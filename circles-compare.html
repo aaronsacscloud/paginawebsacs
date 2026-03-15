@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Isotipo — 5 Propuestas de Circulos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #F5F3EE;
+      padding: 48px;
+      color: #1a1a1a;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+    .header h1 {
+      font-family: 'Urbanist', sans-serif;
+      font-size: 32px;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+    .header p {
+      font-size: 14px;
+      color: #707070;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .proposals {
+      display: flex;
+      flex-direction: column;
+      gap: 48px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .proposal {
+      background: #fff;
+      border-radius: 24px;
+      padding: 40px 48px;
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    .proposal-header {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .proposal-number {
+      font-size: 13px;
+      font-weight: 600;
+      color: #2AB5A0;
+      letter-spacing: 0.08em;
+    }
+    .proposal-name {
+      font-family: 'Urbanist', sans-serif;
+      font-size: 18px;
+      font-weight: 500;
+      color: #333;
+    }
+    .proposal-desc {
+      font-size: 13px;
+      color: #999;
+      margin-left: 8px;
+    }
+
+    /* Logo display row */
+    .logo-row {
+      display: flex;
+      gap: 32px;
+      margin-bottom: 24px;
+    }
+    .logo-box {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 56px 40px;
+      border-radius: 16px;
+    }
+    .logo-box.light {
+      background: #FAFAF8;
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    .logo-box.dark {
+      background: #111;
+    }
+    .logo-box.vertical {
+      flex-direction: column;
+      gap: 16px;
+    }
+    .logo-text {
+      font-family: 'Urbanist', sans-serif;
+      font-size: 36px;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+    .logo-text .sacs {
+      font-weight: 200;
+      color: #6B7B8D;
+    }
+    .logo-text .cloud {
+      font-weight: 500;
+      color: #4B5563;
+    }
+    .logo-text .reg {
+      font-size: 10px;
+      vertical-align: super;
+      font-weight: 300;
+      color: #9CA3AF;
+    }
+    .dark .logo-text .sacs { color: rgba(255,255,255,0.5); }
+    .dark .logo-text .cloud { color: rgba(255,255,255,0.85); }
+    .dark .logo-text .reg { color: rgba(255,255,255,0.3); }
+
+    /* Small versions row */
+    .small-row {
+      display: flex;
+      gap: 48px;
+      align-items: center;
+      padding: 20px 0;
+      border-top: 1px solid rgba(0,0,0,0.05);
+    }
+    .small-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .small-label {
+      font-size: 10px;
+      color: #bbb;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      min-width: 60px;
+    }
+    .small-text {
+      font-family: 'Urbanist', sans-serif;
+      font-size: 18px;
+      letter-spacing: -0.01em;
+    }
+    .small-text .sacs { font-weight: 200; color: #6B7B8D; }
+    .small-text .cloud { font-weight: 500; color: #4B5563; }
+
+    .notes {
+      margin-top: 12px;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #999;
+      max-width: 700px;
+    }
+    .notes strong { color: #555; }
+
+    /* ═══════════════════════════════════════
+       CIRCLE SYSTEMS
+       ═══════════════════════════════════════ */
+
+    /* --- Shared --- */
+    .circles {
+      position: relative;
+      flex-shrink: 0;
+    }
+    .circles .c {
+      border-radius: 50%;
+      position: absolute;
+    }
+
+    /* ═══ PROPOSAL 1: Venn Clasico Refinado ═══ */
+    .p1 .circles { width: 90px; height: 80px; }
+    .p1 .c1 { width: 52px; height: 52px; background: #4B7BE5; opacity: 0.7; top: 16px; left: 0; }
+    .p1 .c2 { width: 36px; height: 36px; background: #E8A838; opacity: 0.75; top: 0; left: 22px; }
+    .p1 .c3 { width: 44px; height: 44px; background: #2AB5A0; opacity: 0.7; top: 18px; left: 36px; }
+
+    .p1-v .circles { width: 120px; height: 110px; }
+    .p1-v .c1 { width: 72px; height: 72px; background: #4B7BE5; opacity: 0.7; top: 20px; left: 0; }
+    .p1-v .c2 { width: 48px; height: 48px; background: #E8A838; opacity: 0.75; top: 0; left: 30px; }
+    .p1-v .c3 { width: 58px; height: 58px; background: #2AB5A0; opacity: 0.7; top: 24px; left: 48px; }
+
+    /* ═══ PROPOSAL 2: Diagonal Ascendente ═══ */
+    .p2 .circles { width: 80px; height: 70px; }
+    .p2 .c1 { width: 44px; height: 44px; background: #4B7BE5; bottom: 0; left: 0; }
+    .p2 .c2 { width: 32px; height: 32px; background: #E8A838; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+    .p2 .c3 { width: 24px; height: 24px; background: #2AB5A0; top: 0; right: 0; }
+
+    .p2-v .circles { width: 110px; height: 100px; }
+    .p2-v .c1 { width: 62px; height: 62px; background: #4B7BE5; bottom: 0; left: 0; }
+    .p2-v .c2 { width: 44px; height: 44px; background: #E8A838; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+    .p2-v .c3 { width: 32px; height: 32px; background: #2AB5A0; top: 0; right: 0; }
+
+    /* ═══ PROPOSAL 3: Apilados con Sombra ═══ */
+    .p3 .circles { width: 72px; height: 72px; }
+    .p3 .c1 { width: 72px; height: 72px; background: #4B7BE5; opacity: 0.15; top: 0; left: 0; }
+    .p3 .c2 { width: 52px; height: 52px; background: #E8A838; opacity: 0.25; top: 10px; left: 10px; }
+    .p3 .c3 { width: 32px; height: 32px; background: #2AB5A0; top: 20px; left: 20px; }
+
+    .p3-v .circles { width: 100px; height: 100px; }
+    .p3-v .c1 { width: 100px; height: 100px; background: #4B7BE5; opacity: 0.15; top: 0; left: 0; }
+    .p3-v .c2 { width: 72px; height: 72px; background: #E8A838; opacity: 0.25; top: 14px; left: 14px; }
+    .p3-v .c3 { width: 44px; height: 44px; background: #2AB5A0; top: 28px; left: 28px; }
+
+    /* Dark overrides for P3 */
+    .dark .p3 .c1, .dark .p3-v .c1 { opacity: 0.2; }
+    .dark .p3 .c2, .dark .p3-v .c2 { opacity: 0.35; }
+    .dark .p3 .c3, .dark .p3-v .c3 { opacity: 0.9; }
+
+    /* ═══ PROPOSAL 4: Triangulo Equilibrado ═══ */
+    .p4 .circles { width: 78px; height: 72px; }
+    .p4 .c1 { width: 38px; height: 38px; background: #4B7BE5; top: 0; left: 50%; transform: translateX(-50%); }
+    .p4 .c2 { width: 38px; height: 38px; background: #E8A838; bottom: 0; left: 0; }
+    .p4 .c3 { width: 38px; height: 38px; background: #2AB5A0; bottom: 0; right: 0; }
+
+    .p4-v .circles { width: 108px; height: 100px; }
+    .p4-v .c1 { width: 52px; height: 52px; background: #4B7BE5; top: 0; left: 50%; transform: translateX(-50%); }
+    .p4-v .c2 { width: 52px; height: 52px; background: #E8A838; bottom: 0; left: 0; }
+    .p4-v .c3 { width: 52px; height: 52px; background: #2AB5A0; bottom: 0; right: 0; }
+
+    /* ═══ PROPOSAL 5: Orbita — Luna y Planetas ═══ */
+    .p5 .circles { width: 80px; height: 80px; }
+    .p5 .c1 { width: 56px; height: 56px; background: #2AB5A0; opacity: 0.8; top: 12px; left: 12px; }
+    .p5 .c2 { width: 24px; height: 24px; background: #4B7BE5; top: 0; left: 0; }
+    .p5 .c3 { width: 18px; height: 18px; background: #E8A838; bottom: 0; right: 4px; }
+
+    .p5-v .circles { width: 110px; height: 110px; }
+    .p5-v .c1 { width: 76px; height: 76px; background: #2AB5A0; opacity: 0.8; top: 17px; left: 17px; }
+    .p5-v .c2 { width: 34px; height: 34px; background: #4B7BE5; top: 0; left: 0; }
+    .p5-v .c3 { width: 24px; height: 24px; background: #E8A838; bottom: 0; right: 6px; }
+
+    /* Meaning tags */
+    .meaning-row {
+      display: flex;
+      gap: 32px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(0,0,0,0.05);
+    }
+    .meaning-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .meaning-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .meaning-label {
+      font-size: 11px;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Isotipo — 5 Propuestas</h1>
+    <p>Explorando posiciones, proporciones y colores para los 3 circulos que representan Negocio, Tecnologia e Impacto Social</p>
+  </div>
+
+  <div class="proposals">
+
+    <!-- ═══ 1: VENN CLASICO REFINADO ═══ -->
+    <div class="proposal">
+      <div class="proposal-header">
+        <span class="proposal-number">01</span>
+        <span class="proposal-name">Venn Clasico Refinado</span>
+        <span class="proposal-desc">— El actual mejorado: superposicion que genera colores de interseccion</span>
+      </div>
+      <div class="logo-row">
+        <div class="logo-box light p1">
+          <div class="circles">
+            <div class="c c1"></div>
+            <div class="c c2"></div>
+            <div class="c c3"></div>
+          </div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+        <div class="logo-box dark p1">
+          <div class="circles">
+            <div class="c c1"></div>
+            <div class="c c2"></div>
+            <div class="c c3"></div>
+          </div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+        <div class="logo-box light vertical p1-v">
+          <div class="circles">
+            <div class="c c1"></div>
+            <div class="c c2"></div>
+            <div class="c c3"></div>
+          </div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+      </div>
+      <div class="notes">
+        <strong>Concepto:</strong> Diagrama de Venn — los 3 valores se superponen para crear algo mayor. Las intersecciones generan colores nuevos que representan la sinergia. Tamanos diferentes: Negocio (grande) > Impacto (mediano) > Tecnologia (pequeno). Colores brand puros con opacidad para las mezclas.
+      </div>
+      <div class="meaning-row">
+        <div class="meaning-item"><div class="meaning-dot" style="background: #4B7BE5;"></div><span class="meaning-label">Negocio — el mas grande, base de todo</span></div>
+        <div class="meaning-item"><div class="meaning-dot" style="background: #E8A838;"></div><span class="meaning-label">Tecnologia — el catalizador</span></div>
+        <div class="meaning-item"><div class="meaning-dot" style="background: #2AB5A0;"></div><span class="meaning-label">Impacto — el proposito</span></div>
+      </div>
+    </div>
+
+    <!-- ═══ 2: DIAGONAL ASCENDENTE ═══ -->
+    <div class="proposal">
+      <div class="proposal-header">
+        <span class="proposal-number">02</span>
+        <span class="proposal-name">Diagonal Ascendente</span>
+        <span class="proposal-desc">— De grande a pequeno, simbolizando crecimiento y elevacion</span>
+      </div>
+      <div class="logo-row">
+        <div class="logo-box light p2">
+          <div class="circles">
+            <div class="c c1"></div>
+            <div class="c c2"></div>
+            <div class="c c3"></div>
+          </div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+        <div class="logo-box dark p2">
+          <div class="circles">
+            <div class="c c1"></div>
+            <div class="c c2"></div>
+            <div class="c c3"></div>
+          </div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+        <div class="logo-box light vertical p2-v">
+          <div class="circles">
+            <div class="c c1"></div>
+            <div class="c c2"></div>
+            <div class="c c3"></div>
+          </div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+      </div>
+      <div class="notes">
+        <strong>Concepto:</strong> Trayectoria ascendente — del comercio (base solida, grande) a traves de la tecnologia (medio) hasta el impacto (cima, pequeno pero elevado). Sin superposicion — cada circulo tiene espacio propio. Sensacion de movimiento y progreso. Los 3 circulos forman una linea diagonal que sube.
+      </div>
+      <div class="meaning-row">
+        <div class="meaning-item"><div class="meaning-dot" style="background: #4B7BE5;"></div><span class="meaning-label">Negocio — la base solida</span></div>
+        <div class="meaning-item"><div class="meaning-dot" style="background: #E8A838;"></div><span class="meaning-label">Tecnologia — el puente</span></div>
+        <div class="meaning-item"><div class="meaning-dot" style="background: #2AB5A0;"></div><span class="meaning-label">Impacto — la meta elevada</span></div>
+      </div>
+    </div>
+
+    <!-- ═══ 3: CONCENTRICOS / CAPAS ═══ -->
+    <div class="proposal">
+      <div class="proposal-header">
+        <span class="proposal-number">03</span>
+        <span class="proposal-name">Concentricos — Capas de Impacto</span>
+        <span class="proposal-desc">— Circulos anidados que irradian desde el centro</span>
+      </div>
+      <div class="logo-row">
+        <div class="logo-box light p3">
+          <div class="circles">
+            <div class="c c1"></div>
+            <div class="c c2"></div>
+            <div class="c c3"></div>
+          </div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+        <div class="logo-box dark p3">
+          <div class="circles">
+            <div class="c c1"></div>
+            <div class="c c2"></div>
+            <div class="c c3"></div>
+          </div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+        <div class="logo-box light vertical p3-v">
+          <div class="circles">
+            <div class="c c1"></div>
+            <div class="c c2"></div>
+            <div class="c c3"></div>
+          </div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+      </div>
+      <div class="notes">
+        <strong>Concepto:</strong> El impacto nace del centro y se expande como ondas. El circulo teal (impacto) es el nucleo solido. El dorado (tecnologia) lo amplifica. El azul (negocio) es el alcance total. Las opacidades crean profundidad — como una gota en el agua. Minimalista y muy contemporaneo.
+      </div>
+      <div class="meaning-row">
+        <div class="meaning-item"><div class="meaning-dot" style="background: #4B7BE5; opacity: 0.3;"></div><span class="meaning-label">Negocio — el alcance</span></div>
+        <div class="meaning-item"><div class="meaning-dot" style="background: #E8A838; opacity: 0.5;"></div><span class="meaning-label">Tecnologia — el amplificador</span></div>
+        <div class="meaning-item"><div class="meaning-dot" style="background: #2AB5A0;"></div><span class="meaning-label">Impacto — el nucleo</span></div>
+      </div>
+    </div>
+
+    <!-- ═══ 4: TRIANGULO EQUILIBRADO ═══ -->
+    <div class="proposal">
+      <div class="proposal-header">
+        <span class="proposal-number">04</span>
+        <span class="proposal-name">Triangulo Equilibrado</span>
+        <span class="proposal-desc">— Los 3 pilares con igual importancia, formando estabilidad</span>
+      </div>
+      <div class="logo-row">
+        <div class="logo-box light p4">
+          <div class="circles">
+            <div class="c c1"></div>
+            <div class="c c2"></div>
+            <div class="c c3"></div>
+          </div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+        <div class="logo-box dark p4">
+          <div class="circles">
+            <div class="c c1"></div>
+            <div class="c c2"></div>
+            <div class="c c3"></div>
+          </div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+        <div class="logo-box light vertical p4-v">
+          <div class="circles">
+            <div class="c c1"></div>
+            <div class="c c2"></div>
+            <div class="c c3"></div>
+          </div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+      </div>
+      <div class="notes">
+        <strong>Concepto:</strong> Triple impacto en equilibrio perfecto. Los 3 circulos tienen el mismo tamanio — ninguno domina. Forman un triangulo que comunica estabilidad y balance. La tecnologia (azul) corona arriba, el comercio (dorado) y el impacto (teal) son los cimientos. Limpio y democratico.
+      </div>
+      <div class="meaning-row">
+        <div class="meaning-item"><div class="meaning-dot" style="background: #4B7BE5;"></div><span class="meaning-label">Tecnologia — guia desde arriba</span></div>
+        <div class="meaning-item"><div class="meaning-dot" style="background: #E8A838;"></div><span class="meaning-label">Negocio — cimiento izquierdo</span></div>
+        <div class="meaning-item"><div class="meaning-dot" style="background: #2AB5A0;"></div><span class="meaning-label">Impacto — cimiento derecho</span></div>
+      </div>
+    </div>
+
+    <!-- ═══ 5: ORBITA ═══ -->
+    <div class="proposal">
+      <div class="proposal-header">
+        <span class="proposal-number">05</span>
+        <span class="proposal-name">Orbita — Ecosistema</span>
+        <span class="proposal-desc">— Un nucleo central con satelites que orbitan</span>
+      </div>
+      <div class="logo-row">
+        <div class="logo-box light p5">
+          <div class="circles">
+            <div class="c c1"></div>
+            <div class="c c2"></div>
+            <div class="c c3"></div>
+          </div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+        <div class="logo-box dark p5">
+          <div class="circles">
+            <div class="c c1"></div>
+            <div class="c c2"></div>
+            <div class="c c3"></div>
+          </div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+        <div class="logo-box light vertical p5-v">
+          <div class="circles">
+            <div class="c c1"></div>
+            <div class="c c2"></div>
+            <div class="c c3"></div>
+          </div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+      </div>
+      <div class="notes">
+        <strong>Concepto:</strong> El impacto (teal) es el planeta central — el proposito de SACS. Alrededor orbitan la tecnologia (azul) y el negocio (dorado) como fuerzas que lo alimentan. Jerarquia clara: el impacto social es el centro de todo. Los satelites sugieren movimiento y dinamismo. Feel de ecosistema tech.
+      </div>
+      <div class="meaning-row">
+        <div class="meaning-item"><div class="meaning-dot" style="background: #2AB5A0;"></div><span class="meaning-label">Impacto — el nucleo central</span></div>
+        <div class="meaning-item"><div class="meaning-dot" style="background: #4B7BE5;"></div><span class="meaning-label">Tecnologia — satelite mayor</span></div>
+        <div class="meaning-item"><div class="meaning-dot" style="background: #E8A838;"></div><span class="meaning-label">Negocio — satelite menor</span></div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

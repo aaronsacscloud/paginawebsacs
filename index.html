@@ -6,7 +6,7 @@
   <title>SACS — Manual de Identidad Visual</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Urbanist:wght@200;300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- SVG Noise/Grain Filters -->
   <svg style="position:absolute;width:0;height:0;">
@@ -46,10 +46,11 @@
       --color-border: #D4D4D4;
       --color-border-light: rgba(0,0,0,0.08);
 
-      /* Fonts — DM Sans reemplaza Bebas Neue como display */
+      /* Fonts */
       --font-display: 'DM Sans', sans-serif;
       --font-heading: 'Space Grotesk', sans-serif;
       --font-body: 'Plus Jakarta Sans', sans-serif;
+      --font-logo: 'Urbanist', sans-serif;
 
       /* Radius */
       --radius-sm: 8px;
@@ -114,7 +115,7 @@
       overflow-y: auto;
     }
     .nav-logo {
-      font-family: var(--font-display);
+      font-family: var(--font-logo);
       font-size: 20px;
       font-weight: 700;
       color: var(--color-text-primary);
@@ -1701,13 +1702,13 @@
       box-shadow: 0 8px 28px rgba(42,181,160,0.3), inset 0 -4px 10px rgba(0,0,0,0.06);
     }
     .p1-text {
-      font-family: var(--font-display);
+      font-family: var(--font-logo);
       font-size: 28px;
-      font-weight: 400;
+      font-weight: 200;
       color: #6B7B8D;
       letter-spacing: -0.02em;
     }
-    .p1-text strong { font-weight: 500; }
+    .p1-text strong { font-weight: 500; color: #4B5563; }
     .p1-text sup { font-size: 10px; vertical-align: super; }
 
     /* Manifiesto */
@@ -2225,9 +2226,7 @@
       .axo-simbolismo { grid-template-columns: 1fr; }
       .axo-states-grid { grid-template-columns: repeat(3, 1fr); }
       .ia-faces-grid { grid-template-columns: repeat(2, 1fr); }
-      .filosofia-grid { grid-template-columns: repeat(2, 1fr); }
       .a11y-grid { grid-template-columns: repeat(2, 1fr); }
-      .glosario-grid { grid-template-columns: 1fr; }
       .uniform-specs-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 768px) {
@@ -2270,18 +2269,10 @@
       .axo-simbolismo { grid-template-columns: 1fr; }
       .axo-states-grid { grid-template-columns: repeat(2, 1fr); }
       .ia-faces-grid { grid-template-columns: 1fr; }
-      .filosofia-grid { grid-template-columns: 1fr; }
       .voz-table { font-size: 13px; }
       .voz-row { flex-direction: column; }
       .voz-col { width: 100%; }
-      .type-waterfall-row { gap: 12px; }
-      .type-waterfall-size { min-width: 36px; font-size: 11px; }
-      .tint-row { flex-wrap: wrap; }
-      .tint-swatch { width: 40px; height: 40px; }
-      .grid-spec { grid-template-columns: repeat(4, 1fr); }
-      .tokens-grid { grid-template-columns: 1fr; }
       .a11y-grid { grid-template-columns: 1fr; }
-      .glosario-grid { grid-template-columns: 1fr; }
       .hero { min-height: 60vh; padding: 60px 24px 80px; }
       .hero-logo-corner { top: 20px; left: 20px; }
       .hero-title { font-size: 36px !important; }
@@ -2289,51 +2280,11 @@
       .grid-4 { grid-template-columns: 1fr 1fr; }
       .axo-states-grid { grid-template-columns: repeat(2, 1fr); }
       .ia-faces-grid { grid-template-columns: 1fr; }
-      .tint-swatch { width: 32px; height: 32px; font-size: 9px; }
     }
 
     /* ═══════════════════════════════════════════════════
-       NEW SECTIONS — Filosofia, Voz, Escala, etc.
+       VOZ DE MARCA & ACCESIBILIDAD
        ═══════════════════════════════════════════════════ */
-
-    /* Filosofia de Diseno */
-    .filosofia-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-      margin-top: 48px;
-    }
-    .filosofia-grid > :last-child:nth-child(odd) {
-      grid-column: 1;
-    }
-    .filosofia-card {
-      padding: 40px 32px;
-      background: var(--color-bg-secondary);
-      border-radius: 16px;
-      position: relative;
-    }
-    .filosofia-number {
-      font-family: var(--font-display);
-      font-size: 48px;
-      font-weight: 700;
-      color: var(--color-primary);
-      opacity: 0.12;
-      position: absolute;
-      top: 16px;
-      right: 20px;
-      line-height: 1;
-    }
-    .filosofia-card h3 {
-      font-family: var(--font-display);
-      font-size: 20px;
-      font-weight: 500;
-      margin-bottom: 12px;
-    }
-    .filosofia-card p {
-      font-size: 14px;
-      line-height: 1.7;
-      color: var(--color-text-secondary);
-    }
 
     /* Voz de Marca */
     .voz-table {
@@ -2371,81 +2322,6 @@
     }
     .voz-header .voz-no { color: var(--color-error); }
 
-    /* Escala Tipografica */
-    .type-waterfall {
-      margin-top: 48px;
-    }
-    .type-waterfall-row {
-      display: flex;
-      align-items: baseline;
-      gap: 24px;
-      padding: 16px 0;
-      border-bottom: 1px solid var(--color-border-light);
-    }
-    .type-waterfall-row:last-child { border-bottom: none; }
-    .type-waterfall-size {
-      font-family: var(--font-heading);
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--color-text-tertiary);
-      min-width: 48px;
-      text-align: right;
-    }
-
-    /* Tints & Shades */
-    .tint-row {
-      display: flex;
-      gap: 8px;
-    }
-    .tint-swatch {
-      width: 64px;
-      height: 64px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      font-weight: 600;
-      transition: transform 0.2s;
-      flex: 1;
-    }
-    .tint-swatch:hover { transform: scale(1.08); }
-
-    /* Grid Spec */
-    .grid-spec {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 24px;
-      margin: 48px 0;
-    }
-    .grid-spec-item {
-      text-align: center;
-    }
-    .grid-spec-visual {
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      height: 80px;
-      margin-bottom: 12px;
-    }
-    .grid-spec-block {
-      background: var(--color-primary);
-      border-radius: 4px;
-      opacity: 0.6;
-    }
-    .grid-spec-label {
-      font-family: var(--font-heading);
-      font-size: 14px;
-      font-weight: 500;
-    }
-    .grid-spec-label span {
-      display: block;
-      font-size: 11px;
-      color: var(--color-text-tertiary);
-      font-weight: 400;
-      margin-top: 2px;
-    }
-
     /* Accesibilidad */
     .a11y-grid {
       display: grid;
@@ -2477,71 +2353,6 @@
       color: var(--color-text-secondary);
     }
 
-    /* Tokens */
-    .tokens-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 32px;
-      margin-top: 48px;
-    }
-    .token-group {
-      padding: 24px;
-      background: var(--color-bg-secondary);
-      border-radius: 16px;
-    }
-    .token-group h4 {
-      font-family: var(--font-display);
-      font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--color-border-light);
-    }
-    .token-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 0;
-      font-size: 13px;
-      border-bottom: 1px solid var(--color-border-light);
-    }
-    .token-row:last-child { border-bottom: none; }
-    .token-row code {
-      font-family: var(--font-heading);
-      font-size: 12px;
-      color: var(--color-primary);
-      font-weight: 500;
-    }
-    .token-row span {
-      font-family: var(--font-heading);
-      font-size: 12px;
-      color: var(--color-text-tertiary);
-    }
-
-    /* Glosario */
-    .glosario-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
-      margin-top: 48px;
-    }
-    .glosario-item {
-      padding: 24px;
-      background: #fff;
-      border-radius: 12px;
-      border: 1px solid var(--color-border-light);
-    }
-    .glosario-term {
-      font-family: var(--font-display);
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-    .glosario-def {
-      font-size: 14px;
-      line-height: 1.6;
-      color: var(--color-text-secondary);
-    }
   </style>
 </head>
 <body>
@@ -2557,6 +2368,7 @@
       <li><a href="#pilares">Pilares S.A.C.S.</a></li>
       <li><a href="#comercio-consciente">Comercio Consciente</a></li>
       <li><a href="#axo">AXO</a></li>
+      <li><a href="#voz">Voz de Marca</a></li>
     </ul>
     <div class="nav-section-label">Sistema</div>
     <ul class="nav-links">
@@ -2564,6 +2376,7 @@
       <li><a href="#colors">Colores</a></li>
       <li><a href="#components">Componentes</a></li>
       <li><a href="#spacing">Espaciado</a></li>
+      <li><a href="#accesibilidad">Accesibilidad</a></li>
     </ul>
     <div class="nav-section-label">Heroes</div>
     <ul class="nav-links">
@@ -2580,27 +2393,13 @@
       <li><a href="#fondo-bordado">Bordado</a></li>
       <li><a href="#fondo-hilos">Hilos</a></li>
     </ul>
-    <div class="nav-section-label">Guias</div>
-    <ul class="nav-links">
-      <li><a href="#filosofia">Filosofia</a></li>
-      <li><a href="#voz">Voz de Marca</a></li>
-      <li><a href="#escala-tipo">Escala Tipografica</a></li>
-      <li><a href="#paleta-expandida">Tints & Shades</a></li>
-      <li><a href="#grilla">Grilla</a></li>
-      <li><a href="#animacion">Animacion</a></li>
-      <li><a href="#fotografia">Fotografia</a></li>
-      <li><a href="#accesibilidad">Accesibilidad</a></li>
-      <li><a href="#zona-exclusion">Zona de Exclusion</a></li>
-      <li><a href="#tokens">Tokens</a></li>
-      <li><a href="#firma-email">Firma de Email</a></li>
-      <li><a href="#glosario">Glosario</a></li>
-    </ul>
     <div class="nav-section-label">Social</div>
     <ul class="nav-links">
       <li><a href="#instagram">Instagram</a></li>
     </ul>
     <div class="nav-section-label">Otros</div>
     <ul class="nav-links">
+      <li><a href="#firma-email">Firma de Email</a></li>
       <li><a href="#nav-footer">Nav & Footer</a></li>
       <li><a class="btn btn-primary btn-sm" href="#">Agenda reunion</a></li>
     </ul>
@@ -2633,7 +2432,7 @@
        ═══════════════════════════════════════════ -->
   <section class="section" id="logo">
     <div class="section-label">00 — Logo</div>
-    <h2 class="section-title">Sacscloud.®</h2>
+    <h2 class="section-title" style="font-family: var(--font-logo);"><span style="font-weight: 200; color: #6B7280;">Sacs</span><span style="font-weight: 500; color: #4B5563;">cloud</span><span style="font-weight: 200; font-size: 0.5em; vertical-align: super;">®</span></h2>
     <p class="section-desc">
       Tres circulos que representan la interseccion de Negocio, Tecnologia e Impacto Social. El punto de encuentro donde el comercio se transforma.
     </p>
@@ -2748,7 +2547,7 @@
             <div class="p1-circle p1-circle-gold" style="width: 90px; height: 90px; left: 62px;"></div>
             <div class="p1-circle p1-circle-teal" style="width: 112px; height: 112px;"></div>
           </div>
-          <div class="p1-text" style="font-size: 36px;"><strong>Sacs</strong>cloud<sup>®</sup></div>
+          <div class="p1-text" style="font-size: 36px;">Sacs<strong>cloud</strong><sup>®</sup></div>
         </div>
         <span class="logo-variant-label">Vertical — Fondo claro</span>
       </div>
@@ -2761,7 +2560,7 @@
             <div class="p1-circle p1-circle-gold" style="width: 90px; height: 90px; left: 62px;"></div>
             <div class="p1-circle p1-circle-teal" style="width: 112px; height: 112px;"></div>
           </div>
-          <div class="p1-text" style="font-size: 36px; color: rgba(255,255,255,0.8);"><strong style="color: rgba(255,255,255,0.9);">Sacs</strong>cloud<sup>®</sup></div>
+          <div class="p1-text" style="font-size: 36px; color: rgba(255,255,255,0.5);">Sacs<strong style="color: rgba(255,255,255,0.85);">cloud</strong><sup>®</sup></div>
         </div>
         <span class="logo-variant-label">Vertical — Fondo oscuro</span>
       </div>
@@ -2777,7 +2576,7 @@
             <div class="p1-circle p1-circle-gold" style="width: 46px; height: 46px; left: 32px;"></div>
             <div class="p1-circle p1-circle-teal" style="width: 58px; height: 58px;"></div>
           </div>
-          <div class="p1-text" style="font-size: 32px;"><strong>Sacs</strong>cloud<sup>®</sup></div>
+          <div class="p1-text" style="font-size: 32px;">Sacs<strong>cloud</strong><sup>®</sup></div>
         </div>
         <span class="logo-variant-label">Horizontal — Fondo claro</span>
       </div>
@@ -2790,7 +2589,7 @@
             <div class="p1-circle p1-circle-gold" style="width: 46px; height: 46px; left: 32px;"></div>
             <div class="p1-circle p1-circle-teal" style="width: 58px; height: 58px;"></div>
           </div>
-          <div class="p1-text" style="font-size: 32px; color: rgba(255,255,255,0.8);"><strong style="color: rgba(255,255,255,0.9);">Sacs</strong>cloud<sup>®</sup></div>
+          <div class="p1-text" style="font-size: 32px; color: rgba(255,255,255,0.5);">Sacs<strong style="color: rgba(255,255,255,0.85);">cloud</strong><sup>®</sup></div>
         </div>
         <span class="logo-variant-label">Horizontal — Fondo oscuro</span>
       </div>
@@ -2930,10 +2729,192 @@
        ═══════════════════════════════════════════ -->
   <section class="section-dark" id="comercio-consciente">
     <div class="section-inner">
-      <!-- 3.1 — Triple Impacto -->
+
+      <!-- ─── VERSION CORTA ─── -->
       <div class="section-label">COMERCIO CONSCIENTE</div>
-      <h2 class="section-title" style="color: #fff;">Cada transaccion<br>genera impacto.</h2>
-      <p class="section-desc">El modelo de triple impacto de SACS.</p>
+      <h2 class="section-title" style="color: #fff;">Creemos que<br>vender es servir.</h2>
+      <div class="manifiesto-quote" style="margin-top: 48px;">
+        Que crecer no es perder esencia.<br>
+        Que la tecnologia libera, no reemplaza.<br>
+        Que el exito se comparte.<br><br>
+        Somos autenticos, y somos muchos.<br>
+        Y juntos, somos imparables.
+      </div>
+      <p style="font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent); margin-top: 32px;">#ComercioConsciente</p>
+
+      <div class="divider" style="background: rgba(255,255,255,0.1); margin: 64px 0;"></div>
+
+      <!-- ─── VERSION MEDIA ─── -->
+      <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.03em; color: #fff; margin-bottom: 32px;">Nuestro compromiso</h3>
+      <div style="max-width: 640px;">
+        <p style="font-size: 17px; line-height: 1.8; color: rgba(255,255,255,0.7); margin-bottom: 16px;">Somos comerciantes conscientes.</p>
+        <p style="font-size: 17px; line-height: 1.8; color: rgba(255,255,255,0.7); margin-bottom: 16px;">Creemos que cada venta es una oportunidad de transformar, no solo de transaccionar.</p>
+        <p style="font-size: 17px; line-height: 1.8; color: rgba(255,255,255,0.7); margin-bottom: 16px;">Nos comprometemos con nuestros clientes, empleados, comunidad y con nosotros mismos.</p>
+        <p style="font-size: 17px; line-height: 1.8; color: rgba(255,255,255,0.7); margin-bottom: 16px;">Usamos tecnologia para tener mas tiempo para lo que importa, no para perder nuestra humanidad.</p>
+        <p style="font-size: 17px; line-height: 1.8; color: rgba(255,255,255,0.7);">Y prometemos que parte de lo que ganamos, siempre regresa. Porque el comercio consciente es comercio circular.</p>
+      </div>
+
+      <div class="divider" style="background: rgba(255,255,255,0.1); margin: 64px 0;"></div>
+
+      <!-- ─── MANIFIESTO COMPLETO ─── -->
+      <h3 style="font-family: var(--font-display); font-size: 32px; font-weight: 500; letter-spacing: -0.03em; color: #fff; margin-bottom: 12px;">Manifiesto completo</h3>
+      <p style="font-size: 14px; color: rgba(255,255,255,0.4); margin-bottom: 48px;">Declaracion formal del movimiento Comercio Consciente.</p>
+
+      <p style="font-size: 20px; line-height: 1.6; color: rgba(255,255,255,0.85); margin-bottom: 48px; max-width: 640px;">Nosotros, los <strong style="color: #fff;">comerciantes conscientes</strong>, declaramos:</p>
+
+      <!-- I -->
+      <div style="margin-bottom: 48px; max-width: 640px;">
+        <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 16px;">I. El comercio no es solo transaccion: es transformacion</div>
+        <ul style="list-style: none; padding: 0;">
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> Cada venta es una oportunidad de impactar una vida.</li>
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> Cada cliente es una persona, no un numero.</li>
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> Cada negocio es un tejido vivo de la comunidad.</li>
+        </ul>
+      </div>
+
+      <!-- II -->
+      <div style="margin-bottom: 48px; max-width: 640px;">
+        <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 16px;">II. Rechazamos que crecer signifique perder la esencia</div>
+        <ul style="list-style: none; padding: 0;">
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> Los numeros importan, pero no mas que las personas.</li>
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> La eficiencia importa, pero no mas que la dignidad.</li>
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> Las ganancias importan, pero no mas que el proposito.</li>
+        </ul>
+      </div>
+
+      <!-- III -->
+      <div style="margin-bottom: 48px; max-width: 640px;">
+        <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 16px;">III. Nos comprometemos a operar con consciencia</div>
+        <ul style="list-style: none; padding: 0;">
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> Con nuestros <strong style="color: rgba(255,255,255,0.85);">clientes</strong>: servicio antes que venta.</li>
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> Con nuestros <strong style="color: rgba(255,255,255,0.85);">empleados</strong>: crecimiento antes que explotacion.</li>
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> Con nuestra <strong style="color: rgba(255,255,255,0.85);">comunidad</strong>: contribucion antes que extraccion.</li>
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> Con <strong style="color: rgba(255,255,255,0.85);">nosotros mismos</strong>: balance antes que burnout.</li>
+        </ul>
+      </div>
+
+      <!-- IV -->
+      <div style="margin-bottom: 48px; max-width: 640px;">
+        <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 16px;">IV. La tecnologia es herramienta, no reemplazo</div>
+        <ul style="list-style: none; padding: 0;">
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> Los datos nos dan claridad, no nos quitan humanidad.</li>
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> La automatizacion nos da tiempo, no nos roba alma.</li>
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> La eficiencia nos da espacio para lo que importa.</li>
+        </ul>
+      </div>
+
+      <!-- V -->
+      <div style="margin-bottom: 48px; max-width: 640px;">
+        <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 16px;">V. Defendemos al comerciante independiente</div>
+        <ul style="list-style: none; padding: 0;">
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> Somos la columna vertebral de la economia.</li>
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> Somos el primer empleo de millones.</li>
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> Somos la tienda de la esquina que conoce tu nombre.</li>
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> Somos resistencia ante la homogeneizacion.</li>
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.85); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> Somos independientes, y somos muchos. Y juntos, somos imparables.</li>
+        </ul>
+      </div>
+
+      <!-- VI -->
+      <div style="margin-bottom: 48px; max-width: 640px;">
+        <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 16px;">VI. Una parte de lo que ganamos siempre regresa</div>
+        <p style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); margin-bottom: 16px;">No porque sea obligatorio. Sino porque asi debe ser.</p>
+        <ul style="list-style: none; padding: 0;">
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> Porque el comercio consciente es comercio circular.</li>
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> Porque quien recibe, debe dar.</li>
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> Porque el exito que no se comparte, no es exito.</li>
+        </ul>
+      </div>
+
+      <!-- VII -->
+      <div style="margin-bottom: 48px; max-width: 640px;">
+        <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 16px;">VII. Aspiramos a un mundo donde</div>
+        <ul style="list-style: none; padding: 0;">
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> El comerciante tenga tiempo para su familia.</li>
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> El empleado tenga dignidad en su trabajo.</li>
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> El cliente tenga confianza en quien le vende.</li>
+          <li style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); padding: 8px 0; padding-left: 20px; position: relative;"><span style="position: absolute; left: 0; color: var(--color-accent);">—</span> La comunidad tenga orgullo de sus negocios locales.</li>
+        </ul>
+      </div>
+
+      <!-- Cierre -->
+      <div style="max-width: 640px; margin-bottom: 48px;">
+        <p style="font-size: 20px; line-height: 1.6; color: rgba(255,255,255,0.85); margin-bottom: 12px;">Este es nuestro manifiesto.</p>
+        <p style="font-size: 20px; line-height: 1.6; color: rgba(255,255,255,0.85); margin-bottom: 12px;">Esta es nuestra declaracion.</p>
+        <p style="font-size: 20px; line-height: 1.6; color: rgba(255,255,255,0.85); margin-bottom: 24px;">Este es nuestro compromiso.</p>
+        <p style="font-size: 17px; line-height: 1.7; color: rgba(255,255,255,0.6); margin-bottom: 12px;">No pedimos permiso para cambiar las reglas. Las estamos reescribiendo.</p>
+        <p style="font-size: 17px; line-height: 1.7; color: rgba(255,255,255,0.6); margin-bottom: 12px;">Si crees en esto, eres uno de nosotros.</p>
+        <p style="font-size: 17px; line-height: 1.7; color: #fff; font-weight: 500;">Si vives esto, eres Comercio Consciente.</p>
+      </div>
+
+      <!-- Firma -->
+      <div style="max-width: 480px; padding: 40px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; margin-bottom: 48px;">
+        <p style="font-size: 14px; color: rgba(255,255,255,0.5); margin-bottom: 24px;"><strong style="color: rgba(255,255,255,0.7);">Firma del Comerciante:</strong> _______________________</p>
+        <p style="font-size: 14px; color: rgba(255,255,255,0.5); margin-bottom: 24px;"><strong style="color: rgba(255,255,255,0.7);">Fecha:</strong> _______________________</p>
+        <p style="font-size: 15px; font-style: italic; color: var(--color-accent);">"Comercio que transforma"</p>
+      </div>
+
+      <div class="divider" style="background: rgba(255,255,255,0.1); margin: 64px 0;"></div>
+
+      <!-- ─── 7 PRINCIPIOS ─── -->
+      <h2 class="section-title mt-48" style="color: #fff;">7 Principios del<br>Comercio Consciente</h2>
+
+      <div class="principios-list">
+        <div class="principio-item">
+          <div class="principio-number">01</div>
+          <div>
+            <div style="font-size: 17px; font-weight: 600; color: #fff; margin-bottom: 4px;">Transformacion > Transaccion</div>
+            <div class="principio-text">Cada venta es una oportunidad de impactar una vida.</div>
+          </div>
+        </div>
+        <div class="principio-item">
+          <div class="principio-number">02</div>
+          <div>
+            <div style="font-size: 17px; font-weight: 600; color: #fff; margin-bottom: 4px;">Esencia > Escala</div>
+            <div class="principio-text">Crecer sin perder lo que nos hace unicos.</div>
+          </div>
+        </div>
+        <div class="principio-item">
+          <div class="principio-number">03</div>
+          <div>
+            <div style="font-size: 17px; font-weight: 600; color: #fff; margin-bottom: 4px;">Consciencia > Conveniencia</div>
+            <div class="principio-text">Decisiones eticas, incluso si cuestan mas.</div>
+          </div>
+        </div>
+        <div class="principio-item">
+          <div class="principio-number">04</div>
+          <div>
+            <div style="font-size: 17px; font-weight: 600; color: #fff; margin-bottom: 4px;">Herramienta > Reemplazo</div>
+            <div class="principio-text">Tecnologia que libera y potencia; no deshumaniza.</div>
+          </div>
+        </div>
+        <div class="principio-item">
+          <div class="principio-number">05</div>
+          <div>
+            <div style="font-size: 17px; font-weight: 600; color: #fff; margin-bottom: 4px;">Independencia > Dependencia</div>
+            <div class="principio-text">Comerciantes fuertes: no cautivos, no controlados.</div>
+          </div>
+        </div>
+        <div class="principio-item">
+          <div class="principio-number">06</div>
+          <div>
+            <div style="font-size: 17px; font-weight: 600; color: #fff; margin-bottom: 4px;">Circularidad > Acumulacion</div>
+            <div class="principio-text">El exito que no se comparte, no es exito.</div>
+          </div>
+        </div>
+        <div class="principio-item">
+          <div class="principio-number">07</div>
+          <div>
+            <div style="font-size: 17px; font-weight: 600; color: #fff; margin-bottom: 4px;">Comunidad > Competencia</div>
+            <div class="principio-text">Juntos elevamos el mercado y el estandar.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider" style="background: rgba(255,255,255,0.1); margin: 64px 0;"></div>
+
+      <!-- ─── TRIPLE IMPACTO ─── -->
+      <h2 class="section-title mt-48" style="color: #fff;">Modelo de<br>triple impacto</h2>
 
       <div class="impacto-grid">
         <div class="impacto-card">
@@ -2953,70 +2934,50 @@
         </div>
       </div>
 
-      <div class="divider" style="background: rgba(255,255,255,0.1);"></div>
+      <div class="divider" style="background: rgba(255,255,255,0.1); margin: 64px 0;"></div>
 
-      <!-- 3.2 — 7 Principios -->
-      <h2 class="section-title mt-48" style="color: #fff;">7 Principios del<br>Comercio Consciente</h2>
-
-      <div class="principios-list">
-        <div class="principio-item">
-          <div class="principio-number">01</div>
-          <div class="principio-text">Cada transaccion puede ser una fuerza de cambio positivo.</div>
-        </div>
-        <div class="principio-item">
-          <div class="principio-number">02</div>
-          <div class="principio-text">La tecnologia debe servir al comerciante, no al reves.</div>
-        </div>
-        <div class="principio-item">
-          <div class="principio-number">03</div>
-          <div class="principio-text">El crecimiento sin impacto social no es verdadero crecimiento.</div>
-        </div>
-        <div class="principio-item">
-          <div class="principio-number">04</div>
-          <div class="principio-text">La transparencia es la base de toda relacion comercial.</div>
-        </div>
-        <div class="principio-item">
-          <div class="principio-number">05</div>
-          <div class="principio-text">Los datos son del comerciante, siempre.</div>
-        </div>
-        <div class="principio-item">
-          <div class="principio-number">06</div>
-          <div class="principio-text">La IA debe amplificar la intuicion humana, no reemplazarla.</div>
-        </div>
-        <div class="principio-item">
-          <div class="principio-number">07</div>
-          <div class="principio-text">El comercio local es la columna vertebral de las comunidades.</div>
-        </div>
-      </div>
-
-      <div class="divider" style="background: rgba(255,255,255,0.1);"></div>
-
-      <!-- 3.3 — Niveles de participacion -->
-      <h2 class="section-title mt-48" style="color: #fff;">Niveles de participacion</h2>
-      <p class="section-desc">Cuatro caminos para unirse al movimiento del comercio consciente.</p>
+      <!-- ─── DONDE INTEGRAR ─── -->
+      <h2 class="section-title mt-48" style="color: #fff;">Donde vive<br>el manifiesto</h2>
+      <p class="section-desc">Puntos de implementacion del Comercio Consciente en todos los canales.</p>
 
       <div class="grid-4" style="margin-top: 48px;">
         <div class="impacto-card">
-          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mx-verde); margin-bottom: 8px;">Semilla</div>
-          <div style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: #fff; margin-bottom: 12px;">Gratis</div>
-          <p style="font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.5);">Para emprendedores que inician su camino.</p>
+          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-primary); margin-bottom: 12px;">En la web</div>
+          <ul style="list-style: none; padding: 0;">
+            <li style="font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.5); padding: 4px 0;">Pagina sacs.com/manifiesto</li>
+            <li style="font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.5); padding: 4px 0;">Boton "Firmo este manifiesto"</li>
+            <li style="font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.5); padding: 4px 0;">Contador de firmantes</li>
+            <li style="font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.5); padding: 4px 0;">Descarga en PDF</li>
+          </ul>
         </div>
         <div class="impacto-card">
-          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 8px;">Crecimiento</div>
-          <div style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: #fff; margin-bottom: 12px;">$799/mes</div>
-          <p style="font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.5);">Para negocios que necesitan escalar.</p>
+          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-secondary); margin-bottom: 12px;">En el producto</div>
+          <ul style="list-style: none; padding: 0;">
+            <li style="font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.5); padding: 4px 0;">Onboarding: "Esto es lo que creemos"</li>
+            <li style="font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.5); padding: 4px 0;">Firmar desde el dashboard</li>
+            <li style="font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.5); padding: 4px 0;">Badge "Comerciante Consciente"</li>
+            <li style="font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.5); padding: 4px 0;">Reafirmacion anual</li>
+          </ul>
         </div>
         <div class="impacto-card">
-          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-primary); margin-bottom: 8px;">Empresa</div>
-          <div style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: #fff; margin-bottom: 12px;">Personalizado</div>
-          <p style="font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.5);">Operaciones complejas multi-ubicacion.</p>
+          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 12px;">Materiales fisicos</div>
+          <ul style="list-style: none; padding: 0;">
+            <li style="font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.5); padding: 4px 0;">Poster enmarcado para tiendas</li>
+            <li style="font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.5); padding: 4px 0;">Version impresa para nuevos clientes</li>
+            <li style="font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.5); padding: 4px 0;">Manifiesto en mandiles y merch</li>
+          </ul>
         </div>
         <div class="impacto-card">
-          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-secondary); margin-bottom: 8px;">Comunidad</div>
-          <div style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: #fff; margin-bottom: 12px;">Movimiento</div>
-          <p style="font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.5);">Retailers que se unen como movimiento.</p>
+          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mx-rosa); margin-bottom: 12px;">Comunicacion</div>
+          <ul style="list-style: none; padding: 0;">
+            <li style="font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.5); padding: 4px 0;">Firma de email con version corta</li>
+            <li style="font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.5); padding: 4px 0;">Stories semanales: 1 principio</li>
+            <li style="font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.5); padding: 4px 0;">Post mensual profundizando</li>
+            <li style="font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.5); padding: 4px 0;">Apertura de presentaciones de venta</li>
+          </ul>
         </div>
       </div>
+
     </div>
   </section>
 
@@ -3667,51 +3628,139 @@
        ═══════════════════════════════════════════ -->
   <section class="section-cream" id="axo">
     <div class="section-inner">
+
+      <!-- A) Presentacion de AXO -->
       <div class="section-label">CONOCE A AXO</div>
       <h2 class="section-title">Tu asistente inteligente<br>para retail.</h2>
 
-      <!-- 4.1 — Presentacion de AXO -->
       <div class="axo-intro">
         <div>
           <p style="font-size: 17px; line-height: 1.7; color: var(--color-text-secondary); margin-bottom: 24px;">
-            <strong>AXO</strong> es un axolotl digital, la mascota y asistente de IA de SACS. Nacio en las aguas de Xochimilco y ahora vive en la nube, ayudando a retailers a tomar mejores decisiones.
+            <strong>AXO</strong> es un axolotl digital, la mascota y asistente de IA de SACS. Nacio en las aguas de Xochimilco y ahora vive en la nube. Su nombre viene de "axolotl", la criatura endemica mexicana famosa por su capacidad de regeneracion.
           </p>
-          <p style="font-size: 17px; line-height: 1.7; color: var(--color-text-secondary);">
-            Su nombre viene de "axolotl", la criatura endemica mexicana famosa por su capacidad de regeneracion — igual que SACS regenera la relacion entre tecnologia y comercio.
-          </p>
-        </div>
-        <div style="display: flex; justify-content: center;">
-          <img src="assets/images/axo-pos.jpeg" alt="AXO con terminal POS" class="axo-image">
-        </div>
-      </div>
 
-      <!-- 4.2 — Simbolismo -->
-      <div class="axo-simbolismo">
-        <div>
-          <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.03em; margin-bottom: 24px;">Simbolismo</h3>
-          <div style="margin-bottom: 20px; padding-left: 20px; border-left: 3px solid var(--color-secondary);">
-            <p style="font-size: 15px; line-height: 1.7; color: var(--color-text-secondary); margin-bottom: 16px;">
-              <strong>Regeneracion:</strong> El axolotl puede regenerar partes de su cuerpo — SACS regenera el comercio.
-            </p>
-            <p style="font-size: 15px; line-height: 1.7; color: var(--color-text-secondary); margin-bottom: 16px;">
-              <strong>Endemico de Mexico:</strong> Especie unica de Xochimilco — Tecnologia hecha desde y para Mexico.
-            </p>
-            <p style="font-size: 15px; line-height: 1.7; color: var(--color-text-secondary); margin-bottom: 16px;">
-              <strong>Agua cristalina:</strong> Vive en agua pura — Transparencia como valor central.
-            </p>
-            <p style="font-size: 15px; line-height: 1.7; color: var(--color-text-secondary);">
-              <strong>En peligro:</strong> Especie amenazada que debemos proteger — Conservacion como compromiso.
-            </p>
+          <!-- AXO Identity Card -->
+          <div style="border: 1px solid var(--color-border-light); border-radius: 16px; padding: 32px; background: var(--color-bg-card); margin-top: 32px;">
+            <div style="font-family: var(--font-display); font-size: 18px; font-weight: 600; margin-bottom: 20px; letter-spacing: -0.02em;">Ficha de identidad</div>
+            <div style="display: grid; grid-template-columns: 140px 1fr; gap: 12px 16px; font-size: 15px; line-height: 1.6;">
+              <span style="font-weight: 600; color: var(--color-text-primary);">Especie</span>
+              <span style="color: var(--color-text-secondary);">Axolotl (Ambystoma mexicanum)</span>
+              <span style="font-weight: 600; color: var(--color-text-primary);">Origen</span>
+              <span style="color: var(--color-text-secondary);">Xochimilco, Ciudad de Mexico</span>
+              <span style="font-weight: 600; color: var(--color-text-primary);">Genero</span>
+              <span style="color: var(--color-text-secondary);">Fluido (representa a todos)</span>
+              <span style="font-weight: 600; color: var(--color-text-primary);">Colores</span>
+              <span style="color: var(--color-text-secondary);">Rosa/coral con branquias brillantes</span>
+              <span style="font-weight: 600; color: var(--color-text-primary);">Edad percibida</span>
+              <span style="color: var(--color-text-secondary);">Joven pero sabio</span>
+            </div>
           </div>
         </div>
-        <div style="display: flex; justify-content: center;">
-          <img src="assets/images/axo-drop.jpeg" alt="AXO en gota de cristal" class="axo-image">
+        <div style="display: flex; justify-content: center; align-items: flex-start;">
+          <img src="assets/images/axo-seedling.jpeg" alt="AXO — axolotl digital de SACS" class="axo-image">
         </div>
       </div>
 
-      <!-- 4.3 — Personalidad y Estados -->
+      <div class="divider"></div>
+
+      <!-- B) La Historia de AXO -->
+      <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.03em; margin-bottom: 48px;">La Historia de AXO</h3>
+
+      <!-- Chapter 1 -->
+      <div style="margin-bottom: 56px;">
+        <div style="font-family: var(--font-body); font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 12px;">CAPITULO 1</div>
+        <h3 style="font-family: var(--font-display); font-size: 24px; font-weight: 500; letter-spacing: -0.02em; margin-bottom: 16px;">El Origen</h3>
+        <p style="font-size: 16px; line-height: 1.7; color: var(--color-text-secondary); max-width: 640px;">
+          En las profundidades de los canales de Xochimilco, donde el agua guarda secretos de siglos, nacio un pequeno axolotl diferente a los demas. Mientras sus hermanos se transformaban en salamandras terrestres, Axo permanecia en el agua, conservando sus branquias plumosas y su sonrisa eterna.
+        </p>
+        <p style="font-size: 16px; line-height: 1.7; color: var(--color-text-secondary); max-width: 640px; margin-top: 16px;">
+          Los ancianos del lago le dijeron que era un defecto. "Deberias transformarte como todos," insistian. Pero Axo descubrio algo que los demas no entendian: su "defecto" era en realidad un superpoder. Podia regenerar cualquier parte de su cuerpo, sanaba mas rapido que nadie, y mientras otros luchaban por adaptarse a la tierra, el dominaba su elemento.
+        </p>
+      </div>
+
+      <!-- Chapter 2 -->
+      <div style="margin-bottom: 56px;">
+        <div style="font-family: var(--font-body); font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 12px;">CAPITULO 2</div>
+        <h3 style="font-family: var(--font-display); font-size: 24px; font-weight: 500; letter-spacing: -0.02em; margin-bottom: 16px;">El Descubrimiento</h3>
+        <p style="font-size: 16px; line-height: 1.7; color: var(--color-text-secondary); max-width: 640px;">
+          Un dia, Axo nado mas alla de los canales antiguos y llego a un mercado en la orilla. Vio a un comerciante llorando sobre sus libros de contabilidad, perdido en un mar de numeros. Vio a una vendedora exhausta que no habia visto a sus hijos en semanas. Vio negocios con potencial hundirse en el caos.
+        </p>
+        <p style="font-size: 16px; line-height: 1.7; color: var(--color-text-secondary); max-width: 640px; margin-top: 16px;">
+          "Son como yo antes de entender mi poder," penso Axo. "Creen que necesitan transformarse completamente para sobrevivir. Pero lo que necesitan es regenerarse, sanar, evolucionar sin perder su esencia."
+        </p>
+      </div>
+
+      <!-- Chapter 3 -->
+      <div style="margin-bottom: 56px;">
+        <div style="font-family: var(--font-body); font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 12px;">CAPITULO 3</div>
+        <h3 style="font-family: var(--font-display); font-size: 24px; font-weight: 500; letter-spacing: -0.02em; margin-bottom: 16px;">La Mision</h3>
+        <p style="font-size: 16px; line-height: 1.7; color: var(--color-text-secondary); max-width: 640px;">
+          Axo emergio del agua (algo que los axolotl normalmente no hacen, pero Axo no es normal) y se acerco al comerciante llorando.
+        </p>
+        <p style="font-size: 16px; line-height: 1.7; color: var(--color-text-secondary); max-width: 640px; margin-top: 16px;">
+          "No necesitas convertirte en algo que no eres," le dijo con su voz suave y burbujeante. "Necesitas las herramientas para regenerarte. Dejame mostrarte."
+        </p>
+        <p style="font-size: 16px; line-height: 1.7; color: var(--color-text-secondary); max-width: 640px; margin-top: 16px;">
+          Y asi comenzo la mision de Axo: ayudar a comerciantes a transformar sus negocios sin perder su alma. A sistematizar sin deshumanizar. A crecer sin olvidar por que empezaron.
+        </p>
+      </div>
+
+      <!-- Chapter 4 -->
+      <div style="margin-bottom: 16px;">
+        <div style="font-family: var(--font-body); font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 12px;">CAPITULO 4</div>
+        <h3 style="font-family: var(--font-display); font-size: 24px; font-weight: 500; letter-spacing: -0.02em; margin-bottom: 16px;">El Proposito Mayor</h3>
+        <p style="font-size: 16px; line-height: 1.7; color: var(--color-text-secondary); max-width: 640px;">
+          Lo que Axo no conto al principio es que cada vez que ayuda a un comerciante a prosperar, una parte de esa prosperidad regresa al agua de Xochimilco. Las branquias de Axo brillan mas intensamente con cada negocio que transforma, y ese brillo ilumina los canales donde nacen mas axolotl.
+        </p>
+        <p style="font-size: 16px; line-height: 1.7; color: var(--color-text-secondary); max-width: 640px; margin-top: 16px;">
+          "Mi especie esta en peligro," susurra Axo a veces. "Pero si puedo ayudar a suficientes humanos a entender que transformacion no significa destruccion, quiza ellos tambien protejan mi hogar."
+        </p>
+        <p style="font-size: 16px; line-height: 1.7; color: var(--color-text-secondary); max-width: 640px; margin-top: 16px;">
+          Por eso el 10% importa. No es caridad. Es el ciclo natural: cuando los comerciantes prosperan conscientemente, el mundo que los rodea tambien prospera.
+        </p>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- C) Simbolismo -->
+      <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.03em; margin-bottom: 32px;">Simbolismo</h3>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+        <div style="display: flex; gap: 16px; align-items: baseline; background: var(--color-bg-card); border: 1px solid var(--color-border-light); border-radius: 12px; padding: 20px 24px;">
+          <span style="font-size: 15px; font-weight: 600; color: var(--color-text-primary); min-width: 140px;">Regeneracion</span>
+          <span style="font-size: 14px; color: var(--color-text-secondary); line-height: 1.5;">Los negocios pueden recuperarse de cualquier crisis</span>
+        </div>
+        <div style="display: flex; gap: 16px; align-items: baseline; background: var(--color-bg-card); border: 1px solid var(--color-border-light); border-radius: 12px; padding: 20px 24px;">
+          <span style="font-size: 15px; font-weight: 600; color: var(--color-text-primary); min-width: 140px;">Neotenia</span>
+          <span style="font-size: 14px; color: var(--color-text-secondary); line-height: 1.5;">No necesitas convertirte en corporacion para ser exitoso</span>
+        </div>
+        <div style="display: flex; gap: 16px; align-items: baseline; background: var(--color-bg-card); border: 1px solid var(--color-border-light); border-radius: 12px; padding: 20px 24px;">
+          <span style="font-size: 15px; font-weight: 600; color: var(--color-text-primary); min-width: 140px;">Vive en agua</span>
+          <span style="font-size: 14px; color: var(--color-text-secondary); line-height: 1.5;">Fluidez, adaptabilidad, flujo</span>
+        </div>
+        <div style="display: flex; gap: 16px; align-items: baseline; background: var(--color-bg-card); border: 1px solid var(--color-border-light); border-radius: 12px; padding: 20px 24px;">
+          <span style="font-size: 15px; font-weight: 600; color: var(--color-text-primary); min-width: 140px;">Branquias externas</span>
+          <span style="font-size: 14px; color: var(--color-text-secondary); line-height: 1.5;">Transparencia, todo visible</span>
+        </div>
+        <div style="display: flex; gap: 16px; align-items: baseline; background: var(--color-bg-card); border: 1px solid var(--color-border-light); border-radius: 12px; padding: 20px 24px;">
+          <span style="font-size: 15px; font-weight: 600; color: var(--color-text-primary); min-width: 140px;">Sonrisa permanente</span>
+          <span style="font-size: 14px; color: var(--color-text-secondary); line-height: 1.5;">Optimismo inherente</span>
+        </div>
+        <div style="display: flex; gap: 16px; align-items: baseline; background: var(--color-bg-card); border: 1px solid var(--color-border-light); border-radius: 12px; padding: 20px 24px;">
+          <span style="font-size: 15px; font-weight: 600; color: var(--color-text-primary); min-width: 140px;">100% mexicano</span>
+          <span style="font-size: 14px; color: var(--color-text-secondary); line-height: 1.5;">Orgullo local, conexion cultural</span>
+        </div>
+        <div style="display: flex; gap: 16px; align-items: baseline; background: var(--color-bg-card); border: 1px solid var(--color-border-light); border-radius: 12px; padding: 20px 24px; grid-column: 1 / -1; max-width: calc(50% - 8px);">
+          <span style="font-size: 15px; font-weight: 600; color: var(--color-text-primary); min-width: 140px;">Especie en recuperacion</span>
+          <span style="font-size: 14px; color: var(--color-text-secondary); line-height: 1.5;">Resiliencia, esperanza, conservacion</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- D) Personalidad y Estados -->
       <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.03em; margin-bottom: 8px;">Estados emocionales</h3>
-      <p style="font-size: 15px; color: var(--color-text-secondary); margin-bottom: 32px;">Las branquias de AXO cambian de color segun su estado. Estilo painterly, no cartoon.</p>
+      <p style="font-size: 15px; color: var(--color-text-secondary); margin-bottom: 32px;">Las branquias de AXO cambian de color segun su estado.</p>
 
       <div class="axo-states-grid">
         <div class="axo-state-card">
@@ -3720,7 +3769,7 @@
             <div class="axo-color-dot" style="background: #F5A0A0;"></div>
           </div>
           <div style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">Default</div>
-          <div style="font-size: 12px; color: var(--color-text-tertiary);">Branquias rosa coral — listo para ayudar</div>
+          <div style="font-size: 12px; color: var(--color-text-tertiary);">Branquias rosa coral — tranquilo, listo para ayudar</div>
         </div>
         <div class="axo-state-card">
           <div style="display: flex; gap: 6px; justify-content: center; margin-bottom: 12px;">
@@ -3756,44 +3805,77 @@
         </div>
       </div>
 
-      <!-- 4.4 — Las 6 Caras de la IA -->
-      <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.03em; margin-top: 80px; margin-bottom: 8px;">Las 6 caras de la IA en SACS</h3>
+      <div class="divider"></div>
+
+      <!-- E) Frases Caracteristicas -->
+      <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.03em; margin-bottom: 32px;">Frases caracteristicas</h3>
+
+      <div class="ia-faces-grid">
+        <div style="background: var(--color-bg-card); border: 1px solid var(--color-border-light); border-radius: 16px; padding: 28px 32px;">
+          <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 12px;">Bienvenida</div>
+          <p style="font-size: 15px; font-style: italic; line-height: 1.6; color: var(--color-text-secondary);">"¿Listo para transformarte? Yo nado contigo."</p>
+        </div>
+        <div style="background: var(--color-bg-card); border: 1px solid var(--color-border-light); border-radius: 16px; padding: 28px 32px;">
+          <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 12px;">Primer logro</div>
+          <p style="font-size: 15px; font-style: italic; line-height: 1.6; color: var(--color-text-secondary);">"¡Mira eso! Tu negocio esta regenerandose."</p>
+        </div>
+        <div style="background: var(--color-bg-card); border: 1px solid var(--color-border-light); border-radius: 16px; padding: 28px 32px;">
+          <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 12px;">Momento dificil</div>
+          <p style="font-size: 15px; font-style: italic; line-height: 1.6; color: var(--color-text-secondary);">"Hasta yo perdi una pata una vez. Mira: ya crecio de nuevo."</p>
+        </div>
+        <div style="background: var(--color-bg-card); border: 1px solid var(--color-border-light); border-radius: 16px; padding: 28px 32px;">
+          <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 12px;">Explicando el 10%</div>
+          <p style="font-size: 15px; font-style: italic; line-height: 1.6; color: var(--color-text-secondary);">"Cada peso que fluye aqui, riega el jardin de alguien mas."</p>
+        </div>
+        <div style="background: var(--color-bg-card); border: 1px solid var(--color-border-light); border-radius: 16px; padding: 28px 32px;">
+          <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 12px;">Celebrando exito</div>
+          <p style="font-size: 15px; font-style: italic; line-height: 1.6; color: var(--color-text-secondary);">"¡Tus branquias brillan! ...Bueno, las mias. Pero es por ti."</p>
+        </div>
+        <div style="background: var(--color-bg-card); border: 1px solid var(--color-border-light); border-radius: 16px; padding: 28px 32px;">
+          <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-tertiary); margin-bottom: 12px;">Despedida diaria</div>
+          <p style="font-size: 15px; font-style: italic; line-height: 1.6; color: var(--color-text-secondary);">"Vuelve manana. El agua siempre esta tibia aqui."</p>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- F) Las 6 Caras de la IA en SACS -->
+      <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.03em; margin-bottom: 8px;">Las 6 caras de la IA en SACS</h3>
       <p style="font-size: 15px; color: var(--color-text-secondary); margin-bottom: 32px;">AXO no es un chatbot — es un sistema de inteligencia que opera en 6 dimensiones.</p>
 
       <div class="ia-faces-grid">
         <div class="ia-face-card">
           <div class="ia-face-name">Predictor</div>
-          <p style="font-size: 14px; line-height: 1.6; color: var(--color-text-secondary);">Anticipa demanda por sucursal, temporada y tendencia. Nunca te quedas sin stock ni con exceso.</p>
+          <p style="font-size: 14px; line-height: 1.6; color: var(--color-text-secondary);">Anticipa demanda por sucursal, temporada y tendencia.</p>
         </div>
         <div class="ia-face-card">
           <div class="ia-face-name">Asistente</div>
-          <p style="font-size: 14px; line-height: 1.6; color: var(--color-text-secondary);">Responde preguntas en lenguaje natural sobre tu negocio. "¿Cual fue mi mejor dia?" — AXO lo sabe.</p>
+          <p style="font-size: 14px; line-height: 1.6; color: var(--color-text-secondary);">Responde preguntas en lenguaje natural sobre tu negocio.</p>
         </div>
         <div class="ia-face-card">
           <div class="ia-face-name">Analista</div>
-          <p style="font-size: 14px; line-height: 1.6; color: var(--color-text-secondary);">Detecta patrones que el ojo humano no ve. Correlaciones entre clima, eventos y ventas.</p>
+          <p style="font-size: 14px; line-height: 1.6; color: var(--color-text-secondary);">Detecta patrones que el ojo humano no ve.</p>
         </div>
         <div class="ia-face-card">
           <div class="ia-face-name">Guardian</div>
-          <p style="font-size: 14px; line-height: 1.6; color: var(--color-text-secondary);">Alerta sobre anomalias, riesgos de inventario y fraude. Tu guardian 24/7.</p>
+          <p style="font-size: 14px; line-height: 1.6; color: var(--color-text-secondary);">Alerta sobre anomalias, riesgos de inventario, fraude.</p>
         </div>
         <div class="ia-face-card">
           <div class="ia-face-name">Consejero</div>
-          <p style="font-size: 14px; line-height: 1.6; color: var(--color-text-secondary);">Sugiere acciones concretas basadas en datos. No solo reporta — recomienda.</p>
+          <p style="font-size: 14px; line-height: 1.6; color: var(--color-text-secondary);">Sugiere acciones concretas basadas en datos.</p>
         </div>
         <div class="ia-face-card">
           <div class="ia-face-name">Narrador</div>
-          <p style="font-size: 14px; line-height: 1.6; color: var(--color-text-secondary);">Genera reportes automaticos que cuentan la historia de tu negocio en lenguaje humano.</p>
+          <p style="font-size: 14px; line-height: 1.6; color: var(--color-text-secondary);">Genera reportes automaticos que cuentan la historia de tu negocio.</p>
         </div>
       </div>
 
-      <!-- 4.5 — Avatar principal -->
+      <!-- G) Avatar principal -->
       <div class="axo-avatar-showcase">
-        <img src="assets/images/axo-seedling.jpeg" alt="AXO sosteniendo una semilla — avatar oficial">
+        <img src="assets/images/axo-drop.jpeg" alt="AXO — avatar principal" class="axo-image" style="max-width: 320px; border-radius: 24px;">
         <p style="font-family: var(--font-display); font-size: 20px; font-weight: 500; letter-spacing: -0.02em; color: var(--color-text-secondary);">
           "Sembrando el futuro del comercio, una transaccion a la vez."
         </p>
-        <p style="font-size: 13px; color: var(--color-text-tertiary); margin-top: 8px;">Avatar oficial — usar en redes sociales, presentaciones y documentacion.</p>
       </div>
     </div>
   </section>
@@ -3948,44 +4030,6 @@
 
 
   <!-- ═══════════════════════════════════════════
-       10 — FILOSOFIA DE DISENO
-       ═══════════════════════════════════════════ -->
-  <section class="section" id="filosofia">
-    <div class="section-label">10 — Filosofia de Diseno</div>
-    <h2 class="section-title">5 principios que guian<br>cada decision visual.</h2>
-    <p class="section-desc">Antes de disenar cualquier pantalla, componente o pieza, estos principios deben cumplirse.</p>
-
-    <div class="filosofia-grid">
-      <div class="filosofia-card">
-        <div class="filosofia-number">01</div>
-        <h3>Claridad sobre decoracion</h3>
-        <p>Cada elemento visual debe tener una funcion. Si no comunica, no se incluye. El espacio vacio es tan importante como el contenido.</p>
-      </div>
-      <div class="filosofia-card">
-        <div class="filosofia-number">02</div>
-        <h3>Mexicano sin caricatura</h3>
-        <p>Nuestra identidad mexicana es autentica, no folklorica. Colores de Oaxaca, no sombreros. Artesania textil, no cliches. Orgullo sin estereotipo.</p>
-      </div>
-      <div class="filosofia-card">
-        <div class="filosofia-number">03</div>
-        <h3>Jerarquia implacable</h3>
-        <p>Siempre hay un elemento principal. Un titulo, un CTA, un dato. El ojo debe saber exactamente a donde ir primero, segundo y tercero.</p>
-      </div>
-      <div class="filosofia-card">
-        <div class="filosofia-number">04</div>
-        <h3>Tecnologia calida</h3>
-        <p>Software de retail no tiene que verse frio y corporativo. Crema calido, tipografia con personalidad, ilustraciones con alma. Tech que se siente humana.</p>
-      </div>
-      <div class="filosofia-card">
-        <div class="filosofia-number">05</div>
-        <h3>Accesible por defecto</h3>
-        <p>Contraste suficiente, tamanos legibles, interacciones claras. Si un comerciante de 55 anos no puede leerlo en su celular, esta mal disenado.</p>
-      </div>
-    </div>
-  </section>
-
-
-  <!-- ═══════════════════════════════════════════
        11 — VOZ DE MARCA
        ═══════════════════════════════════════════ -->
   <section class="section-dark" id="voz">
@@ -4039,275 +4083,6 @@
 
 
   <!-- ═══════════════════════════════════════════
-       12 — ESCALA TIPOGRAFICA
-       ═══════════════════════════════════════════ -->
-  <section class="section" id="escala-tipo">
-    <div class="section-label">12 — Escala Tipografica</div>
-    <h2 class="section-title">Cascada de tamanos.</h2>
-    <p class="section-desc">Cada nivel tiene un proposito. La escala sigue una razon de 1.25 (Major Third) para mantener armonia vertical.</p>
-
-    <div class="type-waterfall">
-      <div class="type-waterfall-row">
-        <span class="type-waterfall-size">72</span>
-        <span style="font-family: var(--font-display); font-size: 72px; font-weight: 500; letter-spacing: -0.04em; line-height: 1;">Display</span>
-      </div>
-      <div class="type-waterfall-row">
-        <span class="type-waterfall-size">56</span>
-        <span style="font-family: var(--font-display); font-size: 56px; font-weight: 500; letter-spacing: -0.04em; line-height: 1;">Titulo</span>
-      </div>
-      <div class="type-waterfall-row">
-        <span class="type-waterfall-size">36</span>
-        <span style="font-family: var(--font-display); font-size: 36px; font-weight: 500; letter-spacing: -0.03em; line-height: 1.1;">Heading 1</span>
-      </div>
-      <div class="type-waterfall-row">
-        <span class="type-waterfall-size">28</span>
-        <span style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.03em; line-height: 1.2;">Heading 2</span>
-      </div>
-      <div class="type-waterfall-row">
-        <span class="type-waterfall-size">20</span>
-        <span style="font-family: var(--font-heading); font-size: 20px; font-weight: 500; line-height: 1.3;">Heading 3</span>
-      </div>
-      <div class="type-waterfall-row">
-        <span class="type-waterfall-size">17</span>
-        <span style="font-family: var(--font-body); font-size: 17px; line-height: 1.5;">Body Large</span>
-      </div>
-      <div class="type-waterfall-row">
-        <span class="type-waterfall-size">15</span>
-        <span style="font-family: var(--font-body); font-size: 15px; line-height: 1.5;">Body</span>
-      </div>
-      <div class="type-waterfall-row">
-        <span class="type-waterfall-size">13</span>
-        <span style="font-family: var(--font-body); font-size: 13px; font-weight: 500; line-height: 1.5;">Caption / Label</span>
-      </div>
-      <div class="type-waterfall-row">
-        <span class="type-waterfall-size">11</span>
-        <span style="font-family: var(--font-body); font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; line-height: 1.5;">Overline</span>
-      </div>
-    </div>
-  </section>
-
-
-  <!-- ═══════════════════════════════════════════
-       13 — PALETA EXPANDIDA (Tints & Shades)
-       ═══════════════════════════════════════════ -->
-  <section class="section-cream" id="paleta-expandida">
-    <div class="section-inner">
-      <div class="section-label">13 — Paleta Expandida</div>
-      <h2 class="section-title">Tints & Shades.</h2>
-      <p class="section-desc">Variaciones de cada color de marca para estados hover, fondos, bordes y acentos sutiles.</p>
-
-      <div style="margin-bottom: 48px;">
-        <h3 style="font-family: var(--font-display); font-size: 20px; font-weight: 500; margin-bottom: 16px;">Primary — Azul</h3>
-        <div class="tint-row">
-          <div class="tint-swatch" style="background: #EBF0FC;"><span>50</span></div>
-          <div class="tint-swatch" style="background: #C5D4F5;"><span>100</span></div>
-          <div class="tint-swatch" style="background: #93B5F5;"><span>200</span></div>
-          <div class="tint-swatch" style="background: #6D96EA;"><span>300</span></div>
-          <div class="tint-swatch" style="background: #4B7BE5; color: #fff;"><span>500</span></div>
-          <div class="tint-swatch" style="background: #3D6BD4; color: #fff;"><span>600</span></div>
-          <div class="tint-swatch" style="background: #2F55B0; color: #fff;"><span>700</span></div>
-          <div class="tint-swatch" style="background: #1E3A7A; color: #fff;"><span>900</span></div>
-        </div>
-      </div>
-
-      <div style="margin-bottom: 48px;">
-        <h3 style="font-family: var(--font-display); font-size: 20px; font-weight: 500; margin-bottom: 16px;">Accent — Dorado</h3>
-        <div class="tint-row">
-          <div class="tint-swatch" style="background: #FDF3E0;"><span>50</span></div>
-          <div class="tint-swatch" style="background: #F5DCA8;"><span>100</span></div>
-          <div class="tint-swatch" style="background: #F0C96E;"><span>200</span></div>
-          <div class="tint-swatch" style="background: #ECBA50;"><span>300</span></div>
-          <div class="tint-swatch" style="background: #E8A838; color: #fff;"><span>500</span></div>
-          <div class="tint-swatch" style="background: #D4952A; color: #fff;"><span>600</span></div>
-          <div class="tint-swatch" style="background: #B07A1E; color: #fff;"><span>700</span></div>
-          <div class="tint-swatch" style="background: #7A5414; color: #fff;"><span>900</span></div>
-        </div>
-      </div>
-
-      <div style="margin-bottom: 48px;">
-        <h3 style="font-family: var(--font-display); font-size: 20px; font-weight: 500; margin-bottom: 16px;">Secondary — Teal</h3>
-        <div class="tint-row">
-          <div class="tint-swatch" style="background: #E6F7F4;"><span>50</span></div>
-          <div class="tint-swatch" style="background: #B3E8DE;"><span>100</span></div>
-          <div class="tint-swatch" style="background: #7DDECE;"><span>200</span></div>
-          <div class="tint-swatch" style="background: #4ECDB5;"><span>300</span></div>
-          <div class="tint-swatch" style="background: #2AB5A0; color: #fff;"><span>500</span></div>
-          <div class="tint-swatch" style="background: #22A08D; color: #fff;"><span>600</span></div>
-          <div class="tint-swatch" style="background: #1A8575; color: #fff;"><span>700</span></div>
-          <div class="tint-swatch" style="background: #0F5C50; color: #fff;"><span>900</span></div>
-        </div>
-      </div>
-
-      <div>
-        <h3 style="font-family: var(--font-display); font-size: 20px; font-weight: 500; margin-bottom: 16px;">Sembrar — Verde</h3>
-        <div class="tint-row">
-          <div class="tint-swatch" style="background: #E8F5EB;"><span>50</span></div>
-          <div class="tint-swatch" style="background: #B8DFC0;"><span>100</span></div>
-          <div class="tint-swatch" style="background: #7BC98A;"><span>200</span></div>
-          <div class="tint-swatch" style="background: #45B05E;"><span>300</span></div>
-          <div class="tint-swatch" style="background: #1B8C3E; color: #fff;"><span>500</span></div>
-          <div class="tint-swatch" style="background: #157A34; color: #fff;"><span>600</span></div>
-          <div class="tint-swatch" style="background: #10652A; color: #fff;"><span>700</span></div>
-          <div class="tint-swatch" style="background: #0A451C; color: #fff;"><span>900</span></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-
-  <!-- ═══════════════════════════════════════════
-       14 — SISTEMA DE GRILLA
-       ═══════════════════════════════════════════ -->
-  <section class="section" id="grilla">
-    <div class="section-label">14 — Sistema de Grilla</div>
-    <h2 class="section-title">8px como unidad base.</h2>
-    <p class="section-desc">Todo el espaciado, padding y sizing se basa en multiplos de 8px. Esto garantiza consistencia en todos los componentes.</p>
-
-    <div class="grid-spec">
-      <div class="grid-spec-item">
-        <div class="grid-spec-visual">
-          <div class="grid-spec-block" style="width: 8px; height: 8px;"></div>
-        </div>
-        <div class="grid-spec-label">8px<br><span>Micro</span></div>
-      </div>
-      <div class="grid-spec-item">
-        <div class="grid-spec-visual">
-          <div class="grid-spec-block" style="width: 16px; height: 16px;"></div>
-        </div>
-        <div class="grid-spec-label">16px<br><span>Compact</span></div>
-      </div>
-      <div class="grid-spec-item">
-        <div class="grid-spec-visual">
-          <div class="grid-spec-block" style="width: 24px; height: 24px;"></div>
-        </div>
-        <div class="grid-spec-label">24px<br><span>Default</span></div>
-      </div>
-      <div class="grid-spec-item">
-        <div class="grid-spec-visual">
-          <div class="grid-spec-block" style="width: 32px; height: 32px;"></div>
-        </div>
-        <div class="grid-spec-label">32px<br><span>Spacious</span></div>
-      </div>
-      <div class="grid-spec-item">
-        <div class="grid-spec-visual">
-          <div class="grid-spec-block" style="width: 48px; height: 48px;"></div>
-        </div>
-        <div class="grid-spec-label">48px<br><span>Section</span></div>
-      </div>
-      <div class="grid-spec-item">
-        <div class="grid-spec-visual">
-          <div class="grid-spec-block" style="width: 64px; height: 64px;"></div>
-        </div>
-        <div class="grid-spec-label">64px<br><span>Region</span></div>
-      </div>
-      <div class="grid-spec-item">
-        <div class="grid-spec-visual">
-          <div class="grid-spec-block" style="width: 80px; height: 80px;"></div>
-        </div>
-        <div class="grid-spec-label">128px<br><span>Page</span></div>
-      </div>
-    </div>
-
-    <div class="divider"></div>
-
-    <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.03em; margin-bottom: 16px;">Layout</h3>
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
-      <div class="feature-card">
-        <div style="font-size: 13px; font-weight: 600; color: var(--color-primary); margin-bottom: 8px;">MAX-WIDTH</div>
-        <div style="font-family: var(--font-display); font-size: 32px; font-weight: 500;">1280px</div>
-        <p style="font-size: 13px; color: var(--color-text-tertiary); margin-top: 4px;">Ancho maximo del contenido</p>
-      </div>
-      <div class="feature-card">
-        <div style="font-size: 13px; font-weight: 600; color: var(--color-primary); margin-bottom: 8px;">SIDEBAR</div>
-        <div style="font-family: var(--font-display); font-size: 32px; font-weight: 500;">240px</div>
-        <p style="font-size: 13px; color: var(--color-text-tertiary); margin-top: 4px;">Navegacion lateral fija</p>
-      </div>
-      <div class="feature-card">
-        <div style="font-size: 13px; font-weight: 600; color: var(--color-primary); margin-bottom: 8px;">PADDING</div>
-        <div style="font-family: var(--font-display); font-size: 32px; font-weight: 500;">48px</div>
-        <p style="font-size: 13px; color: var(--color-text-tertiary); margin-top: 4px;">Padding de seccion (24px mobile)</p>
-      </div>
-    </div>
-  </section>
-
-
-  <!-- ═══════════════════════════════════════════
-       15 — PRINCIPIOS DE ANIMACION
-       ═══════════════════════════════════════════ -->
-  <section class="section-dark" id="animacion">
-    <div class="section-inner">
-      <div class="section-label">15 — Principios de Animacion</div>
-      <h2 class="section-title" style="color: #fff;">Movimiento con<br>intencion.</h2>
-      <p class="section-desc">Cada animacion existe para comunicar algo. Sin animaciones decorativas. Todo movimiento guia la atencion o confirma una accion.</p>
-
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin: 48px 0;">
-        <div class="impacto-card">
-          <div style="font-size: 13px; font-weight: 600; color: var(--color-primary); margin-bottom: 12px;">DURACION BASE</div>
-          <div style="font-family: var(--font-display); font-size: 36px; font-weight: 500; color: #fff; margin-bottom: 8px;">300ms</div>
-          <p style="font-size: 14px; color: rgba(255,255,255,0.5); line-height: 1.5;">Transiciones de hover, focus y estados interactivos. Suficiente para percibirse suave sin sentirse lento.</p>
-          <code style="display: block; margin-top: 12px; font-size: 12px; color: var(--color-secondary); background: rgba(255,255,255,0.06); padding: 8px 12px; border-radius: 6px;">transition: all 0.3s cubic-bezier(.4, 0, .2, 1)</code>
-        </div>
-        <div class="impacto-card">
-          <div style="font-size: 13px; font-weight: 600; color: var(--color-accent); margin-bottom: 12px;">ENTRADA</div>
-          <div style="font-family: var(--font-display); font-size: 36px; font-weight: 500; color: #fff; margin-bottom: 8px;">ease-out</div>
-          <p style="font-size: 14px; color: rgba(255,255,255,0.5); line-height: 1.5;">Elementos que entran a escena. Comienzan rapido y desaceleran. Sensacion de llegada natural.</p>
-          <code style="display: block; margin-top: 12px; font-size: 12px; color: var(--color-secondary); background: rgba(255,255,255,0.06); padding: 8px 12px; border-radius: 6px;">cubic-bezier(0, 0, .2, 1)</code>
-        </div>
-        <div class="impacto-card">
-          <div style="font-size: 13px; font-weight: 600; color: var(--color-secondary); margin-bottom: 12px;">SALIDA</div>
-          <div style="font-family: var(--font-display); font-size: 36px; font-weight: 500; color: #fff; margin-bottom: 8px;">ease-in</div>
-          <p style="font-size: 14px; color: rgba(255,255,255,0.5); line-height: 1.5;">Elementos que salen. Aceleran al final. Sensacion de que el elemento se retira con proposito.</p>
-          <code style="display: block; margin-top: 12px; font-size: 12px; color: var(--color-secondary); background: rgba(255,255,255,0.06); padding: 8px 12px; border-radius: 6px;">cubic-bezier(.4, 0, 1, 1)</code>
-        </div>
-      </div>
-
-      <div style="padding: 32px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;">
-        <div style="font-size: 13px; font-weight: 600; color: var(--color-error); margin-bottom: 12px;">PROHIBIDO</div>
-        <p style="font-size: 15px; color: rgba(255,255,255,0.6); line-height: 1.7;">Bounce effects. Animaciones mayores a 500ms. Movimiento sin trigger del usuario. Parallax excesivo. Spinners cuando se puede usar skeleton loaders. Animaciones que bloqueen la interaccion.</p>
-      </div>
-    </div>
-  </section>
-
-
-  <!-- ═══════════════════════════════════════════
-       16 — DIRECCION FOTOGRAFICA
-       ═══════════════════════════════════════════ -->
-  <section class="section-cream" id="fotografia">
-    <div class="section-inner">
-      <div class="section-label">16 — Direccion Fotografica</div>
-      <h2 class="section-title">Calidez. Autenticidad.<br>Mexico real.</h2>
-      <p class="section-desc">Las imagenes de SACS muestran retailers reales en contextos reales. Nada de stock generico. Nada de modelos perfectos en oficinas blancas.</p>
-
-      <div class="cards-grid" style="margin-top: 48px;">
-        <div class="card">
-          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-secondary); margin-bottom: 12px;">Luz</div>
-          <div class="card-desc">Luz natural calida. Golden hour. Sombras suaves. Nunca flash directo ni iluminacion plana de estudio. La luz debe sentirse como Mexico: generosa y dorada.</div>
-        </div>
-        <div class="card">
-          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 12px;">Sujetos</div>
-          <div class="card-desc">Comerciantes reales en sus negocios. Manos trabajando. Producto exhibido con orgullo. Clientes interactuando. Diversidad etnica y de edad real de Mexico.</div>
-        </div>
-        <div class="card">
-          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-primary); margin-bottom: 12px;">Contexto</div>
-          <div class="card-desc">Tiendas de ropa, boutiques, mercados, calles mexicanas. Arquitectura colonial, colores vivos, texturas. El producto SACS en pantallas reales dentro de negocios reales.</div>
-        </div>
-      </div>
-
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 32px;">
-        <div style="padding: 24px; background: #fff; border-radius: 12px; border: 1px solid var(--color-border-light);">
-          <div style="font-size: 13px; font-weight: 600; color: var(--color-secondary); margin-bottom: 8px;">PALETA FOTOGRAFICA</div>
-          <p style="font-size: 14px; color: var(--color-text-secondary); line-height: 1.6;">Tonos calidos, saturacion media-alta, sombras con tinte crema/ambar. Post-produccion: +5 temperatura, +10 saturacion, -5 highlights. No filtros frios ni desaturados.</p>
-        </div>
-        <div style="padding: 24px; background: #fff; border-radius: 12px; border: 1px solid var(--color-border-light);">
-          <div style="font-size: 13px; font-weight: 600; color: var(--color-error); margin-bottom: 8px;">NUNCA USAR</div>
-          <p style="font-size: 14px; color: var(--color-text-secondary); line-height: 1.6;">Stock generico americano. Fotos con filtros azules/grises. Imagenes de oficinas corporativas. Personas con laptops en cafes. Manos apuntando a graficas genericas.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-
-  <!-- ═══════════════════════════════════════════
        17 — ACCESIBILIDAD
        ═══════════════════════════════════════════ -->
   <section class="section" id="accesibilidad">
@@ -4351,101 +4126,6 @@
 
 
   <!-- ═══════════════════════════════════════════
-       18 — ZONA DE EXCLUSION DEL LOGO
-       ═══════════════════════════════════════════ -->
-  <section class="section-cream" id="zona-exclusion">
-    <div class="section-inner">
-      <div class="section-label">18 — Zona de Exclusion</div>
-      <h2 class="section-title">Espacio vital<br>del isotipo.</h2>
-      <p class="section-desc">El logo necesita respirar. La zona de exclusion minima es igual al diametro del circulo dorado (el mas pequeno) en todos los lados.</p>
-
-      <div style="display: flex; justify-content: center; margin: 64px 0;">
-        <div style="position: relative; padding: 80px; border: 2px dashed var(--color-border); border-radius: 16px; background: #fff;">
-          <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); font-size: 11px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); padding: 2px 8px; border-radius: 4px;">1x</div>
-          <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-size: 11px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); padding: 2px 8px; border-radius: 4px;">1x</div>
-          <div style="position: absolute; left: 0; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); padding: 2px 8px; border-radius: 4px;">1x</div>
-          <div style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); padding: 2px 8px; border-radius: 4px;">1x</div>
-          <div class="p1-circles" style="width: 100px; height: 88px; margin: 0 auto;">
-            <div class="p1-circle p1-circle-blue" style="width: 68px; height: 68px;"></div>
-            <div class="p1-circle p1-circle-gold" style="width: 45px; height: 45px; left: 30px;"></div>
-            <div class="p1-circle p1-circle-teal" style="width: 56px; height: 56px;"></div>
-          </div>
-        </div>
-      </div>
-
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
-        <div class="feature-card" style="text-align: center;">
-          <div style="font-size: 13px; font-weight: 600; color: var(--color-primary); margin-bottom: 8px;">TAMANO MINIMO</div>
-          <div style="font-family: var(--font-display); font-size: 28px; font-weight: 500;">32px</div>
-          <p style="font-size: 13px; color: var(--color-text-tertiary); margin-top: 4px;">Digital (favicon, app icon)</p>
-        </div>
-        <div class="feature-card" style="text-align: center;">
-          <div style="font-size: 13px; font-weight: 600; color: var(--color-accent); margin-bottom: 8px;">TAMANO PREFERIDO</div>
-          <div style="font-family: var(--font-display); font-size: 28px; font-weight: 500;">48-64px</div>
-          <p style="font-size: 13px; color: var(--color-text-tertiary); margin-top: 4px;">Header, documentos, firmas</p>
-        </div>
-        <div class="feature-card" style="text-align: center;">
-          <div style="font-size: 13px; font-weight: 600; color: var(--color-secondary); margin-bottom: 8px;">TAMANO MAXIMO</div>
-          <div style="font-family: var(--font-display); font-size: 28px; font-weight: 500;">Sin limite</div>
-          <p style="font-size: 13px; color: var(--color-text-tertiary); margin-top: 4px;">Eventos, murales, displays</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-
-  <!-- ═══════════════════════════════════════════
-       19 — TOKENS DE DISENO
-       ═══════════════════════════════════════════ -->
-  <section class="section" id="tokens">
-    <div class="section-label">19 — Tokens de Diseno</div>
-    <h2 class="section-title">Variables CSS<br>del sistema.</h2>
-    <p class="section-desc">Todos los valores de diseno estan centralizados en CSS custom properties. Copiar y pegar.</p>
-
-    <div class="tokens-grid">
-      <div class="token-group">
-        <h4>Colores de marca</h4>
-        <div class="token-row"><code>--color-primary</code><span>#4B7BE5</span></div>
-        <div class="token-row"><code>--color-secondary</code><span>#2AB5A0</span></div>
-        <div class="token-row"><code>--color-accent</code><span>#E8A838</span></div>
-        <div class="token-row"><code>--color-error</code><span>#E54B4B</span></div>
-      </div>
-      <div class="token-group">
-        <h4>Fondos</h4>
-        <div class="token-row"><code>--color-bg-primary</code><span>#FAFAF8</span></div>
-        <div class="token-row"><code>--color-bg-secondary</code><span>#F5F3EE</span></div>
-        <div class="token-row"><code>--color-bg-card</code><span>#FFFFFF</span></div>
-        <div class="token-row"><code>--color-bg-dark</code><span>#000000</span></div>
-      </div>
-      <div class="token-group">
-        <h4>Tipografia</h4>
-        <div class="token-row"><code>--font-display</code><span>DM Sans</span></div>
-        <div class="token-row"><code>--font-heading</code><span>Space Grotesk</span></div>
-        <div class="token-row"><code>--font-body</code><span>Plus Jakarta Sans</span></div>
-      </div>
-      <div class="token-group">
-        <h4>Radios</h4>
-        <div class="token-row"><code>--radius-sm</code><span>8px</span></div>
-        <div class="token-row"><code>--radius-md</code><span>12px</span></div>
-        <div class="token-row"><code>--radius-lg</code><span>16px</span></div>
-        <div class="token-row"><code>--radius-full</code><span>50px</span></div>
-      </div>
-      <div class="token-group">
-        <h4>Sombras</h4>
-        <div class="token-row"><code>--shadow-sm</code><span>0 2px 8px rgba(0,0,0,0.06)</span></div>
-        <div class="token-row"><code>--shadow-md</code><span>0 4px 12px rgba(0,0,0,0.08)</span></div>
-        <div class="token-row"><code>--shadow-lg</code><span>0 8px 16px rgba(0,0,0,0.1)</span></div>
-      </div>
-      <div class="token-group">
-        <h4>Transiciones</h4>
-        <div class="token-row"><code>--ease-brand</code><span>cubic-bezier(.4, 0, .2, 1)</span></div>
-        <div class="token-row"><code>--transition-base</code><span>0.3s var(--ease-brand)</span></div>
-      </div>
-    </div>
-  </section>
-
-
-  <!-- ═══════════════════════════════════════════
        20 — FIRMA DE EMAIL
        ═══════════════════════════════════════════ -->
   <section class="section-dark" id="firma-email">
@@ -4478,53 +4158,6 @@
       <div style="padding: 24px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; max-width: 480px;">
         <div style="font-size: 13px; font-weight: 600; color: var(--color-accent); margin-bottom: 8px;">REGLAS</div>
         <p style="font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.6;">Logo isotipo (no logotipo completo). Fuente del sistema (no Google Fonts). Sin banners, sin citas, sin imagenes extra. El tagline siempre al final en italica.</p>
-      </div>
-    </div>
-  </section>
-
-
-  <!-- ═══════════════════════════════════════════
-       21 — GLOSARIO DE MARCA
-       ═══════════════════════════════════════════ -->
-  <section class="section-cream" id="glosario">
-    <div class="section-inner">
-      <div class="section-label">21 — Glosario de Marca</div>
-      <h2 class="section-title">Asi se escribe.<br>Asi se dice.</h2>
-      <p class="section-desc">Terminos oficiales de la marca y como deben escribirse siempre. Sin excepciones.</p>
-
-      <div class="glosario-grid">
-        <div class="glosario-item">
-          <div class="glosario-term">SACS</div>
-          <div class="glosario-def">Siempre en mayusculas. Nunca "Sacs", "sacs" o "S.A.C.S." en texto corrido. Significa Ser · Avanzar · Crear · Sembrar.</div>
-        </div>
-        <div class="glosario-item">
-          <div class="glosario-term">AXO</div>
-          <div class="glosario-def">Siempre en mayusculas. Es el nombre propio del asistente de IA. Nunca "Axo", "axo" o "el AXO".</div>
-        </div>
-        <div class="glosario-item">
-          <div class="glosario-term">Sacscloud</div>
-          <div class="glosario-def">La plataforma completa. Primera letra mayuscula, el resto minusculas. Nunca "SacsCloud", "SACSCLOUD" o "sacs cloud".</div>
-        </div>
-        <div class="glosario-item">
-          <div class="glosario-term">Comercio Consciente</div>
-          <div class="glosario-def">Concepto propio de SACS. Ambas palabras en mayuscula. Es el modelo de negocio, no un eslogan.</div>
-        </div>
-        <div class="glosario-item">
-          <div class="glosario-term">Retailer</div>
-          <div class="glosario-def">Nuestro usuario. Nunca "cliente", "usuario" o "consumidor". Un retailer es un comerciante con tienda fisica o digital.</div>
-        </div>
-        <div class="glosario-item">
-          <div class="glosario-term">Isotipo</div>
-          <div class="glosario-def">Los tres circulos. El logo sin texto. Nunca "el logo de circulos" o "el simbolo".</div>
-        </div>
-        <div class="glosario-item">
-          <div class="glosario-term">Semilla</div>
-          <div class="glosario-def">El plan gratuito. Representa el inicio del viaje. Nunca "plan free", "plan basico" o "trial".</div>
-        </div>
-        <div class="glosario-item">
-          <div class="glosario-term">Triple Impacto</div>
-          <div class="glosario-def">Social + Ambiental + Economico. El modelo de impacto de SACS. Siempre con mayusculas.</div>
-        </div>
       </div>
     </div>
   </section>
@@ -4610,43 +4243,6 @@
     <p class="section-desc" style="margin-bottom: 32px;">Tecnologia moderna sobre fondos artesanales. El contraste que define a SACS.</p>
 
     <div class="ig-sistema-grid">
-      <!-- Post 4: Textil + Dashboard AXO -->
-      <div>
-        <div class="ig-post ig-textil-sistema">
-          <div class="ig-post-inner">
-            <span class="ig-logo-corner">Sacs</span>
-            <div class="ig-badge">AXO Insights</div>
-            <div class="ig-mini-card">
-              <div class="ig-mini-card-row">
-                <span class="ig-mini-card-label">Ventas hoy</span>
-                <span style="font-size: 10px; color: var(--color-secondary);">+23%</span>
-              </div>
-              <div class="ig-mini-card-value">$48,250</div>
-              <div class="ig-mini-card-bar">
-                <div class="ig-mini-card-bar-fill" style="width: 73%; background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));"></div>
-              </div>
-            </div>
-            <div class="ig-mini-card" style="margin-bottom: 0;">
-              <div class="ig-mini-card-row">
-                <span class="ig-mini-card-label">AXO predice</span>
-              </div>
-              <div style="font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.4;">Talla M agotada en 3 dias. Reordena ahora.</div>
-            </div>
-            <div class="ig-headline" style="margin-top: 16px;">Tu negocio<br>en tiempo real.</div>
-            <div class="ig-sub">Inteligencia que entiende tu retail.</div>
-          </div>
-        </div>
-        <div class="ig-post-caption">
-          <h4>Dashboard + Textil Diagonal</h4>
-          <p>Cards glassmorphism sobre fondo textil oaxaqueno. UI moderno que convive con identidad mexicana.</p>
-          <div class="ig-post-tags">
-            <span class="ig-post-tag">Textil diagonal</span>
-            <span class="ig-post-tag">Glassmorphism</span>
-            <span class="ig-post-tag">AXO IA</span>
-          </div>
-        </div>
-      </div>
-
       <!-- Post 5: Papel Picado + Features POS -->
       <div>
         <div class="ig-post ig-papel-sistema">

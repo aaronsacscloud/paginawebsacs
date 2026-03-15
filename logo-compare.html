@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logo Font — 5 Propuestas (v3)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@200;300;400;500;600;700;800&family=Urbanist:wght@200;300;400;500;600;700;800&family=Manrope:wght@200;300;400;500;600;700;800&family=Albert+Sans:wght@200;300;400;500;600;700;800&family=Red+Hat+Display:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #F5F3EE;
+      padding: 48px;
+      color: #1a1a1a;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+    .header h1 {
+      font-size: 32px;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+    .header p {
+      font-size: 14px;
+      color: #707070;
+    }
+
+    .proposals {
+      display: flex;
+      flex-direction: column;
+      gap: 48px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .proposal {
+      background: #fff;
+      border-radius: 24px;
+      padding: 40px 48px;
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    .proposal-header {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .proposal-number {
+      font-size: 13px;
+      font-weight: 600;
+      color: #2AB5A0;
+      letter-spacing: 0.08em;
+    }
+    .proposal-font-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+    }
+    .proposal-font-desc {
+      font-size: 13px;
+      font-weight: 400;
+      color: #999;
+    }
+
+    /* Logo showcase */
+    .logo-row {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      margin-bottom: 24px;
+    }
+    .logo-showcase {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 32px;
+      border-radius: 14px;
+    }
+    .logo-showcase.light {
+      background: #FAFAF8;
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    .logo-showcase.dark {
+      background: #111;
+    }
+    .logo-text {
+      font-size: 44px;
+      letter-spacing: -0.01em;
+    }
+    .logo-text .sacs {
+      color: #6B7B8D;
+    }
+    .logo-text .cloud {
+      color: #4B5563;
+    }
+    .logo-text .reg {
+      font-size: 12px;
+      vertical-align: super;
+      font-weight: 400;
+      color: #9CA3AF;
+    }
+    .dark .logo-text .sacs { color: rgba(255,255,255,0.5); }
+    .dark .logo-text .cloud { color: rgba(255,255,255,0.85); }
+    .dark .logo-text .reg { color: rgba(255,255,255,0.3); }
+
+    /* Size variants */
+    .sizes {
+      display: flex;
+      align-items: baseline;
+      gap: 40px;
+      padding: 20px 0;
+      border-top: 1px solid rgba(0,0,0,0.05);
+    }
+    .size-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .size-label {
+      font-size: 10px;
+      color: #bbb;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* Circles */
+    .circles {
+      display: flex;
+      position: relative;
+      width: 50px;
+      height: 40px;
+      margin-right: 14px;
+    }
+    .circle {
+      border-radius: 50%;
+      position: absolute;
+    }
+    .circle-blue { width: 26px; height: 26px; background: #8AB4F8; top: 7px; left: 0; }
+    .circle-gold { width: 16px; height: 16px; background: #E8A838; top: 0; left: 13px; }
+    .circle-teal { width: 20px; height: 20px; background: #2AB5A0; top: 9px; left: 18px; }
+
+    /* ── Font families ── */
+
+    /* 1: Sora */
+    .font-1 .logo-text { font-family: 'Sora', sans-serif; }
+    .font-1 .logo-text .sacs { font-weight: 300; }
+    .font-1 .logo-text .cloud { font-weight: 500; }
+
+    /* 2: Urbanist */
+    .font-2 .logo-text { font-family: 'Urbanist', sans-serif; }
+    .font-2 .logo-text .sacs { font-weight: 200; }
+    .font-2 .logo-text .cloud { font-weight: 500; }
+
+    /* 3: Manrope */
+    .font-3 .logo-text { font-family: 'Manrope', sans-serif; }
+    .font-3 .logo-text .sacs { font-weight: 300; }
+    .font-3 .logo-text .cloud { font-weight: 500; }
+
+    /* 4: Albert Sans */
+    .font-4 .logo-text { font-family: 'Albert Sans', sans-serif; }
+    .font-4 .logo-text .sacs { font-weight: 200; }
+    .font-4 .logo-text .cloud { font-weight: 500; }
+
+    /* 5: Red Hat Display */
+    .font-5 .logo-text { font-family: 'Red Hat Display', sans-serif; }
+    .font-5 .logo-text .sacs { font-weight: 300; }
+    .font-5 .logo-text .cloud { font-weight: 500; }
+
+    .notes {
+      margin-top: 12px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #999;
+      max-width: 600px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Tipografia del Logo — 5 Propuestas</h1>
+    <p>Contraste elegante: Sacs Light → cloud Medium. Fuentes con presencia sin ser pesadas.</p>
+  </div>
+
+  <div class="proposals">
+
+    <!-- 1: Sora -->
+    <div class="proposal font-1">
+      <div class="proposal-header">
+        <span class="proposal-number">01</span>
+        <span class="proposal-font-name">Sora</span>
+        <span class="proposal-font-desc">— Geometrica japonesa, precision y claridad</span>
+      </div>
+      <div class="logo-row">
+        <div class="logo-showcase light">
+          <div class="circles"><div class="circle circle-blue"></div><div class="circle circle-gold"></div><div class="circle circle-teal"></div></div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+        <div class="logo-showcase dark">
+          <div class="circles"><div class="circle circle-blue"></div><div class="circle circle-gold"></div><div class="circle circle-teal"></div></div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+      </div>
+      <div class="sizes">
+        <div class="size-item"><div class="size-label">20px</div><div class="logo-text" style="font-size:20px"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg" style="font-size:8px">®</span></div></div>
+        <div class="size-item"><div class="size-label">32px</div><div class="logo-text" style="font-size:32px"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg" style="font-size:10px">®</span></div></div>
+        <div class="size-item"><div class="size-label">48px</div><div class="logo-text" style="font-size:48px"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg" style="font-size:12px">®</span></div></div>
+      </div>
+      <div class="notes">Disenada por Jonathan Barnbrook. Proporciones amplias, 'a' de un piso, terminales limpias. Muy usada en startups tech. Se siente precisa y premium.</div>
+    </div>
+
+    <!-- 2: Urbanist -->
+    <div class="proposal font-2">
+      <div class="proposal-header">
+        <span class="proposal-number">02</span>
+        <span class="proposal-font-name">Urbanist</span>
+        <span class="proposal-font-desc">— Geometrica moderna, elegante y amplia</span>
+      </div>
+      <div class="logo-row">
+        <div class="logo-showcase light">
+          <div class="circles"><div class="circle circle-blue"></div><div class="circle circle-gold"></div><div class="circle circle-teal"></div></div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+        <div class="logo-showcase dark">
+          <div class="circles"><div class="circle circle-blue"></div><div class="circle circle-gold"></div><div class="circle circle-teal"></div></div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+      </div>
+      <div class="sizes">
+        <div class="size-item"><div class="size-label">20px</div><div class="logo-text" style="font-size:20px"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg" style="font-size:8px">®</span></div></div>
+        <div class="size-item"><div class="size-label">32px</div><div class="logo-text" style="font-size:32px"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg" style="font-size:10px">®</span></div></div>
+        <div class="size-item"><div class="size-label">48px</div><div class="logo-text" style="font-size:48px"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg" style="font-size:12px">®</span></div></div>
+      </div>
+      <div class="notes">Inspirada en Futura pero mas suave. La 'a' de un piso, proporciones amplias. El ExtraLight (200) es hermoso y el Medium (500) tiene presencia sin gritar. Perfecta para marcas elegantes de tech.</div>
+    </div>
+
+    <!-- 3: Manrope -->
+    <div class="proposal font-3">
+      <div class="proposal-header">
+        <span class="proposal-number">03</span>
+        <span class="proposal-font-name">Manrope</span>
+        <span class="proposal-font-desc">— Semi-redondeada, tech contemporaneo</span>
+      </div>
+      <div class="logo-row">
+        <div class="logo-showcase light">
+          <div class="circles"><div class="circle circle-blue"></div><div class="circle circle-gold"></div><div class="circle circle-teal"></div></div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+        <div class="logo-showcase dark">
+          <div class="circles"><div class="circle circle-blue"></div><div class="circle circle-gold"></div><div class="circle circle-teal"></div></div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+      </div>
+      <div class="sizes">
+        <div class="size-item"><div class="size-label">20px</div><div class="logo-text" style="font-size:20px"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg" style="font-size:8px">®</span></div></div>
+        <div class="size-item"><div class="size-label">32px</div><div class="logo-text" style="font-size:32px"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg" style="font-size:10px">®</span></div></div>
+        <div class="size-item"><div class="size-label">48px</div><div class="logo-text" style="font-size:48px"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg" style="font-size:12px">®</span></div></div>
+      </div>
+      <div class="notes">Mezcla de geometrica y grotesca. Terminales semi-redondeadas, la 'a' de un piso. Usada por GitLab, Pitch y otras SaaS. El contraste Light/Medium es sutil pero solido. Se siente confiable.</div>
+    </div>
+
+    <!-- 4: Albert Sans -->
+    <div class="proposal font-4">
+      <div class="proposal-header">
+        <span class="proposal-number">04</span>
+        <span class="proposal-font-name">Albert Sans</span>
+        <span class="proposal-font-desc">— Geometrica limpia, inspirada en DIN</span>
+      </div>
+      <div class="logo-row">
+        <div class="logo-showcase light">
+          <div class="circles"><div class="circle circle-blue"></div><div class="circle circle-gold"></div><div class="circle circle-teal"></div></div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+        <div class="logo-showcase dark">
+          <div class="circles"><div class="circle circle-blue"></div><div class="circle circle-gold"></div><div class="circle circle-teal"></div></div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+      </div>
+      <div class="sizes">
+        <div class="size-item"><div class="size-label">20px</div><div class="logo-text" style="font-size:20px"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg" style="font-size:8px">®</span></div></div>
+        <div class="size-item"><div class="size-label">32px</div><div class="logo-text" style="font-size:32px"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg" style="font-size:10px">®</span></div></div>
+        <div class="size-item"><div class="size-label">48px</div><div class="logo-text" style="font-size:48px"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg" style="font-size:12px">®</span></div></div>
+      </div>
+      <div class="notes">Inspirada en Albert-Jan Pool (creador de DIN). Limpia, neutral, fuerte. El ExtraLight tiene elegancia sin perder legibilidad. Ideal para marcas que quieren proyectar profesionalismo sin frialdad.</div>
+    </div>
+
+    <!-- 5: Red Hat Display -->
+    <div class="proposal font-5">
+      <div class="proposal-header">
+        <span class="proposal-number">05</span>
+        <span class="proposal-font-name">Red Hat Display</span>
+        <span class="proposal-font-desc">— Personalidad fuerte, terminales abiertas y modernas</span>
+      </div>
+      <div class="logo-row">
+        <div class="logo-showcase light">
+          <div class="circles"><div class="circle circle-blue"></div><div class="circle circle-gold"></div><div class="circle circle-teal"></div></div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+        <div class="logo-showcase dark">
+          <div class="circles"><div class="circle circle-blue"></div><div class="circle circle-gold"></div><div class="circle circle-teal"></div></div>
+          <div class="logo-text"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg">®</span></div>
+        </div>
+      </div>
+      <div class="sizes">
+        <div class="size-item"><div class="size-label">20px</div><div class="logo-text" style="font-size:20px"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg" style="font-size:8px">®</span></div></div>
+        <div class="size-item"><div class="size-label">32px</div><div class="logo-text" style="font-size:32px"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg" style="font-size:10px">®</span></div></div>
+        <div class="size-item"><div class="size-label">48px</div><div class="logo-text" style="font-size:48px"><span class="sacs">Sacs</span><span class="cloud">cloud</span><span class="reg" style="font-size:12px">®</span></div></div>
+      </div>
+      <div class="notes">Creada por Jeremy Mickel para Red Hat. Display font con mucha personalidad — la 'a' de dos pisos pero con caracter unico. Terminales abiertas dan sensacion de amplitud. Excelente para headlines y logos.</div>
+    </div>
+
+  </div>
+
+</body>
+</html>

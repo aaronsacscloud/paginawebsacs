@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comparacion Tipografica — Instagram Posts</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #F5F3EE;
+      padding: 48px;
+      color: #000;
+    }
+    .compare-header {
+      text-align: center;
+      margin-bottom: 64px;
+    }
+    .compare-header h1 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 36px;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+    .compare-header p {
+      font-size: 15px;
+      color: #707070;
+    }
+    .compare-row {
+      display: flex;
+      gap: 48px;
+      justify-content: center;
+      margin-bottom: 80px;
+    }
+    .compare-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    .compare-label {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #707070;
+      margin-bottom: 8px;
+    }
+    .compare-label span {
+      display: block;
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0.02em;
+      color: #999;
+      margin-top: 4px;
+      text-transform: none;
+    }
+
+    /* Instagram Post Frame */
+    .ig-post {
+      width: 380px;
+      height: 380px;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 40px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    }
+
+    /* ── POST STYLES ── */
+
+    /* Post 1: Manifiesto dark */
+    .post-manifiesto {
+      background: #000;
+      color: #fff;
+    }
+    .post-manifiesto .post-eyebrow {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #E8A838;
+      margin-bottom: 16px;
+    }
+    .post-manifiesto .post-headline {
+      font-size: 36px;
+      font-weight: 500;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+    }
+    .post-manifiesto .post-body {
+      font-size: 13px;
+      line-height: 1.6;
+      color: rgba(255,255,255,0.5);
+      max-width: 260px;
+    }
+    .post-manifiesto .post-logo-mark {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      font-size: 14px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.3);
+    }
+
+    /* Post 2: Stat card */
+    .post-stat {
+      background: #4B7BE5;
+      color: #fff;
+      align-items: center;
+      text-align: center;
+    }
+    .post-stat .stat-big {
+      font-size: 96px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+    .post-stat .stat-unit {
+      font-size: 36px;
+      font-weight: 400;
+    }
+    .post-stat .stat-desc {
+      font-size: 15px;
+      line-height: 1.5;
+      color: rgba(255,255,255,0.8);
+      margin-top: 12px;
+      max-width: 220px;
+    }
+
+    /* Post 3: Principio */
+    .post-principio {
+      background: #fff;
+      color: #000;
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    .post-principio .principio-num {
+      font-size: 48px;
+      font-weight: 700;
+      color: #2AB5A0;
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+    .post-principio .principio-title {
+      font-size: 22px;
+      font-weight: 600;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+    .post-principio .principio-body {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #707070;
+    }
+    .post-principio .principio-tag {
+      position: absolute;
+      bottom: 28px;
+      left: 40px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #2AB5A0;
+    }
+
+    /* Post 4: Quote card cream */
+    .post-quote {
+      background: #F5F3EE;
+      color: #000;
+      justify-content: flex-end;
+      padding-bottom: 48px;
+    }
+    .post-quote .quote-mark {
+      font-size: 72px;
+      font-weight: 300;
+      line-height: 0.8;
+      color: #E8A838;
+      margin-bottom: 8px;
+    }
+    .post-quote .quote-text {
+      font-size: 24px;
+      font-weight: 500;
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+    .post-quote .quote-attr {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #707070;
+    }
+
+    /* Font overrides */
+    .font-space .post-headline,
+    .font-space .stat-big,
+    .font-space .stat-unit,
+    .font-space .principio-num,
+    .font-space .principio-title,
+    .font-space .quote-text,
+    .font-space .post-logo-mark {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .font-square .post-headline,
+    .font-square .stat-big,
+    .font-square .stat-unit,
+    .font-square .principio-num,
+    .font-square .principio-title,
+    .font-square .quote-text,
+    .font-square .post-logo-mark {
+      font-family: 'DM Sans', sans-serif;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="compare-header">
+    <h1>Comparacion tipografica — Posts de Instagram</h1>
+    <p>Izquierda: Space Grotesk (geometrica tecnica) — Derecha: DM Sans (estilo Square)</p>
+  </div>
+
+  <!-- ═══ POST 1: MANIFIESTO ═══ -->
+  <div class="compare-row">
+    <div class="compare-col">
+      <div class="compare-label">OPCION A: Space Grotesk<span>Sans-serif geometrica, monoespaciada</span></div>
+      <div class="ig-post post-manifiesto font-space">
+        <div class="post-logo-mark">Sacs</div>
+        <div class="post-eyebrow">Manifiesto</div>
+        <div class="post-headline">Creemos que<br>vender es<br>servir.</div>
+        <div class="post-body">Que crecer no es perder esencia. Que la tecnologia libera, no reemplaza.</div>
+      </div>
+    </div>
+    <div class="compare-col">
+      <div class="compare-label">OPCION B: DM Sans (estilo Square)<span>Sans-serif humanista, suave</span></div>
+      <div class="ig-post post-manifiesto font-square">
+        <div class="post-logo-mark">Sacs</div>
+        <div class="post-eyebrow">Manifiesto</div>
+        <div class="post-headline">Creemos que<br>vender es<br>servir.</div>
+        <div class="post-body">Que crecer no es perder esencia. Que la tecnologia libera, no reemplaza.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ POST 2: STAT ═══ -->
+  <div class="compare-row">
+    <div class="compare-col">
+      <div class="compare-label">Space Grotesk</div>
+      <div class="ig-post post-stat font-space">
+        <div class="stat-big">10<span class="stat-unit">%</span></div>
+        <div class="stat-desc">de cada licencia genera impacto social directo</div>
+      </div>
+    </div>
+    <div class="compare-col">
+      <div class="compare-label">DM Sans (estilo Square)</div>
+      <div class="ig-post post-stat font-square">
+        <div class="stat-big">10<span class="stat-unit">%</span></div>
+        <div class="stat-desc">de cada licencia genera impacto social directo</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ POST 3: PRINCIPIO ═══ -->
+  <div class="compare-row">
+    <div class="compare-col">
+      <div class="compare-label">Space Grotesk</div>
+      <div class="ig-post post-principio font-space">
+        <div class="principio-num">01</div>
+        <div class="principio-title">Transformacion ><br>Transaccion</div>
+        <div class="principio-body">Cada venta es una oportunidad de impactar una vida. No vendemos productos — creamos conexiones.</div>
+        <div class="principio-tag">#ComercioConsciente</div>
+      </div>
+    </div>
+    <div class="compare-col">
+      <div class="compare-label">DM Sans (estilo Square)</div>
+      <div class="ig-post post-principio font-square">
+        <div class="principio-num">01</div>
+        <div class="principio-title">Transformacion ><br>Transaccion</div>
+        <div class="principio-body">Cada venta es una oportunidad de impactar una vida. No vendemos productos — creamos conexiones.</div>
+        <div class="principio-tag">#ComercioConsciente</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ POST 4: QUOTE ═══ -->
+  <div class="compare-row">
+    <div class="compare-col">
+      <div class="compare-label">Space Grotesk</div>
+      <div class="ig-post post-quote font-space">
+        <div class="quote-mark">"</div>
+        <div class="quote-text">No pedimos permiso para cambiar las reglas. Las estamos reescribiendo.</div>
+        <div class="quote-attr">— Comercio Consciente</div>
+      </div>
+    </div>
+    <div class="compare-col">
+      <div class="compare-label">DM Sans (estilo Square)</div>
+      <div class="ig-post post-quote font-square">
+        <div class="quote-mark">"</div>
+        <div class="quote-text">No pedimos permiso para cambiar las reglas. Las estamos reescribiendo.</div>
+        <div class="quote-attr">— Comercio Consciente</div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
