@@ -1,42 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CTABanner from '../components/CTABanner.astro';
-
-const cases = [
-  {
-    name: 'Boutique Rosa',
-    industry: 'Moda femenina',
-    location: 'CDMX — 3 sucursales',
-    challenge: 'Cierres de caja manuales que tomaban horas y errores frecuentes en inventario.',
-    result: 'Reducción del 40% en tiempo operativo. Inventario sincronizado en tiempo real.',
-    quote: 'SACS nos devolvió tiempo para enfocarnos en lo que importa: nuestras clientas.',
-    person: 'María González, Fundadora',
-    stat: '40%',
-    statLabel: 'menos tiempo en operación',
-  },
-  {
-    name: 'Calzado León',
-    industry: 'Calzado',
-    location: 'Guadalajara — 8 sucursales',
-    challenge: 'Transferencias de inventario entre sucursales eran caóticas y generaban pérdidas.',
-    result: 'Transferencias automatizadas. Reducción del 25% en merma por descontrol.',
-    quote: 'Antes era un caos mover producto entre tiendas. Ahora es un clic.',
-    person: 'Roberto Méndez, Director General',
-    stat: '25%',
-    statLabel: 'reducción en merma',
-  },
-  {
-    name: 'ModaMX',
-    industry: 'Fast fashion',
-    location: 'Monterrey — 5 sucursales',
-    challenge: 'No tenían visibilidad de qué productos reordenar ni cuándo.',
-    result: 'AXO predijo demanda con 85% de precisión. Ventas incrementaron 18% en 3 meses.',
-    quote: 'AXO me sugirió reordenar un producto que no tenía en el radar. Vendimos 200 piezas esa semana.',
-    person: 'Ana Castillo, Gerente de Compras',
-    stat: '18%',
-    statLabel: 'incremento en ventas',
-  },
-];
+import { caseStudies } from '../data/testimonials';
 ---
 
 <BaseLayout
@@ -56,7 +21,7 @@ const cases = [
     </div>
   </section>
 
-  {cases.map((c, i) => (
+  {caseStudies.map((c, i) => (
     <section class:list={['case-detail', 'section', { alt: i % 2 === 1 }]}>
       <div class="container case-grid">
         <div class="case-content">
@@ -75,7 +40,7 @@ const cases = [
             </div>
             <blockquote class="case-quote">
               <p>"{c.quote}"</p>
-              <cite>— {c.person}</cite>
+              <cite>— {c.name}, {c.role}</cite>
             </blockquote>
           </div>
         </div>

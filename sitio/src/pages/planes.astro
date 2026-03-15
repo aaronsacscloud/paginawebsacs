@@ -1,88 +1,19 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CTABanner from '../components/CTABanner.astro';
-
-const plans = [
-  {
-    name: 'Semilla',
-    price: 'Gratis',
-    period: '',
-    description: 'Para emprendedores que inician su camino en retail.',
-    features: [
-      '1 sucursal',
-      'Punto de venta básico',
-      'Inventario simple',
-      'Reportes esenciales',
-      'Soporte por email',
-    ],
-    cta: 'Empezar gratis',
-    highlighted: false,
-  },
-  {
-    name: 'Crecimiento',
-    price: '$799',
-    period: '/mes por sucursal',
-    description: 'Para negocios que necesitan escalar sin fricciones.',
-    features: [
-      'Hasta 5 sucursales',
-      'POS completo + CFDI',
-      'Inventario multi-sucursal',
-      'CRM con segmentación',
-      'AXO — Asistente de IA',
-      'Reportes avanzados',
-      'Soporte prioritario',
-    ],
-    cta: 'Comenzar prueba',
-    highlighted: true,
-  },
-  {
-    name: 'Empresa',
-    price: 'Personalizado',
-    period: '',
-    description: 'Para retailers con operaciones complejas y multi-ubicación.',
-    features: [
-      'Sucursales ilimitadas',
-      'Todo de Crecimiento',
-      'API e integraciones',
-      'Onboarding dedicado',
-      'Account manager',
-      'SLA garantizado',
-      'Personalización avanzada',
-    ],
-    cta: 'Contactar ventas',
-    highlighted: false,
-  },
-];
+import { plans, faqs } from '../data/plans';
 
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
-  mainEntity: [
-    {
-      '@type': 'Question',
-      name: '¿Puedo probar SACS gratis?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Sí, el plan Semilla es completamente gratuito e incluye las funcionalidades básicas para una sucursal.',
-      },
+  mainEntity: faqs.map((f) => ({
+    '@type': 'Question',
+    name: f.question,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: f.answer,
     },
-    {
-      '@type': 'Question',
-      name: '¿Qué incluye el 10% de impacto social?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'El 10% de cada licencia se destina a programas de capacitación digital, apoyo a emprendedores locales y conservación de ecosistemas en México.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: '¿Puedo cambiar de plan en cualquier momento?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Sí, puedes escalar o reducir tu plan cuando lo necesites, sin penalizaciones.',
-      },
-    },
-  ],
+  })),
 };
 ---
 
@@ -119,7 +50,7 @@ const faqSchema = {
             <a
               href="/contacto"
               class:list={['btn', plan.highlighted ? 'btn-primary' : 'btn-secondary']}
-              style="width: 100%;"
+              class="plan-cta"
             >
               {plan.cta}
             </a>
@@ -134,10 +65,10 @@ const faqSchema = {
     <div class="container faq-container">
       <h2>Preguntas frecuentes</h2>
       <div class="faq-list">
-        {faqSchema.mainEntity.map((q) => (
+        {faqs.map((q) => (
           <details class="faq-item">
-            <summary>{q.name}</summary>
-            <p>{q.acceptedAnswer.text}</p>
+            <summary>{q.question}</summary>
+            <p>{q.answer}</p>
           </details>
         ))}
       </div>
@@ -244,6 +175,10 @@ const faqSchema = {
     padding-left: var(--space-6);
     font-size: 0.9375rem;
     color: var(--color-text-secondary);
+  }
+
+  .plan-cta {
+    width: 100%;
   }
 
   .plan-features li::before {

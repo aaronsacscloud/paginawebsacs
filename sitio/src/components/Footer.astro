@@ -1,29 +1,7 @@
 ---
-const currentYear = new Date().getFullYear();
+import { footerLinks } from '../data/navigation';
 
-const footerLinks = {
-  producto: [
-    { label: 'Punto de Venta', href: '/producto#pos' },
-    { label: 'Inventario', href: '/producto#inventario' },
-    { label: 'CRM', href: '/producto#crm' },
-    { label: 'Reportes', href: '/producto#reportes' },
-    { label: 'AXO — IA', href: '/producto#axo' },
-  ],
-  empresa: [
-    { label: 'Nosotros', href: '/nosotros' },
-    { label: 'Manifiesto', href: '/manifiesto' },
-    { label: 'Casos de éxito', href: '/casos-de-exito' },
-    { label: 'Blog', href: '/blog' },
-    { label: 'Contacto', href: '/contacto' },
-  ],
-  recursos: [
-    { label: 'Planes y precios', href: '/planes' },
-    { label: 'Centro de ayuda', href: '#' },
-    { label: 'Estado del sistema', href: '#' },
-    { label: 'Política de privacidad', href: '#' },
-    { label: 'Términos de uso', href: '#' },
-  ],
-};
+const currentYear = new Date().getFullYear();
 ---
 
 <footer class="footer">
@@ -87,7 +65,7 @@ const footerLinks = {
 <style>
   .footer {
     background: var(--color-bg-dark);
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--color-text-on-dark-muted);
     padding-block: var(--space-24);
   }
 
@@ -112,7 +90,7 @@ const footerLinks = {
   .footer-tagline {
     font-size: 0.875rem;
     line-height: 1.6;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--color-text-on-dark-subtle);
     max-width: 280px;
   }
 
@@ -120,7 +98,7 @@ const footerLinks = {
     font-family: var(--font-body);
     font-size: 0.875rem;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--color-text-on-dark);
     margin-bottom: var(--space-5);
     letter-spacing: 0;
   }
@@ -135,19 +113,19 @@ const footerLinks = {
   .footer-list a {
     font-size: 0.875rem;
     font-weight: 400;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-text-on-dark-subtle);
     text-decoration: none;
     transition: color var(--duration-fast) ease;
   }
 
   .footer-list a:hover {
-    color: rgba(255, 255, 255, 1);
+    color: var(--color-text-on-dark);
     text-decoration: none;
   }
 
   .footer-divider {
     height: 1px;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--color-border-on-dark);
     margin-top: var(--space-16);
     margin-bottom: var(--space-6);
   }
@@ -162,7 +140,7 @@ const footerLinks = {
 
   .footer-copyright {
     font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--color-text-on-dark-faint);
   }
 
   .footer-impact {

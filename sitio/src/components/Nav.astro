@@ -1,11 +1,5 @@
 ---
-const navLinks = [
-  { label: 'Producto', href: '/producto' },
-  { label: 'Planes', href: '/planes' },
-  { label: 'Casos de éxito', href: '/casos-de-exito' },
-  { label: 'Nosotros', href: '/nosotros' },
-  { label: 'Blog', href: '/blog' },
-];
+import { navLinks } from '../data/navigation';
 
 const currentPath = Astro.url.pathname;
 ---
@@ -71,7 +65,7 @@ const currentPath = Astro.url.pathname;
     right: 0;
     z-index: 1000;
     height: 72px;
-    background: rgba(250, 250, 248, 0.95);
+    background: color-mix(in srgb, var(--color-bg-primary) 95%, transparent);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);

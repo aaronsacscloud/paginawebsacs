@@ -1,22 +1,28 @@
 ---
-const stats = [
-  { number: '500+', label: 'Retailers activos' },
-  { number: '12M+', label: 'Transacciones procesadas' },
-  { number: '99.9%', label: 'Uptime garantizado' },
-  { number: '40%', label: 'Reducción en tiempo operativo' },
-];
+import { stats as defaultStats } from '../data/home';
+
+interface Stat {
+  number: string;
+  label: string;
+}
+
+interface Props {
+  stats?: Stat[];
+}
+
+const { stats = defaultStats } = Astro.props;
 ---
 
 <section class="stats section" id="stats">
   <div class="container">
-    <div class="stats-grid">
+    <dl class="stats-grid">
       {stats.map((stat) => (
         <div class="stat-item">
-          <p class="stat-number display-l">{stat.number}</p>
-          <p class="stat-label body-small">{stat.label}</p>
+          <dt class="stat-label body-small">{stat.label}</dt>
+          <dd class="stat-number display-l">{stat.number}</dd>
         </div>
       ))}
-    </div>
+    </dl>
   </div>
 </section>
 
@@ -50,5 +56,10 @@ const stats = [
 
   .stat-label {
     color: var(--color-text-tertiary);
+    order: 1;
+  }
+
+  .stat-number {
+    order: 0;
   }
 </style>

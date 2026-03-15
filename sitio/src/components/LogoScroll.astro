@@ -1,19 +1,20 @@
 ---
-const logos = [
-  'Boutique Rosa',
-  'Calzado León',
-  'ModaMX',
-  'Textiles Oaxaca',
-  'Urban Style',
-  'Casa Bonita',
-  'Zapatos Express',
-  'Ropa Frida',
-];
+import { logos as defaultLogos } from '../data/home';
+
+interface Props {
+  logos?: string[];
+  label?: string;
+}
+
+const {
+  logos = defaultLogos,
+  label = 'Empresas que crecen con SACS',
+} = Astro.props;
 ---
 
 <section class="logos section" aria-label="Clientes que confían en SACS">
   <div class="container">
-    <p class="eyebrow logos-label">Empresas que crecen con SACS</p>
+    <p class="eyebrow logos-label">{label}</p>
   </div>
   <div class="logos-track">
     <div class="logos-scroll">

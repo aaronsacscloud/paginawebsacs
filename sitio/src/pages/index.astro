@@ -7,6 +7,7 @@ import Testimonials from '../components/Testimonials.astro';
 import Stats from '../components/Stats.astro';
 import ImpactSection from '../components/ImpactSection.astro';
 import CTABanner from '../components/CTABanner.astro';
+import { axoFeatures } from '../data/home';
 
 const websiteSchema = {
   '@context': 'https://schema.org',
@@ -65,7 +66,7 @@ const softwareSchema = {
   <section class="problem-solution section">
     <div class="container ps-grid">
       <div class="ps-problem">
-        <span class="eyebrow" style="color: var(--color-error);">El problema</span>
+        <span class="eyebrow eyebrow-problem">El problema</span>
         <h2>Tu negocio crece, tu control se pierde</h2>
         <p class="body-large">
           Excel para inventarios, una app para ventas, otra para clientes,
@@ -73,7 +74,7 @@ const softwareSchema = {
         </p>
       </div>
       <div class="ps-solution">
-        <span class="eyebrow" style="color: var(--color-secondary);">La solución</span>
+        <span class="eyebrow eyebrow-solution">La solución</span>
         <h2>Un solo sistema que lo conecta todo</h2>
         <p class="body-large">
           SACS reemplaza tus herramientas dispersas con una plataforma integrada.
@@ -99,10 +100,9 @@ const softwareSchema = {
           tomar decisiones basadas en datos reales.
         </p>
         <ul class="axo-features">
-          <li>Predicción de demanda por sucursal</li>
-          <li>Alertas inteligentes de reabastecimiento</li>
-          <li>Análisis de tendencias de ventas</li>
-          <li>Reportes automáticos en lenguaje natural</li>
+          {axoFeatures.map((f) => (
+            <li>{f}</li>
+          ))}
         </ul>
         <a href="/producto#axo" class="btn btn-primary">
           Descubre AXO
@@ -112,7 +112,7 @@ const softwareSchema = {
       <div class="axo-visual">
         <div class="axo-placeholder">
           <span class="axo-emoji" aria-hidden="true">🦎</span>
-          <p class="body-small" style="color: var(--color-text-tertiary);">AXO — IA para retail</p>
+          <p class="body-small axo-label">AXO — IA para retail</p>
         </div>
       </div>
     </div>
@@ -149,6 +149,14 @@ const softwareSchema = {
   .ps-problem,
   .ps-solution {
     max-width: 520px;
+  }
+
+  .eyebrow-problem {
+    color: var(--color-error);
+  }
+
+  .eyebrow-solution {
+    color: var(--color-secondary);
   }
 
   .ps-problem .eyebrow,
@@ -238,6 +246,10 @@ const softwareSchema = {
     justify-content: center;
     gap: var(--space-4);
     border: 1px solid var(--color-border-light);
+  }
+
+  .axo-label {
+    color: var(--color-text-tertiary);
   }
 
   .axo-emoji {

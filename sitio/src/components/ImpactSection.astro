@@ -1,21 +1,33 @@
 ---
+import { impactStats as defaultStats } from '../data/home';
 
+interface ImpactStat {
+  number: string;
+  label: string;
+}
+
+interface Props {
+  stats?: ImpactStat[];
+  title?: string;
+  description?: string;
+  subdescription?: string;
+}
+
+const {
+  stats = defaultStats,
+  title = 'El 10% de tu licencia genera cambio real',
+  description = 'Cada vez que usas SACS, contribuyes automáticamente a programas de capacitación digital, apoyo a emprendedores locales y conservación de ecosistemas en México.',
+  subdescription = 'No es caridad. Es un modelo donde tu éxito impulsa el de tu comunidad. Comercio consciente significa que cada transacción tiene propósito.',
+} = Astro.props;
 ---
 
 <section class="impact section" id="impact">
   <div class="container impact-inner">
     <div class="impact-content">
       <span class="eyebrow badge badge-gold">Impacto Social</span>
-      <h2 class="impact-title">El 10% de tu licencia genera cambio real</h2>
-      <p class="body-large impact-text">
-        Cada vez que usas SACS, contribuyes automáticamente a programas de
-        capacitación digital, apoyo a emprendedores locales y conservación
-        de ecosistemas en México.
-      </p>
-      <p class="impact-text">
-        No es caridad. Es un modelo donde tu éxito impulsa el de tu comunidad.
-        Comercio consciente significa que cada transacción tiene propósito.
-      </p>
+      <h2 class="impact-title">{title}</h2>
+      <p class="body-large impact-text">{description}</p>
+      <p class="impact-text">{subdescription}</p>
       <a href="/manifiesto" class="btn btn-primary">
         Lee nuestro manifiesto
         <span class="btn-arrow" aria-hidden="true">&rarr;</span>
@@ -23,25 +35,19 @@
     </div>
 
     <div class="impact-stats">
-      <div class="impact-stat">
-        <p class="impact-number display-l">10%</p>
-        <p class="body-small">De cada licencia a impacto social</p>
-      </div>
-      <div class="impact-stat">
-        <p class="impact-number display-l">50+</p>
-        <p class="body-small">Comunidades beneficiadas</p>
-      </div>
-      <div class="impact-stat">
-        <p class="impact-number display-l">1,200+</p>
-        <p class="body-small">Personas capacitadas</p>
-      </div>
+      {stats.map((stat) => (
+        <div class="impact-stat">
+          <p class="impact-number display-l">{stat.number}</p>
+          <p class="body-small">{stat.label}</p>
+        </div>
+      ))}
     </div>
   </div>
 </section>
 
 <style>
   .impact {
-    background: linear-gradient(180deg, var(--color-bg-secondary) 0%, var(--color-bg-primary) 100%);
+    background: var(--gradient-cream);
   }
 
   .impact-inner {

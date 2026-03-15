@@ -1,31 +1,25 @@
 ---
-const testimonials = [
-  {
-    quote: 'SACS nos ayudó a reducir un 40% el tiempo en cierres de caja. Antes tardábamos horas, ahora son minutos.',
-    name: 'María González',
-    role: 'Dueña, Boutique Rosa',
-    location: 'CDMX',
-  },
-  {
-    quote: 'Lo que más me gusta es que el inventario se actualiza en todas las sucursales al instante. Ya no hay confusión.',
-    name: 'Roberto Méndez',
-    role: 'Director, Calzado León',
-    location: 'Guadalajara',
-  },
-  {
-    quote: 'AXO me sugirió reordenar un producto que no tenía en el radar. Vendimos 200 piezas esa semana.',
-    name: 'Ana Castillo',
-    role: 'Gerente, ModaMX',
-    location: 'Monterrey',
-  },
-];
+import { testimonials as defaultTestimonials } from '../data/testimonials';
+import type { Testimonial } from '../data/testimonials';
+
+interface Props {
+  testimonials?: Testimonial[];
+  eyebrow?: string;
+  title?: string;
+}
+
+const {
+  testimonials = defaultTestimonials,
+  eyebrow = 'Casos reales',
+  title = 'Lo que dicen nuestros clientes',
+} = Astro.props;
 ---
 
 <section class="testimonials section" id="testimonials">
   <div class="container">
     <div class="testimonials-header">
-      <span class="eyebrow badge badge-teal">Casos reales</span>
-      <h2>Lo que dicen nuestros clientes</h2>
+      <span class="eyebrow badge badge-teal">{eyebrow}</span>
+      <h2>{title}</h2>
     </div>
 
     <div class="testimonials-grid">

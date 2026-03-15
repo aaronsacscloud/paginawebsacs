@@ -7,9 +7,12 @@ const blog = defineCollection({
     title: z.string(),
     description: z.string(),
     pubDate: z.coerce.date(),
+    updatedDate: z.coerce.date().optional(),
     author: z.string().optional(),
     image: z.string().optional(),
     tags: z.array(z.string()).optional(),
+    category: z.enum(['retail', 'tecnologia', 'impacto', 'producto', 'general']).optional(),
+    featured: z.boolean().optional().default(false),
     draft: z.boolean().optional().default(false),
   }),
 });

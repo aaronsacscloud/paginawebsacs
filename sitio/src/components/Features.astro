@@ -1,37 +1,33 @@
 ---
-const features = [
-  {
-    icon: '📦',
-    title: 'Inventario inteligente',
-    description: 'Gestiona múltiples sucursales, transferencias automáticas y alertas de reabastecimiento. Nunca pierdas una venta por falta de stock.',
-  },
-  {
-    icon: '💳',
-    title: 'Punto de venta ágil',
-    description: 'Cobra en segundos con múltiples métodos de pago. Facturación CFDI integrada, sin complicaciones fiscales.',
-  },
-  {
-    icon: '👥',
-    title: 'CRM que entiende tu cliente',
-    description: 'Conoce a tus clientes, segméntalos y crea campañas personalizadas. El retail es relación, no solo transacción.',
-  },
-  {
-    icon: '📊',
-    title: 'Reportes accionables',
-    description: 'Dashboards en tiempo real que te dicen qué vender, cuándo reordenar y dónde está tu mejor margen.',
-  },
-];
+import { features as defaultFeatures } from '../data/home';
+
+interface Feature {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+interface Props {
+  features?: Feature[];
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
+}
+
+const {
+  features = defaultFeatures,
+  eyebrow = 'Plataforma todo-en-uno',
+  title = 'Todo lo que necesitas para operar tu negocio',
+  subtitle = 'SACS reúne las herramientas que antes requerían 4 o 5 apps diferentes. Un solo lugar, cero fricción.',
+} = Astro.props;
 ---
 
 <section class="features section" id="features">
   <div class="container">
     <div class="features-header">
-      <span class="eyebrow badge badge-blue">Plataforma todo-en-uno</span>
-      <h2 class="features-title">Todo lo que necesitas para operar tu negocio</h2>
-      <p class="body-large features-subtitle">
-        SACS reúne las herramientas que antes requerían 4 o 5 apps diferentes.
-        Un solo lugar, cero fricción.
-      </p>
+      <span class="eyebrow badge badge-blue">{eyebrow}</span>
+      <h2 class="features-title">{title}</h2>
+      <p class="body-large features-subtitle">{subtitle}</p>
     </div>
 
     <div class="features-grid">
