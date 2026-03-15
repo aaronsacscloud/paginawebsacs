@@ -1,0 +1,1668 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SACS — Instagram Feed Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --color-primary: #4B7BE5;
+      --color-secondary: #2AB5A0;
+      --color-accent: #E8A838;
+      --color-error: #E54B4B;
+      --color-text-primary: #000000;
+      --color-text-secondary: #333333;
+      --color-text-tertiary: #707070;
+      --color-bg-primary: #FAFAF8;
+      --color-bg-secondary: #F5F3EE;
+      --color-bg-card: #FFFFFF;
+      --color-bg-dark: #000000;
+      --font-display: 'DM Sans', sans-serif;
+      --font-heading: 'Space Grotesk', sans-serif;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+      --ease-square: cubic-bezier(.4, 0, .2, 1);
+      --transition-base: 0.3s var(--ease-square);
+      --mx-rojo: #D42B2B;
+      --mx-rosa: #E8356D;
+      --mx-rosa-hot: #FF1493;
+      --mx-naranja: #F57C20;
+      --mx-amarillo: #FFD100;
+      --mx-verde-lima: #7BC242;
+      --mx-verde: #1B8C3E;
+      --mx-verde-esmeralda: #00875A;
+      --mx-turquesa: #00B5A3;
+      --mx-azul-cielo: #3DA5D9;
+      --mx-azul-rey: #2856A3;
+      --mx-morado: #6B2FA0;
+      --mx-magenta: #C2185B;
+      --mx-crema: #FFF8E7;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-body);
+      background: #f0f0f0;
+      color: var(--color-text-primary);
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    /* ═══════ PAGE HEADER ═══════ */
+    .page-header {
+      background: var(--color-bg-dark);
+      padding: 48px 40px 32px;
+      text-align: center;
+    }
+    .page-header h1 {
+      font-family: var(--font-display);
+      font-size: clamp(32px, 5vw, 48px);
+      font-weight: 500;
+      letter-spacing: -0.05em;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .page-header p {
+      font-size: 16px;
+      color: rgba(255,255,255,0.5);
+    }
+
+    /* ═══════ PHONE MOCKUP ═══════ */
+    .phone-container {
+      display: flex;
+      justify-content: center;
+      padding: 48px 20px 80px;
+    }
+    .phone {
+      width: 420px;
+      max-width: 100%;
+      background: #fff;
+      border-radius: 40px;
+      overflow: hidden;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.18), 0 8px 24px rgba(0,0,0,0.1);
+      border: 8px solid #1a1a1a;
+    }
+
+    /* ═══════ IG HEADER ═══════ */
+    .ig-status-bar {
+      background: #fff;
+      padding: 12px 24px 0;
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 600;
+      color: #000;
+    }
+    .ig-nav {
+      background: #fff;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #efefef;
+    }
+    .ig-nav-logo {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .ig-nav-icons {
+      display: flex;
+      gap: 18px;
+      font-size: 20px;
+    }
+
+    /* ═══════ IG PROFILE ═══════ */
+    .ig-profile {
+      padding: 20px;
+      background: #fff;
+    }
+    .ig-profile-top {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 16px;
+    }
+    .ig-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 2px var(--color-primary);
+    }
+    .ig-avatar-inner {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+    .ig-stats {
+      display: flex;
+      gap: 20px;
+      flex: 1;
+      justify-content: center;
+    }
+    .ig-stat {
+      text-align: center;
+    }
+    .ig-stat-num {
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .ig-stat-label {
+      font-size: 12px;
+      color: var(--color-text-tertiary);
+    }
+    .ig-bio {
+      margin-bottom: 16px;
+    }
+    .ig-bio-name {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+    .ig-bio-cat {
+      font-size: 13px;
+      color: var(--color-text-tertiary);
+      margin-bottom: 4px;
+    }
+    .ig-bio-text {
+      font-size: 13px;
+      line-height: 1.4;
+      color: var(--color-text-secondary);
+    }
+    .ig-bio-link {
+      font-size: 13px;
+      font-weight: 600;
+      color: #00376b;
+    }
+    .ig-actions {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    .ig-btn-follow {
+      flex: 1;
+      background: var(--color-primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: var(--font-body);
+      cursor: pointer;
+    }
+    .ig-btn-msg {
+      flex: 1;
+      background: #efefef;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: var(--font-body);
+      cursor: pointer;
+    }
+
+    /* ═══════ IG HIGHLIGHTS ═══════ */
+    .ig-highlights {
+      display: flex;
+      gap: 16px;
+      padding: 0 0 16px;
+      overflow-x: auto;
+    }
+    .ig-highlight {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .ig-highlight-circle {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 2px solid #dbdbdb;
+      padding: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ig-highlight-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+    .ig-highlight-label {
+      font-size: 11px;
+      max-width: 64px;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ═══════ IG TABS ═══════ */
+    .ig-tabs {
+      display: flex;
+      border-top: 1px solid #efefef;
+      border-bottom: 1px solid #efefef;
+      background: #fff;
+    }
+    .ig-tab {
+      flex: 1;
+      text-align: center;
+      padding: 12px;
+      font-size: 18px;
+      color: #999;
+      cursor: pointer;
+      border-bottom: 1px solid transparent;
+      transition: all 0.2s;
+    }
+    .ig-tab.active {
+      color: #000;
+      border-bottom-color: #000;
+    }
+
+    /* ═══════ IG GRID ═══════ */
+    .ig-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+      background: #fff;
+    }
+
+    /* ═══════ POST CELLS ═══════ */
+    .post {
+      aspect-ratio: 1;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: opacity var(--transition-base);
+    }
+    .post:hover { opacity: 0.88; }
+    .post-inner {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+      position: relative;
+    }
+
+    /* Carousel indicator */
+    .post-carousel::after {
+      content: '';
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 20px;
+      height: 20px;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M4 6h12v12H4zM8 2h12v12' stroke='white' stroke-width='2' fill='none'/%3E%3C/svg%3E") center/contain no-repeat;
+      z-index: 5;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+    }
+
+    /* ═══════ POST TYPE: MANIFIESTO (Dark + Big Type) ═══════ */
+    .post-manifiesto .post-inner {
+      background: #000;
+      justify-content: flex-end;
+      align-items: flex-start;
+      text-align: left;
+      padding: 20px;
+    }
+    .post-manifiesto .post-eyebrow {
+      font-family: var(--font-body);
+      font-size: 7px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-secondary);
+      margin-bottom: 8px;
+    }
+    .post-manifiesto .post-title {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 500;
+      line-height: 1.0;
+      letter-spacing: -0.05em;
+      color: #fff;
+    }
+    .post-manifiesto .post-accent {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: repeating-linear-gradient(90deg,
+        var(--mx-rojo) 0px, var(--mx-rojo) 14px,
+        var(--mx-naranja) 14px, var(--mx-naranja) 28px,
+        var(--mx-amarillo) 28px, var(--mx-amarillo) 42px,
+        var(--mx-verde) 42px, var(--mx-verde) 56px,
+        var(--mx-azul-rey) 56px, var(--mx-azul-rey) 70px,
+        var(--mx-morado) 70px, var(--mx-morado) 84px
+      );
+    }
+    .post-manifiesto .post-logo {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.3);
+      letter-spacing: -0.02em;
+    }
+
+    /* ═══════ POST TYPE: STAT (Number highlight) ═══════ */
+    .post-stat .post-inner {
+      background: var(--color-bg-secondary);
+    }
+    .post-stat .stat-big {
+      font-family: var(--font-display);
+      font-size: 52px;
+      font-weight: 500;
+      letter-spacing: -0.05em;
+      line-height: 1;
+      color: var(--color-primary);
+    }
+    .post-stat .stat-unit {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--color-primary);
+      opacity: 0.7;
+    }
+    .post-stat .stat-desc {
+      font-size: 10px;
+      color: var(--color-text-tertiary);
+      margin-top: 8px;
+      line-height: 1.4;
+      max-width: 100px;
+    }
+    .post-stat .post-logo {
+      position: absolute;
+      bottom: 14px;
+      right: 16px;
+      font-family: var(--font-display);
+      font-size: 10px;
+      font-weight: 700;
+      color: rgba(0,0,0,0.12);
+    }
+
+    /* ═══════ POST TYPE: PRODUCT FEATURE ═══════ */
+    .post-feature .post-inner {
+      background: #fff;
+      border: 1px solid #f0f0f0;
+      align-items: flex-start;
+      text-align: left;
+      justify-content: space-between;
+      padding: 20px;
+    }
+    .post-feature .feature-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    .post-feature .feature-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+    .post-feature .feature-label {
+      font-size: 7px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-primary);
+      margin-bottom: 6px;
+    }
+    .post-feature .feature-title {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      color: #000;
+      margin-bottom: 6px;
+    }
+    .post-feature .feature-desc {
+      font-size: 9px;
+      line-height: 1.5;
+      color: var(--color-text-tertiary);
+    }
+
+    /* ═══════ POST TYPE: MERCHANT / CONEXION HUMANA ═══════ */
+    .post-merchant .post-inner {
+      background:
+        linear-gradient(
+          180deg,
+          #A08060 0%, #C4A078 20%, #D4B898 40%,
+          #DCC8A8 55%, #E4D4B8 70%, #EAD8B0 85%, #E4D0A0 100%
+        );
+      padding: 0;
+      justify-content: flex-end;
+      align-items: stretch;
+      text-align: left;
+    }
+    .post-merchant .merchant-grain {
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+      mix-blend-mode: overlay;
+      opacity: 0.5;
+      z-index: 1;
+    }
+    .post-merchant .merchant-scene {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .post-merchant .merchant-figure {
+      position: relative;
+      width: 60%;
+      height: 65%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .post-merchant .merchant-awning {
+      width: 100%;
+      height: 16px;
+      background: repeating-linear-gradient(90deg,
+        var(--mx-rojo) 0px, var(--mx-rojo) 8px,
+        #fff 8px, #fff 16px
+      );
+      border-radius: 2px 2px 0 0;
+      position: absolute;
+      top: 0;
+    }
+    .post-merchant .merchant-shop {
+      width: 100%;
+      flex: 1;
+      background: rgba(255,255,255,0.25);
+      margin-top: 16px;
+      border-radius: 0 0 2px 2px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 8px;
+      backdrop-filter: blur(2px);
+    }
+    .post-merchant .shop-window {
+      width: 70%;
+      height: 28%;
+      background: rgba(255,255,200,0.4);
+      border-radius: 2px;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+    .post-merchant .shop-door {
+      width: 24%;
+      height: 32%;
+      background: rgba(120,70,30,0.5);
+      border-radius: 3px 3px 0 0;
+    }
+    .post-merchant .merchant-person {
+      position: absolute;
+      bottom: 0;
+      right: -20%;
+      width: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .post-merchant .person-head {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #D4A878;
+    }
+    .post-merchant .person-body {
+      width: 14px;
+      height: 20px;
+      background: var(--mx-azul-rey);
+      border-radius: 3px 3px 0 0;
+      margin-top: -1px;
+    }
+    .post-merchant .merchant-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(0deg,
+        rgba(80,50,20,0.9) 0%,
+        rgba(80,50,20,0.5) 35%,
+        rgba(80,50,20,0.15) 60%,
+        transparent 100%
+      );
+      z-index: 3;
+    }
+    .post-merchant .merchant-text {
+      position: relative;
+      z-index: 4;
+      padding: 20px;
+    }
+    .post-merchant .merchant-label {
+      font-size: 7px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--mx-amarillo);
+      margin-bottom: 6px;
+    }
+    .post-merchant .merchant-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      color: #fff;
+      text-shadow: 0 1px 6px rgba(0,0,0,0.3);
+    }
+    .post-merchant .merchant-sub {
+      font-size: 8px;
+      color: rgba(255,255,255,0.6);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    /* ═══════ POST TYPE: CASO DE EXITO ═══════ */
+    .post-caso .post-inner {
+      background: #000;
+      padding: 20px;
+      align-items: flex-start;
+      text-align: left;
+      justify-content: space-between;
+    }
+    .post-caso .caso-badge {
+      font-size: 7px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: rgba(42,181,160,0.15);
+      color: var(--color-secondary);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+    .post-caso .caso-brand {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 500;
+      letter-spacing: -0.04em;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+    .post-caso .caso-metrics {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: auto;
+    }
+    .post-caso .caso-metric {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .post-caso .caso-num {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      color: var(--color-secondary);
+      line-height: 1;
+    }
+    .post-caso .caso-unit {
+      font-size: 8px;
+      color: rgba(255,255,255,0.45);
+      line-height: 1.3;
+    }
+    .post-caso .caso-quote {
+      font-size: 8px;
+      font-style: italic;
+      color: rgba(255,255,255,0.35);
+      line-height: 1.4;
+      margin-top: 8px;
+      border-left: 2px solid rgba(42,181,160,0.3);
+      padding-left: 8px;
+    }
+    .post-caso .caso-dots {
+      display: flex;
+      gap: 4px;
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .post-caso .caso-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+    }
+    .post-caso .caso-dot.active {
+      background: var(--color-secondary);
+    }
+
+    /* ═══════ POST TYPE: SARAPE PATTERN ═══════ */
+    .post-sarape .post-inner {
+      background:
+        repeating-linear-gradient(90deg,
+          var(--mx-rojo) 0px, var(--mx-rojo) 14px,
+          #fff 14px, #fff 16px,
+          var(--mx-naranja) 16px, var(--mx-naranja) 28px,
+          #fff 28px, #fff 30px,
+          var(--mx-amarillo) 30px, var(--mx-amarillo) 42px,
+          #fff 42px, #fff 44px,
+          var(--mx-verde) 44px, var(--mx-verde) 56px,
+          #fff 56px, #fff 58px,
+          var(--mx-azul-rey) 58px, var(--mx-azul-rey) 70px,
+          #fff 70px, #fff 72px,
+          var(--mx-morado) 72px, var(--mx-morado) 84px,
+          #fff 84px, #fff 86px,
+          var(--mx-rosa) 86px, var(--mx-rosa) 98px,
+          #fff 98px, #fff 100px,
+          var(--mx-turquesa) 100px, var(--mx-turquesa) 112px,
+          #fff 112px, #fff 114px
+        );
+      justify-content: flex-end;
+      align-items: flex-start;
+      text-align: left;
+    }
+    .post-sarape .sarape-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(0deg,
+        rgba(0,0,0,0.85) 0%,
+        rgba(0,0,0,0.5) 40%,
+        rgba(0,0,0,0.1) 70%,
+        transparent 100%
+      );
+    }
+    .post-sarape .sarape-text {
+      position: relative;
+      z-index: 2;
+    }
+    .post-sarape .sarape-label {
+      font-size: 7px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--mx-amarillo);
+      margin-bottom: 6px;
+    }
+    .post-sarape .sarape-title {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      color: #fff;
+    }
+
+    /* ═══════ POST TYPE: TIP / EDUCATIVO ═══════ */
+    .post-tip .post-inner {
+      background: var(--color-primary);
+      align-items: flex-start;
+      text-align: left;
+      justify-content: space-between;
+      padding: 20px;
+    }
+    .post-tip .tip-number {
+      font-family: var(--font-display);
+      font-size: 64px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.15);
+      line-height: 1;
+      position: absolute;
+      top: 10px;
+      right: 16px;
+    }
+    .post-tip .tip-label {
+      font-size: 7px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.6);
+      margin-bottom: auto;
+    }
+    .post-tip .tip-title {
+      font-family: var(--font-display);
+      font-size: 17px;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .post-tip .tip-desc {
+      font-size: 9px;
+      line-height: 1.5;
+      color: rgba(255,255,255,0.65);
+    }
+
+    /* ═══════ POST TYPE: IMPACTO SOCIAL ═══════ */
+    .post-impact .post-inner {
+      background: #000;
+      padding: 20px;
+      align-items: flex-start;
+      text-align: left;
+    }
+    .post-impact .impact-icon {
+      font-size: 24px;
+      margin-bottom: auto;
+    }
+    .post-impact .impact-stat {
+      font-family: var(--font-display);
+      font-size: 36px;
+      font-weight: 500;
+      letter-spacing: -0.05em;
+      color: var(--color-secondary);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .post-impact .impact-label {
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.3;
+    }
+    .post-impact .impact-accent {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--color-secondary), var(--color-primary));
+    }
+
+    /* ═══════ POST TYPE: BRAND MARK ═══════ */
+    .post-brand .post-inner {
+      background: var(--color-bg-primary);
+    }
+    .post-brand .brand-circles {
+      display: flex;
+      position: relative;
+      width: 80px;
+      height: 60px;
+      margin-bottom: 12px;
+    }
+    .post-brand .brand-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      position: absolute;
+      opacity: 0.8;
+    }
+    .post-brand .brand-circle:nth-child(1) { background: var(--color-primary); top: 12px; left: 0; }
+    .post-brand .brand-circle:nth-child(2) { background: var(--color-accent); top: 0; left: 20px; }
+    .post-brand .brand-circle:nth-child(3) { background: var(--color-secondary); top: 12px; left: 40px; }
+    .post-brand .brand-name {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 700;
+      color: #000;
+      letter-spacing: -0.02em;
+    }
+    .post-brand .brand-tagline {
+      font-size: 9px;
+      color: var(--color-text-tertiary);
+      margin-top: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    /* ═══════ POST TYPE: ANNOUNCEMENT ═══════ */
+    .post-announce .post-inner {
+      background: linear-gradient(135deg, var(--color-secondary) 0%, #1a8c7a 100%);
+      padding: 20px;
+      align-items: flex-start;
+      text-align: left;
+      justify-content: space-between;
+    }
+    .post-announce .announce-badge {
+      font-size: 7px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+    .post-announce .announce-body {
+      margin-top: auto;
+    }
+    .post-announce .announce-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .post-announce .announce-desc {
+      font-size: 9px;
+      line-height: 1.5;
+      color: rgba(255,255,255,0.7);
+    }
+
+    /* ═══════ POST TYPE: CAROUSEL TIP ═══════ */
+    .post-carousel-tip .post-inner {
+      background: #000;
+      padding: 20px;
+      align-items: flex-start;
+      text-align: left;
+      justify-content: space-between;
+    }
+    .post-carousel-tip .ct-label {
+      font-size: 7px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-accent);
+    }
+    .post-carousel-tip .ct-title {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 500;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      color: #fff;
+    }
+    .post-carousel-tip .ct-cta {
+      font-size: 9px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.4);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .post-carousel-tip .ct-dots {
+      display: flex;
+      gap: 4px;
+      position: absolute;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .post-carousel-tip .ct-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+    }
+    .post-carousel-tip .ct-dot.active {
+      background: #fff;
+    }
+
+    /* ═══════ POST TYPE: CALLE ═══════ */
+    .post-calle .post-inner {
+      background: linear-gradient(180deg, #4A90C8 0%, #6BB5D8 40%, #8DCAE8 70%, #B0DDF0 100%);
+      padding: 0;
+      justify-content: flex-end;
+    }
+    .post-calle .calle-buildings {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      padding: 0 8px;
+      position: absolute;
+      bottom: 28px;
+    }
+    .post-calle .bldg {
+      border-radius: 2px 2px 0 0;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-content: flex-start;
+      padding: 4px 2px;
+      gap: 2px;
+    }
+    .post-calle .win {
+      width: 8px;
+      height: 9px;
+      background: rgba(255,255,200,0.6);
+      border-radius: 1px 1px 0 0;
+    }
+    .post-calle .calle-floor {
+      width: 100%;
+      height: 28px;
+      background: #C8B8A0;
+      position: relative;
+    }
+    .post-calle .calle-text-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(0deg,
+        rgba(0,0,0,0.8) 0%,
+        rgba(0,0,0,0.4) 40%,
+        transparent 70%
+      );
+      z-index: 2;
+      display: flex;
+      align-items: flex-end;
+      padding: 16px;
+    }
+    .post-calle .calle-label {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      color: #fff;
+      line-height: 1.2;
+      z-index: 3;
+    }
+
+    /* ═══════ POST TYPE: DORADO / GOLD ═══════ */
+    .post-gold .post-inner {
+      background: linear-gradient(180deg, #A08060 0%, #D4A888 50%, #ECD8B8 100%);
+      padding: 24px 20px;
+      justify-content: flex-end;
+      align-items: flex-start;
+      text-align: left;
+    }
+    .post-gold .gold-eyebrow {
+      font-size: 7px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 6px;
+    }
+    .post-gold .gold-title {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 500;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      color: #fff;
+      text-shadow: 0 1px 6px rgba(0,0,0,0.2);
+    }
+    .post-gold .gold-logo {
+      position: absolute;
+      top: 16px;
+      left: 18px;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.4);
+    }
+
+    /* ═══════ EXPANDED POST VIEW ═══════ */
+    .post-expanded-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+    }
+    .post-expanded-overlay.active {
+      display: flex;
+    }
+    .post-expanded {
+      width: min(520px, 90vw);
+      aspect-ratio: 1;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: default;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+    }
+    .post-expanded .post-inner {
+      padding: 48px;
+    }
+    .post-expanded.post-manifiesto .post-title { font-size: 48px; }
+    .post-expanded.post-manifiesto .post-eyebrow { font-size: 12px; }
+    .post-expanded.post-manifiesto .post-logo { font-size: 16px; top: 24px; right: 24px; }
+    .post-expanded.post-stat .stat-big { font-size: 96px; }
+    .post-expanded.post-stat .stat-unit { font-size: 32px; }
+    .post-expanded.post-stat .stat-desc { font-size: 16px; max-width: 200px; }
+    .post-expanded.post-feature .feature-label { font-size: 11px; }
+    .post-expanded.post-feature .feature-title { font-size: 32px; }
+    .post-expanded.post-feature .feature-desc { font-size: 15px; }
+    .post-expanded.post-feature .feature-icon { width: 56px; height: 56px; font-size: 28px; border-radius: 14px; }
+    .post-expanded.post-merchant .merchant-label { font-size: 12px; }
+    .post-expanded.post-merchant .merchant-title { font-size: 36px; }
+    .post-expanded.post-merchant .merchant-sub { font-size: 14px; }
+    .post-expanded.post-merchant .merchant-text { padding: 48px; }
+    .post-expanded.post-sarape .sarape-label { font-size: 11px; }
+    .post-expanded.post-sarape .sarape-title { font-size: 32px; }
+    .post-expanded.post-caso .caso-brand { font-size: 40px; }
+    .post-expanded.post-caso .caso-num { font-size: 36px; }
+    .post-expanded.post-caso .caso-unit { font-size: 14px; }
+    .post-expanded.post-caso .caso-badge { font-size: 11px; }
+    .post-expanded.post-caso .caso-quote { font-size: 14px; }
+    .post-expanded.post-tip .tip-title { font-size: 32px; }
+    .post-expanded.post-tip .tip-desc { font-size: 15px; }
+    .post-expanded.post-tip .tip-label { font-size: 11px; }
+    .post-expanded.post-tip .tip-number { font-size: 120px; }
+    .post-expanded.post-impact .impact-stat { font-size: 64px; }
+    .post-expanded.post-impact .impact-label { font-size: 18px; }
+    .post-expanded.post-impact .impact-icon { font-size: 40px; }
+    .post-expanded.post-brand .brand-name { font-size: 48px; }
+    .post-expanded.post-brand .brand-tagline { font-size: 15px; }
+    .post-expanded.post-announce .announce-title { font-size: 36px; }
+    .post-expanded.post-announce .announce-desc { font-size: 15px; }
+    .post-expanded.post-announce .announce-badge { font-size: 11px; }
+    .post-expanded.post-carousel-tip .ct-title { font-size: 40px; }
+    .post-expanded.post-carousel-tip .ct-label { font-size: 11px; }
+    .post-expanded.post-calle .calle-label { font-size: 28px; }
+    .post-expanded.post-gold .gold-title { font-size: 40px; }
+    .post-expanded.post-gold .gold-eyebrow { font-size: 11px; }
+    .post-expanded.post-gold .gold-logo { font-size: 18px; }
+
+    /* ═══════ SECTION: INDIVIDUAL POSTS DETAIL ═══════ */
+    .posts-detail {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 20px 80px;
+    }
+    .posts-detail-header {
+      text-align: center;
+      padding: 64px 20px 48px;
+    }
+    .posts-detail-header h2 {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 500;
+      letter-spacing: -0.04em;
+      color: var(--color-text-primary);
+      margin-bottom: 8px;
+    }
+    .posts-detail-header p {
+      font-size: 15px;
+      color: var(--color-text-tertiary);
+    }
+    .post-detail-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-bottom: 48px;
+      align-items: center;
+    }
+    .post-detail-row:nth-child(even) .post-detail-visual { order: 2; }
+    .post-detail-row:nth-child(even) .post-detail-info { order: 1; }
+    .post-detail-visual {
+      aspect-ratio: 1;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    }
+    .post-detail-visual .post-inner { border-radius: 0; }
+    .post-detail-info h3 {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+    .post-detail-info .post-type-badge {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-primary);
+      margin-bottom: 12px;
+      display: inline-block;
+    }
+    .post-detail-info p {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--color-text-secondary);
+      margin-bottom: 16px;
+    }
+    .post-detail-info .detail-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .post-detail-info .detail-tag {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: var(--color-bg-secondary);
+      color: var(--color-text-tertiary);
+    }
+
+    @media (max-width: 768px) {
+      .phone { border-radius: 24px; border-width: 5px; }
+      .post-detail-row {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .post-detail-row:nth-child(even) .post-detail-visual { order: 1; }
+      .post-detail-row:nth-child(even) .post-detail-info { order: 2; }
+      .post-detail-visual { max-width: 360px; margin: 0 auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>Instagram Feed</h1>
+    <p>Preview del contenido de @sacs.mx</p>
+  </div>
+
+  <!-- Phone Mockup -->
+  <div class="phone-container">
+    <div class="phone">
+      <!-- Status bar -->
+      <div class="ig-status-bar">
+        <span>9:41</span>
+        <span style="display:flex;gap:4px;align-items:center;">
+          <span style="font-size:11px;">&#9679;&#9679;&#9679;&#9679;</span>
+          <span style="font-size:14px;">&#128267;</span>
+        </span>
+      </div>
+
+      <!-- IG Nav -->
+      <div class="ig-nav">
+        <span class="ig-nav-logo">Instagram</span>
+        <div class="ig-nav-icons">
+          <span>+</span>
+          <span>&#9829;</span>
+          <span>&#9993;</span>
+        </div>
+      </div>
+
+      <!-- Profile -->
+      <div class="ig-profile">
+        <div class="ig-profile-top">
+          <div class="ig-avatar">
+            <div class="ig-avatar-inner">S</div>
+          </div>
+          <div class="ig-stats">
+            <div class="ig-stat">
+              <div class="ig-stat-num">127</div>
+              <div class="ig-stat-label">posts</div>
+            </div>
+            <div class="ig-stat">
+              <div class="ig-stat-num">2,483</div>
+              <div class="ig-stat-label">seguidores</div>
+            </div>
+            <div class="ig-stat">
+              <div class="ig-stat-num">318</div>
+              <div class="ig-stat-label">siguiendo</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ig-bio">
+          <div class="ig-bio-name">SACS - Comercio Consciente</div>
+          <div class="ig-bio-cat">Software</div>
+          <div class="ig-bio-text">
+            El sistema operativo del comercio consciente.<br>
+            Ser. Avanzar. Crear. Sembrar.<br>
+            10% de tu licencia = impacto social
+          </div>
+          <div class="ig-bio-link">sacs.mx</div>
+        </div>
+
+        <div class="ig-actions">
+          <button class="ig-btn-follow">Seguir</button>
+          <button class="ig-btn-msg">Mensaje</button>
+        </div>
+
+        <!-- Highlights -->
+        <div class="ig-highlights">
+          <div class="ig-highlight">
+            <div class="ig-highlight-circle">
+              <div class="ig-highlight-inner" style="background: var(--color-bg-secondary); font-size: 20px;">&#128640;</div>
+            </div>
+            <span class="ig-highlight-label">Producto</span>
+          </div>
+          <div class="ig-highlight">
+            <div class="ig-highlight-circle">
+              <div class="ig-highlight-inner" style="background: #000; color: #fff; font-size: 14px; font-family: var(--font-display); font-weight: 700;">AXO</div>
+            </div>
+            <span class="ig-highlight-label">AXO</span>
+          </div>
+          <div class="ig-highlight">
+            <div class="ig-highlight-circle">
+              <div class="ig-highlight-inner" style="background: var(--mx-rojo);">&#10084;&#65039;</div>
+            </div>
+            <span class="ig-highlight-label">Impacto</span>
+          </div>
+          <div class="ig-highlight">
+            <div class="ig-highlight-circle">
+              <div class="ig-highlight-inner" style="background: var(--color-primary);">&#128161;</div>
+            </div>
+            <span class="ig-highlight-label">Tips</span>
+          </div>
+          <div class="ig-highlight">
+            <div class="ig-highlight-circle">
+              <div class="ig-highlight-inner" style="background: var(--color-bg-secondary);">&#127752;</div>
+            </div>
+            <span class="ig-highlight-label">Oaxaca</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="ig-tabs">
+        <div class="ig-tab active">&#9638;</div>
+        <div class="ig-tab">&#127909;</div>
+        <div class="ig-tab">&#128100;</div>
+      </div>
+
+      <!-- Grid -->
+      <div class="ig-grid">
+
+        <!-- Row 1 -->
+        <div class="post post-manifiesto" onclick="expandPost(this)">
+          <div class="post-inner">
+            <div class="post-accent"></div>
+            <span class="post-logo">Sacs</span>
+            <div class="post-eyebrow">Manifiesto</div>
+            <div class="post-title">Ser.<br>Avanzar.<br>Crear.<br>Sembrar.</div>
+          </div>
+        </div>
+
+        <div class="post post-stat" onclick="expandPost(this)">
+          <div class="post-inner">
+            <div class="stat-big">10<span class="stat-unit">%</span></div>
+            <div class="stat-desc">de cada licencia genera impacto social</div>
+            <span class="post-logo">Sacs</span>
+          </div>
+        </div>
+
+        <div class="post post-feature" onclick="expandPost(this)">
+          <div class="post-inner">
+            <div class="feature-icon" style="background: rgba(75,123,229,0.1); color: var(--color-primary);">&#128202;</div>
+            <div class="feature-body">
+              <div class="feature-label">Producto</div>
+              <div class="feature-title">Inventario inteligente en tiempo real.</div>
+              <div class="feature-desc">Controla stock, merma y reorden automatico desde cualquier dispositivo.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 2 -->
+        <div class="post post-merchant" onclick="expandPost(this)">
+          <div class="post-inner">
+            <div class="merchant-grain"></div>
+            <div class="merchant-scene">
+              <div class="merchant-figure">
+                <div class="merchant-awning"></div>
+                <div class="merchant-shop">
+                  <div class="shop-window"></div>
+                  <div class="shop-door"></div>
+                </div>
+                <div class="merchant-person">
+                  <div class="person-head"></div>
+                  <div class="person-body"></div>
+                </div>
+              </div>
+            </div>
+            <div class="merchant-overlay"></div>
+            <div class="merchant-text">
+              <div class="merchant-label">Comercio Consciente</div>
+              <div class="merchant-title">La conexion humana.</div>
+              <div class="merchant-sub">Detras de cada venta hay una historia.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="post post-sarape" onclick="expandPost(this)">
+          <div class="post-inner">
+            <div class="sarape-overlay"></div>
+            <div class="sarape-text">
+              <div class="sarape-label">Identidad Oaxaquena</div>
+              <div class="sarape-title">Cada hilo cuenta una historia.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="post post-caso post-carousel" onclick="expandPost(this)">
+          <div class="post-inner">
+            <div class="caso-badge">Caso de exito</div>
+            <div style="margin-top: auto;">
+              <div class="caso-brand">Live Shows</div>
+              <div class="caso-metrics">
+                <div class="caso-metric">
+                  <span class="caso-num">150+</span>
+                  <span class="caso-unit">puntos de venta por concierto</span>
+                </div>
+                <div class="caso-metric">
+                  <span class="caso-num">+13%</span>
+                  <span class="caso-unit">rentabilidad</span>
+                </div>
+              </div>
+              <div class="caso-quote">"Sacs nos ayudo a capacitar 100+ vendedores con control preciso de inventario."</div>
+            </div>
+            <div class="caso-dots">
+              <div class="caso-dot active"></div>
+              <div class="caso-dot"></div>
+              <div class="caso-dot"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3 -->
+        <div class="post post-tip" onclick="expandPost(this)">
+          <div class="post-inner">
+            <div class="tip-number">01</div>
+            <div class="tip-label">Tips Retail</div>
+            <div style="margin-top: auto;">
+              <div class="tip-title">Conoce tu inventario como a tu familia.</div>
+              <div class="tip-desc">El 43% de retailers pierde ventas por falta de stock. SACS te alerta antes de que pase.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="post post-impact" onclick="expandPost(this)">
+          <div class="post-inner">
+            <div class="impact-icon">&#127793;</div>
+            <div style="margin-top: auto;">
+              <div class="impact-stat">2,847</div>
+              <div class="impact-label">familias impactadas con comercio consciente</div>
+            </div>
+            <div class="impact-accent"></div>
+          </div>
+        </div>
+
+        <div class="post post-brand" onclick="expandPost(this)">
+          <div class="post-inner">
+            <div class="brand-circles">
+              <div class="brand-circle"></div>
+              <div class="brand-circle"></div>
+              <div class="brand-circle"></div>
+            </div>
+            <div class="brand-name">Sacs</div>
+            <div class="brand-tagline">COMERCIO CONSCIENTE</div>
+          </div>
+        </div>
+
+        <!-- Row 4 -->
+        <div class="post post-announce" onclick="expandPost(this)">
+          <div class="post-inner">
+            <div class="announce-badge">Nuevo</div>
+            <div class="announce-body">
+              <div class="announce-title">E-commerce integrado a tu POS.</div>
+              <div class="announce-desc">Vende en linea y en tienda con un solo inventario.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="post post-carousel-tip post-carousel" onclick="expandPost(this)">
+          <div class="post-inner">
+            <div class="ct-label">Guia completa</div>
+            <div class="ct-title" style="margin-top: auto;">5 errores que matan tu retail.</div>
+            <div class="ct-cta">Desliza para leer &#8594;</div>
+            <div class="ct-dots">
+              <div class="ct-dot active"></div>
+              <div class="ct-dot"></div>
+              <div class="ct-dot"></div>
+              <div class="ct-dot"></div>
+              <div class="ct-dot"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="post post-gold" onclick="expandPost(this)">
+          <div class="post-inner">
+            <span class="gold-logo">Sacs</span>
+            <div class="gold-eyebrow">Casos de exito</div>
+            <div class="gold-title">De 2 a 12 sucursales en un ano.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════ INDIVIDUAL POSTS DETAIL ═══════ -->
+  <div class="posts-detail-header">
+    <h2>Cada post, en detalle</h2>
+    <p>Haz clic en cualquier post del feed para verlo expandido, o explora los formatos aqui abajo.</p>
+  </div>
+
+  <div class="posts-detail">
+
+    <!-- 1. Manifiesto -->
+    <div class="post-detail-row">
+      <div class="post-detail-visual post-manifiesto">
+        <div class="post-inner" style="padding: 40px;">
+          <div class="post-accent"></div>
+          <span class="post-logo" style="font-size: 14px; top: 20px; right: 24px;">Sacs</span>
+          <div class="post-eyebrow" style="font-size: 10px;">Manifiesto</div>
+          <div class="post-title" style="font-size: 40px;">Ser.<br>Avanzar.<br>Crear.<br>Sembrar.</div>
+        </div>
+      </div>
+      <div class="post-detail-info">
+        <span class="post-type-badge">Tipo: Manifiesto</span>
+        <h3>Pilar de marca</h3>
+        <p>Post ancla del feed. Fondo negro puro con tipografia DM Sans peso 500 — la misma precision de Square. La franja sarape superior conecta con la identidad oaxaquena sin saturar. El logo queda sutil arriba a la derecha.</p>
+        <div class="detail-tags">
+          <span class="detail-tag">Fondo negro</span>
+          <span class="detail-tag">Sarape accent</span>
+          <span class="detail-tag">DM Sans 500</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Estadistica -->
+    <div class="post-detail-row">
+      <div class="post-detail-visual post-stat">
+        <div class="post-inner" style="padding: 40px;">
+          <div class="stat-big" style="font-size: 80px;">10<span class="stat-unit" style="font-size: 28px;">%</span></div>
+          <div class="stat-desc" style="font-size: 14px; max-width: 180px;">de cada licencia genera impacto social</div>
+          <span class="post-logo" style="font-size: 13px;">Sacs</span>
+        </div>
+      </div>
+      <div class="post-detail-info">
+        <span class="post-type-badge">Tipo: Estadistica</span>
+        <h3>Dato de impacto</h3>
+        <p>Numeros grandes que comunican el valor diferenciador de SACS. Fondo crema calido (#F5F3EE) para sentirse accesible, no corporativo. La cifra en azul SACS crea jerarquia inmediata — el ojo va directo al numero.</p>
+        <div class="detail-tags">
+          <span class="detail-tag">Fondo crema</span>
+          <span class="detail-tag">Numero destacado</span>
+          <span class="detail-tag">Impacto social</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Feature -->
+    <div class="post-detail-row">
+      <div class="post-detail-visual post-feature">
+        <div class="post-inner" style="padding: 40px;">
+          <div class="feature-icon" style="background: rgba(75,123,229,0.1); color: var(--color-primary); width: 48px; height: 48px; font-size: 24px; border-radius: 12px;">&#128202;</div>
+          <div class="feature-body">
+            <div class="feature-label" style="font-size: 10px;">Producto</div>
+            <div class="feature-title" style="font-size: 28px;">Inventario inteligente en tiempo real.</div>
+            <div class="feature-desc" style="font-size: 13px;">Controla stock, merma y reorden automatico desde cualquier dispositivo.</div>
+          </div>
+        </div>
+      </div>
+      <div class="post-detail-info">
+        <span class="post-type-badge">Tipo: Feature</span>
+        <h3>Producto / Funcionalidad</h3>
+        <p>Layout limpio estilo Square: fondo blanco, icono con tinte de color, texto alineado a la izquierda. Ideal para explicar features individuales del producto sin distraer. El label "Producto" crea consistencia en la serie.</p>
+        <div class="detail-tags">
+          <span class="detail-tag">Fondo blanco</span>
+          <span class="detail-tag">Icono + texto</span>
+          <span class="detail-tag">Serie de producto</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Merchant / Conexion Humana -->
+    <div class="post-detail-row">
+      <div class="post-detail-visual post-merchant">
+        <div class="post-inner">
+          <div class="merchant-grain"></div>
+          <div class="merchant-scene">
+            <div class="merchant-figure">
+              <div class="merchant-awning"></div>
+              <div class="merchant-shop">
+                <div class="shop-window"></div>
+                <div class="shop-door"></div>
+              </div>
+              <div class="merchant-person">
+                <div class="person-head"></div>
+                <div class="person-body"></div>
+              </div>
+            </div>
+          </div>
+          <div class="merchant-overlay"></div>
+          <div class="merchant-text" style="padding: 40px;">
+            <div class="merchant-label" style="font-size: 10px;">Comercio Consciente</div>
+            <div class="merchant-title" style="font-size: 32px;">La conexion humana.</div>
+            <div class="merchant-sub" style="font-size: 13px;">Detras de cada venta hay una historia.</div>
+          </div>
+        </div>
+      </div>
+      <div class="post-detail-info">
+        <span class="post-type-badge">Tipo: Conexion Humana</span>
+        <h3>El comerciante mexicano</h3>
+        <p>Fondo dorado vintage con textura grain — el mismo lenguaje visual de los fondos hero. La escena CSS muestra una tienda con toldo y una figura humana, comunicando cercanía. Ideal para contenido de comunidad, valores y storytelling de marca.</p>
+        <div class="detail-tags">
+          <span class="detail-tag">Gradiente dorado</span>
+          <span class="detail-tag">Grain vintage</span>
+          <span class="detail-tag">Storytelling</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Sarape -->
+    <div class="post-detail-row">
+      <div class="post-detail-visual post-sarape">
+        <div class="post-inner" style="padding: 40px;">
+          <div class="sarape-overlay"></div>
+          <div class="sarape-text">
+            <div class="sarape-label" style="font-size: 10px;">Identidad Oaxaquena</div>
+            <div class="sarape-title" style="font-size: 28px;">Cada hilo cuenta una historia.</div>
+          </div>
+        </div>
+      </div>
+      <div class="post-detail-info">
+        <span class="post-type-badge">Tipo: Textura Oaxaquena</span>
+        <h3>Sarape como fondo</h3>
+        <p>El patron de sarape CSS con overlay oscuro desde abajo. El texto emerge limpio sobre las franjas de colores vivos. Este formato conecta emocionalmente con la identidad mexicana — perfecto para dias festivos, anuncios culturales o posts de comunidad.</p>
+        <div class="detail-tags">
+          <span class="detail-tag">Sarape CSS</span>
+          <span class="detail-tag">Overlay gradiente</span>
+          <span class="detail-tag">Identidad MX</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. Caso de Exito -->
+    <div class="post-detail-row">
+      <div class="post-detail-visual post-caso">
+        <div class="post-inner" style="padding: 40px;">
+          <div class="caso-badge" style="font-size: 10px;">Caso de exito</div>
+          <div style="margin-top: auto;">
+            <div class="caso-brand" style="font-size: 36px;">Live Shows</div>
+            <div class="caso-metrics" style="gap: 10px;">
+              <div class="caso-metric">
+                <span class="caso-num" style="font-size: 32px;">150+</span>
+                <span class="caso-unit" style="font-size: 13px;">puntos de venta por concierto</span>
+              </div>
+              <div class="caso-metric">
+                <span class="caso-num" style="font-size: 32px;">+13%</span>
+                <span class="caso-unit" style="font-size: 13px;">rentabilidad</span>
+              </div>
+              <div class="caso-metric">
+                <span class="caso-num" style="font-size: 32px;">+20%</span>
+                <span class="caso-unit" style="font-size: 13px;">crecimiento e-commerce</span>
+              </div>
+            </div>
+            <div class="caso-quote" style="font-size: 13px; margin-top: 16px;">"Sacs nos ayudo a capacitar 100+ vendedores con control preciso de inventario y reportes detallados."</div>
+          </div>
+          <div class="caso-dots" style="bottom: 24px;">
+            <div class="caso-dot active" style="width: 6px; height: 6px;"></div>
+            <div class="caso-dot" style="width: 6px; height: 6px;"></div>
+            <div class="caso-dot" style="width: 6px; height: 6px;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="post-detail-info">
+        <span class="post-type-badge">Tipo: Caso de Exito</span>
+        <h3>Galeria de resultados</h3>
+        <p>Carousel con metricas reales de clientes SACS como Live Shows, Sandmade y Casa Maca. Fondo negro con cifras en teal que destacan los resultados. La cita del cliente le da autenticidad. Cada slide muestra un caso diferente — formato directamente de sacscloud.com.</p>
+        <div class="detail-tags">
+          <span class="detail-tag">Fondo negro</span>
+          <span class="detail-tag">Metricas reales</span>
+          <span class="detail-tag">Carousel 3 slides</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- Expanded Post Overlay -->
+  <div class="post-expanded-overlay" id="expandedOverlay" onclick="closeExpanded(event)">
+    <div class="post-expanded" id="expandedPost"></div>
+  </div>
+
+
+  <script>
+    function expandPost(el) {
+      const overlay = document.getElementById('expandedOverlay');
+      const container = document.getElementById('expandedPost');
+      container.className = 'post-expanded ' + el.className.replace('post ', '').replace(' post-carousel', '');
+      container.innerHTML = el.innerHTML;
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeExpanded(e) {
+      if (e.target === document.getElementById('expandedOverlay')) {
+        document.getElementById('expandedOverlay').classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.getElementById('expandedOverlay').classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    });
+  </script>
+
+</body>
+</html>

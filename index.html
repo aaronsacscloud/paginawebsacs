@@ -66,8 +66,8 @@
       --shadow-xl: 0 16px 32px rgba(0,0,0,0.12);
 
       /* Transitions */
-      --ease-square: cubic-bezier(.4, 0, .2, 1);
-      --transition-base: 0.3s var(--ease-square);
+      --ease-brand: cubic-bezier(.4, 0, .2, 1);
+      --transition-base: 0.3s var(--ease-brand);
 
       /* Colores Oaxaca */
       --mx-rojo: #D42B2B;
@@ -97,64 +97,77 @@
     }
 
     /* ═══════════════════════════════════════════════════
-       NAV
+       NAV — Sidebar Wiki Style
        ═══════════════════════════════════════════════════ */
     .nav {
       position: fixed;
       top: 0;
       left: 0;
-      right: 0;
-      height: 72px;
-      background: rgba(250,250,248,0.92);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--color-border-light);
+      bottom: 0;
+      width: 240px;
+      background: #fff;
+      border-right: 1px solid var(--color-border-light);
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 40px;
+      flex-direction: column;
+      padding: 32px 0;
       z-index: 1000;
+      overflow-y: auto;
     }
     .nav-logo {
       font-family: var(--font-display);
-      font-size: 24px;
+      font-size: 20px;
       font-weight: 700;
       color: var(--color-text-primary);
       text-decoration: none;
       display: flex;
       align-items: center;
       gap: 10px;
+      padding: 0 24px;
+      margin-bottom: 32px;
     }
     .nav-logo .circles {
       display: flex;
       position: relative;
-      width: 36px;
-      height: 30px;
+      width: 30px;
+      height: 24px;
     }
     .nav-logo .circle {
-      width: 18px;
-      height: 18px;
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
       position: absolute;
       opacity: 0.8;
     }
-    .nav-logo .circle:nth-child(1) { background: var(--color-primary); top: 6px; left: 0; }
-    .nav-logo .circle:nth-child(2) { background: var(--color-accent); top: 0; left: 9px; }
-    .nav-logo .circle:nth-child(3) { background: var(--color-secondary); top: 6px; left: 18px; }
+    .nav-logo .circle:nth-child(1) { background: radial-gradient(circle at 35% 35%, #a8c4f5, #7BA4F0 40%, #5B8AE5); top: 5px; left: 0; box-shadow: 0 2px 6px rgba(75,123,229,0.3); }
+    .nav-logo .circle:nth-child(2) { background: radial-gradient(circle at 40% 35%, #f5d98a, #E8B54E 50%, #D4A030); top: 0; left: 7px; box-shadow: 0 2px 5px rgba(232,168,56,0.3); }
+    .nav-logo .circle:nth-child(3) { background: radial-gradient(circle at 40% 35%, #6DDBC8, #38C5A8 45%, #22A890); top: 5px; left: 14px; box-shadow: 0 2px 6px rgba(42,181,160,0.3); }
+    .nav-section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-text-tertiary);
+      padding: 16px 24px 8px;
+    }
     .nav-links {
       display: flex;
-      gap: 32px;
-      align-items: center;
+      flex-direction: column;
+      gap: 0;
       list-style: none;
     }
     .nav-links a {
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 500;
       color: var(--color-text-secondary);
       text-decoration: none;
-      transition: color 0.2s;
+      transition: all 0.15s;
+      padding: 8px 24px;
+      display: block;
+      border-left: 2px solid transparent;
     }
-    .nav-links a:hover { color: var(--color-text-primary); }
+    .nav-links a:hover { color: var(--color-text-primary); background: var(--color-bg-secondary); border-left-color: var(--color-primary); }
+    .nav-links a.btn { border-left: none; margin: 16px 24px 0; padding: 10px 24px; text-align: center; }
+    .main-content { margin-left: 240px; }
 
     /* ═══════════════════════════════════════════════════
        SECTIONS
@@ -224,76 +237,74 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      justify-content: flex-start;
       align-items: center;
       text-align: center;
-      padding: 160px 40px 120px;
+      padding: 80px 80px 120px;
       position: relative;
       overflow: hidden;
-      background:
-        radial-gradient(ellipse 80% 40% at 40% 15%, rgba(255,255,255,0.08) 0%, transparent 70%),
-        linear-gradient(
-          180deg,
-          #7B8FC7 0%, #8E9DD4 8%, #A0ABD8 15%,
-          #9BABD8 25%, #9BB4D8 35%, #A8C4E0 45%,
-          #B8D4E8 55%, #C8DDE8 65%, #D5E4E8 72%,
-          #DDE8E4 80%, #E2E8D8 88%, #E8E0C8 95%, #E4D4B0 100%
-        );
+      background: #0a0e2a;
     }
-    .hero::before {
-      content: '';
+    .hero-bg {
       position: absolute;
       inset: 0;
-      opacity: 0.3;
-      mix-blend-mode: overlay;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+      background: url('assets/images/hero-illustration.png') center center / cover no-repeat;
+      z-index: 0;
+      opacity: 0.45;
     }
     .hero-content {
       position: relative;
-      z-index: 2;
+      z-index: 3;
       max-width: 900px;
     }
     .hero-eyebrow {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.12);
-      padding: 8px 20px;
-      border-radius: 50px;
+      background: none;
+      border: none;
+      padding: 0;
+      border-radius: 0;
       font-size: 13px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
+      font-weight: 500;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: rgba(255,255,255,0.7);
-      margin-bottom: 32px;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 16px;
     }
     .hero-title {
       font-family: var(--font-display);
-      font-size: clamp(56px, 8vw, 115px);
+      font-size: clamp(44px, 6vw, 72px);
       font-weight: 500;
-      line-height: 0.95;
-      letter-spacing: -0.05em;
+      line-height: 1.1;
+      letter-spacing: -0.04em;
       color: #FFFFFF;
-      margin-bottom: 28px;
+      margin-bottom: 32px;
     }
-    .hero-title span { color: rgba(255,255,255,0.95); }
+    .hero-title span { color: rgba(255,255,255,0.92); }
     .hero-subtitle {
-      font-size: 20px;
-      line-height: 1.6;
-      color: rgba(255,255,255,0.6);
-      max-width: 560px;
-      margin: 0 auto 40px;
+      font-size: 17px;
+      line-height: 1.7;
+      color: rgba(255,255,255,0.55);
+      max-width: 520px;
+      margin: 0 0 36px;
+      font-weight: 400;
     }
     .hero-ctas {
       display: flex;
       gap: 16px;
-      justify-content: center;
       flex-wrap: wrap;
+    }
+    .hero-logo-corner {
+      position: absolute;
+      top: 32px;
+      left: 32px;
+      z-index: 4;
+      opacity: 0.7;
     }
 
     /* ═══════════════════════════════════════════════════
-       BUTTONS — Estilo Square: pill, solidos, limpios
+       BUTTONS — Pill, solidos, limpios
        ═══════════════════════════════════════════════════ */
     .btn {
       display: inline-flex;
@@ -306,7 +317,7 @@
       border: none;
       cursor: pointer;
       min-width: 12rem;
-      transition: all 0.3s var(--ease-square);
+      transition: all 0.3s var(--ease-brand);
     }
     .btn:active { transform: scale(0.95); }
 
@@ -362,7 +373,7 @@
 
     .btn-arrow {
       font-size: 18px;
-      transition: transform 0.3s var(--ease-square);
+      transition: transform 0.3s var(--ease-brand);
     }
     .btn:hover .btn-arrow { transform: translateX(3px); }
 
@@ -569,23 +580,6 @@
     .form-textarea { min-height: 120px; resize: vertical; height: auto; }
 
     /* ═══════════════════════════════════════════════════
-       GRADIENTS
-       ═══════════════════════════════════════════════════ */
-    .gradient-box {
-      height: 160px;
-      border-radius: var(--radius-xl);
-      display: flex;
-      align-items: flex-end;
-      padding: 20px 24px;
-    }
-    .gradient-label {
-      font-size: 14px;
-      font-weight: 600;
-      color: #fff;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.3);
-    }
-
-    /* ═══════════════════════════════════════════════════
        SHADOWS / SPACING / RADIUS
        ═══════════════════════════════════════════════════ */
     .shadow-box {
@@ -654,7 +648,7 @@
       margin-bottom: 32px;
     }
 
-    /* Hero heading — estilo Square */
+    /* Hero heading */
     .hero-display {
       font-family: var(--font-display);
       font-weight: 500;
@@ -693,7 +687,7 @@
     .hero-lateral .bg-image {
       position: absolute;
       inset: 0;
-      background: url('assets/images/flores-intercom.webp') center center / cover no-repeat;
+      background: url('assets/images/flores-xochimilco.webp') center center / cover no-repeat;
       z-index: 0;
     }
     .hero-lateral .bg-overlay {
@@ -741,7 +735,7 @@
     .hero-radial .bg-image {
       position: absolute;
       inset: 0;
-      background: url('assets/images/flores-intercom.webp') center center / cover no-repeat;
+      background: url('assets/images/flores-xochimilco.webp') center center / cover no-repeat;
       z-index: 0;
     }
     .hero-radial .bg-overlay {
@@ -795,7 +789,7 @@
     .hero-bottom .bg-image {
       position: absolute;
       inset: 0;
-      background: url('assets/images/flores-intercom.webp') center 30% / cover no-repeat;
+      background: url('assets/images/flores-xochimilco.webp') center 30% / cover no-repeat;
       z-index: 0;
     }
     .hero-bottom .bg-overlay {
@@ -1052,29 +1046,77 @@
     .footer-link:hover { color: #fff; }
 
     /* ═══════════════════════════════════════════════════
-       AXO
+       AXO — Mascota + IA
        ═══════════════════════════════════════════════════ */
-    .axo-states {
+    .axo-intro {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 16px;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+      margin-bottom: 80px;
     }
-    .axo-state {
-      background: var(--color-bg-card);
-      border-radius: var(--radius-lg);
-      padding: 24px;
-      text-align: center;
+    .axo-image {
+      width: 100%;
+      max-width: 400px;
+      border-radius: 24px;
+      box-shadow: var(--shadow-lg);
+    }
+    .axo-simbolismo {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+      margin: 64px 0;
+      padding: 48px;
+      background: #fff;
+      border-radius: 20px;
       border: 1px solid var(--color-border-light);
     }
-    .axo-emoji { font-size: 40px; margin-bottom: 12px; }
-    .axo-state-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
-    .axo-state-desc { font-size: 12px; color: var(--color-text-tertiary); }
+    .axo-states-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      margin: 48px 0;
+    }
+    .axo-state-card {
+      padding: 24px;
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid var(--color-border-light);
+      text-align: center;
+    }
     .axo-color-dot {
       width: 16px;
       height: 16px;
       border-radius: 50%;
       display: inline-block;
-      margin: 8px 4px 0;
+    }
+    .ia-faces-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin: 48px 0;
+    }
+    .ia-face-card {
+      padding: 32px;
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid var(--color-border-light);
+    }
+    .ia-face-name {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    .axo-avatar-showcase {
+      text-align: center;
+      padding: 64px 0;
+    }
+    .axo-avatar-showcase img {
+      max-width: 320px;
+      border-radius: 24px;
+      margin-bottom: 24px;
     }
 
     /* ═══════════════════════════════════════════════════
@@ -1121,25 +1163,1073 @@
     .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
     .divider { height: 1px; background: var(--color-border-light); margin: 48px 0; }
 
-    /* CTA Final */
-    .cta-final {
-      background: var(--color-bg-dark);
-      padding: 160px 48px;
-      text-align: center;
+    /* ═══════════════════════════════════════════════════
+       UNIFORME — Identidad Textil
+       ═══════════════════════════════════════════════════ */
+    .uniform-section {
+      background-image: radial-gradient(circle, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 20px 20px;
     }
-    .cta-final-title {
+    .mockup-showcase {
+      display: flex;
+      justify-content: center;
+      gap: 80px;
+      margin: 72px 0 64px;
+      flex-wrap: wrap;
+    }
+    .mockup-card { text-align: center; }
+    .mockup-view-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.2);
+      margin-bottom: 24px;
+    }
+    .mockup-frame {
+      position: relative;
+      filter: drop-shadow(0 30px 60px rgba(0,0,0,0.5));
+    }
+    .mockup-tshirt {
+      width: 380px;
+      height: 440px;
+      position: relative;
+      clip-path: polygon(
+        33% 0%, 0% 16%, 0% 28%, 16% 23%,
+        16% 100%, 84% 100%, 84% 23%,
+        100% 28%, 100% 16%, 67% 0%,
+        61% 8%, 50% 10%, 39% 8%
+      );
+      overflow: hidden;
+    }
+    .mockup-navy {
+      background:
+        radial-gradient(ellipse at 50% 6%, rgba(0,0,0,0.35) 0%, transparent 14%),
+        radial-gradient(ellipse at 28% 22%, rgba(255,255,255,0.05) 0%, transparent 45%),
+        radial-gradient(ellipse at 75% 55%, rgba(0,0,0,0.06) 0%, transparent 35%),
+        linear-gradient(175deg, #182642 0%, #0f1629 35%, #0b1020 100%);
+    }
+    .mockup-white {
+      background:
+        radial-gradient(ellipse at 50% 6%, rgba(0,0,0,0.06) 0%, transparent 14%),
+        radial-gradient(ellipse at 28% 22%, rgba(255,255,255,0.5) 0%, transparent 45%),
+        radial-gradient(ellipse at 75% 55%, rgba(0,0,0,0.03) 0%, transparent 35%),
+        linear-gradient(175deg, #fff 0%, #f8f8f8 35%, #f2f1ee 100%);
+    }
+    .mockup-teal {
+      background:
+        radial-gradient(ellipse at 50% 6%, rgba(0,0,0,0.25) 0%, transparent 14%),
+        radial-gradient(ellipse at 28% 22%, rgba(255,255,255,0.08) 0%, transparent 45%),
+        radial-gradient(ellipse at 75% 55%, rgba(0,0,0,0.06) 0%, transparent 35%),
+        linear-gradient(175deg, #32c4ad 0%, #2AB5A0 35%, #1f9a88 100%);
+    }
+    /* Design printed on garment */
+    .tshirt-design {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 26% 18% 12%;
+    }
+    .tshirt-logo-circles {
+      display: flex;
+      margin-bottom: 20px;
+    }
+    .tshirt-logo-circles .tl-circle {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+    }
+    .tshirt-logo-circles .tl-circle:nth-child(2) { margin-left: -7px; }
+    .tshirt-logo-circles .tl-circle:nth-child(3) { margin-left: -7px; }
+    .tshirt-brand-name {
       font-family: var(--font-display);
-      font-size: clamp(48px, 7vw, 90px);
+      font-size: 38px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      margin-bottom: 10px;
+    }
+    .tshirt-tagline {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      opacity: 0.45;
+    }
+    .tshirt-sarape-line {
+      width: 50%;
+      height: 3px;
+      margin-top: 24px;
+      border-radius: 2px;
+      background: repeating-linear-gradient(90deg,
+        var(--mx-rojo) 0 5px, var(--mx-naranja) 5px 10px,
+        var(--mx-amarillo) 10px 15px, var(--mx-verde) 15px 20px,
+        var(--color-primary) 20px 25px
+      );
+    }
+    /* Back design */
+    .tshirt-back-quote {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 500;
+      line-height: 1.35;
+      letter-spacing: -0.02em;
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .tshirt-back-pilares {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      opacity: 0.35;
+      margin-bottom: 20px;
+    }
+    .tshirt-back-bar {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 16px;
+    }
+    .tshirt-back-bar span {
+      width: 28px;
+      height: 4px;
+      border-radius: 2px;
+    }
+    .tshirt-back-bottom {
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      opacity: 0.25;
+    }
+    /* Info below mockup */
+    .mockup-info-title {
+      font-family: var(--font-display);
+      font-size: 17px;
       font-weight: 500;
       color: #fff;
+      margin-top: 28px;
+      letter-spacing: -0.02em;
+    }
+    .mockup-info-sub {
+      font-size: 13px;
+      color: rgba(255,255,255,0.3);
+      margin-top: 4px;
+    }
+    /* Color variants */
+    .mockup-variants {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin: 48px 0 64px;
+    }
+    .variant-item { text-align: center; }
+    .variant-mini-frame {
+      filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3));
+      margin-bottom: 12px;
+    }
+    .variant-mini {
+      width: 90px;
+      height: 104px;
+      clip-path: polygon(
+        33% 0%, 0% 16%, 0% 28%, 16% 23%,
+        16% 100%, 84% 100%, 84% 23%,
+        100% 28%, 100% 16%, 67% 0%,
+        61% 8%, 50% 10%, 39% 8%
+      );
+    }
+    .variant-label {
+      font-size: 12px;
+      color: rgba(255,255,255,0.35);
+    }
+    .variant-label.active { color: var(--color-accent); }
+    /* Specs */
+    .uniform-specs-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin: 48px 0;
+    }
+    .uniform-spec-card {
+      padding: 28px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+    }
+    .uniform-spec-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-accent);
+      margin-bottom: 10px;
+    }
+    .uniform-spec-value {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 500;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .uniform-spec-desc {
+      font-size: 13px;
+      color: rgba(255,255,255,0.35);
+      line-height: 1.5;
+    }
+    /* Placement rule */
+    .uniform-rule {
+      margin-top: 48px;
+      padding: 32px 40px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+    }
+    .uniform-rule-badge {
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--color-accent);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      min-width: 100px;
+      flex-shrink: 0;
+      padding-top: 3px;
+    }
+    .uniform-rule p {
+      font-size: 15px;
+      line-height: 1.7;
+      color: rgba(255,255,255,0.5);
+      margin: 0;
+    }
+    .uniform-rule strong {
+      color: rgba(255,255,255,0.8);
+      font-weight: 500;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       FONDOS EXTRA — CSS-only patterns de fondos.html
+       ═══════════════════════════════════════════════════ */
+    .bg-papel-picado {
+      background:
+        linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.5) 100%),
+        repeating-linear-gradient(180deg,
+          #E8356D 0px, #E8356D 60px, #FFD100 60px, #FFD100 120px,
+          #1B8C3E 120px, #1B8C3E 180px, #2856A3 180px, #2856A3 240px,
+          #F57C20 240px, #F57C20 300px, #6B2FA0 300px, #6B2FA0 360px,
+          #00B5A3 360px, #00B5A3 420px, #D42B2B 420px, #D42B2B 480px
+        );
+    }
+    .bg-papel-picado::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background-image:
+        repeating-linear-gradient(60deg, transparent 0px, transparent 15px, rgba(255,255,255,0.06) 15px, rgba(255,255,255,0.06) 16px),
+        repeating-linear-gradient(-60deg, transparent 0px, transparent 15px, rgba(255,255,255,0.06) 15px, rgba(255,255,255,0.06) 16px);
+      background-size: 30px 52px;
+    }
+
+    .bg-textil-vivo {
+      background:
+        linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.5) 100%),
+        linear-gradient(135deg,
+          #D42B2B 0%, #D42B2B 8%, #F57C20 8%, #F57C20 16%,
+          #FFD100 16%, #FFD100 24%, #7BC242 24%, #7BC242 32%,
+          #00B5A3 32%, #00B5A3 40%, #3DA5D9 40%, #3DA5D9 48%,
+          #2856A3 48%, #2856A3 56%, #6B2FA0 56%, #6B2FA0 64%,
+          #E8356D 64%, #E8356D 72%, #D42B2B 72%, #D42B2B 80%,
+          #F57C20 80%, #F57C20 88%, #FFD100 88%, #FFD100 96%,
+          #1B8C3E 96%, #1B8C3E 100%
+        );
+    }
+    .bg-textil-vivo::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background: repeating-linear-gradient(45deg, transparent, transparent 1px, rgba(0,0,0,0.04) 1px, rgba(0,0,0,0.04) 2px),
+        repeating-linear-gradient(-45deg, transparent, transparent 1px, rgba(0,0,0,0.04) 1px, rgba(0,0,0,0.04) 2px);
+      background-size: 4px 4px;
+    }
+
+    .bg-mural {
+      background:
+        linear-gradient(135deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.55) 100%),
+        linear-gradient(to right,
+          #D42B2B 0%, #D42B2B 20%, #FFD100 20%, #FFD100 35%,
+          #1B8C3E 35%, #1B8C3E 50%, #E8356D 50%, #E8356D 65%,
+          #2856A3 65%, #2856A3 80%, #F57C20 80%, #F57C20 100%
+        );
+    }
+    .bg-mural::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background:
+        radial-gradient(circle 80px at 15% 25%, rgba(255,255,255,0.08) 0%, transparent 70%),
+        radial-gradient(circle 100px at 50% 70%, rgba(255,255,255,0.06) 0%, transparent 70%),
+        radial-gradient(circle 60px at 85% 30%, rgba(255,255,255,0.07) 0%, transparent 70%);
+    }
+
+    .bg-bordado {
+      background: #FFF8E7;
+      color: var(--color-text-primary);
+    }
+    .bg-bordado .fondo-content h3 { color: var(--color-text-primary); }
+    .bg-bordado .fondo-content p { color: var(--color-text-secondary); }
+    .bordado-pattern {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      overflow: hidden;
+    }
+    .bordado-franja {
+      position: absolute;
+      left: 0; right: 0;
+      height: 8px;
+      display: flex;
+    }
+    .bordado-franja div { flex: 1; }
+    .bordado-franja-top { top: 0; }
+    .bordado-franja-bottom { bottom: 0; }
+    .bordado-lateral {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 60px;
+      z-index: 1;
+    }
+    .bordado-lateral-izq { left: 0; }
+    .bordado-lateral-der { right: 0; }
+    .bordado-diamante {
+      width: 28px;
+      height: 28px;
+      transform: rotate(45deg);
+      position: absolute;
+      border: 2px solid;
+      opacity: 0.15;
+    }
+
+    .bg-hilos {
+      background:
+        linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.5) 100%),
+        repeating-linear-gradient(-30deg,
+          #7BC242 0px, #7BC242 8px, transparent 8px, transparent 10px,
+          #D42B2B 10px, #D42B2B 18px, transparent 18px, transparent 20px,
+          #3DA5D9 20px, #3DA5D9 28px, transparent 28px, transparent 30px,
+          #F57C20 30px, #F57C20 38px, transparent 38px, transparent 40px,
+          #E8356D 40px, #E8356D 48px, transparent 48px, transparent 50px,
+          #FFD100 50px, #FFD100 58px, transparent 58px, transparent 60px,
+          #00B5A3 60px, #00B5A3 68px, transparent 68px, transparent 70px,
+          #6B2FA0 70px, #6B2FA0 78px, transparent 78px, transparent 80px
+        );
+    }
+
+
+    /* ═══════════════════════════════════════════════════
+       LOGO SECTION
+       ═══════════════════════════════════════════════════ */
+    .logo-showcase {
+      display: flex;
+      gap: 64px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 64px;
+    }
+    .logo-variant {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    .logo-variant img {
+      max-height: 200px;
+      width: auto;
+    }
+    .logo-variant-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .logo-box {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border-light);
+      border-radius: var(--radius-lg);
+      padding: 48px 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .logo-box-dark {
+      background: #000;
+      border-color: rgba(255,255,255,0.08);
+    }
+    .logo-construction {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin-top: 48px;
+    }
+    .logo-circle-meaning {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px;
+      border-radius: var(--radius-md);
+      background: var(--color-bg-secondary);
+    }
+    .logo-circle-dot {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .logo-circle-info h4 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    .logo-circle-info p {
+      font-size: 13px;
+      color: var(--color-text-tertiary);
+      line-height: 1.4;
+    }
+    .logo-dont-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .logo-dont-item {
+      background: var(--color-bg-secondary);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      text-align: center;
+      border: 2px solid transparent;
+    }
+    .logo-dont-item.dont {
+      border-color: rgba(229,75,75,0.2);
+    }
+    .logo-dont-label {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 16px;
+    }
+    .logo-dont-label.red { color: var(--color-error); }
+
+    /* Logo Proposals */
+    .proposals-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+    }
+    .proposal-card {
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      border: 1px solid var(--color-border-light);
+      background: var(--color-bg-card);
+    }
+    .proposal-visual {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px;
+      position: relative;
+      overflow: hidden;
+    }
+    .proposal-info {
+      padding: 28px;
+      border-top: 1px solid var(--color-border-light);
+    }
+    .proposal-number {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-primary);
+      margin-bottom: 6px;
+    }
+    .proposal-info h4 {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+    .proposal-info p {
+      font-size: 13px;
+      color: var(--color-text-tertiary);
+      line-height: 1.5;
+    }
+
+    /* Proposal 1: Refined Classic — depth + glass */
+    .p1-circles { position: relative; width: 160px; height: 140px; margin-bottom: 24px; }
+    .p1-circle {
+      position: absolute;
+      border-radius: 50%;
+      mix-blend-mode: multiply;
+    }
+    .p1-circle-blue {
+      width: 110px; height: 110px;
+      background: radial-gradient(circle at 35% 35%, #a8c4f5, #7BA4F0 40%, #5B8AE5 100%);
+      bottom: 0; left: 0;
+      box-shadow: 0 8px 32px rgba(75,123,229,0.3), inset 0 -4px 12px rgba(0,0,0,0.06);
+    }
+    .p1-circle-gold {
+      width: 72px; height: 72px;
+      background: radial-gradient(circle at 40% 35%, #f5d98a, #E8B54E 50%, #D4A030 100%);
+      top: 0; left: 50px;
+      box-shadow: 0 6px 24px rgba(232,168,56,0.35), inset 0 -3px 8px rgba(0,0,0,0.06);
+    }
+    .p1-circle-teal {
+      width: 90px; height: 90px;
+      background: radial-gradient(circle at 40% 35%, #6DDBC8, #38C5A8 45%, #22A890 100%);
+      top: 5px; right: 0;
+      box-shadow: 0 8px 28px rgba(42,181,160,0.3), inset 0 -4px 10px rgba(0,0,0,0.06);
+    }
+    .p1-text {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 400;
+      color: #6B7B8D;
+      letter-spacing: -0.02em;
+    }
+    .p1-text strong { font-weight: 500; }
+    .p1-text sup { font-size: 10px; vertical-align: super; }
+
+    /* Manifiesto */
+    .manifiesto-quote {
+      border-left: 3px solid var(--color-accent);
+      padding: 32px 0 32px 32px;
+      margin: 48px 0;
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 500;
+      line-height: 1.3;
+      letter-spacing: -0.03em;
+      color: #fff;
+    }
+
+    /* Pilares S.A.C.S. */
+    .pilares-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 32px;
+    }
+    .pilar-card {
+      padding: 48px 32px;
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid var(--color-border-light);
+      position: relative;
+      overflow: hidden;
+    }
+    .pilar-letter {
+      font-family: var(--font-display);
+      font-size: 120px;
+      font-weight: 700;
+      line-height: 1;
+      opacity: 0.08;
+      position: absolute;
+      top: -10px;
+      right: 10px;
+    }
+    .pilar-name {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+    }
+    .pilar-desc {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--color-text-secondary);
+    }
+    .pilar-bar {
+      height: 4px;
+      border-radius: 2px;
+      margin-top: 32px;
+    }
+
+    /* Comercio Consciente */
+    .principios-list {
+      max-width: 720px;
+      margin: 48px 0;
+    }
+    .principio-item {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+      padding: 24px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .principio-number {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 500;
+      color: var(--color-secondary);
+      min-width: 48px;
+    }
+    .principio-text {
+      font-size: 17px;
+      line-height: 1.6;
+      color: rgba(255,255,255,0.7);
+    }
+    .impacto-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      margin: 48px 0;
+    }
+    .impacto-card {
+      padding: 40px 32px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+    }
+    .impacto-number {
+      font-family: var(--font-display);
+      font-size: 48px;
+      font-weight: 500;
+      letter-spacing: -0.04em;
+      margin-bottom: 12px;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       INSTAGRAM POSTS — 3 formatos clave
+       ═══════════════════════════════════════════════════ */
+    .ig-posts-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .ig-post {
+      aspect-ratio: 1;
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--radius-lg);
+    }
+    .ig-post-inner {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      text-align: center;
+      position: relative;
+    }
+
+    /* Manifiesto */
+    .ig-manifiesto .ig-post-inner {
+      background: #000;
+      justify-content: flex-end;
+      align-items: flex-start;
+      text-align: left;
+    }
+    .ig-manifiesto .ig-accent {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: repeating-linear-gradient(90deg,
+        var(--mx-rojo) 0px, var(--mx-rojo) 14px,
+        var(--mx-naranja) 14px, var(--mx-naranja) 28px,
+        var(--mx-amarillo) 28px, var(--mx-amarillo) 42px,
+        var(--mx-verde) 42px, var(--mx-verde) 56px,
+        var(--mx-azul-rey) 56px, var(--mx-azul-rey) 70px,
+        var(--mx-morado) 70px, var(--mx-morado) 84px
+      );
+    }
+    .ig-manifiesto .ig-logo {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.3);
+      letter-spacing: -0.02em;
+    }
+    .ig-manifiesto .ig-eyebrow {
+      font-family: var(--font-body);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-secondary);
+      margin-bottom: 12px;
+    }
+    .ig-manifiesto .ig-title {
+      font-family: var(--font-display);
+      font-size: 40px;
+      font-weight: 500;
       line-height: 1.0;
       letter-spacing: -0.05em;
-      margin-bottom: 20px;
+      color: #fff;
+    }
+
+    /* Estadistica */
+    .ig-stat .ig-post-inner {
+      background: var(--color-bg-secondary);
+    }
+    .ig-stat .ig-big {
+      font-family: var(--font-display);
+      font-size: 80px;
+      font-weight: 500;
+      letter-spacing: -0.05em;
+      line-height: 1;
+      color: var(--color-primary);
+    }
+    .ig-stat .ig-unit {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 500;
+      color: var(--color-primary);
+      opacity: 0.7;
+    }
+    .ig-stat .ig-desc {
+      font-size: 14px;
+      color: var(--color-text-tertiary);
+      margin-top: 12px;
+      line-height: 1.4;
+      max-width: 200px;
+    }
+    .ig-stat .ig-logo {
+      position: absolute;
+      bottom: 20px;
+      right: 24px;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(0,0,0,0.12);
+    }
+
+    /* Sarape */
+    .ig-sarape .ig-post-inner {
+      background:
+        repeating-linear-gradient(90deg,
+          var(--mx-rojo) 0px, var(--mx-rojo) 14px,
+          #fff 14px, #fff 16px,
+          var(--mx-naranja) 16px, var(--mx-naranja) 28px,
+          #fff 28px, #fff 30px,
+          var(--mx-amarillo) 30px, var(--mx-amarillo) 42px,
+          #fff 42px, #fff 44px,
+          var(--mx-verde) 44px, var(--mx-verde) 56px,
+          #fff 56px, #fff 58px,
+          var(--mx-azul-rey) 58px, var(--mx-azul-rey) 70px,
+          #fff 70px, #fff 72px,
+          var(--mx-morado) 72px, var(--mx-morado) 84px,
+          #fff 84px, #fff 86px,
+          var(--mx-rosa) 86px, var(--mx-rosa) 98px,
+          #fff 98px, #fff 100px,
+          var(--mx-turquesa) 100px, var(--mx-turquesa) 112px,
+          #fff 112px, #fff 114px
+        );
+      justify-content: flex-end;
+      align-items: flex-start;
+      text-align: left;
+    }
+    .ig-sarape .ig-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(0deg,
+        rgba(0,0,0,0.85) 0%,
+        rgba(0,0,0,0.5) 40%,
+        rgba(0,0,0,0.1) 70%,
+        transparent 100%
+      );
+    }
+    .ig-sarape .ig-text {
+      position: relative;
+      z-index: 2;
+    }
+    .ig-sarape .ig-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--mx-amarillo);
+      margin-bottom: 8px;
+    }
+    .ig-sarape .ig-stitle {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 500;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      color: #fff;
+    }
+
+    /* Post: Textil + Sistema */
+    .ig-textil-sistema .ig-post-inner {
+      background:
+        linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.7) 100%),
+        linear-gradient(135deg,
+          #D42B2B 0%, #D42B2B 8%, #F57C20 8%, #F57C20 16%,
+          #FFD100 16%, #FFD100 24%, #7BC242 24%, #7BC242 32%,
+          #00B5A3 32%, #00B5A3 40%, #3DA5D9 40%, #3DA5D9 48%,
+          #2856A3 48%, #2856A3 56%, #6B2FA0 56%, #6B2FA0 64%,
+          #E8356D 64%, #E8356D 72%, #D42B2B 72%, #D42B2B 80%,
+          #F57C20 80%, #F57C20 88%, #FFD100 88%, #FFD100 96%,
+          #1B8C3E 96%, #1B8C3E 100%
+        );
+      justify-content: flex-end;
+      align-items: flex-start;
+      text-align: left;
+    }
+    .ig-textil-sistema .ig-post-inner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(45deg, transparent, transparent 1px, rgba(0,0,0,0.05) 1px, rgba(0,0,0,0.05) 2px),
+        repeating-linear-gradient(-45deg, transparent, transparent 1px, rgba(0,0,0,0.05) 1px, rgba(0,0,0,0.05) 2px);
+      background-size: 4px 4px;
+    }
+    .ig-mini-card {
+      position: relative;
+      z-index: 2;
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 16px;
+      padding: 20px;
+      width: 100%;
+      margin-bottom: 16px;
+    }
+    .ig-mini-card-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .ig-mini-card-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+    }
+    .ig-mini-card-value {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 500;
+      color: #fff;
+      letter-spacing: -0.03em;
+    }
+    .ig-mini-card-bar {
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.1);
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    .ig-mini-card-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+    }
+    .ig-textil-sistema .ig-badge {
+      position: relative;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 50px;
+      padding: 6px 14px;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 12px;
+    }
+    .ig-textil-sistema .ig-headline {
+      position: relative;
+      z-index: 2;
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 500;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      color: #fff;
+    }
+    .ig-textil-sistema .ig-sub {
+      position: relative;
+      z-index: 2;
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      margin-top: 8px;
+    }
+    .ig-textil-sistema .ig-logo-corner {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      z-index: 2;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.25);
+    }
+
+    /* Post: Papel Picado + Sistema */
+    .ig-papel-sistema .ig-post-inner {
+      background:
+        linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.65) 100%),
+        repeating-linear-gradient(180deg,
+          #E8356D 0px, #E8356D 60px, #FFD100 60px, #FFD100 120px,
+          #1B8C3E 120px, #1B8C3E 180px, #2856A3 180px, #2856A3 240px,
+          #F57C20 240px, #F57C20 300px, #6B2FA0 300px, #6B2FA0 360px,
+          #00B5A3 360px, #00B5A3 420px, #D42B2B 420px, #D42B2B 480px
+        );
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    .ig-papel-sistema .ig-post-inner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background-image:
+        repeating-linear-gradient(60deg, transparent 0px, transparent 15px, rgba(255,255,255,0.06) 15px, rgba(255,255,255,0.06) 16px),
+        repeating-linear-gradient(-60deg, transparent 0px, transparent 15px, rgba(255,255,255,0.06) 15px, rgba(255,255,255,0.06) 16px);
+      background-size: 30px 52px;
+    }
+    .ig-papel-sistema .ig-glass-panel {
+      position: relative;
+      z-index: 2;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 280px;
+    }
+    .ig-feature-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .ig-feature-row:last-child { border-bottom: none; }
+    .ig-feature-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .ig-feature-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.8);
+      flex: 1;
+      text-align: left;
+    }
+    .ig-feature-check {
+      font-size: 12px;
+      color: var(--color-secondary);
+      font-weight: 600;
+    }
+    .ig-papel-sistema .ig-logo-corner {
+      position: absolute;
+      bottom: 16px;
+      right: 20px;
+      z-index: 2;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.2);
+    }
+    .ig-papel-sistema .ig-top-label {
+      position: relative;
+      z-index: 2;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--mx-amarillo);
+      margin-bottom: 16px;
+    }
+    .ig-papel-sistema .ig-bottom-line {
+      position: relative;
+      z-index: 2;
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 500;
+      color: #fff;
+      margin-top: 20px;
+      letter-spacing: -0.02em;
+    }
+
+    .ig-sistema-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 32px;
+      max-width: 800px;
+    }
+
+    .ig-post-caption {
+      margin-top: 16px;
+    }
+    .ig-post-caption h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .ig-post-caption p {
+      font-size: 13px;
+      color: var(--color-text-tertiary);
+      line-height: 1.5;
+    }
+    .ig-post-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .ig-post-tag {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      background: rgba(0,0,0,0.05);
+      color: var(--color-text-secondary);
     }
 
     /* ═══════════════════════════════════════════════════
        RESPONSIVE
        ═══════════════════════════════════════════════════ */
+    @media (max-width: 1024px) {
+      .pilares-grid { grid-template-columns: repeat(2, 1fr); }
+      .axo-intro { grid-template-columns: 1fr; gap: 40px; }
+      .axo-simbolismo { grid-template-columns: 1fr; }
+      .axo-states-grid { grid-template-columns: repeat(3, 1fr); }
+      .ia-faces-grid { grid-template-columns: repeat(2, 1fr); }
+      .filosofia-grid { grid-template-columns: repeat(2, 1fr); }
+      .a11y-grid { grid-template-columns: repeat(2, 1fr); }
+      .glosario-grid { grid-template-columns: 1fr; }
+      .uniform-specs-grid { grid-template-columns: repeat(2, 1fr); }
+    }
     @media (max-width: 768px) {
       .hero-title { font-size: 48px; }
       .section-title { font-size: 36px; }
@@ -1150,8 +2240,8 @@
       .section,
       .section-dark,
       .section-cream { padding: 80px 24px; }
-      .nav { padding: 0 20px; }
-      .nav-links { display: none; }
+      .nav { display: none; }
+      .main-content { margin-left: 0; }
       .hero-lateral,
       .hero-radial,
       .hero-bottom,
@@ -1159,7 +2249,298 @@
       .fondo-label { padding: 20px 24px; }
       .calle-edificios { gap: 2px; }
       .edificio { padding: 4px 2px; }
-      .cta-final { padding: 80px 24px; }
+      .mockup-showcase { gap: 40px; }
+      .mockup-tshirt { width: 280px; height: 320px; }
+      .tshirt-brand-name { font-size: 28px; }
+      .tshirt-back-quote { font-size: 20px; }
+      .tshirt-logo-circles .tl-circle { width: 18px; height: 18px; }
+      .tshirt-logo-circles .tl-circle:nth-child(2) { margin-left: -5px; }
+      .tshirt-logo-circles .tl-circle:nth-child(3) { margin-left: -5px; }
+      .uniform-specs-grid { grid-template-columns: 1fr; }
+      .uniform-rule { flex-direction: column; gap: 12px; padding: 24px; }
+      .ig-posts-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
+      .ig-sistema-grid { grid-template-columns: 1fr; max-width: 400px; }
+      .logo-showcase { gap: 32px; }
+      .logo-construction { grid-template-columns: 1fr; }
+      .logo-dont-grid { grid-template-columns: 1fr; }
+      .logo-box { padding: 32px; }
+      .pilares-grid { grid-template-columns: 1fr; }
+      .impacto-grid { grid-template-columns: 1fr; }
+      .axo-intro { grid-template-columns: 1fr; gap: 32px; }
+      .axo-simbolismo { grid-template-columns: 1fr; }
+      .axo-states-grid { grid-template-columns: repeat(2, 1fr); }
+      .ia-faces-grid { grid-template-columns: 1fr; }
+      .filosofia-grid { grid-template-columns: 1fr; }
+      .voz-table { font-size: 13px; }
+      .voz-row { flex-direction: column; }
+      .voz-col { width: 100%; }
+      .type-waterfall-row { gap: 12px; }
+      .type-waterfall-size { min-width: 36px; font-size: 11px; }
+      .tint-row { flex-wrap: wrap; }
+      .tint-swatch { width: 40px; height: 40px; }
+      .grid-spec { grid-template-columns: repeat(4, 1fr); }
+      .tokens-grid { grid-template-columns: 1fr; }
+      .a11y-grid { grid-template-columns: 1fr; }
+      .glosario-grid { grid-template-columns: 1fr; }
+      .hero { min-height: 60vh; padding: 60px 24px 80px; }
+      .hero-logo-corner { top: 20px; left: 20px; }
+      .hero-title { font-size: 36px !important; }
+      .hero-subtitle { font-size: 15px !important; }
+      .grid-4 { grid-template-columns: 1fr 1fr; }
+      .axo-states-grid { grid-template-columns: repeat(2, 1fr); }
+      .ia-faces-grid { grid-template-columns: 1fr; }
+      .tint-swatch { width: 32px; height: 32px; font-size: 9px; }
+    }
+
+    /* ═══════════════════════════════════════════════════
+       NEW SECTIONS — Filosofia, Voz, Escala, etc.
+       ═══════════════════════════════════════════════════ */
+
+    /* Filosofia de Diseno */
+    .filosofia-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 48px;
+    }
+    .filosofia-grid > :last-child:nth-child(odd) {
+      grid-column: 1;
+    }
+    .filosofia-card {
+      padding: 40px 32px;
+      background: var(--color-bg-secondary);
+      border-radius: 16px;
+      position: relative;
+    }
+    .filosofia-number {
+      font-family: var(--font-display);
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--color-primary);
+      opacity: 0.12;
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      line-height: 1;
+    }
+    .filosofia-card h3 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 500;
+      margin-bottom: 12px;
+    }
+    .filosofia-card p {
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--color-text-secondary);
+    }
+
+    /* Voz de Marca */
+    .voz-table {
+      margin-top: 48px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .voz-row {
+      display: flex;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .voz-row:last-child { border-bottom: none; }
+    .voz-header {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .voz-col {
+      flex: 1;
+      padding: 20px 24px;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .voz-si {
+      color: rgba(255,255,255,0.7);
+      background: rgba(42,181,160,0.06);
+      border-right: 1px solid rgba(255,255,255,0.06);
+    }
+    .voz-header .voz-si { color: var(--color-secondary); }
+    .voz-no {
+      color: rgba(255,255,255,0.4);
+      background: rgba(229,75,75,0.04);
+    }
+    .voz-header .voz-no { color: var(--color-error); }
+
+    /* Escala Tipografica */
+    .type-waterfall {
+      margin-top: 48px;
+    }
+    .type-waterfall-row {
+      display: flex;
+      align-items: baseline;
+      gap: 24px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--color-border-light);
+    }
+    .type-waterfall-row:last-child { border-bottom: none; }
+    .type-waterfall-size {
+      font-family: var(--font-heading);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-tertiary);
+      min-width: 48px;
+      text-align: right;
+    }
+
+    /* Tints & Shades */
+    .tint-row {
+      display: flex;
+      gap: 8px;
+    }
+    .tint-swatch {
+      width: 64px;
+      height: 64px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      transition: transform 0.2s;
+      flex: 1;
+    }
+    .tint-swatch:hover { transform: scale(1.08); }
+
+    /* Grid Spec */
+    .grid-spec {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 24px;
+      margin: 48px 0;
+    }
+    .grid-spec-item {
+      text-align: center;
+    }
+    .grid-spec-visual {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      height: 80px;
+      margin-bottom: 12px;
+    }
+    .grid-spec-block {
+      background: var(--color-primary);
+      border-radius: 4px;
+      opacity: 0.6;
+    }
+    .grid-spec-label {
+      font-family: var(--font-heading);
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .grid-spec-label span {
+      display: block;
+      font-size: 11px;
+      color: var(--color-text-tertiary);
+      font-weight: 400;
+      margin-top: 2px;
+    }
+
+    /* Accesibilidad */
+    .a11y-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      margin: 48px 0;
+    }
+    .a11y-card {
+      padding: 32px 24px;
+      background: var(--color-bg-secondary);
+      border-radius: 16px;
+    }
+    .a11y-card h4 {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    .a11y-ratio {
+      font-family: var(--font-display);
+      font-size: 36px;
+      font-weight: 500;
+      color: var(--color-primary);
+      margin-bottom: 12px;
+    }
+    .a11y-card p {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--color-text-secondary);
+    }
+
+    /* Tokens */
+    .tokens-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      margin-top: 48px;
+    }
+    .token-group {
+      padding: 24px;
+      background: var(--color-bg-secondary);
+      border-radius: 16px;
+    }
+    .token-group h4 {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--color-border-light);
+    }
+    .token-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      font-size: 13px;
+      border-bottom: 1px solid var(--color-border-light);
+    }
+    .token-row:last-child { border-bottom: none; }
+    .token-row code {
+      font-family: var(--font-heading);
+      font-size: 12px;
+      color: var(--color-primary);
+      font-weight: 500;
+    }
+    .token-row span {
+      font-family: var(--font-heading);
+      font-size: 12px;
+      color: var(--color-text-tertiary);
+    }
+
+    /* Glosario */
+    .glosario-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-top: 48px;
+    }
+    .glosario-item {
+      padding: 24px;
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid var(--color-border-light);
+    }
+    .glosario-term {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .glosario-def {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--color-text-secondary);
     }
   </style>
 </head>
@@ -1169,41 +2550,472 @@
        NAV
        ═══════════════════════════════════════════ -->
   <nav class="nav">
-    <a href="#" class="nav-logo">
-      <div class="circles">
-        <div class="circle"></div>
-        <div class="circle"></div>
-        <div class="circle"></div>
-      </div>
-      Sacs
-    </a>
+    <div class="nav-section-label" style="padding-top: 0;">Marca</div>
+    <ul class="nav-links">
+      <li><a href="#logo">Logo</a></li>
+      <li><a href="#manifiesto">Manifiesto</a></li>
+      <li><a href="#pilares">Pilares S.A.C.S.</a></li>
+      <li><a href="#comercio-consciente">Comercio Consciente</a></li>
+      <li><a href="#axo">AXO</a></li>
+    </ul>
+    <div class="nav-section-label">Sistema</div>
     <ul class="nav-links">
       <li><a href="#typography">Tipografia</a></li>
       <li><a href="#colors">Colores</a></li>
       <li><a href="#components">Componentes</a></li>
-      <li><a href="#heroes">Heroes</a></li>
-      <li><a href="#fondos">Fondos</a></li>
       <li><a href="#spacing">Espaciado</a></li>
-      <li><a class="btn btn-primary btn-sm" href="#">Agenda una reunion</a></li>
+    </ul>
+    <div class="nav-section-label">Heroes</div>
+    <ul class="nav-links">
+      <li><a href="#heroes">Con ilustracion</a></li>
+    </ul>
+    <div class="nav-section-label">Fondos</div>
+    <ul class="nav-links">
+      <li><a href="#fondos">Oaxaquenos</a></li>
+      <li><a href="#fondo-sarape">Sarape</a></li>
+      <li><a href="#fondo-calle">Calle Oaxaquena</a></li>
+      <li><a href="#fondo-papel">Papel Picado</a></li>
+      <li><a href="#fondo-textil">Textil Diagonal</a></li>
+      <li><a href="#fondo-mural">Mural</a></li>
+      <li><a href="#fondo-bordado">Bordado</a></li>
+      <li><a href="#fondo-hilos">Hilos</a></li>
+    </ul>
+    <div class="nav-section-label">Guias</div>
+    <ul class="nav-links">
+      <li><a href="#filosofia">Filosofia</a></li>
+      <li><a href="#voz">Voz de Marca</a></li>
+      <li><a href="#escala-tipo">Escala Tipografica</a></li>
+      <li><a href="#paleta-expandida">Tints & Shades</a></li>
+      <li><a href="#grilla">Grilla</a></li>
+      <li><a href="#animacion">Animacion</a></li>
+      <li><a href="#fotografia">Fotografia</a></li>
+      <li><a href="#accesibilidad">Accesibilidad</a></li>
+      <li><a href="#zona-exclusion">Zona de Exclusion</a></li>
+      <li><a href="#tokens">Tokens</a></li>
+      <li><a href="#firma-email">Firma de Email</a></li>
+      <li><a href="#glosario">Glosario</a></li>
+    </ul>
+    <div class="nav-section-label">Social</div>
+    <ul class="nav-links">
+      <li><a href="#instagram">Instagram</a></li>
+    </ul>
+    <div class="nav-section-label">Otros</div>
+    <ul class="nav-links">
+      <li><a href="#nav-footer">Nav & Footer</a></li>
+      <li><a class="btn btn-primary btn-sm" href="#">Agenda reunion</a></li>
     </ul>
   </nav>
+
+  <div class="main-content">
 
 
   <!-- ═══════════════════════════════════════════
        HERO — Style Guide
        ═══════════════════════════════════════════ -->
   <section class="hero">
-    <div class="hero-content">
-      <div class="hero-eyebrow">Manual de Identidad v2.0</div>
-      <h1 class="hero-title">
-        El sistema operativo<br>del <span>comercio consciente.</span>
-      </h1>
-      <p class="hero-subtitle">
-        Guia completa de diseno, tipografia, color, texturas y componentes para construir la experiencia digital de SACS.
+    <div class="hero-bg"></div>
+    <div class="hero-logo-corner">
+      <div class="p1-circles" style="width: 56px; height: 48px;">
+        <div class="p1-circle p1-circle-blue" style="width: 38px; height: 38px;"></div>
+        <div class="p1-circle p1-circle-gold" style="width: 25px; height: 25px; left: 17px;"></div>
+        <div class="p1-circle p1-circle-teal" style="width: 31px; height: 31px;"></div>
+      </div>
+    </div>
+    <div class="hero-content" style="width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1;">
+      <h1 class="hero-title" style="margin-bottom: 16px;">Manual de<br>Identidad Visual</h1>
+      <p class="hero-subtitle" style="margin: 0;">Sistema de diseno, marca y lenguaje visual de SACS.</p>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       00A — LOGO
+       ═══════════════════════════════════════════ -->
+  <section class="section" id="logo">
+    <div class="section-label">00 — Logo</div>
+    <h2 class="section-title">Sacscloud.®</h2>
+    <p class="section-desc">
+      Tres circulos que representan la interseccion de Negocio, Tecnologia e Impacto Social. El punto de encuentro donde el comercio se transforma.
+    </p>
+
+
+    <div class="divider"></div>
+
+    <!-- Construction -->
+    <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.04em; margin-bottom: 8px;">Construccion del isotipo</h3>
+    <p class="section-desc" style="margin-bottom: 32px;">Cada circulo tiene un significado. La superposicion genera los colores de interseccion.</p>
+
+    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+      <div class="logo-circle-meaning">
+        <div class="logo-circle-dot" style="background: #8AB4F8;"></div>
+        <div class="logo-circle-info">
+          <h4>Negocio</h4>
+          <p>El circulo mas grande. El comerciante y su operacion son el centro de todo.</p>
+        </div>
+      </div>
+      <div class="logo-circle-meaning">
+        <div class="logo-circle-dot" style="background: #E8A838;"></div>
+        <div class="logo-circle-info">
+          <h4>Tecnologia</h4>
+          <p>Herramientas inteligentes que simplifican, no complican.</p>
+        </div>
+      </div>
+      <div class="logo-circle-meaning">
+        <div class="logo-circle-dot" style="background: #2AB5A0;"></div>
+        <div class="logo-circle-info">
+          <h4>Impacto</h4>
+          <p>El 10% de cada licencia genera impacto social. No es marketing — es compromiso.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Versiones del logo -->
+    <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.04em; margin-bottom: 8px;">Versiones</h3>
+    <p class="section-desc" style="margin-bottom: 32px;">Cuatro versiones para diferentes contextos de uso.</p>
+
+    <div class="grid-4">
+      <div class="feature-card" style="text-align: center;">
+        <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">Logo completo</div>
+        <div style="font-size: 12px; color: var(--color-text-tertiary);">Header del sitio, materiales impresos, presentaciones</div>
+      </div>
+      <div class="feature-card" style="text-align: center;">
+        <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">Isotipo (circulos)</div>
+        <div style="font-size: 12px; color: var(--color-text-tertiary);">Favicon, app icon, redes sociales, watermarks</div>
+      </div>
+      <div class="feature-card" style="text-align: center;">
+        <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">Logotipo (solo texto)</div>
+        <div style="font-size: 12px; color: var(--color-text-tertiary);">Firma de email, contextos minimos</div>
+      </div>
+      <div class="feature-card" style="text-align: center;">
+        <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">Logo invertido</div>
+        <div style="font-size: 12px; color: var(--color-text-tertiary);">Sobre fondos oscuros, fotografia, video</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Uso incorrecto -->
+    <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.04em; margin-bottom: 8px;">Uso incorrecto</h3>
+    <p class="section-desc" style="margin-bottom: 32px;">Mantener la integridad de la marca.</p>
+
+    <div class="logo-dont-grid">
+      <div class="logo-dont-item dont">
+        <div style="font-size: 14px; color: var(--color-text-tertiary);">No rotar ni distorsionar los circulos</div>
+        <div class="logo-dont-label red">No</div>
+      </div>
+      <div class="logo-dont-item dont">
+        <div style="font-size: 14px; color: var(--color-text-tertiary);">No cambiar los colores del isotipo</div>
+        <div class="logo-dont-label red">No</div>
+      </div>
+      <div class="logo-dont-item dont">
+        <div style="font-size: 14px; color: var(--color-text-tertiary);">No usar sobre fondos con bajo contraste</div>
+        <div class="logo-dont-label red">No</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Zona de proteccion -->
+    <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.04em; margin-bottom: 8px;">Zona de proteccion</h3>
+    <div class="grid-2">
+      <div>
+        <p style="font-size: 16px; line-height: 1.7; color: var(--color-text-secondary);">
+          Minimo <strong>1x</strong> el ancho de un circulo del isotipo alrededor del logo completo. Esta zona garantiza legibilidad y presencia visual.
+        </p>
+      </div>
+      <div>
+        <p style="font-size: 16px; line-height: 1.7; color: var(--color-text-secondary);">
+          <strong>Tamano minimo digital:</strong> 120px de ancho (logo completo)<br>
+          <strong>Tamano minimo impreso:</strong> 30mm de ancho
+        </p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Logo Refinado — Version aprobada -->
+    <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.04em; margin-bottom: 8px;">Logo Refinado</h3>
+    <p class="section-desc" style="margin-bottom: 32px;">Evolucion del isotipo con gradientes internos, sombras suaves y profundidad premium.</p>
+
+    <div class="logo-showcase">
+      <!-- Vertical — Light -->
+      <div class="logo-variant">
+        <div class="logo-box" style="padding: 64px 80px; flex-direction: column;">
+          <div class="p1-circles" style="width: 200px; height: 175px; margin-bottom: 24px;">
+            <div class="p1-circle p1-circle-blue" style="width: 138px; height: 138px;"></div>
+            <div class="p1-circle p1-circle-gold" style="width: 90px; height: 90px; left: 62px;"></div>
+            <div class="p1-circle p1-circle-teal" style="width: 112px; height: 112px;"></div>
+          </div>
+          <div class="p1-text" style="font-size: 36px;"><strong>Sacs</strong>cloud<sup>®</sup></div>
+        </div>
+        <span class="logo-variant-label">Vertical — Fondo claro</span>
+      </div>
+
+      <!-- Vertical — Dark -->
+      <div class="logo-variant">
+        <div class="logo-box logo-box-dark" style="padding: 64px 80px; flex-direction: column;">
+          <div class="p1-circles" style="width: 200px; height: 175px; margin-bottom: 24px;">
+            <div class="p1-circle p1-circle-blue" style="width: 138px; height: 138px;"></div>
+            <div class="p1-circle p1-circle-gold" style="width: 90px; height: 90px; left: 62px;"></div>
+            <div class="p1-circle p1-circle-teal" style="width: 112px; height: 112px;"></div>
+          </div>
+          <div class="p1-text" style="font-size: 36px; color: rgba(255,255,255,0.8);"><strong style="color: rgba(255,255,255,0.9);">Sacs</strong>cloud<sup>®</sup></div>
+        </div>
+        <span class="logo-variant-label">Vertical — Fondo oscuro</span>
+      </div>
+    </div>
+
+    <!-- Horizontal versions -->
+    <div class="logo-showcase" style="margin-top: 32px;">
+      <!-- Horizontal — Light -->
+      <div class="logo-variant">
+        <div class="logo-box" style="padding: 48px 64px;">
+          <div class="p1-circles" style="width: 100px; height: 88px; margin-right: 20px; flex-shrink: 0;">
+            <div class="p1-circle p1-circle-blue" style="width: 70px; height: 70px;"></div>
+            <div class="p1-circle p1-circle-gold" style="width: 46px; height: 46px; left: 32px;"></div>
+            <div class="p1-circle p1-circle-teal" style="width: 58px; height: 58px;"></div>
+          </div>
+          <div class="p1-text" style="font-size: 32px;"><strong>Sacs</strong>cloud<sup>®</sup></div>
+        </div>
+        <span class="logo-variant-label">Horizontal — Fondo claro</span>
+      </div>
+
+      <!-- Horizontal — Dark -->
+      <div class="logo-variant">
+        <div class="logo-box logo-box-dark" style="padding: 48px 64px;">
+          <div class="p1-circles" style="width: 100px; height: 88px; margin-right: 20px; flex-shrink: 0;">
+            <div class="p1-circle p1-circle-blue" style="width: 70px; height: 70px;"></div>
+            <div class="p1-circle p1-circle-gold" style="width: 46px; height: 46px; left: 32px;"></div>
+            <div class="p1-circle p1-circle-teal" style="width: 58px; height: 58px;"></div>
+          </div>
+          <div class="p1-text" style="font-size: 32px; color: rgba(255,255,255,0.8);"><strong style="color: rgba(255,255,255,0.9);">Sacs</strong>cloud<sup>®</sup></div>
+        </div>
+        <span class="logo-variant-label">Horizontal — Fondo oscuro</span>
+      </div>
+    </div>
+
+    <!-- Isotipo solo -->
+    <div class="logo-showcase" style="margin-top: 32px;">
+      <div class="logo-variant">
+        <div class="logo-box" style="padding: 48px;">
+          <div class="p1-circles" style="width: 120px; height: 105px;">
+            <div class="p1-circle p1-circle-blue" style="width: 82px; height: 82px;"></div>
+            <div class="p1-circle p1-circle-gold" style="width: 54px; height: 54px; left: 38px;"></div>
+            <div class="p1-circle p1-circle-teal" style="width: 68px; height: 68px;"></div>
+          </div>
+        </div>
+        <span class="logo-variant-label">Isotipo — Solo circulos</span>
+      </div>
+      <div class="logo-variant">
+        <div class="logo-box logo-box-dark" style="padding: 48px;">
+          <div class="p1-circles" style="width: 120px; height: 105px;">
+            <div class="p1-circle p1-circle-blue" style="width: 82px; height: 82px;"></div>
+            <div class="p1-circle p1-circle-gold" style="width: 54px; height: 54px; left: 38px;"></div>
+            <div class="p1-circle p1-circle-teal" style="width: 68px; height: 68px;"></div>
+          </div>
+        </div>
+        <span class="logo-variant-label">Isotipo — Oscuro</span>
+      </div>
+      <div class="logo-variant">
+        <div class="logo-box" style="padding: 32px;">
+          <div class="p1-circles" style="width: 40px; height: 35px;">
+            <div class="p1-circle p1-circle-blue" style="width: 28px; height: 28px;"></div>
+            <div class="p1-circle p1-circle-gold" style="width: 18px; height: 18px; left: 13px;"></div>
+            <div class="p1-circle p1-circle-teal" style="width: 22px; height: 22px;"></div>
+          </div>
+        </div>
+        <span class="logo-variant-label">Favicon / App icon</span>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       00B — MANIFIESTO
+       ═══════════════════════════════════════════ -->
+  <section class="section-dark" id="manifiesto">
+    <div class="section-inner">
+      <!-- 1.1 — Manifiesto corto (hero) -->
+      <div class="section-label">MANIFIESTO</div>
+      <h2 class="section-title" style="color: #fff;">El comercio<br>puede ser mejor.</h2>
+      <p class="section-desc">
+        Creemos que cada transaccion tiene el poder de transformar una comunidad. Que la tecnologia no es un fin, sino un medio para que los negocios crezcan sin perder su alma.
       </p>
-      <div class="hero-ctas">
-        <a href="#typography" class="btn btn-white btn-lg">Explorar el sistema <span class="btn-arrow">→</span></a>
-        <a href="#heroes" class="btn btn-secondary btn-lg">Ver heroes</a>
+
+      <div class="manifiesto-quote">
+        Tecnologia con alma.<br>Comercio con proposito.
+      </div>
+
+      <!-- 1.2 — Declaracion formal -->
+      <h3 style="font-family: var(--font-display); font-size: 20px; font-weight: 500; color: rgba(255,255,255,0.4); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 24px;">Declaracion formal</h3>
+      <div style="max-width: 640px; margin-bottom: 48px;">
+        <p style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); margin-bottom: 24px;">
+          <strong style="color: #fff;">SACS</strong> nacio de una frustracion real — retailers que pierden tiempo con herramientas genericas que no entienden su contexto. Decidimos construir algo diferente: un sistema pensado desde cero para Mexico, con facturacion CFDI nativa, soporte en espanol, y un modelo de impacto social que refleja nuestros valores.
+        </p>
+        <p style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6); margin-bottom: 24px;">
+          <strong style="color: #fff;">SACS</strong> (Ser · Avanzar · Crear · Sembrar) es un sistema operativo empresarial para retailers conscientes en Mexico. Integra punto de venta, gestion de inventario multi-sucursal, CRM, reportes avanzados, y un asistente de inteligencia artificial llamado <strong style="color: #fff;">AXO</strong>.
+        </p>
+        <p style="font-size: 16px; line-height: 1.7; color: rgba(255,255,255,0.6);">
+          Disenado para tiendas de moda, calzado, boutiques y retailers con 1 a 50 sucursales que valoran el impacto social y buscan tecnologia que entienda su contexto mexicano.
+        </p>
+      </div>
+
+      <div class="divider" style="background: rgba(255,255,255,0.1);"></div>
+
+      <!-- 1.3 — Personalidad de marca -->
+      <h2 class="section-title mt-48" style="color: #fff;">Personalidad de marca</h2>
+      <p class="section-desc">Directo pero calido. Seguro sin ser arrogante. Inspirador sin ser cursi. En espanol mexicano.</p>
+
+      <div class="cards-grid mt-32">
+        <div class="card" style="background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08);">
+          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-primary); margin-bottom: 12px;">Audaz</div>
+          <div class="card-desc" style="color: rgba(255,255,255,0.5);">Tipografia bold, statements directos. No pedimos permiso para ser diferentes.</div>
+        </div>
+        <div class="card" style="background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08);">
+          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-secondary); margin-bottom: 12px;">Consciente</div>
+          <div class="card-desc" style="color: rgba(255,255,255,0.5);">Tono reflexivo, impacto social integrado. Cada decision tiene proposito.</div>
+        </div>
+        <div class="card" style="background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08);">
+          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 12px;">Creativo</div>
+          <div class="card-desc" style="color: rgba(255,255,255,0.5);">Ilustraciones vintage, layouts dinamicos. Identidad visual que se siente viva.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       PILARES S.A.C.S.
+       ═══════════════════════════════════════════ -->
+  <section class="section-cream" id="pilares">
+    <div class="section-inner">
+      <div class="section-label">PILARES S.A.C.S.</div>
+      <h2 class="section-title">Cuatro letras.<br>Un proposito.</h2>
+      <p class="section-desc">Cada letra de SACS representa un pilar filosofico que guia todas nuestras decisiones de producto, diseno y negocio.</p>
+
+      <div class="pilares-grid">
+        <div class="pilar-card">
+          <div class="pilar-letter" style="color: var(--color-primary);">S</div>
+          <div class="pilar-name">Ser.</div>
+          <p class="pilar-desc">Ser autentico. Ser consciente de que cada decision impacta. No vendemos software — construimos herramientas para que tu negocio refleje tus valores. En SACS, ser es la base: identidad propia, transparencia, honestidad comercial.</p>
+          <div class="pilar-bar" style="background: var(--color-primary);"></div>
+        </div>
+        <div class="pilar-card">
+          <div class="pilar-letter" style="color: var(--color-accent);">A</div>
+          <div class="pilar-name">Avanzar.</div>
+          <p class="pilar-desc">Avanzar con tecnologia que simplifica, no que complica. Cada funcionalidad existe porque resuelve un problema real. Innovacion con proposito: IA predictiva, automatizacion inteligente, omnicanalidad sin fricciones.</p>
+          <div class="pilar-bar" style="background: var(--color-accent);"></div>
+        </div>
+        <div class="pilar-card">
+          <div class="pilar-letter" style="color: var(--color-secondary);">C</div>
+          <div class="pilar-name">Crear.</div>
+          <p class="pilar-desc">Crear soluciones que inspiren. Diseno con intencion, experiencias que hacen que operar tu negocio sea un placer, no una carga. Interfaces hermosas, flujos intuitivos, reportes que cuentan historias.</p>
+          <div class="pilar-bar" style="background: var(--color-secondary);"></div>
+        </div>
+        <div class="pilar-card">
+          <div class="pilar-letter" style="color: var(--mx-verde);">S</div>
+          <div class="pilar-name">Sembrar.</div>
+          <p class="pilar-desc">Sembrar para el futuro. El 10% de cada licencia no es marketing — es nuestro compromiso con las comunidades que hacen posible el comercio en Mexico. Capacitacion digital, apoyo a emprendedores, conservacion de ecosistemas.</p>
+          <div class="pilar-bar" style="background: var(--mx-verde);"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       COMERCIO CONSCIENTE
+       ═══════════════════════════════════════════ -->
+  <section class="section-dark" id="comercio-consciente">
+    <div class="section-inner">
+      <!-- 3.1 — Triple Impacto -->
+      <div class="section-label">COMERCIO CONSCIENTE</div>
+      <h2 class="section-title" style="color: #fff;">Cada transaccion<br>genera impacto.</h2>
+      <p class="section-desc">El modelo de triple impacto de SACS.</p>
+
+      <div class="impacto-grid">
+        <div class="impacto-card">
+          <div class="impacto-number" style="color: var(--color-accent);">10%</div>
+          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 12px;">Social</div>
+          <p style="font-size: 15px; line-height: 1.7; color: rgba(255,255,255,0.6);">Capacitacion digital para comunidades rurales, apoyo a emprendedores locales, programas de educacion en tecnologia.</p>
+        </div>
+        <div class="impacto-card">
+          <div class="impacto-number" style="color: var(--color-secondary);">AXO</div>
+          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-secondary); margin-bottom: 12px;">Ambiental</div>
+          <p style="font-size: 15px; line-height: 1.7; color: rgba(255,255,255,0.6);">Conservacion de ecosistemas — el axolotl como especie en peligro es nuestra bandera. Vinculado a programas de restauracion en Xochimilco.</p>
+        </div>
+        <div class="impacto-card">
+          <div class="impacto-number" style="color: var(--color-primary);">MX</div>
+          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-primary); margin-bottom: 12px;">Economico</div>
+          <p style="font-size: 15px; line-height: 1.7; color: rgba(255,255,255,0.6);">Tecnologia accesible que permite a negocios pequenos competir con las grandes cadenas. Retailers creciendo con herramientas de nivel enterprise.</p>
+        </div>
+      </div>
+
+      <div class="divider" style="background: rgba(255,255,255,0.1);"></div>
+
+      <!-- 3.2 — 7 Principios -->
+      <h2 class="section-title mt-48" style="color: #fff;">7 Principios del<br>Comercio Consciente</h2>
+
+      <div class="principios-list">
+        <div class="principio-item">
+          <div class="principio-number">01</div>
+          <div class="principio-text">Cada transaccion puede ser una fuerza de cambio positivo.</div>
+        </div>
+        <div class="principio-item">
+          <div class="principio-number">02</div>
+          <div class="principio-text">La tecnologia debe servir al comerciante, no al reves.</div>
+        </div>
+        <div class="principio-item">
+          <div class="principio-number">03</div>
+          <div class="principio-text">El crecimiento sin impacto social no es verdadero crecimiento.</div>
+        </div>
+        <div class="principio-item">
+          <div class="principio-number">04</div>
+          <div class="principio-text">La transparencia es la base de toda relacion comercial.</div>
+        </div>
+        <div class="principio-item">
+          <div class="principio-number">05</div>
+          <div class="principio-text">Los datos son del comerciante, siempre.</div>
+        </div>
+        <div class="principio-item">
+          <div class="principio-number">06</div>
+          <div class="principio-text">La IA debe amplificar la intuicion humana, no reemplazarla.</div>
+        </div>
+        <div class="principio-item">
+          <div class="principio-number">07</div>
+          <div class="principio-text">El comercio local es la columna vertebral de las comunidades.</div>
+        </div>
+      </div>
+
+      <div class="divider" style="background: rgba(255,255,255,0.1);"></div>
+
+      <!-- 3.3 — Niveles de participacion -->
+      <h2 class="section-title mt-48" style="color: #fff;">Niveles de participacion</h2>
+      <p class="section-desc">Cuatro caminos para unirse al movimiento del comercio consciente.</p>
+
+      <div class="grid-4" style="margin-top: 48px;">
+        <div class="impacto-card">
+          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mx-verde); margin-bottom: 8px;">Semilla</div>
+          <div style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: #fff; margin-bottom: 12px;">Gratis</div>
+          <p style="font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.5);">Para emprendedores que inician su camino.</p>
+        </div>
+        <div class="impacto-card">
+          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 8px;">Crecimiento</div>
+          <div style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: #fff; margin-bottom: 12px;">$799/mes</div>
+          <p style="font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.5);">Para negocios que necesitan escalar.</p>
+        </div>
+        <div class="impacto-card">
+          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-primary); margin-bottom: 8px;">Empresa</div>
+          <div style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: #fff; margin-bottom: 12px;">Personalizado</div>
+          <p style="font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.5);">Operaciones complejas multi-ubicacion.</p>
+        </div>
+        <div class="impacto-card">
+          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-secondary); margin-bottom: 8px;">Comunidad</div>
+          <div style="font-family: var(--font-display); font-size: 28px; font-weight: 500; color: #fff; margin-bottom: 12px;">Movimiento</div>
+          <p style="font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.5);">Retailers que se unen como movimiento.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -1216,7 +3028,7 @@
     <div class="section-label">01 — Tipografia</div>
     <h2 class="section-title">Tres familias.<br>Una jerarquia clara.</h2>
     <p class="section-desc">
-      DM Sans para titulos de impacto (estilo Square). Space Grotesk para headings tecnicos. Plus Jakarta Sans para cuerpo y UI.
+      DM Sans para titulos de impacto. Space Grotesk para headings tecnicos. Plus Jakarta Sans para cuerpo y UI.
     </p>
 
     <div class="type-specimen">
@@ -1229,7 +3041,7 @@
         <span class="type-meta-item">Medium 500</span>
         <span class="type-meta-item">LH: 0.95</span>
         <span class="type-meta-item">LS: -0.05em</span>
-        <span class="type-meta-item">Estilo Square</span>
+        <span class="type-meta-item">Display</span>
       </div>
     </div>
 
@@ -1487,44 +3299,6 @@
         </div>
       </div>
 
-      <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">Gradientes (cielos naturales)</h3>
-      <div class="colors-grid">
-        <div class="swatch" style="border: none; box-shadow: none;">
-          <div class="gradient-box" style="background: linear-gradient(180deg, #7B8FC7 0%, #A8C4E0 50%, #E4D4B0 100%);">
-            <span class="gradient-label">Atardecer</span>
-          </div>
-        </div>
-        <div class="swatch" style="border: none; box-shadow: none;">
-          <div class="gradient-box" style="background: linear-gradient(180deg, #C8A0C0 0%, #A8A8D8 40%, #C0DCE0 100%);">
-            <span class="gradient-label">Amanecer</span>
-          </div>
-        </div>
-        <div class="swatch" style="border: none; box-shadow: none;">
-          <div class="gradient-box" style="background: linear-gradient(180deg, #2A2858 0%, #5858B0 50%, #C8CCD8 100%);">
-            <span class="gradient-label">Profundo</span>
-          </div>
-        </div>
-        <div class="swatch" style="border: none; box-shadow: none;">
-          <div class="gradient-box" style="background: linear-gradient(180deg, #4888A8 0%, #78B8C0 50%, #C4D4C0 100%);">
-            <span class="gradient-label">Turquesa</span>
-          </div>
-        </div>
-        <div class="swatch" style="border: none; box-shadow: none;">
-          <div class="gradient-box" style="background: linear-gradient(180deg, #A08060 0%, #D4A888 50%, #ECD8B8 100%);">
-            <span class="gradient-label">Dorado</span>
-          </div>
-        </div>
-        <div class="swatch" style="border: none; box-shadow: none;">
-          <div class="gradient-box" style="background: linear-gradient(180deg, #10102A 0%, #282878 50%, #5888A8 100%);">
-            <span class="gradient-label">Noche</span>
-          </div>
-        </div>
-        <div class="swatch" style="border: none; box-shadow: none;">
-          <div class="gradient-box" style="background: linear-gradient(180deg, #F2EDE4, #EBE5D8); border: 1px solid #e0ddd7;">
-            <span class="gradient-label" style="color: var(--color-text-tertiary); text-shadow: none;">Crema</span>
-          </div>
-        </div>
-      </div>
     </div>
   </section>
 
@@ -1536,7 +3310,7 @@
     <div class="section-label">03 — Componentes</div>
     <h2 class="section-title">Botones</h2>
     <p class="section-desc">
-      Forma pill (border-radius 50px) estilo Square. Solidos, limpios, sin blur ni gradientes en botones.
+      Forma pill (border-radius 50px). Solidos, limpios, sin blur ni gradientes en botones.
     </p>
 
     <div class="flex flex-wrap gap-16 items-center mb-48">
@@ -1591,9 +3365,9 @@
   <section class="section-dark" id="heroes">
     <div class="section-inner">
       <div class="section-label">04 — Heroes con Ilustracion</div>
-      <h2 class="section-title" style="color: #fff;">Imagen + Overlay + Grain.<br>Estilo Intercom.</h2>
+      <h2 class="section-title" style="color: #fff;">Imagen + Overlay + Grain.</h2>
       <p class="section-desc">
-        Ilustraciones painterly como fondo con textura grain (SVG feTurbulence). Tres variantes de overlay aprobadas para legibilidad. Tipografia DM Sans estilo Square. Botones solidos sin blur.
+        Ilustraciones painterly como fondo con textura grain (SVG feTurbulence). Tres variantes de overlay aprobadas para legibilidad. Tipografia DM Sans. Botones solidos sin blur.
       </p>
     </div>
   </section>
@@ -1686,7 +3460,7 @@
     <h4>Fondo — Sarape</h4>
     <p>Franjas verticales con textura de tejido. Overlay lateral para texto.</p>
   </div>
-  <section class="fondo-demo fondo-sarape">
+  <section class="fondo-demo fondo-sarape" id="fondo-sarape">
     <div class="fondo-content">
       <h3>Cada venta siembra en tu comunidad.</h3>
       <p>El 10% de tu licencia genera impacto social automatico. Sin complicaciones, sin excusas.</p>
@@ -1698,7 +3472,7 @@
     <h4>Fondo — Calle Oaxaquena</h4>
     <p>Escena CSS con cielo, papel picado, edificios coloridos y banqueta.</p>
   </div>
-  <section class="fondo-demo fondo-calle">
+  <section class="fondo-demo fondo-calle" id="fondo-calle">
     <div class="calle-cielo"></div>
     <div class="calle-papel">
       <div class="papel-triangulo" style="background: var(--mx-rojo);"></div>
@@ -1785,62 +3559,241 @@
     </div>
   </section>
 
+  <!-- Papel Picado -->
+  <div class="fondo-label">
+    <h4>Fondo — Papel Picado</h4>
+    <p>Franjas horizontales con patron calado tipo fiesta mexicana.</p>
+  </div>
+  <section class="fondo-demo bg-papel-picado" id="fondo-papel">
+    <div class="fondo-content">
+      <h3>Una inteligencia que opera tu negocio por ti.</h3>
+      <p>Tus clientes preguntan por WhatsApp y SACS vende, aparta, recomienda y hace seguimiento.</p>
+    </div>
+  </section>
+
+  <!-- Textil Diagonal -->
+  <div class="fondo-label">
+    <h4>Fondo — Textil Diagonal Vibrante</h4>
+    <p>Chevrones tipo tejido oaxaqueno en colores vivos.</p>
+  </div>
+  <section class="fondo-demo bg-textil-vivo" id="fondo-textil">
+    <div class="fondo-content">
+      <h3>Inventario perfecto. Cero excusas.</h3>
+      <p>Sincroniza stock entre sucursales, e-commerce y WhatsApp. Cada pieza rastreada.</p>
+    </div>
+  </section>
+
+  <!-- Mural -->
+  <div class="fondo-label">
+    <h4>Fondo — Mural Oaxaqueno</h4>
+    <p>Bloques vibrantes tipo mural callejero con textura de concreto.</p>
+  </div>
+  <section class="fondo-demo bg-mural" id="fondo-mural">
+    <div class="fondo-content">
+      <h3>Comercio que siembra.</h3>
+      <p>Cada peso que fluye por SACS riega el jardin de alguien mas. Becas, salud, capacitacion.</p>
+    </div>
+  </section>
+
+  <!-- Bordado -->
+  <div class="fondo-label">
+    <h4>Fondo — Bordado Geometrico (Claro)</h4>
+    <p>Fondo crema con diamantes y franjas multicolor. Para pricing y paginas internas.</p>
+  </div>
+  <section class="fondo-demo bg-bordado" id="fondo-bordado">
+    <div class="bordado-pattern">
+      <div class="bordado-franja bordado-franja-top">
+        <div style="background: #D42B2B;"></div>
+        <div style="background: #F57C20;"></div>
+        <div style="background: #FFD100;"></div>
+        <div style="background: #7BC242;"></div>
+        <div style="background: #00B5A3;"></div>
+        <div style="background: #3DA5D9;"></div>
+        <div style="background: #2856A3;"></div>
+        <div style="background: #6B2FA0;"></div>
+        <div style="background: #E8356D;"></div>
+        <div style="background: #D42B2B;"></div>
+        <div style="background: #F57C20;"></div>
+        <div style="background: #FFD100;"></div>
+      </div>
+      <div class="bordado-franja bordado-franja-bottom">
+        <div style="background: #E8356D;"></div>
+        <div style="background: #D42B2B;"></div>
+        <div style="background: #F57C20;"></div>
+        <div style="background: #FFD100;"></div>
+        <div style="background: #7BC242;"></div>
+        <div style="background: #00B5A3;"></div>
+        <div style="background: #3DA5D9;"></div>
+        <div style="background: #2856A3;"></div>
+        <div style="background: #6B2FA0;"></div>
+        <div style="background: #E8356D;"></div>
+        <div style="background: #D42B2B;"></div>
+        <div style="background: #F57C20;"></div>
+      </div>
+      <div class="bordado-lateral bordado-lateral-izq">
+        <div class="bordado-diamante" style="border-color: #E8356D; top: 60px; left: 12px;"></div>
+        <div class="bordado-diamante" style="border-color: #00B5A3; top: 140px; left: 18px;"></div>
+        <div class="bordado-diamante" style="border-color: #F57C20; top: 220px; left: 8px;"></div>
+        <div class="bordado-diamante" style="border-color: #2856A3; top: 300px; left: 20px;"></div>
+      </div>
+      <div class="bordado-lateral bordado-lateral-der">
+        <div class="bordado-diamante" style="border-color: #00B5A3; top: 80px; right: 12px; left: auto;"></div>
+        <div class="bordado-diamante" style="border-color: #D42B2B; top: 160px; right: 18px; left: auto;"></div>
+        <div class="bordado-diamante" style="border-color: #FFD100; top: 240px; right: 8px; left: auto;"></div>
+      </div>
+    </div>
+    <div class="fondo-content">
+      <h3>Un plan para cada etapa de tu negocio.</h3>
+      <p>Desde Plan Semilla gratuito hasta Enterprise. Creces tu, crece tu plan.</p>
+    </div>
+  </section>
+
+  <!-- Hilos -->
+  <div class="fondo-label">
+    <h4>Fondo — Hilos de Estambre</h4>
+    <p>Lineas diagonales en colores vivos tipo hilos de estambre oaxaqueno.</p>
+  </div>
+  <section class="fondo-demo bg-hilos" id="fondo-hilos">
+    <div class="fondo-content">
+      <h3>Porque todo negocio puede transformarse.</h3>
+      <p>Como el axolotl que se regenera, tu negocio puede recuperarse. AXO nada contigo.</p>
+    </div>
+  </section>
+
 
 
   <!-- ═══════════════════════════════════════════
-       06 — ESTILO DE ILUSTRACION + AXO
+       AXO — Mascota + IA
        ═══════════════════════════════════════════ -->
-  <section class="section-dark" id="illustrations">
+  <section class="section-cream" id="axo">
     <div class="section-inner">
-      <div class="section-label">06 — Estilo de Ilustracion & AXO</div>
-      <h2 class="section-title" style="color: #fff;">Vintage. Mexicano.<br>Painterly.</h2>
-      <p class="section-desc">
-        Inspirado en Intercom Suite: ilustraciones artisticas como fondos con textura grain. Para SACS, la tematica es Xochimilco, axolotls, flora nativa mexicana.
-      </p>
+      <div class="section-label">CONOCE A AXO</div>
+      <h2 class="section-title">Tu asistente inteligente<br>para retail.</h2>
 
-      <div class="divider" style="background: rgba(255,255,255,0.1);"></div>
+      <!-- 4.1 — Presentacion de AXO -->
+      <div class="axo-intro">
+        <div>
+          <p style="font-size: 17px; line-height: 1.7; color: var(--color-text-secondary); margin-bottom: 24px;">
+            <strong>AXO</strong> es un axolotl digital, la mascota y asistente de IA de SACS. Nacio en las aguas de Xochimilco y ahora vive en la nube, ayudando a retailers a tomar mejores decisiones.
+          </p>
+          <p style="font-size: 17px; line-height: 1.7; color: var(--color-text-secondary);">
+            Su nombre viene de "axolotl", la criatura endemica mexicana famosa por su capacidad de regeneracion — igual que SACS regenera la relacion entre tecnologia y comercio.
+          </p>
+        </div>
+        <div style="display: flex; justify-content: center;">
+          <img src="assets/images/axo-pos.jpeg" alt="AXO con terminal POS" class="axo-image">
+        </div>
+      </div>
 
-      <h2 class="section-title mt-48" style="color: #fff;">AXO — La mascota</h2>
-      <p class="section-desc">
-        Axolotl de Xochimilco. Estilo painterly (no cartoon). Sus branquias cambian de color segun su estado emocional.
-      </p>
+      <!-- 4.2 — Simbolismo -->
+      <div class="axo-simbolismo">
+        <div>
+          <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.03em; margin-bottom: 24px;">Simbolismo</h3>
+          <div style="margin-bottom: 20px; padding-left: 20px; border-left: 3px solid var(--color-secondary);">
+            <p style="font-size: 15px; line-height: 1.7; color: var(--color-text-secondary); margin-bottom: 16px;">
+              <strong>Regeneracion:</strong> El axolotl puede regenerar partes de su cuerpo — SACS regenera el comercio.
+            </p>
+            <p style="font-size: 15px; line-height: 1.7; color: var(--color-text-secondary); margin-bottom: 16px;">
+              <strong>Endemico de Mexico:</strong> Especie unica de Xochimilco — Tecnologia hecha desde y para Mexico.
+            </p>
+            <p style="font-size: 15px; line-height: 1.7; color: var(--color-text-secondary); margin-bottom: 16px;">
+              <strong>Agua cristalina:</strong> Vive en agua pura — Transparencia como valor central.
+            </p>
+            <p style="font-size: 15px; line-height: 1.7; color: var(--color-text-secondary);">
+              <strong>En peligro:</strong> Especie amenazada que debemos proteger — Conservacion como compromiso.
+            </p>
+          </div>
+        </div>
+        <div style="display: flex; justify-content: center;">
+          <img src="assets/images/axo-drop.jpeg" alt="AXO en gota de cristal" class="axo-image">
+        </div>
+      </div>
 
-      <div class="axo-states mb-48">
-        <div class="axo-state">
-          <div class="axo-emoji">:)</div>
-          <div class="axo-state-name">Default</div>
-          <div class="axo-state-desc">Branquias rosa coral</div>
-          <div class="axo-color-dot" style="background: #FF7B7B;"></div>
-          <div class="axo-color-dot" style="background: #F5A0A0;"></div>
+      <!-- 4.3 — Personalidad y Estados -->
+      <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.03em; margin-bottom: 8px;">Estados emocionales</h3>
+      <p style="font-size: 15px; color: var(--color-text-secondary); margin-bottom: 32px;">Las branquias de AXO cambian de color segun su estado. Estilo painterly, no cartoon.</p>
+
+      <div class="axo-states-grid">
+        <div class="axo-state-card">
+          <div style="display: flex; gap: 6px; justify-content: center; margin-bottom: 12px;">
+            <div class="axo-color-dot" style="background: #FF7B7B;"></div>
+            <div class="axo-color-dot" style="background: #F5A0A0;"></div>
+          </div>
+          <div style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">Default</div>
+          <div style="font-size: 12px; color: var(--color-text-tertiary);">Branquias rosa coral — listo para ayudar</div>
         </div>
-        <div class="axo-state">
-          <div class="axo-emoji">:D</div>
-          <div class="axo-state-name">Celebrando</div>
-          <div class="axo-state-desc">Branquias doradas</div>
-          <div class="axo-color-dot" style="background: #E8A838;"></div>
-          <div class="axo-color-dot" style="background: #F5D5A0;"></div>
+        <div class="axo-state-card">
+          <div style="display: flex; gap: 6px; justify-content: center; margin-bottom: 12px;">
+            <div class="axo-color-dot" style="background: #E8A838;"></div>
+            <div class="axo-color-dot" style="background: #F5D5A0;"></div>
+          </div>
+          <div style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">Celebrando</div>
+          <div style="font-size: 12px; color: var(--color-text-tertiary);">Branquias doradas — venta exitosa</div>
         </div>
-        <div class="axo-state">
-          <div class="axo-emoji">?</div>
-          <div class="axo-state-name">Pensando</div>
-          <div class="axo-state-desc">Branquias azul suave</div>
-          <div class="axo-color-dot" style="background: #4B7BE5;"></div>
-          <div class="axo-color-dot" style="background: #93B5F5;"></div>
+        <div class="axo-state-card">
+          <div style="display: flex; gap: 6px; justify-content: center; margin-bottom: 12px;">
+            <div class="axo-color-dot" style="background: #4B7BE5;"></div>
+            <div class="axo-color-dot" style="background: #93B5F5;"></div>
+          </div>
+          <div style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">Pensando</div>
+          <div style="font-size: 12px; color: var(--color-text-tertiary);">Branquias azul suave — procesando datos</div>
         </div>
-        <div class="axo-state">
-          <div class="axo-emoji">!</div>
-          <div class="axo-state-name">Motivando</div>
-          <div class="axo-state-desc">Branquias verdes</div>
-          <div class="axo-color-dot" style="background: #2AB5A0;"></div>
-          <div class="axo-color-dot" style="background: #7DDECE;"></div>
+        <div class="axo-state-card">
+          <div style="display: flex; gap: 6px; justify-content: center; margin-bottom: 12px;">
+            <div class="axo-color-dot" style="background: #2AB5A0;"></div>
+            <div class="axo-color-dot" style="background: #7DDECE;"></div>
+          </div>
+          <div style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">Motivando</div>
+          <div style="font-size: 12px; color: var(--color-text-tertiary);">Branquias verdes — sugerencias proactivas</div>
         </div>
-        <div class="axo-state">
-          <div class="axo-emoji">&lt;3</div>
-          <div class="axo-state-name">Impactando</div>
-          <div class="axo-state-desc">Branquias en corazon</div>
-          <div class="axo-color-dot" style="background: #E54B4B;"></div>
-          <div class="axo-color-dot" style="background: #F5A0A0;"></div>
+        <div class="axo-state-card">
+          <div style="display: flex; gap: 6px; justify-content: center; margin-bottom: 12px;">
+            <div class="axo-color-dot" style="background: #E54B4B;"></div>
+            <div class="axo-color-dot" style="background: #F5A0A0;"></div>
+          </div>
+          <div style="font-size: 14px; font-weight: 600; margin-bottom: 4px;">Impactando</div>
+          <div style="font-size: 12px; color: var(--color-text-tertiary);">Branquias en corazon — impacto social</div>
         </div>
+      </div>
+
+      <!-- 4.4 — Las 6 Caras de la IA -->
+      <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.03em; margin-top: 80px; margin-bottom: 8px;">Las 6 caras de la IA en SACS</h3>
+      <p style="font-size: 15px; color: var(--color-text-secondary); margin-bottom: 32px;">AXO no es un chatbot — es un sistema de inteligencia que opera en 6 dimensiones.</p>
+
+      <div class="ia-faces-grid">
+        <div class="ia-face-card">
+          <div class="ia-face-name">Predictor</div>
+          <p style="font-size: 14px; line-height: 1.6; color: var(--color-text-secondary);">Anticipa demanda por sucursal, temporada y tendencia. Nunca te quedas sin stock ni con exceso.</p>
+        </div>
+        <div class="ia-face-card">
+          <div class="ia-face-name">Asistente</div>
+          <p style="font-size: 14px; line-height: 1.6; color: var(--color-text-secondary);">Responde preguntas en lenguaje natural sobre tu negocio. "¿Cual fue mi mejor dia?" — AXO lo sabe.</p>
+        </div>
+        <div class="ia-face-card">
+          <div class="ia-face-name">Analista</div>
+          <p style="font-size: 14px; line-height: 1.6; color: var(--color-text-secondary);">Detecta patrones que el ojo humano no ve. Correlaciones entre clima, eventos y ventas.</p>
+        </div>
+        <div class="ia-face-card">
+          <div class="ia-face-name">Guardian</div>
+          <p style="font-size: 14px; line-height: 1.6; color: var(--color-text-secondary);">Alerta sobre anomalias, riesgos de inventario y fraude. Tu guardian 24/7.</p>
+        </div>
+        <div class="ia-face-card">
+          <div class="ia-face-name">Consejero</div>
+          <p style="font-size: 14px; line-height: 1.6; color: var(--color-text-secondary);">Sugiere acciones concretas basadas en datos. No solo reporta — recomienda.</p>
+        </div>
+        <div class="ia-face-card">
+          <div class="ia-face-name">Narrador</div>
+          <p style="font-size: 14px; line-height: 1.6; color: var(--color-text-secondary);">Genera reportes automaticos que cuentan la historia de tu negocio en lenguaje humano.</p>
+        </div>
+      </div>
+
+      <!-- 4.5 — Avatar principal -->
+      <div class="axo-avatar-showcase">
+        <img src="assets/images/axo-seedling.jpeg" alt="AXO sosteniendo una semilla — avatar oficial">
+        <p style="font-family: var(--font-display); font-size: 20px; font-weight: 500; letter-spacing: -0.02em; color: var(--color-text-secondary);">
+          "Sembrando el futuro del comercio, una transaccion a la vez."
+        </p>
+        <p style="font-size: 13px; color: var(--color-text-tertiary); margin-top: 8px;">Avatar oficial — usar en redes sociales, presentaciones y documentacion.</p>
       </div>
     </div>
   </section>
@@ -1930,7 +3883,7 @@
   <!-- ═══════════════════════════════════════════
        09 — NAVEGACION & FOOTER
        ═══════════════════════════════════════════ -->
-  <section class="section">
+  <section class="section" id="nav-footer">
     <div class="section-label">09 — Navegacion & Footer</div>
     <h2 class="section-title">Estructura del sitio</h2>
     <p class="section-desc">Nav sticky con blur. Footer oscuro con 4 columnas.</p>
@@ -1995,36 +3948,89 @@
 
 
   <!-- ═══════════════════════════════════════════
-       10 — REFERENCIAS
+       10 — FILOSOFIA DE DISENO
        ═══════════════════════════════════════════ -->
-  <section class="section-cream">
-    <div class="section-inner">
-      <div class="section-label">10 — Referencias</div>
-      <h2 class="section-title">De donde viene<br>este sistema.</h2>
+  <section class="section" id="filosofia">
+    <div class="section-label">10 — Filosofia de Diseno</div>
+    <h2 class="section-title">5 principios que guian<br>cada decision visual.</h2>
+    <p class="section-desc">Antes de disenar cualquier pantalla, componente o pieza, estos principios deben cumplirse.</p>
 
-      <div class="cards-grid">
-        <div class="card">
-          <div class="card-title">Square</div>
-          <div class="card-desc">Tipografia DM Sans (similar a Square Sans Display), botones pill solidos, spacing preciso, grid 12 columnas.</div>
-          <div class="mt-16">
-            <span class="badge-component badge-blue">Tipografia</span>
-            <span class="badge-component badge-blue">Botones</span>
-          </div>
+    <div class="filosofia-grid">
+      <div class="filosofia-card">
+        <div class="filosofia-number">01</div>
+        <h3>Claridad sobre decoracion</h3>
+        <p>Cada elemento visual debe tener una funcion. Si no comunica, no se incluye. El espacio vacio es tan importante como el contenido.</p>
+      </div>
+      <div class="filosofia-card">
+        <div class="filosofia-number">02</div>
+        <h3>Mexicano sin caricatura</h3>
+        <p>Nuestra identidad mexicana es autentica, no folklorica. Colores de Oaxaca, no sombreros. Artesania textil, no cliches. Orgullo sin estereotipo.</p>
+      </div>
+      <div class="filosofia-card">
+        <div class="filosofia-number">03</div>
+        <h3>Jerarquia implacable</h3>
+        <p>Siempre hay un elemento principal. Un titulo, un CTA, un dato. El ojo debe saber exactamente a donde ir primero, segundo y tercero.</p>
+      </div>
+      <div class="filosofia-card">
+        <div class="filosofia-number">04</div>
+        <h3>Tecnologia calida</h3>
+        <p>Software de retail no tiene que verse frio y corporativo. Crema calido, tipografia con personalidad, ilustraciones con alma. Tech que se siente humana.</p>
+      </div>
+      <div class="filosofia-card">
+        <div class="filosofia-number">05</div>
+        <h3>Accesible por defecto</h3>
+        <p>Contraste suficiente, tamanos legibles, interacciones claras. Si un comerciante de 55 anos no puede leerlo en su celular, esta mal disenado.</p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       11 — VOZ DE MARCA
+       ═══════════════════════════════════════════ -->
+  <section class="section-dark" id="voz">
+    <div class="section-inner">
+      <div class="section-label">11 — Voz de Marca</div>
+      <h2 class="section-title" style="color: #fff;">Como hablamos.<br>Como NO hablamos.</h2>
+      <p class="section-desc">El tono de SACS es directo, calido y seguro. Hablamos como un amigo experto que te da confianza, no como un vendedor que te presiona.</p>
+
+      <div class="voz-table">
+        <div class="voz-row voz-header">
+          <div class="voz-col voz-si">Asi si</div>
+          <div class="voz-col voz-no">Asi no</div>
         </div>
-        <div class="card">
-          <div class="card-title">Intercom</div>
-          <div class="card-desc">Ilustraciones painterly como fondos, textura grain (SVG feTurbulence), overlays para legibilidad, fondo crema calido.</div>
-          <div class="mt-16">
-            <span class="badge-component badge-teal">Ilustraciones</span>
-            <span class="badge-component badge-teal">Texturas</span>
-          </div>
+        <div class="voz-row">
+          <div class="voz-col voz-si">"Tu inventario, siempre al dia."</div>
+          <div class="voz-col voz-no">"Nuestra solucion de gestion de inventario enterprise-grade..."</div>
         </div>
-        <div class="card">
-          <div class="card-title">Oaxaca</div>
-          <div class="card-desc">Paleta de colores vivos (sarapes, textiles, papel picado). Identidad mexicana autentica como elemento diferenciador.</div>
-          <div class="mt-16">
-            <span class="badge-component badge-gold">Colores</span>
-            <span class="badge-component badge-gold">Fondos CSS</span>
+        <div class="voz-row">
+          <div class="voz-col voz-si">"AXO detecto que te estas quedando sin talla M."</div>
+          <div class="voz-col voz-no">"El sistema ha identificado una alerta de stock bajo."</div>
+        </div>
+        <div class="voz-row">
+          <div class="voz-col voz-si">"Factura en 2 clics. Sin dolor de cabeza."</div>
+          <div class="voz-col voz-no">"Plataforma de facturacion electronica CFDI 4.0 integrada."</div>
+        </div>
+        <div class="voz-row">
+          <div class="voz-col voz-si">"Tu negocio genera impacto real."</div>
+          <div class="voz-col voz-no">"Somos una empresa con responsabilidad social corporativa."</div>
+        </div>
+        <div class="voz-row">
+          <div class="voz-col voz-si">"Vendiste 23% mas que el mes pasado. Felicidades."</div>
+          <div class="voz-col voz-no">"Se ha registrado un incremento porcentual en metricas de venta."</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 48px;">
+        <h3 style="font-family: var(--font-display); font-size: 20px; font-weight: 500; color: #fff; margin-bottom: 16px;">Reglas de tono</h3>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;">
+          <div style="padding: 24px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
+            <div style="font-size: 13px; font-weight: 600; color: var(--color-secondary); margin-bottom: 8px;">SIEMPRE</div>
+            <p style="font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.6;">Tutear al usuario. Usar espanol mexicano natural. Celebrar los logros del comerciante. Ser especifico con datos.</p>
+          </div>
+          <div style="padding: 24px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
+            <div style="font-size: 13px; font-weight: 600; color: var(--color-error); margin-bottom: 8px;">NUNCA</div>
+            <p style="font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.6;">Usar jerga corporativa. Hablar de usted. Usar anglicismos innecesarios. Prometer sin cumplir. Ser condescendiente.</p>
           </div>
         </div>
       </div>
@@ -2033,19 +4039,659 @@
 
 
   <!-- ═══════════════════════════════════════════
-       CTA FINAL
+       12 — ESCALA TIPOGRAFICA
        ═══════════════════════════════════════════ -->
-  <section class="cta-final">
-    <div style="max-width: 700px; margin: 0 auto;">
-      <h2 class="cta-final-title">
-        Comercio que transforma.
-      </h2>
-      <p style="font-size: 20px; color: rgba(255,255,255,0.5); line-height: 1.6; margin-bottom: 40px;">
-        Unete al movimiento del Comercio Consciente. Ser. Avanzar. Crear. Sembrar.
-      </p>
-      <div class="flex gap-16" style="justify-content: center;">
-        <a class="btn btn-white btn-lg">Agenda tu reunion <span class="btn-arrow">→</span></a>
-        <a class="btn btn-secondary btn-lg">Ver el manifiesto</a>
+  <section class="section" id="escala-tipo">
+    <div class="section-label">12 — Escala Tipografica</div>
+    <h2 class="section-title">Cascada de tamanos.</h2>
+    <p class="section-desc">Cada nivel tiene un proposito. La escala sigue una razon de 1.25 (Major Third) para mantener armonia vertical.</p>
+
+    <div class="type-waterfall">
+      <div class="type-waterfall-row">
+        <span class="type-waterfall-size">72</span>
+        <span style="font-family: var(--font-display); font-size: 72px; font-weight: 500; letter-spacing: -0.04em; line-height: 1;">Display</span>
+      </div>
+      <div class="type-waterfall-row">
+        <span class="type-waterfall-size">56</span>
+        <span style="font-family: var(--font-display); font-size: 56px; font-weight: 500; letter-spacing: -0.04em; line-height: 1;">Titulo</span>
+      </div>
+      <div class="type-waterfall-row">
+        <span class="type-waterfall-size">36</span>
+        <span style="font-family: var(--font-display); font-size: 36px; font-weight: 500; letter-spacing: -0.03em; line-height: 1.1;">Heading 1</span>
+      </div>
+      <div class="type-waterfall-row">
+        <span class="type-waterfall-size">28</span>
+        <span style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.03em; line-height: 1.2;">Heading 2</span>
+      </div>
+      <div class="type-waterfall-row">
+        <span class="type-waterfall-size">20</span>
+        <span style="font-family: var(--font-heading); font-size: 20px; font-weight: 500; line-height: 1.3;">Heading 3</span>
+      </div>
+      <div class="type-waterfall-row">
+        <span class="type-waterfall-size">17</span>
+        <span style="font-family: var(--font-body); font-size: 17px; line-height: 1.5;">Body Large</span>
+      </div>
+      <div class="type-waterfall-row">
+        <span class="type-waterfall-size">15</span>
+        <span style="font-family: var(--font-body); font-size: 15px; line-height: 1.5;">Body</span>
+      </div>
+      <div class="type-waterfall-row">
+        <span class="type-waterfall-size">13</span>
+        <span style="font-family: var(--font-body); font-size: 13px; font-weight: 500; line-height: 1.5;">Caption / Label</span>
+      </div>
+      <div class="type-waterfall-row">
+        <span class="type-waterfall-size">11</span>
+        <span style="font-family: var(--font-body); font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; line-height: 1.5;">Overline</span>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       13 — PALETA EXPANDIDA (Tints & Shades)
+       ═══════════════════════════════════════════ -->
+  <section class="section-cream" id="paleta-expandida">
+    <div class="section-inner">
+      <div class="section-label">13 — Paleta Expandida</div>
+      <h2 class="section-title">Tints & Shades.</h2>
+      <p class="section-desc">Variaciones de cada color de marca para estados hover, fondos, bordes y acentos sutiles.</p>
+
+      <div style="margin-bottom: 48px;">
+        <h3 style="font-family: var(--font-display); font-size: 20px; font-weight: 500; margin-bottom: 16px;">Primary — Azul</h3>
+        <div class="tint-row">
+          <div class="tint-swatch" style="background: #EBF0FC;"><span>50</span></div>
+          <div class="tint-swatch" style="background: #C5D4F5;"><span>100</span></div>
+          <div class="tint-swatch" style="background: #93B5F5;"><span>200</span></div>
+          <div class="tint-swatch" style="background: #6D96EA;"><span>300</span></div>
+          <div class="tint-swatch" style="background: #4B7BE5; color: #fff;"><span>500</span></div>
+          <div class="tint-swatch" style="background: #3D6BD4; color: #fff;"><span>600</span></div>
+          <div class="tint-swatch" style="background: #2F55B0; color: #fff;"><span>700</span></div>
+          <div class="tint-swatch" style="background: #1E3A7A; color: #fff;"><span>900</span></div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 48px;">
+        <h3 style="font-family: var(--font-display); font-size: 20px; font-weight: 500; margin-bottom: 16px;">Accent — Dorado</h3>
+        <div class="tint-row">
+          <div class="tint-swatch" style="background: #FDF3E0;"><span>50</span></div>
+          <div class="tint-swatch" style="background: #F5DCA8;"><span>100</span></div>
+          <div class="tint-swatch" style="background: #F0C96E;"><span>200</span></div>
+          <div class="tint-swatch" style="background: #ECBA50;"><span>300</span></div>
+          <div class="tint-swatch" style="background: #E8A838; color: #fff;"><span>500</span></div>
+          <div class="tint-swatch" style="background: #D4952A; color: #fff;"><span>600</span></div>
+          <div class="tint-swatch" style="background: #B07A1E; color: #fff;"><span>700</span></div>
+          <div class="tint-swatch" style="background: #7A5414; color: #fff;"><span>900</span></div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 48px;">
+        <h3 style="font-family: var(--font-display); font-size: 20px; font-weight: 500; margin-bottom: 16px;">Secondary — Teal</h3>
+        <div class="tint-row">
+          <div class="tint-swatch" style="background: #E6F7F4;"><span>50</span></div>
+          <div class="tint-swatch" style="background: #B3E8DE;"><span>100</span></div>
+          <div class="tint-swatch" style="background: #7DDECE;"><span>200</span></div>
+          <div class="tint-swatch" style="background: #4ECDB5;"><span>300</span></div>
+          <div class="tint-swatch" style="background: #2AB5A0; color: #fff;"><span>500</span></div>
+          <div class="tint-swatch" style="background: #22A08D; color: #fff;"><span>600</span></div>
+          <div class="tint-swatch" style="background: #1A8575; color: #fff;"><span>700</span></div>
+          <div class="tint-swatch" style="background: #0F5C50; color: #fff;"><span>900</span></div>
+        </div>
+      </div>
+
+      <div>
+        <h3 style="font-family: var(--font-display); font-size: 20px; font-weight: 500; margin-bottom: 16px;">Sembrar — Verde</h3>
+        <div class="tint-row">
+          <div class="tint-swatch" style="background: #E8F5EB;"><span>50</span></div>
+          <div class="tint-swatch" style="background: #B8DFC0;"><span>100</span></div>
+          <div class="tint-swatch" style="background: #7BC98A;"><span>200</span></div>
+          <div class="tint-swatch" style="background: #45B05E;"><span>300</span></div>
+          <div class="tint-swatch" style="background: #1B8C3E; color: #fff;"><span>500</span></div>
+          <div class="tint-swatch" style="background: #157A34; color: #fff;"><span>600</span></div>
+          <div class="tint-swatch" style="background: #10652A; color: #fff;"><span>700</span></div>
+          <div class="tint-swatch" style="background: #0A451C; color: #fff;"><span>900</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       14 — SISTEMA DE GRILLA
+       ═══════════════════════════════════════════ -->
+  <section class="section" id="grilla">
+    <div class="section-label">14 — Sistema de Grilla</div>
+    <h2 class="section-title">8px como unidad base.</h2>
+    <p class="section-desc">Todo el espaciado, padding y sizing se basa en multiplos de 8px. Esto garantiza consistencia en todos los componentes.</p>
+
+    <div class="grid-spec">
+      <div class="grid-spec-item">
+        <div class="grid-spec-visual">
+          <div class="grid-spec-block" style="width: 8px; height: 8px;"></div>
+        </div>
+        <div class="grid-spec-label">8px<br><span>Micro</span></div>
+      </div>
+      <div class="grid-spec-item">
+        <div class="grid-spec-visual">
+          <div class="grid-spec-block" style="width: 16px; height: 16px;"></div>
+        </div>
+        <div class="grid-spec-label">16px<br><span>Compact</span></div>
+      </div>
+      <div class="grid-spec-item">
+        <div class="grid-spec-visual">
+          <div class="grid-spec-block" style="width: 24px; height: 24px;"></div>
+        </div>
+        <div class="grid-spec-label">24px<br><span>Default</span></div>
+      </div>
+      <div class="grid-spec-item">
+        <div class="grid-spec-visual">
+          <div class="grid-spec-block" style="width: 32px; height: 32px;"></div>
+        </div>
+        <div class="grid-spec-label">32px<br><span>Spacious</span></div>
+      </div>
+      <div class="grid-spec-item">
+        <div class="grid-spec-visual">
+          <div class="grid-spec-block" style="width: 48px; height: 48px;"></div>
+        </div>
+        <div class="grid-spec-label">48px<br><span>Section</span></div>
+      </div>
+      <div class="grid-spec-item">
+        <div class="grid-spec-visual">
+          <div class="grid-spec-block" style="width: 64px; height: 64px;"></div>
+        </div>
+        <div class="grid-spec-label">64px<br><span>Region</span></div>
+      </div>
+      <div class="grid-spec-item">
+        <div class="grid-spec-visual">
+          <div class="grid-spec-block" style="width: 80px; height: 80px;"></div>
+        </div>
+        <div class="grid-spec-label">128px<br><span>Page</span></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.03em; margin-bottom: 16px;">Layout</h3>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
+      <div class="feature-card">
+        <div style="font-size: 13px; font-weight: 600; color: var(--color-primary); margin-bottom: 8px;">MAX-WIDTH</div>
+        <div style="font-family: var(--font-display); font-size: 32px; font-weight: 500;">1280px</div>
+        <p style="font-size: 13px; color: var(--color-text-tertiary); margin-top: 4px;">Ancho maximo del contenido</p>
+      </div>
+      <div class="feature-card">
+        <div style="font-size: 13px; font-weight: 600; color: var(--color-primary); margin-bottom: 8px;">SIDEBAR</div>
+        <div style="font-family: var(--font-display); font-size: 32px; font-weight: 500;">240px</div>
+        <p style="font-size: 13px; color: var(--color-text-tertiary); margin-top: 4px;">Navegacion lateral fija</p>
+      </div>
+      <div class="feature-card">
+        <div style="font-size: 13px; font-weight: 600; color: var(--color-primary); margin-bottom: 8px;">PADDING</div>
+        <div style="font-family: var(--font-display); font-size: 32px; font-weight: 500;">48px</div>
+        <p style="font-size: 13px; color: var(--color-text-tertiary); margin-top: 4px;">Padding de seccion (24px mobile)</p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       15 — PRINCIPIOS DE ANIMACION
+       ═══════════════════════════════════════════ -->
+  <section class="section-dark" id="animacion">
+    <div class="section-inner">
+      <div class="section-label">15 — Principios de Animacion</div>
+      <h2 class="section-title" style="color: #fff;">Movimiento con<br>intencion.</h2>
+      <p class="section-desc">Cada animacion existe para comunicar algo. Sin animaciones decorativas. Todo movimiento guia la atencion o confirma una accion.</p>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin: 48px 0;">
+        <div class="impacto-card">
+          <div style="font-size: 13px; font-weight: 600; color: var(--color-primary); margin-bottom: 12px;">DURACION BASE</div>
+          <div style="font-family: var(--font-display); font-size: 36px; font-weight: 500; color: #fff; margin-bottom: 8px;">300ms</div>
+          <p style="font-size: 14px; color: rgba(255,255,255,0.5); line-height: 1.5;">Transiciones de hover, focus y estados interactivos. Suficiente para percibirse suave sin sentirse lento.</p>
+          <code style="display: block; margin-top: 12px; font-size: 12px; color: var(--color-secondary); background: rgba(255,255,255,0.06); padding: 8px 12px; border-radius: 6px;">transition: all 0.3s cubic-bezier(.4, 0, .2, 1)</code>
+        </div>
+        <div class="impacto-card">
+          <div style="font-size: 13px; font-weight: 600; color: var(--color-accent); margin-bottom: 12px;">ENTRADA</div>
+          <div style="font-family: var(--font-display); font-size: 36px; font-weight: 500; color: #fff; margin-bottom: 8px;">ease-out</div>
+          <p style="font-size: 14px; color: rgba(255,255,255,0.5); line-height: 1.5;">Elementos que entran a escena. Comienzan rapido y desaceleran. Sensacion de llegada natural.</p>
+          <code style="display: block; margin-top: 12px; font-size: 12px; color: var(--color-secondary); background: rgba(255,255,255,0.06); padding: 8px 12px; border-radius: 6px;">cubic-bezier(0, 0, .2, 1)</code>
+        </div>
+        <div class="impacto-card">
+          <div style="font-size: 13px; font-weight: 600; color: var(--color-secondary); margin-bottom: 12px;">SALIDA</div>
+          <div style="font-family: var(--font-display); font-size: 36px; font-weight: 500; color: #fff; margin-bottom: 8px;">ease-in</div>
+          <p style="font-size: 14px; color: rgba(255,255,255,0.5); line-height: 1.5;">Elementos que salen. Aceleran al final. Sensacion de que el elemento se retira con proposito.</p>
+          <code style="display: block; margin-top: 12px; font-size: 12px; color: var(--color-secondary); background: rgba(255,255,255,0.06); padding: 8px 12px; border-radius: 6px;">cubic-bezier(.4, 0, 1, 1)</code>
+        </div>
+      </div>
+
+      <div style="padding: 32px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;">
+        <div style="font-size: 13px; font-weight: 600; color: var(--color-error); margin-bottom: 12px;">PROHIBIDO</div>
+        <p style="font-size: 15px; color: rgba(255,255,255,0.6); line-height: 1.7;">Bounce effects. Animaciones mayores a 500ms. Movimiento sin trigger del usuario. Parallax excesivo. Spinners cuando se puede usar skeleton loaders. Animaciones que bloqueen la interaccion.</p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       16 — DIRECCION FOTOGRAFICA
+       ═══════════════════════════════════════════ -->
+  <section class="section-cream" id="fotografia">
+    <div class="section-inner">
+      <div class="section-label">16 — Direccion Fotografica</div>
+      <h2 class="section-title">Calidez. Autenticidad.<br>Mexico real.</h2>
+      <p class="section-desc">Las imagenes de SACS muestran retailers reales en contextos reales. Nada de stock generico. Nada de modelos perfectos en oficinas blancas.</p>
+
+      <div class="cards-grid" style="margin-top: 48px;">
+        <div class="card">
+          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-secondary); margin-bottom: 12px;">Luz</div>
+          <div class="card-desc">Luz natural calida. Golden hour. Sombras suaves. Nunca flash directo ni iluminacion plana de estudio. La luz debe sentirse como Mexico: generosa y dorada.</div>
+        </div>
+        <div class="card">
+          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 12px;">Sujetos</div>
+          <div class="card-desc">Comerciantes reales en sus negocios. Manos trabajando. Producto exhibido con orgullo. Clientes interactuando. Diversidad etnica y de edad real de Mexico.</div>
+        </div>
+        <div class="card">
+          <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-primary); margin-bottom: 12px;">Contexto</div>
+          <div class="card-desc">Tiendas de ropa, boutiques, mercados, calles mexicanas. Arquitectura colonial, colores vivos, texturas. El producto SACS en pantallas reales dentro de negocios reales.</div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 32px;">
+        <div style="padding: 24px; background: #fff; border-radius: 12px; border: 1px solid var(--color-border-light);">
+          <div style="font-size: 13px; font-weight: 600; color: var(--color-secondary); margin-bottom: 8px;">PALETA FOTOGRAFICA</div>
+          <p style="font-size: 14px; color: var(--color-text-secondary); line-height: 1.6;">Tonos calidos, saturacion media-alta, sombras con tinte crema/ambar. Post-produccion: +5 temperatura, +10 saturacion, -5 highlights. No filtros frios ni desaturados.</p>
+        </div>
+        <div style="padding: 24px; background: #fff; border-radius: 12px; border: 1px solid var(--color-border-light);">
+          <div style="font-size: 13px; font-weight: 600; color: var(--color-error); margin-bottom: 8px;">NUNCA USAR</div>
+          <p style="font-size: 14px; color: var(--color-text-secondary); line-height: 1.6;">Stock generico americano. Fotos con filtros azules/grises. Imagenes de oficinas corporativas. Personas con laptops en cafes. Manos apuntando a graficas genericas.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       17 — ACCESIBILIDAD
+       ═══════════════════════════════════════════ -->
+  <section class="section" id="accesibilidad">
+    <div class="section-label">17 — Accesibilidad</div>
+    <h2 class="section-title">Diseno para todos.</h2>
+    <p class="section-desc">SACS esta disenado para comerciantes de todas las edades y habilidades. Estos son los estandares minimos.</p>
+
+    <div class="a11y-grid">
+      <div class="a11y-card" style="border-left: 4px solid var(--color-secondary);">
+        <h4>Contraste de texto</h4>
+        <div class="a11y-ratio">4.5:1</div>
+        <p>Minimo para texto normal (WCAG AA). Todos nuestros colores de texto sobre fondos claros y oscuros cumplen este ratio.</p>
+      </div>
+      <div class="a11y-card" style="border-left: 4px solid var(--color-primary);">
+        <h4>Contraste de headings</h4>
+        <div class="a11y-ratio">3:1</div>
+        <p>Minimo para texto grande (+18px bold o +24px). Los titulos en DM Sans siempre cumplen este estandar.</p>
+      </div>
+      <div class="a11y-card" style="border-left: 4px solid var(--color-accent);">
+        <h4>Touch targets</h4>
+        <div class="a11y-ratio">44px</div>
+        <p>Tamano minimo de area interactiva. Botones, links y controles siempre tienen al menos 44x44px de area clickeable.</p>
+      </div>
+      <div class="a11y-card" style="border-left: 4px solid var(--color-error);">
+        <h4>Focus visible</h4>
+        <div class="a11y-ratio">2px</div>
+        <p>Outline azul (#006aff) con 2px offset en todos los elementos interactivos. Nunca ocultar el focus ring.</p>
+      </div>
+    </div>
+
+    <div style="margin-top: 48px; padding: 32px; background: var(--color-bg-secondary); border-radius: 16px;">
+      <h4 style="font-family: var(--font-display); font-size: 18px; font-weight: 500; margin-bottom: 16px;">Combinaciones aprobadas</h4>
+      <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+        <div style="padding: 12px 20px; background: #000; color: #fff; border-radius: 8px; font-size: 14px; font-weight: 500;">Negro sobre blanco — 21:1</div>
+        <div style="padding: 12px 20px; background: var(--color-primary); color: #fff; border-radius: 8px; font-size: 14px; font-weight: 500;">Azul sobre blanco — 4.6:1</div>
+        <div style="padding: 12px 20px; background: #000; color: var(--color-secondary); border-radius: 8px; font-size: 14px; font-weight: 500;">Teal sobre negro — 8.2:1</div>
+        <div style="padding: 12px 20px; background: #000; color: var(--color-accent); border-radius: 8px; font-size: 14px; font-weight: 500;">Dorado sobre negro — 7.9:1</div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       18 — ZONA DE EXCLUSION DEL LOGO
+       ═══════════════════════════════════════════ -->
+  <section class="section-cream" id="zona-exclusion">
+    <div class="section-inner">
+      <div class="section-label">18 — Zona de Exclusion</div>
+      <h2 class="section-title">Espacio vital<br>del isotipo.</h2>
+      <p class="section-desc">El logo necesita respirar. La zona de exclusion minima es igual al diametro del circulo dorado (el mas pequeno) en todos los lados.</p>
+
+      <div style="display: flex; justify-content: center; margin: 64px 0;">
+        <div style="position: relative; padding: 80px; border: 2px dashed var(--color-border); border-radius: 16px; background: #fff;">
+          <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); font-size: 11px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); padding: 2px 8px; border-radius: 4px;">1x</div>
+          <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); font-size: 11px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); padding: 2px 8px; border-radius: 4px;">1x</div>
+          <div style="position: absolute; left: 0; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); padding: 2px 8px; border-radius: 4px;">1x</div>
+          <div style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); font-size: 11px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); padding: 2px 8px; border-radius: 4px;">1x</div>
+          <div class="p1-circles" style="width: 100px; height: 88px; margin: 0 auto;">
+            <div class="p1-circle p1-circle-blue" style="width: 68px; height: 68px;"></div>
+            <div class="p1-circle p1-circle-gold" style="width: 45px; height: 45px; left: 30px;"></div>
+            <div class="p1-circle p1-circle-teal" style="width: 56px; height: 56px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
+        <div class="feature-card" style="text-align: center;">
+          <div style="font-size: 13px; font-weight: 600; color: var(--color-primary); margin-bottom: 8px;">TAMANO MINIMO</div>
+          <div style="font-family: var(--font-display); font-size: 28px; font-weight: 500;">32px</div>
+          <p style="font-size: 13px; color: var(--color-text-tertiary); margin-top: 4px;">Digital (favicon, app icon)</p>
+        </div>
+        <div class="feature-card" style="text-align: center;">
+          <div style="font-size: 13px; font-weight: 600; color: var(--color-accent); margin-bottom: 8px;">TAMANO PREFERIDO</div>
+          <div style="font-family: var(--font-display); font-size: 28px; font-weight: 500;">48-64px</div>
+          <p style="font-size: 13px; color: var(--color-text-tertiary); margin-top: 4px;">Header, documentos, firmas</p>
+        </div>
+        <div class="feature-card" style="text-align: center;">
+          <div style="font-size: 13px; font-weight: 600; color: var(--color-secondary); margin-bottom: 8px;">TAMANO MAXIMO</div>
+          <div style="font-family: var(--font-display); font-size: 28px; font-weight: 500;">Sin limite</div>
+          <p style="font-size: 13px; color: var(--color-text-tertiary); margin-top: 4px;">Eventos, murales, displays</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       19 — TOKENS DE DISENO
+       ═══════════════════════════════════════════ -->
+  <section class="section" id="tokens">
+    <div class="section-label">19 — Tokens de Diseno</div>
+    <h2 class="section-title">Variables CSS<br>del sistema.</h2>
+    <p class="section-desc">Todos los valores de diseno estan centralizados en CSS custom properties. Copiar y pegar.</p>
+
+    <div class="tokens-grid">
+      <div class="token-group">
+        <h4>Colores de marca</h4>
+        <div class="token-row"><code>--color-primary</code><span>#4B7BE5</span></div>
+        <div class="token-row"><code>--color-secondary</code><span>#2AB5A0</span></div>
+        <div class="token-row"><code>--color-accent</code><span>#E8A838</span></div>
+        <div class="token-row"><code>--color-error</code><span>#E54B4B</span></div>
+      </div>
+      <div class="token-group">
+        <h4>Fondos</h4>
+        <div class="token-row"><code>--color-bg-primary</code><span>#FAFAF8</span></div>
+        <div class="token-row"><code>--color-bg-secondary</code><span>#F5F3EE</span></div>
+        <div class="token-row"><code>--color-bg-card</code><span>#FFFFFF</span></div>
+        <div class="token-row"><code>--color-bg-dark</code><span>#000000</span></div>
+      </div>
+      <div class="token-group">
+        <h4>Tipografia</h4>
+        <div class="token-row"><code>--font-display</code><span>DM Sans</span></div>
+        <div class="token-row"><code>--font-heading</code><span>Space Grotesk</span></div>
+        <div class="token-row"><code>--font-body</code><span>Plus Jakarta Sans</span></div>
+      </div>
+      <div class="token-group">
+        <h4>Radios</h4>
+        <div class="token-row"><code>--radius-sm</code><span>8px</span></div>
+        <div class="token-row"><code>--radius-md</code><span>12px</span></div>
+        <div class="token-row"><code>--radius-lg</code><span>16px</span></div>
+        <div class="token-row"><code>--radius-full</code><span>50px</span></div>
+      </div>
+      <div class="token-group">
+        <h4>Sombras</h4>
+        <div class="token-row"><code>--shadow-sm</code><span>0 2px 8px rgba(0,0,0,0.06)</span></div>
+        <div class="token-row"><code>--shadow-md</code><span>0 4px 12px rgba(0,0,0,0.08)</span></div>
+        <div class="token-row"><code>--shadow-lg</code><span>0 8px 16px rgba(0,0,0,0.1)</span></div>
+      </div>
+      <div class="token-group">
+        <h4>Transiciones</h4>
+        <div class="token-row"><code>--ease-brand</code><span>cubic-bezier(.4, 0, .2, 1)</span></div>
+        <div class="token-row"><code>--transition-base</code><span>0.3s var(--ease-brand)</span></div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       20 — FIRMA DE EMAIL
+       ═══════════════════════════════════════════ -->
+  <section class="section-dark" id="firma-email">
+    <div class="section-inner">
+      <div class="section-label">20 — Firma de Email</div>
+      <h2 class="section-title" style="color: #fff;">Consistencia en<br>cada mensaje.</h2>
+      <p class="section-desc">Toda comunicacion de SACS debe cerrar con esta firma. Sin variaciones.</p>
+
+      <div style="max-width: 480px; margin: 48px 0; padding: 32px; background: #fff; border-radius: 16px;">
+        <div style="display: flex; gap: 16px; align-items: flex-start;">
+          <div class="p1-circles" style="width: 40px; height: 35px; flex-shrink: 0;">
+            <div class="p1-circle p1-circle-blue" style="width: 27px; height: 27px;"></div>
+            <div class="p1-circle p1-circle-gold" style="width: 18px; height: 18px; left: 12px;"></div>
+            <div class="p1-circle p1-circle-teal" style="width: 22px; height: 22px;"></div>
+          </div>
+          <div>
+            <div style="font-family: var(--font-display); font-size: 15px; font-weight: 600; color: #000;">Nombre Apellido</div>
+            <div style="font-size: 13px; color: var(--color-text-tertiary); margin-bottom: 8px;">Cargo — SACS</div>
+            <div style="font-size: 12px; color: var(--color-text-tertiary); line-height: 1.6;">
+              <span style="color: var(--color-primary);">sacs.com.mx</span><br>
+              +52 (55) 1234 5678
+            </div>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee; font-size: 11px; color: var(--color-text-tertiary); font-style: italic;">
+              Tecnologia con alma. Comercio con proposito.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding: 24px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; max-width: 480px;">
+        <div style="font-size: 13px; font-weight: 600; color: var(--color-accent); margin-bottom: 8px;">REGLAS</div>
+        <p style="font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.6;">Logo isotipo (no logotipo completo). Fuente del sistema (no Google Fonts). Sin banners, sin citas, sin imagenes extra. El tagline siempre al final en italica.</p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       21 — GLOSARIO DE MARCA
+       ═══════════════════════════════════════════ -->
+  <section class="section-cream" id="glosario">
+    <div class="section-inner">
+      <div class="section-label">21 — Glosario de Marca</div>
+      <h2 class="section-title">Asi se escribe.<br>Asi se dice.</h2>
+      <p class="section-desc">Terminos oficiales de la marca y como deben escribirse siempre. Sin excepciones.</p>
+
+      <div class="glosario-grid">
+        <div class="glosario-item">
+          <div class="glosario-term">SACS</div>
+          <div class="glosario-def">Siempre en mayusculas. Nunca "Sacs", "sacs" o "S.A.C.S." en texto corrido. Significa Ser · Avanzar · Crear · Sembrar.</div>
+        </div>
+        <div class="glosario-item">
+          <div class="glosario-term">AXO</div>
+          <div class="glosario-def">Siempre en mayusculas. Es el nombre propio del asistente de IA. Nunca "Axo", "axo" o "el AXO".</div>
+        </div>
+        <div class="glosario-item">
+          <div class="glosario-term">Sacscloud</div>
+          <div class="glosario-def">La plataforma completa. Primera letra mayuscula, el resto minusculas. Nunca "SacsCloud", "SACSCLOUD" o "sacs cloud".</div>
+        </div>
+        <div class="glosario-item">
+          <div class="glosario-term">Comercio Consciente</div>
+          <div class="glosario-def">Concepto propio de SACS. Ambas palabras en mayuscula. Es el modelo de negocio, no un eslogan.</div>
+        </div>
+        <div class="glosario-item">
+          <div class="glosario-term">Retailer</div>
+          <div class="glosario-def">Nuestro usuario. Nunca "cliente", "usuario" o "consumidor". Un retailer es un comerciante con tienda fisica o digital.</div>
+        </div>
+        <div class="glosario-item">
+          <div class="glosario-term">Isotipo</div>
+          <div class="glosario-def">Los tres circulos. El logo sin texto. Nunca "el logo de circulos" o "el simbolo".</div>
+        </div>
+        <div class="glosario-item">
+          <div class="glosario-term">Semilla</div>
+          <div class="glosario-def">El plan gratuito. Representa el inicio del viaje. Nunca "plan free", "plan basico" o "trial".</div>
+        </div>
+        <div class="glosario-item">
+          <div class="glosario-term">Triple Impacto</div>
+          <div class="glosario-def">Social + Ambiental + Economico. El modelo de impacto de SACS. Siempre con mayusculas.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       11 — INSTAGRAM
+       ═══════════════════════════════════════════ -->
+  <section class="section" id="instagram">
+    <div class="section-label">11 — Instagram</div>
+    <h2 class="section-title">5 formatos clave<br>para el feed.</h2>
+    <p class="section-desc">
+      Manifiesto, estadistica, identidad oaxaquena y sistema moderno. Fondos mexicanos con tecnologia de punta.
+    </p>
+
+    <div class="ig-posts-grid">
+      <!-- Manifiesto -->
+      <div>
+        <div class="ig-post ig-manifiesto">
+          <div class="ig-post-inner">
+            <div class="ig-accent"></div>
+            <span class="ig-logo">Sacs</span>
+            <div class="ig-eyebrow">Manifiesto</div>
+            <div class="ig-title">Ser.<br>Avanzar.<br>Crear.<br>Sembrar.</div>
+          </div>
+        </div>
+        <div class="ig-post-caption">
+          <h4>Pilar de marca</h4>
+          <p>Fondo negro puro con DM Sans 500. La franja sarape conecta con la identidad oaxaquena.</p>
+          <div class="ig-post-tags">
+            <span class="ig-post-tag">Fondo negro</span>
+            <span class="ig-post-tag">Sarape accent</span>
+            <span class="ig-post-tag">DM Sans 500</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Estadistica -->
+      <div>
+        <div class="ig-post ig-stat">
+          <div class="ig-post-inner">
+            <div class="ig-big">10<span class="ig-unit">%</span></div>
+            <div class="ig-desc">de cada licencia genera impacto social</div>
+            <span class="ig-logo">Sacs</span>
+          </div>
+        </div>
+        <div class="ig-post-caption">
+          <h4>Dato de impacto</h4>
+          <p>Numeros grandes sobre fondo crema calido. La cifra en azul SACS crea jerarquia inmediata.</p>
+          <div class="ig-post-tags">
+            <span class="ig-post-tag">Fondo crema</span>
+            <span class="ig-post-tag">Numero destacado</span>
+            <span class="ig-post-tag">Impacto social</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sarape -->
+      <div>
+        <div class="ig-post ig-sarape">
+          <div class="ig-post-inner">
+            <div class="ig-overlay"></div>
+            <div class="ig-text">
+              <div class="ig-label">Identidad Oaxaquena</div>
+              <div class="ig-stitle">Cada hilo cuenta una historia.</div>
+            </div>
+          </div>
+        </div>
+        <div class="ig-post-caption">
+          <h4>Sarape como fondo</h4>
+          <p>Patron de sarape CSS con overlay oscuro. El texto emerge limpio sobre colores vivos.</p>
+          <div class="ig-post-tags">
+            <span class="ig-post-tag">Sarape CSS</span>
+            <span class="ig-post-tag">Overlay gradiente</span>
+            <span class="ig-post-tag">Identidad MX</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fila 2: Posts de sistema con fondos mexicanos -->
+    <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.03em; margin-top: 64px; margin-bottom: 8px;">Sistema + Mexico</h3>
+    <p class="section-desc" style="margin-bottom: 32px;">Tecnologia moderna sobre fondos artesanales. El contraste que define a SACS.</p>
+
+    <div class="ig-sistema-grid">
+      <!-- Post 4: Textil + Dashboard AXO -->
+      <div>
+        <div class="ig-post ig-textil-sistema">
+          <div class="ig-post-inner">
+            <span class="ig-logo-corner">Sacs</span>
+            <div class="ig-badge">AXO Insights</div>
+            <div class="ig-mini-card">
+              <div class="ig-mini-card-row">
+                <span class="ig-mini-card-label">Ventas hoy</span>
+                <span style="font-size: 10px; color: var(--color-secondary);">+23%</span>
+              </div>
+              <div class="ig-mini-card-value">$48,250</div>
+              <div class="ig-mini-card-bar">
+                <div class="ig-mini-card-bar-fill" style="width: 73%; background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));"></div>
+              </div>
+            </div>
+            <div class="ig-mini-card" style="margin-bottom: 0;">
+              <div class="ig-mini-card-row">
+                <span class="ig-mini-card-label">AXO predice</span>
+              </div>
+              <div style="font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.4;">Talla M agotada en 3 dias. Reordena ahora.</div>
+            </div>
+            <div class="ig-headline" style="margin-top: 16px;">Tu negocio<br>en tiempo real.</div>
+            <div class="ig-sub">Inteligencia que entiende tu retail.</div>
+          </div>
+        </div>
+        <div class="ig-post-caption">
+          <h4>Dashboard + Textil Diagonal</h4>
+          <p>Cards glassmorphism sobre fondo textil oaxaqueno. UI moderno que convive con identidad mexicana.</p>
+          <div class="ig-post-tags">
+            <span class="ig-post-tag">Textil diagonal</span>
+            <span class="ig-post-tag">Glassmorphism</span>
+            <span class="ig-post-tag">AXO IA</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Post 5: Papel Picado + Features POS -->
+      <div>
+        <div class="ig-post ig-papel-sistema">
+          <div class="ig-post-inner">
+            <span class="ig-logo-corner">Sacs</span>
+            <div class="ig-top-label">Todo en uno</div>
+            <div class="ig-glass-panel">
+              <div class="ig-feature-row">
+                <div class="ig-feature-dot" style="background: var(--color-primary);"></div>
+                <span class="ig-feature-label">Punto de Venta</span>
+                <span class="ig-feature-check">✓</span>
+              </div>
+              <div class="ig-feature-row">
+                <div class="ig-feature-dot" style="background: var(--color-accent);"></div>
+                <span class="ig-feature-label">Inventario Multi-sucursal</span>
+                <span class="ig-feature-check">✓</span>
+              </div>
+              <div class="ig-feature-row">
+                <div class="ig-feature-dot" style="background: var(--color-secondary);"></div>
+                <span class="ig-feature-label">Facturacion CFDI</span>
+                <span class="ig-feature-check">✓</span>
+              </div>
+              <div class="ig-feature-row">
+                <div class="ig-feature-dot" style="background: var(--mx-rosa);"></div>
+                <span class="ig-feature-label">CRM de Clientes</span>
+                <span class="ig-feature-check">✓</span>
+              </div>
+              <div class="ig-feature-row">
+                <div class="ig-feature-dot" style="background: var(--mx-verde);"></div>
+                <span class="ig-feature-label">AXO — IA Predictiva</span>
+                <span class="ig-feature-check">✓</span>
+              </div>
+            </div>
+            <div class="ig-bottom-line">Un sistema. Cero excusas.</div>
+          </div>
+        </div>
+        <div class="ig-post-caption">
+          <h4>Features + Papel Picado</h4>
+          <p>Lista de capacidades en panel glass sobre fondo papel picado. Claridad del sistema sobre identidad vibrante.</p>
+          <div class="ig-post-tags">
+            <span class="ig-post-tag">Papel picado</span>
+            <span class="ig-post-tag">Glass panel</span>
+            <span class="ig-post-tag">Feature list</span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -2059,6 +4705,8 @@
       SACS Style Guide v2.0 — Marzo 2026
     </p>
   </footer>
+
+  </div><!-- /main-content -->
 
 </body>
 </html>
