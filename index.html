@@ -32,15 +32,15 @@
       --color-error: #E54B4B;
 
       /* Text */
-      --color-text-primary: #000000;
-      --color-text-secondary: #333333;
+      --color-text-primary: #1A1A1A;
+      --color-text-secondary: #4A4A4A;
       --color-text-tertiary: #707070;
 
       /* Backgrounds */
       --color-bg-primary: #FAFAF8;
       --color-bg-secondary: #F5F3EE;
       --color-bg-card: #FFFFFF;
-      --color-bg-dark: #000000;
+      --color-bg-dark: #1A1A1A;
 
       /* Borders */
       --color-border: #D4D4D4;
@@ -56,7 +56,7 @@
       --radius-sm: 8px;
       --radius-md: 12px;
       --radius-lg: 16px;
-      --radius-xl: 16px;
+      --radius-xl: 20px;
       --radius-2xl: 24px;
       --radius-full: 50px;
 
@@ -66,9 +66,28 @@
       --shadow-lg: 0 8px 16px rgba(0,0,0,0.1);
       --shadow-xl: 0 16px 32px rgba(0,0,0,0.12);
 
-      /* Transitions */
+      /* Spacing */
+      --space-1: 4px;   --space-2: 8px;   --space-3: 12px;
+      --space-4: 16px;  --space-5: 20px;  --space-6: 24px;
+      --space-8: 32px;  --space-10: 40px; --space-12: 48px;
+      --space-16: 64px; --space-20: 80px; --space-24: 96px;
+      --space-32: 128px; --space-40: 160px;
+
+      /* Motion — Curva de Agua */
       --ease-brand: cubic-bezier(.4, 0, .2, 1);
-      --transition-base: 0.3s var(--ease-brand);
+      --ease-agua: cubic-bezier(0.22, 0.68, 0, 1);
+      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      --ease-smooth: cubic-bezier(0.45, 0, 0.55, 1);
+      --duration-fast: 200ms;
+      --duration-base: 300ms;
+      --duration-slow: 600ms;
+      --transition-base: 0.3s var(--ease-agua);
+
+      /* Paleta Ritual — Ecos refinados de la paleta Oaxaca para uso en interfaz core */
+      --ritual-jade: #5B8F7B;
+      --ritual-rosa: #C4929B;
+      --ritual-terracota: #B87B5E;
+      --ritual-indigo: #3D4F7C;
 
       /* Colores Oaxaca */
       --mx-rojo: #D42B2B;
@@ -2353,6 +2372,781 @@
       color: var(--color-text-secondary);
     }
 
+    /* ═══════════════════════════════════════════════════
+       MOTION — Curva de Agua & Micro-interacciones
+       ═══════════════════════════════════════════════════ */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes axoBreath {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.04); opacity: 0.92; }
+    }
+    @keyframes axoCelebrate {
+      0% { transform: scale(1) rotate(0deg); }
+      25% { transform: scale(1.08) rotate(-2deg); }
+      50% { transform: scale(1.12) rotate(2deg); }
+      75% { transform: scale(1.06) rotate(-1deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+    @keyframes axoSwim {
+      0% { transform: translateX(0) translateY(0); }
+      25% { transform: translateX(6px) translateY(-3px); }
+      50% { transform: translateX(0) translateY(-6px); }
+      75% { transform: translateX(-6px) translateY(-3px); }
+      100% { transform: translateX(0) translateY(0); }
+    }
+    @keyframes grecaPulse {
+      0%, 100% { opacity: 0.03; }
+      50% { opacity: 0.06; }
+    }
+
+    .animate-fade-in-up {
+      animation: fadeInUp var(--duration-slow) var(--ease-agua) both;
+    }
+    .axo-breath { animation: axoBreath 3s var(--ease-smooth) infinite; }
+    .axo-celebrate { animation: axoCelebrate 0.8s var(--ease-spring) both; }
+    .axo-swim { animation: axoSwim 4s var(--ease-smooth) infinite; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .animate-fade-in-up,
+      .axo-breath,
+      .axo-celebrate,
+      .axo-swim { animation: none !important; }
+      * { transition-duration: 0.01ms !important; }
+    }
+
+    /* ═══════════════════════════════════════════════════
+       GEOMETRIA CULTURAL — Greca escalonada, diamante
+       ═══════════════════════════════════════════════════ */
+    .greca-divider {
+      height: 12px;
+      background:
+        repeating-linear-gradient(90deg,
+          transparent 0px, transparent 10px,
+          var(--ritual-terracota) 10px, var(--ritual-terracota) 12px,
+          transparent 12px, transparent 22px
+        ),
+        repeating-linear-gradient(0deg,
+          transparent 0px, transparent 4px,
+          var(--ritual-terracota) 4px, var(--ritual-terracota) 6px,
+          transparent 6px, transparent 10px
+        );
+      opacity: 0.15;
+      border-radius: 1px;
+    }
+    .geo-pattern-card {
+      padding: 48px 40px;
+      border-radius: 20px;
+      border: 1px solid var(--color-border-light);
+      background: var(--color-bg-card);
+      position: relative;
+      overflow: hidden;
+    }
+    .geo-pattern-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0.03;
+      pointer-events: none;
+    }
+    .geo-diamante::before {
+      background:
+        repeating-conic-gradient(
+          var(--ritual-indigo) 0% 25%,
+          transparent 0% 50%
+        ) 0 0 / 20px 20px;
+      transform: rotate(45deg) scale(1.5);
+    }
+    .geo-greca::before {
+      background:
+        repeating-linear-gradient(90deg,
+          transparent 0px, transparent 8px,
+          var(--ritual-terracota) 8px, var(--ritual-terracota) 10px
+        ),
+        repeating-linear-gradient(0deg,
+          transparent 0px, transparent 8px,
+          var(--ritual-terracota) 8px, var(--ritual-terracota) 10px
+        );
+    }
+    .geo-espiral::before {
+      background:
+        radial-gradient(circle at 50% 50%, transparent 8px, var(--ritual-jade) 8px, var(--ritual-jade) 10px, transparent 10px);
+      background-size: 24px 24px;
+    }
+    .geo-pattern-name {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+    .geo-pattern-origin {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ritual-terracota);
+      margin-bottom: 12px;
+    }
+    .geo-pattern-desc {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--color-text-secondary);
+    }
+
+    /* ═══════════════════════════════════════════════════
+       RETRATOS DE COMERCIANTES
+       ═══════════════════════════════════════════════════ */
+    .retrato-card {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 0;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--color-border-light);
+      background: var(--color-bg-card);
+    }
+    .retrato-foto {
+      background: linear-gradient(135deg, var(--ritual-terracota) 0%, var(--ritual-rosa) 100%);
+      min-height: 400px;
+      display: flex;
+      align-items: flex-end;
+      padding: 32px;
+      position: relative;
+    }
+    .retrato-foto-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 64px;
+      opacity: 0.3;
+      color: #fff;
+    }
+    .retrato-contenido {
+      padding: 48px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .retrato-eyebrow {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ritual-terracota);
+      margin-bottom: 16px;
+    }
+    .retrato-nombre {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      margin-bottom: 4px;
+    }
+    .retrato-negocio {
+      font-size: 14px;
+      color: var(--color-text-tertiary);
+      margin-bottom: 24px;
+    }
+    .retrato-cita {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 500;
+      line-height: 1.5;
+      letter-spacing: -0.02em;
+      color: var(--color-text-primary);
+      border-left: 3px solid var(--ritual-terracota);
+      padding-left: 20px;
+      margin-bottom: 24px;
+    }
+    .retrato-historia {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--color-text-secondary);
+      margin-bottom: 24px;
+    }
+    .retrato-principio {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ritual-jade);
+      background: rgba(91, 143, 123, 0.08);
+      padding: 8px 16px;
+      border-radius: var(--radius-full);
+    }
+
+    .firmante-card {
+      padding: 32px;
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border-light);
+      border-radius: 16px;
+      text-align: center;
+    }
+    .firmante-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .firmante-nombre {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+    .firmante-tienda {
+      font-size: 13px;
+      color: var(--color-text-tertiary);
+      margin-bottom: 4px;
+    }
+    .firmante-ubicacion {
+      font-size: 12px;
+      color: var(--color-text-tertiary);
+      margin-bottom: 12px;
+    }
+    .firmante-principio {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ritual-jade);
+      background: rgba(91, 143, 123, 0.08);
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      display: inline-block;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       VOZ DE MARCA — Expandida por contextos
+       ═══════════════════════════════════════════════════ */
+    .voz-category-label {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      display: inline-block;
+      margin-bottom: 16px;
+    }
+    .voz-cat-marketing { background: rgba(75,123,229,0.1); color: var(--color-primary); }
+    .voz-cat-producto { background: rgba(42,181,160,0.1); color: var(--color-secondary); }
+    .voz-cat-axo { background: rgba(232,168,56,0.1); color: var(--color-accent); }
+    .voz-cat-critico { background: rgba(229,75,75,0.1); color: var(--color-error); }
+
+    /* ═══════════════════════════════════════════════════
+       MANUAL DE COMUNICACION
+       ═══════════════════════════════════════════════════ */
+    .com-section-block {
+      margin-bottom: 64px;
+    }
+    .com-section-block:last-child { margin-bottom: 0; }
+    .com-block-title {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+    .com-block-desc {
+      font-size: 14px;
+      line-height: 1.6;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 32px;
+      max-width: 640px;
+    }
+    .com-gradient-bar {
+      height: 3px;
+      border-radius: 2px;
+      margin-bottom: 32px;
+      background: linear-gradient(90deg, var(--ritual-jade), var(--ritual-indigo));
+      opacity: 0.4;
+    }
+    .com-principle-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .com-principle-card {
+      padding: 28px 24px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+    }
+    .com-principle-card .com-card-num {
+      font-family: var(--font-heading);
+      font-size: 32px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.08);
+      margin-bottom: 12px;
+      line-height: 1;
+    }
+    .com-principle-card h4 {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .com-principle-card p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.5;
+    }
+    .com-channel-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .com-channel-card {
+      padding: 32px 24px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.03);
+      position: relative;
+      overflow: hidden;
+    }
+    .com-channel-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .com-channel-card.ch-web::before { background: var(--color-primary); }
+    .com-channel-card.ch-ig::before { background: var(--ritual-rosa); }
+    .com-channel-card.ch-tk::before { background: var(--ritual-indigo); }
+    .com-channel-icon {
+      font-size: 28px;
+      margin-bottom: 16px;
+    }
+    .com-channel-card h4 {
+      font-family: var(--font-display);
+      font-size: 17px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .com-channel-card .ch-subtitle {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .com-channel-card.ch-web .ch-subtitle { color: var(--color-primary); }
+    .com-channel-card.ch-ig .ch-subtitle { color: var(--ritual-rosa); }
+    .com-channel-card.ch-tk .ch-subtitle { color: var(--ritual-indigo); }
+    .com-channel-card p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.6;
+    }
+    .com-channel-card ul {
+      list-style: none;
+      padding: 0;
+      margin: 16px 0 0;
+    }
+    .com-channel-card li {
+      font-size: 13px;
+      color: rgba(255,255,255,0.45);
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      line-height: 1.5;
+    }
+    .com-channel-card li:last-child { border-bottom: none; }
+    .com-journey-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+    .com-journey-step {
+      padding: 24px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.02);
+      text-align: center;
+      position: relative;
+    }
+    .com-journey-step::after {
+      content: '→';
+      position: absolute;
+      right: -10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: rgba(255,255,255,0.15);
+      font-size: 16px;
+    }
+    .com-journey-step:last-child::after { content: none; }
+    .com-journey-step .step-num {
+      font-family: var(--font-heading);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .com-journey-step h5 {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .com-journey-step p {
+      font-size: 12px;
+      color: rgba(255,255,255,0.4);
+      line-height: 1.5;
+    }
+    .com-graduation-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .com-graduation-table th {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 16px 20px;
+      text-align: left;
+      background: rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.6);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .com-graduation-table td {
+      padding: 16px 20px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.5;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      vertical-align: top;
+    }
+    .com-graduation-table tr:last-child td { border-bottom: none; }
+    .com-graduation-table .grad-level {
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .com-graduation-table .grad-100 { color: var(--ritual-jade); }
+    .com-graduation-table .grad-60 { color: var(--color-primary); }
+    .com-graduation-table .grad-30 { color: var(--ritual-rosa); }
+    .com-graduation-table .grad-10 { color: var(--color-accent); }
+    .com-graduation-table .grad-5 { color: rgba(255,255,255,0.3); }
+    .com-formula-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    .com-formula-card {
+      padding: 28px 24px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+    }
+    .com-formula-card h4 {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .com-formula-card .formula-context {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .com-formula-card .formula-template {
+      font-family: var(--font-heading);
+      font-size: 14px;
+      color: rgba(255,255,255,0.7);
+      padding: 16px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.06);
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    .com-formula-card .formula-example {
+      font-size: 13px;
+      color: rgba(255,255,255,0.4);
+      font-style: italic;
+      line-height: 1.5;
+    }
+    .com-vocab-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    .com-vocab-col {
+      padding: 28px 24px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .com-vocab-col.vocab-si {
+      background: rgba(42,181,160,0.04);
+      border-color: rgba(42,181,160,0.12);
+    }
+    .com-vocab-col.vocab-no {
+      background: rgba(229,75,75,0.03);
+      border-color: rgba(229,75,75,0.1);
+    }
+    .com-vocab-col h4 {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .com-vocab-col.vocab-si h4 { color: var(--color-secondary); }
+    .com-vocab-col.vocab-no h4 { color: var(--color-error); }
+    .com-vocab-col ul {
+      list-style: none;
+      padding: 0;
+    }
+    .com-vocab-col li {
+      font-size: 13px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      line-height: 1.5;
+    }
+    .com-vocab-col.vocab-si li { color: rgba(255,255,255,0.6); }
+    .com-vocab-col.vocab-no li { color: rgba(255,255,255,0.35); text-decoration: line-through; }
+    .com-vocab-col li:last-child { border-bottom: none; }
+    .com-axo-presence-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .com-axo-card {
+      padding: 24px;
+      border-radius: 16px;
+      border: 1px solid rgba(232,168,56,0.15);
+      background: rgba(232,168,56,0.04);
+    }
+    .com-axo-card h4 {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-accent);
+      margin-bottom: 4px;
+    }
+    .com-axo-card .axo-where {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+      color: rgba(255,255,255,0.3);
+      margin-bottom: 12px;
+    }
+    .com-axo-card p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.5;
+    }
+    .com-axo-card .axo-example {
+      margin-top: 12px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 10px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.6);
+      font-style: italic;
+    }
+    .com-data-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    .com-data-card {
+      padding: 28px 24px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+    }
+    .com-data-card h4 {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+    .com-data-card .data-example {
+      font-family: var(--font-heading);
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      line-height: 1.2;
+    }
+    .com-data-card p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.45);
+      line-height: 1.5;
+    }
+    .com-content-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    .com-content-card {
+      padding: 28px 24px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+    }
+    .com-content-card h4 {
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .com-content-card .content-tag {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      margin-bottom: 12px;
+    }
+    .com-content-card p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.6;
+    }
+    .com-content-card .content-example {
+      margin-top: 12px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 10px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.55);
+      font-style: italic;
+      line-height: 1.5;
+    }
+    @media (max-width: 768px) {
+      .com-principle-grid,
+      .com-channel-grid,
+      .com-axo-presence-grid { grid-template-columns: 1fr; }
+      .com-journey-grid { grid-template-columns: 1fr; }
+      .com-journey-step::after { content: none; }
+      .com-formula-grid,
+      .com-vocab-grid,
+      .com-data-grid,
+      .com-content-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ═══════════════════════════════════════════════════
+       MOTION SECTION — Demo curves
+       ═══════════════════════════════════════════════════ */
+    .motion-curve-demo {
+      padding: 32px;
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border-light);
+      border-radius: 16px;
+      text-align: center;
+    }
+    .motion-ball {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      margin: 16px auto 0;
+    }
+    .motion-curve-demo:hover .motion-ball-agua {
+      transform: translateX(60px);
+      transition: transform 0.6s var(--ease-agua);
+    }
+    .motion-curve-demo:hover .motion-ball-spring {
+      transform: translateX(60px);
+      transition: transform 0.6s var(--ease-spring);
+    }
+    .motion-curve-demo:hover .motion-ball-smooth {
+      transform: translateX(60px);
+      transition: transform 0.6s var(--ease-smooth);
+    }
+    .motion-ball { transition: transform 0.6s var(--ease-agua); }
+
+    /* ═══════════════════════════════════════════════════
+       FOTOGRAFIA — Direccion de Imagen
+       ═══════════════════════════════════════════════════ */
+    .foto-rule-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+    .foto-rule-card {
+      padding: 32px;
+      border-radius: 16px;
+    }
+    .foto-rule-do {
+      background: rgba(42,181,160,0.06);
+      border: 1px solid rgba(42,181,160,0.15);
+    }
+    .foto-rule-dont {
+      background: rgba(229,75,75,0.04);
+      border: 1px solid rgba(229,75,75,0.12);
+    }
+    .foto-rule-label {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .foto-rule-do .foto-rule-label { color: var(--color-secondary); }
+    .foto-rule-dont .foto-rule-label { color: var(--color-error); }
+    .foto-rule-list {
+      list-style: none;
+      padding: 0;
+    }
+    .foto-rule-list li {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--color-text-secondary);
+      padding: 6px 0;
+      padding-left: 20px;
+      position: relative;
+    }
+    .foto-rule-do .foto-rule-list li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--color-secondary);
+      font-weight: 600;
+    }
+    .foto-rule-dont .foto-rule-list li::before {
+      content: '✗';
+      position: absolute;
+      left: 0;
+      color: var(--color-error);
+      font-weight: 600;
+    }
+
+    /* Responsive additions */
+    @media (max-width: 768px) {
+      .retrato-card { grid-template-columns: 1fr; }
+      .retrato-foto { min-height: 200px; }
+      .foto-rule-grid { grid-template-columns: 1fr; }
+      .geo-grid-3 { grid-template-columns: 1fr !important; }
+    }
+
   </style>
 </head>
 <body>
@@ -2361,46 +3155,36 @@
        NAV
        ═══════════════════════════════════════════ -->
   <nav class="nav">
-    <div class="nav-section-label" style="padding-top: 0;">Marca</div>
+    <div class="nav-section-label" style="padding-top: 0;">Marca (01–06)</div>
     <ul class="nav-links">
-      <li><a href="#logo">Logo</a></li>
-      <li><a href="#manifiesto">Manifiesto</a></li>
-      <li><a href="#pilares">Pilares S.A.C.S.</a></li>
-      <li><a href="#comercio-consciente">Comercio Consciente</a></li>
-      <li><a href="#axo">AXO</a></li>
-      <li><a href="#voz">Voz de Marca</a></li>
+      <li><a href="#logo">01 Logo</a></li>
+      <li><a href="#manifiesto">02 Manifiesto</a></li>
+      <li><a href="#pilares">03 Pilares S.A.C.S.</a></li>
+      <li><a href="#comercio-consciente">04 Comercio Consciente</a></li>
+      <li><a href="#axo">05 AXO</a></li>
+      <li><a href="#voz">06 Voz de Marca</a></li>
+      <li><a href="#comunicacion">06B Comunicacion</a></li>
     </ul>
-    <div class="nav-section-label">Sistema</div>
+    <div class="nav-section-label">Sistema (07–13)</div>
     <ul class="nav-links">
-      <li><a href="#typography">Tipografia</a></li>
-      <li><a href="#colors">Colores</a></li>
-      <li><a href="#components">Componentes</a></li>
-      <li><a href="#spacing">Espaciado</a></li>
-      <li><a href="#accesibilidad">Accesibilidad</a></li>
+      <li><a href="#typography">07 Tipografia</a></li>
+      <li><a href="#colors">08 Color</a></li>
+      <li><a href="#spacing">09 Espaciado</a></li>
+      <li><a href="#components">10 Componentes</a></li>
+      <li><a href="#heroes">11 Heroes</a></li>
+      <li><a href="#fondos">12 Fondos Culturales</a></li>
+      <li><a href="#geometria">13 Geometria Cultural</a></li>
     </ul>
-    <div class="nav-section-label">Heroes</div>
+    <div class="nav-section-label">Aplicaciones (14–19)</div>
     <ul class="nav-links">
-      <li><a href="#heroes">Con ilustracion</a></li>
-    </ul>
-    <div class="nav-section-label">Fondos</div>
-    <ul class="nav-links">
-      <li><a href="#fondos">Oaxaquenos</a></li>
-      <li><a href="#fondo-sarape">Sarape</a></li>
-      <li><a href="#fondo-calle">Calle Oaxaquena</a></li>
-      <li><a href="#fondo-papel">Papel Picado</a></li>
-      <li><a href="#fondo-textil">Textil Diagonal</a></li>
-      <li><a href="#fondo-mural">Mural</a></li>
-      <li><a href="#fondo-bordado">Bordado</a></li>
-      <li><a href="#fondo-hilos">Hilos</a></li>
-    </ul>
-    <div class="nav-section-label">Social</div>
-    <ul class="nav-links">
-      <li><a href="#instagram">Instagram</a></li>
-    </ul>
-    <div class="nav-section-label">Otros</div>
-    <ul class="nav-links">
-      <li><a href="#firma-email">Firma de Email</a></li>
+      <li><a href="#instagram">14 Instagram</a></li>
+      <li><a href="#firma-email">15 Firma de Email</a></li>
+      <li><a href="#uniformes">16 Identidad Textil</a></li>
+      <li><a href="#fotografia">17 Direccion de Imagen</a></li>
+      <li><a href="#retratos">18 Retratos de Comerciantes</a></li>
+      <li><a href="#accesibilidad">19 Accesibilidad</a></li>
       <li><a href="#nav-footer">Nav & Footer</a></li>
+      <li><a href="#motion">Motion</a></li>
       <li><a class="btn btn-primary btn-sm" href="#">Agenda reunion</a></li>
     </ul>
   </nav>
@@ -2431,7 +3215,7 @@
        00A — LOGO
        ═══════════════════════════════════════════ -->
   <section class="section" id="logo">
-    <div class="section-label">00 — Logo</div>
+    <div class="section-label">01 — Logo</div>
     <h2 class="section-title" style="font-family: var(--font-logo);"><span style="font-weight: 200; color: #6B7280;">Sacs</span><span style="font-weight: 500; color: #4B5563;">cloud</span><span style="font-weight: 200; font-size: 0.5em; vertical-align: super;">®</span></h2>
     <p class="section-desc">
       Tres circulos que representan la interseccion de Negocio, Tecnologia e Impacto Social. El punto de encuentro donde el comercio se transforma.
@@ -2637,7 +3421,7 @@
   <section class="section-dark" id="manifiesto">
     <div class="section-inner">
       <!-- 1.1 — Manifiesto corto (hero) -->
-      <div class="section-label">MANIFIESTO</div>
+      <div class="section-label">02 — Manifiesto</div>
       <h2 class="section-title" style="color: #fff;">El comercio<br>puede ser mejor.</h2>
       <p class="section-desc">
         Creemos que cada transaccion tiene el poder de transformar una comunidad. Que la tecnologia no es un fin, sino un medio para que los negocios crezcan sin perder su alma.
@@ -2690,7 +3474,7 @@
        ═══════════════════════════════════════════ -->
   <section class="section-cream" id="pilares">
     <div class="section-inner">
-      <div class="section-label">PILARES S.A.C.S.</div>
+      <div class="section-label">03 — Pilares S.A.C.S.</div>
       <h2 class="section-title">Cuatro letras.<br>Un proposito.</h2>
       <p class="section-desc">Cada letra de SACS representa un pilar filosofico que guia todas nuestras decisiones de producto, diseno y negocio.</p>
 
@@ -2731,7 +3515,7 @@
     <div class="section-inner">
 
       <!-- ─── VERSION CORTA ─── -->
-      <div class="section-label">COMERCIO CONSCIENTE</div>
+      <div class="section-label">04 — Comercio Consciente</div>
       <h2 class="section-title" style="color: #fff;">Creemos que<br>vender es servir.</h2>
       <div class="manifiesto-quote" style="margin-top: 48px;">
         Que crecer no es perder esencia.<br>
@@ -2986,10 +3770,10 @@
        01 — TIPOGRAFIA
        ═══════════════════════════════════════════ -->
   <section class="section" id="typography">
-    <div class="section-label">01 — Tipografia</div>
+    <div class="section-label">07 — Tipografia</div>
     <h2 class="section-title">Tres familias.<br>Una jerarquia clara.</h2>
     <p class="section-desc">
-      DM Sans para titulos de impacto. Space Grotesk para headings tecnicos. Plus Jakarta Sans para cuerpo y UI.
+      DM Sans para titulos display de impacto. Space Grotesk para headings tecnicos y numeros. Plus Jakarta Sans para cuerpo y UI. Urbanist solo en el logo (no se carga en runtime).
     </p>
 
     <div class="type-specimen">
@@ -3124,10 +3908,10 @@
        ═══════════════════════════════════════════ -->
   <section class="section-cream" id="colors">
     <div class="section-inner">
-      <div class="section-label">02 — Colores</div>
+      <div class="section-label">08 — Color</div>
       <h2 class="section-title">La paleta de<br>SACS.</h2>
       <p class="section-desc">
-        Dos paletas: la corporativa (derivada del logo) y la oaxaquena (para texturas, fondos y elementos decorativos).
+        Tres paletas: la corporativa (derivada del logo), la ritual (ecos mexicanos para la interfaz core) y la oaxaquena (para texturas, fondos y elementos decorativos).
       </p>
 
       <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">Primarios</h3>
@@ -3162,20 +3946,57 @@
         </div>
       </div>
 
-      <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">Neutros</h3>
+      <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Paleta Ritual</h3>
+      <p style="font-size: 14px; color: var(--color-text-tertiary); line-height: 1.6; max-width: 560px; margin-bottom: 20px;">Ecos refinados y desaturados de la paleta Oaxaca, disenados para usarse como acentos sutiles en la interfaz core. La mexicanidad se percibe en el ADN cromatico, no solo en fondos decorativos.</p>
       <div class="colors-grid mb-48">
         <div class="swatch">
-          <div class="swatch-color" style="background: #000000;"></div>
+          <div class="swatch-color" style="background: var(--ritual-jade);"></div>
           <div class="swatch-info">
-            <div class="swatch-name">Negro</div>
-            <div class="swatch-hex">#000000</div>
+            <div class="swatch-name">Jade Codice</div>
+            <div class="swatch-hex">#5B8F7B</div>
+            <p style="font-size: 11px; color: var(--color-text-tertiary); margin-top: 4px; line-height: 1.4;">Del jade mesoamericano — piedra de vida y poder. Badges de impacto, estados de exito profundo.</p>
           </div>
         </div>
         <div class="swatch">
-          <div class="swatch-color" style="background: #333333;"></div>
+          <div class="swatch-color" style="background: var(--ritual-rosa);"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Rosa Axolotl</div>
+            <div class="swatch-hex">#C4929B</div>
+            <p style="font-size: 11px; color: var(--color-text-tertiary); margin-top: 4px; line-height: 1.4;">Del rosa coral del axolotl — regeneracion y ternura. Estados emocionales, notificaciones de AXO.</p>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--ritual-terracota);"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Terracota Sutil</div>
+            <div class="swatch-hex">#B87B5E</div>
+            <p style="font-size: 11px; color: var(--color-text-tertiary); margin-top: 4px; line-height: 1.4;">Del barro oaxaqueno — calidez artesanal. Alertas calidas, estados de atencion humanizada.</p>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: var(--ritual-indigo);"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Indigo Nocturno</div>
+            <div class="swatch-hex">#3D4F7C</div>
+            <p style="font-size: 11px; color: var(--color-text-tertiary); margin-top: 4px; line-height: 1.4;">Del cielo de Oaxaca al anochecer — profundidad y misterio. Fondos oscuros premium, elementos de IA.</p>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">Neutros</h3>
+      <div class="colors-grid mb-48">
+        <div class="swatch">
+          <div class="swatch-color" style="background: #1A1A1A;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Negro Carbon</div>
+            <div class="swatch-hex">#1A1A1A</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #4A4A4A;"></div>
           <div class="swatch-info">
             <div class="swatch-name">Gris Oscuro</div>
-            <div class="swatch-hex">#333333</div>
+            <div class="swatch-hex">#4A4A4A</div>
           </div>
         </div>
         <div class="swatch">
@@ -3268,7 +4089,7 @@
        03 — COMPONENTES
        ═══════════════════════════════════════════ -->
   <section class="section" id="components">
-    <div class="section-label">03 — Componentes</div>
+    <div class="section-label">10 — Componentes</div>
     <h2 class="section-title">Botones</h2>
     <p class="section-desc">
       Forma pill (border-radius 50px). Solidos, limpios, sin blur ni gradientes en botones.
@@ -3325,7 +4146,7 @@
        ═══════════════════════════════════════════ -->
   <section class="section-dark" id="heroes">
     <div class="section-inner">
-      <div class="section-label">04 — Heroes con Ilustracion</div>
+      <div class="section-label">11 — Heroes con Ilustracion</div>
       <h2 class="section-title" style="color: #fff;">Imagen + Overlay + Grain.</h2>
       <p class="section-desc">
         Ilustraciones painterly como fondo con textura grain (SVG feTurbulence). Tres variantes de overlay aprobadas para legibilidad. Tipografia DM Sans. Botones solidos sin blur.
@@ -3408,7 +4229,7 @@
        ═══════════════════════════════════════════ -->
   <section class="section-dark" id="fondos">
     <div class="section-inner">
-      <div class="section-label">05 — Fondos Oaxaquenos</div>
+      <div class="section-label">12 — Fondos Culturales</div>
       <h2 class="section-title" style="color: #fff;">Texturas CSS con<br>colores vivos.</h2>
       <p class="section-desc">
         Patrones CSS-only inspirados en sarapes, papel picado y calles oaxaquenas. Todos con overlays para legibilidad y textura grain.
@@ -3630,7 +4451,7 @@
     <div class="section-inner">
 
       <!-- A) Presentacion de AXO -->
-      <div class="section-label">CONOCE A AXO</div>
+      <div class="section-label">05 — AXO</div>
       <h2 class="section-title">Tu asistente inteligente<br>para retail.</h2>
 
       <div class="axo-intro">
@@ -3885,7 +4706,7 @@
        07 — FORMULARIOS
        ═══════════════════════════════════════════ -->
   <section class="section">
-    <div class="section-label">07 — Formularios</div>
+    <div class="section-label">10B — Formularios</div>
     <h2 class="section-title">Inputs & Forms</h2>
     <p class="section-desc">Bordes suaves, focus con halo azul, accesibles.</p>
 
@@ -3921,7 +4742,7 @@
        ═══════════════════════════════════════════ -->
   <section class="section-cream" id="spacing">
     <div class="section-inner">
-      <div class="section-label">08 — Espaciado</div>
+      <div class="section-label">09 — Espaciado</div>
       <h2 class="section-title">Sistema de 8px</h2>
       <p class="section-desc">Todo el espaciado se deriva de multiplos de 8. Consistencia visual en cada pixel.</p>
 
@@ -3944,7 +4765,8 @@
       <div class="radius-grid mb-48">
         <div class="radius-box" style="border-radius: 8px;"><span class="radius-value">8px</span><span class="radius-name">sm</span></div>
         <div class="radius-box" style="border-radius: 12px;"><span class="radius-value">12px</span><span class="radius-name">md</span></div>
-        <div class="radius-box" style="border-radius: 16px;"><span class="radius-value">16px</span><span class="radius-name">lg / xl</span></div>
+        <div class="radius-box" style="border-radius: 16px;"><span class="radius-value">16px</span><span class="radius-name">lg</span></div>
+        <div class="radius-box" style="border-radius: 20px;"><span class="radius-value">20px</span><span class="radius-name">xl</span></div>
         <div class="radius-box" style="border-radius: 24px;"><span class="radius-value">24px</span><span class="radius-name">2xl</span></div>
         <div class="radius-box" style="border-radius: 50px;"><span class="radius-value">50px</span><span class="radius-name">full</span></div>
       </div>
@@ -3966,7 +4788,7 @@
        09 — NAVEGACION & FOOTER
        ═══════════════════════════════════════════ -->
   <section class="section" id="nav-footer">
-    <div class="section-label">09 — Navegacion & Footer</div>
+    <div class="section-label">Nav & Footer</div>
     <h2 class="section-title">Estructura del sitio</h2>
     <p class="section-desc">Nav sticky con blur. Footer oscuro con 4 columnas.</p>
 
@@ -4034,10 +4856,12 @@
        ═══════════════════════════════════════════ -->
   <section class="section-dark" id="voz">
     <div class="section-inner">
-      <div class="section-label">11 — Voz de Marca</div>
+      <div class="section-label">06 — Voz de Marca</div>
       <h2 class="section-title" style="color: #fff;">Como hablamos.<br>Como NO hablamos.</h2>
       <p class="section-desc">El tono de SACS es directo, calido y seguro. Hablamos como un amigo experto que te da confianza, no como un vendedor que te presiona.</p>
 
+      <!-- MARKETING -->
+      <div class="voz-category-label voz-cat-marketing">Marketing</div>
       <div class="voz-table">
         <div class="voz-row voz-header">
           <div class="voz-col voz-si">Asi si</div>
@@ -4048,20 +4872,87 @@
           <div class="voz-col voz-no">"Nuestra solucion de gestion de inventario enterprise-grade..."</div>
         </div>
         <div class="voz-row">
-          <div class="voz-col voz-si">"AXO detecto que te estas quedando sin talla M."</div>
-          <div class="voz-col voz-no">"El sistema ha identificado una alerta de stock bajo."</div>
+          <div class="voz-col voz-si">"Tu negocio genera impacto real."</div>
+          <div class="voz-col voz-no">"Somos una empresa con responsabilidad social corporativa."</div>
         </div>
         <div class="voz-row">
           <div class="voz-col voz-si">"Factura en 2 clics. Sin dolor de cabeza."</div>
           <div class="voz-col voz-no">"Plataforma de facturacion electronica CFDI 4.0 integrada."</div>
         </div>
         <div class="voz-row">
-          <div class="voz-col voz-si">"Tu negocio genera impacto real."</div>
-          <div class="voz-col voz-no">"Somos una empresa con responsabilidad social corporativa."</div>
-        </div>
-        <div class="voz-row">
           <div class="voz-col voz-si">"Vendiste 23% mas que el mes pasado. Felicidades."</div>
           <div class="voz-col voz-no">"Se ha registrado un incremento porcentual en metricas de venta."</div>
+        </div>
+      </div>
+
+      <!-- PRODUCTO -->
+      <div class="voz-category-label voz-cat-producto" style="margin-top: 32px;">Producto (Microcopy)</div>
+      <div class="voz-table">
+        <div class="voz-row voz-header">
+          <div class="voz-col voz-si">Asi si</div>
+          <div class="voz-col voz-no">Asi no</div>
+        </div>
+        <div class="voz-row">
+          <div class="voz-col voz-si">"Todavia no hay ventas hoy. Buen momento para revisar tu inventario."</div>
+          <div class="voz-col voz-no">"No se encontraron resultados."</div>
+        </div>
+        <div class="voz-row">
+          <div class="voz-col voz-si">"Algo salio mal. Estamos en eso — intenta de nuevo en un minuto."</div>
+          <div class="voz-col voz-no">"Error 500: Internal Server Error."</div>
+        </div>
+        <div class="voz-row">
+          <div class="voz-col voz-si">"Tu reporte esta listo. 3 insights que te van a interesar."</div>
+          <div class="voz-col voz-no">"El proceso de generacion de reportes ha sido completado exitosamente."</div>
+        </div>
+        <div class="voz-row">
+          <div class="voz-col voz-si">"Bienvenida, Martha. Tu tienda vendio $12,400 ayer."</div>
+          <div class="voz-col voz-no">"Bienvenido al dashboard. Revise las metricas del dia anterior."</div>
+        </div>
+      </div>
+
+      <!-- AXO -->
+      <div class="voz-category-label voz-cat-axo" style="margin-top: 32px;">La voz de AXO</div>
+      <div class="voz-table">
+        <div class="voz-row voz-header">
+          <div class="voz-col voz-si">Asi si</div>
+          <div class="voz-col voz-no">Asi no</div>
+        </div>
+        <div class="voz-row">
+          <div class="voz-col voz-si">"AXO detecto que te estas quedando sin talla M."</div>
+          <div class="voz-col voz-no">"El sistema ha identificado una alerta de stock bajo."</div>
+        </div>
+        <div class="voz-row">
+          <div class="voz-col voz-si">"Oye, tus ventas de viernes son 40% mas altas que las de martes. Quieres que programe una promo para los martes?"</div>
+          <div class="voz-col voz-no">"Patron detectado: varianza significativa en metricas de ventas por dia de la semana."</div>
+        </div>
+        <div class="voz-row">
+          <div class="voz-col voz-si">"Listo. Ya movi 20 piezas de Sucursal Centro a Sucursal Norte. Tu cliente las tendra manana."</div>
+          <div class="voz-col voz-no">"Transferencia de inventario procesada. Ref: TRX-2847."</div>
+        </div>
+        <div class="voz-row">
+          <div class="voz-col voz-si">"No estoy 100% seguro de esta prediccion. Quieres que te muestre los datos para que decidas tu?"</div>
+          <div class="voz-col voz-no">"Confianza del modelo: 62%. Proceder con precaucion."</div>
+        </div>
+      </div>
+
+      <!-- MOMENTOS CRITICOS -->
+      <div class="voz-category-label voz-cat-critico" style="margin-top: 32px;">Momentos criticos</div>
+      <div class="voz-table">
+        <div class="voz-row voz-header">
+          <div class="voz-col voz-si">Asi si</div>
+          <div class="voz-col voz-no">Asi no</div>
+        </div>
+        <div class="voz-row">
+          <div class="voz-col voz-si">"Estamos teniendo problemas tecnicos. Tu informacion esta segura. Estamos trabajando para resolverlo ya."</div>
+          <div class="voz-col voz-no">"El servicio no esta disponible temporalmente. Disculpe las molestias."</div>
+        </div>
+        <div class="voz-row">
+          <div class="voz-col voz-si">"Lamentamos que te vayas. Tu informacion estara disponible 30 dias por si cambias de opinion."</div>
+          <div class="voz-col voz-no">"Su cuenta ha sido cancelada. Los datos seran eliminados conforme a nuestra politica de retencion."</div>
+        </div>
+        <div class="voz-row">
+          <div class="voz-col voz-si">"Tu pago no paso. Revisa los datos de tu tarjeta o intenta con otra."</div>
+          <div class="voz-col voz-no">"Error de pago: transaccion declinada por la institucion emisora."</div>
         </div>
       </div>
 
@@ -4070,14 +4961,676 @@
         <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;">
           <div style="padding: 24px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
             <div style="font-size: 13px; font-weight: 600; color: var(--color-secondary); margin-bottom: 8px;">SIEMPRE</div>
-            <p style="font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.6;">Tutear al usuario. Usar espanol mexicano natural. Celebrar los logros del comerciante. Ser especifico con datos.</p>
+            <p style="font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.6;">Tutear al usuario. Usar espanol mexicano natural. Celebrar los logros del comerciante. Ser especifico con datos. Ser honesto cuando algo falla. Dar siguiente paso claro.</p>
           </div>
           <div style="padding: 24px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;">
             <div style="font-size: 13px; font-weight: 600; color: var(--color-error); margin-bottom: 8px;">NUNCA</div>
-            <p style="font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.6;">Usar jerga corporativa. Hablar de usted. Usar anglicismos innecesarios. Prometer sin cumplir. Ser condescendiente.</p>
+            <p style="font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.6;">Usar jerga corporativa. Hablar de usted. Usar anglicismos innecesarios. Prometer sin cumplir. Ser condescendiente. Mostrar codigos de error sin contexto humano.</p>
           </div>
         </div>
       </div>
+
+      <div class="divider" style="background: rgba(255,255,255,0.1); margin: 48px 0;"></div>
+
+      <!-- AXO Voice Framework -->
+      <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.03em; color: #fff; margin-bottom: 12px;">AXO Voice Framework</h3>
+      <p style="font-size: 14px; color: rgba(255,255,255,0.5); margin-bottom: 32px;">AXO tiene 6 caras y cada una tiene un tono especifico. La personalidad base es constante: curioso, calido, directo, humilde cuando no sabe.</p>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+        <div style="padding: 24px; background: rgba(75,123,229,0.08); border: 1px solid rgba(75,123,229,0.15); border-radius: 16px;">
+          <div style="font-size: 13px; font-weight: 600; color: var(--color-primary); margin-bottom: 8px;">ANALISTA</div>
+          <p style="font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.5;">Preciso con datos, pero explica como amigo. "Tus martes son flojos — quieres probar algo?"</p>
+        </div>
+        <div style="padding: 24px; background: rgba(42,181,160,0.08); border: 1px solid rgba(42,181,160,0.15); border-radius: 16px;">
+          <div style="font-size: 13px; font-weight: 600; color: var(--color-secondary); margin-bottom: 8px;">ASISTENTE</div>
+          <p style="font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.5;">Eficiente y claro. "Listo. La transferencia ya va en camino."</p>
+        </div>
+        <div style="padding: 24px; background: rgba(232,168,56,0.08); border: 1px solid rgba(232,168,56,0.15); border-radius: 16px;">
+          <div style="font-size: 13px; font-weight: 600; color: var(--color-accent); margin-bottom: 8px;">COACH</div>
+          <p style="font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.5;">Motivador sin ser cursi. "Llevas 3 meses creciendo. Eso no es suerte — es trabajo."</p>
+        </div>
+        <div style="padding: 24px; background: rgba(196, 146, 155, 0.12); border: 1px solid rgba(196, 146, 155, 0.2); border-radius: 16px;">
+          <div style="font-size: 13px; font-weight: 600; color: var(--ritual-rosa); margin-bottom: 8px;">GUARDIAN</div>
+          <p style="font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.5;">Protector y alerta. "Ojo: este proveedor subio precios 15% — quieres que busque alternativas?"</p>
+        </div>
+        <div style="padding: 24px; background: rgba(91,143,123, 0.12); border: 1px solid rgba(91,143,123, 0.2); border-radius: 16px;">
+          <div style="font-size: 13px; font-weight: 600; color: var(--ritual-jade); margin-bottom: 8px;">SEMBRADOR</div>
+          <p style="font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.5;">Conecta impacto social. "Este mes tu licencia ayudo a capacitar a 3 emprendedores."</p>
+        </div>
+        <div style="padding: 24px; background: rgba(61,79,124, 0.15); border: 1px solid rgba(61,79,124, 0.25); border-radius: 16px;">
+          <div style="font-size: 13px; font-weight: 600; color: var(--ritual-indigo); margin-bottom: 8px;">NARRADOR</div>
+          <p style="font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.5;">Cuenta la historia del negocio. "En 2024 empezaste con 1 sucursal. Hoy tienes 4."</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       06B — MANUAL DE COMUNICACION
+       ═══════════════════════════════════════════ -->
+  <section class="section-dark" id="comunicacion">
+    <div class="section-inner">
+      <div class="section-label">06B — Manual de Comunicacion</div>
+      <h2 class="section-title" style="color: #fff;">Como nos entiende<br>el mundo.</h2>
+      <p class="section-desc" style="max-width: 640px;">Cada palabra que sale de SACS construye o destruye confianza. Este manual define como hablamos en cada canal, en cada momento, con cada tipo de comerciante. No es una guia de estilo — es la forma en que una marca consciente se comunica con el mundo.</p>
+
+      <!-- ═══ A. PRINCIPIO DE COMUNICACION ═══ -->
+      <div class="com-section-block">
+        <div class="com-gradient-bar"></div>
+        <h3 class="com-block-title" style="color: #fff;">A. Principio de comunicacion</h3>
+        <p class="com-block-desc">Toda comunicacion de SACS nace de una premisa: hablamos con comerciantes que quieren crecer, aprender y seguir adelante. No les vendemos — los equipamos. No los instruimos — los inspiramos.</p>
+
+        <div class="com-principle-grid">
+          <div class="com-principle-card">
+            <div class="com-card-num">01</div>
+            <h4>Beneficio antes que funcion</h4>
+            <p>Primero el resultado que el comerciante obtiene, despues como funciona. "Vende en todos tus canales desde un solo lugar" antes que "plataforma omnicanal integrada".</p>
+          </div>
+          <div class="com-principle-card">
+            <div class="com-card-num">02</div>
+            <h4>Dato antes que promesa</h4>
+            <p>Un numero real vale mas que un adjetivo. "23% mas ventas" en vez de "increible crecimiento". Cuando no hay dato, usa una historia real.</p>
+          </div>
+          <div class="com-principle-card">
+            <div class="com-card-num">03</div>
+            <h4>Accion antes que explicacion</h4>
+            <p>Cada pieza de comunicacion cierra con un paso claro. No informamos — movemos. "Empieza gratis" no "Conoce mas sobre nuestros planes".</p>
+          </div>
+          <div class="com-principle-card">
+            <div class="com-card-num">04</div>
+            <h4>Persona antes que empresa</h4>
+            <p>SACS no habla de si mismo. Habla del comerciante. "Tu negocio crece" no "SACS te hace crecer". El heroe siempre es quien vende.</p>
+          </div>
+          <div class="com-principle-card">
+            <div class="com-card-num">05</div>
+            <h4>Honestidad antes que perfeccion</h4>
+            <p>Si algo falla, lo decimos. Si no sabemos, lo admitimos. La confianza se construye con transparencia, no con marketing perfecto.</p>
+          </div>
+          <div class="com-principle-card">
+            <div class="com-card-num">06</div>
+            <h4>Inspiracion antes que instruccion</h4>
+            <p>No le decimos al comerciante que hacer — le mostramos lo que es posible. Analogias simples, filosofia accesible, ejemplos que se sienten cercanos.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ B. GRADUACION FILOSOFICA ═══ -->
+      <div class="com-section-block">
+        <div class="com-gradient-bar"></div>
+        <h3 class="com-block-title" style="color: #fff;">B. Graduacion filosofica</h3>
+        <p class="com-block-desc">La profundidad del mensaje cambia segun el contexto. Un manifiesto puede ser poetico. Un push notification debe ser directo. Esta tabla define cuanta filosofia llevar a cada punto de contacto.</p>
+
+        <table class="com-graduation-table">
+          <thead>
+            <tr>
+              <th style="width: 100px;">Nivel</th>
+              <th style="width: 200px;">Donde aplica</th>
+              <th>Como suena</th>
+              <th style="width: 260px;">Ejemplo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="grad-level grad-100">100%</span></td>
+              <td>Manifiesto, pagina About, campanas de marca, keynotes</td>
+              <td>Poetico, declarativo, transformador. Frases cortas con peso. Invitacion a un movimiento, no a un producto.</td>
+              <td>"El comercio puede ser mejor. Y los que lo saben, ya estan aqui."</td>
+            </tr>
+            <tr>
+              <td><span class="grad-level grad-60">60%</span></td>
+              <td>Landing pages, blog editorial, email de bienvenida, Instagram carousels</td>
+              <td>Inspirador pero aterrizado. Conecta la vision con el dia a dia del comerciante. Datos + proposito.</td>
+              <td>"Cada venta es una oportunidad de impactar una vida. Por eso te damos las herramientas para que no se te escape ninguna."</td>
+            </tr>
+            <tr>
+              <td><span class="grad-level grad-30">30%</span></td>
+              <td>Paginas de producto, features, comparativas, onboarding</td>
+              <td>Calido y directo. Beneficio claro. La filosofia esta en el tono, no en las palabras — se siente humano sin decir "humano".</td>
+              <td>"Controla tu inventario en todos tus canales. Sin sorpresas, sin faltantes."</td>
+            </tr>
+            <tr>
+              <td><span class="grad-level grad-10">10%</span></td>
+              <td>Push notifications, microcopy, tooltips, confirmaciones</td>
+              <td>Ultra directo. La calidez esta en la brevedad respetuosa y el dato util. Sin relleno.</td>
+              <td>"Vendiste $8,400 hoy. 12% mas que ayer."</td>
+            </tr>
+            <tr>
+              <td><span class="grad-level grad-5">5%</span></td>
+              <td>Codigos de error, alertas de sistema, estados de carga, recibos</td>
+              <td>Funcional con empatia minima. Sin jerga tecnica. Siguiente paso claro.</td>
+              <td>"Algo salio mal. Estamos en eso — intenta en un minuto."</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ═══ C. VOZ POR CANAL ═══ -->
+      <div class="com-section-block">
+        <div class="com-gradient-bar"></div>
+        <h3 class="com-block-title" style="color: #fff;">C. Voz por canal</h3>
+        <p class="com-block-desc">Cada canal tiene su ritmo, su audiencia y sus reglas. La esencia es la misma — la forma cambia.</p>
+
+        <div class="com-channel-grid">
+          <div class="com-channel-card ch-web">
+            <div class="com-channel-icon">&#9679;</div>
+            <h4>Sitio web</h4>
+            <div class="ch-subtitle">Canal de confianza</div>
+            <p>El sitio es donde el comerciante decide si confiar en SACS. Cada headline es una promesa. Cada seccion resuelve una duda. El tono es profesional, calido y seguro.</p>
+            <ul>
+              <li><strong>Headlines:</strong> Beneficio + resultado. "Vende en todos tus canales desde un solo lugar."</li>
+              <li><strong>Subheadlines:</strong> Contexto + dato. "Unifica inventario, ventas y clientes sin perder el control."</li>
+              <li><strong>CTAs:</strong> Accion directa. "Empieza gratis", "Ver demo", "Habla con nosotros"</li>
+              <li><strong>Secciones de features:</strong> Icono + titulo de beneficio + 1 parrafo + CTA secundario</li>
+              <li><strong>Social proof:</strong> Numero especifico + contexto. "847 comerciantes ya firmaron el manifiesto"</li>
+              <li><strong>Footer:</strong> Calido, no legal. "Hecho con consciencia en Mexico."</li>
+            </ul>
+          </div>
+          <div class="com-channel-card ch-ig">
+            <div class="com-channel-icon">&#9650;</div>
+            <h4>Instagram</h4>
+            <div class="ch-subtitle">Canal de inspiracion</div>
+            <p>Instagram es donde SACS inspira, educa y muestra el movimiento vivo. AXO es el presentador. Los comerciantes son los protagonistas. El contenido es visual primero, texto segundo.</p>
+            <ul>
+              <li><strong>Feed posts:</strong> Imagen premium + copy corto. Maximo 3 lineas visibles antes de "mas"</li>
+              <li><strong>Carousels:</strong> 1 idea por slide. Titulo grande + dato o insight. Maximo 8 slides</li>
+              <li><strong>Stories:</strong> Informal, rapido, con stickers y encuestas. AXO puede narrar</li>
+              <li><strong>Reels:</strong> Hook en 2 segundos. Formato: problema → dato sorpresa → solucion. Edicion dinamica</li>
+              <li><strong>Captions:</strong> Pregunta al final para engagement. Hashtag: #ComercioConsciente siempre</li>
+              <li><strong>Bio:</strong> Proposito en 1 linea + CTA. No features, no buzzwords</li>
+            </ul>
+          </div>
+          <div class="com-channel-card ch-tk">
+            <div class="com-channel-icon">&#9654;</div>
+            <h4>TikTok</h4>
+            <div class="ch-subtitle">Canal de movimiento</div>
+            <p>TikTok es donde SACS se siente mas joven, mas directo y mas atrevido. El comerciante ve contenido que le resuelve un problema real en 30 segundos. AXO puede ser el narrador visual.</p>
+            <ul>
+              <li><strong>Hook:</strong> Los primeros 2 segundos deciden todo. Pregunta provocadora o dato impactante</li>
+              <li><strong>Formato preferido:</strong> "Cosas que haces mal en tu tienda y no sabes" / "3 datos de tu negocio que ignoras"</li>
+              <li><strong>Tono:</strong> Directo, ligeramente atrevido, nunca condescendiente. Como un amigo que sabe</li>
+              <li><strong>Duración:</strong> 15-45 segundos ideal. Si pasa de 60, debe ser storytelling</li>
+              <li><strong>CTA:</strong> "Siguenos para mas" o "Link en bio". Nunca "compra ahora"</li>
+              <li><strong>Tendencias:</strong> Participar solo si la tendencia encaja con el mensaje. Nunca forzar</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ D. VOZ POR ETAPA DEL JOURNEY ═══ -->
+      <div class="com-section-block">
+        <div class="com-gradient-bar"></div>
+        <h3 class="com-block-title" style="color: #fff;">D. Voz por etapa del journey</h3>
+        <p class="com-block-desc">El comerciante pasa por 5 etapas con SACS. En cada una, lo que necesita escuchar es diferente.</p>
+
+        <div class="com-journey-grid">
+          <div class="com-journey-step">
+            <div class="step-num" style="color: var(--ritual-jade);">Etapa 1</div>
+            <h5>Descubrimiento</h5>
+            <p>Necesita entender que es SACS en 10 segundos. Mensaje: "Un solo lugar para vender, controlar y crecer. Enfocate en lo tuyo — nosotros nos encargamos del resto."</p>
+          </div>
+          <div class="com-journey-step">
+            <div class="step-num" style="color: var(--color-primary);">Etapa 2</div>
+            <h5>Evaluacion</h5>
+            <p>Compara con Sicar, Bind, Size and Colors. Mensaje: "No es solo un punto de venta. Es el sistema completo que unifica tus canales, tu inventario y tus datos."</p>
+          </div>
+          <div class="com-journey-step">
+            <div class="step-num" style="color: var(--color-accent);">Etapa 3</div>
+            <h5>Onboarding</h5>
+            <p>Necesita sentir que va a poder. Mensaje: "Ya estas aqui. Vamos paso a paso. En 15 minutos vas a tener tu primera venta registrada."</p>
+          </div>
+          <div class="com-journey-step">
+            <div class="step-num" style="color: var(--ritual-rosa);">Etapa 4</div>
+            <h5>Uso diario</h5>
+            <p>Necesita sentir que SACS trabaja para el. Mensaje: datos, insights, celebraciones. AXO es el companero silencioso que aparece cuando importa.</p>
+          </div>
+          <div class="com-journey-step">
+            <div class="step-num" style="color: var(--ritual-indigo);">Etapa 5</div>
+            <h5>Expansion</h5>
+            <p>Nueva sucursal, nuevo canal, nuevo producto. Mensaje: "Tu negocio crecio. SACS crece contigo. Sin migrar, sin empezar de cero."</p>
+          </div>
+        </div>
+
+        <!-- Discovery deep dive -->
+        <div style="margin-top: 40px; padding: 32px; background: rgba(91,143,123,0.06); border: 1px solid rgba(91,143,123,0.15); border-radius: 20px;">
+          <h4 style="font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--ritual-jade); margin-bottom: 8px;">Foco: Descubrimiento</h4>
+          <p style="font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 20px;">Esta es la etapa donde mas perdemos. El comerciante tiene 10 segundos para entender por que somos diferentes. Estas son las 3 ideas que deben quedar claras:</p>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+            <div style="padding: 20px; background: rgba(255,255,255,0.04); border-radius: 12px;">
+              <div style="font-family: var(--font-heading); font-size: 24px; font-weight: 700; color: var(--ritual-jade); margin-bottom: 8px;">1</div>
+              <p style="font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.5;"><strong style="color: #fff;">Unifica todo.</strong> Punto de venta + tienda en linea + inventario + clientes en un solo sistema. No 5 apps — una.</p>
+            </div>
+            <div style="padding: 20px; background: rgba(255,255,255,0.04); border-radius: 12px;">
+              <div style="font-family: var(--font-heading); font-size: 24px; font-weight: 700; color: var(--ritual-jade); margin-bottom: 8px;">2</div>
+              <p style="font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.5;"><strong style="color: #fff;">Enfocate en lo tuyo.</strong> SACS se encarga de inventario, reportes, y datos. Tu enfocate en vender, en crear, en tu cliente.</p>
+            </div>
+            <div style="padding: 20px; background: rgba(255,255,255,0.04); border-radius: 12px;">
+              <div style="font-family: var(--font-heading); font-size: 24px; font-weight: 700; color: var(--ritual-jade); margin-bottom: 8px;">3</div>
+              <p style="font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.5;"><strong style="color: #fff;">AXO te ensena.</strong> No estas solo. Tienes un asistente de IA que te dice que funciona, que no, y que hacer diferente.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ E. AXO EN LA COMUNICACION ═══ -->
+      <div class="com-section-block">
+        <div class="com-gradient-bar"></div>
+        <h3 class="com-block-title" style="color: #fff;">E. AXO en toda la comunicacion</h3>
+        <p class="com-block-desc">AXO no vive solo dentro de la app. Es la cara visual de SACS en todos los canales. Ensena, analiza, motiva y conecta. Donde hay comunicacion de SACS, hay presencia de AXO.</p>
+
+        <div class="com-axo-presence-grid">
+          <div class="com-axo-card">
+            <h4>AXO en el sitio web</h4>
+            <div class="axo-where">Landing, features, pricing</div>
+            <p>AXO aparece como guia visual que explica features complejos con lenguaje simple. No es decoracion — es el que traduce tecnologia a beneficio.</p>
+            <div class="axo-example">"AXO analiza tus ventas y te dice exactamente que producto pedir, cuando pedirlo y cuanto."</div>
+          </div>
+          <div class="com-axo-card">
+            <h4>AXO en Instagram</h4>
+            <div class="axo-where">Carousels, reels, stories</div>
+            <p>AXO es el presentador de contenido educativo. Presenta datos, tips y casos de exito. Su ilustracion acompana cada pieza de contenido.</p>
+            <div class="axo-example">"Sabias que los comerciantes que revisan sus datos diario venden 31% mas? AXO te los pone en tu celular cada manana."</div>
+          </div>
+          <div class="com-axo-card">
+            <h4>AXO en TikTok</h4>
+            <div class="axo-where">Videos educativos, trends</div>
+            <p>AXO como narrador o personaje animado que revela insights del comercio. Tono mas atrevido, directo, con datos que sorprenden.</p>
+            <div class="axo-example">"El 68% de las tiendas no saben cual es su producto mas rentable. AXO te lo dice en 3 segundos."</div>
+          </div>
+          <div class="com-axo-card">
+            <h4>AXO en onboarding</h4>
+            <div class="axo-where">Primeros 7 dias</div>
+            <p>AXO guia al comerciante paso a paso. Celebra cada logro. No abruma con features — va revelando capacidades conforme el comerciante avanza.</p>
+            <div class="axo-example">"Tu primera venta registrada. Asi empieza todo. Manana te muestro como leer tu primer reporte."</div>
+          </div>
+          <div class="com-axo-card">
+            <h4>AXO en uso diario</h4>
+            <div class="axo-where">Dashboard, alertas, insights</div>
+            <p>AXO es el companero silencioso que aparece cuando hay algo importante. No interrumpe — informa. No ordena — sugiere.</p>
+            <div class="axo-example">"Tus ventas de viernes son 40% mas altas que las de martes. Quieres que armemos una promo para martes?"</div>
+          </div>
+          <div class="com-axo-card">
+            <h4>AXO en momentos dificiles</h4>
+            <div class="axo-where">Errores, cancelaciones, downtime</div>
+            <p>AXO no desaparece cuando hay problemas. Se queda, explica con honestidad, y da el siguiente paso. Nunca culpa al usuario.</p>
+            <div class="axo-example">"Estamos teniendo un problema tecnico. Tu informacion esta segura. Estamos en ello — te aviso cuando este resuelto."</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ F. COMO HABLAMOS DE RETAILERS ═══ -->
+      <div class="com-section-block">
+        <div class="com-gradient-bar"></div>
+        <h3 class="com-block-title" style="color: #fff;">F. Como hablamos de los comerciantes</h3>
+        <p class="com-block-desc">Los comerciantes son el centro de todo. No son "usuarios", no son "clientes", no son "leads". Son personas con negocios reales que estan construyendo algo. Asi les hablamos.</p>
+
+        <div class="com-formula-grid">
+          <div class="com-formula-card">
+            <h4>Mindset de crecimiento</h4>
+            <div class="formula-context" style="color: var(--ritual-jade);">Principio central</div>
+            <div class="formula-template">Hablamos con comerciantes que quieren aprender, crecer y seguir adelante. No con quienes buscan el atajo mas barato. Nuestro mensaje atrae a los que ven su negocio como un proyecto de vida.</div>
+            <div class="formula-example">"Para quienes ven su tienda como algo mas que un negocio. Para quienes quieren crecer sin perder lo que los hace unicos."</div>
+          </div>
+          <div class="com-formula-card">
+            <h4>Empoderamiento, no dependencia</h4>
+            <div class="formula-context" style="color: var(--color-primary);">Como los posicionamos</div>
+            <div class="formula-template">El comerciante es el heroe. SACS es la herramienta. AXO es el guia. Nunca decimos "SACS hace que tu negocio crezca" — decimos "Tu negocio crece. SACS te da las herramientas."</div>
+            <div class="formula-example">"Tu ya sabes vender. Nosotros te damos la claridad para vender mejor."</div>
+          </div>
+          <div class="com-formula-card">
+            <h4>Cuando hablamos de su negocio</h4>
+            <div class="formula-context" style="color: var(--color-accent);">Lenguaje especifico</div>
+            <div class="formula-template">"Tu tienda", "tu negocio", "tu equipo", "tus clientes". Siempre posesivo — es suyo, no nuestro. Nunca generalizar: "los negocios" se siente lejano. "Tu tienda" se siente cercano.</div>
+            <div class="formula-example">"Tu tienda vendio $12,400 ayer" no "Las ventas del establecimiento registraron $12,400".</div>
+          </div>
+          <div class="com-formula-card">
+            <h4>Cuando hablamos de sus retos</h4>
+            <div class="formula-context" style="color: var(--ritual-rosa);">Empatia sin drama</div>
+            <div class="formula-template">Reconocemos la dificultad sin dramatizar. No decimos "sabemos lo dificil que es" — decimos lo que podemos hacer al respecto. Empatia practica, no retorica.</div>
+            <div class="formula-example">"Llevar inventario a mano consume tiempo. SACS lo hace automatico para que uses ese tiempo en lo que importa."</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ G. COMO HABLAMOS DE DATOS ═══ -->
+      <div class="com-section-block">
+        <div class="com-gradient-bar"></div>
+        <h3 class="com-block-title" style="color: #fff;">G. Como hablamos de datos</h3>
+        <p class="com-block-desc">Los datos son el superpoder de SACS. Pero un dato sin contexto es ruido. Cada numero que compartimos debe tener: el dato, lo que significa, y que hacer con el.</p>
+
+        <div class="com-data-grid">
+          <div class="com-data-card">
+            <h4>Dato + significado + accion</h4>
+            <div class="data-example" style="color: var(--color-secondary);">23% mas ventas</div>
+            <p><strong style="color: rgba(255,255,255,0.7);">Bien:</strong> "Vendiste 23% mas que el mes pasado. Tu promocion de martes funciono — quieres repetirla?"</p>
+            <p style="margin-top: 8px;"><strong style="color: rgba(255,255,255,0.35);">Mal:</strong> "Incremento de 23% en ventas mensuales. Ver reporte completo."</p>
+          </div>
+          <div class="com-data-card">
+            <h4>Numeros con cara humana</h4>
+            <div class="data-example" style="color: var(--color-accent);">847 comerciantes</div>
+            <p><strong style="color: rgba(255,255,255,0.7);">Bien:</strong> "847 comerciantes ya firmaron el manifiesto. Son tiendas reales, en ciudades reales, cambiando la forma de vender."</p>
+            <p style="margin-top: 8px;"><strong style="color: rgba(255,255,255,0.35);">Mal:</strong> "Mas de 800 usuarios activos en la plataforma."</p>
+          </div>
+          <div class="com-data-card">
+            <h4>Comparativas justas</h4>
+            <div class="data-example" style="color: var(--ritual-jade);">vs. competencia</div>
+            <p>Nunca atacamos por nombre. Comparamos categorias: "A diferencia de los puntos de venta tradicionales, SACS unifica todos tus canales." No mencionamos Sicar, Bind ni Size and Colors directamente.</p>
+          </div>
+          <div class="com-data-card">
+            <h4>Datos de impacto social</h4>
+            <div class="data-example" style="color: var(--ritual-rosa);">10% que regresa</div>
+            <p>"Este trimestre, tu licencia ayudo a capacitar a 12 emprendedores rurales." El impacto debe sentirse personal — no es la empresa la que dona, es cada comerciante el que contribuye.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ H. FORMULAS DE MENSAJE ═══ -->
+      <div class="com-section-block">
+        <div class="com-gradient-bar"></div>
+        <h3 class="com-block-title" style="color: #fff;">H. Formulas de mensaje</h3>
+        <p class="com-block-desc">Frameworks reutilizables para los tipos de mensaje mas comunes. No son scripts — son estructuras que mantienen la voz consistente sin importar quien escriba.</p>
+
+        <div class="com-formula-grid">
+          <div class="com-formula-card">
+            <h4>Headline de landing</h4>
+            <div class="formula-context" style="color: var(--color-primary);">Sitio web</div>
+            <div class="formula-template">[Verbo en imperativo] + [resultado para el comerciante] + [desde donde / como].<br><br>Maximo 8 palabras. Sin adjetivos vacios.</div>
+            <div class="formula-example">"Vende en todos tus canales desde un solo lugar."<br>"Controla tu inventario sin esfuerzo."<br>"Crece sin perder tu esencia."</div>
+          </div>
+          <div class="com-formula-card">
+            <h4>Feature description</h4>
+            <div class="formula-context" style="color: var(--color-secondary);">Paginas de producto</div>
+            <div class="formula-template">[Problema que resuelve] → [Como lo resuelve SACS] → [Resultado].<br><br>3 oraciones maximo. Primera en negrita.</div>
+            <div class="formula-example">"<strong>Llevar inventario a mano es lento y lleno de errores.</strong> SACS sincroniza tu stock en tiempo real entre tienda fisica y online. Siempre sabes que tienes, donde lo tienes."</div>
+          </div>
+          <div class="com-formula-card">
+            <h4>Post de Instagram</h4>
+            <div class="formula-context" style="color: var(--ritual-rosa);">Feed + carousels</div>
+            <div class="formula-template">[Hook: pregunta o dato] + [Contexto: 1-2 lineas] + [Insight o tip] + [CTA: pregunta o invitacion] + #ComercioConsciente</div>
+            <div class="formula-example">"Sabias que el 73% de las tiendas pierden ventas por faltantes de inventario? No es mala suerte — es falta de datos. AXO te avisa antes de que pase. Tu solo decides."</div>
+          </div>
+          <div class="com-formula-card">
+            <h4>Video de TikTok</h4>
+            <div class="formula-context" style="color: var(--ritual-indigo);">Contenido corto</div>
+            <div class="formula-template">[Hook provocador: 2 seg] → [Problema identificable: 5 seg] → [Dato sorpresa: 3 seg] → [Solucion: 5 seg] → [CTA: 2 seg]</div>
+            <div class="formula-example">"Tres errores que estan matando tus ventas y no lo sabes → [error 1, 2, 3 con datos] → SACS te muestra exactamente donde esta el problema → Link en bio"</div>
+          </div>
+          <div class="com-formula-card">
+            <h4>Email de bienvenida</h4>
+            <div class="formula-context" style="color: var(--color-accent);">Onboarding</div>
+            <div class="formula-template">[Bienvenida calida + nombre] → [Que va a pasar en los proximos dias] → [Un dato motivador] → [Primer paso claro] → [Firma de AXO]</div>
+            <div class="formula-example">"Hola, Sofia. Ya eres parte del movimiento. En los proximos 3 dias, AXO te va a guiar para configurar tu tienda. Los comerciantes que completan el setup en la primera semana venden 40% mas el primer mes."</div>
+          </div>
+          <div class="com-formula-card">
+            <h4>Notificacion push</h4>
+            <div class="formula-context" style="color: rgba(255,255,255,0.3);">Microcopy</div>
+            <div class="formula-template">[Dato o evento] + [Significado en 1 frase].<br><br>Maximo 2 lineas. Sin saludo. Sin emoji excesivo (1 maximo).</div>
+            <div class="formula-example">"Vendiste $8,400 hoy — 12% mas que ayer."<br>"Tu talla M se esta agotando. Quedan 3 piezas."<br>"Tu reporte semanal esta listo."</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ I. VOCABULARIO SACS ═══ -->
+      <div class="com-section-block">
+        <div class="com-gradient-bar"></div>
+        <h3 class="com-block-title" style="color: #fff;">I. Vocabulario SACS</h3>
+        <p class="com-block-desc">Las palabras que elegimos definen como nos perciben. Este es el vocabulario que construye nuestra identidad — y el que la destruye.</p>
+
+        <div class="com-vocab-grid">
+          <div class="com-vocab-col vocab-si">
+            <h4>Palabras que usamos</h4>
+            <ul>
+              <li><strong>Comerciante</strong> — no "usuario", no "cliente", no "vendedor"</li>
+              <li><strong>Tu tienda / tu negocio</strong> — posesivo, cercano, respetuoso</li>
+              <li><strong>Crecer</strong> — no "escalar", no "optimizar"</li>
+              <li><strong>Herramienta</strong> — no "solucion", no "plataforma"</li>
+              <li><strong>Datos / insights</strong> — no "analytics", no "metricas"</li>
+              <li><strong>Inventario</strong> — no "stock management"</li>
+              <li><strong>Canales</strong> — tienda fisica + en linea + redes</li>
+              <li><strong>Impacto</strong> — resultado real, medible</li>
+              <li><strong>Comunidad</strong> — los comerciantes como colectivo</li>
+              <li><strong>Consciente</strong> — con proposito, con intencion</li>
+              <li><strong>Sencillo / claro</strong> — no "intuitivo", no "seamless"</li>
+              <li><strong>Paso a paso</strong> — guia practica, no teoria</li>
+            </ul>
+          </div>
+          <div class="com-vocab-col vocab-no">
+            <h4>Palabras que evitamos</h4>
+            <ul>
+              <li><strong>Solucion integral</strong> — vacio, corporativo</li>
+              <li><strong>Enterprise-grade</strong> — anglicismo innecesario</li>
+              <li><strong>Optimizar / maximizar</strong> — frio, mecanico</li>
+              <li><strong>Revolucionario / disruptivo</strong> — gastado, arrogante</li>
+              <li><strong>Stakeholders / KPIs</strong> — jerga que aleja</li>
+              <li><strong>Lider del mercado</strong> — auto-proclamado, nadie lo cree</li>
+              <li><strong>De clase mundial</strong> — vacio, sin evidencia</li>
+              <li><strong>Ecosistema</strong> — aburrido, de Silicon Valley</li>
+              <li><strong>Synergy / leverage</strong> — anglicismos prohibidos</li>
+              <li><strong>Innovador</strong> — que tu trabajo hable, no tu copy</li>
+              <li><strong>Empoderar</strong> — sobreusado, perdio significado</li>
+              <li><strong>Robusto / escalable</strong> — ingenieria, no marketing</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Mexicanismos -->
+        <div style="margin-top: 32px; padding: 28px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;">
+          <h4 style="font-family: var(--font-display); font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 12px;">Mexicanismos: la regla</h4>
+          <p style="font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.6; margin-bottom: 16px;">El espanol de SACS es mexicano. No neutral, no espanol de Espana, no "latino generico". Pero la mexicanidad esta en la calidez y la estructura de frase, no en el slang.</p>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+            <div style="padding: 16px; background: rgba(42,181,160,0.06); border-radius: 12px;">
+              <div style="font-size: 12px; font-weight: 600; color: var(--color-secondary); margin-bottom: 8px;">SI USAMOS</div>
+              <p style="font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.5;">"Oye", "Listo", "Sale", "Va", "Ojo", "Checa esto" — naturales, calidos, universalmente entendidos en Mexico.</p>
+            </div>
+            <div style="padding: 16px; background: rgba(232,168,56,0.06); border-radius: 12px;">
+              <div style="font-size: 12px; font-weight: 600; color: var(--color-accent); margin-bottom: 8px;">CON CUIDADO</div>
+              <p style="font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.5;">"Neta", "Chido", "Orale" — solo en TikTok o contextos muy informales. Nunca en producto, sitio web o emails.</p>
+            </div>
+            <div style="padding: 16px; background: rgba(229,75,75,0.06); border-radius: 12px;">
+              <div style="font-size: 12px; font-weight: 600; color: var(--color-error); margin-bottom: 8px;">NUNCA</div>
+              <p style="font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.5;">"Mijo/mija", "Compa", "Wey" — demasiado informal, puede sentirse condescendiente o poco profesional. SACS es calido, no coloquial.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ J. COMO HABLAMOS DE LO NUEVO ═══ -->
+      <div class="com-section-block">
+        <div class="com-gradient-bar"></div>
+        <h3 class="com-block-title" style="color: #fff;">J. Como hablamos de innovacion</h3>
+        <p class="com-block-desc">SACS no solo es punto de venta. Es el sistema que prepara al comerciante para el futuro del comercio: suscripciones, comunidades, venta social, IA aplicada. Pero nunca hablamos de tecnologia por la tecnologia — siempre desde el resultado.</p>
+
+        <div class="com-content-grid">
+          <div class="com-content-card">
+            <div class="content-tag" style="background: rgba(75,123,229,0.1); color: var(--color-primary);">Suscripciones</div>
+            <h4>Ingreso recurrente</h4>
+            <p>No vendemos "modelo de suscripcion SaaS". Vendemos la tranquilidad de saber cuanto vas a vender el proximo mes. Predecibilidad para el comerciante.</p>
+            <div class="content-example">"Imagina saber exactamente cuanto vas a facturar el proximo mes. Con suscripciones, tus clientes regresan automaticamente."</div>
+          </div>
+          <div class="com-content-card">
+            <div class="content-tag" style="background: rgba(42,181,160,0.1); color: var(--color-secondary);">Comunidades</div>
+            <h4>Clientes que regresan</h4>
+            <p>No es "community management". Es convertir a tus compradores en una tribu que se identifica con tu marca. Pertenencia, no solo transaccion.</p>
+            <div class="content-example">"Tus mejores clientes no solo compran — pertenecen. Crea una comunidad alrededor de tu tienda y convierte compradores en fans."</div>
+          </div>
+          <div class="com-content-card">
+            <div class="content-tag" style="background: rgba(232,168,56,0.1); color: var(--color-accent);">IA aplicada</div>
+            <h4>AXO como diferenciador</h4>
+            <p>No es "inteligencia artificial avanzada". Es AXO, tu asistente que te dice que esta funcionando, que no, y que hacer diferente. Tiene nombre, tiene cara, tiene opinion.</p>
+            <div class="content-example">"AXO no es un chatbot. Es el asistente que conoce tu negocio, analiza tus datos, y te dice: 'Oye, tu talla M se vende 3 veces mas los viernes. Quieres que ajuste el pedido?'"</div>
+          </div>
+          <div class="com-content-card">
+            <div class="content-tag" style="background: rgba(196,146,155,0.1); color: var(--ritual-rosa);">Venta social</div>
+            <h4>Vender donde estan tus clientes</h4>
+            <p>No es "social commerce integration". Es poder vender por Instagram, WhatsApp o TikTok sin perder el control de tu inventario ni tus datos.</p>
+            <div class="content-example">"Tu cliente te escribe por WhatsApp. Tu le mandas el link. El paga. El inventario se actualiza solo. Asi de sencillo."</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ K. CONTENIDO EDITORIAL ═══ -->
+      <div class="com-section-block">
+        <div class="com-gradient-bar"></div>
+        <h3 class="com-block-title" style="color: #fff;">K. Contenido editorial y thought leadership</h3>
+        <p class="com-block-desc">SACS tiene dos lineas de contenido: el movimiento consciente y la innovacion practica. Ambas se complementan. Juntas posicionan a SACS como la marca que piensa diferente y actua diferente.</p>
+
+        <div class="com-content-grid">
+          <div class="com-content-card" style="border-color: rgba(91,143,123,0.2); background: rgba(91,143,123,0.04);">
+            <div class="content-tag" style="background: rgba(91,143,123,0.15); color: var(--ritual-jade);">Linea 1</div>
+            <h4>Comercio Consciente</h4>
+            <p>El movimiento. Por que importa comprar local. Por que la tecnologia debe servir, no reemplazar. Historias de comerciantes reales. El impacto del 10% que regresa. El manifiesto vivo.</p>
+            <div class="content-example">Titulos ejemplo: "Por que tu tienda de la esquina importa mas de lo que crees" / "Lo que pasa cuando un comerciante deja de competir por precio" / "847 firmas y contando: el manifiesto crece"</div>
+          </div>
+          <div class="com-content-card" style="border-color: rgba(61,79,124,0.2); background: rgba(61,79,124,0.04);">
+            <div class="content-tag" style="background: rgba(61,79,124,0.15); color: var(--ritual-indigo);">Linea 2</div>
+            <h4>Futuro del comercio</h4>
+            <p>La innovacion practica. Nuevas formas de vender: suscripciones, comunidades, live shopping, IA. No desde la tecnologia — desde el resultado para el comerciante.</p>
+            <div class="content-example">Titulos ejemplo: "5 tiendas que ya venden por suscripcion (y cuanto ganan)" / "Tu inventario sabe mas de tu negocio de lo que crees" / "Lo que AXO aprendio de 10,000 ventas"</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 32px; padding: 28px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px;">
+          <h4 style="font-family: var(--font-display); font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 12px;">Reglas editoriales</h4>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;">
+            <div>
+              <p style="font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.8;">
+                <strong style="color: rgba(255,255,255,0.7);">Titulos:</strong> Provocan curiosidad o revelan un dato. Nunca genericos. "5 errores que..." es valido solo si los errores son reales y especificos.<br>
+                <strong style="color: rgba(255,255,255,0.7);">Apertura:</strong> Las primeras 2 lineas son todo. Empieza con dato, pregunta o historia. Nunca con "En el mundo actual..."<br>
+                <strong style="color: rgba(255,255,255,0.7);">Longitud:</strong> Blog: 800-1,200 palabras. Carousels: 8 slides max. Emails: 150 palabras max.
+              </p>
+            </div>
+            <div>
+              <p style="font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.8;">
+                <strong style="color: rgba(255,255,255,0.7);">Cierre:</strong> Siempre con reflexion + invitacion. No "compra ahora" — "y tu, que tipo de comerciante quieres ser?"<br>
+                <strong style="color: rgba(255,255,255,0.7);">Fuentes:</strong> Cada dato con fuente. Sin fuente, no se publica. La credibilidad no se negocia.<br>
+                <strong style="color: rgba(255,255,255,0.7);">Frecuencia:</strong> Calidad sobre cantidad. 1 pieza excelente > 5 mediocres. El contenido mediocre dana la marca.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ L. ANTI-PATRONES ═══ -->
+      <div class="com-section-block">
+        <div class="com-gradient-bar"></div>
+        <h3 class="com-block-title" style="color: #fff;">L. Lo que SACS nunca dice</h3>
+        <p class="com-block-desc">Tan importante como lo que decimos es lo que nunca diríamos. Estas frases son senales de que algo salio mal en la comunicacion.</p>
+
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+          <div style="padding: 20px; background: rgba(229,75,75,0.04); border: 1px solid rgba(229,75,75,0.1); border-radius: 12px;">
+            <p style="font-size: 14px; color: rgba(255,255,255,0.35); text-decoration: line-through;">"Somos la solucion lider en el mercado de retail."</p>
+            <p style="font-size: 12px; color: var(--color-error); margin-top: 8px;">Nadie te cree cuando lo dices tu mismo.</p>
+          </div>
+          <div style="padding: 20px; background: rgba(229,75,75,0.04); border: 1px solid rgba(229,75,75,0.1); border-radius: 12px;">
+            <p style="font-size: 14px; color: rgba(255,255,255,0.35); text-decoration: line-through;">"Nuestra plataforma enterprise-grade ofrece escalabilidad sin limites."</p>
+            <p style="font-size: 12px; color: var(--color-error); margin-top: 8px;">Jerga tecnica + promesa imposible. Doble falta.</p>
+          </div>
+          <div style="padding: 20px; background: rgba(229,75,75,0.04); border: 1px solid rgba(229,75,75,0.1); border-radius: 12px;">
+            <p style="font-size: 14px; color: rgba(255,255,255,0.35); text-decoration: line-through;">"Porque nos importas." / "Tu exito es nuestro exito."</p>
+            <p style="font-size: 12px; color: var(--color-error); margin-top: 8px;">Frases vacias que toda empresa dice. Muestra, no digas.</p>
+          </div>
+          <div style="padding: 20px; background: rgba(229,75,75,0.04); border: 1px solid rgba(229,75,75,0.1); border-radius: 12px;">
+            <p style="font-size: 14px; color: rgba(255,255,255,0.35); text-decoration: line-through;">"Hagamos que las cosas pasen." / "Juntos somos mas fuertes."</p>
+            <p style="font-size: 12px; color: var(--color-error); margin-top: 8px;">Motivacional generico. SACS inspira con especificidad, no con poster de oficina.</p>
+          </div>
+          <div style="padding: 20px; background: rgba(229,75,75,0.04); border: 1px solid rgba(229,75,75,0.1); border-radius: 12px;">
+            <p style="font-size: 14px; color: rgba(255,255,255,0.35); text-decoration: line-through;">"Disculpe las molestias. Estamos trabajando para mejorar su experiencia."</p>
+            <p style="font-size: 12px; color: var(--color-error); margin-top: 8px;">Corporativo, frio, de usted. SACS dice: "Algo salio mal. Estamos en eso."</p>
+          </div>
+          <div style="padding: 20px; background: rgba(229,75,75,0.04); border: 1px solid rgba(229,75,75,0.1); border-radius: 12px;">
+            <p style="font-size: 14px; color: rgba(255,255,255,0.35); text-decoration: line-through;">"A diferencia de [competidor], nosotros si..."</p>
+            <p style="font-size: 12px; color: var(--color-error); margin-top: 8px;">Nunca atacamos por nombre. Comparamos categorias, no marcas.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ M. MOMENTOS QUE IMPORTAN ═══ -->
+      <div class="com-section-block">
+        <div class="com-gradient-bar"></div>
+        <h3 class="com-block-title" style="color: #fff;">M. Momentos que importan</h3>
+        <p class="com-block-desc">Hay momentos donde la comunicacion puede transformar la relacion con el comerciante. No son los momentos de venta — son los momentos de verdad.</p>
+
+        <div class="com-formula-grid">
+          <div class="com-formula-card" style="border-color: rgba(42,181,160,0.15); background: rgba(42,181,160,0.04);">
+            <h4>Primera venta registrada</h4>
+            <div class="formula-context" style="color: var(--color-secondary);">Celebracion</div>
+            <div class="formula-template">Este es el momento mas importante del onboarding. AXO lo celebra. No con confetti generico — con un dato que haga sentir que esto es real.</div>
+            <div class="formula-example">"Tu primera venta en SACS: $340. Asi empezo cada comerciante consciente. Bienvenida al movimiento, Sofia."</div>
+          </div>
+          <div class="com-formula-card" style="border-color: rgba(232,168,56,0.15); background: rgba(232,168,56,0.04);">
+            <h4>Nuevo record de ventas</h4>
+            <div class="formula-context" style="color: var(--color-accent);">Reconocimiento</div>
+            <div class="formula-template">AXO detecta el record y lo comunica con contexto: cuanto fue, cuando fue el anterior, que cambio. No solo "felicidades" — datos que expliquen el logro.</div>
+            <div class="formula-example">"Record. $47,800 en un dia. Tu mejor viernes hasta hoy. La promo de 2x1 en accesorios funciono — quieres repetirla el proximo viernes?"</div>
+          </div>
+          <div class="com-formula-card" style="border-color: rgba(196,146,155,0.15); background: rgba(196,146,155,0.04);">
+            <h4>Semana dificil</h4>
+            <div class="formula-context" style="color: var(--ritual-rosa);">Empatia activa</div>
+            <div class="formula-template">Cuando las ventas bajan, AXO no lo ignora. Pero no dramatiza. Ofrece perspectiva y un paso concreto. Todo tiene una leccion — sea bueno o malo.</div>
+            <div class="formula-example">"Esta semana fue mas tranquila. Pero mira: tu margen subio 4% porque vendiste mas productos de alto valor. A veces vender menos es vender mejor."</div>
+          </div>
+          <div class="com-formula-card" style="border-color: rgba(61,79,124,0.15); background: rgba(61,79,124,0.04);">
+            <h4>Cancelacion</h4>
+            <div class="formula-context" style="color: var(--ritual-indigo);">Despedida digna</div>
+            <div class="formula-template">Sin culpa, sin presion. Respeto por la decision. Puerta abierta. La informacion disponible 30 dias. Y una frase que recuerde que siempre son bienvenidos.</div>
+            <div class="formula-example">"Lamentamos que te vayas. Tu informacion esta segura y disponible 30 dias. Si algun dia decides regresar, tu tienda te estara esperando. Gracias por haber sido parte."</div>
+          </div>
+          <div class="com-formula-card" style="border-color: rgba(91,143,123,0.15); background: rgba(91,143,123,0.04);">
+            <h4>Aniversario con SACS</h4>
+            <div class="formula-context" style="color: var(--ritual-jade);">Retrospectiva</div>
+            <div class="formula-template">AXO como Narrador. Cuenta la historia del ano: cuanto vendio, cuantos clientes atendio, como crecio. Un mini-reporte que se siente como carta personal.</div>
+            <div class="formula-example">"1 ano con SACS. 14,200 ventas. 3,847 clientes. 1 nueva sucursal. De tu primera venta de $340 a meses de $45,000. Esta es tu historia, y apenas empieza."</div>
+          </div>
+          <div class="com-formula-card" style="border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.02);">
+            <h4>Impacto social</h4>
+            <div class="formula-context" style="color: rgba(255,255,255,0.3);">Conexion con proposito</div>
+            <div class="formula-template">AXO como Sembrador. Conecta la licencia del comerciante con el impacto real. Personal, no corporativo. "Tu licencia" no "la empresa".</div>
+            <div class="formula-example">"Este trimestre, tu licencia ayudo a capacitar a 12 emprendedores en Oaxaca. Uno de ellos acaba de abrir su primera tienda. Eso es Comercio Consciente."</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ N. CHECKLIST DE COMUNICACION ═══ -->
+      <div class="com-section-block">
+        <div class="com-gradient-bar"></div>
+        <h3 class="com-block-title" style="color: #fff;">N. Checklist antes de publicar</h3>
+        <p class="com-block-desc">Antes de que cualquier pieza de comunicacion salga de SACS, debe pasar estos 8 filtros.</p>
+
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+          <div style="padding: 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; display: flex; align-items: flex-start; gap: 12px;">
+            <div style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--ritual-jade); min-width: 20px;">1</div>
+            <p style="font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.5;"><strong style="color: rgba(255,255,255,0.7);">El comerciante es el heroe?</strong> Si el mensaje habla mas de SACS que del comerciante, reescribir.</p>
+          </div>
+          <div style="padding: 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; display: flex; align-items: flex-start; gap: 12px;">
+            <div style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--ritual-jade); min-width: 20px;">2</div>
+            <p style="font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.5;"><strong style="color: rgba(255,255,255,0.7);">Tiene un paso siguiente claro?</strong> Si el lector no sabe que hacer despues, falta el CTA.</p>
+          </div>
+          <div style="padding: 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; display: flex; align-items: flex-start; gap: 12px;">
+            <div style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--ritual-jade); min-width: 20px;">3</div>
+            <p style="font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.5;"><strong style="color: rgba(255,255,255,0.7);">Suena como SACS o como cualquier empresa?</strong> Si puedes poner el logo de otro y funciona, no es nuestro.</p>
+          </div>
+          <div style="padding: 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; display: flex; align-items: flex-start; gap: 12px;">
+            <div style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--ritual-jade); min-width: 20px;">4</div>
+            <p style="font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.5;"><strong style="color: rgba(255,255,255,0.7);">Usa datos o solo adjetivos?</strong> "Increible" no dice nada. "23% mas" dice todo.</p>
+          </div>
+          <div style="padding: 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; display: flex; align-items: flex-start; gap: 12px;">
+            <div style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--ritual-jade); min-width: 20px;">5</div>
+            <p style="font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.5;"><strong style="color: rgba(255,255,255,0.7);">Lo entenderia un comerciante de primera generacion?</strong> Si necesita diccionario tech, simplificar.</p>
+          </div>
+          <div style="padding: 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; display: flex; align-items: flex-start; gap: 12px;">
+            <div style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--ritual-jade); min-width: 20px;">6</div>
+            <p style="font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.5;"><strong style="color: rgba(255,255,255,0.7);">Tutea al comerciante?</strong> Si hay un "usted" o un "estimado cliente", corregir inmediatamente.</p>
+          </div>
+          <div style="padding: 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; display: flex; align-items: flex-start; gap: 12px;">
+            <div style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--ritual-jade); min-width: 20px;">7</div>
+            <p style="font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.5;"><strong style="color: rgba(255,255,255,0.7);">Es honesto?</strong> No promete lo que no puede cumplir? No exagera? La credibilidad es el activo mas valioso.</p>
+          </div>
+          <div style="padding: 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; display: flex; align-items: flex-start; gap: 12px;">
+            <div style="font-family: var(--font-heading); font-size: 16px; font-weight: 700; color: var(--ritual-jade); min-width: 20px;">8</div>
+            <p style="font-size: 13px; color: rgba(255,255,255,0.55); line-height: 1.5;"><strong style="color: rgba(255,255,255,0.7);">Inspira?</strong> Despues de leerlo, el comerciante siente que puede mas? Si no, le falta alma.</p>
+          </div>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -4086,7 +5639,7 @@
        17 — ACCESIBILIDAD
        ═══════════════════════════════════════════ -->
   <section class="section" id="accesibilidad">
-    <div class="section-label">17 — Accesibilidad</div>
+    <div class="section-label">19 — Accesibilidad</div>
     <h2 class="section-title">Diseno para todos.</h2>
     <p class="section-desc">SACS esta disenado para comerciantes de todas las edades y habilidades. Estos son los estandares minimos.</p>
 
@@ -4130,7 +5683,7 @@
        ═══════════════════════════════════════════ -->
   <section class="section-dark" id="firma-email">
     <div class="section-inner">
-      <div class="section-label">20 — Firma de Email</div>
+      <div class="section-label">15 — Firma de Email</div>
       <h2 class="section-title" style="color: #fff;">Consistencia en<br>cada mensaje.</h2>
       <p class="section-desc">Toda comunicacion de SACS debe cerrar con esta firma. Sin variaciones.</p>
 
@@ -4167,7 +5720,7 @@
        11 — INSTAGRAM
        ═══════════════════════════════════════════ -->
   <section class="section" id="instagram">
-    <div class="section-label">11 — Instagram</div>
+    <div class="section-label">14 — Instagram</div>
     <h2 class="section-title">5 formatos clave<br>para el feed.</h2>
     <p class="section-desc">
       Manifiesto, estadistica, identidad oaxaquena y sistema moderno. Fondos mexicanos con tecnologia de punta.
@@ -4294,15 +5847,320 @@
 
 
   <!-- ═══════════════════════════════════════════
+       13 — GEOMETRIA CULTURAL
+       ═══════════════════════════════════════════ -->
+  <section class="section-cream" id="geometria">
+    <div class="section-inner">
+      <div class="section-label">13 — Geometria Cultural</div>
+      <h2 class="section-title">La estructura invisible<br>de Mexico.</h2>
+      <p class="section-desc">
+        Principios geometricos extraidos de codices prehispanicos y textiles mesoamericanos. No como decoracion, sino como logica estructural del diseno. Imposible de copiar.
+      </p>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;" class="geo-grid-3">
+        <div class="geo-pattern-card geo-diamante">
+          <div class="geo-pattern-origin">Mitla, Oaxaca</div>
+          <div class="geo-pattern-name">Diamante de Mitla</div>
+          <div class="geo-pattern-desc">Cuadrado rotado a 45 grados — la unidad geometrica base de las grecas de Mitla. Se usa como principio proporcional para cards, badges y elementos de acento. La rotacion crea tension visual y dinamismo dentro de una estructura rigida.</div>
+          <div style="margin-top: 24px; display: flex; gap: 12px; align-items: center;">
+            <div style="width: 40px; height: 40px; border: 2px solid var(--ritual-indigo); transform: rotate(45deg); opacity: 0.3;"></div>
+            <div style="width: 28px; height: 28px; border: 2px solid var(--ritual-indigo); transform: rotate(45deg); opacity: 0.2;"></div>
+            <div style="width: 18px; height: 18px; background: var(--ritual-indigo); transform: rotate(45deg); opacity: 0.15;"></div>
+          </div>
+        </div>
+
+        <div class="geo-pattern-card geo-greca">
+          <div class="geo-pattern-origin">Xicalcoliuhqui</div>
+          <div class="geo-pattern-name">Greca Escalonada</div>
+          <div class="geo-pattern-desc">Espiral escalonada que representa el viento (Ehecatl). Se abstrae como sistema de dividers, bordes de seccion y micro-patrones de fondo al 3% de opacidad. Reemplaza lineas horizontales genericas con identidad cultural.</div>
+          <div class="greca-divider" style="margin-top: 24px;"></div>
+        </div>
+
+        <div class="geo-pattern-card geo-espiral">
+          <div class="geo-pattern-origin">Codice Fejervary-Mayer</div>
+          <div class="geo-pattern-name">Proporcion del Codice</div>
+          <div class="geo-pattern-desc">Los codices mesoamericanos usan grillas modulares sorprendentemente precisas. La division en cuadrantes con punto central informa la organizacion de layouts, el centrado de elementos hero y las proporciones de grids asimetricos.</div>
+          <div style="margin-top: 24px; width: 80px; height: 80px; border: 1px solid rgba(91,143,123,0.2); position: relative;">
+            <div style="position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: rgba(91,143,123,0.15);"></div>
+            <div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(91,143,123,0.15);"></div>
+            <div style="position: absolute; top: 50%; left: 50%; width: 8px; height: 8px; background: var(--ritual-jade); border-radius: 50%; transform: translate(-50%, -50%); opacity: 0.4;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 48px; padding: 32px; background: var(--color-bg-card); border: 1px solid var(--color-border-light); border-radius: 16px;">
+        <h4 style="font-family: var(--font-display); font-size: 18px; font-weight: 500; margin-bottom: 12px;">Aplicaciones en el sistema</h4>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;" class="geo-grid-3">
+          <div>
+            <div style="font-size: 13px; font-weight: 600; color: var(--ritual-terracota); margin-bottom: 8px;">Dividers</div>
+            <p style="font-size: 14px; color: var(--color-text-secondary); line-height: 1.6;">La greca escalonada reemplaza las lineas horizontales genericas entre secciones.</p>
+          </div>
+          <div>
+            <div style="font-size: 13px; font-weight: 600; color: var(--ritual-indigo); margin-bottom: 8px;">Micro-patrones</div>
+            <p style="font-size: 14px; color: var(--color-text-secondary); line-height: 1.6;">Diamantes y grecas al 2-4% de opacidad como fondos de secciones claras. Eco geometrico casi invisible.</p>
+          </div>
+          <div>
+            <div style="font-size: 13px; font-weight: 600; color: var(--ritual-jade); margin-bottom: 8px;">Proporciones</div>
+            <p style="font-size: 14px; color: var(--color-text-secondary); line-height: 1.6;">La logica del codice informa la proporcion de cards, grids y layouts asimetricos.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       17 — DIRECCION DE IMAGEN
+       ═══════════════════════════════════════════ -->
+  <section class="section" id="fotografia">
+    <div class="section-label">17 — Direccion de Imagen</div>
+    <h2 class="section-title">Fotografia con<br>alma mexicana.</h2>
+    <p class="section-desc">
+      Guia para toda fotografia de marca: sitio web, redes sociales, pitch decks y materiales impresos. Personas reales, tiendas reales, Mexico real.
+    </p>
+
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 48px;" class="geo-grid-3">
+      <div style="padding: 32px; background: var(--color-bg-secondary); border-radius: 16px;">
+        <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ritual-terracota); margin-bottom: 12px;">Luz</div>
+        <p style="font-size: 15px; line-height: 1.7; color: var(--color-text-secondary);">Calida y natural. Hora dorada o luz de ventana. La luz de una tarde en Oaxaca: suave, envolvente, con sombras largas que dan profundidad.</p>
+      </div>
+      <div style="padding: 32px; background: var(--color-bg-secondary); border-radius: 16px;">
+        <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ritual-terracota); margin-bottom: 12px;">Tratamiento de color</div>
+        <p style="font-size: 15px; line-height: 1.7; color: var(--color-text-secondary);">Tono calido-cremoso consistente con #F5F3EE. Sombras con tinte calido (nunca azul-frio). Saturacion natural, no excesiva. Grain sutil que evoque textura de barro.</p>
+      </div>
+      <div style="padding: 32px; background: var(--color-bg-secondary); border-radius: 16px;">
+        <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ritual-terracota); margin-bottom: 12px;">Composicion</div>
+        <p style="font-size: 15px; line-height: 1.7; color: var(--color-text-secondary);">Personas centradas con espacio para texto. Contexto visible (la tienda, la calle, los productos). Profundidad de campo media — ni todo enfocado ni bokeh extremo.</p>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 48px;">
+      <h3 style="font-family: var(--font-display); font-size: 22px; font-weight: 500; letter-spacing: -0.03em; margin-bottom: 12px;">Sujetos</h3>
+      <p style="font-size: 15px; color: var(--color-text-secondary); line-height: 1.7; max-width: 600px; margin-bottom: 24px;">Comerciantes reales en sus tiendas reales. Expresiones naturales — no poses de stock. Diversidad de edad, genero y contexto comercial. Detalles: manos trabajando, producto en estante, interaccion con cliente.</p>
+    </div>
+
+    <div class="foto-rule-grid">
+      <div class="foto-rule-card foto-rule-do">
+        <div class="foto-rule-label">Asi si</div>
+        <ul class="foto-rule-list">
+          <li>Comerciante sonriendo naturalmente en su tienda</li>
+          <li>Luz de ventana, hora dorada, sombras calidas</li>
+          <li>Producto real en contexto (no sobre fondo blanco)</li>
+          <li>Diversidad real de personas y comercios</li>
+          <li>Manos trabajando, detalles de texturas y materiales</li>
+          <li>Interfaz de SACS visible en contexto real (tablet en mostrador)</li>
+        </ul>
+      </div>
+      <div class="foto-rule-card foto-rule-dont">
+        <div class="foto-rule-label">Asi no</div>
+        <ul class="foto-rule-list">
+          <li>Stock photography con personas genéricas</li>
+          <li>Filtros de Instagram o presets saturados</li>
+          <li>Iluminacion fluorescente o flash directo</li>
+          <li>Fondos blancos esteriles tipo Amazon</li>
+          <li>Screenshots de la app sin contexto de uso</li>
+          <li>Imagenes con marca de agua o baja resolucion</li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="margin-top: 48px; padding: 32px; background: var(--color-bg-secondary); border-radius: 16px;">
+      <h4 style="font-family: var(--font-display); font-size: 18px; font-weight: 500; margin-bottom: 12px;">Mockups de producto</h4>
+      <p style="font-size: 14px; color: var(--color-text-secondary); line-height: 1.6;">Mostrar la interfaz de SACS en contexto real: tablet sobre mostrador de tienda, laptop junto a inventario, celular en mano del comerciante. Siempre con angulo natural (no frontal perfecto). Pantalla con datos realistas, nunca "Lorem ipsum". El entorno debe sentirse mexicano: madera, cemento, colores calidos de fondo.</p>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       18 — RETRATOS DEL COMERCIO CONSCIENTE
+       ═══════════════════════════════════════════ -->
+  <section class="section-cream" id="retratos">
+    <div class="section-inner">
+      <div class="section-label">18 — Retratos del Comercio Consciente</div>
+      <h2 class="section-title">Rostros detras<br>del movimiento.</h2>
+      <p class="section-desc">
+        Historias reales de comerciantes que firman el manifiesto. Formato editorial premium que convierte la filosofia abstracta en caras, nombres y numeros concretos.
+      </p>
+
+      <!-- Retrato ejemplo -->
+      <div class="retrato-card" style="margin-bottom: 48px;">
+        <div class="retrato-foto">
+          <div class="retrato-foto-placeholder">MR</div>
+        </div>
+        <div class="retrato-contenido">
+          <div class="retrato-eyebrow">Retrato de firmante #001</div>
+          <div class="retrato-nombre">Martha Rodriguez</div>
+          <div class="retrato-negocio">Fashion Store MX — 8 sucursales, Guadalajara, Jalisco</div>
+          <div class="retrato-cita">"Antes de SACS, pasaba mas tiempo contando inventario que atendiendo clientes. Ahora AXO me dice que pedir antes de que se me acabe."</div>
+          <div class="retrato-historia">Martha empezo con un puesto en el tianguis de San Juan de Dios hace 12 anos. Hoy tiene 8 tiendas de ropa y calzado en Guadalajara. El quiebre: cuando perdio $180,000 en mercancia por no tener control de inventario entre sucursales. SACS le devolvio la claridad. Desde que firmo el manifiesto, sus empleados tambien lo firmaron.</div>
+          <div class="retrato-principio">Principio que mas le resono: Esencia > Escala</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Tarjetas de firmantes -->
+      <h3 style="font-family: var(--font-display); font-size: 24px; font-weight: 500; letter-spacing: -0.03em; margin-top: 48px; margin-bottom: 8px;">Tarjetas de Firmante</h3>
+      <p style="font-size: 14px; color: var(--color-text-tertiary); margin-bottom: 32px;">Formato compacto para "Muro de Firmas" en web, producto y redes sociales.</p>
+
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;" class="grid-4">
+        <div class="firmante-card">
+          <div class="firmante-avatar" style="background: var(--ritual-terracota);">MR</div>
+          <div class="firmante-nombre">Martha Rodriguez</div>
+          <div class="firmante-tienda">Fashion Store MX</div>
+          <div class="firmante-ubicacion">Guadalajara, JAL</div>
+          <div class="firmante-principio">Esencia > Escala</div>
+        </div>
+        <div class="firmante-card">
+          <div class="firmante-avatar" style="background: var(--ritual-jade);">CL</div>
+          <div class="firmante-nombre">Carlos Lopez</div>
+          <div class="firmante-tienda">Zapateria El Paso</div>
+          <div class="firmante-ubicacion">Oaxaca, OAX</div>
+          <div class="firmante-principio">Comunidad > Competencia</div>
+        </div>
+        <div class="firmante-card">
+          <div class="firmante-avatar" style="background: var(--ritual-indigo);">AP</div>
+          <div class="firmante-nombre">Ana Perez</div>
+          <div class="firmante-tienda">Boutique Cielo</div>
+          <div class="firmante-ubicacion">CDMX</div>
+          <div class="firmante-principio">Consciencia > Conveniencia</div>
+        </div>
+        <div class="firmante-card">
+          <div class="firmante-avatar" style="background: var(--ritual-rosa);">RG</div>
+          <div class="firmante-nombre">Roberto Garcia</div>
+          <div class="firmante-tienda">Deportes Garcia</div>
+          <div class="firmante-ubicacion">Monterrey, NL</div>
+          <div class="firmante-principio">Herramienta > Reemplazo</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 48px; padding: 32px; background: var(--color-bg-card); border: 1px solid var(--color-border-light); border-radius: 16px;">
+        <h4 style="font-family: var(--font-display); font-size: 18px; font-weight: 500; margin-bottom: 12px;">Formato narrativo del Retrato</h4>
+        <p style="font-size: 14px; color: var(--color-text-secondary); line-height: 1.7; margin-bottom: 16px;">Cada retrato sigue esta estructura (no bullets — narrativa en primera persona):</p>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;" class="grid-4">
+          <div style="padding: 16px; background: var(--color-bg-secondary); border-radius: 12px;">
+            <div style="font-size: 12px; font-weight: 600; color: var(--ritual-terracota); margin-bottom: 4px;">1. Origen</div>
+            <p style="font-size: 13px; color: var(--color-text-tertiary); line-height: 1.5;">Historia del negocio — como empezo, de donde viene.</p>
+          </div>
+          <div style="padding: 16px; background: var(--color-bg-secondary); border-radius: 12px;">
+            <div style="font-size: 12px; font-weight: 600; color: var(--ritual-terracota); margin-bottom: 4px;">2. Quiebre</div>
+            <p style="font-size: 13px; color: var(--color-text-tertiary); line-height: 1.5;">El problema que casi los hunde o el momento que cambio todo.</p>
+          </div>
+          <div style="padding: 16px; background: var(--color-bg-secondary); border-radius: 12px;">
+            <div style="font-size: 12px; font-weight: 600; color: var(--ritual-terracota); margin-bottom: 4px;">3. Transformacion</div>
+            <p style="font-size: 13px; color: var(--color-text-tertiary); line-height: 1.5;">Como SACS les ayudo a superar el obstáculo.</p>
+          </div>
+          <div style="padding: 16px; background: var(--color-bg-secondary); border-radius: 12px;">
+            <div style="font-size: 12px; font-weight: 600; color: var(--ritual-terracota); margin-bottom: 4px;">4. Impacto</div>
+            <p style="font-size: 13px; color: var(--color-text-tertiary); line-height: 1.5;">Metricas concretas + el principio que mas les resono.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       MOTION & MICRO-INTERACCIONES
+       ═══════════════════════════════════════════ -->
+  <section class="section-dark" id="motion">
+    <div class="section-inner">
+      <div class="section-label" style="color: var(--color-secondary);">Motion & Micro-interacciones</div>
+      <h2 class="section-title" style="color: #fff;">Movimiento como agua.</h2>
+      <p class="section-desc">
+        El movimiento en SACS se inspira en la fluidez del agua: suave, con momentum natural, nunca brusco. La "Curva de Agua" reemplaza el ease-in-out generico como transicion por defecto.
+      </p>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 48px;">
+        <div class="motion-curve-demo">
+          <div style="font-size: 13px; font-weight: 600; color: var(--color-primary); margin-bottom: 4px;">Curva de Agua</div>
+          <div style="font-size: 12px; color: var(--color-text-tertiary); margin-bottom: 4px;">cubic-bezier(0.22, 0.68, 0, 1)</div>
+          <p style="font-size: 12px; color: var(--color-text-tertiary);">Default. Entradas, transiciones, hovers.</p>
+          <div class="motion-ball motion-ball-agua"></div>
+        </div>
+        <div class="motion-curve-demo">
+          <div style="font-size: 13px; font-weight: 600; color: var(--color-accent); margin-bottom: 4px;">Spring</div>
+          <div style="font-size: 12px; color: var(--color-text-tertiary); margin-bottom: 4px;">cubic-bezier(0.34, 1.56, 0.64, 1)</div>
+          <p style="font-size: 12px; color: var(--color-text-tertiary);">Botones, celebraciones, pops.</p>
+          <div class="motion-ball motion-ball-spring" style="background: var(--color-accent);"></div>
+        </div>
+        <div class="motion-curve-demo">
+          <div style="font-size: 13px; font-weight: 600; color: var(--color-secondary); margin-bottom: 4px;">Smooth</div>
+          <div style="font-size: 12px; color: var(--color-text-tertiary); margin-bottom: 4px;">cubic-bezier(0.45, 0, 0.55, 1)</div>
+          <p style="font-size: 12px; color: var(--color-text-tertiary);">Animaciones largas, respiracion AXO.</p>
+          <div class="motion-ball motion-ball-smooth" style="background: var(--color-secondary);"></div>
+        </div>
+      </div>
+
+      <p style="font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 32px;">Pasa el cursor sobre cada card para ver la curva en accion.</p>
+
+      <div class="divider" style="background: rgba(255,255,255,0.1);"></div>
+
+      <h3 style="font-family: var(--font-display); font-size: 24px; font-weight: 500; letter-spacing: -0.03em; color: #fff; margin-top: 48px; margin-bottom: 12px;">Micro-animaciones de AXO</h3>
+      <p style="font-size: 14px; color: rgba(255,255,255,0.5); margin-bottom: 32px;">AXO es una presencia animada, no un PNG estatico. Tres estados base de movimiento.</p>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 48px;">
+        <div style="padding: 40px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; text-align: center;">
+          <div style="font-size: 48px; margin-bottom: 16px;" class="axo-breath">🦎</div>
+          <div style="font-size: 13px; font-weight: 600; color: var(--ritual-rosa); margin-bottom: 8px;">Respiracion</div>
+          <p style="font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.5;">Idle — AXO respira suavemente. Scale 1 → 1.04 en 3s con ease-smooth. Para chat, dashboard, estados de espera.</p>
+          <code style="font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 8px; display: block;">axoBreath 3s ease infinite</code>
+        </div>
+        <div style="padding: 40px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; text-align: center;">
+          <div style="font-size: 48px; margin-bottom: 16px;" class="axo-celebrate">🦎</div>
+          <div style="font-size: 13px; font-weight: 600; color: var(--color-accent); margin-bottom: 8px;">Celebracion</div>
+          <p style="font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.5;">Venta completada, meta alcanzada. Scale + rotate con spring. 0.8s, una vez.</p>
+          <code style="font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 8px; display: block;">axoCelebrate 0.8s spring once</code>
+        </div>
+        <div style="padding: 40px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; text-align: center;">
+          <div style="font-size: 48px; margin-bottom: 16px;" class="axo-swim">🦎</div>
+          <div style="font-size: 13px; font-weight: 600; color: var(--color-primary); margin-bottom: 8px;">Nadar</div>
+          <p style="font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.5;">Transiciones entre paginas, loading. Movimiento ondulante X+Y en 4s. Evoca agua.</p>
+          <code style="font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 8px; display: block;">axoSwim 4s smooth infinite</code>
+        </div>
+      </div>
+
+      <div style="padding: 24px; background: rgba(229,75,75,0.06); border: 1px solid rgba(229,75,75,0.12); border-radius: 12px;">
+        <div style="font-size: 13px; font-weight: 600; color: var(--color-error); margin-bottom: 8px;">REGLA OBLIGATORIA</div>
+        <p style="font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.6;">Toda animacion debe respetar <code style="background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; font-size: 12px;">@media (prefers-reduced-motion: reduce)</code>. Si el usuario prefiere movimiento reducido, todas las animaciones se desactivan. Sin excepciones.</p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
        MINI FOOTER
        ═══════════════════════════════════════════ -->
   <footer style="background: var(--color-bg-dark); padding: 24px 40px; text-align: center;">
     <p style="font-size: 12px; color: rgba(255,255,255,0.3);">
-      SACS Style Guide v2.0 — Marzo 2026
+      SACS Style Guide v2.0 — Marzo 2026 — Este documento es la fuente de verdad del sistema de diseno.
     </p>
   </footer>
 
   </div><!-- /main-content -->
+
+  <!-- Fade-in-up on scroll — ejemplo vivo del sistema de motion -->
+  <script>
+    (function() {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var targets = document.querySelectorAll('.section-title, .section-label, .section-desc');
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.style.opacity = '0';
+            entry.target.style.transform = 'translateY(24px)';
+            requestAnimationFrame(function() {
+              entry.target.style.transition = 'opacity 0.6s cubic-bezier(0.22,0.68,0,1), transform 0.6s cubic-bezier(0.22,0.68,0,1)';
+              entry.target.style.opacity = '1';
+              entry.target.style.transform = 'translateY(0)';
+            });
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1 });
+      targets.forEach(function(t) { observer.observe(t); });
+    })();
+  </script>
 
 </body>
 </html>

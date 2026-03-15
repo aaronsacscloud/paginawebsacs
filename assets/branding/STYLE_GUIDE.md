@@ -62,9 +62,9 @@ para mayor coherencia, usando un peso Medium o Semibold.
 ## 3. TIPOGRAFIA
 
 ### 3.1 Filosofia tipografica
-Inspirada en la audacia de Webflow (titulos masivos, impactantes) y la precision de Square
-(jerarquia clara, pesos bien definidos). El resultado: tipografia que se siente creativa
-y profesional al mismo tiempo.
+Titulos masivos y audaces que transmiten confianza, con una jerarquia precisa y pesos
+bien definidos. El resultado: tipografia que se siente creativa y profesional al mismo
+tiempo — como la voz de un amigo experto que habla con claridad.
 
 ### 3.2 Familia principal: Plus Jakarta Sans
 Fuente geometrica moderna, amigable, con personalidad.
@@ -197,8 +197,8 @@ Nav Item
 
 ### 4.1 Filosofia de color
 Partimos de los colores del logo actual (azul, amarillo, teal) y los evolucionamos
-hacia una paleta mas sofisticada e intencional, con tintes calidos inspirados en
-la estetica vintage de Intercom.
+hacia una paleta mas sofisticada e intencional, con tintes calidos que evocan la
+tierra mexicana, la luz de una tarde en Oaxaca, y el papel envejecido de un codice.
 
 ### 4.2 Colores primarios
 
@@ -240,7 +240,7 @@ GRIS CLARO
 
 CREMA CALIDO (Background)
   HEX:   #F5F3EE
-  Uso:   Fondo de secciones alternas (inspirado en Intercom)
+  Uso:   Fondo de secciones alternas — evoca la calidez de la tierra mexicana
 
 BLANCO ROTO
   HEX:   #FAFAF8
@@ -280,7 +280,7 @@ GRADIENTE NOCHE (Secciones oscuras)
   Direccion: 180deg
   De:        #1A1A2E
   A:         #16213E
-  Uso:       Secciones con fondo oscuro tipo Intercom cosmic
+  Uso:       Secciones con fondo oscuro, evocando el cielo nocturno de Oaxaca
 
 GRADIENTE CALIDO (AXO / Impacto)
   Direccion: 120deg
@@ -297,8 +297,8 @@ GRADIENTE CREMA (Sutil)
 ```
 
 ### 4.6 Fondos con ilustracion
-Siguiendo el patron de Intercom, las secciones hero y feature pueden usar
-ilustraciones de fondo con overlays:
+Las secciones hero y feature usan ilustraciones de fondo con overlays para
+crear profundidad y atmosfera:
 
 ```
 Overlay sobre ilustracion clara:
@@ -399,7 +399,7 @@ PRIMARY BUTTON
   Size:           16px
   Weight:         600 (Semibold)
   Padding:        14px 28px
-  Border-radius:  50px (pill shape, estilo Square)
+  Border-radius:  50px (pill shape)
   Hover:          scale(1.03), background #3D6BD4
   Active:         translateY(1px)
   Shadow:         none (flat)
@@ -422,12 +422,13 @@ GHOST BUTTON
   Hover:          background rgba(75,123,229,0.08)
 
 CTA BUTTON (Premium)
-  Background:     gradiente hero (135deg, #4B7BE5 → #2AB5A0)
+  Background:     #4B7BE5 (Azul SACS — solido, sin gradiente)
   Text:           #FFFFFF
   Padding:        16px 36px
   Border-radius:  50px
   Shadow:         0 4px 14px rgba(75,123,229,0.3)
   Hover:          scale(1.03), shadow intensificado
+  Nota:           NUNCA usar gradientes en botones/CTAs
 
 BUTTON SIZES:
   Small:    12px text, 10px 20px padding
@@ -606,19 +607,19 @@ HERO SECCION (Paginas internas)
 ## 8. ESTILO DE ILUSTRACION
 
 ### 8.1 Filosofia visual
-Inspirado en el estilo de Intercom Suite: ilustraciones con estetica painterly/vintage
-que crean un contraste rico contra la tipografia moderna y bold. Para SACS, estas
-ilustraciones tendran tematica mexicana acuatica (Xochimilco, axolotls, lirios,
-naturaleza mexicana).
+Ilustraciones con estetica painterly/vintage que crean un contraste rico contra
+la tipografia moderna y bold. Tematica mexicana acuatica (Xochimilco, axolotls,
+lirios, naturaleza mexicana). El estilo evoca un mural mexicano moderno —
+contemporaneo pero con raiz profunda.
 
 ### 8.2 Estilo artistico
 
 ```
 TIPO:           Ilustracion digital con textura painterly (no flat, no 3D)
-ESTETICA:       Vintage contemporaneo — como un mural mexicano moderno
+ESTETICA:       Vintage contemporaneo — mural mexicano moderno con precision digital
 TEXTURAS:       Pinceladas visibles, grano sutil, capas de color traslucidas
 PALETTE:        Azules profundos, turquesas, corales, dorados, verdes naturales
-REFERENCIA:     Mezcla de Intercom (koi fish style) + muralismo mexicano moderno
+REFERENCIA:     Muralismo mexicano moderno + botanica acuatica de Xochimilco
 LUZ:            Calida, como luz de atardecer sobre agua
 ```
 
@@ -642,7 +643,7 @@ SECCION DE IMPACTO (10%)
   Palette:  Tonos calidos, dorados, verdes
 
 SECCION DE AI / TECNOLOGIA
-  Escena:   Vista nocturna/cosmica (como Intercom galaxy) con AXO
+  Escena:   Vista nocturna/cosmica — cielo de Oaxaca — con AXO
             flotando entre constelaciones de datos
   Palette:  Azul profundo, violeta, puntos brillantes
 
@@ -688,7 +689,7 @@ DO:
   ✓ Integrar elementos mexicanos naturales (xochimilco, flora nativa)
   ✓ Crear profundidad con capas de transparencia
   ✓ Dejar espacio claro para texto (no ilustrar encima del copy)
-  ✓ Usar ilustraciones como fondo de secciones hero (estilo Intercom)
+  ✓ Usar ilustraciones como fondo de secciones hero
 
 DON'T:
   ✗ Usar stock illustrations genericas
@@ -796,7 +797,7 @@ SCALE IN (Cards)
   A:        opacity 1, scale(1)
   Duracion: 400ms
 
-TEXT REVEAL (Titulos hero, estilo Webflow)
+TEXT REVEAL (Titulos hero)
   Tipo:     Line-by-line mask reveal
   De:       Cada linea translateY(100%), opacity 0
   A:        translateY(0), opacity 1
@@ -824,9 +825,9 @@ PARALLAX SUTIL (Ilustraciones de fondo)
 ```
 01. NAV (sticky)
 02. HERO — Ilustracion acuatica + titulo bold + CTAs
-03. LOGOS — Scroll infinito de clientes (estilo Square)
+03. LOGOS — Scroll infinito de clientes
 04. PROBLEMA → SOLUCION — "Tu negocio crece, tu control se pierde"
-05. FEATURES PRINCIPALES — 3-4 tabs con contenido (estilo Square)
+05. FEATURES PRINCIPALES — 3-4 tabs con contenido
 06. ILUSTRACION + FEATURE — AXO AI section con imagen grande
 07. TESTIMONIALS — Cards con caso de estudio
 08. METRICAS — Stats con numeros animados
@@ -913,9 +914,17 @@ PARALLAX SUTIL (Ilustraciones de fondo)
   --color-border:         #D4D4D4;
   --color-border-light:   rgba(0,0,0,0.08);
 
+  /* Paleta Ritual */
+  --ritual-jade:          #5B8F7B;
+  --ritual-rosa:          #C4929B;
+  --ritual-terracota:     #B87B5E;
+  --ritual-indigo:        #3D4F7C;
+
   /* Typography */
-  --font-display:         'Space Grotesk', sans-serif;
+  --font-display:         'DM Sans', sans-serif;
+  --font-heading:         'Space Grotesk', sans-serif;
   --font-body:            'Plus Jakarta Sans', sans-serif;
+  --font-logo:            'Urbanist', sans-serif;
 
   /* Spacing */
   --space-1: 4px;   --space-2: 8px;   --space-3: 12px;
@@ -940,9 +949,10 @@ PARALLAX SUTIL (Ilustraciones de fondo)
   --grid-columns:  12;
   --grid-gap:      24px;
 
-  /* Motion */
-  --ease-default:  cubic-bezier(0.25, 0.1, 0.25, 1);
-  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Motion — Curva de Agua */
+  --ease-agua:     cubic-bezier(0.22, 0.68, 0, 1);     /* Default — fluida como agua */
+  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);  /* Botones, celebraciones */
+  --ease-smooth:   cubic-bezier(0.45, 0, 0.55, 1);     /* Animaciones largas, respiracion AXO */
   --duration-fast: 200ms;
   --duration-base: 300ms;
   --duration-slow: 600ms;
@@ -951,14 +961,14 @@ PARALLAX SUTIL (Ilustraciones de fondo)
 
 ---
 
-## 17. REFERENCIAS DE DISENO
+## 17. PRINCIPIOS DE DISENO
 
-| Elemento tomado de  | Que tomamos                                        |
-|---------------------|----------------------------------------------------|
-| **Square**          | Tipografia precisa, botones pill, escala de spacing, grid 12col, componentes limpios |
-| **Intercom**        | Ilustraciones painterly como fondos, secciones oscuras cosmicas, fondo crema calido #F5F3EE |
-| **Webflow**         | Titulos hero masivos y audaces, line-reveal animation, feeling creativo/bold |
-| **SACS Original**   | Colores del logo (evolucionados), identidad de marca, manifesto |
+| Principio                | Expresion en SACS                                 |
+|--------------------------|---------------------------------------------------|
+| **Precision con alma**   | Tipografia precisa, botones pill solidos, grid 12col, componentes limpios — pero con calidez mexicana en cada token de color |
+| **Profundidad narrativa**| Ilustraciones painterly como fondos, secciones oscuras que evocan el cielo nocturno de Oaxaca, crema calido #F5F3EE como tierra |
+| **Audacia consciente**   | Titulos hero masivos y directos, movimiento fluido como agua, feeling creativo sin pedir disculpas |
+| **Raiz mexicana**        | Paleta Ritual, geometria de codices y grecas como principio estructural, axolotl como mascota original |
 
 ---
 
