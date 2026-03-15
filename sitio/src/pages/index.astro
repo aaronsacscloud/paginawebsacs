@@ -1,0 +1,246 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Hero from '../components/Hero.astro';
+import LogoScroll from '../components/LogoScroll.astro';
+import Features from '../components/Features.astro';
+import Testimonials from '../components/Testimonials.astro';
+import Stats from '../components/Stats.astro';
+import ImpactSection from '../components/ImpactSection.astro';
+import CTABanner from '../components/CTABanner.astro';
+
+const websiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'SACS',
+  url: 'https://sacs.com.mx',
+  description: 'Sistema operativo empresarial para retailers conscientes en México.',
+};
+
+const softwareSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'SACS',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  description: 'Plataforma todo-en-uno para gestión de retail: punto de venta, inventario, CRM, reportes y asistente de IA.',
+  offers: {
+    '@type': 'AggregateOffer',
+    priceCurrency: 'MXN',
+    lowPrice: '0',
+    offerCount: '3',
+  },
+  featureList: [
+    'Punto de venta',
+    'Inventario multi-sucursal',
+    'CRM',
+    'Reportes en tiempo real',
+    'Asistente de IA (AXO)',
+    'Facturación CFDI',
+  ],
+  areaServed: {
+    '@type': 'Country',
+    name: 'MX',
+  },
+};
+---
+
+<BaseLayout
+  title="SACS — Sistema operativo para retailers conscientes"
+  description="SACS es la plataforma todo-en-uno para gestionar tu retail en México: punto de venta, inventario, CRM, reportes y un asistente de IA. El 10% de tu licencia genera impacto social."
+  structuredData={[websiteSchema, softwareSchema]}
+>
+  <!-- 01. Hero -->
+  <Hero
+    eyebrow="Comercio Consciente"
+    title="Tu negocio merece crecer con propósito."
+    subtitle="SACS es el sistema operativo que transforma la manera en que gestionas tu retail. Inventarios, ventas, clientes — todo en un solo lugar."
+    primaryCTA={{ label: 'Empieza gratis', href: '/contacto' }}
+    secondaryCTA={{ label: 'Conoce a AXO', href: '/producto#axo' }}
+  />
+
+  <!-- 02. Logo scroll -->
+  <LogoScroll />
+
+  <!-- 03. Problema → Solución -->
+  <section class="problem-solution section">
+    <div class="container ps-grid">
+      <div class="ps-problem">
+        <span class="eyebrow" style="color: var(--color-error);">El problema</span>
+        <h2>Tu negocio crece, tu control se pierde</h2>
+        <p class="body-large">
+          Excel para inventarios, una app para ventas, otra para clientes,
+          WhatsApp para pedidos. El caos operativo frena tu crecimiento.
+        </p>
+      </div>
+      <div class="ps-solution">
+        <span class="eyebrow" style="color: var(--color-secondary);">La solución</span>
+        <h2>Un solo sistema que lo conecta todo</h2>
+        <p class="body-large">
+          SACS reemplaza tus herramientas dispersas con una plataforma integrada.
+          Punto de venta, inventario, CRM, reportes — con IA que te ayuda a
+          tomar mejores decisiones.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04. Features principales -->
+  <Features />
+
+  <!-- 05. AXO AI Section -->
+  <section class="axo section" id="axo">
+    <div class="container axo-grid">
+      <div class="axo-content">
+        <span class="eyebrow badge badge-gold">Asistente de IA</span>
+        <h2>Conoce a AXO, tu asistente inteligente</h2>
+        <p class="body-large">
+          AXO es un asistente de inteligencia artificial que aprende de tu
+          negocio. Predice demanda, sugiere reabastecimiento y te ayuda a
+          tomar decisiones basadas en datos reales.
+        </p>
+        <ul class="axo-features">
+          <li>Predicción de demanda por sucursal</li>
+          <li>Alertas inteligentes de reabastecimiento</li>
+          <li>Análisis de tendencias de ventas</li>
+          <li>Reportes automáticos en lenguaje natural</li>
+        </ul>
+        <a href="/producto#axo" class="btn btn-primary">
+          Descubre AXO
+          <span aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+      <div class="axo-visual">
+        <div class="axo-placeholder">
+          <span class="axo-emoji" aria-hidden="true">🦎</span>
+          <p class="body-small" style="color: var(--color-text-tertiary);">AXO — IA para retail</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06. Testimonials -->
+  <Testimonials />
+
+  <!-- 07. Stats -->
+  <Stats />
+
+  <!-- 08. Impacto Social -->
+  <ImpactSection />
+
+  <!-- 09. CTA Final -->
+  <CTABanner />
+</BaseLayout>
+
+<style>
+  /* Problem → Solution */
+  .ps-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-12);
+  }
+
+  @media (min-width: 768px) {
+    .ps-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-16);
+    }
+  }
+
+  .ps-problem,
+  .ps-solution {
+    max-width: 520px;
+  }
+
+  .ps-problem .eyebrow,
+  .ps-solution .eyebrow {
+    display: block;
+    margin-bottom: var(--space-4);
+  }
+
+  .ps-problem h2,
+  .ps-solution h2 {
+    margin-bottom: var(--space-4);
+  }
+
+  .ps-problem .body-large,
+  .ps-solution .body-large {
+    color: var(--color-text-secondary);
+  }
+
+  /* AXO Section */
+  .axo {
+    background: var(--color-bg-secondary);
+  }
+
+  .axo-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-12);
+    align-items: center;
+  }
+
+  @media (min-width: 1024px) {
+    .axo-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-16);
+    }
+  }
+
+  .axo-content .badge {
+    margin-bottom: var(--space-5);
+  }
+
+  .axo-content h2 {
+    margin-bottom: var(--space-5);
+  }
+
+  .axo-content .body-large {
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-6);
+  }
+
+  .axo-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-bottom: var(--space-8);
+  }
+
+  .axo-features li {
+    position: relative;
+    padding-left: var(--space-6);
+    color: var(--color-text-secondary);
+  }
+
+  .axo-features li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--color-secondary);
+    font-weight: 700;
+  }
+
+  .axo-visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .axo-placeholder {
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: var(--color-bg-card);
+    border-radius: var(--radius-2xl);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4);
+    border: 1px solid var(--color-border-light);
+  }
+
+  .axo-emoji {
+    font-size: 5rem;
+  }
+</style>

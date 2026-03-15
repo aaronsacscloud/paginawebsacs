@@ -1,0 +1,205 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CTABanner from '../components/CTABanner.astro';
+
+const productSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'SACS',
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  description: 'Plataforma de gestión de retail todo-en-uno con punto de venta, inventario, CRM, reportes y asistente de IA.',
+  featureList: [
+    'Punto de venta multi-método de pago',
+    'Inventario multi-sucursal con transferencias',
+    'CRM con segmentación de clientes',
+    'Reportes y analytics en tiempo real',
+    'Facturación electrónica CFDI',
+    'Asistente de IA (AXO)',
+    'App móvil para gestión remota',
+  ],
+};
+
+const sections = [
+  {
+    id: 'pos',
+    eyebrow: 'Punto de Venta',
+    title: 'Cobra en segundos, sin complicaciones',
+    description: 'Un POS diseñado para velocidad. Múltiples métodos de pago, facturación CFDI automática y una interfaz que tu equipo domina en minutos.',
+    features: ['Cobro con tarjeta, efectivo y transferencia', 'Facturación CFDI en un clic', 'Corte de caja automatizado', 'Funciona offline'],
+  },
+  {
+    id: 'inventario',
+    eyebrow: 'Inventario',
+    title: 'Control total, cero excusas',
+    description: 'Gestiona stock en todas tus sucursales desde un solo panel. Transferencias, alertas de mínimos y trazabilidad completa de cada producto.',
+    features: ['Multi-sucursal en tiempo real', 'Transferencias entre tiendas', 'Alertas de reabastecimiento', 'Código de barras y SKU'],
+  },
+  {
+    id: 'crm',
+    eyebrow: 'CRM',
+    title: 'Conoce a tu cliente, no solo su ticket',
+    description: 'Cada compra construye un perfil. Segmenta, personaliza y crea relaciones que generan recompra.',
+    features: ['Perfil 360° del cliente', 'Segmentación inteligente', 'Historial de compras completo', 'Campañas personalizadas'],
+  },
+  {
+    id: 'reportes',
+    eyebrow: 'Reportes',
+    title: 'Datos que te dicen qué hacer',
+    description: 'Dashboards en tiempo real que transforman números en decisiones. Ventas, márgenes, tendencias — todo claro, todo accionable.',
+    features: ['Dashboard en tiempo real', 'Reportes por sucursal y vendedor', 'Análisis de márgenes', 'Exportación a Excel/PDF'],
+  },
+  {
+    id: 'axo',
+    eyebrow: 'AXO — IA',
+    title: 'Tu asistente inteligente para retail',
+    description: 'AXO aprende de tu negocio y te ayuda a anticiparte. Predicción de demanda, sugerencias de compra y análisis en lenguaje natural.',
+    features: ['Predicción de demanda', 'Sugerencias de reabastecimiento', 'Análisis de tendencias', 'Reportes en lenguaje natural'],
+  },
+];
+---
+
+<BaseLayout
+  title="Producto"
+  description="Conoce todas las funcionalidades de SACS: punto de venta, inventario multi-sucursal, CRM, reportes avanzados y AXO, tu asistente de IA para retail."
+  structuredData={productSchema}
+>
+  <section class="producto-hero section">
+    <div class="container">
+      <div class="producto-header">
+        <span class="eyebrow badge badge-blue">Plataforma</span>
+        <h1 class="display-l">Todo lo que tu retail necesita, en un solo lugar</h1>
+        <p class="body-large">
+          SACS integra las herramientas que antes requerían 5 apps diferentes.
+          Diseñado para retailers mexicanos que quieren crecer sin caos.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  {sections.map((s, i) => (
+    <section class:list={['feature-detail', 'section', { alt: i % 2 === 1 }]} id={s.id}>
+      <div class="container feature-grid">
+        <div class="feature-text">
+          <span class="eyebrow" style="color: var(--color-primary);">{s.eyebrow}</span>
+          <h2>{s.title}</h2>
+          <p class="body-large">{s.description}</p>
+          <ul class="feature-list">
+            {s.features.map((f) => (
+              <li>{f}</li>
+            ))}
+          </ul>
+        </div>
+        <div class="feature-visual">
+          <div class="feature-placeholder">
+            <p class="body-small" style="color: var(--color-text-tertiary);">
+              {s.eyebrow}
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  ))}
+
+  <CTABanner
+    title="¿Listo para simplificar tu operación?"
+    subtitle="Prueba SACS gratis y descubre por qué cientos de retailers ya lo usan."
+  />
+</BaseLayout>
+
+<style>
+  .producto-hero {
+    padding-top: calc(72px + var(--space-16));
+    padding-bottom: var(--space-8);
+  }
+
+  .producto-header {
+    text-align: center;
+    max-width: 700px;
+    margin-inline: auto;
+  }
+
+  .producto-header .badge {
+    margin-bottom: var(--space-5);
+  }
+
+  .producto-header h1 {
+    margin-bottom: var(--space-4);
+  }
+
+  .producto-header .body-large {
+    color: var(--color-text-secondary);
+  }
+
+  .feature-detail.alt {
+    background: var(--color-bg-secondary);
+  }
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-12);
+    align-items: center;
+  }
+
+  @media (min-width: 1024px) {
+    .feature-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-16);
+    }
+
+    .feature-detail:nth-child(even) .feature-grid {
+      direction: rtl;
+    }
+
+    .feature-detail:nth-child(even) .feature-grid > * {
+      direction: ltr;
+    }
+  }
+
+  .feature-text .eyebrow {
+    display: block;
+    margin-bottom: var(--space-4);
+  }
+
+  .feature-text h2 {
+    margin-bottom: var(--space-4);
+  }
+
+  .feature-text .body-large {
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-6);
+  }
+
+  .feature-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .feature-list li {
+    position: relative;
+    padding-left: var(--space-6);
+    color: var(--color-text-secondary);
+  }
+
+  .feature-list li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--color-secondary);
+    font-weight: 700;
+  }
+
+  .feature-placeholder {
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: var(--color-bg-card);
+    border-radius: var(--radius-2xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border-light);
+  }
+</style>

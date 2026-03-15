@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SACS — Hero con Ilustración + Textura</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- SVG Noise Texture Filter -->
+  <svg style="position:absolute;width:0;height:0;">
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feBlend in="SourceGraphic" mode="multiply"/>
+    </filter>
+    <filter id="grain-light">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.12"/>
+      </feComponentTransfer>
+      <feBlend in="SourceGraphic" mode="overlay"/>
+    </filter>
+  </svg>
+
+  <style>
+    :root {
+      --font-display: 'DM Sans', sans-serif;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+
+      --sacs-blue: #4B7BE5;
+      --sacs-teal: #2AB5A0;
+      --sacs-gold: #E8A838;
+      --sacs-cream: #F5F3EE;
+      --sacs-dark: #1A1A2E;
+      --sacs-white: #FFFFFF;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-body);
+      background: #0D0D14;
+      color: #fff;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ═══════════════════════════════════════════
+       HERO 1 — Ilustración de Flores + Textura
+       ═══════════════════════════════════════════ */
+    .hero-illustration {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 120px 80px;
+      overflow: hidden;
+    }
+
+    /* Imagen de fondo */
+    .hero-illustration .bg-image {
+      position: absolute;
+      inset: 0;
+      background: url('assets/images/flores-intercom.webp') center center / cover no-repeat;
+      z-index: 0;
+    }
+
+    /* Overlay oscuro para legibilidad — gradiente de izquierda */
+    .hero-illustration .bg-overlay {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg,
+          rgba(10, 10, 20, 0.88) 0%,
+          rgba(10, 10, 20, 0.72) 35%,
+          rgba(10, 10, 20, 0.45) 60%,
+          rgba(10, 10, 20, 0.15) 100%
+        );
+      z-index: 1;
+    }
+
+    /* Textura grain encima de todo */
+    .hero-illustration .bg-grain {
+      position: absolute;
+      inset: -50%;
+      width: 200%;
+      height: 200%;
+      filter: url(#grain-light);
+      opacity: 0.5;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* Contenido */
+    .hero-illustration .hero-content {
+      position: relative;
+      z-index: 3;
+      max-width: 720px;
+    }
+
+    /* Badge */
+    .badge {
+      display: inline-block;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 8px 20px;
+      border-radius: 50px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 32px;
+    }
+
+    /* Heading — estilo Square: limpio, geométrico, preciso */
+    .hero-heading {
+      font-family: var(--font-display);
+      font-size: clamp(42px, 6vw, 80px);
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      color: #fff;
+      margin-bottom: 24px;
+    }
+
+    /* Subtítulo */
+    .hero-subtitle {
+      font-family: var(--font-body);
+      font-size: clamp(16px, 2vw, 20px);
+      font-weight: 400;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, 0.75);
+      max-width: 520px;
+      margin-bottom: 48px;
+    }
+
+    /* Botones — sólidos, limpios, sin blur */
+    .btn-group {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 600;
+      padding: 16px 32px;
+      border-radius: 50px;
+      background: #fff;
+      color: var(--sacs-dark);
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s ease, transform 0.15s ease;
+    }
+
+    .btn-primary:hover {
+      background: #f0f0f0;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 600;
+      padding: 16px 32px;
+      border-radius: 50px;
+      background: transparent;
+      color: #fff;
+      border: 1.5px solid rgba(255, 255, 255, 0.35);
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.2s ease, transform 0.15s ease;
+    }
+
+    .btn-secondary:hover {
+      border-color: rgba(255, 255, 255, 0.7);
+      transform: translateY(-1px);
+    }
+
+    /* Arrow icon */
+    .btn-arrow {
+      font-size: 18px;
+      transition: transform 0.2s ease;
+    }
+    .btn-primary:hover .btn-arrow,
+    .btn-secondary:hover .btn-arrow {
+      transform: translateX(3px);
+    }
+
+
+    /* ═══════════════════════════════════════════
+       HERO 2 — Misma imagen, overlay centro
+       ═══════════════════════════════════════════ */
+    .hero-center {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 40px;
+      overflow: hidden;
+    }
+
+    .hero-center .bg-image {
+      position: absolute;
+      inset: 0;
+      background: url('assets/images/flores-intercom.webp') center center / cover no-repeat;
+      z-index: 0;
+    }
+
+    /* Overlay radial — oscurece centro para texto, deja bordes visibles */
+    .hero-center .bg-overlay {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at center,
+          rgba(10, 10, 20, 0.82) 0%,
+          rgba(10, 10, 20, 0.6) 40%,
+          rgba(10, 10, 20, 0.25) 75%,
+          rgba(10, 10, 20, 0.1) 100%
+        );
+      z-index: 1;
+    }
+
+    .hero-center .bg-grain {
+      position: absolute;
+      inset: -50%;
+      width: 200%;
+      height: 200%;
+      filter: url(#grain-light);
+      opacity: 0.45;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .hero-center .hero-content {
+      position: relative;
+      z-index: 3;
+      max-width: 800px;
+    }
+
+    .hero-center .hero-heading {
+      font-size: clamp(48px, 7vw, 96px);
+      margin-bottom: 28px;
+    }
+
+    .hero-center .hero-subtitle {
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+      margin-bottom: 48px;
+    }
+
+    .hero-center .btn-group {
+      justify-content: center;
+    }
+
+
+    /* ═══════════════════════════════════════════
+       HERO 3 — Imagen visible abajo, texto arriba
+       con gradiente bottom-up
+       ═══════════════════════════════════════════ */
+    .hero-split {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 80px;
+      overflow: hidden;
+    }
+
+    .hero-split .bg-image {
+      position: absolute;
+      inset: 0;
+      background: url('assets/images/flores-intercom.webp') center 30% / cover no-repeat;
+      z-index: 0;
+    }
+
+    /* Gradiente bottom-up fuerte para texto abajo */
+    .hero-split .bg-overlay {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(0deg,
+          rgba(10, 10, 20, 0.95) 0%,
+          rgba(10, 10, 20, 0.85) 25%,
+          rgba(10, 10, 20, 0.4) 55%,
+          rgba(10, 10, 20, 0.05) 100%
+        );
+      z-index: 1;
+    }
+
+    .hero-split .bg-grain {
+      position: absolute;
+      inset: -50%;
+      width: 200%;
+      height: 200%;
+      filter: url(#grain-light);
+      opacity: 0.4;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .hero-split .hero-content {
+      position: relative;
+      z-index: 3;
+      max-width: 680px;
+    }
+
+    .hero-split .hero-heading {
+      font-size: clamp(40px, 5.5vw, 72px);
+      margin-bottom: 20px;
+    }
+
+    .hero-split .hero-subtitle {
+      margin-bottom: 40px;
+    }
+
+
+    /* ═══════════════════════════════════════════
+       HERO 4 — Card flotante sobre imagen
+       ═══════════════════════════════════════════ */
+    .hero-card-over {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 80px;
+      overflow: hidden;
+    }
+
+    .hero-card-over .bg-image {
+      position: absolute;
+      inset: 0;
+      background: url('assets/images/flores-intercom.webp') center center / cover no-repeat;
+      z-index: 0;
+    }
+
+    /* Overlay ligero — la imagen se ve más */
+    .hero-card-over .bg-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 10, 20, 0.2);
+      z-index: 1;
+    }
+
+    .hero-card-over .bg-grain {
+      position: absolute;
+      inset: -50%;
+      width: 200%;
+      height: 200%;
+      filter: url(#grain-light);
+      opacity: 0.35;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* Card sólida */
+    .hero-card-over .hero-card {
+      position: relative;
+      z-index: 3;
+      background: rgba(26, 26, 46, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      padding: 64px;
+      max-width: 560px;
+    }
+
+    .hero-card-over .hero-heading {
+      font-size: clamp(36px, 4.5vw, 56px);
+      margin-bottom: 20px;
+    }
+
+    .hero-card-over .hero-subtitle {
+      margin-bottom: 40px;
+    }
+
+
+    /* ═══════════════════════════════════════════
+       SECTION SEPARATOR
+       ═══════════════════════════════════════════ */
+    .section-label {
+      background: var(--sacs-dark);
+      padding: 40px 80px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .section-label h2 {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .section-label p {
+      font-family: var(--font-body);
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.25);
+      margin-top: 4px;
+    }
+
+    /* ═══════════════════════════════════════════
+       RESPONSIVE
+       ═══════════════════════════════════════════ */
+    @media (max-width: 768px) {
+      .hero-illustration,
+      .hero-center,
+      .hero-split,
+      .hero-card-over {
+        padding: 80px 24px;
+      }
+
+      .hero-card-over .hero-card {
+        padding: 40px 28px;
+      }
+
+      .section-label {
+        padding: 28px 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ─── VARIANTE 1: Overlay lateral (texto izquierda, imagen se ve a la derecha) ─── -->
+  <div class="section-label">
+    <h2>Variante 1 — Overlay Lateral</h2>
+    <p>Gradiente de izquierda a derecha. Texto legible, imagen visible al costado.</p>
+  </div>
+
+  <section class="hero-illustration">
+    <div class="bg-image"></div>
+    <div class="bg-overlay"></div>
+    <div class="bg-grain"></div>
+
+    <div class="hero-content">
+      <span class="badge">Comercio Consciente</span>
+      <h1 class="hero-heading">Tu negocio merece crecer con propósito.</h1>
+      <p class="hero-subtitle">
+        SACS es el sistema operativo que transforma la manera en que gestionas tu retail.
+        Inventarios, ventas, clientes — todo en un solo lugar.
+      </p>
+      <div class="btn-group">
+        <a href="#" class="btn-primary">Empieza gratis <span class="btn-arrow">→</span></a>
+        <a href="#" class="btn-secondary">Conoce a AXO <span class="btn-arrow">→</span></a>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ─── VARIANTE 2: Overlay radial centro (texto centrado, bordes con imagen) ─── -->
+  <div class="section-label">
+    <h2>Variante 2 — Overlay Radial Centro</h2>
+    <p>Texto centrado con fondo radial. La ilustración se asoma por los bordes.</p>
+  </div>
+
+  <section class="hero-center">
+    <div class="bg-image"></div>
+    <div class="bg-overlay"></div>
+    <div class="bg-grain"></div>
+
+    <div class="hero-content">
+      <span class="badge">SACS Retail OS</span>
+      <h1 class="hero-heading">Ser. Avanzar. Crear. Sembrar.</h1>
+      <p class="hero-subtitle">
+        Cada decisión que tomas con SACS impulsa un comercio más consciente.
+        El 10% de tu licencia genera impacto social automáticamente.
+      </p>
+      <div class="btn-group">
+        <a href="#" class="btn-primary">Comenzar ahora <span class="btn-arrow">→</span></a>
+        <a href="#" class="btn-secondary">Ver impacto <span class="btn-arrow">→</span></a>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ─── VARIANTE 3: Gradiente bottom-up (imagen arriba, texto abajo) ─── -->
+  <div class="section-label">
+    <h2>Variante 3 — Gradiente Bottom-Up</h2>
+    <p>La ilustración se ve completa arriba, el texto emerge desde abajo.</p>
+  </div>
+
+  <section class="hero-split">
+    <div class="bg-image"></div>
+    <div class="bg-overlay"></div>
+    <div class="bg-grain"></div>
+
+    <div class="hero-content">
+      <span class="badge">Nuevo en SACS</span>
+      <h1 class="hero-heading">AXO nada contigo en cada venta.</h1>
+      <p class="hero-subtitle">
+        Nuestro asistente de IA aprende de tu negocio y te ayuda a tomar
+        mejores decisiones. Inteligencia artificial que entiende el retail mexicano.
+      </p>
+      <div class="btn-group">
+        <a href="#" class="btn-primary">Probar AXO <span class="btn-arrow">→</span></a>
+        <a href="#" class="btn-secondary">Cómo funciona <span class="btn-arrow">→</span></a>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ─── VARIANTE 4: Card flotante sobre imagen visible ─── -->
+  <div class="section-label">
+    <h2>Variante 4 — Card sobre Ilustración</h2>
+    <p>La imagen se ve casi completa. El contenido vive dentro de una card sólida.</p>
+  </div>
+
+  <section class="hero-card-over">
+    <div class="bg-image"></div>
+    <div class="bg-overlay"></div>
+    <div class="bg-grain"></div>
+
+    <div class="hero-card">
+      <span class="badge">Plataforma Retail</span>
+      <h1 class="hero-heading">Opera tu negocio sin complicaciones.</h1>
+      <p class="hero-subtitle">
+        Punto de venta, inventario multi-sucursal, CRM, reportes —
+        todo conectado, todo simple.
+      </p>
+      <div class="btn-group">
+        <a href="#" class="btn-primary">Agenda un demo <span class="btn-arrow">→</span></a>
+      </div>
+    </div>
+  </section>
+
+
+</body>
+</html>

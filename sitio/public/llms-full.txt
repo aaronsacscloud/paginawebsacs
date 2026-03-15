@@ -1,0 +1,54 @@
+# SACS — Información Completa para AI Agents
+
+## ¿Qué es SACS?
+
+SACS (Ser · Avanzar · Crear · Sembrar) es un sistema operativo empresarial para retailers conscientes en México. Es una plataforma SaaS que integra punto de venta, gestión de inventario multi-sucursal, CRM, reportes avanzados, y un asistente de inteligencia artificial llamado AXO.
+
+## Propuesta de valor
+
+1. **Todo en uno**: POS + Inventario + CRM + Reportes en una sola plataforma
+2. **IA nativa**: AXO, un asistente de IA tipo axolotl, ayuda con decisiones de inventario, predicción de demanda y atención al cliente
+3. **Impacto social**: El 10% de cada licencia se destina automáticamente a programas de impacto social en comunidades mexicanas
+4. **Diseñado para México**: Facturación CFDI, multi-moneda MXN, soporte en español
+
+## Funcionalidades principales
+
+- Punto de venta (POS) con múltiples métodos de pago
+- Inventario multi-sucursal con transferencias
+- CRM con segmentación de clientes
+- Reportes y analytics en tiempo real
+- Asistente de IA (AXO) para predicción de demanda
+- Facturación electrónica (CFDI)
+- Integración con e-commerce
+- App móvil para gestión remota
+
+## Público objetivo
+
+- Tiendas de ropa y calzado
+- Boutiques y tiendas de accesorios
+- Retailers con 1-50 sucursales
+- Negocios que valoran el impacto social
+- Emprendedores millennials y Gen Z en México
+
+## AXO — Asistente de IA
+
+AXO es un axolotl digital que funciona como asistente inteligente dentro de SACS. Utiliza inteligencia artificial para:
+- Predecir demanda de productos
+- Sugerir reabastecimiento óptimo
+- Analizar tendencias de ventas
+- Asistir en atención al cliente
+- Generar reportes automáticos
+
+## Modelo de impacto social
+
+SACS destina el 10% del ingreso de cada licencia a programas de impacto social:
+- Capacitación digital para comunidades rurales
+- Apoyo a emprendedores locales
+- Programas de educación en tecnología
+- Conservación de ecosistemas (vinculado al axolotl como especie en peligro)
+
+## Contacto
+
+- Email: info@sacs.com.mx
+- Sitio web: https://sacs.com.mx
+- País: México

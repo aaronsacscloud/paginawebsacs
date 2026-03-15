@@ -1,0 +1,94 @@
+---
+
+---
+
+<section class="impact section" id="impact">
+  <div class="container impact-inner">
+    <div class="impact-content">
+      <span class="eyebrow badge badge-gold">Impacto Social</span>
+      <h2 class="impact-title">El 10% de tu licencia genera cambio real</h2>
+      <p class="body-large impact-text">
+        Cada vez que usas SACS, contribuyes automáticamente a programas de
+        capacitación digital, apoyo a emprendedores locales y conservación
+        de ecosistemas en México.
+      </p>
+      <p class="impact-text">
+        No es caridad. Es un modelo donde tu éxito impulsa el de tu comunidad.
+        Comercio consciente significa que cada transacción tiene propósito.
+      </p>
+      <a href="/manifiesto" class="btn btn-primary">
+        Lee nuestro manifiesto
+        <span class="btn-arrow" aria-hidden="true">&rarr;</span>
+      </a>
+    </div>
+
+    <div class="impact-stats">
+      <div class="impact-stat">
+        <p class="impact-number display-l">10%</p>
+        <p class="body-small">De cada licencia a impacto social</p>
+      </div>
+      <div class="impact-stat">
+        <p class="impact-number display-l">50+</p>
+        <p class="body-small">Comunidades beneficiadas</p>
+      </div>
+      <div class="impact-stat">
+        <p class="impact-number display-l">1,200+</p>
+        <p class="body-small">Personas capacitadas</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .impact {
+    background: linear-gradient(180deg, var(--color-bg-secondary) 0%, var(--color-bg-primary) 100%);
+  }
+
+  .impact-inner {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-16);
+    align-items: center;
+  }
+
+  @media (min-width: 1024px) {
+    .impact-inner {
+      grid-template-columns: 1.2fr 0.8fr;
+    }
+  }
+
+  .impact-content .badge {
+    margin-bottom: var(--space-5);
+  }
+
+  .impact-title {
+    margin-bottom: var(--space-5);
+  }
+
+  .impact-text {
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-6);
+    max-width: 540px;
+  }
+
+  .impact-stats {
+    display: grid;
+    gap: var(--space-6);
+  }
+
+  .impact-stat {
+    background: var(--color-bg-card);
+    border-radius: var(--radius-xl);
+    padding: var(--space-8);
+    border-left: 4px solid var(--color-accent);
+  }
+
+  .impact-number {
+    color: var(--color-accent);
+    margin-bottom: var(--space-2);
+  }
+
+  .impact-stat .body-small {
+    color: var(--color-text-secondary);
+  }
+</style>

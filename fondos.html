@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SACS — Fondos Oaxaquenos Vibrantes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --font-display: 'Space Grotesk', sans-serif;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+      --font-statement: 'Bebas Neue', sans-serif;
+
+      /* COLORES OAXACA VIVOS */
+      --mx-rojo: #D42B2B;
+      --mx-rosa: #E8356D;
+      --mx-rosa-hot: #FF1493;
+      --mx-naranja: #F57C20;
+      --mx-amarillo: #FFD100;
+      --mx-verde-lima: #7BC242;
+      --mx-verde: #1B8C3E;
+      --mx-verde-esmeralda: #00875A;
+      --mx-turquesa: #00B5A3;
+      --mx-azul-cielo: #3DA5D9;
+      --mx-azul-rey: #2856A3;
+      --mx-morado: #6B2FA0;
+      --mx-magenta: #C2185B;
+      --mx-blanco: #FEFEFE;
+      --mx-crema: #FFF8E7;
+      --mx-negro: #1A1A1A;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: var(--font-body);
+      background: #0A0A12;
+      color: #fff;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── HERO BASE ─── */
+    .hero-section {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 120px 80px;
+      overflow: hidden;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      max-width: 800px;
+    }
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      backdrop-filter: blur(12px);
+      padding: 8px 20px;
+      border-radius: 50px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.9);
+      margin-bottom: 32px;
+    }
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: 72px;
+      font-weight: 700;
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+      color: #FFFFFF;
+      margin-bottom: 24px;
+    }
+    .hero-subtitle {
+      font-size: 20px;
+      line-height: 1.6;
+      color: rgba(255,255,255,0.7);
+      max-width: 520px;
+      margin-bottom: 40px;
+    }
+    .hero-ctas { display: flex; gap: 16px; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 16px;
+      padding: 14px 28px;
+      border-radius: 50px;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: all 0.25s ease;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-white { background: #fff; color: #1A1A1A; }
+    .btn-white:hover { transform: scale(1.03); box-shadow: 0 8px 30px rgba(0,0,0,0.2); }
+    .btn-outline { background: transparent; color: #fff; border: 1.5px solid rgba(255,255,255,0.4); }
+    .btn-outline:hover { border-color: #fff; background: rgba(255,255,255,0.08); }
+    .btn-dark { background: #1A1A1A; color: #fff; }
+    .btn-dark:hover { transform: scale(1.03); }
+    .btn-outline-dark { background: transparent; color: #1A1A1A; border: 1.5px solid rgba(0,0,0,0.25); }
+    .btn-outline-dark:hover { border-color: #1A1A1A; background: rgba(0,0,0,0.04); }
+
+    .intercom-line {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      margin: 28px 0;
+    }
+    .intercom-line-dark {
+      background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1), transparent);
+    }
+
+    .separator {
+      padding: 50px 80px;
+      text-align: center;
+      background: #0A0A12;
+    }
+    .separator h2 {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.3);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .separator p {
+      font-size: 14px;
+      color: rgba(255,255,255,0.2);
+      margin-top: 8px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .section-info {
+      position: absolute;
+      top: 24px;
+      right: 32px;
+      z-index: 20;
+      display: flex;
+      gap: 8px;
+    }
+    .info-tag {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 50px;
+      background: rgba(0,0,0,0.3);
+      backdrop-filter: blur(8px);
+      color: rgba(255,255,255,0.8);
+    }
+
+    .floating-card {
+      position: absolute;
+      z-index: 5;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(16px);
+      border-radius: 16px;
+      padding: 20px 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      color: #1A1A1A;
+      max-width: 280px;
+    }
+    .floating-card-value {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 700;
+    }
+    .floating-card-label { font-size: 12px; color: #8C8C8C; }
+
+    /* Statement */
+    .statement-fullbleed {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 40px;
+      overflow: hidden;
+    }
+    .statement-text {
+      font-family: var(--font-statement);
+      text-transform: uppercase;
+      line-height: 0.9;
+      letter-spacing: 0.01em;
+      font-weight: 400;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* ══════════════════════════════════════════════════════
+       FONDO 1: SARAPE MEXICANO
+       Franjas verticales vibrantes tipo sarape de Saltillo
+       ══════════════════════════════════════════════════════ */
+    .bg-sarape {
+      background:
+        /* Overlay oscuro para legibilidad */
+        linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.35) 40%, rgba(0,0,0,0.55) 100%),
+        /* Franjas del sarape */
+        repeating-linear-gradient(
+          90deg,
+          #D42B2B 0px, #D42B2B 45px,
+          #B22222 45px, #B22222 48px,
+          #FEFEFE 48px, #FEFEFE 52px,
+          #1B8C3E 52px, #1B8C3E 90px,
+          #146B2F 90px, #146B2F 93px,
+          #FEFEFE 93px, #FEFEFE 97px,
+          #FFD100 97px, #FFD100 115px,
+          #F5A623 115px, #F5A623 135px,
+          #FEFEFE 135px, #FEFEFE 139px,
+          #2856A3 139px, #2856A3 175px,
+          #1E4080 175px, #1E4080 178px,
+          #FEFEFE 178px, #FEFEFE 182px,
+          #E8356D 182px, #E8356D 210px,
+          #C2185B 210px, #C2185B 213px,
+          #FEFEFE 213px, #FEFEFE 217px,
+          #F57C20 217px, #F57C20 250px,
+          #D46A18 250px, #D46A18 253px,
+          #FEFEFE 253px, #FEFEFE 257px,
+          #00B5A3 257px, #00B5A3 290px,
+          #009688 290px, #009688 293px,
+          #FEFEFE 293px, #FEFEFE 297px,
+          #6B2FA0 297px, #6B2FA0 330px,
+          #5A2888 330px, #5A2888 333px,
+          #FEFEFE 333px, #FEFEFE 337px,
+          #D42B2B 337px, #D42B2B 375px,
+          #B22222 375px, #B22222 378px,
+          #FEFEFE 378px, #FEFEFE 382px,
+          #7BC242 382px, #7BC242 415px,
+          #68A838 415px, #68A838 418px,
+          #FEFEFE 418px, #FEFEFE 422px,
+          #3DA5D9 422px, #3DA5D9 460px
+        );
+    }
+    .bg-sarape::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      /* Textura de tela tejida */
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 2px,
+          rgba(0,0,0,0.03) 2px,
+          rgba(0,0,0,0.03) 4px
+        ),
+        repeating-linear-gradient(
+          90deg,
+          transparent,
+          transparent 1px,
+          rgba(0,0,0,0.02) 1px,
+          rgba(0,0,0,0.02) 2px
+        );
+      z-index: 1;
+    }
+    .bg-sarape::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+      mix-blend-mode: multiply;
+      opacity: 0.6;
+    }
+
+
+    /* ══════════════════════════════════════════════════════
+       FONDO 2: PAPEL PICADO / FIESTA
+       Explosivos colores con patron perforado
+       ══════════════════════════════════════════════════════ */
+    .bg-papel-picado {
+      background:
+        /* Overlay para legibilidad */
+        linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.5) 100%),
+        /* Franjas de papel picado horizontales (como guirnaldas) */
+        repeating-linear-gradient(
+          180deg,
+          #E8356D 0px, #E8356D 60px,
+          #FFD100 60px, #FFD100 120px,
+          #1B8C3E 120px, #1B8C3E 180px,
+          #2856A3 180px, #2856A3 240px,
+          #F57C20 240px, #F57C20 300px,
+          #6B2FA0 300px, #6B2FA0 360px,
+          #00B5A3 360px, #00B5A3 420px,
+          #D42B2B 420px, #D42B2B 480px
+        );
+    }
+    .bg-papel-picado::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      /* Patron calado tipo papel picado */
+      background-image:
+        /* Triangulos superiores */
+        repeating-linear-gradient(
+          60deg,
+          transparent 0px,
+          transparent 15px,
+          rgba(255,255,255,0.06) 15px,
+          rgba(255,255,255,0.06) 16px
+        ),
+        repeating-linear-gradient(
+          -60deg,
+          transparent 0px,
+          transparent 15px,
+          rgba(255,255,255,0.06) 15px,
+          rgba(255,255,255,0.06) 16px
+        ),
+        /* Puntos */
+        radial-gradient(circle 3px at 30px 30px, rgba(255,255,255,0.08) 0%, transparent 100%),
+        radial-gradient(circle 3px at 60px 60px, rgba(255,255,255,0.08) 0%, transparent 100%),
+        radial-gradient(circle 2px at 45px 15px, rgba(255,255,255,0.06) 0%, transparent 100%);
+      background-size: 30px 52px, 30px 52px, 90px 90px, 90px 90px, 90px 90px;
+    }
+    .bg-papel-picado::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+      mix-blend-mode: multiply;
+      opacity: 0.5;
+    }
+
+
+    /* ══════════════════════════════════════════════════════
+       FONDO 3: TEXTIL ZIGZAG VIBRANTE
+       Chevrones tipo tejido oaxaqueno en colores vivos
+       ══════════════════════════════════════════════════════ */
+    .bg-textil-vivo {
+      background:
+        /* Overlay */
+        linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.5) 100%),
+        /* Chevrones multicolor */
+        linear-gradient(135deg,
+          #D42B2B 0%, #D42B2B 8%,
+          #F57C20 8%, #F57C20 16%,
+          #FFD100 16%, #FFD100 24%,
+          #7BC242 24%, #7BC242 32%,
+          #00B5A3 32%, #00B5A3 40%,
+          #3DA5D9 40%, #3DA5D9 48%,
+          #2856A3 48%, #2856A3 56%,
+          #6B2FA0 56%, #6B2FA0 64%,
+          #E8356D 64%, #E8356D 72%,
+          #D42B2B 72%, #D42B2B 80%,
+          #F57C20 80%, #F57C20 88%,
+          #FFD100 88%, #FFD100 96%,
+          #1B8C3E 96%, #1B8C3E 100%
+        );
+    }
+    .bg-textil-vivo::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      /* Textura de fibra tejida */
+      background:
+        repeating-linear-gradient(
+          45deg,
+          transparent,
+          transparent 1px,
+          rgba(0,0,0,0.04) 1px,
+          rgba(0,0,0,0.04) 2px
+        ),
+        repeating-linear-gradient(
+          -45deg,
+          transparent,
+          transparent 1px,
+          rgba(0,0,0,0.04) 1px,
+          rgba(0,0,0,0.04) 2px
+        );
+      background-size: 4px 4px;
+    }
+    .bg-textil-vivo::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.1'/%3E%3C/svg%3E");
+      mix-blend-mode: multiply;
+      opacity: 0.7;
+    }
+
+
+    /* ══════════════════════════════════════════════════════
+       FONDO 4: CALLE OAXAQUENA — COMERCIO VIVO
+       Edificios coloridos + papel picado + vida de calle
+       ══════════════════════════════════════════════════════ */
+    .bg-calle-oaxaca {
+      background: #87CEEB;
+      overflow: hidden;
+    }
+    .calle-scene {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+    /* Cielo */
+    .calle-cielo {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 45%;
+      background: linear-gradient(180deg, #6BB3D9 0%, #87CEEB 40%, #A8D8EA 70%, #C8E6F0 100%);
+    }
+    /* Guirnalda de papel picado */
+    .calle-papel {
+      position: absolute;
+      top: 15%;
+      left: 0; right: 0;
+      height: 60px;
+      z-index: 5;
+      display: flex;
+      overflow: hidden;
+    }
+    .papel-triangulo {
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-top: 35px solid;
+      margin: 0 2px;
+      filter: drop-shadow(0 2px 3px rgba(0,0,0,0.1));
+      flex-shrink: 0;
+    }
+    .calle-papel-2 { top: 22%; }
+    .calle-papel-3 { top: 29%; }
+    /* Edificios */
+    .calle-edificios {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 62%;
+      display: flex;
+      z-index: 3;
+    }
+    .edificio {
+      flex: 1;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 20px;
+    }
+    .edificio::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      /* Textura de pared */
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+      mix-blend-mode: multiply;
+    }
+    .ventana {
+      width: 35px;
+      height: 50px;
+      background: rgba(0,0,0,0.15);
+      border: 3px solid rgba(0,0,0,0.1);
+      border-radius: 0 0 0 0;
+      margin: 12px;
+      position: relative;
+    }
+    .ventana-arco {
+      border-radius: 50% 50% 0 0;
+    }
+    .puerta {
+      width: 45px;
+      height: 70px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 4px;
+      margin-top: auto;
+      margin-bottom: 0;
+      position: absolute;
+      bottom: 0;
+    }
+    /* Banqueta */
+    .calle-banqueta {
+      position: absolute;
+      bottom: 0;
+      left: 0; right: 0;
+      height: 8%;
+      background: #C4B09A;
+      z-index: 4;
+      border-top: 3px solid #A89880;
+    }
+    /* Overlay para legibilidad */
+    .calle-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 8;
+      background:
+        linear-gradient(180deg,
+          rgba(0,0,0,0.4) 0%,
+          rgba(0,0,0,0.2) 30%,
+          rgba(0,0,0,0.15) 50%,
+          rgba(0,0,0,0.3) 80%,
+          rgba(0,0,0,0.5) 100%
+        );
+    }
+
+
+    /* ══════════════════════════════════════════════════════
+       FONDO 5: MURAL OAXAQUENO
+       Bloques vibrantes tipo mural callejero
+       ══════════════════════════════════════════════════════ */
+    .bg-mural {
+      background:
+        /* Overlay para texto */
+        linear-gradient(135deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.55) 100%),
+        /* Bloques de mural */
+        linear-gradient(to right,
+          #D42B2B 0%, #D42B2B 20%,
+          #FFD100 20%, #FFD100 35%,
+          #1B8C3E 35%, #1B8C3E 50%,
+          #E8356D 50%, #E8356D 65%,
+          #2856A3 65%, #2856A3 80%,
+          #F57C20 80%, #F57C20 100%
+        );
+    }
+    .bg-mural::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      /* Patron de pintura con textura de pared */
+      background:
+        radial-gradient(circle 80px at 15% 25%, rgba(255,255,255,0.08) 0%, transparent 70%),
+        radial-gradient(circle 100px at 50% 70%, rgba(255,255,255,0.06) 0%, transparent 70%),
+        radial-gradient(circle 60px at 85% 30%, rgba(255,255,255,0.07) 0%, transparent 70%),
+        radial-gradient(circle 120px at 30% 80%, rgba(0,0,0,0.05) 0%, transparent 70%),
+        radial-gradient(circle 90px at 70% 50%, rgba(0,0,0,0.04) 0%, transparent 70%);
+    }
+    .bg-mural::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      /* Textura de concreto/pared */
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='6' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E");
+      mix-blend-mode: multiply;
+      opacity: 0.8;
+    }
+
+
+    /* ══════════════════════════════════════════════════════
+       FONDO 6: BORDADO GEOMETRICO
+       Diamantes, zigzags, cruces en colores saturados
+       ══════════════════════════════════════════════════════ */
+    .bg-bordado {
+      background: #FFF8E7;
+      color: #1A1A1A;
+    }
+    .bordado-pattern {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      overflow: hidden;
+    }
+    /* Franja decorativa superior */
+    .bordado-franja {
+      position: absolute;
+      left: 0; right: 0;
+      height: 12px;
+      display: flex;
+    }
+    .bordado-franja div {
+      flex: 1;
+      height: 100%;
+    }
+    .bordado-franja-top { top: 0; }
+    .bordado-franja-bottom { bottom: 0; }
+    /* Diamantes laterales */
+    .bordado-lateral {
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 80px;
+      z-index: 1;
+    }
+    .bordado-lateral-izq { left: 0; }
+    .bordado-lateral-der { right: 0; }
+    .bordado-diamante {
+      width: 40px;
+      height: 40px;
+      transform: rotate(45deg);
+      position: absolute;
+      border: 3px solid;
+      opacity: 0.15;
+    }
+    .bg-bordado .hero-eyebrow {
+      background: rgba(0,0,0,0.05);
+      border-color: rgba(0,0,0,0.1);
+      color: rgba(0,0,0,0.6);
+    }
+    .bg-bordado .hero-title { color: #1A1A1A; }
+    .bg-bordado .hero-subtitle { color: #4A4A4A; }
+    .bg-bordado .intercom-line { background: linear-gradient(90deg, transparent, rgba(0,0,0,0.08), transparent); }
+
+
+    /* ══════════════════════════════════════════════════════
+       FONDO 7: HILOS DE COLORES
+       Ondas diagonales tipo hilos de estambre
+       ══════════════════════════════════════════════════════ */
+    .bg-hilos {
+      background:
+        linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.5) 100%),
+        /* Ondas de color como hilos */
+        repeating-linear-gradient(
+          -30deg,
+          #7BC242 0px, #7BC242 8px,
+          transparent 8px, transparent 10px,
+          #D42B2B 10px, #D42B2B 18px,
+          transparent 18px, transparent 20px,
+          #3DA5D9 20px, #3DA5D9 28px,
+          transparent 28px, transparent 30px,
+          #F57C20 30px, #F57C20 38px,
+          transparent 38px, transparent 40px,
+          #E8356D 40px, #E8356D 48px,
+          transparent 48px, transparent 50px,
+          #FFD100 50px, #FFD100 58px,
+          transparent 58px, transparent 60px,
+          #00B5A3 60px, #00B5A3 68px,
+          transparent 68px, transparent 70px,
+          #6B2FA0 70px, #6B2FA0 78px,
+          transparent 78px, transparent 80px
+        );
+    }
+    .bg-hilos::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      /* Textura de hilo/estambre */
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E");
+      mix-blend-mode: multiply;
+      opacity: 0.8;
+    }
+
+
+    /* ══════════════════════════════════════════════════════
+       FONDO 8: CIELO ATARDECER + TEXTIL
+       El mejor de los cielos con colores mas saturados
+       ══════════════════════════════════════════════════════ */
+    .bg-cielo-vivo {
+      background:
+        /* Nubes */
+        radial-gradient(ellipse 80% 35% at 40% 20%, rgba(255,255,255,0.15) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 25% at 65% 15%, rgba(255,255,255,0.1) 0%, transparent 60%),
+        /* Cielo mas saturado */
+        linear-gradient(
+          180deg,
+          #5B6FC7 0%,
+          #6B7DD4 10%,
+          #7B8BD8 20%,
+          #8B9BE0 30%,
+          #80A8E4 40%,
+          #70B8E8 50%,
+          #60C8E8 60%,
+          #50D0D8 70%,
+          #60D0C0 80%,
+          #80C8A0 88%,
+          #C0B870 94%,
+          #E0A850 100%
+        );
+    }
+    /* Franja de sarape en la parte inferior */
+    .bg-cielo-vivo::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0; right: 0;
+      height: 120px;
+      z-index: 2;
+      background:
+        linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.1) 100%),
+        repeating-linear-gradient(
+          0deg,
+          #D42B2B 0px, #D42B2B 12px,
+          #FEFEFE 12px, #FEFEFE 15px,
+          #1B8C3E 15px, #1B8C3E 27px,
+          #FEFEFE 27px, #FEFEFE 30px,
+          #FFD100 30px, #FFD100 42px,
+          #FEFEFE 42px, #FEFEFE 45px,
+          #2856A3 45px, #2856A3 57px,
+          #FEFEFE 57px, #FEFEFE 60px,
+          #E8356D 60px, #E8356D 72px,
+          #FEFEFE 72px, #FEFEFE 75px,
+          #F57C20 75px, #F57C20 87px,
+          #FEFEFE 87px, #FEFEFE 90px,
+          #00B5A3 90px, #00B5A3 102px,
+          #FEFEFE 102px, #FEFEFE 105px,
+          #6B2FA0 105px, #6B2FA0 117px,
+          #FEFEFE 117px, #FEFEFE 120px
+        );
+    }
+    .bg-cielo-vivo::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+      mix-blend-mode: overlay;
+      opacity: 0.4;
+    }
+
+
+    @media (max-width: 768px) {
+      .hero-section { padding: 100px 24px; }
+      .hero-title { font-size: 44px; }
+      .separator { padding: 40px 24px; }
+      .floating-card { display: none; }
+      .statement-fullbleed { padding: 40px 20px; }
+      .statement-fullbleed .statement-text { font-size: clamp(36px, 11vw, 200px) !important; }
+      .calle-scene { display: none; }
+      .bg-calle-oaxaca { background: linear-gradient(180deg, #6BB3D9 0%, #87CEEB 40%, #FFD100 60%, #D42B2B 80%, #1B8C3E 100%); }
+      .bg-calle-oaxaca .calle-overlay { display: block !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══ 1: SARAPE ═══ -->
+  <section class="hero-section bg-sarape">
+    <div class="section-info">
+      <span class="info-tag">01</span>
+      <span class="info-tag">Sarape Mexicano</span>
+    </div>
+    <div class="hero-content">
+      <div class="hero-eyebrow">Comercio Consciente</div>
+      <h1 class="hero-title">
+        Tu negocio.<br>
+        Todas tus sucursales.<br>
+        Un sistema.
+      </h1>
+      <div class="intercom-line"></div>
+      <p class="hero-subtitle">
+        SACS conecta punto de venta, inventario, reportes, CRM e Inbox en una sola inteligencia que opera tu retail.
+      </p>
+      <div class="hero-ctas">
+        <a class="btn btn-white">Agenda tu reunion</a>
+        <a class="btn btn-outline">Ver el manifiesto</a>
+      </div>
+    </div>
+    <div class="floating-card" style="bottom: 120px; right: 80px;">
+      <div class="floating-card-label">Ventas hoy</div>
+      <div class="floating-card-value" style="color: #1B8C3E;">$47,832</div>
+      <div class="floating-card-label" style="color: #1B8C3E;">+12% vs ayer</div>
+    </div>
+  </section>
+
+  <div class="separator">
+    <h2>01 — Sarape Mexicano</h2>
+    <p>Franjas verticales vibrantes con textura de tela tejida. Rojo, verde, amarillo, azul, rosa, naranja, turquesa, morado. Overlay oscuro para legibilidad.</p>
+  </div>
+
+  <!-- ═══ 2: PAPEL PICADO ═══ -->
+  <section class="hero-section bg-papel-picado">
+    <div class="section-info">
+      <span class="info-tag">02</span>
+      <span class="info-tag">Papel Picado</span>
+    </div>
+    <div class="hero-content">
+      <div class="hero-eyebrow">SACS AI — El cerebro del retail</div>
+      <h1 class="hero-title">
+        Una inteligencia<br>
+        que opera tu negocio<br>
+        por ti.
+      </h1>
+      <div class="intercom-line"></div>
+      <p class="hero-subtitle">
+        Tus clientes preguntan por WhatsApp y SACS vende, aparta, recomienda y hace seguimiento.
+      </p>
+      <div class="hero-ctas">
+        <a class="btn btn-white">Conoce SACS AI</a>
+        <a class="btn btn-outline">Ver demo</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="separator">
+    <h2>02 — Papel Picado</h2>
+    <p>Franjas horizontales de colores vivos con patron calado tipo papel picado superpuesto. Triangulos y puntos perforados.</p>
+  </div>
+
+  <!-- ═══ 3: TEXTIL ZIGZAG ═══ -->
+  <section class="hero-section bg-textil-vivo">
+    <div class="section-info">
+      <span class="info-tag">03</span>
+      <span class="info-tag">Textil Diagonal Vibrante</span>
+    </div>
+    <div class="hero-content">
+      <div class="hero-eyebrow">Para retailers que operan en serio</div>
+      <h1 class="hero-title">
+        Inventario perfecto.<br>
+        Cero excusas.<br>
+        Cero merma.
+      </h1>
+      <div class="intercom-line"></div>
+      <p class="hero-subtitle">
+        Sincroniza stock entre sucursales, e-commerce y WhatsApp. Cada pieza rastreada.
+      </p>
+      <div class="hero-ctas">
+        <a class="btn btn-white">Explora inventario</a>
+        <a class="btn btn-outline">Casos de exito</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="separator">
+    <h2>03 — Textil Diagonal</h2>
+    <p>Chevrones en diagonal con todos los colores del arcoiris oaxaqueno. Textura cruzada de fibra. El mas explosivo.</p>
+  </div>
+
+  <!-- ═══ 4: CALLE OAXAQUENA ═══ -->
+  <section class="hero-section bg-calle-oaxaca">
+    <div class="section-info">
+      <span class="info-tag">04</span>
+      <span class="info-tag">Calle Oaxaquena — Comercio Vivo</span>
+    </div>
+
+    <!-- Escena de calle -->
+    <div class="calle-scene">
+      <div class="calle-cielo"></div>
+
+      <!-- Papel picado guirnaldas -->
+      <div class="calle-papel">
+        <div class="papel-triangulo" style="border-top-color: #E8356D;"></div>
+        <div class="papel-triangulo" style="border-top-color: #FFD100;"></div>
+        <div class="papel-triangulo" style="border-top-color: #1B8C3E;"></div>
+        <div class="papel-triangulo" style="border-top-color: #2856A3;"></div>
+        <div class="papel-triangulo" style="border-top-color: #F57C20;"></div>
+        <div class="papel-triangulo" style="border-top-color: #6B2FA0;"></div>
+        <div class="papel-triangulo" style="border-top-color: #D42B2B;"></div>
+        <div class="papel-triangulo" style="border-top-color: #00B5A3;"></div>
+        <div class="papel-triangulo" style="border-top-color: #E8356D;"></div>
+        <div class="papel-triangulo" style="border-top-color: #FFD100;"></div>
+        <div class="papel-triangulo" style="border-top-color: #1B8C3E;"></div>
+        <div class="papel-triangulo" style="border-top-color: #2856A3;"></div>
+        <div class="papel-triangulo" style="border-top-color: #F57C20;"></div>
+        <div class="papel-triangulo" style="border-top-color: #6B2FA0;"></div>
+        <div class="papel-triangulo" style="border-top-color: #D42B2B;"></div>
+        <div class="papel-triangulo" style="border-top-color: #00B5A3;"></div>
+        <div class="papel-triangulo" style="border-top-color: #E8356D;"></div>
+        <div class="papel-triangulo" style="border-top-color: #FFD100;"></div>
+        <div class="papel-triangulo" style="border-top-color: #1B8C3E;"></div>
+        <div class="papel-triangulo" style="border-top-color: #2856A3;"></div>
+        <div class="papel-triangulo" style="border-top-color: #F57C20;"></div>
+        <div class="papel-triangulo" style="border-top-color: #6B2FA0;"></div>
+        <div class="papel-triangulo" style="border-top-color: #D42B2B;"></div>
+        <div class="papel-triangulo" style="border-top-color: #00B5A3;"></div>
+        <div class="papel-triangulo" style="border-top-color: #E8356D;"></div>
+        <div class="papel-triangulo" style="border-top-color: #FFD100;"></div>
+        <div class="papel-triangulo" style="border-top-color: #1B8C3E;"></div>
+        <div class="papel-triangulo" style="border-top-color: #2856A3;"></div>
+        <div class="papel-triangulo" style="border-top-color: #F57C20;"></div>
+        <div class="papel-triangulo" style="border-top-color: #6B2FA0;"></div>
+        <div class="papel-triangulo" style="border-top-color: #D42B2B;"></div>
+        <div class="papel-triangulo" style="border-top-color: #00B5A3;"></div>
+        <div class="papel-triangulo" style="border-top-color: #E8356D;"></div>
+        <div class="papel-triangulo" style="border-top-color: #FFD100;"></div>
+        <div class="papel-triangulo" style="border-top-color: #1B8C3E;"></div>
+        <div class="papel-triangulo" style="border-top-color: #2856A3;"></div>
+      </div>
+      <div class="calle-papel calle-papel-2">
+        <div class="papel-triangulo" style="border-top-color: #6B2FA0;"></div>
+        <div class="papel-triangulo" style="border-top-color: #D42B2B;"></div>
+        <div class="papel-triangulo" style="border-top-color: #00B5A3;"></div>
+        <div class="papel-triangulo" style="border-top-color: #E8356D;"></div>
+        <div class="papel-triangulo" style="border-top-color: #FFD100;"></div>
+        <div class="papel-triangulo" style="border-top-color: #1B8C3E;"></div>
+        <div class="papel-triangulo" style="border-top-color: #2856A3;"></div>
+        <div class="papel-triangulo" style="border-top-color: #F57C20;"></div>
+        <div class="papel-triangulo" style="border-top-color: #6B2FA0;"></div>
+        <div class="papel-triangulo" style="border-top-color: #D42B2B;"></div>
+        <div class="papel-triangulo" style="border-top-color: #00B5A3;"></div>
+        <div class="papel-triangulo" style="border-top-color: #E8356D;"></div>
+        <div class="papel-triangulo" style="border-top-color: #FFD100;"></div>
+        <div class="papel-triangulo" style="border-top-color: #1B8C3E;"></div>
+        <div class="papel-triangulo" style="border-top-color: #2856A3;"></div>
+        <div class="papel-triangulo" style="border-top-color: #F57C20;"></div>
+        <div class="papel-triangulo" style="border-top-color: #6B2FA0;"></div>
+        <div class="papel-triangulo" style="border-top-color: #D42B2B;"></div>
+        <div class="papel-triangulo" style="border-top-color: #00B5A3;"></div>
+        <div class="papel-triangulo" style="border-top-color: #E8356D;"></div>
+        <div class="papel-triangulo" style="border-top-color: #FFD100;"></div>
+        <div class="papel-triangulo" style="border-top-color: #1B8C3E;"></div>
+        <div class="papel-triangulo" style="border-top-color: #2856A3;"></div>
+        <div class="papel-triangulo" style="border-top-color: #F57C20;"></div>
+        <div class="papel-triangulo" style="border-top-color: #6B2FA0;"></div>
+        <div class="papel-triangulo" style="border-top-color: #D42B2B;"></div>
+        <div class="papel-triangulo" style="border-top-color: #00B5A3;"></div>
+        <div class="papel-triangulo" style="border-top-color: #E8356D;"></div>
+        <div class="papel-triangulo" style="border-top-color: #FFD100;"></div>
+        <div class="papel-triangulo" style="border-top-color: #1B8C3E;"></div>
+        <div class="papel-triangulo" style="border-top-color: #2856A3;"></div>
+        <div class="papel-triangulo" style="border-top-color: #F57C20;"></div>
+        <div class="papel-triangulo" style="border-top-color: #6B2FA0;"></div>
+        <div class="papel-triangulo" style="border-top-color: #D42B2B;"></div>
+        <div class="papel-triangulo" style="border-top-color: #00B5A3;"></div>
+        <div class="papel-triangulo" style="border-top-color: #E8356D;"></div>
+      </div>
+
+      <!-- Edificios coloridos -->
+      <div class="calle-edificios">
+        <div class="edificio" style="background: #FFD100;">
+          <div class="ventana ventana-arco" style="background: rgba(0,0,0,0.12); border-color: #D4B000;"></div>
+          <div class="ventana ventana-arco" style="background: rgba(0,0,0,0.12); border-color: #D4B000;"></div>
+          <div class="puerta" style="background: #8B6914; left: calc(50% - 22px);"></div>
+        </div>
+        <div class="edificio" style="background: #D42B2B;">
+          <div class="ventana" style="border-color: #A82222;"></div>
+          <div class="ventana" style="border-color: #A82222;"></div>
+          <div class="puerta" style="background: #6B1515; left: calc(50% - 22px);"></div>
+        </div>
+        <div class="edificio" style="background: #2856A3;">
+          <div class="ventana ventana-arco" style="border-color: #1E4080;"></div>
+          <div class="ventana ventana-arco" style="border-color: #1E4080;"></div>
+          <div class="puerta" style="background: #14305A; left: calc(50% - 22px);"></div>
+        </div>
+        <div class="edificio" style="background: #1B8C3E;">
+          <div class="ventana" style="border-color: #146B2F;"></div>
+          <div class="ventana" style="border-color: #146B2F;"></div>
+          <div class="puerta" style="background: #0D4A20; left: calc(50% - 22px);"></div>
+        </div>
+        <div class="edificio" style="background: #E8356D;">
+          <div class="ventana ventana-arco" style="border-color: #C42858;"></div>
+          <div class="ventana ventana-arco" style="border-color: #C42858;"></div>
+          <div class="puerta" style="background: #8B1A3E; left: calc(50% - 22px);"></div>
+        </div>
+        <div class="edificio" style="background: #F57C20;">
+          <div class="ventana" style="border-color: #D06818;"></div>
+          <div class="ventana" style="border-color: #D06818;"></div>
+          <div class="puerta" style="background: #8B4610; left: calc(50% - 22px);"></div>
+        </div>
+        <div class="edificio" style="background: #6B2FA0;">
+          <div class="ventana ventana-arco" style="border-color: #5A2888;"></div>
+          <div class="ventana ventana-arco" style="border-color: #5A2888;"></div>
+          <div class="puerta" style="background: #3D1A5C; left: calc(50% - 22px);"></div>
+        </div>
+        <div class="edificio" style="background: #00B5A3;">
+          <div class="ventana" style="border-color: #009688;"></div>
+          <div class="ventana" style="border-color: #009688;"></div>
+          <div class="puerta" style="background: #006B60; left: calc(50% - 22px);"></div>
+        </div>
+      </div>
+
+      <div class="calle-banqueta"></div>
+    </div>
+
+    <div class="calle-overlay"></div>
+
+    <div class="hero-content">
+      <div class="hero-eyebrow">Hecho en Mexico, para Mexico</div>
+      <h1 class="hero-title">
+        Tecnologia con<br>
+        alma mexicana.
+      </h1>
+      <div class="intercom-line"></div>
+      <p class="hero-subtitle">
+        Somos la tienda de la esquina que conoce tu nombre. Somos independientes, y somos muchos. Y juntos, somos imparables.
+      </p>
+      <div class="hero-ctas">
+        <a class="btn btn-white">Conoce la historia</a>
+        <a class="btn btn-outline">Unete al movimiento</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="separator">
+    <h2>04 — Calle Oaxaquena</h2>
+    <p>Paisaje CSS con cielo, papel picado colgante, edificios coloridos con ventanas y puertas, y banqueta. Evoca una calle real de comercios en Oaxaca.</p>
+  </div>
+
+  <!-- ═══ 5: MURAL ═══ -->
+  <section class="hero-section bg-mural">
+    <div class="section-info">
+      <span class="info-tag">05</span>
+      <span class="info-tag">Mural Oaxaqueno</span>
+    </div>
+    <div class="hero-content">
+      <div class="hero-eyebrow">10% de cada licencia a impacto</div>
+      <h1 class="hero-title">
+        Comercio que<br>
+        siembra.
+      </h1>
+      <div class="intercom-line"></div>
+      <p class="hero-subtitle">
+        Cada peso que fluye por SACS riega el jardin de alguien mas. Becas, salud, capacitacion, microcreditos.
+      </p>
+      <div class="hero-ctas">
+        <a class="btn btn-white">Ver nuestro impacto</a>
+        <a class="btn btn-outline">Leer el manifiesto</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="separator">
+    <h2>05 — Mural Oaxaqueno</h2>
+    <p>Bloques verticales de color vivo (como un mural real) con textura de pared de concreto encima. Manchas de pintura organicas.</p>
+  </div>
+
+  <!-- ═══ 6: BORDADO (Version clara) ═══ -->
+  <section class="hero-section bg-bordado">
+    <div class="section-info">
+      <span class="info-tag" style="background: rgba(0,0,0,0.06); color: rgba(0,0,0,0.5);">06</span>
+      <span class="info-tag" style="background: rgba(0,0,0,0.06); color: rgba(0,0,0,0.5);">Bordado — Version Clara</span>
+    </div>
+
+    <div class="bordado-pattern">
+      <!-- Franja superior multicolor -->
+      <div class="bordado-franja bordado-franja-top">
+        <div style="background: #D42B2B;"></div>
+        <div style="background: #F57C20;"></div>
+        <div style="background: #FFD100;"></div>
+        <div style="background: #7BC242;"></div>
+        <div style="background: #00B5A3;"></div>
+        <div style="background: #3DA5D9;"></div>
+        <div style="background: #2856A3;"></div>
+        <div style="background: #6B2FA0;"></div>
+        <div style="background: #E8356D;"></div>
+        <div style="background: #D42B2B;"></div>
+        <div style="background: #F57C20;"></div>
+        <div style="background: #FFD100;"></div>
+      </div>
+      <div class="bordado-franja bordado-franja-bottom">
+        <div style="background: #E8356D;"></div>
+        <div style="background: #D42B2B;"></div>
+        <div style="background: #F57C20;"></div>
+        <div style="background: #FFD100;"></div>
+        <div style="background: #7BC242;"></div>
+        <div style="background: #00B5A3;"></div>
+        <div style="background: #3DA5D9;"></div>
+        <div style="background: #2856A3;"></div>
+        <div style="background: #6B2FA0;"></div>
+        <div style="background: #E8356D;"></div>
+        <div style="background: #D42B2B;"></div>
+        <div style="background: #F57C20;"></div>
+      </div>
+      <!-- Diamantes decorativos izquierda -->
+      <div class="bordado-lateral bordado-lateral-izq">
+        <div class="bordado-diamante" style="border-color: #E8356D; top: 80px; left: 15px;"></div>
+        <div class="bordado-diamante" style="border-color: #00B5A3; top: 180px; left: 20px;"></div>
+        <div class="bordado-diamante" style="border-color: #F57C20; top: 280px; left: 10px;"></div>
+        <div class="bordado-diamante" style="border-color: #2856A3; top: 380px; left: 25px;"></div>
+        <div class="bordado-diamante" style="border-color: #FFD100; top: 480px; left: 15px;"></div>
+        <div class="bordado-diamante" style="border-color: #6B2FA0; top: 580px; left: 20px;"></div>
+      </div>
+      <div class="bordado-lateral bordado-lateral-der">
+        <div class="bordado-diamante" style="border-color: #00B5A3; top: 120px; right: 15px; left: auto;"></div>
+        <div class="bordado-diamante" style="border-color: #D42B2B; top: 220px; right: 20px; left: auto;"></div>
+        <div class="bordado-diamante" style="border-color: #FFD100; top: 320px; right: 10px; left: auto;"></div>
+        <div class="bordado-diamante" style="border-color: #E8356D; top: 420px; right: 25px; left: auto;"></div>
+        <div class="bordado-diamante" style="border-color: #7BC242; top: 520px; right: 15px; left: auto;"></div>
+      </div>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-eyebrow">Precios claros, sin sorpresas</div>
+      <h1 class="hero-title">
+        Un plan para<br>
+        cada etapa de<br>
+        tu negocio.
+      </h1>
+      <div class="intercom-line intercom-line-dark"></div>
+      <p class="hero-subtitle">
+        Desde Plan Semilla gratuito hasta Enterprise. Creces tu, crece tu plan.
+      </p>
+      <div class="hero-ctas">
+        <a class="btn btn-dark">Ver precios</a>
+        <a class="btn btn-outline-dark">Habla con ventas</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="separator">
+    <h2>06 — Bordado Geometrico (Claro)</h2>
+    <p>Fondo crema con franjas multicolor en top/bottom y diamantes decorativos en los laterales. Para pricing, FAQ, paginas internas.</p>
+  </div>
+
+  <!-- ═══ 7: HILOS ═══ -->
+  <section class="hero-section bg-hilos">
+    <div class="section-info">
+      <span class="info-tag">07</span>
+      <span class="info-tag">Hilos de Estambre</span>
+    </div>
+    <div class="hero-content">
+      <div class="hero-eyebrow">Conoce a AXO</div>
+      <h1 class="hero-title">
+        Porque todo<br>
+        negocio puede<br>
+        transformarse.
+      </h1>
+      <div class="intercom-line"></div>
+      <p class="hero-subtitle">
+        Como el axolotl que se regenera, tu negocio puede recuperarse. AXO nada contigo.
+      </p>
+      <div class="hero-ctas">
+        <a class="btn btn-white">Empieza gratis</a>
+        <a class="btn btn-outline">Historia de AXO</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="separator">
+    <h2>07 — Hilos de Estambre</h2>
+    <p>Lineas diagonales delgadas en colores vivos tipo hilos de estambre oaxaqueno. Textura de fibra encima.</p>
+  </div>
+
+  <!-- ═══ 8: CIELO + SARAPE ═══ -->
+  <section class="hero-section bg-cielo-vivo">
+    <div class="section-info">
+      <span class="info-tag">08</span>
+      <span class="info-tag">Cielo Vivo + Franja Sarape</span>
+    </div>
+    <div class="hero-content">
+      <div class="hero-eyebrow">Ser · Avanzar · Crear · Sembrar</div>
+      <h1 class="hero-title">
+        El sistema operativo<br>
+        del comercio<br>
+        consciente.
+      </h1>
+      <div class="intercom-line"></div>
+      <p class="hero-subtitle">
+        SACS no es solo software. Es un movimiento. Una comunidad de comerciantes que creen que el exito se comparte.
+      </p>
+      <div class="hero-ctas">
+        <a class="btn btn-white">Unete al movimiento</a>
+        <a class="btn btn-outline">Firma el manifiesto</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="separator">
+    <h2>08 — Cielo Vivo + Franja Sarape</h2>
+    <p>Cielo natural saturado (azul a dorado) con una franja de sarape horizontal vibrante en la parte inferior. Lo mejor de los dos mundos.</p>
+  </div>
+
+
+  <!-- ═══ STATEMENTS CON FONDOS VIBRANTES ═══ -->
+  <div class="separator" style="padding-top: 100px;">
+    <h2 style="font-size: 24px; color: rgba(255,255,255,0.4);">Bebas Neue + Fondos Vibrantes</h2>
+  </div>
+
+  <section class="statement-fullbleed bg-sarape">
+    <div class="statement-text" style="font-size: clamp(50px, 13vw, 180px); color: rgba(255,255,255,0.9); text-align: center;">
+      NO DEJES QUE<br>TU NEGOCIO SE<br>PIERDA EN EL CAOS
+    </div>
+  </section>
+
+  <section class="statement-fullbleed bg-mural" style="flex-direction: column; align-items: flex-start; padding: 100px 80px;">
+    <div class="statement-text" style="font-size: clamp(44px, 10vw, 140px); color: rgba(255,255,255,0.85); margin-bottom: 40px;">
+      EL EXITO QUE<br>NO SE COMPARTE<br>NO ES EXITO
+    </div>
+    <div style="position: relative; z-index: 10; max-width: 500px;">
+      <div class="intercom-line"></div>
+      <p style="font-size: 18px; color: rgba(255,255,255,0.7); line-height: 1.6; margin-bottom: 32px;">
+        El 10% de cada licencia de SACS se destina a causas que elevan la vida. Si usas SACS, eres un comerciante de impacto.
+      </p>
+      <a class="btn btn-white">Ver el impacto</a>
+    </div>
+  </section>
+
+  <section class="statement-fullbleed bg-hilos" style="min-height: 80vh;">
+    <div class="statement-text" style="font-size: clamp(60px, 15vw, 220px); color: rgba(255,255,255,0.9); text-align: center;">
+      SER<br>AVANZAR<br>CREAR<br>SEMBRAR
+    </div>
+  </section>
+
+
+  <!-- ═══ RESUMEN ═══ -->
+  <section style="padding: 96px 80px; max-width: 1200px; margin: 0 auto;">
+    <h2 style="font-family: var(--font-display); font-size: 44px; font-weight: 700; margin-bottom: 48px; letter-spacing: -0.03em;">
+      8 fondos vibrantes.
+    </h2>
+
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 48px;">
+      <div style="border-radius: 12px; overflow: hidden;">
+        <div style="height: 100px; background: repeating-linear-gradient(90deg, #D42B2B 0px, #D42B2B 12px, #FFF 12px, #FFF 14px, #1B8C3E 14px, #1B8C3E 26px, #FFF 26px, #FFF 28px, #FFD100 28px, #FFD100 40px, #FFF 40px, #FFF 42px, #2856A3 42px, #2856A3 54px, #FFF 54px, #FFF 56px, #E8356D 56px, #E8356D 68px, #FFF 68px, #FFF 70px);"></div>
+        <div style="padding: 12px; background: rgba(255,255,255,0.04);"><span style="font-size: 13px; font-weight: 600;">01 Sarape</span><br><span style="font-size: 11px; color: rgba(255,255,255,0.4);">Hero principal</span></div>
+      </div>
+      <div style="border-radius: 12px; overflow: hidden;">
+        <div style="height: 100px; background: repeating-linear-gradient(180deg, #E8356D 0px, #E8356D 14px, #FFD100 14px, #FFD100 28px, #1B8C3E 28px, #1B8C3E 42px, #2856A3 42px, #2856A3 56px, #F57C20 56px, #F57C20 70px, #6B2FA0 70px, #6B2FA0 84px, #00B5A3 84px, #00B5A3 100px);"></div>
+        <div style="padding: 12px; background: rgba(255,255,255,0.04);"><span style="font-size: 13px; font-weight: 600;">02 Papel Picado</span><br><span style="font-size: 11px; color: rgba(255,255,255,0.4);">AI / Features</span></div>
+      </div>
+      <div style="border-radius: 12px; overflow: hidden;">
+        <div style="height: 100px; background: linear-gradient(135deg, #D42B2B 0%, #F57C20 14%, #FFD100 28%, #7BC242 42%, #00B5A3 56%, #3DA5D9 70%, #6B2FA0 84%, #E8356D 100%);"></div>
+        <div style="padding: 12px; background: rgba(255,255,255,0.04);"><span style="font-size: 13px; font-weight: 600;">03 Textil Diagonal</span><br><span style="font-size: 11px; color: rgba(255,255,255,0.4);">Inventario</span></div>
+      </div>
+      <div style="border-radius: 12px; overflow: hidden;">
+        <div style="height: 100px; background: linear-gradient(180deg, #87CEEB 0%, #87CEEB 40%, #FFD100 60%, #D42B2B 75%, #1B8C3E 90%);"></div>
+        <div style="padding: 12px; background: rgba(255,255,255,0.04);"><span style="font-size: 13px; font-weight: 600;">04 Calle Oaxaca</span><br><span style="font-size: 11px; color: rgba(255,255,255,0.4);">Comercio vivo</span></div>
+      </div>
+      <div style="border-radius: 12px; overflow: hidden;">
+        <div style="height: 100px; background: linear-gradient(90deg, #D42B2B 0%, #FFD100 20%, #1B8C3E 40%, #E8356D 60%, #2856A3 80%, #F57C20 100%);"></div>
+        <div style="padding: 12px; background: rgba(255,255,255,0.04);"><span style="font-size: 13px; font-weight: 600;">05 Mural</span><br><span style="font-size: 11px; color: rgba(255,255,255,0.4);">Impacto social</span></div>
+      </div>
+      <div style="border-radius: 12px; overflow: hidden;">
+        <div style="height: 100px; background: #FFF8E7; border: 1px solid rgba(255,255,255,0.06); border-top: 8px solid; border-image: linear-gradient(90deg, #D42B2B, #F57C20, #FFD100, #7BC242, #00B5A3, #2856A3, #6B2FA0, #E8356D) 1;"></div>
+        <div style="padding: 12px; background: rgba(255,255,255,0.04);"><span style="font-size: 13px; font-weight: 600;">06 Bordado (claro)</span><br><span style="font-size: 11px; color: rgba(255,255,255,0.4);">Pricing / FAQ</span></div>
+      </div>
+      <div style="border-radius: 12px; overflow: hidden;">
+        <div style="height: 100px; background: repeating-linear-gradient(-30deg, #7BC242 0px, #7BC242 6px, transparent 6px, transparent 8px, #D42B2B 8px, #D42B2B 14px, transparent 14px, transparent 16px, #3DA5D9 16px, #3DA5D9 22px, transparent 22px, transparent 24px, #F57C20 24px, #F57C20 30px, transparent 30px, transparent 32px);"></div>
+        <div style="padding: 12px; background: rgba(255,255,255,0.04);"><span style="font-size: 13px; font-weight: 600;">07 Hilos</span><br><span style="font-size: 11px; color: rgba(255,255,255,0.4);">AXO</span></div>
+      </div>
+      <div style="border-radius: 12px; overflow: hidden;">
+        <div style="height: 100px; background: linear-gradient(180deg, #5B6FC7 0%, #70B8E8 50%, #E0A850 100%);"></div>
+        <div style="padding: 12px; background: rgba(255,255,255,0.04);"><span style="font-size: 13px; font-weight: 600;">08 Cielo + Sarape</span><br><span style="font-size: 11px; color: rgba(255,255,255,0.4);">Manifiesto</span></div>
+      </div>
+    </div>
+
+    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 32px;">
+      <h3 style="font-family: var(--font-display); font-size: 18px; font-weight: 600; margin-bottom: 16px;">Paleta Oaxaca Viva</h3>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <div style="text-align: center;"><div style="width: 48px; height: 48px; border-radius: 8px; background: #D42B2B;"></div><div style="font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 4px;">Rojo</div></div>
+        <div style="text-align: center;"><div style="width: 48px; height: 48px; border-radius: 8px; background: #E8356D;"></div><div style="font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 4px;">Rosa</div></div>
+        <div style="text-align: center;"><div style="width: 48px; height: 48px; border-radius: 8px; background: #F57C20;"></div><div style="font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 4px;">Naranja</div></div>
+        <div style="text-align: center;"><div style="width: 48px; height: 48px; border-radius: 8px; background: #FFD100;"></div><div style="font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 4px;">Amarillo</div></div>
+        <div style="text-align: center;"><div style="width: 48px; height: 48px; border-radius: 8px; background: #7BC242;"></div><div style="font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 4px;">Lima</div></div>
+        <div style="text-align: center;"><div style="width: 48px; height: 48px; border-radius: 8px; background: #1B8C3E;"></div><div style="font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 4px;">Verde</div></div>
+        <div style="text-align: center;"><div style="width: 48px; height: 48px; border-radius: 8px; background: #00B5A3;"></div><div style="font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 4px;">Turquesa</div></div>
+        <div style="text-align: center;"><div style="width: 48px; height: 48px; border-radius: 8px; background: #3DA5D9;"></div><div style="font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 4px;">Cielo</div></div>
+        <div style="text-align: center;"><div style="width: 48px; height: 48px; border-radius: 8px; background: #2856A3;"></div><div style="font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 4px;">Azul Rey</div></div>
+        <div style="text-align: center;"><div style="width: 48px; height: 48px; border-radius: 8px; background: #6B2FA0;"></div><div style="font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 4px;">Morado</div></div>
+      </div>
+    </div>
+  </section>
+
+  <footer style="padding: 24px 80px; text-align: center;">
+    <p style="font-size: 12px; color: rgba(255,255,255,0.2);">
+      SACS — Fondos Oaxaquenos Vibrantes — Marzo 2026 · <a href="index.html" style="color: rgba(255,255,255,0.3); text-decoration: underline;">Style Guide</a>
+    </p>
+  </footer>
+
+</body>
+</html>

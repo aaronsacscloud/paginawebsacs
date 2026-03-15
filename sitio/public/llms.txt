@@ -1,0 +1,25 @@
+# SACS — Sistema Operativo para Retailers Conscientes
+
+> SACS (Ser · Avanzar · Crear · Sembrar) es una plataforma de gestión empresarial diseñada para retailers en México. Combina punto de venta, inventario multi-sucursal, CRM, reportes avanzados y un asistente de IA llamado AXO. El 10% de cada licencia se destina a impacto social.
+
+## Páginas del sitio
+
+- [Inicio](https://sacs.com.mx/): Página principal con visión general del producto
+- [Producto](https://sacs.com.mx/producto): Funcionalidades detalladas de la plataforma
+- [Planes](https://sacs.com.mx/planes): Precios y comparativa de planes
+- [Casos de éxito](https://sacs.com.mx/casos-de-exito): Historias de clientes reales
+- [Manifiesto](https://sacs.com.mx/manifiesto): Nuestra filosofía de comercio consciente
+- [Nosotros](https://sacs.com.mx/nosotros): El equipo detrás de SACS
+- [Blog](https://sacs.com.mx/blog): Artículos sobre retail, tecnología e impacto
+- [Contacto](https://sacs.com.mx/contacto): Agenda una reunión o escríbenos
+
+## Información clave
+
+- **Mercado**: Retailers en México (tiendas de ropa, calzado, accesorios, multi-sucursal)
+- **Diferenciador**: IA integrada (AXO) + impacto social automático (10% de licencia)
+- **Modelo**: SaaS con planes mensuales
+- **Contacto**: info@sacs.com.mx
+
+## Más información
+
+- [Información detallada para AI agents](https://sacs.com.mx/llms-full.txt)

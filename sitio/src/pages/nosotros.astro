@@ -1,0 +1,146 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CTABanner from '../components/CTABanner.astro';
+
+const aboutSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'AboutPage',
+  name: 'Sobre SACS',
+  description: 'Conoce al equipo detrás de SACS y nuestra misión de transformar el retail en México.',
+};
+---
+
+<BaseLayout
+  title="Nosotros"
+  description="Conoce al equipo detrás de SACS. Somos un equipo mexicano con la misión de transformar el retail con tecnología consciente."
+  structuredData={aboutSchema}
+>
+  <section class="nosotros-hero section">
+    <div class="container nosotros-header">
+      <span class="eyebrow badge badge-blue">Sobre nosotros</span>
+      <h1 class="display-l">Construimos tecnología con alma mexicana</h1>
+      <p class="body-large">
+        SACS nació de una frustración real: ver a retailers talentosos
+        perder tiempo en herramientas que no fueron diseñadas para ellos.
+        Decidimos construir algo diferente.
+      </p>
+    </div>
+  </section>
+
+  <section class="story section">
+    <div class="container story-grid">
+      <div class="story-content">
+        <h2>Nuestra historia</h2>
+        <p>
+          Empezamos en 2024 con una pregunta simple: ¿por qué los retailers
+          mexicanos tienen que usar herramientas genéricas diseñadas para
+          otro mercado?
+        </p>
+        <p>
+          Así nació SACS — un sistema pensado desde cero para la realidad
+          del retail en México. Con facturación CFDI nativa, soporte en
+          español, y un modelo de impacto social que refleja nuestros valores.
+        </p>
+        <p>
+          El nombre SACS viene de cuatro verbos que guían todo lo que
+          hacemos: <strong>Ser</strong>, <strong>Avanzar</strong>,
+          <strong>Crear</strong> y <strong>Sembrar</strong>.
+        </p>
+      </div>
+      <div class="story-values">
+        <div class="value-card card">
+          <h3 style="color: var(--color-primary);">Ser</h3>
+          <p>Autenticidad en cada decisión. Tecnología que refleja valores reales.</p>
+        </div>
+        <div class="value-card card">
+          <h3 style="color: var(--color-primary);">Avanzar</h3>
+          <p>Innovación con propósito. Cada feature resuelve un problema real.</p>
+        </div>
+        <div class="value-card card">
+          <h3 style="color: var(--color-accent);">Crear</h3>
+          <p>Diseño con intención. Experiencias que inspiran y simplifican.</p>
+        </div>
+        <div class="value-card card">
+          <h3 style="color: var(--color-secondary);">Sembrar</h3>
+          <p>Impacto social en cada transacción. Crecimiento que comparte.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <CTABanner
+    title="¿Quieres ser parte de esta historia?"
+    subtitle="Estamos buscando retailers que compartan nuestra visión de comercio consciente."
+  />
+</BaseLayout>
+
+<style>
+  .nosotros-hero {
+    padding-top: calc(72px + var(--space-16));
+    padding-bottom: var(--space-8);
+  }
+
+  .nosotros-header {
+    max-width: 700px;
+  }
+
+  .nosotros-header .badge {
+    margin-bottom: var(--space-5);
+  }
+
+  .nosotros-header h1 {
+    margin-bottom: var(--space-5);
+  }
+
+  .nosotros-header .body-large {
+    color: var(--color-text-secondary);
+  }
+
+  .story {
+    background: var(--color-bg-secondary);
+  }
+
+  .story-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-12);
+  }
+
+  @media (min-width: 1024px) {
+    .story-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-16);
+    }
+  }
+
+  .story-content h2 {
+    margin-bottom: var(--space-6);
+  }
+
+  .story-content p {
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-5);
+    line-height: 1.7;
+  }
+
+  .story-values {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+  }
+
+  .value-card {
+    padding: var(--space-6);
+  }
+
+  .value-card h3 {
+    margin-bottom: var(--space-2);
+    font-size: 1.25rem;
+  }
+
+  .value-card p {
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+  }
+</style>

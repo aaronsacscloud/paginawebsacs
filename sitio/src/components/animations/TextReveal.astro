@@ -1,0 +1,72 @@
+---
+interface Props {
+  text: string;
+  tag?: string;
+  class?: string;
+}
+
+const { text, tag = 'h2', class: className = '' } = Astro.props;
+const words = text.split(' ');
+---
+
+<div class:list={['text-reveal-wrapper', className]}>
+  {words.map((word, i) => (
+    <span class="word-mask">
+      <span class="word" style={`transition-delay: ${i * 80}ms`}>
+        {word}&nbsp;
+      </span>
+    </span>
+  ))}
+</div>
+
+<style>
+  .text-reveal-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .word-mask {
+    overflow: hidden;
+    display: inline-block;
+  }
+
+  .word {
+    display: inline-block;
+    transform: translateY(100%);
+    opacity: 0;
+    transition:
+      transform 0.6s var(--ease-smooth),
+      opacity 0.6s var(--ease-smooth);
+  }
+
+  .text-reveal-wrapper.visible .word {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .word {
+      transform: none;
+      opacity: 1;
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.2 }
+  );
+
+  document.querySelectorAll('.text-reveal-wrapper').forEach((el) => {
+    observer.observe(el);
+  });
+</script>

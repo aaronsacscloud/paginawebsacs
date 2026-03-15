@@ -1,0 +1,59 @@
+---
+interface Props {
+  target: number;
+  suffix?: string;
+  prefix?: string;
+  duration?: number;
+}
+
+const { target, suffix = '', prefix = '', duration = 1500 } = Astro.props;
+---
+
+<span
+  class="counter-up"
+  data-target={target}
+  data-suffix={suffix}
+  data-prefix={prefix}
+  data-duration={duration}
+>
+  {prefix}0{suffix}
+</span>
+
+<script>
+  const counters = document.querySelectorAll('.counter-up');
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const el = entry.target as HTMLElement;
+          const target = parseFloat(el.dataset.target || '0');
+          const suffix = el.dataset.suffix || '';
+          const prefix = el.dataset.prefix || '';
+          const duration = parseInt(el.dataset.duration || '1500');
+          const start = performance.now();
+
+          const animate = (now: number) => {
+            const elapsed = now - start;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+            const current = Math.floor(target * eased);
+            el.textContent = `${prefix}${current.toLocaleString('es-MX')}${suffix}`;
+
+            if (progress < 1) {
+              requestAnimationFrame(animate);
+            } else {
+              el.textContent = `${prefix}${target.toLocaleString('es-MX')}${suffix}`;
+            }
+          };
+
+          requestAnimationFrame(animate);
+          observer.unobserve(el);
+        }
+      });
+    },
+    { threshold: 0.5 }
+  );
+
+  counters.forEach((el) => observer.observe(el));
+</script>

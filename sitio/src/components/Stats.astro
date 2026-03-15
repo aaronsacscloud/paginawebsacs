@@ -1,0 +1,54 @@
+---
+const stats = [
+  { number: '500+', label: 'Retailers activos' },
+  { number: '12M+', label: 'Transacciones procesadas' },
+  { number: '99.9%', label: 'Uptime garantizado' },
+  { number: '40%', label: 'Reducción en tiempo operativo' },
+];
+---
+
+<section class="stats section" id="stats">
+  <div class="container">
+    <div class="stats-grid">
+      {stats.map((stat) => (
+        <div class="stat-item">
+          <p class="stat-number display-l">{stat.number}</p>
+          <p class="stat-label body-small">{stat.label}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .stats {
+    background: var(--color-bg-primary);
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-8);
+  }
+
+  @media (min-width: 768px) {
+    .stats-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  .stat-item {
+    text-align: center;
+    padding: var(--space-6) 0;
+    border-top: 2px solid var(--color-primary);
+  }
+
+  .stat-number {
+    color: var(--color-primary);
+    margin-bottom: var(--space-2);
+  }
+
+  .stat-label {
+    color: var(--color-text-tertiary);
+  }
+</style>

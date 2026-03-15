@@ -1,0 +1,49 @@
+---
+interface Props {
+  title?: string;
+  subtitle?: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+}
+
+const {
+  title = 'Tu negocio merece crecer con propósito',
+  subtitle = 'Agenda una reunión con nuestro equipo y descubre cómo SACS puede transformar tu operación.',
+  ctaLabel = 'Agenda un demo',
+  ctaHref = '/contacto',
+} = Astro.props;
+---
+
+<section class="cta-banner section">
+  <div class="container cta-content">
+    <h2 class="display-l cta-title">{title}</h2>
+    <p class="body-large cta-subtitle">{subtitle}</p>
+    <a href={ctaHref} class="btn btn-white btn-lg">
+      {ctaLabel}
+      <span class="btn-arrow" aria-hidden="true">&rarr;</span>
+    </a>
+  </div>
+</section>
+
+<style>
+  .cta-banner {
+    background: linear-gradient(135deg, #1A1A2E 0%, #16213E 100%);
+    padding-block: var(--space-32);
+  }
+
+  .cta-content {
+    text-align: center;
+    max-width: 720px;
+    margin-inline: auto;
+  }
+
+  .cta-title {
+    color: #fff;
+    margin-bottom: var(--space-5);
+  }
+
+  .cta-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: var(--space-10);
+  }
+</style>

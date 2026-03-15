@@ -1,0 +1,2064 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SACS — Manual de Identidad Visual</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- SVG Noise/Grain Filters -->
+  <svg style="position:absolute;width:0;height:0;">
+    <filter id="grain-light">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.12"/>
+      </feComponentTransfer>
+      <feBlend in="SourceGraphic" mode="overlay"/>
+    </filter>
+  </svg>
+
+  <style>
+    /* ═══════════════════════════════════════════════════
+       DESIGN TOKENS
+       ═══════════════════════════════════════════════════ */
+    :root {
+      /* Brand */
+      --color-primary: #4B7BE5;
+      --color-secondary: #2AB5A0;
+      --color-accent: #E8A838;
+      --color-error: #E54B4B;
+
+      /* Text */
+      --color-text-primary: #000000;
+      --color-text-secondary: #333333;
+      --color-text-tertiary: #707070;
+
+      /* Backgrounds */
+      --color-bg-primary: #FAFAF8;
+      --color-bg-secondary: #F5F3EE;
+      --color-bg-card: #FFFFFF;
+      --color-bg-dark: #000000;
+
+      /* Borders */
+      --color-border: #D4D4D4;
+      --color-border-light: rgba(0,0,0,0.08);
+
+      /* Fonts — DM Sans reemplaza Bebas Neue como display */
+      --font-display: 'DM Sans', sans-serif;
+      --font-heading: 'Space Grotesk', sans-serif;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+
+      /* Radius */
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 16px;
+      --radius-2xl: 24px;
+      --radius-full: 50px;
+
+      /* Shadows */
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+      --shadow-lg: 0 8px 16px rgba(0,0,0,0.1);
+      --shadow-xl: 0 16px 32px rgba(0,0,0,0.12);
+
+      /* Transitions */
+      --ease-square: cubic-bezier(.4, 0, .2, 1);
+      --transition-base: 0.3s var(--ease-square);
+
+      /* Colores Oaxaca */
+      --mx-rojo: #D42B2B;
+      --mx-rosa: #E8356D;
+      --mx-rosa-hot: #FF1493;
+      --mx-naranja: #F57C20;
+      --mx-amarillo: #FFD100;
+      --mx-verde-lima: #7BC242;
+      --mx-verde: #1B8C3E;
+      --mx-verde-esmeralda: #00875A;
+      --mx-turquesa: #00B5A3;
+      --mx-azul-cielo: #3DA5D9;
+      --mx-azul-rey: #2856A3;
+      --mx-morado: #6B2FA0;
+      --mx-magenta: #C2185B;
+      --mx-crema: #FFF8E7;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--color-text-primary);
+      background: var(--color-bg-primary);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       NAV
+       ═══════════════════════════════════════════════════ */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 72px;
+      background: rgba(250,250,248,0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--color-border-light);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      z-index: 1000;
+    }
+    .nav-logo {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .nav-logo .circles {
+      display: flex;
+      position: relative;
+      width: 36px;
+      height: 30px;
+    }
+    .nav-logo .circle {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      position: absolute;
+      opacity: 0.8;
+    }
+    .nav-logo .circle:nth-child(1) { background: var(--color-primary); top: 6px; left: 0; }
+    .nav-logo .circle:nth-child(2) { background: var(--color-accent); top: 0; left: 9px; }
+    .nav-logo .circle:nth-child(3) { background: var(--color-secondary); top: 6px; left: 18px; }
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      align-items: center;
+      list-style: none;
+    }
+    .nav-links a {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--color-text-primary); }
+
+    /* ═══════════════════════════════════════════════════
+       SECTIONS
+       ═══════════════════════════════════════════════════ */
+    .section {
+      padding: 128px 48px;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+    .section-dark {
+      background: var(--color-bg-dark);
+      color: #fff;
+      max-width: 100%;
+      padding: 128px 48px;
+    }
+    .section-dark .section-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+    .section-cream {
+      background: var(--color-bg-secondary);
+      max-width: 100%;
+      padding: 128px 48px;
+    }
+    .section-cream .section-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+    .section-full {
+      max-width: 100%;
+      padding: 0;
+    }
+
+    .section-label {
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-primary);
+      margin-bottom: 16px;
+    }
+    .section-dark .section-label { color: var(--color-secondary); }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: 56px;
+      font-weight: 500;
+      line-height: 1.1;
+      letter-spacing: -0.04em;
+      margin-bottom: 24px;
+    }
+
+    .section-desc {
+      font-size: 18px;
+      line-height: 1.6;
+      color: var(--color-text-secondary);
+      max-width: 600px;
+      margin-bottom: 48px;
+    }
+    .section-dark .section-desc { color: rgba(255,255,255,0.6); }
+
+    /* ═══════════════════════════════════════════════════
+       HERO (Style Guide)
+       ═══════════════════════════════════════════════════ */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 160px 40px 120px;
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse 80% 40% at 40% 15%, rgba(255,255,255,0.08) 0%, transparent 70%),
+        linear-gradient(
+          180deg,
+          #7B8FC7 0%, #8E9DD4 8%, #A0ABD8 15%,
+          #9BABD8 25%, #9BB4D8 35%, #A8C4E0 45%,
+          #B8D4E8 55%, #C8DDE8 65%, #D5E4E8 72%,
+          #DDE8E4 80%, #E2E8D8 88%, #E8E0C8 95%, #E4D4B0 100%
+        );
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0.3;
+      mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 900px;
+    }
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 8px 20px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.7);
+      margin-bottom: 32px;
+    }
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(56px, 8vw, 115px);
+      font-weight: 500;
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+      color: #FFFFFF;
+      margin-bottom: 28px;
+    }
+    .hero-title span { color: rgba(255,255,255,0.95); }
+    .hero-subtitle {
+      font-size: 20px;
+      line-height: 1.6;
+      color: rgba(255,255,255,0.6);
+      max-width: 560px;
+      margin: 0 auto 40px;
+    }
+    .hero-ctas {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       BUTTONS — Estilo Square: pill, solidos, limpios
+       ═══════════════════════════════════════════════════ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: var(--font-display);
+      font-weight: 500;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      min-width: 12rem;
+      transition: all 0.3s var(--ease-square);
+    }
+    .btn:active { transform: scale(0.95); }
+
+    .btn-primary {
+      background: var(--color-primary);
+      color: #FFFFFF;
+      font-size: 16px;
+      padding: 16px 38px;
+      border-radius: var(--radius-full);
+    }
+    .btn-primary:hover { background: #3D6BD4; }
+
+    .btn-white {
+      background: #fff;
+      color: var(--color-text-primary);
+      font-size: 16px;
+      padding: 16px 38px;
+      border-radius: var(--radius-full);
+    }
+    .btn-white:hover { background: #f0f0f0; }
+
+    .btn-secondary {
+      background: transparent;
+      color: #FFFFFF;
+      font-size: 16px;
+      padding: 16px 38px;
+      border-radius: var(--radius-full);
+      border: 1.5px solid rgba(255,255,255,0.3);
+    }
+    .btn-secondary:hover { border-color: rgba(255,255,255,0.7); }
+
+    .btn-secondary-dark {
+      background: transparent;
+      color: var(--color-text-primary);
+      font-size: 16px;
+      padding: 16px 38px;
+      border-radius: var(--radius-full);
+      border: 1.5px solid var(--color-text-primary);
+    }
+    .btn-secondary-dark:hover { background: var(--color-text-primary); color: #fff; }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--color-primary);
+      font-size: 16px;
+      padding: 16px 38px;
+      border-radius: var(--radius-full);
+    }
+    .btn-ghost:hover { background: rgba(75,123,229,0.08); }
+
+    .btn-sm { font-size: 14px; padding: 10px 24px; }
+    .btn-lg { font-size: 18px; padding: 20px 48px; }
+
+    .btn-arrow {
+      font-size: 18px;
+      transition: transform 0.3s var(--ease-square);
+    }
+    .btn:hover .btn-arrow { transform: translateX(3px); }
+
+    /* ═══════════════════════════════════════════════════
+       COLOR SWATCHES
+       ═══════════════════════════════════════════════════ */
+    .colors-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 24px;
+    }
+    .swatch {
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: var(--color-bg-card);
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition-base);
+    }
+    .swatch:hover { box-shadow: var(--shadow-lg); }
+    .swatch-color {
+      height: 120px;
+      display: flex;
+      align-items: flex-end;
+      padding: 12px 16px;
+    }
+    .swatch-info { padding: 16px; }
+    .swatch-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+    .swatch-hex { font-size: 13px; color: var(--color-text-tertiary); font-family: 'Space Grotesk', monospace; }
+
+    /* Oaxacan swatch — smaller */
+    .colors-grid-sm {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 16px;
+    }
+    .swatch-sm {
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: var(--color-bg-card);
+      box-shadow: var(--shadow-sm);
+    }
+    .swatch-sm .swatch-color { height: 80px; }
+    .swatch-sm .swatch-info { padding: 10px 12px; }
+    .swatch-sm .swatch-name { font-size: 12px; }
+    .swatch-sm .swatch-hex { font-size: 11px; }
+
+    /* ═══════════════════════════════════════════════════
+       TYPOGRAPHY SPECIMENS
+       ═══════════════════════════════════════════════════ */
+    .type-specimen {
+      margin-bottom: 40px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid var(--color-border-light);
+    }
+    .type-specimen:last-child { border-bottom: none; }
+    .type-meta {
+      display: flex;
+      gap: 24px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .type-meta-item {
+      font-size: 12px;
+      color: var(--color-text-tertiary);
+      background: var(--color-bg-secondary);
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+    }
+
+    /* ═══════════════════════════════════════════════════
+       CARDS
+       ═══════════════════════════════════════════════════ */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .card {
+      background: var(--color-bg-card);
+      border: 1px solid var(--color-border-light);
+      border-radius: var(--radius-lg);
+      padding: 48px;
+      transition: all var(--transition-base);
+    }
+    .card:hover { box-shadow: var(--shadow-lg); }
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    .card-icon-blue { background: rgba(75,123,229,0.1); color: var(--color-primary); }
+    .card-icon-teal { background: rgba(42,181,160,0.1); color: var(--color-secondary); }
+    .card-icon-gold { background: rgba(232,168,56,0.1); color: var(--color-accent); }
+    .card-title { font-size: 20px; font-weight: 600; margin-bottom: 10px; line-height: 1.3; }
+    .card-desc { font-size: 15px; line-height: 1.6; color: var(--color-text-secondary); }
+
+    .feature-card {
+      background: var(--color-bg-secondary);
+      border: none;
+      border-radius: var(--radius-xl);
+      padding: 40px;
+    }
+    .stat-card {
+      background: transparent;
+      border: none;
+      border-top: 2px solid var(--color-primary);
+      border-radius: 0;
+      padding: 24px 0;
+    }
+    .stat-number {
+      font-family: var(--font-display);
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--color-primary);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .stat-label { font-size: 14px; color: var(--color-text-tertiary); }
+
+    /* ═══════════════════════════════════════════════════
+       BADGES
+       ═══════════════════════════════════════════════════ */
+    .badges-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .badge-component {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .badge-blue { background: rgba(75,123,229,0.1); color: var(--color-primary); }
+    .badge-teal { background: rgba(42,181,160,0.1); color: var(--color-secondary); }
+    .badge-gold { background: rgba(232,168,56,0.1); color: var(--color-accent); }
+    .badge-gray { background: rgba(0,0,0,0.05); color: var(--color-text-secondary); }
+    .badge-error { background: rgba(229,75,75,0.1); color: var(--color-error); }
+
+    .tag {
+      font-size: 13px;
+      font-weight: 500;
+      padding: 6px 16px;
+      border-radius: var(--radius-full);
+      border: 1px solid rgba(0,0,0,0.1);
+      display: inline-flex;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .tag:hover { background: rgba(0,0,0,0.03); }
+
+    /* Focus states — Accesibilidad */
+    .btn:focus-visible,
+    .form-input:focus-visible,
+    .tag:focus-visible,
+    a:focus-visible {
+      outline: 2px solid #006aff;
+      outline-offset: 2px;
+      border-radius: 8px;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       INPUTS
+       ═══════════════════════════════════════════════════ */
+    .form-group { margin-bottom: 20px; max-width: 400px; }
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      margin-bottom: 6px;
+    }
+    .form-input {
+      width: 100%;
+      height: 48px;
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      font-family: var(--font-body);
+      font-size: 16px;
+      color: var(--color-text-primary);
+      background: var(--color-bg-card);
+      transition: all 0.2s;
+      outline: none;
+    }
+    .form-input::placeholder { color: var(--color-text-tertiary); }
+    .form-input:focus {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(75,123,229,0.1);
+    }
+    .form-input-error { border-color: var(--color-error); }
+    .form-input-error:focus { box-shadow: 0 0 0 3px rgba(229,75,75,0.1); }
+    .form-helper { font-size: 13px; color: var(--color-text-tertiary); margin-top: 4px; }
+    .form-helper-error { color: var(--color-error); }
+    .form-textarea { min-height: 120px; resize: vertical; height: auto; }
+
+    /* ═══════════════════════════════════════════════════
+       GRADIENTS
+       ═══════════════════════════════════════════════════ */
+    .gradient-box {
+      height: 160px;
+      border-radius: var(--radius-xl);
+      display: flex;
+      align-items: flex-end;
+      padding: 20px 24px;
+    }
+    .gradient-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    /* ═══════════════════════════════════════════════════
+       SHADOWS / SPACING / RADIUS
+       ═══════════════════════════════════════════════════ */
+    .shadow-box {
+      background: var(--color-bg-card);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      text-align: center;
+    }
+    .shadow-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .shadow-value { font-size: 11px; color: var(--color-text-tertiary); font-family: monospace; }
+
+    .spacing-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+    .spacing-bar {
+      height: 24px;
+      background: var(--color-primary);
+      border-radius: 4px;
+      opacity: 0.7;
+    }
+    .spacing-label {
+      font-size: 13px;
+      color: var(--color-text-tertiary);
+      min-width: 120px;
+      font-family: monospace;
+    }
+    .radius-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 24px;
+    }
+    .radius-box {
+      width: 100px;
+      height: 100px;
+      background: var(--color-bg-secondary);
+      border: 2px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .radius-value { font-size: 11px; font-weight: 600; }
+    .radius-name { font-size: 10px; color: var(--color-text-tertiary); }
+
+    /* ═══════════════════════════════════════════════════
+       HERO SECTIONS — Con ilustracion + textura grain
+       ═══════════════════════════════════════════════════ */
+
+    /* Badge para heroes */
+    .hero-badge {
+      display: inline-block;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 8px 20px;
+      border-radius: 50px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 32px;
+    }
+
+    /* Hero heading — estilo Square */
+    .hero-display {
+      font-family: var(--font-display);
+      font-weight: 500;
+      line-height: 1.05;
+      letter-spacing: -0.05em;
+      color: #fff;
+      margin-bottom: 24px;
+    }
+
+    .hero-body {
+      font-family: var(--font-body);
+      font-size: clamp(16px, 2vw, 20px);
+      font-weight: 400;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, 0.75);
+      max-width: 520px;
+      margin-bottom: 48px;
+    }
+
+    .hero-btns {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    /* Variante 1 — Overlay Lateral */
+    .hero-lateral {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 120px 80px;
+      overflow: hidden;
+    }
+    .hero-lateral .bg-image {
+      position: absolute;
+      inset: 0;
+      background: url('assets/images/flores-intercom.webp') center center / cover no-repeat;
+      z-index: 0;
+    }
+    .hero-lateral .bg-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg,
+        rgba(10, 10, 20, 0.88) 0%,
+        rgba(10, 10, 20, 0.72) 35%,
+        rgba(10, 10, 20, 0.45) 60%,
+        rgba(10, 10, 20, 0.15) 100%
+      );
+      z-index: 1;
+    }
+    .hero-lateral .bg-grain {
+      position: absolute;
+      inset: -50%;
+      width: 200%;
+      height: 200%;
+      filter: url(#grain-light);
+      opacity: 0.5;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .hero-lateral .hero-inner {
+      position: relative;
+      z-index: 3;
+      max-width: 720px;
+    }
+    .hero-lateral .hero-display {
+      font-size: clamp(48px, 7vw, 115px);
+    }
+
+    /* Variante 2 — Overlay Radial Centro */
+    .hero-radial {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 40px;
+      overflow: hidden;
+    }
+    .hero-radial .bg-image {
+      position: absolute;
+      inset: 0;
+      background: url('assets/images/flores-intercom.webp') center center / cover no-repeat;
+      z-index: 0;
+    }
+    .hero-radial .bg-overlay {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center,
+        rgba(10, 10, 20, 0.82) 0%,
+        rgba(10, 10, 20, 0.6) 40%,
+        rgba(10, 10, 20, 0.25) 75%,
+        rgba(10, 10, 20, 0.1) 100%
+      );
+      z-index: 1;
+    }
+    .hero-radial .bg-grain {
+      position: absolute;
+      inset: -50%;
+      width: 200%;
+      height: 200%;
+      filter: url(#grain-light);
+      opacity: 0.45;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .hero-radial .hero-inner {
+      position: relative;
+      z-index: 3;
+      max-width: 800px;
+    }
+    .hero-radial .hero-display {
+      font-size: clamp(52px, 8vw, 115px);
+    }
+    .hero-radial .hero-body {
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .hero-radial .hero-btns {
+      justify-content: center;
+    }
+
+    /* Variante 3 — Gradiente Bottom-Up */
+    .hero-bottom {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 80px;
+      overflow: hidden;
+    }
+    .hero-bottom .bg-image {
+      position: absolute;
+      inset: 0;
+      background: url('assets/images/flores-intercom.webp') center 30% / cover no-repeat;
+      z-index: 0;
+    }
+    .hero-bottom .bg-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(0deg,
+        rgba(10, 10, 20, 0.95) 0%,
+        rgba(10, 10, 20, 0.85) 25%,
+        rgba(10, 10, 20, 0.4) 55%,
+        rgba(10, 10, 20, 0.05) 100%
+      );
+      z-index: 1;
+    }
+    .hero-bottom .bg-grain {
+      position: absolute;
+      inset: -50%;
+      width: 200%;
+      height: 200%;
+      filter: url(#grain-light);
+      opacity: 0.4;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .hero-bottom .hero-inner {
+      position: relative;
+      z-index: 3;
+      max-width: 680px;
+    }
+    .hero-bottom .hero-display {
+      font-size: clamp(44px, 6vw, 96px);
+    }
+
+    /* ═══════════════════════════════════════════════════
+       FONDOS OAXAQUENOS — CSS-only patterns
+       ═══════════════════════════════════════════════════ */
+    .fondo-demo {
+      position: relative;
+      min-height: 500px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 80px;
+      overflow: hidden;
+    }
+    .fondo-demo .fondo-content {
+      position: relative;
+      z-index: 5;
+      max-width: 640px;
+    }
+    .fondo-demo .fondo-content h3 {
+      font-family: var(--font-display);
+      font-size: clamp(36px, 5vw, 64px);
+      font-weight: 500;
+      line-height: 1.05;
+      letter-spacing: -0.05em;
+      color: #fff;
+      margin-bottom: 16px;
+    }
+    .fondo-demo .fondo-content p {
+      font-family: var(--font-body);
+      font-size: 18px;
+      line-height: 1.6;
+      color: rgba(255,255,255,0.7);
+      max-width: 480px;
+    }
+
+    /* Sarape */
+    .fondo-sarape {
+      background:
+        repeating-linear-gradient(90deg,
+          var(--mx-rojo) 0px, var(--mx-rojo) 18px,
+          #fff 18px, #fff 21px,
+          var(--mx-naranja) 21px, var(--mx-naranja) 36px,
+          #fff 36px, #fff 39px,
+          var(--mx-amarillo) 39px, var(--mx-amarillo) 54px,
+          #fff 54px, #fff 57px,
+          var(--mx-verde) 57px, var(--mx-verde) 72px,
+          #fff 72px, #fff 75px,
+          var(--mx-azul-rey) 75px, var(--mx-azul-rey) 90px,
+          #fff 90px, #fff 93px,
+          var(--mx-morado) 93px, var(--mx-morado) 108px,
+          #fff 108px, #fff 111px,
+          var(--mx-rosa) 111px, var(--mx-rosa) 126px,
+          #fff 126px, #fff 129px,
+          var(--mx-turquesa) 129px, var(--mx-turquesa) 144px,
+          #fff 144px, #fff 147px,
+          var(--mx-magenta) 147px, var(--mx-magenta) 162px,
+          #fff 162px, #fff 165px
+        );
+    }
+    .fondo-sarape::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(0deg,
+          transparent 0px, transparent 3px,
+          rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px
+        );
+      mix-blend-mode: multiply;
+      z-index: 1;
+    }
+    .fondo-sarape::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg,
+        rgba(10,10,20,0.85) 0%,
+        rgba(10,10,20,0.6) 40%,
+        rgba(10,10,20,0.3) 70%,
+        rgba(10,10,20,0.1) 100%
+      );
+      z-index: 2;
+    }
+
+    /* Calle Oaxaquena */
+    .fondo-calle {
+      min-height: 600px;
+      background: linear-gradient(180deg, #4A90C8 0%, #6BB5D8 40%, #8DCAE8 70%, #B0DDF0 100%);
+      justify-content: flex-start;
+      padding-top: 100px;
+    }
+    .calle-cielo {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, #4A90C8 0%, #6BB5D8 40%, #8DCAE8 70%, #B0DDF0 100%);
+      z-index: 0;
+    }
+    .calle-papel {
+      position: absolute;
+      top: 60px;
+      left: 0;
+      right: 0;
+      height: 40px;
+      z-index: 2;
+      display: flex;
+      justify-content: center;
+      gap: 0;
+    }
+    .papel-triangulo {
+      width: 30px;
+      height: 30px;
+      clip-path: polygon(50% 100%, 0 0, 100% 0);
+    }
+    .calle-edificios {
+      position: absolute;
+      bottom: 60px;
+      left: 0;
+      right: 0;
+      height: 280px;
+      z-index: 2;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 3px;
+    }
+    .edificio {
+      border-radius: 3px 3px 0 0;
+      position: relative;
+      display: flex;
+      flex-wrap: wrap;
+      align-content: flex-start;
+      padding: 8px 4px;
+      gap: 4px;
+      justify-content: center;
+    }
+    .ventana {
+      width: 14px;
+      height: 16px;
+      background: rgba(255,255,200,0.6);
+      border-radius: 2px 2px 0 0;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+    .puerta {
+      width: 20px;
+      height: 30px;
+      background: rgba(80,40,20,0.7);
+      border-radius: 3px 3px 0 0;
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .calle-banqueta {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: #C8B8A0;
+      z-index: 1;
+    }
+    .calle-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(0deg,
+        rgba(10,10,20,0.9) 0%,
+        rgba(10,10,20,0.7) 30%,
+        rgba(10,10,20,0.3) 60%,
+        rgba(10,10,20,0.1) 100%
+      );
+      z-index: 3;
+    }
+    .calle-grain {
+      position: absolute;
+      inset: -50%;
+      width: 200%;
+      height: 200%;
+      filter: url(#grain-light);
+      opacity: 0.3;
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       NAV & FOOTER DEMOS
+       ═══════════════════════════════════════════════════ */
+    .nav-demo {
+      background: var(--color-bg-card);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--color-border-light);
+      overflow: hidden;
+    }
+    .nav-demo-bar {
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      border-bottom: 1px solid var(--color-border-light);
+    }
+    .nav-demo-body {
+      padding: 60px 32px;
+      text-align: center;
+      color: var(--color-text-tertiary);
+      font-size: 14px;
+    }
+
+    .footer-demo {
+      background: var(--color-bg-dark);
+      border-radius: var(--radius-xl);
+      padding: 48px;
+      color: rgba(255,255,255,0.7);
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 40px;
+    }
+    .footer-brand { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 12px; }
+    .footer-desc { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.5); }
+    .footer-col-title { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px; }
+    .footer-link { display: block; font-size: 14px; color: rgba(255,255,255,0.6); text-decoration: none; margin-bottom: 10px; transition: color 0.2s; }
+    .footer-link:hover { color: #fff; }
+
+    /* ═══════════════════════════════════════════════════
+       AXO
+       ═══════════════════════════════════════════════════ */
+    .axo-states {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+    }
+    .axo-state {
+      background: var(--color-bg-card);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      text-align: center;
+      border: 1px solid var(--color-border-light);
+    }
+    .axo-emoji { font-size: 40px; margin-bottom: 12px; }
+    .axo-state-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .axo-state-desc { font-size: 12px; color: var(--color-text-tertiary); }
+    .axo-color-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: inline-block;
+      margin: 8px 4px 0;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       SECTION DIVIDER (para fondos)
+       ═══════════════════════════════════════════════════ */
+    .fondo-label {
+      background: var(--color-bg-dark);
+      padding: 24px 80px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .fondo-label h4 {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+    }
+    .fondo-label p {
+      font-family: var(--font-body);
+      font-size: 13px;
+      color: rgba(255,255,255,0.2);
+      margin-top: 2px;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       UTILITIES
+       ═══════════════════════════════════════════════════ */
+    .mt-8 { margin-top: 8px; }
+    .mt-16 { margin-top: 16px; }
+    .mt-24 { margin-top: 24px; }
+    .mt-32 { margin-top: 32px; }
+    .mt-48 { margin-top: 48px; }
+    .mt-64 { margin-top: 64px; }
+    .mb-8 { margin-bottom: 8px; }
+    .mb-16 { margin-bottom: 16px; }
+    .mb-24 { margin-bottom: 24px; }
+    .mb-48 { margin-bottom: 48px; }
+    .gap-16 { gap: 16px; }
+    .flex { display: flex; }
+    .flex-wrap { flex-wrap: wrap; }
+    .items-center { align-items: center; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+    .divider { height: 1px; background: var(--color-border-light); margin: 48px 0; }
+
+    /* CTA Final */
+    .cta-final {
+      background: var(--color-bg-dark);
+      padding: 160px 48px;
+      text-align: center;
+    }
+    .cta-final-title {
+      font-family: var(--font-display);
+      font-size: clamp(48px, 7vw, 90px);
+      font-weight: 500;
+      color: #fff;
+      line-height: 1.0;
+      letter-spacing: -0.05em;
+      margin-bottom: 20px;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       RESPONSIVE
+       ═══════════════════════════════════════════════════ */
+    @media (max-width: 768px) {
+      .hero-title { font-size: 48px; }
+      .section-title { font-size: 36px; }
+      .cards-grid { grid-template-columns: 1fr; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .grid-4 { grid-template-columns: 1fr 1fr; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+      .section,
+      .section-dark,
+      .section-cream { padding: 80px 24px; }
+      .nav { padding: 0 20px; }
+      .nav-links { display: none; }
+      .hero-lateral,
+      .hero-radial,
+      .hero-bottom,
+      .fondo-demo { padding: 80px 24px; }
+      .fondo-label { padding: 20px 24px; }
+      .calle-edificios { gap: 2px; }
+      .edificio { padding: 4px 2px; }
+      .cta-final { padding: 80px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════
+       NAV
+       ═══════════════════════════════════════════ -->
+  <nav class="nav">
+    <a href="#" class="nav-logo">
+      <div class="circles">
+        <div class="circle"></div>
+        <div class="circle"></div>
+        <div class="circle"></div>
+      </div>
+      Sacs
+    </a>
+    <ul class="nav-links">
+      <li><a href="#typography">Tipografia</a></li>
+      <li><a href="#colors">Colores</a></li>
+      <li><a href="#components">Componentes</a></li>
+      <li><a href="#heroes">Heroes</a></li>
+      <li><a href="#fondos">Fondos</a></li>
+      <li><a href="#spacing">Espaciado</a></li>
+      <li><a class="btn btn-primary btn-sm" href="#">Agenda una reunion</a></li>
+    </ul>
+  </nav>
+
+
+  <!-- ═══════════════════════════════════════════
+       HERO — Style Guide
+       ═══════════════════════════════════════════ -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-eyebrow">Manual de Identidad v2.0</div>
+      <h1 class="hero-title">
+        El sistema operativo<br>del <span>comercio consciente.</span>
+      </h1>
+      <p class="hero-subtitle">
+        Guia completa de diseno, tipografia, color, texturas y componentes para construir la experiencia digital de SACS.
+      </p>
+      <div class="hero-ctas">
+        <a href="#typography" class="btn btn-white btn-lg">Explorar el sistema <span class="btn-arrow">→</span></a>
+        <a href="#heroes" class="btn btn-secondary btn-lg">Ver heroes</a>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       01 — TIPOGRAFIA
+       ═══════════════════════════════════════════ -->
+  <section class="section" id="typography">
+    <div class="section-label">01 — Tipografia</div>
+    <h2 class="section-title">Tres familias.<br>Una jerarquia clara.</h2>
+    <p class="section-desc">
+      DM Sans para titulos de impacto (estilo Square). Space Grotesk para headings tecnicos. Plus Jakarta Sans para cuerpo y UI.
+    </p>
+
+    <div class="type-specimen">
+      <p style="font-family: var(--font-display); font-size: clamp(56px, 8vw, 115px); font-weight: 500; line-height: 0.95; letter-spacing: -0.05em;">
+        Display Hero
+      </p>
+      <div class="type-meta">
+        <span class="type-meta-item">DM Sans</span>
+        <span class="type-meta-item">56-115px</span>
+        <span class="type-meta-item">Medium 500</span>
+        <span class="type-meta-item">LH: 0.95</span>
+        <span class="type-meta-item">LS: -0.05em</span>
+        <span class="type-meta-item">Estilo Square</span>
+      </div>
+    </div>
+
+    <div class="type-specimen">
+      <p style="font-family: var(--font-display); font-size: 64px; font-weight: 500; line-height: 1.05; letter-spacing: -0.05em;">
+        Display Large
+      </p>
+      <div class="type-meta">
+        <span class="type-meta-item">DM Sans</span>
+        <span class="type-meta-item">64px</span>
+        <span class="type-meta-item">Medium 500</span>
+        <span class="type-meta-item">LH: 1.05</span>
+        <span class="type-meta-item">LS: -0.05em</span>
+      </div>
+    </div>
+
+    <div class="type-specimen">
+      <p style="font-family: var(--font-heading); font-size: 56px; font-weight: 500; line-height: 1.1; letter-spacing: -0.04em;">
+        Heading 1 — Space Grotesk
+      </p>
+      <div class="type-meta">
+        <span class="type-meta-item">Space Grotesk</span>
+        <span class="type-meta-item">56px</span>
+        <span class="type-meta-item">Medium 500</span>
+        <span class="type-meta-item">LH: 1.1</span>
+        <span class="type-meta-item">LS: -0.04em</span>
+      </div>
+    </div>
+
+    <div class="type-specimen">
+      <h2 style="font-family: var(--font-body); font-size: 36px; font-weight: 600; line-height: 1.15; letter-spacing: -0.02em;">
+        Heading 2 — Comercio que transforma
+      </h2>
+      <div class="type-meta">
+        <span class="type-meta-item">Plus Jakarta Sans</span>
+        <span class="type-meta-item">36px</span>
+        <span class="type-meta-item">Semibold 600</span>
+        <span class="type-meta-item">LH: 1.15</span>
+      </div>
+    </div>
+
+    <div class="type-specimen">
+      <h3 style="font-family: var(--font-body); font-size: 28px; font-weight: 600; line-height: 1.2; letter-spacing: -0.015em;">
+        Heading 3 — Tecnologia con alma mexicana
+      </h3>
+      <div class="type-meta">
+        <span class="type-meta-item">Plus Jakarta Sans</span>
+        <span class="type-meta-item">28px</span>
+        <span class="type-meta-item">Semibold 600</span>
+        <span class="type-meta-item">LH: 1.2</span>
+      </div>
+    </div>
+
+    <div class="type-specimen">
+      <h4 style="font-family: var(--font-body); font-size: 22px; font-weight: 600; line-height: 1.3;">
+        Heading 4 — El cerebro del retail
+      </h4>
+      <div class="type-meta">
+        <span class="type-meta-item">Plus Jakarta Sans</span>
+        <span class="type-meta-item">22px</span>
+        <span class="type-meta-item">Semibold 600</span>
+        <span class="type-meta-item">LH: 1.3</span>
+      </div>
+    </div>
+
+    <div class="type-specimen">
+      <p style="font-size: 20px; line-height: 1.6;">
+        Body Large — Creemos que vender es servir. Que crecer no es perder esencia. Que la tecnologia libera, no reemplaza. Que el exito se comparte.
+      </p>
+      <div class="type-meta">
+        <span class="type-meta-item">Plus Jakarta Sans</span>
+        <span class="type-meta-item">20px</span>
+        <span class="type-meta-item">Regular 400</span>
+        <span class="type-meta-item">LH: 1.6</span>
+      </div>
+    </div>
+
+    <div class="type-specimen">
+      <p style="font-size: 16px; line-height: 1.6;">
+        Body — SACS es un sistema operativo empresarial disenado para retailers conscientes. Cada venta es una oportunidad de impactar una vida. Los numeros importan, pero no mas que las personas.
+      </p>
+      <div class="type-meta">
+        <span class="type-meta-item">Plus Jakarta Sans</span>
+        <span class="type-meta-item">16px</span>
+        <span class="type-meta-item">Regular 400</span>
+        <span class="type-meta-item">LH: 1.6</span>
+      </div>
+    </div>
+
+    <div class="type-specimen">
+      <p style="font-size: 14px; line-height: 1.5; color: var(--color-text-tertiary);">
+        Body Small — Desarrollos Tecnologicos con Amor e Impacto Positivo S.A. de C.V. Todos los derechos reservados.
+      </p>
+      <div class="type-meta">
+        <span class="type-meta-item">Plus Jakarta Sans</span>
+        <span class="type-meta-item">14px</span>
+        <span class="type-meta-item">Regular 400</span>
+        <span class="type-meta-item">LH: 1.5</span>
+      </div>
+    </div>
+
+    <div class="type-specimen">
+      <p style="font-size: 13px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-primary);">
+        EYEBROW / OVERLINE — COMERCIO CONSCIENTE
+      </p>
+      <div class="type-meta">
+        <span class="type-meta-item">Plus Jakarta Sans</span>
+        <span class="type-meta-item">13px</span>
+        <span class="type-meta-item">Semibold 600</span>
+        <span class="type-meta-item">LS: 0.1em</span>
+        <span class="type-meta-item">UPPERCASE</span>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       02 — COLORES
+       ═══════════════════════════════════════════ -->
+  <section class="section-cream" id="colors">
+    <div class="section-inner">
+      <div class="section-label">02 — Colores</div>
+      <h2 class="section-title">La paleta de<br>SACS.</h2>
+      <p class="section-desc">
+        Dos paletas: la corporativa (derivada del logo) y la oaxaquena (para texturas, fondos y elementos decorativos).
+      </p>
+
+      <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">Primarios</h3>
+      <div class="colors-grid mb-48">
+        <div class="swatch">
+          <div class="swatch-color" style="background: #4B7BE5;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Azul SACS</div>
+            <div class="swatch-hex">#4B7BE5</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #2AB5A0;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Teal SACS</div>
+            <div class="swatch-hex">#2AB5A0</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #E8A838;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Dorado SACS</div>
+            <div class="swatch-hex">#E8A838</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #E54B4B;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Error</div>
+            <div class="swatch-hex">#E54B4B</div>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">Neutros</h3>
+      <div class="colors-grid mb-48">
+        <div class="swatch">
+          <div class="swatch-color" style="background: #000000;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Negro</div>
+            <div class="swatch-hex">#000000</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #333333;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Gris Oscuro</div>
+            <div class="swatch-hex">#333333</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #707070;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Gris Medio</div>
+            <div class="swatch-hex">#707070</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #D4D4D4;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Gris Claro</div>
+            <div class="swatch-hex">#D4D4D4</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #F5F3EE; border: 1px solid #e0ddd7;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Crema Calido</div>
+            <div class="swatch-hex">#F5F3EE</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #FAFAF8; border: 1px solid #eee;"></div>
+          <div class="swatch-info">
+            <div class="swatch-name">Blanco Roto</div>
+            <div class="swatch-hex">#FAFAF8</div>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">Paleta Oaxaquena (texturas y fondos)</h3>
+      <div class="colors-grid-sm mb-48">
+        <div class="swatch-sm">
+          <div class="swatch-color" style="background: var(--mx-rojo);"></div>
+          <div class="swatch-info"><div class="swatch-name">Rojo</div><div class="swatch-hex">#D42B2B</div></div>
+        </div>
+        <div class="swatch-sm">
+          <div class="swatch-color" style="background: var(--mx-rosa);"></div>
+          <div class="swatch-info"><div class="swatch-name">Rosa</div><div class="swatch-hex">#E8356D</div></div>
+        </div>
+        <div class="swatch-sm">
+          <div class="swatch-color" style="background: var(--mx-naranja);"></div>
+          <div class="swatch-info"><div class="swatch-name">Naranja</div><div class="swatch-hex">#F57C20</div></div>
+        </div>
+        <div class="swatch-sm">
+          <div class="swatch-color" style="background: var(--mx-amarillo);"></div>
+          <div class="swatch-info"><div class="swatch-name">Amarillo</div><div class="swatch-hex">#FFD100</div></div>
+        </div>
+        <div class="swatch-sm">
+          <div class="swatch-color" style="background: var(--mx-verde-lima);"></div>
+          <div class="swatch-info"><div class="swatch-name">Verde Lima</div><div class="swatch-hex">#7BC242</div></div>
+        </div>
+        <div class="swatch-sm">
+          <div class="swatch-color" style="background: var(--mx-verde);"></div>
+          <div class="swatch-info"><div class="swatch-name">Verde</div><div class="swatch-hex">#1B8C3E</div></div>
+        </div>
+        <div class="swatch-sm">
+          <div class="swatch-color" style="background: var(--mx-turquesa);"></div>
+          <div class="swatch-info"><div class="swatch-name">Turquesa</div><div class="swatch-hex">#00B5A3</div></div>
+        </div>
+        <div class="swatch-sm">
+          <div class="swatch-color" style="background: var(--mx-azul-cielo);"></div>
+          <div class="swatch-info"><div class="swatch-name">Azul Cielo</div><div class="swatch-hex">#3DA5D9</div></div>
+        </div>
+        <div class="swatch-sm">
+          <div class="swatch-color" style="background: var(--mx-azul-rey);"></div>
+          <div class="swatch-info"><div class="swatch-name">Azul Rey</div><div class="swatch-hex">#2856A3</div></div>
+        </div>
+        <div class="swatch-sm">
+          <div class="swatch-color" style="background: var(--mx-morado);"></div>
+          <div class="swatch-info"><div class="swatch-name">Morado</div><div class="swatch-hex">#6B2FA0</div></div>
+        </div>
+        <div class="swatch-sm">
+          <div class="swatch-color" style="background: var(--mx-magenta);"></div>
+          <div class="swatch-info"><div class="swatch-name">Magenta</div><div class="swatch-hex">#C2185B</div></div>
+        </div>
+        <div class="swatch-sm">
+          <div class="swatch-color" style="background: var(--mx-rosa-hot);"></div>
+          <div class="swatch-info"><div class="swatch-name">Rosa Hot</div><div class="swatch-hex">#FF1493</div></div>
+        </div>
+      </div>
+
+      <h3 style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">Gradientes (cielos naturales)</h3>
+      <div class="colors-grid">
+        <div class="swatch" style="border: none; box-shadow: none;">
+          <div class="gradient-box" style="background: linear-gradient(180deg, #7B8FC7 0%, #A8C4E0 50%, #E4D4B0 100%);">
+            <span class="gradient-label">Atardecer</span>
+          </div>
+        </div>
+        <div class="swatch" style="border: none; box-shadow: none;">
+          <div class="gradient-box" style="background: linear-gradient(180deg, #C8A0C0 0%, #A8A8D8 40%, #C0DCE0 100%);">
+            <span class="gradient-label">Amanecer</span>
+          </div>
+        </div>
+        <div class="swatch" style="border: none; box-shadow: none;">
+          <div class="gradient-box" style="background: linear-gradient(180deg, #2A2858 0%, #5858B0 50%, #C8CCD8 100%);">
+            <span class="gradient-label">Profundo</span>
+          </div>
+        </div>
+        <div class="swatch" style="border: none; box-shadow: none;">
+          <div class="gradient-box" style="background: linear-gradient(180deg, #4888A8 0%, #78B8C0 50%, #C4D4C0 100%);">
+            <span class="gradient-label">Turquesa</span>
+          </div>
+        </div>
+        <div class="swatch" style="border: none; box-shadow: none;">
+          <div class="gradient-box" style="background: linear-gradient(180deg, #A08060 0%, #D4A888 50%, #ECD8B8 100%);">
+            <span class="gradient-label">Dorado</span>
+          </div>
+        </div>
+        <div class="swatch" style="border: none; box-shadow: none;">
+          <div class="gradient-box" style="background: linear-gradient(180deg, #10102A 0%, #282878 50%, #5888A8 100%);">
+            <span class="gradient-label">Noche</span>
+          </div>
+        </div>
+        <div class="swatch" style="border: none; box-shadow: none;">
+          <div class="gradient-box" style="background: linear-gradient(180deg, #F2EDE4, #EBE5D8); border: 1px solid #e0ddd7;">
+            <span class="gradient-label" style="color: var(--color-text-tertiary); text-shadow: none;">Crema</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       03 — COMPONENTES
+       ═══════════════════════════════════════════ -->
+  <section class="section" id="components">
+    <div class="section-label">03 — Componentes</div>
+    <h2 class="section-title">Botones</h2>
+    <p class="section-desc">
+      Forma pill (border-radius 50px) estilo Square. Solidos, limpios, sin blur ni gradientes en botones.
+    </p>
+
+    <div class="flex flex-wrap gap-16 items-center mb-48">
+      <a class="btn btn-primary">Primary</a>
+      <a class="btn btn-secondary-dark">Secondary</a>
+      <a class="btn btn-ghost">Ghost</a>
+      <a class="btn btn-white" style="border: 1px solid var(--color-border);">White</a>
+    </div>
+
+    <div class="flex flex-wrap gap-16 items-center mb-48">
+      <a class="btn btn-primary btn-sm">Small</a>
+      <a class="btn btn-primary">Default</a>
+      <a class="btn btn-primary btn-lg">Large</a>
+    </div>
+
+    <div style="background: var(--color-bg-dark); padding: 32px; border-radius: var(--radius-xl); margin-bottom: 48px;">
+      <p style="font-size: 13px; color: rgba(255,255,255,0.4); margin-bottom: 16px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;">Sobre fondo oscuro</p>
+      <div class="flex flex-wrap gap-16 items-center">
+        <a class="btn btn-white">White Solid</a>
+        <a class="btn btn-secondary">Secondary Outline</a>
+        <a class="btn btn-primary">Primary</a>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Badges & Tags -->
+    <h2 class="section-title mt-48">Badges & Tags</h2>
+    <div class="badges-row">
+      <span class="badge-component badge-blue">Nuevo</span>
+      <span class="badge-component badge-teal">Activo</span>
+      <span class="badge-component badge-gold">Premium</span>
+      <span class="badge-component badge-gray">Draft</span>
+      <span class="badge-component badge-error">Critico</span>
+    </div>
+    <div class="flex flex-wrap gap-16 mb-48">
+      <span class="tag">POS</span>
+      <span class="tag">Inventario</span>
+      <span class="tag">E-commerce</span>
+      <span class="tag">CRM</span>
+      <span class="tag">Reportes</span>
+      <span class="tag">IA</span>
+    </div>
+
+
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       04 — HEROES CON ILUSTRACION + TEXTURA
+       ═══════════════════════════════════════════ -->
+  <section class="section-dark" id="heroes">
+    <div class="section-inner">
+      <div class="section-label">04 — Heroes con Ilustracion</div>
+      <h2 class="section-title" style="color: #fff;">Imagen + Overlay + Grain.<br>Estilo Intercom.</h2>
+      <p class="section-desc">
+        Ilustraciones painterly como fondo con textura grain (SVG feTurbulence). Tres variantes de overlay aprobadas para legibilidad. Tipografia DM Sans estilo Square. Botones solidos sin blur.
+      </p>
+    </div>
+  </section>
+
+  <!-- Hero Variante 1 — Overlay Lateral -->
+  <div class="fondo-label">
+    <h4>Hero Variante 1 — Overlay Lateral</h4>
+    <p>Gradiente izquierda-derecha. Texto legible, imagen visible al costado.</p>
+  </div>
+  <section class="hero-lateral">
+    <div class="bg-image"></div>
+    <div class="bg-overlay"></div>
+    <div class="bg-grain"></div>
+    <div class="hero-inner">
+      <span class="hero-badge">Comercio Consciente</span>
+      <h1 class="hero-display">Tu negocio merece crecer con proposito.</h1>
+      <p class="hero-body">
+        SACS es el sistema operativo que transforma la manera en que gestionas tu retail.
+        Inventarios, ventas, clientes — todo en un solo lugar.
+      </p>
+      <div class="hero-btns">
+        <a href="#" class="btn btn-white">Empieza gratis <span class="btn-arrow">→</span></a>
+        <a href="#" class="btn btn-secondary">Conoce a AXO <span class="btn-arrow">→</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Hero Variante 2 — Overlay Radial Centro -->
+  <div class="fondo-label">
+    <h4>Hero Variante 2 — Overlay Radial Centro</h4>
+    <p>Texto centrado con fondo radial. La ilustracion se asoma por los bordes.</p>
+  </div>
+  <section class="hero-radial">
+    <div class="bg-image"></div>
+    <div class="bg-overlay"></div>
+    <div class="bg-grain"></div>
+    <div class="hero-inner">
+      <span class="hero-badge">SACS Retail OS</span>
+      <h1 class="hero-display">Ser. Avanzar. Crear. Sembrar.</h1>
+      <p class="hero-body">
+        Cada decision que tomas con SACS impulsa un comercio mas consciente.
+        El 10% de tu licencia genera impacto social automaticamente.
+      </p>
+      <div class="hero-btns">
+        <a href="#" class="btn btn-white">Comenzar ahora <span class="btn-arrow">→</span></a>
+        <a href="#" class="btn btn-secondary">Ver impacto <span class="btn-arrow">→</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Hero Variante 3 — Gradiente Bottom-Up -->
+  <div class="fondo-label">
+    <h4>Hero Variante 3 — Gradiente Bottom-Up</h4>
+    <p>La ilustracion se ve completa arriba, el texto emerge desde abajo.</p>
+  </div>
+  <section class="hero-bottom">
+    <div class="bg-image"></div>
+    <div class="bg-overlay"></div>
+    <div class="bg-grain"></div>
+    <div class="hero-inner">
+      <span class="hero-badge">Nuevo en SACS</span>
+      <h1 class="hero-display">AXO nada contigo en cada venta.</h1>
+      <p class="hero-body">
+        Nuestro asistente de IA aprende de tu negocio y te ayuda a tomar
+        mejores decisiones. Inteligencia artificial que entiende el retail mexicano.
+      </p>
+      <div class="hero-btns">
+        <a href="#" class="btn btn-white">Probar AXO <span class="btn-arrow">→</span></a>
+        <a href="#" class="btn btn-secondary">Como funciona <span class="btn-arrow">→</span></a>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       05 — FONDOS OAXAQUENOS
+       ═══════════════════════════════════════════ -->
+  <section class="section-dark" id="fondos">
+    <div class="section-inner">
+      <div class="section-label">05 — Fondos Oaxaquenos</div>
+      <h2 class="section-title" style="color: #fff;">Texturas CSS con<br>colores vivos.</h2>
+      <p class="section-desc">
+        Patrones CSS-only inspirados en sarapes, papel picado y calles oaxaquenas. Todos con overlays para legibilidad y textura grain.
+      </p>
+    </div>
+  </section>
+
+  <!-- Sarape -->
+  <div class="fondo-label">
+    <h4>Fondo — Sarape</h4>
+    <p>Franjas verticales con textura de tejido. Overlay lateral para texto.</p>
+  </div>
+  <section class="fondo-demo fondo-sarape">
+    <div class="fondo-content">
+      <h3>Cada venta siembra en tu comunidad.</h3>
+      <p>El 10% de tu licencia genera impacto social automatico. Sin complicaciones, sin excusas.</p>
+    </div>
+  </section>
+
+  <!-- Calle Oaxaquena -->
+  <div class="fondo-label">
+    <h4>Fondo — Calle Oaxaquena</h4>
+    <p>Escena CSS con cielo, papel picado, edificios coloridos y banqueta.</p>
+  </div>
+  <section class="fondo-demo fondo-calle">
+    <div class="calle-cielo"></div>
+    <div class="calle-papel">
+      <div class="papel-triangulo" style="background: var(--mx-rojo);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-amarillo);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-verde);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-azul-rey);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-morado);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-rosa);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-naranja);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-turquesa);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-rojo);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-amarillo);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-verde);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-azul-rey);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-morado);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-rosa);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-naranja);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-turquesa);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-rojo);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-amarillo);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-verde);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-azul-rey);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-morado);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-rosa);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-naranja);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-turquesa);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-rojo);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-amarillo);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-verde);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-azul-rey);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-morado);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-rosa);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-naranja);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-turquesa);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-rojo);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-amarillo);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-verde);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-azul-rey);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-morado);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-rosa);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-naranja);"></div>
+      <div class="papel-triangulo" style="background: var(--mx-turquesa);"></div>
+    </div>
+    <div class="calle-edificios">
+      <div class="edificio" style="width:55px; height:180px; background: var(--mx-rojo);">
+        <div class="ventana"></div><div class="ventana"></div><div class="ventana"></div><div class="ventana"></div><div class="ventana"></div><div class="ventana"></div>
+        <div class="puerta"></div>
+      </div>
+      <div class="edificio" style="width:50px; height:140px; background: var(--mx-amarillo);">
+        <div class="ventana"></div><div class="ventana"></div><div class="ventana"></div><div class="ventana"></div>
+        <div class="puerta"></div>
+      </div>
+      <div class="edificio" style="width:60px; height:200px; background: var(--mx-verde);">
+        <div class="ventana"></div><div class="ventana"></div><div class="ventana"></div><div class="ventana"></div><div class="ventana"></div><div class="ventana"></div><div class="ventana"></div><div class="ventana"></div>
+        <div class="puerta"></div>
+      </div>
+      <div class="edificio" style="width:45px; height:120px; background: var(--mx-azul-cielo);">
+        <div class="ventana"></div><div class="ventana"></div><div class="ventana"></div><div class="ventana"></div>
+        <div class="puerta"></div>
+      </div>
+      <div class="edificio" style="width:65px; height:160px; background: var(--mx-naranja);">
+        <div class="ventana"></div><div class="ventana"></div><div class="ventana"></div><div class="ventana"></div><div class="ventana"></div><div class="ventana"></div>
+        <div class="puerta"></div>
+      </div>
+      <div class="edificio" style="width:50px; height:190px; background: var(--mx-morado);">
+        <div class="ventana"></div><div class="ventana"></div><div class="ventana"></div><div class="ventana"></div><div class="ventana"></div><div class="ventana"></div>
+        <div class="puerta"></div>
+      </div>
+      <div class="edificio" style="width:55px; height:130px; background: var(--mx-rosa);">
+        <div class="ventana"></div><div class="ventana"></div><div class="ventana"></div><div class="ventana"></div>
+        <div class="puerta"></div>
+      </div>
+      <div class="edificio" style="width:48px; height:170px; background: var(--mx-turquesa);">
+        <div class="ventana"></div><div class="ventana"></div><div class="ventana"></div><div class="ventana"></div><div class="ventana"></div><div class="ventana"></div>
+        <div class="puerta"></div>
+      </div>
+    </div>
+    <div class="calle-banqueta"></div>
+    <div class="calle-overlay"></div>
+    <div class="calle-grain"></div>
+    <div class="fondo-content">
+      <h3>Tu tienda. Tu calle. Tu sistema.</h3>
+      <p>SACS conecta todos los puntos de tu operacion retail como las calles conectan una ciudad.</p>
+    </div>
+  </section>
+
+
+
+  <!-- ═══════════════════════════════════════════
+       06 — ESTILO DE ILUSTRACION + AXO
+       ═══════════════════════════════════════════ -->
+  <section class="section-dark" id="illustrations">
+    <div class="section-inner">
+      <div class="section-label">06 — Estilo de Ilustracion & AXO</div>
+      <h2 class="section-title" style="color: #fff;">Vintage. Mexicano.<br>Painterly.</h2>
+      <p class="section-desc">
+        Inspirado en Intercom Suite: ilustraciones artisticas como fondos con textura grain. Para SACS, la tematica es Xochimilco, axolotls, flora nativa mexicana.
+      </p>
+
+      <div class="divider" style="background: rgba(255,255,255,0.1);"></div>
+
+      <h2 class="section-title mt-48" style="color: #fff;">AXO — La mascota</h2>
+      <p class="section-desc">
+        Axolotl de Xochimilco. Estilo painterly (no cartoon). Sus branquias cambian de color segun su estado emocional.
+      </p>
+
+      <div class="axo-states mb-48">
+        <div class="axo-state">
+          <div class="axo-emoji">:)</div>
+          <div class="axo-state-name">Default</div>
+          <div class="axo-state-desc">Branquias rosa coral</div>
+          <div class="axo-color-dot" style="background: #FF7B7B;"></div>
+          <div class="axo-color-dot" style="background: #F5A0A0;"></div>
+        </div>
+        <div class="axo-state">
+          <div class="axo-emoji">:D</div>
+          <div class="axo-state-name">Celebrando</div>
+          <div class="axo-state-desc">Branquias doradas</div>
+          <div class="axo-color-dot" style="background: #E8A838;"></div>
+          <div class="axo-color-dot" style="background: #F5D5A0;"></div>
+        </div>
+        <div class="axo-state">
+          <div class="axo-emoji">?</div>
+          <div class="axo-state-name">Pensando</div>
+          <div class="axo-state-desc">Branquias azul suave</div>
+          <div class="axo-color-dot" style="background: #4B7BE5;"></div>
+          <div class="axo-color-dot" style="background: #93B5F5;"></div>
+        </div>
+        <div class="axo-state">
+          <div class="axo-emoji">!</div>
+          <div class="axo-state-name">Motivando</div>
+          <div class="axo-state-desc">Branquias verdes</div>
+          <div class="axo-color-dot" style="background: #2AB5A0;"></div>
+          <div class="axo-color-dot" style="background: #7DDECE;"></div>
+        </div>
+        <div class="axo-state">
+          <div class="axo-emoji">&lt;3</div>
+          <div class="axo-state-name">Impactando</div>
+          <div class="axo-state-desc">Branquias en corazon</div>
+          <div class="axo-color-dot" style="background: #E54B4B;"></div>
+          <div class="axo-color-dot" style="background: #F5A0A0;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       07 — FORMULARIOS
+       ═══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-label">07 — Formularios</div>
+    <h2 class="section-title">Inputs & Forms</h2>
+    <p class="section-desc">Bordes suaves, focus con halo azul, accesibles.</p>
+
+    <div class="grid-2">
+      <div>
+        <div class="form-group">
+          <label class="form-label">Nombre completo</label>
+          <input type="text" class="form-input" placeholder="Martha Rodriguez">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" placeholder="martha@fashionstore.mx">
+          <div class="form-helper">Usaremos este email para tu cuenta SACS.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Numero de sucursales</label>
+          <input type="text" class="form-input form-input-error" value="abc" placeholder="12">
+          <div class="form-helper form-helper-error">Ingresa un numero valido.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cuentanos sobre tu negocio</label>
+          <textarea class="form-input form-textarea" placeholder="Tengo 8 tiendas de calzado en Guadalajara..."></textarea>
+        </div>
+        <a class="btn btn-primary">Agenda tu reunion <span class="btn-arrow">→</span></a>
+      </div>
+      <div></div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       08 — ESPACIADO
+       ═══════════════════════════════════════════ -->
+  <section class="section-cream" id="spacing">
+    <div class="section-inner">
+      <div class="section-label">08 — Espaciado</div>
+      <h2 class="section-title">Sistema de 8px</h2>
+      <p class="section-desc">Todo el espaciado se deriva de multiplos de 8. Consistencia visual en cada pixel.</p>
+
+      <div class="mb-48">
+        <div class="spacing-row"><span class="spacing-label">4px (space-1)</span><div class="spacing-bar" style="width: 4px;"></div></div>
+        <div class="spacing-row"><span class="spacing-label">8px (space-2)</span><div class="spacing-bar" style="width: 8px;"></div></div>
+        <div class="spacing-row"><span class="spacing-label">12px (space-3)</span><div class="spacing-bar" style="width: 12px;"></div></div>
+        <div class="spacing-row"><span class="spacing-label">16px (space-4)</span><div class="spacing-bar" style="width: 16px;"></div></div>
+        <div class="spacing-row"><span class="spacing-label">24px (space-6)</span><div class="spacing-bar" style="width: 24px;"></div></div>
+        <div class="spacing-row"><span class="spacing-label">32px (space-8)</span><div class="spacing-bar" style="width: 32px;"></div></div>
+        <div class="spacing-row"><span class="spacing-label">48px (space-12)</span><div class="spacing-bar" style="width: 48px;"></div></div>
+        <div class="spacing-row"><span class="spacing-label">64px (space-16)</span><div class="spacing-bar" style="width: 64px;"></div></div>
+        <div class="spacing-row"><span class="spacing-label">96px (space-24)</span><div class="spacing-bar" style="width: 96px;"></div></div>
+        <div class="spacing-row"><span class="spacing-label">128px (space-32)</span><div class="spacing-bar" style="width: 128px;"></div></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 class="section-title mt-48">Border Radius</h2>
+      <div class="radius-grid mb-48">
+        <div class="radius-box" style="border-radius: 8px;"><span class="radius-value">8px</span><span class="radius-name">sm</span></div>
+        <div class="radius-box" style="border-radius: 12px;"><span class="radius-value">12px</span><span class="radius-name">md</span></div>
+        <div class="radius-box" style="border-radius: 16px;"><span class="radius-value">16px</span><span class="radius-name">lg / xl</span></div>
+        <div class="radius-box" style="border-radius: 24px;"><span class="radius-value">24px</span><span class="radius-name">2xl</span></div>
+        <div class="radius-box" style="border-radius: 50px;"><span class="radius-value">50px</span><span class="radius-name">full</span></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 class="section-title mt-48">Sombras</h2>
+      <div class="grid-4" style="gap: 32px;">
+        <div class="shadow-box" style="box-shadow: var(--shadow-sm);"><div class="shadow-name">Shadow SM</div><div class="shadow-value">Cards reposo</div></div>
+        <div class="shadow-box" style="box-shadow: var(--shadow-md);"><div class="shadow-name">Shadow MD</div><div class="shadow-value">Dropdowns</div></div>
+        <div class="shadow-box" style="box-shadow: var(--shadow-lg);"><div class="shadow-name">Shadow LG</div><div class="shadow-value">Cards hover</div></div>
+        <div class="shadow-box" style="box-shadow: var(--shadow-xl);"><div class="shadow-name">Shadow XL</div><div class="shadow-value">Modales</div></div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       09 — NAVEGACION & FOOTER
+       ═══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-label">09 — Navegacion & Footer</div>
+    <h2 class="section-title">Estructura del sitio</h2>
+    <p class="section-desc">Nav sticky con blur. Footer oscuro con 4 columnas.</p>
+
+    <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 20px;">Navegacion</h3>
+    <div class="nav-demo mb-48">
+      <div class="nav-demo-bar">
+        <span style="font-family: var(--font-display); font-weight: 700; font-size: 20px;">Sacs</span>
+        <div class="flex gap-16 items-center" style="gap: 32px;">
+          <span style="font-size: 15px; font-weight: 500; color: var(--color-text-secondary);">Producto</span>
+          <span style="font-size: 15px; font-weight: 500; color: var(--color-text-secondary);">Precios</span>
+          <span style="font-size: 15px; font-weight: 500; color: var(--color-text-secondary);">Casos de Exito</span>
+          <span style="font-size: 15px; font-weight: 500; color: var(--color-text-secondary);">Blog</span>
+          <span class="btn btn-primary btn-sm">Agenda una reunion</span>
+        </div>
+      </div>
+      <div class="nav-demo-body">
+        72px de alto · Fondo con backdrop-blur · Border sutil inferior · Logo + links + CTA
+      </div>
+    </div>
+
+    <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 20px;">Footer</h3>
+    <div class="footer-demo">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand">Sacs</div>
+          <p class="footer-desc">El sistema operativo del comercio consciente. Tecnologia con alma mexicana.</p>
+        </div>
+        <div>
+          <div class="footer-col-title">Producto</div>
+          <a href="#" class="footer-link">Punto de Venta</a>
+          <a href="#" class="footer-link">Inventario</a>
+          <a href="#" class="footer-link">E-commerce</a>
+          <a href="#" class="footer-link">SACS AI</a>
+          <a href="#" class="footer-link">Reportes</a>
+        </div>
+        <div>
+          <div class="footer-col-title">Empresa</div>
+          <a href="#" class="footer-link">Nosotros</a>
+          <a href="#" class="footer-link">Manifiesto</a>
+          <a href="#" class="footer-link">Casos de Exito</a>
+          <a href="#" class="footer-link">Blog</a>
+          <a href="#" class="footer-link">Carreras</a>
+        </div>
+        <div>
+          <div class="footer-col-title">Soporte</div>
+          <a href="#" class="footer-link">Centro de Ayuda</a>
+          <a href="#" class="footer-link">Contacto</a>
+          <a href="#" class="footer-link">WhatsApp</a>
+          <a href="#" class="footer-link">Status</a>
+        </div>
+      </div>
+      <div style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 40px; padding-top: 24px; display: flex; justify-content: space-between;">
+        <span style="font-size: 12px; color: rgba(255,255,255,0.4);">2026 Sacs. Todos los derechos reservados.</span>
+        <div class="flex gap-16">
+          <a href="#" class="footer-link" style="margin: 0; font-size: 12px;">Terminos</a>
+          <a href="#" class="footer-link" style="margin: 0; font-size: 12px;">Privacidad</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       10 — REFERENCIAS
+       ═══════════════════════════════════════════ -->
+  <section class="section-cream">
+    <div class="section-inner">
+      <div class="section-label">10 — Referencias</div>
+      <h2 class="section-title">De donde viene<br>este sistema.</h2>
+
+      <div class="cards-grid">
+        <div class="card">
+          <div class="card-title">Square</div>
+          <div class="card-desc">Tipografia DM Sans (similar a Square Sans Display), botones pill solidos, spacing preciso, grid 12 columnas.</div>
+          <div class="mt-16">
+            <span class="badge-component badge-blue">Tipografia</span>
+            <span class="badge-component badge-blue">Botones</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Intercom</div>
+          <div class="card-desc">Ilustraciones painterly como fondos, textura grain (SVG feTurbulence), overlays para legibilidad, fondo crema calido.</div>
+          <div class="mt-16">
+            <span class="badge-component badge-teal">Ilustraciones</span>
+            <span class="badge-component badge-teal">Texturas</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Oaxaca</div>
+          <div class="card-desc">Paleta de colores vivos (sarapes, textiles, papel picado). Identidad mexicana autentica como elemento diferenciador.</div>
+          <div class="mt-16">
+            <span class="badge-component badge-gold">Colores</span>
+            <span class="badge-component badge-gold">Fondos CSS</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       CTA FINAL
+       ═══════════════════════════════════════════ -->
+  <section class="cta-final">
+    <div style="max-width: 700px; margin: 0 auto;">
+      <h2 class="cta-final-title">
+        Comercio que transforma.
+      </h2>
+      <p style="font-size: 20px; color: rgba(255,255,255,0.5); line-height: 1.6; margin-bottom: 40px;">
+        Unete al movimiento del Comercio Consciente. Ser. Avanzar. Crear. Sembrar.
+      </p>
+      <div class="flex gap-16" style="justify-content: center;">
+        <a class="btn btn-white btn-lg">Agenda tu reunion <span class="btn-arrow">→</span></a>
+        <a class="btn btn-secondary btn-lg">Ver el manifiesto</a>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════
+       MINI FOOTER
+       ═══════════════════════════════════════════ -->
+  <footer style="background: var(--color-bg-dark); padding: 24px 40px; text-align: center;">
+    <p style="font-size: 12px; color: rgba(255,255,255,0.3);">
+      SACS Style Guide v2.0 — Marzo 2026
+    </p>
+  </footer>
+
+</body>
+</html>

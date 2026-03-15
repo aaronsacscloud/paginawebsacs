@@ -1,0 +1,118 @@
+---
+const testimonials = [
+  {
+    quote: 'SACS nos ayudó a reducir un 40% el tiempo en cierres de caja. Antes tardábamos horas, ahora son minutos.',
+    name: 'María González',
+    role: 'Dueña, Boutique Rosa',
+    location: 'CDMX',
+  },
+  {
+    quote: 'Lo que más me gusta es que el inventario se actualiza en todas las sucursales al instante. Ya no hay confusión.',
+    name: 'Roberto Méndez',
+    role: 'Director, Calzado León',
+    location: 'Guadalajara',
+  },
+  {
+    quote: 'AXO me sugirió reordenar un producto que no tenía en el radar. Vendimos 200 piezas esa semana.',
+    name: 'Ana Castillo',
+    role: 'Gerente, ModaMX',
+    location: 'Monterrey',
+  },
+];
+---
+
+<section class="testimonials section" id="testimonials">
+  <div class="container">
+    <div class="testimonials-header">
+      <span class="eyebrow badge badge-teal">Casos reales</span>
+      <h2>Lo que dicen nuestros clientes</h2>
+    </div>
+
+    <div class="testimonials-grid">
+      {testimonials.map((t) => (
+        <div class="testimonial-card card">
+          <blockquote class="testimonial-quote">
+            <p class="body-large">"{t.quote}"</p>
+          </blockquote>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar" aria-hidden="true">
+              {t.name[0]}
+            </div>
+            <div>
+              <p class="testimonial-name">{t.name}</p>
+              <p class="testimonial-role">{t.role} · {t.location}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .testimonials-header {
+    text-align: center;
+    margin-bottom: var(--space-16);
+  }
+
+  .testimonials-header h2 {
+    margin-top: var(--space-5);
+  }
+
+  .testimonials-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .testimonials-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .testimonial-card {
+    padding: var(--space-8);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: var(--space-8);
+  }
+
+  .testimonial-quote p {
+    color: var(--color-text-primary);
+    font-style: italic;
+  }
+
+  .testimonial-author {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .testimonial-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--color-bg-secondary);
+    color: var(--color-primary);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.125rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .testimonial-name {
+    font-weight: 600;
+    color: var(--color-text-primary);
+    font-size: 0.9375rem;
+  }
+
+  .testimonial-role {
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary);
+  }
+</style>

@@ -1,0 +1,84 @@
+---
+const logos = [
+  'Boutique Rosa',
+  'Calzado León',
+  'ModaMX',
+  'Textiles Oaxaca',
+  'Urban Style',
+  'Casa Bonita',
+  'Zapatos Express',
+  'Ropa Frida',
+];
+---
+
+<section class="logos section" aria-label="Clientes que confían en SACS">
+  <div class="container">
+    <p class="eyebrow logos-label">Empresas que crecen con SACS</p>
+  </div>
+  <div class="logos-track">
+    <div class="logos-scroll">
+      {[...logos, ...logos].map((name) => (
+        <div class="logo-item" aria-hidden="true">
+          <span class="logo-placeholder">{name}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .logos {
+    padding-block: var(--space-12);
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  .logos-label {
+    color: var(--color-text-tertiary);
+    text-align: center;
+    margin-bottom: var(--space-8);
+  }
+
+  .logos-track {
+    overflow: hidden;
+    mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent);
+  }
+
+  .logos-scroll {
+    display: flex;
+    gap: var(--space-12);
+    animation: scroll 30s linear infinite;
+    width: max-content;
+  }
+
+  .logo-item {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+  }
+
+  .logo-placeholder {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: var(--color-text-tertiary);
+    white-space: nowrap;
+    opacity: 0.6;
+  }
+
+  @keyframes scroll {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .logos-scroll {
+      animation: none;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+  }
+</style>

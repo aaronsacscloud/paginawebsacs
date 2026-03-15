@@ -1,0 +1,141 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog')).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+---
+
+<BaseLayout
+  title="Blog"
+  description="Artículos sobre retail, tecnología, impacto social y cómo SACS está transformando el comercio en México."
+>
+  <section class="blog-hero section">
+    <div class="container">
+      <div class="blog-header">
+        <span class="eyebrow badge badge-blue">Blog</span>
+        <h1 class="display-l">Ideas para retailers conscientes</h1>
+        <p class="body-large">
+          Artículos sobre retail, tecnología, impacto social y el futuro
+          del comercio en México.
+        </p>
+      </div>
+
+      {posts.length > 0 ? (
+        <div class="blog-grid">
+          {posts.map((post) => (
+            <a href={`/blog/${post.id}`} class="blog-card card">
+              <div class="blog-card-content">
+                <time class="body-small" datetime={post.data.pubDate.toISOString()}>
+                  {post.data.pubDate.toLocaleDateString('es-MX', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </time>
+                <h3>{post.data.title}</h3>
+                <p>{post.data.description}</p>
+                {post.data.tags && (
+                  <div class="blog-card-tags">
+                    {post.data.tags.map((tag: string) => (
+                      <span class="badge badge-blue">{tag}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <div class="blog-empty">
+          <p class="body-large">Próximamente: artículos sobre retail, tecnología e impacto.</p>
+        </div>
+      )}
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .blog-hero {
+    padding-top: calc(72px + var(--space-16));
+  }
+
+  .blog-header {
+    max-width: 640px;
+    margin-bottom: var(--space-16);
+  }
+
+  .blog-header .badge {
+    margin-bottom: var(--space-5);
+  }
+
+  .blog-header h1 {
+    margin-bottom: var(--space-4);
+  }
+
+  .blog-header .body-large {
+    color: var(--color-text-secondary);
+  }
+
+  .blog-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .blog-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .blog-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .blog-card {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .blog-card:hover {
+    text-decoration: none;
+  }
+
+  .blog-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .blog-card time {
+    color: var(--color-text-tertiary);
+  }
+
+  .blog-card h3 {
+    font-size: 1.25rem;
+  }
+
+  .blog-card p {
+    color: var(--color-text-secondary);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+  }
+
+  .blog-card-tags {
+    display: flex;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+  }
+
+  .blog-empty {
+    text-align: center;
+    padding: var(--space-16) 0;
+    color: var(--color-text-tertiary);
+  }
+</style>
