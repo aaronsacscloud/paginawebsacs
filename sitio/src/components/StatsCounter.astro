@@ -1,0 +1,230 @@
+---
+interface Stat {
+  from: number;
+  to: number;
+  suffix: string;
+  label: string;
+  color: string;
+}
+
+const stats: Stat[] = [
+  { from: 0, to: 500, suffix: '+', label: 'Retailers conscientes', color: 'var(--color-primary)' },
+  { from: 0, to: 1.2, suffix: 'M+', label: 'Transacciones procesadas', color: 'var(--color-secondary)' },
+  { from: 0, to: 98.9, suffix: '%', label: 'Tiempo de actividad', color: 'var(--color-accent)' },
+  { from: 0, to: 15, suffix: 'min', label: 'Tiempo de setup promedio', color: 'var(--color-primary)' },
+];
+---
+
+<section class="stats-section" id="stats-section">
+  <div class="container stats-inner">
+    <div class="stats-header reveal">
+      <span class="stats-eyebrow">Impacto</span>
+      <h2 class="stats-title">Números que hablan por sí solos.</h2>
+    </div>
+
+    <div class="stats-grid reveal" style="--i:1">
+      {stats.map((stat) => (
+        <div class="stat-item" data-from={stat.from} data-to={stat.to} data-suffix={stat.suffix} data-decimals={stat.to % 1 !== 0 ? '1' : '0'}>
+          <div class="stat-value-wrapper">
+            <span class="stat-value" style={`color: ${stat.color}`}>
+              {stat.from}{stat.suffix}
+            </span>
+          </div>
+          <span class="stat-label">{stat.label}</span>
+          <div class="stat-line" style={`background: ${stat.color}`}></div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .stats-section {
+    background: var(--color-bg-dark);
+    padding: var(--space-20) 0;
+    overflow: hidden;
+  }
+
+  @media (min-width: 768px) {
+    .stats-section {
+      padding: var(--space-24) 0;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .stats-section {
+      padding: var(--space-32) 0;
+    }
+  }
+
+  .stats-inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+  }
+
+  @media (min-width: 768px) {
+    .stats-inner {
+      gap: var(--space-16);
+    }
+  }
+
+  /* ─── Header ─── */
+  .stats-header {
+    text-align: center;
+  }
+
+  .stats-eyebrow {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-text-on-dark-muted);
+    margin-bottom: var(--space-3);
+  }
+
+  .stats-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 4vw, 3rem);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.035em;
+    color: #fff;
+    max-width: 500px;
+    margin-inline: auto;
+  }
+
+  /* ─── Grid ─── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-8) var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .stats-grid {
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-8);
+    }
+  }
+
+  /* ─── Stat item ─── */
+  .stat-item {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .stat-value-wrapper {
+    overflow: hidden;
+  }
+
+  .stat-value {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    display: block;
+    /* Tabular figures for smooth counting */
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-on-dark-muted);
+    line-height: 1.3;
+    max-width: 180px;
+  }
+
+  @media (min-width: 768px) {
+    .stat-label {
+      font-size: 0.9375rem;
+    }
+  }
+
+  .stat-line {
+    width: 32px;
+    height: 2px;
+    border-radius: 1px;
+    margin-top: var(--space-3);
+    opacity: 0.5;
+  }
+
+  /* ─── Reduced motion ─── */
+  @media (prefers-reduced-motion: reduce) {
+    .stat-value {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  function easeOutExpo(t: number): number {
+    return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+  }
+
+  function animateCounter(element: HTMLElement, from: number, to: number, suffix: string, decimals: number, duration: number) {
+    const startTime = performance.now();
+
+    function update(currentTime: number) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = easeOutExpo(progress);
+      const current = from + (to - from) * eased;
+
+      const formatted = decimals > 0
+        ? current.toFixed(decimals)
+        : Math.round(current).toLocaleString('es-MX');
+
+      element.textContent = `${formatted}${suffix}`;
+
+      if (progress < 1) {
+        requestAnimationFrame(update);
+      }
+    }
+
+    requestAnimationFrame(update);
+  }
+
+  const statItems = document.querySelectorAll('.stat-item');
+
+  if (statItems.length > 0) {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const item = entry.target as HTMLElement;
+            const from = parseFloat(item.dataset.from || '0');
+            const to = parseFloat(item.dataset.to || '0');
+            const suffix = item.dataset.suffix || '';
+            const decimals = parseInt(item.dataset.decimals || '0', 10);
+            const valueEl = item.querySelector('.stat-value') as HTMLElement;
+
+            if (valueEl) {
+              if (prefersReducedMotion) {
+                const formatted = decimals > 0
+                  ? to.toFixed(decimals)
+                  : Math.round(to).toLocaleString('es-MX');
+                valueEl.textContent = `${formatted}${suffix}`;
+              } else {
+                animateCounter(valueEl, from, to, suffix, decimals, 2000);
+              }
+            }
+
+            observer.unobserve(item);
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    statItems.forEach((item) => observer.observe(item));
+  }
+</script>

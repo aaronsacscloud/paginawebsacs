@@ -12,103 +12,1834 @@ const {
   title,
   subtitle,
   primaryCTA = { label: 'Empieza gratis', href: '/contacto' },
-  secondaryCTA = { label: 'Conoce a AXO', href: '/producto#axo' },
+  secondaryCTA = { label: 'Ver demo', href: '/producto' },
 } = Astro.props;
+
+const features = [
+  { id: 'cobros', label: 'Cobra en segundos' },
+  { id: 'inventario', label: 'Controla tu inventario' },
+  { id: 'clientes', label: 'Conoce a tus clientes' },
+  { id: 'datos', label: 'Decide con datos' },
+];
+
+const useCases = [
+  {
+    id: 'pos',
+    title: 'Vende desde cualquier punto',
+    desc: 'Convierte cualquier dispositivo en un punto de venta. Cobra con tarjeta, efectivo o transferencia en segundos.',
+    cta: 'Ver más',
+  },
+  {
+    id: 'stock',
+    title: 'Controla stock sin esfuerzo',
+    desc: 'Alertas de reabasto, movimientos entre sucursales y conteo rápido desde el celular.',
+    cta: 'Ver más',
+  },
+  {
+    id: 'crm',
+    title: 'Fideliza a cada cliente',
+    desc: 'Captura datos automáticamente, segmenta por comportamiento y lanza promociones personalizadas.',
+    cta: 'Ver más',
+  },
+  {
+    id: 'reports',
+    title: 'Reportes que sí entiendes',
+    desc: 'Dashboards claros con las métricas que importan. Sin Excel, sin complicaciones.',
+    cta: 'Ver más',
+  },
+  {
+    id: 'ai',
+    title: 'IA que te asesora',
+    desc: 'AXO analiza tus datos y te sugiere qué hacer: reabastecer, lanzar promo o ajustar precio.',
+    cta: 'Ver más',
+  },
+];
 ---
 
-<section class="hero">
-  <div class="hero-bg">
-    <div class="hero-gradient"></div>
+<!-- ═══ BLOQUE 1: Banner compacto — fondo azul SACS + figuras geométricas ═══ -->
+<section class="hero-banner" id="hero-section">
+  <!-- Figuras geométricas decorativas -->
+  <div class="hero-shapes" aria-hidden="true">
+    <div class="shape shape-circle-1"></div>
+    <div class="shape shape-circle-2"></div>
+    <div class="shape shape-square-1"></div>
+    <div class="shape shape-square-2"></div>
+    <div class="shape shape-triangle-1"></div>
+    <div class="shape shape-diamond-1"></div>
+    <div class="shape shape-ring-1"></div>
+    <div class="shape shape-dots"></div>
   </div>
-  <div class="container hero-content">
-    <span class="hero-eyebrow eyebrow">{eyebrow}</span>
-    <h1 class="display-xl hero-title">{title}</h1>
-    <p class="body-large hero-subtitle">{subtitle}</p>
-    <div class="hero-ctas">
-      <a href={primaryCTA.href} class="btn btn-white btn-lg">
-        {primaryCTA.label}
-        <span class="btn-arrow" aria-hidden="true">&rarr;</span>
-      </a>
-      {secondaryCTA && (
-        <a href={secondaryCTA.href} class="btn btn-outline-white btn-lg">
-          {secondaryCTA.label}
-          <span class="btn-arrow" aria-hidden="true">&rarr;</span>
+
+  <div class="hero-banner-content">
+    <div class="hero-text">
+      <h1 class="hero-title">{title}</h1>
+      <p class="hero-subtitle">{subtitle}</p>
+      <div class="hero-ctas">
+        <a href={primaryCTA.href} class="hero-btn hero-btn-filled">
+          {primaryCTA.label}
         </a>
-      )}
+      </div>
+    </div>
+
+    <!-- Credibility badges -->
+    <div class="hero-bottom-bar">
+      <div class="hero-badges">
+        <div class="hero-badge">
+          <svg class="hero-badge-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M10 1l2.39 4.84L18 6.71l-4 3.9.94 5.5L10 13.48l-4.94 2.63.94-5.5-4-3.9 5.61-.87L10 1z" fill="#E8A838"/>
+          </svg>
+          <div>
+            <span class="hero-badge-value">4.8/5</span>
+            <span class="hero-badge-label">Google Reviews</span>
+          </div>
+        </div>
+        <div class="hero-badge-divider"></div>
+        <div class="hero-badge">
+          <svg class="hero-badge-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M6 10h8M10 7v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          <div>
+            <span class="hero-badge-value">+500</span>
+            <span class="hero-badge-label">Negocios activos</span>
+          </div>
+        </div>
+        <div class="hero-badge-divider"></div>
+        <div class="hero-badge">
+          <svg class="hero-badge-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M10 2a8 8 0 100 16 8 8 0 000-16z" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div>
+            <span class="hero-badge-value">99.9%</span>
+            <span class="hero-badge-label">Uptime</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
+<!-- ═══ BLOQUE 2: Video — arranca full, se centra al scrollear ═══ -->
+<section class="hero-video-section">
+  <div class="hero-video-sticky">
+    <div class="hero-video-card">
+      <video
+        class="hero-video"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+      >
+        <source src="/videos/hero-retailer.webm" type="video/webm" />
+        <source src="/videos/hero-retailer.mp4" type="video/mp4" />
+      </video>
+      <div class="hero-video-scrim"></div>
+
+      <!-- Checks superpuestos sobre el video -->
+      <div class="hero-video-overlay">
+        <span class="hero-video-label">Automatiza tu negocio</span>
+        <ul class="hero-checks" role="list">
+          {features.map((f, i) => (
+            <li
+              class={`hero-check-item${i === 0 ? ' active' : ''}`}
+              data-feature={f.id}
+              data-index={i}
+            >
+              <svg class="hero-check-icon" width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                <circle cx="14" cy="14" r="12" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
+                <path d="M9 14.5l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span>{f.label}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <!-- Overlay mockup flotante a la derecha -->
+      <div class="hero-mockup-area">
+        <div class="hero-mockup hero-mockup-cobros active" data-overlay="cobros" aria-hidden="true">
+          <div class="mockup-card">
+            <div class="mockup-header">
+              <div class="mockup-dot" style="background:#2AB5A0"></div>
+              <span>Punto de Venta</span>
+            </div>
+            <div class="mockup-body">
+              <div class="mockup-amount">$1,247.00</div>
+              <div class="mockup-btn">Cobrar</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-mockup hero-mockup-inventario" data-overlay="inventario" aria-hidden="true">
+          <div class="mockup-card">
+            <div class="mockup-header">
+              <div class="mockup-dot" style="background:#4B7BE5"></div>
+              <span>Inventario</span>
+            </div>
+            <div class="mockup-body">
+              <div class="mockup-row"><span>SKU-041</span><span class="mockup-badge mockup-badge-ok">128 uds</span></div>
+              <div class="mockup-row"><span>SKU-087</span><span class="mockup-badge mockup-badge-low">3 uds</span></div>
+              <div class="mockup-row"><span>SKU-153</span><span class="mockup-badge mockup-badge-ok">56 uds</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-mockup hero-mockup-clientes" data-overlay="clientes" aria-hidden="true">
+          <div class="mockup-card">
+            <div class="mockup-header">
+              <div class="mockup-dot" style="background:#E8A838"></div>
+              <span>Cliente</span>
+            </div>
+            <div class="mockup-body">
+              <div class="mockup-profile">
+                <div class="mockup-avatar">M</div>
+                <div><span class="mockup-name">María López</span><span class="mockup-tag">VIP · 23 compras</span></div>
+              </div>
+              <div class="mockup-stat"><span>Ticket promedio</span><strong>$890</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-mockup hero-mockup-datos" data-overlay="datos" aria-hidden="true">
+          <div class="mockup-card">
+            <div class="mockup-header">
+              <div class="mockup-dot" style="background:#2AB5A0"></div>
+              <span>Dashboard</span>
+            </div>
+            <div class="mockup-body">
+              <div class="mockup-kpis">
+                <div><span class="mockup-kpi-val">$48.2K</span><span class="mockup-kpi-lbl">Ventas</span></div>
+                <div><span class="mockup-kpi-val">+12%</span><span class="mockup-kpi-lbl">vs semana ant.</span></div>
+              </div>
+              <svg class="mockup-chart" viewBox="0 0 120 32" preserveAspectRatio="none">
+                <path d="M0 28 Q15 22 30 20 T60 14 T90 10 T120 6 V32 H0Z" fill="rgba(42,181,160,0.15)"/>
+                <path d="M0 28 Q15 22 30 20 T60 14 T90 10 T120 6" fill="none" stroke="#2AB5A0" stroke-width="2"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- .hero-video-sticky -->
+</section>
+
+<!-- ═══ BLOQUE 2.5: Social proof — Square-style expanding cards ═══ -->
+<section class="hero-social-proof">
+  <div class="sp-header container">
+    <h2 class="sp-title">Negocios que crecen con SACS</h2>
+  </div>
+  <div class="sp-panels">
+    <article class="sp-panel active" data-panel-idx="0" style="--panel-bg: url('/images/panel-organica.jpg') center/cover">
+      <div class="sp-panel-overlay"></div>
+      <span class="sp-panel-label">Orgánica MX</span>
+      <div class="sp-panel-detail">
+        <div class="sp-panel-stat">3 sucursales</div>
+        <p class="sp-panel-quote">"En 2 semanas teníamos todo sincronizado."</p>
+        <span class="sp-panel-link">Conocer más <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </div>
+    </article>
+    <article class="sp-panel" data-panel-idx="1" style="--panel-bg: url('/images/panel-casaverde.jpg') center/cover">
+      <div class="sp-panel-overlay"></div>
+      <span class="sp-panel-label">Casa Verde</span>
+      <div class="sp-panel-detail">
+        <div class="sp-panel-stat">8 sucursales</div>
+        <p class="sp-panel-quote">"Mis cajeros lo aprendieron en un día."</p>
+        <span class="sp-panel-link">Conocer más <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </div>
+    </article>
+    <article class="sp-panel" data-panel-idx="2" style="--panel-bg: url('/images/panel-mercadosol.jpg') center/cover">
+      <div class="sp-panel-overlay"></div>
+      <span class="sp-panel-label">Mercado Sol</span>
+      <div class="sp-panel-detail">
+        <div class="sp-panel-stat">12 sucursales</div>
+        <p class="sp-panel-quote">"Vendimos 40% más con las sugerencias de AXO."</p>
+        <span class="sp-panel-link">Conocer más <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </div>
+    </article>
+    <article class="sp-panel" data-panel-idx="3" style="--panel-bg: url('/images/panel-retailmx.jpg') center/cover">
+      <div class="sp-panel-overlay"></div>
+      <span class="sp-panel-label">RetailMX</span>
+      <div class="sp-panel-detail">
+        <div class="sp-panel-stat">22 sucursales</div>
+        <p class="sp-panel-quote">"De 5 sistemas a uno solo. El ahorro es brutal."</p>
+        <span class="sp-panel-link">Conocer más <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- ═══ BLOQUE 3: Plataforma — estilo Square accordion ═══ -->
+<section class="platform-section">
+  <div class="platform-inner">
+    <!-- Columna izquierda: texto + accordion -->
+    <div class="platform-text-col">
+      <span class="platform-eyebrow">Plataforma</span>
+      <h2 class="platform-title">Todo encaja en un solo lugar.</h2>
+
+      <div class="platform-accordion">
+        {useCases.map((uc, i) => (
+          <div class={`accordion-item${i === 0 ? ' active' : ''}`} data-accordion={uc.id} data-index={i}>
+            <button class="accordion-header" type="button" aria-expanded={i === 0 ? 'true' : 'false'}>
+              <span class="accordion-label">{uc.title}</span>
+              <svg class="accordion-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <line class="icon-h" x1="4" y1="10" x2="16" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                <line class="icon-v" x1="10" y1="4" x2="10" y2="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <div class="accordion-body">
+              <p class="accordion-desc">{uc.desc}</p>
+              <a href="/producto" class="accordion-link">
+                Conocer más
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </a>
+              <!-- Progress bar -->
+              <div class="accordion-progress"><div class="accordion-progress-fill"></div></div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Columna derecha: fondo painterly + mockup card -->
+    <div class="platform-visual-col">
+      <div class="platform-bg" aria-hidden="true">
+        <div class="platform-bg-texture"></div>
+        <div class="platform-bg-blob platform-bg-blob-1"></div>
+        <div class="platform-bg-blob platform-bg-blob-2"></div>
+        <div class="platform-bg-blob platform-bg-blob-3"></div>
+      </div>
+      <div class="platform-mockup-wrapper">
+        <!-- POS mockup -->
+        <div class="platform-mockup active" data-mockup="pos">
+          <div class="pm-window">
+            <div class="pm-titlebar">
+              <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
+              <span class="pm-titlebar-text">Punto de Venta</span>
+            </div>
+            <div class="pm-content">
+              <div class="pm-grid">
+                <div class="pm-product"><div class="pm-product-img"></div><div class="pm-product-bar"></div><span>$85</span></div>
+                <div class="pm-product selected"><div class="pm-product-img"></div><div class="pm-product-bar"></div><span>$120</span></div>
+                <div class="pm-product"><div class="pm-product-img"></div><div class="pm-product-bar"></div><span>$65</span></div>
+                <div class="pm-product"><div class="pm-product-img"></div><div class="pm-product-bar"></div><span>$95</span></div>
+                <div class="pm-product"><div class="pm-product-img"></div><div class="pm-product-bar"></div><span>$140</span></div>
+                <div class="pm-product"><div class="pm-product-img"></div><div class="pm-product-bar"></div><span>$55</span></div>
+              </div>
+              <div class="pm-sidebar">
+                <div class="pm-sidebar-title">3 productos</div>
+                <div class="pm-sidebar-row"><div class="pm-sidebar-bar"></div><span>$85</span></div>
+                <div class="pm-sidebar-row"><div class="pm-sidebar-bar"></div><span>$120</span></div>
+                <div class="pm-sidebar-row"><div class="pm-sidebar-bar"></div><span>$65</span></div>
+                <div class="pm-sidebar-total"><span>Total</span><strong>$270</strong></div>
+                <div class="pm-sidebar-btn">Cobrar</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inventario mockup -->
+        <div class="platform-mockup" data-mockup="stock">
+          <div class="pm-window">
+            <div class="pm-titlebar">
+              <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
+              <span class="pm-titlebar-text">Inventario</span>
+            </div>
+            <div class="pm-content pm-content-list">
+              <div class="pm-list-header"><span>Producto</span><span>Stock</span><span>Estado</span></div>
+              <div class="pm-list-row"><span>Café Orgánico 250g</span><span>128</span><span class="pm-status-ok">En stock</span></div>
+              <div class="pm-list-row alert"><span>Miel de Agave 500ml</span><span>3</span><span class="pm-status-low">Bajo</span></div>
+              <div class="pm-list-row"><span>Jabón Artesanal</span><span>56</span><span class="pm-status-ok">En stock</span></div>
+              <div class="pm-list-row"><span>Chocolate 70%</span><span>89</span><span class="pm-status-ok">En stock</span></div>
+              <div class="pm-list-row"><span>Vela Aromática</span><span>34</span><span class="pm-status-ok">En stock</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CRM mockup -->
+        <div class="platform-mockup" data-mockup="crm">
+          <div class="pm-window">
+            <div class="pm-titlebar">
+              <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
+              <span class="pm-titlebar-text">Clientes</span>
+            </div>
+            <div class="pm-content pm-content-crm">
+              <div class="pm-crm-profile">
+                <div class="pm-crm-avatar">ML</div>
+                <div>
+                  <div class="pm-crm-name">María López</div>
+                  <div class="pm-crm-tag">VIP · 23 compras</div>
+                </div>
+              </div>
+              <div class="pm-crm-stats">
+                <div class="pm-crm-stat"><span>Ticket promedio</span><strong>$890</strong></div>
+                <div class="pm-crm-stat"><span>Última visita</span><strong>Hace 2 días</strong></div>
+                <div class="pm-crm-stat"><span>Puntos</span><strong>1,240</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reportes mockup -->
+        <div class="platform-mockup" data-mockup="reports">
+          <div class="pm-window">
+            <div class="pm-titlebar">
+              <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
+              <span class="pm-titlebar-text">Reportes</span>
+            </div>
+            <div class="pm-content pm-content-reports">
+              <div class="pm-report-kpis">
+                <div><span class="pm-kpi-val">$48.2K</span><span class="pm-kpi-label">Ventas semana</span></div>
+                <div><span class="pm-kpi-val">+12%</span><span class="pm-kpi-label">vs anterior</span></div>
+              </div>
+              <svg class="pm-chart" viewBox="0 0 400 120" preserveAspectRatio="none">
+                <path d="M0 100 Q50 85 100 75 T200 55 T300 35 T400 20 V120 H0Z" fill="rgba(42,181,160,0.12)"/>
+                <path d="M0 100 Q50 85 100 75 T200 55 T300 35 T400 20" fill="none" stroke="#2AB5A0" stroke-width="2.5"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- AXO/IA mockup -->
+        <div class="platform-mockup" data-mockup="ai">
+          <div class="pm-window">
+            <div class="pm-titlebar">
+              <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
+              <span class="pm-titlebar-text">AXO — Tu copiloto IA</span>
+            </div>
+            <div class="pm-content pm-content-chat">
+              <div class="pm-chat-msg pm-chat-ai">Las ventas subieron 12% esta semana. Te sugiero reabastecer Miel de Agave antes del fin de semana.</div>
+              <div class="pm-chat-msg pm-chat-user">Genera la orden</div>
+              <div class="pm-chat-msg pm-chat-ai">Listo, orden de compra #247 creada por 50 unidades. Llega el jueves.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- .platform-mockup-wrapper -->
+    </div><!-- .platform-visual-col -->
+  </div><!-- .platform-inner -->
+</section>
+
+<!-- ═══ BLOQUE 4: Post-hero transition ═══ -->
+<section class="post-hero">
+  <div class="container">
+    <h2 class="post-hero-title">Todo conectado en un solo sistema.</h2>
+    <p class="post-hero-subtitle">Punto de venta, inventario, clientes y reportes — trabajando juntos, no separados.</p>
+  </div>
+</section>
+
 <style>
-  .hero {
+  /* ═══════════════════════════════════════════
+     BLOQUE 1: Banner — Enterprise monocromatico
+     ═══════════════════════════════════════════ */
+
+  .hero-banner {
     position: relative;
-    min-height: 100vh;
-    min-height: 100dvh;
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    background: var(--color-bg-primary);
     overflow: hidden;
-    padding-top: 72px; /* nav height */
+    padding-top: 71px;
   }
 
-  .hero-bg {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-  }
+  .hero-shapes { display: none; }
+  .shape { display: none; }
 
-  .hero-gradient {
-    position: absolute;
-    inset: 0;
-    background: var(--gradient-hero);
-  }
-
-  .hero-content {
+  .hero-banner-content {
     position: relative;
     z-index: 2;
-    padding-block: var(--space-32);
-    max-width: 800px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    max-width: var(--max-width);
+    width: 100%;
+    margin-inline: auto;
+    padding-inline: var(--space-5);
+  }
+
+  @media (min-width: 768px) { .hero-banner-content { padding-inline: var(--space-10); } }
+  @media (min-width: 1024px) { .hero-banner-content { padding-inline: var(--space-16); } }
+
+  .hero-text {
+    padding-top: var(--space-8);
+    padding-bottom: var(--space-6);
+    max-width: 700px;
   }
 
   @media (min-width: 768px) {
-    .hero-content {
-      padding-block: var(--space-40);
+    .hero-text {
+      padding-top: var(--space-10);
+      padding-bottom: var(--space-8);
     }
   }
 
-  .hero-eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    padding: var(--space-2) var(--space-5);
-    border-radius: var(--radius-full);
-    color: rgba(255, 255, 255, 0.85);
-    margin-bottom: var(--space-8);
+  @media (min-width: 1024px) {
+    .hero-text {
+      padding-top: var(--space-12);
+      padding-bottom: var(--space-10);
+    }
   }
 
   .hero-title {
-    color: #fff;
+    font-family: var(--font-display);
+    font-size: clamp(2.75rem, 7vw, 4.75rem);
+    font-weight: 800;
+    line-height: 0.92;
+    letter-spacing: -0.04em;
+    color: var(--color-text-primary);
     margin-bottom: var(--space-6);
   }
 
   .hero-subtitle {
-    color: rgba(255, 255, 255, 0.7);
-    max-width: 560px;
+    font-size: clamp(1rem, 1.5vw, 1.175rem);
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+    max-width: 500px;
     margin-bottom: var(--space-10);
   }
 
-  .hero-ctas {
+  .hero-ctas { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+
+  .hero-btn {
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 14px 28px;
+    border-radius: var(--radius-full);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    transition: all 0.2s ease;
+    line-height: 1;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .hero-btn:hover { text-decoration: none; }
+
+  .hero-btn-filled { background: #0f0f1a; color: #fff; }
+  .hero-btn-filled:hover {
+    background: #333;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  }
+
+  /* Bottom bar — credibility badges */
+  .hero-bottom-bar {
+    padding-block: var(--space-5);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .hero-badges {
     display: flex;
-    gap: var(--space-4);
+    align-items: center;
+    gap: var(--space-5);
     flex-wrap: wrap;
   }
 
-  .btn-arrow {
-    transition: transform var(--duration-fast) ease;
+  @media (min-width: 768px) {
+    .hero-badges { gap: var(--space-8); }
   }
 
-  .btn:hover .btn-arrow {
-    transform: translateX(3px);
+  .hero-badge {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .hero-badge-icon {
+    flex-shrink: 0;
+    color: var(--color-text-tertiary);
+  }
+
+  .hero-badge-value {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    line-height: 1.2;
+  }
+
+  .hero-badge-label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary);
+    line-height: 1.2;
+  }
+
+  .hero-badge-divider {
+    width: 1px;
+    height: 28px;
+    background: rgba(0, 0, 0, 0.1);
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .hero-badge-divider { display: block; }
+  }
+
+  /* ═══════════════════════════════════════════
+     BLOQUE 2: Video — arranca full, se centra al scroll
+     ═══════════════════════════════════════════ */
+
+  .hero-video-section {
+    --vid-progress: 0;
+    background: var(--color-bg-primary);
+    /* Height = 1 viewport for card + 4 viewports for 4 features */
+    height: 500vh;
+    position: relative;
+  }
+
+  .hero-video-sticky {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* padding grows from 0 to 40px as vid-progress goes 0→1 */
+    padding: calc(var(--vid-progress) * 40px);
+    will-change: padding;
+    transition: padding 0.05s linear;
+    z-index: 1;
+  }
+
+  .hero-video-card {
+    position: relative;
+    /* border-radius grows from 0 to 24px */
+    border-radius: calc(var(--vid-progress) * 24px);
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    will-change: border-radius;
+    transition: border-radius 0.05s linear;
+  }
+
+  .hero-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .hero-video-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg,
+      rgba(26,26,46,0.82) 0%,
+      rgba(26,26,46,0.5) 35%,
+      rgba(26,26,46,0.15) 60%,
+      transparent 100%
+    );
+    z-index: 1;
+  }
+
+  /* Checks superpuestos */
+  .hero-video-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: var(--space-8) var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .hero-video-overlay { padding: var(--space-10) var(--space-10); }
+  }
+
+  @media (min-width: 1024px) {
+    .hero-video-overlay { padding: var(--space-12) var(--space-16); }
+  }
+
+  .hero-video-label {
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: var(--space-5);
+  }
+
+  @media (min-width: 768px) {
+    .hero-video-label { font-size: 1rem; }
+  }
+
+  .hero-checks {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .hero-check-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    color: rgba(255, 255, 255, 0.45);
+    font-family: var(--font-display);
+    font-size: clamp(1.125rem, 2.5vw, 1.75rem);
+    font-weight: 700;
+    line-height: 1.2;
+    cursor: pointer;
+    transition: color 0.35s ease;
+    padding: var(--space-1) 0;
+  }
+
+  .hero-check-item:hover { color: rgba(255, 255, 255, 0.7); }
+
+  .hero-check-item.active {
+    color: #fff;
+    text-shadow: 0 0 20px rgba(255,255,255,0.3);
+  }
+
+  .hero-check-icon {
+    flex-shrink: 0;
+    transition: color 0.35s ease;
+  }
+
+  .hero-check-item.active .hero-check-icon { color: var(--color-secondary); }
+
+  /* Mockup flotante */
+  .hero-mockup-area {
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    width: 280px;
+    height: 300px;
+  }
+
+  @media (min-width: 768px) {
+    .hero-mockup-area { right: 40px; width: 300px; }
+  }
+
+  @media (min-width: 1200px) {
+    .hero-mockup-area { right: 60px; width: 340px; }
+  }
+
+  @media (max-width: 767px) {
+    .hero-mockup-area { display: none; }
+  }
+
+  .hero-mockup {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    transform: translateY(-50%) scale(0.7);
+    opacity: 0;
+    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+  }
+
+  .hero-mockup.active {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+    animation: mockupPop 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes mockupPop {
+    0% { opacity: 0; transform: translateY(-40%) scale(0.5); }
+    40% { opacity: 1; transform: translateY(-52%) scale(1.06); }
+    70% { transform: translateY(-49%) scale(0.98); }
+    100% { opacity: 1; transform: translateY(-50%) scale(1); }
+  }
+
+  .mockup-card {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius-lg);
+    box-shadow:
+      0 20px 60px rgba(0,0,0,0.35),
+      0 0 0 1px rgba(255,255,255,0.5),
+      0 0 40px rgba(255,255,255,0.15);
+    width: 100%;
+    overflow: hidden;
+    transition: box-shadow 0.4s ease;
+  }
+
+  .hero-mockup.active .mockup-card {
+    box-shadow:
+      0 24px 80px rgba(0,0,0,0.4),
+      0 0 0 2px rgba(255,255,255,0.9),
+      0 0 60px rgba(255,255,255,0.2),
+      0 0 120px rgba(42,181,160,0.15);
+  }
+
+  .mockup-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a1a;
+    letter-spacing: -0.01em;
+  }
+
+  .mockup-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  .mockup-body { padding: 16px 20px; }
+
+  .mockup-amount {
+    font-family: var(--font-display);
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 14px;
+    letter-spacing: -0.03em;
+  }
+
+  .mockup-btn {
+    background: var(--color-secondary);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .mockup-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 14px;
+    color: #555;
+    font-weight: 500;
+  }
+
+  .mockup-row + .mockup-row { border-top: 1px solid rgba(0,0,0,0.06); padding-top: 10px; margin-top: 2px; }
+
+  .mockup-badge {
+    font-size: 13px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+
+  .mockup-badge-ok { background: rgba(42,181,160,0.15); color: #1a8a78; }
+  .mockup-badge-low { background: rgba(229,75,75,0.15); color: #c0392b; }
+
+  .mockup-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .mockup-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .mockup-name { display: block; font-size: 16px; font-weight: 700; color: #1a1a1a; }
+  .mockup-tag { display: block; font-size: 13px; color: #888; margin-top: 2px; }
+
+  .mockup-stat {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    color: #555;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0,0,0,0.06);
+    font-weight: 500;
+  }
+
+  .mockup-stat strong { font-size: 16px; }
+
+  .mockup-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .mockup-kpi-val { display: block; font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: #1a1a1a; letter-spacing: -0.02em; }
+  .mockup-kpi-lbl { display: block; font-size: 12px; color: #888; margin-top: 2px; }
+  .mockup-chart { width: 100%; height: 28px; }
+
+  /* ═══════════════════════════════════════════
+     BLOQUE 2.5: Social proof — expanding panels
+     ═══════════════════════════════════════════ */
+
+  .hero-social-proof {
+    background: var(--color-bg-primary);
+    padding: var(--space-16) 0 var(--space-20);
+  }
+
+  .sp-header {
+    margin-bottom: var(--space-10);
+  }
+
+  .sp-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+    font-weight: 800;
+    color: var(--color-text-primary);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  /* Panels container */
+  .sp-panels {
+    display: flex;
+    gap: 6px;
+    height: 520px;
+    padding-inline: var(--space-5);
+    max-width: 1400px;
+    margin-inline: auto;
+  }
+
+  @media (min-width: 768px) {
+    .sp-panels {
+      height: 560px;
+      gap: 8px;
+      padding-inline: var(--space-8);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .sp-panels { height: 600px; }
+  }
+
+  /* Individual panel */
+  .sp-panel {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--panel-bg) no-repeat;
+    transition: flex 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .sp-panel.active {
+    flex: 4;
+  }
+
+  @media (min-width: 768px) {
+    .sp-panel.active { flex: 3.5; }
+  }
+
+  /* Gradient overlay from bottom */
+  .sp-panel-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.6) 0%,
+      rgba(0, 0, 0, 0.15) 40%,
+      transparent 70%
+    );
+    z-index: 1;
+    transition: background 0.5s ease;
+  }
+
+  .sp-panel.active .sp-panel-overlay {
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.55) 0%,
+      rgba(0, 0, 0, 0.08) 50%,
+      transparent 70%
+    );
+  }
+
+  /* Label — always visible, large text */
+  .sp-panel-label {
+    position: absolute;
+    z-index: 2;
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.03em;
+    transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+    /* Collapsed: vertical, centered */
+    bottom: var(--space-6);
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: clamp(1.125rem, 2vw, 1.5rem);
+    white-space: nowrap;
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+  }
+
+  .sp-panel.active .sp-panel-label {
+    /* Expanded: horizontal, top-left */
+    writing-mode: horizontal-tb;
+    text-orientation: initial;
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    top: var(--space-8);
+    left: var(--space-6);
+    bottom: auto;
+    transform: none;
+  }
+
+  @media (min-width: 768px) {
+    .sp-panel.active .sp-panel-label {
+      top: var(--space-10);
+      left: var(--space-8);
+    }
+  }
+
+  /* Detail — only visible when active */
+  .sp-panel-detail {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    padding: var(--space-6);
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.5s ease 0.15s, transform 0.5s ease 0.15s;
+    pointer-events: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  @media (min-width: 768px) {
+    .sp-panel-detail { padding: var(--space-8); }
+  }
+
+  .sp-panel.active .sp-panel-detail {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .sp-panel-stat {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.02em;
+    margin-bottom: var(--space-2);
+  }
+
+  .sp-panel-quote {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0 0 var(--space-4);
+    max-width: 400px;
+  }
+
+  .sp-panel-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #fff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+    padding-bottom: 2px;
+  }
+
+  /* Mobile: stack vertically */
+  @media (max-width: 639px) {
+    .sp-panels {
+      flex-direction: column;
+      height: auto;
+    }
+
+    .sp-panel {
+      height: 80px;
+      flex: none !important;
+      transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .sp-panel.active {
+      height: 360px;
+    }
+
+    .sp-panel-label {
+      writing-mode: horizontal-tb;
+      text-orientation: initial;
+      left: var(--space-5);
+      bottom: 50%;
+      transform: translateY(50%);
+      font-size: 1.25rem;
+    }
+
+    .sp-panel.active .sp-panel-label {
+      bottom: auto;
+      top: var(--space-5);
+      left: var(--space-5);
+      transform: none;
+      font-size: 1.75rem;
+    }
+  }
+
+  /* ═══════════════════════════════════════════
+     BLOQUE 3: Plataforma — Square-style accordion
+     ═══════════════════════════════════════════ */
+
+  .platform-section {
+    background: var(--color-bg-secondary);
+    padding: var(--space-20) var(--space-5);
+  }
+
+  @media (min-width: 768px) {
+    .platform-section { padding: var(--space-24) var(--space-10); }
+  }
+
+  @media (min-width: 1024px) {
+    .platform-section { padding: var(--space-32) var(--space-16); }
+  }
+
+  .platform-inner {
+    max-width: var(--max-width);
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+  }
+
+  @media (min-width: 1024px) {
+    .platform-inner {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: var(--space-16);
+    }
+  }
+
+  /* Left column */
+  .platform-text-col {
+    flex: 1;
+    max-width: 560px;
+  }
+
+  .platform-eyebrow {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+    margin-bottom: var(--space-4);
+  }
+
+  .platform-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4.5vw, 3.25rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.035em;
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-10);
+  }
+
+  /* Accordion */
+  .platform-accordion {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .accordion-item {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .accordion-item:last-child {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .accordion-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-5) 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-size: clamp(1rem, 1.5vw, 1.1875rem);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    line-height: 1.3;
+    text-align: left;
+  }
+
+  .accordion-header:hover {
+    color: var(--color-primary);
+  }
+
+  .accordion-icon {
+    flex-shrink: 0;
+    color: var(--color-text-tertiary);
+    transition: transform 0.3s ease;
+  }
+
+  .accordion-icon .icon-v {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    transform-origin: center;
+  }
+
+  .accordion-item.active .accordion-icon .icon-v {
+    opacity: 0;
+    transform: rotate(90deg);
+  }
+
+  .accordion-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .accordion-item.active .accordion-body {
+    max-height: 200px;
+  }
+
+  .accordion-desc {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-4);
+    padding-right: var(--space-8);
+  }
+
+  .accordion-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    text-decoration: none;
+    border-bottom: 1.5px solid var(--color-text-primary);
+    padding-bottom: 1px;
+    margin-bottom: var(--space-5);
+  }
+
+  .accordion-link:hover {
+    text-decoration: none;
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  .accordion-progress {
+    height: 3px;
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: 2px;
+    margin-bottom: var(--space-2);
+    overflow: hidden;
+  }
+
+  .accordion-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--color-primary);
+    border-radius: 2px;
+  }
+
+  .accordion-item.active .accordion-progress-fill {
+    animation: accordionFill 5s linear forwards;
+  }
+
+  @keyframes accordionFill {
+    from { width: 0%; }
+    to { width: 100%; }
+  }
+
+  /* Right column — painterly background + mockup */
+  .platform-visual-col {
+    flex: 1;
+    position: relative;
+    border-radius: var(--radius-2xl);
+    overflow: hidden;
+    min-height: 480px;
+  }
+
+  @media (min-width: 768px) {
+    .platform-visual-col { min-height: 560px; }
+  }
+
+  @media (min-width: 1024px) {
+    .platform-visual-col {
+      position: sticky;
+      top: 100px;
+      min-height: 600px;
+    }
+  }
+
+  /* Neutral warm background */
+  .platform-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: linear-gradient(160deg, #e8e4dc 0%, #ddd8d0 50%, #d4cfc6 100%);
+  }
+
+  .platform-bg-texture {
+    position: absolute;
+    inset: 0;
+    opacity: 0.25;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.2) 0%, transparent 40%);
+    mix-blend-mode: overlay;
+  }
+
+  .platform-bg-blob { display: none; }
+
+  .platform-mockup-wrapper {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 520px;
+    margin: var(--space-10) auto;
+    min-height: 380px;
+  }
+
+  @media (min-width: 768px) {
+    .platform-mockup-wrapper {
+      margin: var(--space-12) auto;
+      min-height: 440px;
+    }
+  }
+
+  .platform-mockup {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    pointer-events: none;
+  }
+
+  .platform-mockup.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+    position: relative;
+  }
+
+  /* Window mockup — estilo macOS */
+  .pm-window {
+    background: #fff;
+    border-radius: var(--radius-xl);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+  }
+
+  .pm-titlebar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .pm-dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .pm-dots span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .pm-titlebar-text {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+  }
+
+  .pm-content {
+    padding: 20px;
+    display: flex;
+    gap: 16px;
+  }
+
+  /* POS grid mockup */
+  .pm-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .pm-product {
+    text-align: left;
+  }
+
+  .pm-product-img {
+    width: 100%;
+    aspect-ratio: 1;
+    background: #e8e4dc;
+    border-radius: var(--radius-md);
+    margin-bottom: 8px;
+  }
+
+  .pm-product.selected .pm-product-img {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  .pm-product-bar {
+    height: 6px;
+    width: 60%;
+    background: #e5e5e5;
+    border-radius: 3px;
+    margin-bottom: 6px;
+  }
+
+  .pm-product span {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  .pm-sidebar {
+    width: 160px;
+    flex-shrink: 0;
+    padding-left: 16px;
+    border-left: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .pm-sidebar-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-bottom: 12px;
+  }
+
+  .pm-sidebar-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+  }
+
+  .pm-sidebar-bar {
+    height: 5px;
+    width: 60px;
+    background: #e5e5e5;
+    border-radius: 3px;
+  }
+
+  .pm-sidebar-row span {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+  }
+
+  .pm-sidebar-total {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 12px;
+    margin-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    font-size: 14px;
+    color: var(--color-text-primary);
+  }
+
+  .pm-sidebar-total strong { font-weight: 700; }
+
+  .pm-sidebar-btn {
+    margin-top: 16px;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    padding: 10px;
+    border-radius: var(--radius-full);
+  }
+
+  /* Inventario list */
+  .pm-content-list {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .pm-list-header {
+    display: grid;
+    grid-template-columns: 1fr 80px 80px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .pm-list-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 80px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+    font-size: 14px;
+    color: var(--color-text-secondary);
+  }
+
+  .pm-list-row.alert { background: rgba(229, 75, 75, 0.04); }
+
+  .pm-status-ok {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1a8a78;
+    background: rgba(42, 181, 160, 0.1);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    display: inline-block;
+    width: fit-content;
+  }
+
+  .pm-status-low {
+    font-size: 12px;
+    font-weight: 600;
+    color: #c0392b;
+    background: rgba(229, 75, 75, 0.1);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    display: inline-block;
+    width: fit-content;
+  }
+
+  /* CRM */
+  .pm-content-crm {
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  .pm-crm-profile {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .pm-crm-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .pm-crm-name { font-size: 16px; font-weight: 700; color: var(--color-text-primary); }
+  .pm-crm-tag { font-size: 13px; color: var(--color-text-tertiary); margin-top: 2px; }
+
+  .pm-crm-stats {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .pm-crm-stat {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    font-size: 14px;
+    color: var(--color-text-secondary);
+  }
+
+  .pm-crm-stat strong {
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  /* Reports */
+  .pm-content-reports {
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  .pm-report-kpis {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .pm-kpi-val {
+    display: block;
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 2.5vw, 2rem);
+    font-weight: 800;
+    color: var(--color-text-primary);
+    letter-spacing: -0.02em;
+  }
+
+  .pm-kpi-label {
+    display: block;
+    font-size: 13px;
+    color: var(--color-text-tertiary);
+    margin-top: 4px;
+  }
+
+  .pm-chart {
+    width: 100%;
+    height: 100px;
+  }
+
+  /* Chat */
+  .pm-content-chat {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .pm-chat-msg {
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 12px 16px;
+    border-radius: 14px;
+    max-width: 85%;
+  }
+
+  .pm-chat-ai {
+    background: var(--color-bg-secondary);
+    color: var(--color-text-secondary);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+  }
+
+  .pm-chat-user {
+    background: var(--color-primary);
+    color: #fff;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+
+  /* ═══════════════════════════════════════════
+     BLOQUE 4: Post-hero transition
+     ═══════════════════════════════════════════ */
+
+  .post-hero {
+    padding: var(--space-24) var(--space-5);
+    text-align: center;
+    background: var(--color-bg-primary);
+  }
+
+  @media (min-width: 768px) { .post-hero { padding: var(--space-32) var(--space-10); } }
+
+  .post-hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4.5vw, 3.5rem);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.035em;
+    color: var(--color-text-primary);
+    max-width: 700px;
+    margin-inline: auto;
+    margin-bottom: var(--space-5);
+  }
+
+  .post-hero-subtitle {
+    font-size: clamp(1rem, 1.5vw, 1.25rem);
+    color: var(--color-text-secondary);
+    max-width: 540px;
+    margin-inline: auto;
+    line-height: 1.6;
+  }
+
+  /* ─── Reduced motion ─── */
+  @media (prefers-reduced-motion: reduce) {
+    .hero-check-item,
+    .hero-mockup,
+    .platform-mockup,
+    .accordion-body {
+      transition: none;
+      opacity: 1;
+      transform: none;
+    }
+
+    .accordion-item.active .accordion-progress-fill {
+      animation: none;
+      width: 100%;
+    }
+
+    .hero-video-section {
+      padding: 0 var(--space-6) var(--space-6);
+    }
+
+    .hero-video-card {
+      border-radius: var(--radius-xl);
+    }
   }
 </style>
+
+<script>
+  // ═══ Scroll-driven video transitions ═══
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const videoSection = document.querySelector<HTMLElement>('.hero-video-section');
+  const videoSticky = document.querySelector<HTMLElement>('.hero-video-sticky');
+  const checkItems = document.querySelectorAll<HTMLLIElement>('.hero-check-item');
+  const videoMockups = document.querySelectorAll<HTMLDivElement>('[data-overlay]');
+
+  function setActiveCheck(index: number) {
+    checkItems.forEach((item, i) => item.classList.toggle('active', i === index));
+    videoMockups.forEach((m) => {
+      const id = m.dataset.overlay;
+      const featureId = checkItems[index]?.dataset.feature;
+      m.classList.toggle('active', id === featureId);
+    });
+  }
+
+  if (!prefersReducedMotion && videoSection && videoSticky) {
+    let lastFeatureIdx = -1;
+
+    const onScroll = () => {
+      const rect = videoSection.getBoundingClientRect();
+      const sectionH = videoSection.offsetHeight;
+      const vh = window.innerHeight;
+      const scrolled = -rect.top;
+      const scrollable = sectionH - vh;
+
+      if (scrolled < 0 || scrolled > scrollable) {
+        if (scrolled > scrollable) {
+          videoSticky.style.setProperty('--vid-progress', '1');
+        }
+        return;
+      }
+
+      const totalProgress = scrolled / scrollable;
+
+      const contractEnd = 0.15;
+      const vidProgress = Math.min(1, totalProgress / contractEnd);
+      videoSticky.style.setProperty('--vid-progress', String(vidProgress));
+
+      const featureStart = 0.15;
+      const featureEnd = 0.92;
+      const featureProgress = Math.max(0, Math.min(1,
+        (totalProgress - featureStart) / (featureEnd - featureStart)
+      ));
+
+      const numFeatures = checkItems.length;
+      const featureIdx = Math.min(numFeatures - 1, Math.floor(featureProgress * numFeatures));
+
+      if (featureIdx !== lastFeatureIdx) {
+        setActiveCheck(featureIdx);
+        lastFeatureIdx = featureIdx;
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  } else {
+    setActiveCheck(0);
+    if (videoSticky) videoSticky.style.setProperty('--vid-progress', '1');
+  }
+
+  // ═══ Expanding panels ═══
+  const panels = document.querySelectorAll<HTMLElement>('.sp-panel');
+  if (panels.length > 0) {
+    let panelInterval: ReturnType<typeof setInterval> | null = null;
+    let activePanel = 0;
+    const PANEL_MS = 4500;
+
+    function setActivePanel(idx: number) {
+      panels.forEach((p, i) => p.classList.toggle('active', i === idx));
+      activePanel = idx;
+    }
+
+    function startPanelCycle() {
+      stopPanelCycle();
+      panelInterval = setInterval(() => {
+        setActivePanel((activePanel + 1) % panels.length);
+      }, PANEL_MS);
+    }
+
+    function stopPanelCycle() {
+      if (panelInterval) { clearInterval(panelInterval); panelInterval = null; }
+    }
+
+    panels.forEach((panel, i) => {
+      panel.addEventListener('click', () => {
+        stopPanelCycle();
+        setActivePanel(i);
+        startPanelCycle();
+      });
+    });
+
+    if (!prefersReducedMotion) startPanelCycle();
+  }
+
+  // ═══ Platform accordion ═══
+  const accordionItems = document.querySelectorAll<HTMLDivElement>('.accordion-item');
+  const platformMockups = document.querySelectorAll<HTMLDivElement>('.platform-mockup');
+
+  const accordionToMockup: Record<string, string> = {
+    pos: 'pos',
+    stock: 'stock',
+    crm: 'crm',
+    reports: 'reports',
+    ai: 'ai',
+  };
+
+  if (accordionItems.length > 0) {
+    let activeAccordion = 0;
+    let accInterval: ReturnType<typeof setInterval> | null = null;
+    const ACC_MS = 5000;
+
+    function setActiveAccordion(index: number) {
+      const ucId = accordionItems[index]?.dataset.accordion || '';
+
+      accordionItems.forEach((item, i) => {
+        const isActive = i === index;
+        item.classList.toggle('active', isActive);
+        const btn = item.querySelector('.accordion-header');
+        if (btn) btn.setAttribute('aria-expanded', String(isActive));
+      });
+
+      const mockupId = accordionToMockup[ucId] || '';
+      platformMockups.forEach((m) => m.classList.toggle('active', m.dataset.mockup === mockupId));
+
+      activeAccordion = index;
+    }
+
+    function startAccCycle() {
+      stopAccCycle();
+      accInterval = setInterval(() => {
+        setActiveAccordion((activeAccordion + 1) % accordionItems.length);
+      }, ACC_MS);
+    }
+
+    function stopAccCycle() {
+      if (accInterval) { clearInterval(accInterval); accInterval = null; }
+    }
+
+    accordionItems.forEach((item, i) => {
+      const header = item.querySelector('.accordion-header');
+      if (header) {
+        header.addEventListener('click', () => {
+          stopAccCycle();
+          setActiveAccordion(i);
+          startAccCycle();
+        });
+      }
+    });
+
+    if (!prefersReducedMotion) startAccCycle();
+    setActiveAccordion(0);
+  }
+</script>

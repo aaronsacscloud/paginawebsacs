@@ -1,0 +1,260 @@
+---
+interface Industry {
+  title: string;
+  description: string;
+  icon: string;
+  accentColor: string;
+  bgPattern: string;
+}
+
+const industries: Industry[] = [
+  {
+    title: 'Tiendas & Boutiques',
+    description: 'Inventario multi-sucursal, programa de lealtad y punto de venta rápido.',
+    icon: 'store',
+    accentColor: 'var(--color-primary)',
+    bgPattern: '#4B7BE5',
+  },
+  {
+    title: 'Cafeterías & Restaurantes',
+    description: 'Comandas por mesa, control de insumos y análisis de platillos más vendidos.',
+    icon: 'cafe',
+    accentColor: 'var(--color-accent)',
+    bgPattern: '#E8A838',
+  },
+  {
+    title: 'Servicios & Bienestar',
+    description: 'Agenda de citas, historial de clientes y cobros recurrentes automatizados.',
+    icon: 'service',
+    accentColor: 'var(--color-secondary)',
+    bgPattern: '#2AB5A0',
+  },
+];
+---
+
+<section class="industries">
+  <div class="container">
+    <div class="industries-header reveal">
+      <span class="industries-eyebrow">Industrias</span>
+      <h2 class="industries-title">Diseñado para tu tipo de negocio.</h2>
+      <p class="industries-desc">SACS se adapta a tiendas de ropa, cafeterías, boutiques y más.</p>
+    </div>
+    <div class="industries-grid">
+      {industries.map((industry, i) => (
+        <a class="industry-card reveal" style={`--i:${i}; --card-accent:${industry.bgPattern}`} href="/casos-de-exito">
+          <div class="industry-visual">
+            {industry.icon === 'store' && (
+              <svg class="industry-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            )}
+            {industry.icon === 'cafe' && (
+              <svg class="industry-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/>
+                <line x1="6" y1="1" x2="6" y2="4"/>
+                <line x1="10" y1="1" x2="10" y2="4"/>
+                <line x1="14" y1="1" x2="14" y2="4"/>
+              </svg>
+            )}
+            {industry.icon === 'service' && (
+              <svg class="industry-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            )}
+            <div class="industry-visual-glow"></div>
+            <div class="industry-visual-pattern"></div>
+          </div>
+          <div class="industry-text">
+            <h3 class="industry-card-title">{industry.title}</h3>
+            <p class="industry-card-desc">{industry.description}</p>
+            <span class="industry-link">
+              Ver solución
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </span>
+          </div>
+        </a>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .industries {
+    background: var(--color-bg-secondary);
+    padding: var(--space-20) 0;
+  }
+
+  @media (min-width: 768px) {
+    .industries {
+      padding: var(--space-24) 0;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .industries {
+      padding: var(--space-32) 0;
+    }
+  }
+
+  /* ─── Header ─── */
+  .industries-header {
+    text-align: center;
+    margin-bottom: var(--space-12);
+  }
+
+  @media (min-width: 768px) {
+    .industries-header {
+      margin-bottom: var(--space-16);
+    }
+  }
+
+  .industries-eyebrow {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+    margin-bottom: var(--space-3);
+  }
+
+  .industries-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 4vw, 3rem);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.035em;
+    color: var(--color-text-primary);
+    max-width: 500px;
+    margin-inline: auto;
+    margin-bottom: var(--space-4);
+  }
+
+  .industries-desc {
+    font-size: clamp(0.9375rem, 1.2vw, 1.0625rem);
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+    max-width: 420px;
+    margin-inline: auto;
+  }
+
+  /* ─── Grid ─── */
+  .industries-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 768px) {
+    .industries-grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-8);
+    }
+  }
+
+  /* ─── Card ─── */
+  .industry-card {
+    background: var(--color-bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border-light);
+    overflow: hidden;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .industry-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+    text-decoration: none;
+  }
+
+  .industry-visual {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--card-accent) 6%, #fafaf8);
+  }
+
+  .industry-icon {
+    position: relative;
+    z-index: 1;
+    color: var(--card-accent);
+    opacity: 0.7;
+  }
+
+  .industry-visual-glow {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: var(--card-accent);
+    opacity: 0.08;
+    top: -30%;
+    right: -15%;
+    filter: blur(50px);
+  }
+
+  .industry-visual-pattern {
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle 1.5px at 25% 35%, var(--card-accent) 0%, transparent 100%),
+      radial-gradient(circle 1.5px at 65% 65%, var(--card-accent) 0%, transparent 100%),
+      radial-gradient(circle 1.5px at 80% 25%, var(--card-accent) 0%, transparent 100%);
+    opacity: 0.15;
+  }
+
+  .industry-text {
+    padding: var(--space-6) var(--space-6) var(--space-8);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    flex: 1;
+  }
+
+  .industry-card-title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    letter-spacing: -0.02em;
+  }
+
+  .industry-card-desc {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+  }
+
+  .industry-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin-top: auto;
+    padding-top: var(--space-3);
+    transition: gap 0.2s ease;
+  }
+
+  .industry-card:hover .industry-link {
+    gap: 10px;
+  }
+
+  /* ─── Reduced motion ─── */
+  @media (prefers-reduced-motion: reduce) {
+    .industry-card:hover {
+      transform: none;
+    }
+  }
+</style>

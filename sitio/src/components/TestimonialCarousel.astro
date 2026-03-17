@@ -1,0 +1,212 @@
+---
+interface Testimonial {
+  quote: string;
+  name: string;
+  role: string;
+  initials: string;
+  color: string;
+}
+
+const testimonials: Testimonial[] = [
+  {
+    quote: 'SACS nos permitió pasar de Excel a un sistema real en 15 minutos. Ahora tenemos visibilidad total de nuestras 3 sucursales.',
+    name: 'Ana Rodríguez',
+    role: 'Boutique La Paloma, CDMX',
+    initials: 'AR',
+    color: 'var(--color-primary)',
+  },
+  {
+    quote: 'El módulo de reportes cambió cómo tomamos decisiones. Antes adivinábamos, ahora sabemos exactamente qué productos mover.',
+    name: 'Carlos Mendoza',
+    role: 'Café Orgánico, Guadalajara',
+    initials: 'CM',
+    color: 'var(--color-secondary)',
+  },
+  {
+    quote: 'AXO nos sugirió reducir el pedido de un producto que siempre sobraba. Ahorramos $8,000 el primer mes.',
+    name: 'Lucía Herrera',
+    role: 'Herrera & Co., Monterrey',
+    initials: 'LH',
+    color: 'var(--color-accent)',
+  },
+];
+---
+
+<section class="testimonials">
+  <div class="container">
+    <div class="testimonials-header reveal">
+      <span class="testimonials-eyebrow">Clientes</span>
+      <h2 class="testimonials-title">Lo que dicen quienes ya usan SACS.</h2>
+    </div>
+    <div class="testimonials-track">
+      {testimonials.map((t, i) => (
+        <div class="testimonial-card reveal" style={`--i:${i}`}>
+          <div class="testimonial-stars" aria-label="5 estrellas">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          </div>
+          <blockquote class="testimonial-quote">"{t.quote}"</blockquote>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar" style={`background:${t.color}`}>{t.initials}</div>
+            <div class="testimonial-info">
+              <span class="testimonial-name">{t.name}</span>
+              <span class="testimonial-role">{t.role}</span>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .testimonials {
+    background: var(--color-bg-card);
+    padding: var(--space-20) 0;
+  }
+
+  @media (min-width: 768px) {
+    .testimonials {
+      padding: var(--space-24) 0;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .testimonials {
+      padding: var(--space-32) 0;
+    }
+  }
+
+  /* ─── Header ─── */
+  .testimonials-header {
+    text-align: center;
+    margin-bottom: var(--space-12);
+  }
+
+  @media (min-width: 768px) {
+    .testimonials-header {
+      margin-bottom: var(--space-16);
+    }
+  }
+
+  .testimonials-eyebrow {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+    margin-bottom: var(--space-3);
+  }
+
+  .testimonials-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 4vw, 3rem);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.035em;
+    color: var(--color-text-primary);
+    max-width: 500px;
+    margin-inline: auto;
+  }
+
+  /* ─── Track ─── */
+  .testimonials-track {
+    display: flex;
+    gap: var(--space-6);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: var(--space-2);
+    scrollbar-width: none;
+  }
+
+  .testimonials-track::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .testimonials-track {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      overflow: visible;
+      scroll-snap-type: none;
+    }
+  }
+
+  /* ─── Card ─── */
+  .testimonial-card {
+    background: var(--color-bg-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-8);
+    border: 1px solid var(--color-border-light);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    min-width: 300px;
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
+
+  @media (min-width: 768px) {
+    .testimonial-card {
+      min-width: unset;
+    }
+  }
+
+  .testimonial-stars {
+    display: flex;
+    gap: 2px;
+    color: var(--color-accent);
+  }
+
+  .testimonial-quote {
+    font-size: clamp(1rem, 1.5vw, 1.125rem);
+    line-height: 1.6;
+    color: var(--color-text-primary);
+    font-weight: 500;
+    margin: 0;
+    flex: 1;
+  }
+
+  .testimonial-author {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border-light);
+  }
+
+  .testimonial-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .testimonial-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .testimonial-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+
+  .testimonial-role {
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary);
+  }
+</style>

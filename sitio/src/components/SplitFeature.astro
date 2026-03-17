@@ -1,0 +1,388 @@
+---
+---
+
+<section class="split-feature">
+  <div class="container">
+    <!-- Bloque 1: visual izq, texto der -->
+    <div class="split-row reveal">
+      <div class="split-visual reveal-child" style="--i:0">
+        <div class="split-mockup">
+          <div class="split-mock-topbar">
+            <div class="split-mock-dots"><span></span><span></span><span></span></div>
+            <span>Punto de Venta</span>
+          </div>
+          <div class="split-mock-body split-mock-pos">
+            <div class="split-mock-products">
+              <div class="split-mock-product"><div class="smp-img" style="background:#e8ddd0"></div><div class="smp-price">$85</div></div>
+              <div class="split-mock-product selected"><div class="smp-img" style="background:#d4c4a8"></div><div class="smp-price">$120</div></div>
+              <div class="split-mock-product"><div class="smp-img" style="background:#c8b898"></div><div class="smp-price">$65</div></div>
+              <div class="split-mock-product"><div class="smp-img" style="background:#ddd4c4"></div><div class="smp-price">$95</div></div>
+            </div>
+            <div class="split-mock-cart">
+              <div class="split-mock-cart-line"><span></span><span>$85</span></div>
+              <div class="split-mock-cart-line"><span></span><span>$120</span></div>
+              <div class="split-mock-cart-total"><span>Total</span><span>$205</span></div>
+              <div class="split-mock-cart-btn">Cobrar</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="split-content reveal-child" style="--i:1">
+        <span class="split-eyebrow">Vende donde sea</span>
+        <h2 class="split-title">Cobra en segundos, desde cualquier dispositivo.</h2>
+        <p class="split-desc">Tablet, celular o computadora. Acepta todos los métodos de pago y sincroniza al instante con tu inventario.</p>
+        <a class="split-link" href="/producto#pos">
+          Conocer más
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Bloque 2: texto izq, visual der (invertido) -->
+    <div class="split-row reverse reveal">
+      <div class="split-visual reveal-child" style="--i:1">
+        <div class="split-mockup">
+          <div class="split-mock-topbar">
+            <div class="split-mock-dots"><span></span><span></span><span></span></div>
+            <span>Reportes</span>
+          </div>
+          <div class="split-mock-body split-mock-dashboard">
+            <div class="split-mock-kpis">
+              <div class="split-mock-kpi">
+                <span class="smk-label">Ventas hoy</span>
+                <span class="smk-value">$24,850</span>
+                <span class="smk-change up">+12%</span>
+              </div>
+              <div class="split-mock-kpi">
+                <span class="smk-label">Transacciones</span>
+                <span class="smk-value">187</span>
+                <span class="smk-change up">+8%</span>
+              </div>
+              <div class="split-mock-kpi">
+                <span class="smk-label">Margen</span>
+                <span class="smk-value">38.2%</span>
+                <span class="smk-change down">-1.2%</span>
+              </div>
+            </div>
+            <div class="split-mock-chart">
+              <svg viewBox="0 0 300 60" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="splitChartGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#4B7BE5" stop-opacity="0.2"/>
+                    <stop offset="100%" stop-color="#4B7BE5" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0 45 Q25 40 50 35 T100 28 T150 32 T200 20 T250 18 T300 12 V60 H0Z" fill="url(#splitChartGrad)"/>
+                <path d="M0 45 Q25 40 50 35 T100 28 T150 32 T200 20 T250 18 T300 12" fill="none" stroke="#4B7BE5" stroke-width="1.5"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="split-content reveal-child" style="--i:0">
+        <span class="split-eyebrow">Decide con datos</span>
+        <h2 class="split-title">Métricas claras, decisiones inteligentes.</h2>
+        <p class="split-desc">Dashboards en tiempo real con ventas, márgenes y tendencias por hora. Todo lo que necesitas para tomar mejores decisiones.</p>
+        <a class="split-link" href="/producto#reportes">
+          Conocer más
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .split-feature {
+    background: var(--color-bg-card);
+    padding: var(--space-20) 0;
+  }
+
+  @media (min-width: 768px) {
+    .split-feature {
+      padding: var(--space-24) 0;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .split-feature {
+      padding: var(--space-32) 0;
+    }
+  }
+
+  .split-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-10);
+    align-items: center;
+  }
+
+  .split-row + .split-row {
+    margin-top: var(--space-20);
+  }
+
+  @media (min-width: 768px) {
+    .split-row {
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-16);
+    }
+
+    .split-row + .split-row {
+      margin-top: var(--space-32);
+    }
+  }
+
+  @media (min-width: 768px) {
+    .split-row.reverse .split-visual {
+      order: 2;
+    }
+    .split-row.reverse .split-content {
+      order: 1;
+    }
+  }
+
+  /* ─── Content ─── */
+  .split-eyebrow {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .split-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 3.5vw, 2.75rem);
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: -0.035em;
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .split-desc {
+    font-size: clamp(0.9375rem, 1.2vw, 1.0625rem);
+    line-height: 1.65;
+    color: var(--color-text-secondary);
+    max-width: 440px;
+    margin-bottom: var(--space-6);
+  }
+
+  .split-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    text-decoration: none;
+    border-bottom: 1.5px solid var(--color-text-primary);
+    padding-bottom: 2px;
+    transition: gap 0.2s ease;
+  }
+
+  .split-link:hover {
+    gap: 10px;
+    text-decoration: none;
+  }
+
+  /* ─── Visual / Mockup ─── */
+  .split-mockup {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--color-border-light);
+    background: #fff;
+  }
+
+  .split-mock-topbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #f7f7f7;
+    border-bottom: 1px solid #eee;
+    font-size: 11px;
+    font-weight: 500;
+    color: #999;
+  }
+
+  .split-mock-dots {
+    display: flex;
+    gap: 5px;
+  }
+
+  .split-mock-dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .split-mock-dots span:nth-child(1) { background: #ff5f57; }
+  .split-mock-dots span:nth-child(2) { background: #ffbd2e; }
+  .split-mock-dots span:nth-child(3) { background: #28c840; }
+
+  .split-mock-body {
+    padding: 16px;
+    background: #fafaf8;
+  }
+
+  /* POS mockup */
+  .split-mock-pos {
+    display: flex;
+    gap: 12px;
+  }
+
+  .split-mock-products {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .split-mock-product {
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.06);
+  }
+
+  .split-mock-product.selected {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 1px var(--color-primary);
+  }
+
+  .smp-img {
+    aspect-ratio: 1;
+  }
+
+  .smp-price {
+    font-size: 10px;
+    font-weight: 700;
+    color: #1a1a1a;
+    padding: 6px 8px;
+    font-family: var(--font-display);
+  }
+
+  .split-mock-cart {
+    width: 140px;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.06);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .split-mock-cart-line {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #666;
+  }
+
+  .split-mock-cart-line span:first-child {
+    width: 50px;
+    height: 6px;
+    background: #e5e5e5;
+    border-radius: 3px;
+    align-self: center;
+  }
+
+  .split-mock-cart-line span:last-child {
+    font-weight: 600;
+    color: #1a1a1a;
+    font-family: var(--font-display);
+  }
+
+  .split-mock-cart-total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 700;
+    color: #1a1a1a;
+    border-top: 1px solid #eee;
+    padding-top: 8px;
+    font-family: var(--font-display);
+  }
+
+  .split-mock-cart-btn {
+    background: var(--color-primary);
+    color: #fff;
+    text-align: center;
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: auto;
+  }
+
+  /* Dashboard mockup */
+  .split-mock-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .split-mock-kpis {
+    display: flex;
+    gap: 8px;
+  }
+
+  .split-mock-kpi {
+    flex: 1;
+    background: #fff;
+    border-radius: 8px;
+    padding: 10px;
+    border: 1px solid rgba(0,0,0,0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .smk-label {
+    font-size: 9px;
+    color: #999;
+  }
+
+  .smk-value {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+
+  .smk-change {
+    font-size: 9px;
+    font-weight: 600;
+  }
+
+  .smk-change.up { color: var(--color-secondary); }
+  .smk-change.down { color: var(--color-error); }
+
+  .split-mock-chart {
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.06);
+    padding: 14px;
+    height: 80px;
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .split-mock-chart svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ─── Reduced motion ─── */
+  @media (prefers-reduced-motion: reduce) {
+    .split-mockup {
+      transition: none;
+    }
+  }
+</style>

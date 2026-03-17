@@ -39,7 +39,8 @@
   --color-border-on-dark:        rgba(255, 255, 255, 0.1);
 
   /* ─── Typography ─── */
-  --font-display:  'Space Grotesk', sans-serif;
+  --font-display:  'Sora', sans-serif;
+  --font-logo:     'Clash Display', sans-serif;
   --font-body:     'Plus Jakarta Sans', sans-serif;
 
   /* ─── Spacing (8px base) ─── */
@@ -147,35 +148,36 @@ a:hover {
 
 h1, h2, h3, h4 {
   color: var(--color-text-primary);
-  font-family: var(--font-body);
+  font-family: var(--font-display);
   font-weight: 700;
 }
 
 .display-xl {
   font-family: var(--font-display);
   font-size: clamp(2.75rem, 6vw, 5rem); /* 44px → 80px */
-  font-weight: 700;
-  line-height: 0.95;
-  letter-spacing: -0.04em;
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.05em;
 }
 
 .display-l {
   font-family: var(--font-display);
   font-size: clamp(2.25rem, 5vw, 4rem); /* 36px → 64px */
-  font-weight: 700;
-  line-height: 1.0;
-  letter-spacing: -0.035em;
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
 }
 
 h1 {
   font-size: clamp(2rem, 4vw, 3rem); /* 32px → 48px */
+  font-weight: 800;
   line-height: 1.1;
   letter-spacing: -0.03em;
 }
 
 h2 {
   font-size: clamp(1.75rem, 3vw, 2.25rem); /* 28px → 36px */
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.15;
   letter-spacing: -0.02em;
 }

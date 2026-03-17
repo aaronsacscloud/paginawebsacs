@@ -1,0 +1,475 @@
+---
+interface ScrollCard {
+  number: string;
+  title: string;
+  description: string;
+  color: string;
+  icon: string;
+}
+
+const cards: ScrollCard[] = [
+  {
+    number: '01',
+    title: 'Punto de Venta',
+    description: 'Cobra desde cualquier dispositivo. Efectivo, tarjeta, QR — todo sincronizado en tiempo real con tu inventario.',
+    color: '#4B7BE5',
+    icon: 'pos',
+  },
+  {
+    number: '02',
+    title: 'Inventario',
+    description: 'Controla stock en múltiples ubicaciones. Alertas automáticas, traspasos y conteos cíclicos sin esfuerzo.',
+    color: '#2AB5A0',
+    icon: 'inv',
+  },
+  {
+    number: '03',
+    title: 'CRM',
+    description: 'Conoce a cada cliente por nombre. Historial de compras, segmentos inteligentes y campañas que convierten.',
+    color: '#E8A838',
+    icon: 'crm',
+  },
+  {
+    number: '04',
+    title: 'Reportes',
+    description: 'Dashboards en tiempo real. Ventas, márgenes, tendencias — la información que necesitas para decidir mejor.',
+    color: '#4B7BE5',
+    icon: 'rep',
+  },
+  {
+    number: '05',
+    title: 'AXO — IA',
+    description: 'Tu copiloto de inteligencia artificial. Predice demanda, sugiere reabastecimiento y detecta anomalías antes que tú.',
+    color: '#2AB5A0',
+    icon: 'axo',
+  },
+];
+
+const totalCards = String(cards.length).padStart(2, '0');
+---
+
+<section class="hscroll" id="hscroll">
+  <div class="hscroll-sticky">
+    <!-- Header -->
+    <div class="hscroll-header container reveal">
+      <div class="hscroll-header-text">
+        <span class="hscroll-eyebrow">Plataforma</span>
+        <h2 class="hscroll-title">Un sistema,<br />cinco superpoderes.</h2>
+      </div>
+      <div class="hscroll-counter">
+        <span class="hscroll-counter-current" id="hscroll-counter-current">01</span>
+        <span class="hscroll-counter-sep">/</span>
+        <span class="hscroll-counter-total">{totalCards}</span>
+      </div>
+    </div>
+
+    <!-- Cards track -->
+    <div class="hscroll-track" id="hscroll-track">
+      {cards.map((card) => (
+        <div class="hscroll-card" data-number={card.number}>
+          <div class="hscroll-card-inner" style={`--card-color: ${card.color}`}>
+            <!-- Visual area -->
+            <div class="hscroll-card-visual">
+              <div class="hscroll-card-bg">
+                <div class="hscroll-card-glow"></div>
+                <div class="hscroll-card-pattern"></div>
+              </div>
+              <div class="hscroll-card-icon">
+                {card.icon === 'pos' && (
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                )}
+                {card.icon === 'inv' && (
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>
+                )}
+                {card.icon === 'crm' && (
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+                )}
+                {card.icon === 'rep' && (
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                )}
+                {card.icon === 'axo' && (
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a4 4 0 014 4v1a1 1 0 001 1h1a4 4 0 010 8h-1a1 1 0 00-1 1v1a4 4 0 01-8 0v-1a1 1 0 00-1-1H6a4 4 0 010-8h1a1 1 0 001-1V6a4 4 0 014-4z"/></svg>
+                )}
+              </div>
+              <div class="hscroll-card-number">{card.number}</div>
+            </div>
+            <!-- Text area -->
+            <div class="hscroll-card-text">
+              <h3 class="hscroll-card-title">{card.title}</h3>
+              <p class="hscroll-card-desc">{card.description}</p>
+              <a href={`/producto#${card.icon === 'pos' ? 'pos' : card.icon === 'inv' ? 'inventario' : card.icon === 'crm' ? 'crm' : card.icon === 'rep' ? 'reportes' : 'axo'}`} class="hscroll-card-link">
+                Conocer más
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <!-- Progress bar -->
+    <div class="hscroll-progress container">
+      <div class="hscroll-progress-track">
+        <div class="hscroll-progress-fill" id="hscroll-progress-fill"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hscroll {
+    position: relative;
+    /* Height = viewport heights needed for scroll distance */
+    height: 400vh;
+    background: var(--color-bg-primary);
+  }
+
+  .hscroll-sticky {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding-top: 71px; /* nav height */
+  }
+
+  /* ─── Header ─── */
+  .hscroll-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding-top: var(--space-12);
+    padding-bottom: var(--space-8);
+    flex-shrink: 0;
+  }
+
+  @media (min-width: 768px) {
+    .hscroll-header {
+      padding-top: var(--space-16);
+      padding-bottom: var(--space-10);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .hscroll-header {
+      padding-top: var(--space-24);
+    }
+  }
+
+  .hscroll-eyebrow {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    margin-bottom: var(--space-3);
+  }
+
+  .hscroll-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 4vw, 3rem);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.035em;
+    color: var(--color-text-primary);
+  }
+
+  .hscroll-counter {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-family: var(--font-display);
+    flex-shrink: 0;
+  }
+
+  .hscroll-counter-current {
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    transition: color 0.3s ease;
+  }
+
+  .hscroll-counter-sep {
+    font-size: 1.25rem;
+    color: var(--color-text-tertiary);
+    font-weight: 400;
+  }
+
+  .hscroll-counter-total {
+    font-size: 1.25rem;
+    color: var(--color-text-tertiary);
+    font-weight: 500;
+  }
+
+  /* ─── Track ─── */
+  .hscroll-track {
+    display: flex;
+    gap: var(--space-5);
+    flex: 1;
+    padding: 0 var(--space-5);
+    align-items: stretch;
+    will-change: transform;
+  }
+
+  @media (min-width: 768px) {
+    .hscroll-track {
+      gap: var(--space-6);
+      padding: 0 var(--space-10);
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .hscroll-track {
+      padding: 0 var(--space-16);
+    }
+  }
+
+  /* ─── Card ─── */
+  .hscroll-card {
+    flex-shrink: 0;
+    width: 80vw;
+    max-width: 520px;
+  }
+
+  @media (min-width: 768px) {
+    .hscroll-card {
+      width: 50vw;
+      max-width: 580px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .hscroll-card {
+      width: 40vw;
+      max-width: 600px;
+    }
+  }
+
+  .hscroll-card-inner {
+    height: 100%;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border-light);
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+
+  .hscroll-card-inner:hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+    transform: translateY(-4px);
+  }
+
+  /* Visual area */
+  .hscroll-card-visual {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+  }
+
+  @media (min-width: 768px) {
+    .hscroll-card-visual {
+      height: 260px;
+    }
+  }
+
+  .hscroll-card-bg {
+    position: absolute;
+    inset: 0;
+    background: var(--card-color);
+    opacity: 0.08;
+  }
+
+  .hscroll-card-glow {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: var(--card-color);
+    opacity: 0.15;
+    top: -40%;
+    right: -20%;
+    filter: blur(60px);
+  }
+
+  .hscroll-card-pattern {
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle 1px at 20% 30%, var(--card-color) 0%, transparent 100%),
+      radial-gradient(circle 1px at 60% 70%, var(--card-color) 0%, transparent 100%),
+      radial-gradient(circle 1px at 80% 20%, var(--card-color) 0%, transparent 100%),
+      radial-gradient(circle 1px at 40% 80%, var(--card-color) 0%, transparent 100%);
+    opacity: 0.25;
+  }
+
+  .hscroll-card-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--card-color);
+    opacity: 0.7;
+  }
+
+  .hscroll-card-number {
+    position: absolute;
+    bottom: var(--space-4);
+    right: var(--space-5);
+    font-family: var(--font-display);
+    font-size: 4rem;
+    font-weight: 700;
+    color: var(--card-color);
+    opacity: 0.1;
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+
+  @media (min-width: 768px) {
+    .hscroll-card-number {
+      font-size: 5rem;
+    }
+  }
+
+  /* Text area */
+  .hscroll-card-text {
+    padding: var(--space-6) var(--space-6) var(--space-8);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    flex: 1;
+  }
+
+  @media (min-width: 768px) {
+    .hscroll-card-text {
+      padding: var(--space-8) var(--space-8) var(--space-10);
+    }
+  }
+
+  .hscroll-card-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 2vw, 1.5rem);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    letter-spacing: -0.02em;
+  }
+
+  .hscroll-card-desc {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+  }
+
+  .hscroll-card-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--card-color);
+    text-decoration: none;
+    margin-top: auto;
+    padding-top: var(--space-2);
+    transition: gap 0.2s ease;
+  }
+
+  .hscroll-card-link:hover {
+    gap: 10px;
+    text-decoration: none;
+  }
+
+  /* ─── Progress bar ─── */
+  .hscroll-progress {
+    flex-shrink: 0;
+    padding-bottom: var(--space-8);
+    padding-top: var(--space-6);
+  }
+
+  .hscroll-progress-track {
+    height: 2px;
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .hscroll-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--color-text-primary);
+    border-radius: 2px;
+    transition: width 0.1s linear;
+  }
+
+  /* ─── Reduced motion ─── */
+  @media (prefers-reduced-motion: reduce) {
+    .hscroll-card-inner:hover {
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  const section = document.getElementById('hscroll');
+  const track = document.getElementById('hscroll-track');
+  const progressFill = document.getElementById('hscroll-progress-fill');
+  const counterCurrent = document.getElementById('hscroll-counter-current');
+  const cards = document.querySelectorAll('.hscroll-card');
+
+  if (section && track && cards.length > 0) {
+    let ticking = false;
+
+    function updateScroll() {
+      const rect = section.getBoundingClientRect();
+      const sectionHeight = section.offsetHeight;
+      const viewportH = window.innerHeight;
+
+      // How far we've scrolled into the section (0 to sectionHeight - viewportH)
+      const scrolled = -rect.top;
+      const maxScroll = sectionHeight - viewportH;
+      const progress = Math.max(0, Math.min(1, scrolled / maxScroll));
+
+      // Calculate how far the track needs to move
+      const trackWidth = track.scrollWidth;
+      const visibleWidth = track.parentElement?.clientWidth || window.innerWidth;
+      const maxTranslate = trackWidth - visibleWidth + 40; // 40px buffer
+
+      const translateX = -progress * maxTranslate;
+      track.style.transform = `translateX(${translateX}px)`;
+
+      // Update progress bar
+      if (progressFill) {
+        progressFill.style.width = `${progress * 100}%`;
+      }
+
+      // Update counter
+      if (counterCurrent) {
+        const cardIndex = Math.min(
+          cards.length - 1,
+          Math.floor(progress * cards.length)
+        );
+        const num = String(cardIndex + 1).padStart(2, '0');
+        if (counterCurrent.textContent !== num) {
+          counterCurrent.textContent = num;
+        }
+      }
+    }
+
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          updateScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    });
+
+    // Initial call
+    updateScroll();
+  }
+</script>

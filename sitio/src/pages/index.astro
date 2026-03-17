@@ -1,13 +1,15 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
-import LogoScroll from '../components/LogoScroll.astro';
-import Features from '../components/Features.astro';
-import Testimonials from '../components/Testimonials.astro';
-import Stats from '../components/Stats.astro';
-import ImpactSection from '../components/ImpactSection.astro';
-import CTABanner from '../components/CTABanner.astro';
-import { axoFeatures } from '../data/home';
+import HorizontalScroller from '../components/HorizontalScroller.astro';
+import SplitFeature from '../components/SplitFeature.astro';
+import StatsCounter from '../components/StatsCounter.astro';
+import FeatureShowcase from '../components/FeatureShowcase.astro';
+import IndustryCards from '../components/IndustryCards.astro';
+import TestimonialCarousel from '../components/TestimonialCarousel.astro';
+import ImpactBanner from '../components/ImpactBanner.astro';
+import FAQAccordion from '../components/FAQAccordion.astro';
+import FinalCTA from '../components/FinalCTA.astro';
 
 const websiteSchema = {
   '@context': 'https://schema.org',
@@ -16,243 +18,91 @@ const websiteSchema = {
   url: 'https://sacs.com.mx',
   description: 'Sistema operativo empresarial para retailers conscientes en México.',
 };
-
-const softwareSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
-  name: 'SACS',
-  applicationCategory: 'BusinessApplication',
-  operatingSystem: 'Web',
-  description: 'Plataforma todo-en-uno para gestión de retail: punto de venta, inventario, CRM, reportes y asistente de IA.',
-  offers: {
-    '@type': 'AggregateOffer',
-    priceCurrency: 'MXN',
-    lowPrice: '0',
-    offerCount: '3',
-  },
-  featureList: [
-    'Punto de venta',
-    'Inventario multi-sucursal',
-    'CRM',
-    'Reportes en tiempo real',
-    'Asistente de IA (AXO)',
-    'Facturación CFDI',
-  ],
-  areaServed: {
-    '@type': 'Country',
-    name: 'MX',
-  },
-};
 ---
 
 <BaseLayout
   title="SACS — Sistema operativo para retailers conscientes"
-  description="SACS es la plataforma todo-en-uno para gestionar tu retail en México: punto de venta, inventario, CRM, reportes y un asistente de IA. El 10% de tu licencia genera impacto social."
-  structuredData={[websiteSchema, softwareSchema]}
+  description="SACS es la plataforma todo-en-uno para gestionar tu retail en México."
+  structuredData={websiteSchema}
 >
-  <!-- 01. Hero -->
   <Hero
-    eyebrow="Comercio Consciente"
-    title="Tu negocio merece crecer con propósito."
-    subtitle="SACS es el sistema operativo que transforma la manera en que gestionas tu retail. Inventarios, ventas, clientes — todo en un solo lugar."
+    eyebrow="Software para retail"
+    title="Centraliza la operación de todas tus tiendas."
+    subtitle="Inventario, ventas, eCommerce y WhatsApp — conectados en un solo sistema. Sin hojas de cálculo, sin datos dispersos."
     primaryCTA={{ label: 'Empieza gratis', href: '/contacto' }}
-    secondaryCTA={{ label: 'Conoce a AXO', href: '/producto#axo' }}
+    secondaryCTA={{ label: 'Ver demo', href: '/producto' }}
   />
-
-  <!-- 02. Logo scroll -->
-  <LogoScroll />
-
-  <!-- 03. Problema → Solución -->
-  <section class="problem-solution section">
-    <div class="container ps-grid">
-      <div class="ps-problem">
-        <span class="eyebrow eyebrow-problem">El problema</span>
-        <h2>Tu negocio crece, tu control se pierde</h2>
-        <p class="body-large">
-          Excel para inventarios, una app para ventas, otra para clientes,
-          WhatsApp para pedidos. El caos operativo frena tu crecimiento.
-        </p>
-      </div>
-      <div class="ps-solution">
-        <span class="eyebrow eyebrow-solution">La solución</span>
-        <h2>Un solo sistema que lo conecta todo</h2>
-        <p class="body-large">
-          SACS reemplaza tus herramientas dispersas con una plataforma integrada.
-          Punto de venta, inventario, CRM, reportes — con IA que te ayuda a
-          tomar mejores decisiones.
-        </p>
-      </div>
-    </div>
-  </section>
-
-  <!-- 04. Features principales -->
-  <Features />
-
-  <!-- 05. AXO AI Section -->
-  <section class="axo section" id="axo">
-    <div class="container axo-grid">
-      <div class="axo-content">
-        <span class="eyebrow badge badge-gold">Asistente de IA</span>
-        <h2>Conoce a AXO, tu asistente inteligente</h2>
-        <p class="body-large">
-          AXO es un asistente de inteligencia artificial que aprende de tu
-          negocio. Predice demanda, sugiere reabastecimiento y te ayuda a
-          tomar decisiones basadas en datos reales.
-        </p>
-        <ul class="axo-features">
-          {axoFeatures.map((f) => (
-            <li>{f}</li>
-          ))}
-        </ul>
-        <a href="/producto#axo" class="btn btn-primary">
-          Descubre AXO
-          <span aria-hidden="true">&rarr;</span>
-        </a>
-      </div>
-      <div class="axo-visual">
-        <div class="axo-placeholder">
-          <span class="axo-emoji" aria-hidden="true">🦎</span>
-          <p class="body-small axo-label">AXO — IA para retail</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 06. Testimonials -->
-  <Testimonials />
-
-  <!-- 07. Stats -->
-  <Stats />
-
-  <!-- 08. Impacto Social -->
-  <ImpactSection />
-
-  <!-- 09. CTA Final -->
-  <CTABanner />
+  <HorizontalScroller />
+  <SplitFeature />
+  <StatsCounter />
+  <FeatureShowcase />
+  <IndustryCards />
+  <TestimonialCarousel />
+  <ImpactBanner />
+  <FAQAccordion />
+  <FinalCTA />
 </BaseLayout>
 
-<style>
-  /* Problem → Solution */
-  .ps-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-12);
-  }
+<!-- Global reveal animation observer -->
+<script>
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  @media (min-width: 768px) {
-    .ps-grid {
-      grid-template-columns: 1fr 1fr;
-      gap: var(--space-16);
+  if (!prefersReducedMotion) {
+    const reveals = document.querySelectorAll('.reveal');
+
+    if (reveals.length > 0) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+      );
+
+      reveals.forEach((el) => observer.observe(el));
     }
+  } else {
+    // Immediately show all reveal elements
+    document.querySelectorAll('.reveal').forEach((el) => {
+      el.classList.add('visible');
+    });
+  }
+</script>
+
+<style is:global>
+  .reveal {
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .ps-problem,
-  .ps-solution {
-    max-width: 520px;
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
   }
 
-  .eyebrow-problem {
-    color: var(--color-error);
+  .reveal .reveal-child {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: calc(var(--i, 0) * 120ms);
   }
 
-  .eyebrow-solution {
-    color: var(--color-secondary);
+  .reveal.visible .reveal-child {
+    opacity: 1;
+    transform: translateY(0);
   }
 
-  .ps-problem .eyebrow,
-  .ps-solution .eyebrow {
-    display: block;
-    margin-bottom: var(--space-4);
-  }
-
-  .ps-problem h2,
-  .ps-solution h2 {
-    margin-bottom: var(--space-4);
-  }
-
-  .ps-problem .body-large,
-  .ps-solution .body-large {
-    color: var(--color-text-secondary);
-  }
-
-  /* AXO Section */
-  .axo {
-    background: var(--color-bg-secondary);
-  }
-
-  .axo-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-12);
-    align-items: center;
-  }
-
-  @media (min-width: 1024px) {
-    .axo-grid {
-      grid-template-columns: 1fr 1fr;
-      gap: var(--space-16);
+  @media (prefers-reduced-motion: reduce) {
+    .reveal,
+    .reveal .reveal-child {
+      opacity: 1;
+      transform: none;
+      transition: none;
     }
-  }
-
-  .axo-content .badge {
-    margin-bottom: var(--space-5);
-  }
-
-  .axo-content h2 {
-    margin-bottom: var(--space-5);
-  }
-
-  .axo-content .body-large {
-    color: var(--color-text-secondary);
-    margin-bottom: var(--space-6);
-  }
-
-  .axo-features {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    margin-bottom: var(--space-8);
-  }
-
-  .axo-features li {
-    position: relative;
-    padding-left: var(--space-6);
-    color: var(--color-text-secondary);
-  }
-
-  .axo-features li::before {
-    content: '✓';
-    position: absolute;
-    left: 0;
-    color: var(--color-secondary);
-    font-weight: 700;
-  }
-
-  .axo-visual {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .axo-placeholder {
-    width: 100%;
-    aspect-ratio: 4/3;
-    background: var(--color-bg-card);
-    border-radius: var(--radius-2xl);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-4);
-    border: 1px solid var(--color-border-light);
-  }
-
-  .axo-label {
-    color: var(--color-text-tertiary);
-  }
-
-  .axo-emoji {
-    font-size: 5rem;
   }
 </style>

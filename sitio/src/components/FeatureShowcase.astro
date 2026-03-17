@@ -1,0 +1,1065 @@
+---
+interface Feature {
+  id: string;
+  title: string;
+  description: string;
+  href: string;
+}
+
+const features: Feature[] = [
+  {
+    id: 'pos',
+    title: 'Cobra en segundos',
+    description: 'Vende desde cualquier dispositivo — tablet, celular o computadora. Acepta efectivo, tarjeta, QR y transferencias. Todo sincronizado al instante.',
+    href: '/producto#pos',
+  },
+  {
+    id: 'inventario',
+    title: 'Controla tu inventario',
+    description: 'Stock en tiempo real en todas tus ubicaciones. Alertas de reabastecimiento, traspasos entre sucursales y conteos cíclicos automáticos.',
+    href: '/producto#inventario',
+  },
+  {
+    id: 'crm',
+    title: 'Conoce a tus clientes',
+    description: 'Cada compra construye un perfil. Segmenta por comportamiento, lanza promociones personalizadas y convierte compradores en fans.',
+    href: '/producto#crm',
+  },
+  {
+    id: 'reportes',
+    title: 'Decide con datos',
+    description: 'Dashboards claros con las métricas que importan. Ventas por hora, márgenes por producto, tendencias por temporada — todo en tiempo real.',
+    href: '/producto#reportes',
+  },
+  {
+    id: 'axo',
+    title: 'Tu copiloto con IA',
+    description: 'AXO analiza tus datos y te da recomendaciones accionables. Predice demanda, detecta anomalías y genera órdenes de compra automáticas.',
+    href: '/producto#axo',
+  },
+];
+---
+
+<section class="showcase" id="feature-showcase">
+  <div class="container showcase-inner">
+    <!-- Left: header + accordion -->
+    <div class="showcase-left">
+      <div class="showcase-header reveal">
+        <span class="showcase-eyebrow">Plataforma</span>
+        <h2 class="showcase-title">Todo encaja en un solo lugar.</h2>
+      </div>
+
+      <div class="showcase-accordion" id="showcase-accordion">
+        {features.map((feature, i) => (
+          <button
+            class:list={['accordion-item', { active: i === 0 }]}
+            data-index={i}
+            data-id={feature.id}
+            aria-expanded={i === 0 ? 'true' : 'false'}
+          >
+            <div class="accordion-header">
+              <span class="accordion-title">{feature.title}</span>
+              <span class="accordion-icon" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <line x1="10" y1="4" x2="10" y2="16" class="accordion-icon-v" />
+                  <line x1="4" y1="10" x2="16" y2="10" />
+                </svg>
+              </span>
+            </div>
+            <div class="accordion-body">
+              <p class="accordion-desc">{feature.description}</p>
+              <a href={feature.href} class="accordion-link" onclick="event.stopPropagation()">
+                Conocer más
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </a>
+            </div>
+            <!-- Progress bar for active item -->
+            <div class="accordion-progress">
+              <div class="accordion-progress-fill"></div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <!-- Right: product mockups -->
+    <div class="showcase-right">
+      <div class="showcase-screen" id="showcase-screen">
+        <!-- POS mockup -->
+        <div class="mockup mockup-pos active" data-mockup="pos">
+          <div class="mock-window">
+            <div class="mock-topbar">
+              <div class="mock-dots"><span></span><span></span><span></span></div>
+              <div class="mock-tab">Punto de Venta</div>
+            </div>
+            <div class="mock-pos-body">
+              <div class="mock-pos-grid">
+                <div class="mock-product-card"><div class="mock-product-img" style="background:#e8ddd0"></div><div class="mock-product-name"></div><div class="mock-product-price">$85</div></div>
+                <div class="mock-product-card selected"><div class="mock-product-img" style="background:#d4c4a8"></div><div class="mock-product-name"></div><div class="mock-product-price">$120</div></div>
+                <div class="mock-product-card"><div class="mock-product-img" style="background:#c8b898"></div><div class="mock-product-name"></div><div class="mock-product-price">$65</div></div>
+                <div class="mock-product-card"><div class="mock-product-img" style="background:#ddd4c4"></div><div class="mock-product-name"></div><div class="mock-product-price">$95</div></div>
+                <div class="mock-product-card"><div class="mock-product-img" style="background:#e0d8c8"></div><div class="mock-product-name"></div><div class="mock-product-price">$140</div></div>
+                <div class="mock-product-card"><div class="mock-product-img" style="background:#d8cbb8"></div><div class="mock-product-name"></div><div class="mock-product-price">$55</div></div>
+              </div>
+              <div class="mock-pos-sidebar">
+                <div class="mock-cart-header"><span>3 productos</span></div>
+                <div class="mock-cart-item"><span></span><span>$85</span></div>
+                <div class="mock-cart-item"><span></span><span>$120</span></div>
+                <div class="mock-cart-item"><span></span><span>$65</span></div>
+                <div class="mock-cart-divider"></div>
+                <div class="mock-cart-total"><span>Total</span><span>$270</span></div>
+                <div class="mock-cart-btn">Cobrar</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inventario mockup -->
+        <div class="mockup mockup-inv" data-mockup="inventario">
+          <div class="mock-window">
+            <div class="mock-topbar">
+              <div class="mock-dots"><span></span><span></span><span></span></div>
+              <div class="mock-tab">Inventario</div>
+            </div>
+            <div class="mock-inv-body">
+              <div class="mock-inv-toolbar">
+                <div class="mock-search"></div>
+                <div class="mock-filter-btn"></div>
+                <div class="mock-add-btn">+ Producto</div>
+              </div>
+              <div class="mock-inv-table">
+                <div class="mock-inv-row header"><span>Producto</span><span>SKU</span><span>Stock</span><span>Estado</span></div>
+                <div class="mock-inv-row"><span class="name"></span><span class="sku"></span><span>248</span><span class="badge ok">OK</span></div>
+                <div class="mock-inv-row"><span class="name"></span><span class="sku"></span><span>12</span><span class="badge warn">Bajo</span></div>
+                <div class="mock-inv-row"><span class="name"></span><span class="sku"></span><span>89</span><span class="badge ok">OK</span></div>
+                <div class="mock-inv-row"><span class="name"></span><span class="sku"></span><span>0</span><span class="badge danger">Agotado</span></div>
+                <div class="mock-inv-row"><span class="name"></span><span class="sku"></span><span>156</span><span class="badge ok">OK</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CRM mockup -->
+        <div class="mockup mockup-crm" data-mockup="crm">
+          <div class="mock-window">
+            <div class="mock-topbar">
+              <div class="mock-dots"><span></span><span></span><span></span></div>
+              <div class="mock-tab">Clientes</div>
+            </div>
+            <div class="mock-crm-body">
+              <div class="mock-crm-profile">
+                <div class="mock-crm-avatar">MC</div>
+                <div class="mock-crm-info">
+                  <div class="mock-crm-name"></div>
+                  <div class="mock-crm-tag">Cliente frecuente</div>
+                </div>
+              </div>
+              <div class="mock-crm-stats">
+                <div class="mock-crm-stat"><span class="val">$12,450</span><span class="lbl">Total gastado</span></div>
+                <div class="mock-crm-stat"><span class="val">34</span><span class="lbl">Compras</span></div>
+                <div class="mock-crm-stat"><span class="val">$366</span><span class="lbl">Ticket prom.</span></div>
+              </div>
+              <div class="mock-crm-timeline">
+                <div class="mock-crm-event"><div class="dot"></div><span>Compra — $520</span><span class="date">Hoy</span></div>
+                <div class="mock-crm-event"><div class="dot"></div><span>Compra — $180</span><span class="date">Mar 10</span></div>
+                <div class="mock-crm-event"><div class="dot"></div><span>Se unió al programa</span><span class="date">Feb 14</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reportes mockup -->
+        <div class="mockup mockup-rep" data-mockup="reportes">
+          <div class="mock-window">
+            <div class="mock-topbar">
+              <div class="mock-dots"><span></span><span></span><span></span></div>
+              <div class="mock-tab">Reportes</div>
+            </div>
+            <div class="mock-rep-body">
+              <div class="mock-rep-kpis">
+                <div class="mock-rep-kpi"><span class="val">$148,520</span><span class="lbl">Ventas del mes</span><span class="change up">+12.4%</span></div>
+                <div class="mock-rep-kpi"><span class="val">2,847</span><span class="lbl">Transacciones</span><span class="change up">+8.1%</span></div>
+                <div class="mock-rep-kpi"><span class="val">38.2%</span><span class="lbl">Margen bruto</span><span class="change down">-1.2%</span></div>
+              </div>
+              <div class="mock-rep-chart">
+                <svg viewBox="0 0 400 100" preserveAspectRatio="none">
+                  <defs><linearGradient id="repGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4B7BE5" stop-opacity="0.2"/><stop offset="100%" stop-color="#4B7BE5" stop-opacity="0"/></linearGradient></defs>
+                  <path d="M0 70 Q30 65 60 55 T120 45 T180 50 T240 35 T300 30 T360 22 T400 18 V100 H0Z" fill="url(#repGrad)"/>
+                  <path d="M0 70 Q30 65 60 55 T120 45 T180 50 T240 35 T300 30 T360 22 T400 18" fill="none" stroke="#4B7BE5" stroke-width="2"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AXO mockup -->
+        <div class="mockup mockup-axo" data-mockup="axo">
+          <div class="mock-window mock-window-dark">
+            <div class="mock-topbar mock-topbar-dark">
+              <div class="mock-dots"><span></span><span></span><span></span></div>
+              <div class="mock-tab">AXO — Copiloto IA</div>
+            </div>
+            <div class="mock-axo-body">
+              <div class="mock-axo-msg ai">
+                <div class="mock-axo-avatar">
+                  <div class="axo-dot"></div>
+                </div>
+                <div class="mock-axo-bubble">He detectado que el SKU-4821 baja 30% cada lunes. Te sugiero reducir el pedido semanal de 50 a 35 unidades.</div>
+              </div>
+              <div class="mock-axo-msg user">
+                <div class="mock-axo-bubble user">Aplica el cambio</div>
+              </div>
+              <div class="mock-axo-msg ai">
+                <div class="mock-axo-avatar">
+                  <div class="axo-dot"></div>
+                </div>
+                <div class="mock-axo-bubble">Listo. Orden de compra #1847 actualizada. Ahorro estimado: $2,100/mes.</div>
+              </div>
+              <div class="mock-axo-input">
+                <span>Pregunta a AXO...</span>
+                <div class="mock-axo-send">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .showcase {
+    background: var(--color-bg-primary);
+    padding: var(--space-20) 0;
+  }
+
+  @media (min-width: 768px) {
+    .showcase {
+      padding: var(--space-24) 0;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .showcase {
+      padding: var(--space-32) 0;
+    }
+  }
+
+  .showcase-inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-10);
+  }
+
+  @media (min-width: 1024px) {
+    .showcase-inner {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: var(--space-16);
+    }
+  }
+
+  /* ─── Left side ─── */
+  .showcase-left {
+    flex: 1;
+    max-width: 480px;
+  }
+
+  @media (min-width: 1024px) {
+    .showcase-left {
+      position: sticky;
+      top: calc(71px + var(--space-10));
+    }
+  }
+
+  .showcase-header {
+    margin-bottom: var(--space-10);
+  }
+
+  .showcase-eyebrow {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+    margin-bottom: var(--space-3);
+  }
+
+  .showcase-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 3.5vw, 2.75rem);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.035em;
+    color: var(--color-text-primary);
+  }
+
+  /* ─── Accordion ─── */
+  .showcase-accordion {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .accordion-item {
+    display: flex;
+    flex-direction: column;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    padding: 0;
+    border-top: 1px solid var(--color-border-light);
+    font-family: var(--font-body);
+    transition: background 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .accordion-item:last-child {
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  .accordion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-5) 0;
+    gap: var(--space-4);
+  }
+
+  .accordion-title {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    transition: color 0.2s ease;
+  }
+
+  .accordion-item.active .accordion-title {
+    color: var(--color-text-primary);
+  }
+
+  .accordion-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    color: var(--color-text-tertiary);
+    transition: transform 0.3s ease;
+  }
+
+  .accordion-icon-v {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    transform-origin: center;
+  }
+
+  .accordion-item.active .accordion-icon-v {
+    opacity: 0;
+    transform: rotate(90deg);
+  }
+
+  /* Accordion body */
+  .accordion-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0 0 0 0;
+  }
+
+  .accordion-item.active .accordion-body {
+    max-height: 200px;
+    padding: 0 0 var(--space-5) 0;
+  }
+
+  .accordion-desc {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-4);
+  }
+
+  .accordion-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    text-decoration: none;
+    border-bottom: 1px solid var(--color-text-primary);
+    padding-bottom: 2px;
+    transition: gap 0.2s ease;
+  }
+
+  .accordion-link:hover {
+    gap: 10px;
+    text-decoration: none;
+  }
+
+  /* Progress bar on active item */
+  .accordion-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: transparent;
+  }
+
+  .accordion-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--color-primary);
+    border-radius: 1px;
+  }
+
+  .accordion-item.active .accordion-progress-fill {
+    animation: progressFill 6s linear forwards;
+  }
+
+  @keyframes progressFill {
+    from { width: 0%; }
+    to { width: 100%; }
+  }
+
+  /* ─── Right side: mockups ─── */
+  .showcase-right {
+    flex: 1.2;
+    position: relative;
+  }
+
+  @media (min-width: 1024px) {
+    .showcase-right {
+      position: sticky;
+      top: calc(71px + var(--space-8));
+    }
+  }
+
+  .showcase-screen {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--color-bg-secondary);
+    aspect-ratio: 4 / 3;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--color-border-light);
+  }
+
+  /* ─── Mockup shared ─── */
+  .mockup {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transform: scale(0.96);
+    transition: opacity 0.45s ease, transform 0.45s ease;
+    pointer-events: none;
+  }
+
+  .mockup.active {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+  }
+
+  .mock-window {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+  }
+
+  .mock-window-dark {
+    background: #111118;
+  }
+
+  .mock-topbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: #f7f7f7;
+    border-bottom: 1px solid #eee;
+    flex-shrink: 0;
+  }
+
+  .mock-topbar-dark {
+    background: #1a1a28;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .mock-dots {
+    display: flex;
+    gap: 5px;
+  }
+
+  .mock-dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .mock-dots span:nth-child(1) { background: #ff5f57; }
+  .mock-dots span:nth-child(2) { background: #ffbd2e; }
+  .mock-dots span:nth-child(3) { background: #28c840; }
+
+  .mock-tab {
+    font-size: 11px;
+    font-weight: 500;
+    color: #999;
+    font-family: var(--font-body);
+  }
+
+  .mock-topbar-dark .mock-tab {
+    color: rgba(255,255,255,0.5);
+  }
+
+  /* ═══ POS Mockup ═══ */
+  .mock-pos-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .mock-pos-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 14px;
+    background: #fafaf8;
+  }
+
+  .mock-product-card {
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.06);
+    transition: border-color 0.2s ease;
+  }
+
+  .mock-product-card.selected {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 1px var(--color-primary);
+  }
+
+  .mock-product-img {
+    aspect-ratio: 1;
+  }
+
+  .mock-product-name {
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    margin: 8px 8px 4px;
+    width: 60%;
+  }
+
+  .mock-product-price {
+    font-size: 10px;
+    font-weight: 700;
+    color: #1a1a1a;
+    padding: 0 8px 8px;
+    font-family: var(--font-display);
+  }
+
+  .mock-pos-sidebar {
+    width: 35%;
+    background: #fff;
+    border-left: 1px solid #eee;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .mock-cart-header {
+    font-size: 11px;
+    font-weight: 600;
+    color: #1a1a1a;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .mock-cart-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #666;
+  }
+
+  .mock-cart-item span:first-child {
+    width: 60px;
+    height: 6px;
+    background: #e5e5e5;
+    border-radius: 3px;
+    align-self: center;
+  }
+
+  .mock-cart-item span:last-child {
+    font-weight: 600;
+    color: #1a1a1a;
+    font-family: var(--font-display);
+  }
+
+  .mock-cart-divider {
+    height: 1px;
+    background: #eee;
+    margin: 4px 0;
+  }
+
+  .mock-cart-total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1a1a1a;
+    font-family: var(--font-display);
+  }
+
+  .mock-cart-btn {
+    background: var(--color-primary);
+    color: #fff;
+    text-align: center;
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: auto;
+  }
+
+  /* ═══ Inventario Mockup ═══ */
+  .mock-inv-body {
+    flex: 1;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: #fafaf8;
+  }
+
+  .mock-inv-toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .mock-search {
+    flex: 1;
+    height: 28px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+  }
+
+  .mock-filter-btn {
+    width: 28px;
+    height: 28px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+  }
+
+  .mock-add-btn {
+    font-size: 10px;
+    font-weight: 600;
+    background: var(--color-primary);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+
+  .mock-inv-table {
+    flex: 1;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+
+  .mock-inv-row {
+    display: flex;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+    color: #666;
+  }
+
+  .mock-inv-row.header {
+    font-weight: 600;
+    color: #999;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: #fafaf8;
+  }
+
+  .mock-inv-row span { flex: 1; }
+  .mock-inv-row span.name { width: 80px; height: 6px; background: #1a1a1a; border-radius: 3px; flex: 2; }
+  .mock-inv-row span.sku { width: 50px; height: 6px; background: #e0e0e0; border-radius: 3px; }
+
+  .mock-inv-row .badge {
+    font-size: 9px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-align: center;
+    flex: 0.8;
+  }
+
+  .badge.ok { background: rgba(42,181,160,0.1); color: var(--color-secondary); }
+  .badge.warn { background: rgba(232,168,56,0.1); color: var(--color-accent); }
+  .badge.danger { background: rgba(229,75,75,0.1); color: var(--color-error); }
+
+  /* ═══ CRM Mockup ═══ */
+  .mock-crm-body {
+    flex: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: #fafaf8;
+  }
+
+  .mock-crm-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .mock-crm-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .mock-crm-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .mock-crm-name {
+    width: 100px;
+    height: 10px;
+    background: #1a1a1a;
+    border-radius: 5px;
+  }
+
+  .mock-crm-tag {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--color-secondary);
+    background: rgba(42,181,160,0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+    width: fit-content;
+  }
+
+  .mock-crm-stats {
+    display: flex;
+    gap: 10px;
+  }
+
+  .mock-crm-stat {
+    flex: 1;
+    background: #fff;
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid rgba(0,0,0,0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .mock-crm-stat .val {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+
+  .mock-crm-stat .lbl {
+    font-size: 9px;
+    color: #999;
+  }
+
+  .mock-crm-timeline {
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.06);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+  }
+
+  .mock-crm-event {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 10px;
+    color: #666;
+  }
+
+  .mock-crm-event .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    flex-shrink: 0;
+  }
+
+  .mock-crm-event .date {
+    margin-left: auto;
+    color: #bbb;
+    font-size: 9px;
+  }
+
+  /* ═══ Reportes Mockup ═══ */
+  .mock-rep-body {
+    flex: 1;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: #fafaf8;
+  }
+
+  .mock-rep-kpis {
+    display: flex;
+    gap: 10px;
+  }
+
+  .mock-rep-kpi {
+    flex: 1;
+    background: #fff;
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid rgba(0,0,0,0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .mock-rep-kpi .val {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+
+  .mock-rep-kpi .lbl {
+    font-size: 9px;
+    color: #999;
+  }
+
+  .mock-rep-kpi .change {
+    font-size: 9px;
+    font-weight: 600;
+  }
+
+  .change.up { color: var(--color-secondary); }
+  .change.down { color: var(--color-error); }
+
+  .mock-rep-chart {
+    flex: 1;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.06);
+    padding: 16px;
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .mock-rep-chart svg {
+    width: 100%;
+    height: 80%;
+  }
+
+  /* ═══ AXO Mockup ═══ */
+  .mock-axo-body {
+    flex: 1;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .mock-axo-msg {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .mock-axo-msg.user {
+    justify-content: flex-end;
+  }
+
+  .mock-axo-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(42,181,160,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .axo-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-secondary);
+    box-shadow: 0 0 6px rgba(42,181,160,0.6);
+  }
+
+  .mock-axo-bubble {
+    font-size: 11px;
+    line-height: 1.5;
+    padding: 10px 14px;
+    border-radius: 12px;
+    max-width: 80%;
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.85);
+    border-bottom-left-radius: 4px;
+  }
+
+  .mock-axo-bubble.user {
+    background: var(--color-primary);
+    color: #fff;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 4px;
+  }
+
+  .mock-axo-input {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: auto;
+    padding: 10px 14px;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+  }
+
+  .mock-axo-send {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ─── Reduced motion ─── */
+  @media (prefers-reduced-motion: reduce) {
+    .mockup {
+      transition: opacity 0.2s ease;
+      transform: none;
+    }
+    .mockup.active {
+      transform: none;
+    }
+    .accordion-item.active .accordion-progress-fill {
+      animation: none;
+      width: 100%;
+    }
+  }
+</style>
+
+<script>
+  const accordion = document.getElementById('showcase-accordion');
+  const items = accordion?.querySelectorAll('.accordion-item');
+  const mockups = document.querySelectorAll('.mockup');
+  let autoPlayTimer: ReturnType<typeof setTimeout> | null = null;
+  let currentIndex = 0;
+
+  function activateItem(index: number) {
+    if (!items) return;
+    currentIndex = index;
+
+    // Update accordion
+    items.forEach((item, i) => {
+      const isActive = i === index;
+      item.classList.toggle('active', isActive);
+      item.setAttribute('aria-expanded', String(isActive));
+
+      // Restart progress animation
+      if (isActive) {
+        const fill = item.querySelector('.accordion-progress-fill') as HTMLElement;
+        if (fill) {
+          fill.style.animation = 'none';
+          // Force reflow
+          void fill.offsetHeight;
+          fill.style.animation = '';
+        }
+      }
+    });
+
+    // Update mockups
+    const targetId = items[index]?.getAttribute('data-id');
+    mockups.forEach((mockup) => {
+      mockup.classList.toggle('active', mockup.getAttribute('data-mockup') === targetId);
+    });
+  }
+
+  function startAutoPlay() {
+    stopAutoPlay();
+    autoPlayTimer = setTimeout(() => {
+      const nextIndex = (currentIndex + 1) % (items?.length || 1);
+      activateItem(nextIndex);
+      startAutoPlay();
+    }, 6000);
+  }
+
+  function stopAutoPlay() {
+    if (autoPlayTimer) {
+      clearTimeout(autoPlayTimer);
+      autoPlayTimer = null;
+    }
+  }
+
+  // Click handlers
+  items?.forEach((item, i) => {
+    item.addEventListener('click', () => {
+      activateItem(i);
+      startAutoPlay(); // Reset timer on manual click
+    });
+  });
+
+  // Start auto-play when section is visible
+  const showcaseSection = document.getElementById('feature-showcase');
+  if (showcaseSection) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            startAutoPlay();
+          } else {
+            stopAutoPlay();
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+    observer.observe(showcaseSection);
+  }
+</script>
