@@ -4,10 +4,6 @@ import Hero from '../components/Hero.astro';
 import HorizontalScroller from '../components/HorizontalScroller.astro';
 import SplitFeature from '../components/SplitFeature.astro';
 import StatsCounter from '../components/StatsCounter.astro';
-import FeatureShowcase from '../components/FeatureShowcase.astro';
-import IndustryCards from '../components/IndustryCards.astro';
-import TestimonialCarousel from '../components/TestimonialCarousel.astro';
-import ImpactBanner from '../components/ImpactBanner.astro';
 import FAQAccordion from '../components/FAQAccordion.astro';
 import FinalCTA from '../components/FinalCTA.astro';
 
@@ -27,18 +23,14 @@ const websiteSchema = {
 >
   <Hero
     eyebrow="Software para retail"
-    title="Centraliza la operación de todas tus tiendas."
-    subtitle="Inventario, ventas, eCommerce y WhatsApp — conectados en un solo sistema. Sin hojas de cálculo, sin datos dispersos."
+    title="Visibilidad total de toda tu operación retail."
+    subtitle="De la bodega al mostrador a la tienda en línea. Ventas, stock, clientes y lealtad en un solo lugar."
     primaryCTA={{ label: 'Empieza gratis', href: '/contacto' }}
-    secondaryCTA={{ label: 'Ver demo', href: '/producto' }}
+    secondaryCTA={{ label: 'Agenda una demo', href: '/contacto#demo' }}
   />
   <HorizontalScroller />
   <SplitFeature />
   <StatsCounter />
-  <FeatureShowcase />
-  <IndustryCards />
-  <TestimonialCarousel />
-  <ImpactBanner />
   <FAQAccordion />
   <FinalCTA />
 </BaseLayout>

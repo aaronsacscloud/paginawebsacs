@@ -53,9 +53,8 @@ Minimo 1x el ancho de un circulo del isotipo alrededor del logo completo.
 - Impreso: 30mm de ancho
 
 ### 2.5 Consideracion tipografica del logo
-La tipografia actual del logo es una sans-serif light/regular (estilo similar a Cerebri Sans).
-**Recomendacion:** Evaluar migrar a la tipografia principal del sistema (ver seccion 3)
-para mayor coherencia, usando un peso Medium o Semibold.
+El wordmark "Sacs" usa **Clash Display Bold (700)** — una sans-serif editorial con personalidad
+unica que lo diferencia del sistema tipografico de contenido. Tracking: -0.05em.
 
 ---
 
@@ -77,15 +76,24 @@ Google Fonts: `Plus+Jakarta+Sans:wght@300;400;500;600;700;800`
 - Feeling moderno/startup que conecta con millennials
 - Gratuita y altamente optimizada para web
 
-### 3.3 Familia de display (titulos hero): Space Grotesk
-Para titulos oversized y statements de impacto.
-Google Fonts: `Space+Grotesk:wght@400;500;600;700`
+### 3.3 Familia de display (titulos hero): Sora
+Para titulos oversized, statements de impacto y headings H1-H4.
+Google Fonts: `Sora:wght@400;500;600;700;800`
 
-**Por que Space Grotesk:**
-- Personalidad unica — no generica como Inter o Roboto
-- Letras con detalles geometricos que la hacen memorable
-- Perfecta para titulos grandes (60px+)
-- Contrasta con Plus Jakarta creando dinamismo visual
+**Por que Sora:**
+- Geometria futurista con energia tech — alineada con la identidad SACS
+- ExtraBold (800) genera impacto masivo en heroes sin necesidad de all-caps
+- Pesos 500-600 funcionan perfecto para subtitulos y UI labels
+- Contrasta con Plus Jakarta Sans creando dinamismo visual
+
+### 3.3b Familia de wordmark: Clash Display
+Exclusivamente para el wordmark "Sacs" en Nav y Footer.
+Fontshare: `Clash Display, weight 700`
+
+**Por que Clash Display:**
+- Personalidad editorial unica que diferencia la marca
+- Bold sin ser agresiva — sofisticada y memorable
+- Reservada solo para el logo, creando distincion clara
 
 ### 3.4 Escala tipografica
 
@@ -94,39 +102,39 @@ SISTEMA DE TAMANOS (Desktop → Mobile)
 ═══════════════════════════════════════
 
 Display XL (Hero)
-  Font:          Space Grotesk
+  Font:          Sora
   Size:          80px → 44px
-  Weight:        700 (Bold)
-  Line-height:   0.95 (95%)
-  Letter-spacing: -0.04em (-3.2px)
+  Weight:        800 (ExtraBold)
+  Line-height:   0.9 (90%)
+  Letter-spacing: -0.05em
   Uso:           Hero principal, statement de impacto
 
 Display L
-  Font:          Space Grotesk
+  Font:          Sora
   Size:          64px → 36px
-  Weight:        700 (Bold)
-  Line-height:   1.0 (100%)
-  Letter-spacing: -0.035em (-2.24px)
+  Weight:        800 (ExtraBold)
+  Line-height:   0.95 (95%)
+  Letter-spacing: -0.04em
   Uso:           Titulos de seccion principales
 
 H1
-  Font:          Plus Jakarta Sans
+  Font:          Sora
   Size:          48px → 32px
-  Weight:        700 (Bold)
+  Weight:        800 (ExtraBold)
   Line-height:   1.1 (110%)
-  Letter-spacing: -0.03em (-1.44px)
+  Letter-spacing: -0.03em
   Uso:           Titulos de pagina, feature sections
 
 H2
-  Font:          Plus Jakarta Sans
+  Font:          Sora
   Size:          36px → 28px
-  Weight:        600 (Semibold)
+  Weight:        700 (Bold)
   Line-height:   1.15 (115%)
-  Letter-spacing: -0.02em (-0.72px)
+  Letter-spacing: -0.02em
   Uso:           Subtitulos, titulos de cards grandes
 
 H3
-  Font:          Plus Jakarta Sans
+  Font:          Sora
   Size:          28px → 22px
   Weight:        600 (Semibold)
   Line-height:   1.2 (120%)
@@ -134,7 +142,7 @@ H3
   Uso:           Titulos de tarjetas, features
 
 H4
-  Font:          Plus Jakarta Sans
+  Font:          Sora
   Size:          22px → 18px
   Weight:        600 (Semibold)
   Line-height:   1.3 (130%)
@@ -184,12 +192,13 @@ Nav Item
 ```
 
 ### 3.5 Reglas tipograficas
-- Titulos hero SIEMPRE en Space Grotesk Bold
+- Titulos hero SIEMPRE en **Sora ExtraBold (800)**
+- Wordmark "Sacs" SIEMPRE en **Clash Display Bold (700)**
 - Maximo 2 lineas en hero titles (impacto > explicacion)
 - Body text nunca menor a 16px en desktop
 - Links en texto: peso 600, color primario, sin subrayado (underline on hover)
 - No usar italicas excepto en citas textuales
-- Numeros y metricas: Space Grotesk Medium, tamano display
+- Numeros y metricas: **Sora Medium (500)**, tamano display
 
 ---
 
@@ -479,7 +488,7 @@ STAT CARD
   Background:     transparent
   Border-top:     2px solid #4B7BE5
   Padding:        24px 0
-  Numero:         Display L, Space Grotesk, color primario
+  Numero:         Display L, Sora, color primario
   Label:          Body Small, gris medio
 ```
 
@@ -590,7 +599,7 @@ HERO PRINCIPAL (Home)
   Layout:         Centrado
   Padding:        160px top, 120px bottom
   Eyebrow:        Overline + badge
-  Titulo:         Display XL, Space Grotesk
+  Titulo:         Display XL, Sora
   Subtitulo:      Body Large, max-width 600px, gris oscuro
   CTAs:           Primary + Secondary, gap 16px
   Background:     Ilustracion vintage con overlay gradiente
@@ -921,10 +930,9 @@ PARALLAX SUTIL (Ilustraciones de fondo)
   --ritual-indigo:        #3D4F7C;
 
   /* Typography */
-  --font-display:         'DM Sans', sans-serif;
-  --font-heading:         'Space Grotesk', sans-serif;
+  --font-display:         'Sora', sans-serif;
+  --font-logo:            'Clash Display', sans-serif;
   --font-body:            'Plus Jakarta Sans', sans-serif;
-  --font-logo:            'Urbanist', sans-serif;
 
   /* Spacing */
   --space-1: 4px;   --space-2: 8px;   --space-3: 12px;

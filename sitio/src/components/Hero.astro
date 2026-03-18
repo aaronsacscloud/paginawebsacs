@@ -1,4 +1,6 @@
 ---
+import BeforeAfter from './BeforeAfter.astro';
+
 interface Props {
   eyebrow?: string;
   title: string;
@@ -15,58 +17,72 @@ const {
   secondaryCTA = { label: 'Ver demo', href: '/producto' },
 } = Astro.props;
 
-const features = [
-  { id: 'cobros', label: 'Cobra en segundos' },
-  { id: 'inventario', label: 'Controla tu inventario' },
-  { id: 'clientes', label: 'Conoce a tus clientes' },
-  { id: 'datos', label: 'Decide con datos' },
-];
-
-const useCases = [
+const steps = [
   {
     id: 'pos',
-    title: 'Vende desde cualquier punto',
-    desc: 'Convierte cualquier dispositivo en un punto de venta. Cobra con tarjeta, efectivo o transferencia en segundos.',
-    cta: 'Ver más',
+    step: 1,
+    verb: 'Vende',
+    title: 'Vende más en cada punto',
+    features: [
+      'Cobra con tarjeta, efectivo o transferencia',
+      'Desde cualquier dispositivo, en cualquier sucursal',
+      'Cliente identificado en cada ticket',
+    ],
   },
   {
     id: 'stock',
-    title: 'Controla stock sin esfuerzo',
-    desc: 'Alertas de reabasto, movimientos entre sucursales y conteo rápido desde el celular.',
-    cta: 'Ver más',
+    step: 2,
+    verb: 'Controla',
+    title: 'Controla tu stock en tiempo real',
+    features: [
+      'Stock por sucursal y CEDIS en tiempo real',
+      'Traspasos y nivelación entre bodegas',
+      'Alertas de reabasto automáticas',
+    ],
   },
   {
     id: 'crm',
+    step: 3,
+    verb: 'Fideliza',
     title: 'Fideliza a cada cliente',
-    desc: 'Captura datos automáticamente, segmenta por comportamiento y lanza promociones personalizadas.',
-    cta: 'Ver más',
-  },
-  {
-    id: 'reports',
-    title: 'Reportes que sí entiendes',
-    desc: 'Dashboards claros con las métricas que importan. Sin Excel, sin complicaciones.',
-    cta: 'Ver más',
+    features: [
+      'Programa de lealtad integrado al cobro',
+      'Seguimiento automático por comportamiento',
+      'Promociones personalizadas',
+    ],
   },
   {
     id: 'ai',
-    title: 'IA que te asesora',
-    desc: 'AXO analiza tus datos y te sugiere qué hacer: reabastecer, lanzar promo o ajustar precio.',
-    cta: 'Ver más',
+    step: 4,
+    verb: 'Automatiza',
+    title: 'Automatiza con inteligencia',
+    features: [
+      'Sugerencias inteligentes de reabasto',
+      'Predicción de demanda',
+      'Órdenes de compra automáticas',
+    ],
   },
+];
+
+const tabletScreens = steps.map(s => ({ id: s.id, label: `${s.step}. ${s.verb}` }));
+
+// Backward compat for platform accordion
+const useCases = [
+  { id: 'pos', title: 'Vende desde cualquier punto', desc: 'Convierte cualquier dispositivo en un punto de venta. Cobra con tarjeta, efectivo o transferencia en segundos.', cta: 'Ver más' },
+  { id: 'stock', title: 'Controla stock sin esfuerzo', desc: 'Alertas de reabasto, movimientos entre sucursales y conteo rápido desde el celular.', cta: 'Ver más' },
+  { id: 'crm', title: 'Fideliza a cada cliente', desc: 'Captura datos automáticamente, segmenta por comportamiento y lanza promociones personalizadas.', cta: 'Ver más' },
+  { id: 'reports', title: 'Reportes que sí entiendes', desc: 'Dashboards claros con las métricas que importan. Sin Excel, sin complicaciones.', cta: 'Ver más' },
+  { id: 'ai', title: 'IA que te asesora', desc: 'AXO analiza tus datos y te sugiere qué hacer: reabastecer, lanzar promo o ajustar precio.', cta: 'Ver más' },
 ];
 ---
 
-<!-- ═══ BLOQUE 1: Banner compacto — fondo azul SACS + figuras geométricas ═══ -->
+<!-- ═══ BLOQUE 1: Banner — Fondo claro con texturas ═══ -->
 <section class="hero-banner" id="hero-section">
-  <!-- Figuras geométricas decorativas -->
+  <!-- Texturas decorativas -->
   <div class="hero-shapes" aria-hidden="true">
     <div class="shape shape-circle-1"></div>
     <div class="shape shape-circle-2"></div>
     <div class="shape shape-square-1"></div>
-    <div class="shape shape-square-2"></div>
-    <div class="shape shape-triangle-1"></div>
-    <div class="shape shape-diamond-1"></div>
-    <div class="shape shape-ring-1"></div>
     <div class="shape shape-dots"></div>
   </div>
 
@@ -78,152 +94,456 @@ const useCases = [
         <a href={primaryCTA.href} class="hero-btn hero-btn-filled">
           {primaryCTA.label}
         </a>
+        <a href={secondaryCTA.href} class="hero-btn hero-btn-outline">
+          {secondaryCTA.label}
+        </a>
+      </div>
+
+      <!-- Credibility badges -->
+      <div class="hero-bottom-bar">
+        <div class="hero-badges">
+          <div class="hero-badge">
+            <svg class="hero-badge-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M10 1l2.39 4.84L18 6.71l-4 3.9.94 5.5L10 13.48l-4.94 2.63.94-5.5-4-3.9 5.61-.87L10 1z" fill="#E8A838"/>
+            </svg>
+            <div>
+              <span class="hero-badge-value">4.8/5</span>
+              <span class="hero-badge-label">Google Reviews</span>
+            </div>
+          </div>
+          <div class="hero-badge-divider"></div>
+          <div class="hero-badge">
+            <svg class="hero-badge-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M6 10h8M10 7v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <div>
+              <span class="hero-badge-value">+500</span>
+              <span class="hero-badge-label">Negocios activos</span>
+            </div>
+          </div>
+          <div class="hero-badge-divider"></div>
+          <div class="hero-badge">
+            <svg class="hero-badge-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M10 2a8 8 0 100 16 8 8 0 000-16z" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div>
+              <span class="hero-badge-value">99.9%</span>
+              <span class="hero-badge-label">Uptime</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Credibility badges -->
-    <div class="hero-bottom-bar">
-      <div class="hero-badges">
-        <div class="hero-badge">
-          <svg class="hero-badge-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <path d="M10 1l2.39 4.84L18 6.71l-4 3.9.94 5.5L10 13.48l-4.94 2.63.94-5.5-4-3.9 5.61-.87L10 1z" fill="#E8A838"/>
-          </svg>
-          <div>
-            <span class="hero-badge-value">4.8/5</span>
-            <span class="hero-badge-label">Google Reviews</span>
+    <!-- Hero image + floating notifications -->
+    <div class="hero-visual">
+      <div class="hero-image-wrapper">
+        <img
+          src="/images/hero-sacs-store.png"
+          alt="Persona usando SACS en tablet en su tienda de ropa"
+          class="hero-image"
+          width="900"
+          height="600"
+          loading="eager"
+        />
+        <!-- Notificaciones animadas sobre la imagen -->
+        <div class="hero-notif hero-notif-1" aria-hidden="true">
+          <div class="hero-notif-icon hero-notif-icon-loyalty">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.611.611l4.458-1.495A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.325 0-4.47-.744-6.227-2.01l-.435-.326-2.847.954.954-2.847-.326-.435A9.956 9.956 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>
           </div>
+          <div class="hero-notif-body">
+            <span class="hero-notif-title">Fidelización</span>
+            <span class="hero-notif-msg">5 seguimientos pendientes de clientes</span>
+          </div>
+          <span class="hero-notif-badge">5</span>
         </div>
-        <div class="hero-badge-divider"></div>
-        <div class="hero-badge">
-          <svg class="hero-badge-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/>
-            <path d="M6 10h8M10 7v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-          <div>
-            <span class="hero-badge-value">+500</span>
-            <span class="hero-badge-label">Negocios activos</span>
+
+        <div class="hero-notif hero-notif-2" aria-hidden="true">
+          <div class="hero-notif-icon hero-notif-icon-shop">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M20 4H4v2l1 1v11h14V7l1-1V4zM9 18v-4h6v4H9zm9 0h-1v-5a1 1 0 00-1-1H8a1 1 0 00-1 1v5H6V7.5l-.5-.5h13l-.5.5V18z"/><path d="M3 2h18a1 1 0 011 1v1H2V3a1 1 0 011-1z"/></svg>
           </div>
+          <div class="hero-notif-body">
+            <span class="hero-notif-title">Tienda en línea</span>
+            <span class="hero-notif-msg">Pedido #384 — $1,290</span>
+          </div>
+          <span class="hero-notif-badge">+1</span>
         </div>
-        <div class="hero-badge-divider"></div>
-        <div class="hero-badge">
-          <svg class="hero-badge-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <path d="M10 2a8 8 0 100 16 8 8 0 000-16z" stroke="currentColor" stroke-width="1.5"/>
-            <path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <div>
-            <span class="hero-badge-value">99.9%</span>
-            <span class="hero-badge-label">Uptime</span>
+
+        <div class="hero-notif hero-notif-3" aria-hidden="true">
+          <div class="hero-notif-icon hero-notif-icon-inventory">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
           </div>
+          <div class="hero-notif-body">
+            <span class="hero-notif-title">Nivelación de inventario</span>
+            <span class="hero-notif-msg">Transferir 40 uds. a Suc. Centro</span>
+          </div>
+          <span class="hero-notif-time">Sugerencia</span>
+        </div>
+
+        <div class="hero-notif hero-notif-4" aria-hidden="true">
+          <div class="hero-notif-icon hero-notif-icon-receiving">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M12 2L2 7v10l10 5 10-5V7L12 2z" fill="none" stroke="#fff" stroke-width="1.5"/><path d="M12 12v10M2 7l10 5 10-5" fill="none" stroke="#fff" stroke-width="1.5"/><path d="M8 4.5l8 4" fill="none" stroke="#fff" stroke-width="1.5"/></svg>
+          </div>
+          <div class="hero-notif-body">
+            <span class="hero-notif-title">Recepción de mercancía</span>
+            <span class="hero-notif-msg">OC #192 llega mañana — 120 pzas.</span>
+          </div>
+          <span class="hero-notif-time">Mañana</span>
+        </div>
+
+        <div class="hero-notif hero-notif-5" aria-hidden="true">
+          <div class="hero-notif-icon hero-notif-icon-shrink">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M12 9v2m0 4h.01M5.07 19H18.93a2 2 0 001.73-3L13.73 4a2 2 0 00-3.46 0L3.34 16a2 2 0 001.73 3z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="hero-notif-body">
+            <span class="hero-notif-title">Alerta de merma</span>
+            <span class="hero-notif-msg">Suc. Polanco: 2.3% esta semana</span>
+          </div>
+          <span class="hero-notif-badge">!</span>
+        </div>
+
+        <div class="hero-notif hero-notif-6" aria-hidden="true">
+          <div class="hero-notif-icon hero-notif-icon-restock">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M23 4l-6 6M17 4h6v6M1 20l6-6m0 6H1v-6" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="hero-notif-body">
+            <span class="hero-notif-title">Reabasto automático</span>
+            <span class="hero-notif-msg">12 SKUs bajo mínimo en CEDIS</span>
+          </div>
+          <span class="hero-notif-badge">12</span>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ═══ BLOQUE 2: Video — arranca full, se centra al scrollear ═══ -->
-<section class="hero-video-section">
-  <div class="hero-video-sticky">
-    <div class="hero-video-card">
-      <video
-        class="hero-video"
-        autoplay
-        muted
-        loop
-        playsinline
-        preload="metadata"
-      >
-        <source src="/videos/hero-retailer.webm" type="video/webm" />
-        <source src="/videos/hero-retailer.mp4" type="video/mp4" />
-      </video>
-      <div class="hero-video-scrim"></div>
+<!-- ═══ BLOQUE 2: Tablet — paso a paso ═══ -->
+<section class="hero-tablet-section" id="tablet-section">
+  <div class="hero-tablet-sticky">
+    <!-- Fondos oaxaqueños por paso -->
+    <div class="tablet-bg-patterns">
+      <div class="tablet-bg-layer active" data-bg="pos"></div>
+      <div class="tablet-bg-layer" data-bg="stock"></div>
+      <div class="tablet-bg-layer" data-bg="crm"></div>
+      <div class="tablet-bg-layer" data-bg="ai"></div>
+    </div>
 
-      <!-- Checks superpuestos sobre el video -->
-      <div class="hero-video-overlay">
-        <span class="hero-video-label">Automatiza tu negocio</span>
-        <ul class="hero-checks" role="list">
-          {features.map((f, i) => (
-            <li
-              class={`hero-check-item${i === 0 ? ' active' : ''}`}
-              data-feature={f.id}
-              data-index={i}
-            >
-              <svg class="hero-check-icon" width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
-                <circle cx="14" cy="14" r="12" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
-                <path d="M9 14.5l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              <span>{f.label}</span>
-            </li>
-          ))}
-        </ul>
+    <div class="tablet-section-header">
+      <span class="tablet-section-eyebrow">Tu operación, paso a paso</span>
+      <h2 class="tablet-section-title" id="tablet-section-title">{steps[0].title}</h2>
+    </div>
+
+    <div class="tablet-3col">
+      <!-- Left: vertical pills -->
+      <nav class="tablet-pills-col" aria-label="Pasos SACS">
+        {steps.map((s, i) => (
+          <button
+            class={`tablet-vpill${i === 0 ? ' active' : ''}`}
+            data-tablet-idx={i}
+            type="button"
+          >
+            <span class="tablet-vpill-num">{s.step}</span>
+            <span class="tablet-vpill-label">{s.verb}</span>
+          </button>
+        ))}
+      </nav>
+
+      <!-- Center: tablet -->
+      <div class="hero-tablet-wrapper">
+        <div class="hero-tablet-frame">
+          <div class="tablet-camera"></div>
+          <div class="tablet-screen">
+            <div class="tablet-slide active" data-slide="pos">
+              <img src="/images/screen-pos.png" alt="Punto de Venta SACS" class="tablet-slide-img" />
+            </div>
+
+            <div class="tablet-slide" data-slide="stock">
+              <div class="pm-window">
+                <div class="pm-titlebar">
+                  <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
+                  <span class="pm-titlebar-text">Inventario</span>
+                </div>
+                <div class="pm-content pm-content-list">
+                  <div class="pm-list-header"><span>Producto</span><span>Stock</span><span>Estado</span></div>
+                  <div class="pm-list-row"><span>Café Orgánico 250g</span><span>128</span><span class="pm-status-ok">En stock</span></div>
+                  <div class="pm-list-row alert"><span>Miel de Agave 500ml</span><span>3</span><span class="pm-status-low">Bajo</span></div>
+                  <div class="pm-list-row"><span>Jabón Artesanal</span><span>56</span><span class="pm-status-ok">En stock</span></div>
+                  <div class="pm-list-row"><span>Chocolate 70%</span><span>89</span><span class="pm-status-ok">En stock</span></div>
+                  <div class="pm-list-row"><span>Vela Aromática</span><span>34</span><span class="pm-status-ok">En stock</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="tablet-slide" data-slide="crm">
+              <div class="pm-window">
+                <div class="pm-titlebar">
+                  <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
+                  <span class="pm-titlebar-text">Clientes</span>
+                </div>
+                <div class="pm-content pm-content-crm">
+                  <div class="pm-crm-profile">
+                    <div class="pm-crm-avatar">ML</div>
+                    <div>
+                      <div class="pm-crm-name">María López</div>
+                      <div class="pm-crm-tag">VIP · 23 compras</div>
+                    </div>
+                  </div>
+                  <div class="pm-crm-stats">
+                    <div class="pm-crm-stat"><span>Ticket promedio</span><strong>$890</strong></div>
+                    <div class="pm-crm-stat"><span>Última visita</span><strong>Hace 2 días</strong></div>
+                    <div class="pm-crm-stat"><span>Puntos</span><strong>1,240</strong></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="tablet-slide" data-slide="ai">
+              <div class="pm-window">
+                <div class="pm-titlebar">
+                  <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
+                  <span class="pm-titlebar-text">AXO — Tu copiloto IA</span>
+                </div>
+                <div class="pm-content pm-content-chat">
+                  <div class="pm-chat-msg pm-chat-ai">Las ventas subieron 12% esta semana. Te sugiero reabastecer Miel de Agave antes del fin de semana.</div>
+                  <div class="pm-chat-msg pm-chat-user">Genera la orden</div>
+                  <div class="pm-chat-msg pm-chat-ai">Listo, orden de compra #247 creada por 50 unidades. Llega el jueves.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Overlay mockup flotante a la derecha -->
-      <div class="hero-mockup-area">
-        <div class="hero-mockup hero-mockup-cobros active" data-overlay="cobros" aria-hidden="true">
-          <div class="mockup-card">
-            <div class="mockup-header">
-              <div class="mockup-dot" style="background:#2AB5A0"></div>
-              <span>Punto de Venta</span>
-            </div>
-            <div class="mockup-body">
-              <div class="mockup-amount">$1,247.00</div>
-              <div class="mockup-btn">Cobrar</div>
-            </div>
+      <!-- Right: features -->
+      <div class="tablet-details-col">
+        {steps.map((s, i) => (
+          <div class={`tablet-detail${i === 0 ? ' active' : ''}`} data-detail={s.id}>
+            <ul class="tablet-detail-list">
+              {s.features.map(f => (
+                <li class="tablet-detail-item">
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                    <path d="M6 10l3 3 5-5" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span>{f}</span>
+                </li>
+              ))}
+            </ul>
+            <a href={`/producto#${s.id}`} class="tablet-detail-cta">
+              Ver más
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ BLOQUE 2.3: Feature showcase — imagen + texto ═══ -->
+<section class="feature-showcase">
+  <div class="fs-inner container">
+    <div class="fs-image-col">
+      <div class="fs-image-wrapper">
+        <img
+          src="/images/hero-sacs-store.png"
+          alt="Tienda usando SACS para gestionar ventas"
+          class="fs-image"
+          loading="lazy"
+        />
+        <!-- Floating card animada -->
+        <div class="fs-float-card">
+          <div class="fs-float-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="#E8A838"/>
+            </svg>
+          </div>
+          <div class="fs-float-text">
+            <span class="fs-float-title">Programa de lealtad</span>
+            <span class="fs-float-meta">
+              <span class="fs-float-badge">Activo</span>
+              3,733 puntos acumulados
+            </span>
           </div>
         </div>
 
-        <div class="hero-mockup hero-mockup-inventario" data-overlay="inventario" aria-hidden="true">
-          <div class="mockup-card">
-            <div class="mockup-header">
-              <div class="mockup-dot" style="background:#4B7BE5"></div>
-              <span>Inventario</span>
-            </div>
-            <div class="mockup-body">
-              <div class="mockup-row"><span>SKU-041</span><span class="mockup-badge mockup-badge-ok">128 uds</span></div>
-              <div class="mockup-row"><span>SKU-087</span><span class="mockup-badge mockup-badge-low">3 uds</span></div>
-              <div class="mockup-row"><span>SKU-153</span><span class="mockup-badge mockup-badge-ok">56 uds</span></div>
-            </div>
+        <!-- Segunda card flotante -->
+        <div class="fs-float-card fs-float-card-2">
+          <div class="fs-float-icon fs-float-icon-green">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="#2AB5A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
           </div>
-        </div>
-
-        <div class="hero-mockup hero-mockup-clientes" data-overlay="clientes" aria-hidden="true">
-          <div class="mockup-card">
-            <div class="mockup-header">
-              <div class="mockup-dot" style="background:#E8A838"></div>
-              <span>Cliente</span>
-            </div>
-            <div class="mockup-body">
-              <div class="mockup-profile">
-                <div class="mockup-avatar">M</div>
-                <div><span class="mockup-name">María López</span><span class="mockup-tag">VIP · 23 compras</span></div>
-              </div>
-              <div class="mockup-stat"><span>Ticket promedio</span><strong>$890</strong></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="hero-mockup hero-mockup-datos" data-overlay="datos" aria-hidden="true">
-          <div class="mockup-card">
-            <div class="mockup-header">
-              <div class="mockup-dot" style="background:#2AB5A0"></div>
-              <span>Dashboard</span>
-            </div>
-            <div class="mockup-body">
-              <div class="mockup-kpis">
-                <div><span class="mockup-kpi-val">$48.2K</span><span class="mockup-kpi-lbl">Ventas</span></div>
-                <div><span class="mockup-kpi-val">+12%</span><span class="mockup-kpi-lbl">vs semana ant.</span></div>
-              </div>
-              <svg class="mockup-chart" viewBox="0 0 120 32" preserveAspectRatio="none">
-                <path d="M0 28 Q15 22 30 20 T60 14 T90 10 T120 6 V32 H0Z" fill="rgba(42,181,160,0.15)"/>
-                <path d="M0 28 Q15 22 30 20 T60 14 T90 10 T120 6" fill="none" stroke="#2AB5A0" stroke-width="2"/>
-              </svg>
-            </div>
+          <div class="fs-float-text">
+            <span class="fs-float-title">Ventas del día</span>
+            <span class="fs-float-meta">
+              <strong>$12,480</strong>
+              <span class="fs-float-up">+18%</span>
+            </span>
           </div>
         </div>
       </div>
     </div>
-  </div><!-- .hero-video-sticky -->
+
+    <div class="fs-text-col">
+      <h2 class="fs-title">Impulsa el crecimiento que tu negocio merece.</h2>
+      <p class="fs-desc">Activa programas de lealtad, gestiona clientes VIP y lanza promociones personalizadas — todo desde el mismo sistema donde cobras. Sin herramientas extra, sin complicaciones.</p>
+      <a href="/producto" class="fs-cta">
+        Conocer más
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+  </div>
 </section>
+
+<!-- ═══ BLOQUE 2.35: Scrollytelling — sticky image + features ═══ -->
+<section class="scrolly-section">
+  <!-- Imagen sticky izquierda -->
+  <div class="scrolly-media">
+    <div class="scrolly-img-wrap">
+      <!-- Fondos — tonos claros elegantes -->
+      <div class="scrolly-bg scrolly-bg-0 active" data-scrolly-bg="0"></div>
+      <div class="scrolly-bg scrolly-bg-1" data-scrolly-bg="1"></div>
+      <div class="scrolly-bg scrolly-bg-2" data-scrolly-bg="2"></div>
+      <div class="scrolly-bg scrolly-bg-3" data-scrolly-bg="3"></div>
+      <!-- Imágenes -->
+      <img src="/images/hero-sacs-store.png" alt="" class="scrolly-img active" data-scrolly-img="0" />
+      <img src="/images/screen-pos.png" alt="" class="scrolly-img" data-scrolly-img="1" />
+      <img src="/images/panel-organica.jpg" alt="" class="scrolly-img" data-scrolly-img="2" />
+      <img src="/images/panel-casaverde.jpg" alt="" class="scrolly-img" data-scrolly-img="3" />
+    </div>
+  </div>
+
+  <!-- Features derecha -->
+  <div class="scrolly-features">
+    <div class="scrolly-item active" data-scrolly-idx="0">
+      <h3 class="scrolly-item-title">Nunca pierdas una venta</h3>
+      <p class="scrolly-item-desc">Cobra en tienda, por WhatsApp o desde tu e-commerce — todo llega al mismo sistema. Acepta tarjeta, efectivo o transferencia, incluso sin internet.</p>
+    </div>
+    <div class="scrolly-item" data-scrolly-idx="1">
+      <h3 class="scrolly-item-title">Un punto de venta que se adapta a ti</h3>
+      <p class="scrolly-item-desc">Busca productos por nombre o código de barras, aplica descuentos, identifica clientes VIP y cobra en segundos. Así de simple.</p>
+    </div>
+    <div class="scrolly-item" data-scrolly-idx="2">
+      <h3 class="scrolly-item-title">Controla tu inventario sin esfuerzo</h3>
+      <p class="scrolly-item-desc">Alertas de reabasto, movimientos entre sucursales y conteos rápidos desde el celular. Siempre sabes cuánto tienes y dónde.</p>
+    </div>
+    <div class="scrolly-item" data-scrolly-idx="3">
+      <h3 class="scrolly-item-title">Decide con datos reales</h3>
+      <p class="scrolly-item-desc">Dashboards claros con ventas, costos y márgenes. AXO analiza tus datos y te sugiere qué hacer — sin Excel, sin complicaciones.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ BLOQUE 2.4: Bento Grid — Multisucursal ═══ -->
+<section class="bento-section">
+  <div class="container">
+    <div class="bento-header reveal">
+      <span class="bento-eyebrow">Multisucursal</span>
+      <h2 class="bento-title">Hecho para quien tiene más de una tienda.</h2>
+    </div>
+
+    <div class="bento-grid reveal">
+      <!-- Card 1 (large) -->
+      <div class="bento-card bento-card-lg reveal-child" style="--i:0">
+        <div class="bento-visual bento-visual-dashboard">
+          <div class="bento-map">
+            <div class="bento-map-dot" style="top:28%;left:35%"><span class="bento-dot-ping"></span></div>
+            <div class="bento-map-dot" style="top:52%;left:58%"><span class="bento-dot-ping"></span></div>
+            <div class="bento-map-dot" style="top:38%;left:72%"><span class="bento-dot-ping"></span></div>
+            <div class="bento-map-dot" style="top:65%;left:40%"><span class="bento-dot-ping"></span></div>
+            <svg class="bento-map-lines" viewBox="0 0 400 200" preserveAspectRatio="none">
+              <line x1="140" y1="56" x2="232" y2="104" stroke="rgba(75,123,229,0.2)" stroke-width="1" stroke-dasharray="4 4"/>
+              <line x1="232" y1="104" x2="288" y2="76" stroke="rgba(75,123,229,0.2)" stroke-width="1" stroke-dasharray="4 4"/>
+              <line x1="140" y1="56" x2="160" y2="130" stroke="rgba(75,123,229,0.2)" stroke-width="1" stroke-dasharray="4 4"/>
+            </svg>
+          </div>
+        </div>
+        <div class="bento-text">
+          <h3 class="bento-card-title">Un dashboard para todas tus tiendas</h3>
+          <p class="bento-card-desc">Visualiza ventas, inventario y rendimiento de cada sucursal desde un solo lugar.</p>
+        </div>
+      </div>
+
+      <!-- Card 2 (normal) -->
+      <div class="bento-card reveal-child" style="--i:1">
+        <div class="bento-visual bento-visual-stock">
+          <div class="bento-counter">
+            <div class="bento-counter-row">
+              <span class="bento-counter-label">Sucursal Centro</span>
+              <span class="bento-counter-val">248</span>
+            </div>
+            <div class="bento-counter-row">
+              <span class="bento-counter-label">Sucursal Norte</span>
+              <span class="bento-counter-val">124</span>
+            </div>
+            <div class="bento-counter-row">
+              <span class="bento-counter-label">Sucursal Sur</span>
+              <span class="bento-counter-val">89</span>
+            </div>
+            <div class="bento-counter-bar"><div class="bento-counter-fill"></div></div>
+          </div>
+        </div>
+        <div class="bento-text">
+          <h3 class="bento-card-title">Inventario sincronizado en tiempo real</h3>
+          <p class="bento-card-desc">Cada venta actualiza el stock en todas tus ubicaciones al instante.</p>
+        </div>
+      </div>
+
+      <!-- Card 3 (normal) -->
+      <div class="bento-card reveal-child" style="--i:2">
+        <div class="bento-visual bento-visual-transfer">
+          <div class="bento-transfer">
+            <div class="bento-store-icon">
+              <span class="bento-store-letter">A</span>
+              <span class="bento-store-qty">50 uds</span>
+            </div>
+            <div class="bento-transfer-arrow">
+              <svg width="48" height="24" viewBox="0 0 48 24" fill="none">
+                <path d="M4 12h36M36 6l6 6-6 6" stroke="var(--color-secondary, #2AB5A0)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <span class="bento-transfer-badge">Traspaso</span>
+            </div>
+            <div class="bento-store-icon">
+              <span class="bento-store-letter">B</span>
+              <span class="bento-store-qty bento-qty-positive">+50 uds</span>
+            </div>
+          </div>
+        </div>
+        <div class="bento-text">
+          <h3 class="bento-card-title">Mueve productos entre sucursales</h3>
+          <p class="bento-card-desc">Traspasos en dos clics. Sin Excel, sin llamadas.</p>
+        </div>
+      </div>
+
+      <!-- Card 4 (large) -->
+      <div class="bento-card bento-card-lg reveal-child" style="--i:3">
+        <div class="bento-visual bento-visual-axo">
+          <div class="bento-axo-suggestion">
+            <div class="bento-axo-header">
+              <div class="bento-axo-dot"></div>
+              <span class="bento-axo-label">AXO · Sugerencia</span>
+            </div>
+            <div class="bento-axo-msg">
+              Sucursal Norte tiene 12 uds de <strong>Café Orgánico</strong>. Sucursal Centro tiene 89. Te sugiero mover 30 unidades.
+            </div>
+            <div class="bento-axo-actions">
+              <button class="bento-axo-btn bento-axo-btn-primary" type="button">Aplicar</button>
+              <button class="bento-axo-btn bento-axo-btn-ghost" type="button">Ver detalles</button>
+            </div>
+          </div>
+        </div>
+        <div class="bento-text">
+          <h3 class="bento-card-title">AXO te dice qué reabastecer y dónde</h3>
+          <p class="bento-card-desc">Inteligencia artificial que analiza demanda por sucursal y genera órdenes automáticas.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<BeforeAfter />
 
 <!-- ═══ BLOQUE 2.5: Social proof — Square-style expanding cards ═══ -->
 <section class="hero-social-proof">
@@ -308,9 +628,6 @@ const useCases = [
     <div class="platform-visual-col">
       <div class="platform-bg" aria-hidden="true">
         <div class="platform-bg-texture"></div>
-        <div class="platform-bg-blob platform-bg-blob-1"></div>
-        <div class="platform-bg-blob platform-bg-blob-2"></div>
-        <div class="platform-bg-blob platform-bg-blob-3"></div>
       </div>
       <div class="platform-mockup-wrapper">
         <!-- POS mockup -->
@@ -418,7 +735,6 @@ const useCases = [
           </div>
         </div>
       </div>
-    </div><!-- .platform-mockup-wrapper -->
     </div><!-- .platform-visual-col -->
   </div><!-- .platform-inner -->
 </section>
@@ -433,20 +749,87 @@ const useCases = [
 
 <style>
   /* ═══════════════════════════════════════════
-     BLOQUE 1: Banner — Enterprise monocromatico
+     BLOQUE 1: Banner — Fondo claro con texturas
      ═══════════════════════════════════════════ */
 
   .hero-banner {
     position: relative;
     display: flex;
     flex-direction: column;
-    background: var(--color-bg-primary);
+    background: #FFFFFF;
     overflow: hidden;
-    padding-top: 71px;
+    padding-top: 110px;
+    padding-bottom: var(--space-12, 3rem);
   }
 
-  .hero-shapes { display: none; }
-  .shape { display: none; }
+  /* ─── Gradient mesh orbs + noise texture ─── */
+  .hero-shapes {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Noise grain overlay for depth */
+  .hero-shapes::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    opacity: 0.5;
+    mix-blend-mode: multiply;
+  }
+
+  .shape {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+  }
+
+  /* SACS Blue gradient orb — top-right */
+  .shape-circle-1 {
+    top: -10%;
+    right: -5%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(75, 123, 229, 0.08) 0%, transparent 70%);
+  }
+
+  /* Teal orb — bottom-left */
+  .shape-circle-2 {
+    bottom: -15%;
+    left: -10%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(42, 181, 160, 0.06) 0%, transparent 70%);
+  }
+
+  /* Gold accent — subtle, center-right */
+  .shape-square-1 {
+    top: 40%;
+    right: 20%;
+    width: 350px;
+    height: 350px;
+    background: radial-gradient(circle, rgba(232, 168, 56, 0.05) 0%, transparent 70%);
+    filter: blur(100px);
+  }
+
+  /* Dot pattern — subtle grid */
+  .shape-dots {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    filter: none;
+    background-image: radial-gradient(circle, rgba(0, 0, 0, 0.06) 1px, transparent 1px);
+    background-size: 32px 32px;
+    opacity: 0.4;
+  }
 
   .hero-banner-content {
     position: relative;
@@ -454,7 +837,6 @@ const useCases = [
     flex: 1;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     max-width: var(--max-width);
     width: 100%;
     margin-inline: auto;
@@ -462,12 +844,20 @@ const useCases = [
   }
 
   @media (min-width: 768px) { .hero-banner-content { padding-inline: var(--space-10); } }
-  @media (min-width: 1024px) { .hero-banner-content { padding-inline: var(--space-16); } }
+
+  @media (min-width: 1024px) {
+    .hero-banner-content {
+      padding-inline: var(--space-16);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-8);
+      align-items: center;
+    }
+  }
 
   .hero-text {
     padding-top: var(--space-8);
     padding-bottom: var(--space-6);
-    max-width: 700px;
   }
 
   @media (min-width: 768px) {
@@ -492,6 +882,7 @@ const useCases = [
     letter-spacing: -0.04em;
     color: var(--color-text-primary);
     margin-bottom: var(--space-6);
+    animation: heroFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
   }
 
   .hero-subtitle {
@@ -500,9 +891,26 @@ const useCases = [
     color: var(--color-text-secondary);
     max-width: 500px;
     margin-bottom: var(--space-10);
+    animation: heroFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.25s both;
   }
 
-  .hero-ctas { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+  .hero-ctas {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    animation: heroFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+  }
+
+  @keyframes heroFadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 
   .hero-btn {
     font-size: 0.875rem;
@@ -521,17 +929,28 @@ const useCases = [
 
   .hero-btn:hover { text-decoration: none; }
 
-  .hero-btn-filled { background: #0f0f1a; color: #fff; }
+  .hero-btn-filled { background: var(--color-primary); color: #fff; }
   .hero-btn-filled:hover {
-    background: #333;
+    background: var(--color-primary-hover);
     transform: translateY(-1px);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 4px 24px rgba(75, 123, 229, 0.3);
+  }
+
+  .hero-btn-outline {
+    background: transparent;
+    color: var(--color-text-primary);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+  }
+  .hero-btn-outline:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.25);
+    transform: translateY(-1px);
   }
 
   /* Bottom bar — credibility badges */
   .hero-bottom-bar {
-    padding-block: var(--space-5);
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    padding-top: var(--space-8);
+    animation: heroFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both;
   }
 
   .hero-badges {
@@ -575,7 +994,7 @@ const useCases = [
   .hero-badge-divider {
     width: 1px;
     height: 28px;
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.12);
     display: none;
   }
 
@@ -583,299 +1002,1066 @@ const useCases = [
     .hero-badge-divider { display: block; }
   }
 
-  /* ═══════════════════════════════════════════
-     BLOQUE 2: Video — arranca full, se centra al scroll
-     ═══════════════════════════════════════════ */
-
-  .hero-video-section {
-    --vid-progress: 0;
-    background: var(--color-bg-primary);
-    /* Height = 1 viewport for card + 4 viewports for 4 features */
-    height: 500vh;
+  /* ─── Hero image (right side) ─── */
+  .hero-visual {
+    display: none;
     position: relative;
+    align-self: center;
   }
 
-  .hero-video-sticky {
+  @media (min-width: 1024px) {
+    .hero-visual {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  .hero-image-wrapper {
+    position: relative;
+    animation: heroImageIn 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+  }
+
+  .hero-image {
+    width: 100%;
+    max-width: 600px;
+    aspect-ratio: 4 / 5;
+    border-radius: var(--radius-xl, 20px);
+    object-fit: cover;
+    object-position: center 55%;
+  }
+
+  @keyframes heroImageIn {
+    from {
+      opacity: 0;
+      transform: translateY(40px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* ─── Floating notifications ─── */
+  .hero-notif {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 14px;
+    padding: 10px 14px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    opacity: 0;
+    white-space: nowrap;
+  }
+
+  /* Slot positions — notifs 1-3 are slot A, 4-6 are slot B (rotate) */
+  .hero-notif-1, .hero-notif-4 {
+    bottom: 52%;
+    left: -8%;
+  }
+
+  .hero-notif-2, .hero-notif-5 {
+    bottom: 32%;
+    right: -6%;
+  }
+
+  .hero-notif-3, .hero-notif-6 {
+    bottom: 14%;
+    left: 2%;
+  }
+
+  /* First wave — appear and stay for 4s, then fade out */
+  .hero-notif-1 {
+    animation: notifSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 1.2s both,
+               notifFadeOut 0.5s ease 5.2s forwards;
+  }
+  .hero-notif-2 {
+    animation: notifSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 1.8s both,
+               notifFadeOut 0.5s ease 5.8s forwards;
+  }
+  .hero-notif-3 {
+    animation: notifSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 2.4s both,
+               notifFadeOut 0.5s ease 6.4s forwards;
+  }
+
+  /* Second wave — appear after first wave fades */
+  .hero-notif-4 {
+    animation: notifSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 5.8s both,
+               notifFadeOut 0.5s ease 9.8s forwards;
+  }
+  .hero-notif-5 {
+    animation: notifSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 6.4s both,
+               notifFadeOut 0.5s ease 10.4s forwards;
+  }
+  .hero-notif-6 {
+    animation: notifSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 7.0s both,
+               notifFadeOut 0.5s ease 11.0s forwards;
+  }
+
+  @keyframes notifSlideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-20px) scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+  }
+
+  @keyframes notifPulse {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  @keyframes notifFadeOut {
+    from {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(-10px) scale(0.95);
+    }
+  }
+
+  .hero-notif-icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hero-notif-icon-loyalty { background: #25D366; }
+  .hero-notif-icon-shop { background: var(--color-primary, #4B7BE5); }
+  .hero-notif-icon-inventory { background: #2AB5A0; }
+  .hero-notif-icon-receiving { background: #4B7BE5; }
+  .hero-notif-icon-shrink { background: #E8A838; }
+  .hero-notif-icon-restock { background: #E54B4B; }
+
+  .hero-notif-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  .hero-notif-title {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1A1A1A);
+    letter-spacing: -0.01em;
+  }
+
+  .hero-notif-msg {
+    font-size: 0.625rem;
+    color: var(--color-text-secondary, #4A4A4A);
+    line-height: 1.3;
+  }
+
+  .hero-notif-time {
+    font-size: 0.5625rem;
+    color: var(--color-text-tertiary, #8C8C8C);
+    flex-shrink: 0;
+  }
+
+  .hero-notif-badge {
+    font-size: 0.5625rem;
+    font-weight: 700;
+    color: #fff;
+    background: #E54B4B;
+    border-radius: 50px;
+    padding: 2px 6px;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 1023px) {
+    .hero-notif { display: none; }
+  }
+
+  /* ═══════════════════════════════════════════
+     BLOQUE 2: Tablet 3D — scroll-driven
+     ═══════════════════════════════════════════ */
+
+  .hero-tablet-section {
+    --tablet-tilt: 1;
+    --tablet-bg-progress: 0;
+    background: color-mix(
+      in srgb,
+      var(--color-bg-primary, #FAFAF8) calc((1 - var(--tablet-bg-progress)) * 100%),
+      #4B7BE5
+    );
+    height: 400vh;
+    position: relative;
+    transition: background 0.05s linear;
+  }
+
+  .hero-tablet-sticky {
     position: sticky;
     top: 0;
     height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    /* padding grows from 0 to 40px as vid-progress goes 0→1 */
-    padding: calc(var(--vid-progress) * 40px);
-    will-change: padding;
-    transition: padding 0.05s linear;
-    z-index: 1;
-  }
-
-  .hero-video-card {
-    position: relative;
-    /* border-radius grows from 0 to 24px */
-    border-radius: calc(var(--vid-progress) * 24px);
+    flex-direction: column;
+    padding: 24px;
+    padding-top: 110px;
+    box-sizing: border-box;
     overflow: hidden;
-    width: 100%;
-    height: 100%;
-    will-change: border-radius;
-    transition: border-radius 0.05s linear;
   }
 
-  .hero-video {
+  /* ── Fondos oaxaqueños ── */
+  .tablet-bg-patterns {
     position: absolute;
     inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  .hero-video-scrim {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg,
-      rgba(26,26,46,0.82) 0%,
-      rgba(26,26,46,0.5) 35%,
-      rgba(26,26,46,0.15) 60%,
-      transparent 100%
-    );
-    z-index: 1;
-  }
-
-  /* Checks superpuestos */
-  .hero-video-overlay {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: var(--space-8) var(--space-6);
-  }
-
-  @media (min-width: 768px) {
-    .hero-video-overlay { padding: var(--space-10) var(--space-10); }
-  }
-
-  @media (min-width: 1024px) {
-    .hero-video-overlay { padding: var(--space-12) var(--space-16); }
-  }
-
-  .hero-video-label {
-    font-family: var(--font-display);
-    font-size: 0.875rem;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: var(--space-5);
-  }
-
-  @media (min-width: 768px) {
-    .hero-video-label { font-size: 1rem; }
-  }
-
-  .hero-checks {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-  }
-
-  .hero-check-item {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    color: rgba(255, 255, 255, 0.45);
-    font-family: var(--font-display);
-    font-size: clamp(1.125rem, 2.5vw, 1.75rem);
-    font-weight: 700;
-    line-height: 1.2;
-    cursor: pointer;
-    transition: color 0.35s ease;
-    padding: var(--space-1) 0;
-  }
-
-  .hero-check-item:hover { color: rgba(255, 255, 255, 0.7); }
-
-  .hero-check-item.active {
-    color: #fff;
-    text-shadow: 0 0 20px rgba(255,255,255,0.3);
-  }
-
-  .hero-check-icon {
-    flex-shrink: 0;
-    transition: color 0.35s ease;
-  }
-
-  .hero-check-item.active .hero-check-icon { color: var(--color-secondary); }
-
-  /* Mockup flotante */
-  .hero-mockup-area {
-    position: absolute;
-    right: 24px;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 2;
-    width: 280px;
-    height: 300px;
-  }
-
-  @media (min-width: 768px) {
-    .hero-mockup-area { right: 40px; width: 300px; }
-  }
-
-  @media (min-width: 1200px) {
-    .hero-mockup-area { right: 60px; width: 340px; }
-  }
-
-  @media (max-width: 767px) {
-    .hero-mockup-area { display: none; }
-  }
-
-  .hero-mockup {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    transform: translateY(-50%) scale(0.7);
-    opacity: 0;
-    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
-                transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 0;
     pointer-events: none;
   }
 
-  .hero-mockup.active {
+  .tablet-bg-layer {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+
+  .tablet-bg-layer.active {
     opacity: 1;
-    transform: translateY(-50%) scale(1);
-    animation: mockupPop 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  @keyframes mockupPop {
-    0% { opacity: 0; transform: translateY(-40%) scale(0.5); }
-    40% { opacity: 1; transform: translateY(-52%) scale(1.06); }
-    70% { transform: translateY(-49%) scale(0.98); }
-    100% { opacity: 1; transform: translateY(-50%) scale(1); }
+  /* ── Fondos oaxaqueños por módulo ── */
+
+  /* POS — Azul SACS con greca geométrica sutil */
+  .tablet-bg-layer[data-bg="pos"] {
+    background:
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 30h10v-10h10v10h10v-10h10v10h10v-10h10' fill='none' stroke='rgba(255,255,255,0.06)' stroke-width='1.5'/%3E%3Cpath d='M0 50h10v-10h10v10h10v-10h10v10h10v-10h10' fill='none' stroke='rgba(255,255,255,0.04)' stroke-width='1.5'/%3E%3C/svg%3E") repeat,
+      linear-gradient(160deg, #4B7BE5 0%, #3A5FBB 50%, #2D4A99 100%);
   }
 
-  .mockup-card {
-    background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: var(--radius-lg);
-    box-shadow:
-      0 20px 60px rgba(0,0,0,0.35),
-      0 0 0 1px rgba(255,255,255,0.5),
-      0 0 40px rgba(255,255,255,0.15);
-    width: 100%;
-    overflow: hidden;
-    transition: box-shadow 0.4s ease;
+  /* Inventario — Teal profundo con patrón de rombos zapotecas */
+  .tablet-bg-layer[data-bg="stock"] {
+    background:
+      url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0L40 20L20 40L0 20Z' fill='none' stroke='rgba(255,255,255,0.07)' stroke-width='1'/%3E%3Cpath d='M20 8L32 20L20 32L8 20Z' fill='none' stroke='rgba(255,255,255,0.04)' stroke-width='1'/%3E%3C/svg%3E") repeat,
+      linear-gradient(160deg, #1A8A76 0%, #16705F 50%, #0E5A4C 100%);
   }
 
-  .hero-mockup.active .mockup-card {
-    box-shadow:
-      0 24px 80px rgba(0,0,0,0.4),
-      0 0 0 2px rgba(255,255,255,0.9),
-      0 0 60px rgba(255,255,255,0.2),
-      0 0 120px rgba(42,181,160,0.15);
+  /* CRM/Clientes — Dorado cálido con espirales de códice */
+  .tablet-bg-layer[data-bg="crm"] {
+    background:
+      url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='40' cy='40' r='20' fill='none' stroke='rgba(255,255,255,0.06)' stroke-width='1'/%3E%3Ccircle cx='40' cy='40' r='12' fill='none' stroke='rgba(255,255,255,0.04)' stroke-width='1'/%3E%3Ccircle cx='40' cy='40' r='30' fill='none' stroke='rgba(255,255,255,0.03)' stroke-width='1'/%3E%3C/svg%3E") repeat,
+      linear-gradient(160deg, #D4952E 0%, #B87D24 50%, #96641B 100%);
   }
 
-  .mockup-header {
+  /* AXO/IA — Violeta profundo con grecas escalonadas */
+  .tablet-bg-layer[data-bg="ai"] {
+    background:
+      url("data:image/svg+xml,%3Csvg width='48' height='48' viewBox='0 0 48 48' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 24h8v-8h8v8h8v-8h8v8h8v-8h8' fill='none' stroke='rgba(255,255,255,0.06)' stroke-width='1'/%3E%3Cpath d='M4 36h8v-8h8v8h8v-8h8v8h8' fill='none' stroke='rgba(255,255,255,0.04)' stroke-width='1'/%3E%3Cpath d='M0 12h8v-8h8v8h8v-8h8v8h8v-8h8' fill='none' stroke='rgba(255,255,255,0.03)' stroke-width='1'/%3E%3C/svg%3E") repeat,
+      linear-gradient(160deg, #5B2C8E 0%, #4A2272 50%, #3A1A5C 100%);
+  }
+
+  /* Grain texture overlay on all tablet backgrounds */
+  .tablet-bg-layer::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    opacity: 0.6;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+  }
+
+  .tablet-section-header {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    margin-bottom: var(--space-5);
+    flex-shrink: 0;
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .tablet-section-eyebrow {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.6);
+  }
+
+  .tablet-section-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 4vw, 3rem);
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    transition: color 0.5s ease;
+  }
+
+  .hero-tablet-section.light-bg .tablet-section-title {
+    color: var(--color-text-primary, #1A1A1A);
+  }
+  .hero-tablet-section.light-bg .tablet-section-cta {
+    color: var(--color-primary, #4B7BE5);
+    border-color: var(--color-primary, #4B7BE5);
+  }
+  .hero-tablet-section.light-bg .tablet-section-cta:hover {
+    background: rgba(75,123,229,0.08);
+  }
+  .hero-tablet-section.light-bg .tablet-nav-track {
+    background: rgba(0,0,0,0.06);
+    border-color: rgba(0,0,0,0.04);
+  }
+  .hero-tablet-section.light-bg .tablet-nav-pill {
+    color: rgba(0,0,0,0.4);
+  }
+  .hero-tablet-section.light-bg .tablet-nav-pill.active {
+    color: var(--color-text-primary, #1A1A1A);
+  }
+  .hero-tablet-section.light-bg .tablet-nav-indicator {
+    background: rgba(0,0,0,0.1);
+  }
+
+  .tablet-section-cta {
+    display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 14px 20px;
-    border-bottom: 1px solid rgba(0,0,0,0.06);
-    font-size: 14px;
-    font-weight: 700;
-    color: #1a1a1a;
-    letter-spacing: -0.01em;
-  }
-
-  .mockup-dot { width: 8px; height: 8px; border-radius: 50%; }
-
-  .mockup-body { padding: 16px 20px; }
-
-  .mockup-amount {
-    font-family: var(--font-display);
-    font-size: 2.25rem;
-    font-weight: 800;
-    color: #1a1a1a;
-    margin-bottom: 14px;
-    letter-spacing: -0.03em;
-  }
-
-  .mockup-btn {
-    background: var(--color-secondary);
+    font-size: 0.875rem;
+    font-weight: 600;
     color: #fff;
-    font-size: 15px;
-    font-weight: 700;
-    text-align: center;
-    padding: 12px;
-    border-radius: 10px;
+    border: 1.5px solid rgba(255,255,255,0.4);
+    background: none;
+    padding: 10px 24px;
+    border-radius: var(--radius-full, 50px);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    letter-spacing: 0.02em;
   }
 
-  .mockup-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    font-size: 14px;
-    color: #555;
-    font-weight: 500;
-  }
-
-  .mockup-row + .mockup-row { border-top: 1px solid rgba(0,0,0,0.06); padding-top: 10px; margin-top: 2px; }
-
-  .mockup-badge {
-    font-size: 13px;
-    font-weight: 700;
-    padding: 4px 10px;
-    border-radius: 6px;
-  }
-
-  .mockup-badge-ok { background: rgba(42,181,160,0.15); color: #1a8a78; }
-  .mockup-badge-low { background: rgba(229,75,75,0.15); color: #c0392b; }
-
-  .mockup-profile {
-    display: flex;
-    align-items: center;
+  .tablet-section-cta:hover {
+    background: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.7);
     gap: 12px;
-    margin-bottom: 14px;
   }
 
-  .mockup-avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: var(--color-primary);
-    color: #fff;
-    font-size: 16px;
-    font-weight: 700;
+  /* ── 3-column layout: pills | tablet | details ── */
+  .tablet-3col {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-5);
+    width: 100%;
+  }
+
+  @media (min-width: 1200px) {
+    .tablet-3col {
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-6);
+      padding-inline: var(--space-4);
+    }
+  }
+
+  /* ── Left: vertical pills ── */
+  .tablet-pills-col {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    flex-shrink: 0;
+    width: 180px;
+  }
+
+  @media (min-width: 1200px) {
+    .tablet-pills-col { display: flex; }
+  }
+
+  .tablet-vpill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.25s ease;
+  }
+
+  .tablet-vpill:hover {
+    background: rgba(255,255,255,0.08);
+  }
+
+  .tablet-vpill.active {
+    background: rgba(255,255,255,0.12);
+  }
+
+  .tablet-vpill-num {
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.4);
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: all 0.25s ease;
+  }
+
+  .tablet-vpill.active .tablet-vpill-num {
+    background: #fff;
+    color: #4B7BE5;
+  }
+
+  .tablet-vpill-label {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.4);
+    transition: color 0.25s ease;
+  }
+
+  .tablet-vpill.active .tablet-vpill-label {
+    color: #fff;
+  }
+
+  /* ── Right: details ── */
+  .tablet-details-col {
+    display: none;
+    flex-shrink: 0;
+    width: 220px;
+    min-height: 120px;
+  }
+
+  @media (min-width: 1200px) {
+    .tablet-details-col { display: block; }
+  }
+
+  .tablet-detail {
+    display: none;
+  }
+
+  .tablet-detail.active {
+    display: block;
+    animation: detailFadeIn 0.35s ease both;
+  }
+
+  @keyframes detailFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .tablet-detail-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .tablet-detail-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: rgba(255,255,255,0.7);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+  }
+
+  .tablet-detail-item svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .tablet-detail-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: var(--space-5);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: rgba(255,255,255,0.5);
+    text-decoration: none;
+    transition: color 0.2s ease, gap 0.2s ease;
+  }
+
+  .tablet-detail-cta:hover {
+    color: #fff;
+    gap: 8px;
+    text-decoration: none;
+  }
+
+  .hero-tablet-section.light-bg .tablet-section-eyebrow {
+    color: rgba(0,0,0,0.4);
+  }
+
+  .hero-tablet-wrapper {
+    position: relative;
+    z-index: 2;
+    perspective: 1800px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-5);
+    width: 100%;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .hero-tablet-frame {
+    position: relative;
+    width: 92vw;
+    max-width: 900px;
+    background: #1a1a2e;
+    border-radius: 16px;
+    padding: 10px;
+    box-shadow:
+      0 60px 160px rgba(0, 0, 0, 0.4),
+      0 30px 60px rgba(0, 0, 0, 0.25),
+      0 0 0 1px rgba(255, 255, 255, 0.08),
+      0 0 80px rgba(75, 123, 229, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    transform: rotateX(calc(8deg * var(--tablet-tilt))) rotateY(calc(-4deg * var(--tablet-tilt)));
+    transform-style: preserve-3d;
+    transition: transform 0.1s linear;
+    transform-origin: center center;
+  }
+
+  @media (min-width: 768px) {
+    .hero-tablet-frame {
+      border-radius: 24px;
+      padding: 16px;
+    }
+  }
+
+  @media (min-width: 1200px) {
+    .hero-tablet-frame {
+      border-radius: 30px;
+      padding: 22px;
+      width: 100%;
+      max-width: none;
+    }
+  }
+
+  .tablet-camera {
+    position: absolute;
+    top: 7px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #2a2a3e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  @media (min-width: 768px) {
+    .tablet-camera { top: 9px; }
+  }
+
+  .tablet-screen {
+    position: relative;
+    width: 100%;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #fff;
+    aspect-ratio: 16 / 10;
+  }
+
+  @media (min-width: 768px) {
+    .tablet-screen {
+      border-radius: 10px;
+    }
+  }
+
+  @media (min-width: 1200px) {
+    .tablet-screen {
+      border-radius: 14px;
+    }
+  }
+
+  .tablet-slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transform: scale(0.96);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    pointer-events: none;
+  }
+
+  .tablet-slide.active {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+    position: relative;
+  }
+
+  .tablet-slide-img {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    object-position: left top;
+    display: block;
+  }
+
+  .tablet-slide .pm-window {
+    border-radius: 0;
+    box-shadow: none;
+    height: 100%;
+  }
+
+  /* Pill navigation */
+  .tablet-nav {
+    position: relative;
+    z-index: 2;
     flex-shrink: 0;
   }
 
-  .mockup-name { display: block; font-size: 16px; font-weight: 700; color: #1a1a1a; }
-  .mockup-tag { display: block; font-size: 13px; color: #888; margin-top: 2px; }
-
-  .mockup-stat {
-    display: flex;
-    justify-content: space-between;
-    font-size: 14px;
-    color: #555;
-    padding-top: 10px;
-    border-top: 1px solid rgba(0,0,0,0.06);
-    font-weight: 500;
+  .tablet-nav-track {
+    position: relative;
+    display: inline-flex;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-full, 9999px);
+    padding: 3px;
+    gap: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
   }
 
-  .mockup-stat strong { font-size: 16px; }
+  .tablet-nav-indicator {
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    left: 3px;
+    width: 0;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: calc(var(--radius-full, 9999px) - 2px);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+    z-index: 0;
+  }
 
-  .mockup-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-  .mockup-kpi-val { display: block; font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: #1a1a1a; letter-spacing: -0.02em; }
-  .mockup-kpi-lbl { display: block; font-size: 12px; color: #888; margin-top: 2px; }
-  .mockup-chart { width: 100%; height: 28px; }
+  .tablet-nav-pill {
+    position: relative;
+    z-index: 1;
+    padding: 8px 16px;
+    font-family: var(--font-body, system-ui);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.45);
+    background: none;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.3s ease;
+    line-height: 1;
+  }
+
+  .tablet-nav-pill:hover:not(.active) {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .tablet-nav-pill.active {
+    color: #fff;
+    font-weight: 600;
+  }
+
+  @media (max-width: 1023px) {
+    .tablet-nav-pill {
+      padding: 6px 12px;
+      font-size: 0.75rem;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .tablet-nav-track {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      max-width: calc(100vw - 32px);
+      scrollbar-width: none;
+    }
+    .tablet-nav-track::-webkit-scrollbar { display: none; }
+    .tablet-nav-pill {
+      padding: 6px 10px;
+      font-size: 0.6875rem;
+    }
+  }
+
+  /* Mobile: no 3D tilt, full width */
+  @media (max-width: 767px) {
+    .hero-tablet-section {
+      height: auto;
+      padding: var(--space-10) 0;
+      background: #4B7BE5;
+    }
+
+    .hero-tablet-sticky {
+      position: relative;
+      height: auto;
+      padding: 16px;
+    }
+
+    .hero-tablet-frame {
+      transform: none !important;
+      width: 100%;
+      max-width: none;
+      padding: 8px;
+      border-radius: 14px;
+    }
+
+    .hero-tablet-wrapper {
+      perspective: none;
+    }
+  }
+
+  /* ═══════════════════════════════════════════
+     BLOQUE 2.3: Feature showcase — imagen + texto
+     ═══════════════════════════════════════════ */
+
+  .feature-showcase {
+    background: #fff;
+    padding: var(--space-20) 0;
+    overflow: hidden;
+  }
+
+  .fs-inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-10);
+    align-items: center;
+  }
+
+  @media (min-width: 1024px) {
+    .fs-inner {
+      flex-direction: row-reverse;
+      gap: var(--space-16);
+      align-items: center;
+    }
+  }
+
+  .fs-image-col {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .fs-image-wrapper {
+    position: relative;
+  }
+
+  .fs-image {
+    width: 100%;
+    border-radius: var(--radius-xl, 20px);
+    object-fit: cover;
+    aspect-ratio: 4 / 3;
+  }
+
+  /* Floating cards */
+  .fs-float-card {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 16px;
+    padding: 14px 18px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    bottom: 12%;
+    left: -4%;
+    opacity: 0;
+  }
+
+  .fs-image-wrapper.in-view .fs-float-card {
+    animation:
+      fsCardIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both,
+      fsCardFloat 5s ease-in-out 0.7s infinite;
+  }
+
+  .fs-float-card-2 {
+    bottom: auto;
+    left: auto;
+    top: 8%;
+    right: -4%;
+  }
+
+  .fs-image-wrapper.in-view .fs-float-card-2 {
+    animation:
+      fsCardIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both,
+      fsCardFloat 5s ease-in-out 1.1s infinite;
+  }
+
+  @keyframes fsCardIn {
+    from {
+      opacity: 0;
+      transform: translateY(24px) scale(0.92);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes fsCardFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  .fs-float-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(232, 168, 56, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .fs-float-icon-green {
+    background: rgba(42, 181, 160, 0.1);
+  }
+
+  .fs-float-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .fs-float-title {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1A1A1A);
+    letter-spacing: -0.01em;
+  }
+
+  .fs-float-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: var(--color-text-secondary, #4A4A4A);
+  }
+
+  .fs-float-badge {
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #2AB5A0;
+    background: rgba(42, 181, 160, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .fs-float-up {
+    color: #2AB5A0;
+    font-weight: 700;
+  }
+
+  /* Text column */
+  .fs-text-col {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .fs-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4.5vw, 3.25rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: var(--color-text-primary, #1A1A1A);
+    margin-bottom: var(--space-5);
+  }
+
+  .fs-desc {
+    font-size: clamp(1rem, 1.3vw, 1.125rem);
+    line-height: 1.6;
+    color: var(--color-text-secondary, #4A4A4A);
+    max-width: 480px;
+    margin-bottom: var(--space-8);
+  }
+
+  .fs-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-primary, #4B7BE5);
+    text-decoration: none;
+    transition: gap 0.3s ease;
+  }
+
+  .fs-cta:hover {
+    gap: 12px;
+  }
+
+  @media (max-width: 1023px) {
+    .fs-float-card {
+      padding: 10px 14px;
+      border-radius: 12px;
+    }
+    .fs-float-card-2 { display: none; }
+  }
+
+  /* ═══════════════════════════════════════════
+     BLOQUE 2.35: Scrollytelling — sticky image + features
+     ═══════════════════════════════════════════ */
+
+  .scrolly-section {
+    position: relative;
+    background: #fff;
+    display: block;
+  }
+
+  @media (min-width: 1024px) {
+    .scrolly-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  /* Sticky image — takes full left half, sticks to viewport */
+  .scrolly-media {
+    display: none;
+  }
+
+  @media (min-width: 1024px) {
+    .scrolly-media {
+      display: block;
+      position: sticky;
+      top: 72px;
+      height: calc(100vh - 72px);
+      overflow: hidden;
+    }
+  }
+
+  .scrolly-img-wrap {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 24px;
+    width: calc(100% - 48px);
+    height: calc(100% - 48px);
+  }
+
+  /* Fondos — colores del logo */
+  .scrolly-bg {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.8s cubic-bezier(0.22, 0.68, 0, 1);
+    z-index: 0;
+  }
+
+  .scrolly-bg.active { opacity: 1; }
+
+  .scrolly-bg-0 { background: #F5F5F3; }
+  .scrolly-bg-1 { background: #F0F0EE; }
+  .scrolly-bg-2 { background: #EDECEA; }
+  .scrolly-bg-3 { background: #F2F1EF; }
+
+  /* Images — simple crossfade */
+  .scrolly-img {
+    position: absolute;
+    inset: 3%;
+    width: 94%;
+    height: 94%;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+
+  .scrolly-img.active {
+    opacity: 1;
+  }
+
+  /* Features column — normal scrolling flow */
+  .scrolly-features {
+    display: flex;
+    flex-direction: column;
+    padding: 0 var(--space-5);
+  }
+
+  @media (min-width: 1024px) {
+    .scrolly-features {
+      padding: 0 var(--space-12) 0 var(--space-10);
+    }
+  }
+
+  .scrolly-item {
+    padding: var(--space-10) 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .scrolly-item:last-child {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  @media (min-width: 1024px) {
+    .scrolly-item {
+      padding: var(--space-12) 0;
+      min-height: 60vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .scrolly-item:first-child {
+      padding-top: 20vh;
+    }
+
+    .scrolly-item:last-child {
+      padding-bottom: 20vh;
+    }
+  }
+
+  .scrolly-item-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    color: var(--color-text-tertiary, #8C8C8C);
+    margin-bottom: var(--space-4);
+    transition: color 0.4s ease;
+  }
+
+  .scrolly-item-desc {
+    font-size: clamp(0.95rem, 1.2vw, 1.0625rem);
+    line-height: 1.6;
+    color: var(--color-text-tertiary, #8C8C8C);
+    max-width: 480px;
+    transition: color 0.4s ease;
+  }
+
+  .scrolly-item.active .scrolly-item-title {
+    color: var(--color-text-primary, #1A1A1A);
+  }
+
+  .scrolly-item.active .scrolly-item-desc {
+    color: var(--color-text-secondary, #4A4A4A);
+  }
 
   /* ═══════════════════════════════════════════
      BLOQUE 2.5: Social proof — expanding panels
@@ -883,20 +2069,23 @@ const useCases = [
 
   .hero-social-proof {
     background: var(--color-bg-primary);
-    padding: var(--space-16) 0 var(--space-20);
+    padding: var(--space-20) 0;
   }
 
   .sp-header {
-    margin-bottom: var(--space-10);
+    margin-bottom: var(--space-12);
+    text-align: center;
   }
 
   .sp-title {
     font-family: var(--font-display);
-    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
     font-weight: 800;
     color: var(--color-text-primary);
-    letter-spacing: -0.03em;
-    line-height: 1.1;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    max-width: 900px;
+    margin-inline: auto;
   }
 
   /* Panels container */
@@ -1300,8 +2489,6 @@ const useCases = [
     mix-blend-mode: overlay;
   }
 
-  .platform-bg-blob { display: none; }
-
   .platform-mockup-wrapper {
     position: relative;
     z-index: 1;
@@ -1634,23 +2821,24 @@ const useCases = [
      ═══════════════════════════════════════════ */
 
   .post-hero {
-    padding: var(--space-24) var(--space-5);
+    padding: var(--space-32) var(--space-5);
     text-align: center;
     background: var(--color-bg-primary);
   }
 
-  @media (min-width: 768px) { .post-hero { padding: var(--space-32) var(--space-10); } }
+  @media (min-width: 768px) { .post-hero { padding: 120px var(--space-10); } }
+  @media (min-width: 1024px) { .post-hero { padding: 160px var(--space-16); } }
 
   .post-hero-title {
     font-family: var(--font-display);
-    font-size: clamp(2rem, 4.5vw, 3.5rem);
-    font-weight: 700;
-    line-height: 1.05;
-    letter-spacing: -0.035em;
+    font-size: clamp(2.75rem, 7vw, 5.5rem);
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.04em;
     color: var(--color-text-primary);
-    max-width: 700px;
+    max-width: 1000px;
     margin-inline: auto;
-    margin-bottom: var(--space-5);
+    margin-bottom: var(--space-6);
   }
 
   .post-hero-subtitle {
@@ -1661,13 +2849,340 @@ const useCases = [
     line-height: 1.6;
   }
 
+  /* ═══════════════════════════════════════════
+     BLOQUE 2.4: Bento Grid — Multisucursal
+     ═══════════════════════════════════════════ */
+
+  .bento-section {
+    background: var(--color-bg-primary);
+    padding: var(--space-20, 80px) 0;
+  }
+
+  @media (min-width: 1024px) {
+    .bento-section { padding: var(--space-32, 128px) 0; }
+  }
+
+  .bento-header {
+    text-align: center;
+    margin-bottom: var(--space-10, 40px);
+  }
+
+  .bento-eyebrow {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary, #8C8C8C);
+    margin-bottom: var(--space-3, 12px);
+  }
+
+  .bento-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+    color: var(--color-text-primary);
+    max-width: 680px;
+    margin-inline: auto;
+  }
+
+  .bento-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4, 16px);
+  }
+
+  @media (min-width: 640px) {
+    .bento-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-5, 20px); }
+  }
+
+  @media (min-width: 1024px) {
+    .bento-grid { grid-template-columns: repeat(3, 1fr); gap: var(--space-6, 24px); }
+  }
+
+  .bento-card {
+    background: var(--color-bg-card, #fff);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: var(--radius-xl, 20px);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+  }
+
+  .bento-card:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    transform: translateY(-4px);
+  }
+
+  @media (min-width: 640px) {
+    .bento-card-lg { grid-column: span 2; }
+  }
+
+  .bento-visual {
+    position: relative;
+    padding: var(--space-8, 32px) var(--space-6, 24px);
+    min-height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .bento-visual-dashboard { background: #111118; }
+  .bento-visual-stock { background: var(--color-bg-secondary, #F5F3EE); }
+  .bento-visual-transfer { background: var(--color-bg-secondary, #F5F3EE); }
+  .bento-visual-axo { background: #111118; }
+
+  .bento-text { padding: var(--space-5, 20px) var(--space-6, 24px) var(--space-8, 32px); }
+
+  .bento-card-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.125rem, 2vw, 1.375rem);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: var(--space-2, 8px);
+  }
+
+  .bento-card-desc {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--color-text-secondary, #4A4A4A);
+  }
+
+  /* Card 1: Dashboard map */
+  .bento-map {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    aspect-ratio: 2 / 1;
+  }
+
+  .bento-map-lines {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .bento-map-dot {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--color-primary, #4B7BE5);
+    box-shadow: 0 0 8px rgba(75, 123, 229, 0.6);
+    z-index: 1;
+  }
+
+  .bento-dot-ping {
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 2px solid var(--color-primary, #4B7BE5);
+    opacity: 0;
+    animation: bentoPing 2.5s ease-out infinite;
+  }
+
+  .bento-map-dot:nth-child(2) .bento-dot-ping { animation-delay: 0.6s; }
+  .bento-map-dot:nth-child(3) .bento-dot-ping { animation-delay: 1.2s; }
+  .bento-map-dot:nth-child(4) .bento-dot-ping { animation-delay: 1.8s; }
+
+  @keyframes bentoPing {
+    0% { opacity: 0.7; transform: scale(1); }
+    100% { opacity: 0; transform: scale(2.5); }
+  }
+
+  /* Card 2: Stock counter */
+  .bento-counter {
+    width: 100%;
+    max-width: 260px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+  }
+
+  .bento-counter-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #fff;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .bento-counter-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-secondary, #4A4A4A);
+  }
+
+  .bento-counter-val {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+  }
+
+  .bento-counter-bar {
+    height: 6px;
+    background: rgba(0, 0, 0, 0.06);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+
+  .bento-counter-fill {
+    height: 100%;
+    width: 72%;
+    background: var(--color-secondary, #2AB5A0);
+    border-radius: 3px;
+  }
+
+  /* Card 3: Transfer */
+  .bento-transfer {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4, 16px);
+    justify-content: center;
+  }
+
+  .bento-store-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .bento-store-letter {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+  }
+
+  .bento-store-qty {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-tertiary, #8C8C8C);
+  }
+
+  .bento-qty-positive { color: var(--color-secondary, #2AB5A0); }
+
+  .bento-transfer-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .bento-transfer-badge {
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-secondary, #2AB5A0);
+  }
+
+  /* Card 4: AXO suggestion */
+  .bento-axo-suggestion {
+    width: 100%;
+    max-width: 400px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .bento-axo-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .bento-axo-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-secondary, #2AB5A0);
+    box-shadow: 0 0 6px rgba(42, 181, 160, 0.6);
+  }
+
+  .bento-axo-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .bento-axo-msg {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .bento-axo-msg strong { color: #fff; font-weight: 600; }
+
+  .bento-axo-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .bento-axo-btn {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+  }
+
+  .bento-axo-btn:hover { opacity: 0.85; }
+
+  .bento-axo-btn-primary {
+    background: var(--color-secondary, #2AB5A0);
+    color: #fff;
+  }
+
+  .bento-axo-btn-ghost {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
   /* ─── Reduced motion ─── */
   @media (prefers-reduced-motion: reduce) {
-    .hero-check-item,
-    .hero-mockup,
+    .hero-title,
+    .hero-subtitle,
+    .hero-ctas,
+    .hero-bottom-bar,
+    .hero-image-wrapper,
+    .hero-image,
     .platform-mockup,
-    .accordion-body {
+    .accordion-body,
+    .tablet-slide {
       transition: none;
+      animation: none;
       opacity: 1;
       transform: none;
     }
@@ -1677,77 +3192,153 @@ const useCases = [
       width: 100%;
     }
 
-    .hero-video-section {
-      padding: 0 var(--space-6) var(--space-6);
+    .hero-tablet-section {
+      height: auto;
+      padding: var(--space-12) 0;
+      background: #4B7BE5;
     }
 
-    .hero-video-card {
-      border-radius: var(--radius-xl);
+    .hero-tablet-sticky {
+      position: relative;
+      height: auto;
+    }
+
+    .hero-tablet-frame {
+      transform: none !important;
     }
   }
 </style>
 
 <script>
-  // ═══ Scroll-driven video transitions ═══
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isMobile = window.innerWidth < 768;
 
-  const videoSection = document.querySelector<HTMLElement>('.hero-video-section');
-  const videoSticky = document.querySelector<HTMLElement>('.hero-video-sticky');
-  const checkItems = document.querySelectorAll<HTMLLIElement>('.hero-check-item');
-  const videoMockups = document.querySelectorAll<HTMLDivElement>('[data-overlay]');
+  // ═══ Tablet scroll-driven animation ═══
+  const tabletSection = document.querySelector<HTMLElement>('.hero-tablet-section');
+  const tabletFrame = document.querySelector<HTMLElement>('.hero-tablet-frame');
+  const tabletSlides = document.querySelectorAll<HTMLDivElement>('.tablet-slide');
+  const tabletPills = document.querySelectorAll<HTMLButtonElement>('.tablet-vpill');
+  const bgLayers = document.querySelectorAll<HTMLElement>('.tablet-bg-layer');
+  const sectionTitleEl = document.getElementById('tablet-section-title');
+  const detailPanels = document.querySelectorAll<HTMLElement>('.tablet-detail');
 
-  function setActiveCheck(index: number) {
-    checkItems.forEach((item, i) => item.classList.toggle('active', i === index));
-    videoMockups.forEach((m) => {
-      const id = m.dataset.overlay;
-      const featureId = checkItems[index]?.dataset.feature;
-      m.classList.toggle('active', id === featureId);
-    });
+  const slideTitles = [
+    'Vende más en cada punto',
+    'Controla tu stock en tiempo real',
+    'Fideliza a cada cliente',
+    'Automatiza con inteligencia',
+  ];
+
+  function setActiveSlide(index: number) {
+    tabletSlides.forEach((s, i) => s.classList.toggle('active', i === index));
+    tabletPills.forEach((p, i) => p.classList.toggle('active', i === index));
+    bgLayers.forEach((l, i) => l.classList.toggle('active', i === index));
+    detailPanels.forEach((d, i) => d.classList.toggle('active', i === index));
+    if (sectionTitleEl) sectionTitleEl.textContent = slideTitles[index] || slideTitles[0];
   }
 
-  if (!prefersReducedMotion && videoSection && videoSticky) {
-    let lastFeatureIdx = -1;
+  if (!prefersReducedMotion && !isMobile && tabletSection && tabletFrame) {
+    let lastSlideIdx = -1;
 
-    const onScroll = () => {
-      const rect = videoSection.getBoundingClientRect();
-      const sectionH = videoSection.offsetHeight;
+    const onTabletScroll = () => {
+      const rect = tabletSection.getBoundingClientRect();
+      const sectionH = tabletSection.offsetHeight;
       const vh = window.innerHeight;
       const scrolled = -rect.top;
       const scrollable = sectionH - vh;
 
-      if (scrolled < 0 || scrolled > scrollable) {
-        if (scrolled > scrollable) {
-          videoSticky.style.setProperty('--vid-progress', '1');
-        }
-        return;
-      }
+      if (scrolled < 0 || scrolled > scrollable) return;
 
       const totalProgress = scrolled / scrollable;
 
-      const contractEnd = 0.15;
-      const vidProgress = Math.min(1, totalProgress / contractEnd);
-      videoSticky.style.setProperty('--vid-progress', String(vidProgress));
+      let bgProgress: number;
+      if (totalProgress < 0.10) {
+        bgProgress = totalProgress / 0.10;
+      } else if (totalProgress > 0.90) {
+        bgProgress = 1 - ((totalProgress - 0.90) / 0.10);
+      } else {
+        bgProgress = 1;
+      }
+      tabletSection.style.setProperty('--tablet-bg-progress', String(bgProgress));
 
-      const featureStart = 0.15;
-      const featureEnd = 0.92;
-      const featureProgress = Math.max(0, Math.min(1,
-        (totalProgress - featureStart) / (featureEnd - featureStart)
+      const tiltEnd = 0.12;
+      const tilt = Math.max(0, 1 - (totalProgress / tiltEnd));
+      tabletSection.style.setProperty('--tablet-tilt', String(tilt));
+
+      const slideStart = 0.12;
+      const slideEnd = 0.90;
+      const slideProgress = Math.max(0, Math.min(1,
+        (totalProgress - slideStart) / (slideEnd - slideStart)
       ));
 
-      const numFeatures = checkItems.length;
-      const featureIdx = Math.min(numFeatures - 1, Math.floor(featureProgress * numFeatures));
+      const numSlides = tabletSlides.length;
+      const slideIdx = Math.min(numSlides - 1, Math.floor(slideProgress * numSlides));
 
-      if (featureIdx !== lastFeatureIdx) {
-        setActiveCheck(featureIdx);
-        lastFeatureIdx = featureIdx;
+      if (slideIdx !== lastSlideIdx) {
+        setActiveSlide(slideIdx);
+        lastSlideIdx = slideIdx;
       }
     };
 
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
+    window.addEventListener('scroll', onTabletScroll, { passive: true });
+    onTabletScroll();
+  } else if (isMobile && !prefersReducedMotion) {
+    let mobileSlideIdx = 0;
+    setActiveSlide(0);
+    setInterval(() => {
+      mobileSlideIdx = (mobileSlideIdx + 1) % tabletSlides.length;
+      setActiveSlide(mobileSlideIdx);
+    }, 4000);
   } else {
-    setActiveCheck(0);
-    if (videoSticky) videoSticky.style.setProperty('--vid-progress', '1');
+    setActiveSlide(0);
+  }
+
+  // Pill clicks
+  tabletPills.forEach((pill, i) => {
+    pill.addEventListener('click', () => setActiveSlide(i));
+  });
+
+  // ═══ Scrollytelling — sticky image + features ═══
+  const scrollyItems = document.querySelectorAll<HTMLElement>('.scrolly-item');
+  const scrollyImgs = document.querySelectorAll<HTMLElement>('.scrolly-img');
+  const scrollyBgs = document.querySelectorAll<HTMLElement>('.scrolly-bg');
+
+  if (scrollyItems.length > 0 && scrollyImgs.length > 0) {
+    const scrollyObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const idx = (entry.target as HTMLElement).dataset.scrollyIdx;
+            scrollyItems.forEach((item) =>
+              item.classList.toggle('active', item.dataset.scrollyIdx === idx)
+            );
+            scrollyImgs.forEach((img) =>
+              img.classList.toggle('active', img.dataset.scrollyImg === idx)
+            );
+            scrollyBgs.forEach((bg) =>
+              bg.classList.toggle('active', bg.dataset.scrollyBg === idx)
+            );
+          }
+        });
+      },
+      { rootMargin: '-35% 0px -35% 0px' }
+    );
+    scrollyItems.forEach((item) => scrollyObserver.observe(item));
+  }
+
+  // ═══ Feature showcase — reveal on scroll ═══
+  const fsWrapper = document.querySelector('.fs-image-wrapper');
+  if (fsWrapper) {
+    const fsObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          fsWrapper.classList.add('in-view');
+          fsObserver.disconnect();
+        }
+      },
+      { threshold: 0.3 }
+    );
+    fsObserver.observe(fsWrapper);
   }
 
   // ═══ Expanding panels ═══

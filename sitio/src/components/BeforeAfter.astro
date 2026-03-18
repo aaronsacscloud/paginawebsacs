@@ -1,0 +1,389 @@
+---
+const painPoints = [
+  'Datos dispersos en hojas de cálculo que nadie actualiza.',
+  'Inventario que nunca cuadra entre tienda y online.',
+  'Horas perdidas conciliando ventas a mano.',
+  'Clientes que se van sin que lo notes.',
+];
+
+const benefits = [
+  'Un solo dashboard para todas tus tiendas.',
+  'Inventario sincronizado en tiempo real.',
+  'Ventas, envíos y facturación — automatizados.',
+  'Cada cliente con perfil, historial y seguimiento.',
+];
+---
+
+<section class="ba-section" id="ba-section">
+  <div class="ba-section-header reveal">
+    <h2 class="ba-section-title">¿Por qué SACS?</h2>
+  </div>
+  <div class="ba-sticky">
+    <div class="container">
+      <div class="ba-frame" id="ba-frame">
+        <!-- Before card (left half, stays in place) -->
+        <div class="ba-card ba-before" id="ba-before">
+          <div class="ba-inner">
+            <div class="ba-card-top">
+              <span class="ba-label">Sin sistema:</span>
+              <h2 class="ba-heading">Operas tu negocio a ciegas.</h2>
+            </div>
+            <div class="ba-card-bottom">
+              <ul class="ba-list">
+                {painPoints.map((point) => (
+                  <li class="ba-list-item ba-item-before">
+                    <span class="ba-x-icon" aria-hidden="true">
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+                    </span>
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+              <a href="/contacto" class="ba-btn ba-btn-before">Empieza gratis</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- After card (starts right half, expands to full) -->
+        <div class="ba-card ba-after" id="ba-after">
+          <div class="ba-inner">
+            <div class="ba-card-top">
+              <span class="ba-label ba-label-after">Con SACS:</span>
+              <h2 class="ba-heading ba-heading-after">Todo conectado, todo claro.</h2>
+            </div>
+            <div class="ba-card-bottom">
+              <ul class="ba-list">
+                {benefits.map((benefit) => (
+                  <li class="ba-list-item ba-item-after">
+                    <span class="ba-check-icon" aria-hidden="true">
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect width="16" height="16" rx="4" fill="rgba(255,255,255,0.2)"/><path d="M4.5 8l2.5 2.5 4.5-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                    <span>{benefit}</span>
+                  </li>
+                ))}
+              </ul>
+              <a href="/contacto" class="ba-btn ba-btn-after">Empieza gratis</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .ba-section {
+    position: relative;
+    height: 220vh;
+    background: var(--color-bg-primary);
+  }
+
+  .ba-section-header {
+    text-align: center;
+    padding: var(--space-20, 80px) var(--space-5) var(--space-10, 40px);
+  }
+
+  .ba-section-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 800;
+    color: var(--color-text-primary);
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  .ba-sticky {
+    position: sticky;
+    top: 80px;
+    padding: var(--space-4) 0;
+  }
+
+  /* ─── Frame: contains both cards ─── */
+  .ba-frame {
+    position: relative;
+    height: min(580px, 72vh);
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  /* ─── Cards ─── */
+  .ba-card {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    overflow: hidden;
+  }
+
+  .ba-inner {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: var(--space-10) var(--space-8);
+  }
+
+  @media (min-width: 1024px) {
+    .ba-inner {
+      padding: var(--space-12) var(--space-10);
+    }
+  }
+
+  .ba-card-top {
+    margin-bottom: auto;
+  }
+
+  .ba-card-bottom {
+    margin-top: var(--space-6);
+  }
+
+  /* ─── Before card ─── */
+  .ba-before {
+    left: 0;
+    width: 100%;
+    background: var(--color-bg-secondary);
+    z-index: 1;
+    will-change: width, left, opacity;
+  }
+
+  .ba-before .ba-inner {
+    max-width: 50%;
+  }
+
+  /* ─── After card ─── */
+  .ba-after {
+    right: 0;
+    width: 50%;
+    background: var(--color-primary);
+    z-index: 2;
+    border-radius: 20px;
+    box-shadow: -8px 0 30px rgba(0, 0, 0, 0.15);
+    will-change: right;
+  }
+
+  /* ─── Labels ─── */
+  .ba-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-3);
+  }
+
+  .ba-label-after {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  /* ─── Headings ─── */
+  .ba-heading {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 3.5vw, 2.75rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+    color: var(--color-text-primary);
+  }
+
+  .ba-heading-after {
+    color: #fff;
+  }
+
+  /* ─── Lists ─── */
+  .ba-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ba-list-item {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-3) 0;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    font-weight: 500;
+    white-space: normal;
+  }
+
+  .ba-list-item + .ba-list-item {
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .ba-item-before {
+    color: var(--color-text-secondary);
+  }
+
+  .ba-item-after {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .ba-item-after + .ba-item-after {
+    border-top-color: rgba(255, 255, 255, 0.1);
+  }
+
+  /* ─── Icons ─── */
+  .ba-x-icon,
+  .ba-check-icon {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    margin-top: 3px;
+  }
+
+  .ba-x-icon {
+    color: var(--color-text-tertiary);
+    opacity: 0.5;
+  }
+
+  /* ─── Buttons ─── */
+  .ba-btn {
+    display: block;
+    text-align: center;
+    padding: var(--space-4) var(--space-6);
+    border-radius: 10px;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    text-decoration: none;
+    margin-top: var(--space-6);
+    transition: opacity 0.2s ease;
+  }
+
+  .ba-btn:hover {
+    opacity: 0.9;
+    text-decoration: none;
+  }
+
+  .ba-btn-before {
+    background: var(--color-text-primary);
+    color: #fff;
+  }
+
+  .ba-btn-after {
+    background: #fff;
+    color: var(--color-text-primary);
+  }
+
+  /* ─── Mobile: stack vertically, no animation ─── */
+  @media (max-width: 767px) {
+    .ba-section {
+      height: auto;
+      padding: var(--space-16) 0;
+    }
+    .ba-sticky {
+      position: relative;
+      top: 0;
+    }
+    .ba-frame {
+      height: auto;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+      overflow: visible;
+    }
+    .ba-card {
+      position: relative;
+      border-radius: 20px;
+    }
+    .ba-before {
+      width: 100%;
+    }
+    .ba-after {
+      width: 100%;
+    }
+  }
+
+  /* ─── Reduced motion ─── */
+  @media (prefers-reduced-motion: reduce) {
+    .ba-section {
+      height: auto !important;
+      padding: var(--space-16) 0;
+    }
+    .ba-sticky {
+      position: relative;
+      top: 0;
+    }
+    .ba-frame {
+      height: auto;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+      overflow: visible;
+    }
+    .ba-card {
+      position: relative !important;
+      width: 100% !important;
+      border-radius: 20px !important;
+    }
+  }
+</style>
+
+<script>
+  function initBeforeAfter() {
+    const section = document.getElementById('ba-section');
+    const afterCard = document.getElementById('ba-after');
+    const beforeCard = document.getElementById('ba-before');
+
+    if (!section || !afterCard || !beforeCard) return;
+    if (window.innerWidth < 768) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    let ticking = false;
+
+    // Smooth deceleration curve (ease-out cubic)
+    function easeOutCubic(x: number) {
+      return 1 - Math.pow(1 - x, 3);
+    }
+
+    // Smooth ease-in-out with gentle deceleration
+    function easeInOutQuart(x: number) {
+      return x < 0.5
+        ? 8 * x * x * x * x
+        : 1 - Math.pow(-2 * x + 2, 4) / 2;
+    }
+
+    function update() {
+      const rect = section.getBoundingClientRect();
+      const sectionH = section.offsetHeight;
+      const viewH = window.innerHeight;
+
+      const scrolled = -rect.top;
+      const total = sectionH - viewH;
+      const raw = Math.max(0, Math.min(1, scrolled / total));
+
+      // Overlapping phases for fluid motion
+      // Phase 1 (0→0.55): After card slides to center
+      // Phase 2 (0.35→1): Before card tucks behind (starts while phase 1 is still going)
+      const p1 = easeOutCubic(Math.min(1, raw / 0.55));
+      const p2 = easeInOutQuart(Math.max(0, Math.min(1, (raw - 0.35) / 0.65)));
+
+      // After card: smooth slide to center + growing shadow
+      afterCard.style.right = `${p1 * 25}%`;
+      const shadowStrength = 0.08 + p1 * 0.12;
+      const shadowBlur = 30 + p1 * 20;
+      afterCard.style.boxShadow = `-8px 4px ${shadowBlur}px rgba(0, 0, 0, ${shadowStrength})`;
+
+      // Before card: shrink + slide to center + scale down for depth
+      const beforeScale = 1 - p2 * 0.04; // subtle 96% scale for depth
+      beforeCard.style.width = `${100 - p2 * 48}%`;
+      beforeCard.style.left = `${p2 * 24}%`;
+      beforeCard.style.opacity = String(1 - p2 * 0.5);
+      beforeCard.style.borderRadius = `${p2 * 20}px`;
+      beforeCard.style.transform = `scale(${beforeScale})`;
+
+      ticking = false;
+    }
+
+    function onScroll() {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    update();
+  }
+
+  initBeforeAfter();
+</script>

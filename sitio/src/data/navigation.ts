@@ -5,23 +5,69 @@ export interface NavSubItem {
   icon?: string;
 }
 
+export interface NavPillar {
+  verb: string;
+  description: string;
+  href: string;
+  items: NavSubItem[];
+}
+
 export interface NavLink {
   label: string;
   href: string;
   children?: NavSubItem[];
+  pillars?: NavPillar[];
 }
 
 export const navLinks: NavLink[] = [
   {
-    label: 'Producto',
+    label: 'Plataforma',
     href: '/producto',
-    children: [
-      { label: 'Punto de venta', href: '/producto#pos', description: 'Cobra en segundos desde cualquier dispositivo.', icon: 'pos' },
-      { label: 'Comercio electrónico', href: '/producto#ecommerce', description: 'Tu tienda online integrada con tu inventario.', icon: 'ecom' },
-      { label: 'Pedidos y logística', href: '/producto#pedidos', description: 'Gestiona entregas y fulfillment sin fricciones.', icon: 'ship' },
-      { label: 'Gestión de inventario', href: '/producto#inventario', description: 'Control total de stock en tiempo real.', icon: 'inv' },
-      { label: 'Clientes y fidelización', href: '/producto#clientes', description: 'Conoce, segmenta y retén a tus clientes.', icon: 'crm' },
-      { label: 'Automatización IA', href: '/producto#axo', description: 'AXO, tu copiloto de inteligencia artificial.', icon: 'axo' },
+    pillars: [
+      {
+        verb: 'Vende',
+        description: 'Cobra en todos los canales',
+        href: '/producto#vende',
+        items: [
+          { label: 'Punto de venta', href: '/producto#pos' },
+          { label: 'Comercio electrónico', href: '/producto#ecommerce' },
+          { label: 'WhatsApp Commerce', href: '/producto#whatsapp' },
+          { label: 'Métodos de pago', href: '/producto#pagos' },
+        ],
+      },
+      {
+        verb: 'Controla',
+        description: 'Opera todas tus tiendas',
+        href: '/producto#controla',
+        items: [
+          { label: 'Gestión de inventario', href: '/producto#inventario' },
+          { label: 'Multi-sucursal', href: '/producto#sucursales' },
+          { label: 'Pedidos y logística', href: '/producto#pedidos' },
+          { label: 'Facturación electrónica', href: '/producto#facturacion' },
+        ],
+      },
+      {
+        verb: 'Fideliza',
+        description: 'Crece con tus clientes',
+        href: '/producto#fideliza',
+        items: [
+          { label: 'CRM y clientes', href: '/producto#clientes' },
+          { label: 'Programa de lealtad', href: '/producto#lealtad' },
+          { label: 'Campañas', href: '/producto#campanas' },
+          { label: 'Personalización', href: '/producto#custom' },
+        ],
+      },
+      {
+        verb: 'Automatiza',
+        description: 'Decide con inteligencia',
+        href: '/producto#automatiza',
+        items: [
+          { label: 'Reportes en tiempo real', href: '/producto#reportes' },
+          { label: 'AXO · IA', href: '/producto#axo' },
+          { label: 'Alertas inteligentes', href: '/producto#alertas' },
+          { label: 'Integraciones', href: '/producto#integraciones' },
+        ],
+      },
     ],
   },
   { label: 'Planes', href: '/planes' },
@@ -30,13 +76,29 @@ export const navLinks: NavLink[] = [
 ];
 
 export const footerLinks = {
-  producto: [
+  vende: [
     { label: 'Punto de venta', href: '/producto#pos' },
     { label: 'Comercio electrónico', href: '/producto#ecommerce' },
-    { label: 'Pedidos y logística', href: '/producto#pedidos' },
+    { label: 'WhatsApp Commerce', href: '/producto#whatsapp' },
+    { label: 'Métodos de pago', href: '/producto#pagos' },
+  ],
+  controla: [
     { label: 'Gestión de inventario', href: '/producto#inventario' },
-    { label: 'Clientes y fidelización', href: '/producto#clientes' },
-    { label: 'Automatización IA', href: '/producto#axo' },
+    { label: 'Multi-sucursal', href: '/producto#sucursales' },
+    { label: 'Pedidos y logística', href: '/producto#pedidos' },
+    { label: 'Facturación electrónica', href: '/producto#facturacion' },
+  ],
+  fideliza: [
+    { label: 'CRM y clientes', href: '/producto#clientes' },
+    { label: 'Programa de lealtad', href: '/producto#lealtad' },
+    { label: 'Campañas', href: '/producto#campanas' },
+    { label: 'Personalización', href: '/producto#custom' },
+  ],
+  automatiza: [
+    { label: 'Reportes en tiempo real', href: '/producto#reportes' },
+    { label: 'AXO · IA', href: '/producto#axo' },
+    { label: 'Alertas inteligentes', href: '/producto#alertas' },
+    { label: 'Integraciones', href: '/producto#integraciones' },
   ],
   empresa: [
     { label: 'Nosotros', href: '/nosotros' },

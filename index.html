@@ -6,7 +6,9 @@
   <title>SACS — Manual de Identidad Visual</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Urbanist:wght@200;300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
   <!-- SVG Noise/Grain Filters -->
   <svg style="position:absolute;width:0;height:0;">
@@ -47,10 +49,11 @@
       --color-border-light: rgba(0,0,0,0.08);
 
       /* Fonts */
-      --font-display: 'DM Sans', sans-serif;
-      --font-heading: 'Space Grotesk', sans-serif;
+      --font-display: 'Sora', sans-serif;
+      --font-heading: 'Sora', sans-serif;
       --font-body: 'Plus Jakarta Sans', sans-serif;
-      --font-logo: 'Urbanist', sans-serif;
+      --font-logo: 'Clash Display', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
 
       /* Radius */
       --radius-sm: 8px;
@@ -397,6 +400,141 @@
     }
     .btn:hover .btn-arrow { transform: translateX(3px); }
 
+    /* Download grid */
+    .download-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .download-card {
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .download-card:hover {
+      border-color: var(--color-primary);
+      box-shadow: 0 4px 16px rgba(75,123,229,0.1);
+    }
+    .download-card-preview {
+      width: 100%;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-md);
+      background: var(--color-bg-secondary);
+    }
+    .download-card-preview.dark {
+      background: #111;
+    }
+    .download-card-label {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      text-align: center;
+    }
+    .download-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-primary);
+      background: rgba(75,123,229,0.06);
+      border: none;
+      padding: 8px 16px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: background 0.2s ease;
+      text-decoration: none;
+    }
+    .download-btn:hover { background: rgba(75,123,229,0.12); }
+    .download-btn svg { width: 14px; height: 14px; }
+    .download-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    /* Papeleria */
+    .papeleria-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 32px;
+      margin-top: 32px;
+    }
+    .papeleria-item {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .papeleria-item-label {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-text-tertiary);
+    }
+
+    /* Business card */
+    .bcard {
+      width: 340px;
+      height: 200px;
+      border-radius: 12px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+    .bcard-front {
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    .bcard-back {
+      background: #111;
+    }
+    .bcard-dark {
+      background: #111;
+    }
+
+    /* Letterhead */
+    .letterhead {
+      width: 100%;
+      max-width: 380px;
+      aspect-ratio: 8.5/11;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 8px;
+      padding: 40px 32px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Merch */
+    .merch-card {
+      width: 100%;
+      height: 320px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
     /* ═══════════════════════════════════════════════════
        COLOR SWATCHES
        ═══════════════════════════════════════════════════ */
@@ -421,7 +559,7 @@
     }
     .swatch-info { padding: 16px; }
     .swatch-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
-    .swatch-hex { font-size: 13px; color: var(--color-text-tertiary); font-family: 'Space Grotesk', monospace; }
+    .swatch-hex { font-size: 13px; color: var(--color-text-tertiary); font-family: var(--font-mono); }
 
     /* Oaxacan swatch — smaller */
     .colors-grid-sm {
@@ -609,7 +747,7 @@
       text-align: center;
     }
     .shadow-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
-    .shadow-value { font-size: 11px; color: var(--color-text-tertiary); font-family: monospace; }
+    .shadow-value { font-size: 11px; color: var(--color-text-tertiary); font-family: var(--font-mono); }
 
     .spacing-row {
       display: flex;
@@ -627,7 +765,7 @@
       font-size: 13px;
       color: var(--color-text-tertiary);
       min-width: 120px;
-      font-family: monospace;
+      font-family: var(--font-mono);
     }
     .radius-grid {
       display: grid;
@@ -1702,6 +1840,9 @@
       border-radius: 50%;
       mix-blend-mode: multiply;
     }
+    .logo-box-dark .p1-circle {
+      mix-blend-mode: screen;
+    }
     .p1-circle-blue {
       width: 110px; height: 110px;
       background: radial-gradient(circle at 35% 35%, #a8c4f5, #7BA4F0 40%, #5B8AE5 100%);
@@ -1723,12 +1864,11 @@
     .p1-text {
       font-family: var(--font-logo);
       font-size: 28px;
-      font-weight: 200;
-      color: #6B7B8D;
-      letter-spacing: -0.02em;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      letter-spacing: -0.03em;
     }
-    .p1-text strong { font-weight: 500; color: #4B5563; }
-    .p1-text sup { font-size: 10px; vertical-align: super; }
+    .p1-text sup { font-size: 10px; vertical-align: super; font-weight: 400; }
 
     /* Manifiesto */
     .manifiesto-quote {
@@ -3179,10 +3319,9 @@
     <ul class="nav-links">
       <li><a href="#instagram">14 Instagram</a></li>
       <li><a href="#firma-email">15 Firma de Email</a></li>
-      <li><a href="#uniformes">16 Identidad Textil</a></li>
-      <li><a href="#fotografia">17 Direccion de Imagen</a></li>
-      <li><a href="#retratos">18 Retratos de Comerciantes</a></li>
-      <li><a href="#accesibilidad">19 Accesibilidad</a></li>
+      <li><a href="#fotografia">16 Direccion de Imagen</a></li>
+      <li><a href="#retratos">17 Retratos de Comerciantes</a></li>
+      <li><a href="#accesibilidad">18 Accesibilidad</a></li>
       <li><a href="#nav-footer">Nav & Footer</a></li>
       <li><a href="#motion">Motion</a></li>
       <li><a class="btn btn-primary btn-sm" href="#">Agenda reunion</a></li>
@@ -3216,7 +3355,7 @@
        ═══════════════════════════════════════════ -->
   <section class="section" id="logo">
     <div class="section-label">01 — Logo</div>
-    <h2 class="section-title" style="font-family: var(--font-logo);"><span style="font-weight: 200; color: #6B7280;">Sacs</span><span style="font-weight: 500; color: #4B5563;">cloud</span><span style="font-weight: 200; font-size: 0.5em; vertical-align: super;">®</span></h2>
+    <h2 class="section-title" style="font-family: var(--font-logo); font-weight: 700; color: var(--color-text-primary);">Sacs<span style="font-weight: 200; font-size: 0.5em; vertical-align: super;">®</span></h2>
     <p class="section-desc">
       Tres circulos que representan la interseccion de Negocio, Tecnologia e Impacto Social. El punto de encuentro donde el comercio se transforma.
     </p>
@@ -3325,26 +3464,26 @@
     <div class="logo-showcase">
       <!-- Vertical — Light -->
       <div class="logo-variant">
-        <div class="logo-box" style="padding: 64px 80px; flex-direction: column;">
-          <div class="p1-circles" style="width: 200px; height: 175px; margin-bottom: 24px;">
-            <div class="p1-circle p1-circle-blue" style="width: 138px; height: 138px;"></div>
-            <div class="p1-circle p1-circle-gold" style="width: 90px; height: 90px; left: 62px;"></div>
-            <div class="p1-circle p1-circle-teal" style="width: 112px; height: 112px;"></div>
+        <div class="logo-box" style="padding: 48px 64px; flex-direction: column;">
+          <div class="p1-circles" style="width: 150px; height: 132px; margin-bottom: 20px;">
+            <div class="p1-circle p1-circle-blue" style="width: 104px; height: 104px;"></div>
+            <div class="p1-circle p1-circle-gold" style="width: 68px; height: 68px; left: 47px;"></div>
+            <div class="p1-circle p1-circle-teal" style="width: 84px; height: 84px;"></div>
           </div>
-          <div class="p1-text" style="font-size: 36px;">Sacs<strong>cloud</strong><sup>®</sup></div>
+          <div class="p1-text" style="font-size: 36px;">Sacs<sup>®</sup></div>
         </div>
         <span class="logo-variant-label">Vertical — Fondo claro</span>
       </div>
 
       <!-- Vertical — Dark -->
       <div class="logo-variant">
-        <div class="logo-box logo-box-dark" style="padding: 64px 80px; flex-direction: column;">
-          <div class="p1-circles" style="width: 200px; height: 175px; margin-bottom: 24px;">
-            <div class="p1-circle p1-circle-blue" style="width: 138px; height: 138px;"></div>
-            <div class="p1-circle p1-circle-gold" style="width: 90px; height: 90px; left: 62px;"></div>
-            <div class="p1-circle p1-circle-teal" style="width: 112px; height: 112px;"></div>
+        <div class="logo-box logo-box-dark" style="padding: 48px 64px; flex-direction: column;">
+          <div class="p1-circles" style="width: 150px; height: 132px; margin-bottom: 20px;">
+            <div class="p1-circle p1-circle-blue" style="width: 104px; height: 104px;"></div>
+            <div class="p1-circle p1-circle-gold" style="width: 68px; height: 68px; left: 47px;"></div>
+            <div class="p1-circle p1-circle-teal" style="width: 84px; height: 84px;"></div>
           </div>
-          <div class="p1-text" style="font-size: 36px; color: rgba(255,255,255,0.5);">Sacs<strong style="color: rgba(255,255,255,0.85);">cloud</strong><sup>®</sup></div>
+          <div class="p1-text" style="font-size: 36px; color: #fff;">Sacs<sup>®</sup></div>
         </div>
         <span class="logo-variant-label">Vertical — Fondo oscuro</span>
       </div>
@@ -3354,26 +3493,26 @@
     <div class="logo-showcase" style="margin-top: 32px;">
       <!-- Horizontal — Light -->
       <div class="logo-variant">
-        <div class="logo-box" style="padding: 48px 64px;">
-          <div class="p1-circles" style="width: 100px; height: 88px; margin-right: 20px; flex-shrink: 0;">
-            <div class="p1-circle p1-circle-blue" style="width: 70px; height: 70px;"></div>
-            <div class="p1-circle p1-circle-gold" style="width: 46px; height: 46px; left: 32px;"></div>
-            <div class="p1-circle p1-circle-teal" style="width: 58px; height: 58px;"></div>
+        <div class="logo-box" style="padding: 40px 56px;">
+          <div class="p1-circles" style="width: 80px; height: 70px; margin-right: 16px; flex-shrink: 0;">
+            <div class="p1-circle p1-circle-blue" style="width: 56px; height: 56px;"></div>
+            <div class="p1-circle p1-circle-gold" style="width: 36px; height: 36px; left: 26px;"></div>
+            <div class="p1-circle p1-circle-teal" style="width: 46px; height: 46px;"></div>
           </div>
-          <div class="p1-text" style="font-size: 32px;">Sacs<strong>cloud</strong><sup>®</sup></div>
+          <div class="p1-text" style="font-size: 32px;">Sacs<sup>®</sup></div>
         </div>
         <span class="logo-variant-label">Horizontal — Fondo claro</span>
       </div>
 
       <!-- Horizontal — Dark -->
       <div class="logo-variant">
-        <div class="logo-box logo-box-dark" style="padding: 48px 64px;">
-          <div class="p1-circles" style="width: 100px; height: 88px; margin-right: 20px; flex-shrink: 0;">
-            <div class="p1-circle p1-circle-blue" style="width: 70px; height: 70px;"></div>
-            <div class="p1-circle p1-circle-gold" style="width: 46px; height: 46px; left: 32px;"></div>
-            <div class="p1-circle p1-circle-teal" style="width: 58px; height: 58px;"></div>
+        <div class="logo-box logo-box-dark" style="padding: 40px 56px;">
+          <div class="p1-circles" style="width: 80px; height: 70px; margin-right: 16px; flex-shrink: 0;">
+            <div class="p1-circle p1-circle-blue" style="width: 56px; height: 56px;"></div>
+            <div class="p1-circle p1-circle-gold" style="width: 36px; height: 36px; left: 26px;"></div>
+            <div class="p1-circle p1-circle-teal" style="width: 46px; height: 46px;"></div>
           </div>
-          <div class="p1-text" style="font-size: 32px; color: rgba(255,255,255,0.5);">Sacs<strong style="color: rgba(255,255,255,0.85);">cloud</strong><sup>®</sup></div>
+          <div class="p1-text" style="font-size: 32px; color: #fff;">Sacs<sup>®</sup></div>
         </div>
         <span class="logo-variant-label">Horizontal — Fondo oscuro</span>
       </div>
@@ -3410,6 +3549,97 @@
           </div>
         </div>
         <span class="logo-variant-label">Favicon / App icon</span>
+      </div>
+    </div>
+
+    <!-- Descargables del logo -->
+    <div class="divider"></div>
+    <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.04em; margin-bottom: 8px;">Descargables</h3>
+    <p style="font-size: 16px; color: var(--color-text-secondary); margin-bottom: 24px;">Descarga cada variante del logo en SVG (vector) o PNG (raster). Click para descargar.</p>
+
+    <div class="download-grid">
+      <!-- Vertical claro -->
+      <div class="download-card">
+        <div class="download-card-preview">
+          <svg width="80" height="90" viewBox="0 0 200 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="65" cy="95" r="52" fill="#7BA4F0" opacity="0.85"/>
+            <circle cx="100" cy="45" r="34" fill="#E8B54E" opacity="0.85"/>
+            <circle cx="135" cy="60" r="42" fill="#38C5A8" opacity="0.85"/>
+            <text x="100" y="195" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="42" fill="#1A1A1A">Sacs<tspan font-size="14" baseline-shift="super" font-weight="400">®</tspan></text>
+          </svg>
+        </div>
+        <span class="download-card-label">Vertical — Claro</span>
+        <div class="download-actions">
+          <button class="download-btn" onclick="downloadLogoSVG('vertical-light')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>SVG</button>
+          <button class="download-btn" onclick="downloadLogoPNG('vertical-light')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>PNG</button>
+        </div>
+      </div>
+
+      <!-- Vertical oscuro -->
+      <div class="download-card">
+        <div class="download-card-preview dark">
+          <svg width="80" height="90" viewBox="0 0 200 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="65" cy="95" r="52" fill="#7BA4F0" opacity="0.7"/>
+            <circle cx="100" cy="45" r="34" fill="#E8B54E" opacity="0.7"/>
+            <circle cx="135" cy="60" r="42" fill="#38C5A8" opacity="0.7"/>
+            <text x="100" y="195" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="42" fill="#ffffff">Sacs<tspan font-size="14" baseline-shift="super" font-weight="400">®</tspan></text>
+          </svg>
+        </div>
+        <span class="download-card-label">Vertical — Oscuro</span>
+        <div class="download-actions">
+          <button class="download-btn" onclick="downloadLogoSVG('vertical-dark')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>SVG</button>
+          <button class="download-btn" onclick="downloadLogoPNG('vertical-dark')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>PNG</button>
+        </div>
+      </div>
+
+      <!-- Horizontal claro -->
+      <div class="download-card">
+        <div class="download-card-preview">
+          <svg width="140" height="50" viewBox="0 0 300 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="35" cy="55" r="30" fill="#7BA4F0" opacity="0.85"/>
+            <circle cx="55" cy="25" r="20" fill="#E8B54E" opacity="0.85"/>
+            <circle cx="75" cy="35" r="24" fill="#38C5A8" opacity="0.85"/>
+            <text x="200" y="65" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="40" fill="#1A1A1A">Sacs<tspan font-size="14" baseline-shift="super" font-weight="400">®</tspan></text>
+          </svg>
+        </div>
+        <span class="download-card-label">Horizontal — Claro</span>
+        <div class="download-actions">
+          <button class="download-btn" onclick="downloadLogoSVG('horizontal-light')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>SVG</button>
+          <button class="download-btn" onclick="downloadLogoPNG('horizontal-light')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>PNG</button>
+        </div>
+      </div>
+
+      <!-- Horizontal oscuro -->
+      <div class="download-card">
+        <div class="download-card-preview dark">
+          <svg width="140" height="50" viewBox="0 0 300 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="35" cy="55" r="30" fill="#7BA4F0" opacity="0.7"/>
+            <circle cx="55" cy="25" r="20" fill="#E8B54E" opacity="0.7"/>
+            <circle cx="75" cy="35" r="24" fill="#38C5A8" opacity="0.7"/>
+            <text x="200" y="65" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="40" fill="#ffffff">Sacs<tspan font-size="14" baseline-shift="super" font-weight="400">®</tspan></text>
+          </svg>
+        </div>
+        <span class="download-card-label">Horizontal — Oscuro</span>
+        <div class="download-actions">
+          <button class="download-btn" onclick="downloadLogoSVG('horizontal-dark')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>SVG</button>
+          <button class="download-btn" onclick="downloadLogoPNG('horizontal-dark')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>PNG</button>
+        </div>
+      </div>
+
+      <!-- Isotipo -->
+      <div class="download-card">
+        <div class="download-card-preview">
+          <svg width="60" height="55" viewBox="0 0 140 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="45" cy="75" r="42" fill="#7BA4F0" opacity="0.85"/>
+            <circle cx="75" cy="30" r="28" fill="#E8B54E" opacity="0.85"/>
+            <circle cx="100" cy="45" r="34" fill="#38C5A8" opacity="0.85"/>
+          </svg>
+        </div>
+        <span class="download-card-label">Isotipo</span>
+        <div class="download-actions">
+          <button class="download-btn" onclick="downloadLogoSVG('isotipo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>SVG</button>
+          <button class="download-btn" onclick="downloadLogoPNG('isotipo')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>PNG</button>
+        </div>
       </div>
     </div>
   </section>
@@ -3773,67 +4003,67 @@
     <div class="section-label">07 — Tipografia</div>
     <h2 class="section-title">Tres familias.<br>Una jerarquia clara.</h2>
     <p class="section-desc">
-      DM Sans para titulos display de impacto. Space Grotesk para headings tecnicos y numeros. Plus Jakarta Sans para cuerpo y UI. Urbanist solo en el logo (no se carga en runtime).
+      Sora ExtraBold para titulos display de impacto. Sora Medium/Bold para headings y numeros. Plus Jakarta Sans para cuerpo y UI. Clash Display Bold solo en el wordmark "Sacs".
     </p>
 
     <div class="type-specimen">
-      <p style="font-family: var(--font-display); font-size: clamp(56px, 8vw, 115px); font-weight: 500; line-height: 0.95; letter-spacing: -0.05em;">
+      <p style="font-family: var(--font-display); font-size: clamp(56px, 8vw, 115px); font-weight: 800; line-height: 0.9; letter-spacing: -0.05em;">
         Display Hero
       </p>
       <div class="type-meta">
-        <span class="type-meta-item">DM Sans</span>
+        <span class="type-meta-item">Sora</span>
         <span class="type-meta-item">56-115px</span>
-        <span class="type-meta-item">Medium 500</span>
-        <span class="type-meta-item">LH: 0.95</span>
+        <span class="type-meta-item">ExtraBold 800</span>
+        <span class="type-meta-item">LH: 0.9</span>
         <span class="type-meta-item">LS: -0.05em</span>
         <span class="type-meta-item">Display</span>
       </div>
     </div>
 
     <div class="type-specimen">
-      <p style="font-family: var(--font-display); font-size: 64px; font-weight: 500; line-height: 1.05; letter-spacing: -0.05em;">
+      <p style="font-family: var(--font-display); font-size: 64px; font-weight: 800; line-height: 0.95; letter-spacing: -0.04em;">
         Display Large
       </p>
       <div class="type-meta">
-        <span class="type-meta-item">DM Sans</span>
+        <span class="type-meta-item">Sora</span>
         <span class="type-meta-item">64px</span>
-        <span class="type-meta-item">Medium 500</span>
-        <span class="type-meta-item">LH: 1.05</span>
-        <span class="type-meta-item">LS: -0.05em</span>
-      </div>
-    </div>
-
-    <div class="type-specimen">
-      <p style="font-family: var(--font-heading); font-size: 56px; font-weight: 500; line-height: 1.1; letter-spacing: -0.04em;">
-        Heading 1 — Space Grotesk
-      </p>
-      <div class="type-meta">
-        <span class="type-meta-item">Space Grotesk</span>
-        <span class="type-meta-item">56px</span>
-        <span class="type-meta-item">Medium 500</span>
-        <span class="type-meta-item">LH: 1.1</span>
+        <span class="type-meta-item">ExtraBold 800</span>
+        <span class="type-meta-item">LH: 0.95</span>
         <span class="type-meta-item">LS: -0.04em</span>
       </div>
     </div>
 
     <div class="type-specimen">
-      <h2 style="font-family: var(--font-body); font-size: 36px; font-weight: 600; line-height: 1.15; letter-spacing: -0.02em;">
+      <p style="font-family: var(--font-display); font-size: 48px; font-weight: 800; line-height: 1.1; letter-spacing: -0.03em;">
+        Heading 1 — Sora ExtraBold
+      </p>
+      <div class="type-meta">
+        <span class="type-meta-item">Sora</span>
+        <span class="type-meta-item">48px</span>
+        <span class="type-meta-item">ExtraBold 800</span>
+        <span class="type-meta-item">LH: 1.1</span>
+        <span class="type-meta-item">LS: -0.03em</span>
+      </div>
+    </div>
+
+    <div class="type-specimen">
+      <h2 style="font-family: var(--font-display); font-size: 36px; font-weight: 700; line-height: 1.15; letter-spacing: -0.02em;">
         Heading 2 — Comercio que transforma
       </h2>
       <div class="type-meta">
-        <span class="type-meta-item">Plus Jakarta Sans</span>
+        <span class="type-meta-item">Sora</span>
         <span class="type-meta-item">36px</span>
-        <span class="type-meta-item">Semibold 600</span>
+        <span class="type-meta-item">Bold 700</span>
         <span class="type-meta-item">LH: 1.15</span>
       </div>
     </div>
 
     <div class="type-specimen">
-      <h3 style="font-family: var(--font-body); font-size: 28px; font-weight: 600; line-height: 1.2; letter-spacing: -0.015em;">
+      <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 600; line-height: 1.2; letter-spacing: -0.015em;">
         Heading 3 — Tecnologia con alma mexicana
       </h3>
       <div class="type-meta">
-        <span class="type-meta-item">Plus Jakarta Sans</span>
+        <span class="type-meta-item">Sora</span>
         <span class="type-meta-item">28px</span>
         <span class="type-meta-item">Semibold 600</span>
         <span class="type-meta-item">LH: 1.2</span>
@@ -3841,11 +4071,11 @@
     </div>
 
     <div class="type-specimen">
-      <h4 style="font-family: var(--font-body); font-size: 22px; font-weight: 600; line-height: 1.3;">
+      <h4 style="font-family: var(--font-display); font-size: 22px; font-weight: 600; line-height: 1.3;">
         Heading 4 — El cerebro del retail
       </h4>
       <div class="type-meta">
-        <span class="type-meta-item">Plus Jakarta Sans</span>
+        <span class="type-meta-item">Sora</span>
         <span class="type-meta-item">22px</span>
         <span class="type-meta-item">Semibold 600</span>
         <span class="type-meta-item">LH: 1.3</span>
@@ -3898,6 +4128,49 @@
         <span class="type-meta-item">Semibold 600</span>
         <span class="type-meta-item">LS: 0.1em</span>
         <span class="type-meta-item">UPPERCASE</span>
+      </div>
+    </div>
+
+    <!-- Descargables de tipografia -->
+    <div class="divider"></div>
+    <h3 style="font-family: var(--font-display); font-size: 28px; font-weight: 500; letter-spacing: -0.04em; margin-bottom: 8px;">Descargar tipografias</h3>
+    <p style="font-size: 16px; color: var(--color-text-secondary); margin-bottom: 24px;">Las tres familias tipograficas del sistema SACS. Click para ir a la fuente oficial y descargar.</p>
+
+    <div class="download-grid">
+      <!-- Sora -->
+      <div class="download-card">
+        <div class="download-card-preview">
+          <span style="font-family: var(--font-display); font-size: 32px; font-weight: 700; letter-spacing: -0.03em; color: var(--color-text-primary);">Sora</span>
+        </div>
+        <span class="download-card-label">Display &amp; Headings<br>400 · 500 · 600 · 700 · 800</span>
+        <a class="download-btn" href="https://fonts.google.com/specimen/Sora" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>Google Fonts</a>
+      </div>
+
+      <!-- Plus Jakarta Sans -->
+      <div class="download-card">
+        <div class="download-card-preview">
+          <span style="font-family: var(--font-body); font-size: 28px; font-weight: 600; color: var(--color-text-primary);">Plus Jakarta</span>
+        </div>
+        <span class="download-card-label">Body &amp; UI<br>300 · 400 · 500 · 600 · 700</span>
+        <a class="download-btn" href="https://fonts.google.com/specimen/Plus+Jakarta+Sans" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>Google Fonts</a>
+      </div>
+
+      <!-- Clash Display -->
+      <div class="download-card">
+        <div class="download-card-preview">
+          <span style="font-family: var(--font-logo); font-size: 32px; font-weight: 700; letter-spacing: -0.03em; color: var(--color-text-primary);">Clash Display</span>
+        </div>
+        <span class="download-card-label">Solo wordmark "Sacs"<br>Bold 700</span>
+        <a class="download-btn" href="https://www.fontshare.com/fonts/clash-display" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>Fontshare</a>
+      </div>
+
+      <!-- JetBrains Mono -->
+      <div class="download-card">
+        <div class="download-card-preview">
+          <span style="font-family: var(--font-mono); font-size: 24px; font-weight: 400; color: var(--color-text-primary);">JetBrains Mono</span>
+        </div>
+        <span class="download-card-label">Codigo &amp; valores tecnicos<br>Regular 400 · Medium 500</span>
+        <a class="download-btn" href="https://fonts.google.com/specimen/JetBrains+Mono" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>Google Fonts</a>
       </div>
     </div>
   </section>
@@ -4149,7 +4422,7 @@
       <div class="section-label">11 — Heroes con Ilustracion</div>
       <h2 class="section-title" style="color: #fff;">Imagen + Overlay + Grain.</h2>
       <p class="section-desc">
-        Ilustraciones painterly como fondo con textura grain (SVG feTurbulence). Tres variantes de overlay aprobadas para legibilidad. Tipografia DM Sans. Botones solidos sin blur.
+        Ilustraciones painterly como fondo con textura grain (SVG feTurbulence). Tres variantes de overlay aprobadas para legibilidad. Tipografia Sora. Botones solidos sin blur.
       </p>
     </div>
   </section>
@@ -5652,7 +5925,7 @@
       <div class="a11y-card" style="border-left: 4px solid var(--color-primary);">
         <h4>Contraste de headings</h4>
         <div class="a11y-ratio">3:1</div>
-        <p>Minimo para texto grande (+18px bold o +24px). Los titulos en DM Sans siempre cumplen este estandar.</p>
+        <p>Minimo para texto grande (+18px bold o +24px). Los titulos en Sora siempre cumplen este estandar.</p>
       </div>
       <div class="a11y-card" style="border-left: 4px solid var(--color-accent);">
         <h4>Touch targets</h4>
@@ -5739,11 +6012,11 @@
         </div>
         <div class="ig-post-caption">
           <h4>Pilar de marca</h4>
-          <p>Fondo negro puro con DM Sans 500. La franja sarape conecta con la identidad oaxaquena.</p>
+          <p>Fondo negro puro con Sora 500. La franja sarape conecta con la identidad oaxaquena.</p>
           <div class="ig-post-tags">
             <span class="ig-post-tag">Fondo negro</span>
             <span class="ig-post-tag">Sarape accent</span>
-            <span class="ig-post-tag">DM Sans 500</span>
+            <span class="ig-post-tag">Sora 500</span>
           </div>
         </div>
       </div>
@@ -6138,6 +6411,49 @@
   </footer>
 
   </div><!-- /main-content -->
+
+  <!-- Logo download functions -->
+  <script>
+    var logoSVGs = {
+      'vertical-light': '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="440" viewBox="0 0 400 440"><rect width="400" height="440" fill="#ffffff"/><circle cx="130" cy="190" r="104" fill="#7BA4F0" opacity="0.85"/><circle cx="200" cy="90" r="68" fill="#E8B54E" opacity="0.85"/><circle cx="270" cy="120" r="84" fill="#38C5A8" opacity="0.85"/><text x="200" y="390" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="84" fill="#1A1A1A">Sacs<tspan font-size="28" baseline-shift="super" font-weight="400">\u00AE</tspan></text></svg>',
+      'vertical-dark': '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="440" viewBox="0 0 400 440"><rect width="400" height="440" fill="#111111"/><circle cx="130" cy="190" r="104" fill="#7BA4F0" opacity="0.7"/><circle cx="200" cy="90" r="68" fill="#E8B54E" opacity="0.7"/><circle cx="270" cy="120" r="84" fill="#38C5A8" opacity="0.7"/><text x="200" y="390" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="84" fill="#ffffff">Sacs<tspan font-size="28" baseline-shift="super" font-weight="400">\u00AE</tspan></text></svg>',
+      'horizontal-light': '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="200" viewBox="0 0 600 200"><rect width="600" height="200" fill="#ffffff"/><circle cx="70" cy="110" r="60" fill="#7BA4F0" opacity="0.85"/><circle cx="110" cy="50" r="40" fill="#E8B54E" opacity="0.85"/><circle cx="150" cy="70" r="48" fill="#38C5A8" opacity="0.85"/><text x="400" y="125" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="80" fill="#1A1A1A">Sacs<tspan font-size="26" baseline-shift="super" font-weight="400">\u00AE</tspan></text></svg>',
+      'horizontal-dark': '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="200" viewBox="0 0 600 200"><rect width="600" height="200" fill="#111111"/><circle cx="70" cy="110" r="60" fill="#7BA4F0" opacity="0.7"/><circle cx="110" cy="50" r="40" fill="#E8B54E" opacity="0.7"/><circle cx="150" cy="70" r="48" fill="#38C5A8" opacity="0.7"/><text x="400" y="125" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="80" fill="#ffffff">Sacs<tspan font-size="26" baseline-shift="super" font-weight="400">\u00AE</tspan></text></svg>',
+      'isotipo': '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="260" viewBox="0 0 300 260"><rect width="300" height="260" fill="#ffffff"/><circle cx="95" cy="160" r="84" fill="#7BA4F0" opacity="0.85"/><circle cx="150" cy="60" r="56" fill="#E8B54E" opacity="0.85"/><circle cx="205" cy="90" r="68" fill="#38C5A8" opacity="0.85"/></svg>'
+    };
+    function downloadLogoSVG(variant) {
+      var svg = logoSVGs[variant];
+      var blob = new Blob([svg], {type: 'image/svg+xml'});
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'sacs-logo-' + variant + '.svg';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+    function downloadLogoPNG(variant) {
+      var svg = logoSVGs[variant];
+      var canvas = document.createElement('canvas');
+      var ctx = canvas.getContext('2d');
+      var img = new Image();
+      var blob = new Blob([svg], {type: 'image/svg+xml'});
+      var url = URL.createObjectURL(blob);
+      img.onload = function() {
+        canvas.width = img.width * 2;
+        canvas.height = img.height * 2;
+        ctx.scale(2, 2);
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob(function(pngBlob) {
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(pngBlob);
+          a.download = 'sacs-logo-' + variant + '.png';
+          a.click();
+          URL.revokeObjectURL(a.href);
+        }, 'image/png');
+        URL.revokeObjectURL(url);
+      };
+      img.src = url;
+    }
+  </script>
 
   <!-- Fade-in-up on scroll — ejemplo vivo del sistema de motion -->
   <script>

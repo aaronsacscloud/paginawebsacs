@@ -47,6 +47,7 @@ const features: Feature[] = [
       <div class="showcase-header reveal">
         <span class="showcase-eyebrow">Plataforma</span>
         <h2 class="showcase-title">Todo encaja en un solo lugar.</h2>
+        <p class="showcase-subtitle">Cada módulo se conecta con los demás — sin integraciones extra.</p>
       </div>
 
       <div class="showcase-accordion" id="showcase-accordion">
@@ -58,12 +59,10 @@ const features: Feature[] = [
             aria-expanded={i === 0 ? 'true' : 'false'}
           >
             <div class="accordion-header">
+              <span class="accordion-num">{String(i + 1).padStart(2, '0')}</span>
               <span class="accordion-title">{feature.title}</span>
-              <span class="accordion-icon" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <line x1="10" y1="4" x2="10" y2="16" class="accordion-icon-v" />
-                  <line x1="4" y1="10" x2="16" y2="10" />
-                </svg>
+              <span class="accordion-arrow" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 4l4 4-4 4"/></svg>
               </span>
             </div>
             <div class="accordion-body">
@@ -297,66 +296,90 @@ const features: Feature[] = [
     color: var(--color-text-primary);
   }
 
+  .showcase-subtitle {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+    margin-top: var(--space-3);
+  }
+
   /* ─── Accordion ─── */
   .showcase-accordion {
     display: flex;
     flex-direction: column;
+    gap: 6px;
   }
 
   .accordion-item {
     display: flex;
     flex-direction: column;
     border: none;
-    background: none;
+    background: transparent;
     text-align: left;
     cursor: pointer;
-    padding: 0;
-    border-top: 1px solid var(--color-border-light);
+    padding: var(--space-4) var(--space-5);
+    border-radius: 12px;
     font-family: var(--font-body);
-    transition: background 0.2s ease;
+    transition: background 0.25s ease, box-shadow 0.25s ease;
     position: relative;
     overflow: hidden;
+    border-left: 3px solid transparent;
   }
 
-  .accordion-item:last-child {
-    border-bottom: 1px solid var(--color-border-light);
+  .accordion-item:hover {
+    background: rgba(0, 0, 0, 0.025);
+  }
+
+  .accordion-item.active {
+    background: var(--color-bg-card);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
+    border-left-color: var(--color-primary);
   }
 
   .accordion-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: var(--space-5) 0;
-    gap: var(--space-4);
+    gap: var(--space-3);
+  }
+
+  .accordion-num {
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    min-width: 1.5rem;
+    transition: color 0.25s ease;
+  }
+
+  .accordion-item.active .accordion-num {
+    color: var(--color-primary);
   }
 
   .accordion-title {
     font-size: 1.0625rem;
     font-weight: 600;
     color: var(--color-text-primary);
+    flex: 1;
     transition: color 0.2s ease;
   }
 
-  .accordion-item.active .accordion-title {
-    color: var(--color-text-primary);
-  }
-
-  .accordion-icon {
+  .accordion-arrow {
     flex-shrink: 0;
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
     color: var(--color-text-tertiary);
-    transition: transform 0.3s ease;
-  }
-
-  .accordion-icon-v {
-    transition: transform 0.3s ease, opacity 0.3s ease;
-    transform-origin: center;
-  }
-
-  .accordion-item.active .accordion-icon-v {
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s ease, opacity 0.25s ease;
     opacity: 0;
+  }
+
+  .accordion-item:hover .accordion-arrow,
+  .accordion-item.active .accordion-arrow {
+    opacity: 1;
+  }
+
+  .accordion-item.active .accordion-arrow {
     transform: rotate(90deg);
+    color: var(--color-primary);
   }
 
   /* Accordion body */
@@ -364,31 +387,29 @@ const features: Feature[] = [
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    padding: 0 0 0 0;
+    padding: 0 0 0 2.25rem;
   }
 
   .accordion-item.active .accordion-body {
     max-height: 200px;
-    padding: 0 0 var(--space-5) 0;
+    padding: var(--space-2) 0 0 2.25rem;
   }
 
   .accordion-desc {
     font-size: 0.9375rem;
     line-height: 1.6;
     color: var(--color-text-secondary);
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--space-3);
   }
 
   .accordion-link {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     font-weight: 600;
-    color: var(--color-text-primary);
+    color: var(--color-primary);
     text-decoration: none;
-    border-bottom: 1px solid var(--color-text-primary);
-    padding-bottom: 2px;
     transition: gap 0.2s ease;
   }
 
@@ -397,30 +418,30 @@ const features: Feature[] = [
     text-decoration: none;
   }
 
-  /* Progress bar on active item */
+  /* Progress bar on active item — left border fill */
   .accordion-progress {
     position: absolute;
-    bottom: 0;
+    top: 0;
     left: 0;
-    right: 0;
-    height: 2px;
+    bottom: 0;
+    width: 3px;
     background: transparent;
   }
 
   .accordion-progress-fill {
-    height: 100%;
-    width: 0%;
+    width: 100%;
+    height: 0%;
     background: var(--color-primary);
     border-radius: 1px;
   }
 
   .accordion-item.active .accordion-progress-fill {
-    animation: progressFill 6s linear forwards;
+    animation: progressFillVertical 6s linear forwards;
   }
 
-  @keyframes progressFill {
-    from { width: 0%; }
-    to { width: 100%; }
+  @keyframes progressFillVertical {
+    from { height: 0%; }
+    to { height: 100%; }
   }
 
   /* ─── Right side: mockups ─── */
@@ -980,7 +1001,7 @@ const features: Feature[] = [
     }
     .accordion-item.active .accordion-progress-fill {
       animation: none;
-      width: 100%;
+      height: 100%;
     }
   }
 </style>
