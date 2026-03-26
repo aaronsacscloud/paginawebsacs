@@ -23,10 +23,11 @@ const steps = [
     step: 1,
     verb: 'Vende',
     title: 'Vende más en cada punto',
-    features: [
-      'Cobra con tarjeta, efectivo o transferencia',
-      'Desde cualquier dispositivo, en cualquier sucursal',
-      'Cliente identificado en cada ticket',
+    bgKey: 'pos',
+    subs: [
+      { id: 'pos-pdv', label: 'Punto de Venta', desc: 'Cobra con tarjeta, efectivo o transferencia desde cualquier dispositivo.', image: '/images/screen-pos.png' },
+      { id: 'pos-ecommerce', label: 'eCommerce', desc: 'Tu tienda en línea conectada al mismo inventario y clientes.', image: null },
+      { id: 'pos-whatsapp', label: 'WhatsApp', desc: 'Vende y da seguimiento directo por WhatsApp Business.', image: null },
     ],
   },
   {
@@ -34,10 +35,11 @@ const steps = [
     step: 2,
     verb: 'Controla',
     title: 'Controla tu stock en tiempo real',
-    features: [
-      'Stock por sucursal y CEDIS en tiempo real',
-      'Traspasos y nivelación entre bodegas',
-      'Alertas de reabasto automáticas',
+    bgKey: 'stock',
+    subs: [
+      { id: 'stock-inventario', label: 'Inventario multi-sucursal', desc: 'Stock por sucursal y CEDIS en tiempo real, siempre sincronizado.', image: null },
+      { id: 'stock-traspasos', label: 'Traspasos entre CEDIS', desc: 'Mueve mercancía entre bodegas y sucursales con un clic.', image: null },
+      { id: 'stock-alertas', label: 'Alertas de reabasto', desc: 'Recibe alertas automáticas cuando un producto está por agotarse.', image: null },
     ],
   },
   {
@@ -45,10 +47,11 @@ const steps = [
     step: 3,
     verb: 'Fideliza',
     title: 'Fideliza a cada cliente',
-    features: [
-      'Programa de lealtad integrado al cobro',
-      'Seguimiento automático por comportamiento',
-      'Promociones personalizadas',
+    bgKey: 'crm',
+    subs: [
+      { id: 'crm-lealtad', label: 'Programa de lealtad', desc: 'Programa de puntos integrado al cobro, sin apps extra.', image: null },
+      { id: 'crm-seguimiento', label: 'Seguimiento de clientes', desc: 'Historial de compras, preferencias y seguimiento automático.', image: null },
+      { id: 'crm-promos', label: 'Promociones', desc: 'Lanza promociones personalizadas por segmento o comportamiento.', image: null },
     ],
   },
   {
@@ -56,15 +59,18 @@ const steps = [
     step: 4,
     verb: 'Automatiza',
     title: 'Automatiza con inteligencia',
-    features: [
-      'Sugerencias inteligentes de reabasto',
-      'Predicción de demanda',
-      'Órdenes de compra automáticas',
+    bgKey: 'ai',
+    subs: [
+      { id: 'ai-reabasto', label: 'Sugerencias de reabasto', desc: 'AXO analiza tus ventas y te sugiere qué reabastecer y cuándo.', image: null },
+      { id: 'ai-prediccion', label: 'Predicción de demanda', desc: 'Anticipa la demanda por producto, sucursal y temporada.', image: null },
+      { id: 'ai-ordenes', label: 'Órdenes automáticas', desc: 'Genera órdenes de compra automáticas con un clic.', image: null },
     ],
   },
 ];
 
-const tabletScreens = steps.map(s => ({ id: s.id, label: `${s.step}. ${s.verb}` }));
+const allSubs = steps.flatMap((s, stepIdx) =>
+  s.subs.map((sub) => ({ ...sub, stepIdx, stepId: s.id, stepTitle: s.title, bgKey: s.bgKey }))
+);
 
 // Backward compat for platform accordion
 const useCases = [
@@ -231,22 +237,34 @@ const useCases = [
     </div>
 
     <div class="tablet-section-header">
-      <span class="tablet-section-eyebrow">Tu operación, paso a paso</span>
       <h2 class="tablet-section-title" id="tablet-section-title">{steps[0].title}</h2>
     </div>
 
     <div class="tablet-3col">
       <!-- Left: vertical pills -->
       <nav class="tablet-pills-col" aria-label="Pasos SACS">
-        {steps.map((s, i) => (
-          <button
-            class={`tablet-vpill${i === 0 ? ' active' : ''}`}
-            data-tablet-idx={i}
-            type="button"
-          >
-            <span class="tablet-vpill-num">{s.step}</span>
-            <span class="tablet-vpill-label">{s.verb}</span>
-          </button>
+        {steps.map((s, si) => (
+          <div class={`tablet-step-group${si === 0 ? ' active' : ''}`} data-step={si}>
+            <button
+              class={`tablet-vpill${si === 0 ? ' active' : ''}`}
+              data-tablet-step={si}
+              type="button"
+            >
+              <span class="tablet-vpill-num">{s.step}</span>
+              <span class="tablet-vpill-label">{s.verb}</span>
+            </button>
+            <div class="tablet-sub-list">
+              {s.subs.map((sub, j) => (
+                <button
+                  class={`tablet-sub-pill${si === 0 && j === 0 ? ' active' : ''}`}
+                  data-sub-global={allSubs.findIndex(x => x.id === sub.id)}
+                  type="button"
+                >
+                  {sub.label}
+                </button>
+              ))}
+            </div>
+          </div>
         ))}
       </nav>
 
@@ -255,11 +273,46 @@ const useCases = [
         <div class="hero-tablet-frame">
           <div class="tablet-camera"></div>
           <div class="tablet-screen">
-            <div class="tablet-slide active" data-slide="pos">
+            {/* ── Vende: Punto de Venta ── */}
+            <div class="tablet-slide active" data-slide="pos-pdv">
               <img src="/images/screen-pos.png" alt="Punto de Venta SACS" class="tablet-slide-img" />
             </div>
 
-            <div class="tablet-slide" data-slide="stock">
+            {/* ── Vende: eCommerce ── */}
+            <div class="tablet-slide" data-slide="pos-ecommerce">
+              <div class="pm-window">
+                <div class="pm-titlebar">
+                  <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
+                  <span class="pm-titlebar-text">Tienda en línea</span>
+                </div>
+                <div class="pm-content pm-content-list">
+                  <div class="pm-list-header"><span>Pedido</span><span>Total</span><span>Estado</span></div>
+                  <div class="pm-list-row"><span>#384 — María L.</span><span>$1,290</span><span class="pm-status-ok">Pagado</span></div>
+                  <div class="pm-list-row"><span>#383 — Carlos R.</span><span>$650</span><span class="pm-status-ok">Enviado</span></div>
+                  <div class="pm-list-row"><span>#382 — Ana G.</span><span>$2,100</span><span class="pm-status-ok">Pagado</span></div>
+                  <div class="pm-list-row"><span>#381 — Pedro M.</span><span>$430</span><span class="pm-status-low">Pendiente</span></div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Vende: WhatsApp ── */}
+            <div class="tablet-slide" data-slide="pos-whatsapp">
+              <div class="pm-window">
+                <div class="pm-titlebar">
+                  <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
+                  <span class="pm-titlebar-text">WhatsApp Commerce</span>
+                </div>
+                <div class="pm-content pm-content-chat">
+                  <div class="pm-chat-msg pm-chat-user">Hola, ¿tienen el Café Orgánico 250g?</div>
+                  <div class="pm-chat-msg pm-chat-ai">¡Sí! Tenemos 128 unidades en stock. ¿Te envío el link de pago?</div>
+                  <div class="pm-chat-msg pm-chat-user">Sí, 3 bolsas por favor</div>
+                  <div class="pm-chat-msg pm-chat-ai">Listo, link enviado por $870. Entrega mañana 🚚</div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Controla: Inventario ── */}
+            <div class="tablet-slide" data-slide="stock-inventario">
               <div class="pm-window">
                 <div class="pm-titlebar">
                   <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
@@ -276,7 +329,58 @@ const useCases = [
               </div>
             </div>
 
-            <div class="tablet-slide" data-slide="crm">
+            {/* ── Controla: Traspasos ── */}
+            <div class="tablet-slide" data-slide="stock-traspasos">
+              <div class="pm-window">
+                <div class="pm-titlebar">
+                  <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
+                  <span class="pm-titlebar-text">Traspasos</span>
+                </div>
+                <div class="pm-content pm-content-list">
+                  <div class="pm-list-header"><span>Movimiento</span><span>Pzas</span><span>Estado</span></div>
+                  <div class="pm-list-row"><span>CEDIS → Suc. Centro</span><span>40</span><span class="pm-status-ok">En tránsito</span></div>
+                  <div class="pm-list-row"><span>Suc. Norte → CEDIS</span><span>25</span><span class="pm-status-ok">Completado</span></div>
+                  <div class="pm-list-row"><span>CEDIS → Suc. Sur</span><span>60</span><span class="pm-status-low">Pendiente</span></div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Controla: Alertas ── */}
+            <div class="tablet-slide" data-slide="stock-alertas">
+              <div class="pm-window">
+                <div class="pm-titlebar">
+                  <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
+                  <span class="pm-titlebar-text">Alertas de reabasto</span>
+                </div>
+                <div class="pm-content pm-content-list">
+                  <div class="pm-list-header"><span>Producto</span><span>Stock</span><span>Acción</span></div>
+                  <div class="pm-list-row alert"><span>Miel de Agave 500ml</span><span>3</span><span class="pm-status-low">Reabastecer</span></div>
+                  <div class="pm-list-row alert"><span>Crema de Cacao</span><span>5</span><span class="pm-status-low">Reabastecer</span></div>
+                  <div class="pm-list-row"><span>Vela Aromática</span><span>34</span><span class="pm-status-ok">OK</span></div>
+                  <div class="pm-list-row"><span>Jabón Artesanal</span><span>56</span><span class="pm-status-ok">OK</span></div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Fideliza: Programa de lealtad ── */}
+            <div class="tablet-slide" data-slide="crm-lealtad">
+              <div class="pm-window">
+                <div class="pm-titlebar">
+                  <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
+                  <span class="pm-titlebar-text">Programa de lealtad</span>
+                </div>
+                <div class="pm-content pm-content-list">
+                  <div class="pm-list-header"><span>Cliente</span><span>Puntos</span><span>Nivel</span></div>
+                  <div class="pm-list-row"><span>María López</span><span>1,240</span><span class="pm-status-ok">VIP</span></div>
+                  <div class="pm-list-row"><span>Carlos Ruiz</span><span>680</span><span class="pm-status-ok">Gold</span></div>
+                  <div class="pm-list-row"><span>Ana García</span><span>320</span><span class="pm-status-ok">Silver</span></div>
+                  <div class="pm-list-row"><span>Pedro Mendoza</span><span>90</span><span class="pm-status-low">Nuevo</span></div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Fideliza: Seguimiento de clientes ── */}
+            <div class="tablet-slide" data-slide="crm-seguimiento">
               <div class="pm-window">
                 <div class="pm-titlebar">
                   <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
@@ -299,7 +403,24 @@ const useCases = [
               </div>
             </div>
 
-            <div class="tablet-slide" data-slide="ai">
+            {/* ── Fideliza: Promociones ── */}
+            <div class="tablet-slide" data-slide="crm-promos">
+              <div class="pm-window">
+                <div class="pm-titlebar">
+                  <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
+                  <span class="pm-titlebar-text">Promociones</span>
+                </div>
+                <div class="pm-content pm-content-list">
+                  <div class="pm-list-header"><span>Promoción</span><span>Alcance</span><span>Estado</span></div>
+                  <div class="pm-list-row"><span>2x1 Café Orgánico</span><span>VIP</span><span class="pm-status-ok">Activa</span></div>
+                  <div class="pm-list-row"><span>15% en Jabones</span><span>Todos</span><span class="pm-status-ok">Activa</span></div>
+                  <div class="pm-list-row"><span>Puntos dobles sábado</span><span>Gold+</span><span class="pm-status-low">Próxima</span></div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Automatiza: Sugerencias de reabasto ── */}
+            <div class="tablet-slide" data-slide="ai-reabasto">
               <div class="pm-window">
                 <div class="pm-titlebar">
                   <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
@@ -307,8 +428,40 @@ const useCases = [
                 </div>
                 <div class="pm-content pm-content-chat">
                   <div class="pm-chat-msg pm-chat-ai">Las ventas subieron 12% esta semana. Te sugiero reabastecer Miel de Agave antes del fin de semana.</div>
+                  <div class="pm-chat-msg pm-chat-user">¿Cuántas unidades?</div>
+                  <div class="pm-chat-msg pm-chat-ai">Basado en tu historial, 50 unidades cubren 3 semanas. ¿Genero la orden?</div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Automatiza: Predicción de demanda ── */}
+            <div class="tablet-slide" data-slide="ai-prediccion">
+              <div class="pm-window">
+                <div class="pm-titlebar">
+                  <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
+                  <span class="pm-titlebar-text">AXO — Predicción</span>
+                </div>
+                <div class="pm-content pm-content-list">
+                  <div class="pm-list-header"><span>Producto</span><span>Próx. semana</span><span>Tendencia</span></div>
+                  <div class="pm-list-row"><span>Café Orgánico</span><span>+18%</span><span class="pm-status-ok">↑ Sube</span></div>
+                  <div class="pm-list-row"><span>Miel de Agave</span><span>+25%</span><span class="pm-status-ok">↑ Sube</span></div>
+                  <div class="pm-list-row"><span>Vela Aromática</span><span>-5%</span><span class="pm-status-low">↓ Baja</span></div>
+                  <div class="pm-list-row"><span>Chocolate 70%</span><span>+8%</span><span class="pm-status-ok">→ Estable</span></div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Automatiza: Órdenes automáticas ── */}
+            <div class="tablet-slide" data-slide="ai-ordenes">
+              <div class="pm-window">
+                <div class="pm-titlebar">
+                  <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
+                  <span class="pm-titlebar-text">AXO — Órdenes</span>
+                </div>
+                <div class="pm-content pm-content-chat">
+                  <div class="pm-chat-msg pm-chat-ai">Orden de compra #247 lista: 50 uds. Miel de Agave + 30 uds. Crema de Cacao.</div>
                   <div class="pm-chat-msg pm-chat-user">Genera la orden</div>
-                  <div class="pm-chat-msg pm-chat-ai">Listo, orden de compra #247 creada por 50 unidades. Llega el jueves.</div>
+                  <div class="pm-chat-msg pm-chat-ai">Listo, OC #247 enviada al proveedor. Entrega estimada: jueves.</div>
                 </div>
               </div>
             </div>
@@ -318,24 +471,130 @@ const useCases = [
 
       <!-- Right: features -->
       <div class="tablet-details-col">
-        {steps.map((s, i) => (
-          <div class={`tablet-detail${i === 0 ? ' active' : ''}`} data-detail={s.id}>
-            <ul class="tablet-detail-list">
-              {s.features.map(f => (
-                <li class="tablet-detail-item">
-                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                    <path d="M6 10l3 3 5-5" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  <span>{f}</span>
-                </li>
-              ))}
-            </ul>
-            <a href={`/producto#${s.id}`} class="tablet-detail-cta">
+        {allSubs.map((sub, i) => (
+          <div class={`tablet-detail${i === 0 ? ' active' : ''}`} data-detail-idx={i}>
+            <p class="tablet-detail-desc">{sub.desc}</p>
+            <a href={`/producto#${sub.stepId}`} class="tablet-detail-cta">
               Ver más
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </a>
           </div>
         ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ BLOQUE 2.4: Casos de éxito — Reels ═══ -->
+<section class="reels-section">
+  <div class="reels-header">
+    <h2 class="reels-title">Negocios que ya crecen con SACS</h2>
+    <p class="reels-subtitle">Desde moda y belleza hasta alimentos y artesanías, retailers de todo México eligen SACS.</p>
+  </div>
+  <div class="reels-track-wrapper">
+    <div class="reels-track">
+      <div class="reel-card" style="--reel-idx:0">
+        <div class="reel-bg" style="background:linear-gradient(135deg,#6C5CE7,#A29BFE);">
+          <span class="reel-ghost-letter">K</span>
+        </div>
+        <div class="reel-top">
+          <span class="reel-tag">Moda</span>
+          <h3 class="reel-brand">Kumu Shampoo</h3>
+        </div>
+        <div class="reel-bottom">
+          <span class="reel-metric">+40%</span>
+          <span class="reel-label">ventas online</span>
+          <p class="reel-quote">"SACS nos dio visibilidad total de nuestro ecommerce."</p>
+        </div>
+      </div>
+      <div class="reel-card" style="--reel-idx:1">
+        <div class="reel-bg" style="background:linear-gradient(135deg,#00B894,#55EFC4);">
+          <span class="reel-ghost-letter">C</span>
+        </div>
+        <div class="reel-top">
+          <span class="reel-tag">Bienestar</span>
+          <h3 class="reel-brand">Colagenisa</h3>
+        </div>
+        <div class="reel-bottom">
+          <span class="reel-metric">5</span>
+          <span class="reel-label">sucursales sincronizadas</span>
+          <p class="reel-quote">"Inventario en tiempo real en todas nuestras tiendas."</p>
+        </div>
+      </div>
+      <div class="reel-card" style="--reel-idx:2">
+        <div class="reel-bg" style="background:linear-gradient(135deg,#FDCB6E,#E17055);">
+          <span class="reel-ghost-letter">G</span>
+        </div>
+        <div class="reel-top">
+          <span class="reel-tag">Belleza</span>
+          <h3 class="reel-brand">Goldn Stella</h3>
+        </div>
+        <div class="reel-bottom">
+          <span class="reel-metric">+25%</span>
+          <span class="reel-label">ticket promedio</span>
+          <p class="reel-quote">"El programa de lealtad transformó nuestra retención."</p>
+        </div>
+      </div>
+      <div class="reel-card" style="--reel-idx:3">
+        <div class="reel-bg" style="background:linear-gradient(135deg,#0984E3,#74B9FF);">
+          <span class="reel-ghost-letter">R</span>
+        </div>
+        <div class="reel-top">
+          <span class="reel-tag">Artesanal</span>
+          <h3 class="reel-brand">Ruecca</h3>
+        </div>
+        <div class="reel-bottom">
+          <span class="reel-metric">−30%</span>
+          <span class="reel-label">merma con IA</span>
+          <p class="reel-quote">"El reabasto inteligente eliminó nuestro desperdicio."</p>
+        </div>
+      </div>
+      <div class="reel-card" style="--reel-idx:4">
+        <div class="reel-bg" style="background:linear-gradient(135deg,#E84393,#FD79A8);">
+          <span class="reel-ghost-letter">A</span>
+        </div>
+        <div class="reel-top">
+          <span class="reel-tag">Diseño</span>
+          <h3 class="reel-brand">AM Atelier</h3>
+        </div>
+        <div class="reel-bottom">
+          <span class="reel-metric">3x</span>
+          <span class="reel-label">más rápido en inventario</span>
+          <p class="reel-quote">"Lo que tardaba horas ahora se hace en minutos."</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ BLOQUE 2.5: Stats — números que importan ═══ -->
+<section class="stats-section" id="stats-section">
+  <div class="stats-bg" aria-hidden="true">
+    <div class="stats-glow stats-glow-1"></div>
+    <div class="stats-glow stats-glow-2"></div>
+    <div class="stats-glow stats-glow-3"></div>
+  </div>
+  <div class="stats-inner">
+    <div class="stats-text">
+      <h2 class="stats-headline">La plataforma que impulsa el comercio consciente.</h2>
+      <p class="stats-subtitle">Rendimiento comprobado. Listo para crecer contigo.</p>
+    </div>
+    <div class="stats-grid">
+      <div class="stats-card" data-stat-idx="0">
+        <span class="stats-number" data-target="500" data-prefix="+" data-suffix="">0</span>
+        <span class="stats-label">Negocios activos en México y LATAM</span>
+      </div>
+      <div class="stats-card" data-stat-idx="1">
+        <span class="stats-number" data-target="2" data-prefix="+" data-suffix="M">0</span>
+        <span class="stats-label">Transacciones procesadas al mes</span>
+      </div>
+      <div class="stats-card" data-stat-idx="2">
+        <span class="stats-number" data-target="50" data-prefix="" data-suffix="K">0</span>
+        <span class="stats-label">Productos gestionados en tiempo real</span>
+      </div>
+      <div class="stats-card" data-stat-idx="3">
+        <span class="stats-number" data-target="99.9" data-prefix="" data-suffix="%">0</span>
+        <span class="stats-label">Uptime garantizado</span>
       </div>
     </div>
   </div>
@@ -1196,9 +1455,9 @@ const useCases = [
     background: color-mix(
       in srgb,
       var(--color-bg-primary, #FAFAF8) calc((1 - var(--tablet-bg-progress)) * 100%),
-      #4B7BE5
+      #f5f5f7
     );
-    height: 400vh;
+    height: 1200vh;
     position: relative;
     transition: background 0.05s linear;
   }
@@ -1217,7 +1476,7 @@ const useCases = [
     overflow: hidden;
   }
 
-  /* ── Fondos oaxaqueños ── */
+  /* ── Backgrounds — Apple-inspired deep tones + sacred geometry ── */
   .tablet-bg-patterns {
     position: absolute;
     inset: 0;
@@ -1229,53 +1488,99 @@ const useCases = [
     position: absolute;
     inset: 0;
     opacity: 0;
-    transition: opacity 0.8s ease;
+    transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .tablet-bg-layer.active {
     opacity: 1;
   }
 
-  /* ── Fondos oaxaqueños por módulo ── */
-
-  /* POS — Azul SACS con greca geométrica sutil */
+  /* ── POS — Clean white with soft blue ambient glow + Seed of Life ── */
   .tablet-bg-layer[data-bg="pos"] {
-    background:
-      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 30h10v-10h10v10h10v-10h10v10h10v-10h10' fill='none' stroke='rgba(255,255,255,0.06)' stroke-width='1.5'/%3E%3Cpath d='M0 50h10v-10h10v10h10v-10h10v10h10v-10h10' fill='none' stroke='rgba(255,255,255,0.04)' stroke-width='1.5'/%3E%3C/svg%3E") repeat,
-      linear-gradient(160deg, #4B7BE5 0%, #3A5FBB 50%, #2D4A99 100%);
+    background: #f5f5f7;
   }
-
-  /* Inventario — Teal profundo con patrón de rombos zapotecas */
-  .tablet-bg-layer[data-bg="stock"] {
-    background:
-      url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0L40 20L20 40L0 20Z' fill='none' stroke='rgba(255,255,255,0.07)' stroke-width='1'/%3E%3Cpath d='M20 8L32 20L20 32L8 20Z' fill='none' stroke='rgba(255,255,255,0.04)' stroke-width='1'/%3E%3C/svg%3E") repeat,
-      linear-gradient(160deg, #1A8A76 0%, #16705F 50%, #0E5A4C 100%);
-  }
-
-  /* CRM/Clientes — Dorado cálido con espirales de códice */
-  .tablet-bg-layer[data-bg="crm"] {
-    background:
-      url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='40' cy='40' r='20' fill='none' stroke='rgba(255,255,255,0.06)' stroke-width='1'/%3E%3Ccircle cx='40' cy='40' r='12' fill='none' stroke='rgba(255,255,255,0.04)' stroke-width='1'/%3E%3Ccircle cx='40' cy='40' r='30' fill='none' stroke='rgba(255,255,255,0.03)' stroke-width='1'/%3E%3C/svg%3E") repeat,
-      linear-gradient(160deg, #D4952E 0%, #B87D24 50%, #96641B 100%);
-  }
-
-  /* AXO/IA — Violeta profundo con grecas escalonadas */
-  .tablet-bg-layer[data-bg="ai"] {
-    background:
-      url("data:image/svg+xml,%3Csvg width='48' height='48' viewBox='0 0 48 48' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 24h8v-8h8v8h8v-8h8v8h8v-8h8' fill='none' stroke='rgba(255,255,255,0.06)' stroke-width='1'/%3E%3Cpath d='M4 36h8v-8h8v8h8v-8h8v8h8' fill='none' stroke='rgba(255,255,255,0.04)' stroke-width='1'/%3E%3Cpath d='M0 12h8v-8h8v8h8v-8h8v8h8v-8h8' fill='none' stroke='rgba(255,255,255,0.03)' stroke-width='1'/%3E%3C/svg%3E") repeat,
-      linear-gradient(160deg, #5B2C8E 0%, #4A2272 50%, #3A1A5C 100%);
-  }
-
-  /* Grain texture overlay on all tablet backgrounds */
-  .tablet-bg-layer::after {
+  .tablet-bg-layer[data-bg="pos"]::before {
     content: '';
     position: absolute;
     inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 15%, rgba(75,123,229,0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 45% at 85% 80%, rgba(100,150,255,0.06) 0%, transparent 55%),
+      radial-gradient(ellipse 120% 80% at 50% 100%, rgba(75,123,229,0.04) 0%, transparent 50%);
+  }
+  .tablet-bg-layer[data-bg="pos"]::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='rgba(0,0,0,0.04)' stroke-width='0.5'%3E%3Ccircle cx='100' cy='100' r='30'/%3E%3Ccircle cx='100' cy='70' r='30'/%3E%3Ccircle cx='126' cy='85' r='30'/%3E%3Ccircle cx='126' cy='115' r='30'/%3E%3Ccircle cx='100' cy='130' r='30'/%3E%3Ccircle cx='74' cy='115' r='30'/%3E%3Ccircle cx='74' cy='85' r='30'/%3E%3C/g%3E%3C/svg%3E");
     background-size: 200px 200px;
-    opacity: 0.6;
-    mix-blend-mode: overlay;
-    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  /* ── Stock — Warm off-white with soft teal glow + Flower of Life ── */
+  .tablet-bg-layer[data-bg="stock"] {
+    background: #f5f7f6;
+  }
+  .tablet-bg-layer[data-bg="stock"]::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 70% 55% at 75% 20%, rgba(26,138,118,0.07) 0%, transparent 65%),
+      radial-gradient(ellipse 50% 45% at 15% 75%, rgba(22,112,95,0.05) 0%, transparent 55%),
+      radial-gradient(ellipse 120% 80% at 50% 100%, rgba(26,138,118,0.03) 0%, transparent 50%);
+  }
+  .tablet-bg-layer[data-bg="stock"]::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='240' height='208' viewBox='0 0 240 208' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='rgba(0,0,0,0.035)' stroke-width='0.5'%3E%3Ccircle cx='60' cy='104' r='30'/%3E%3Ccircle cx='90' cy='52' r='30'/%3E%3Ccircle cx='150' cy='52' r='30'/%3E%3Ccircle cx='180' cy='104' r='30'/%3E%3Ccircle cx='150' cy='156' r='30'/%3E%3Ccircle cx='90' cy='156' r='30'/%3E%3Ccircle cx='120' cy='104' r='30'/%3E%3Ccircle cx='120' cy='52' r='30'/%3E%3Ccircle cx='60' cy='52' r='30'/%3E%3Ccircle cx='180' cy='52' r='30'/%3E%3Ccircle cx='180' cy='156' r='30'/%3E%3Ccircle cx='120' cy='156' r='30'/%3E%3Ccircle cx='60' cy='156' r='30'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 240px 208px;
+    opacity: 0.5;
+  }
+
+  /* ── CRM — Soft warm white with amber glow + Metatron's Cube ── */
+  .tablet-bg-layer[data-bg="crm"] {
+    background: #f7f5f3;
+  }
+  .tablet-bg-layer[data-bg="crm"]::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 65% 50% at 20% 25%, rgba(212,149,46,0.07) 0%, transparent 65%),
+      radial-gradient(ellipse 55% 40% at 80% 75%, rgba(184,125,36,0.05) 0%, transparent 55%),
+      radial-gradient(ellipse 120% 80% at 50% 100%, rgba(212,149,46,0.03) 0%, transparent 50%);
+  }
+  .tablet-bg-layer[data-bg="crm"]::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='260' height='260' viewBox='0 0 260 260' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='rgba(0,0,0,0.03)' stroke-width='0.5'%3E%3Ccircle cx='130' cy='130' r='60'/%3E%3Ccircle cx='130' cy='70' r='30'/%3E%3Ccircle cx='182' cy='100' r='30'/%3E%3Ccircle cx='182' cy='160' r='30'/%3E%3Ccircle cx='130' cy='190' r='30'/%3E%3Ccircle cx='78' cy='160' r='30'/%3E%3Ccircle cx='78' cy='100' r='30'/%3E%3Cline x1='130' y1='70' x2='182' y2='100'/%3E%3Cline x1='182' y1='100' x2='182' y2='160'/%3E%3Cline x1='182' y1='160' x2='130' y2='190'/%3E%3Cline x1='130' y1='190' x2='78' y2='160'/%3E%3Cline x1='78' y1='160' x2='78' y2='100'/%3E%3Cline x1='78' y1='100' x2='130' y2='70'/%3E%3Cline x1='130' y1='70' x2='182' y2='160'/%3E%3Cline x1='182' y1='100' x2='78' y2='160'/%3E%3Cline x1='182' y1='160' x2='78' y2='100'/%3E%3Cline x1='130' y1='190' x2='130' y2='70'/%3E%3Cline x1='78' y1='100' x2='182' y2='160'/%3E%3Cline x1='78' y1='160' x2='182' y2='100'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 260px 260px;
+    opacity: 0.4;
+  }
+
+  /* ── AI — Cool light gray with violet glow + Sri Yantra ── */
+  .tablet-bg-layer[data-bg="ai"] {
+    background: #f5f4f7;
+  }
+  .tablet-bg-layer[data-bg="ai"]::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 75% 55% at 70% 15%, rgba(91,44,142,0.07) 0%, transparent 65%),
+      radial-gradient(ellipse 55% 45% at 20% 80%, rgba(120,60,180,0.05) 0%, transparent 55%),
+      radial-gradient(ellipse 120% 80% at 50% 100%, rgba(91,44,142,0.03) 0%, transparent 50%);
+  }
+  .tablet-bg-layer[data-bg="ai"]::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='280' height='280' viewBox='0 0 280 280' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='rgba(0,0,0,0.03)' stroke-width='0.5'%3E%3Ccircle cx='140' cy='140' r='80'/%3E%3Ccircle cx='140' cy='140' r='55'/%3E%3Ccircle cx='140' cy='140' r='30'/%3E%3Cpolygon points='140,60 210,180 70,180'/%3E%3Cpolygon points='140,220 70,100 210,100'/%3E%3Cpolygon points='140,80 195,165 85,165'/%3E%3Cpolygon points='140,200 85,115 195,115'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 280px 280px;
+    opacity: 0.4;
   }
 
   .tablet-section-header {
@@ -1295,42 +1600,20 @@ const useCases = [
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: rgba(255,255,255,0.6);
+    color: rgba(0,0,0,0.4);
   }
 
   .tablet-section-title {
     font-family: var(--font-display);
     font-size: clamp(1.75rem, 4vw, 3rem);
     font-weight: 800;
-    color: #fff;
+    color: #1d1d1f;
     letter-spacing: -0.04em;
     line-height: 1;
     transition: color 0.5s ease;
   }
 
-  .hero-tablet-section.light-bg .tablet-section-title {
-    color: var(--color-text-primary, #1A1A1A);
-  }
-  .hero-tablet-section.light-bg .tablet-section-cta {
-    color: var(--color-primary, #4B7BE5);
-    border-color: var(--color-primary, #4B7BE5);
-  }
-  .hero-tablet-section.light-bg .tablet-section-cta:hover {
-    background: rgba(75,123,229,0.08);
-  }
-  .hero-tablet-section.light-bg .tablet-nav-track {
-    background: rgba(0,0,0,0.06);
-    border-color: rgba(0,0,0,0.04);
-  }
-  .hero-tablet-section.light-bg .tablet-nav-pill {
-    color: rgba(0,0,0,0.4);
-  }
-  .hero-tablet-section.light-bg .tablet-nav-pill.active {
-    color: var(--color-text-primary, #1A1A1A);
-  }
-  .hero-tablet-section.light-bg .tablet-nav-indicator {
-    background: rgba(0,0,0,0.1);
-  }
+  /* light-bg overrides no longer needed — section is always light */
 
   .tablet-section-cta {
     display: inline-flex;
@@ -1338,8 +1621,8 @@ const useCases = [
     gap: 8px;
     font-size: 0.875rem;
     font-weight: 600;
-    color: #fff;
-    border: 1.5px solid rgba(255,255,255,0.4);
+    color: var(--color-primary, #4B7BE5);
+    border: 1.5px solid var(--color-primary, #4B7BE5);
     background: none;
     padding: 10px 24px;
     border-radius: var(--radius-full, 50px);
@@ -1349,8 +1632,8 @@ const useCases = [
   }
 
   .tablet-section-cta:hover {
-    background: rgba(255,255,255,0.15);
-    border-color: rgba(255,255,255,0.7);
+    background: rgba(75,123,229,0.06);
+    border-color: var(--color-primary, #4B7BE5);
     gap: 12px;
   }
 
@@ -1401,11 +1684,11 @@ const useCases = [
   }
 
   .tablet-vpill:hover {
-    background: rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.04);
   }
 
   .tablet-vpill.active {
-    background: rgba(255,255,255,0.12);
+    background: rgba(0,0,0,0.06);
   }
 
   .tablet-vpill-num {
@@ -1415,8 +1698,8 @@ const useCases = [
     width: 26px;
     height: 26px;
     border-radius: 50%;
-    background: rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.4);
+    background: rgba(0,0,0,0.06);
+    color: rgba(0,0,0,0.3);
     font-size: 0.75rem;
     font-weight: 700;
     flex-shrink: 0;
@@ -1424,19 +1707,68 @@ const useCases = [
   }
 
   .tablet-vpill.active .tablet-vpill-num {
-    background: #fff;
-    color: #4B7BE5;
+    background: #1d1d1f;
+    color: #fff;
   }
 
   .tablet-vpill-label {
     font-size: 0.9375rem;
     font-weight: 600;
-    color: rgba(255,255,255,0.4);
+    color: rgba(0,0,0,0.35);
     transition: color 0.25s ease;
   }
 
   .tablet-vpill.active .tablet-vpill-label {
-    color: #fff;
+    color: #1d1d1f;
+  }
+
+  /* ── Sub-items inside step groups ── */
+  .tablet-step-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tablet-sub-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-left: 36px;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.35s ease, opacity 0.3s ease, margin 0.3s ease;
+    margin-top: 0;
+  }
+
+  .tablet-step-group.active .tablet-sub-list {
+    max-height: 200px;
+    opacity: 1;
+    margin-top: 4px;
+  }
+
+  .tablet-sub-pill {
+    display: block;
+    text-align: left;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: rgba(0,0,0,0.3);
+    padding: 5px 10px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .tablet-sub-pill:hover {
+    color: rgba(0,0,0,0.55);
+    background: rgba(0,0,0,0.03);
+  }
+
+  .tablet-sub-pill.active {
+    color: #1d1d1f;
+    background: rgba(0,0,0,0.05);
   }
 
   /* ── Right: details ── */
@@ -1465,27 +1797,11 @@ const useCases = [
     to { opacity: 1; transform: translateY(0); }
   }
 
-  .tablet-detail-list {
-    list-style: none;
+  .tablet-detail-desc {
+    color: rgba(0,0,0,0.55);
+    font-size: 0.875rem;
+    line-height: 1.5;
     margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .tablet-detail-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    color: rgba(255,255,255,0.7);
-    font-size: 0.8125rem;
-    line-height: 1.4;
-  }
-
-  .tablet-detail-item svg {
-    flex-shrink: 0;
-    margin-top: 1px;
   }
 
   .tablet-detail-cta {
@@ -1495,20 +1811,18 @@ const useCases = [
     margin-top: var(--space-5);
     font-size: 0.8125rem;
     font-weight: 500;
-    color: rgba(255,255,255,0.5);
+    color: var(--color-primary, #4B7BE5);
     text-decoration: none;
     transition: color 0.2s ease, gap 0.2s ease;
   }
 
   .tablet-detail-cta:hover {
-    color: #fff;
+    color: #1d1d1f;
     gap: 8px;
     text-decoration: none;
   }
 
-  .hero-tablet-section.light-bg .tablet-section-eyebrow {
-    color: rgba(0,0,0,0.4);
-  }
+  /* light-bg eyebrow override no longer needed */
 
   .hero-tablet-wrapper {
     position: relative;
@@ -1527,15 +1841,14 @@ const useCases = [
     position: relative;
     width: 92vw;
     max-width: 900px;
-    background: #1a1a2e;
+    background: #1d1d1f;
     border-radius: 16px;
     padding: 10px;
     box-shadow:
-      0 60px 160px rgba(0, 0, 0, 0.4),
-      0 30px 60px rgba(0, 0, 0, 0.25),
-      0 0 0 1px rgba(255, 255, 255, 0.08),
-      0 0 80px rgba(75, 123, 229, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      0 40px 120px rgba(0, 0, 0, 0.12),
+      0 20px 50px rgba(0, 0, 0, 0.08),
+      0 0 0 1px rgba(0, 0, 0, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
     transform: rotateX(calc(8deg * var(--tablet-tilt))) rotateY(calc(-4deg * var(--tablet-tilt)));
     transform-style: preserve-3d;
     transition: transform 0.1s linear;
@@ -1566,8 +1879,8 @@ const useCases = [
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: #2a2a3e;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #2a2a2e;
+    border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   @media (min-width: 768px) {
@@ -1707,7 +2020,7 @@ const useCases = [
     .hero-tablet-section {
       height: auto;
       padding: var(--space-10) 0;
-      background: #4B7BE5;
+      background: #f5f5f7;
     }
 
     .hero-tablet-sticky {
@@ -1726,6 +2039,354 @@ const useCases = [
 
     .hero-tablet-wrapper {
       perspective: none;
+    }
+  }
+
+  /* ═══════════════════════════════════════════
+     BLOQUE 2.5: Stats — números que importan
+     ═══════════════════════════════════════════ */
+
+  .stats-section {
+    position: relative;
+    overflow: hidden;
+    padding: clamp(80px, 12vw, 160px) 0;
+    background: #1a1a2e;
+  }
+
+  /* ── Ambient glows ── */
+  .stats-bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .stats-glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px);
+  }
+
+  .stats-glow-1 {
+    width: 600px;
+    height: 600px;
+    top: -20%;
+    left: -5%;
+    background: rgba(75, 123, 229, 0.35);
+  }
+
+  .stats-glow-2 {
+    width: 500px;
+    height: 500px;
+    bottom: -15%;
+    right: -5%;
+    background: rgba(42, 181, 160, 0.2);
+  }
+
+  .stats-glow-3 {
+    width: 400px;
+    height: 400px;
+    top: 30%;
+    right: 25%;
+    background: rgba(91, 44, 142, 0.12);
+  }
+
+  .stats-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--space-6, 24px);
+  }
+
+  .stats-text {
+    margin-bottom: clamp(48px, 6vw, 80px);
+  }
+
+  .stats-headline {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    max-width: 700px;
+    margin: 0;
+  }
+
+  .stats-subtitle {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    color: rgba(255, 255, 255, 0.5);
+    margin: var(--space-4, 16px) 0 0;
+    max-width: 500px;
+    line-height: 1.5;
+  }
+
+  /* ── Glass cards grid ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  @media (max-width: 1023px) {
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 599px) {
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .stats-card {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: clamp(24px, 3vw, 36px);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .stats-card.in-view {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .stats-card[data-stat-idx="1"] { transition-delay: 0.1s; }
+  .stats-card[data-stat-idx="2"] { transition-delay: 0.2s; }
+  .stats-card[data-stat-idx="3"] { transition-delay: 0.3s; }
+
+  .stats-number {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 5vw, 3.75rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    background: linear-gradient(135deg, #2AB5A0, #4BD8C4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .stats-label {
+    font-size: 0.9375rem;
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.4;
+  }
+
+  /* ═══════════════════════════════════════════
+     BLOQUE 2.4: Casos de éxito — Reels
+     ═══════════════════════════════════════════ */
+
+  .reels-section {
+    padding: clamp(64px, 8vw, 120px) 0 clamp(64px, 8vw, 100px);
+    background: #f5f5f7;
+    overflow: hidden;
+  }
+
+  .reels-header {
+    max-width: 1200px;
+    margin: 0 auto clamp(40px, 5vw, 64px);
+    padding: 0 var(--space-6, 24px);
+    text-align: center;
+  }
+
+  .reels-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 4vw, 3rem);
+    font-weight: 800;
+    color: #1d1d1f;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    margin: 0;
+  }
+
+  .reels-subtitle {
+    font-size: clamp(0.9375rem, 1.5vw, 1.125rem);
+    color: rgba(0,0,0,0.45);
+    margin: var(--space-4, 16px) auto 0;
+    max-width: 560px;
+    line-height: 1.5;
+  }
+
+  /* Track wrapper — horizontal scroll with snap */
+  .reels-track-wrapper {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .reels-track-wrapper::-webkit-scrollbar { display: none; }
+
+  .reels-track {
+    display: flex;
+    gap: clamp(16px, 2vw, 24px);
+    padding: 16px clamp(24px, 5vw, calc((100vw - 1200px) / 2 + 24px));
+    width: max-content;
+  }
+
+  /* Individual reel card */
+  .reel-card {
+    position: relative;
+    width: clamp(220px, 22vw, 280px);
+    aspect-ratio: 9 / 16;
+    border-radius: 20px;
+    overflow: hidden;
+    flex-shrink: 0;
+    scroll-snap-align: center;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    cursor: pointer;
+    transform: translateY(32px);
+    opacity: 0;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.35s ease;
+    transition-delay: calc(var(--reel-idx, 0) * 80ms);
+  }
+
+  .reel-card.in-view {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .reel-card:hover {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+  }
+
+  .reel-card.in-view:hover {
+    transform: translateY(-6px) scale(1.02);
+  }
+
+  /* Background layer */
+  .reel-bg {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .reel-ghost-letter {
+    font-family: var(--font-display);
+    font-size: clamp(6rem, 12vw, 10rem);
+    font-weight: 900;
+    color: rgba(255,255,255,0.1);
+    user-select: none;
+    line-height: 1;
+  }
+
+  /* Top overlay — brand + tag */
+  .reel-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 20px 16px 32px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 1;
+  }
+
+  .reel-tag {
+    display: inline-flex;
+    align-self: flex-start;
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.85);
+    background: rgba(255,255,255,0.15);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border-radius: 100px;
+    padding: 4px 12px;
+  }
+
+  .reel-brand {
+    font-family: var(--font-display);
+    font-size: clamp(1rem, 1.4vw, 1.25rem);
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin: 0;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+
+  /* Bottom overlay — metric + quote */
+  .reel-bottom {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 40px 16px 20px;
+    background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 1;
+  }
+
+  .reel-metric {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 3vw, 2.75rem);
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  .reel-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.8);
+    letter-spacing: 0.01em;
+    margin-bottom: 8px;
+  }
+
+  .reel-quote {
+    font-size: 0.75rem;
+    font-style: italic;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 1023px) {
+    .reel-card {
+      width: clamp(200px, 30vw, 260px);
+    }
+  }
+
+  @media (max-width: 599px) {
+    .reels-track {
+      padding: 12px 16px;
+      gap: 14px;
+    }
+
+    .reel-card {
+      width: 72vw;
+      scroll-snap-align: start;
+    }
+
+    .reel-ghost-letter {
+      font-size: 8rem;
     }
   }
 
@@ -3195,7 +3856,7 @@ const useCases = [
     .hero-tablet-section {
       height: auto;
       padding: var(--space-12) 0;
-      background: #4B7BE5;
+      background: #f5f5f7;
     }
 
     .hero-tablet-sticky {
@@ -3213,32 +3874,55 @@ const useCases = [
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const isMobile = window.innerWidth < 768;
 
-  // ═══ Tablet scroll-driven animation ═══
+  // ═══ Tablet scroll-driven animation (12 sub-sections) ═══
   const tabletSection = document.querySelector<HTMLElement>('.hero-tablet-section');
   const tabletFrame = document.querySelector<HTMLElement>('.hero-tablet-frame');
   const tabletSlides = document.querySelectorAll<HTMLDivElement>('.tablet-slide');
-  const tabletPills = document.querySelectorAll<HTMLButtonElement>('.tablet-vpill');
   const bgLayers = document.querySelectorAll<HTMLElement>('.tablet-bg-layer');
   const sectionTitleEl = document.getElementById('tablet-section-title');
   const detailPanels = document.querySelectorAll<HTMLElement>('.tablet-detail');
+  const stepGroups = document.querySelectorAll<HTMLElement>('.tablet-step-group');
+  const vpills = document.querySelectorAll<HTMLButtonElement>('.tablet-vpill');
+  const subPills = document.querySelectorAll<HTMLButtonElement>('.tablet-sub-pill');
 
-  const slideTitles = [
-    'Vende más en cada punto',
-    'Controla tu stock en tiempo real',
-    'Fideliza a cada cliente',
-    'Automatiza con inteligencia',
+  // Map each sub to its step index and title
+  const subStepMap = [
+    { stepIdx: 0, title: 'Vende más en cada punto' },
+    { stepIdx: 0, title: 'Vende más en cada punto' },
+    { stepIdx: 0, title: 'Vende más en cada punto' },
+    { stepIdx: 1, title: 'Controla tu stock en tiempo real' },
+    { stepIdx: 1, title: 'Controla tu stock en tiempo real' },
+    { stepIdx: 1, title: 'Controla tu stock en tiempo real' },
+    { stepIdx: 2, title: 'Fideliza a cada cliente' },
+    { stepIdx: 2, title: 'Fideliza a cada cliente' },
+    { stepIdx: 2, title: 'Fideliza a cada cliente' },
+    { stepIdx: 3, title: 'Automatiza con inteligencia' },
+    { stepIdx: 3, title: 'Automatiza con inteligencia' },
+    { stepIdx: 3, title: 'Automatiza con inteligencia' },
   ];
 
-  function setActiveSlide(index: number) {
-    tabletSlides.forEach((s, i) => s.classList.toggle('active', i === index));
-    tabletPills.forEach((p, i) => p.classList.toggle('active', i === index));
-    bgLayers.forEach((l, i) => l.classList.toggle('active', i === index));
-    detailPanels.forEach((d, i) => d.classList.toggle('active', i === index));
-    if (sectionTitleEl) sectionTitleEl.textContent = slideTitles[index] || slideTitles[0];
+  // Map step index to bg layer index (1:1)
+  const bgKeys = ['pos', 'stock', 'crm', 'ai'];
+
+  function setActiveSub(globalIdx: number) {
+    // Update slides
+    tabletSlides.forEach((s, i) => s.classList.toggle('active', i === globalIdx));
+    // Update detail panels
+    detailPanels.forEach((d, i) => d.classList.toggle('active', i === globalIdx));
+    // Update sub pills
+    subPills.forEach((p, i) => p.classList.toggle('active', i === globalIdx));
+    // Update step groups (expand active, collapse others)
+    const stepIdx = subStepMap[globalIdx]?.stepIdx ?? 0;
+    stepGroups.forEach((g, i) => g.classList.toggle('active', i === stepIdx));
+    vpills.forEach((p, i) => p.classList.toggle('active', i === stepIdx));
+    // Update bg layers (one per step, not per sub)
+    bgLayers.forEach((l, i) => l.classList.toggle('active', i === stepIdx));
+    // Update title
+    if (sectionTitleEl) sectionTitleEl.textContent = subStepMap[globalIdx]?.title || subStepMap[0].title;
   }
 
   if (!prefersReducedMotion && !isMobile && tabletSection && tabletFrame) {
-    let lastSlideIdx = -1;
+    let lastSubIdx = -1;
 
     const onTabletScroll = () => {
       const rect = tabletSection.getBoundingClientRect();
@@ -3252,50 +3936,86 @@ const useCases = [
       const totalProgress = scrolled / scrollable;
 
       let bgProgress: number;
-      if (totalProgress < 0.10) {
-        bgProgress = totalProgress / 0.10;
-      } else if (totalProgress > 0.90) {
-        bgProgress = 1 - ((totalProgress - 0.90) / 0.10);
+      if (totalProgress < 0.05) {
+        bgProgress = totalProgress / 0.05;
+      } else if (totalProgress > 0.95) {
+        bgProgress = 1 - ((totalProgress - 0.95) / 0.05);
       } else {
         bgProgress = 1;
       }
       tabletSection.style.setProperty('--tablet-bg-progress', String(bgProgress));
 
-      const tiltEnd = 0.12;
+      const tiltEnd = 0.06;
       const tilt = Math.max(0, 1 - (totalProgress / tiltEnd));
       tabletSection.style.setProperty('--tablet-tilt', String(tilt));
 
-      const slideStart = 0.12;
-      const slideEnd = 0.90;
+      const slideStart = 0.06;
+      const slideEnd = 0.95;
       const slideProgress = Math.max(0, Math.min(1,
         (totalProgress - slideStart) / (slideEnd - slideStart)
       ));
 
-      const numSlides = tabletSlides.length;
-      const slideIdx = Math.min(numSlides - 1, Math.floor(slideProgress * numSlides));
+      const numSubs = tabletSlides.length; // 12
+      const subIdx = Math.min(numSubs - 1, Math.floor(slideProgress * numSubs));
 
-      if (slideIdx !== lastSlideIdx) {
-        setActiveSlide(slideIdx);
-        lastSlideIdx = slideIdx;
+      if (subIdx !== lastSubIdx) {
+        setActiveSub(subIdx);
+        lastSubIdx = subIdx;
       }
     };
 
     window.addEventListener('scroll', onTabletScroll, { passive: true });
     onTabletScroll();
   } else if (isMobile && !prefersReducedMotion) {
-    let mobileSlideIdx = 0;
-    setActiveSlide(0);
+    // Mobile: auto-cycle through all 12 subs
+    let mobileSubIdx = 0;
+    setActiveSub(0);
     setInterval(() => {
-      mobileSlideIdx = (mobileSlideIdx + 1) % tabletSlides.length;
-      setActiveSlide(mobileSlideIdx);
-    }, 4000);
+      mobileSubIdx = (mobileSubIdx + 1) % tabletSlides.length;
+      setActiveSub(mobileSubIdx);
+    }, 3000);
   } else {
-    setActiveSlide(0);
+    setActiveSub(0);
   }
 
-  // Pill clicks
-  tabletPills.forEach((pill, i) => {
-    pill.addEventListener('click', () => setActiveSlide(i));
+  // Step pill clicks → jump to first sub of that step
+  vpills.forEach((pill, stepIdx) => {
+    pill.addEventListener('click', () => {
+      const firstSubIdx = stepIdx * 3; // 3 subs per step
+      setActiveSub(firstSubIdx);
+      // If scroll-driven, scroll to the right position
+      if (tabletSection && !isMobile) {
+        const sectionH = tabletSection.offsetHeight;
+        const vh = window.innerHeight;
+        const scrollable = sectionH - vh;
+        const slideStart = 0.06;
+        const slideEnd = 0.95;
+        const subProgress = firstSubIdx / tabletSlides.length;
+        const totalProgress = slideStart + subProgress * (slideEnd - slideStart);
+        const sectionTop = tabletSection.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo({ top: sectionTop + totalProgress * scrollable, behavior: 'smooth' });
+      }
+    });
+  });
+
+  // Sub pill clicks
+  subPills.forEach((pill) => {
+    pill.addEventListener('click', () => {
+      const globalIdx = parseInt(pill.dataset.subGlobal || '0', 10);
+      setActiveSub(globalIdx);
+      // If scroll-driven, scroll to the right position
+      if (tabletSection && !isMobile) {
+        const sectionH = tabletSection.offsetHeight;
+        const vh = window.innerHeight;
+        const scrollable = sectionH - vh;
+        const slideStart = 0.06;
+        const slideEnd = 0.95;
+        const subProgress = globalIdx / tabletSlides.length;
+        const totalProgress = slideStart + subProgress * (slideEnd - slideStart);
+        const sectionTop = tabletSection.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo({ top: sectionTop + totalProgress * scrollable, behavior: 'smooth' });
+      }
+    });
   });
 
   // ═══ Scrollytelling — sticky image + features ═══
@@ -3326,6 +4046,49 @@ const useCases = [
     scrollyItems.forEach((item) => scrollyObserver.observe(item));
   }
 
+  // ═══ Stats — counter animation on scroll ═══
+  const statsCards = document.querySelectorAll<HTMLElement>('.stats-card');
+  const statsNumbers = document.querySelectorAll<HTMLElement>('.stats-number');
+
+  if (statsCards.length > 0) {
+    function animateCounter(el: HTMLElement) {
+      const target = parseFloat(el.dataset.target || '0');
+      const prefix = el.dataset.prefix || '';
+      const suffix = el.dataset.suffix || '';
+      const isDecimal = target % 1 !== 0;
+      const duration = 2000;
+      const startTime = performance.now();
+
+      function update(now: number) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease out cubic
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = target * eased;
+        const display = isDecimal ? current.toFixed(1) : Math.floor(current).toLocaleString();
+        el.textContent = prefix + display + suffix;
+        if (progress < 1) requestAnimationFrame(update);
+      }
+      requestAnimationFrame(update);
+    }
+
+    const statsObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const card = entry.target as HTMLElement;
+            card.classList.add('in-view');
+            const numEl = card.querySelector<HTMLElement>('.stats-number');
+            if (numEl) animateCounter(numEl);
+            statsObserver.unobserve(card);
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+    statsCards.forEach((card) => statsObserver.observe(card));
+  }
+
   // ═══ Feature showcase — reveal on scroll ═══
   const fsWrapper = document.querySelector('.fs-image-wrapper');
   if (fsWrapper) {
@@ -3339,6 +4102,23 @@ const useCases = [
       { threshold: 0.3 }
     );
     fsObserver.observe(fsWrapper);
+  }
+
+  // ═══ Reels — reveal on scroll with stagger ═══
+  const reelCards = document.querySelectorAll('.reel-card');
+  if (reelCards.length > 0) {
+    const reelsObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+            reelsObserver.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.15 }
+    );
+    reelCards.forEach((card) => reelsObserver.observe(card));
   }
 
   // ═══ Expanding panels ═══
