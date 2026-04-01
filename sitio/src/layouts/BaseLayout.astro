@@ -48,20 +48,10 @@ const allSchemas = structuredData
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
     <!-- Preload critical fonts -->
-    <link
-      rel="preload"
-      href="/fonts/PlusJakartaSans-Regular.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-    <link
-      rel="preload"
-      href="/fonts/Sora-ExtraBold.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
+    <link rel="preload" href="/fonts/PlusJakartaSans-Regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/Sora-ExtraBold.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- Preload hero image (above-fold, LCP element) -->
+    <link rel="preload" href="/images/hero-sacs-store.webp" as="image" type="image/webp" />
 
     <SEO
       title={title}

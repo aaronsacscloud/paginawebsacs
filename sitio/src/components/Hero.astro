@@ -147,12 +147,13 @@ const useCases = [
     <div class="hero-visual">
       <div class="hero-image-wrapper">
         <img
-          src="/images/hero-sacs-store.png"
+          src="/images/hero-sacs-store.webp"
           alt="Persona usando SACS en tablet en su tienda de ropa"
           class="hero-image"
           width="900"
           height="600"
           loading="eager"
+          fetchpriority="high"
         />
         <!-- Notificaciones animadas sobre la imagen -->
         <div class="hero-notif hero-notif-1" aria-hidden="true">
@@ -275,12 +276,12 @@ const useCases = [
           <div class="tablet-screen">
             {/* ── Vende: Punto de Venta ── */}
             <div class="tablet-slide active" data-slide="pos-pdv">
-              <img src="/images/screen-pos.png" alt="Punto de Venta SACS" class="tablet-slide-img" />
+              <img src="/images/screen-pos.webp" alt="Punto de Venta SACS" class="tablet-slide-img" width="1999" height="1252" loading="lazy" />
             </div>
 
             {/* ── Vende: eCommerce ── */}
             <div class="tablet-slide" data-slide="pos-ecommerce">
-              <img src="/images/screen-ecommerce.png" alt="eCommerce SACS — Tienda en línea con catálogo y checkout" class="tablet-slide-img tablet-slide-img-dark" />
+              <img src="/images/screen-ecommerce.webp" alt="eCommerce SACS — Tienda en línea con catálogo y checkout" class="tablet-slide-img tablet-slide-img-dark" width="2786" height="1504" loading="lazy" />
             </div>
 
             {/* ── Vende: WhatsApp ── */}
@@ -594,10 +595,12 @@ const useCases = [
     <div class="fs-image-col">
       <div class="fs-image-wrapper">
         <img
-          src="/images/hero-sacs-store.png"
+          src="/images/hero-sacs-store.webp"
           alt="Tienda usando SACS para gestionar ventas"
           class="fs-image"
           loading="lazy"
+          width="2400"
+          height="1792"
         />
         <!-- Floating card animada -->
         <div class="fs-float-card">
@@ -655,10 +658,10 @@ const useCases = [
       <div class="scrolly-bg scrolly-bg-2" data-scrolly-bg="2"></div>
       <div class="scrolly-bg scrolly-bg-3" data-scrolly-bg="3"></div>
       <!-- Imágenes -->
-      <img src="/images/hero-sacs-store.png" alt="" class="scrolly-img active" data-scrolly-img="0" />
-      <img src="/images/screen-pos.png" alt="" class="scrolly-img" data-scrolly-img="1" />
-      <img src="/images/panel-organica.jpg" alt="" class="scrolly-img" data-scrolly-img="2" />
-      <img src="/images/panel-casaverde.jpg" alt="" class="scrolly-img" data-scrolly-img="3" />
+      <img src="/images/hero-sacs-store.webp" alt="" class="scrolly-img active" data-scrolly-img="0" width="2400" height="1792" loading="lazy" />
+      <img src="/images/screen-pos.webp" alt="" class="scrolly-img" data-scrolly-img="1" width="1999" height="1252" loading="lazy" />
+      <img src="/images/panel-organica.jpg" alt="" class="scrolly-img" data-scrolly-img="2" width="800" height="600" loading="lazy" />
+      <img src="/images/panel-casaverde.jpg" alt="" class="scrolly-img" data-scrolly-img="3" width="800" height="600" loading="lazy" />
     </div>
   </div>
 
@@ -3978,6 +3981,37 @@ const useCases = [
     border: 1px solid rgba(255, 255, 255, 0.12);
   }
 
+  /* ─── Mobile performance: disable heavy effects ─── */
+  @media (max-width: 767px) {
+    /* Kill expensive background patterns (4 SVG data URIs + 12 radial gradients) */
+    .tablet-bg-patterns { display: none; }
+
+    /* Kill hero decorative shapes (blur filters + noise texture) */
+    .hero-shapes { display: none; }
+
+    /* Replace expensive backdrop-filter with solid bg on notifications */
+    .hero-notif {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      background: rgba(255, 255, 255, 0.97);
+    }
+
+    /* Simplify heavy box-shadows */
+    .hero-tablet-frame {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    }
+
+    .scrolly-img {
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Disable 3D transforms */
+    .hero-tablet-frame {
+      transform: none !important;
+      will-change: auto;
+    }
+  }
+
   /* ─── Reduced motion ─── */
   @media (prefers-reduced-motion: reduce) {
     .hero-title,
@@ -4030,13 +4064,21 @@ const useCases = [
 
     const restart = () => {
       notifs.forEach(el => {
-        el.style.animation = 'none';
-        void el.offsetHeight; // force reflow
-        el.style.animation = '';
+        el.classList.remove('hero-notif-animating');
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            el.classList.add('hero-notif-animating');
+          });
+        });
       });
     };
 
-    setInterval(restart, CYCLE_MS);
+    // Only run when page is visible
+    let notifTimer: ReturnType<typeof setInterval> | null = null;
+    const startNotifs = () => { if (!notifTimer) notifTimer = setInterval(restart, CYCLE_MS); };
+    const stopNotifs = () => { if (notifTimer) { clearInterval(notifTimer); notifTimer = null; } };
+    document.addEventListener('visibilitychange', () => document.hidden ? stopNotifs() : startNotifs());
+    startNotifs();
   })();
 
   // ═══ Tablet scroll-driven animation (12 sub-sections) ═══
@@ -4088,45 +4130,52 @@ const useCases = [
 
   if (!prefersReducedMotion && !isMobile && tabletSection && tabletFrame) {
     let lastSubIdx = -1;
+    let rafPending = false;
+    // Cache values that don't change per scroll
+    const vh = window.innerHeight;
 
     const onTabletScroll = () => {
-      const rect = tabletSection.getBoundingClientRect();
-      const sectionH = tabletSection.offsetHeight;
-      const vh = window.innerHeight;
-      const scrolled = -rect.top;
-      const scrollable = sectionH - vh;
+      if (rafPending) return;
+      rafPending = true;
+      requestAnimationFrame(() => {
+        rafPending = false;
+        const rect = tabletSection.getBoundingClientRect();
+        const sectionH = tabletSection.offsetHeight;
+        const scrolled = -rect.top;
+        const scrollable = sectionH - vh;
 
-      if (scrolled < 0 || scrolled > scrollable) return;
+        if (scrolled < 0 || scrolled > scrollable) return;
 
-      const totalProgress = scrolled / scrollable;
+        const totalProgress = scrolled / scrollable;
 
-      let bgProgress: number;
-      if (totalProgress < 0.05) {
-        bgProgress = totalProgress / 0.05;
-      } else if (totalProgress > 0.95) {
-        bgProgress = 1 - ((totalProgress - 0.95) / 0.05);
-      } else {
-        bgProgress = 1;
-      }
-      tabletSection.style.setProperty('--tablet-bg-progress', String(bgProgress));
+        let bgProgress: number;
+        if (totalProgress < 0.05) {
+          bgProgress = totalProgress / 0.05;
+        } else if (totalProgress > 0.95) {
+          bgProgress = 1 - ((totalProgress - 0.95) / 0.05);
+        } else {
+          bgProgress = 1;
+        }
+        tabletSection.style.setProperty('--tablet-bg-progress', String(bgProgress));
 
-      const tiltEnd = 0.06;
-      const tilt = Math.max(0, 1 - (totalProgress / tiltEnd));
-      tabletSection.style.setProperty('--tablet-tilt', String(tilt));
+        const tiltEnd = 0.06;
+        const tilt = Math.max(0, 1 - (totalProgress / tiltEnd));
+        tabletSection.style.setProperty('--tablet-tilt', String(tilt));
 
-      const slideStart = 0.06;
-      const slideEnd = 0.95;
-      const slideProgress = Math.max(0, Math.min(1,
-        (totalProgress - slideStart) / (slideEnd - slideStart)
-      ));
+        const slideStart = 0.06;
+        const slideEnd = 0.95;
+        const slideProgress = Math.max(0, Math.min(1,
+          (totalProgress - slideStart) / (slideEnd - slideStart)
+        ));
 
-      const numSubs = tabletSlides.length; // 12
-      const subIdx = Math.min(numSubs - 1, Math.floor(slideProgress * numSubs));
+        const numSubs = tabletSlides.length;
+        const subIdx = Math.min(numSubs - 1, Math.floor(slideProgress * numSubs));
 
-      if (subIdx !== lastSubIdx) {
-        setActiveSub(subIdx);
-        lastSubIdx = subIdx;
-      }
+        if (subIdx !== lastSubIdx) {
+          setActiveSub(subIdx);
+          lastSubIdx = subIdx;
+        }
+      });
     };
 
     window.addEventListener('scroll', onTabletScroll, { passive: true });
