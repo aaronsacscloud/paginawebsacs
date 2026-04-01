@@ -61,9 +61,9 @@ const currentPath = Astro.url.pathname;
     </nav>
 
     <div class="nav-actions">
-      <a href="/contacto" class="nav-action-link">Contacto</a>
       <a href="#" class="nav-action-link">Iniciar sesión</a>
-      <a href="/contacto" class="btn-nav-cta">Empieza gratis</a>
+      <a href="/registro" class="btn-nav-secondary">Empieza gratis</a>
+      <a href="/contacto" class="btn-nav-cta">Agenda una demo</a>
     </div>
 
     <button
@@ -106,10 +106,10 @@ const currentPath = Astro.url.pathname;
         </>
       ))}
       <div class="mobile-divider"></div>
-      <a href="/contacto" class="mobile-link mobile-link-secondary">Contacto</a>
       <a href="#" class="mobile-link mobile-link-secondary">Iniciar sesión</a>
+      <a href="/registro" class="btn-mobile-secondary">Empieza gratis</a>
       <a href="/contacto" class="btn-mobile-cta">
-        Empieza gratis
+        Agenda una demo
       </a>
     </nav>
   </div>
@@ -418,6 +418,30 @@ const currentPath = Astro.url.pathname;
     transform: translateY(-1px);
   }
 
+  /* Secondary CTA button */
+  .btn-nav-secondary {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--color-text-primary);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+  }
+
+  .btn-nav-secondary:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.25);
+    text-decoration: none;
+    transform: translateY(-1px);
+  }
+
   /* ─── Hamburger ─── */
   .nav-hamburger {
     display: flex;
@@ -581,6 +605,26 @@ const currentPath = Astro.url.pathname;
 
   .btn-mobile-cta:hover {
     background: #f0f0f0;
+    text-decoration: none;
+  }
+
+  .btn-mobile-secondary {
+    display: block;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 14px 28px;
+    border-radius: 6px;
+    background: transparent;
+    color: #fff;
+    text-decoration: none;
+    margin-top: var(--space-3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: background 0.2s ease;
+  }
+
+  .btn-mobile-secondary:hover {
+    background: rgba(255, 255, 255, 0.08);
     text-decoration: none;
   }
 
