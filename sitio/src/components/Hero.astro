@@ -124,8 +124,8 @@ const useCases = [
               <path d="M6 10h8M10 7v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
             </svg>
             <div>
-              <span class="hero-badge-value">+500</span>
-              <span class="hero-badge-label">Negocios activos</span>
+              <span class="hero-badge-value">+3,000</span>
+              <span class="hero-badge-label">Marcas activas en México y Latam</span>
             </div>
           </div>
           <div class="hero-badge-divider"></div>
@@ -280,19 +280,7 @@ const useCases = [
 
             {/* ── Vende: eCommerce ── */}
             <div class="tablet-slide" data-slide="pos-ecommerce">
-              <div class="pm-window">
-                <div class="pm-titlebar">
-                  <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
-                  <span class="pm-titlebar-text">Tienda en línea</span>
-                </div>
-                <div class="pm-content pm-content-list">
-                  <div class="pm-list-header"><span>Pedido</span><span>Total</span><span>Estado</span></div>
-                  <div class="pm-list-row"><span>#384 — María L.</span><span>$1,290</span><span class="pm-status-ok">Pagado</span></div>
-                  <div class="pm-list-row"><span>#383 — Carlos R.</span><span>$650</span><span class="pm-status-ok">Enviado</span></div>
-                  <div class="pm-list-row"><span>#382 — Ana G.</span><span>$2,100</span><span class="pm-status-ok">Pagado</span></div>
-                  <div class="pm-list-row"><span>#381 — Pedro M.</span><span>$430</span><span class="pm-status-low">Pendiente</span></div>
-                </div>
-              </div>
+              <img src="/images/screen-ecommerce.png" alt="eCommerce SACS — Tienda en línea con catálogo y checkout" class="tablet-slide-img tablet-slide-img-dark" />
             </div>
 
             {/* ── Vende: WhatsApp ── */}
@@ -1932,6 +1920,11 @@ const useCases = [
     display: block;
   }
 
+  .tablet-slide-img-dark {
+    object-position: center center;
+    background: #1b1b1b;
+  }
+
   .tablet-slide .pm-window {
     border-radius: 0;
     box-shadow: none;
@@ -2015,30 +2008,184 @@ const useCases = [
     }
   }
 
-  /* Mobile: no 3D tilt, full width */
+  /* ── Mobile: interactive tabs + swipe (iOS-quality UX) ── */
   @media (max-width: 767px) {
     .hero-tablet-section {
       height: auto;
-      padding: var(--space-10) 0;
+      padding: 0;
       background: #f5f5f7;
     }
 
     .hero-tablet-sticky {
       position: relative;
       height: auto;
-      padding: 16px;
+      padding: 48px 20px 56px;
+    }
+
+    .tablet-section-header {
+      margin-bottom: 20px;
+    }
+
+    .tablet-section-title {
+      font-size: clamp(1.375rem, 5.5vw, 1.75rem);
+    }
+
+    .tablet-3col {
+      gap: 16px;
+    }
+
+    /* ── Step tabs: iOS segmented control ── */
+    .tablet-pills-col {
+      display: grid !important;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      width: 100%;
+      background: rgba(0,0,0,0.05);
+      border-radius: 12px;
+      padding: 3px;
+    }
+
+    .tablet-step-group {
+      display: contents;
+    }
+
+    .tablet-vpill {
+      grid-row: 1;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 8px 4px;
+      border-radius: 9px;
+      background: transparent;
+      min-height: 48px;
+    }
+
+    .tablet-vpill:hover {
+      background: rgba(0,0,0,0.02);
+    }
+
+    .tablet-vpill.active {
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+    }
+
+    .tablet-vpill-num {
+      width: 20px;
+      height: 20px;
+      font-size: 0.625rem;
+    }
+
+    .tablet-vpill.active .tablet-vpill-num {
+      background: #1d1d1f;
+      color: #fff;
+    }
+
+    .tablet-vpill-label {
+      font-size: 0.6875rem;
+    }
+
+    /* ── Sub-pills: chip row spanning full width below tabs ── */
+    .tablet-sub-list {
+      grid-row: 2;
+      grid-column: 1 / -1;
+      flex-direction: row;
+      padding-left: 0;
+      gap: 6px;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      margin: 0;
+      transition: none;
+    }
+
+    .tablet-step-group.active .tablet-sub-list {
+      display: flex;
+      flex-direction: row;
+      max-height: none;
+      opacity: 1;
+      overflow: hidden;
+      margin-top: 4px;
+      padding: 0;
+    }
+
+    .tablet-step-group:not(.active) .tablet-sub-list {
+      display: none;
+    }
+
+    .tablet-sub-pill {
+      flex: 1 1 0%;
+      min-width: 0;
+      text-align: center;
+      padding: 8px 6px;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      border-radius: 8px;
+      background: rgba(0,0,0,0.04);
+      color: rgba(0,0,0,0.45);
+      white-space: nowrap;
+      min-height: 34px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+      line-height: 18px;
+    }
+
+    .tablet-sub-pill:hover {
+      background: rgba(0,0,0,0.06);
+      color: rgba(0,0,0,0.6);
+    }
+
+    .tablet-sub-pill.active {
+      background: rgba(75,123,229,0.1);
+      color: #4B7BE5;
+    }
+
+    /* ── Tablet mockup ── */
+    .hero-tablet-wrapper {
+      perspective: none;
     }
 
     .hero-tablet-frame {
       transform: none !important;
       width: 100%;
       max-width: none;
-      padding: 8px;
+      padding: 6px;
       border-radius: 14px;
+      box-shadow:
+        0 8px 30px rgba(0,0,0,0.08),
+        0 2px 8px rgba(0,0,0,0.04);
     }
 
-    .hero-tablet-wrapper {
-      perspective: none;
+    .tablet-camera {
+      display: none;
+    }
+
+    .tablet-screen {
+      border-radius: 8px;
+    }
+
+    /* ── Details: visible below mockup ── */
+    .tablet-details-col {
+      display: block !important;
+      width: 100%;
+      min-height: auto;
+      text-align: center;
+      padding: 4px 8px 0;
+    }
+
+    .tablet-detail-desc {
+      font-size: 0.8125rem;
+      line-height: 1.55;
+      text-align: center;
+      color: rgba(0,0,0,0.5);
+      max-width: 320px;
+      margin: 0 auto;
+    }
+
+    .tablet-detail-cta {
+      justify-content: center;
+      margin-top: 14px;
     }
   }
 
@@ -3874,6 +4021,24 @@ const useCases = [
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const isMobile = window.innerWidth < 768;
 
+  // ═══ Loop hero floating notifications ═══
+  (() => {
+    if (prefersReducedMotion) return;
+    const CYCLE_MS = 13000; // full cycle ~11.5s + 1.5s pause
+    const notifs = document.querySelectorAll<HTMLElement>('.hero-notif');
+    if (!notifs.length) return;
+
+    const restart = () => {
+      notifs.forEach(el => {
+        el.style.animation = 'none';
+        void el.offsetHeight; // force reflow
+        el.style.animation = '';
+      });
+    };
+
+    setInterval(restart, CYCLE_MS);
+  })();
+
   // ═══ Tablet scroll-driven animation (12 sub-sections) ═══
   const tabletSection = document.querySelector<HTMLElement>('.hero-tablet-section');
   const tabletFrame = document.querySelector<HTMLElement>('.hero-tablet-frame');
@@ -3966,14 +4131,31 @@ const useCases = [
 
     window.addEventListener('scroll', onTabletScroll, { passive: true });
     onTabletScroll();
-  } else if (isMobile && !prefersReducedMotion) {
-    // Mobile: auto-cycle through all 12 subs
-    let mobileSubIdx = 0;
+  } else if (isMobile) {
+    // Mobile: click/tap + swipe navigation (no auto-cycle)
     setActiveSub(0);
-    setInterval(() => {
-      mobileSubIdx = (mobileSubIdx + 1) % tabletSlides.length;
-      setActiveSub(mobileSubIdx);
-    }, 3000);
+
+    // Touch swipe on tablet frame to cycle slides
+    if (tabletFrame) {
+      let touchStartX = 0;
+      let touchStartY = 0;
+      tabletFrame.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }, { passive: true });
+      tabletFrame.addEventListener('touchend', (e) => {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+          let cur = 0;
+          tabletSlides.forEach((s, i) => { if (s.classList.contains('active')) cur = i; });
+          const next = dx < 0
+            ? Math.min(tabletSlides.length - 1, cur + 1)
+            : Math.max(0, cur - 1);
+          if (next !== cur) setActiveSub(next);
+        }
+      }, { passive: true });
+    }
   } else {
     setActiveSub(0);
   }
