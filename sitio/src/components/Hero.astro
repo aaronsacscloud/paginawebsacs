@@ -276,12 +276,12 @@ const useCases = [
           <div class="tablet-screen">
             {/* ── Vende: Punto de Venta ── */}
             <div class="tablet-slide active" data-slide="pos-pdv">
-              <img src="/images/screen-pos.webp" alt="Punto de Venta SACS" class="tablet-slide-img" width="1999" height="1252" loading="lazy" />
+              <img src="/images/screen-pos.webp" alt="Punto de Venta SACS" class="tablet-slide-img" loading="lazy" />
             </div>
 
             {/* ── Vende: eCommerce ── */}
             <div class="tablet-slide" data-slide="pos-ecommerce">
-              <img src="/images/screen-ecommerce.webp" alt="eCommerce SACS — Tienda en línea con catálogo y checkout" class="tablet-slide-img tablet-slide-img-dark" width="2786" height="1504" loading="lazy" />
+              <img src="/images/screen-ecommerce.webp" alt="eCommerce SACS — Tienda en línea con catálogo y checkout" class="tablet-slide-img tablet-slide-img-dark" loading="lazy" />
             </div>
 
             {/* ── Vende: WhatsApp ── */}
@@ -1918,9 +1918,10 @@ const useCases = [
   .tablet-slide-img {
     width: 100%;
     aspect-ratio: 16 / 10;
-    object-fit: cover;
-    object-position: left top;
+    object-fit: contain;
+    object-position: center;
     display: block;
+    background: #fff;
   }
 
   .tablet-slide-img-dark {
