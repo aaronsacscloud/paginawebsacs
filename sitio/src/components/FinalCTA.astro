@@ -2,7 +2,7 @@
 ---
 
 <section class="final-cta">
-  <div class="container final-cta-inner reveal">
+  <div class="container final-cta-inner">
     <h2 class="final-cta-title">Empieza hoy. Es gratis.</h2>
     <p class="final-cta-desc">Configura tu negocio en 15 minutos. Sin tarjeta de crédito, sin contratos.</p>
     <a class="final-cta-btn" href="/contacto">Crear cuenta gratis</a>
@@ -78,6 +78,28 @@
   @media (prefers-reduced-motion: reduce) {
     .final-cta-btn:hover {
       transform: none;
+    }
+  }
+
+  /* ─── Mobile optimization ─── */
+  @media (max-width: 767px) {
+    .final-cta {
+      padding: var(--space-16) 0;
+    }
+
+    .final-cta-title {
+      font-size: clamp(1.75rem, 7vw, 2.5rem);
+    }
+
+    .final-cta-desc {
+      font-size: 0.9375rem;
+      margin-bottom: var(--space-8);
+    }
+
+    .final-cta-btn {
+      width: 100%;
+      padding: 16px 28px;
+      font-size: 1rem;
     }
   }
 </style>

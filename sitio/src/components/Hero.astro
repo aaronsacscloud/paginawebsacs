@@ -1,6 +1,4 @@
 ---
-import BeforeAfter from './BeforeAfter.astro';
-
 interface Props {
   eyebrow?: string;
   title: string;
@@ -381,41 +379,31 @@ const useCases = [
 
             {/* ── Vende: Redes Sociales & IA ── */}
             <div class="tablet-slide" data-slide="pos-social">
-              <div class="social-grid-slide">
-                <div class="social-grid-card">
-                  <div class="social-grid-icon" style="background:#FE2C55;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.75a8.18 8.18 0 004.76 1.52V6.84a4.84 4.84 0 01-1-.15z"/></svg>
+              <div class="social-devices-wrapper">
+                <img
+                  src="/images/social-commerce-devices.webp"
+                  alt="SACS — Catálogo de productos sincronizado en móvil y tablet con canales de venta sociales"
+                  class="social-devices-img"
+                  width="1200"
+                  height="900"
+                  loading="lazy"
+                />
+                {/* Logos flotantes animados */}
+                <div class="social-floating-logos">
+                  <div class="floating-logo floating-logo--tiktok" aria-label="TikTok Shop">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.75a8.18 8.18 0 004.76 1.52V6.84a4.84 4.84 0 01-1-.15z"/></svg>
                   </div>
-                  <div class="social-grid-text">
-                    <strong>TikTok Shop</strong>
-                    <span>Productos etiquetados en videos. Stock real sincronizado.</span>
+                  <div class="floating-logo floating-logo--instagram" aria-label="Instagram Shop">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8z"/></svg>
                   </div>
-                </div>
-                <div class="social-grid-card">
-                  <div class="social-grid-icon" style="background:linear-gradient(135deg,#833AB4,#E1306C,#F77737);">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8z"/></svg>
+                  <div class="floating-logo floating-logo--facebook" aria-label="Facebook Shop">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
                   </div>
-                  <div class="social-grid-text">
-                    <strong>Instagram Shop</strong>
-                    <span>Stories con productos. Ventas por DM automáticas.</span>
+                  <div class="floating-logo floating-logo--google" aria-label="Google Shopping">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
                   </div>
-                </div>
-                <div class="social-grid-card">
-                  <div class="social-grid-icon" style="background:#1877F2;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                  </div>
-                  <div class="social-grid-text">
-                    <strong>Facebook Shop</strong>
-                    <span>Catálogo sincronizado. Venta por Messenger.</span>
-                  </div>
-                </div>
-                <div class="social-grid-card">
-                  <div class="social-grid-icon" style="background:#1A1A1A;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#10A37F"><path d="M22.282 9.821a5.985 5.985 0 00-.516-4.91 6.046 6.046 0 00-6.51-2.9A6.065 6.065 0 0011.67.5 6.04 6.04 0 005.337 4.14a6.015 6.015 0 00-4.02 2.916 6.043 6.043 0 00.743 7.097 5.98 5.98 0 00.516 4.911 6.043 6.043 0 006.51 2.9A5.99 5.99 0 0012.33 23.5a6.04 6.04 0 006.333-3.64 6.015 6.015 0 004.02-2.916 6.043 6.043 0 00-.743-7.097z"/></svg>
-                  </div>
-                  <div class="social-grid-text">
-                    <strong>ChatGPT Commerce</strong>
-                    <span>Tus clientes compran a través de IA con datos reales.</span>
+                  <div class="floating-logo floating-logo--chatgpt" aria-label="ChatGPT Commerce">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M22.282 9.821a5.985 5.985 0 00-.516-4.91 6.046 6.046 0 00-6.51-2.9A6.065 6.065 0 0011.67.5 6.04 6.04 0 005.337 4.14a6.015 6.015 0 00-4.02 2.916 6.043 6.043 0 00.743 7.097 5.98 5.98 0 00.516 4.911 6.043 6.043 0 006.51 2.9A5.99 5.99 0 0012.33 23.5a6.04 6.04 0 006.333-3.64 6.015 6.015 0 004.02-2.916 6.043 6.043 0 00-.743-7.097z"/></svg>
                   </div>
                 </div>
               </div>
@@ -1010,7 +998,7 @@ const useCases = [
 <section class="zt-section" id="zt-section">
   <div class="zt-sticky">
     <div class="zt-text-wrap">
-      <h2 class="zt-text" id="zt-text">Visibilidad total, de tu inventario y de tu negocio</h2>
+      <h2 class="zt-text" id="zt-text">Bienvenido a la era del comercio unificado, <span class="zt-strike-text">tu punto de venta ya no es suficiente</span></h2>
     </div>
   </div>
 </section>
@@ -1033,11 +1021,11 @@ const useCases = [
           </div>
           <div class="inv-intel-screen-body">
             <div class="inv-intel-row inv-intel-row--header"><span>Producto</span><span>Polanco</span><span>Condesa</span><span>CEDIS</span><span>Acción</span></div>
-            <div class="inv-intel-row"><span class="inv-intel-prod">Blazer Rosa M</span><span>2</span><span>14</span><span>8</span><span class="inv-intel-action inv-intel-action--transfer">↔ Transferir 6</span></div>
-            <div class="inv-intel-row inv-intel-row--highlight"><span class="inv-intel-prod">Blusa Lino Resort S</span><span>0</span><span>3</span><span>12</span><span class="inv-intel-action inv-intel-action--restock">📦 Resurtir 8</span></div>
-            <div class="inv-intel-row"><span class="inv-intel-prod">Falda Midi L</span><span>18</span><span>16</span><span>4</span><span class="inv-intel-action inv-intel-action--promo">🏷️ Promoción</span></div>
-            <div class="inv-intel-row"><span class="inv-intel-prod">Vestido Noche XS</span><span>1</span><span>0</span><span>0</span><span class="inv-intel-action inv-intel-action--buy">🛒 Comprar más</span></div>
-            <div class="inv-intel-row"><span class="inv-intel-prod">Bolso Verano</span><span>24</span><span>22</span><span>30</span><span class="inv-intel-action inv-intel-action--liquidate">⚡ Liquidar</span></div>
+            <div class="inv-intel-row"><span class="inv-intel-prod">Blazer Rosa M</span><span>2</span><span>14</span><span>8</span><span class="inv-intel-action inv-intel-action--transfer">Transferir 6</span></div>
+            <div class="inv-intel-row inv-intel-row--highlight"><span class="inv-intel-prod">Blusa Lino Resort S</span><span>0</span><span>3</span><span>12</span><span class="inv-intel-action inv-intel-action--restock">Resurtir 8</span></div>
+            <div class="inv-intel-row"><span class="inv-intel-prod">Falda Midi L</span><span>18</span><span>16</span><span>4</span><span class="inv-intel-action inv-intel-action--promo">Promoción</span></div>
+            <div class="inv-intel-row"><span class="inv-intel-prod">Vestido Noche XS</span><span>1</span><span>0</span><span>0</span><span class="inv-intel-action inv-intel-action--buy">Comprar más</span></div>
+            <div class="inv-intel-row"><span class="inv-intel-prod">Bolso Verano</span><span>24</span><span>22</span><span>30</span><span class="inv-intel-action inv-intel-action--liquidate">Liquidar</span></div>
           </div>
           <div class="inv-intel-screen-footer">
             <span class="inv-intel-footer-dot"></span>
@@ -1079,6 +1067,203 @@ const useCases = [
         <h3 class="inv-intel-card-title">Ajuste de precios</h3>
         <p class="inv-intel-card-desc">Sugiere subir precio en productos con alta demanda y bajo stock. Maximiza margen automáticamente.</p>
       </div>
+      <div class="inv-intel-card" style="--i:6">
+        <span class="inv-intel-card-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="4" y="4" width="24" height="24" rx="2" stroke="#4B7BE5" stroke-width="1.5" opacity="0.2"/><path d="M10 10h4v12h-4z" stroke="#4B7BE5" stroke-width="1.5"/><path d="M18 16h4v6h-4z" stroke="#2AB5A0" stroke-width="1.5"/><path d="M26 8h-4v4h4z" stroke="#E8A838" stroke-width="1.5" opacity="0.6"/><text x="12" y="27" text-anchor="middle" font-family="var(--font-display)" font-size="5" font-weight="700" fill="#4B7BE5">A</text><text x="20" y="27" text-anchor="middle" font-family="var(--font-display)" font-size="5" font-weight="700" fill="#2AB5A0">B</text><text x="28" y="27" text-anchor="middle" font-family="var(--font-display)" font-size="5" font-weight="700" fill="#E8A838">C</text></svg></span>
+        <h3 class="inv-intel-card-title">Reportes ABC</h3>
+        <p class="inv-intel-card-desc">Clasifica tus productos en A, B y C según su contribución a ventas y margen. Enfoca recursos donde más impactan.</p>
+      </div>
+      <div class="inv-intel-card" style="--i:7">
+        <span class="inv-intel-card-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M6 26l4-8 4 4 4-10 4 6 4-12" stroke="#2AB5A0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 26h20" stroke="#4B7BE5" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/><circle cx="10" cy="18" r="2" fill="#E8F5E9" stroke="#2AB5A0" stroke-width="1"/><circle cx="18" cy="12" r="2" fill="#E8F5E9" stroke="#2AB5A0" stroke-width="1"/><circle cx="26" cy="6" r="2" fill="#FDF5E6" stroke="#E8A838" stroke-width="1"/></svg></span>
+        <h3 class="inv-intel-card-title">Sell Through</h3>
+        <p class="inv-intel-card-desc">Mide qué porcentaje del inventario recibido se vendió en un periodo. Identifica productos estancados vs. los que vuelan.</p>
+      </div>
+      <div class="inv-intel-card" style="--i:8">
+        <span class="inv-intel-card-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M6 24l6-4 4 2 4-6 6-8" stroke="#4B7BE5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 24l6-4 4 2 4-6 6-8" stroke="#4B7BE5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 3" opacity="0.3" transform="translate(0,-4)"/><circle cx="26" cy="8" r="3" fill="#FDF5E6" stroke="#E8A838" stroke-width="1.5"/><path d="M25 8h2M26 7v2" stroke="#E8A838" stroke-width="1" stroke-linecap="round"/><path d="M4 28h24" stroke="#4B7BE5" stroke-width="1" opacity="0.15"/></svg></span>
+        <h3 class="inv-intel-card-title">Forecast personalizado</h3>
+        <p class="inv-intel-card-desc">Proyecta demanda futura con reglas que tú defines: temporadas, eventos, tendencias locales. Compra lo justo.</p>
+      </div>
+    </div>
+    <div class="section-ctas">
+      <a href="/contacto" class="section-cta section-cta--filled">Empieza gratis</a>
+      <a href="/contacto#demo" class="section-cta section-cta--outline">Agenda una demo</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ Herramientas de gestión — Estilo AgendaPro ═══ -->
+<section class="htv2">
+  <div class="htv2-inner">
+    <h2 class="htv2-title">Todas las herramientas para gestionar tu negocio</h2>
+
+    <!-- Row 1: 3 cards -->
+    <div class="htv2-row htv2-row--3">
+      <div class="htv2-card">
+        <div class="htv2-card-text">
+          <h3 class="htv2-card-title">Facturación electrónica</h3>
+          <ul class="htv2-features">
+            <li>CFDI 4.0 desde cada venta</li>
+            <li>Timbrado automático</li>
+            <li>Complementos de pago</li>
+            <li>Cancelaciones en un clic</li>
+            <li>Facturación global</li>
+          </ul>
+        </div>
+        <div class="htv2-visual">
+          <div class="htv2-mockup">
+            <div class="htv2-mockup-bar"><span></span><span></span><span></span></div>
+            <div class="htv2-mockup-body">
+              <div class="htv2-invoice-header">
+                <span class="htv2-invoice-label">CFDI 4.0</span>
+                <span class="htv2-badge htv2-badge--green">Timbrado</span>
+              </div>
+              <div class="htv2-invoice-row"><span>RFC Emisor</span><span>SAC240101XX0</span></div>
+              <div class="htv2-invoice-row"><span>RFC Receptor</span><span>XAXX010101000</span></div>
+              <div class="htv2-invoice-row"><span>Folio</span><span>A-00384</span></div>
+              <div class="htv2-invoice-total">
+                <span class="htv2-invoice-total-label">Total</span>
+                <span class="htv2-invoice-total-amount">$4,280.00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="htv2-card">
+        <div class="htv2-card-text">
+          <h3 class="htv2-card-title">Compras e inventario</h3>
+          <ul class="htv2-features">
+            <li>Órdenes de compra a proveedores</li>
+            <li>Recepción de mercancía contra pedido</li>
+            <li>Control de costos de adquisición</li>
+            <li>Alertas de inventario bajo</li>
+            <li>Historial de compras por proveedor</li>
+          </ul>
+        </div>
+        <div class="htv2-visual">
+          <div class="htv2-mockup">
+            <div class="htv2-mockup-bar"><span></span><span></span><span></span></div>
+            <div class="htv2-mockup-body">
+              <div class="htv2-po-header">OC #192</div>
+              <table class="htv2-po-table">
+                <thead><tr><th>Producto</th><th>Qty</th><th>Costo</th></tr></thead>
+                <tbody>
+                  <tr><td>Blusa algodón S</td><td>40</td><td>$3,200</td></tr>
+                  <tr><td>Falda lino M</td><td>25</td><td>$4,375</td></tr>
+                  <tr><td>Vestido boho L</td><td>15</td><td>$3,900</td></tr>
+                </tbody>
+              </table>
+              <div class="htv2-po-total"><span>Total</span><span>$11,475</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="htv2-card">
+        <div class="htv2-card-text">
+          <h3 class="htv2-card-title">Créditos y cobranza</h3>
+          <ul class="htv2-features">
+            <li>Líneas de crédito por cliente mayorista</li>
+            <li>Límites y plazos personalizados</li>
+            <li>Seguimiento de saldos pendientes</li>
+            <li>Antigüedad de deuda por cliente</li>
+            <li>Alertas de vencimiento automáticas</li>
+          </ul>
+        </div>
+        <div class="htv2-visual">
+          <div class="htv2-mockup">
+            <div class="htv2-mockup-bar"><span></span><span></span><span></span></div>
+            <div class="htv2-mockup-body htv2-credit-body">
+              <div class="htv2-credit-client">Boutique Oaxaca</div>
+              <div class="htv2-credit-bar-wrap">
+                <div class="htv2-credit-bar"><div class="htv2-credit-bar-fill" style="width:62%"></div></div>
+                <div class="htv2-credit-pct">62% usado</div>
+              </div>
+              <div class="htv2-credit-amounts">
+                <div class="htv2-credit-amount"><span class="htv2-credit-label">Usado</span><span class="htv2-credit-value">$27,900</span></div>
+                <div class="htv2-credit-amount"><span class="htv2-credit-label">Disponible</span><span class="htv2-credit-value htv2-credit-value--green">$17,100</span></div>
+              </div>
+              <div class="htv2-credit-term">Plazo: 30 días</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: 2 cards -->
+    <div class="htv2-row htv2-row--2">
+      <div class="htv2-card">
+        <div class="htv2-card-text">
+          <h3 class="htv2-card-title">Cuentas por pagar</h3>
+          <ul class="htv2-features">
+            <li>Registro de deuda por proveedor</li>
+            <li>Calendario de vencimientos</li>
+            <li>Pagos parciales y abonos</li>
+            <li>Conciliación automática</li>
+            <li>Historial de pagos</li>
+          </ul>
+        </div>
+        <div class="htv2-visual">
+          <div class="htv2-mockup">
+            <div class="htv2-mockup-bar"><span></span><span></span><span></span></div>
+            <div class="htv2-mockup-body htv2-payables-body">
+              <div class="htv2-payable-row">
+                <div class="htv2-payable-info"><span class="htv2-payable-name">Textiles del Bajío</span><span class="htv2-payable-date">Vence 12 Abr</span></div>
+                <div class="htv2-payable-right"><span class="htv2-payable-amount">$24,350</span><span class="htv2-payable-badge">5 días</span></div>
+              </div>
+              <div class="htv2-payable-row">
+                <div class="htv2-payable-info"><span class="htv2-payable-name">Hilos y Más</span><span class="htv2-payable-date">Vence 18 Abr</span></div>
+                <div class="htv2-payable-right"><span class="htv2-payable-amount">$8,900</span><span class="htv2-payable-badge">11 días</span></div>
+              </div>
+              <div class="htv2-payable-row htv2-payable-row--overdue">
+                <div class="htv2-payable-info"><span class="htv2-payable-name">Empaques Express</span><span class="htv2-payable-date">Venció 2 Abr</span></div>
+                <div class="htv2-payable-right"><span class="htv2-payable-amount">$3,200</span><span class="htv2-payable-badge htv2-payable-badge--red">Vencida</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="htv2-card">
+        <div class="htv2-card-text">
+          <h3 class="htv2-card-title">Reportes financieros</h3>
+          <ul class="htv2-features">
+            <li>Estado de resultados en tiempo real</li>
+            <li>Flujo de efectivo por periodo</li>
+            <li>Margen por producto y categoría</li>
+            <li>Reportes de ventas con IA</li>
+            <li>Exportación a Excel y PDF</li>
+          </ul>
+        </div>
+        <div class="htv2-visual">
+          <div class="htv2-mockup">
+            <div class="htv2-mockup-bar"><span></span><span></span><span></span></div>
+            <div class="htv2-mockup-body htv2-reports-body">
+              <div class="htv2-reports-ai">Análisis IA: Tus ventas aumentaron 42% vs periodo anterior</div>
+              <div class="htv2-reports-metrics">
+                <div class="htv2-reports-metric">
+                  <span class="htv2-reports-metric-label">Total vendido</span>
+                  <span class="htv2-reports-metric-value">$250,000</span>
+                  <span class="htv2-reports-metric-change htv2-reports-metric-change--up">&#8593;42.1%</span>
+                </div>
+                <div class="htv2-reports-metric">
+                  <span class="htv2-reports-metric-label">Cantidad de ventas</span>
+                  <span class="htv2-reports-metric-value">168</span>
+                  <span class="htv2-reports-metric-change htv2-reports-metric-change--up">&#8593;15.4%</span>
+                </div>
+                <div class="htv2-reports-metric">
+                  <span class="htv2-reports-metric-label">Venta promedio</span>
+                  <span class="htv2-reports-metric-value">$1,488</span>
+                  <span class="htv2-reports-metric-change htv2-reports-metric-change--up">&#8593;23.2%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="section-ctas">
+      <a href="/contacto#demo" class="section-cta section-cta--filled">Agenda una demo</a>
+      <a href="/contacto" class="section-cta section-cta--outline">Crea tu cuenta gratis</a>
     </div>
   </div>
 </section>
@@ -1086,7 +1271,7 @@ const useCases = [
 <!-- ═══ BLOQUE 2.4: Casos de éxito — Reels ═══ -->
 <section class="reels-section">
   <div class="reels-header">
-    <h2 class="reels-title">Negocios que ya crecen con SACS</h2>
+    <h2 class="reels-title">Negocios que ya crecen con <span class="reels-title-logo">Sacs</span></h2>
     <p class="reels-subtitle">1 sucursal o 100 — el mismo sistema. Empieza con lo que necesitas hoy y crece sin cambiar de plataforma.</p>
   </div>
   <div class="reels-track-wrapper">
@@ -1096,7 +1281,7 @@ const useCases = [
           <img src="/images/case-bella-pandita.webp" alt="La Bella Pandita — 42 sucursales con SACS" loading="lazy" />
         </div>
         <div class="reel-hl-info">
-          <span class="reel-tag" style="background:rgba(108,92,231,0.9);">Moda</span>
+          <span class="reel-tag" style="background:rgba(108,92,231,0.9);">Novedades | Moda y hogar</span>
           <h3 class="reel-brand" style="margin-top:8px;">La Bella Pandita</h3>
           <div class="reel-hl-stats">
             <div class="reel-hl-stat">
@@ -1105,8 +1290,8 @@ const useCases = [
             </div>
             <div class="reel-hl-stat-divider"></div>
             <div class="reel-hl-stat">
-              <span class="reel-hl-stat-num">+300%</span>
-              <span class="reel-hl-stat-label">lifetime value</span>
+              <span class="reel-hl-stat-num">+1M</span>
+              <span class="reel-hl-stat-label">transacciones</span>
             </div>
           </div>
         </div>
@@ -1116,42 +1301,22 @@ const useCases = [
           <img src="/images/case-liveshow.webp" alt="Liveshow Merchandising — conciertos con SACS" loading="lazy" />
         </div>
         <div class="reel-hl-info">
-          <span class="reel-tag" style="background:rgba(232,67,147,0.9);">Entretenimiento</span>
+          <span class="reel-tag" style="background:rgba(232,67,147,0.9);">Merchandising</span>
           <h3 class="reel-brand" style="margin-top:8px;">Liveshow Merchandising</h3>
           <div class="reel-hl-stats">
             <div class="reel-hl-stat">
-              <span class="reel-hl-stat-num">150K</span>
-              <span class="reel-hl-stat-label">transacciones</span>
+              <span class="reel-hl-stat-num">+1,500</span>
+              <span class="reel-hl-stat-label">puntos de venta</span>
             </div>
             <div class="reel-hl-stat-divider"></div>
             <div class="reel-hl-stat">
-              <span class="reel-hl-stat-num">100+</span>
-              <span class="reel-hl-stat-label">puntos de venta</span>
+              <span class="reel-hl-stat-num">5</span>
+              <span class="reel-hl-stat-label">canales de venta</span>
             </div>
           </div>
         </div>
       </div>
       <div class="reel-card reel-card--highlight" style="--reel-idx:2">
-        <div class="reel-hl-photo">
-          <img src="/images/case-sandmade.webp" alt="Sandmade Swimwear — 8 boutiques turísticas" loading="lazy" />
-        </div>
-        <div class="reel-hl-info">
-          <span class="reel-tag" style="background:rgba(0,184,148,0.9);">Swimwear</span>
-          <h3 class="reel-brand" style="margin-top:8px;">Sandmade</h3>
-          <div class="reel-hl-stats">
-            <div class="reel-hl-stat">
-              <span class="reel-hl-stat-num">98%</span>
-              <span class="reel-hl-stat-label">precisión inventario</span>
-            </div>
-            <div class="reel-hl-stat-divider"></div>
-            <div class="reel-hl-stat">
-              <span class="reel-hl-stat-num">8</span>
-              <span class="reel-hl-stat-label">boutiques</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="reel-card reel-card--highlight" style="--reel-idx:3">
         <div class="reel-hl-photo">
           <img src="/images/case-casa-maca.webp" alt="Casa Maca — moda consciente con SACS" loading="lazy" />
         </div>
@@ -1160,289 +1325,25 @@ const useCases = [
           <h3 class="reel-brand" style="margin-top:8px;">Casa Maca</h3>
           <div class="reel-hl-stats">
             <div class="reel-hl-stat">
-              <span class="reel-hl-stat-num">−80%</span>
-              <span class="reel-hl-stat-label">trabajo manual</span>
+              <span class="reel-hl-stat-num">2</span>
+              <span class="reel-hl-stat-label">sucursales</span>
             </div>
             <div class="reel-hl-stat-divider"></div>
             <div class="reel-hl-stat">
-              <span class="reel-hl-stat-num">30</span>
-              <span class="reel-hl-stat-label">días implementación</span>
+              <span class="reel-hl-stat-num">3</span>
+              <span class="reel-hl-stat-label">canales digitales</span>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-</section>
-
-<!-- ═══ Por qué SACS — Scrollytelling con imágenes ═══ -->
-<section class="why-sacs-section">
-  <div class="why-sacs-scrolly">
-    {/* Sticky image left */}
-    <div class="why-sacs-media">
-      <div class="why-sacs-img-wrap">
-        <img src="/images/screen-pos.webp" alt="" class="why-sacs-img active" data-why-img="0" width="1999" height="1252" loading="lazy" />
-        <img src="/images/whatsapp-venta-producto.webp" alt="" class="why-sacs-img" data-why-img="1" width="800" height="800" loading="lazy" />
-        <img src="/images/hero-sacs-tablet.webp" alt="" class="why-sacs-img" data-why-img="2" width="2400" height="1792" loading="lazy" />
-        <img src="/images/recepcion-mercancia.webp" alt="" class="why-sacs-img" data-why-img="3" width="1200" height="1560" loading="lazy" />
-        <img src="/images/hero-sacs-store.webp" alt="" class="why-sacs-img" data-why-img="4" width="2400" height="1792" loading="lazy" />
-      </div>
-    </div>
-
-    {/* Scroll panels right */}
-    <div class="why-sacs-features">
-      <div class="why-sacs-item active" data-why-idx="0">
-        <h3 class="why-sacs-item-title">Migración con IA en menos de 3 días</h3>
-        <p class="why-sacs-item-desc">Sin importar la cantidad de datos, nuestra IA migra tu catálogo, clientes, historial de ventas y configuraciones desde cualquier sistema. Sin trabajo manual, sin pérdida de información, sin pausar tu operación.</p>
-      </div>
-      <div class="why-sacs-item" data-why-idx="1">
-        <h3 class="why-sacs-item-title">Soporte 24/7, siempre que lo necesites</h3>
-        <p class="why-sacs-item-desc">Equipo dedicado disponible por chat, teléfono y WhatsApp. No importa si es sábado a las 11pm o lunes a las 6am — siempre hay alguien listo para ayudarte.</p>
-      </div>
-      <div class="why-sacs-item" data-why-idx="2">
-        <h3 class="why-sacs-item-title">Usuarios y dispositivos ilimitados</h3>
-        <p class="why-sacs-item-desc">En todos nuestros planes. Agrega cajeros, gerentes, bodegueros — los que necesites. Desde tablet, celular o computadora. Sin cargos extra, sin límites artificiales.</p>
-      </div>
-      <div class="why-sacs-item" data-why-idx="3">
-        <h3 class="why-sacs-item-title">Academia SACS — Onboarding autónomo</h3>
-        <p class="why-sacs-item-desc">Cursos paso a paso para dueños y empleados. Tu equipo aprende a usar SACS a su ritmo, sin depender de capacitaciones presenciales. Nuevos empleados se onboardean solos.</p>
-      </div>
-      <div class="why-sacs-item" data-why-idx="4">
-        <h3 class="why-sacs-item-title">Enterprise: Personalización total</h3>
-        <p class="why-sacs-item-desc">Para operaciones complejas, desarrollamos funcionalidades a la medida. Integraciones con tu ERP, flujos personalizados, reportes custom — tu sistema, tus reglas.</p>
-      </div>
-    </div>
   </div>
 </section>
 
-<!-- ═══ BLOQUE 2.35: Scrollytelling — sticky image + features ═══ -->
-<section class="scrolly-section">
-  <!-- Imagen sticky izquierda -->
-  <div class="scrolly-media">
-    <div class="scrolly-img-wrap">
-      <!-- Fondos — tonos claros elegantes -->
-      <div class="scrolly-bg scrolly-bg-0 active" data-scrolly-bg="0"></div>
-      <div class="scrolly-bg scrolly-bg-1" data-scrolly-bg="1"></div>
-      <div class="scrolly-bg scrolly-bg-2" data-scrolly-bg="2"></div>
-      <div class="scrolly-bg scrolly-bg-3" data-scrolly-bg="3"></div>
-      <!-- Imágenes -->
-      <img src="/images/hero-sacs-store.webp" alt="" class="scrolly-img active" data-scrolly-img="0" width="2400" height="1792" loading="lazy" />
-      <img src="/images/screen-pos.webp" alt="" class="scrolly-img" data-scrolly-img="1" width="1999" height="1252" loading="lazy" />
-      <img src="/images/panel-organica.jpg" alt="" class="scrolly-img" data-scrolly-img="2" width="800" height="600" loading="lazy" />
-      <img src="/images/panel-casaverde.jpg" alt="" class="scrolly-img" data-scrolly-img="3" width="800" height="600" loading="lazy" />
-    </div>
-  </div>
+<!-- Secciones movidas a /componentes -->
 
-  <!-- Features derecha -->
-  <div class="scrolly-features">
-    <div class="scrolly-item active" data-scrolly-idx="0">
-      <h3 class="scrolly-item-title">Nunca pierdas una venta</h3>
-      <p class="scrolly-item-desc">Cobra en tienda, por WhatsApp o desde tu e-commerce — todo llega al mismo sistema. Acepta tarjeta, efectivo o transferencia, incluso sin internet.</p>
-    </div>
-    <div class="scrolly-item" data-scrolly-idx="1">
-      <h3 class="scrolly-item-title">Un punto de venta que se adapta a ti</h3>
-      <p class="scrolly-item-desc">Busca productos por nombre o código de barras, aplica descuentos, identifica clientes VIP y cobra en segundos. Así de simple.</p>
-    </div>
-    <div class="scrolly-item" data-scrolly-idx="2">
-      <h3 class="scrolly-item-title">Controla tu inventario sin esfuerzo</h3>
-      <p class="scrolly-item-desc">Alertas de reabasto, movimientos entre sucursales y conteos rápidos desde el celular. Siempre sabes cuánto tienes y dónde.</p>
-    </div>
-    <div class="scrolly-item" data-scrolly-idx="3">
-      <h3 class="scrolly-item-title">Decide con datos reales</h3>
-      <p class="scrolly-item-desc">Dashboards claros con ventas, costos y márgenes. AXO analiza tus datos y te sugiere qué hacer — sin Excel, sin complicaciones.</p>
-    </div>
-  </div>
-</section>
-
-
-<BeforeAfter />
-
-
-<!-- ═══ BLOQUE 3: Plataforma — estilo Square accordion ═══ -->
-<section class="platform-section">
-  <div class="platform-inner">
-    <!-- Columna izquierda: texto + accordion -->
-    <div class="platform-text-col">
-      <span class="platform-eyebrow">Plataforma</span>
-      <h2 class="platform-title">Todo encaja en un solo lugar.</h2>
-
-      <div class="platform-accordion">
-        {useCases.map((uc, i) => (
-          <div class={`accordion-item${i === 0 ? ' active' : ''}`} data-accordion={uc.id} data-index={i}>
-            <button class="accordion-header" type="button" aria-expanded={i === 0 ? 'true' : 'false'}>
-              <span class="accordion-label">{uc.title}</span>
-              <svg class="accordion-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                <line class="icon-h" x1="4" y1="10" x2="16" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                <line class="icon-v" x1="10" y1="4" x2="10" y2="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              </svg>
-            </button>
-            <div class="accordion-body">
-              <p class="accordion-desc">{uc.desc}</p>
-              <a href="/producto" class="accordion-link">
-                Conocer más
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                  <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-              </a>
-              <!-- Progress bar -->
-              <div class="accordion-progress"><div class="accordion-progress-fill"></div></div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-
-    <!-- Columna derecha: fondo painterly + mockup card -->
-    <div class="platform-visual-col">
-      <div class="platform-bg" aria-hidden="true">
-        <div class="platform-bg-texture"></div>
-      </div>
-      <div class="platform-mockup-wrapper">
-        <!-- POS mockup -->
-        <div class="platform-mockup active" data-mockup="pos">
-          <div class="pm-window">
-            <div class="pm-titlebar">
-              <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
-              <span class="pm-titlebar-text">Punto de Venta</span>
-            </div>
-            <div class="pm-content">
-              <div class="pm-grid">
-                <div class="pm-product"><div class="pm-product-img"></div><div class="pm-product-bar"></div><span>$85</span></div>
-                <div class="pm-product selected"><div class="pm-product-img"></div><div class="pm-product-bar"></div><span>$120</span></div>
-                <div class="pm-product"><div class="pm-product-img"></div><div class="pm-product-bar"></div><span>$65</span></div>
-                <div class="pm-product"><div class="pm-product-img"></div><div class="pm-product-bar"></div><span>$95</span></div>
-                <div class="pm-product"><div class="pm-product-img"></div><div class="pm-product-bar"></div><span>$140</span></div>
-                <div class="pm-product"><div class="pm-product-img"></div><div class="pm-product-bar"></div><span>$55</span></div>
-              </div>
-              <div class="pm-sidebar">
-                <div class="pm-sidebar-title">3 productos</div>
-                <div class="pm-sidebar-row"><div class="pm-sidebar-bar"></div><span>$85</span></div>
-                <div class="pm-sidebar-row"><div class="pm-sidebar-bar"></div><span>$120</span></div>
-                <div class="pm-sidebar-row"><div class="pm-sidebar-bar"></div><span>$65</span></div>
-                <div class="pm-sidebar-total"><span>Total</span><strong>$270</strong></div>
-                <div class="pm-sidebar-btn">Cobrar</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Inventario mockup -->
-        <div class="platform-mockup" data-mockup="stock">
-          <div class="pm-window">
-            <div class="pm-titlebar">
-              <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
-              <span class="pm-titlebar-text">Inventario</span>
-            </div>
-            <div class="pm-content pm-content-list">
-              <div class="pm-list-header"><span>Producto</span><span>Stock</span><span>Estado</span></div>
-              <div class="pm-list-row"><span>Café Orgánico 250g</span><span>128</span><span class="pm-status-ok">En stock</span></div>
-              <div class="pm-list-row alert"><span>Miel de Agave 500ml</span><span>3</span><span class="pm-status-low">Bajo</span></div>
-              <div class="pm-list-row"><span>Jabón Artesanal</span><span>56</span><span class="pm-status-ok">En stock</span></div>
-              <div class="pm-list-row"><span>Chocolate 70%</span><span>89</span><span class="pm-status-ok">En stock</span></div>
-              <div class="pm-list-row"><span>Vela Aromática</span><span>34</span><span class="pm-status-ok">En stock</span></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- CRM mockup -->
-        <div class="platform-mockup" data-mockup="crm">
-          <div class="pm-window">
-            <div class="pm-titlebar">
-              <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
-              <span class="pm-titlebar-text">Clientes</span>
-            </div>
-            <div class="pm-content pm-content-crm">
-              <div class="pm-crm-profile">
-                <div class="pm-crm-avatar">ML</div>
-                <div>
-                  <div class="pm-crm-name">María López</div>
-                  <div class="pm-crm-tag">VIP · 23 compras</div>
-                </div>
-              </div>
-              <div class="pm-crm-stats">
-                <div class="pm-crm-stat"><span>Ticket promedio</span><strong>$890</strong></div>
-                <div class="pm-crm-stat"><span>Última visita</span><strong>Hace 2 días</strong></div>
-                <div class="pm-crm-stat"><span>Puntos</span><strong>1,240</strong></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Reportes mockup -->
-        <div class="platform-mockup" data-mockup="reports">
-          <div class="pm-window">
-            <div class="pm-titlebar">
-              <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
-              <span class="pm-titlebar-text">Reportes</span>
-            </div>
-            <div class="pm-content pm-content-reports">
-              <div class="pm-report-kpis">
-                <div><span class="pm-kpi-val">$48.2K</span><span class="pm-kpi-label">Ventas semana</span></div>
-                <div><span class="pm-kpi-val">+12%</span><span class="pm-kpi-label">vs anterior</span></div>
-              </div>
-              <svg class="pm-chart" viewBox="0 0 400 120" preserveAspectRatio="none">
-                <path d="M0 100 Q50 85 100 75 T200 55 T300 35 T400 20 V120 H0Z" fill="rgba(42,181,160,0.12)"/>
-                <path d="M0 100 Q50 85 100 75 T200 55 T300 35 T400 20" fill="none" stroke="#2AB5A0" stroke-width="2.5"/>
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <!-- AXO/IA mockup -->
-        <div class="platform-mockup" data-mockup="ai">
-          <div class="pm-window">
-            <div class="pm-titlebar">
-              <div class="pm-dots"><span style="background:#FF5F57"></span><span style="background:#FFBD2E"></span><span style="background:#27C93F"></span></div>
-              <span class="pm-titlebar-text">AXO — Tu copiloto IA</span>
-            </div>
-            <div class="pm-content pm-content-chat">
-              <div class="pm-chat-msg pm-chat-ai">Las ventas subieron 12% esta semana. Te sugiero reabastecer Miel de Agave antes del fin de semana.</div>
-              <div class="pm-chat-msg pm-chat-user">Genera la orden</div>
-              <div class="pm-chat-msg pm-chat-ai">Listo, orden de compra #247 creada por 50 unidades. Llega el jueves.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div><!-- .platform-visual-col -->
-  </div><!-- .platform-inner -->
-</section>
-
-<!-- ═══ OPCIÓN A: Text Reveal por Scroll (guardado para uso futuro) ═══ -->
-<section class="tr-section" id="tr-section">
-  <div class="tr-sticky">
-    <div class="tr-aurora" aria-hidden="true">
-      <div class="tr-aurora-blob tr-aurora-blob-1"></div>
-      <div class="tr-aurora-blob tr-aurora-blob-2"></div>
-    </div>
-    <div class="tr-content">
-      <p class="tr-text" id="tr-text">
-        Tu catálogo físico conectado a WhatsApp, Instagram, TikTok, Facebook y ChatGPT. Stock sincronizado. Envíos automáticos. Cero trabajo manual.
-      </p>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ OPCIÓN B: Flip Words (descomentar para probar) ═══ -->
-<!--
-<section class="fw-section" id="fw-section">
-  <div class="fw-aurora" aria-hidden="true">
-    <div class="fw-aurora-blob fw-aurora-blob-1"></div>
-    <div class="fw-aurora-blob fw-aurora-blob-2"></div>
-  </div>
-  <div class="fw-content">
-    <h2 class="fw-title">
-      Ahora todo es posible desde tu
-      <span class="fw-flipper" id="fw-flipper">
-        <span class="fw-word fw-word--active">tienda</span>
-        <span class="fw-word">WhatsApp</span>
-        <span class="fw-word">Instagram</span>
-        <span class="fw-word">TikTok</span>
-        <span class="fw-word">eCommerce</span>
-      </span>
-    </h2>
-  </div>
-</section>
--->
+<!-- Plataforma, Text Reveal, Flip Words movidos a /componentes -->
 
 <style>
   /* ═══════════════════════════════════════════
@@ -2277,14 +2178,13 @@ const useCases = [
     position: relative;
     width: 92vw;
     max-width: 900px;
-    background: #1d1d1f;
+    background: #f5f5f7;
     border-radius: 16px;
     padding: 10px;
     box-shadow:
-      0 40px 120px rgba(0, 0, 0, 0.12),
-      0 20px 50px rgba(0, 0, 0, 0.08),
-      0 0 0 1px rgba(0, 0, 0, 0.06),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      0 40px 120px rgba(0, 0, 0, 0.08),
+      0 20px 50px rgba(0, 0, 0, 0.05),
+      0 0 0 1px rgba(0, 0, 0, 0.06);
     transform: rotateX(calc(8deg * var(--tablet-tilt))) rotateY(calc(-4deg * var(--tablet-tilt)));
     transform-style: preserve-3d;
     transition: transform 0.1s linear;
@@ -2315,8 +2215,8 @@ const useCases = [
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: #2a2a2e;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: #d1d1d6;
+    border: 1px solid rgba(0, 0, 0, 0.06);
   }
 
   @media (min-width: 768px) {
@@ -2375,53 +2275,102 @@ const useCases = [
     background: #1b1b1b;
   }
 
-  /* Social grid slide */
-  .social-grid-slide {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    padding: 32px;
+  /* Social devices + floating logos */
+  .social-devices-wrapper {
+    position: relative;
     height: 100%;
-    align-content: center;
+    overflow: hidden;
   }
-  .social-grid-card {
-    background: #fff;
-    border-radius: 16px;
-    padding: 24px;
+  .social-devices-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+  }
+
+  /* Floating logo badges — row above tablet */
+  .social-floating-logos {
+    position: absolute;
+    top: 10px;
+    left: 30%;
+    right: 0;
     display: flex;
-    align-items: flex-start;
-    gap: 14px;
-    border: 1px solid rgba(0,0,0,0.06);
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    justify-content: center;
+    gap: 12px;
+    pointer-events: none;
+    z-index: 3;
   }
-  .social-grid-card:hover {
-    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-    transform: translateY(-2px);
-  }
-  .social-grid-icon {
+  .floating-logo {
     width: 40px;
     height: 40px;
-    border-radius: 10px;
+    border-radius: 11px;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+    opacity: 0;
     flex-shrink: 0;
   }
-  .social-grid-text {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+  .floating-logo--tiktok {
+    background: #010101;
   }
-  .social-grid-text strong {
-    font-family: var(--font-display);
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--color-text-primary);
+  .floating-logo--instagram {
+    background: linear-gradient(135deg,#833AB4,#E1306C,#F77737);
   }
-  .social-grid-text span {
-    font-size: 13px;
-    color: var(--color-text-secondary);
-    line-height: 1.4;
+  .floating-logo--facebook {
+    background: #1877F2;
+  }
+  .floating-logo--google {
+    background: #fff;
+  }
+  .floating-logo--chatgpt {
+    background: #1A1A1A;
+  }
+
+  /* Logos only animate when slide is active */
+  .tablet-slide:not(.active) .floating-logo {
+    opacity: 0;
+    animation: none;
+  }
+  .tablet-slide.active .floating-logo {
+    animation: floatAppear 0.6s ease-out forwards, floatHover 3s ease-in-out 0.6s infinite;
+  }
+  .tablet-slide.active .floating-logo--tiktok  { animation-delay: 0.1s, 0.7s; }
+  .tablet-slide.active .floating-logo--instagram { animation-delay: 0.25s, 0.85s; }
+  .tablet-slide.active .floating-logo--facebook { animation-delay: 0.4s, 1.0s; }
+  .tablet-slide.active .floating-logo--google   { animation-delay: 0.55s, 1.15s; }
+  .tablet-slide.active .floating-logo--chatgpt  { animation-delay: 0.7s, 1.3s; }
+
+  @keyframes floatAppear {
+    0% {
+      opacity: 0;
+      transform: translateY(20px) scale(0.7);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes floatHover {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .floating-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+    }
+    .floating-logo svg {
+      width: 16px;
+      height: 16px;
+    }
   }
 
   /* Apartados dashboard screen */
@@ -3140,6 +3089,19 @@ const useCases = [
     transform-origin: center center;
   }
 
+  .zt-strike-text {
+    position: relative;
+    text-decoration: line-through;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 0.06em;
+    transition: text-decoration-color 0.5s ease, color 0.5s ease 0.1s;
+  }
+
+  .zt-strike-text.struck {
+    text-decoration-color: #E53E3E;
+    color: rgba(255, 255, 255, 0.3);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .zt-text {
       transform: scale(1) !important;
@@ -3154,7 +3116,7 @@ const useCases = [
      ═══════════════════════════════════════════ */
   .inv-intel-section {
     background: var(--color-bg-primary, #FAFAF8);
-    padding: clamp(80px, 10vw, 140px) 0;
+    padding: clamp(80px, 10vw, 140px) 0 clamp(40px, 5vw, 64px);
   }
   .inv-intel-inner {
     max-width: 1280px;
@@ -3324,6 +3286,19 @@ const useCases = [
     padding: clamp(28px, 3vw, 40px) clamp(20px, 2.5vw, 28px);
     border-bottom: 1px solid rgba(0,0,0,0.08);
     border-right: 1px solid rgba(0,0,0,0.08);
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .inv-intel-card.in-view {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .inv-intel-card { opacity: 1; transform: none; transition: none; }
   }
   .inv-intel-card:nth-child(3n) { border-right: none; }
   .inv-intel-card:nth-child(n+4) { border-bottom: none; }
@@ -3379,7 +3354,7 @@ const useCases = [
   }
 
   /* ═══════════════════════════════════════════
-     Por qué SACS — Scrollytelling with images
+     Sticky Features — estilo Square Bitcoin (was why-sacs)
      ═══════════════════════════════════════════ */
   .why-sacs-section {
     position: relative;
@@ -3666,22 +3641,22 @@ const useCases = [
   }
 
   .sq-feature-block {
-    padding: clamp(40px, 6vw, 72px) 0;
+    padding: clamp(24px, 4vw, 40px) 0;
     border-bottom: 1px solid rgba(0,0,0,0.08);
   }
 
   @media (min-width: 1024px) {
     .sq-feature-block {
-      min-height: 70vh;
+      min-height: 45vh;
       display: flex;
       flex-direction: column;
       justify-content: center;
     }
     .sq-feature-block:first-child {
-      padding-top: 35vh;
+      padding-top: 20vh;
     }
     .sq-feature-block:last-child {
-      padding-bottom: 35vh;
+      padding-bottom: 20vh;
     }
   }
 
@@ -3721,6 +3696,76 @@ const useCases = [
   }
 
 
+  /* ═══ Herramientas de gestión — AgendaPro style ═══ */
+  .htv2 { background: #fff; padding: clamp(64px, 8vw, 100px) 0; }
+  .htv2-inner { max-width: 1280px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+  .htv2-title { font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3.25rem); font-weight: 800; letter-spacing: -0.035em; line-height: 1.08; color: var(--color-text-primary, #1A1A1A); text-align: center; max-width: 700px; margin: 0 auto clamp(40px, 5vw, 64px); }
+  .htv2-row { display: grid; gap: 20px; margin-bottom: 20px; grid-template-columns: 1fr; }
+  .htv2-row:last-child { margin-bottom: 0; }
+  @media (min-width: 768px) { .htv2-row--2 { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1024px) { .htv2-row--3 { grid-template-columns: repeat(3, 1fr); } }
+  .htv2-card { background: #fff; border: 1px solid rgba(0,0,0,0.08); border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; opacity: 0; transform: translateY(40px); transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1); }
+  .htv2-card.in-view { opacity: 1; transform: translateY(0); }
+  @media (prefers-reduced-motion: reduce) { .htv2-card { opacity: 1; transform: none; transition: none; } }
+  .htv2-card-text { padding: 32px 32px 0; flex: 0 0 auto; }
+  .htv2-card-title { font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: var(--color-text-primary, #1A1A1A); letter-spacing: -0.02em; line-height: 1.2; margin: 0 0 16px; }
+  .htv2-features { list-style: disc; padding-left: 20px; margin: 0; color: #555; font-size: 0.9375rem; line-height: 1.8; }
+  .htv2-features li { padding: 2px 0; }
+  .htv2-visual { background: #F5F5F7; padding: 24px 24px 0; margin-top: auto; }
+  .htv2-mockup { background: #fff; border-radius: 10px 10px 0 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.04); overflow: hidden; font-family: var(--font-body); }
+  .htv2-mockup-bar { display: flex; gap: 6px; padding: 10px 14px; background: #fafafa; border-bottom: 1px solid #f0f0f0; }
+  .htv2-mockup-bar span { width: 8px; height: 8px; border-radius: 50%; background: #ddd; }
+  .htv2-mockup-body { padding: 16px 18px; }
+  .htv2-invoice-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .htv2-invoice-label { font-weight: 700; font-size: 14px; color: #1A1A1A; }
+  .htv2-invoice-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 11px; }
+  .htv2-invoice-row span:first-child { color: #999; }
+  .htv2-invoice-row span:last-child { color: #333; }
+  .htv2-invoice-total { border-top: 1px solid #eee; margin-top: 10px; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; }
+  .htv2-invoice-total-label { font-size: 11px; color: #999; }
+  .htv2-invoice-total-amount { font-size: 18px; font-weight: 700; color: #1A1A1A; }
+  .htv2-badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 12px; }
+  .htv2-badge--green { background: #E8F5E9; color: #2E7D32; }
+  .htv2-po-header { font-weight: 700; font-size: 14px; color: #1A1A1A; margin-bottom: 12px; }
+  .htv2-po-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .htv2-po-table th { text-align: left; color: #999; font-weight: 500; padding: 4px 0; border-bottom: 1px solid #f0f0f0; }
+  .htv2-po-table th:last-child, .htv2-po-table td:last-child { text-align: right; }
+  .htv2-po-table th:nth-child(2), .htv2-po-table td:nth-child(2) { text-align: center; }
+  .htv2-po-table td { padding: 6px 0; color: #333; border-bottom: 1px solid #f8f8f8; }
+  .htv2-po-total { border-top: 1px solid #eee; margin-top: 8px; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; }
+  .htv2-po-total span:first-child { color: #999; }
+  .htv2-po-total span:last-child { font-size: 16px; font-weight: 700; color: #1A1A1A; }
+  .htv2-credit-body { display: flex; flex-direction: column; gap: 12px; }
+  .htv2-credit-client { font-weight: 700; font-size: 14px; color: #1A1A1A; }
+  .htv2-credit-bar-wrap { display: flex; flex-direction: column; gap: 6px; }
+  .htv2-credit-bar { width: 100%; height: 8px; background: #E8F5E9; border-radius: 4px; overflow: hidden; }
+  .htv2-credit-bar-fill { height: 100%; background: #1A1A1A; border-radius: 4px; }
+  .htv2-credit-pct { font-size: 11px; color: #999; text-align: right; }
+  .htv2-credit-amounts { display: flex; justify-content: space-between; gap: 12px; }
+  .htv2-credit-amount { display: flex; flex-direction: column; gap: 2px; }
+  .htv2-credit-label { font-size: 11px; color: #999; }
+  .htv2-credit-value { font-size: 15px; font-weight: 700; color: #1A1A1A; }
+  .htv2-credit-value--green { color: #2E7D32; }
+  .htv2-credit-term { font-size: 11px; color: #999; padding-top: 4px; border-top: 1px solid #f0f0f0; }
+  .htv2-payables-body { display: flex; flex-direction: column; gap: 0; padding: 0; }
+  .htv2-payable-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-bottom: 1px solid #f5f5f5; }
+  .htv2-payable-row:last-child { border-bottom: none; }
+  .htv2-payable-info { display: flex; flex-direction: column; gap: 2px; }
+  .htv2-payable-name { font-size: 12px; font-weight: 600; color: #1A1A1A; }
+  .htv2-payable-date { font-size: 11px; color: #999; }
+  .htv2-payable-right { display: flex; align-items: center; gap: 10px; }
+  .htv2-payable-amount { font-size: 13px; font-weight: 700; color: #1A1A1A; }
+  .htv2-payable-badge { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 10px; background: #F0F0F0; color: #666; white-space: nowrap; }
+  .htv2-payable-badge--red { background: #FFEBEE; color: #C62828; }
+  .htv2-payable-row--overdue .htv2-payable-date { color: #C62828; }
+  .htv2-reports-body { display: flex; flex-direction: column; gap: 14px; }
+  .htv2-reports-ai { font-size: 11px; font-weight: 600; color: #1A1A1A; background: #F5F0FF; padding: 8px 12px; border-radius: 8px; border-left: 3px solid #7C3AED; line-height: 1.4; }
+  .htv2-reports-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .htv2-reports-metric { display: flex; flex-direction: column; gap: 2px; padding: 8px; background: #fafafa; border-radius: 8px; text-align: center; }
+  .htv2-reports-metric-label { font-size: 9px; color: #999; text-transform: uppercase; letter-spacing: 0.03em; }
+  .htv2-reports-metric-value { font-size: 14px; font-weight: 700; color: #1A1A1A; }
+  .htv2-reports-metric-change--up { font-size: 10px; font-weight: 600; color: #2E7D32; }
+
   /* ═══════════════════════════════════════════
      BLOQUE 2.4: Casos de éxito — Reels
      ═══════════════════════════════════════════ */
@@ -3744,6 +3789,9 @@ const useCases = [
     letter-spacing: -0.04em;
     line-height: 1.1;
     margin: 0;
+  }
+  .reels-title-logo {
+    font-family: var(--font-logo, 'Clash Display', sans-serif);
   }
   .reels-subtitle {
     font-size: clamp(0.9375rem, 1.5vw, 1.125rem);
@@ -3776,14 +3824,21 @@ const useCases = [
     scroll-snap-align: center;
     box-shadow: 0 4px 24px rgba(0,0,0,0.08);
     cursor: pointer;
-    transition: box-shadow 0.35s ease;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease;
+    opacity: 0;
+    transform: translateY(50px) scale(0.95);
+  }
+  .reel-card.in-view {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    transition-delay: calc(var(--reel-idx, 0) * 150ms);
   }
   .reel-card:hover {
     transform: translateY(-6px) scale(1.02);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18);
   }
-  .reel-card.in-view:hover {
-    transform: translateY(-6px) scale(1.02);
+  @media (prefers-reduced-motion: reduce) {
+    .reel-card { opacity: 1; transform: none; transition: box-shadow 0.3s ease; }
   }
   .reel-card--highlight {
     scroll-snap-align: center;
@@ -3805,6 +3860,10 @@ const useCases = [
     object-fit: cover;
     object-position: center bottom;
     display: block;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reel-card:hover .reel-hl-photo img {
+    transform: scale(1.06);
   }
   .reel-highlight-bg {
     position: absolute;
@@ -6497,6 +6556,403 @@ const useCases = [
       transform: none !important;
     }
   }
+
+  /* ═══ Section CTAs ═══ */
+  .section-ctas {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: clamp(40px, 5vw, 56px);
+    flex-wrap: wrap;
+  }
+
+  .section-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 700;
+    padding: 18px 44px;
+    border-radius: 100px;
+    text-decoration: none;
+    line-height: 1;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .section-cta--filled {
+    background: #2563EB;
+    color: #fff;
+  }
+
+  .section-cta--filled:hover {
+    background: #1D4FD7;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 32px rgba(37, 99, 235, 0.3);
+    text-decoration: none;
+  }
+
+  .section-cta--outline {
+    background: transparent;
+    color: #2563EB;
+    border: 1.5px solid #2563EB;
+  }
+
+  .section-cta--outline:hover {
+    background: rgba(37, 99, 235, 0.06);
+    transform: translateY(-3px);
+    text-decoration: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .section-cta:hover { transform: none; }
+  }
+
+  /* ═══════════════════════════════════════════
+     MOBILE OPTIMIZATION — max-width: 767px
+     ═══════════════════════════════════════════ */
+  @media (max-width: 767px) {
+    /* ── Hero Banner ── */
+    .hero-banner {
+      padding-top: 90px;
+      padding-bottom: var(--space-8, 2rem);
+    }
+
+    .hero-title {
+      font-size: clamp(2rem, 8.5vw, 2.75rem);
+      margin-bottom: var(--space-4, 1rem);
+      line-height: 0.95;
+    }
+
+    .hero-subtitle {
+      font-size: 0.9375rem;
+      margin-bottom: var(--space-6, 1.5rem);
+    }
+
+    .hero-text {
+      padding-top: var(--space-4, 1rem);
+      padding-bottom: var(--space-4, 1rem);
+    }
+
+    .hero-ctas {
+      flex-direction: column;
+      gap: var(--space-2, 0.5rem);
+    }
+
+    .hero-btn {
+      width: 100%;
+      justify-content: center;
+      padding: 14px 24px;
+      font-size: 0.8125rem;
+    }
+
+    .hero-bottom-bar {
+      padding-top: var(--space-5, 1.25rem);
+    }
+
+    .hero-badges {
+      gap: var(--space-3, 0.75rem);
+    }
+
+    .hero-badge-label {
+      font-size: 0.6875rem;
+    }
+
+    .hero-badge-value {
+      font-size: 0.8125rem;
+    }
+
+    /* ── Zoom Typo Section ── */
+    .zt-section {
+      height: 200vh;
+    }
+
+    .zt-text {
+      font-size: clamp(1.5rem, 6vw, 2.5rem);
+      line-height: 1.1;
+      padding: 0 16px;
+    }
+
+    .zt-text-wrap {
+      padding: 0 8px;
+    }
+
+    /* ── Social Commerce / WhatsApp ── */
+    .sq-features-header {
+      padding: clamp(48px, 8vw, 80px) 20px clamp(24px, 3vw, 32px);
+    }
+
+    .sc-title {
+      font-size: clamp(1.625rem, 6.5vw, 2.5rem);
+    }
+
+    .sc-subtitle {
+      font-size: 0.875rem;
+    }
+
+    .sq-features-media {
+      padding: 0 16px;
+      position: sticky;
+      top: 70px;
+      z-index: 2;
+      background: #fff;
+      padding-top: 16px;
+      padding-bottom: 16px;
+    }
+
+    .sq-features-img-wrap {
+      border-radius: 16px;
+      max-height: 45vh;
+      aspect-ratio: 9 / 14;
+      max-width: 240px;
+      margin: 0 auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+      border: 6px solid #1A1A1A;
+      border-radius: 28px;
+    }
+
+    .sq-features-img {
+      border-radius: 22px;
+    }
+
+    .sq-features-content {
+      padding: 16px 20px 32px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .sq-feature-block {
+      padding: 20px 0;
+      position: relative;
+      padding-left: 40px;
+    }
+
+    .sq-feature-block::before {
+      content: counter(sq-step);
+      counter-increment: sq-step;
+      position: absolute;
+      left: 0;
+      top: 22px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #f0f0f0;
+      color: #999;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+    }
+
+    .sq-feature-block.active::before {
+      background: #2563EB;
+      color: #fff;
+    }
+
+    .sq-features-content {
+      counter-reset: sq-step;
+    }
+
+    .sq-feature-title {
+      font-size: 1.125rem;
+      margin-bottom: 6px;
+    }
+
+    .sq-feature-desc {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+    }
+
+    /* ── Inventory Intelligence ── */
+    .inv-intel-section {
+      padding: clamp(48px, 8vw, 80px) 0 clamp(32px, 4vw, 48px);
+    }
+
+    .inv-intel-inner {
+      padding: 0 16px;
+    }
+
+    .inv-intel-title {
+      font-size: clamp(1.625rem, 6.5vw, 2.5rem);
+    }
+
+    .inv-intel-desc {
+      font-size: 0.9375rem;
+    }
+
+    .inv-intel-screen {
+      border-radius: 14px;
+    }
+
+    .inv-intel-screen-topbar {
+      padding: 12px 14px;
+    }
+
+    .inv-intel-screen-title {
+      font-size: 13px;
+    }
+
+    .inv-intel-screen-footer {
+      padding: 10px 14px;
+      font-size: 11px;
+    }
+
+    .inv-intel-card {
+      padding: 24px 16px;
+    }
+
+    .inv-intel-card-title {
+      font-size: 0.9375rem;
+    }
+
+    .inv-intel-card-desc {
+      font-size: 0.8125rem;
+    }
+
+    /* ── htv2 — Herramientas de gestion ── */
+    .htv2 {
+      padding: clamp(48px, 6vw, 80px) 0;
+    }
+
+    .htv2-inner {
+      padding: 0 16px;
+    }
+
+    .htv2-title {
+      font-size: clamp(1.5rem, 6.5vw, 2.25rem);
+      margin: 0 auto clamp(28px, 4vw, 48px);
+    }
+
+    .htv2-card-text {
+      padding: 20px 20px 0;
+    }
+
+    .htv2-card-title {
+      font-size: 1.0625rem;
+    }
+
+    .htv2-features {
+      font-size: 0.875rem;
+      line-height: 1.7;
+    }
+
+    .htv2-visual {
+      padding: 16px 16px 0;
+    }
+
+    .htv2-mockup-body {
+      padding: 12px 14px;
+    }
+
+    .htv2-reports-metrics {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .htv2-reports-metric {
+      padding: 6px 4px;
+    }
+
+    .htv2-reports-metric-value {
+      font-size: 12px;
+    }
+
+    .htv2-reports-metric-label {
+      font-size: 8px;
+    }
+
+    /* ── Reels / Cases ── */
+    .reels-section {
+      padding: 40px 0 32px;
+    }
+
+    .reels-header {
+      padding: 0 16px;
+      margin-bottom: 16px;
+    }
+
+    .reels-title {
+      font-size: clamp(1.25rem, 5.5vw, 1.75rem);
+    }
+
+    .reels-subtitle {
+      font-size: 0.8125rem;
+      margin-top: 8px;
+    }
+
+    /* ── Reels — disable backdrop-filter on mobile ── */
+    .reel-tag {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* ── Section CTAs — stack vertically on mobile ── */
+    .section-ctas {
+      flex-direction: column;
+      gap: 10px;
+      margin-top: clamp(28px, 4vw, 40px);
+      padding: 0 16px;
+    }
+
+    .section-cta {
+      width: 100%;
+      font-size: 1rem;
+      padding: 16px 32px;
+    }
+  }
+
+  /* ═══════════════════════════════════════════
+     SMALL MOBILE — max-width: 399px (iPhone SE)
+     ═══════════════════════════════════════════ */
+  @media (max-width: 399px) {
+    .hero-title {
+      font-size: 1.875rem;
+    }
+
+    .hero-badges {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-3, 0.75rem);
+    }
+
+    .zt-text {
+      font-size: 1.375rem;
+    }
+
+    .sc-title {
+      font-size: 1.5rem;
+    }
+
+    .inv-intel-title {
+      font-size: 1.5rem;
+    }
+
+    .htv2-title {
+      font-size: 1.375rem;
+    }
+
+    .reels-title {
+      font-size: 1.2rem;
+    }
+
+    .section-cta {
+      font-size: 0.9375rem;
+      padding: 14px 24px;
+    }
+
+    .mc-step-title {
+      font-size: 1.2rem;
+    }
+
+    .mc-card {
+      flex: 0 0 90%;
+    }
+  }
+
 </style>
 
 <script>
@@ -6526,6 +6982,7 @@ const useCases = [
     { stepIdx: 0, title: 'Vende más en cada punto' },
     { stepIdx: 0, title: 'Pedidos y apartados sin esfuerzo' },
     { stepIdx: 0, title: 'Tu tienda online, siempre abierta' },
+    { stepIdx: 0, title: 'Vende en redes sociales e IA' },
     { stepIdx: 1, title: 'Todo tu inventario sincronizado' },
     { stepIdx: 1, title: 'Conteo físico en segundos' },
     { stepIdx: 1, title: 'Recibe mercancía sin errores' },
@@ -6712,26 +7169,6 @@ const useCases = [
     });
   });
 
-  // ═══ Why SACS — scrollytelling with images ═══
-  const whyItems = document.querySelectorAll<HTMLElement>('.why-sacs-item');
-  const whyImgs = document.querySelectorAll<HTMLElement>('.why-sacs-img');
-
-  if (whyItems.length > 0 && whyImgs.length > 0) {
-    const whyObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const idx = (entry.target as HTMLElement).dataset.whyIdx;
-            whyItems.forEach(item => item.classList.toggle('active', item.dataset.whyIdx === idx));
-            whyImgs.forEach(img => img.classList.toggle('active', img.dataset.whyImg === idx));
-          }
-        });
-      },
-      { threshold: 0.3, rootMargin: '0px 0px -30% 0px' }
-    );
-    whyItems.forEach(item => whyObserver.observe(item));
-  }
-
   // ═══ WhatsApp Commerce — entrance reveals ═══
   const sqHeader = document.querySelector('.sq-header-reveal');
   const sqMedia = document.querySelector('.sq-media-reveal');
@@ -6855,6 +7292,8 @@ const useCases = [
     const ZT_SCALE_START = 8;
     const ZT_SCALE_END = 1;
     let ztTicking = false;
+    let ztXFired = false;
+    const ztStrikeText = ztText.querySelector<HTMLElement>('.zt-strike-text');
 
     const updateZoomTypo = () => {
       const rect = ztSection.getBoundingClientRect();
@@ -6869,6 +7308,15 @@ const useCases = [
       const scale = ZT_SCALE_START - (ZT_SCALE_START - ZT_SCALE_END) * eased;
 
       ztText.style.setProperty('--zt-scale', String(scale));
+
+      // Trigger X animation when zoom is nearly done
+      if (progress > 0.85 && !ztXFired) {
+        ztXFired = true;
+        if (ztStrikeText) ztStrikeText.classList.add('struck');
+      } else if (progress < 0.8 && ztXFired) {
+        ztXFired = false;
+        if (ztStrikeText) ztStrikeText.classList.remove('struck');
+      }
     };
 
     window.addEventListener('scroll', () => {
@@ -6880,10 +7328,19 @@ const useCases = [
     updateZoomTypo();
   }
 
-  // ═══ Reels — show immediately (no entrance animation) ═══
-  document.querySelectorAll('.reel-card').forEach((card) => {
-    card.classList.add('in-view');
-  });
+  // ═══ Reels — staggered entrance on scroll ═══
+  const reelCards = document.querySelectorAll<HTMLElement>('.reel-card');
+  if (reelCards.length > 0) {
+    const reelObs = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          (entry.target as HTMLElement).classList.add('in-view');
+          reelObs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    reelCards.forEach((card) => reelObs.observe(card));
+  }
 
   // ═══ Scrollytelling — sticky image + features ═══
   const scrollyItems = document.querySelectorAll<HTMLElement>('.scrolly-item');
@@ -7084,4 +7541,40 @@ const useCases = [
       tab.addEventListener('click', () => switchToTab(i));
     });
   })();
+
+  // ═══ Inventory intel cards — staggered fade-up on scroll ═══
+  const intelCards = document.querySelectorAll<HTMLElement>('.inv-intel-card');
+  if (intelCards.length > 0) {
+    const intelObs = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const card = entry.target as HTMLElement;
+          const idx = Array.from(intelCards).indexOf(card);
+          const delay = (idx % 3) * 100;
+          setTimeout(() => card.classList.add('in-view'), delay);
+          intelObs.unobserve(card);
+        }
+      });
+    }, { threshold: 0.1 });
+    intelCards.forEach((card) => intelObs.observe(card));
+  }
+
+  // ═══ Tools cards — staggered fade-up on scroll ═══
+  const toolsCards = document.querySelectorAll<HTMLElement>('.htv2-card');
+  if (toolsCards.length > 0) {
+    const toolsObs = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const card = entry.target as HTMLElement;
+          const row = card.parentElement;
+          const siblings = row ? Array.from(row.children) : [card];
+          const sibIdx = siblings.indexOf(card);
+          const delay = sibIdx * 120; // stagger within each row
+          setTimeout(() => card.classList.add('in-view'), delay);
+          toolsObs.unobserve(card);
+        }
+      });
+    }, { threshold: 0.15 });
+    toolsCards.forEach((card) => toolsObs.observe(card));
+  }
 </script>

@@ -1,0 +1,779 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import BeforeAfter from '../components/BeforeAfter.astro';
+import HorizontalScroller from '../components/HorizontalScroller.astro';
+---
+
+<BaseLayout
+  title="Componentes — Biblioteca de referencia"
+  description="Componentes reutilizables para el sitio de SACS."
+>
+  <div class="comp-page">
+    <div class="comp-header">
+      <h1 class="comp-title">Componentes</h1>
+      <p class="comp-desc">Biblioteca de secciones reutilizables. No es una página pública.</p>
+    </div>
+
+    <!-- ═══ 0. HorizontalScroller — Un sistema, cinco superpoderes ═══ -->
+    <div class="comp-block">
+      <h2 class="comp-block-label">0. HorizontalScroller — Plataforma</h2>
+    </div>
+    <HorizontalScroller />
+
+    <!-- ═══ 1. Scrollytelling — sticky image + features ═══ -->
+    <div class="comp-block">
+      <h2 class="comp-block-label">1. Scrollytelling — sticky image + features</h2>
+    </div>
+    <section class="scrolly-section">
+      <div class="scrolly-media">
+        <div class="scrolly-img-wrap">
+          <div class="scrolly-bg scrolly-bg-0 active" data-scrolly-bg="0"></div>
+          <div class="scrolly-bg scrolly-bg-1" data-scrolly-bg="1"></div>
+          <div class="scrolly-bg scrolly-bg-2" data-scrolly-bg="2"></div>
+          <div class="scrolly-bg scrolly-bg-3" data-scrolly-bg="3"></div>
+          <img src="/images/hero-sacs-store.webp" alt="" class="scrolly-img active" data-scrolly-img="0" width="2400" height="1792" loading="lazy" />
+          <img src="/images/screen-pos.webp" alt="" class="scrolly-img" data-scrolly-img="1" width="1999" height="1252" loading="lazy" />
+          <img src="/images/panel-organica.jpg" alt="" class="scrolly-img" data-scrolly-img="2" width="800" height="600" loading="lazy" />
+          <img src="/images/panel-casaverde.jpg" alt="" class="scrolly-img" data-scrolly-img="3" width="800" height="600" loading="lazy" />
+        </div>
+      </div>
+      <div class="scrolly-features">
+        <div class="scrolly-item active" data-scrolly-idx="0">
+          <h3 class="scrolly-item-title">Nunca pierdas una venta</h3>
+          <p class="scrolly-item-desc">Cobra en tienda, por WhatsApp o desde tu e-commerce — todo llega al mismo sistema. Acepta tarjeta, efectivo o transferencia, incluso sin internet.</p>
+        </div>
+        <div class="scrolly-item" data-scrolly-idx="1">
+          <h3 class="scrolly-item-title">Un punto de venta que se adapta a ti</h3>
+          <p class="scrolly-item-desc">Busca productos por nombre o código de barras, aplica descuentos, identifica clientes VIP y cobra en segundos. Así de simple.</p>
+        </div>
+        <div class="scrolly-item" data-scrolly-idx="2">
+          <h3 class="scrolly-item-title">Controla tu inventario sin esfuerzo</h3>
+          <p class="scrolly-item-desc">Alertas de reabasto, movimientos entre sucursales y conteos rápidos desde el celular. Siempre sabes cuánto tienes y dónde.</p>
+        </div>
+        <div class="scrolly-item" data-scrolly-idx="3">
+          <h3 class="scrolly-item-title">Decide con datos reales</h3>
+          <p class="scrolly-item-desc">Dashboards claros con ventas, costos y márgenes. AXO analiza tus datos y te sugiere qué hacer — sin Excel, sin complicaciones.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 2. BeforeAfter — ¿Por qué SACS? ═══ -->
+    <div class="comp-block">
+      <h2 class="comp-block-label">2. BeforeAfter — ¿Por qué SACS?</h2>
+    </div>
+    <BeforeAfter />
+
+    <!-- ═══ 3. Text Reveal por Scroll ═══ -->
+    <div class="comp-block">
+      <h2 class="comp-block-label">3. Text Reveal por Scroll</h2>
+    </div>
+    <section class="tr-section" id="tr-section">
+      <div class="tr-sticky">
+        <div class="tr-aurora" aria-hidden="true">
+          <div class="tr-aurora-blob tr-aurora-blob-1"></div>
+          <div class="tr-aurora-blob tr-aurora-blob-2"></div>
+        </div>
+        <div class="tr-content">
+          <p class="tr-text" id="tr-text">
+            Tu catálogo físico conectado a WhatsApp, Instagram, TikTok, Facebook y ChatGPT. Stock sincronizado. Envíos automáticos. Cero trabajo manual.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ 4. Flip Words ═══ -->
+    <div class="comp-block">
+      <h2 class="comp-block-label">4. Flip Words</h2>
+    </div>
+    <section class="fw-section" id="fw-section">
+      <div class="fw-aurora" aria-hidden="true">
+        <div class="fw-aurora-blob fw-aurora-blob-1"></div>
+        <div class="fw-aurora-blob fw-aurora-blob-2"></div>
+      </div>
+      <div class="fw-content">
+        <h2 class="fw-title">
+          Ahora todo es posible desde tu
+          <span class="fw-flipper" id="fw-flipper">
+            <span class="fw-word fw-word--active">tienda</span>
+            <span class="fw-word">WhatsApp</span>
+            <span class="fw-word">Instagram</span>
+            <span class="fw-word">TikTok</span>
+            <span class="fw-word">eCommerce</span>
+          </span>
+        </h2>
+      </div>
+    </section>
+
+    <!-- ═══ 5. Herramientas de gestión v2 — Layout mixto ═══ -->
+    <div class="comp-block">
+      <h2 class="comp-block-label">5. Herramientas de gestión v2</h2>
+    </div>
+    <section class="htv2">
+      <div class="htv2-inner">
+        <h2 class="htv2-title">Todas las herramientas para gestionar tu negocio</h2>
+
+        <!-- Row 1: 3 cards -->
+        <div class="htv2-row htv2-row--3">
+          <!-- Card 1: Facturación electrónica -->
+          <div class="htv2-card">
+            <div class="htv2-card-text">
+              <h3 class="htv2-card-title">Facturación electrónica</h3>
+              <ul class="htv2-features">
+                <li>CFDI 4.0 desde cada venta</li>
+                <li>Timbrado automático</li>
+                <li>Complementos de pago</li>
+                <li>Cancelaciones en un clic</li>
+                <li>Facturación global</li>
+              </ul>
+            </div>
+            <div class="htv2-visual">
+              <div class="htv2-mockup">
+                <div class="htv2-mockup-bar"><span></span><span></span><span></span></div>
+                <div class="htv2-mockup-body">
+                  <div class="htv2-invoice-header">
+                    <span class="htv2-invoice-label">CFDI 4.0</span>
+                    <span class="htv2-badge htv2-badge--green">Timbrado</span>
+                  </div>
+                  <div class="htv2-invoice-row"><span>RFC Emisor</span><span>SAC240101XX0</span></div>
+                  <div class="htv2-invoice-row"><span>RFC Receptor</span><span>XAXX010101000</span></div>
+                  <div class="htv2-invoice-row"><span>Folio</span><span>A-00384</span></div>
+                  <div class="htv2-invoice-total">
+                    <span class="htv2-invoice-total-label">Total</span>
+                    <span class="htv2-invoice-total-amount">$4,280.00</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Compras e inventario -->
+          <div class="htv2-card">
+            <div class="htv2-card-text">
+              <h3 class="htv2-card-title">Compras e inventario</h3>
+              <ul class="htv2-features">
+                <li>Órdenes de compra a proveedores</li>
+                <li>Recepción de mercancía contra pedido</li>
+                <li>Control de costos de adquisición</li>
+                <li>Alertas de inventario bajo</li>
+                <li>Historial de compras por proveedor</li>
+              </ul>
+            </div>
+            <div class="htv2-visual">
+              <div class="htv2-mockup">
+                <div class="htv2-mockup-bar"><span></span><span></span><span></span></div>
+                <div class="htv2-mockup-body">
+                  <div class="htv2-po-header">OC #192</div>
+                  <table class="htv2-po-table">
+                    <thead>
+                      <tr><th>Producto</th><th>Qty</th><th>Costo</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>Blusa algodón S</td><td>40</td><td>$3,200</td></tr>
+                      <tr><td>Falda lino M</td><td>25</td><td>$4,375</td></tr>
+                      <tr><td>Vestido boho L</td><td>15</td><td>$3,900</td></tr>
+                    </tbody>
+                  </table>
+                  <div class="htv2-po-total">
+                    <span>Total</span>
+                    <span>$11,475</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: Créditos y cobranza -->
+          <div class="htv2-card">
+            <div class="htv2-card-text">
+              <h3 class="htv2-card-title">Créditos y cobranza</h3>
+              <ul class="htv2-features">
+                <li>Líneas de crédito por cliente mayorista</li>
+                <li>Límites y plazos personalizados</li>
+                <li>Seguimiento de saldos pendientes</li>
+                <li>Antigüedad de deuda por cliente</li>
+                <li>Alertas de vencimiento automáticas</li>
+              </ul>
+            </div>
+            <div class="htv2-visual">
+              <div class="htv2-mockup">
+                <div class="htv2-mockup-bar"><span></span><span></span><span></span></div>
+                <div class="htv2-mockup-body htv2-credit-body">
+                  <div class="htv2-credit-client">Boutique Oaxaca</div>
+                  <div class="htv2-credit-bar-wrap">
+                    <div class="htv2-credit-bar">
+                      <div class="htv2-credit-bar-fill" style="width:62%"></div>
+                    </div>
+                    <div class="htv2-credit-pct">62% usado</div>
+                  </div>
+                  <div class="htv2-credit-amounts">
+                    <div class="htv2-credit-amount"><span class="htv2-credit-label">Usado</span><span class="htv2-credit-value">$27,900</span></div>
+                    <div class="htv2-credit-amount"><span class="htv2-credit-label">Disponible</span><span class="htv2-credit-value htv2-credit-value--green">$17,100</span></div>
+                  </div>
+                  <div class="htv2-credit-term">Plazo: 30 días</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 2: 2 cards -->
+        <div class="htv2-row htv2-row--2">
+          <!-- Card 4: Cuentas por pagar -->
+          <div class="htv2-card">
+            <div class="htv2-card-text">
+              <h3 class="htv2-card-title">Cuentas por pagar</h3>
+              <ul class="htv2-features">
+                <li>Registro de deuda por proveedor</li>
+                <li>Calendario de vencimientos</li>
+                <li>Pagos parciales y abonos</li>
+                <li>Conciliación automática</li>
+                <li>Historial de pagos</li>
+              </ul>
+            </div>
+            <div class="htv2-visual">
+              <div class="htv2-mockup">
+                <div class="htv2-mockup-bar"><span></span><span></span><span></span></div>
+                <div class="htv2-mockup-body htv2-payables-body">
+                  <div class="htv2-payable-row">
+                    <div class="htv2-payable-info">
+                      <span class="htv2-payable-name">Textiles del Bajío</span>
+                      <span class="htv2-payable-date">Vence 12 Abr</span>
+                    </div>
+                    <div class="htv2-payable-right">
+                      <span class="htv2-payable-amount">$24,350</span>
+                      <span class="htv2-payable-badge">5 días</span>
+                    </div>
+                  </div>
+                  <div class="htv2-payable-row">
+                    <div class="htv2-payable-info">
+                      <span class="htv2-payable-name">Hilos y Más</span>
+                      <span class="htv2-payable-date">Vence 18 Abr</span>
+                    </div>
+                    <div class="htv2-payable-right">
+                      <span class="htv2-payable-amount">$8,900</span>
+                      <span class="htv2-payable-badge">11 días</span>
+                    </div>
+                  </div>
+                  <div class="htv2-payable-row htv2-payable-row--overdue">
+                    <div class="htv2-payable-info">
+                      <span class="htv2-payable-name">Empaques Express</span>
+                      <span class="htv2-payable-date">Venció 2 Abr</span>
+                    </div>
+                    <div class="htv2-payable-right">
+                      <span class="htv2-payable-amount">$3,200</span>
+                      <span class="htv2-payable-badge htv2-payable-badge--red">Vencida</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 5: Reportes financieros -->
+          <div class="htv2-card">
+            <div class="htv2-card-text">
+              <h3 class="htv2-card-title">Reportes financieros</h3>
+              <ul class="htv2-features">
+                <li>Estado de resultados en tiempo real</li>
+                <li>Flujo de efectivo por periodo</li>
+                <li>Margen por producto y categoría</li>
+                <li>Reportes de ventas con IA</li>
+                <li>Exportación a Excel y PDF</li>
+              </ul>
+            </div>
+            <div class="htv2-visual">
+              <div class="htv2-mockup">
+                <div class="htv2-mockup-bar"><span></span><span></span><span></span></div>
+                <div class="htv2-mockup-body htv2-reports-body">
+                  <div class="htv2-reports-ai">Análisis IA: Tus ventas aumentaron 42% vs periodo anterior</div>
+                  <div class="htv2-reports-metrics">
+                    <div class="htv2-reports-metric">
+                      <span class="htv2-reports-metric-label">Total vendido</span>
+                      <span class="htv2-reports-metric-value">$250,000</span>
+                      <span class="htv2-reports-metric-change htv2-reports-metric-change--up">&#8593;42.1%</span>
+                    </div>
+                    <div class="htv2-reports-metric">
+                      <span class="htv2-reports-metric-label">Cantidad de ventas</span>
+                      <span class="htv2-reports-metric-value">168</span>
+                      <span class="htv2-reports-metric-change htv2-reports-metric-change--up">&#8593;15.4%</span>
+                    </div>
+                    <div class="htv2-reports-metric">
+                      <span class="htv2-reports-metric-label">Venta promedio</span>
+                      <span class="htv2-reports-metric-value">$1,488</span>
+                      <span class="htv2-reports-metric-change htv2-reports-metric-change--up">&#8593;23.2%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .comp-page {
+    padding-top: 80px;
+  }
+  .comp-header {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 48px 24px 24px;
+  }
+  .comp-title {
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: var(--color-text-primary);
+  }
+  .comp-desc {
+    color: var(--color-text-secondary);
+    margin-top: 8px;
+  }
+  .comp-block {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 48px 24px 16px;
+    border-top: 2px solid #eee;
+  }
+  .comp-block-label {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    letter-spacing: -0.02em;
+  }
+
+  /* ═══ Herramientas v2 ═══ */
+  .htv2 {
+    background: #fff;
+    padding: clamp(48px, 6vw, 80px) 0;
+  }
+
+  .htv2-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 clamp(20px, 4vw, 48px);
+  }
+
+  .htv2-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4vw, 3.25rem);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 1.08;
+    color: var(--color-text-primary, #1A1A1A);
+    text-align: center;
+    max-width: 700px;
+    margin: 0 auto clamp(40px, 5vw, 64px);
+  }
+
+  /* Rows */
+  .htv2-row {
+    display: grid;
+    gap: 20px;
+    margin-bottom: 20px;
+    grid-template-columns: 1fr;
+  }
+
+  .htv2-row:last-child {
+    margin-bottom: 0;
+  }
+
+  @media (min-width: 768px) {
+    .htv2-row--2 { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (min-width: 1024px) {
+    .htv2-row--3 { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  /* Cards */
+  .htv2-card {
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .htv2-card-text {
+    padding: 32px 32px 0;
+    flex: 0 0 auto;
+  }
+
+  .htv2-card-title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--color-text-primary, #1A1A1A);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin: 0 0 16px;
+  }
+
+  .htv2-features {
+    list-style: disc;
+    padding-left: 20px;
+    margin: 0;
+    color: #555;
+    font-size: 0.9375rem;
+    line-height: 1.8;
+  }
+
+  .htv2-features li {
+    padding: 2px 0;
+  }
+
+  /* Visual area at bottom of card */
+  .htv2-visual {
+    background: #F5F5F7;
+    padding: 24px 24px 0;
+    margin-top: auto;
+  }
+
+  .htv2-mockup {
+    background: #fff;
+    border-radius: 10px 10px 0 0;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.04);
+    overflow: hidden;
+    font-family: var(--font-body);
+  }
+
+  .htv2-mockup-bar {
+    display: flex;
+    gap: 6px;
+    padding: 10px 14px;
+    background: #fafafa;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .htv2-mockup-bar span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ddd;
+  }
+
+  .htv2-mockup-body {
+    padding: 16px 18px;
+  }
+
+  /* Invoice mockup (Card 1) */
+  .htv2-invoice-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .htv2-invoice-label {
+    font-weight: 700;
+    font-size: 14px;
+    color: #1A1A1A;
+  }
+
+  .htv2-invoice-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    font-size: 11px;
+  }
+
+  .htv2-invoice-row span:first-child {
+    color: #999;
+  }
+
+  .htv2-invoice-row span:last-child {
+    color: #333;
+  }
+
+  .htv2-invoice-total {
+    border-top: 1px solid #eee;
+    margin-top: 10px;
+    padding-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .htv2-invoice-total-label {
+    font-size: 11px;
+    color: #999;
+  }
+
+  .htv2-invoice-total-amount {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1A1A1A;
+  }
+
+  .htv2-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 12px;
+  }
+
+  .htv2-badge--green {
+    background: #E8F5E9;
+    color: #2E7D32;
+  }
+
+  /* Purchase Order mockup (Card 2) */
+  .htv2-po-header {
+    font-weight: 700;
+    font-size: 14px;
+    color: #1A1A1A;
+    margin-bottom: 12px;
+  }
+
+  .htv2-po-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+
+  .htv2-po-table th {
+    text-align: left;
+    color: #999;
+    font-weight: 500;
+    padding: 4px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .htv2-po-table th:last-child,
+  .htv2-po-table td:last-child {
+    text-align: right;
+  }
+
+  .htv2-po-table th:nth-child(2),
+  .htv2-po-table td:nth-child(2) {
+    text-align: center;
+  }
+
+  .htv2-po-table td {
+    padding: 6px 0;
+    color: #333;
+    border-bottom: 1px solid #f8f8f8;
+  }
+
+  .htv2-po-total {
+    border-top: 1px solid #eee;
+    margin-top: 8px;
+    padding-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+  }
+
+  .htv2-po-total span:first-child {
+    color: #999;
+  }
+
+  .htv2-po-total span:last-child {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1A1A1A;
+  }
+
+  /* Credit mockup (Card 3) */
+  .htv2-credit-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .htv2-credit-client {
+    font-weight: 700;
+    font-size: 14px;
+    color: #1A1A1A;
+  }
+
+  .htv2-credit-bar-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .htv2-credit-bar {
+    width: 100%;
+    height: 8px;
+    background: #E8F5E9;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .htv2-credit-bar-fill {
+    height: 100%;
+    background: #1A1A1A;
+    border-radius: 4px;
+  }
+
+  .htv2-credit-pct {
+    font-size: 11px;
+    color: #999;
+    text-align: right;
+  }
+
+  .htv2-credit-amounts {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .htv2-credit-amount {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .htv2-credit-label {
+    font-size: 11px;
+    color: #999;
+  }
+
+  .htv2-credit-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1A1A1A;
+  }
+
+  .htv2-credit-value--green {
+    color: #2E7D32;
+  }
+
+  .htv2-credit-term {
+    font-size: 11px;
+    color: #999;
+    padding-top: 4px;
+    border-top: 1px solid #f0f0f0;
+  }
+
+  /* Payables mockup (Card 4) */
+  .htv2-payables-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+  }
+
+  .htv2-payable-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 18px;
+    border-bottom: 1px solid #f5f5f5;
+  }
+
+  .htv2-payable-row:last-child {
+    border-bottom: none;
+  }
+
+  .htv2-payable-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .htv2-payable-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1A1A1A;
+  }
+
+  .htv2-payable-date {
+    font-size: 11px;
+    color: #999;
+  }
+
+  .htv2-payable-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .htv2-payable-amount {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1A1A1A;
+  }
+
+  .htv2-payable-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 10px;
+    background: #F0F0F0;
+    color: #666;
+    white-space: nowrap;
+  }
+
+  .htv2-payable-badge--red {
+    background: #FFEBEE;
+    color: #C62828;
+  }
+
+  .htv2-payable-row--overdue .htv2-payable-date {
+    color: #C62828;
+  }
+
+  /* Reports mockup (Card 5) */
+  .htv2-reports-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .htv2-reports-ai {
+    font-size: 11px;
+    font-weight: 600;
+    color: #1A1A1A;
+    background: #F5F0FF;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border-left: 3px solid #7C3AED;
+    line-height: 1.4;
+  }
+
+  .htv2-reports-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .htv2-reports-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px;
+    background: #fafafa;
+    border-radius: 8px;
+    text-align: center;
+  }
+
+  .htv2-reports-metric-label {
+    font-size: 9px;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .htv2-reports-metric-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1A1A1A;
+  }
+
+  .htv2-reports-metric-change--up {
+    font-size: 10px;
+    font-weight: 600;
+    color: #2E7D32;
+  }
+</style>

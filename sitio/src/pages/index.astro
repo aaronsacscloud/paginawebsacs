@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
-import HorizontalScroller from '../components/HorizontalScroller.astro';
 import FAQAccordion from '../components/FAQAccordion.astro';
 import FinalCTA from '../components/FinalCTA.astro';
 
@@ -26,71 +25,6 @@ const websiteSchema = {
     primaryCTA={{ label: 'Empieza gratis', href: '/contacto' }}
     secondaryCTA={{ label: 'Agenda una demo', href: '/contacto#demo' }}
   />
-  <HorizontalScroller />
   <FAQAccordion />
   <FinalCTA />
 </BaseLayout>
-
-<!-- Global reveal animation observer -->
-<script>
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  if (!prefersReducedMotion) {
-    const reveals = document.querySelectorAll('.reveal');
-
-    if (reveals.length > 0) {
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('visible');
-              observer.unobserve(entry.target);
-            }
-          });
-        },
-        { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
-      );
-
-      reveals.forEach((el) => observer.observe(el));
-    }
-  } else {
-    // Immediately show all reveal elements
-    document.querySelectorAll('.reveal').forEach((el) => {
-      el.classList.add('visible');
-    });
-  }
-</script>
-
-<style is:global>
-  .reveal {
-    opacity: 0;
-    transform: translateY(32px);
-    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  .reveal.visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  .reveal .reveal-child {
-    opacity: 0;
-    transform: translateY(24px);
-    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-    transition-delay: calc(var(--i, 0) * 120ms);
-  }
-
-  .reveal.visible .reveal-child {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .reveal,
-    .reveal .reveal-child {
-      opacity: 1;
-      transform: none;
-      transition: none;
-    }
-  }
-</style>
