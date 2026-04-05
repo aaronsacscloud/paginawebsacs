@@ -1,0 +1,424 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const cases = [
+  {
+    slug: 'liveshow',
+    brand: 'Liveshow Merchandising',
+    tagline: 'Shakira, Metallica, Karol G y Lady Gaga confían en SACS.',
+    tag: 'Entretenimiento',
+    tagColor: '#E84393',
+    image: '/images/case-shakira-merch.webp',
+    stats: [
+      { num: '150K+', label: 'transacciones sin error' },
+      { num: '100+', label: 'puntos de venta simultáneos' },
+      { num: '75%', label: 'ventas más rápidas' },
+      { num: '4/min', label: 'ventas en hora pico' },
+    ],
+    quote: '"En un concierto perdimos 20% de ventas en dos horas porque el sistema colapsó. Con SACS eso no vuelve a pasar."',
+    author: 'Mariana López, Directora de Operaciones',
+    desc: 'Liveshow produce y comercializa mercancía oficial de los artistas más grandes del mundo en México. Con más de 100 puntos de venta simultáneos en festivales de 75,000 personas, necesitaban un sistema que no fallara.',
+    highlights: ['Modo offline para operación sin internet', 'Transferencias de inventario entre módulos en tiempo real', 'Alertas automáticas de picos de venta', 'Panel de tendencias en vivo'],
+  },
+  {
+    slug: 'la-bella-pandita',
+    brand: 'La Bella Pandita',
+    tagline: 'De 1 tienda en Querétaro a 42 sucursales en todo México.',
+    tag: 'Moda',
+    tagColor: '#6C5CE7',
+    image: '/images/case-bella-pandita.webp',
+    stats: [
+      { num: '42', label: 'sucursales sincronizadas' },
+      { num: '+300%', label: 'customer lifetime value' },
+      { num: '45%', label: 'clientes fidelizados' },
+      { num: '98%', label: 'precisión de inventario' },
+    ],
+    quote: '"La Bella Pandita dejó de ser solo una marca de retail físico para convertirse en una operación omnicanal completamente integrada."',
+    author: 'Equipo La Bella Pandita',
+    desc: 'Cadena de boutiques de moda y novedades que escaló de 1 tienda piloto a 42 sucursales en 3 años. SACS digitalizó toda su operación: POS móvil, programa de lealtad con wallet digital, y sincronización en tiempo real de 12,500+ productos.',
+    highlights: ['POS móvil — cobros en menos de 2 minutos', 'Recepción de mercancía de 4 horas a 30 minutos', 'Programa de lealtad con puntos y wallet digital', 'Flash sales y promociones automatizadas'],
+  },
+  {
+    slug: 'sandmade',
+    brand: 'Sandmade Swimwear',
+    tagline: 'Swimwear premium conectado de Tulum a Los Cabos.',
+    tag: 'Swimwear',
+    tagColor: '#00B894',
+    image: '/images/case-sandmade.webp',
+    stats: [
+      { num: '98%', label: 'precisión de inventario' },
+      { num: '8', label: 'boutiques turísticas' },
+      { num: '20s', label: 'tiempo por transacción' },
+      { num: '45', label: 'días de implementación' },
+    ],
+    quote: '"Cada venta se convirtió en una oportunidad de conectar auténticamente con los clientes sin perder agilidad ni precisión."',
+    author: 'Equipo Sandmade',
+    desc: 'Marca de swimwear con boutiques en los destinos turísticos más exclusivos de México. SACS unificó sus 8 tiendas, e-commerce Shopify, Instagram y WhatsApp en un solo sistema con inventario en tiempo real.',
+    highlights: ['Integración Shopify + Instagram + WhatsApp', 'Fulfillment de pickup en menos de 2 horas', 'Devoluciones procesadas en menos de 2 minutos', 'CEDIS conectado con todas las boutiques'],
+  },
+  {
+    slug: 'casa-maca',
+    brand: 'Casa Maca',
+    tagline: 'Moda consciente que ahora opera con datos.',
+    tag: 'Moda Consciente',
+    tagColor: '#FDCB6E',
+    tagTextColor: '#1A1A1A',
+    image: '/images/case-casa-maca.webp',
+    stats: [
+      { num: '-80%', label: 'trabajo manual' },
+      { num: '+25%', label: 'ticket promedio' },
+      { num: '98%', label: 'precisión inventario' },
+      { num: '30', label: 'días implementación' },
+    ],
+    quote: '"Casa Maca diseña desde la intuición, pero ahora opera con data."',
+    author: 'Equipo Casa Maca',
+    desc: 'Marca de moda sostenible en Guadalajara que pasó de Excel y procesos manuales a una operación omnicanal automatizada. 2 boutiques físicas + e-commerce + social commerce, todo conectado.',
+    highlights: ['De Excel a automatización completa', 'Catálogo sincronizado en WhatsApp e Instagram', 'Programa de lealtad integrado al cobro', 'Publicación automática en redes sociales'],
+  },
+];
+---
+
+<BaseLayout
+  title="Casos de éxito — Retailers que crecen con SACS"
+  description="Descubre cómo retailers mexicanos transforman su operación con SACS. Desde 1 tienda hasta 42 sucursales."
+>
+
+<!-- Hero -->
+<section class="ce-hero">
+  <div class="ce-hero-inner">
+    <span class="ce-eyebrow">Casos de éxito</span>
+    <h1 class="ce-hero-title">Retailers reales.<br>Resultados reales.</h1>
+    <p class="ce-hero-subtitle">De mercancía de Shakira en conciertos de 75,000 personas a boutiques de swimwear en Tulum. Así opera el retail con SACS.</p>
+  </div>
+</section>
+
+<!-- Cases -->
+{cases.map((c, idx) => (
+  <section class={`ce-case ${idx % 2 === 1 ? 'ce-case--alt' : ''}`} id={c.slug}>
+    <div class="ce-case-inner">
+      <div class="ce-case-visual">
+        <div class="ce-case-img-wrap">
+          <img src={c.image} alt={`${c.brand} — caso de éxito SACS`} width="600" height="500" loading="lazy" class="ce-case-img" />
+        </div>
+      </div>
+      <div class="ce-case-content">
+        <span class="ce-case-tag" style={`background:${c.tagColor}; color:${c.tagTextColor || '#fff'};`}>{c.tag}</span>
+        <h2 class="ce-case-brand">{c.brand}</h2>
+        <p class="ce-case-tagline">{c.tagline}</p>
+        <div class="ce-case-stats">
+          {c.stats.map((s) => (
+            <div class="ce-stat">
+              <span class="ce-stat-num">{s.num}</span>
+              <span class="ce-stat-label">{s.label}</span>
+            </div>
+          ))}
+        </div>
+        <blockquote class="ce-case-quote">
+          <p>{c.quote}</p>
+          <cite>— {c.author}</cite>
+        </blockquote>
+        <p class="ce-case-desc">{c.desc}</p>
+        <ul class="ce-case-highlights">
+          {c.highlights.map((h) => (
+            <li>{h}</li>
+          ))}
+        </ul>
+        <a href={`/casos-de-exito/${c.slug}`} class="ce-case-link">
+          Ver caso completo
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+))}
+
+<!-- CTA -->
+<section class="ce-cta">
+  <div class="ce-cta-inner">
+    <h2 class="ce-cta-title">Tu negocio puede ser el siguiente.</h2>
+    <p class="ce-cta-subtitle">Configura SACS en 15 minutos. Sin tarjeta de crédito.</p>
+    <div class="ce-cta-actions">
+      <a href="/contacto" class="ce-cta-btn ce-cta-btn--primary">Empieza gratis</a>
+      <a href="/contacto#demo" class="ce-cta-btn ce-cta-btn--secondary">Agenda una demo</a>
+    </div>
+  </div>
+</section>
+
+</BaseLayout>
+
+<style>
+  /* ── Hero ── */
+  .ce-hero {
+    padding: clamp(120px, 14vw, 180px) 0 clamp(60px, 8vw, 100px);
+    text-align: center;
+    background: #fff;
+  }
+  .ce-hero-inner {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  .ce-eyebrow {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--color-text-tertiary);
+    margin-bottom: 16px;
+    display: block;
+  }
+  .ce-hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 800;
+    color: var(--color-text-primary);
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+    margin: 0 0 24px;
+  }
+  .ce-hero-subtitle {
+    font-family: var(--font-body);
+    font-size: clamp(1rem, 1.5vw, 1.2rem);
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  /* ── Case Section ── */
+  .ce-case {
+    padding: clamp(60px, 8vw, 100px) 0;
+    background: #fff;
+    border-top: 1px solid rgba(0,0,0,0.04);
+  }
+  .ce-case--alt {
+    background: var(--color-bg-primary);
+  }
+  .ce-case-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 clamp(20px, 4vw, 48px);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(40px, 6vw, 80px);
+    align-items: center;
+  }
+  .ce-case--alt .ce-case-inner {
+    direction: rtl;
+  }
+  .ce-case--alt .ce-case-inner > * {
+    direction: ltr;
+  }
+
+  /* Visual */
+  .ce-case-img-wrap {
+    border-radius: 20px;
+    overflow: hidden;
+  }
+  .ce-case-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+    aspect-ratio: 6 / 5;
+  }
+
+  /* Content */
+  .ce-case-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .ce-case-brand {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+    font-weight: 800;
+    color: var(--color-text-primary);
+    letter-spacing: -0.03em;
+    margin: 12px 0 8px;
+    line-height: 1.1;
+  }
+  .ce-case-tagline {
+    font-family: var(--font-body);
+    font-size: clamp(1rem, 1.3vw, 1.15rem);
+    color: var(--color-text-secondary);
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+
+  /* Stats grid */
+  .ce-case-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .ce-stat {
+    background: var(--color-bg-secondary, #F5F3EE);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .ce-case--alt .ce-stat {
+    background: #fff;
+  }
+  .ce-stat-num {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 2.5vw, 2rem);
+    font-weight: 800;
+    color: var(--color-text-primary);
+    letter-spacing: -0.03em;
+    display: block;
+    line-height: 1;
+  }
+  .ce-stat-label {
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    margin-top: 4px;
+    display: block;
+  }
+
+  /* Quote */
+  .ce-case-quote {
+    border-left: 3px solid var(--color-text-primary);
+    padding-left: 20px;
+    margin: 0 0 24px;
+  }
+  .ce-case-quote p {
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-style: italic;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    margin: 0 0 8px;
+  }
+  .ce-case-quote cite {
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-style: normal;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+  }
+
+  /* Description */
+  .ce-case-desc {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    line-height: 1.65;
+    margin-bottom: 20px;
+  }
+
+  /* Highlights */
+  .ce-case-highlights {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .ce-case-highlights li {
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    padding-left: 20px;
+    position: relative;
+  }
+  .ce-case-highlights li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--color-secondary, #2AB5A0);
+    font-weight: 700;
+  }
+
+  /* Case link */
+  .ce-case-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-primary);
+    text-decoration: none;
+    margin-top: 20px;
+    transition: gap 0.2s ease;
+  }
+  .ce-case-link:hover {
+    gap: 10px;
+  }
+
+  /* CTA */
+  .ce-cta {
+    padding: clamp(80px, 10vw, 140px) 0;
+    background: var(--color-text-primary);
+    text-align: center;
+  }
+  .ce-cta-inner {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+  .ce-cta-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.03em;
+    margin: 0 0 12px;
+    line-height: 1.1;
+  }
+  .ce-cta-subtitle {
+    font-family: var(--font-body);
+    font-size: 1.1rem;
+    color: rgba(255,255,255,0.6);
+    margin: 0 0 32px;
+  }
+  .ce-cta-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .ce-cta-btn {
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 700;
+    padding: 14px 32px;
+    border-radius: 100px;
+    text-decoration: none;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+  .ce-cta-btn:hover { transform: translateY(-2px); }
+  .ce-cta-btn--primary {
+    background: #fff;
+    color: var(--color-text-primary);
+  }
+  .ce-cta-btn--secondary {
+    background: transparent;
+    color: #fff;
+    border: 1.5px solid rgba(255,255,255,0.3);
+  }
+
+  /* Mobile */
+  @media (max-width: 768px) {
+    .ce-case-inner {
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+    .ce-case--alt .ce-case-inner {
+      direction: ltr;
+    }
+    .ce-case-stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+</style>
