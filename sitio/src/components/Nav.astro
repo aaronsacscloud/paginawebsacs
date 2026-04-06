@@ -66,22 +66,9 @@ const currentPath = Astro.url.pathname;
     </nav>
 
     <div class="nav-actions">
-      <div class="nav-lang-selector">
-        <button class="nav-lang-btn" aria-label="Language" aria-expanded="false">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-          <span>{locale.toUpperCase()}</span>
-        </button>
-        <div class="nav-lang-dropdown">
-          {locales.map((l) => (
-            <a href={getLocalizedUrl('/', l)} class:list={['nav-lang-option', { active: l === locale }]}>
-              {languageNames[l]}
-            </a>
-          ))}
-        </div>
-      </div>
-      <a href="https://app.sacscloud.com/" class="nav-action-link">{t('nav.login', locale)}</a>
-      <a href={getLocalizedUrl('/prueba-gratis', locale)} class="nav-action-link">{t('nav.startFree', locale)}</a>
-      <a href={getLocalizedUrl('/contacto', locale)} class="btn-nav-cta">{t('nav.bookDemo', locale)}</a>
+      <a href="https://app.sacscloud.com/" class="nav-action-link">Iniciar sesion</a>
+      <a href="/prueba-gratis" class="nav-action-link">Empieza gratis</a>
+      <a href="/contacto" class="btn-nav-cta">Agenda una demo</a>
     </div>
 
     <button

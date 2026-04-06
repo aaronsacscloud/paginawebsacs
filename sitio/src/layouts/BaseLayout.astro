@@ -44,7 +44,7 @@ const allSchemas = structuredData
 ---
 
 <!doctype html>
-<html lang={locale}>
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -58,11 +58,6 @@ const allSchemas = structuredData
     <link rel="preload" href="/fonts/Sora-ExtraBold.woff2" as="font" type="font/woff2" crossorigin />
     <!-- Preload hero image (above-fold, LCP element) -->
     <link rel="preload" href="/images/hero-sacs-store.webp" as="image" type="image/webp" />
-
-    <!-- Hreflang tags for SEO -->
-    {hreflangLinks.map(({ lang, href }) => (
-      <link rel="alternate" hreflang={lang} href={href} />
-    ))}
 
     <SEO
       title={title}
