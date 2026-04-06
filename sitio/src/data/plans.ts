@@ -56,7 +56,7 @@ export const plans: Plan[] = [
     annual: { mxn: 500, usd: 25, eur: 23, brl: 130, cop: 105000, ars: 22500, clp: 23750, pen: 95, gbp: 20 },
     annualTotal: { mxn: 6000, usd: 300, eur: 276, brl: 1560, cop: 1260000, ars: 270000, clp: 285000, pen: 1140, gbp: 240 },
     highlighted: false,
-    cta: { label: 'Inicia ahora', href: '/prueba-gratis?plan=vende', variant: 'secondary' },
+    cta: { label: 'Inicia ahora', href: '/registro?plan=vende', variant: 'secondary' },
     features: [
       { category: 'Ventas', items: ['Punto de venta online y offline', 'Tienda en línea básica integrada', 'Cotizaciones', 'Pedidos y apartados', 'Ventas a crédito'] },
       { category: 'Canales', items: ['Facebook, Instagram y WhatsApp', 'TikTok Shop', 'Productos visibles en ChatGPT'] },
@@ -78,7 +78,7 @@ export const plans: Plan[] = [
     annualTotal: { mxn: 9000, usd: 450, eur: 414, brl: 2340, cop: 1890000, ars: 405000, clp: 427500, pen: 1710, gbp: 360 },
     highlighted: false,
     inheritsFrom: 'Vende',
-    cta: { label: 'Inicia ahora', href: '/prueba-gratis?plan=controla', variant: 'secondary' },
+    cta: { label: 'Inicia ahora', href: '/registro?plan=controla', variant: 'secondary' },
     features: [
       { category: 'Inventario avanzado', items: ['Multi-sucursal en tiempo real', 'Gestión de CEDIS', 'Traspasos entre sucursales', 'Reabasto sugerido', 'Alertas de stock bajo o exceso'] },
       { category: 'Conteos y trazabilidad', items: ['Conteo físico desde el celular', 'Conteos cíclicos programados', 'Kardex y trazabilidad', 'Control de mermas'] },
@@ -103,7 +103,7 @@ export const plans: Plan[] = [
     badge: 'Más popular',
     highlighted: true,
     inheritsFrom: 'Controla',
-    cta: { label: 'Inicia ahora', href: '/prueba-gratis?plan=fideliza', variant: 'primary' },
+    cta: { label: 'Inicia ahora', href: '/registro?plan=fideliza', variant: 'primary' },
     features: [
       { category: 'Lealtad', items: ['Monedero electrónico y programa de lealtad', 'Niveles y recompensas personalizadas', 'Redención de puntos en tu tienda en línea'] },
       { category: 'Ventas y promociones', items: ['Notificaciones automáticas por WhatsApp', 'Ventas de impulso y venta cruzada', 'Promociones avanzadas'] },
@@ -126,7 +126,7 @@ export const plans: Plan[] = [
     annualTotal: { mxn: 29000, usd: 1450, eur: 1334, brl: 7540, cop: 6090000, ars: 1305000, clp: 1377500, pen: 5510, gbp: 1150 },
     highlighted: false,
     inheritsFrom: 'Fideliza',
-    cta: { label: 'Inicia ahora', href: '/prueba-gratis?plan=automatiza', variant: 'secondary' },
+    cta: { label: 'Inicia ahora', href: '/registro?plan=automatiza', variant: 'secondary' },
     features: [
       { category: 'IA e inventario', items: ['Nivelación automática entre sucursales con IA', 'Reglas inteligentes de reabastecimiento', 'Alertas personalizadas y acciones sugeridas'] },
       { category: 'AXO — Tu copiloto IA', items: ['Consultar, operar y automatizar procesos', 'Automatización de tareas clave', 'Inteligencia operativa para mejores decisiones'] },
