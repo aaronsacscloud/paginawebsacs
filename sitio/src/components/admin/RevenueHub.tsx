@@ -278,29 +278,64 @@ export default function RevenueHub() {
   // ─── Quotes ───
   const QuotesView = () => {
     const [quotes, setQuotes] = useState<any[]>([]);
+    const [showDrawer, setShowDrawer] = useState(false);
+    const [qf, setQf] = useState<any>({ items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migración incluida en planes de pago.\nSoporte 24/7 incluido. Sin contratos de permanencia.' });
 
     useEffect(() => {
       fetch('/api/revenue/quotes').then(r => r.json()).then(d => setQuotes(Array.isArray(d) ? d : []));
     }, []);
 
-    const price = PLAN_PRICES[quoteForm.plan || ''] || 0;
-    const suc = parseInt(quoteForm.sucursales || '1') || 1;
-    const isAnnual = quoteForm.periodo === 'anual';
-    const subtotal = price * suc * (isAnnual ? 10 : 1);
-    const discount = subtotal * (parseFloat(quoteForm.descuento_pct || '0') / 100);
-    const total = subtotal - discount;
+    const addPlanItem = () => {
+      setQf({ ...qf, items: [...(qf.items || []), { tipo: 'plan', nombre: 'controla', sucursales: 1, precio_unitario: 900, periodo: 'mensual', descuento_pct: 0, subtotal: 900 }] });
+    };
+
+    const addExtraItem = () => {
+      setQf({ ...qf, items: [...(qf.items || []), { tipo: 'extra', nombre: '', monto: 0, recurrente: false, descripcion: '' }] });
+    };
+
+    const updateItem = (idx: number, field: string, value: any) => {
+      const items = [...(qf.items || [])];
+      items[idx] = { ...items[idx], [field]: value };
+      if (items[idx].tipo === 'plan') {
+        const p = PLAN_PRICES[items[idx].nombre] || 0;
+        items[idx].precio_unitario = p;
+        const suc = parseInt(items[idx].sucursales) || 1;
+        const isAnn = items[idx].periodo === 'anual';
+        const sub = p * suc * (isAnn ? 10 : 1);
+        const disc = sub * (parseFloat(items[idx].descuento_pct || 0) / 100);
+        items[idx].subtotal = sub - disc;
+      } else {
+        items[idx].subtotal = parseFloat(items[idx].monto) || 0;
+      }
+      setQf({ ...qf, items });
+    };
+
+    const removeItem = (idx: number) => {
+      setQf({ ...qf, items: (qf.items || []).filter((_: any, i: number) => i !== idx) });
+    };
+
+    // Calculate totals
+    const itemsSubtotal = (qf.items || []).reduce((s: number, i: any) => s + (i.subtotal || parseFloat(i.monto) || 0), 0);
+    const globalDisc = qf.descuento_tipo === 'pct' ? itemsSubtotal * (parseFloat(qf.descuento_global) || 0) / 100 : (parseFloat(qf.descuento_global) || 0);
+    const afterDisc = itemsSubtotal - globalDisc;
+    const ivaMonto = qf.iva_incluido ? afterDisc * 0.16 : 0;
+    const grandTotal = afterDisc + ivaMonto;
 
     const createQuote = async () => {
       setSaving(true);
-      const body = {
-        ...quoteForm,
-        precio_unitario: price,
-        total,
-        vigencia: new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10),
-        estado: 'sent',
-      };
+      const body = { ...qf, subtotal: itemsSubtotal, iva_monto: Math.round(ivaMonto), total: Math.round(grandTotal), estado: 'sent' };
       await fetch('/api/revenue/quotes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      setQuoteForm({});
+      setShowDrawer(false);
+      setQf({ items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migración incluida en planes de pago.\nSoporte 24/7 incluido. Sin contratos de permanencia.' });
+      const d = await fetch('/api/revenue/quotes').then(r => r.json());
+      setQuotes(Array.isArray(d) ? d : []);
+      setSaving(false);
+    };
+
+    const duplicateQuote = async (q: any) => {
+      const copy = { ...q, id: undefined, numero: undefined, estado: 'draft', created_at: undefined };
+      setSaving(true);
+      await fetch('/api/revenue/quotes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(copy) });
       const d = await fetch('/api/revenue/quotes').then(r => r.json());
       setQuotes(Array.isArray(d) ? d : []);
       setSaving(false);
@@ -308,42 +343,111 @@ export default function RevenueHub() {
 
     return (
       <div>
-        <div style={{ ...S.card, marginBottom: 16 }}>
-          <h3 style={S.cardTitle}>Nueva cotización</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8 }}>
-            <div><label style={S.label}>Empresa</label><input value={quoteForm.empresa || ''} onChange={e => setQuoteForm({ ...quoteForm, empresa: e.target.value })} style={S.input} /></div>
-            <div><label style={S.label}>Contacto</label><input value={quoteForm.contacto || ''} onChange={e => setQuoteForm({ ...quoteForm, contacto: e.target.value })} style={S.input} /></div>
-            <div><label style={S.label}>Email</label><input value={quoteForm.email || ''} onChange={e => setQuoteForm({ ...quoteForm, email: e.target.value })} style={S.input} /></div>
-            <div><label style={S.label}>Plan</label><select value={quoteForm.plan || ''} onChange={e => setQuoteForm({ ...quoteForm, plan: e.target.value })} style={S.input}>{PLANS.map(p => <option key={p} value={p}>{p} (${PLAN_PRICES[p]})</option>)}</select></div>
-            <div><label style={S.label}>Sucursales</label><input type="number" value={quoteForm.sucursales || 1} onChange={e => setQuoteForm({ ...quoteForm, sucursales: e.target.value })} style={S.input} /></div>
-            <div><label style={S.label}>Período</label><select value={quoteForm.periodo || 'mensual'} onChange={e => setQuoteForm({ ...quoteForm, periodo: e.target.value })} style={S.input}><option value="mensual">Mensual</option><option value="anual">Anual (2 meses gratis)</option></select></div>
-            <div><label style={S.label}>Descuento %</label><input type="number" value={quoteForm.descuento_pct || 0} onChange={e => setQuoteForm({ ...quoteForm, descuento_pct: e.target.value })} style={S.input} /></div>
-            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#2AB5A0' }}>{fmt(total)} {isAnnual ? '/año' : '/mes'}</div>
-            </div>
-          </div>
-          <button onClick={createQuote} disabled={saving || !quoteForm.plan} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', marginTop: 12 }}>{saving ? 'Creando...' : 'Crear cotización'}</button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+          <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800 }}>Cotizaciones</h2>
+          <button onClick={() => setShowDrawer(true)} style={{ ...S.btn, background: '#1a1a1a', color: '#fff' }}>+ Nueva cotización</button>
         </div>
 
         <div style={S.card}>
-          <h3 style={S.cardTitle}>Cotizaciones</h3>
           <table style={S.table}>
-            <thead><tr>{['Fecha', 'Empresa', 'Plan', 'Suc.', 'Total', 'Estado', 'Link'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+            <thead><tr>{['#', 'Fecha', 'Empresa', 'Total', 'Estado', 'Template', 'Acciones'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
             <tbody>
+              {quotes.length === 0 && <tr><td colSpan={7} style={{ ...S.td, textAlign: 'center' as const, color: '#ccc', padding: 32 }}>Sin cotizaciones</td></tr>}
               {quotes.map((q: any) => (
                 <tr key={q.id} style={S.tr}>
+                  <td style={{ ...S.td, fontWeight: 700, color: '#4B7BE5' }}>{q.numero || '-'}</td>
                   <td style={S.td}>{q.created_at?.slice(0, 10)}</td>
                   <td style={{ ...S.td, fontWeight: 700 }}>{q.empresa}</td>
-                  <td style={S.td}>{q.plan}</td>
-                  <td style={S.td}>{q.sucursales}</td>
-                  <td style={{ ...S.td, fontWeight: 700 }}>{fmt(q.total)}</td>
-                  <td style={S.td}><span style={{ ...S.badge, background: q.estado === 'sent' ? '#fff3e0' : q.estado === 'accepted' ? '#e8f5e9' : '#f5f5f5', color: q.estado === 'sent' ? '#e65100' : q.estado === 'accepted' ? '#2e7d32' : '#999' }}>{q.estado}</span></td>
-                  <td style={S.td}><a href={`/cotizacion/${q.id}`} target="_blank" rel="noopener" style={{ color: '#4B7BE5', textDecoration: 'none', fontWeight: 600, fontSize: '0.75rem' }}>Ver →</a></td>
+                  <td style={{ ...S.td, fontWeight: 700 }}>{fmt(q.total || 0)}</td>
+                  <td style={S.td}><span style={{ ...S.badge, background: q.estado === 'accepted' ? '#e8f5e9' : q.estado === 'sent' ? '#fff3e0' : '#f5f5f5', color: q.estado === 'accepted' ? '#2e7d32' : q.estado === 'sent' ? '#e65100' : '#999' }}>{q.estado}</span></td>
+                  <td style={S.td}><span style={{ fontSize: '0.625rem', color: '#999', textTransform: 'capitalize' as const }}>{q.template || 'modern'}</span></td>
+                  <td style={S.td}>
+                    <a href={`/cotizacion/${q.id}`} target="_blank" rel="noopener" style={{ ...S.btnSmall, textDecoration: 'none', display: 'inline-flex' }}>Ver</a>
+                    <button onClick={() => duplicateQuote(q)} style={S.btnSmall}>Duplicar</button>
+                    <a href={`https://wa.me/?text=${encodeURIComponent(`Cotización ${q.numero}: https://www.sacscloud.com/cotizacion/${q.id}`)}`} target="_blank" rel="noopener" style={{ ...S.btnSmall, background: '#e8f5e9', color: '#2e7d32', textDecoration: 'none', display: 'inline-flex' }}>WA</a>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+
+        {/* ─── Quote Drawer ─── */}
+        {showDrawer && (
+          <div style={S.overlay}>
+            <div onClick={() => setShowDrawer(false)} style={{ flex: 1 }} />
+            <div style={{ width: 520, maxWidth: '95vw', background: '#fff', overflowY: 'auto' as const, boxShadow: '-4px 0 20px rgba(0,0,0,0.1)', padding: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
+                <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800 }}>Nueva cotización</h3>
+                <button onClick={() => setShowDrawer(false)} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#999' }}>✕</button>
+              </div>
+
+              {/* Client */}
+              <Label>Cliente</Label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
+                <input value={qf.empresa || ''} onChange={e => setQf({ ...qf, empresa: e.target.value })} placeholder="Empresa" style={S.input} />
+                <input value={qf.contacto || ''} onChange={e => setQf({ ...qf, contacto: e.target.value })} placeholder="Contacto" style={S.input} />
+                <input value={qf.email || ''} onChange={e => setQf({ ...qf, email: e.target.value })} placeholder="Email" style={S.input} />
+                <input value={qf.whatsapp || ''} onChange={e => setQf({ ...qf, whatsapp: e.target.value })} placeholder="WhatsApp" style={S.input} />
+              </div>
+
+              {/* Items */}
+              <Label>Conceptos</Label>
+              {(qf.items || []).map((item: any, idx: number) => (
+                <div key={idx} style={{ background: '#f8f9fb', borderRadius: 10, padding: 12, marginBottom: 8, position: 'relative' as const }}>
+                  <button onClick={() => removeItem(idx)} style={{ position: 'absolute' as const, top: 8, right: 8, background: 'none', border: 'none', color: '#ccc', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+                  {item.tipo === 'plan' ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                      <div><label style={{ ...S.label, marginTop: 0 }}>Plan</label><select value={item.nombre} onChange={e => updateItem(idx, 'nombre', e.target.value)} style={S.input}>{PLANS.map(p => <option key={p} value={p}>{p} (${PLAN_PRICES[p]})</option>)}</select></div>
+                      <div><label style={{ ...S.label, marginTop: 0 }}>Sucursales</label><input type="number" value={item.sucursales} onChange={e => updateItem(idx, 'sucursales', e.target.value)} style={S.input} /></div>
+                      <div><label style={{ ...S.label, marginTop: 0 }}>Período</label><select value={item.periodo} onChange={e => updateItem(idx, 'periodo', e.target.value)} style={S.input}><option value="mensual">Mensual</option><option value="anual">Anual (2 meses gratis)</option></select></div>
+                      <div><label style={{ ...S.label, marginTop: 0 }}>Desc. %</label><input type="number" value={item.descuento_pct || 0} onChange={e => updateItem(idx, 'descuento_pct', e.target.value)} style={S.input} /></div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 6 }}>
+                      <div><label style={{ ...S.label, marginTop: 0 }}>Concepto</label><input value={item.nombre || ''} onChange={e => updateItem(idx, 'nombre', e.target.value)} placeholder="Ej. Implementación" style={S.input} /></div>
+                      <div><label style={{ ...S.label, marginTop: 0 }}>Monto</label><input type="number" value={item.monto || ''} onChange={e => updateItem(idx, 'monto', e.target.value)} style={S.input} /></div>
+                      <div><label style={{ ...S.label, marginTop: 0 }}>Descripción</label><input value={item.descripcion || ''} onChange={e => updateItem(idx, 'descripcion', e.target.value)} style={S.input} /></div>
+                      <div><label style={{ ...S.label, marginTop: 0 }}>Recurrente</label><select value={item.recurrente ? 'si' : 'no'} onChange={e => updateItem(idx, 'recurrente', e.target.value === 'si')} style={S.input}><option value="no">No (único)</option><option value="si">Sí (mensual)</option></select></div>
+                    </div>
+                  )}
+                  <div style={{ textAlign: 'right' as const, fontSize: '0.875rem', fontWeight: 700, color: '#2AB5A0', marginTop: 6 }}>{fmt(item.subtotal || item.monto || 0)}</div>
+                </div>
+              ))}
+              <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
+                <button onClick={addPlanItem} style={{ ...S.btnSmall, flex: 1 }}>+ Plan Sacs</button>
+                <button onClick={addExtraItem} style={{ ...S.btnSmall, flex: 1 }}>+ Concepto extra</button>
+              </div>
+
+              {/* Totals & Config */}
+              <div style={{ background: '#f8f9fb', borderRadius: 10, padding: 16, marginBottom: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginBottom: 8 }}>
+                  <span>Subtotal</span><span style={{ fontWeight: 700 }}>{fmt(itemsSubtotal)}</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 }}>
+                  <div><label style={{ ...S.label, marginTop: 0 }}>Desc. global</label><input type="number" value={qf.descuento_global || 0} onChange={e => setQf({ ...qf, descuento_global: e.target.value })} style={S.input} /></div>
+                  <div><label style={{ ...S.label, marginTop: 0 }}>Tipo</label><select value={qf.descuento_tipo} onChange={e => setQf({ ...qf, descuento_tipo: e.target.value })} style={S.input}><option value="pct">Porcentaje %</option><option value="fijo">Monto fijo $</option></select></div>
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8125rem', marginBottom: 8, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={qf.iva_incluido} onChange={e => setQf({ ...qf, iva_incluido: e.target.checked })} /> Agregar IVA 16%
+                </label>
+                {qf.iva_incluido && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginBottom: 4 }}><span>IVA</span><span>{fmt(ivaMonto)}</span></div>}
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.125rem', fontWeight: 800, borderTop: '2px solid #1a1a1a', paddingTop: 8, marginTop: 4 }}>
+                  <span>Total</span><span style={{ color: '#2AB5A0' }}>{fmt(grandTotal)} {qf.moneda}</span>
+                </div>
+              </div>
+
+              {/* Config */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+                <div><label style={S.label}>Moneda</label><select value={qf.moneda} onChange={e => setQf({ ...qf, moneda: e.target.value })} style={S.input}><option value="MXN">MXN</option><option value="USD">USD</option></select></div>
+                <div><label style={S.label}>Template</label><select value={qf.template} onChange={e => setQf({ ...qf, template: e.target.value })} style={S.input}><option value="modern">Modern</option><option value="dark">Dark</option><option value="classic">Classic</option></select></div>
+              </div>
+              <div><label style={S.label}>Condiciones</label><textarea value={qf.condiciones || ''} onChange={e => setQf({ ...qf, condiciones: e.target.value })} style={{ ...S.input, height: 60, resize: 'vertical' as const }} /></div>
+
+              <button onClick={createQuote} disabled={saving || !(qf.items || []).length || !qf.empresa} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', width: '100%', marginTop: 16, justifyContent: 'center' }}>{saving ? 'Creando...' : 'Crear y enviar cotización'}</button>
+            </div>
+          </div>
+        )}
       </div>
     );
   };

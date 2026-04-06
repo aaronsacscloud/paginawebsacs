@@ -8,20 +8,30 @@ export const GET: APIRoute = async ({ url }) => {
 
   if (id) {
     const { data, error } = await supabase.from('quotes').select('*').eq('id', id).single();
-    if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    if (error) return new Response(JSON.stringify({ error: error.message }), { status: 404, headers: { 'Content-Type': 'application/json' } });
     return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } });
   }
 
   const { data, error } = await supabase.from('quotes').select('*').order('created_at', { ascending: false });
-  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   return new Response(JSON.stringify(data || []), { status: 200, headers: { 'Content-Type': 'application/json' } });
 };
 
 export const POST: APIRoute = async ({ request }) => {
   const body = await request.json();
-  const { data, error } = await supabase.from('quotes').insert(body).select().single();
 
-  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  // Auto-generate quote number
+  const { count } = await supabase.from('quotes').select('*', { count: 'exact', head: true });
+  const num = `COT-${String((count || 0) + 1).padStart(3, '0')}`;
+
+  const { data, error } = await supabase.from('quotes').insert({
+    ...body,
+    numero: num,
+    vigencia: body.vigencia || new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10),
+    estado: body.estado || 'draft',
+  }).select().single();
+
+  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   return new Response(JSON.stringify(data), { status: 201, headers: { 'Content-Type': 'application/json' } });
 };
 
@@ -30,6 +40,6 @@ export const PUT: APIRoute = async ({ request }) => {
   const { id, ...rest } = body;
   const { data, error } = await supabase.from('quotes').update(rest).eq('id', id).select().single();
 
-  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } });
 };

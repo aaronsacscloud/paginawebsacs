@@ -1,0 +1,275 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+const { data: quote } = await supabase.from('quotes').select('*').eq('id', id).single();
+
+if (!quote) return Astro.redirect('/404');
+
+const items = quote.items || [];
+const template = quote.template || 'modern';
+const isExpired = quote.vigencia && new Date(quote.vigencia) < new Date();
+const daysLeft = quote.vigencia ? Math.ceil((new Date(quote.vigencia).getTime() - Date.now()) / 86400000) : 0;
+const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+const fecha = new Date(quote.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+---
+
+<BaseLayout title={`Cotización ${quote.numero} — Sacs`} description={`Cotización para ${quote.empresa}`}>
+
+<div class:list={['quote-page', `quote-${template}`]} id="quote-doc">
+  <div class="quote-container">
+    <!-- Header -->
+    <div class="quote-header">
+      <div class="quote-logo">
+        <span class="quote-logo-text">Sacs</span>
+        <span class="quote-logo-tag">Cotización</span>
+      </div>
+      <div class="quote-meta">
+        <div class="quote-number">{quote.numero}</div>
+        <div class="quote-date">Fecha: {fecha}</div>
+        <div class="quote-date">Vigencia: {quote.vigencia}</div>
+        {!isExpired && daysLeft > 0 && <div class="quote-validity">Válida por {daysLeft} días</div>}
+        {isExpired && <div class="quote-expired">Cotización vencida</div>}
+      </div>
+    </div>
+
+    <!-- Client info -->
+    <div class="quote-client">
+      <div class="quote-client-label">Cotización para:</div>
+      <div class="quote-client-name">{quote.empresa}</div>
+      {quote.contacto && <div class="quote-client-detail">{quote.contacto}</div>}
+      {quote.email && <div class="quote-client-detail">{quote.email}</div>}
+      {quote.whatsapp && <div class="quote-client-detail">{quote.whatsapp}</div>}
+    </div>
+
+    <!-- Items table -->
+    <table class="quote-table">
+      <thead>
+        <tr>
+          <th class="qt-concept">Concepto</th>
+          <th class="qt-detail">Detalle</th>
+          <th class="qt-qty">Cant.</th>
+          <th class="qt-price">Precio unit.</th>
+          <th class="qt-subtotal">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {items.map((item: any) => (
+          <tr>
+            <td class="qt-concept">
+              <strong>{item.nombre}</strong>
+              {item.descripcion && <div class="qt-desc">{item.descripcion}</div>}
+            </td>
+            <td class="qt-detail">
+              {item.tipo === 'plan' ? `${item.periodo === 'anual' ? 'Anual' : 'Mensual'}` : item.recurrente ? 'Recurrente' : 'Único'}
+            </td>
+            <td class="qt-qty">{item.tipo === 'plan' ? `${item.sucursales} suc.` : '1'}</td>
+            <td class="qt-price">{fmt(item.precio_unitario || item.monto || 0)} {quote.moneda}</td>
+            <td class="qt-subtotal">{fmt(item.subtotal || item.monto || 0)} {quote.moneda}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+
+    <!-- Totals -->
+    <div class="quote-totals">
+      <div class="quote-total-row">
+        <span>Subtotal</span>
+        <span>{fmt(quote.subtotal || 0)} {quote.moneda}</span>
+      </div>
+      {quote.descuento_global > 0 && (
+        <div class="quote-total-row quote-discount">
+          <span>Descuento {quote.descuento_tipo === 'pct' ? `(${quote.descuento_global}%)` : ''}</span>
+          <span>-{fmt(quote.descuento_tipo === 'pct' ? (quote.subtotal || 0) * quote.descuento_global / 100 : quote.descuento_global)} {quote.moneda}</span>
+        </div>
+      )}
+      {quote.iva_incluido && (
+        <div class="quote-total-row">
+          <span>IVA (16%)</span>
+          <span>{fmt(quote.iva_monto || 0)} {quote.moneda}</span>
+        </div>
+      )}
+      <div class="quote-total-row quote-total-final">
+        <span>Total</span>
+        <span>{fmt(quote.total || 0)} {quote.moneda}</span>
+      </div>
+    </div>
+
+    <!-- Conditions -->
+    {quote.condiciones && (
+      <div class="quote-conditions">
+        <div class="quote-conditions-title">Condiciones</div>
+        <div class="quote-conditions-text">{quote.condiciones}</div>
+      </div>
+    )}
+
+    <!-- Footer -->
+    <div class="quote-footer">
+      <div class="quote-footer-brand">
+        <span class="quote-footer-logo">Sacs</span>
+        <span class="quote-footer-tagline">Sistema operativo para retailers</span>
+      </div>
+      <div class="quote-footer-contact">
+        www.sacscloud.com · administracion@sacscloud.com
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions (hidden in print) -->
+  <div class="quote-actions no-print">
+    {quote.estado !== 'accepted' && !isExpired && (
+      <button class="quote-action-btn quote-action-accept" id="btn-accept">Aceptar cotización</button>
+    )}
+    {quote.estado === 'accepted' && (
+      <div class="quote-accepted-badge">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12a10 10 0 11-5.93-9.14" stroke="currentColor" stroke-width="2"/><path d="M22 4L12 14.01l-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Cotización aceptada {quote.aceptado_por ? `por ${quote.aceptado_por}` : ''}
+      </div>
+    )}
+    <button class="quote-action-btn quote-action-pdf" onclick="window.print()">Descargar PDF</button>
+    <a class="quote-action-btn quote-action-wa" href={`https://wa.me/?text=${encodeURIComponent(`Hola, te comparto la cotización ${quote.numero} de Sacs: https://www.sacscloud.com/cotizacion/${quote.id}`)}`} target="_blank">Compartir por WhatsApp</a>
+  </div>
+</div>
+
+</BaseLayout>
+
+<style>
+:global(nav), :global(.nav), :global(header), :global(footer), :global(.whatsapp-float) { display: none !important; }
+
+.quote-page { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+.quote-container { background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+
+/* ─── Header ─── */
+.quote-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 40px 40px 24px; border-bottom: 1px solid #f0f0f0; }
+.quote-logo { display: flex; align-items: center; gap: 10px; }
+.quote-logo-text { font-family: var(--font-logo); font-size: 2rem; font-weight: 700; color: #1a1a1a; }
+.quote-logo-tag { font-size: 0.6875rem; font-weight: 700; color: var(--color-primary); background: rgba(75,123,229,0.08); padding: 3px 10px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.08em; }
+.quote-meta { text-align: right; }
+.quote-number { font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: #1a1a1a; }
+.quote-date { font-size: 0.8125rem; color: #999; margin-top: 2px; }
+.quote-validity { font-size: 0.6875rem; font-weight: 700; color: var(--color-secondary); background: rgba(42,181,160,0.08); padding: 3px 10px; border-radius: 20px; display: inline-block; margin-top: 8px; }
+.quote-expired { font-size: 0.6875rem; font-weight: 700; color: #E54B4B; background: rgba(229,75,75,0.08); padding: 3px 10px; border-radius: 20px; display: inline-block; margin-top: 8px; }
+
+/* ─── Client ─── */
+.quote-client { padding: 24px 40px; }
+.quote-client-label { font-size: 0.625rem; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+.quote-client-name { font-family: var(--font-display); font-size: 1.125rem; font-weight: 700; color: #1a1a1a; }
+.quote-client-detail { font-size: 0.8125rem; color: #666; margin-top: 2px; }
+
+/* ─── Table ─── */
+.quote-table { width: 100%; border-collapse: collapse; }
+.quote-table th { font-size: 0.625rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #aaa; padding: 12px 16px; text-align: left; background: #fafafa; border-top: 1px solid #f0f0f0; border-bottom: 1px solid #f0f0f0; }
+.quote-table td { padding: 16px; font-size: 0.875rem; color: #555; border-bottom: 1px solid #f5f5f5; }
+.quote-table td strong { color: #1a1a1a; }
+.qt-desc { font-size: 0.75rem; color: #999; margin-top: 2px; }
+.qt-detail, .qt-qty { white-space: nowrap; }
+.qt-price, .qt-subtotal { text-align: right; white-space: nowrap; font-weight: 600; }
+.quote-table th.qt-price, .quote-table th.qt-subtotal { text-align: right; }
+
+/* ─── Totals ─── */
+.quote-totals { padding: 20px 40px; }
+.quote-total-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 0.875rem; color: #666; }
+.quote-total-row.quote-discount { color: #2AB5A0; }
+.quote-total-row.quote-total-final { font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: #1a1a1a; border-top: 2px solid #1a1a1a; padding-top: 12px; margin-top: 8px; }
+
+/* ─── Conditions ─── */
+.quote-conditions { padding: 20px 40px; border-top: 1px solid #f0f0f0; }
+.quote-conditions-title { font-size: 0.625rem; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+.quote-conditions-text { font-size: 0.8125rem; color: #888; line-height: 1.6; white-space: pre-line; }
+
+/* ─── Footer ─── */
+.quote-footer { padding: 24px 40px; background: #fafafa; border-top: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+.quote-footer-logo { font-family: var(--font-logo); font-size: 1rem; font-weight: 700; color: #1a1a1a; }
+.quote-footer-tagline { font-size: 0.6875rem; color: #aaa; margin-left: 8px; }
+.quote-footer-contact { font-size: 0.6875rem; color: #aaa; }
+
+/* ─── Actions ─── */
+.quote-actions { display: flex; gap: 10px; justify-content: center; margin-top: 24px; flex-wrap: wrap; }
+.quote-action-btn { padding: 12px 24px; border-radius: 50px; font-size: 0.875rem; font-weight: 600; cursor: pointer; text-decoration: none; border: none; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; }
+.quote-action-accept { background: #1a1a1a; color: #fff; }
+.quote-action-accept:hover { background: #333; }
+.quote-action-pdf { background: #f0f0f0; color: #555; }
+.quote-action-pdf:hover { background: #e0e0e0; }
+.quote-action-wa { background: #e8f5e9; color: #2e7d32; }
+.quote-action-wa:hover { background: #c8e6c9; }
+.quote-accepted-badge { display: flex; align-items: center; gap: 6px; font-size: 0.875rem; font-weight: 700; color: #2AB5A0; }
+
+/* ─── Dark template ─── */
+.quote-dark .quote-container { background: #1a1a1a; color: #fff; }
+.quote-dark .quote-logo-text { color: #fff; }
+.quote-dark .quote-logo-tag { background: rgba(42,181,160,0.15); color: #2AB5A0; }
+.quote-dark .quote-number { color: #fff; }
+.quote-dark .quote-date { color: rgba(255,255,255,0.45); }
+.quote-dark .quote-client-name { color: #fff; }
+.quote-dark .quote-client-detail { color: rgba(255,255,255,0.55); }
+.quote-dark .quote-header { border-color: rgba(255,255,255,0.1); }
+.quote-dark .quote-table th { background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.4); border-color: rgba(255,255,255,0.08); }
+.quote-dark .quote-table td { color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.06); }
+.quote-dark .quote-table td strong { color: #fff; }
+.quote-dark .quote-total-row { color: rgba(255,255,255,0.5); }
+.quote-dark .quote-total-row.quote-total-final { color: #fff; border-color: #fff; }
+.quote-dark .quote-conditions { border-color: rgba(255,255,255,0.08); }
+.quote-dark .quote-conditions-text { color: rgba(255,255,255,0.4); }
+.quote-dark .quote-footer { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
+.quote-dark .quote-footer-logo { color: #fff; }
+.quote-dark .qt-desc { color: rgba(255,255,255,0.35); }
+
+/* ─── Classic template ─── */
+.quote-classic .quote-container { border-radius: 0; box-shadow: none; border: 2px solid #1a1a1a; }
+.quote-classic .quote-header { border-bottom: 2px solid #1a1a1a; }
+.quote-classic .quote-logo-tag { background: #1a1a1a; color: #fff; border-radius: 0; }
+.quote-classic .quote-table th { background: #1a1a1a; color: #fff; border: 1px solid #1a1a1a; }
+.quote-classic .quote-table td { border: 1px solid #ddd; }
+.quote-classic .quote-footer { background: #1a1a1a; }
+.quote-classic .quote-footer-logo, .quote-classic .quote-footer-tagline, .quote-classic .quote-footer-contact { color: #fff; }
+
+/* ─── Print ─── */
+@media print {
+  .no-print { display: none !important; }
+  .quote-page { padding: 0; }
+  .quote-container { box-shadow: none; border-radius: 0; }
+  body { background: #fff !important; }
+  @page { margin: 1cm; }
+}
+
+/* ─── Mobile ─── */
+@media (max-width: 640px) {
+  .quote-header { flex-direction: column; gap: 16px; padding: 24px 20px 20px; }
+  .quote-meta { text-align: left; }
+  .quote-client { padding: 20px; }
+  .quote-table th, .quote-table td { padding: 10px 8px; font-size: 0.75rem; }
+  .qt-detail { display: none; }
+  .quote-totals { padding: 16px 20px; }
+  .quote-conditions { padding: 16px 20px; }
+  .quote-footer { flex-direction: column; gap: 8px; padding: 16px 20px; }
+}
+</style>
+
+<script>
+  const acceptBtn = document.getElementById('btn-accept');
+  if (acceptBtn) {
+    acceptBtn.addEventListener('click', async () => {
+      const name = prompt('Tu nombre para aceptar la cotización:');
+      if (!name) return;
+
+      const quoteId = window.location.pathname.split('/').pop();
+      acceptBtn.textContent = 'Procesando...';
+
+      await fetch('/api/revenue/quotes', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: quoteId,
+          estado: 'accepted',
+          aceptado_por: name,
+          aceptado_fecha: new Date().toISOString(),
+        }),
+      });
+
+      window.location.reload();
+    });
+  }
+</script>
