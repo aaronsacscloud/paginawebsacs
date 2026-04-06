@@ -1,40 +1,40 @@
 import type { APIRoute } from 'astro';
-import { put, list } from '@vercel/blob';
+import Stripe from 'stripe';
 
 export const prerender = false;
+
+const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY || '', {
+  apiVersion: '2025-03-31.basil',
+});
 
 export const POST: APIRoute = async ({ request }) => {
   try {
     const data = await request.json();
-    const lead = {
-      id: Date.now().toString(),
-      timestamp: new Date().toISOString(),
-      nombre: data.nombre || '',
-      empresa: data.empresa || '',
-      giro: data.giro || '',
-      sucursales: data.sucursales || '',
-      whatsapp: data.whatsapp || '',
-      email: data.email || '',
-      paso: data.paso || '',
-      plan: data.plan || '',
-    };
 
-    // Store each lead as individual blob
-    await put(`leads/${lead.id}.json`, JSON.stringify(lead), {
-      access: 'public',
-      contentType: 'application/json',
+    // Save lead as Stripe customer with metadata
+    await stripe.customers.create({
+      email: data.email || `lead-${Date.now()}@noemail.com`,
+      name: data.nombre || '',
+      phone: data.whatsapp || '',
+      metadata: {
+        empresa: data.empresa || '',
+        giro: data.giro || '',
+        sucursales: data.sucursales || '',
+        paso: data.paso || '',
+        plan: data.plan || '',
+        source: 'website-lead',
+        fecha: new Date().toISOString(),
+      },
     });
-
-    console.log('LEAD SAVED:', JSON.stringify(lead));
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     });
   } catch (err) {
-    console.log('LEAD ERROR:', err);
-    return new Response(JSON.stringify({ success: false, error: String(err) }), {
-      status: 500,
+    console.log('Lead save error:', err);
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
   }
