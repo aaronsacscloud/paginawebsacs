@@ -812,12 +812,39 @@ const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  const SHEET_WEBHOOK = 'https://script.google.com/macros/s/AKfycbyC2XrYCPXx1sqnczLjbcrYH0USx9guESQ3jEnHCOs-o0WJnAAetsYJC9KR2XYJw_zI/exec';
+
+  function sendLeadToSheet(paso: string, plan?: string) {
+    const data = {
+      nombre: (document.getElementById('nombre') as HTMLInputElement).value,
+      empresa: (document.getElementById('empresa') as HTMLInputElement).value,
+      giro: (document.getElementById('giro') as HTMLSelectElement).value,
+      sucursales: (document.getElementById('sucursales') as HTMLSelectElement).value,
+      whatsapp: (document.getElementById('whatsapp') as HTMLInputElement).value,
+      email: (document.getElementById('email') as HTMLInputElement).value,
+      paso,
+      plan: plan || '',
+    };
+
+    // Fire and forget — don't block the user
+    fetch(SHEET_WEBHOOK, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }).catch(() => {});
+  }
+
   btnNext.addEventListener('click', () => {
     // Validate all step 1 fields
     const step1Fields = step1.querySelectorAll<HTMLElement>('.signup-field[data-validate]');
     let allValid = true;
     step1Fields.forEach((f) => { if (!validateField(f)) allValid = false; });
     if (!allValid) return;
+
+    // Send lead to Google Sheet immediately
+    sendLeadToSheet('Paso 1 completado');
+
     goToStep(2);
   });
 
@@ -941,6 +968,7 @@ const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
       const data = await res.json();
 
       if (data.success) {
+        sendLeadToSheet('Registro completado', selectedPlan);
         window.location.href = '/bienvenida';
       } else {
         const errEl = document.getElementById('card-errors');
