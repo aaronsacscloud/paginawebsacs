@@ -19,11 +19,7 @@ export default defineConfig({
     },
     ssr: {
       noExternal: [],
-    },
-    build: {
-      rollupOptions: {
-        external: ['bufferutil', 'utf-8-validate'],
-      },
+      external: ['recharts'],
     },
   },
 });
