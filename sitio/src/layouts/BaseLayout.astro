@@ -4,6 +4,7 @@ import StructuredData from '../components/StructuredData.astro';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import WhatsAppButton from '../components/WhatsAppButton.astro';
+import PageTracker from '../components/PageTracker.astro';
 import '../styles/global.css';
 import { getLangFromUrl, getHreflangLinks, t } from '../i18n/utils';
 import type { Locale } from '../i18n/config';
@@ -167,6 +168,7 @@ const allSchemas = structuredData
     </main>
     <Footer locale={locale} />
     <WhatsAppButton locale={locale} />
+    <PageTracker />
 
     <!-- Coming soon modal -->
     <div class="cs-modal-overlay" id="cs-modal" aria-hidden="true">

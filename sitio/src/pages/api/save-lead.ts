@@ -8,7 +8,6 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     const data = await request.json();
 
-    // Create Stripe customer via REST API directly (no SDK version issues)
     const params = new URLSearchParams();
     params.append('email', data.email || `lead-${Date.now()}@noemail.com`);
     params.append('name', data.nombre || '');
@@ -20,6 +19,12 @@ export const POST: APIRoute = async ({ request }) => {
     params.append('metadata[plan]', data.plan || '');
     params.append('metadata[source]', 'website-lead');
     params.append('metadata[fecha]', new Date().toISOString());
+    // Tracking data
+    params.append('metadata[score]', data.score || '0');
+    params.append('metadata[totalTime]', data.totalTime || '0');
+    params.append('metadata[pagesVisited]', (data.pagesVisited || '').substring(0, 500));
+    params.append('metadata[pageCount]', data.pageCount || '0');
+    params.append('metadata[visitorId]', data.visitorId || '');
 
     const res = await fetch('https://api.stripe.com/v1/customers', {
       method: 'POST',

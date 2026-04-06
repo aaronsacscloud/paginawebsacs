@@ -813,7 +813,13 @@ const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
   }
 
   function sendLeadToSheet(paso: string, plan?: string) {
-    const data = {
+    // Get visitor tracking data
+    const visitor = (window as any).__sacsVisitor ? (window as any).__sacsVisitor() : null;
+    const uniquePages = visitor?.pages
+      ? [...new Set(visitor.pages.map((p: any) => p.path))].join(', ')
+      : '';
+
+    const data: Record<string, string> = {
       nombre: (document.getElementById('nombre') as HTMLInputElement).value,
       empresa: (document.getElementById('empresa') as HTMLInputElement).value,
       giro: (document.getElementById('giro') as HTMLSelectElement).value,
@@ -822,9 +828,13 @@ const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
       email: (document.getElementById('email') as HTMLInputElement).value,
       paso,
       plan: plan || '',
+      visitorId: visitor?.id || '',
+      score: String(visitor?.score || 0),
+      totalTime: String(visitor?.totalTime || 0),
+      pagesVisited: uniquePages,
+      pageCount: String(visitor?.pages?.length || 0),
     };
 
-    // Send to our own API (reliable, logs in Vercel)
     fetch('/api/save-lead', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

@@ -25,6 +25,10 @@ export const GET: APIRoute = async () => {
         email: c.email || '',
         paso: c.metadata?.paso || '',
         plan: c.metadata?.plan || '',
+        score: parseInt(c.metadata?.score || '0'),
+        totalTime: parseInt(c.metadata?.totalTime || '0'),
+        pagesVisited: c.metadata?.pagesVisited || '',
+        pageCount: parseInt(c.metadata?.pageCount || '0'),
       }))
       .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 

@@ -20,6 +20,10 @@ interface Lead {
   email: string;
   paso: string;
   plan: string;
+  score: number;
+  totalTime: number;
+  pagesVisited: string;
+  pageCount: number;
 }
 
 export default function LeadsTable() {
@@ -99,6 +103,38 @@ export default function LeadsTable() {
       },
     },
     { accessorKey: 'plan', header: 'Plan' },
+    {
+      accessorKey: 'score',
+      header: 'Score',
+      cell: ({ getValue }) => {
+        const s = getValue() as number;
+        const color = s >= 70 ? '#2e7d32' : s >= 40 ? '#E8A838' : '#999';
+        const bg = s >= 70 ? '#e8f5e9' : s >= 40 ? '#fff3e0' : '#f5f5f5';
+        const label = s >= 70 ? '🔥' : s >= 40 ? '👍' : '';
+        return <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', background: bg, color }}>{s}/100 {label}</span>;
+      },
+    },
+    {
+      accessorKey: 'totalTime',
+      header: 'Tiempo',
+      cell: ({ getValue }) => {
+        const secs = getValue() as number;
+        if (!secs) return '-';
+        const mins = Math.floor(secs / 60);
+        const s = secs % 60;
+        return <span style={{ fontSize: '0.8125rem' }}>{mins > 0 ? `${mins}m ${s}s` : `${s}s`}</span>;
+      },
+    },
+    {
+      accessorKey: 'pagesVisited',
+      header: 'Páginas',
+      cell: ({ row }) => {
+        const pages = row.original.pagesVisited;
+        const count = row.original.pageCount;
+        if (!pages) return '-';
+        return <span title={pages} style={{ fontSize: '0.6875rem', color: '#666', maxWidth: '200px', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{count} pág. · {pages}</span>;
+      },
+    },
   ], []);
 
   const table = useReactTable({

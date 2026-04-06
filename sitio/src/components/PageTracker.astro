@@ -1,0 +1,77 @@
+<!-- Page tracking script — records pages visited, time spent, and engagement -->
+<script is:inline>
+(function() {
+  var STORAGE_KEY = 'sacs_visitor';
+  var startTime = Date.now();
+  var maxScroll = 0;
+
+  // Get or create visitor data
+  function getVisitor() {
+    try {
+      var data = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      if (data && data.id) return data;
+    } catch(e) {}
+    return {
+      id: 'v_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+      firstSeen: new Date().toISOString(),
+      pages: [],
+      totalTime: 0,
+      score: 0
+    };
+  }
+
+  function saveVisitor(v) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(v)); } catch(e) {}
+  }
+
+  // Track scroll depth
+  function onScroll() {
+    var scrollPct = Math.round((window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100);
+    if (scrollPct > maxScroll) maxScroll = scrollPct;
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  // Save page visit on unload
+  function savePageVisit() {
+    var v = getVisitor();
+    var timeSpent = Math.round((Date.now() - startTime) / 1000);
+    var path = window.location.pathname;
+
+    v.pages.push({
+      path: path,
+      date: new Date().toISOString(),
+      timeSeconds: timeSpent,
+      scrollDepth: maxScroll
+    });
+
+    v.totalTime = (v.totalTime || 0) + timeSpent;
+
+    // Calculate score
+    var score = 0;
+    var uniquePages = [];
+    v.pages.forEach(function(p) {
+      if (uniquePages.indexOf(p.path) === -1) uniquePages.push(p.path);
+    });
+
+    score += uniquePages.length * 5;                                    // 5 pts per unique page
+    score += Math.min(v.totalTime, 600) / 10;                          // up to 60 pts for time (max 10min)
+    if (uniquePages.indexOf('/planes') > -1) score += 20;              // saw pricing
+    if (uniquePages.indexOf('/prueba-gratis') > -1) score += 30;       // went to signup
+    if (uniquePages.indexOf('/contacto') > -1) score += 15;            // went to contact
+    if (uniquePages.indexOf('/casos-de-exito') > -1) score += 10;      // saw case studies
+    v.score = Math.round(Math.min(score, 100));
+
+    // Keep only last 50 pages
+    if (v.pages.length > 50) v.pages = v.pages.slice(-50);
+
+    saveVisitor(v);
+  }
+
+  window.addEventListener('beforeunload', savePageVisit);
+  // Also save periodically
+  setInterval(savePageVisit, 30000);
+
+  // Expose for signup form
+  window.__sacsVisitor = getVisitor;
+})();
+</script>
