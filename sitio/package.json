@@ -16,6 +16,7 @@
     "@astrojs/sitemap": "^3.7.1",
     "@astrojs/vercel": "^10.0.0",
     "@stripe/stripe-js": "^9.0.1",
+    "@supabase/supabase-js": "^2.101.1",
     "@tanstack/react-table": "^8.21.3",
     "@vercel/blob": "^2.3.3",
     "astro": "^6.0.4",

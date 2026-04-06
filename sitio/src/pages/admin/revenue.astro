@@ -1,0 +1,15 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import RevenueHub from '../../components/admin/RevenueHub';
+---
+
+<BaseLayout title="Revenue Hub — Sacs" description="Dashboard de ingresos y clientes">
+<RevenueHub client:only="react" />
+</BaseLayout>
+
+<style is:global>
+nav, .nav, header, footer, .whatsapp-float, .final-cta {
+  display: none !important;
+}
+main { padding: 0 !important; margin: 0 !important; }
+</style>
