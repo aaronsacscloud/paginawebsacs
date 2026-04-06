@@ -163,6 +163,28 @@
     "aria": "Contacter par WhatsApp",
     "message": "Bonjour, je souhaite en savoir plus sur Sacs. Je consultais:"
   },
+  "faq": {
+    "title": "Questions frequentes",
+    "subtitle": "Vous avez une autre question?",
+    "subtitleLink": "Contactez-nous",
+    "q1": "Combien coute Sacs?",
+    "a1": "Nous avons un plan gratuit avec toutes les fonctions essentielles. Les plans payants commencent a 28 EUR/mois et incluent des fonctionnalites avancees.",
+    "q2": "Combien de temps faut-il pour configurer Sacs?",
+    "a2": "La configuration initiale prend 10 a 15 minutes. Notre equipe vous accompagne a chaque etape.",
+    "q3": "Quel type de support proposez-vous?",
+    "a3": "Tous les plans incluent le support par chat et email. Les plans Pro et Enterprise incluent le support telephonique prioritaire.",
+    "q4": "S'integre-t-il avec d'autres outils?",
+    "a4": "Oui. Sacs s'integre avec les principaux processeurs de paiement, plateformes e-commerce et outils marketing. Nous offrons aussi une API ouverte.",
+    "q5": "Mes donnees sont-elles securisees?",
+    "a5": "Absolument. Nous utilisons un chiffrement de niveau bancaire (AES-256) avec des sauvegardes automatiques toutes les heures.",
+    "q6": "Puis-je migrer depuis un autre systeme?",
+    "a6": "Oui. Notre equipe vous aide a migrer votre catalogue, clients et historique de ventes sans cout supplementaire. Le processus prend 1 a 3 jours."
+  },
+  "finalCta": {
+    "title": "Commencez aujourd'hui. C'est gratuit.",
+    "desc": "Configurez votre entreprise en 15 minutes. Sans carte bancaire, sans contrat.",
+    "btn": "Creer un compte gratuit"
+  },
   "common": {
     "backToAll": "Tous les cas clients",
     "readMore": "Voir le cas complet",

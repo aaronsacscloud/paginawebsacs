@@ -163,6 +163,28 @@
     "aria": "Contatta via WhatsApp",
     "message": "Ciao, sono interessato a saperne di piu su Sacs. Stavo guardando:"
   },
+  "faq": {
+    "title": "Domande frequenti",
+    "subtitle": "Hai un'altra domanda?",
+    "subtitleLink": "Contattaci",
+    "q1": "Quanto costa Sacs?",
+    "a1": "Abbiamo un piano gratuito con tutte le funzioni essenziali. I piani a pagamento partono da 28 EUR/mese e includono funzionalita avanzate.",
+    "q2": "Quanto tempo ci vuole per configurare Sacs?",
+    "a2": "La configurazione iniziale richiede 10-15 minuti. Il nostro team ti accompagna in ogni passaggio.",
+    "q3": "Che tipo di supporto offrite?",
+    "a3": "Tutti i piani includono supporto via chat ed email. I piani Pro ed Enterprise includono supporto telefonico prioritario.",
+    "q4": "Si integra con altri strumenti?",
+    "a4": "Si. Sacs si integra con i principali processori di pagamento, piattaforme e-commerce e strumenti di marketing. Offriamo anche un'API aperta.",
+    "q5": "I miei dati sono al sicuro?",
+    "a5": "Assolutamente. Utilizziamo crittografia di livello bancario (AES-256) con backup automatici ogni ora.",
+    "q6": "Posso migrare da un altro sistema?",
+    "a6": "Si. Il nostro team ti aiuta a migrare catalogo, clienti e storico vendite senza costi aggiuntivi. Il processo richiede 1-3 giorni."
+  },
+  "finalCta": {
+    "title": "Inizia oggi. E gratuito.",
+    "desc": "Configura la tua attivita in 15 minuti. Senza carta di credito, senza contratti.",
+    "btn": "Crea account gratuito"
+  },
   "common": {
     "backToAll": "Tutti i casi di successo",
     "readMore": "Vedi il caso completo",

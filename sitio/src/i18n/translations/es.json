@@ -163,6 +163,28 @@
     "aria": "Contactar por WhatsApp",
     "message": "Hola, me interesa conocer mas sobre Sacs. Estaba viendo:"
   },
+  "faq": {
+    "title": "Preguntas frecuentes",
+    "subtitle": "Tienes otra pregunta?",
+    "subtitleLink": "Escribenos",
+    "q1": "Cuanto cuesta Sacs?",
+    "a1": "Tenemos un plan gratuito con todas las funciones esenciales. Los planes de pago comienzan en $299/mes e incluyen funcionalidades avanzadas como multi-sucursal, reportes premium y AXO (IA).",
+    "q2": "Cuanto tiempo toma configurar Sacs?",
+    "a2": "El setup inicial toma entre 10 y 15 minutos. Incluye crear tu cuenta, configurar tu catalogo y conectar tu primer metodo de pago. Nuestro equipo te acompana en cada paso.",
+    "q3": "Que tipo de soporte ofrecen?",
+    "a3": "Todos los planes incluyen soporte por chat y email. Los planes Pro y Enterprise cuentan con soporte telefonico prioritario y un account manager dedicado.",
+    "q4": "Se integra con otras herramientas?",
+    "a4": "Si. Sacs se integra con los principales procesadores de pago, plataformas de e-commerce, sistemas contables y herramientas de marketing. Tambien ofrecemos una API abierta.",
+    "q5": "Mis datos estan seguros?",
+    "a5": "Absolutamente. Usamos encriptacion de grado bancario (AES-256), servidores en la nube con redundancia y respaldos automaticos cada hora.",
+    "q6": "Puedo migrar desde otro sistema?",
+    "a6": "Si. Nuestro equipo de onboarding te ayuda a migrar tu catalogo, clientes e historial de ventas sin costo adicional. El proceso tipico toma de 1 a 3 dias habiles."
+  },
+  "finalCta": {
+    "title": "Empieza hoy. Es gratis.",
+    "desc": "Configura tu negocio en 15 minutos. Sin tarjeta de credito, sin contratos.",
+    "btn": "Crear cuenta gratis"
+  },
   "common": {
     "backToAll": "Todos los casos de exito",
     "readMore": "Ver caso completo",

@@ -1,42 +1,26 @@
 ---
-interface FAQ {
-  question: string;
-  answer: string;
-}
+import { t, getLocalizedUrl } from '../i18n/utils';
+import type { Locale } from '../i18n/config';
 
+interface Props { locale?: Locale; }
+const { locale = 'es' } = Astro.props;
+
+interface FAQ { question: string; answer: string; }
 const faqs: FAQ[] = [
-  {
-    question: '¿Cuánto cuesta SACS?',
-    answer: 'Tenemos un plan gratuito con todas las funciones esenciales. Los planes de pago comienzan en $299/mes e incluyen funcionalidades avanzadas como multi-sucursal, reportes premium y AXO (IA).',
-  },
-  {
-    question: '¿Cuánto tiempo toma configurar SACS?',
-    answer: 'El setup inicial toma entre 10 y 15 minutos. Incluye crear tu cuenta, configurar tu catálogo y conectar tu primer método de pago. Nuestro equipo te acompaña en cada paso.',
-  },
-  {
-    question: '¿Qué tipo de soporte ofrecen?',
-    answer: 'Todos los planes incluyen soporte por chat y email. Los planes Pro y Enterprise cuentan con soporte telefónico prioritario y un account manager dedicado.',
-  },
-  {
-    question: '¿Se integra con otras herramientas?',
-    answer: 'Sí. SACS se integra con los principales procesadores de pago en México, plataformas de e-commerce, sistemas contables y herramientas de marketing. También ofrecemos una API abierta.',
-  },
-  {
-    question: '¿Mis datos están seguros?',
-    answer: 'Absolutamente. Usamos encriptación de grado bancario (AES-256), servidores en la nube con redundancia y respaldos automáticos cada hora. Cumplimos con las regulaciones de protección de datos de México.',
-  },
-  {
-    question: '¿Puedo migrar desde otro sistema?',
-    answer: 'Sí. Nuestro equipo de onboarding te ayuda a migrar tu catálogo, clientes e historial de ventas sin costo adicional. El proceso típico toma de 1 a 3 días hábiles.',
-  },
+  { question: t('faq.q1', locale), answer: t('faq.a1', locale) },
+  { question: t('faq.q2', locale), answer: t('faq.a2', locale) },
+  { question: t('faq.q3', locale), answer: t('faq.a3', locale) },
+  { question: t('faq.q4', locale), answer: t('faq.a4', locale) },
+  { question: t('faq.q5', locale), answer: t('faq.a5', locale) },
+  { question: t('faq.q6', locale), answer: t('faq.a6', locale) },
 ];
 ---
 
 <section class="faq" id="faq-section">
   <div class="faq-wrapper">
     <div class="faq-header">
-      <h2 class="faq-title">Preguntas frecuentes</h2>
-      <p class="faq-subtitle">¿Tienes otra pregunta? <a href="/contacto" class="faq-link">Escríbenos</a></p>
+      <h2 class="faq-title">{t('faq.title', locale)}</h2>
+      <p class="faq-subtitle">{t('faq.subtitle', locale)} <a href={getLocalizedUrl('/contacto', locale)} class="faq-link">{t('faq.subtitleLink', locale)}</a></p>
     </div>
     <div class="faq-list" id="faq-accordion">
       {faqs.map((faq, i) => (

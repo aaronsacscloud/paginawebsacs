@@ -163,6 +163,28 @@
     "aria": "Contact via WhatsApp",
     "message": "Hi, I'm interested in learning more about Sacs. I was looking at:"
   },
+  "faq": {
+    "title": "Frequently asked questions",
+    "subtitle": "Have another question?",
+    "subtitleLink": "Contact us",
+    "q1": "How much does Sacs cost?",
+    "a1": "We have a free plan with all essential features. Paid plans start at $30/month and include advanced features like multi-location, premium reports, and AXO (AI).",
+    "q2": "How long does it take to set up Sacs?",
+    "a2": "Initial setup takes 10 to 15 minutes. It includes creating your account, setting up your catalog, and connecting your first payment method. Our team walks you through every step.",
+    "q3": "What kind of support do you offer?",
+    "a3": "All plans include chat and email support. Pro and Enterprise plans include priority phone support and a dedicated account manager.",
+    "q4": "Does it integrate with other tools?",
+    "a4": "Yes. Sacs integrates with major payment processors, e-commerce platforms, accounting systems, and marketing tools. We also offer an open API.",
+    "q5": "Is my data secure?",
+    "a5": "Absolutely. We use bank-grade encryption (AES-256), cloud servers with redundancy, and automatic backups every hour.",
+    "q6": "Can I migrate from another system?",
+    "a6": "Yes. Our onboarding team helps you migrate your catalog, customers, and sales history at no extra cost. The typical process takes 1 to 3 business days."
+  },
+  "finalCta": {
+    "title": "Start today. It's free.",
+    "desc": "Set up your business in 15 minutes. No credit card, no contracts.",
+    "btn": "Create free account"
+  },
   "common": {
     "backToAll": "All case studies",
     "readMore": "View full case study",

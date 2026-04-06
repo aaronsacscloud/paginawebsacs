@@ -1,11 +1,16 @@
 ---
+import { t, getLocalizedUrl } from '../i18n/utils';
+import type { Locale } from '../i18n/config';
+
+interface Props { locale?: Locale; }
+const { locale = 'es' } = Astro.props;
 ---
 
 <section class="final-cta">
   <div class="container final-cta-inner">
-    <h2 class="final-cta-title">Empieza hoy. Es gratis.</h2>
-    <p class="final-cta-desc">Configura tu negocio en 15 minutos. Sin tarjeta de crédito, sin contratos.</p>
-    <a class="final-cta-btn" href="/prueba-gratis">Crear cuenta gratis</a>
+    <h2 class="final-cta-title">{t('finalCta.title', locale)}</h2>
+    <p class="final-cta-desc">{t('finalCta.desc', locale)}</p>
+    <a class="final-cta-btn" href={getLocalizedUrl('/prueba-gratis', locale)}>{t('finalCta.btn', locale)}</a>
   </div>
 </section>
 
