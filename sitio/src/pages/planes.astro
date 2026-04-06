@@ -14,22 +14,12 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
   description="Elige el plan SACS ideal para tu negocio. Desde $900/mes por sucursal. Sin contratos, sin costos ocultos."
 >
 
-<!-- ═══ Free trial banner ═══ -->
-<section class="trial-banner">
-  <div class="trial-banner-inner">
-    <div class="trial-banner-content">
-      <span class="trial-banner-badge">Gratis</span>
-      <p class="trial-banner-text"><strong>Prueba Sacs 7 dias sin limites.</strong> Accede a nuestro plan Growth completo. Sin tarjeta, sin compromiso.</p>
-    </div>
-    <a href="/prueba-gratis" class="trial-banner-btn">Probar gratis</a>
-  </div>
-</section>
-
 <!-- ═══ SECTION 1: Hero ═══ -->
 <section class="pricing-hero">
   <div class="container pricing-hero-inner">
-    <h1 class="pricing-headline">El plan justo para cada etapa de tu marca.</h1>
-    <p class="pricing-subtitle">Todas las herramientas para operar tu retail. Sin sorpresas, sin costos ocultos.</p>
+    <h1 class="pricing-headline">Prueba gratis.<br/>Luego paga lo que necesitas.</h1>
+    <p class="pricing-subtitle">Empieza con nuestro plan Growth completo por 7 dias. Sin tarjeta. Despues, elige el plan que se ajuste a tu negocio.</p>
+    <a href="/prueba-gratis" class="pricing-hero-btn">Iniciar prueba gratis</a>
 
     <div class="pricing-toggles" id="pricing-toggles">
       <!-- Currency toggle -->
@@ -56,6 +46,7 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
         </button>
       </div>
     </div>
+
   </div>
 </section>
 
@@ -627,83 +618,30 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
 /* ═══════════════════════════════════════
    FREE TRIAL BANNER
    ═══════════════════════════════════════ */
-.trial-banner {
-  background: var(--color-bg-primary);
-  border-bottom: 1px solid var(--color-border-light);
-  padding: calc(71px + var(--space-4)) 0 0;
-}
-.trial-banner-inner {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: var(--space-4) var(--space-6);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  background: #fff;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
-}
-.trial-banner-content {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-.trial-banner-badge {
+.pricing-hero-btn {
+  display: inline-block;
   font-family: var(--font-body);
-  font-size: 0.6875rem;
+  font-size: 1rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #fff;
-  background: var(--color-secondary);
-  padding: 4px 10px;
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-.trial-banner-text {
-  font-family: var(--font-body);
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-  margin: 0;
-  line-height: 1.4;
-}
-.trial-banner-text strong {
   color: var(--color-text-primary);
-}
-.trial-banner-btn {
-  font-family: var(--font-body);
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: var(--color-primary);
-  background: none;
-  border: 1.5px solid var(--color-primary);
-  padding: 8px 20px;
-  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  padding: 14px 36px;
+  border-radius: var(--radius-sm);
   text-decoration: none;
-  white-space: nowrap;
-  transition: background 0.2s ease, color 0.2s ease;
+  margin-bottom: var(--space-8);
+  transition: background 0.2s ease, transform 0.2s ease;
 }
-.trial-banner-btn:hover {
-  background: var(--color-primary);
-  color: #fff;
+.pricing-hero-btn:hover {
+  background: #d4952e;
+  transform: translateY(-2px);
   text-decoration: none;
-}
-@media (max-width: 767px) {
-  .trial-banner-inner {
-    flex-direction: column;
-    text-align: center;
-  }
-  .trial-banner-content {
-    flex-direction: column;
-  }
 }
 
 /* ═══════════════════════════════════════
    PRICING HERO
    ═══════════════════════════════════════ */
 .pricing-hero {
-  padding: var(--space-10) 0 var(--space-8);
+  padding: calc(71px + var(--space-16)) 0 var(--space-8);
   text-align: center;
 }
 
