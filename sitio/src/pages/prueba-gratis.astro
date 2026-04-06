@@ -812,6 +812,8 @@ const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  const SHEET_WEBHOOK = 'https://script.google.com/macros/s/AKfycbxuzbTlS9W-63322C0JKe2NML-LWpqmZeZskK5G9dgOn-KLcoqnJtHbCBzWtu23of97jA/exec';
+
   function sendLeadToSheet(paso: string, plan?: string) {
     const data = {
       nombre: (document.getElementById('nombre') as HTMLInputElement).value,
@@ -824,10 +826,10 @@ const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
       plan: plan || '',
     };
 
-    // Send to our own API route (logs to Vercel + forwards to Google Sheet)
-    fetch('/api/save-lead', {
+    // Send directly from browser to Google Sheet webhook
+    fetch(SHEET_WEBHOOK, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      mode: 'no-cors',
       body: JSON.stringify(data),
     }).catch(() => {});
   }
