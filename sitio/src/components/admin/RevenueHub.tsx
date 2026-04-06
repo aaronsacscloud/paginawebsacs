@@ -326,8 +326,9 @@ export default function RevenueHub() {
 
     const createQuote = async () => {
       setSaving(true);
-      const body = { ...qf, subtotal: itemsSubtotal, iva_monto: Math.round(ivaMonto), total: Math.round(grandTotal), estado: 'sent' };
-      await fetch('/api/revenue/quotes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const body = { ...qf, subtotal: itemsSubtotal, iva_monto: Math.round(ivaMonto), total: Math.round(grandTotal), estado: qf.estado || 'sent' };
+      const isEdit = !!qf.id;
+      await fetch('/api/revenue/quotes', { method: isEdit ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       setShowDrawer(false);
       setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida. Soporte 24/7. Sin contratos.' });
       const d = await fetch('/api/revenue/quotes').then(r => r.json());
@@ -348,7 +349,7 @@ export default function RevenueHub() {
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
           <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800 }}>Cotizaciones</h2>
-          <button onClick={() => setShowDrawer(true)} style={{ ...S.btn, background: '#1a1a1a', color: '#fff' }}>+ Nueva cotización</button>
+          <button onClick={() => { setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida. Soporte 24/7. Sin contratos.' }); setShowDrawer(true); }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff' }}>+ Nueva cotización</button>
         </div>
 
         <div style={S.card}>
@@ -365,9 +366,11 @@ export default function RevenueHub() {
                   <td style={S.td}><span style={{ ...S.badge, background: q.estado === 'accepted' ? '#e8f5e9' : q.estado === 'sent' ? '#fff3e0' : '#f5f5f5', color: q.estado === 'accepted' ? '#2e7d32' : q.estado === 'sent' ? '#e65100' : '#999' }}>{q.estado}</span></td>
                   <td style={S.td}><span style={{ fontSize: '0.625rem', color: '#999', textTransform: 'capitalize' as const }}>{q.template || 'modern'}</span></td>
                   <td style={S.td}>
+                    <button onClick={() => { setQf({ ...q, items: Array.isArray(q.items) ? q.items : [] }); setShowDrawer(true); }} style={S.btnSmall}>Editar</button>
                     <a href={`/cotizacion/${q.id}`} target="_blank" rel="noopener" style={{ ...S.btnSmall, textDecoration: 'none', display: 'inline-flex' }}>Ver</a>
                     <button onClick={() => duplicateQuote(q)} style={S.btnSmall}>Duplicar</button>
                     <a href={`https://wa.me/?text=${encodeURIComponent(`Cotización ${q.numero}: https://www.sacscloud.com/cotizacion/${q.id}`)}`} target="_blank" rel="noopener" style={{ ...S.btnSmall, background: '#e8f5e9', color: '#2e7d32', textDecoration: 'none', display: 'inline-flex' }}>WA</a>
+                    <a href={`mailto:${q.email || ''}?subject=${encodeURIComponent(`Cotización ${q.numero} - Sacs`)}&body=${encodeURIComponent(`Hola ${q.contacto || ''},\n\nTe comparto tu cotización:\nhttps://www.sacscloud.com/cotizacion/${q.id}\n\nQuedo al pendiente.\nSaludos`)}`} style={{ ...S.btnSmall, background: '#e3f2fd', color: '#1565c0', textDecoration: 'none', display: 'inline-flex' }}>Email</a>
                   </td>
                 </tr>
               ))}
@@ -381,7 +384,7 @@ export default function RevenueHub() {
             <div onClick={() => setShowDrawer(false)} style={{ flex: 1, background: 'rgba(0,0,0,0.3)' }} />
             <div style={{ width: 520, maxWidth: '95vw', background: '#fff', overflowY: 'auto' as const, boxShadow: '-4px 0 20px rgba(0,0,0,0.1)', padding: 24 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-                <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800 }}>Nueva cotización</h3>
+                <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800 }}>{qf.id ? `Editar ${qf.numero || 'cotización'}` : 'Nueva cotización'}</h3>
                 <button onClick={() => setShowDrawer(false)} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#999' }}>✕</button>
               </div>
 
@@ -447,7 +450,7 @@ export default function RevenueHub() {
               </div>
               <div><label style={S.label}>Condiciones</label><textarea value={qf.condiciones || ''} onChange={e => setQf({ ...qf, condiciones: e.target.value })} style={{ ...S.input, height: 60 }} /></div>
 
-              <button onClick={createQuote} disabled={saving || !items.length || !qf.empresa} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', width: '100%', marginTop: 16, justifyContent: 'center' }}>{saving ? 'Creando...' : 'Crear y enviar cotización'}</button>
+              <button onClick={createQuote} disabled={saving || !items.length || !qf.empresa} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', width: '100%', marginTop: 16, justifyContent: 'center' }}>{saving ? 'Guardando...' : qf.id ? 'Guardar cambios' : 'Crear y enviar cotización'}</button>
             </div>
           </div>
         )}

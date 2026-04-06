@@ -9,12 +9,37 @@ const { data: quote } = await supabase.from('quotes').select('*').eq('id', id).s
 
 if (!quote) return Astro.redirect('/404');
 
-const items = quote.items || [];
+const items = Array.isArray(quote.items) ? quote.items : [];
 const template = quote.template || 'modern';
 const isExpired = quote.vigencia && new Date(quote.vigencia) < new Date();
 const daysLeft = quote.vigencia ? Math.ceil((new Date(quote.vigencia).getTime() - Date.now()) / 86400000) : 0;
 const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
 const fecha = new Date(quote.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+const vigenciaFecha = quote.vigencia ? new Date(quote.vigencia).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+
+// Classify items
+const planItems = items.filter((i: any) => i.tipo === 'plan');
+const uniqueItems = items.filter((i: any) => i.tipo === 'extra' && !i.recurrente);
+const recurringItems = items.filter((i: any) => i.tipo === 'extra' && i.recurrente);
+
+// Calculate payment breakdown
+const annualPlanTotal = planItems.filter((i: any) => i.periodo === 'anual').reduce((s: number, i: any) => s + (i.subtotal || 0), 0);
+const monthlyPlanTotal = planItems.filter((i: any) => i.periodo === 'mensual').reduce((s: number, i: any) => s + (i.subtotal || 0), 0);
+const uniqueTotal = uniqueItems.reduce((s: number, i: any) => s + (i.monto || i.subtotal || 0), 0);
+const recurringTotal = recurringItems.reduce((s: number, i: any) => s + (i.monto || i.subtotal || 0), 0);
+const firstPayment = annualPlanTotal + monthlyPlanTotal + uniqueTotal + recurringTotal;
+const monthlyRecurring = monthlyPlanTotal + recurringTotal;
+
+// Auto-generate summary
+const planNames = planItems.map((i: any) => `Plan ${i.nombre}`).join(' + ');
+const sucTotal = planItems.reduce((s: number, i: any) => s + (parseInt(i.sucursales) || 1), 0);
+const extraNames = [...uniqueItems, ...recurringItems].map((i: any) => i.nombre).filter(Boolean);
+const summary = planNames ? `${planNames} para ${sucTotal} sucursal${sucTotal > 1 ? 'es' : ''}${extraNames.length ? ' con ' + extraNames.join(' y ') : ''}` : quote.empresa;
+
+// Next annual renewal date
+const nextAnnualDate = new Date();
+nextAnnualDate.setFullYear(nextAnnualDate.getFullYear() + 1);
+const nextAnnualStr = nextAnnualDate.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
 ---
 
 <BaseLayout title={`Cotización ${quote.numero} — Sacs`} description={`Cotización para ${quote.empresa}`}>
@@ -31,7 +56,7 @@ const fecha = new Date(quote.created_at).toLocaleDateString('es-MX', { day: 'num
         <div class="quote-number">{quote.numero}</div>
         <div class="quote-date">Fecha: {fecha}</div>
         <div class="quote-date">Vigencia: {quote.vigencia}</div>
-        {!isExpired && daysLeft > 0 && <div class="quote-validity">Válida por {daysLeft} días</div>}
+        {!isExpired && daysLeft > 0 && <div class="quote-validity">Válida hasta {vigenciaFecha}</div>}
         {isExpired && <div class="quote-expired">Cotización vencida</div>}
       </div>
     </div>
@@ -43,6 +68,11 @@ const fecha = new Date(quote.created_at).toLocaleDateString('es-MX', { day: 'num
       {quote.contacto && <div class="quote-client-detail">{quote.contacto}</div>}
       {quote.email && <div class="quote-client-detail">{quote.email}</div>}
       {quote.whatsapp && <div class="quote-client-detail">{quote.whatsapp}</div>}
+    </div>
+
+    <!-- Executive summary -->
+    <div class="quote-summary">
+      {summary}
     </div>
 
     <!-- Items table -->
@@ -57,20 +87,39 @@ const fecha = new Date(quote.created_at).toLocaleDateString('es-MX', { day: 'num
         </tr>
       </thead>
       <tbody>
-        {items.map((item: any) => (
-          <tr>
-            <td class="qt-concept">
-              <strong>{item.nombre}</strong>
-              {item.descripcion && <div class="qt-desc">{item.descripcion}</div>}
-            </td>
-            <td class="qt-detail">
-              {item.tipo === 'plan' ? `${item.periodo === 'anual' ? 'Anual' : 'Mensual'}` : item.recurrente ? 'Recurrente' : 'Único'}
-            </td>
-            <td class="qt-qty">{item.tipo === 'plan' ? `${item.sucursales} suc.` : '1'}</td>
-            <td class="qt-price">{fmt(item.precio_unitario || item.monto || 0)} {quote.moneda}</td>
-            <td class="qt-subtotal">{fmt(item.subtotal || item.monto || 0)} {quote.moneda}</td>
-          </tr>
-        ))}
+        {items.map((item: any) => {
+          const isAnnual = item.periodo === 'anual';
+          const suc = parseInt(item.sucursales) || 1;
+          const monthlyFull = (item.precio_unitario || 0) * suc * 12;
+          const annualPrice = (item.precio_unitario || 0) * suc * 10;
+          const savings = isAnnual ? monthlyFull - annualPrice : 0;
+          const hasDiscount = item.tipo === 'plan' && parseFloat(item.descuento_pct || 0) > 0;
+          const beforeDiscount = (item.precio_unitario || 0) * suc * (isAnnual ? 10 : 1);
+
+          return (
+            <tr>
+              <td class="qt-concept">
+                <strong>{item.tipo === 'plan' ? `Plan ${item.nombre}` : item.nombre}</strong>
+                {item.tipo === 'plan' && (
+                  <div class="qt-desc">
+                    {fmt(item.precio_unitario || 0)}/suc × {suc} suc. × {isAnnual ? '10 meses' : '1 mes'}
+                    {isAnnual && <span class="qt-savings"> · Ahorro: {fmt(savings)} (2 meses gratis)</span>}
+                  </div>
+                )}
+                {item.descripcion && <div class="qt-desc">{item.descripcion}</div>}
+              </td>
+              <td class="qt-detail">
+                {item.tipo === 'plan' ? (isAnnual ? 'Anual' : 'Mensual') : item.recurrente ? 'Recurrente' : 'Único'}
+              </td>
+              <td class="qt-qty">{item.tipo === 'plan' ? `${suc} suc.` : '1'}</td>
+              <td class="qt-price">{fmt(item.precio_unitario || item.monto || 0)}</td>
+              <td class="qt-subtotal">
+                {hasDiscount && <span class="qt-strikethrough">{fmt(beforeDiscount)}</span>}
+                {fmt(item.subtotal || item.monto || 0)} {quote.moneda}
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
 
@@ -97,6 +146,64 @@ const fecha = new Date(quote.created_at).toLocaleDateString('es-MX', { day: 'num
         <span>{fmt(quote.total || 0)} {quote.moneda}</span>
       </div>
     </div>
+
+    <!-- Payment breakdown -->
+    {(annualPlanTotal > 0 || uniqueTotal > 0 || monthlyRecurring > 0) && (
+      <div class="quote-payments">
+        <div class="quote-payments-title">Resumen de pagos</div>
+
+        <div class="quote-payment-block">
+          <div class="quote-payment-label">Primer pago</div>
+          {planItems.map((i: any) => (
+            <div class="quote-payment-line">
+              <span>Plan {i.nombre} ({i.periodo}) · {i.sucursales} suc.</span>
+              <span>{fmt(i.subtotal || 0)}</span>
+            </div>
+          ))}
+          {uniqueItems.map((i: any) => (
+            <div class="quote-payment-line">
+              <span>{i.nombre} (único)</span>
+              <span>{fmt(i.monto || i.subtotal || 0)}</span>
+            </div>
+          ))}
+          {recurringItems.map((i: any) => (
+            <div class="quote-payment-line">
+              <span>{i.nombre}</span>
+              <span>{fmt(i.monto || i.subtotal || 0)}</span>
+            </div>
+          ))}
+          <div class="quote-payment-total">
+            <span>Total primer pago {quote.iva_incluido ? '(con IVA)' : ''}</span>
+            <span>{fmt(quote.total || 0)} {quote.moneda}</span>
+          </div>
+        </div>
+
+        {monthlyRecurring > 0 && (
+          <div class="quote-payment-block">
+            <div class="quote-payment-label">Pago mensual recurrente</div>
+            {planItems.filter((i: any) => i.periodo === 'mensual').map((i: any) => (
+              <div class="quote-payment-line"><span>Plan {i.nombre} · {i.sucursales} suc.</span><span>{fmt(i.subtotal || 0)}</span></div>
+            ))}
+            {recurringItems.map((i: any) => (
+              <div class="quote-payment-line"><span>{i.nombre}</span><span>{fmt(i.monto || 0)}</span></div>
+            ))}
+            <div class="quote-payment-total">
+              <span>Total mensual {quote.iva_incluido ? '(+IVA)' : ''}</span>
+              <span>{fmt(monthlyRecurring)} {quote.moneda}/mes</span>
+            </div>
+          </div>
+        )}
+
+        {annualPlanTotal > 0 && (
+          <div class="quote-payment-block">
+            <div class="quote-payment-label">Próxima renovación anual: {nextAnnualStr}</div>
+            {planItems.filter((i: any) => i.periodo === 'anual').map((i: any) => (
+              <div class="quote-payment-line"><span>Renovación Plan {i.nombre} · {i.sucursales} suc.</span><span>{fmt(i.subtotal || 0)}</span></div>
+            ))}
+          </div>
+        )}
+      </div>
+    )}
 
     <!-- Conditions -->
     {quote.condiciones && (
@@ -169,11 +276,35 @@ const fecha = new Date(quote.created_at).toLocaleDateString('es-MX', { day: 'num
 .qt-price, .qt-subtotal { text-align: right; white-space: nowrap; font-weight: 600; }
 .quote-table th.qt-price, .quote-table th.qt-subtotal { text-align: right; }
 
+/* ─── Summary ─── */
+.quote-summary { padding: 0 40px 20px; font-size: 1rem; font-weight: 600; color: var(--color-primary); line-height: 1.5; font-style: italic; }
+
+/* ─── Strikethrough price ─── */
+.qt-strikethrough { text-decoration: line-through; color: #ccc; font-weight: 400; margin-right: 6px; font-size: 0.75rem; }
+
+/* ─── Savings ─── */
+.qt-savings { color: #2AB5A0; font-weight: 600; }
+
 /* ─── Totals ─── */
 .quote-totals { padding: 20px 40px; }
 .quote-total-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 0.875rem; color: #666; }
 .quote-total-row.quote-discount { color: #2AB5A0; }
 .quote-total-row.quote-total-final { font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: #1a1a1a; border-top: 2px solid #1a1a1a; padding-top: 12px; margin-top: 8px; }
+
+/* ─── Payment breakdown ─── */
+.quote-payments { padding: 20px 40px; border-top: 1px solid #f0f0f0; }
+.quote-payments-title { font-family: var(--font-display); font-size: 0.875rem; font-weight: 700; color: #1a1a1a; margin-bottom: 16px; }
+.quote-payment-block { margin-bottom: 16px; padding: 16px; background: #fafafa; border-radius: 10px; }
+.quote-payment-label { font-size: 0.6875rem; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+.quote-payment-line { display: flex; justify-content: space-between; font-size: 0.8125rem; color: #666; padding: 4px 0; }
+.quote-payment-total { display: flex; justify-content: space-between; font-size: 0.9375rem; font-weight: 800; color: #1a1a1a; border-top: 1px solid #e0e0e0; padding-top: 8px; margin-top: 8px; }
+
+.quote-dark .quote-summary { color: #2AB5A0; }
+.quote-dark .quote-payments { border-color: rgba(255,255,255,0.08); }
+.quote-dark .quote-payment-block { background: rgba(255,255,255,0.03); }
+.quote-dark .quote-payment-label { color: rgba(255,255,255,0.4); }
+.quote-dark .quote-payment-line { color: rgba(255,255,255,0.5); }
+.quote-dark .quote-payment-total { color: #fff; border-color: rgba(255,255,255,0.1); }
 
 /* ─── Conditions ─── */
 .quote-conditions { padding: 20px 40px; border-top: 1px solid #f0f0f0; }
