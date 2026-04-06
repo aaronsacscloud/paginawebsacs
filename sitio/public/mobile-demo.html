@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SACS — Mobile Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --font-display: 'Plus Jakarta Sans', sans-serif;
+    --font-body: 'Instrument Sans', sans-serif;
+    --teal: #2AB5A0;
+    --dark: #1A1A1A;
+    --gray: #888;
+    --light: #f5f5f7;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: var(--font-body); background: #fff; color: var(--dark); -webkit-font-smoothing: antialiased; }
+
+  /* ── Tab Switcher (fixed top) ── */
+  .demo-tabs {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; background: #fff; border-bottom: 1px solid #eee;
+    padding: 8px 12px; gap: 6px;
+  }
+  .demo-tab {
+    flex: 1; text-align: center; padding: 10px 4px; border-radius: 10px;
+    font-family: var(--font-display); font-size: 12px; font-weight: 700;
+    background: var(--light); color: var(--gray); border: none; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .demo-tab.active { background: var(--dark); color: #fff; }
+  .demo-content { padding-top: 60px; }
+  .demo-option { display: none; }
+  .demo-option.active { display: block; }
+
+  /* ══════════════════════════════════════
+     OPTION A: Stacked Cards
+     ══════════════════════════════════════ */
+  .opt-a-step { padding: 32px 0 24px; }
+  .opt-a-step:nth-child(even) { background: var(--light); }
+  .opt-a-step-header {
+    padding: 0 20px; margin-bottom: 16px;
+  }
+  .opt-a-step-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--dark); color: #fff;
+    font-family: var(--font-display); font-size: 11px; font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .opt-a-step-title {
+    font-family: var(--font-display); font-size: 26px; font-weight: 800;
+    color: var(--dark); line-height: 1.15; letter-spacing: -0.5px;
+  }
+  .opt-a-carousel {
+    display: flex; gap: 12px; padding: 0 20px;
+    overflow-x: auto; scroll-snap-type: x mandatory;
+    scrollbar-width: none; -ms-overflow-style: none;
+  }
+  .opt-a-carousel::-webkit-scrollbar { display: none; }
+  .opt-a-card {
+    flex: 0 0 82%; scroll-snap-align: center;
+    background: #fff; border-radius: 16px; overflow: hidden;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+  }
+  .opt-a-step:nth-child(even) .opt-a-card { background: #fff; }
+  .opt-a-card-visual {
+    width: 100%; aspect-ratio: 4/3; overflow: hidden; position: relative;
+    background: #eee;
+  }
+  .opt-a-card-visual img,
+  .opt-a-card-visual video {
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .opt-a-card-body { padding: 14px 16px 18px; }
+  .opt-a-card-title {
+    font-family: var(--font-display); font-size: 16px; font-weight: 700;
+    color: var(--dark); margin-bottom: 4px;
+  }
+  .opt-a-card-desc {
+    font-size: 13px; color: var(--gray); line-height: 1.45;
+  }
+  .opt-a-dots {
+    display: flex; justify-content: center; gap: 6px;
+    padding: 12px 0 0;
+  }
+  .opt-a-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(0,0,0,0.15);
+  }
+  .opt-a-dot:first-child { background: var(--dark); }
+
+  /* ══════════════════════════════════════
+     OPTION B: Stories
+     ══════════════════════════════════════ */
+  .opt-b-container {
+    position: relative; height: 100svh; overflow: hidden;
+    background: #000;
+  }
+  .opt-b-progress {
+    position: absolute; top: 12px; left: 12px; right: 12px; z-index: 10;
+    display: flex; gap: 3px;
+  }
+  .opt-b-seg {
+    flex: 1; height: 3px; border-radius: 2px;
+    background: rgba(255,255,255,0.25); overflow: hidden;
+  }
+  .opt-b-seg-fill {
+    width: 0%; height: 100%; background: #fff; border-radius: 2px;
+    transition: width 0.3s;
+  }
+  .opt-b-seg.done .opt-b-seg-fill { width: 100%; }
+  .opt-b-seg.active .opt-b-seg-fill {
+    width: 100%;
+    animation: storyFill 5s linear forwards;
+  }
+  @keyframes storyFill { from { width: 0; } to { width: 100%; } }
+
+  .opt-b-slides {
+    position: relative; width: 100%; height: 100%;
+  }
+  .opt-b-slide {
+    position: absolute; inset: 0;
+    opacity: 0; transition: opacity 0.35s ease;
+    display: flex; flex-direction: column; justify-content: flex-end;
+  }
+  .opt-b-slide.active { opacity: 1; }
+  .opt-b-slide-bg {
+    position: absolute; inset: 0;
+  }
+  .opt-b-slide-bg img,
+  .opt-b-slide-bg video {
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .opt-b-slide-overlay {
+    position: relative; z-index: 2;
+    background: linear-gradient(transparent, rgba(0,0,0,0.75) 40%);
+    padding: 60px 20px 40px;
+  }
+  .opt-b-step-badge {
+    display: inline-block;
+    font-family: var(--font-display); font-size: 11px; font-weight: 700;
+    color: var(--teal); text-transform: uppercase; letter-spacing: 1.5px;
+    margin-bottom: 8px;
+  }
+  .opt-b-title {
+    font-family: var(--font-display); font-size: 24px; font-weight: 800;
+    color: #fff; line-height: 1.2; margin-bottom: 8px; letter-spacing: -0.3px;
+  }
+  .opt-b-desc {
+    font-size: 14px; color: rgba(255,255,255,0.65); line-height: 1.5;
+  }
+  .opt-b-tap-left, .opt-b-tap-right {
+    position: absolute; top: 0; bottom: 0; width: 35%; z-index: 5;
+  }
+  .opt-b-tap-left { left: 0; }
+  .opt-b-tap-right { right: 0; }
+
+  /* ══════════════════════════════════════
+     OPTION C: Accordion
+     ══════════════════════════════════════ */
+  .opt-c-container { padding: 32px 0; }
+  .opt-c-title {
+    font-family: var(--font-display); font-size: 28px; font-weight: 800;
+    color: var(--dark); text-align: center; padding: 0 20px; margin-bottom: 24px;
+    letter-spacing: -0.5px;
+  }
+  .opt-c-accordion { padding: 0 16px; }
+  .opt-c-item {
+    border: 1px solid #e8e8e8; border-radius: 14px;
+    margin-bottom: 10px; overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .opt-c-item.active { border-color: var(--teal); }
+  .opt-c-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 16px; cursor: pointer; background: none; border: none;
+    width: 100%; text-align: left;
+  }
+  .opt-c-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: #f0f0f0; color: var(--gray);
+    font-family: var(--font-display); font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.3s;
+  }
+  .opt-c-item.active .opt-c-num { background: var(--dark); color: #fff; }
+  .opt-c-verb {
+    font-family: var(--font-display); font-size: 17px; font-weight: 700;
+    color: var(--dark); flex: 1;
+  }
+  .opt-c-arrow {
+    width: 20px; height: 20px; color: var(--gray);
+    transition: transform 0.3s;
+  }
+  .opt-c-item.active .opt-c-arrow { transform: rotate(180deg); }
+  .opt-c-body {
+    max-height: 0; overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  .opt-c-item.active .opt-c-body { max-height: 2000px; }
+  .opt-c-feature {
+    padding: 0 16px 20px;
+  }
+  .opt-c-feature + .opt-c-feature {
+    border-top: 1px solid #f0f0f0;
+    padding-top: 20px;
+  }
+  .opt-c-feat-visual {
+    width: 100%; aspect-ratio: 16/10; border-radius: 12px;
+    overflow: hidden; margin-bottom: 12px; background: #f0f0f0;
+  }
+  .opt-c-feat-visual img,
+  .opt-c-feat-visual video {
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .opt-c-feat-title {
+    font-family: var(--font-display); font-size: 16px; font-weight: 700;
+    color: var(--dark); margin-bottom: 4px;
+  }
+  .opt-c-feat-desc {
+    font-size: 13px; color: var(--gray); line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<!-- Tab Switcher -->
+<div class="demo-tabs">
+  <button class="demo-tab active" data-opt="a">A: Cards</button>
+  <button class="demo-tab" data-opt="b">B: Stories</button>
+  <button class="demo-tab" data-opt="c">C: Accordion</button>
+</div>
+
+<div class="demo-content">
+
+<!-- ══════════════════════════════════════
+     OPTION A: Stacked Cards
+     ══════════════════════════════════════ -->
+<div class="demo-option active" id="opt-a">
+
+  <!-- Vende -->
+  <div class="opt-a-step">
+    <div class="opt-a-step-header">
+      <div class="opt-a-step-num">1</div>
+      <h2 class="opt-a-step-title">Vende más en cada punto</h2>
+    </div>
+    <div class="opt-a-carousel">
+      <div class="opt-a-card">
+        <div class="opt-a-card-visual"><img src="/images/screen-pos.webp" alt="POS" loading="lazy"></div>
+        <div class="opt-a-card-body">
+          <div class="opt-a-card-title">Punto de Venta</div>
+          <div class="opt-a-card-desc">Cobra con tarjeta, efectivo o transferencia desde cualquier dispositivo.</div>
+        </div>
+      </div>
+      <div class="opt-a-card">
+        <div class="opt-a-card-visual"><img src="/images/screen-ecommerce.webp" alt="eCommerce" loading="lazy"></div>
+        <div class="opt-a-card-body">
+          <div class="opt-a-card-title">eCommerce</div>
+          <div class="opt-a-card-desc">Tu tienda en línea conectada al mismo inventario y clientes.</div>
+        </div>
+      </div>
+    </div>
+    <div class="opt-a-dots"><div class="opt-a-dot"></div><div class="opt-a-dot"></div></div>
+  </div>
+
+  <!-- Controla -->
+  <div class="opt-a-step">
+    <div class="opt-a-step-header">
+      <div class="opt-a-step-num">2</div>
+      <h2 class="opt-a-step-title">Controla tu stock en tiempo real</h2>
+    </div>
+    <div class="opt-a-carousel">
+      <div class="opt-a-card">
+        <div class="opt-a-card-visual"><img src="/images/conteo-fisico-real.webp" alt="Conteo" loading="lazy"></div>
+        <div class="opt-a-card-body">
+          <div class="opt-a-card-title">Conteo físico</div>
+          <div class="opt-a-card-desc">Escanea con tu celular y actualiza el inventario en segundos.</div>
+        </div>
+      </div>
+      <div class="opt-a-card">
+        <div class="opt-a-card-visual"><img src="/images/recepcion-mercancia.webp" alt="Recepción" loading="lazy"></div>
+        <div class="opt-a-card-body">
+          <div class="opt-a-card-title">Recepción de mercancía</div>
+          <div class="opt-a-card-desc">Recibe pedidos escaneando cajas y actualiza tu inventario al instante.</div>
+        </div>
+      </div>
+      <div class="opt-a-card">
+        <div class="opt-a-card-visual" style="background:#f8f8f8;display:flex;align-items:center;justify-content:center;">
+          <span style="font-family:var(--font-display);font-size:14px;color:#bbb;">Inventario multi-sucursal</span>
+        </div>
+        <div class="opt-a-card-body">
+          <div class="opt-a-card-title">Inventario multi-sucursal</div>
+          <div class="opt-a-card-desc">Stock por sucursal y CEDIS en tiempo real, siempre sincronizado.</div>
+        </div>
+      </div>
+    </div>
+    <div class="opt-a-dots"><div class="opt-a-dot"></div><div class="opt-a-dot"></div><div class="opt-a-dot"></div></div>
+  </div>
+
+  <!-- Fideliza -->
+  <div class="opt-a-step">
+    <div class="opt-a-step-header">
+      <div class="opt-a-step-num">3</div>
+      <h2 class="opt-a-step-title">Fideliza a cada cliente</h2>
+    </div>
+    <div class="opt-a-carousel">
+      <div class="opt-a-card">
+        <div class="opt-a-card-visual"><img src="/images/fideliza-loyalty.webp" alt="Lealtad" loading="lazy"></div>
+        <div class="opt-a-card-body">
+          <div class="opt-a-card-title">Programa de lealtad</div>
+          <div class="opt-a-card-desc">Programa de puntos integrado al cobro, sin apps extra.</div>
+        </div>
+      </div>
+      <div class="opt-a-card">
+        <div class="opt-a-card-visual"><img src="/images/recomendaciones-productos.webp" alt="Recomendaciones" loading="lazy"></div>
+        <div class="opt-a-card-body">
+          <div class="opt-a-card-title">Recomendaciones de productos</div>
+          <div class="opt-a-card-desc">Sugiere prendas basadas en las últimas compras de cada cliente.</div>
+        </div>
+      </div>
+    </div>
+    <div class="opt-a-dots"><div class="opt-a-dot"></div><div class="opt-a-dot"></div></div>
+  </div>
+
+  <!-- Automatiza -->
+  <div class="opt-a-step">
+    <div class="opt-a-step-header">
+      <div class="opt-a-step-num">4</div>
+      <h2 class="opt-a-step-title">Tu negocio con IA integrada</h2>
+    </div>
+    <div class="opt-a-carousel">
+      <div class="opt-a-card">
+        <div class="opt-a-card-visual">
+          <video autoplay muted loop playsinline><source src="/images/ai-empresarial.mp4" type="video/mp4"></video>
+        </div>
+        <div class="opt-a-card-body">
+          <div class="opt-a-card-title">IA Empresarial</div>
+          <div class="opt-a-card-desc">AXO analiza tus ventas, predice demanda y automatiza órdenes de compra.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     OPTION B: Stories
+     ══════════════════════════════════════ -->
+<div class="demo-option" id="opt-b">
+  <div class="opt-b-container">
+    <div class="opt-b-progress" id="story-progress"></div>
+
+    <div class="opt-b-slides" id="story-slides"></div>
+
+    <div class="opt-b-tap-left" id="story-prev"></div>
+    <div class="opt-b-tap-right" id="story-next"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     OPTION C: Accordion
+     ══════════════════════════════════════ -->
+<div class="demo-option" id="opt-c">
+  <div class="opt-c-container">
+    <h2 class="opt-c-title">Todo lo que necesitas para tu negocio</h2>
+    <div class="opt-c-accordion">
+
+      <!-- Vende -->
+      <div class="opt-c-item active">
+        <button class="opt-c-header">
+          <div class="opt-c-num">1</div>
+          <span class="opt-c-verb">Vende</span>
+          <svg class="opt-c-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="opt-c-body">
+          <div class="opt-c-feature">
+            <div class="opt-c-feat-visual"><img src="/images/screen-pos.webp" alt="POS" loading="lazy"></div>
+            <div class="opt-c-feat-title">Punto de Venta</div>
+            <div class="opt-c-feat-desc">Cobra con tarjeta, efectivo o transferencia desde cualquier dispositivo.</div>
+          </div>
+          <div class="opt-c-feature">
+            <div class="opt-c-feat-visual"><img src="/images/screen-ecommerce.webp" alt="eCommerce" loading="lazy"></div>
+            <div class="opt-c-feat-title">eCommerce</div>
+            <div class="opt-c-feat-desc">Tu tienda en línea conectada al mismo inventario y clientes.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controla -->
+      <div class="opt-c-item">
+        <button class="opt-c-header">
+          <div class="opt-c-num">2</div>
+          <span class="opt-c-verb">Controla</span>
+          <svg class="opt-c-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="opt-c-body">
+          <div class="opt-c-feature">
+            <div class="opt-c-feat-visual"><img src="/images/conteo-fisico-real.webp" alt="Conteo" loading="lazy"></div>
+            <div class="opt-c-feat-title">Conteo físico</div>
+            <div class="opt-c-feat-desc">Escanea con tu celular y actualiza el inventario en segundos.</div>
+          </div>
+          <div class="opt-c-feature">
+            <div class="opt-c-feat-visual"><img src="/images/recepcion-mercancia.webp" alt="Recepción" loading="lazy"></div>
+            <div class="opt-c-feat-title">Recepción de mercancía</div>
+            <div class="opt-c-feat-desc">Recibe pedidos escaneando cajas y actualiza tu inventario al instante.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fideliza -->
+      <div class="opt-c-item">
+        <button class="opt-c-header">
+          <div class="opt-c-num">3</div>
+          <span class="opt-c-verb">Fideliza</span>
+          <svg class="opt-c-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="opt-c-body">
+          <div class="opt-c-feature">
+            <div class="opt-c-feat-visual"><img src="/images/fideliza-loyalty.webp" alt="Lealtad" loading="lazy"></div>
+            <div class="opt-c-feat-title">Programa de lealtad</div>
+            <div class="opt-c-feat-desc">Programa de puntos integrado al cobro, sin apps extra.</div>
+          </div>
+          <div class="opt-c-feature">
+            <div class="opt-c-feat-visual"><img src="/images/recomendaciones-productos.webp" alt="Recomendaciones" loading="lazy"></div>
+            <div class="opt-c-feat-title">Recomendaciones de productos</div>
+            <div class="opt-c-feat-desc">Sugiere prendas basadas en las últimas compras de cada cliente.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Automatiza -->
+      <div class="opt-c-item">
+        <button class="opt-c-header">
+          <div class="opt-c-num">4</div>
+          <span class="opt-c-verb">Automatiza</span>
+          <svg class="opt-c-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="opt-c-body">
+          <div class="opt-c-feature">
+            <div class="opt-c-feat-visual">
+              <video autoplay muted loop playsinline><source src="/images/ai-empresarial.mp4" type="video/mp4"></video>
+            </div>
+            <div class="opt-c-feat-title">IA Empresarial</div>
+            <div class="opt-c-feat-desc">AXO analiza tus ventas, predice demanda y automatiza órdenes de compra.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</div><!-- /demo-content -->
+
+<script>
+// ── Tab Switcher ──
+document.querySelectorAll('.demo-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.demo-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.demo-option').forEach(o => o.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('opt-' + tab.dataset.opt).classList.add('active');
+    window.scrollTo(0, 0);
+    if (tab.dataset.opt === 'b') initStories();
+  });
+});
+
+// ── Option A: Update dots on scroll ──
+document.querySelectorAll('.opt-a-carousel').forEach(carousel => {
+  const dots = carousel.parentElement.querySelectorAll('.opt-a-dot');
+  carousel.addEventListener('scroll', () => {
+    const idx = Math.round(carousel.scrollLeft / (carousel.offsetWidth * 0.82));
+    dots.forEach((d, i) => d.style.background = i === idx ? 'var(--dark)' : 'rgba(0,0,0,0.15)');
+  }, { passive: true });
+});
+
+// ── Option B: Stories ──
+const storiesData = [
+  { step: 'Vende', title: 'Punto de Venta', desc: 'Cobra con tarjeta, efectivo o transferencia desde cualquier dispositivo.', img: '/images/screen-pos.webp' },
+  { step: 'Vende', title: 'eCommerce', desc: 'Tu tienda en línea conectada al mismo inventario y clientes.', img: '/images/screen-ecommerce.webp' },
+  { step: 'Controla', title: 'Conteo físico', desc: 'Escanea con tu celular y actualiza el inventario en segundos.', img: '/images/conteo-fisico-real.webp' },
+  { step: 'Controla', title: 'Recepción de mercancía', desc: 'Recibe pedidos escaneando cajas y actualiza tu inventario al instante.', img: '/images/recepcion-mercancia.webp' },
+  { step: 'Fideliza', title: 'Programa de lealtad', desc: 'Programa de puntos integrado al cobro, sin apps extra.', img: '/images/fideliza-loyalty.webp' },
+  { step: 'Fideliza', title: 'Recomendaciones', desc: 'Sugiere prendas basadas en las últimas compras de cada cliente.', img: '/images/recomendaciones-productos.webp' },
+  { step: 'Automatiza', title: 'IA Empresarial', desc: 'AXO analiza tus ventas, predice demanda y automatiza órdenes de compra.', video: '/images/ai-empresarial.mp4' },
+];
+
+let storyIdx = 0, storyTimer = null, storiesInited = false;
+
+function initStories() {
+  if (storiesInited) { goStory(0); return; }
+  storiesInited = true;
+  const progress = document.getElementById('story-progress');
+  const slides = document.getElementById('story-slides');
+
+  storiesData.forEach((s, i) => {
+    // Progress segment
+    const seg = document.createElement('div');
+    seg.className = 'opt-b-seg';
+    seg.innerHTML = '<div class="opt-b-seg-fill"></div>';
+    progress.appendChild(seg);
+
+    // Slide
+    const slide = document.createElement('div');
+    slide.className = 'opt-b-slide' + (i === 0 ? ' active' : '');
+    const media = s.video
+      ? `<video autoplay muted loop playsinline style="width:100%;height:100%;object-fit:cover;"><source src="${s.video}" type="video/mp4"></video>`
+      : `<img src="${s.img}" alt="${s.title}" loading="lazy" style="width:100%;height:100%;object-fit:cover;">`;
+    slide.innerHTML = `
+      <div class="opt-b-slide-bg">${media}</div>
+      <div class="opt-b-slide-overlay">
+        <div class="opt-b-step-badge">${s.step}</div>
+        <div class="opt-b-title">${s.title}</div>
+        <div class="opt-b-desc">${s.desc}</div>
+      </div>`;
+    slides.appendChild(slide);
+  });
+
+  document.getElementById('story-prev').addEventListener('click', () => goStory(storyIdx - 1));
+  document.getElementById('story-next').addEventListener('click', () => goStory(storyIdx + 1));
+  goStory(0);
+}
+
+function goStory(idx) {
+  if (idx < 0) idx = 0;
+  if (idx >= storiesData.length) idx = 0;
+  storyIdx = idx;
+  clearTimeout(storyTimer);
+
+  document.querySelectorAll('.opt-b-slide').forEach((s, i) => s.classList.toggle('active', i === idx));
+  document.querySelectorAll('.opt-b-seg').forEach((s, i) => {
+    s.classList.remove('active', 'done');
+    if (i < idx) s.classList.add('done');
+    if (i === idx) s.classList.add('active');
+  });
+
+  storyTimer = setTimeout(() => goStory(idx + 1), 5000);
+}
+
+// ── Option C: Accordion ──
+document.querySelectorAll('.opt-c-header').forEach(header => {
+  header.addEventListener('click', () => {
+    const item = header.parentElement;
+    const wasActive = item.classList.contains('active');
+    document.querySelectorAll('.opt-c-item').forEach(i => i.classList.remove('active'));
+    if (!wasActive) item.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

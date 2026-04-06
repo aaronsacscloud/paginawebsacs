@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SACS — Sistema Tipografico: Sora + Clash Display</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Sora:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Fontshare: Clash Display -->
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ═══════════════════════════════════════════
+       RESET & BASE
+       ═══════════════════════════════════════════ */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #1A1A1A;
+      background: #FAFAF8;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ─── SACS Tokens ─── */
+    :root {
+      --sacs-blue: #4B7BE5;
+      --sacs-teal: #2AB5A0;
+      --sacs-gold: #E8A838;
+      --sacs-dark: #1A1A1A;
+      --sacs-dark-deep: #1A1A2E;
+      --sacs-cream: #F5F3EE;
+      --sacs-offwhite: #FAFAF8;
+
+      --font-current: 'Space Grotesk', sans-serif;
+      --font-outfit: 'Outfit', sans-serif;
+      --font-sora: 'Sora', sans-serif;
+      --font-clash: 'Clash Display', sans-serif;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    /* ═══════════════════════════════════════════
+       PAGE CHROME
+       ═══════════════════════════════════════════ */
+    .page-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .page-nav-brand {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      color: #1A1A2E;
+      letter-spacing: -0.02em;
+    }
+
+    .page-nav-links {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .page-nav-links a {
+      font-size: 13px;
+      font-weight: 600;
+      color: #4A4A4A;
+      text-decoration: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .page-nav-links a:hover {
+      background: rgba(75,123,229,0.08);
+      color: var(--sacs-blue);
+    }
+
+    /* Highlight badge for final pick */
+    .hero-toggle-btn.final {
+      position: relative;
+    }
+
+    .hero-toggle-btn.final::after {
+      content: 'FINAL';
+      position: absolute;
+      top: -8px;
+      right: -4px;
+      font-size: 7px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      background: var(--sacs-teal);
+      color: #fff;
+      padding: 1px 5px;
+      border-radius: 3px;
+      line-height: 1.4;
+    }
+
+    .font-selector button.final {
+      position: relative;
+    }
+
+    .font-selector button.final::after {
+      content: 'ELEGIDA';
+      position: absolute;
+      top: -8px;
+      right: -4px;
+      font-size: 7px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      background: var(--sacs-teal);
+      color: #fff;
+      padding: 1px 5px;
+      border-radius: 3px;
+      line-height: 1.4;
+    }
+
+    /* Type system spec */
+    .type-system {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      margin-top: 32px;
+      margin-bottom: 48px;
+    }
+
+    .type-system-card {
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 12px;
+      padding: 28px;
+      position: relative;
+    }
+
+    .type-system-card.highlight {
+      border-color: var(--sacs-blue);
+      border-width: 2px;
+    }
+
+    .type-system-role {
+      font-size: 0.625rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--sacs-blue);
+      margin-bottom: 6px;
+    }
+
+    .type-system-font {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--sacs-dark);
+      margin-bottom: 2px;
+    }
+
+    .type-system-detail {
+      font-size: 0.75rem;
+      color: #8C8C8C;
+      margin-bottom: 16px;
+    }
+
+    .type-system-sample {
+      line-height: 1;
+      color: var(--sacs-dark);
+    }
+
+    .type-system-uses {
+      margin-top: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .type-system-tag {
+      font-size: 0.625rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(0,0,0,0.04);
+      color: #8C8C8C;
+    }
+
+    .page-header {
+      padding: 80px 32px 48px;
+      max-width: 900px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .page-header h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      color: var(--sacs-dark-deep);
+      margin-bottom: 16px;
+    }
+
+    .page-header p {
+      font-size: 1.0625rem;
+      color: #4A4A4A;
+      max-width: 640px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    .section-anchor { scroll-margin-top: 80px; }
+
+    /* ═══════════════════════════════════════════
+       SECTION WRAPPER
+       ═══════════════════════════════════════════ */
+    .comp-section {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 64px 32px;
+    }
+
+    .comp-section + .comp-section {
+      border-top: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .section-label {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--sacs-blue);
+      margin-bottom: 8px;
+    }
+
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      color: var(--sacs-dark-deep);
+      margin-bottom: 12px;
+    }
+
+    .section-desc {
+      font-size: 0.9375rem;
+      color: #4A4A4A;
+      max-width: 600px;
+      line-height: 1.6;
+      margin-bottom: 48px;
+    }
+
+    /* ═══════════════════════════════════════════
+       SECTION 1 — LOGO WORDMARK
+       ═══════════════════════════════════════════ */
+    .logo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 48px;
+    }
+
+    .logo-card {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .logo-card-header {
+      padding: 14px 20px;
+      background: #fff;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo-card-font-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--sacs-dark);
+      letter-spacing: -0.01em;
+    }
+
+    .logo-card-meta {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: #8C8C8C;
+    }
+
+    .logo-card-badge {
+      display: inline-block;
+      font-size: 0.625rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(75,123,229,0.1);
+      color: var(--sacs-blue);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .logo-card-badge.control {
+      background: rgba(0,0,0,0.06);
+      color: #8C8C8C;
+    }
+
+    .logo-samples {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .logo-sample-row {
+      padding: 24px 28px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-sample-row.light { background: var(--sacs-offwhite); }
+    .logo-sample-row.dark  { background: var(--sacs-dark-deep); }
+
+    .logo-isotipo {
+      flex-shrink: 0;
+    }
+
+    .logo-sizes {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 20px;
+    }
+
+    .logo-wordmark {
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .logo-size-label {
+      font-size: 9px;
+      font-weight: 600;
+      color: #8C8C8C;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .dark .logo-size-label { color: rgba(255,255,255,0.4); }
+
+    /* ═══════════════════════════════════════════
+       SECTION 2 — HEADLINES COMPARADOS
+       ═══════════════════════════════════════════ */
+    .headline-comparison {
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+
+    .headline-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .headline-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+    @media (max-width: 768px) {
+      .headline-row {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+    }
+
+    .headline-col-label {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .headline-col-label.actual { color: #8C8C8C; }
+    .headline-col-label.propuesto { color: var(--sacs-blue); }
+
+    .headline-col-label .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .headline-col-label.actual .dot { background: #D4D4D4; }
+    .headline-col-label.propuesto .dot { background: var(--sacs-blue); }
+
+    .headline-level {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: #8C8C8C;
+      margin-bottom: 8px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .headline-text-actual {
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 0.95;
+      color: var(--sacs-dark);
+    }
+
+    .headline-text-proposed {
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      line-height: 0.9;
+      color: var(--sacs-dark);
+    }
+
+    .headline-text-actual.display-xl { font-size: clamp(2.75rem, 6vw, 5rem); }
+    .headline-text-actual.display-l  { font-size: clamp(2.25rem, 5vw, 4rem); }
+    .headline-text-actual.h1         { font-size: clamp(2rem, 4vw, 3rem); }
+    .headline-text-actual.h2         { font-size: clamp(1.75rem, 3vw, 2.25rem); }
+
+    .headline-text-proposed.display-xl { font-size: clamp(3.15rem, 7vw, 6.25rem); }
+    .headline-text-proposed.display-l  { font-size: clamp(2.6rem, 5.8vw, 5rem); }
+    .headline-text-proposed.h1         { font-size: clamp(2.3rem, 4.6vw, 3.75rem); }
+    .headline-text-proposed.h2         { font-size: clamp(2rem, 3.5vw, 2.8rem); }
+
+    /* Font selector for headlines */
+    .font-selector {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+
+    .font-selector button {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      padding: 8px 18px;
+      border: 1.5px solid rgba(0,0,0,0.1);
+      border-radius: 6px;
+      background: #fff;
+      color: #4A4A4A;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .font-selector button:hover {
+      border-color: var(--sacs-blue);
+      color: var(--sacs-blue);
+    }
+
+    .font-selector button.active {
+      background: var(--sacs-dark-deep);
+      color: #fff;
+      border-color: var(--sacs-dark-deep);
+    }
+
+    /* ═══════════════════════════════════════════
+       SECTION 3 — MOCK HERO
+       ═══════════════════════════════════════════ */
+    .hero-mock-wrapper {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+    }
+
+    .hero-mock-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: #fff;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .hero-mock-controls-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #8C8C8C;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .hero-toggle-group {
+      display: flex;
+      gap: 4px;
+      background: #f5f5f5;
+      padding: 3px;
+      border-radius: 8px;
+    }
+
+    .hero-toggle-btn {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 7px 16px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: #8C8C8C;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .hero-toggle-btn:hover {
+      color: var(--sacs-dark);
+    }
+
+    .hero-toggle-btn.active {
+      background: #fff;
+      color: var(--sacs-dark);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    /* The hero itself */
+    .hero-mock {
+      position: relative;
+      background: #0a0a14;
+      padding: 12px;
+    }
+
+    @media (min-width: 768px) {
+      .hero-mock { padding: 20px; }
+    }
+
+    .hero-mock-inner {
+      position: relative;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .hero-mock-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .hero-mock-bg-gradient {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 100% 80% at 50% 0%, #0d1b3e 0%, transparent 65%),
+        radial-gradient(ellipse 80% 50% at 20% 30%, rgba(42, 181, 160, 0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 70% 60% at 80% 40%, rgba(75, 123, 229, 0.1) 0%, transparent 55%),
+        linear-gradient(180deg, #070e1f 0%, #0a1628 10%, #0f1f3d 25%, #132a4a 40%, #163252 55%, #1a3a5c 65%, #1e4466 75%, #224e70 85%, #265878 92%, #2a6280 100%);
+    }
+
+    .hero-mock-glow {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+    }
+
+    .hero-mock-glow-1 {
+      width: 500px;
+      height: 350px;
+      background: rgba(75, 123, 229, 0.15);
+      top: -15%;
+      left: -10%;
+    }
+
+    .hero-mock-glow-2 {
+      width: 400px;
+      height: 300px;
+      background: rgba(232, 168, 56, 0.1);
+      top: 10%;
+      right: -15%;
+    }
+
+    .hero-mock-glow-3 {
+      width: 450px;
+      height: 250px;
+      background: rgba(42, 181, 160, 0.12);
+      bottom: 5%;
+      left: 20%;
+    }
+
+    .hero-mock-stars {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 50%;
+      background-image:
+        radial-gradient(1px 1px at 10% 15%, rgba(255,255,255,0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 25% 8%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 40% 20%, rgba(255,255,255,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 55% 5%, rgba(255,255,255,0.35) 0%, transparent 100%),
+        radial-gradient(1px 1px at 70% 18%, rgba(255,255,255,0.45) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 85% 12%, rgba(255,255,255,0.5) 0%, transparent 100%);
+    }
+
+    /* Hero nav mock */
+    .hero-mock-nav {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 28px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    @media (min-width: 768px) {
+      .hero-mock-nav { padding: 18px 48px; }
+    }
+
+    .hero-mock-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hero-mock-logo-text {
+      line-height: 1;
+      color: #fff;
+      letter-spacing: -0.03em;
+      transition: font-family 0.3s ease, font-weight 0.3s ease;
+    }
+
+    .hero-mock-nav-links {
+      display: none;
+      gap: 24px;
+    }
+
+    @media (min-width: 768px) {
+      .hero-mock-nav-links { display: flex; }
+    }
+
+    .hero-mock-nav-links span {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.7);
+    }
+
+    .hero-mock-nav-cta {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      padding: 8px 18px;
+      border-radius: 6px;
+      background: #fff;
+      color: #0f0f1a;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    /* Hero content */
+    .hero-mock-content {
+      position: relative;
+      z-index: 2;
+      padding: 64px 28px 80px;
+      max-width: 700px;
+    }
+
+    @media (min-width: 768px) {
+      .hero-mock-content { padding: 96px 48px 120px; }
+    }
+
+    .hero-mock-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 6px 14px;
+      border-radius: 50px;
+      color: rgba(255, 255, 255, 0.75);
+      margin-bottom: 28px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .hero-mock-title {
+      color: #fff;
+      margin-bottom: 20px;
+      transition: font-family 0.3s ease, font-weight 0.3s ease, font-size 0.3s ease, letter-spacing 0.3s ease, line-height 0.3s ease;
+    }
+
+    .hero-mock-subtitle {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: clamp(1rem, 1.5vw, 1.125rem);
+      line-height: 1.6;
+      color: rgba(255, 255, 255, 0.6);
+      max-width: 480px;
+      margin-bottom: 36px;
+    }
+
+    .hero-mock-ctas {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .hero-mock-btn {
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 12px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      line-height: 1;
+      cursor: default;
+    }
+
+    .hero-mock-btn-filled {
+      background: #fff;
+      color: #0f0f1a;
+    }
+
+    .hero-mock-btn-outline {
+      background: transparent;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    /* Trust bar */
+    .hero-mock-trust {
+      position: relative;
+      z-index: 2;
+      padding: 32px 28px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      text-align: center;
+      background: rgba(0, 0, 0, 0.15);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    @media (min-width: 768px) {
+      .hero-mock-trust { padding: 36px 48px; }
+    }
+
+    .hero-mock-trust-text {
+      font-size: 0.8125rem;
+      color: rgba(255, 255, 255, 0.5);
+      margin-bottom: 16px;
+      font-weight: 500;
+    }
+
+    .hero-mock-trust-logos {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      flex-wrap: wrap;
+    }
+
+    .hero-mock-trust-logos span {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.3);
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      transition: font-family 0.3s ease;
+    }
+
+    /* Font state info */
+    .hero-font-info {
+      padding: 16px 20px;
+      background: var(--sacs-offwhite);
+      border-top: 1px solid rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .hero-font-info-item {
+      font-size: 0.75rem;
+      color: #8C8C8C;
+    }
+
+    .hero-font-info-item strong {
+      color: var(--sacs-dark);
+      font-weight: 700;
+    }
+
+    /* ═══════════════════════════════════════════
+       SECTION 4 — ANALYSIS
+       ═══════════════════════════════════════════ */
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 48px;
+    }
+
+    .analysis-card {
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 12px;
+      padding: 28px;
+    }
+
+    .analysis-card-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--sacs-dark);
+      margin-bottom: 4px;
+      letter-spacing: -0.02em;
+    }
+
+    .analysis-card-font {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #8C8C8C;
+      margin-bottom: 20px;
+    }
+
+    .analysis-card-sample {
+      line-height: 1;
+      margin-bottom: 20px;
+      color: var(--sacs-dark);
+      letter-spacing: -0.04em;
+    }
+
+    .analysis-meter {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .analysis-meter-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .analysis-meter-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      color: #8C8C8C;
+      width: 80px;
+      flex-shrink: 0;
+    }
+
+    .analysis-meter-bar {
+      flex: 1;
+      height: 6px;
+      background: #f0f0f0;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .analysis-meter-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+
+    .analysis-meter-value {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      color: var(--sacs-dark);
+      width: 28px;
+      text-align: right;
+    }
+
+    /* Comparison table */
+    .comparison-table-wrapper {
+      overflow-x: auto;
+      margin-bottom: 48px;
+    }
+
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+    }
+
+    .comparison-table th {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #8C8C8C;
+      text-align: left;
+      padding: 12px 16px;
+      border-bottom: 2px solid rgba(0,0,0,0.08);
+      white-space: nowrap;
+    }
+
+    .comparison-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(0,0,0,0.04);
+      vertical-align: top;
+    }
+
+    .comparison-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .comparison-table .font-name {
+      font-weight: 700;
+      color: var(--sacs-dark);
+      white-space: nowrap;
+    }
+
+    .rating {
+      display: inline-flex;
+      gap: 2px;
+    }
+
+    .rating-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #e0e0e0;
+    }
+
+    .rating-dot.filled { background: var(--sacs-blue); }
+    .rating-dot.half   { background: rgba(75,123,229,0.4); }
+
+    /* Recommendation */
+    .recommendation {
+      background: #fff;
+      border: 2px solid var(--sacs-blue);
+      border-radius: 16px;
+      padding: 40px;
+      position: relative;
+    }
+
+    .recommendation::before {
+      content: 'RECOMENDACION';
+      position: absolute;
+      top: -10px;
+      left: 32px;
+      background: var(--sacs-blue);
+      color: #fff;
+      font-size: 0.625rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      padding: 3px 12px;
+      border-radius: 4px;
+    }
+
+    .recommendation-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 0.95;
+      color: var(--sacs-dark);
+      margin-bottom: 16px;
+    }
+
+    .recommendation-body {
+      font-size: 0.9375rem;
+      color: #4A4A4A;
+      line-height: 1.7;
+      max-width: 640px;
+    }
+
+    .recommendation-body strong {
+      color: var(--sacs-dark);
+      font-weight: 700;
+    }
+
+    .pros-cons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 28px;
+    }
+
+    @media (max-width: 600px) {
+      .pros-cons { grid-template-columns: 1fr; }
+    }
+
+    .pros-cons-col h4 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+    }
+
+    .pros-cons-col.pros h4 { color: var(--sacs-teal); }
+    .pros-cons-col.cons h4 { color: var(--sacs-gold); }
+
+    .pros-cons-col ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .pros-cons-col li {
+      font-size: 0.8125rem;
+      color: #4A4A4A;
+      padding-left: 20px;
+      position: relative;
+      line-height: 1.5;
+    }
+
+    .pros-cons-col.pros li::before {
+      content: '+';
+      position: absolute;
+      left: 0;
+      font-weight: 800;
+      color: var(--sacs-teal);
+    }
+
+    .pros-cons-col.cons li::before {
+      content: '-';
+      position: absolute;
+      left: 2px;
+      font-weight: 800;
+      color: var(--sacs-gold);
+    }
+
+    /* ═══════════════════════════════════════════
+       RESPONSIVE
+       ═══════════════════════════════════════════ */
+    @media (max-width: 640px) {
+      .comp-section { padding: 40px 16px; }
+      .page-header { padding: 48px 16px 32px; }
+      .page-nav { padding: 12px 16px; }
+      .recommendation { padding: 28px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     PAGE NAVIGATION
+     ═══════════════════════════════════════════ -->
+<div class="page-nav">
+  <span class="page-nav-brand">SACS / Sora + Clash Display</span>
+  <div class="page-nav-links">
+    <a href="#sec-system">Sistema</a>
+    <a href="#sec-logo">Wordmark</a>
+    <a href="#sec-headlines">Headlines</a>
+    <a href="#sec-hero">Hero Mock</a>
+    <a href="#sec-analysis">Analisis</a>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PAGE HEADER
+     ═══════════════════════════════════════════ -->
+<div class="page-header">
+  <h1>Sistema Tipografico SACS</h1>
+  <p>Decision final: <strong>Sora ExtraBold</strong> para headlines/display + <strong>Clash Display Bold</strong> para el wordmark "Sacs". Sistema completo con comparacion visual y mock interactivo.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SECTION 0 — TYPE SYSTEM DEFINITION
+     ═══════════════════════════════════════════ -->
+<section class="comp-section section-anchor" id="sec-system">
+  <div class="section-label">Decision</div>
+  <div class="section-title">Sistema Tipografico Propuesto</div>
+  <div class="section-desc">Tres fuentes, cada una con un rol claro. Sora aporta la energia y modernidad en headlines. Clash Display le da personalidad editorial unica al wordmark. Plus Jakarta Sans mantiene la legibilidad en body.</div>
+
+  <div class="type-system">
+    <div class="type-system-card highlight">
+      <div class="type-system-role">Wordmark / Logo</div>
+      <div class="type-system-font">Clash Display</div>
+      <div class="type-system-detail">700 Bold / tracking -0.05em / Fontshare</div>
+      <div class="type-system-sample" style="font-family:'Clash Display',sans-serif; font-weight:700; font-size:48px; letter-spacing:-0.05em;">Sacs</div>
+      <div class="type-system-uses">
+        <span class="type-system-tag">Logo wordmark</span>
+        <span class="type-system-tag">Firma de marca</span>
+        <span class="type-system-tag">Branding hero</span>
+      </div>
+    </div>
+    <div class="type-system-card highlight">
+      <div class="type-system-role">Display / Headlines</div>
+      <div class="type-system-font">Sora</div>
+      <div class="type-system-detail">800 ExtraBold / tracking -0.05em / line-height 0.9 / Google Fonts</div>
+      <div class="type-system-sample" style="font-family:'Sora',sans-serif; font-weight:800; font-size:36px; letter-spacing:-0.05em; line-height:0.9;">Tu negocio merece crecer</div>
+      <div class="type-system-uses">
+        <span class="type-system-tag">H1-H4</span>
+        <span class="type-system-tag">Display XL/L</span>
+        <span class="type-system-tag">Feature titles</span>
+        <span class="type-system-tag">CTA grandes</span>
+      </div>
+    </div>
+    <div class="type-system-card">
+      <div class="type-system-role">Subtitulos / Semi-bold</div>
+      <div class="type-system-font">Sora</div>
+      <div class="type-system-detail">500-600 Medium/Semibold / tracking -0.02em</div>
+      <div class="type-system-sample" style="font-family:'Sora',sans-serif; font-weight:600; font-size:22px; letter-spacing:-0.02em; line-height:1.2;">Conecta todo en un solo sistema</div>
+      <div class="type-system-uses">
+        <span class="type-system-tag">Nav links</span>
+        <span class="type-system-tag">Card titles</span>
+        <span class="type-system-tag">Eyebrows</span>
+        <span class="type-system-tag">Labels</span>
+      </div>
+    </div>
+    <div class="type-system-card">
+      <div class="type-system-role">Body / Texto largo</div>
+      <div class="type-system-font">Plus Jakarta Sans</div>
+      <div class="type-system-detail">400-600 Regular/Semibold / line-height 1.6</div>
+      <div class="type-system-sample" style="font-family:'Plus Jakarta Sans',sans-serif; font-weight:400; font-size:16px; line-height:1.6; color:#4A4A4A;">SACS conecta tu punto de venta, inventario, clientes y reportes en un solo sistema inteligente.</div>
+      <div class="type-system-uses">
+        <span class="type-system-tag">Parrafos</span>
+        <span class="type-system-tag">Descripciones</span>
+        <span class="type-system-tag">Formularios</span>
+        <span class="type-system-tag">UI text</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SECTION 1 — LOGO WORDMARK
+     ═══════════════════════════════════════════ -->
+<section class="comp-section section-anchor" id="sec-logo">
+  <div class="section-label">Seccion 1</div>
+  <div class="section-title">Logo Wordmark "Sacs"</div>
+  <div class="section-desc">Cada candidata en fondos claro y oscuro, con el isotipo de circulos, en 4 tamanos: movil (32px), nav desktop (44px), hero lockup (72px) y presentacion (120px).</div>
+
+  <div class="logo-grid" id="logo-grid">
+    <!-- Cards generated by JS -->
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SECTION 2 — HEADLINES COMPARADOS
+     ═══════════════════════════════════════════ -->
+<section class="comp-section section-anchor" id="sec-headlines">
+  <div class="section-label">Seccion 2</div>
+  <div class="section-title">Headlines Comparados</div>
+  <div class="section-desc">Textos reales de SACS: columna izquierda con el estilo actual, columna derecha con la candidata seleccionada en bold extremo.</div>
+
+  <div class="font-selector" id="headline-font-selector">
+    <button data-font="outfit">Outfit 800</button>
+    <button class="active final" data-font="sora">Sora 800</button>
+    <button data-font="clash">Clash Display 700</button>
+  </div>
+
+  <div class="headline-comparison" id="headline-comparison">
+    <!-- Generated by JS -->
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SECTION 3 — MOCK HERO
+     ═══════════════════════════════════════════ -->
+<section class="comp-section section-anchor" id="sec-hero">
+  <div class="section-label">Seccion 3</div>
+  <div class="section-title">Mock Hero Completo</div>
+  <div class="section-desc">Recreacion del hero de SACS con toggle interactivo para comparar fuentes en tiempo real. Usa los botones para cambiar entre sistemas tipograficos.</div>
+
+  <div class="hero-mock-wrapper">
+    <!-- Controls -->
+    <div class="hero-mock-controls">
+      <span class="hero-mock-controls-label">Tipografia activa</span>
+      <div class="hero-toggle-group" id="hero-toggle-group">
+        <button class="hero-toggle-btn" data-hero-font="space">Space Grotesk (Actual)</button>
+        <button class="hero-toggle-btn" data-hero-font="sora">Sora 800</button>
+        <button class="hero-toggle-btn" data-hero-font="clash">Clash Display 700</button>
+        <button class="hero-toggle-btn active final" data-hero-font="sacsfinal">Sora + Clash (Final)</button>
+      </div>
+    </div>
+
+    <!-- Hero -->
+    <div class="hero-mock">
+      <div class="hero-mock-inner">
+        <!-- Background -->
+        <div class="hero-mock-bg">
+          <div class="hero-mock-bg-gradient"></div>
+          <div class="hero-mock-glow hero-mock-glow-1"></div>
+          <div class="hero-mock-glow hero-mock-glow-2"></div>
+          <div class="hero-mock-glow hero-mock-glow-3"></div>
+          <div class="hero-mock-stars"></div>
+        </div>
+
+        <!-- Nav -->
+        <div class="hero-mock-nav">
+          <div class="hero-mock-logo">
+            <svg width="36" height="28" viewBox="0 0 36 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="10" cy="14" r="9" fill="#4B7BE5" opacity="0.9"/>
+              <circle cx="18" cy="8" r="9" fill="#E8A838" opacity="0.85"/>
+              <circle cx="22" cy="16" r="9" fill="#2AB5A0" opacity="0.85"/>
+            </svg>
+            <span class="hero-mock-logo-text" id="hero-logo-text" style="font-family:'Clash Display',sans-serif; font-size:22px; font-weight:700; letter-spacing:-0.05em;">Sacs</span>
+          </div>
+          <div class="hero-mock-nav-links">
+            <span>Producto</span>
+            <span>Planes</span>
+            <span>Nosotros</span>
+          </div>
+          <span class="hero-mock-nav-cta">Empieza gratis</span>
+        </div>
+
+        <!-- Content -->
+        <div class="hero-mock-content">
+          <div class="hero-mock-eyebrow">Comercio Consciente</div>
+          <h1 class="hero-mock-title" id="hero-title" style="font-family:'Sora',sans-serif; font-size:clamp(2.8rem,7vw,4.5rem); font-weight:800; line-height:0.9; letter-spacing:-0.05em;">
+            Tu negocio merece crecer con proposito.
+          </h1>
+          <p class="hero-mock-subtitle">
+            SACS conecta tu punto de venta, inventario, clientes y reportes en un solo sistema inteligente. Deja de usar 5 herramientas. Usa una.
+          </p>
+          <div class="hero-mock-ctas">
+            <span class="hero-mock-btn hero-mock-btn-outline">Ver demo</span>
+            <span class="hero-mock-btn hero-mock-btn-filled">Empieza gratis</span>
+          </div>
+        </div>
+
+        <!-- Trust bar -->
+        <div class="hero-mock-trust">
+          <p class="hero-mock-trust-text">Mas de 500 retailers conscientes confian en SACS</p>
+          <div class="hero-mock-trust-logos" id="hero-trust-logos">
+            <span style="font-family:'Sora',sans-serif; font-weight:600;">RetailMX</span>
+            <span style="font-family:'Sora',sans-serif; font-weight:600;">Organica</span>
+            <span style="font-family:'Sora',sans-serif; font-weight:600;">CasaVerde</span>
+            <span style="font-family:'Sora',sans-serif; font-weight:600;">Mercado Sol</span>
+            <span style="font-family:'Sora',sans-serif; font-weight:600;">Xochimilco Co.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Font info bar -->
+    <div class="hero-font-info" id="hero-font-info">
+      <span class="hero-font-info-item"><strong>Headlines:</strong> Sora 800</span>
+      <span class="hero-font-info-item"><strong>Wordmark:</strong> Clash Display 700</span>
+      <span class="hero-font-info-item"><strong>Tracking:</strong> -0.05em</span>
+      <span class="hero-font-info-item"><strong>Line-height:</strong> 0.9</span>
+      <span class="hero-font-info-item"><strong>Tamano max:</strong> 72px</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SECTION 4 — ANALYSIS
+     ═══════════════════════════════════════════ -->
+<section class="comp-section section-anchor" id="sec-analysis">
+  <div class="section-label">Seccion 4</div>
+  <div class="section-title">Analisis Visual</div>
+  <div class="section-desc">Evaluacion de cada candidata para el sistema de marca SACS: brand fit, legibilidad, personalidad e impacto.</div>
+
+  <!-- Rating cards -->
+  <div class="analysis-grid" id="analysis-grid">
+    <!-- Generated by JS -->
+  </div>
+
+  <!-- Comparison table -->
+  <div class="comparison-table-wrapper">
+    <table class="comparison-table">
+      <thead>
+        <tr>
+          <th>Criterio</th>
+          <th>Space Grotesk (Control)</th>
+          <th>Outfit</th>
+          <th>Sora</th>
+          <th>Clash Display</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="font-name">Brand fit SACS</td>
+          <td>Limpio, geometrico, conservador</td>
+          <td>Audaz pero humano, calidez en terminaciones</td>
+          <td>Futurista, tech-forward, geometrico puro</td>
+          <td>Editorial agresivo, moderno extremo</td>
+        </tr>
+        <tr>
+          <td class="font-name">Personalidad</td>
+          <td>Refinado, profesional, serio</td>
+          <td>Confiable, energetico, accesible</td>
+          <td>Innovador, cool, espacial</td>
+          <td>Provocador, vanguardista, premium</td>
+        </tr>
+        <tr>
+          <td class="font-name">Legibilidad display</td>
+          <td>Excelente en todos los tamanos</td>
+          <td>Excelente, mejor en tamaos grandes</td>
+          <td>Muy buena, rasgos unicos ayudan</td>
+          <td>Buena en grande, pierde detalle en chico</td>
+        </tr>
+        <tr>
+          <td class="font-name">Impacto visual</td>
+          <td>Moderado - se queda corto en hero</td>
+          <td>Alto - llena el espacio con confianza</td>
+          <td>Alto - geometria futurista atrae la vista</td>
+          <td>Muy alto - domina la composicion</td>
+        </tr>
+        <tr>
+          <td class="font-name">Rango de pesos</td>
+          <td>400-700 (limitado)</td>
+          <td>100-900 (variable, excelente)</td>
+          <td>100-800 (variable, muy bueno)</td>
+          <td>200-700 (bueno, sin 800+)</td>
+        </tr>
+        <tr>
+          <td class="font-name">"Comercio Consciente"</td>
+          <td>Encaja bien pero sin diferenciacion</td>
+          <td>Suavidad humanista complementa el mensaje</td>
+          <td>Demasiado tech para "consciente"</td>
+          <td>Tension interesante: bold + consciente</td>
+        </tr>
+        <tr>
+          <td class="font-name">Referente mas cercano</td>
+          <td>Linear, Notion</td>
+          <td>ManyChat, Loom, Canva</td>
+          <td>Vercel, Supabase</td>
+          <td>Pitch, Read.cv</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Recommendation -->
+  <div class="recommendation">
+    <div class="recommendation-title" style="font-family:'Sora',sans-serif; font-weight:800;">Sora headlines + Clash Display wordmark.</div>
+    <div class="recommendation-body">
+      <p>Un sistema dual que da a SACS <strong>dos voces tipograficas complementarias</strong>: Sora trae la energia geometrica y futurista para headlines — innovador, tech, espacial. Clash Display aporta personalidad editorial unica al wordmark "Sacs" — vanguardista, premium, con caracter propio.</p>
+      <br>
+      <p><strong>El sistema completo:</strong></p>
+      <ul style="margin:8px 0 0 20px; font-size:0.9375rem; color:#4A4A4A; line-height:1.7;">
+        <li><strong>Clash Display 700</strong> — Wordmark "Sacs" exclusivamente. Tracking -0.05em. Le da identidad editorial que ninguna otra fuente logra.</li>
+        <li><strong>Sora 800</strong> — Display XL/L y H1-H2. Tracking -0.05em, line-height 0.9. La geometria futurista atrae la vista, el peso ExtraBold llena el espacio.</li>
+        <li><strong>Sora 500-600</strong> — Subtitulos, nav links, card titles, eyebrows. Tracking -0.02em. Mantiene coherencia con los headlines.</li>
+        <li><strong>Plus Jakarta Sans 400-600</strong> — Body, descripciones, forms, UI text. Line-height 1.6. Sigue siendo la columna vertebral de la legibilidad.</li>
+      </ul>
+
+      <div class="pros-cons">
+        <div class="pros-cons-col pros">
+          <h4>A favor</h4>
+          <ul>
+            <li>Clash Display para "Sacs" le da identidad editorial unica e irrepetible</li>
+            <li>Sora ExtraBold tiene la energia futurista que conecta con el producto tech</li>
+            <li>Dos voces: el wordmark es "marca", los headlines son "producto"</li>
+            <li>Sora variable (Google Fonts): excelente rendimiento, gratis</li>
+            <li>Clash Display solo carga para el wordmark — impacto minimo en performance</li>
+            <li>La combinacion es poco comun en SaaS: diferenciacion real</li>
+          </ul>
+        </div>
+        <div class="pros-cons-col cons">
+          <h4>Consideraciones</h4>
+          <ul>
+            <li>Tres fuentes (Clash + Sora + Jakarta) = mas peso que un sistema de dos</li>
+            <li>Clash Display viene de Fontshare, no Google Fonts (CDN diferente)</li>
+            <li>La S de Clash Display tiene proporciones muy distintas a Sora — verificar que no choquen en composiciones cercanas</li>
+            <li>Sora en "Comercio Consciente": lo tech puede necesitar suavizarse con el body Jakarta en subtitulos</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div style="padding:48px 32px; text-align:center;">
+  <p style="font-size:0.75rem; color:#8C8C8C;">SACS Typography Comparison — Generado para evaluacion interna. No distribuir.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+     ═══════════════════════════════════════════ -->
+<script>
+  // ─── Data ───
+  const fonts = [
+    {
+      key: 'space',
+      name: 'Space Grotesk',
+      family: "'Space Grotesk', sans-serif",
+      weight: 700,
+      weightLabel: '700 Bold',
+      tracking: '-0.03em',
+      badge: 'Control',
+      badgeClass: 'control',
+    },
+    {
+      key: 'outfit',
+      name: 'Outfit',
+      family: "'Outfit', sans-serif",
+      weight: 800,
+      weightLabel: '800 ExtraBold',
+      tracking: '-0.04em',
+      badge: 'Candidata A',
+      badgeClass: '',
+    },
+    {
+      key: 'sora',
+      name: 'Sora',
+      family: "'Sora', sans-serif",
+      weight: 800,
+      weightLabel: '800 ExtraBold',
+      tracking: '-0.04em',
+      badge: 'Candidata B',
+      badgeClass: '',
+    },
+    {
+      key: 'clash',
+      name: 'Clash Display',
+      family: "'Clash Display', sans-serif",
+      weight: 700,
+      weightLabel: '700 Bold',
+      tracking: '-0.05em',
+      badge: 'Candidata C',
+      badgeClass: '',
+    },
+  ];
+
+  const isotipoSVG = `<svg width="36" height="28" viewBox="0 0 36 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="10" cy="14" r="9" fill="#4B7BE5" opacity="0.9"/>
+    <circle cx="18" cy="8" r="9" fill="#E8A838" opacity="0.85"/>
+    <circle cx="22" cy="16" r="9" fill="#2AB5A0" opacity="0.85"/>
+  </svg>`;
+
+  const isotipoSVGDark = isotipoSVG; // Same for both
+
+  const sizes = [
+    { label: '32px', px: 32 },
+    { label: '44px', px: 44 },
+    { label: '72px', px: 72 },
+    { label: '120px', px: 120 },
+  ];
+
+  const headlines = [
+    { level: 'Display XL', text: 'Tu negocio merece crecer con proposito.', classActual: 'display-xl', classProposed: 'display-xl' },
+    { level: 'Display L', text: 'Empieza hoy. Es gratis.', classActual: 'display-l', classProposed: 'display-l' },
+    { level: 'H1', text: 'Todo conectado en un solo sistema.', classActual: 'h1', classProposed: 'h1' },
+    { level: 'H2', text: 'Cobra en segundos, desde cualquier dispositivo.', classActual: 'h2', classProposed: 'h2' },
+  ];
+
+  const analysisData = [
+    {
+      name: 'Space Grotesk',
+      family: "'Space Grotesk', sans-serif",
+      weight: 700,
+      sample: 'Sacs',
+      sampleSize: '48px',
+      meta: 'Control — 700 Bold',
+      metrics: { brandFit: 6, legibilidad: 9, personalidad: 5, impacto: 5, rendimiento: 8 },
+      color: '#8C8C8C',
+    },
+    {
+      name: 'Outfit',
+      family: "'Outfit', sans-serif",
+      weight: 800,
+      sample: 'Sacs',
+      sampleSize: '52px',
+      meta: 'Candidata A — 800 ExtraBold',
+      metrics: { brandFit: 9, legibilidad: 9, personalidad: 8, impacto: 8, rendimiento: 9 },
+      color: '#4B7BE5',
+    },
+    {
+      name: 'Sora',
+      family: "'Sora', sans-serif",
+      weight: 800,
+      sample: 'Sacs',
+      sampleSize: '52px',
+      meta: 'Candidata B — 800 ExtraBold',
+      metrics: { brandFit: 6, legibilidad: 8, personalidad: 8, impacto: 8, rendimiento: 8 },
+      color: '#2AB5A0',
+    },
+    {
+      name: 'Clash Display',
+      family: "'Clash Display', sans-serif",
+      weight: 700,
+      sample: 'Sacs',
+      sampleSize: '52px',
+      meta: 'Candidata C — 700 Bold',
+      metrics: { brandFit: 5, legibilidad: 7, personalidad: 9, impacto: 9, rendimiento: 7 },
+      color: '#E8A838',
+    },
+  ];
+
+  // ─── Section 1: Logo wordmark grid ───
+  function buildLogoGrid() {
+    const grid = document.getElementById('logo-grid');
+    grid.innerHTML = '';
+
+    fonts.forEach((f) => {
+      const card = document.createElement('div');
+      card.className = 'logo-card';
+
+      // Light row sizes
+      const lightSizes = sizes.map(s =>
+        `<div>
+          <span class="logo-size-label">${s.label}</span>
+          <span class="logo-wordmark" style="font-family:${f.family}; font-weight:${f.weight}; font-size:${s.px}px; letter-spacing:${f.tracking}; color:#1A1A1A;">${s.px <= 44 ? 'Sacs' : 'Sacs'}</span>
+        </div>`
+      ).join('');
+
+      // Dark row sizes
+      const darkSizes = sizes.map(s =>
+        `<div>
+          <span class="logo-size-label">${s.label}</span>
+          <span class="logo-wordmark" style="font-family:${f.family}; font-weight:${f.weight}; font-size:${s.px}px; letter-spacing:${f.tracking}; color:#fff;">${s.px <= 44 ? 'Sacs' : 'Sacs'}</span>
+        </div>`
+      ).join('');
+
+      card.innerHTML = `
+        <div class="logo-card-header">
+          <div>
+            <div class="logo-card-font-name">${f.name}</div>
+            <div class="logo-card-meta">${f.weightLabel} / tracking ${f.tracking}</div>
+          </div>
+          <span class="logo-card-badge ${f.badgeClass}">${f.badge}</span>
+        </div>
+        <div class="logo-samples">
+          <div class="logo-sample-row light">
+            <div class="logo-isotipo">${isotipoSVG}</div>
+            <div class="logo-sizes">${lightSizes}</div>
+          </div>
+          <div class="logo-sample-row dark">
+            <div class="logo-isotipo">${isotipoSVGDark}</div>
+            <div class="logo-sizes">${darkSizes}</div>
+          </div>
+        </div>
+      `;
+
+      grid.appendChild(card);
+    });
+  }
+
+  // ─── Section 2: Headlines ───
+  let activeHeadlineFont = 'sora';
+
+  function getProposedFont(key) {
+    return fonts.find(f => f.key === key) || fonts[1];
+  }
+
+  function buildHeadlines() {
+    const container = document.getElementById('headline-comparison');
+    const pf = getProposedFont(activeHeadlineFont);
+    container.innerHTML = '';
+
+    headlines.forEach(h => {
+      const row = document.createElement('div');
+      row.className = 'headline-row';
+      row.innerHTML = `
+        <div>
+          <div class="headline-col-label actual"><span class="dot"></span> Actual — Space Grotesk 700</div>
+          <div class="headline-level">${h.level}</div>
+          <div class="headline-text-actual ${h.classActual}">${h.text}</div>
+        </div>
+        <div>
+          <div class="headline-col-label propuesto"><span class="dot"></span> Propuesto — ${pf.name} ${pf.weight}</div>
+          <div class="headline-level">${h.level} (+15-25% tamano)</div>
+          <div class="headline-text-proposed ${h.classProposed}" style="font-family:${pf.family}; font-weight:${pf.weight};">${h.text}</div>
+        </div>
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  // Headline font selector
+  document.getElementById('headline-font-selector').addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    document.querySelectorAll('#headline-font-selector button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeHeadlineFont = btn.dataset.font;
+    buildHeadlines();
+  });
+
+  // ─── Section 3: Hero toggle ───
+  const heroFontConfigs = {
+    space: {
+      family: "'Space Grotesk', sans-serif",
+      titleWeight: 700,
+      titleSize: 'clamp(2.5rem, 6vw, 3.75rem)',
+      titleTracking: '-0.04em',
+      titleLineHeight: '0.95',
+      logoFamily: "'Space Grotesk', sans-serif",
+      logoWeight: 600,
+      logoSize: '20px',
+      logoTracking: '-0.02em',
+      infoLabel: 'Space Grotesk',
+      infoPeso: '700 (Bold)',
+      infoTracking: '-0.04em',
+      infoLh: '0.95',
+      infoMax: '60px',
+    },
+    outfit: {
+      family: "'Outfit', sans-serif",
+      titleWeight: 800,
+      titleSize: 'clamp(2.8rem, 7vw, 4.5rem)',
+      titleTracking: '-0.05em',
+      titleLineHeight: '0.9',
+      logoFamily: "'Outfit', sans-serif",
+      logoWeight: 700,
+      logoSize: '22px',
+      logoTracking: '-0.03em',
+      infoLabel: 'Outfit',
+      infoPeso: '800 (ExtraBold)',
+      infoTracking: '-0.05em',
+      infoLh: '0.9',
+      infoMax: '72px',
+    },
+    sora: {
+      family: "'Sora', sans-serif",
+      titleWeight: 800,
+      titleSize: 'clamp(2.8rem, 7vw, 4.5rem)',
+      titleTracking: '-0.05em',
+      titleLineHeight: '0.9',
+      logoFamily: "'Sora', sans-serif",
+      logoWeight: 700,
+      logoSize: '22px',
+      logoTracking: '-0.03em',
+      infoLabel: 'Sora',
+      infoPeso: '800 (ExtraBold)',
+      infoTracking: '-0.05em',
+      infoLh: '0.9',
+      infoMax: '72px',
+    },
+    clash: {
+      family: "'Clash Display', sans-serif",
+      titleWeight: 700,
+      titleSize: 'clamp(2.8rem, 7vw, 4.5rem)',
+      titleTracking: '-0.05em',
+      titleLineHeight: '0.9',
+      logoFamily: "'Clash Display', sans-serif",
+      logoWeight: 600,
+      logoSize: '22px',
+      logoTracking: '-0.04em',
+      infoLabel: 'Clash Display',
+      infoPeso: '700 (Bold)',
+      infoTracking: '-0.05em',
+      infoLh: '0.9',
+      infoMax: '72px',
+    },
+    sacsfinal: {
+      family: "'Sora', sans-serif",
+      titleWeight: 800,
+      titleSize: 'clamp(2.8rem, 7vw, 4.5rem)',
+      titleTracking: '-0.05em',
+      titleLineHeight: '0.9',
+      logoFamily: "'Clash Display', sans-serif",
+      logoWeight: 700,
+      logoSize: '22px',
+      logoTracking: '-0.05em',
+      infoLabel: 'Sora 800 + Clash Display 700',
+      infoPeso: 'Headlines: 800 / Wordmark: 700',
+      infoTracking: '-0.05em',
+      infoLh: '0.9',
+      infoMax: '72px',
+    },
+  };
+
+  function updateHero(fontKey) {
+    const cfg = heroFontConfigs[fontKey];
+    const logoFamily = cfg.logoFamily || cfg.family;
+
+    // Title
+    const title = document.getElementById('hero-title');
+    title.style.fontFamily = cfg.family;
+    title.style.fontWeight = cfg.titleWeight;
+    title.style.fontSize = cfg.titleSize;
+    title.style.letterSpacing = cfg.titleTracking;
+    title.style.lineHeight = cfg.titleLineHeight;
+
+    // Logo text — uses logoFamily (separate for combo modes)
+    const logo = document.getElementById('hero-logo-text');
+    logo.style.fontFamily = logoFamily;
+    logo.style.fontWeight = cfg.logoWeight;
+    logo.style.fontSize = cfg.logoSize;
+    logo.style.letterSpacing = cfg.logoTracking;
+
+    // Trust logos — use headline font
+    const trustLogos = document.querySelectorAll('#hero-trust-logos span');
+    trustLogos.forEach(span => {
+      span.style.fontFamily = cfg.family;
+    });
+
+    // Info bar — show dual info for combo
+    const info = document.getElementById('hero-font-info');
+    if (fontKey === 'sacsfinal') {
+      info.innerHTML = `
+        <span class="hero-font-info-item"><strong>Headlines:</strong> Sora 800</span>
+        <span class="hero-font-info-item"><strong>Wordmark:</strong> Clash Display 700</span>
+        <span class="hero-font-info-item"><strong>Tracking:</strong> ${cfg.infoTracking}</span>
+        <span class="hero-font-info-item"><strong>Line-height:</strong> ${cfg.infoLh}</span>
+        <span class="hero-font-info-item"><strong>Tamano max:</strong> ${cfg.infoMax}</span>
+      `;
+    } else {
+      info.innerHTML = `
+        <span class="hero-font-info-item"><strong>Fuente:</strong> ${cfg.infoLabel}</span>
+        <span class="hero-font-info-item"><strong>Peso:</strong> ${cfg.infoPeso}</span>
+        <span class="hero-font-info-item"><strong>Tracking:</strong> ${cfg.infoTracking}</span>
+        <span class="hero-font-info-item"><strong>Line-height:</strong> ${cfg.infoLh}</span>
+        <span class="hero-font-info-item"><strong>Tamano max:</strong> ${cfg.infoMax}</span>
+      `;
+    }
+  }
+
+  document.getElementById('hero-toggle-group').addEventListener('click', (e) => {
+    const btn = e.target.closest('.hero-toggle-btn');
+    if (!btn) return;
+    document.querySelectorAll('.hero-toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    updateHero(btn.dataset.heroFont);
+  });
+
+  // ─── Section 4: Analysis cards ───
+  function buildAnalysis() {
+    const grid = document.getElementById('analysis-grid');
+    grid.innerHTML = '';
+
+    analysisData.forEach(d => {
+      const card = document.createElement('div');
+      card.className = 'analysis-card';
+
+      const metersHTML = Object.entries(d.metrics).map(([key, val]) => {
+        const labels = { brandFit: 'Brand fit', legibilidad: 'Legibilidad', personalidad: 'Personalidad', impacto: 'Impacto', rendimiento: 'Rendimiento' };
+        const pct = val * 10;
+        return `
+          <div class="analysis-meter-row">
+            <span class="analysis-meter-label">${labels[key]}</span>
+            <div class="analysis-meter-bar">
+              <div class="analysis-meter-fill" style="width:${pct}%; background:${d.color};"></div>
+            </div>
+            <span class="analysis-meter-value">${val}/10</span>
+          </div>
+        `;
+      }).join('');
+
+      card.innerHTML = `
+        <div class="analysis-card-title">${d.name}</div>
+        <div class="analysis-card-font">${d.meta}</div>
+        <div class="analysis-card-sample" style="font-family:${d.family}; font-weight:${d.weight}; font-size:${d.sampleSize}; letter-spacing:-0.04em;">
+          ${d.sample}
+        </div>
+        <div class="analysis-meter">${metersHTML}</div>
+      `;
+
+      grid.appendChild(card);
+    });
+  }
+
+  // ─── Init ───
+  buildLogoGrid();
+  buildHeadlines();
+  buildAnalysis();
+</script>
+
+</body>
+</html>

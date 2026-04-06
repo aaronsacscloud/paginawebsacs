@@ -1,0 +1,1892 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SACS — Presentacion 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ========================================
+     SACS PRESENTATION — Design System
+     ======================================== */
+
+  :root {
+    /* Brand Colors */
+    --blue: #4B7BE5;
+    --blue-deep: #1a2b4a;
+    --blue-dark: #0f1a2e;
+    --teal: #2AB5A0;
+    --teal-light: #34d4bc;
+    --gold: #E8A838;
+    --gold-light: #f4c76b;
+    --cream: #F5F3EE;
+    --off-white: #FAFAF8;
+    --white: #ffffff;
+
+    /* Neutrals */
+    --gray-50: #f8f9fa;
+    --gray-100: #e9ecef;
+    --gray-200: #dee2e6;
+    --gray-300: #ced4da;
+    --gray-400: #adb5bd;
+    --gray-500: #6c757d;
+    --gray-600: #495057;
+    --gray-700: #343a40;
+    --gray-800: #212529;
+
+    /* Typography */
+    --font-display: 'Sora', sans-serif;
+    --font-body: 'Plus Jakarta Sans', sans-serif;
+
+    /* Spacing */
+    --slide-padding: 80px;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--font-body);
+    background: var(--blue-dark);
+    color: var(--gray-800);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ========================================
+     SLIDE ENGINE
+     ======================================== */
+
+  .deck {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--slide-padding);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                visibility 0.6s;
+    overflow: hidden;
+  }
+
+  .slide.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .slide.active .animate-in {
+    animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .slide.active .animate-in.d1 { animation-delay: 0.1s; }
+  .slide.active .animate-in.d2 { animation-delay: 0.25s; }
+  .slide.active .animate-in.d3 { animation-delay: 0.4s; }
+  .slide.active .animate-in.d4 { animation-delay: 0.55s; }
+  .slide.active .animate-in.d5 { animation-delay: 0.7s; }
+  .slide.active .animate-in.d6 { animation-delay: 0.85s; }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(32px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.92);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(60px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .slide.active .animate-scale {
+    animation: scaleIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+  }
+
+  .slide.active .animate-right {
+    animation: slideInRight 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+  }
+
+  /* ========================================
+     BACKGROUNDS
+     ======================================== */
+
+  .bg-white { background: var(--white); }
+  .bg-cream { background: var(--cream); }
+  .bg-off-white { background: var(--off-white); }
+  .bg-dark {
+    background: var(--blue-dark);
+    color: var(--white);
+  }
+  .bg-blue {
+    background: var(--blue);
+    color: var(--white);
+  }
+  .bg-teal {
+    background: linear-gradient(135deg, #1a3a35 0%, #0f2b26 100%);
+    color: var(--white);
+  }
+  .bg-gradient-hero {
+    background: linear-gradient(160deg, var(--blue-dark) 0%, #1a2b4a 40%, #1e3555 100%);
+    color: var(--white);
+  }
+  .bg-gradient-warm {
+    background: linear-gradient(160deg, #faf8f4 0%, #f5f0e8 100%);
+  }
+
+  /* ========================================
+     LAYOUT HELPERS
+     ======================================== */
+
+  .slide-inner {
+    width: 100%;
+    max-width: 1280px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    position: relative;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+    width: 100%;
+  }
+
+  .two-col.wide-left {
+    grid-template-columns: 1.2fr 0.8fr;
+  }
+
+  .two-col.wide-right {
+    grid-template-columns: 0.8fr 1.2fr;
+  }
+
+  .full-center {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+
+  /* ========================================
+     TYPOGRAPHY
+     ======================================== */
+
+  .display-xl {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(42px, 5vw, 72px);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+  }
+
+  .display-lg {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(36px, 4vw, 56px);
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+  }
+
+  .display-md {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(28px, 3vw, 42px);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .display-sm {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(22px, 2.2vw, 32px);
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+  }
+
+  .body-lg {
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: clamp(16px, 1.4vw, 20px);
+    line-height: 1.6;
+    color: var(--gray-600);
+  }
+
+  .body-md {
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: clamp(14px, 1.2vw, 17px);
+    line-height: 1.6;
+    color: var(--gray-500);
+  }
+
+  .label {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--teal);
+  }
+
+  .text-white .body-lg,
+  .text-white .body-md {
+    color: rgba(255,255,255,0.75);
+  }
+
+  .text-white .label {
+    color: var(--gold);
+  }
+
+  .text-blue { color: var(--blue); }
+  .text-teal { color: var(--teal); }
+  .text-gold { color: var(--gold); }
+
+  .mt-16 { margin-top: 16px; }
+  .mt-24 { margin-top: 24px; }
+  .mt-32 { margin-top: 32px; }
+  .mt-40 { margin-top: 40px; }
+  .mt-48 { margin-top: 48px; }
+  .mb-16 { margin-bottom: 16px; }
+  .mb-24 { margin-bottom: 24px; }
+  .mb-32 { margin-bottom: 32px; }
+
+  /* ========================================
+     COMPONENTS
+     ======================================== */
+
+  /* Pill badge */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    border-radius: 100px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+  }
+
+  .pill-teal {
+    background: rgba(42, 181, 160, 0.12);
+    color: var(--teal);
+  }
+
+  .pill-gold {
+    background: rgba(232, 168, 56, 0.12);
+    color: var(--gold);
+  }
+
+  .pill-blue {
+    background: rgba(75, 123, 229, 0.12);
+    color: var(--blue);
+  }
+
+  .pill-white {
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.8);
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+
+  /* Feature grid */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 20px;
+    width: 100%;
+  }
+
+  .feature-card {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 28px 20px;
+    text-align: center;
+    border: 1px solid var(--gray-100);
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.06);
+  }
+
+  .feature-card .num {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--blue);
+    color: var(--white);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+
+  .feature-card .feature-name {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--gray-700);
+    line-height: 1.3;
+  }
+
+  .feature-card.accent .num {
+    background: var(--teal);
+  }
+
+  /* Stats */
+  .stat-row {
+    display: flex;
+    gap: 60px;
+  }
+
+  .stat {
+    text-align: left;
+  }
+
+  .stat-value {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(40px, 4vw, 64px);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  .stat-label {
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 15px;
+    margin-top: 8px;
+    opacity: 0.6;
+  }
+
+  /* Mockup placeholder */
+  .mockup-frame {
+    background: var(--gray-50);
+    border-radius: 20px;
+    border: 2px solid var(--gray-200);
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mockup-frame.tablet {
+    aspect-ratio: 4/3;
+    max-width: 520px;
+  }
+
+  .mockup-frame.phone {
+    aspect-ratio: 9/19.5;
+    max-width: 240px;
+    border-radius: 32px;
+    padding: 12px;
+  }
+
+  .mockup-screen {
+    background: var(--white);
+    border-radius: 12px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .mockup-screen .placeholder-text {
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--gray-400);
+    text-align: center;
+    padding: 20px;
+  }
+
+  /* ---- Real image utilities ---- */
+  .slide-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: contain;
+  }
+
+  /* Photo with rounded corners and shadow */
+  .photo-frame {
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.10);
+  }
+
+  .photo-frame img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Tablet device mockup */
+  .device-tablet {
+    position: relative;
+    max-width: 540px;
+    width: 100%;
+    background: #1a1a2e;
+    border-radius: 24px;
+    padding: 14px;
+    box-shadow:
+      0 2px 0 #0d0d1a,
+      0 20px 60px rgba(0,0,0,0.18);
+  }
+
+  .device-tablet::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: -3px;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 40px;
+    background: #2a2a3e;
+    border-radius: 0 2px 2px 0;
+  }
+
+  .device-tablet .device-screen {
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .device-tablet .device-screen img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Phone device mockup */
+  .device-phone {
+    position: relative;
+    max-width: 220px;
+    width: 100%;
+    background: #1a1a2e;
+    border-radius: 36px;
+    padding: 10px;
+    box-shadow:
+      0 2px 0 #0d0d1a,
+      0 20px 50px rgba(0,0,0,0.2);
+  }
+
+  .device-phone::before {
+    content: '';
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 6px;
+    background: #111;
+    border-radius: 3px;
+    z-index: 2;
+  }
+
+  .device-phone .device-screen {
+    border-radius: 28px;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .device-phone .device-screen img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Light variant for light backgrounds */
+  .device-tablet.light {
+    background: #e0e0e8;
+    box-shadow:
+      0 2px 0 #c0c0c8,
+      0 20px 60px rgba(0,0,0,0.10);
+  }
+  .device-tablet.light::before { background: #c8c8d0; }
+
+  .device-phone.light {
+    background: #e0e0e8;
+    border-radius: 36px;
+    box-shadow:
+      0 2px 0 #c0c0c8,
+      0 20px 50px rgba(0,0,0,0.12);
+  }
+  .device-phone.light::before { background: #cacad0; }
+
+  /* Transparent-bg images that float (no frame needed) */
+  .float-img {
+    filter: drop-shadow(0 16px 40px rgba(0,0,0,0.15));
+  }
+
+  .float-img img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Testimonial card */
+  .testimonial-card {
+    background: var(--white);
+    border-radius: 24px;
+    padding: 48px;
+    box-shadow: 0 4px 40px rgba(0,0,0,0.05);
+    border: 1px solid var(--gray-100);
+    max-width: 100%;
+  }
+
+  .testimonial-quote {
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: clamp(16px, 1.3vw, 19px);
+    line-height: 1.7;
+    color: var(--gray-600);
+    font-style: italic;
+    position: relative;
+    padding-left: 24px;
+    border-left: 3px solid var(--teal);
+  }
+
+  .testimonial-brand {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(24px, 2.5vw, 36px);
+    color: var(--gray-800);
+  }
+
+  .testimonial-highlight {
+    font-weight: 700;
+    color: var(--blue);
+    font-style: normal;
+  }
+
+  /* Channel icons grid */
+  .channel-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+  }
+
+  .channel-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: var(--white);
+    border: 1px solid var(--gray-100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    transition: transform 0.3s;
+  }
+
+  .channel-icon:hover {
+    transform: scale(1.1);
+  }
+
+  /* Price card */
+  .price-card {
+    background: var(--white);
+    border-radius: 24px;
+    padding: 48px;
+    text-align: center;
+    box-shadow: 0 8px 60px rgba(0,0,0,0.06);
+    border: 2px solid var(--blue);
+    max-width: 440px;
+  }
+
+  .price-amount {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(48px, 5vw, 72px);
+    color: var(--blue);
+    line-height: 1;
+  }
+
+  .price-currency {
+    font-size: 0.45em;
+    font-weight: 600;
+    vertical-align: super;
+    opacity: 0.6;
+  }
+
+  .price-period {
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 16px;
+    color: var(--gray-500);
+    margin-top: 8px;
+  }
+
+  /* Divider line */
+  .divider {
+    width: 64px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--teal);
+    margin: 24px 0;
+  }
+
+  .divider.center { margin: 24px auto; }
+
+  /* Logo circles */
+  .logo-mark {
+    position: relative;
+    width: 56px;
+    height: 52px;
+    margin-bottom: 12px;
+  }
+
+  .logo-mark .circle {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    opacity: 0.85;
+  }
+
+  .logo-mark .c1 { background: var(--blue); top: 0; left: 4px; }
+  .logo-mark .c2 { background: var(--gold); top: 0; right: 4px; }
+  .logo-mark .c3 { background: var(--teal); bottom: 0; left: 50%; transform: translateX(-50%); }
+
+  /* Connector lines (for omnichannel diagram) */
+  .hub-diagram {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .hub-center {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .hub-spokes {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .spoke-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .spoke-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--white);
+    border: 2px solid var(--gray-200);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+  }
+
+  .spoke-label {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* ========================================
+     NAVIGATION
+     ======================================== */
+
+  .slide-nav {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 100;
+    background: rgba(15, 26, 46, 0.85);
+    backdrop-filter: blur(12px);
+    padding: 10px 20px;
+    border-radius: 100px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .slide-nav button {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+    font-size: 18px;
+  }
+
+  .slide-nav button:hover {
+    background: rgba(255,255,255,0.1);
+    color: white;
+  }
+
+  .slide-counter {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+    min-width: 48px;
+    text-align: center;
+  }
+
+  .progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: var(--teal);
+    transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 101;
+  }
+
+  /* ========================================
+     DECORATIVE
+     ======================================== */
+
+  .bg-pattern {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image:
+      radial-gradient(circle at 20% 50%, var(--blue) 1px, transparent 1px),
+      radial-gradient(circle at 80% 20%, var(--teal) 1px, transparent 1px),
+      radial-gradient(circle at 60% 80%, var(--gold) 1px, transparent 1px);
+    background-size: 60px 60px, 80px 80px, 70px 70px;
+  }
+
+  .glow-teal {
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(42,181,160,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .glow-blue {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(75,123,229,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .glow-gold {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(232,168,56,0.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* Watermark logo */
+  .watermark {
+    position: absolute;
+    bottom: 32px;
+    left: var(--slide-padding);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0.4;
+  }
+
+  .watermark .wm-circles {
+    position: relative;
+    width: 28px;
+    height: 26px;
+  }
+
+  .watermark .wm-circles .circle {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    opacity: 0.8;
+  }
+
+  .watermark .wm-circles .c1 { background: var(--blue); top: 0; left: 2px; }
+  .watermark .wm-circles .c2 { background: var(--gold); top: 0; right: 2px; }
+  .watermark .wm-circles .c3 { background: var(--teal); bottom: 0; left: 50%; transform: translateX(-50%); }
+
+  .watermark .wm-text {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: -0.02em;
+  }
+
+  .bg-dark .watermark { opacity: 0.3; color: white; }
+
+  /* Bullet list */
+  .bullet-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .bullet-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: clamp(14px, 1.2vw, 17px);
+    line-height: 1.5;
+    color: var(--gray-600);
+  }
+
+  .bullet-list li::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--teal);
+    flex-shrink: 0;
+    margin-top: 7px;
+  }
+
+  .bg-dark .bullet-list li {
+    color: rgba(255,255,255,0.7);
+  }
+
+  /* Forbes slide */
+  .forbes-text {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-weight: 700;
+    font-size: clamp(60px, 7vw, 100px);
+    letter-spacing: -0.02em;
+    opacity: 0.08;
+    position: absolute;
+    bottom: 60px;
+    right: 80px;
+  }
+
+  /* CTA Button */
+  .cta-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 36px;
+    border-radius: 100px;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 16px;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+    border: none;
+  }
+
+  .cta-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  }
+
+  .cta-blue {
+    background: var(--blue);
+    color: white;
+  }
+
+  .cta-teal {
+    background: var(--teal);
+    color: white;
+  }
+
+  .cta-outline {
+    background: transparent;
+    color: var(--blue);
+    border: 2px solid var(--blue);
+  }
+
+  /* Highlight span */
+  .hl-teal { color: var(--teal); }
+  .hl-blue { color: var(--blue); }
+  .hl-gold { color: var(--gold); }
+
+  /* Icon box */
+  .icon-box {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    margin-bottom: 16px;
+  }
+
+  .icon-box.teal { background: rgba(42,181,160,0.1); }
+  .icon-box.blue { background: rgba(75,123,229,0.1); }
+  .icon-box.gold { background: rgba(232,168,56,0.1); }
+
+  /* Section label with line */
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .section-label::before {
+    content: '';
+    width: 32px;
+    height: 2px;
+    background: var(--teal);
+    border-radius: 1px;
+  }
+
+  .bg-dark .section-label::before {
+    background: var(--gold);
+  }
+
+  /* Feature row for lists */
+  .feature-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    width: 100%;
+  }
+
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: var(--white);
+    border-radius: 12px;
+    border: 1px solid var(--gray-100);
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--gray-700);
+    transition: transform 0.2s;
+  }
+
+  .feature-item:hover {
+    transform: translateX(4px);
+  }
+
+  .feature-item .fi-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--blue);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .bg-dark .feature-item {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.85);
+  }
+
+  .bg-dark .feature-item .fi-num {
+    background: var(--teal);
+  }
+
+  /* Omnichannel hub visual */
+  .omni-visual {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+  }
+
+  .omni-hub {
+    width: 100px;
+    height: 100px;
+    border-radius: 24px;
+    background: var(--blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(75,123,229,0.3);
+  }
+
+  .omni-branches {
+    display: flex;
+    gap: 20px;
+  }
+
+  .omni-branch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .omni-branch-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(75,123,229,0.08);
+    border: 1px solid rgba(75,123,229,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+
+  .omni-branch-label {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .connector-line {
+    width: 2px;
+    height: 32px;
+    background: linear-gradient(to bottom, var(--blue), rgba(75,123,229,0.2));
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 1024px) {
+    .two-col { grid-template-columns: 1fr; gap: 40px; }
+    .feature-grid { grid-template-columns: repeat(3, 1fr); }
+    .slide { padding: 40px; }
+    :root { --slide-padding: 40px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<div class="deck" id="deck">
+
+  <!-- ========================================
+       SLIDE 1 — COVER
+       ======================================== -->
+  <div class="slide bg-gradient-hero active" data-slide="0">
+    <div class="glow-teal" style="top: -100px; right: -100px;"></div>
+    <div class="glow-blue" style="bottom: -200px; left: -150px;"></div>
+    <div class="slide-inner">
+      <div class="full-center text-white">
+        <div class="logo-mark animate-in d1" style="width:72px; height:66px; margin: 0 auto 24px;">
+          <div class="circle c1" style="width:40px;height:40px;left:6px;"></div>
+          <div class="circle c2" style="width:40px;height:40px;right:6px;"></div>
+          <div class="circle c3" style="width:40px;height:40px;bottom:0;"></div>
+        </div>
+        <div class="section-label animate-in d2" style="justify-content:center;">
+          <span class="label" style="color: var(--gold);">Software para retailers de moda</span>
+        </div>
+        <h1 class="display-xl animate-in d3" style="max-width: 900px;">
+          Venta e inventario<br><span class="hl-teal">omnicanal</span> para marcas de ropa y calzado
+        </h1>
+        <p class="body-lg animate-in d4" style="color: rgba(255,255,255,0.6); max-width: 600px; margin-top: 24px;">
+          Plataforma de nueva generacion, moderna, multidispositivo y 100% en la nube. Desde una tienda hasta +100 sucursales.
+        </p>
+        <div class="animate-in d5" style="display:flex; gap:16px; margin-top:40px;">
+          <a class="cta-button cta-teal">Agenda una demo</a>
+          <a class="cta-button cta-outline" style="color: white; border-color: rgba(255,255,255,0.3);">Ver planes</a>
+        </div>
+        <div class="animate-in d6 float-img" style="margin-top: 48px; max-width: 720px;">
+          <img src="assets/presentacion/img-000.png" alt="SACS Platform - POS, Mobile, Tablet">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 2 — 13 ANOS, MILES DE CLIENTES
+       ======================================== -->
+  <div class="slide bg-cream" data-slide="1">
+    <div class="slide-inner">
+      <div class="two-col">
+        <div>
+          <div class="section-label animate-in d1">
+            <span class="label">Trayectoria</span>
+          </div>
+          <div class="stat-row animate-in d2" style="margin-bottom: 40px;">
+            <div class="stat">
+              <div class="stat-value text-blue">13</div>
+              <div class="stat-label" style="color: var(--gray-600);">anos de experiencia</div>
+            </div>
+            <div class="stat">
+              <div class="stat-value text-teal">Miles</div>
+              <div class="stat-label" style="color: var(--gray-600);">de clientes activos</div>
+            </div>
+          </div>
+          <p class="body-lg animate-in d3">
+            Tenemos todo lo que necesitas: desde herramientas sencillas para gestionar tu punto de venta hasta opciones avanzadas para negocios con mas de 100 sucursales, multiples canales digitales y operaciones complejas.
+          </p>
+          <p class="body-lg animate-in d4" style="margin-top: 20px;">
+            Crece a tu propio ritmo. Soporte ilimitado para que siempre tengas la ayuda que necesitas.
+          </p>
+        </div>
+        <div class="animate-scale" style="display: flex; justify-content: center;">
+          <div class="photo-frame" style="max-width: 380px;">
+            <img src="assets/presentacion/img-003.png" alt="Mujer usando SACS en su telefono">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="watermark"><div class="wm-circles"><div class="circle c1"></div><div class="circle c2"></div><div class="circle c3"></div></div><span class="wm-text">Sacs</span></div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 3 — PUNTO DE VENTA
+       ======================================== -->
+  <div class="slide bg-white" data-slide="2">
+    <div class="slide-inner">
+      <div class="two-col">
+        <div>
+          <div class="section-label animate-in d1">
+            <span class="label">Punto de venta</span>
+          </div>
+          <h2 class="display-lg animate-in d2">Online y<br>offline</h2>
+          <div class="divider animate-in d3"></div>
+          <p class="body-lg animate-in d3">
+            Vende de manera moderna en tu tienda fisica, con o sin internet. Muestra fotos de tus productos, cobra con tabletas o celulares, envia el ticket por WhatsApp, haz el corte de caja, aparta productos y acepta todos los metodos de pago.
+          </p>
+          <p class="body-md animate-in d4" style="margin-top: 16px;">
+            Tu inventario se mantiene actualizado en todo momento, en todas tus sucursales.
+          </p>
+        </div>
+        <div class="animate-right" style="display: flex; justify-content: center;">
+          <div class="device-tablet">
+            <div class="device-screen">
+              <img src="assets/presentacion/img-005.png" alt="Punto de Venta SACS - Vista tablet con catalogo de productos">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="watermark"><div class="wm-circles"><div class="circle c1"></div><div class="circle c2"></div><div class="circle c3"></div></div><span class="wm-text">Sacs</span></div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 4 — MOBILE POS
+       ======================================== -->
+  <div class="slide bg-dark" data-slide="3">
+    <div class="glow-teal" style="top: 50%; right: -100px; transform: translateY(-50%);"></div>
+    <div class="slide-inner">
+      <div class="two-col text-white">
+        <div>
+          <div class="section-label animate-in d1">
+            <span class="label" style="color: var(--gold);">Mobile POS</span>
+          </div>
+          <h2 class="display-lg animate-in d2">Sal de la caja<br>y <span class="hl-teal">vende mas</span></h2>
+          <div class="divider animate-in d3" style="background: var(--gold);"></div>
+          <p class="body-lg animate-in d3" style="color: rgba(255,255,255,0.7);">
+            Vende, imprime o envia tickets por WhatsApp, consulta existencias, escanea codigos de barras o busca productos. Usalo en Android, iOS, Huawei o cualquier dispositivo.
+          </p>
+          <p class="body-lg animate-in d4" style="color: rgba(255,255,255,0.6); margin-top: 16px;">
+            Gestiona cambios y devoluciones, todo desde la mano de tus vendedores o cajeros para ofrecer la mejor experiencia en tienda.
+          </p>
+        </div>
+        <div class="animate-right" style="display: flex; gap: 28px; justify-content: center; align-items: flex-start;">
+          <div class="device-phone" style="max-width: 190px;">
+            <div class="device-screen">
+              <img src="assets/presentacion/img-009.png" alt="Mobile POS - Catalogo de productos movil">
+            </div>
+          </div>
+          <div class="device-phone" style="max-width: 190px; margin-top: 48px;">
+            <div class="device-screen">
+              <img src="assets/presentacion/img-012.png" alt="Ticket digital - Envio por WhatsApp">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 5 — INTERCAMBIOS Y DEVOLUCIONES
+       ======================================== -->
+  <div class="slide bg-off-white" data-slide="4">
+    <div class="slide-inner">
+      <div class="two-col">
+        <div>
+          <div class="section-label animate-in d1">
+            <span class="label">Posventa</span>
+          </div>
+          <h2 class="display-lg animate-in d2">Intercambios, devoluciones y reembolsos</h2>
+          <div class="divider animate-in d3"></div>
+          <p class="body-lg animate-in d3">
+            Sin complicaciones: maneja cambios de talla, color o incluso productos con promociones de forma automatica. Crea reglas de negocio para decidir cuando aceptar o no cambios.
+          </p>
+          <p class="body-md animate-in d4" style="margin-top: 16px;">
+            Busca productos sin necesidad de que el cliente tenga el ticket. Todo es rapido, sencillo y totalmente automatizado.
+          </p>
+        </div>
+        <div class="animate-right" style="display:flex; justify-content: center;">
+          <div class="device-tablet light">
+            <div class="device-screen">
+              <img src="assets/presentacion/img-016.png" alt="Intercambios y devoluciones - Nota de venta">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="watermark"><div class="wm-circles"><div class="circle c1"></div><div class="circle c2"></div><div class="circle c3"></div></div><span class="wm-text">Sacs</span></div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 6 — MAS FUNCIONES POS
+       ======================================== -->
+  <div class="slide bg-white" data-slide="5">
+    <div class="slide-inner">
+      <div class="full-center" style="gap: 48px;">
+        <div>
+          <div class="section-label animate-in d1" style="justify-content: center;">
+            <span class="label">Punto de venta</span>
+          </div>
+          <h2 class="display-md animate-in d2">+200 funciones para vender mejor</h2>
+        </div>
+        <div class="feature-grid animate-in d3">
+          <div class="feature-card"><div class="num">1</div><div class="feature-name">Corte de caja</div></div>
+          <div class="feature-card"><div class="num">2</div><div class="feature-name">Anticipos y apartados</div></div>
+          <div class="feature-card"><div class="num">3</div><div class="feature-name">Venta a credito</div></div>
+          <div class="feature-card"><div class="num">4</div><div class="feature-name">Arqueo de caja</div></div>
+          <div class="feature-card"><div class="num">5</div><div class="feature-name">Promociones</div></div>
+          <div class="feature-card accent"><div class="num">6</div><div class="feature-name">Precios por volumen</div></div>
+          <div class="feature-card accent"><div class="num">7</div><div class="feature-name">Listas de precios</div></div>
+          <div class="feature-card accent"><div class="num">8</div><div class="feature-name">Verificador tallas y colores</div></div>
+          <div class="feature-card accent"><div class="num">9</div><div class="feature-name">Tickets WhatsApp</div></div>
+          <div class="feature-card accent"><div class="num">+</div><div class="feature-name">Y mucho mas...</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="watermark"><div class="wm-circles"><div class="circle c1"></div><div class="circle c2"></div><div class="circle c3"></div></div><span class="wm-text">Sacs</span></div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 7 — ETIQUETAS
+       ======================================== -->
+  <div class="slide bg-gradient-warm" data-slide="6">
+    <div class="slide-inner">
+      <div class="two-col">
+        <div>
+          <div class="section-label animate-in d1">
+            <span class="label">Etiquetas</span>
+          </div>
+          <h2 class="display-lg animate-in d2">Imprime y personaliza tus etiquetas</h2>
+          <div class="divider animate-in d3"></div>
+          <p class="body-lg animate-in d3">
+            Crea y personaliza tus etiquetas de codigo de barras con tallas, colores, precios, descuentos y mas. Con solo recibir el producto, imprimes tus etiquetas automaticamente.
+          </p>
+          <p class="body-md animate-in d4" style="margin-top: 16px;">
+            Sin complicaciones, solo fluidez.
+          </p>
+        </div>
+        <div class="animate-right" style="display:flex; justify-content: center; align-items: center;">
+          <div class="photo-frame" style="max-width: 380px;">
+            <img src="assets/presentacion/img-021.png" alt="Escaneo de etiquetas de codigo de barras">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="watermark"><div class="wm-circles"><div class="circle c1"></div><div class="circle c2"></div><div class="circle c3"></div></div><span class="wm-text">Sacs</span></div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 8 — ESCANEO MOVIL
+       ======================================== -->
+  <div class="slide bg-dark" data-slide="7">
+    <div class="glow-gold" style="top: 20%; left: -100px;"></div>
+    <div class="slide-inner">
+      <div class="two-col text-white">
+        <div>
+          <div class="section-label animate-in d1">
+            <span class="label" style="color: var(--gold);">Escaneo movil</span>
+          </div>
+          <h2 class="display-lg animate-in d2">Escanea productos con tu telefono</h2>
+          <div class="divider animate-in d3" style="background: var(--gold);"></div>
+          <p class="body-lg animate-in d3" style="color: rgba(255,255,255,0.7);">
+            Usa tu telefono para contar, auditar y recibir productos de compras o transferencias, ademas de verificar existencias. Todo de forma rapida y sencilla.
+          </p>
+          <p class="body-lg animate-in d4" style="color: rgba(255,255,255,0.6); margin-top: 16px;">
+            No necesitas descargar ninguna aplicacion. Cualquier empleado puede usarlo en minutos. Solo escanea los codigos con la camara y gestiona tu inventario al instante.
+          </p>
+        </div>
+        <div class="animate-right" style="display: flex; justify-content: center;">
+          <div class="photo-frame" style="max-width: 340px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <img src="assets/presentacion/img-022.png" alt="Escaneando productos con el telefono en tienda">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 9 — INVENTARIO MULTISUCURSAL
+       ======================================== -->
+  <div class="slide bg-white" data-slide="8">
+    <div class="slide-inner">
+      <div class="two-col">
+        <div>
+          <div class="section-label animate-in d1">
+            <span class="label">Inventario</span>
+          </div>
+          <h2 class="display-lg animate-in d2">Multisucursal<br><span class="hl-blue">centralizado</span></h2>
+          <div class="divider animate-in d3"></div>
+          <p class="body-lg animate-in d3">
+            Controla todas tus transacciones desde un solo lugar y visualiza las operaciones de todas tus tiendas.
+          </p>
+          <p class="body-lg animate-in d4" style="margin-top: 16px;">
+            Administra tu inventario, transfiere productos, haz resurtidos y gestiona todo desde cualquier dispositivo.
+          </p>
+        </div>
+        <div class="animate-scale" style="display:flex; justify-content: center;">
+          <div style="max-width: 420px; border-radius: 24px; overflow: hidden; box-shadow: 0 16px 48px rgba(0,0,0,0.12);">
+            <img src="assets/presentacion/img-023.png" alt="Diagrama inventario multisucursal - Empresa, sucursales y almacenes" style="width: 100%; height: auto; display: block;">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="watermark"><div class="wm-circles"><div class="circle c1"></div><div class="circle c2"></div><div class="circle c3"></div></div><span class="wm-text">Sacs</span></div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 10 — INVENTARIO TIEMPO REAL
+       ======================================== -->
+  <div class="slide bg-cream" data-slide="9">
+    <div class="slide-inner">
+      <div class="two-col">
+        <div>
+          <div class="section-label animate-in d1">
+            <span class="label">Inventario</span>
+          </div>
+          <h2 class="display-lg animate-in d2">Visualiza tu inventario en <span class="hl-teal">tiempo real</span></h2>
+          <div class="divider animate-in d3"></div>
+          <p class="body-lg animate-in d3">
+            Centraliza y visualiza tu inventario en tiempo real. Consulta el stock total, productos reservados y existencias por sucursal, talla o color.
+          </p>
+          <p class="body-md animate-in d4" style="margin-top: 16px;">
+            Edita facilmente desde Excel o actualiza manualmente desde tu tablet o telefono. Rapido, sencillo y siempre actualizado.
+          </p>
+        </div>
+        <div class="animate-right" style="display: flex; justify-content: center;">
+          <div class="device-tablet light">
+            <div class="device-screen">
+              <img src="assets/presentacion/img-025.png" alt="Inventario en tiempo real - Lista de productos con stock">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="watermark"><div class="wm-circles"><div class="circle c1"></div><div class="circle c2"></div><div class="circle c3"></div></div><span class="wm-text">Sacs</span></div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 11 — MAS FUNCIONES INVENTARIO
+       ======================================== -->
+  <div class="slide bg-dark" data-slide="10">
+    <div class="bg-pattern"></div>
+    <div class="slide-inner">
+      <div class="full-center text-white" style="gap: 48px;">
+        <div>
+          <div class="section-label animate-in d1" style="justify-content: center;">
+            <span class="label" style="color: var(--gold);">Inventario omnicanal</span>
+          </div>
+          <h2 class="display-md animate-in d2">+100 funciones de inventario</h2>
+        </div>
+        <div class="feature-grid animate-in d3">
+          <div class="feature-card" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1);"><div class="num" style="background: var(--teal);">1</div><div class="feature-name" style="color: rgba(255,255,255,0.85);">Compras</div></div>
+          <div class="feature-card" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1);"><div class="num" style="background: var(--teal);">2</div><div class="feature-name" style="color: rgba(255,255,255,0.85);">Resurtido automatico</div></div>
+          <div class="feature-card" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1);"><div class="num" style="background: var(--teal);">3</div><div class="feature-name" style="color: rgba(255,255,255,0.85);">Recepcion de productos</div></div>
+          <div class="feature-card" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1);"><div class="num" style="background: var(--teal);">4</div><div class="feature-name" style="color: rgba(255,255,255,0.85);">Mermas</div></div>
+          <div class="feature-card" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1);"><div class="num" style="background: var(--teal);">5</div><div class="feature-name" style="color: rgba(255,255,255,0.85);">Conteo fisico y auditoria</div></div>
+          <div class="feature-card" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1);"><div class="num" style="background: var(--gold);">6</div><div class="feature-name" style="color: rgba(255,255,255,0.85);">Ajustes</div></div>
+          <div class="feature-card" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1);"><div class="num" style="background: var(--gold);">7</div><div class="feature-name" style="color: rgba(255,255,255,0.85);">Reportes ABC, rotacion</div></div>
+          <div class="feature-card" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1);"><div class="num" style="background: var(--gold);">8</div><div class="feature-name" style="color: rgba(255,255,255,0.85);">Gestion de CEDIS</div></div>
+          <div class="feature-card" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1);"><div class="num" style="background: var(--gold);">9</div><div class="feature-name" style="color: rgba(255,255,255,0.85);">Sugerencias automaticas</div></div>
+          <div class="feature-card" style="background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1);"><div class="num" style="background: var(--gold);">+</div><div class="feature-name" style="color: rgba(255,255,255,0.85);">Y mucho mas...</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 12 — COMERCIO ELECTRONICO
+       ======================================== -->
+  <div class="slide bg-white" data-slide="11">
+    <div class="slide-inner">
+      <div class="two-col">
+        <div>
+          <div class="section-label animate-in d1">
+            <span class="label">E-commerce</span>
+          </div>
+          <h2 class="display-lg animate-in d2">Comercio electronico <span class="hl-blue">integrado</span></h2>
+          <div class="divider animate-in d3"></div>
+          <p class="body-lg animate-in d3">
+            Conecta todas tus tiendas fisicas con tu propia tienda en linea. Tus clientes podran pedir productos para recoger en tienda, pagar en linea y recoger en cualquier sucursal.
+          </p>
+          <p class="body-lg animate-in d4" style="margin-top: 16px;">
+            Envios locales y nacionales, apartados y pedidos parciales en la web para pagarlos en tienda.
+          </p>
+          <p class="body-md animate-in d5" style="margin-top: 16px;">
+            Compatible con WooCommerce y Shopify.
+          </p>
+        </div>
+        <div class="animate-scale float-img" style="display:flex; justify-content: center; align-items: center; max-width: 520px;">
+          <img src="assets/presentacion/img-030.png" alt="E-commerce integrado - Tres telefonos con tienda online">
+        </div>
+      </div>
+    </div>
+    <div class="watermark"><div class="wm-circles"><div class="circle c1"></div><div class="circle c2"></div><div class="circle c3"></div></div><span class="wm-text">Sacs</span></div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 13 — REDES Y WHATSAPP
+       ======================================== -->
+  <div class="slide bg-off-white" data-slide="12">
+    <div class="slide-inner">
+      <div class="two-col">
+        <div>
+          <div class="section-label animate-in d1">
+            <span class="label">Omnicanal</span>
+          </div>
+          <h2 class="display-lg animate-in d2">Conecta tus redes y <span class="hl-teal">WhatsApp</span></h2>
+          <div class="divider animate-in d3"></div>
+          <p class="body-lg animate-in d3">
+            Tu inventario siempre sincronizado y listo para vender. Publica historias en Instagram con tus productos reales, llevalos a tu web para que tus clientes compren, y recibe todos los pedidos directamente en Sacs.
+          </p>
+          <p class="body-lg animate-in d4" style="margin-top: 16px;">
+            Tus productos visibles en WhatsApp, y todo se actualiza automaticamente en todos tus canales. Todo en un solo lugar, con total control.
+          </p>
+        </div>
+        <div class="animate-scale float-img" style="display: flex; justify-content: center; max-width: 440px;">
+          <img src="assets/presentacion/img-032.png" alt="Hub omnicanal - SACS conectado con redes sociales, e-commerce y sucursales">
+        </div>
+      </div>
+    </div>
+    <div class="watermark"><div class="wm-circles"><div class="circle c1"></div><div class="circle c2"></div><div class="circle c3"></div></div><span class="wm-text">Sacs</span></div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 14 — MONEDERO Y CASHBACK
+       ======================================== -->
+  <div class="slide bg-gradient-warm" data-slide="13">
+    <div class="slide-inner">
+      <div class="two-col">
+        <div>
+          <div class="section-label animate-in d1">
+            <span class="label">Fidelizacion</span>
+          </div>
+          <h2 class="display-lg animate-in d2">Monedero electronico y <span class="hl-gold">cashback</span></h2>
+          <div class="divider animate-in d3" style="background: var(--gold);"></div>
+          <p class="body-lg animate-in d3">
+            Crea el plan de recompensas perfecto para tus clientes. Personaliza las tarjetas o hazlo digital, y haz que tus clientes ganen puntos con cada compra.
+          </p>
+          <p class="body-lg animate-in d4" style="margin-top: 16px;">
+            Podran ver su saldo de puntos en su portal personal y canjearlos por productos en tu tienda. Ademas, puedes abonar reembolsos directamente a la tarjeta.
+          </p>
+        </div>
+        <div class="animate-right" style="display: flex; flex-direction: column; align-items: center; gap: 24px; justify-content: center;">
+          <div class="photo-frame" style="max-width: 380px;">
+            <img src="assets/presentacion/img-034.png" alt="Clienta recibiendo su compra en tienda">
+          </div>
+          <div style="max-width: 420px; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.06); background: #fff; border: 1px solid var(--gray-100);">
+            <img src="assets/presentacion/img-035.png" alt="Tarjeta de cliente - Andrea Gutierrez, Gold, 354 puntos" style="width: 100%; height: auto; display: block;">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="watermark"><div class="wm-circles"><div class="circle c1"></div><div class="circle c2"></div><div class="circle c3"></div></div><span class="wm-text">Sacs</span></div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 15 — ANALITICAS
+       ======================================== -->
+  <div class="slide bg-white" data-slide="14">
+    <div class="slide-inner">
+      <div class="two-col">
+        <div>
+          <div class="section-label animate-in d1">
+            <span class="label">Analiticas</span>
+          </div>
+          <h2 class="display-lg animate-in d2">Indicadores de <span class="hl-blue">desempeno</span></h2>
+          <div class="divider animate-in d3"></div>
+          <p class="body-lg animate-in d3">
+            Descubre tus productos mas vendidos, las tallas y colores favoritos, y los que estan por agotarse.
+          </p>
+          <p class="body-lg animate-in d4" style="margin-top: 16px;">
+            Analiza rotacion, ticket promedio, top clientes, costeo de inventario y recibe recomendaciones automaticas para tus promociones de temporada.
+          </p>
+        </div>
+        <div class="animate-right" style="display: flex; justify-content: center;">
+          <div class="device-tablet">
+            <div class="device-screen">
+              <img src="assets/presentacion/img-039.png" alt="Dashboard de analiticas - Ingresos, KPIs, graficas de desempeno">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="watermark"><div class="wm-circles"><div class="circle c1"></div><div class="circle c2"></div><div class="circle c3"></div></div><span class="wm-text">Sacs</span></div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 16 — FORBES
+       ======================================== -->
+  <div class="slide bg-dark" data-slide="15">
+    <div class="glow-gold" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
+    <div class="slide-inner">
+      <div class="full-center text-white" style="gap: 32px;">
+        <div class="pill pill-white animate-in d1">Reconocimiento</div>
+        <h2 class="display-xl animate-in d2" style="max-width: 800px;">Respaldados por<br><span style="color: var(--gold);">Forbes</span></h2>
+        <div class="divider center animate-in d3" style="background: var(--gold);"></div>
+        <p class="body-lg animate-in d3" style="color: rgba(255,255,255,0.65); max-width: 640px;">
+          Uno de los medios de comunicacion mas grandes del mundo publico a Sacscloud como caso de exito, rechazando mas de 200 millones de pesos de inversion, consolidandose como empresa mexicana y con el fin de seguir creciendo y creando en Mexico.
+        </p>
+        <div class="animate-in d4" style="margin-top: 16px;">
+          <a class="cta-button cta-teal" style="cursor:pointer;">Ver nota completa</a>
+        </div>
+      </div>
+    </div>
+    <div style="position: absolute; bottom: 60px; right: 80px; max-width: 240px; opacity: 0.06;">
+      <img src="assets/presentacion/img-043.png" alt="Forbes" style="width: 100%; height: auto; filter: invert(1);">
+    </div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 17 — CASO CASA MACA
+       ======================================== -->
+  <div class="slide bg-cream" data-slide="16">
+    <div class="slide-inner">
+      <div class="two-col">
+        <div>
+          <div class="section-label animate-in d1">
+            <span class="label">Caso de exito</span>
+          </div>
+          <h2 class="display-md animate-in d2" style="margin-bottom: 24px;">Casa Maca</h2>
+          <div class="testimonial-card animate-in d3">
+            <p class="testimonial-quote">
+              Siempre batallabamos con el control de inventario. Vendiamos en Instagram y WhatsApp y cuando el cliente llegaba a la tienda... el producto ya no estaba!<br><br>
+              Pensamos que migrar de sistema seria complicado, pero con Sacs fue sencillo, nos ayudaron en todo el proceso hasta tener <span class="testimonial-highlight">todos nuestros canales de venta conectados</span>.<br><br>
+              Ahora cada venta se actualiza en tiempo real, eliminando errores y malas experiencias al cliente y tenemos mas tiempo para crecer nuestra marca.
+            </p>
+          </div>
+        </div>
+        <div class="animate-scale" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;">
+          <div style="max-width: 240px;">
+            <img src="assets/presentacion/img-044.png" alt="Logo Casa Maca" style="width: 100%; height: auto; display: block;">
+          </div>
+          <div style="display: flex; gap: 16px; align-items: end;">
+            <div class="photo-frame" style="max-width: 320px; flex: 2;">
+              <img src="assets/presentacion/img-046.png" alt="Interior de tienda Casa Maca">
+            </div>
+            <div class="photo-frame" style="max-width: 140px; flex: 1; border-radius: 16px;">
+              <img src="assets/presentacion/img-047.png" alt="Fundadoras de Casa Maca">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="watermark"><div class="wm-circles"><div class="circle c1"></div><div class="circle c2"></div><div class="circle c3"></div></div><span class="wm-text">Sacs</span></div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 18 — CASO LIVESHOW MERCH
+       ======================================== -->
+  <div class="slide bg-dark" data-slide="17">
+    <div class="glow-blue" style="top: -100px; right: -100px;"></div>
+    <div class="slide-inner">
+      <div class="two-col text-white">
+        <div>
+          <div class="section-label animate-in d1">
+            <span class="label" style="color: var(--gold);">Caso de exito</span>
+          </div>
+          <h2 class="display-md animate-in d2" style="margin-bottom: 24px;">LiveShow Merch</h2>
+          <p class="body-lg animate-in d3" style="color: rgba(255,255,255,0.7);">
+            Se especializan en representar tiendas oficiales de mercancia de artistas en los estadios y teatros mas importantes del pais.
+          </p>
+          <p class="body-lg animate-in d4" style="color: rgba(255,255,255,0.7); margin-top: 16px;">
+            Con Sacs, capacitaron a mas de <strong style="color: white;">150 vendedores</strong> para operar multiples puntos de venta fisicos simultaneamente, gestionando miles de transacciones en un solo dia con un control de inventario mas preciso que nunca.
+          </p>
+          <p class="body-lg animate-in d5" style="color: rgba(255,255,255,0.5); margin-top: 16px; font-style: italic;">
+            Aliado en conciertos de Shakira, Karol G, Eric Clapton y muchos mas.
+          </p>
+        </div>
+        <div class="animate-scale" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;">
+          <div style="max-width: 90px;">
+            <img src="assets/presentacion/img-048.png" alt="Logo LiveShow Merchandising" style="width: 100%; height: auto; display: block; filter: invert(1) brightness(2);">
+          </div>
+          <div class="photo-frame" style="max-width: 360px; box-shadow: 0 16px 48px rgba(0,0,0,0.3);">
+            <img src="assets/presentacion/img-050.png" alt="Stand de mercancia oficial Shakira">
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+            <div class="pill pill-white" style="font-size: 12px;">Shakira</div>
+            <div class="pill pill-white" style="font-size: 12px;">Karol G</div>
+            <div class="pill pill-white" style="font-size: 12px;">Eric Clapton</div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 300px;">
+            <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 16px; text-align: center;">
+              <div style="font-family: var(--font-display); font-weight: 800; font-size: 26px; color: var(--teal);">150+</div>
+              <div style="font-family: var(--font-body); font-size: 11px; color: rgba(255,255,255,0.5);">Vendedores</div>
+            </div>
+            <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 16px; text-align: center;">
+              <div style="font-family: var(--font-display); font-weight: 800; font-size: 26px; color: var(--gold);">Miles</div>
+              <div style="font-family: var(--font-body); font-size: 11px; color: rgba(255,255,255,0.5);">Txn/dia</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 19 — CASO LA BELLA PANDITA
+       ======================================== -->
+  <div class="slide bg-off-white" data-slide="18">
+    <div class="slide-inner">
+      <div class="two-col">
+        <div>
+          <div class="section-label animate-in d1">
+            <span class="label">Caso de exito</span>
+          </div>
+          <h2 class="display-md animate-in d2" style="margin-bottom: 24px;">La Bella Pandita</h2>
+          <p class="body-lg animate-in d3">
+            En menos de 4 anos, lograron escalar a mas de <strong>38 sucursales fisicas y dos modelos de negocio</strong>, con punto de venta, inventarios y programas de fidelidad gestionados por Sacs en tiempo real.
+          </p>
+          <p class="body-lg animate-in d4" style="margin-top: 16px;">
+            Ademas, integraron su CEDIS para una operacion mas eficiente.
+          </p>
+          <div class="animate-in d5" style="margin-top: 24px; padding: 20px; background: var(--white); border-radius: 14px; border-left: 4px solid var(--teal);">
+            <p style="font-family: var(--font-body); font-weight: 600; font-size: 16px; color: var(--gray-700); line-height: 1.5;">
+              "Con Sacs, no hay limites para nuestro crecimiento; todo se puede personalizar a la medida de nuestro negocio."
+            </p>
+          </div>
+        </div>
+        <div class="animate-scale" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;">
+          <div style="max-width: 240px;">
+            <img src="assets/presentacion/img-051.png" alt="Logo La Bella Pandita" style="width: 100%; height: auto; display: block;">
+          </div>
+          <div class="photo-frame" style="max-width: 400px;">
+            <img src="assets/presentacion/img-053.png" alt="Sucursal La Bella Pandita en centro comercial">
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; max-width: 400px;">
+            <div style="background: var(--white); border-radius: 14px; padding: 14px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.04);">
+              <div style="font-family: var(--font-display); font-weight: 800; font-size: 26px; color: var(--blue);">38+</div>
+              <div style="font-family: var(--font-body); font-size: 11px; color: var(--gray-500);">Sucursales</div>
+            </div>
+            <div style="background: var(--white); border-radius: 14px; padding: 14px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.04);">
+              <div style="font-family: var(--font-display); font-weight: 800; font-size: 26px; color: var(--teal);">2</div>
+              <div style="font-family: var(--font-body); font-size: 11px; color: var(--gray-500);">Modelos</div>
+            </div>
+            <div style="background: var(--white); border-radius: 14px; padding: 14px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.04);">
+              <div style="font-family: var(--font-display); font-weight: 800; font-size: 26px; color: var(--gold);">4</div>
+              <div style="font-family: var(--font-body); font-size: 11px; color: var(--gray-500);">Anos</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="watermark"><div class="wm-circles"><div class="circle c1"></div><div class="circle c2"></div><div class="circle c3"></div></div><span class="wm-text">Sacs</span></div>
+  </div>
+
+  <!-- ========================================
+       SLIDE 20 — PRICING / CTA
+       ======================================== -->
+  <div class="slide bg-gradient-hero" data-slide="19">
+    <div class="glow-teal" style="bottom: -100px; left: -100px;"></div>
+    <div class="glow-gold" style="top: -50px; right: -50px;"></div>
+    <div class="slide-inner">
+      <div class="full-center text-white" style="gap: 40px;">
+        <div>
+          <div class="section-label animate-in d1" style="justify-content: center;">
+            <span class="label" style="color: var(--gold);">Planes y precios</span>
+          </div>
+          <h2 class="display-xl animate-in d2">Comienza hoy</h2>
+          <p class="body-lg animate-in d3" style="color: rgba(255,255,255,0.6); max-width: 500px; margin-top: 16px;">
+            Planes para emprendedores que estan comenzando y opciones personalizadas para grandes negocios con mas de 50 sucursales.
+          </p>
+        </div>
+        <div class="price-card animate-in d4" style="border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); backdrop-filter: blur(20px);">
+          <div style="font-family: var(--font-body); font-weight: 600; font-size: 13px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;">Desde</div>
+          <div class="price-amount" style="color: white;">$900<span class="price-currency">MXN</span></div>
+          <div class="price-period" style="color: rgba(255,255,255,0.5);">mensuales por sucursal</div>
+          <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 12px;">
+            <a class="cta-button cta-teal" style="justify-content: center; width: 100%;">Agenda una demo</a>
+            <a class="cta-button cta-outline" style="justify-content: center; width: 100%; color: white; border-color: rgba(255,255,255,0.25);">Ver planes en sacscloud.com</a>
+          </div>
+        </div>
+        <div class="animate-in d5" style="display: flex; gap: 32px; margin-top: 16px;">
+          <div style="text-align: center;">
+            <div style="font-family: var(--font-display); font-weight: 700; font-size: 14px; color: rgba(255,255,255,0.4);">100% nube</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-family: var(--font-display); font-weight: 700; font-size: 14px; color: rgba(255,255,255,0.4);">Soporte ilimitado</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-family: var(--font-display); font-weight: 700; font-size: 14px; color: rgba(255,255,255,0.4);">Sin contratos</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Navigation -->
+<nav class="slide-nav" id="slideNav">
+  <button onclick="prevSlide()" aria-label="Anterior">&#8592;</button>
+  <span class="slide-counter" id="slideCounter">1 / 20</span>
+  <button onclick="nextSlide()" aria-label="Siguiente">&#8594;</button>
+</nav>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const counter = document.getElementById('slideCounter');
+  const progressBar = document.getElementById('progressBar');
+  let current = 0;
+  const total = slides.length;
+
+  function goTo(index) {
+    if (index < 0 || index >= total) return;
+
+    // Remove active + reset animations on current slide
+    slides[current].classList.remove('active');
+    slides[current].querySelectorAll('.animate-in, .animate-scale, .animate-right').forEach(el => {
+      el.style.animation = 'none';
+      el.offsetHeight; // force reflow
+      el.style.animation = '';
+    });
+
+    current = index;
+
+    // Activate new slide
+    slides[current].classList.add('active');
+
+    // Update counter
+    counter.textContent = `${current + 1} / ${total}`;
+
+    // Update progress bar
+    progressBar.style.width = `${((current + 1) / total) * 100}%`;
+  }
+
+  function nextSlide() {
+    goTo(current + 1);
+  }
+
+  function prevSlide() {
+    goTo(current - 1);
+  }
+
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault();
+      nextSlide();
+    }
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      prevSlide();
+    }
+    if (e.key === 'Home') {
+      e.preventDefault();
+      goTo(0);
+    }
+    if (e.key === 'End') {
+      e.preventDefault();
+      goTo(total - 1);
+    }
+  });
+
+  // Touch support
+  let touchStartX = 0;
+  document.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+  });
+
+  document.addEventListener('touchend', (e) => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) nextSlide();
+      else prevSlide();
+    }
+  });
+
+  // Initialize
+  progressBar.style.width = `${(1 / total) * 100}%`;
+</script>
+
+</body>
+</html>

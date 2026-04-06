@@ -17,5 +17,13 @@ export default defineConfig({
     css: {
       preprocessorOptions: {},
     },
+    ssr: {
+      noExternal: [],
+    },
+    build: {
+      rollupOptions: {
+        external: ['bufferutil', 'utf-8-validate'],
+      },
+    },
   },
 });
