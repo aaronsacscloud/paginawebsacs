@@ -3,6 +3,13 @@
 export interface PlanPrice {
   mxn: number;
   usd: number;
+  eur: number;
+  brl: number;
+  cop: number;
+  ars: number;
+  clp: number;
+  pen: number;
+  gbp: number;
 }
 
 export interface Plan {
@@ -45,9 +52,9 @@ export const plans: Plan[] = [
     id: 'vende',
     name: 'Vende',
     description: 'Para marcas que arrancan su primera tienda.',
-    monthly: { mxn: 600, usd: 30 },
-    annual: { mxn: 500, usd: 25 },
-    annualTotal: { mxn: 6000, usd: 300 },  // 600 × 10
+    monthly: { mxn: 600, usd: 30, eur: 28, brl: 155, cop: 125000, ars: 27000, clp: 28500, pen: 114, gbp: 24 },
+    annual: { mxn: 500, usd: 25, eur: 23, brl: 130, cop: 105000, ars: 22500, clp: 23750, pen: 95, gbp: 20 },
+    annualTotal: { mxn: 6000, usd: 300, eur: 276, brl: 1560, cop: 1260000, ars: 270000, clp: 285000, pen: 1140, gbp: 240 },
     highlighted: false,
     cta: { label: 'Prueba 7 días gratis', href: '/prueba-gratis', variant: 'secondary' },
     features: [
@@ -69,9 +76,9 @@ export const plans: Plan[] = [
     id: 'controla',
     name: 'Controla',
     description: 'Para marcas con varias sucursales que necesitan orden.',
-    monthly: { mxn: 900, usd: 45 },
-    annual: { mxn: 750, usd: 38 },
-    annualTotal: { mxn: 9000, usd: 450 },  // 900 × 10
+    monthly: { mxn: 900, usd: 45, eur: 42, brl: 234, cop: 189000, ars: 40500, clp: 42750, pen: 171, gbp: 36 },
+    annual: { mxn: 750, usd: 38, eur: 35, brl: 197, cop: 159600, ars: 34200, clp: 36100, pen: 144, gbp: 30 },
+    annualTotal: { mxn: 9000, usd: 450, eur: 414, brl: 2340, cop: 1890000, ars: 405000, clp: 427500, pen: 1710, gbp: 360 },
     highlighted: false,
     inheritsFrom: 'Vende',
     cta: { label: 'Prueba 7 días gratis', href: '/prueba-gratis', variant: 'secondary' },
@@ -97,9 +104,9 @@ export const plans: Plan[] = [
     id: 'fideliza',
     name: 'Fideliza',
     description: 'Para marcas que quieren clientes que regresan.',
-    monthly: { mxn: 1400, usd: 70 },
-    annual: { mxn: 1167, usd: 58 },
-    annualTotal: { mxn: 14000, usd: 700 },  // 1400 × 10
+    monthly: { mxn: 1400, usd: 70, eur: 65, brl: 364, cop: 294000, ars: 63000, clp: 66500, pen: 266, gbp: 56 },
+    annual: { mxn: 1167, usd: 58, eur: 54, brl: 302, cop: 243600, ars: 52200, clp: 55100, pen: 220, gbp: 46 },
+    annualTotal: { mxn: 14000, usd: 700, eur: 644, brl: 3640, cop: 2940000, ars: 630000, clp: 665000, pen: 2660, gbp: 560 },
     badge: 'Más popular',
     highlighted: true,
     inheritsFrom: 'Controla',
@@ -125,9 +132,9 @@ export const plans: Plan[] = [
     id: 'automatiza',
     name: 'Automatiza',
     description: 'Para marcas que quieren operar sin intervenir.',
-    monthly: { mxn: 2900, usd: 145 },
-    annual: { mxn: 2417, usd: 121 },
-    annualTotal: { mxn: 29000, usd: 1450 },  // 2900 × 10
+    monthly: { mxn: 2900, usd: 145, eur: 134, brl: 754, cop: 609000, ars: 130500, clp: 137750, pen: 551, gbp: 115 },
+    annual: { mxn: 2417, usd: 121, eur: 111, brl: 629, cop: 508200, ars: 108900, clp: 114950, pen: 460, gbp: 96 },
+    annualTotal: { mxn: 29000, usd: 1450, eur: 1334, brl: 7540, cop: 6090000, ars: 1305000, clp: 1377500, pen: 5510, gbp: 1150 },
     highlighted: false,
     inheritsFrom: 'Fideliza',
     cta: { label: 'Agenda una demo', href: '/contacto', variant: 'secondary' },

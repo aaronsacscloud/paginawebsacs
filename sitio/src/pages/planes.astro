@@ -22,9 +22,18 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
 
     <div class="pricing-toggles" id="pricing-toggles">
       <!-- Currency toggle -->
-      <div class="toggle-group" role="group" aria-label="Moneda">
-        <button class="toggle-btn active" data-currency="mxn" aria-pressed="true">MXN</button>
-        <button class="toggle-btn" data-currency="usd" aria-pressed="false">USD</button>
+      <div class="currency-selector">
+        <select class="currency-select" id="currency-select" aria-label="Moneda">
+          <option value="mxn" selected>MXN</option>
+          <option value="usd">USD</option>
+          <option value="eur">EUR</option>
+          <option value="gbp">GBP</option>
+          <option value="brl">BRL</option>
+          <option value="cop">COP</option>
+          <option value="ars">ARS</option>
+          <option value="clp">CLP</option>
+          <option value="pen">PEN</option>
+        </select>
       </div>
 
       <!-- Billing toggle -->
@@ -51,12 +60,10 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
           data-index={i}
         >
           <span class="price-strip-name">{plan.name}</span>
-          <span class="price-strip-price">
-            <span class="price-value" data-billing="monthly" data-currency="mxn">${plan.monthly.mxn.toLocaleString('es-MX')}</span>
-            <span class="price-value" data-billing="monthly" data-currency="usd">${plan.monthly.usd} USD</span>
-            <span class="price-value" data-billing="annual" data-currency="mxn">${plan.annual.mxn.toLocaleString('es-MX')}</span>
-            <span class="price-value" data-billing="annual" data-currency="usd">${plan.annual.usd} USD</span>
-          </span>
+          <span class="price-strip-price price-dynamic"
+            data-monthly={JSON.stringify(plan.monthly)}
+            data-annual={JSON.stringify(plan.annual)}
+          ></span>
         </button>
       ))}
     </div>
@@ -71,19 +78,13 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
           <p class="plan-desc">{plan.description}</p>
 
           <div class="plan-price" aria-live="polite">
-            <span class="plan-price-amount price-value" data-billing="monthly" data-currency="mxn">${plan.monthly.mxn.toLocaleString('es-MX')} <span class="plan-price-currency">MXN</span></span>
-            <span class="plan-price-amount price-value" data-billing="monthly" data-currency="usd">${plan.monthly.usd} <span class="plan-price-currency">USD</span></span>
-            <span class="plan-price-amount price-value" data-billing="annual" data-currency="mxn">${plan.annual.mxn.toLocaleString('es-MX')} <span class="plan-price-currency">MXN</span></span>
-            <span class="plan-price-amount price-value" data-billing="annual" data-currency="usd">${plan.annual.usd} <span class="plan-price-currency">USD</span></span>
-            <span class="plan-price-period">
-              <span class="price-period-text" data-billing="monthly">/mes por sucursal</span>
-              <span class="price-period-text" data-billing="annual">/mes por sucursal</span>
-            </span>
-            <span class="plan-price-annual-total price-period-text" data-billing="annual">
-              <span class="price-value" data-billing="annual" data-currency="mxn">${plan.annualTotal.mxn.toLocaleString('es-MX')} MXN</span>
-              <span class="price-value" data-billing="annual" data-currency="usd">${plan.annualTotal.usd.toLocaleString('es-MX')} USD</span>
-              /año por sucursal
-            </span>
+            <span class="plan-price-amount price-dynamic"
+              data-monthly={JSON.stringify(plan.monthly)}
+              data-annual={JSON.stringify(plan.annual)}
+              data-annual-total={JSON.stringify(plan.annualTotal)}
+            ></span>
+            <span class="plan-price-period">/mes por sucursal</span>
+            <span class="plan-price-annual-total price-annual-total-dynamic" style="display:none;">/año por sucursal</span>
           </div>
 
           <a
@@ -662,6 +663,33 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
   }
 }
 
+.currency-selector {
+  position: relative;
+}
+.currency-select {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-full);
+  padding: 8px 32px 8px 14px;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238C8C8C' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  transition: border-color 0.2s ease;
+}
+.currency-select:hover {
+  border-color: var(--color-border);
+}
+.currency-select:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .toggle-group {
   display: inline-flex;
   background: var(--color-bg-secondary);
@@ -711,19 +739,9 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
 /* ═══════════════════════════════════════
    PRICE DISPLAY TOGGLE (CSS-driven)
    ═══════════════════════════════════════ */
-.price-value { display: none; }
-.price-period-text { display: none; }
-
-[data-billing="monthly"][data-currency="mxn"] .price-value[data-billing="monthly"][data-currency="mxn"],
-[data-billing="monthly"][data-currency="usd"] .price-value[data-billing="monthly"][data-currency="usd"],
-[data-billing="annual"][data-currency="mxn"] .price-value[data-billing="annual"][data-currency="mxn"],
-[data-billing="annual"][data-currency="usd"] .price-value[data-billing="annual"][data-currency="usd"] {
-  display: inline;
-}
-
-[data-billing="monthly"] .price-period-text[data-billing="monthly"],
-[data-billing="annual"] .price-period-text[data-billing="annual"] {
-  display: inline;
+/* Price display is now JS-driven via .price-dynamic elements */
+.price-dynamic {
+  font-variant-numeric: tabular-nums;
 }
 
 /* ═══════════════════════════════════════
@@ -2709,14 +2727,59 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
   const root = document.getElementById('pricing-root');
   const toggles = document.getElementById('pricing-toggles');
 
+  // Currency symbols for formatting
+  const currencyLabels: Record<string, string> = {
+    mxn: 'MXN', usd: 'USD', eur: 'EUR', gbp: 'GBP',
+    brl: 'BRL', cop: 'COP', ars: 'ARS', clp: 'CLP', pen: 'PEN'
+  };
+
+  function formatAmount(amount: number, currency: string): string {
+    if (amount >= 10000) return amount.toLocaleString('es-MX');
+    return amount.toLocaleString('es-MX');
+  }
+
+  function updatePrices() {
+    if (!root) return;
+    const billing = root.dataset.billing || 'monthly';
+    const currency = root.dataset.currency || 'mxn';
+    const label = currencyLabels[currency] || currency.toUpperCase();
+
+    document.querySelectorAll('.price-dynamic').forEach(el => {
+      const monthlyData = el.getAttribute('data-monthly');
+      const annualData = el.getAttribute('data-annual');
+      const annualTotalData = el.getAttribute('data-annual-total');
+
+      if (billing === 'monthly' && monthlyData) {
+        const prices = JSON.parse(monthlyData);
+        const amount = prices[currency] ?? prices['usd'];
+        el.textContent = `${formatAmount(amount, currency)} ${label}`;
+      } else if (billing === 'annual' && annualData) {
+        const prices = JSON.parse(annualData);
+        const amount = prices[currency] ?? prices['usd'];
+        el.textContent = `${formatAmount(amount, currency)} ${label}`;
+      }
+
+      // Show annual total
+      if (annualTotalData) {
+        const totalEl = el.closest('.plan-price')?.querySelector('.price-annual-total-dynamic') as HTMLElement;
+        if (totalEl && billing === 'annual') {
+          const totalPrices = JSON.parse(annualTotalData);
+          const totalAmount = totalPrices[currency] ?? totalPrices['usd'];
+          totalEl.textContent = `${formatAmount(totalAmount, currency)} ${label} /año por sucursal`;
+          totalEl.style.display = 'block';
+        } else if (totalEl) {
+          totalEl.style.display = 'none';
+        }
+      }
+    });
+  }
+
+  // Billing toggle (monthly/annual buttons)
   if (toggles && root) {
     toggles.addEventListener('click', (e) => {
       const btn = (e.target as HTMLElement).closest('.toggle-btn') as HTMLButtonElement;
       if (!btn) return;
-
       const billing = btn.dataset.billing;
-      const currency = btn.dataset.currency;
-
       if (billing) {
         root.dataset.billing = billing;
         const group = btn.closest('.toggle-group');
@@ -2726,20 +2789,22 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
         });
         btn.classList.add('active');
         btn.setAttribute('aria-pressed', 'true');
-      }
-
-      if (currency) {
-        root.dataset.currency = currency;
-        const group = btn.closest('.toggle-group');
-        group?.querySelectorAll('.toggle-btn').forEach(b => {
-          b.classList.remove('active');
-          b.setAttribute('aria-pressed', 'false');
-        });
-        btn.classList.add('active');
-        btn.setAttribute('aria-pressed', 'true');
+        updatePrices();
       }
     });
   }
+
+  // Currency selector (dropdown)
+  const currencySelect = document.getElementById('currency-select') as HTMLSelectElement;
+  if (currencySelect && root) {
+    currencySelect.addEventListener('change', () => {
+      root.dataset.currency = currencySelect.value;
+      updatePrices();
+    });
+  }
+
+  // Initial render
+  updatePrices();
 
   // ─── Comparison table accordion ───
   const compAccordion = document.getElementById('comparison-accordion');
