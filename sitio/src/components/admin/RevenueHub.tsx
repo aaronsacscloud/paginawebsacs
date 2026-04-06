@@ -1,21 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
-
-// Lazy load recharts to avoid SSR issues
-const LazyChart = lazy(() =>
-  import('recharts').then((mod) => ({
-    default: ({ data }: { data: any[] }) => (
-      <mod.ResponsiveContainer width="100%" height={250}>
-        <mod.BarChart data={data}>
-          <mod.CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-          <mod.XAxis dataKey="month" tick={{ fontSize: 11, fill: '#999' }} />
-          <mod.YAxis tick={{ fontSize: 11, fill: '#999' }} tickFormatter={(v: number) => '$' + Math.round(v).toLocaleString('es-MX')} />
-          <mod.Tooltip formatter={(v: number) => '$' + Math.round(v).toLocaleString('es-MX')} />
-          <mod.Bar dataKey="amount" fill="#4B7BE5" radius={[4, 4, 0, 0]} />
-        </mod.BarChart>
-      </mod.ResponsiveContainer>
-    ),
-  }))
-);
+import { useState, useEffect } from 'react';
 
 const PLANS = ['vende', 'controla', 'fideliza', 'automatiza'];
 const PLAN_PRICES: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 2900 };
@@ -81,9 +64,19 @@ export default function RevenueHub() {
         {/* Revenue chart */}
         <div style={S.card}>
           <h3 style={S.cardTitle}>Ingresos mensuales</h3>
-          <Suspense fallback={<div style={{ height: 250, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ccc' }}>Cargando gráfica...</div>}>
-            <LazyChart data={chartData} />
-          </Suspense>
+          {/* CSS bar chart */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 200 }}>
+            {chartData.map((d: any, i: number) => {
+              const max = Math.max(...chartData.map((x: any) => x.amount as number), 1);
+              const h = ((d.amount as number) / max) * 180;
+              return (
+                <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                  <div title={fmt(d.amount as number)} style={{ width: '100%', height: h, background: '#4B7BE5', borderRadius: '4px 4px 0 0', minHeight: 2, transition: 'height 0.3s ease' }} />
+                  <span style={{ fontSize: '0.5625rem', color: '#aaa' }}>{d.month}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Two columns */}
