@@ -1,0 +1,133 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { t } from '../../i18n/utils';
+
+const locale = 'en';
+---
+
+<BaseLayout
+  title={t('contact.metaTitle', locale)}
+  description={t('contact.metaDesc', locale)}
+  locale={locale}
+>
+
+<section class="ct-hero">
+  <div class="ct-hero-inner">
+    <div class="ct-hero-text">
+      <h1 class="ct-h1">{t('contact.heroTitle', locale)}</h1>
+      <p class="ct-lead">{t('contact.heroLead', locale)}</p>
+      <div class="ct-session">
+        <p class="ct-session-label">{t('contact.sessionLabel', locale)}</p>
+        <div class="ct-session-steps">
+          <div class="ct-session-step">
+            <span class="ct-session-num">1</span>
+            <div>
+              <strong>{t('contact.step1Title', locale)}</strong>
+              <p>{t('contact.step1Desc', locale)}</p>
+            </div>
+          </div>
+          <div class="ct-session-step">
+            <span class="ct-session-num">2</span>
+            <div>
+              <strong>{t('contact.step2Title', locale)}</strong>
+              <p>{t('contact.step2Desc', locale)}</p>
+            </div>
+          </div>
+          <div class="ct-session-step">
+            <span class="ct-session-num">3</span>
+            <div>
+              <strong>{t('contact.step3Title', locale)}</strong>
+              <p>{t('contact.step3Desc', locale)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="ct-hero-stats">
+        <div class="ct-hero-stat"><span class="ct-stat-num">{t('proof.brands', locale)}</span><span class="ct-stat-label">{t('proof.brandsLabel', locale)}</span></div>
+        <div class="ct-stat-sep"></div>
+        <div class="ct-hero-stat"><span class="ct-stat-num">{t('proof.rating', locale)}</span><span class="ct-stat-label">{t('proof.ratingLabel', locale)}</span></div>
+        <div class="ct-stat-sep"></div>
+        <div class="ct-hero-stat"><span class="ct-stat-num">{t('proof.uptime', locale)}</span><span class="ct-stat-label">{t('proof.uptimeLabel', locale)}</span></div>
+      </div>
+      <blockquote class="ct-hero-quote">
+        <p>"{t('trust.quote', locale)}"</p>
+        <cite>— La Bella Pandita</cite>
+      </blockquote>
+      <div class="ct-hero-trusted">
+        <span class="ct-trusted-label">{t('trust.trustedBy', locale)}</span>
+        <div class="ct-trusted-names">
+          <span>La Bella Pandita</span><span>Liveshow</span><span>Casa Maca</span><span>Sandmade</span>
+        </div>
+      </div>
+    </div>
+    <div class="ct-hero-cal" id="demo">
+      <div class="calendly-inline-widget" data-url="https://calendly.com/aaronherzberg/reuniongeneral?hide_event_type_details=1&hide_gdpr_banner=1" style="min-width:320px;height:700px;"></div>
+      <script type="text/javascript" src="https://assets.calendly.com/assets/external/widget.js" async></script>
+    </div>
+  </div>
+</section>
+
+<section class="ct-wa">
+  <div class="ct-wa-inner">
+    <p class="ct-wa-text">{t('contact.waText', locale)}</p>
+    <a id="demo-wa-link" href="https://wa.me/5215536634392" target="_blank" rel="noopener noreferrer" class="ct-wa-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      {t('cta.writeWhatsApp', locale)}
+    </a>
+  </div>
+</section>
+
+</BaseLayout>
+
+<style>
+  .ct-hero { background: #fff; padding: clamp(100px, 10vw, 140px) 0 clamp(64px, 8vw, 96px); }
+  .ct-hero-inner { max-width: 1200px; margin: 0 auto; padding: 0 clamp(24px, 4vw, 48px); display: grid; grid-template-columns: 1fr 1.15fr; gap: clamp(48px, 6vw, 80px); align-items: start; }
+  .ct-h1 { font-family: var(--font-display); font-size: clamp(2.5rem, 5vw, 3.75rem); font-weight: 800; color: var(--color-text-primary); letter-spacing: -0.04em; line-height: 1.05; margin: 0 0 var(--space-5); }
+  .ct-lead { font-family: var(--font-body); font-size: clamp(1rem, 1.4vw, 1.1rem); color: var(--color-text-secondary); line-height: 1.65; margin: 0 0 var(--space-8); max-width: 440px; }
+  .ct-session { margin-bottom: var(--space-2); }
+  .ct-session-label { font-family: var(--font-body); font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-text-tertiary); margin: 0 0 var(--space-3); }
+  .ct-session-steps { display: flex; flex-direction: column; gap: 14px; }
+  .ct-session-step { display: flex; gap: 12px; align-items: flex-start; }
+  .ct-session-num { font-family: var(--font-display); font-size: 0.6875rem; font-weight: 700; color: var(--color-primary); width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--color-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .ct-session-step strong { font-family: var(--font-body); font-size: 0.875rem; font-weight: 700; color: var(--color-text-primary); display: block; line-height: 1.3; }
+  .ct-session-step p { font-family: var(--font-body); font-size: 0.8125rem; color: var(--color-text-tertiary); line-height: 1.45; margin: 2px 0 0; }
+  .ct-hero-stats { display: flex; align-items: center; gap: var(--space-5); margin-top: var(--space-8); padding-top: var(--space-6); border-top: 1px solid var(--color-border-light); }
+  .ct-stat-num { font-family: var(--font-display); font-size: 1.125rem; font-weight: 800; color: var(--color-text-primary); display: block; line-height: 1; }
+  .ct-stat-label { font-family: var(--font-body); font-size: 0.6875rem; color: var(--color-text-tertiary); display: block; margin-top: 3px; }
+  .ct-stat-sep { width: 1px; height: 28px; background: var(--color-border-light); flex-shrink: 0; }
+  .ct-hero-quote { margin: var(--space-6) 0 0; padding: var(--space-4) var(--space-5); border-left: 2px solid var(--color-border-light); }
+  .ct-hero-quote p { font-family: var(--font-body); font-size: 0.875rem; font-style: italic; color: var(--color-text-secondary); line-height: 1.55; margin: 0 0 6px; }
+  .ct-hero-quote cite { font-family: var(--font-body); font-size: 0.75rem; font-style: normal; font-weight: 600; color: var(--color-text-tertiary); }
+  .ct-hero-trusted { margin-top: var(--space-6); }
+  .ct-trusted-label { font-family: var(--font-body); font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-text-tertiary); display: block; margin-bottom: var(--space-2); }
+  .ct-trusted-names { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ct-trusted-names span { font-family: var(--font-body); font-size: 0.75rem; font-weight: 600; color: var(--color-text-tertiary); background: var(--color-bg-primary); padding: 5px 12px; border-radius: 100px; border: 1px solid var(--color-border-light); }
+  .ct-hero-cal { background: var(--color-bg-primary); border: 1px solid var(--color-border-light); border-radius: var(--radius-xl); padding: var(--space-6); min-height: 700px; }
+  .ct-wa { background: var(--color-bg-primary); padding: var(--space-10) var(--space-6); border-top: 1px solid var(--color-border-light); }
+  .ct-wa-inner { max-width: 600px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: var(--space-6); }
+  .ct-wa-text { font-family: var(--font-body); font-size: 0.9375rem; color: var(--color-text-secondary); margin: 0; }
+  .ct-wa-btn { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-body); font-size: 0.875rem; font-weight: 700; color: #fff; background: #25D366; padding: 12px 24px; border-radius: var(--radius-sm); text-decoration: none; white-space: nowrap; transition: background 0.2s ease; }
+  .ct-wa-btn:hover { background: #1fbe5d; text-decoration: none; }
+  @media (max-width: 768px) {
+    .ct-hero-inner { grid-template-columns: 1fr; gap: var(--space-10); }
+    .ct-wa-inner { flex-direction: column; text-align: center; }
+    .ct-hero-stats { justify-content: center; }
+    .ct-hero-trusted { text-align: center; }
+    .ct-trusted-names { justify-content: center; }
+  }
+</style>
+
+<script>
+  {
+    const waLink = document.getElementById('demo-wa-link') as HTMLAnchorElement;
+    if (waLink) {
+      const msg = encodeURIComponent('Hi, I\'m interested in booking a demo of Sacs. I was looking at: ' + window.location.href);
+      waLink.href = `https://wa.me/5215536634392?text=${msg}`;
+    }
+    if (window.location.hash === '#demo') {
+      const el = document.getElementById('demo');
+      if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+    }
+  }
+</script>
+</BaseLayout>

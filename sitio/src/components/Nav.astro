@@ -1,6 +1,11 @@
 ---
 import { navLinks } from '../data/navigation';
+import { t, getLocalizedUrl } from '../i18n/utils';
+import { locales, languageNames, defaultLocale } from '../i18n/config';
+import type { Locale } from '../i18n/config';
 
+interface Props { locale?: Locale; }
+const { locale = 'es' } = Astro.props;
 const currentPath = Astro.url.pathname;
 ---
 
@@ -61,9 +66,22 @@ const currentPath = Astro.url.pathname;
     </nav>
 
     <div class="nav-actions">
-      <a href="https://app.sacscloud.com/" class="nav-action-link">Iniciar sesión</a>
-      <a href="/prueba-gratis" class="nav-action-link">Empieza gratis</a>
-      <a href="/contacto" class="btn-nav-cta">Agenda una demo</a>
+      <div class="nav-lang-selector">
+        <button class="nav-lang-btn" aria-label="Language" aria-expanded="false">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+          <span>{locale.toUpperCase()}</span>
+        </button>
+        <div class="nav-lang-dropdown">
+          {locales.map((l) => (
+            <a href={getLocalizedUrl('/', l)} class:list={['nav-lang-option', { active: l === locale }]}>
+              {languageNames[l]}
+            </a>
+          ))}
+        </div>
+      </div>
+      <a href="https://app.sacscloud.com/" class="nav-action-link">{t('nav.login', locale)}</a>
+      <a href={getLocalizedUrl('/prueba-gratis', locale)} class="nav-action-link">{t('nav.startFree', locale)}</a>
+      <a href={getLocalizedUrl('/contacto', locale)} class="btn-nav-cta">{t('nav.bookDemo', locale)}</a>
     </div>
 
     <button
@@ -387,6 +405,70 @@ const currentPath = Astro.url.pathname;
     .nav-actions {
       display: flex;
     }
+  }
+
+  /* Language selector */
+  .nav-lang-selector {
+    position: relative;
+  }
+  .nav-lang-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: 1px solid var(--color-border-light);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+  }
+  .nav-lang-btn:hover {
+    border-color: var(--color-border);
+  }
+  .nav-lang-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: #fff;
+    border: 1px solid var(--color-border-light);
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    padding: 4px;
+    min-width: 140px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px);
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+    z-index: 100;
+  }
+  .nav-lang-selector:hover .nav-lang-dropdown,
+  .nav-lang-btn:focus + .nav-lang-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+  .nav-lang-option {
+    display: block;
+    padding: 8px 12px;
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    border-radius: 6px;
+    transition: background 0.15s ease;
+  }
+  .nav-lang-option:hover {
+    background: var(--color-bg-primary);
+    text-decoration: none;
+  }
+  .nav-lang-option.active {
+    color: var(--color-primary);
+    font-weight: 700;
   }
 
   .nav-action-link {

@@ -5,6 +5,8 @@ import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import WhatsAppButton from '../components/WhatsAppButton.astro';
 import '../styles/global.css';
+import { getLangFromUrl, getHreflangLinks, t } from '../i18n/utils';
+import type { Locale } from '../i18n/config';
 
 interface Props {
   title: string;
@@ -13,9 +15,12 @@ interface Props {
   type?: 'website' | 'article';
   noindex?: boolean;
   structuredData?: Record<string, unknown> | Record<string, unknown>[];
+  locale?: Locale;
 }
 
 const { title, description, image, type, noindex, structuredData } = Astro.props;
+const locale = Astro.props.locale || getLangFromUrl(Astro.url);
+const hreflangLinks = getHreflangLinks(Astro.url.pathname);
 
 const orgSchema = {
   '@context': 'https://schema.org',
@@ -39,7 +44,7 @@ const allSchemas = structuredData
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang={locale}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -53,6 +58,11 @@ const allSchemas = structuredData
     <link rel="preload" href="/fonts/Sora-ExtraBold.woff2" as="font" type="font/woff2" crossorigin />
     <!-- Preload hero image (above-fold, LCP element) -->
     <link rel="preload" href="/images/hero-sacs-store.webp" as="image" type="image/webp" />
+
+    <!-- Hreflang tags for SEO -->
+    {hreflangLinks.map(({ lang, href }) => (
+      <link rel="alternate" hreflang={lang} href={href} />
+    ))}
 
     <SEO
       title={title}
@@ -155,25 +165,25 @@ const allSchemas = structuredData
     </style>
   </head>
   <body>
-    <a href="#main-content" class="skip-link">Saltar al contenido</a>
-    <Nav />
+    <a href="#main-content" class="skip-link">{t('common.skipToContent', locale)}</a>
+    <Nav locale={locale} />
     <main id="main-content">
       <slot />
     </main>
-    <Footer />
-    <WhatsAppButton />
+    <Footer locale={locale} />
+    <WhatsAppButton locale={locale} />
 
     <!-- Coming soon modal -->
     <div class="cs-modal-overlay" id="cs-modal" aria-hidden="true">
       <div class="cs-modal">
-        <button class="cs-modal-close" id="cs-modal-close" aria-label="Cerrar">&times;</button>
+        <button class="cs-modal-close" id="cs-modal-close" aria-label={t('modal.close', locale)}>&times;</button>
         <div class="cs-modal-icon">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
         </div>
-        <h2 class="cs-modal-title">Proximamente</h2>
-        <p class="cs-modal-subtitle">Actualizacion Sacs 5.0</p>
-        <p class="cs-modal-desc">Estamos trabajando en esta seccion. Mientras tanto, agenda una demo para conocer toda la plataforma.</p>
-        <a href="/contacto" class="cs-modal-btn">Agenda una demo</a>
+        <h2 class="cs-modal-title">{t('modal.title', locale)}</h2>
+        <p class="cs-modal-subtitle">{t('modal.subtitle', locale)}</p>
+        <p class="cs-modal-desc">{t('modal.desc', locale)}</p>
+        <a href="/contacto" class="cs-modal-btn">{t('modal.cta', locale)}</a>
       </div>
     </div>
 

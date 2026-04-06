@@ -1,6 +1,12 @@
 ---
+import { t } from '../i18n/utils';
+import type { Locale } from '../i18n/config';
+
+interface Props { locale?: Locale; }
+const { locale = 'es' } = Astro.props;
+
 const WHATSAPP_NUMBER = '5215536634392';
-const DEFAULT_MESSAGE = 'Hola, me interesa conocer más sobre SACS. Estaba viendo:';
+const DEFAULT_MESSAGE = t('whatsapp.message', locale);
 ---
 
 <div class="whatsapp-float" id="whatsapp-float">
@@ -10,7 +16,7 @@ const DEFAULT_MESSAGE = 'Hola, me interesa conocer más sobre SACS. Estaba viend
     class="whatsapp-btn"
     target="_blank"
     rel="noopener noreferrer"
-    aria-label="Contactar por WhatsApp"
+    aria-label={t('whatsapp.aria', locale)}
     aria-describedby="whatsapp-tooltip"
     data-number={WHATSAPP_NUMBER}
     data-message={DEFAULT_MESSAGE}
@@ -20,7 +26,7 @@ const DEFAULT_MESSAGE = 'Hola, me interesa conocer más sobre SACS. Estaba viend
     </svg>
     <span class="whatsapp-pulse" aria-hidden="true"></span>
   </a>
-  <span class="whatsapp-tooltip" id="whatsapp-tooltip" role="tooltip">¿Necesitas ayuda?</span>
+  <span class="whatsapp-tooltip" id="whatsapp-tooltip" role="tooltip">{t('whatsapp.tooltip', locale)}</span>
 </div>
 
 <style>

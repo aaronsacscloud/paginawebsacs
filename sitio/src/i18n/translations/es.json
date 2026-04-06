@@ -1,0 +1,175 @@
+{
+  "meta": {
+    "siteTitle": "Sacs — Sistema operativo para retailers conscientes",
+    "siteDescription": "Sacs es la plataforma todo-en-uno para gestionar tu retail."
+  },
+  "nav": {
+    "platform": "Plataforma",
+    "pricing": "Planes",
+    "caseStudies": "Casos de exito",
+    "login": "Iniciar sesion",
+    "startFree": "Empieza gratis",
+    "bookDemo": "Agenda una demo",
+    "openMenu": "Abrir menu",
+    "closeMenu": "Cerrar menu",
+    "pillars": {
+      "sell": { "verb": "Vende", "desc": "Cobra en todos los canales" },
+      "control": { "verb": "Controla", "desc": "Opera todas tus tiendas" },
+      "loyalty": { "verb": "Fideliza", "desc": "Crece con tus clientes" },
+      "automate": { "verb": "Automatiza", "desc": "Decide con inteligencia" }
+    },
+    "features": {
+      "pos": "Punto de venta",
+      "ecommerce": "Comercio electronico",
+      "whatsapp": "WhatsApp Commerce",
+      "payments": "Metodos de pago",
+      "inventory": "Gestion de inventario",
+      "multibranch": "Multi-sucursal",
+      "orders": "Pedidos y logistica",
+      "billing": "Facturacion electronica",
+      "crm": "CRM y clientes",
+      "loyalty": "Programa de lealtad",
+      "campaigns": "Campanas",
+      "personalization": "Personalizacion",
+      "reports": "Reportes en tiempo real",
+      "axo": "AXO · IA",
+      "alerts": "Alertas inteligentes",
+      "integrations": "Integraciones"
+    },
+    "viewPlatform": "Ver toda la plataforma"
+  },
+  "hero": {
+    "eyebrow": "Software para retail",
+    "title": "Visibilidad total de toda tu operacion retail.",
+    "subtitle": "De la bodega al mostrador a la tienda en linea. Ventas, stock, clientes y lealtad en un solo lugar."
+  },
+  "cta": {
+    "startFree": "Empieza gratis",
+    "bookDemo": "Agenda una demo",
+    "tryFree": "Prueba 7 dias gratis",
+    "viewAll": "Ver todos",
+    "learnMore": "Conocer mas",
+    "readArticle": "Leer articulo",
+    "contactUs": "Contactanos",
+    "writeWhatsApp": "Escribenos por WhatsApp"
+  },
+  "doubts": {
+    "title": "Aun tienes dudas?"
+  },
+  "cards": {
+    "demoTitle": "Agenda\nuna demo",
+    "demoDesc": "Te mostramos Sacs con datos de tu negocio. 30 min, sin compromiso.",
+    "demoCta": "Reservar horario",
+    "startTitle": "Inicia\nahora",
+    "startDesc": "Crea tu cuenta gratis y configura tu tienda en 15 minutos. Sin tarjeta.",
+    "startCta": "Empieza gratis"
+  },
+  "blog": {
+    "eyebrow": "Blog",
+    "title": "Ideas para retailers conscientes",
+    "subtitle": "Tendencias, innovacion y casos reales del retail.",
+    "viewAll": "Ver todos los articulos"
+  },
+  "contact": {
+    "metaTitle": "Agenda una demo — Sacs",
+    "metaDesc": "Agenda una demo personalizada de 30 minutos con un experto de Sacs.",
+    "heroTitle": "Conoce Sacs\nen 30 minutos",
+    "heroLead": "Te mostramos la plataforma funcionando con datos reales de tu industria. Sin slides, sin presion.",
+    "sessionLabel": "En la sesion:",
+    "step1Title": "Escuchamos tus retos",
+    "step1Desc": "Nos cuentas que te frena hoy y que necesitas resolver.",
+    "step2Title": "Te mostramos como resolverlo",
+    "step2Desc": "Abrimos Sacs en vivo y lo configuramos para tu caso.",
+    "step3Title": "Disenamos tu vision juntos",
+    "step3Desc": "Platicamos a donde quieres llegar y como lograrlo con Sacs.",
+    "processEyebrow": "Como funciona",
+    "processTitle": "Que esperar de la reunion",
+    "process1Title": "Entendemos tu negocio",
+    "process1Desc": "Nos cuentas como operas hoy, cuantas sucursales tienes, que canales usas y que te duele de tu operacion.",
+    "process2Title": "Demo en vivo",
+    "process2Desc": "Te mostramos Sacs funcionando con datos y escenarios de tu tipo de negocio. Punto de venta, inventario, clientes, reportes.",
+    "process3Title": "Siguiente paso",
+    "process3Desc": "Definimos juntos el plan de implementacion, tiempos de migracion y como empezar. Sin presion.",
+    "afterEyebrow": "Despues de la demo",
+    "afterTitle": "De la reunion a operar en 24 horas",
+    "afterBadge1": "En la llamada",
+    "after1Title": "Propuesta a tu medida",
+    "after1Desc": "Te presentamos un plan personalizado basado en tu tamano y necesidades. Transparente, sin letras chiquitas.",
+    "afterBadge2": "Mismo dia",
+    "after2Title": "Cuenta activa",
+    "after2Desc": "Si aceptas, tu cuenta se habilita ese mismo dia. Sin esperas, sin procesos largos.",
+    "afterBadge3": "Dia siguiente",
+    "after3Title": "Asesoria de inicio",
+    "after3Desc": "Un experto te acompana para configurar catalogo, inventario y punto de venta. Al dia siguiente ya operas.",
+    "migrateEyebrow": "Si decides iniciar",
+    "migrateTitle": "Migrar es mas facil de lo que piensas",
+    "migrateDesc": "Nuestro equipo migra tu catalogo, clientes e historial de ventas. Tu solo validas. Sin perder un dia de ventas.",
+    "migrate1Title": "Nos envias tu catalogo",
+    "migrate1Desc": "Excel, CSV o desde tu sistema actual. Nosotros lo formateamos.",
+    "migrate2Title": "Importamos todo en 1-3 dias",
+    "migrate2Desc": "Productos, variantes, precios, clientes y proveedores.",
+    "migrate3Title": "Vendes desde el dia 1",
+    "migrate3Desc": "Capacitacion incluida. Tu ejecutivo te acompana en cada paso.",
+    "noRiskTitle": "Sin riesgo",
+    "noRiskDesc": "Prueba 7 dias gratis. Sin tarjeta. Si no te convence, cancelas con un clic. Sin llamadas, sin retencion, sin letra chiquita.",
+    "noRiskExtras": "Migracion incluida · Soporte 24/7 · Cancela cuando quieras",
+    "consultingTitle": "Consultoria de implementacion gratis",
+    "consultingDesc": "Normalmente tiene un costo de",
+    "consultingPrice": "$8,000 MXN",
+    "consultingDetail": ". Con tu plan anual, la consultoria personalizada de implementacion es completamente gratis.",
+    "consultingBadge": "Incluido con plan anual",
+    "waText": "Prefieres chatear? Escribenos directo por WhatsApp."
+  },
+  "proof": {
+    "brands": "3,000+",
+    "brandsLabel": "marcas activas",
+    "rating": "4.8/5",
+    "ratingLabel": "Google Reviews",
+    "uptime": "99.9%",
+    "uptimeLabel": "uptime",
+    "setup": "15 min",
+    "setupLabel": "para configurar"
+  },
+  "trust": {
+    "trustedBy": "Confian en Sacs",
+    "quote": "La plataforma nos dio el control que necesitabamos para escalar a 42 sucursales."
+  },
+  "footer": {
+    "tagline": "Sistema operativo para retailers conscientes. Tecnologia con alma mexicana.",
+    "platform": "Plataforma",
+    "company": "Empresa",
+    "resources": "Recursos",
+    "aboutUs": "Nosotros",
+    "manifesto": "Manifiesto",
+    "blog": "Blog",
+    "contact": "Contacto",
+    "pricingPlans": "Planes y precios",
+    "helpCenter": "Centro de ayuda",
+    "systemStatus": "Estado del sistema",
+    "privacyPolicy": "Politica de privacidad",
+    "termsOfUse": "Terminos de uso",
+    "copyright": "Todos los derechos reservados.",
+    "impact": "El 10% de cada licencia genera impacto social."
+  },
+  "modal": {
+    "title": "Proximamente",
+    "subtitle": "Actualizacion Sacs 5.0",
+    "desc": "Estamos trabajando en esta seccion. Mientras tanto, agenda una demo para conocer toda la plataforma.",
+    "cta": "Agenda una demo",
+    "close": "Cerrar"
+  },
+  "whatsapp": {
+    "tooltip": "Necesitas ayuda?",
+    "aria": "Contactar por WhatsApp",
+    "message": "Hola, me interesa conocer mas sobre Sacs. Estaba viendo:"
+  },
+  "common": {
+    "backToAll": "Todos los casos de exito",
+    "readMore": "Ver caso completo",
+    "noCommitment": "Sin compromiso, sin tarjeta",
+    "yourBusiness": "Tu negocio puede ser el siguiente.",
+    "configure15": "Configura tu negocio en 15 minutos. Sin tarjeta de credito, sin contratos.",
+    "freeAccount": "Crear cuenta gratis",
+    "skipToContent": "Saltar al contenido"
+  }
+}

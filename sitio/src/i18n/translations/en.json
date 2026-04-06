@@ -1,0 +1,175 @@
+{
+  "meta": {
+    "siteTitle": "Sacs — Operating system for conscious retailers",
+    "siteDescription": "Sacs is the all-in-one platform to manage your retail business."
+  },
+  "nav": {
+    "platform": "Platform",
+    "pricing": "Pricing",
+    "caseStudies": "Case Studies",
+    "login": "Log in",
+    "startFree": "Start free",
+    "bookDemo": "Book a demo",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "pillars": {
+      "sell": { "verb": "Sell", "desc": "Accept payments everywhere" },
+      "control": { "verb": "Control", "desc": "Run all your stores" },
+      "loyalty": { "verb": "Retain", "desc": "Grow with your customers" },
+      "automate": { "verb": "Automate", "desc": "Decide with intelligence" }
+    },
+    "features": {
+      "pos": "Point of Sale",
+      "ecommerce": "E-commerce",
+      "whatsapp": "WhatsApp Commerce",
+      "payments": "Payment methods",
+      "inventory": "Inventory management",
+      "multibranch": "Multi-location",
+      "orders": "Orders & logistics",
+      "billing": "Electronic invoicing",
+      "crm": "CRM & customers",
+      "loyalty": "Loyalty program",
+      "campaigns": "Campaigns",
+      "personalization": "Personalization",
+      "reports": "Real-time reports",
+      "axo": "AXO · AI",
+      "alerts": "Smart alerts",
+      "integrations": "Integrations"
+    },
+    "viewPlatform": "View full platform"
+  },
+  "hero": {
+    "eyebrow": "Retail software",
+    "title": "Full visibility across your entire retail operation.",
+    "subtitle": "From warehouse to counter to online store. Sales, stock, customers, and loyalty in one place."
+  },
+  "cta": {
+    "startFree": "Start free",
+    "bookDemo": "Book a demo",
+    "tryFree": "Try 7 days free",
+    "viewAll": "View all",
+    "learnMore": "Learn more",
+    "readArticle": "Read article",
+    "contactUs": "Contact us",
+    "writeWhatsApp": "Message us on WhatsApp"
+  },
+  "doubts": {
+    "title": "Still have questions?"
+  },
+  "cards": {
+    "demoTitle": "Book\na demo",
+    "demoDesc": "We show you Sacs with your business data. 30 min, no strings attached.",
+    "demoCta": "Reserve a spot",
+    "startTitle": "Start\nnow",
+    "startDesc": "Create your free account and set up your store in 15 minutes. No credit card.",
+    "startCta": "Start free"
+  },
+  "blog": {
+    "eyebrow": "Blog",
+    "title": "Ideas for conscious retailers",
+    "subtitle": "Trends, innovation, and real retail stories.",
+    "viewAll": "View all articles"
+  },
+  "contact": {
+    "metaTitle": "Book a demo — Sacs",
+    "metaDesc": "Book a personalized 30-minute demo with a Sacs expert.",
+    "heroTitle": "See Sacs\nin 30 minutes",
+    "heroLead": "We show you the platform running with real data from your industry. No slides, no pressure.",
+    "sessionLabel": "In the session:",
+    "step1Title": "We listen to your challenges",
+    "step1Desc": "Tell us what's holding you back and what you need to solve.",
+    "step2Title": "We show you how to solve it",
+    "step2Desc": "We open Sacs live and configure it for your use case.",
+    "step3Title": "We design your vision together",
+    "step3Desc": "We talk about where you want to go and how to get there with Sacs.",
+    "processEyebrow": "How it works",
+    "processTitle": "What to expect from the meeting",
+    "process1Title": "We understand your business",
+    "process1Desc": "Tell us how you operate today, how many locations you have, what channels you use, and what hurts.",
+    "process2Title": "Live demo",
+    "process2Desc": "We show you Sacs running with data and scenarios from your type of business. POS, inventory, customers, reports.",
+    "process3Title": "Next step",
+    "process3Desc": "Together we define the implementation plan, migration timelines, and how to start. No pressure.",
+    "afterEyebrow": "After the demo",
+    "afterTitle": "From meeting to operating in 24 hours",
+    "afterBadge1": "On the call",
+    "after1Title": "Custom proposal",
+    "after1Desc": "We present a personalized plan based on your size and needs. Transparent, no fine print.",
+    "afterBadge2": "Same day",
+    "after2Title": "Account active",
+    "after2Desc": "If you accept, your account is enabled that same day. No waiting, no long processes.",
+    "afterBadge3": "Next day",
+    "after3Title": "Onboarding session",
+    "after3Desc": "An expert helps you set up your catalog, inventory, and POS. The next day you're operating.",
+    "migrateEyebrow": "If you decide to start",
+    "migrateTitle": "Migrating is easier than you think",
+    "migrateDesc": "Our team migrates your catalog, customers, and sales history. You just validate. Without losing a day of sales.",
+    "migrate1Title": "Send us your catalog",
+    "migrate1Desc": "Excel, CSV, or from your current system. We format it.",
+    "migrate2Title": "We import everything in 1-3 days",
+    "migrate2Desc": "Products, variants, prices, customers, and suppliers.",
+    "migrate3Title": "You sell from day 1",
+    "migrate3Desc": "Training included. Your account executive walks with you every step.",
+    "noRiskTitle": "No risk",
+    "noRiskDesc": "Try 7 days free. No card. If it doesn't convince you, cancel with one click. No calls, no retention, no fine print.",
+    "noRiskExtras": "Migration included · 24/7 support · Cancel anytime",
+    "consultingTitle": "Free implementation consulting",
+    "consultingDesc": "Normally costs",
+    "consultingPrice": "$400 USD",
+    "consultingDetail": ". With your annual plan, personalized implementation consulting is completely free.",
+    "consultingBadge": "Included with annual plan",
+    "waText": "Prefer to chat? Message us directly on WhatsApp."
+  },
+  "proof": {
+    "brands": "3,000+",
+    "brandsLabel": "active brands",
+    "rating": "4.8/5",
+    "ratingLabel": "Google Reviews",
+    "uptime": "99.9%",
+    "uptimeLabel": "uptime",
+    "setup": "15 min",
+    "setupLabel": "to set up"
+  },
+  "trust": {
+    "trustedBy": "Trusted by",
+    "quote": "The platform gave us the control we needed to scale to 42 locations."
+  },
+  "footer": {
+    "tagline": "Operating system for conscious retailers. Technology with Mexican soul.",
+    "platform": "Platform",
+    "company": "Company",
+    "resources": "Resources",
+    "aboutUs": "About us",
+    "manifesto": "Manifesto",
+    "blog": "Blog",
+    "contact": "Contact",
+    "pricingPlans": "Plans & pricing",
+    "helpCenter": "Help center",
+    "systemStatus": "System status",
+    "privacyPolicy": "Privacy policy",
+    "termsOfUse": "Terms of use",
+    "copyright": "All rights reserved.",
+    "impact": "10% of every license creates social impact."
+  },
+  "modal": {
+    "title": "Coming soon",
+    "subtitle": "Sacs 5.0 Update",
+    "desc": "We're working on this section. In the meantime, book a demo to see the full platform.",
+    "cta": "Book a demo",
+    "close": "Close"
+  },
+  "whatsapp": {
+    "tooltip": "Need help?",
+    "aria": "Contact via WhatsApp",
+    "message": "Hi, I'm interested in learning more about Sacs. I was looking at:"
+  },
+  "common": {
+    "backToAll": "All case studies",
+    "readMore": "View full case study",
+    "noCommitment": "No commitment, no credit card",
+    "yourBusiness": "Your business could be next.",
+    "configure15": "Set up your business in 15 minutes. No credit card, no contracts.",
+    "freeAccount": "Create free account",
+    "skipToContent": "Skip to content"
+  }
+}
