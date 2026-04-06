@@ -130,7 +130,7 @@ export const plans: Plan[] = [
     annualTotal: { mxn: 29000, usd: 1450 },  // 2900 × 10
     highlighted: false,
     inheritsFrom: 'Fideliza',
-    cta: { label: 'Agenda una demo', href: '/contacto#demo', variant: 'secondary' },
+    cta: { label: 'Agenda una demo', href: '/contacto', variant: 'secondary' },
     features: [
       'Nivelación de inventarios con IA',
       'Reglas automáticas de reabastecimiento',
