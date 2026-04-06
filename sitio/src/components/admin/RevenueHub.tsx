@@ -279,7 +279,7 @@ export default function RevenueHub() {
   const QuotesView = () => {
     const [quotes, setQuotes] = useState<any[]>([]);
     const [showDrawer, setShowDrawer] = useState(false);
-    const [qf, setQf] = useState<any>({ items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migración incluida en planes de pago.\nSoporte 24/7 incluido. Sin contratos de permanencia.' });
+    const [qf, setQf] = useState<any>({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida en planes de pago. Soporte 24/7 incluido. Sin contratos de permanencia.' });
 
     useEffect(() => {
       fetch('/api/revenue/quotes').then(r => r.json()).then(d => setQuotes(Array.isArray(d) ? d : []));
@@ -326,7 +326,7 @@ export default function RevenueHub() {
       const body = { ...qf, subtotal: itemsSubtotal, iva_monto: Math.round(ivaMonto), total: Math.round(grandTotal), estado: 'sent' };
       await fetch('/api/revenue/quotes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       setShowDrawer(false);
-      setQf({ items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migración incluida en planes de pago.\nSoporte 24/7 incluido. Sin contratos de permanencia.' });
+      setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida. Soporte 24/7. Sin contratos.' });
       const d = await fetch('/api/revenue/quotes').then(r => r.json());
       setQuotes(Array.isArray(d) ? d : []);
       setSaving(false);
@@ -374,9 +374,9 @@ export default function RevenueHub() {
 
         {/* ─── Quote Drawer ─── */}
         {showDrawer && (
-          <div style={S.overlay}>
-            <div onClick={() => setShowDrawer(false)} style={{ flex: 1 }} />
-            <div style={{ width: 520, maxWidth: '95vw', background: '#fff', overflowY: 'auto' as const, boxShadow: '-4px 0 20px rgba(0,0,0,0.1)', padding: '24px' }}>
+          <div style={{ position: 'fixed' as const, inset: 0, zIndex: 200, display: 'flex', justifyContent: 'flex-end' }}>
+            <div onClick={() => setShowDrawer(false)} style={{ flex: 1, background: 'rgba(0,0,0,0.3)' }} />
+            <div style={{ width: 520, maxWidth: '95vw', background: '#fff', overflowY: 'auto' as const, boxShadow: '-4px 0 20px rgba(0,0,0,0.1)', padding: 24 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
                 <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800 }}>Nueva cotización</h3>
                 <button onClick={() => setShowDrawer(false)} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#999' }}>✕</button>
