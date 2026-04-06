@@ -1,11 +1,36 @@
+// ─── Interfaces ───
+
+export interface PlanPrice {
+  mxn: number;
+  usd: number;
+}
+
 export interface Plan {
+  id: string;
   name: string;
-  price: string;
-  period: string;
   description: string;
-  features: string[];
-  cta: string;
+  monthly: PlanPrice;
+  annual: PlanPrice;
+  annualTotal: PlanPrice;
+  badge?: string;
   highlighted: boolean;
+  inheritsFrom?: string;
+  cta: { label: string; href: string; variant: 'primary' | 'secondary' };
+  features: string[];
+  services: string[];
+}
+
+export interface ComparisonFeature {
+  name: string;
+  vende: boolean | string;
+  controla: boolean | string;
+  fideliza: boolean | string;
+  automatiza: boolean | string;
+}
+
+export interface ComparisonCategory {
+  name: string;
+  features: ComparisonFeature[];
 }
 
 export interface FAQ {
@@ -13,6 +38,354 @@ export interface FAQ {
   answer: string;
 }
 
-export const plans: Plan[] = [];
+// ─── Plans ───
 
-export const faqs: FAQ[] = [];
+export const plans: Plan[] = [
+  {
+    id: 'vende',
+    name: 'Vende',
+    description: 'Para marcas que arrancan su primera tienda.',
+    monthly: { mxn: 600, usd: 30 },
+    annual: { mxn: 500, usd: 25 },
+    annualTotal: { mxn: 6000, usd: 300 },  // 600 × 10
+    highlighted: false,
+    cta: { label: 'Prueba 7 días gratis', href: '/contacto', variant: 'secondary' },
+    features: [
+      'Punto de venta online y offline',
+      'Tickets por WhatsApp',
+      'Productos con variantes (talla, color)',
+      'Cortes de caja y arqueos',
+      'Códigos de barras y QR',
+      'Tienda en línea básica',
+      'Cambios, devoluciones y cancelaciones',
+    ],
+    services: [
+      '1 sucursal',
+      'Reunión de introducción',
+      'Soporte 24/7 (<10 min)',
+    ],
+  },
+  {
+    id: 'controla',
+    name: 'Controla',
+    description: 'Para marcas con varias sucursales que necesitan orden.',
+    monthly: { mxn: 900, usd: 45 },
+    annual: { mxn: 750, usd: 38 },
+    annualTotal: { mxn: 9000, usd: 450 },  // 900 × 10
+    highlighted: false,
+    inheritsFrom: 'Vende',
+    cta: { label: 'Prueba 7 días gratis', href: '/contacto', variant: 'secondary' },
+    features: [
+      'Inventario multi-sucursal en tiempo real',
+      'Conteo físico desde el celular',
+      'Órdenes de compra y recepción',
+      'Traspasos entre sucursales',
+      'Facturación CFDI 4.0',
+      'Cotizaciones, apartados y pedidos',
+      'Créditos y cuentas por cobrar',
+      'Metas y comisiones por vendedor',
+    ],
+    services: [
+      'Multi-sucursal',
+      'Ejecutivo de cuenta',
+      'Reunión mensual',
+      'Soporte 24/7 (<30 min)',
+      'Migración gratis (3 días)',
+    ],
+  },
+  {
+    id: 'fideliza',
+    name: 'Fideliza',
+    description: 'Para marcas que quieren clientes que regresan.',
+    monthly: { mxn: 1400, usd: 70 },
+    annual: { mxn: 1167, usd: 58 },
+    annualTotal: { mxn: 14000, usd: 700 },  // 1400 × 10
+    badge: 'Más popular',
+    highlighted: true,
+    inheritsFrom: 'Controla',
+    cta: { label: 'Prueba 7 días gratis', href: '/contacto', variant: 'primary' },
+    features: [
+      'Monedero electrónico y puntos de lealtad',
+      'Recompensas por niveles de compra',
+      'Promociones 2x1, 3x2 y por volumen',
+      'Activación automática por fechas o eventos',
+      'Perfil omnicanal de cada cliente',
+      'Sync inventario con Meta, TikTok y Google',
+      'Portal de autofacturación con tu marca',
+    ],
+    services: [
+      'Multi-sucursal',
+      'Ejecutivo de cuenta',
+      'Reunión mensual',
+      'Soporte 24/7 (<2 min)',
+      'Migración gratis (1 día)',
+    ],
+  },
+  {
+    id: 'automatiza',
+    name: 'Automatiza',
+    description: 'Para marcas que quieren operar sin intervenir.',
+    monthly: { mxn: 2900, usd: 145 },
+    annual: { mxn: 2417, usd: 121 },
+    annualTotal: { mxn: 29000, usd: 1450 },  // 2900 × 10
+    highlighted: false,
+    inheritsFrom: 'Fideliza',
+    cta: { label: 'Agenda una demo', href: '/contacto#demo', variant: 'secondary' },
+    features: [
+      'Nivelación de inventarios con IA',
+      'Reglas automáticas de reabastecimiento',
+      'Fichas de producto con IA (foto a catálogo)',
+      'Agente IA: reportes, auditorías y alertas',
+      'Detección de anomalías y robos',
+      'Descuento por volumen en licencias',
+    ],
+    services: [
+      'Multi-sucursal',
+      'Ejecutivo SR dedicado',
+      '3h implementación inicial',
+      'Reunión mensual',
+      'Soporte 24/7 (<2 min)',
+      'Migración gratis (1 día)',
+    ],
+  },
+];
+
+// ─── Universal Features (all plans) ───
+
+export const universalFeatures: string[] = [
+  'Soporte 24/7 por chat y WhatsApp',
+  'Dispositivos ilimitados',
+  'Usuarios ilimitados',
+  'Hasta 10,000 productos',
+  '3 cajas para cobrar',
+  'Espacio ilimitado',
+  'Actualizaciones mensuales',
+  'Sin contratos de permanencia',
+];
+
+// ─── Comparison Table ───
+
+export const comparisonCategories: ComparisonCategory[] = [
+  {
+    name: 'Punto de venta',
+    features: [
+      { name: 'Punto de venta online y offline', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Ventas sin internet', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Impresión rápida de tickets', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Ticket por WhatsApp', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Diversos métodos de pago', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Arqueos de caja', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Cortes de caja', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Ticket personalizado', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Ventas pausadas', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Precios por tipo de cliente', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Múltiples cajeros por turno', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Cobro en múltiples divisas', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Pantalla principal automatizada', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Corte de caja ciego antifraude', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Bloqueo seguro de pantalla', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Permisos avanzados en POS', vende: false, controla: false, fideliza: false, automatiza: true },
+    ],
+  },
+  {
+    name: 'Cambios y devoluciones',
+    features: [
+      { name: 'Gestión de cambios y devoluciones', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Cambios y devoluciones multi-sucursal', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Cambios exprés de talla o color', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Notas de crédito automáticas', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Reembolsos al método original', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Etiquetas QR en tickets', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Reportes de devoluciones', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Bonificación en monedero electrónico', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Sugerencias inteligentes en cambios', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Cambios sin ticket físico', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Validación automática de políticas', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Permisos avanzados en cambios', vende: false, controla: false, fideliza: false, automatiza: true },
+    ],
+  },
+  {
+    name: 'Apartados y pedidos',
+    features: [
+      { name: 'Cotizaciones y pedidos', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Apartado con anticipo', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Listas de precios automáticas', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Validación de existencias en tiempo real', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Pagos parciales', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Descuentos en pedidos', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Precios por volumen en pedidos', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Recordatorios automáticos de pago', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Facturación automática al concluir', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Puntos de lealtad al concluir', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Recuperación de pedidos cancelados', vende: false, controla: false, fideliza: false, automatiza: true },
+      { name: 'Cross-selling inteligente', vende: false, controla: false, fideliza: false, automatiza: true },
+    ],
+  },
+  {
+    name: 'Inventario y stock',
+    features: [
+      { name: 'Gestión de productos con variantes', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Códigos de barras y QR', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Importación masiva de productos', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Conteo físico sin cerrar tienda', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Conteo masivo con escáner', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Conteo desde el celular', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Transferencias entre sucursales', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Distribución desde CEDIS', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Existencias multi-sucursal en tiempo real', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Historial de movimientos por producto', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Conteo sorpresa automático', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Auditorías parciales por categoría', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Nivelación automática con IA', vende: false, controla: false, fideliza: false, automatiza: true },
+      { name: 'Reabastecimiento automático', vende: false, controla: false, fideliza: false, automatiza: true },
+    ],
+  },
+  {
+    name: 'CRM y clientes',
+    features: [
+      { name: 'Registro de clientes', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Historial de compras por cliente', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Notas y seguimientos', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Resumen de ventas por cliente', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Perfil 360° del cliente', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Actividad omnicanal', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Sugerencias automáticas de productos', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Segmentación por comportamiento', vende: false, controla: false, fideliza: true, automatiza: true },
+    ],
+  },
+  {
+    name: 'Lealtad y promociones',
+    features: [
+      { name: 'Descuentos por artículo', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Descuentos por volumen', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Promociones combinadas', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Avisos de promociones en POS', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Promociones multi-sucursal', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Tarjetas de regalo', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Monedero electrónico', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Puntos de lealtad por compra', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Niveles de lealtad configurables', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Promoción 3x2 automática', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Promociones progresivas', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Programación por fecha y hora', vende: false, controla: false, fideliza: true, automatiza: true },
+    ],
+  },
+  {
+    name: 'E-commerce y omnicanal',
+    features: [
+      { name: 'Tienda en línea básica', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Sincronización con inventario físico', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Tienda en línea avanzada', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Envíos locales y nacionales', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Chat integrado con WhatsApp', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Checkout por WhatsApp y Web', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Sync con Meta, TikTok y Google', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Generación omnicanal de puntos', vende: false, controla: false, fideliza: true, automatiza: true },
+    ],
+  },
+  {
+    name: 'Reportes y analítica',
+    features: [
+      { name: 'Reporte de ventas por producto', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Reporte por método de pago', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Comparativa de ventas', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Margen de utilidad por producto', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Reporte Kardex', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Ventas por vendedor y producto', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Sell Through', vende: false, controla: false, fideliza: false, automatiza: true },
+      { name: 'Reabastecimiento inteligente', vende: false, controla: false, fideliza: false, automatiza: true },
+      { name: 'KPIs multitienda', vende: false, controla: false, fideliza: false, automatiza: true },
+      { name: 'Envío automático de reportes', vende: false, controla: false, fideliza: false, automatiza: true },
+    ],
+  },
+  {
+    name: 'Facturación electrónica',
+    features: [
+      { name: 'Factura manual CFDI', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Factura desde punto de venta', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Factura global a público en general', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Cancelación de facturas', vende: true, controla: true, fideliza: true, automatiza: true },
+      { name: 'Facturación automática', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Kiosko de autofacturación', vende: false, controla: false, fideliza: true, automatiza: true },
+    ],
+  },
+  {
+    name: 'Compras y recepción',
+    features: [
+      { name: 'Órdenes de compra por variante', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Recepción con validación', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Recepción sin orden previa', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Devolución a proveedores', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Catálogos por proveedor', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Historial de costos por variante', vende: false, controla: true, fideliza: true, automatiza: true },
+      { name: 'Alertas de reposición', vende: false, controla: false, fideliza: true, automatiza: true },
+      { name: 'Planificador inteligente por tallas', vende: false, controla: false, fideliza: false, automatiza: true },
+    ],
+  },
+];
+
+// ─── Add-ons ───
+
+export interface Addon {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  badge?: string;
+}
+
+export const addons: Addon[] = [
+  {
+    id: 'shopify',
+    name: 'Integración con Shopify',
+    description: 'Sincroniza inventario, pedidos y clientes entre tus tiendas físicas y tu tienda en Shopify en tiempo real.',
+    icon: 'shopify',
+  },
+  {
+    id: 'woocommerce',
+    name: 'Integración con WooCommerce',
+    description: 'Conecta tu tienda en WordPress con Sacs. Stock, precios y pedidos sincronizados automáticamente.',
+    icon: 'woocommerce',
+  },
+  {
+    id: 'staff',
+    name: 'Staff',
+    description: 'Gestión de empleados, horarios, cambios de turno y control de asistencia desde tu punto de venta.',
+    icon: 'staff',
+  },
+  {
+    id: 'marketing',
+    name: 'Marketing Suite',
+    description: 'Campañas por correo y WhatsApp, segmentación de clientes y automatización de marketing para retail.',
+    icon: 'marketing',
+  },
+];
+
+// ─── Pricing FAQ ───
+
+export const pricingFaqs: FAQ[] = [
+  {
+    question: '¿Puedo cambiar de plan en cualquier momento?',
+    answer: 'Sí. Puedes subir o bajar de plan cuando quieras, sin penalización. El cambio se refleja en tu siguiente periodo de facturación.',
+  },
+  {
+    question: '¿Qué pasa con mis datos si cancelo?',
+    answer: 'Tus datos se mantienen accesibles durante 90 días después de cancelar. Puedes exportar todo en cualquier momento. No hay cargos por cancelación.',
+  },
+  {
+    question: '¿La migración desde otro sistema tiene costo?',
+    answer: 'No. La migración de productos está incluida en todos los planes de pago. En Controla y superiores, nuestro equipo la hace por ti en 1 a 3 días.',
+  },
+  {
+    question: '¿Qué métodos de pago aceptan?',
+    answer: 'Tarjeta de crédito y débito, transferencia bancaria (SPEI) y pago en OXXO. Facturamos en pesos mexicanos con CFDI.',
+  },
+  {
+    question: '¿Cuánto toma implementar SACS en mi tienda?',
+    answer: 'El setup básico toma 15 minutos. Con migración completa de catálogo y capacitación, entre 1 y 3 semanas dependiendo del volumen.',
+  },
+  {
+    question: '¿El soporte tiene costo adicional?',
+    answer: 'No. Todos los planes incluyen soporte 24/7 por chat y WhatsApp. Los planes Controla, Fideliza y Automatiza incluyen ejecutivo de cuenta dedicado.',
+  },
+];
