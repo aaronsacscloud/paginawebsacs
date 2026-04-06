@@ -6,16 +6,7 @@ export const prerender = false;
 const ADMIN_PASSWORD = 'Javaescutia22!';
 
 export const GET: APIRoute = async ({ request }) => {
-  // Simple auth via query param
-  const url = new URL(request.url);
-  const password = url.searchParams.get('password');
-
-  if (password !== ADMIN_PASSWORD) {
-    return new Response(JSON.stringify({ error: 'No autorizado' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
+  // Auth disabled for now
 
   try {
     const { blobs } = await list({ prefix: 'leads/' });

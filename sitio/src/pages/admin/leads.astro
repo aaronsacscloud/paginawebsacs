@@ -6,19 +6,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
 <section class="crm-page">
   <div class="crm-container">
-    <!-- Login -->
-    <div id="crm-login" class="crm-login">
-      <h1 class="crm-title">Sacs CRM</h1>
-      <p class="crm-subtitle">Ingresa la contraseña para ver los leads.</p>
-      <div class="crm-login-form">
-        <input type="password" id="crm-password" placeholder="Contraseña" class="crm-input" />
-        <button id="crm-login-btn" class="crm-btn">Entrar</button>
-      </div>
-      <p id="crm-login-error" class="crm-error"></p>
-    </div>
-
     <!-- Dashboard -->
-    <div id="crm-dashboard" class="crm-dashboard" style="display:none">
+    <div id="crm-dashboard" class="crm-dashboard">
       <div class="crm-header">
         <div>
           <h1 class="crm-title">Leads</h1>
@@ -281,40 +270,23 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 </style>
 
 <script>
-  const loginEl = document.getElementById('crm-login')!;
-  const dashboardEl = document.getElementById('crm-dashboard')!;
-  const passwordInput = document.getElementById('crm-password') as HTMLInputElement;
-  const loginBtn = document.getElementById('crm-login-btn')!;
-  const loginError = document.getElementById('crm-login-error')!;
   const refreshBtn = document.getElementById('crm-refresh')!;
   const tbody = document.getElementById('crm-tbody')!;
 
-  let currentPassword = '';
-
-  loginBtn.addEventListener('click', () => {
-    currentPassword = passwordInput.value;
-    loadLeads();
-  });
-
-  passwordInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { currentPassword = passwordInput.value; loadLeads(); }
-  });
-
   refreshBtn.addEventListener('click', loadLeads);
+
+  // Load on page load
+  loadLeads();
 
   async function loadLeads() {
     try {
-      const res = await fetch(`/api/get-leads?password=${encodeURIComponent(currentPassword)}`);
+      const res = await fetch('/api/get-leads');
       const data = await res.json();
 
       if (data.error) {
-        loginError.textContent = data.error === 'No autorizado' ? 'Contraseña incorrecta' : data.error;
+        tbody.innerHTML = '<tr><td colspan="9" class="crm-empty">Error: ' + data.error + '</td></tr>';
         return;
       }
-
-      // Show dashboard
-      loginEl.style.display = 'none';
-      dashboardEl.style.display = 'block';
 
       const leads = data.leads || [];
       const today = new Date().toISOString().slice(0, 10);
