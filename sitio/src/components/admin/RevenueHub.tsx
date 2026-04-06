@@ -285,37 +285,40 @@ export default function RevenueHub() {
       fetch('/api/revenue/quotes').then(r => r.json()).then(d => setQuotes(Array.isArray(d) ? d : []));
     }, []);
 
+    // Ensure items is always an array
+    const items = Array.isArray(qf.items) ? qf.items : [];
+
     const addPlanItem = () => {
-      setQf({ ...qf, items: [...(qf.items || []), { tipo: 'plan', nombre: 'controla', sucursales: 1, precio_unitario: 900, periodo: 'mensual', descuento_pct: 0, subtotal: 900 }] });
+      setQf({ ...qf, items: [...items, { tipo: 'plan', nombre: 'controla', sucursales: 1, precio_unitario: 900, periodo: 'mensual', descuento_pct: 0, subtotal: 900 }] });
     };
 
     const addExtraItem = () => {
-      setQf({ ...qf, items: [...(qf.items || []), { tipo: 'extra', nombre: '', monto: 0, recurrente: false, descripcion: '' }] });
+      setQf({ ...qf, items: [...items, { tipo: 'extra', nombre: '', monto: 0, recurrente: false, descripcion: '' }] });
     };
 
     const updateItem = (idx: number, field: string, value: any) => {
-      const items = [...(qf.items || [])];
-      items[idx] = { ...items[idx], [field]: value };
-      if (items[idx].tipo === 'plan') {
-        const p = PLAN_PRICES[items[idx].nombre] || 0;
-        items[idx].precio_unitario = p;
-        const suc = parseInt(items[idx].sucursales) || 1;
-        const isAnn = items[idx].periodo === 'anual';
+      const arr = [...items];
+      arr[idx] = { ...arr[idx], [field]: value };
+      if (arr[idx].tipo === 'plan') {
+        const p = PLAN_PRICES[arr[idx].nombre] || 0;
+        arr[idx].precio_unitario = p;
+        const suc = parseInt(arr[idx].sucursales) || 1;
+        const isAnn = arr[idx].periodo === 'anual';
         const sub = p * suc * (isAnn ? 10 : 1);
-        const disc = sub * (parseFloat(items[idx].descuento_pct || 0) / 100);
-        items[idx].subtotal = sub - disc;
+        const disc = sub * (parseFloat(arr[idx].descuento_pct || 0) / 100);
+        arr[idx].subtotal = sub - disc;
       } else {
-        items[idx].subtotal = parseFloat(items[idx].monto) || 0;
+        arr[idx].subtotal = parseFloat(arr[idx].monto) || 0;
       }
-      setQf({ ...qf, items });
+      setQf({ ...qf, items: arr });
     };
 
     const removeItem = (idx: number) => {
-      setQf({ ...qf, items: (qf.items || []).filter((_: any, i: number) => i !== idx) });
+      setQf({ ...qf, items: items.filter((_: any, i: number) => i !== idx) });
     };
 
     // Calculate totals
-    const itemsSubtotal = (qf.items || []).reduce((s: number, i: any) => s + (i.subtotal || parseFloat(i.monto) || 0), 0);
+    const itemsSubtotal = items.reduce((s: number, i: any) => s + (i.subtotal || parseFloat(i.monto) || 0), 0);
     const globalDisc = qf.descuento_tipo === 'pct' ? itemsSubtotal * (parseFloat(qf.descuento_global) || 0) / 100 : (parseFloat(qf.descuento_global) || 0);
     const afterDisc = itemsSubtotal - globalDisc;
     const ivaMonto = qf.iva_incluido ? afterDisc * 0.16 : 0;
@@ -383,7 +386,7 @@ export default function RevenueHub() {
               </div>
 
               {/* Client */}
-              <Label>Cliente</Label>
+              <div style={S.label}>Cliente</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
                 <input value={qf.empresa || ''} onChange={e => setQf({ ...qf, empresa: e.target.value })} placeholder="Empresa" style={S.input} />
                 <input value={qf.contacto || ''} onChange={e => setQf({ ...qf, contacto: e.target.value })} placeholder="Contacto" style={S.input} />
@@ -392,8 +395,8 @@ export default function RevenueHub() {
               </div>
 
               {/* Items */}
-              <Label>Conceptos</Label>
-              {(qf.items || []).map((item: any, idx: number) => (
+              <div style={S.label}>Conceptos</div>
+              {items.map((item: any, idx: number) => (
                 <div key={idx} style={{ background: '#f8f9fb', borderRadius: 10, padding: 12, marginBottom: 8, position: 'relative' as const }}>
                   <button onClick={() => removeItem(idx)} style={{ position: 'absolute' as const, top: 8, right: 8, background: 'none', border: 'none', color: '#ccc', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
                   {item.tipo === 'plan' ? (
@@ -442,9 +445,9 @@ export default function RevenueHub() {
                 <div><label style={S.label}>Moneda</label><select value={qf.moneda} onChange={e => setQf({ ...qf, moneda: e.target.value })} style={S.input}><option value="MXN">MXN</option><option value="USD">USD</option></select></div>
                 <div><label style={S.label}>Template</label><select value={qf.template} onChange={e => setQf({ ...qf, template: e.target.value })} style={S.input}><option value="modern">Modern</option><option value="dark">Dark</option><option value="classic">Classic</option></select></div>
               </div>
-              <div><label style={S.label}>Condiciones</label><textarea value={qf.condiciones || ''} onChange={e => setQf({ ...qf, condiciones: e.target.value })} style={{ ...S.input, height: 60, resize: 'vertical' as const }} /></div>
+              <div><label style={S.label}>Condiciones</label><textarea value={qf.condiciones || ''} onChange={e => setQf({ ...qf, condiciones: e.target.value })} style={{ ...S.input, height: 60 }} /></div>
 
-              <button onClick={createQuote} disabled={saving || !(qf.items || []).length || !qf.empresa} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', width: '100%', marginTop: 16, justifyContent: 'center' }}>{saving ? 'Creando...' : 'Crear y enviar cotización'}</button>
+              <button onClick={createQuote} disabled={saving || !items.length || !qf.empresa} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', width: '100%', marginTop: 16, justifyContent: 'center' }}>{saving ? 'Creando...' : 'Crear y enviar cotización'}</button>
             </div>
           </div>
         )}
