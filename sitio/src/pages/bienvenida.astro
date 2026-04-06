@@ -1,0 +1,177 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Bienvenido a Sacs"
+  description="Tu cuenta ha sido creada exitosamente."
+>
+
+<section class="welcome-page">
+  <div class="welcome-inner">
+    <div class="welcome-check">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+        <circle cx="24" cy="24" r="24" fill="var(--color-secondary)"/>
+        <path d="M15 24l6 6 12-12" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <h1 class="welcome-title">Tu cuenta está lista</h1>
+    <p class="welcome-desc">Tienes 7 días gratis para explorar todas las funciones de Sacs. No se realizará ningún cobro durante tu prueba.</p>
+
+    <div class="welcome-next">
+      <h2 class="welcome-next-title">Siguientes pasos</h2>
+      <div class="welcome-steps">
+        <div class="welcome-step">
+          <span class="welcome-step-num">1</span>
+          <div>
+            <strong>Revisa tu correo</strong>
+            <span>Te enviamos los datos de acceso a tu cuenta.</span>
+          </div>
+        </div>
+        <div class="welcome-step">
+          <span class="welcome-step-num">2</span>
+          <div>
+            <strong>Configura tu catálogo</strong>
+            <span>Agrega tus primeros productos o importa desde Excel.</span>
+          </div>
+        </div>
+        <div class="welcome-step">
+          <span class="welcome-step-num">3</span>
+          <div>
+            <strong>Empieza a vender</strong>
+            <span>Tu punto de venta está listo. Haz tu primera venta hoy.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <a class="welcome-btn" href="https://app.sacscloud.com" target="_blank">Ir a mi cuenta</a>
+    <a class="welcome-link" href="/">Volver al inicio</a>
+  </div>
+</section>
+
+</BaseLayout>
+
+<style>
+.welcome-page {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(71px + 48px) 20px 48px;
+}
+
+.welcome-inner {
+  max-width: 480px;
+  text-align: center;
+}
+
+.welcome-check {
+  margin-bottom: var(--space-6);
+}
+
+.welcome-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 800;
+  color: var(--color-text-primary);
+  letter-spacing: -0.03em;
+  margin: 0 0 var(--space-3);
+}
+
+.welcome-desc {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0 0 var(--space-10);
+}
+
+.welcome-next {
+  text-align: left;
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  margin-bottom: var(--space-8);
+}
+
+.welcome-next-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-5);
+}
+
+.welcome-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.welcome-step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.welcome-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.welcome-step strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.welcome-step span {
+  font-size: 0.8125rem;
+  color: var(--color-text-tertiary);
+}
+
+.welcome-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 16px;
+  background: var(--color-text-primary);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  text-decoration: none;
+  margin-bottom: var(--space-3);
+  transition: all 0.2s ease;
+}
+
+.welcome-btn:hover {
+  background: #333;
+  transform: translateY(-1px);
+}
+
+.welcome-link {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-decoration: none;
+}
+
+.welcome-link:hover { color: var(--color-primary); }
+</style>

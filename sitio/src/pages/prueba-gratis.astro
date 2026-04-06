@@ -1,0 +1,960 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
+---
+
+<BaseLayout
+  title="Prueba gratis 7 días — Sacs"
+  description="Crea tu cuenta gratis y configura tu tienda en 15 minutos. Sin tarjeta de crédito."
+>
+
+<meta name="stripe-pk" content={stripePk} />
+<section class="signup-page">
+  <div class="signup-grid">
+    <!-- Left: Form -->
+    <div class="signup-form-side">
+      <div class="signup-form-inner">
+        <a href="/" class="signup-logo" aria-label="Sacs — Inicio">
+          <span class="signup-logo-text">Sacs</span>
+        </a>
+
+        <h1 class="signup-title">Empieza tu prueba gratis</h1>
+        <p class="signup-subtitle">7 días con todas las funciones. Sin tarjeta de crédito.</p>
+
+        <!-- Step indicators -->
+        <div class="signup-steps">
+          <div class="signup-step active" data-step="1"><span class="signup-step-num">1</span> Tu información</div>
+          <div class="signup-step-line"></div>
+          <div class="signup-step" data-step="2"><span class="signup-step-num">2</span> Método de pago</div>
+        </div>
+
+        <form class="signup-form" id="signup-form">
+          <!-- STEP 1: Info -->
+          <div id="step-1" class="signup-step-content">
+            <div class="signup-field" data-validate="text">
+              <label for="nombre">Tu nombre</label>
+              <input type="text" id="nombre" name="nombre" placeholder="Ej. María García" required autocomplete="name" />
+              <span class="field-status">✓</span>
+            </div>
+
+            <div class="signup-field" data-validate="text">
+              <label for="empresa">Nombre de tu empresa</label>
+              <input type="text" id="empresa" name="empresa" placeholder="Ej. Boutique María" required autocomplete="organization" />
+              <span class="field-status">✓</span>
+            </div>
+
+            <div class="signup-row">
+              <div class="signup-field" data-validate="select">
+                <label for="giro">Giro de negocio</label>
+                <select id="giro" name="giro" required>
+                  <option value="" disabled selected>Selecciona</option>
+                  <option value="moda">Moda y ropa</option>
+                  <option value="calzado">Calzado</option>
+                  <option value="accesorios">Accesorios y joyería</option>
+                  <option value="cosmeticos">Cosméticos y belleza</option>
+                  <option value="hogar">Hogar y decoración</option>
+                  <option value="alimentos">Alimentos y gourmet</option>
+                  <option value="deportes">Deportes</option>
+                  <option value="infantil">Infantil y juguetes</option>
+                  <option value="otro">Otro</option>
+                </select>
+                <span class="field-status">✓</span>
+              </div>
+              <div class="signup-field" data-validate="select">
+                <label for="sucursales">Sucursales</label>
+                <select id="sucursales" name="sucursales" required>
+                  <option value="" disabled selected>¿Cuántas?</option>
+                  <option value="1">1 sucursal</option>
+                  <option value="2-3">2 a 3</option>
+                  <option value="4-10">4 a 10</option>
+                  <option value="11-20">11 a 20</option>
+                  <option value="20+">Más de 20</option>
+                </select>
+                <span class="field-status">✓</span>
+              </div>
+            </div>
+
+            <div class="signup-field" data-validate="phone">
+              <label for="whatsapp">WhatsApp</label>
+              <div class="signup-input-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M17.47 14.38c-.28-.14-1.64-.81-1.9-.9-.25-.1-.43-.14-.62.14-.18.28-.72.9-.88 1.08-.16.19-.33.21-.61.07-.28-.14-1.18-.44-2.25-1.39-.83-.74-1.39-1.66-1.56-1.94-.16-.28-.02-.43.12-.57.13-.13.28-.33.42-.5.14-.16.19-.28.28-.47.1-.19.05-.35-.02-.5-.07-.14-.62-1.49-.85-2.04-.22-.54-.45-.46-.62-.47h-.53c-.19 0-.49.07-.74.35-.26.28-.98.96-.98 2.34s1 2.71 1.14 2.9c.14.19 1.97 3.01 4.78 4.22.67.29 1.19.46 1.6.59.67.21 1.28.18 1.76.11.54-.08 1.64-.67 1.87-1.32.23-.65.23-1.2.16-1.32-.07-.11-.26-.18-.54-.32z" fill="var(--color-secondary)"/><path d="M12 2C6.48 2 2 6.48 2 12c0 1.77.46 3.43 1.27 4.88L2 22l5.23-1.23A9.96 9.96 0 0012 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18a7.96 7.96 0 01-4.18-1.18l-.3-.18-3.1.73.82-3-.2-.31A7.96 7.96 0 014 12c0-4.41 3.59-8 8-8s8 3.59 8 8-3.59 8-8 8z" fill="var(--color-secondary)"/></svg>
+                <input type="tel" id="whatsapp" name="whatsapp" placeholder="55 1234 5678" required autocomplete="tel" />
+                <span class="field-status">✓</span>
+              </div>
+            </div>
+
+            <div class="signup-field" data-validate="email">
+              <label for="email">Correo electrónico</label>
+              <div class="signup-input-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" stroke="var(--color-text-tertiary)" stroke-width="1.5"/><path d="M3 7l9 6 9-6" stroke="var(--color-text-tertiary)" stroke-width="1.5" stroke-linecap="round"/></svg>
+                <input type="email" id="email" name="email" placeholder="tu@empresa.com" required autocomplete="email" />
+                <span class="field-status">✓</span>
+              </div>
+            </div>
+
+            <div class="signup-field" data-validate="password">
+              <label for="password">Contraseña</label>
+              <div class="signup-input-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" stroke="var(--color-text-tertiary)" stroke-width="1.5"/><path d="M8 11V7a4 4 0 118 0v4" stroke="var(--color-text-tertiary)" stroke-width="1.5" stroke-linecap="round"/></svg>
+                <input type="password" id="password" name="password" placeholder="Mínimo 8 caracteres" required minlength="8" autocomplete="new-password" />
+                <span class="field-status">✓</span>
+              </div>
+            </div>
+
+            <button type="button" class="signup-btn" id="btn-next">Continuar</button>
+          </div>
+
+          <!-- STEP 2: Plan + Payment -->
+          <div id="step-2" class="signup-step-content" style="display:none">
+            <button type="button" class="signup-back" id="btn-back">← Volver</button>
+
+            <div class="signup-field">
+              <label>Elige tu plan</label>
+              <div class="signup-plan-grid">
+                <label class="signup-plan-card">
+                  <input type="radio" name="plan" value="vende" />
+                  <span class="signup-plan-card-inner">
+                    <strong>Vende</strong>
+                    <span>$600/mes</span>
+                  </span>
+                </label>
+                <label class="signup-plan-card">
+                  <input type="radio" name="plan" value="controla" checked />
+                  <span class="signup-plan-card-inner">
+                    <strong>Controla</strong>
+                    <span>$900/mes</span>
+                  </span>
+                </label>
+                <label class="signup-plan-card">
+                  <input type="radio" name="plan" value="fideliza" />
+                  <span class="signup-plan-card-inner">
+                    <strong>Fideliza</strong>
+                    <span>$1,400/mes</span>
+                  </span>
+                </label>
+                <label class="signup-plan-card">
+                  <input type="radio" name="plan" value="automatiza" />
+                  <span class="signup-plan-card-inner">
+                    <strong>Automatiza</strong>
+                    <span>$2,900/mes</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div class="signup-trial-notice">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2L4 6v5c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V6l-8-4z" stroke="currentColor" stroke-width="2"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>7 días gratis. Después se cobrará <strong id="plan-price-display">$900 MXN/mes</strong>. Cancela cuando quieras.</span>
+            </div>
+
+            <div class="signup-field">
+              <label>Tarjeta de crédito o débito</label>
+              <div id="card-element" class="stripe-card-element"></div>
+              <div id="card-errors" class="stripe-card-errors" role="alert"></div>
+            </div>
+
+            <button type="submit" class="signup-btn" id="btn-submit">
+              <span id="btn-submit-text">Iniciar prueba gratis</span>
+              <span id="btn-submit-loading" style="display:none">Procesando...</span>
+            </button>
+
+            <p class="signup-terms">Al crear tu cuenta aceptas los <a href="/terminos" target="_blank">Términos y condiciones</a> y el <a href="/privacidad" target="_blank">Aviso de privacidad</a>.</p>
+          </div>
+        </form>
+
+        <div class="signup-secure">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2L4 6v5c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V6l-8-4z" stroke="currentColor" stroke-width="2"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Conexión segura · Encriptación AES-256 · Datos protegidos</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Visual -->
+    <div class="signup-visual-side">
+      <div class="signup-visual-content">
+        <h2 class="signup-visual-title">Configura tu tienda en 15 minutos y empieza a vender hoy</h2>
+        <p class="signup-visual-desc">Más de 3,000 marcas en México ya operan con Sacs. Desde 1 sucursal hasta 100.</p>
+
+        <!-- Floating UI card -->
+        <div class="signup-float-card">
+          <div class="signup-float-header">
+            <span class="signup-float-dot" style="background:#2AB5A0"></span>
+            <span class="signup-float-store">Tu Boutique</span>
+            <span class="signup-float-badge">Activa</span>
+          </div>
+          <div class="signup-float-stats">
+            <div class="signup-float-stat">
+              <span class="signup-float-stat-num">$0</span>
+              <span class="signup-float-stat-label">Ventas hoy</span>
+            </div>
+            <div class="signup-float-stat">
+              <span class="signup-float-stat-num">0</span>
+              <span class="signup-float-stat-label">Productos</span>
+            </div>
+            <div class="signup-float-stat">
+              <span class="signup-float-stat-num">0</span>
+              <span class="signup-float-stat-label">Clientes</span>
+            </div>
+          </div>
+          <div class="signup-float-msg">Tu tienda está lista. Agrega tu primer producto.</div>
+        </div>
+
+        <!-- Trust points -->
+        <div class="signup-visual-trust">
+          <span>✓ Sin tarjeta de crédito</span>
+          <span>✓ Migración incluida</span>
+          <span>✓ Soporte 24/7</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</BaseLayout>
+
+<style>
+/* Hide main nav, footer and WhatsApp on this page */
+:global(nav), :global(.nav), :global(header), :global(footer), :global(.final-cta), :global(.whatsapp-float) {
+  display: none !important;
+}
+
+.signup-page {
+  min-height: 100vh;
+}
+
+.signup-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: calc(100vh - 71px);
+}
+
+@media (min-width: 1024px) {
+  .signup-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ─── Form side ─── */
+.signup-form-side {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-10) var(--space-6);
+}
+
+.signup-form-inner {
+  width: 100%;
+  max-width: 440px;
+}
+
+.signup-logo {
+  display: inline-block;
+  margin-bottom: var(--space-6);
+  text-decoration: none;
+}
+
+.signup-logo-text {
+  font-family: var(--font-logo);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.signup-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2.5vw, 1.875rem);
+  font-weight: 800;
+  color: var(--color-text-primary);
+  letter-spacing: -0.03em;
+  margin: 0 0 var(--space-1);
+}
+
+.signup-subtitle {
+  font-size: 0.9375rem;
+  color: var(--color-text-tertiary);
+  margin: 0 0 var(--space-5);
+}
+
+/* Form */
+.signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.signup-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.signup-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+}
+
+.signup-field label {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.signup-field input,
+.signup-field select {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  padding: 12px 14px;
+  padding-right: 38px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: #fff;
+  color: var(--color-text-primary);
+  outline: none;
+  transition: border-color var(--duration-fast) var(--ease-default), box-shadow var(--duration-fast) var(--ease-default);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Validation states */
+.signup-field.valid input,
+.signup-field.valid select {
+  border-color: var(--color-secondary);
+}
+
+.signup-field.invalid input,
+.signup-field.invalid select {
+  border-color: var(--color-error);
+}
+
+.signup-field .field-status {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: 18px;
+  height: 18px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.signup-field.valid .field-status {
+  display: flex;
+  background: var(--color-secondary);
+  color: #fff;
+}
+
+.signup-field.invalid .field-status {
+  display: flex;
+  background: var(--color-error);
+  color: #fff;
+}
+
+.signup-field select {
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%238C8C8C' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding-right: 40px;
+}
+
+.signup-field input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.signup-field input:focus,
+.signup-field select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(75, 123, 229, 0.1);
+}
+
+.signup-input-icon {
+  position: relative;
+}
+
+.signup-input-icon svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.signup-input-icon input {
+  padding-left: 38px;
+  width: 100%;
+}
+
+.signup-input-icon .field-status {
+  right: 12px;
+  bottom: 12px;
+}
+
+/* Submit */
+.signup-btn {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 14px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--color-text-primary);
+  color: #fff;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-default);
+  margin-top: var(--space-2);
+}
+
+.signup-btn:hover {
+  background: #333;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.signup-terms {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+  text-align: center;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.signup-terms a {
+  color: var(--color-text-secondary);
+  text-decoration: underline;
+}
+
+.signup-secure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: var(--space-6);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+}
+
+.signup-secure svg {
+  color: var(--color-secondary);
+}
+
+/* ─── Visual side ─── */
+.signup-visual-side {
+  display: none;
+  background: var(--color-bg-dark);
+  position: relative;
+  overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+  .signup-visual-side { display: flex; align-items: center; justify-content: center; }
+}
+
+.signup-visual-content {
+  position: relative;
+  z-index: 1;
+  padding: var(--space-12);
+  max-width: 500px;
+}
+
+.signup-visual-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 2.5vw, 2.5rem);
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin: 0 0 var(--space-4);
+}
+
+.signup-visual-desc {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.6;
+  margin: 0 0 var(--space-10);
+}
+
+/* Floating card */
+.signup-float-card {
+  background: #fff;
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  margin-bottom: var(--space-8);
+}
+
+.signup-float-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.signup-float-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.signup-float-store {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  flex: 1;
+}
+
+.signup-float-badge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--color-secondary);
+  background: rgba(42, 181, 160, 0.1);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+}
+
+.signup-float-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.signup-float-stat {
+  text-align: center;
+}
+
+.signup-float-stat-num {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+.signup-float-stat-label {
+  display: block;
+  font-size: 0.6875rem;
+  color: var(--color-text-tertiary);
+  margin-top: 2px;
+}
+
+.signup-float-msg {
+  font-size: 0.8125rem;
+  color: var(--color-secondary);
+  font-weight: 600;
+  text-align: center;
+  padding: 10px;
+  background: rgba(42, 181, 160, 0.06);
+  border-radius: var(--radius-sm);
+}
+
+.signup-visual-trust {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.signup-visual-trust span {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .signup-btn:hover { transform: none; }
+}
+
+/* Step content */
+.signup-step-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.signup-step-content[style*="display:none"],
+.signup-step-content[style*="display: none"] {
+  display: none !important;
+}
+
+/* Step indicators */
+.signup-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: var(--space-6);
+}
+
+.signup-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+}
+
+.signup-step.active {
+  color: var(--color-primary);
+}
+
+.signup-step.done {
+  color: var(--color-secondary);
+}
+
+.signup-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6875rem;
+  font-weight: 800;
+}
+
+.signup-step.active .signup-step-num {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.signup-step.done .signup-step-num {
+  background: var(--color-secondary);
+  color: #fff;
+}
+
+.signup-step-line {
+  flex: 1;
+  height: 2px;
+  background: var(--color-bg-secondary);
+  margin: 0 10px;
+}
+
+/* Back button */
+.signup-back {
+  background: none;
+  border: none;
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: var(--space-4);
+}
+
+.signup-back:hover { color: var(--color-text-primary); }
+
+/* Plan selector in step 2 */
+.signup-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.signup-plan-card {
+  cursor: pointer;
+}
+
+.signup-plan-card input { display: none; }
+
+.signup-plan-card-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 8px;
+  border: 2px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  transition: all var(--duration-fast) var(--ease-default);
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.signup-plan-card-inner strong {
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+}
+
+.signup-plan-card input:checked + .signup-plan-card-inner {
+  border-color: var(--color-primary);
+  background: rgba(75, 123, 229, 0.05);
+}
+
+.signup-plan-card input:checked + .signup-plan-card-inner strong {
+  color: var(--color-primary);
+}
+
+/* Trial notice */
+.signup-trial-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  background: rgba(42, 181, 160, 0.06);
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.signup-trial-notice svg {
+  flex-shrink: 0;
+  color: var(--color-secondary);
+  margin-top: 2px;
+}
+
+.signup-trial-notice strong {
+  color: var(--color-text-primary);
+}
+
+/* Stripe card element */
+.stripe-card-element {
+  padding: 14px 16px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: #fff;
+  transition: border-color var(--duration-fast) var(--ease-default);
+  min-height: 44px;
+}
+
+.stripe-card-element.StripeElement--focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(75, 123, 229, 0.1);
+}
+
+.stripe-card-element.StripeElement--invalid {
+  border-color: var(--color-error);
+}
+
+.stripe-card-errors {
+  font-size: 0.75rem;
+  color: var(--color-error);
+  margin-top: 4px;
+  min-height: 18px;
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+  .signup-form-side { padding: var(--space-8) var(--space-5); }
+  .signup-row { grid-template-columns: 1fr; }
+}
+</style>
+
+<script>
+  // ─── Field validation ───
+  const fields = document.querySelectorAll<HTMLElement>('.signup-field[data-validate]');
+
+  function validateField(field: HTMLElement): boolean {
+    const type = field.dataset.validate;
+    const input = field.querySelector('input, select') as HTMLInputElement | HTMLSelectElement;
+    if (!input) return false;
+
+    const val = input.value.trim();
+    if (!val) { field.classList.remove('valid', 'invalid'); return false; }
+
+    let isValid = false;
+    switch (type) {
+      case 'text': isValid = val.length >= 2; break;
+      case 'select': isValid = val !== ''; break;
+      case 'phone': isValid = val.replace(/\D/g, '').length >= 10; break;
+      case 'email': isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val); break;
+      case 'password': isValid = val.length >= 8; break;
+    }
+
+    field.classList.toggle('valid', isValid);
+    field.classList.toggle('invalid', !isValid);
+    const status = field.querySelector('.field-status');
+    if (status) status.textContent = isValid ? '✓' : '✗';
+    return isValid;
+  }
+
+  fields.forEach((field) => {
+    const input = field.querySelector('input, select');
+    if (input) {
+      input.addEventListener('input', () => validateField(field));
+      input.addEventListener('change', () => validateField(field));
+      input.addEventListener('blur', () => validateField(field));
+    }
+  });
+
+  // ─── Step navigation ───
+  const step1 = document.getElementById('step-1')!;
+  const step2 = document.getElementById('step-2')!;
+  const btnNext = document.getElementById('btn-next')!;
+  const btnBack = document.getElementById('btn-back')!;
+  const stepIndicators = document.querySelectorAll('.signup-step');
+
+  function goToStep(num: number) {
+    if (num === 2) {
+      step1.style.display = 'none';
+      step2.style.display = 'flex';
+      stepIndicators[0].classList.remove('active');
+      stepIndicators[0].classList.add('done');
+      stepIndicators[1].classList.add('active');
+      initStripe();
+    } else {
+      step2.style.display = 'none';
+      step1.style.display = 'flex';
+      stepIndicators[1].classList.remove('active');
+      stepIndicators[0].classList.remove('done');
+      stepIndicators[0].classList.add('active');
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  btnNext.addEventListener('click', () => {
+    // Validate all step 1 fields
+    const step1Fields = step1.querySelectorAll<HTMLElement>('.signup-field[data-validate]');
+    let allValid = true;
+    step1Fields.forEach((f) => { if (!validateField(f)) allValid = false; });
+    if (!allValid) return;
+    goToStep(2);
+  });
+
+  btnBack.addEventListener('click', () => goToStep(1));
+
+  // ─── Plan price display ───
+  const PLAN_PRICES: Record<string, string> = {
+    vende: '$600 MXN/mes',
+    controla: '$900 MXN/mes',
+    fideliza: '$1,400 MXN/mes',
+    automatiza: '$2,900 MXN/mes',
+  };
+  const planRadios = document.querySelectorAll<HTMLInputElement>('input[name="plan"]');
+  const priceDisplay = document.getElementById('plan-price-display');
+
+  planRadios.forEach((radio) => {
+    radio.addEventListener('change', () => {
+      if (priceDisplay) priceDisplay.textContent = PLAN_PRICES[radio.value] || '';
+    });
+  });
+
+  // ─── Stripe Elements ───
+  let stripe: any = null;
+  let cardElement: any = null;
+  let stripeReady = false;
+
+  function initStripe() {
+    if (stripeReady) return;
+
+    // Load Stripe.js dynamically
+    const script = document.createElement('script');
+    script.src = 'https://js.stripe.com/v3/';
+    script.onload = () => {
+      const pk = (document.querySelector('meta[name="stripe-pk"]') as HTMLMetaElement)?.content || '';
+      if (!pk) { console.warn('Stripe publishable key not found'); return; }
+
+      stripe = (window as any).Stripe(pk);
+      const elements = stripe.elements({
+        fonts: [{ cssSrc: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap' }],
+      });
+
+      cardElement = elements.create('card', {
+        style: {
+          base: {
+            fontFamily: '"Plus Jakarta Sans", sans-serif',
+            fontSize: '15px',
+            color: '#1A1A1A',
+            '::placeholder': { color: '#8C8C8C' },
+          },
+          invalid: { color: '#E54B4B' },
+        },
+        hidePostalCode: true,
+      });
+
+      cardElement.mount('#card-element');
+
+      cardElement.on('change', (event: any) => {
+        const errEl = document.getElementById('card-errors');
+        if (errEl) errEl.textContent = event.error ? event.error.message : '';
+      });
+
+      stripeReady = true;
+    };
+    document.head.appendChild(script);
+  }
+
+  // ─── Form submit ───
+  const form = document.getElementById('signup-form') as HTMLFormElement;
+  const btnSubmit = document.getElementById('btn-submit') as HTMLButtonElement;
+  const btnText = document.getElementById('btn-submit-text')!;
+  const btnLoading = document.getElementById('btn-submit-loading')!;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!stripe || !cardElement) return;
+
+    btnSubmit.disabled = true;
+    btnText.style.display = 'none';
+    btnLoading.style.display = 'inline';
+
+    try {
+      // Create payment method
+      const { paymentMethod, error } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
+        billing_details: {
+          name: (document.getElementById('nombre') as HTMLInputElement).value,
+          email: (document.getElementById('email') as HTMLInputElement).value,
+        },
+      });
+
+      if (error) {
+        const errEl = document.getElementById('card-errors');
+        if (errEl) errEl.textContent = error.message || 'Error al procesar la tarjeta';
+        btnSubmit.disabled = false;
+        btnText.style.display = 'inline';
+        btnLoading.style.display = 'none';
+        return;
+      }
+
+      // Get selected plan
+      const selectedPlan = (document.querySelector('input[name="plan"]:checked') as HTMLInputElement)?.value || 'controla';
+
+      // Call API
+      const res = await fetch('/api/create-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: (document.getElementById('nombre') as HTMLInputElement).value,
+          empresa: (document.getElementById('empresa') as HTMLInputElement).value,
+          giro: (document.getElementById('giro') as HTMLSelectElement).value,
+          sucursales: (document.getElementById('sucursales') as HTMLSelectElement).value,
+          whatsapp: (document.getElementById('whatsapp') as HTMLInputElement).value,
+          email: (document.getElementById('email') as HTMLInputElement).value,
+          paymentMethodId: paymentMethod.id,
+          planId: selectedPlan,
+          billing: 'monthly',
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        window.location.href = '/bienvenida';
+      } else {
+        const errEl = document.getElementById('card-errors');
+        if (errEl) errEl.textContent = data.error || 'Error al crear la suscripción';
+        btnSubmit.disabled = false;
+        btnText.style.display = 'inline';
+        btnLoading.style.display = 'none';
+      }
+    } catch (err) {
+      const errEl = document.getElementById('card-errors');
+      if (errEl) errEl.textContent = 'Error de conexión. Intenta de nuevo.';
+      btnSubmit.disabled = false;
+      btnText.style.display = 'inline';
+      btnLoading.style.display = 'none';
+    }
+  });
+</script>

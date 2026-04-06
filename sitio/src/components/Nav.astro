@@ -106,11 +106,15 @@ const currentPath = Astro.url.pathname;
         </>
       ))}
       <div class="mobile-divider"></div>
-      <a href="/contacto" class="mobile-link mobile-link-secondary">Contacto</a>
       <a href="https://app.sacscloud.com/" class="mobile-link mobile-link-secondary">Iniciar sesión</a>
-      <a href="/prueba-gratis" class="btn-mobile-cta">
-        Empieza gratis
-      </a>
+      <div class="mobile-cta-group">
+        <a href="/prueba-gratis" class="btn-mobile-cta btn-mobile-primary">
+          Empieza gratis
+        </a>
+        <a href="/contacto#demo" class="btn-mobile-cta btn-mobile-outline">
+          Agenda una demo
+        </a>
+      </div>
     </nav>
   </div>
 </header>
@@ -573,23 +577,42 @@ const currentPath = Astro.url.pathname;
     margin: var(--space-3) var(--space-4);
   }
 
+  .mobile-cta-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: var(--space-5);
+    padding: 0 var(--space-4);
+  }
+
   .btn-mobile-cta {
     display: block;
     text-align: center;
-    font-size: 1rem;
-    font-weight: 600;
-    padding: 14px 28px;
-    border-radius: 6px;
-    background: #fff;
-    color: #0f0f1a;
+    font-size: 1.0625rem;
+    font-weight: 700;
+    padding: 16px 28px;
+    border-radius: var(--radius-full);
     text-decoration: none;
-    margin-top: var(--space-4);
-    transition: background 0.2s ease;
+    transition: all 0.2s ease;
   }
 
-  .btn-mobile-cta:hover {
+  .btn-mobile-primary {
+    background: #fff;
+    color: #0f0f1a;
+  }
+
+  .btn-mobile-primary:hover {
     background: #f0f0f0;
-    text-decoration: none;
+  }
+
+  .btn-mobile-outline {
+    background: transparent;
+    color: #fff;
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .btn-mobile-outline:hover {
+    border-color: rgba(255, 255, 255, 0.6);
   }
 
   @media (min-width: 1024px) {
