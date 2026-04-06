@@ -1,40 +1,44 @@
 import type { APIRoute } from 'astro';
-import Stripe from 'stripe';
 
 export const prerender = false;
 
-const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-03-31.basil',
-});
+const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || '';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
     const data = await request.json();
 
-    // Save lead as Stripe customer with metadata
-    await stripe.customers.create({
-      email: data.email || `lead-${Date.now()}@noemail.com`,
-      name: data.nombre || '',
-      phone: data.whatsapp || '',
-      metadata: {
-        empresa: data.empresa || '',
-        giro: data.giro || '',
-        sucursales: data.sucursales || '',
-        paso: data.paso || '',
-        plan: data.plan || '',
-        source: 'website-lead',
-        fecha: new Date().toISOString(),
+    // Create Stripe customer via REST API directly (no SDK version issues)
+    const params = new URLSearchParams();
+    params.append('email', data.email || `lead-${Date.now()}@noemail.com`);
+    params.append('name', data.nombre || '');
+    params.append('phone', data.whatsapp || '');
+    params.append('metadata[empresa]', data.empresa || '');
+    params.append('metadata[giro]', data.giro || '');
+    params.append('metadata[sucursales]', data.sucursales || '');
+    params.append('metadata[paso]', data.paso || '');
+    params.append('metadata[plan]', data.plan || '');
+    params.append('metadata[source]', 'website-lead');
+    params.append('metadata[fecha]', new Date().toISOString());
+
+    const res = await fetch('https://api.stripe.com/v1/customers', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${STRIPE_KEY}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
+      body: params.toString(),
     });
 
-    return new Response(JSON.stringify({ success: true }), {
+    const result = await res.json();
+
+    return new Response(JSON.stringify({ success: true, id: result.id }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     });
   } catch (err) {
-    console.log('Lead save error:', err);
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
+    return new Response(JSON.stringify({ success: false, error: String(err) }), {
+      status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
   }
