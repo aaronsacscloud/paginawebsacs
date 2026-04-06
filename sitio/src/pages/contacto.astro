@@ -3,162 +3,230 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout
-  title="Agenda una demo — SACS"
-  description="Agenda una demo personalizada de 30 minutos con un experto de SACS. Te mostramos la plataforma funcionando con datos de tu negocio."
+  title="Agenda una demo — Sacs"
+  description="Agenda una demo personalizada de 30 minutos con un experto de Sacs. Te mostramos la plataforma funcionando con datos de tu negocio."
 >
 
 <!-- Hero -->
-<section class="demo-hero">
-  <div class="demo-hero-inner">
-    <div class="demo-hero-content">
-      <span class="demo-eyebrow">Sin compromiso, sin tarjeta</span>
-      <h1 class="demo-hero-title">Ve SACS en accion con datos de tu negocio</h1>
-      <p class="demo-hero-subtitle">En 30 minutos te mostramos como gestionar ventas, inventario, clientes y lealtad en un solo lugar. Personalizado para tu tipo de negocio.</p>
-      <div class="demo-hero-benefits">
-        <div class="demo-benefit">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2a8 8 0 100 16 8 8 0 000-16z" stroke="var(--color-primary)" stroke-width="1.5"/><path d="M7 10l2 2 4-4" stroke="var(--color-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span>Demo personalizada de 30 min</span>
+<section class="ct-hero">
+  <div class="ct-hero-inner">
+    <div class="ct-hero-text">
+      <h1 class="ct-h1">Conoce Sacs<br/>en 30 minutos</h1>
+      <p class="ct-lead">Te mostramos la plataforma funcionando con datos reales de tu industria. Sin slides, sin presion.</p>
+      <div class="ct-session">
+        <p class="ct-session-label">En la sesion:</p>
+        <div class="ct-session-steps">
+          <div class="ct-session-step">
+            <span class="ct-session-num">1</span>
+            <div>
+              <strong>Escuchamos tus retos</strong>
+              <p>Nos cuentas que te frena hoy y que necesitas resolver.</p>
+            </div>
+          </div>
+          <div class="ct-session-step">
+            <span class="ct-session-num">2</span>
+            <div>
+              <strong>Te mostramos como resolverlo</strong>
+              <p>Abrimos Sacs en vivo y lo configuramos para tu caso.</p>
+            </div>
+          </div>
+          <div class="ct-session-step">
+            <span class="ct-session-num">3</span>
+            <div>
+              <strong>Diseñamos tu vision juntos</strong>
+              <p>Platicamos a donde quieres llegar y como lograrlo con Sacs.</p>
+            </div>
+          </div>
         </div>
-        <div class="demo-benefit">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2a8 8 0 100 16 8 8 0 000-16z" stroke="var(--color-primary)" stroke-width="1.5"/><path d="M7 10l2 2 4-4" stroke="var(--color-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span>Con un experto en retail</span>
+      </div>
+
+      <!-- Inline stats -->
+      <div class="ct-hero-stats">
+        <div class="ct-hero-stat">
+          <span class="ct-stat-num">3,000+</span>
+          <span class="ct-stat-label">marcas activas</span>
         </div>
-        <div class="demo-benefit">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2a8 8 0 100 16 8 8 0 000-16z" stroke="var(--color-primary)" stroke-width="1.5"/><path d="M7 10l2 2 4-4" stroke="var(--color-primary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span>Sin compromiso ni tarjeta de credito</span>
+        <div class="ct-stat-sep"></div>
+        <div class="ct-hero-stat">
+          <span class="ct-stat-num">4.8/5</span>
+          <span class="ct-stat-label">en Google</span>
+        </div>
+        <div class="ct-stat-sep"></div>
+        <div class="ct-hero-stat">
+          <span class="ct-stat-num">99.9%</span>
+          <span class="ct-stat-label">uptime</span>
+        </div>
+      </div>
+
+      <!-- Quote -->
+      <blockquote class="ct-hero-quote">
+        <p>"La plataforma nos dio el control que necesitabamos para escalar a 42 sucursales."</p>
+        <cite>— La Bella Pandita</cite>
+      </blockquote>
+
+      <!-- Trusted -->
+      <div class="ct-hero-trusted">
+        <span class="ct-trusted-label">Confian en Sacs</span>
+        <div class="ct-trusted-names">
+          <span>La Bella Pandita</span>
+          <span>Liveshow</span>
+          <span>Casa Maca</span>
+          <span>Sandmade</span>
         </div>
       </div>
     </div>
-    <div class="demo-hero-calendly" id="demo">
-      <div class="demo-calendly-card">
-        <h2 class="demo-calendly-title">Elige tu horario</h2>
-        <p class="demo-calendly-desc">Selecciona el dia y hora que mejor te funcione.</p>
-        <div class="demo-calendly-embed" id="calendly-embed">
-          <div class="demo-calendly-placeholder">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <p>Cargando calendario...</p>
+    <div class="ct-hero-cal" id="demo">
+      <div class="calendly-inline-widget" data-url="https://calendly.com/aaronherzberg/reuniongeneral?hide_event_type_details=1&hide_gdpr_banner=1" style="min-width:320px;height:700px;"></div>
+      <script type="text/javascript" src="https://assets.calendly.com/assets/external/widget.js" async></script>
+    </div>
+  </div>
+</section>
+
+<!-- Social proof strip -->
+<section class="ct-proof">
+  <div class="ct-proof-inner">
+    <div class="ct-proof-item">
+      <span class="ct-proof-num">3,000+</span>
+      <span class="ct-proof-label">marcas activas</span>
+    </div>
+    <span class="ct-proof-dot" aria-hidden="true"></span>
+    <div class="ct-proof-item">
+      <span class="ct-proof-num">4.8/5</span>
+      <span class="ct-proof-label">Google Reviews</span>
+    </div>
+    <span class="ct-proof-dot" aria-hidden="true"></span>
+    <div class="ct-proof-item">
+      <span class="ct-proof-num">99.9%</span>
+      <span class="ct-proof-label">uptime</span>
+    </div>
+    <span class="ct-proof-dot" aria-hidden="true"></span>
+    <div class="ct-proof-item">
+      <span class="ct-proof-num">15 min</span>
+      <span class="ct-proof-label">para configurar</span>
+    </div>
+  </div>
+</section>
+
+<!-- Process -->
+<section class="ct-process">
+  <div class="ct-process-inner">
+    <p class="ct-eyebrow">Como funciona</p>
+    <h2 class="ct-h2">Que esperar de la reunion</h2>
+    <div class="ct-process-grid">
+      <div class="ct-process-card">
+        <span class="ct-process-num">1</span>
+        <h3>Entendemos tu negocio</h3>
+        <p>Nos cuentas como operas hoy, cuantas sucursales tienes, que canales usas y que te duele de tu operacion.</p>
+      </div>
+      <div class="ct-process-card">
+        <span class="ct-process-num">2</span>
+        <h3>Demo en vivo</h3>
+        <p>Te mostramos Sacs funcionando con datos y escenarios de tu tipo de negocio. Punto de venta, inventario, clientes, reportes.</p>
+      </div>
+      <div class="ct-process-card">
+        <span class="ct-process-num">3</span>
+        <h3>Siguiente paso</h3>
+        <p>Definimos juntos el plan de implementacion, tiempos de migracion y como empezar. Sin presion.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- After the demo -->
+<section class="ct-after">
+  <div class="ct-after-inner">
+    <p class="ct-eyebrow">Despues de la demo</p>
+    <h2 class="ct-h2">De la reunion a operar en 24 horas</h2>
+    <div class="ct-after-grid">
+      <div class="ct-after-card">
+        <div class="ct-after-badge">En la llamada</div>
+        <h3>Propuesta a tu medida</h3>
+        <p>Te presentamos un plan personalizado basado en tu tamano y necesidades. Transparente, sin letras chiquitas.</p>
+      </div>
+      <div class="ct-after-card ct-after-card--accent">
+        <div class="ct-after-badge ct-after-badge--accent">Mismo dia</div>
+        <h3>Cuenta activa</h3>
+        <p>Si aceptas, tu cuenta se habilita ese mismo dia. Sin esperas, sin procesos largos.</p>
+      </div>
+      <div class="ct-after-card">
+        <div class="ct-after-badge">Dia siguiente</div>
+        <h3>Asesoria de inicio</h3>
+        <p>Un experto te acompana para configurar catalogo, inventario y punto de venta. Al dia siguiente ya operas.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Migration + No risk -->
+<section class="ct-migrate">
+  <div class="ct-migrate-inner">
+    <div class="ct-migrate-left">
+      <p class="ct-eyebrow">Si decides iniciar</p>
+      <h2 class="ct-h2" style="margin-bottom:var(--space-5)">Migrar es mas facil de lo que piensas</h2>
+      <p class="ct-migrate-desc">Nuestro equipo migra tu catalogo, clientes e historial de ventas. Tu solo validas. Sin perder un dia de ventas.</p>
+      <div class="ct-migrate-steps">
+        <div class="ct-migrate-step">
+          <span class="ct-migrate-num">1</span>
+          <div>
+            <strong>Nos envias tu catalogo</strong>
+            <p>Excel, CSV o desde tu sistema actual. Nosotros lo formateamos.</p>
+          </div>
+        </div>
+        <div class="ct-migrate-step">
+          <span class="ct-migrate-num">2</span>
+          <div>
+            <strong>Importamos todo en 1-3 dias</strong>
+            <p>Productos, variantes, precios, clientes y proveedores.</p>
+          </div>
+        </div>
+        <div class="ct-migrate-step">
+          <span class="ct-migrate-num">3</span>
+          <div>
+            <strong>Vendes desde el dia 1</strong>
+            <p>Capacitacion incluida. Tu ejecutivo te acompana en cada paso.</p>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</section>
-
-<!-- Trust bar -->
-<section class="demo-trust">
-  <div class="demo-trust-inner">
-    <div class="demo-trust-item">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-      <div>
-        <span class="demo-trust-num">3,000+</span>
-        <span class="demo-trust-label">marcas activas</span>
-      </div>
-    </div>
-    <div class="demo-trust-item">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 1l2.39 4.84L18 6.71l-4 3.9.94 5.5L10 13.48l-4.94 2.63.94-5.5-4-3.9 5.61-.87L10 1z" fill="#E8A838" transform="translate(2,2) scale(0.85)"/></svg>
-      <div>
-        <span class="demo-trust-num">4.8/5</span>
-        <span class="demo-trust-label">Google Reviews</span>
-      </div>
-    </div>
-    <div class="demo-trust-item">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-      <div>
-        <span class="demo-trust-num">99.9%</span>
-        <span class="demo-trust-label">uptime garantizado</span>
-      </div>
-    </div>
-    <div class="demo-trust-item">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-      <div>
-        <span class="demo-trust-num">15 min</span>
-        <span class="demo-trust-label">para configurar</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- What to expect -->
-<section class="demo-section">
-  <div class="demo-section-inner">
-    <h2 class="demo-section-title">Que veras en la demo</h2>
-    <p class="demo-section-desc">Te mostramos SACS funcionando con un escenario real de tu industria. No slides, no presentaciones genericas.</p>
-    <div class="demo-steps">
-      <div class="demo-step">
-        <span class="demo-step-num">01</span>
-        <div>
-          <h3>Entendemos tu negocio</h3>
-          <p>Nos cuentas como operas hoy, cuantas sucursales tienes, que canales usas y que te duele de tu operacion actual.</p>
+    <div class="ct-migrate-right">
+      <div class="ct-norisk-card">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="var(--color-secondary)" stroke-width="1.5"/><path d="M8 12l3 3 5-5" stroke="var(--color-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h3>Sin riesgo</h3>
+        <p>Prueba 7 dias gratis. Sin tarjeta. Si no te convence, cancelas con un clic. Sin llamadas, sin retencion, sin letra chiquita.</p>
+        <div class="ct-norisk-checks">
+          <span>Migracion incluida en todos los planes</span>
+          <span>Soporte 24/7 desde el dia 1</span>
+          <span>Cancela cuando quieras</span>
         </div>
       </div>
-      <div class="demo-step">
-        <span class="demo-step-num">02</span>
-        <div>
-          <h3>Demo personalizada</h3>
-          <p>Te mostramos SACS funcionando con datos y escenarios de tu tipo de negocio: punto de venta, inventario, clientes, reportes y mas.</p>
-        </div>
-      </div>
-      <div class="demo-step">
-        <span class="demo-step-num">03</span>
-        <div>
-          <h3>Plan de implementacion</h3>
-          <p>Definimos juntos los siguientes pasos, tiempos de migracion y como empezar. Sin presion, sin compromiso.</p>
-        </div>
+      <div class="ct-bonus-card">
+        <h3>Consultoria de implementacion gratis</h3>
+        <p>Normalmente tiene un costo de <strong>$8,000 MXN</strong>. Con tu plan anual, la consultoria personalizada de implementacion es completamente gratis. Un experto disena contigo la estrategia para que saques el maximo de Sacs desde el dia uno.</p>
+        <span class="ct-bonus-badge">Incluido con plan anual</span>
       </div>
     </div>
   </div>
 </section>
 
 <!-- Testimonial -->
-<section class="demo-section demo-section--alt">
-  <div class="demo-section-inner">
-    <blockquote class="demo-quote">
-      <p>"En un concierto llegamos a perder el 20% de nuestras ventas en solo dos horas porque el sistema cayo. Con SACS eso no vuelve a pasar."</p>
-      <cite>— Mariana Lopez, Directora de Operaciones, Liveshow Merchandising</cite>
+<section class="ct-quote-section">
+  <div class="ct-quote-inner">
+    <blockquote class="ct-blockquote">
+      <p>"En un concierto llegamos a perder el 20% de nuestras ventas en solo dos horas porque el sistema cayo. Con Sacs eso no vuelve a pasar."</p>
+      <footer>
+        <cite>Mariana Lopez</cite>
+        <span>Directora de Operaciones, Liveshow Merchandising</span>
+      </footer>
     </blockquote>
   </div>
 </section>
 
-<!-- Industries -->
-<section class="demo-section">
-  <div class="demo-section-inner">
-    <h2 class="demo-section-title">SACS funciona para tu tipo de negocio</h2>
-    <div class="demo-industries">
-      <div class="demo-industry">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        <span>Tiendas y boutiques</span>
-      </div>
-      <div class="demo-industry">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" aria-hidden="true"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>
-        <span>Multi-sucursal</span>
-      </div>
-      <div class="demo-industry">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-        <span>E-commerce</span>
-      </div>
-      <div class="demo-industry">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" aria-hidden="true"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
-        <span>Cafeterias y restaurantes</span>
-      </div>
-      <div class="demo-industry">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <span>Eventos y merchandising</span>
-      </div>
-      <div class="demo-industry">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" aria-hidden="true"><path d="M12 2a4 4 0 014 4v1a1 1 0 001 1h1a4 4 0 010 8h-1a1 1 0 00-1 1v1a4 4 0 01-8 0v-1a1 1 0 00-1-1H6a4 4 0 010-8h1a1 1 0 001-1V6a4 4 0 014-4z"/></svg>
-        <span>Moda y lifestyle</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Final CTA -->
-<section class="demo-final-cta">
-  <div class="demo-final-inner">
-    <h2>Tambien puedes escribirnos</h2>
-    <p>Si prefieres chatear directamente, contactanos por WhatsApp.</p>
-    <a id="demo-wa-link" href="https://wa.me/5215536634392" target="_blank" rel="noopener noreferrer" class="demo-wa-btn">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+<!-- WhatsApp alternative -->
+<section class="ct-wa">
+  <div class="ct-wa-inner">
+    <p class="ct-wa-text">Prefieres chatear? Escribenos directo por WhatsApp.</p>
+    <a id="demo-wa-link" href="https://wa.me/5215536634392" target="_blank" rel="noopener noreferrer" class="ct-wa-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
       Escribenos por WhatsApp
     </a>
   </div>
@@ -167,313 +235,612 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 </BaseLayout>
 
 <style>
-  /* ── Hero ── */
-  .demo-hero {
-    background: #0f0f1a;
-    padding: clamp(80px, 8vw, 120px) 0 clamp(60px, 6vw, 80px);
+  /* ═══════════════════════════════════════
+     Contacto — Refined Squarespace style
+     ═══════════════════════════════════════ */
+
+  /* ── Shared ── */
+  .ct-eyebrow {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--color-text-tertiary);
+    margin: 0 0 var(--space-4);
   }
-  .demo-hero-inner {
+  .ct-h2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.625rem, 3vw, 2.25rem);
+    font-weight: 700;
+    color: var(--color-text-primary);
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    margin: 0 0 var(--space-10);
+  }
+
+  /* ── Hero ── */
+  .ct-hero {
+    background: #fff;
+    padding: clamp(100px, 10vw, 140px) 0 clamp(64px, 8vw, 96px);
+  }
+  .ct-hero-inner {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 clamp(20px, 4vw, 48px);
+    padding: 0 clamp(24px, 4vw, 48px);
     display: grid;
-    grid-template-columns: 1fr 1.1fr;
-    gap: clamp(40px, 5vw, 80px);
+    grid-template-columns: 1fr 1.15fr;
+    gap: clamp(48px, 6vw, 80px);
     align-items: start;
   }
-  .demo-eyebrow {
-    font-family: var(--font-body);
-    font-size: 0.8125rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--color-primary);
-    display: block;
-    margin-bottom: 16px;
-  }
-  .demo-hero-title {
+  .ct-h1 {
     font-family: var(--font-display);
-    font-size: clamp(2.25rem, 4.5vw, 3.5rem);
+    font-size: clamp(2.5rem, 5vw, 3.75rem);
     font-weight: 800;
-    color: #fff;
+    color: var(--color-text-primary);
     letter-spacing: -0.04em;
     line-height: 1.05;
-    margin: 0 0 20px;
+    margin: 0 0 var(--space-5);
   }
-  .demo-hero-subtitle {
+  .ct-lead {
     font-family: var(--font-body);
-    font-size: clamp(1rem, 1.5vw, 1.125rem);
-    color: rgba(255,255,255,0.6);
-    line-height: 1.6;
-    margin: 0 0 32px;
-    max-width: 480px;
+    font-size: clamp(1rem, 1.4vw, 1.1rem);
+    color: var(--color-text-secondary);
+    line-height: 1.65;
+    margin: 0 0 var(--space-8);
+    max-width: 440px;
   }
-  .demo-hero-benefits {
+  .ct-session {
+    margin-bottom: var(--space-2);
+  }
+  .ct-session-label {
+    font-family: var(--font-body);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-text-tertiary);
+    margin: 0 0 var(--space-3);
+  }
+  .ct-session-steps {
     display: flex;
     flex-direction: column;
     gap: 14px;
   }
-  .demo-benefit {
+  .ct-session-step {
     display: flex;
-    align-items: center;
     gap: 12px;
-    font-family: var(--font-body);
-    font-size: 0.9375rem;
-    color: rgba(255,255,255,0.8);
-  }
-  .demo-benefit svg { flex-shrink: 0; }
-
-  /* ── Calendly Card ── */
-  .demo-calendly-card {
-    background: #fff;
-    border-radius: var(--radius-xl);
-    padding: 32px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-  }
-  .demo-calendly-title {
-    font-family: var(--font-display);
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--color-text-primary);
-    letter-spacing: -0.02em;
-    margin: 0 0 8px;
-  }
-  .demo-calendly-desc {
-    font-family: var(--font-body);
-    font-size: 0.875rem;
-    color: var(--color-text-secondary);
-    margin: 0 0 24px;
-  }
-  .demo-calendly-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    min-height: 400px;
-    background: var(--color-bg-primary);
-    border-radius: var(--radius-lg);
-  }
-  .demo-calendly-placeholder p {
-    font-family: var(--font-body);
-    font-size: 0.875rem;
-    color: var(--color-text-tertiary);
-    margin: 0;
-  }
-
-  /* ── Trust Bar ── */
-  .demo-trust {
-    background: #fff;
-    border-bottom: 1px solid var(--color-bg-secondary);
-  }
-  .demo-trust-inner {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 28px clamp(20px, 4vw, 48px);
-    display: flex;
-    justify-content: space-between;
-    gap: 24px;
-  }
-  .demo-trust-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .demo-trust-item svg { flex-shrink: 0; }
-  .demo-trust-num {
-    font-family: var(--font-display);
-    font-size: 1.125rem;
-    font-weight: 800;
-    color: var(--color-text-primary);
-    display: block;
-    line-height: 1.1;
-  }
-  .demo-trust-label {
-    font-family: var(--font-body);
-    font-size: 0.75rem;
-    color: var(--color-text-tertiary);
-    display: block;
-  }
-
-  /* ── Sections ── */
-  .demo-section {
-    padding: clamp(60px, 8vw, 100px) 24px;
-    background: #fff;
-  }
-  .demo-section--alt {
-    background: var(--color-bg-primary);
-  }
-  .demo-section-inner {
-    max-width: 800px;
-    margin: 0 auto;
-  }
-  .demo-section-title {
-    font-family: var(--font-display);
-    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
-    font-weight: 800;
-    color: var(--color-text-primary);
-    letter-spacing: -0.03em;
-    line-height: 1.1;
-    margin: 0 0 12px;
-    text-align: center;
-  }
-  .demo-section-desc {
-    font-family: var(--font-body);
-    font-size: 1rem;
-    color: var(--color-text-secondary);
-    line-height: 1.6;
-    margin: 0 0 40px;
-    text-align: center;
-    max-width: 560px;
-    margin-inline: auto;
-  }
-
-  /* ── Steps ── */
-  .demo-steps {
-    display: flex;
-    flex-direction: column;
-    gap: 32px;
-  }
-  .demo-step {
-    display: flex;
-    gap: 24px;
     align-items: flex-start;
   }
-  .demo-step-num {
+  .ct-session-num {
     font-family: var(--font-display);
-    font-size: 1.75rem;
-    font-weight: 800;
+    font-size: 0.6875rem;
+    font-weight: 700;
     color: var(--color-primary);
-    letter-spacing: -0.03em;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
-    line-height: 1.2;
+    margin-top: 1px;
   }
-  .demo-step h3 {
-    font-family: var(--font-display);
-    font-size: 1.125rem;
+  .ct-session-step strong {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
     font-weight: 700;
     color: var(--color-text-primary);
-    margin: 0 0 6px;
+    display: block;
+    line-height: 1.3;
   }
-  .demo-step p {
+  .ct-session-step p {
     font-family: var(--font-body);
-    font-size: 15px;
-    color: var(--color-text-secondary);
-    line-height: 1.6;
-    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary);
+    line-height: 1.45;
+    margin: 2px 0 0;
   }
 
-  /* ── Quote ── */
-  .demo-quote {
-    border-left: 4px solid var(--color-primary);
-    padding-left: 28px;
-    margin: 0;
-    max-width: 640px;
+  /* Hero stats */
+  .ct-hero-stats {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    margin-top: var(--space-8);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--color-border-light);
   }
-  .demo-quote p {
+  .ct-stat-num {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 800;
+    color: var(--color-text-primary);
+    display: block;
+    line-height: 1;
+  }
+  .ct-stat-label {
     font-family: var(--font-body);
-    font-size: clamp(1.1rem, 1.5vw, 1.3rem);
+    font-size: 0.6875rem;
+    color: var(--color-text-tertiary);
+    display: block;
+    margin-top: 3px;
+  }
+  .ct-stat-sep {
+    width: 1px;
+    height: 28px;
+    background: var(--color-border-light);
+    flex-shrink: 0;
+  }
+
+  /* Hero quote */
+  .ct-hero-quote {
+    margin: var(--space-6) 0 0;
+    padding: var(--space-4) var(--space-5);
+    border-left: 2px solid var(--color-border-light);
+  }
+  .ct-hero-quote p {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
     font-style: italic;
     color: var(--color-text-secondary);
-    line-height: 1.6;
-    margin: 0 0 12px;
+    line-height: 1.55;
+    margin: 0 0 6px;
   }
-  .demo-quote cite {
+  .ct-hero-quote cite {
     font-family: var(--font-body);
-    font-size: 14px;
+    font-size: 0.75rem;
     font-style: normal;
     font-weight: 600;
     color: var(--color-text-tertiary);
   }
 
-  /* ── Industries ── */
-  .demo-industries {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    margin-top: 40px;
+  /* Trusted */
+  .ct-hero-trusted {
+    margin-top: var(--space-6);
   }
-  .demo-industry {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    background: var(--color-bg-primary);
-    border-radius: var(--radius-lg);
-    padding: 20px 24px;
-    border: 1px solid var(--color-bg-secondary);
-  }
-  .demo-industry span {
+  .ct-trusted-label {
     font-family: var(--font-body);
-    font-size: 0.9375rem;
+    font-size: 0.6875rem;
     font-weight: 600;
-    color: var(--color-text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-text-tertiary);
+    display: block;
+    margin-bottom: var(--space-2);
+  }
+  .ct-trusted-names {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .ct-trusted-names span {
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    background: var(--color-bg-primary);
+    padding: 5px 12px;
+    border-radius: 100px;
+    border: 1px solid var(--color-border-light);
   }
 
-  /* ── Final CTA ── */
-  .demo-final-cta {
-    padding: clamp(60px, 8vw, 100px) 24px;
+  /* Calendly side */
+  .ct-hero-cal {
     background: var(--color-bg-primary);
-    text-align: center;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    min-height: 700px;
   }
-  .demo-final-inner {
-    max-width: 480px;
+
+  /* ── Social proof strip ── */
+  .ct-proof {
+    background: var(--color-bg-primary);
+    border-top: 1px solid var(--color-border-light);
+    border-bottom: 1px solid var(--color-border-light);
+  }
+  .ct-proof-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--space-6) var(--space-6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-6);
+  }
+  .ct-proof-item { text-align: center; }
+  .ct-proof-num {
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    display: block;
+    line-height: 1;
+  }
+  .ct-proof-label {
+    font-family: var(--font-body);
+    font-size: 0.6875rem;
+    color: var(--color-text-tertiary);
+    display: block;
+    margin-top: 3px;
+    letter-spacing: 0.01em;
+  }
+  .ct-proof-dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--color-border);
+    flex-shrink: 0;
+  }
+
+  /* ── Process ── */
+  .ct-process {
+    background: #fff;
+    padding: clamp(72px, 9vw, 112px) var(--space-6);
+  }
+  .ct-process-inner {
+    max-width: 960px;
     margin: 0 auto;
   }
-  .demo-final-cta h2 {
-    font-family: var(--font-display);
-    font-size: clamp(1.5rem, 3vw, 2rem);
-    font-weight: 800;
-    color: var(--color-text-primary);
-    letter-spacing: -0.03em;
-    margin: 0 0 8px;
+  .ct-process-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--color-border-light);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
   }
-  .demo-final-cta p {
+  .ct-process-card {
+    background: #fff;
+    padding: var(--space-8) var(--space-6);
+  }
+  .ct-process-num {
+    font-family: var(--font-display);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid var(--color-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-4);
+  }
+  .ct-process-card h3 {
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    letter-spacing: -0.02em;
+    margin: 0 0 var(--space-2);
+  }
+  .ct-process-card p {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    color: var(--color-text-tertiary);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* ── After the demo ── */
+  .ct-after {
+    background: var(--color-bg-primary);
+    padding: clamp(72px, 9vw, 112px) var(--space-6);
+  }
+  .ct-after-inner {
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  .ct-after-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+  }
+  .ct-after-card {
+    background: #fff;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    padding: var(--space-6);
+    transition: border-color 0.25s ease;
+  }
+  .ct-after-card:hover {
+    border-color: var(--color-border);
+  }
+  .ct-after-card--accent {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 1px var(--color-primary);
+  }
+  .ct-after-badge {
+    font-family: var(--font-body);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-text-tertiary);
+    margin-bottom: var(--space-3);
+    display: block;
+  }
+  .ct-after-badge--accent {
+    color: var(--color-primary);
+  }
+  .ct-after-card h3 {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    letter-spacing: -0.02em;
+    margin: 0 0 var(--space-2);
+  }
+  .ct-after-card p {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    color: var(--color-text-tertiary);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* ── Migration ── */
+  .ct-migrate {
+    background: var(--color-bg-primary);
+    padding: clamp(72px, 9vw, 112px) var(--space-6);
+  }
+  .ct-migrate-inner {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(40px, 5vw, 64px);
+    align-items: start;
+  }
+  .ct-migrate-desc {
     font-family: var(--font-body);
     font-size: 1rem;
     color: var(--color-text-secondary);
-    margin: 0 0 24px;
+    line-height: 1.6;
+    margin: 0 0 var(--space-8);
+    max-width: 440px;
   }
-  .demo-wa-btn {
+  .ct-migrate-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .ct-migrate-step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .ct-migrate-num {
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #fff;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--color-text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .ct-migrate-step strong {
+    font-family: var(--font-body);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    display: block;
+  }
+  .ct-migrate-step p {
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary);
+    line-height: 1.5;
+    margin: 2px 0 0;
+  }
+
+  /* No risk card */
+  .ct-norisk-card {
+    background: #fff;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-xl);
+    padding: var(--space-8) var(--space-6);
+    text-align: center;
+    margin-bottom: var(--space-4);
+  }
+  .ct-norisk-card svg {
+    margin-bottom: var(--space-3);
+  }
+  .ct-norisk-card h3 {
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+    font-weight: 800;
+    color: var(--color-text-primary);
+    letter-spacing: -0.02em;
+    margin: 0 0 var(--space-3);
+  }
+  .ct-norisk-card > p {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    margin: 0 0 var(--space-5);
+  }
+  .ct-norisk-checks {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: left;
+  }
+  .ct-norisk-checks span {
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-secondary);
+    padding-left: 20px;
+    position: relative;
+  }
+  .ct-norisk-checks span::before {
+    content: '\2713';
+    position: absolute;
+    left: 0;
+    font-weight: 700;
+  }
+
+  /* Bonus card */
+  .ct-bonus-card {
+    background: var(--color-text-primary);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    position: relative;
+    overflow: hidden;
+  }
+  .ct-bonus-card h3 {
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.02em;
+    margin: 0 0 var(--space-2);
+  }
+  .ct-bonus-card p {
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.6;
+    margin: 0 0 var(--space-4);
+  }
+  .ct-bonus-card p strong {
+    color: #fff;
+    text-decoration: line-through;
+    text-decoration-color: rgba(255,255,255,0.4);
+  }
+  .ct-bonus-badge {
+    font-family: var(--font-body);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-primary);
+    background: var(--color-accent);
+    padding: 5px 12px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+
+  /* ── Testimonial ── */
+  .ct-quote-section {
+    background: #fff;
+    padding: clamp(72px, 9vw, 112px) var(--space-6);
+  }
+  .ct-quote-inner {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+  .ct-blockquote {
+    margin: 0;
+    padding: 0;
+    border: none;
+    text-align: center;
+  }
+  .ct-blockquote p {
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 2.5vw, 1.625rem);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    letter-spacing: -0.02em;
+    line-height: 1.4;
+    margin: 0 0 var(--space-6);
+  }
+  .ct-blockquote footer {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .ct-blockquote cite {
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 700;
+    font-style: normal;
+    color: var(--color-text-primary);
+  }
+  .ct-blockquote footer span {
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary);
+  }
+
+  /* ── WhatsApp CTA ── */
+  .ct-wa {
+    background: var(--color-bg-primary);
+    padding: var(--space-10) var(--space-6);
+    border-top: 1px solid var(--color-border-light);
+  }
+  .ct-wa-inner {
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-6);
+  }
+  .ct-wa-text {
+    font-family: var(--font-body);
+    font-size: 0.9375rem;
+    color: var(--color-text-secondary);
+    margin: 0;
+  }
+  .ct-wa-btn {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     font-family: var(--font-body);
-    font-size: 1rem;
+    font-size: 0.875rem;
     font-weight: 700;
     color: #fff;
     background: #25D366;
-    padding: 16px 32px;
-    border-radius: 8px;
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
     text-decoration: none;
-    transition: background 0.2s ease, transform 0.2s ease;
+    white-space: nowrap;
+    transition: background 0.2s ease;
   }
-  .demo-wa-btn:hover {
-    background: #20bd5a;
-    transform: translateY(-2px);
+  .ct-wa-btn:hover {
+    background: #1fbe5d;
     text-decoration: none;
   }
 
-  /* ── Mobile ── */
+  /* ── Responsive ── */
   @media (max-width: 768px) {
-    .demo-hero-inner {
+    .ct-hero-inner {
       grid-template-columns: 1fr;
-      gap: 40px;
+      gap: var(--space-10);
     }
-    .demo-hero-content {
+    .ct-hero {
+      padding-top: clamp(80px, 8vw, 100px);
+    }
+    .ct-process-grid {
+      grid-template-columns: 1fr;
+    }
+    .ct-after-grid {
+      grid-template-columns: 1fr;
+    }
+    .ct-proof-inner {
+      flex-wrap: wrap;
+      gap: var(--space-4) var(--space-5);
+    }
+    .ct-proof-dot { display: none; }
+    .ct-wa-inner {
+      flex-direction: column;
       text-align: center;
     }
-    .demo-hero-subtitle {
-      margin-inline: auto;
-    }
-    .demo-hero-benefits {
-      align-items: center;
-    }
-    .demo-trust-inner {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-    .demo-industries {
+    .ct-migrate-inner {
       grid-template-columns: 1fr;
     }
   }
@@ -481,14 +848,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 <script>
   {
-    // WhatsApp link with page context
     const waLink = document.getElementById('demo-wa-link') as HTMLAnchorElement;
     if (waLink) {
-      const msg = encodeURIComponent('Hola, me interesa agendar una demo de SACS. Estaba viendo: ' + window.location.href);
+      const msg = encodeURIComponent('Hola, me interesa agendar una demo de Sacs. Estaba viendo: ' + window.location.href);
       waLink.href = `https://wa.me/5215536634392?text=${msg}`;
     }
-
-    // Scroll to demo section if #demo hash
     if (window.location.hash === '#demo') {
       const el = document.getElementById('demo');
       if (el) {

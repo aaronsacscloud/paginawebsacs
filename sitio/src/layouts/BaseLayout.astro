@@ -162,5 +162,150 @@ const allSchemas = structuredData
     </main>
     <Footer />
     <WhatsAppButton />
+
+    <!-- Coming soon modal -->
+    <div class="cs-modal-overlay" id="cs-modal" aria-hidden="true">
+      <div class="cs-modal">
+        <button class="cs-modal-close" id="cs-modal-close" aria-label="Cerrar">&times;</button>
+        <div class="cs-modal-icon">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <h2 class="cs-modal-title">Proximamente</h2>
+        <p class="cs-modal-subtitle">Actualizacion Sacs 5.0</p>
+        <p class="cs-modal-desc">Estamos trabajando en esta seccion. Mientras tanto, agenda una demo para conocer toda la plataforma.</p>
+        <a href="/contacto#demo" class="cs-modal-btn">Agenda una demo</a>
+      </div>
+    </div>
+
+    <style>
+      .cs-modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.25s ease, visibility 0.25s ease;
+        padding: 24px;
+      }
+      .cs-modal-overlay.is-open {
+        opacity: 1;
+        visibility: visible;
+      }
+      .cs-modal {
+        background: #fff;
+        border-radius: 20px;
+        padding: 48px 40px;
+        max-width: 420px;
+        width: 100%;
+        text-align: center;
+        position: relative;
+        transform: scale(0.95) translateY(10px);
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      .cs-modal-overlay.is-open .cs-modal {
+        transform: scale(1) translateY(0);
+      }
+      .cs-modal-close {
+        position: absolute;
+        top: 16px;
+        right: 20px;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: var(--color-text-tertiary);
+        cursor: pointer;
+        line-height: 1;
+        padding: 4px;
+      }
+      .cs-modal-close:hover {
+        color: var(--color-text-primary);
+      }
+      .cs-modal-icon {
+        margin-bottom: 16px;
+      }
+      .cs-modal-title {
+        font-family: var(--font-display);
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--color-text-primary);
+        letter-spacing: -0.03em;
+        margin: 0 0 4px;
+      }
+      .cs-modal-subtitle {
+        font-family: var(--font-body);
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--color-primary);
+        margin: 0 0 16px;
+      }
+      .cs-modal-desc {
+        font-family: var(--font-body);
+        font-size: 0.875rem;
+        color: var(--color-text-secondary);
+        line-height: 1.6;
+        margin: 0 0 24px;
+      }
+      .cs-modal-btn {
+        display: inline-block;
+        font-family: var(--font-body);
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: #fff;
+        background: var(--color-primary);
+        padding: 12px 28px;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: background 0.2s ease;
+      }
+      .cs-modal-btn:hover {
+        background: var(--color-primary-hover);
+        text-decoration: none;
+      }
+      @media (max-width: 480px) {
+        .cs-modal {
+          padding: 36px 28px;
+        }
+      }
+    </style>
+
+    <script>
+      {
+        const modal = document.getElementById('cs-modal');
+        const closeBtn = document.getElementById('cs-modal-close');
+
+        // Links that should trigger the modal: href="#" or href containing /producto#
+        const comingSoonSelectors = [
+          'a[href="#"]',
+          'a[href^="/producto#"]',
+          'a[href="/producto"]',
+          'a[href="/nosotros"]',
+          'a[href="/manifiesto"]',
+          'a[href="/componentes"]',
+        ];
+
+        const links = document.querySelectorAll(comingSoonSelectors.join(','));
+
+        links.forEach(link => {
+          link.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (modal) modal.classList.add('is-open');
+          });
+        });
+
+        if (closeBtn && modal) {
+          closeBtn.addEventListener('click', () => modal.classList.remove('is-open'));
+          modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.classList.remove('is-open');
+          });
+          document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') modal.classList.remove('is-open');
+          });
+        }
+      }
+    </script>
   </body>
 </html>
