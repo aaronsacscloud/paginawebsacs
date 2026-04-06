@@ -22,18 +22,16 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
 
     <div class="pricing-toggles" id="pricing-toggles">
       <!-- Currency toggle -->
-      <div class="currency-selector">
-        <select class="currency-select" id="currency-select" aria-label="Moneda">
-          <option value="mxn" selected>MXN</option>
-          <option value="usd">USD</option>
-          <option value="eur">EUR</option>
-          <option value="gbp">GBP</option>
-          <option value="brl">BRL</option>
-          <option value="cop">COP</option>
-          <option value="ars">ARS</option>
-          <option value="clp">CLP</option>
-          <option value="pen">PEN</option>
-        </select>
+      <div class="currency-picker" id="currency-picker" role="group" aria-label="Moneda">
+        <button class="cpick-btn active" data-cur="mxn"><span class="cpick-flag">&#x1F1F2;&#x1F1FD;</span> <span class="cpick-code">MXN</span> <span class="cpick-sym">$</span></button>
+        <button class="cpick-btn" data-cur="usd"><span class="cpick-flag">&#x1F1FA;&#x1F1F8;</span> <span class="cpick-code">USD</span> <span class="cpick-sym">$</span></button>
+        <button class="cpick-btn" data-cur="eur"><span class="cpick-flag">&#x1F1EA;&#x1F1FA;</span> <span class="cpick-code">EUR</span> <span class="cpick-sym">&euro;</span></button>
+        <button class="cpick-btn" data-cur="gbp"><span class="cpick-flag">&#x1F1EC;&#x1F1E7;</span> <span class="cpick-code">GBP</span> <span class="cpick-sym">&pound;</span></button>
+        <button class="cpick-btn" data-cur="brl"><span class="cpick-flag">&#x1F1E7;&#x1F1F7;</span> <span class="cpick-code">BRL</span> <span class="cpick-sym">R$</span></button>
+        <button class="cpick-btn" data-cur="cop"><span class="cpick-flag">&#x1F1E8;&#x1F1F4;</span> <span class="cpick-code">COP</span> <span class="cpick-sym">$</span></button>
+        <button class="cpick-btn" data-cur="ars"><span class="cpick-flag">&#x1F1E6;&#x1F1F7;</span> <span class="cpick-code">ARS</span> <span class="cpick-sym">$</span></button>
+        <button class="cpick-btn" data-cur="clp"><span class="cpick-flag">&#x1F1E8;&#x1F1F1;</span> <span class="cpick-code">CLP</span> <span class="cpick-sym">$</span></button>
+        <button class="cpick-btn" data-cur="pen"><span class="cpick-flag">&#x1F1F5;&#x1F1EA;</span> <span class="cpick-code">PEN</span> <span class="cpick-sym">S/</span></button>
       </div>
 
       <!-- Billing toggle -->
@@ -663,31 +661,62 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
   }
 }
 
-.currency-selector {
-  position: relative;
+.currency-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
 }
-.currency-select {
-  font-family: var(--font-body);
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border-light);
+.cpick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #fff;
+  border: 1.5px solid var(--color-border-light);
   border-radius: var(--radius-full);
-  padding: 8px 32px 8px 14px;
+  padding: 6px 12px;
   cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238C8C8C' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  transition: border-color 0.2s ease;
+  font-family: var(--font-body);
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
-.currency-select:hover {
+.cpick-btn:hover {
   border-color: var(--color-border);
+  background: var(--color-bg-primary);
 }
-.currency-select:focus {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+.cpick-btn.active {
+  border-color: var(--color-primary);
+  background: rgba(75, 123, 229, 0.06);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+.cpick-flag {
+  font-size: 1rem;
+  line-height: 1;
+}
+.cpick-code {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: 0.02em;
+}
+.cpick-sym {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+}
+@media (max-width: 767px) {
+  .currency-picker {
+    gap: 4px;
+  }
+  .cpick-btn {
+    padding: 5px 8px;
+    gap: 3px;
+  }
+  .cpick-code {
+    font-size: 0.6875rem;
+  }
+  .cpick-sym {
+    display: none;
+  }
 }
 
 .toggle-group {
@@ -2794,11 +2823,17 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
     });
   }
 
-  // Currency selector (dropdown)
-  const currencySelect = document.getElementById('currency-select') as HTMLSelectElement;
-  if (currencySelect && root) {
-    currencySelect.addEventListener('change', () => {
-      root.dataset.currency = currencySelect.value;
+  // Currency picker (buttons)
+  const currencyPicker = document.getElementById('currency-picker');
+  if (currencyPicker && root) {
+    currencyPicker.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('.cpick-btn') as HTMLButtonElement;
+      if (!btn) return;
+      const cur = btn.dataset.cur;
+      if (!cur) return;
+      root.dataset.currency = cur;
+      currencyPicker.querySelectorAll('.cpick-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
       updatePrices();
     });
   }
