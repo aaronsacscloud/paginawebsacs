@@ -1,50 +1,39 @@
 import type { APIRoute } from 'astro';
+import { put, list } from '@vercel/blob';
 
 export const prerender = false;
-
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwJZ6VLnjKeIJ8Jh3H4vDoUicD59cEUQFxMhpEYFzQSmWHVToLYC0t2xHtRqhNlEUxp/exec';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
     const data = await request.json();
-
-    // Log to Vercel (always works)
-    console.log('NEW LEAD:', JSON.stringify({
+    const lead = {
+      id: Date.now().toString(),
       timestamp: new Date().toISOString(),
-      ...data,
-    }));
+      nombre: data.nombre || '',
+      empresa: data.empresa || '',
+      giro: data.giro || '',
+      sucursales: data.sucursales || '',
+      whatsapp: data.whatsapp || '',
+      email: data.email || '',
+      paso: data.paso || '',
+      plan: data.plan || '',
+    };
 
-    // Forward to Google Sheet via Apps Script (server-side, follow redirects)
-    try {
-      const params = new URLSearchParams({
-        nombre: data.nombre || '',
-        empresa: data.empresa || '',
-        giro: data.giro || '',
-        sucursales: data.sucursales || '',
-        whatsapp: data.whatsapp || '',
-        email: data.email || '',
-        paso: data.paso || '',
-        plan: data.plan || '',
-      });
+    // Store each lead as individual blob
+    await put(`leads/${lead.id}.json`, JSON.stringify(lead), {
+      access: 'public',
+      contentType: 'application/json',
+    });
 
-      // Try GET with query params (most reliable for Apps Script)
-      await fetch(APPS_SCRIPT_URL + '?' + params.toString(), {
-        method: 'GET',
-        redirect: 'follow',
-      });
-    } catch (sheetErr) {
-      console.log('Sheet webhook error:', sheetErr);
-    }
+    console.log('LEAD SAVED:', JSON.stringify(lead));
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     });
-  } catch {
-    return new Response(JSON.stringify({ success: false }), {
+  } catch (err) {
+    console.log('LEAD ERROR:', err);
+    return new Response(JSON.stringify({ success: false, error: String(err) }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

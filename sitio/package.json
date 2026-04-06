@@ -15,7 +15,9 @@
     "@astrojs/sitemap": "^3.7.1",
     "@astrojs/vercel": "^10.0.0",
     "@stripe/stripe-js": "^9.0.1",
+    "@vercel/blob": "^2.3.3",
     "astro": "^6.0.4",
+    "googleapis": "^171.4.0",
     "gsap": "^3.14.2",
     "stripe": "^22.0.0"
   }

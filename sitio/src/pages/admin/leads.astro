@@ -1,0 +1,359 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="CRM — Leads" description="Panel de leads de Sacs">
+
+<section class="crm-page">
+  <div class="crm-container">
+    <!-- Login -->
+    <div id="crm-login" class="crm-login">
+      <h1 class="crm-title">Sacs CRM</h1>
+      <p class="crm-subtitle">Ingresa la contraseña para ver los leads.</p>
+      <div class="crm-login-form">
+        <input type="password" id="crm-password" placeholder="Contraseña" class="crm-input" />
+        <button id="crm-login-btn" class="crm-btn">Entrar</button>
+      </div>
+      <p id="crm-login-error" class="crm-error"></p>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="crm-dashboard" class="crm-dashboard" style="display:none">
+      <div class="crm-header">
+        <div>
+          <h1 class="crm-title">Leads</h1>
+          <p class="crm-subtitle">Total: <strong id="crm-total">0</strong> leads capturados</p>
+        </div>
+        <button id="crm-refresh" class="crm-btn-secondary">Actualizar</button>
+      </div>
+
+      <!-- Stats -->
+      <div class="crm-stats">
+        <div class="crm-stat">
+          <span class="crm-stat-num" id="stat-total">0</span>
+          <span class="crm-stat-label">Total leads</span>
+        </div>
+        <div class="crm-stat">
+          <span class="crm-stat-num" id="stat-paso1">0</span>
+          <span class="crm-stat-label">Paso 1</span>
+        </div>
+        <div class="crm-stat">
+          <span class="crm-stat-num" id="stat-completado">0</span>
+          <span class="crm-stat-label">Completados</span>
+        </div>
+        <div class="crm-stat">
+          <span class="crm-stat-num" id="stat-hoy">0</span>
+          <span class="crm-stat-label">Hoy</span>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="crm-table-wrapper">
+        <table class="crm-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Nombre</th>
+              <th>Empresa</th>
+              <th>Giro</th>
+              <th>Sucursales</th>
+              <th>WhatsApp</th>
+              <th>Email</th>
+              <th>Estado</th>
+              <th>Plan</th>
+            </tr>
+          </thead>
+          <tbody id="crm-tbody">
+            <tr><td colspan="9" class="crm-empty">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+</BaseLayout>
+
+<style>
+:global(nav), :global(.nav), :global(header), :global(footer), :global(.whatsapp-float) {
+  display: none !important;
+}
+
+.crm-page {
+  min-height: 100vh;
+  background: var(--color-bg-primary);
+  padding: 40px 20px;
+}
+
+.crm-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Login */
+.crm-login {
+  max-width: 360px;
+  margin: 120px auto;
+  text-align: center;
+}
+
+.crm-login-form {
+  display: flex;
+  gap: 8px;
+  margin-top: var(--space-5);
+}
+
+.crm-input {
+  flex: 1;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  padding: 12px 16px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  outline: none;
+}
+
+.crm-input:focus {
+  border-color: var(--color-primary);
+}
+
+.crm-error {
+  color: var(--color-error);
+  font-size: 0.8125rem;
+  margin-top: 8px;
+}
+
+/* Header */
+.crm-title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.crm-subtitle {
+  font-size: 0.9375rem;
+  color: var(--color-text-tertiary);
+  margin: 4px 0 0;
+}
+
+.crm-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-6);
+}
+
+/* Buttons */
+.crm-btn {
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  padding: 12px 24px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-text-primary);
+  color: #fff;
+  cursor: pointer;
+}
+
+.crm-btn:hover { background: #333; }
+
+.crm-btn-secondary {
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: #fff;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.crm-btn-secondary:hover { background: var(--color-bg-secondary); }
+
+/* Stats */
+.crm-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+
+.crm-stat {
+  background: #fff;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  text-align: center;
+}
+
+.crm-stat-num {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.crm-stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 4px;
+}
+
+/* Table */
+.crm-table-wrapper {
+  background: #fff;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+}
+
+.crm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.crm-table th {
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-tertiary);
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border-light);
+  white-space: nowrap;
+}
+
+.crm-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  color: var(--color-text-secondary);
+}
+
+.crm-table tbody tr:hover {
+  background: var(--color-bg-primary);
+}
+
+.crm-empty {
+  text-align: center;
+  padding: 48px 16px !important;
+  color: var(--color-text-tertiary);
+}
+
+.crm-badge {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 50px;
+}
+
+.crm-badge--paso1 {
+  background: rgba(232, 168, 56, 0.1);
+  color: #E8A838;
+}
+
+.crm-badge--completado {
+  background: rgba(42, 181, 160, 0.1);
+  color: #2AB5A0;
+}
+
+.crm-wa-link {
+  color: var(--color-secondary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+@media (max-width: 767px) {
+  .crm-stats { grid-template-columns: repeat(2, 1fr); }
+  .crm-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+}
+</style>
+
+<script>
+  const loginEl = document.getElementById('crm-login')!;
+  const dashboardEl = document.getElementById('crm-dashboard')!;
+  const passwordInput = document.getElementById('crm-password') as HTMLInputElement;
+  const loginBtn = document.getElementById('crm-login-btn')!;
+  const loginError = document.getElementById('crm-login-error')!;
+  const refreshBtn = document.getElementById('crm-refresh')!;
+  const tbody = document.getElementById('crm-tbody')!;
+
+  let currentPassword = '';
+
+  loginBtn.addEventListener('click', () => {
+    currentPassword = passwordInput.value;
+    loadLeads();
+  });
+
+  passwordInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { currentPassword = passwordInput.value; loadLeads(); }
+  });
+
+  refreshBtn.addEventListener('click', loadLeads);
+
+  async function loadLeads() {
+    try {
+      const res = await fetch(`/api/get-leads?password=${encodeURIComponent(currentPassword)}`);
+      const data = await res.json();
+
+      if (data.error) {
+        loginError.textContent = data.error === 'No autorizado' ? 'Contraseña incorrecta' : data.error;
+        return;
+      }
+
+      // Show dashboard
+      loginEl.style.display = 'none';
+      dashboardEl.style.display = 'block';
+
+      const leads = data.leads || [];
+      const today = new Date().toISOString().slice(0, 10);
+
+      // Stats
+      (document.getElementById('stat-total') as HTMLElement).textContent = String(leads.length);
+      (document.getElementById('crm-total') as HTMLElement).textContent = String(leads.length);
+      (document.getElementById('stat-paso1') as HTMLElement).textContent = String(leads.filter((l: any) => l.paso?.includes('Paso 1')).length);
+      (document.getElementById('stat-completado') as HTMLElement).textContent = String(leads.filter((l: any) => l.paso?.includes('completado') || l.paso?.includes('Registro')).length);
+      (document.getElementById('stat-hoy') as HTMLElement).textContent = String(leads.filter((l: any) => l.timestamp?.startsWith(today)).length);
+
+      // Table
+      if (leads.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="crm-empty">No hay leads aún</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = leads.map((lead: any) => {
+        const date = new Date(lead.timestamp).toLocaleString('es-MX', { timeZone: 'America/Mexico_City', dateStyle: 'short', timeStyle: 'short' });
+        const isCompleted = lead.paso?.includes('Registro') || lead.paso?.includes('completado');
+        const badgeClass = isCompleted ? 'crm-badge--completado' : 'crm-badge--paso1';
+        const badgeText = isCompleted ? 'Completado' : 'Paso 1';
+        const waLink = lead.whatsapp ? `https://wa.me/52${lead.whatsapp.replace(/\D/g, '')}` : '';
+
+        return `<tr>
+          <td>${date}</td>
+          <td><strong>${lead.nombre || '-'}</strong></td>
+          <td>${lead.empresa || '-'}</td>
+          <td>${lead.giro || '-'}</td>
+          <td>${lead.sucursales || '-'}</td>
+          <td>${waLink ? `<a href="${waLink}" target="_blank" class="crm-wa-link">${lead.whatsapp}</a>` : '-'}</td>
+          <td>${lead.email || '-'}</td>
+          <td><span class="crm-badge ${badgeClass}">${badgeText}</span></td>
+          <td>${lead.plan || '-'}</td>
+        </tr>`;
+      }).join('');
+
+    } catch (err) {
+      loginError.textContent = 'Error de conexión';
+    }
+  }
+</script>
