@@ -1,5 +1,21 @@
-import { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useState, useEffect, lazy, Suspense } from 'react';
+
+// Lazy load recharts to avoid SSR issues
+const LazyChart = lazy(() =>
+  import('recharts').then((mod) => ({
+    default: ({ data }: { data: any[] }) => (
+      <mod.ResponsiveContainer width="100%" height={250}>
+        <mod.BarChart data={data}>
+          <mod.CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+          <mod.XAxis dataKey="month" tick={{ fontSize: 11, fill: '#999' }} />
+          <mod.YAxis tick={{ fontSize: 11, fill: '#999' }} tickFormatter={(v: number) => '$' + Math.round(v).toLocaleString('es-MX')} />
+          <mod.Tooltip formatter={(v: number) => '$' + Math.round(v).toLocaleString('es-MX')} />
+          <mod.Bar dataKey="amount" fill="#4B7BE5" radius={[4, 4, 0, 0]} />
+        </mod.BarChart>
+      </mod.ResponsiveContainer>
+    ),
+  }))
+);
 
 const PLANS = ['vende', 'controla', 'fideliza', 'automatiza'];
 const PLAN_PRICES: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 2900 };
@@ -65,15 +81,9 @@ export default function RevenueHub() {
         {/* Revenue chart */}
         <div style={S.card}>
           <h3 style={S.cardTitle}>Ingresos mensuales</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#999' }} />
-              <YAxis tick={{ fontSize: 11, fill: '#999' }} tickFormatter={(v: number) => fmt(v)} />
-              <Tooltip formatter={(v: number) => fmt(v)} />
-              <Bar dataKey="amount" fill="#4B7BE5" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <Suspense fallback={<div style={{ height: 250, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ccc' }}>Cargando gráfica...</div>}>
+            <LazyChart data={chartData} />
+          </Suspense>
         </div>
 
         {/* Two columns */}
