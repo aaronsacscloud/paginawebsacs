@@ -49,7 +49,7 @@ export const plans: Plan[] = [
     annual: { mxn: 500, usd: 25 },
     annualTotal: { mxn: 6000, usd: 300 },  // 600 × 10
     highlighted: false,
-    cta: { label: 'Prueba 14 días gratis', href: '/prueba-gratis', variant: 'secondary' },
+    cta: { label: 'Prueba 7 días gratis', href: '/prueba-gratis', variant: 'secondary' },
     features: [
       'Punto de venta online y offline',
       'Tickets por WhatsApp',
@@ -74,7 +74,7 @@ export const plans: Plan[] = [
     annualTotal: { mxn: 9000, usd: 450 },  // 900 × 10
     highlighted: false,
     inheritsFrom: 'Vende',
-    cta: { label: 'Prueba 14 días gratis', href: '/prueba-gratis', variant: 'secondary' },
+    cta: { label: 'Prueba 7 días gratis', href: '/prueba-gratis', variant: 'secondary' },
     features: [
       'Inventario multi-sucursal en tiempo real',
       'Conteo físico desde el celular',
@@ -103,7 +103,7 @@ export const plans: Plan[] = [
     badge: 'Más popular',
     highlighted: true,
     inheritsFrom: 'Controla',
-    cta: { label: 'Prueba 14 días gratis', href: '/prueba-gratis', variant: 'primary' },
+    cta: { label: 'Prueba 7 días gratis', href: '/prueba-gratis', variant: 'primary' },
     features: [
       'Monedero electrónico y puntos de lealtad',
       'Recompensas por niveles de compra',

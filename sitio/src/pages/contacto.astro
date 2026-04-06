@@ -193,11 +193,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="var(--color-secondary)" stroke-width="1.5"/><path d="M8 12l3 3 5-5" stroke="var(--color-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <h3>Sin riesgo</h3>
         <p>Prueba 7 dias gratis. Sin tarjeta. Si no te convence, cancelas con un clic. Sin llamadas, sin retencion, sin letra chiquita.</p>
-        <div class="ct-norisk-checks">
-          <span>Migracion incluida en todos los planes</span>
-          <span>Soporte 24/7 desde el dia 1</span>
-          <span>Cancela cuando quieras</span>
-        </div>
+        <p class="ct-norisk-extras">Migracion incluida &middot; Soporte 24/7 &middot; Cancela cuando quieras</p>
       </div>
       <div class="ct-bonus-card">
         <h3>Consultoria de implementacion gratis</h3>
@@ -672,25 +668,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     line-height: 1.6;
     margin: 0 0 var(--space-5);
   }
-  .ct-norisk-checks {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    text-align: left;
-  }
-  .ct-norisk-checks span {
+  .ct-norisk-extras {
     font-family: var(--font-body);
     font-size: 0.8125rem;
-    font-weight: 600;
-    color: var(--color-secondary);
-    padding-left: 20px;
-    position: relative;
-  }
-  .ct-norisk-checks span::before {
-    content: '\2713';
-    position: absolute;
-    left: 0;
-    font-weight: 700;
+    color: var(--color-text-tertiary);
+    margin: 0;
+    line-height: 1.5;
   }
 
   /* Bonus card */
