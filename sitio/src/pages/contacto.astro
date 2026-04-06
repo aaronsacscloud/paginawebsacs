@@ -836,12 +836,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const msg = encodeURIComponent('Hola, me interesa agendar una demo de Sacs. Estaba viendo: ' + window.location.href);
       waLink.href = `https://wa.me/5215536634392?text=${msg}`;
     }
-    if (window.location.hash === '#demo') {
-      const el = document.getElementById('demo');
-      if (el) {
-        setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
-      }
-    }
+    // Always start at top
+    window.scrollTo(0, 0);
   }
 </script>
 </BaseLayout>
