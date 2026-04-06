@@ -812,8 +812,6 @@ const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  const SHEET_WEBHOOK = 'https://script.google.com/macros/s/AKfycbwJZ6VLnjKeIJ8Jh3H4vDoUicD59cEUQFxMhpEYFzQSmWHVToLYC0t2xHtRqhNlEUxp/exec';
-
   function sendLeadToSheet(paso: string, plan?: string) {
     const data = {
       nombre: (document.getElementById('nombre') as HTMLInputElement).value,
@@ -826,10 +824,10 @@ const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
       plan: plan || '',
     };
 
-    // POST JSON — this is the method that worked before
-    fetch(SHEET_WEBHOOK, {
+    // Send to our own API (reliable, logs in Vercel)
+    fetch('/api/save-lead', {
       method: 'POST',
-      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     }).catch(() => {});
   }
