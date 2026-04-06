@@ -25,6 +25,631 @@ const websiteSchema = {
     primaryCTA={{ label: 'Empieza gratis', href: '/contacto' }}
     secondaryCTA={{ label: 'Agenda una demo', href: '/contacto#demo' }}
   />
+  <!-- ═══ CTA: ¿Aún tienes dudas? + Cards integradas ═══ -->
+  <section class="cta-doubts-section" id="cta-doubts-section">
+    <div class="cta-doubts-sticky">
+      <div class="cta-doubts-content">
+        <h2 class="cta-doubts-text" id="cta-doubts-text">¿Aún tienes dudas?</h2>
+        <div class="xpand-row" id="xpand-row">
+          <a href="/contacto#demo" class="xpand-card xpand-card--demo">
+            <div class="xpand-card-bg xpand-bg--demo"></div>
+            <div class="xpand-card-overlay"></div>
+            <h3 class="xpand-card-title">Agenda<br/>una demo</h3>
+            <div class="xpand-card-reveal">
+              <p class="xpand-card-desc">Te mostramos SACS con datos de tu negocio. 30 min, sin compromiso.</p>
+              <span class="xpand-card-cta">Reservar horario <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 10h10M12 6l4 4-4 4"/></svg></span>
+            </div>
+          </a>
+          <a href="/contacto" class="xpand-card xpand-card--start">
+            <div class="xpand-card-bg xpand-bg--start"></div>
+            <div class="xpand-card-overlay"></div>
+            <h3 class="xpand-card-title">Inicia<br/>ahora</h3>
+            <div class="xpand-card-reveal">
+              <p class="xpand-card-desc">Crea tu cuenta gratis y configura tu tienda en 15 minutos. Sin tarjeta.</p>
+              <span class="xpand-card-cta">Empieza gratis <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 10h10M12 6l4 4-4 4"/></svg></span>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <style>
+    .cta-doubts-section {
+      position: relative;
+      height: 400vh;
+      background: #0f0f1a;
+    }
+
+    .cta-doubts-sticky {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .cta-doubts-content {
+      position: relative;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 clamp(20px, 4vw, 48px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 40px;
+      transition: transform 0.1s linear;
+    }
+
+    .cta-doubts-text {
+      font-family: var(--font-display);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      color: #fff;
+      margin: 0;
+      font-size: clamp(3rem, 8vw, 6rem);
+      transform: scale(var(--cta-scale, 8));
+      transform-origin: center center;
+      text-align: center;
+    }
+
+    /* ── Cards row ── */
+    .xpand-row {
+      width: 100%;
+      display: flex;
+      gap: 12px;
+      height: 420px;
+      opacity: 0;
+      transform: translateY(60px);
+      transition: opacity 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                  transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .xpand-row.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .xpand-card {
+      position: relative;
+      flex: 1;
+      border-radius: 20px;
+      overflow: hidden;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 40px;
+      cursor: pointer;
+      transition: flex 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .xpand-row:hover .xpand-card {
+      flex: 0.6;
+    }
+
+    .xpand-row .xpand-card:hover {
+      flex: 1.8;
+    }
+
+    .xpand-card-bg {
+      position: absolute;
+      inset: 0;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .xpand-card:hover .xpand-card-bg {
+      transform: scale(1.05);
+    }
+
+    .xpand-bg--demo {
+      background: linear-gradient(150deg, #3B5BDB 0%, #2B4AC0 50%, #1a2f6d 100%);
+    }
+
+    .xpand-bg--start {
+      background: linear-gradient(150deg, #f5f5f7 0%, #e8e8ed 50%, #dcdce2 100%);
+    }
+
+    .xpand-card--start .xpand-card-title {
+      color: #0f0f1a;
+    }
+
+    .xpand-card--start .xpand-card-desc {
+      color: rgba(15, 15, 26, 0.55);
+    }
+
+    .xpand-card-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.1) 50%, transparent 100%);
+      pointer-events: none;
+    }
+
+    .xpand-card-title {
+      position: relative;
+      z-index: 1;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      letter-spacing: -0.04em;
+      line-height: 1;
+      color: #fff;
+      margin: 0;
+      text-transform: uppercase;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .xpand-card:hover .xpand-card-title {
+      transform: translateY(-8px);
+    }
+
+    .xpand-card-reveal {
+      position: relative;
+      z-index: 1;
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                  opacity 0.4s ease 0.1s;
+    }
+
+    .xpand-card:hover .xpand-card-reveal {
+      max-height: 160px;
+      opacity: 1;
+    }
+
+    .xpand-card-desc {
+      font-size: 1rem;
+      line-height: 1.5;
+      color: rgba(255, 255, 255, 0.6);
+      margin: 16px 0 20px;
+      max-width: 340px;
+    }
+
+    .xpand-card-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1rem;
+      padding: 12px 24px;
+      border-radius: 6px;
+      transition: gap 0.3s ease, background 0.2s ease;
+    }
+
+    .xpand-card:hover .xpand-card-cta {
+      gap: 12px;
+    }
+
+    .xpand-card--demo .xpand-card-cta {
+      color: #3B5BDB;
+      background: #fff;
+    }
+
+    .xpand-card--demo .xpand-card-cta:hover {
+      background: #f0f0f0;
+    }
+
+    .xpand-card--start .xpand-card-cta {
+      color: #fff;
+      background: #0f0f1a;
+    }
+
+    .xpand-card--start .xpand-card-cta:hover {
+      background: #1a1a2e;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .cta-doubts-text {
+        transform: scale(1) !important;
+      }
+      .cta-doubts-section {
+        height: auto;
+      }
+      .xpand-row {
+        opacity: 1;
+        transform: none;
+      }
+      .xpand-row:hover .xpand-card,
+      .xpand-row .xpand-card:hover {
+        flex: 1;
+      }
+      .xpand-card-reveal {
+        max-height: none;
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 767px) {
+      .cta-doubts-section {
+        height: 300vh;
+      }
+
+      .cta-doubts-text {
+        font-size: clamp(1.75rem, 7vw, 2.5rem);
+      }
+
+      .cta-doubts-content {
+        gap: 32px;
+      }
+
+      .xpand-row {
+        flex-direction: column;
+        height: auto;
+        gap: 12px;
+      }
+
+      .xpand-card {
+        min-height: 240px;
+        padding: 28px;
+        border-radius: 16px;
+      }
+
+      .xpand-row:hover .xpand-card {
+        flex: 1;
+      }
+
+      .xpand-row .xpand-card:hover {
+        flex: 1;
+      }
+
+      .xpand-card-reveal {
+        max-height: none;
+        opacity: 1;
+      }
+
+      .xpand-card-title {
+        font-size: clamp(1.75rem, 7vw, 2.5rem);
+      }
+    }
+
+    @media (min-width: 768px) and (max-width: 1023px) {
+      .cta-doubts-text {
+        font-size: clamp(2rem, 6vw, 3.5rem);
+      }
+
+      .xpand-row {
+        height: 360px;
+      }
+
+      .xpand-card-title {
+        font-size: clamp(1.5rem, 3.5vw, 2.5rem);
+      }
+    }
+  </style>
+
+  <script>
+    {
+      const section = document.getElementById('cta-doubts-section');
+      const text = document.getElementById('cta-doubts-text');
+      const row = document.getElementById('xpand-row');
+
+      if (section && text && row) {
+        const SCALE_START = 8;
+        const SCALE_END = 1;
+        let ticking = false;
+
+        const update = () => {
+          const rect = section.getBoundingClientRect();
+          const sectionH = section.offsetHeight;
+          const vh = window.innerHeight;
+
+          const scrolled = -rect.top;
+          const totalScroll = sectionH - vh;
+
+          // Text zoom: 0% - 60% of scroll
+          const textProgress = Math.max(0, Math.min(1, scrolled / (totalScroll * 0.6)));
+          const eased = 1 - Math.pow(1 - textProgress, 3);
+          const scale = SCALE_START - (SCALE_START - SCALE_END) * eased;
+          text.style.setProperty('--cta-scale', String(scale));
+
+          // Cards appear: 55% - 80% of scroll
+          const cardsProgress = Math.max(0, Math.min(1, (scrolled / totalScroll - 0.55) / 0.25));
+          if (cardsProgress > 0) {
+            row.classList.add('visible');
+          } else {
+            row.classList.remove('visible');
+          }
+
+          // Shift content up slightly as cards come in
+          const content = document.querySelector('.cta-doubts-content') as HTMLElement;
+          if (content && cardsProgress > 0) {
+            const shift = cardsProgress * 15;
+            content.style.transform = `translateY(-${shift}vh)`;
+          } else if (content) {
+            content.style.transform = '';
+          }
+
+          ticking = false;
+        };
+
+        window.addEventListener('scroll', () => {
+          if (!ticking) {
+            requestAnimationFrame(update);
+            ticking = true;
+          }
+        }, { passive: true });
+
+        update();
+      }
+    }
+  </script>
+
+  <!-- ═══ Blog Section ═══ -->
+  <section class="blog-home-section">
+    <div class="blog-home-container">
+      <div class="blog-home-header">
+        <span class="blog-home-eyebrow">Blog</span>
+        <h2 class="blog-home-title">Ideas para retailers conscientes</h2>
+        <p class="blog-home-subtitle">Tendencias, innovación y casos reales del retail en México.</p>
+      </div>
+      <div class="blog-home-grid">
+        <a href="/blog/bershka" class="blog-home-card blog-home-card--featured">
+          <div class="blog-home-card-img-wrap">
+            <img src="/images/blog-bershka-hero.webp" alt="Bershka — innovación retail" width="720" height="400" loading="lazy" class="blog-home-card-img" />
+          </div>
+          <div class="blog-home-card-body">
+            <div class="blog-home-card-tags">
+              <span class="blog-home-tag">Retail</span>
+              <span class="blog-home-tag">Innovación</span>
+            </div>
+            <h3 class="blog-home-card-title">Cómo Bershka redefine la experiencia de compra en México</h3>
+            <p class="blog-home-card-desc">Tecnología avanzada, diseño sostenible y estrategia omnicanal en su nueva tienda insignia.</p>
+          </div>
+        </a>
+        <a href="/blog/machina" class="blog-home-card">
+          <div class="blog-home-card-img-wrap">
+            <img src="/images/blog-machina-hero.webp" alt="Machina — moda y tecnología" width="720" height="400" loading="lazy" class="blog-home-card-img" />
+          </div>
+          <div class="blog-home-card-body">
+            <div class="blog-home-card-tags">
+              <span class="blog-home-tag">Moda</span>
+              <span class="blog-home-tag">Tecnología</span>
+            </div>
+            <h3 class="blog-home-card-title">Machina: la revolución mexicana que fusiona moda y tecnología</h3>
+            <p class="blog-home-card-desc">Wearables inteligentes, la colaboración con Nike y el futuro del fashion retail.</p>
+          </div>
+        </a>
+        <a href="/blog/bienvenida" class="blog-home-card">
+          <div class="blog-home-card-body blog-home-card-body--no-img">
+            <div class="blog-home-card-tags">
+              <span class="blog-home-tag">Anuncios</span>
+              <span class="blog-home-tag">SACS</span>
+            </div>
+            <h3 class="blog-home-card-title">Bienvenidos a SACS: comercio consciente desde el día uno</h3>
+            <p class="blog-home-card-desc">Lanzamos SACS con una misión clara: que cada retailer en México tenga acceso a tecnología de clase mundial.</p>
+            <span class="blog-home-card-link">Leer artículo <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          </div>
+        </a>
+      </div>
+      <div class="blog-home-footer">
+        <a href="/blog" class="blog-home-all-link">Ver todos los artículos <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+      </div>
+    </div>
+  </section>
+
+  <style>
+    .blog-home-section {
+      padding: clamp(80px, 10vw, 140px) 0;
+      background: #fff;
+    }
+
+    .blog-home-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 clamp(20px, 4vw, 48px);
+    }
+
+    .blog-home-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .blog-home-eyebrow {
+      font-family: var(--font-body);
+      font-size: 0.8125rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-primary);
+      display: block;
+      margin-bottom: 12px;
+    }
+
+    .blog-home-title {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800;
+      color: var(--color-text-primary);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin: 0 0 12px;
+    }
+
+    .blog-home-subtitle {
+      font-family: var(--font-body);
+      font-size: clamp(1rem, 1.5vw, 1.125rem);
+      color: var(--color-text-secondary);
+      margin: 0;
+    }
+
+    .blog-home-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 16px;
+    }
+
+    .blog-home-card {
+      text-decoration: none;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      background: var(--color-bg-primary);
+      display: flex;
+      flex-direction: column;
+      transition: transform var(--duration-fast) var(--ease-default),
+                  box-shadow var(--duration-fast) var(--ease-default);
+    }
+
+    .blog-home-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-xl);
+      text-decoration: none;
+    }
+
+    .blog-home-card--featured {
+      grid-row: span 2;
+    }
+
+    .blog-home-card-img-wrap {
+      overflow: hidden;
+    }
+
+    .blog-home-card--featured .blog-home-card-img-wrap {
+      height: 100%;
+      min-height: 280px;
+    }
+
+    .blog-home-card:not(.blog-home-card--featured) .blog-home-card-img-wrap {
+      height: 180px;
+    }
+
+    .blog-home-card--featured {
+      display: grid;
+      grid-template-rows: 1fr auto;
+    }
+
+    .blog-home-card-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.6s var(--ease-default);
+    }
+
+    .blog-home-card:hover .blog-home-card-img {
+      transform: scale(1.04);
+    }
+
+    .blog-home-card-body {
+      padding: 24px;
+    }
+
+    .blog-home-card-body--no-img {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      height: 100%;
+      padding: 32px 28px;
+    }
+
+    .blog-home-card-tags {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .blog-home-tag {
+      font-family: var(--font-body);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-primary);
+      background: rgba(75, 123, 229, 0.08);
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+
+    .blog-home-card-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.125rem, 2vw, 1.375rem);
+      font-weight: 800;
+      color: var(--color-text-primary);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin: 0 0 8px;
+    }
+
+    .blog-home-card--featured .blog-home-card-title {
+      font-size: clamp(1.25rem, 2.5vw, 1.625rem);
+    }
+
+    .blog-home-card-desc {
+      font-family: var(--font-body);
+      font-size: 14px;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .blog-home-card-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-body);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin-top: 16px;
+      transition: gap 0.2s ease;
+    }
+
+    .blog-home-card:hover .blog-home-card-link {
+      gap: 10px;
+    }
+
+    .blog-home-footer {
+      text-align: center;
+      margin-top: 40px;
+    }
+
+    .blog-home-all-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-body);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--color-primary);
+      text-decoration: none;
+      padding: 12px 28px;
+      border: 1.5px solid var(--color-primary);
+      border-radius: 100px;
+      transition: background 0.2s ease, color 0.2s ease, gap 0.2s ease;
+    }
+
+    .blog-home-all-link:hover {
+      background: var(--color-primary);
+      color: #fff;
+      text-decoration: none;
+      gap: 12px;
+    }
+
+    @media (max-width: 767px) {
+      .blog-home-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .blog-home-card--featured {
+        grid-row: span 1;
+      }
+
+      .blog-home-card--featured .blog-home-card-img-wrap {
+        height: 200px;
+        min-height: 0;
+      }
+
+      .blog-home-card--featured {
+        display: flex;
+      }
+    }
+  </style>
+
   <FAQAccordion />
   <FinalCTA />
 </BaseLayout>

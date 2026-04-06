@@ -1018,8 +1018,8 @@ const useCases = [
           src="/images/inv-nivelacion-tablet.webp"
           alt="SACS — Nivelación de inventario automática multisucursal en tablet"
           class="inv-intel-tablet-img"
-          width="1200"
-          height="800"
+          width="1536"
+          height="1024"
           loading="lazy"
         />
       </div>
@@ -1266,7 +1266,7 @@ const useCases = [
   </div>
   <div class="reels-track-wrapper">
     <div class="reels-track">
-      <div class="reel-card reel-card--highlight" style="--reel-idx:0">
+      <a href="/casos-de-exito/la-bella-pandita" class="reel-card reel-card--highlight" style="--reel-idx:0">
         <div class="reel-hl-photo">
           <img src="/images/case-bella-pandita.webp" alt="La Bella Pandita — 42 sucursales con SACS" loading="lazy" />
         </div>
@@ -1285,8 +1285,8 @@ const useCases = [
             </div>
           </div>
         </div>
-      </div>
-      <div class="reel-card reel-card--highlight" style="--reel-idx:1">
+      </a>
+      <a href="/casos-de-exito/liveshow" class="reel-card reel-card--highlight" style="--reel-idx:1">
         <div class="reel-hl-photo">
           <img src="/images/case-liveshow.webp" alt="Liveshow Merchandising — conciertos con SACS" loading="lazy" />
         </div>
@@ -1305,8 +1305,8 @@ const useCases = [
             </div>
           </div>
         </div>
-      </div>
-      <div class="reel-card reel-card--highlight" style="--reel-idx:2">
+      </a>
+      <a href="/casos-de-exito/casa-maca" class="reel-card reel-card--highlight" style="--reel-idx:2">
         <div class="reel-hl-photo">
           <img src="/images/case-casa-maca.webp" alt="Casa Maca — moda consciente con SACS" loading="lazy" />
         </div>
@@ -1325,7 +1325,7 @@ const useCases = [
             </div>
           </div>
         </div>
-      </div>
+      </a>
     </div>
   </div>
   </div>
@@ -3167,7 +3167,7 @@ const useCases = [
   .inv-intel-tablet-img {
     width: 100%;
     height: auto;
-    border-radius: 0;
+    border-radius: 24px;
     box-shadow: none;
     mix-blend-mode: multiply;
     transform: perspective(1200px) rotateY(25deg) rotateX(5deg) scale(0.95);
@@ -3844,6 +3844,11 @@ const useCases = [
     flex-direction: column;
     background: #1A1A1A;
     aspect-ratio: auto;
+    text-decoration: none;
+    color: inherit;
+  }
+  .reel-card--highlight:hover {
+    text-decoration: none;
   }
   .reel-hl-photo {
     overflow: hidden;

@@ -72,7 +72,6 @@ export const navLinks: NavLink[] = [
   },
   { label: 'Planes', href: '/planes' },
   { label: 'Casos de éxito', href: '/casos-de-exito' },
-  { label: 'Nosotros', href: '/nosotros' },
 ];
 
 export const footerLinks = {

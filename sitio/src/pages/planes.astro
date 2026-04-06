@@ -1,10 +1,2944 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import FAQAccordion from '../components/FAQAccordion.astro';
+import FinalCTA from '../components/FinalCTA.astro';
+import { plans, universalFeatures, comparisonCategories, pricingFaqs, addons } from '../data/plans';
+
+const checkIcon = `<svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M4 9.5l3.5 3.5L14 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const xIcon = `<svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M5 5l8 8M13 5l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 ---
 
 <BaseLayout
-  title="Planes y precios"
-  description="Elige el plan SACS ideal para tu negocio."
+  title="Planes y precios — SACS"
+  description="Elige el plan SACS ideal para tu negocio. Desde $900/mes por sucursal. Sin contratos, sin costos ocultos."
 >
-  <!-- Pricing page content will go here -->
+
+<!-- ═══ SECTION 1: Hero ═══ -->
+<section class="pricing-hero">
+  <div class="container pricing-hero-inner">
+    <h1 class="pricing-headline">El plan justo para cada etapa de tu marca.</h1>
+    <p class="pricing-subtitle">Todas las herramientas para operar tu retail. Sin sorpresas, sin costos ocultos.</p>
+
+    <div class="pricing-toggles" id="pricing-toggles">
+      <!-- Currency toggle -->
+      <div class="toggle-group" role="group" aria-label="Moneda">
+        <button class="toggle-btn active" data-currency="mxn" aria-pressed="true">MXN</button>
+        <button class="toggle-btn" data-currency="usd" aria-pressed="false">USD</button>
+      </div>
+
+      <!-- Billing toggle -->
+      <div class="toggle-group" role="group" aria-label="Periodo de facturación">
+        <button class="toggle-btn active" data-billing="monthly" aria-pressed="true">Mensual</button>
+        <button class="toggle-btn" data-billing="annual" aria-pressed="false">
+          Anual
+          <span class="toggle-savings">Ahorra 2 meses</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SECTION 2: Plan Cards ═══ -->
+<section class="pricing-cards-section" id="pricing-root" data-billing="monthly" data-currency="mxn">
+  <div class="container">
+
+    <!-- Mobile price strip -->
+    <div class="price-strip" id="price-strip" aria-hidden="true">
+      {plans.map((plan, i) => (
+        <button
+          class:list={['price-strip-item', { active: plan.highlighted }]}
+          data-index={i}
+        >
+          <span class="price-strip-name">{plan.name}</span>
+          <span class="price-strip-price">
+            <span class="price-value" data-billing="monthly" data-currency="mxn">${plan.monthly.mxn.toLocaleString('es-MX')}</span>
+            <span class="price-value" data-billing="monthly" data-currency="usd">${plan.monthly.usd} USD</span>
+            <span class="price-value" data-billing="annual" data-currency="mxn">${plan.annual.mxn.toLocaleString('es-MX')}</span>
+            <span class="price-value" data-billing="annual" data-currency="usd">${plan.annual.usd} USD</span>
+          </span>
+        </button>
+      ))}
+    </div>
+
+    <!-- Cards grid / carousel -->
+    <div class="pricing-cards" id="pricing-cards">
+      {plans.map((plan) => (
+        <article class:list={['plan-card', { highlighted: plan.highlighted }]} data-plan={plan.id}>
+          {plan.badge && <span class="plan-badge">{plan.badge}</span>}
+
+          <h3 class="plan-name">{plan.name}</h3>
+          <p class="plan-desc">{plan.description}</p>
+
+          <div class="plan-price" aria-live="polite">
+            <span class="plan-price-amount price-value" data-billing="monthly" data-currency="mxn">${plan.monthly.mxn.toLocaleString('es-MX')} <span class="plan-price-currency">MXN</span></span>
+            <span class="plan-price-amount price-value" data-billing="monthly" data-currency="usd">${plan.monthly.usd} <span class="plan-price-currency">USD</span></span>
+            <span class="plan-price-amount price-value" data-billing="annual" data-currency="mxn">${plan.annual.mxn.toLocaleString('es-MX')} <span class="plan-price-currency">MXN</span></span>
+            <span class="plan-price-amount price-value" data-billing="annual" data-currency="usd">${plan.annual.usd} <span class="plan-price-currency">USD</span></span>
+            <span class="plan-price-period">
+              <span class="price-period-text" data-billing="monthly">/mes por sucursal</span>
+              <span class="price-period-text" data-billing="annual">/mes por sucursal</span>
+            </span>
+            <span class="plan-price-annual-total price-period-text" data-billing="annual">
+              <span class="price-value" data-billing="annual" data-currency="mxn">${plan.annualTotal.mxn.toLocaleString('es-MX')} MXN</span>
+              <span class="price-value" data-billing="annual" data-currency="usd">${plan.annualTotal.usd.toLocaleString('es-MX')} USD</span>
+              /año por sucursal
+            </span>
+          </div>
+
+          <a
+            class:list={['plan-cta', plan.cta.variant === 'primary' ? 'btn-primary' : 'btn-secondary']}
+            href={plan.cta.href}
+          >
+            {plan.cta.label}
+          </a>
+
+          <div class="plan-divider"></div>
+
+          {plan.inheritsFrom && (
+            <p class="plan-inherits">Todo en {plan.inheritsFrom}, más:</p>
+          )}
+
+          <ul class="plan-features">
+            {plan.features.map((feature) => (
+              <li class="plan-feature">
+                <span class="feature-check" set:html={checkIcon} />
+                <span>{feature}</span>
+              </li>
+            ))}
+          </ul>
+
+          <div class="plan-divider plan-divider-light"></div>
+
+          <div class="plan-services">
+            <span class="plan-services-label">Servicios incluidos</span>
+            {plan.services.map((service) => (
+              <span class="plan-service">{service}</span>
+            ))}
+          </div>
+        </article>
+      ))}
+    </div>
+
+    <!-- Carousel dots (mobile) -->
+    <div class="carousel-dots" id="carousel-dots" aria-hidden="true">
+      {plans.map((_, i) => (
+        <span class:list={['dot', { active: i === 2 }]} data-index={i}></span>
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SECTION: Enterprise ═══ -->
+<section class="enterprise-section">
+  <div class="container enterprise-grid">
+    <div class="enterprise-content">
+      <h2 class="enterprise-title">Tu operación es única. Tu plan también.</h2>
+      <p class="enterprise-desc">Si manejas más de 20 sucursales o más de 20,000 productos, diseñamos un plan a tu medida. Personalizaciones, apps custom, integraciones dedicadas y todo lo necesario para crear una experiencia extraordinaria con Sacs.</p>
+      <ul class="enterprise-points">
+        <li>Ejecutivo SR dedicado y soporte prioritario</li>
+        <li>Personalizaciones y desarrollos a medida</li>
+        <li>Integraciones custom con tus sistemas</li>
+        <li>Descuento por volumen en licencias</li>
+      </ul>
+      <a class="enterprise-btn" href="/contacto#demo">Hablar con ventas</a>
+    </div>
+    <div class="enterprise-visual">
+      <div class="enterprise-card">
+        <div class="enterprise-card-glow"></div>
+        <div class="enterprise-card-inner">
+          <div class="enterprise-card-header">
+            <span class="enterprise-card-logo">Sacs</span>
+            <span class="enterprise-card-label">Enterprise</span>
+          </div>
+          <div class="enterprise-card-body">
+            <div class="enterprise-card-stat">
+              <span class="enterprise-card-stat-num">∞</span>
+              <span class="enterprise-card-stat-label">Sucursales</span>
+            </div>
+            <div class="enterprise-card-divider"></div>
+            <div class="enterprise-card-stat">
+              <span class="enterprise-card-stat-num">∞</span>
+              <span class="enterprise-card-stat-label">Productos</span>
+            </div>
+          </div>
+          <div class="enterprise-card-features">
+            <span>✓ Apps custom</span>
+            <span>✓ API dedicada</span>
+            <span>✓ SLA garantizado</span>
+          </div>
+          <div class="enterprise-card-price">Personalizado</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SECTION 3: Universal Features ═══ -->
+<section class="universal-section">
+  <div class="container">
+    <h2 class="universal-title">Incluido en todos los planes</h2>
+    <div class="universal-grid">
+      {universalFeatures.map((feature) => (
+        <div class="universal-item">
+          <span class="universal-check" set:html={checkIcon} />
+          <span>{feature}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SECTION: Migration ═══ -->
+<section class="migration-section">
+  <div class="container migration-grid">
+    <div class="migration-content">
+      <h2 class="migration-title">Migrar es más fácil de lo que piensas</h2>
+      <p class="migration-desc">Nuestro equipo migra tu catálogo, clientes e historial de ventas. Tú solo validas. Sin perder un día de ventas.</p>
+      <div class="migration-steps">
+        <div class="migration-step">
+          <span class="migration-step-num">1</span>
+          <div>
+            <span class="migration-step-title">Nos envías tu catálogo</span>
+            <span class="migration-step-desc">Excel, CSV o desde tu sistema actual. Nosotros lo formateamos.</span>
+          </div>
+        </div>
+        <div class="migration-step">
+          <span class="migration-step-num">2</span>
+          <div>
+            <span class="migration-step-title">Importamos todo en 1-3 días</span>
+            <span class="migration-step-desc">Productos, variantes, precios, clientes y proveedores.</span>
+          </div>
+        </div>
+        <div class="migration-step">
+          <span class="migration-step-num">3</span>
+          <div>
+            <span class="migration-step-title">Vendes desde el día 1</span>
+            <span class="migration-step-desc">Capacitación incluida. Tu ejecutivo te acompaña en cada paso.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="migration-guarantee">
+      <div class="migration-guarantee-card">
+        <span class="migration-guarantee-icon">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M16 2C8.27 2 2 8.27 2 16s6.27 14 14 14 14-6.27 14-14S23.73 2 16 2z" stroke="var(--color-secondary)" stroke-width="2"/><path d="M10 16l4 4 8-8" stroke="var(--color-secondary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+        <h3 class="migration-guarantee-title">Sin riesgo</h3>
+        <p class="migration-guarantee-desc">Prueba 7 días gratis. Sin tarjeta. Si no te convence, cancelas con un clic. Sin llamadas, sin retención, sin letra chiquita.</p>
+        <div class="migration-guarantee-points">
+          <span>✓ Migración incluida en todos los planes</span>
+          <span>✓ Soporte 24/7 desde el día 1</span>
+          <span>✓ Cancela cuando quieras</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SECTION: Add-ons ═══ -->
+<section class="addons-section">
+  <div class="container">
+    <h2 class="addons-title">Potencia tu operación</h2>
+    <p class="addons-subtitle">Módulos opcionales que puedes agregar a cualquier plan.</p>
+
+    <div class="addons-grid">
+      <div class="addon-card">
+        <div class="addon-card-content">
+          <h3 class="addon-plugin-name">Shopify</h3>
+          <p class="addon-desc">Sincroniza inventario, pedidos y clientes entre tus tiendas físicas y Shopify en tiempo real.</p>
+          <ul class="addon-points">
+            <li>Inventario sincronizado en tiempo real</li>
+            <li>Pedidos unificados en un solo lugar</li>
+            <li>Clientes conectados entre canales</li>
+          </ul>
+          <a class="addon-btn" href="/contacto#demo">Ver más</a>
+        </div>
+      </div>
+      <div class="addon-card">
+        <div class="addon-card-content">
+          <h3 class="addon-plugin-name">WooCommerce</h3>
+          <p class="addon-desc">Conecta tu tienda en WordPress con Sacs. Stock, precios y pedidos sincronizados.</p>
+          <ul class="addon-points">
+            <li>Stock actualizado automáticamente</li>
+            <li>Precios sincronizados en ambas tiendas</li>
+            <li>Pedidos importados sin intervención</li>
+          </ul>
+          <a class="addon-btn" href="/contacto#demo">Ver más</a>
+        </div>
+      </div>
+      <div class="addon-card addon-card--light">
+        <div class="addon-card-content">
+          <h3 class="addon-plugin-name">Staff</h3>
+          <p class="addon-desc">Gestión de empleados, horarios, cambios de turno y control de asistencia.</p>
+          <ul class="addon-points">
+            <li>Turnos y horarios por sucursal</li>
+            <li>Cambios de turno desde el POS</li>
+            <li>Control de asistencia integrado</li>
+          </ul>
+          <a class="addon-btn" href="/contacto#demo">Ver más</a>
+        </div>
+      </div>
+      <div class="addon-card addon-card--light">
+        <div class="addon-card-content">
+          <h3 class="addon-plugin-name">Marketing Suite</h3>
+          <p class="addon-desc">Campañas por correo y WhatsApp, segmentación y automatización de marketing.</p>
+          <ul class="addon-points">
+            <li>Campañas de email y WhatsApp</li>
+            <li>Segmentación inteligente de clientes</li>
+            <li>Automatización de flujos de marketing</li>
+          </ul>
+          <a class="addon-btn" href="/contacto#demo">Ver más</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SECTION 4: Comparison Table ═══ -->
+<section class="comparison-section">
+  <div class="container">
+    <h2 class="comparison-title">Compara planes en detalle</h2>
+    <p class="comparison-subtitle">Haz clic en cada categoría para ver las funciones.</p>
+
+    <!-- Desktop table header (sticky) -->
+    <div class="comparison-header">
+      <div class="comparison-header-feature">Función</div>
+      {plans.map((plan) => (
+        <div class:list={['comparison-header-plan', { highlighted: plan.highlighted }]}>
+          {plan.name}
+        </div>
+      ))}
+    </div>
+
+    <!-- Accordion categories -->
+    <div class="comparison-accordion" id="comparison-accordion">
+      {comparisonCategories.map((category, catIndex) => (
+        <div class="comparison-category" data-cat={catIndex}>
+          <button
+            class="comparison-category-header"
+            aria-expanded="false"
+            aria-controls={`cat-${catIndex}`}
+          >
+            <span class="comparison-category-name">{category.name}</span>
+            <span class="comparison-category-count">{category.features.length} funciones</span>
+            <span class="comparison-category-chevron" set:html={chevronIcon} />
+          </button>
+
+          <div class="comparison-category-body" id={`cat-${catIndex}`}>
+            {category.features.map((feature, fIdx) => (
+              <div class:list={['comparison-row', { alt: fIdx % 2 === 1 }]}>
+                <div class="comparison-feature-name">{feature.name}</div>
+                <div class="comparison-values">
+                  {(['vende', 'controla', 'fideliza', 'automatiza'] as const).map((planId) => (
+                    <div class:list={['comparison-cell', { highlighted: planId === 'fideliza' }]}>
+                      <span class="comparison-cell-label">{planId.charAt(0).toUpperCase() + planId.slice(1)}</span>
+                      {typeof feature[planId] === 'boolean' ? (
+                        feature[planId] ? (
+                          <span class="cell-check" set:html={checkIcon} aria-label="Incluido" />
+                        ) : (
+                          <span class="cell-x" set:html={xIcon} aria-label="No incluido" />
+                        )
+                      ) : (
+                        <span class="cell-text">{feature[planId]}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SECTION: ROI Calculator ═══ -->
+<section class="calc-section" id="roi-calculator">
+  <div class="container">
+    <h2 class="calc-title">Descubre cuánto puedes ahorrar con Sacs</h2>
+    <p class="calc-subtitle">Configura tu negocio y mira el impacto en dinero y tiempo.</p>
+
+    <div class="calc-grid">
+      <div class="calc-inputs">
+        <!-- Plan selector -->
+        <div class="calc-plan-selector">
+          <span class="calc-slider-label">Tu plan</span>
+          <div class="calc-plan-options" id="calc-plan-options">
+            <button class="calc-plan-opt" data-plan="vende" data-price="600">Vende<span>$600/mes</span></button>
+            <button class="calc-plan-opt active" data-plan="controla" data-price="900">Controla<span>$900/mes</span></button>
+            <button class="calc-plan-opt" data-plan="fideliza" data-price="1400">Fideliza<span>$1,400/mes</span></button>
+            <button class="calc-plan-opt" data-plan="automatiza" data-price="2900">Automatiza<span>$2,900/mes</span></button>
+          </div>
+        </div>
+
+        <div class="calc-slider-group">
+          <div class="calc-slider-header">
+            <span class="calc-slider-label">Facturación anual</span>
+            <span class="calc-slider-value" id="calc-revenue-display">$1M MXN</span>
+          </div>
+          <input type="range" id="calc-revenue" min="500000" max="500000000" step="500000" value="1000000" class="calc-range" aria-label="Facturación anual" />
+          <div class="calc-slider-ticks"><span>$500K</span><span>$500M</span></div>
+        </div>
+        <div class="calc-slider-group">
+          <div class="calc-slider-header">
+            <span class="calc-slider-label">Número de sucursales</span>
+            <span class="calc-slider-value" id="calc-branches-display">3</span>
+          </div>
+          <input type="range" id="calc-branches" min="1" max="50" step="1" value="3" class="calc-range" aria-label="Número de sucursales" />
+          <div class="calc-slider-ticks"><span>1</span><span>50</span></div>
+        </div>
+
+        <div class="calc-benefits">
+          <div class="calc-category">
+            <span class="calc-category-label">Control de tu operación diaria</span>
+            <label class="calc-benefit"><input type="checkbox" checked data-pct="0.8" data-hrs="0" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Corte de caja ciego antifraude</span><span class="calc-benefit-why">El cajero reporta sin ver el total real. Sacs compara y detecta faltantes al instante.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
+            <label class="calc-benefit"><input type="checkbox" checked data-pct="0" data-hrs="6" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Conteo de inventario desde el celular</span><span class="calc-benefit-why">Antes cerrabas la tienda para contar. Ahora tu equipo cuenta desde el celular en horario normal.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
+            <label class="calc-benefit"><input type="checkbox" checked data-pct="0" data-hrs="4" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Facturación CFDI automática</span><span class="calc-benefit-why">Cada factura manual toma ~15 min. Con Sacs se genera automáticamente desde cada venta.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
+            <label class="calc-benefit"><input type="checkbox" checked data-pct="0" data-hrs="3" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Recepción de mercancía con escáner</span><span class="calc-benefit-why">Escaneas las cajas al recibirlas y Sacs valida contra la orden de compra. Sin contar a mano.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
+          </div>
+          <div class="calc-category">
+            <span class="calc-category-label">Inventario que se mueve donde se vende</span>
+            <label class="calc-benefit"><input type="checkbox" checked data-pct="1.5" data-hrs="0" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Detectar productos estancados</span><span class="calc-benefit-why">El reporte Dusty detecta productos con 0 ventas en 60 días. Los descuentas antes de que pierdan valor.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
+            <label class="calc-benefit"><input type="checkbox" checked data-pct="0.8" data-hrs="2" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Traspasos inteligentes entre sucursales</span><span class="calc-benefit-why">Si una talla está agotada en una tienda pero sobra en otra, Sacs lo detecta y sugiere el traspaso.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
+            <label class="calc-benefit"><input type="checkbox" checked data-pct="0.5" data-hrs="2" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Reabasto basado en velocidad de venta</span><span class="calc-benefit-why">En vez de pedir "a ojo", Sacs calcula cuántas unidades necesitas basado en ventas reales por talla.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
+          </div>
+          <div class="calc-category">
+            <span class="calc-category-label">Clientes que regresan y gastan más</span>
+            <label class="calc-benefit"><input type="checkbox" checked data-pct="1.5" data-hrs="0" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Programa de lealtad integrado al cobro</span><span class="calc-benefit-why">Un cliente con puntos regresa 2x más. El monedero se activa al cobrar, sin apps extras.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
+            <label class="calc-benefit"><input type="checkbox" checked data-pct="0.5" data-hrs="2" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Promociones automáticas por fecha</span><span class="calc-benefit-why">Programas la promoción del Buen Fin una vez. Se activa y desactiva sola en todas las sucursales.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
+            <label class="calc-benefit"><input type="checkbox" checked data-pct="1" data-hrs="0" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Venta en tienda + web + WhatsApp + redes</span><span class="calc-benefit-why">Vendes en 5 canales sin miedo a vender algo agotado. El stock se actualiza en segundos.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
+          </div>
+          <div class="calc-category">
+            <span class="calc-category-label">Decisiones con datos, no con intuición</span>
+            <label class="calc-benefit"><input type="checkbox" checked data-pct="0" data-hrs="4" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Reportes automáticos de venta y margen</span><span class="calc-benefit-why">En vez de 2 horas en Excel cada semana, Sacs genera tus reportes automáticamente.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
+            <label class="calc-benefit"><input type="checkbox" checked data-pct="0.8" data-hrs="0" /><span class="calc-benefit-check"></span><div class="calc-benefit-info"><span class="calc-benefit-text">Predicción de demanda con IA</span><span class="calc-benefit-why">La IA analiza ventas históricas y te dice qué comprar para la siguiente temporada. Menos sobrantes.</span></div><span class="calc-benefit-pct"></span><span class="calc-benefit-save"></span></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="calc-results">
+        <div class="calc-results-card">
+          <h3 class="calc-results-title">Ahorro estimado anual</h3>
+          <div class="calc-results-row">
+            <div class="calc-result-item"><span class="calc-result-num" id="calc-money">$136,000</span><span class="calc-result-label">MXN en dinero</span></div>
+            <div class="calc-result-divider"></div>
+            <div class="calc-result-item"><span class="calc-result-num calc-result-num--time" id="calc-hours">936</span><span class="calc-result-label">horas al año</span></div>
+          </div>
+          <div class="calc-results-equiv">≈ <span id="calc-fte">5.9</span> empleados de tiempo completo</div>
+          <div class="calc-results-divider"></div>
+          <div class="calc-results-plan">
+            <span class="calc-results-plan-label">Costo de Sacs · <strong id="calc-plan-name">Controla</strong></span>
+            <span class="calc-results-plan-price" id="calc-sacs-cost">$32,400 MXN/año</span>
+            <span class="calc-results-plan-roi">Retorno de inversión: <strong id="calc-roi">4.2x</strong></span>
+          </div>
+          <a class="calc-results-btn" href="/contacto">Prueba 7 días gratis</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SECTION: Credibility ═══ -->
+<section class="credibility-section">
+  <div class="container">
+
+    <!-- Cases — same component as homepage -->
+    <div class="reels-header">
+      <h2 class="reels-title">Negocios que ya crecen con <span class="reels-title-logo">Sacs</span></h2>
+      <p class="reels-subtitle">1 sucursal o 100 — el mismo sistema. Empieza con lo que necesitas hoy y crece sin cambiar de plataforma.</p>
+    </div>
+    <div class="reels-track-wrapper">
+      <div class="reels-track">
+        <a href="/casos-de-exito/la-bella-pandita" class="reel-card reel-card--highlight" style="--reel-idx:0">
+          <div class="reel-hl-photo">
+            <img src="/images/case-bella-pandita.webp" alt="La Bella Pandita — 42 sucursales con Sacs" loading="lazy" width="600" height="450" />
+          </div>
+          <div class="reel-hl-info">
+            <span class="reel-tag" style="background:rgba(108,92,231,0.9);">Novedades | Moda y hogar</span>
+            <h3 class="reel-brand" style="margin-top:8px;">La Bella Pandita</h3>
+            <div class="reel-hl-stats">
+              <div class="reel-hl-stat">
+                <span class="reel-hl-stat-num">42</span>
+                <span class="reel-hl-stat-label">sucursales</span>
+              </div>
+              <div class="reel-hl-stat-divider"></div>
+              <div class="reel-hl-stat">
+                <span class="reel-hl-stat-num">+1M</span>
+                <span class="reel-hl-stat-label">transacciones</span>
+              </div>
+            </div>
+          </div>
+        </a>
+        <a href="/casos-de-exito/liveshow" class="reel-card reel-card--highlight" style="--reel-idx:1">
+          <div class="reel-hl-photo">
+            <img src="/images/case-liveshow.webp" alt="Liveshow Merchandising — conciertos con Sacs" loading="lazy" width="600" height="450" />
+          </div>
+          <div class="reel-hl-info">
+            <span class="reel-tag" style="background:rgba(232,67,147,0.9);">Merchandising</span>
+            <h3 class="reel-brand" style="margin-top:8px;">Liveshow Merchandising</h3>
+            <div class="reel-hl-stats">
+              <div class="reel-hl-stat">
+                <span class="reel-hl-stat-num">+1,500</span>
+                <span class="reel-hl-stat-label">puntos de venta</span>
+              </div>
+              <div class="reel-hl-stat-divider"></div>
+              <div class="reel-hl-stat">
+                <span class="reel-hl-stat-num">5</span>
+                <span class="reel-hl-stat-label">canales de venta</span>
+              </div>
+            </div>
+          </div>
+        </a>
+        <a href="/casos-de-exito/casa-maca" class="reel-card reel-card--highlight" style="--reel-idx:2">
+          <div class="reel-hl-photo">
+            <img src="/images/case-casa-maca.webp" alt="Casa Maca — moda consciente con Sacs" loading="lazy" width="600" height="450" />
+          </div>
+          <div class="reel-hl-info">
+            <span class="reel-tag" style="background:rgba(253,203,110,0.9); color:#1A1A1A;">Moda Consciente</span>
+            <h3 class="reel-brand" style="margin-top:8px;">Casa Maca</h3>
+            <div class="reel-hl-stats">
+              <div class="reel-hl-stat">
+                <span class="reel-hl-stat-num">2</span>
+                <span class="reel-hl-stat-label">sucursales</span>
+              </div>
+              <div class="reel-hl-stat-divider"></div>
+              <div class="reel-hl-stat">
+                <span class="reel-hl-stat-num">3</span>
+                <span class="reel-hl-stat-label">canales digitales</span>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Trust badges -->
+    <div class="trust-badges">
+      <div class="trust-badge">
+        <svg class="trust-badge-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M10 1l2.39 4.84L18 6.71l-4 3.9.94 5.5L10 13.48l-4.94 2.63.94-5.5-4-3.9 5.61-.87L10 1z" fill="#E8A838"/>
+        </svg>
+        <div>
+          <span class="trust-badge-value">4.8/5</span>
+          <span class="trust-badge-label">Google Reviews</span>
+        </div>
+      </div>
+      <div class="trust-badge-divider"></div>
+      <div class="trust-badge">
+        <svg class="trust-badge-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M6 10h8M10 7v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <span class="trust-badge-value">+3,000</span>
+          <span class="trust-badge-label">Marcas activas en México y Latam</span>
+        </div>
+      </div>
+      <div class="trust-badge-divider"></div>
+      <div class="trust-badge">
+        <svg class="trust-badge-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M10 2a8 8 0 100 16 8 8 0 000-16z" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M7 10l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div>
+          <span class="trust-badge-value">99.9%</span>
+          <span class="trust-badge-label">Uptime</span>
+        </div>
+      </div>
+      <div class="trust-badge-divider"></div>
+      <div class="trust-badge">
+        <svg class="trust-badge-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M3 3h14v14H3z" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M7 7h1.5v6H7zM11.5 7H13v6h-1.5z" fill="currentColor"/>
+        </svg>
+        <div>
+          <span class="trust-badge-value">Forbes</span>
+          <span class="trust-badge-label">Publicado en Forbes México</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SECTION 6: FAQ ═══ -->
+<section class="pricing-faq" id="pricing-faq-section">
+  <div class="faq-wrapper">
+    <div class="faq-header">
+      <h2 class="faq-title">Preguntas frecuentes</h2>
+      <p class="faq-subtitle">¿Tienes otra pregunta? <a href="/contacto" class="faq-link">Escríbenos</a></p>
+    </div>
+    <div class="faq-list" id="pricing-faq-accordion">
+      {pricingFaqs.map((faq, i) => (
+        <div
+          class:list={['faq-item', { active: i === 0 }]}
+          data-index={i}
+          role="button"
+          tabindex="0"
+          aria-expanded={i === 0 ? 'true' : 'false'}
+        >
+          <div class="faq-q">
+            <span class="faq-q-num">{String(i + 1).padStart(2, '0')}</span>
+            <span class="faq-q-text">{faq.question}</span>
+            <span class="faq-q-icon" aria-hidden="true" set:html={chevronIcon} />
+          </div>
+          <div class="faq-a">
+            <p>{faq.answer}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SECTION 7: Final CTA ═══ -->
+<FinalCTA />
+
 </BaseLayout>
+
+<style>
+/* ═══════════════════════════════════════
+   PRICING HERO
+   ═══════════════════════════════════════ */
+.pricing-hero {
+  padding: calc(71px + var(--space-16)) 0 var(--space-8);
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .pricing-hero { padding-top: calc(71px + var(--space-20)); }
+}
+
+@media (min-width: 1024px) {
+  .pricing-hero { padding-top: calc(71px + var(--space-24)); }
+}
+
+.pricing-hero-inner {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.pricing-eyebrow {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: clamp(0.75rem, 1vw, 0.8125rem);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-secondary);
+  margin-bottom: var(--space-5);
+}
+
+.pricing-headline {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-4);
+}
+
+.pricing-subtitle {
+  font-size: clamp(1rem, 1.5vw, 1.25rem);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0 0 var(--space-8);
+}
+
+/* ─── Toggles ─── */
+.pricing-toggles {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.toggle-group {
+  display: inline-flex;
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-full);
+  padding: 3px;
+  gap: 2px;
+}
+
+.toggle-btn {
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 8px 18px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-default);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.toggle-btn.active {
+  background: var(--color-primary);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.toggle-savings {
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--color-secondary);
+  background: rgba(42, 181, 160, 0.12);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.toggle-btn.active .toggle-savings {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ═══════════════════════════════════════
+   PRICE DISPLAY TOGGLE (CSS-driven)
+   ═══════════════════════════════════════ */
+.price-value { display: none; }
+.price-period-text { display: none; }
+
+[data-billing="monthly"][data-currency="mxn"] .price-value[data-billing="monthly"][data-currency="mxn"],
+[data-billing="monthly"][data-currency="usd"] .price-value[data-billing="monthly"][data-currency="usd"],
+[data-billing="annual"][data-currency="mxn"] .price-value[data-billing="annual"][data-currency="mxn"],
+[data-billing="annual"][data-currency="usd"] .price-value[data-billing="annual"][data-currency="usd"] {
+  display: inline;
+}
+
+[data-billing="monthly"] .price-period-text[data-billing="monthly"],
+[data-billing="annual"] .price-period-text[data-billing="annual"] {
+  display: inline;
+}
+
+/* ═══════════════════════════════════════
+   PLAN CARDS
+   ═══════════════════════════════════════ */
+.pricing-cards-section {
+  padding: 0 0 var(--space-16);
+}
+
+/* Mobile price strip */
+.price-strip {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  margin-bottom: var(--space-4);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
+  padding: 4px;
+}
+
+.price-strip-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 4px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-default);
+}
+
+.price-strip-item.active {
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.price-strip-name {
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  letter-spacing: -0.01em;
+}
+
+.price-strip-price {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+@media (min-width: 768px) {
+  .price-strip { display: none; }
+  .carousel-dots { display: none !important; }
+}
+
+/* Cards grid */
+.pricing-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+}
+
+@media (min-width: 768px) {
+  .pricing-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .pricing-cards {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Mobile: horizontal carousel */
+@media (max-width: 767px) {
+  .pricing-cards {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: var(--space-4);
+    padding: 0 var(--space-5);
+    margin: 0 calc(-1 * var(--space-5));
+  }
+
+  .pricing-cards::-webkit-scrollbar { display: none; }
+
+  .plan-card {
+    flex: 0 0 calc(100vw - 56px);
+    scroll-snap-align: center;
+  }
+}
+
+/* Card base */
+.plan-card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow var(--duration-base) var(--ease-default), transform var(--duration-base) var(--ease-default);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .plan-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
+}
+
+.plan-card.highlighted {
+  border: 2px solid var(--color-primary);
+  box-shadow: var(--shadow-md);
+}
+
+@media (min-width: 768px) {
+  .plan-card.highlighted:hover {
+    box-shadow: var(--shadow-xl);
+  }
+}
+
+/* Badge */
+.plan-badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+  background: var(--color-primary);
+  padding: 5px 16px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  z-index: 1;
+}
+
+/* Plan name */
+.plan-name {
+  font-family: var(--font-display);
+  font-size: clamp(1.125rem, 1.5vw, 1.375rem);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--space-2);
+}
+
+/* Plan description */
+.plan-desc {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin: 0 0 var(--space-6);
+  min-height: 2.5rem;
+}
+
+@media (min-width: 1024px) {
+  .plan-desc {
+    min-height: 3.75rem; /* 3 lines at 13px × 1.5 = ~60px, ensures alignment across 4 cols */
+  }
+}
+
+/* Price */
+.plan-price {
+  margin-bottom: var(--space-6);
+}
+
+.plan-price-amount {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 2.5vw, 2.25rem);
+  font-weight: 800;
+  color: var(--color-text-primary);
+  letter-spacing: -0.04em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.plan-price-currency {
+  font-size: 0.5em;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  vertical-align: baseline;
+  color: var(--color-text-tertiary);
+}
+
+.plan-price-period {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  margin-top: var(--space-1);
+}
+
+.plan-price-annual-total {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-secondary);
+  margin-top: 4px;
+}
+
+/* CTA */
+.plan-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 14px 24px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all var(--duration-fast) var(--ease-default);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.plan-cta.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+}
+
+.plan-cta.btn-primary:hover {
+  background: var(--color-primary-hover);
+  transform: scale(1.03);
+}
+
+.plan-cta.btn-secondary {
+  background: transparent;
+  color: var(--color-text-primary);
+  border: 1.5px solid var(--color-text-primary);
+}
+
+.plan-cta.btn-secondary:hover {
+  background: var(--color-text-primary);
+  color: #fff;
+}
+
+/* Divider */
+.plan-divider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin: var(--space-6) 0;
+}
+
+.plan-divider-light {
+  margin: var(--space-4) 0;
+}
+
+/* Inherits from */
+.plan-inherits {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  margin: 0 0 var(--space-4);
+}
+
+/* Feature list */
+.plan-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  flex: 1;
+}
+
+.plan-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.feature-check {
+  flex-shrink: 0;
+  color: var(--color-secondary);
+  margin-top: 1px;
+}
+
+/* Services */
+.plan-services {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.plan-services-label {
+  width: 100%;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 2px;
+}
+
+.plan-service {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-secondary);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+}
+
+/* Carousel dots */
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: var(--space-4);
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.15);
+  transition: all var(--duration-fast) var(--ease-default);
+}
+
+.dot.active {
+  width: 20px;
+  border-radius: 3px;
+  background: var(--color-text-primary);
+}
+
+/* ═══════════════════════════════════════
+   ENTERPRISE
+   ═══════════════════════════════════════ */
+.enterprise-section {
+  background: var(--color-bg-dark);
+  padding: var(--space-16) 0;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .enterprise-section { padding: var(--space-20) 0; }
+}
+
+@media (min-width: 1024px) {
+  .enterprise-section { padding: var(--space-24) 0; }
+}
+
+.enterprise-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-10);
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .enterprise-grid { grid-template-columns: 1fr 1fr; gap: var(--space-16); }
+}
+
+.enterprise-eyebrow {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-secondary);
+  margin-bottom: var(--space-4);
+}
+
+.enterprise-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3.5vw, 2.75rem);
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 0 0 var(--space-5);
+}
+
+.enterprise-desc {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.65;
+  margin: 0 0 var(--space-6);
+  max-width: 500px;
+}
+
+.enterprise-points {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.enterprise-points li {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  padding-left: 24px;
+  position: relative;
+}
+
+.enterprise-points li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--color-secondary);
+  font-weight: 700;
+}
+
+.enterprise-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 36px;
+  background: #fff;
+  color: var(--color-bg-dark);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  text-decoration: none;
+  transition: all var(--duration-fast) var(--ease-default);
+}
+
+.enterprise-btn:hover {
+  background: #f0f0f0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15);
+}
+
+/* Enterprise card */
+.enterprise-visual {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.enterprise-card {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+}
+
+.enterprise-card-glow {
+  position: absolute;
+  inset: -20px;
+  background: radial-gradient(circle at 50% 50%, rgba(75, 123, 229, 0.2) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: enterprise-pulse 4s ease-in-out infinite;
+}
+
+@keyframes enterprise-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.08); opacity: 0.8; }
+}
+
+.enterprise-card-inner {
+  position: relative;
+  background: linear-gradient(145deg, #2a2a3e 0%, #1a1a2e 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.enterprise-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-8);
+}
+
+.enterprise-card-logo {
+  font-family: var(--font-logo);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.enterprise-card-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-secondary);
+  background: rgba(42, 181, 160, 0.15);
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+}
+
+.enterprise-card-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
+  margin-bottom: var(--space-6);
+}
+
+.enterprise-card-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.enterprise-card-stat-num {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+
+.enterprise-card-stat-label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.enterprise-card-divider {
+  width: 1px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.enterprise-card-features {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.enterprise-card-features span {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.06);
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+}
+
+.enterprise-card-price {
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 767px) {
+  .enterprise-card { max-width: 280px; }
+  .enterprise-card-stat-num { font-size: 2.25rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .enterprise-card-glow { animation: none; }
+}
+
+/* ═══════════════════════════════════════
+   ROI CALCULATOR
+   ═══════════════════════════════════════ */
+.calc-section {
+  padding: var(--space-16) 0;
+  background: #fff;
+}
+
+@media (min-width: 768px) { .calc-section { padding: var(--space-20) 0; } }
+@media (min-width: 1024px) { .calc-section { padding: var(--space-24) 0; } }
+
+.calc-eyebrow {
+  display: block;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: clamp(0.75rem, 1vw, 0.8125rem);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  margin-bottom: var(--space-4);
+}
+
+.calc-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  font-weight: 800;
+  color: var(--color-text-primary);
+  text-align: center;
+  margin: 0 0 var(--space-3);
+  letter-spacing: -0.03em;
+}
+
+.calc-subtitle {
+  font-size: 1rem;
+  color: var(--color-text-tertiary);
+  text-align: center;
+  margin: 0 0 var(--space-12);
+}
+
+.calc-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-10);
+}
+
+@media (min-width: 1024px) {
+  .calc-grid { grid-template-columns: 1fr 400px; gap: var(--space-12); }
+}
+
+/* Plan selector */
+.calc-plan-selector {
+  margin-bottom: var(--space-8);
+}
+
+.calc-plan-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: var(--space-3);
+}
+
+@media (min-width: 768px) {
+  .calc-plan-options { grid-template-columns: repeat(4, 1fr); }
+}
+
+.calc-plan-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 8px;
+  border: 2px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: #fff;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  transition: all var(--duration-fast) var(--ease-default);
+}
+
+.calc-plan-opt span {
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+}
+
+.calc-plan-opt.active {
+  border-color: var(--color-primary);
+  background: rgba(75, 123, 229, 0.06);
+}
+
+.calc-plan-opt.active span {
+  color: var(--color-primary);
+}
+
+.calc-plan-opt:hover:not(.active) {
+  border-color: var(--color-border);
+}
+
+/* Sliders */
+.calc-slider-group {
+  margin-bottom: var(--space-8);
+}
+
+.calc-slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--space-3);
+}
+
+.calc-slider-label {
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.calc-slider-value {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.calc-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-bg-secondary);
+  outline: none;
+  cursor: pointer;
+}
+
+.calc-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(75, 123, 229, 0.3);
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease-default);
+}
+
+.calc-range::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.calc-range::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(75, 123, 229, 0.3);
+  cursor: pointer;
+}
+
+.calc-slider-ticks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 0.6875rem;
+  color: var(--color-text-tertiary);
+}
+
+/* Benefits */
+.calc-benefits {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.calc-category-label {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--space-3);
+}
+
+.calc-benefit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  transition: opacity var(--duration-fast) var(--ease-default);
+}
+
+.calc-benefit:has(input:not(:checked)) {
+  opacity: 0.4;
+}
+
+.calc-benefit input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.calc-benefit-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 2px solid var(--color-border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--duration-fast) var(--ease-default);
+}
+
+.calc-benefit input:checked ~ .calc-benefit-check {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.calc-benefit input:checked ~ .calc-benefit-check::after {
+  content: '✓';
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.calc-benefit-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.calc-benefit-text {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.calc-benefit-why {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--color-text-tertiary);
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+.calc-benefit-pct {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.calc-benefit-save {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-secondary);
+  white-space: nowrap;
+  min-width: 70px;
+  text-align: right;
+}
+
+/* Results */
+.calc-results {
+  position: sticky;
+  top: 90px;
+  align-self: start;
+}
+
+.calc-results-card {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+}
+
+.calc-results-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 var(--space-6);
+  text-align: center;
+}
+
+.calc-results-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  margin-bottom: var(--space-5);
+}
+
+.calc-result-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.calc-result-icon {
+  font-size: 1.5rem;
+  margin-bottom: 4px;
+}
+
+.calc-result-num {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 800;
+  color: var(--color-primary);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  transition: color 0.3s ease;
+}
+
+.calc-result-num--time {
+  color: var(--color-secondary);
+}
+
+.calc-result-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  margin-top: 4px;
+}
+
+.calc-result-divider {
+  width: 1px;
+  height: 48px;
+  background: var(--color-border-light);
+}
+
+.calc-results-equiv {
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  margin-bottom: var(--space-6);
+}
+
+.calc-results-equiv span {
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+.calc-results-divider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin-bottom: var(--space-5);
+}
+
+.calc-results-plan {
+  text-align: center;
+  margin-bottom: var(--space-6);
+}
+
+.calc-results-plan-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.calc-results-plan-price {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.calc-results-plan-roi {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.calc-results-plan-roi strong {
+  color: var(--color-secondary);
+  font-weight: 800;
+}
+
+.calc-results-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 16px;
+  background: var(--color-primary);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  text-decoration: none;
+  transition: all var(--duration-fast) var(--ease-default);
+}
+
+.calc-results-btn:hover {
+  background: var(--color-primary-hover);
+  transform: scale(1.02);
+}
+
+@media (max-width: 1023px) {
+  .calc-results { position: static; }
+}
+
+/* ═══════════════════════════════════════
+   UNIVERSAL FEATURES
+   ═══════════════════════════════════════ */
+.universal-section {
+  background: var(--color-bg-secondary);
+  padding: var(--space-16) 0;
+}
+
+@media (min-width: 768px) {
+  .universal-section { padding: var(--space-20) 0; }
+}
+
+.universal-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  text-align: center;
+  margin: 0 0 var(--space-10);
+  letter-spacing: -0.02em;
+}
+
+.universal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4) var(--space-3);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .universal-grid { grid-template-columns: repeat(3, 1fr); gap: var(--space-5) var(--space-6); }
+}
+
+@media (min-width: 1024px) {
+  .universal-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.universal-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.universal-check {
+  flex-shrink: 0;
+  color: var(--color-secondary);
+}
+
+/* ═══════════════════════════════════════
+   COMPARISON TABLE
+   ═══════════════════════════════════════ */
+.comparison-section {
+  padding: var(--space-16) 0;
+  content-visibility: auto;
+  contain-intrinsic-size: 0 600px;
+}
+
+@media (min-width: 768px) {
+  .comparison-section { padding: var(--space-20) 0; }
+}
+
+@media (min-width: 1024px) {
+  .comparison-section { padding: var(--space-24) 0; }
+}
+
+.comparison-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  font-weight: 800;
+  color: var(--color-text-primary);
+  text-align: center;
+  margin: 0 0 var(--space-3);
+  letter-spacing: -0.03em;
+}
+
+.comparison-subtitle {
+  font-size: 1rem;
+  color: var(--color-text-tertiary);
+  text-align: center;
+  margin: 0 0 var(--space-10);
+}
+
+/* Desktop table header */
+.comparison-header {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .comparison-header {
+    display: grid;
+    grid-template-columns: 2fr repeat(4, 1fr);
+    gap: 0;
+    padding: var(--space-4) var(--space-5);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    position: sticky;
+    top: 71px;
+    z-index: 10;
+  }
+}
+
+.comparison-header-feature {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.comparison-header-plan {
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  text-align: center;
+}
+
+.comparison-header-plan.highlighted {
+  color: var(--color-primary);
+}
+
+/* Accordion category */
+.comparison-category {
+  border-top: 1px solid var(--color-border-light);
+}
+
+.comparison-category:last-child {
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.comparison-category-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-5) 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+@media (min-width: 768px) {
+  .comparison-category-header {
+    padding: var(--space-5);
+  }
+}
+
+.comparison-category-name {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  flex: 1;
+}
+
+.comparison-category-count {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+}
+
+.comparison-category-chevron {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  color: var(--color-text-tertiary);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.comparison-category.open .comparison-category-chevron {
+  transform: rotate(180deg);
+}
+
+.comparison-category.open .comparison-category-name {
+  color: var(--color-primary);
+}
+
+/* Category body */
+.comparison-category-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.comparison-category.open .comparison-category-body {
+  max-height: 2000px;
+}
+
+/* Comparison row */
+.comparison-row {
+  padding: var(--space-3) 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.comparison-row.alt {
+  background: var(--color-bg-primary);
+}
+
+@media (min-width: 768px) {
+  .comparison-row {
+    display: grid;
+    grid-template-columns: 2fr repeat(4, 1fr);
+    align-items: center;
+    gap: 0;
+    padding: var(--space-3) var(--space-5);
+  }
+}
+
+.comparison-feature-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+}
+
+@media (min-width: 768px) {
+  .comparison-feature-name {
+    margin-bottom: 0;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+  }
+}
+
+/* Values grid (mobile: 2x2, desktop: inline) */
+.comparison-values {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px var(--space-3);
+}
+
+@media (min-width: 768px) {
+  .comparison-values {
+    display: contents;
+  }
+}
+
+.comparison-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+@media (min-width: 768px) {
+  .comparison-cell {
+    justify-content: center;
+  }
+
+  .comparison-cell-label { display: none; }
+}
+
+.comparison-cell-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  min-width: 55px;
+}
+
+.cell-check {
+  color: var(--color-secondary);
+  display: flex;
+}
+
+.cell-x {
+  color: var(--color-border);
+  display: flex;
+}
+
+.cell-text {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* ═══════════════════════════════════════
+   ADD-ONS
+   ═══════════════════════════════════════ */
+.addons-section {
+  padding: var(--space-16) 0;
+  background: var(--color-bg-secondary);
+}
+
+@media (min-width: 768px) {
+  .addons-section { padding: var(--space-20) 0; }
+}
+
+@media (min-width: 1024px) {
+  .addons-section { padding: var(--space-24) 0; }
+}
+
+.addons-eyebrow {
+  display: block;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: clamp(0.75rem, 1vw, 0.8125rem);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-secondary);
+  margin-bottom: var(--space-4);
+}
+
+.addons-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  font-weight: 800;
+  color: var(--color-text-primary);
+  text-align: center;
+  margin: 0 0 var(--space-3);
+  letter-spacing: -0.03em;
+}
+
+.addons-subtitle {
+  font-size: 1rem;
+  color: var(--color-text-tertiary);
+  text-align: center;
+  margin: 0 0 var(--space-10);
+}
+
+.addons-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+}
+
+@media (min-width: 768px) {
+  .addons-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Addon card — colored hero style */
+.addon-card {
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 380px;
+  position: relative;
+  transition: transform var(--duration-base) var(--ease-default), box-shadow var(--duration-base) var(--ease-default);
+}
+
+@media (min-width: 768px) {
+  .addon-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+  }
+}
+
+/* All cards — dark */
+.addon-card { background: var(--color-bg-dark); }
+
+/* Light variant — white bg */
+.addon-card.addon-card--light {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+}
+
+.addon-card--light .addon-plugin-name { color: var(--color-text-primary); }
+.addon-card--light .addon-desc { color: var(--color-text-secondary); }
+.addon-card--light .addon-points li { color: var(--color-text-secondary); }
+.addon-card--light .addon-points li::before { color: var(--color-primary); }
+.addon-card--light .addon-btn {
+  background: var(--color-primary);
+  color: #fff;
+}
+.addon-card--light .addon-btn:hover {
+  background: var(--color-primary-hover);
+}
+
+.addon-card-content {
+  padding: var(--space-8) var(--space-8) var(--space-5);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.addon-plugin-name {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 0 0 var(--space-3);
+}
+
+.addon-desc {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+  margin: 0 0 var(--space-5);
+}
+
+.addon-points {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.addon-points li {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.4;
+  padding-left: 22px;
+  position: relative;
+}
+
+.addon-points li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  font-weight: 700;
+  color: #fff;
+}
+
+.addon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: var(--space-6);
+  padding: 12px 28px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  text-decoration: none;
+  transition: background var(--duration-fast) var(--ease-default);
+  width: fit-content;
+}
+
+.addon-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ═══════════════════════════════════════
+   CREDIBILITY
+   ═══════════════════════════════════════ */
+.credibility-section {
+  padding: var(--space-16) 0;
+}
+
+@media (min-width: 768px) {
+  .credibility-section { padding: var(--space-20) 0; }
+}
+
+@media (min-width: 1024px) {
+  .credibility-section { padding: var(--space-24) 0; }
+}
+
+/* Trust badges — integrated with dark reels */
+.trust-badges {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+  margin-top: var(--space-10);
+  padding: var(--space-6) var(--space-8);
+  background: #1A1A1A;
+  border-radius: var(--radius-xl);
+}
+
+@media (max-width: 767px) {
+  .trust-badges {
+    gap: var(--space-5);
+    padding: var(--space-5);
+    border-radius: var(--radius-lg);
+  }
+}
+
+.trust-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.trust-badge-icon {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.trust-badge-value {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.trust-badge-label {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.3;
+}
+
+.trust-badge-divider {
+  width: 1px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+@media (max-width: 767px) {
+  .trust-badge-divider { display: none; }
+  .trust-badges {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+  }
+}
+
+/* Reels — same styles as homepage Hero */
+.reels-header {
+  max-width: 1200px;
+  margin: 0 auto clamp(40px, 5vw, 64px);
+  padding: 0 var(--space-6);
+  text-align: center;
+}
+.reels-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 4vw, 3rem);
+  font-weight: 800;
+  color: #1d1d1f;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  margin: 0;
+}
+.reels-title-logo {
+  font-family: var(--font-logo, 'Clash Display', sans-serif);
+}
+.reels-subtitle {
+  font-size: clamp(0.9375rem, 1.5vw, 1.125rem);
+  color: rgba(0,0,0,0.45);
+  margin: var(--space-4) auto 0;
+  max-width: 560px;
+  line-height: 1.5;
+}
+.reels-track-wrapper {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.reels-track-wrapper::-webkit-scrollbar { display: none; }
+.reels-track {
+  display: flex;
+  gap: clamp(16px, 2vw, 24px);
+  padding: 16px clamp(24px, 5vw, calc((100vw - 1200px) / 2 + 24px));
+  width: max-content;
+}
+.reel-card {
+  position: relative;
+  width: clamp(340px, 42vw, 520px);
+  aspect-ratio: 3 / 4;
+  border-radius: 20px;
+  overflow: hidden;
+  flex-shrink: 0;
+  scroll-snap-align: center;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  cursor: pointer;
+  transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s ease;
+}
+.reel-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+}
+.reel-card--highlight {
+  scroll-snap-align: center;
+  display: flex;
+  flex-direction: column;
+  background: #1A1A1A;
+  aspect-ratio: auto;
+  text-decoration: none;
+  color: inherit;
+}
+.reel-card--highlight:hover {
+  text-decoration: none;
+}
+.reel-hl-photo {
+  overflow: hidden;
+  min-height: 0;
+  position: relative;
+  max-height: 420px;
+}
+.reel-hl-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center bottom;
+  display: block;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reel-card:hover .reel-hl-photo img {
+  transform: scale(1.06);
+}
+.reel-hl-info {
+  padding: 18px 20px 20px;
+  color: #fff;
+  flex-shrink: 0;
+  background: #1A1A1A;
+  position: relative;
+  z-index: 1;
+}
+.reel-hl-stats {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+.reel-hl-stat {
+  display: flex;
+  flex-direction: column;
+}
+.reel-hl-stat-num {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: #fff;
+}
+.reel-hl-stat-label {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.55);
+  margin-top: 4px;
+}
+.reel-hl-stat-divider {
+  width: 1px;
+  height: 36px;
+  background: rgba(255,255,255,0.15);
+  flex-shrink: 0;
+}
+.reel-tag {
+  display: inline-flex;
+  align-self: flex-start;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.85);
+  background: rgba(255,255,255,0.15);
+  border-radius: 100px;
+  padding: 4px 12px;
+}
+.reel-brand {
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 1.4vw, 1.25rem);
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0;
+}
+@media (max-width: 1024px) {
+  .reels-header { margin-bottom: 20px; }
+  .reels-title { font-size: 1.4rem; }
+  .reels-subtitle { font-size: 0.85rem; }
+  .reels-track { gap: 12px; padding: 8px 16px; }
+  .reel-card {
+    width: 65vw;
+    max-width: 280px;
+    aspect-ratio: 9 / 16;
+    border-radius: 16px;
+  }
+  .reel-card--highlight {
+    aspect-ratio: 9 / 16;
+    position: relative;
+  }
+  .reel-hl-photo {
+    position: absolute;
+    inset: 0;
+    max-height: none;
+  }
+  .reel-hl-photo img { width: 100%; height: 100%; object-fit: cover; }
+  .reel-hl-info {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 40px 14px 14px;
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 60%, transparent 100%);
+    z-index: 1;
+  }
+  .reel-hl-stat-num { font-size: 1.3rem; }
+  .reel-hl-stat-label { font-size: 10px; }
+  .reel-hl-stats { gap: 10px; margin-top: 8px; }
+  .reel-hl-stat-divider { height: 28px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reel-card { transition: box-shadow 0.3s ease; }
+  .reel-hl-photo img { transition: none; }
+}
+
+/* ═══════════════════════════════════════
+   MIGRATION
+   ═══════════════════════════════════════ */
+.migration-section {
+  padding: var(--space-16) 0;
+  background: var(--color-bg-primary);
+}
+
+@media (min-width: 768px) { .migration-section { padding: var(--space-20) 0; } }
+@media (min-width: 1024px) { .migration-section { padding: var(--space-24) 0; } }
+
+.migration-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-10);
+}
+
+@media (min-width: 768px) {
+  .migration-grid { grid-template-columns: 1fr 1fr; gap: var(--space-12); align-items: center; }
+}
+
+.migration-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  font-weight: 800;
+  color: var(--color-text-primary);
+  letter-spacing: -0.03em;
+  margin: 0 0 var(--space-4);
+}
+
+.migration-desc {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0 0 var(--space-8);
+}
+
+.migration-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.migration-step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.migration-step-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.migration-step-title {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.migration-step-desc {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--color-text-tertiary);
+  margin-top: 2px;
+}
+
+.migration-guarantee-card {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  text-align: center;
+}
+
+.migration-guarantee-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--space-4);
+}
+
+.migration-guarantee-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-3);
+}
+
+.migration-guarantee-desc {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0 0 var(--space-6);
+}
+
+.migration-guarantee-points {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.migration-guarantee-points span {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-secondary);
+}
+
+/* ═══════════════════════════════════════
+   FAQ (pricing-specific, reusing pattern)
+   ═══════════════════════════════════════ */
+.pricing-faq {
+  background: #fff;
+  padding: clamp(64px, 8vw, 120px) 0;
+}
+
+.pricing-faq .faq-wrapper {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 4vw, 48px);
+}
+
+.pricing-faq .faq-header {
+  text-align: center;
+  margin-bottom: clamp(40px, 5vw, 56px);
+}
+
+.pricing-faq .faq-title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+  color: var(--color-text-primary);
+  margin: 0 0 12px;
+}
+
+.pricing-faq .faq-subtitle {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.pricing-faq .faq-link {
+  color: #2563EB;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.pricing-faq .faq-link:hover { text-decoration: underline; }
+
+.pricing-faq .faq-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.pricing-faq .faq-item {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  outline: none;
+}
+
+.pricing-faq .faq-item:last-child {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.pricing-faq .faq-item:focus-visible {
+  outline: 2px solid #2563EB;
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
+.pricing-faq .faq-q {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 0;
+}
+
+.pricing-faq .faq-q-num {
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+  width: 28px;
+}
+
+.pricing-faq .faq-q-text {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1.35;
+  flex: 1;
+  letter-spacing: -0.01em;
+}
+
+.pricing-faq .faq-q-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  color: var(--color-text-tertiary);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
+}
+
+.pricing-faq .faq-item.active .faq-q-icon { transform: rotate(180deg); color: #2563EB; }
+.pricing-faq .faq-item.active .faq-q-num { color: #2563EB; }
+
+.pricing-faq .faq-a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pricing-faq .faq-item.active .faq-a { max-height: 300px; }
+
+.pricing-faq .faq-a p {
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  margin: 0;
+  padding: 0 0 24px 44px;
+  max-width: 600px;
+}
+
+.pricing-faq .faq-item:hover .faq-q-text { color: #2563EB; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pricing-faq .faq-a,
+  .pricing-faq .faq-q-icon { transition: none; }
+}
+
+@media (max-width: 767px) {
+  .pricing-faq { padding: clamp(48px, 6vw, 64px) 0; }
+  .pricing-faq .faq-header { margin-bottom: 32px; }
+  .pricing-faq .faq-q { padding: 20px 0; gap: 12px; }
+  .pricing-faq .faq-q-num { display: none; }
+  .pricing-faq .faq-q-text { font-size: 1rem; }
+  .pricing-faq .faq-a p { padding: 0 0 20px 0; font-size: 0.9375rem; }
+}
+
+/* ═══════════════════════════════════════
+   REDUCED MOTION
+   ═══════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .plan-card,
+  .plan-cta,
+  .toggle-btn,
+  .comparison-category-chevron,
+  .comparison-category-body {
+    transition: none !important;
+  }
+}
+</style>
+
+<script>
+  // ─── Toggle state management ───
+  const root = document.getElementById('pricing-root');
+  const toggles = document.getElementById('pricing-toggles');
+
+  if (toggles && root) {
+    toggles.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('.toggle-btn') as HTMLButtonElement;
+      if (!btn) return;
+
+      const billing = btn.dataset.billing;
+      const currency = btn.dataset.currency;
+
+      if (billing) {
+        root.dataset.billing = billing;
+        const group = btn.closest('.toggle-group');
+        group?.querySelectorAll('.toggle-btn').forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+      }
+
+      if (currency) {
+        root.dataset.currency = currency;
+        const group = btn.closest('.toggle-group');
+        group?.querySelectorAll('.toggle-btn').forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+      }
+    });
+  }
+
+  // ─── Comparison table accordion ───
+  const compAccordion = document.getElementById('comparison-accordion');
+  compAccordion?.addEventListener('click', (e) => {
+    const header = (e.target as HTMLElement).closest('.comparison-category-header') as HTMLButtonElement;
+    if (!header) return;
+
+    const category = header.closest('.comparison-category');
+    if (!category) return;
+
+    const isOpen = category.classList.contains('open');
+    category.classList.toggle('open');
+    header.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+  });
+
+  // ─── Pricing FAQ accordion ───
+  const pricingFaqAccordion = document.getElementById('pricing-faq-accordion');
+  const pricingFaqItems = pricingFaqAccordion?.querySelectorAll('.faq-item');
+
+  pricingFaqItems?.forEach((item) => {
+    item.addEventListener('click', () => {
+      const isActive = item.classList.contains('active');
+
+      pricingFaqItems.forEach((it) => {
+        it.classList.remove('active');
+        it.setAttribute('aria-expanded', 'false');
+      });
+
+      if (!isActive) {
+        item.classList.add('active');
+        item.setAttribute('aria-expanded', 'true');
+      }
+    });
+
+    item.addEventListener('keydown', (e: Event) => {
+      if ((e as KeyboardEvent).key === 'Enter' || (e as KeyboardEvent).key === ' ') {
+        e.preventDefault();
+        (item as HTMLElement).click();
+      }
+    });
+  });
+
+  // ─── Mobile carousel sync ───
+  const cardsContainer = document.getElementById('pricing-cards');
+  const dots = document.querySelectorAll('#carousel-dots .dot');
+  const stripItems = document.querySelectorAll('#price-strip .price-strip-item');
+  let scrollTicking = false;
+
+  function updateCarouselState(index: number) {
+    dots.forEach((dot, i) => {
+      dot.classList.toggle('active', i === index);
+    });
+    stripItems.forEach((item, i) => {
+      item.classList.toggle('active', i === index);
+    });
+  }
+
+  if (cardsContainer && window.innerWidth < 768) {
+    // Scroll to Fideliza (index 2) on load
+    requestAnimationFrame(() => {
+      const cards = cardsContainer.querySelectorAll('.plan-card');
+      if (cards[2]) {
+        (cards[2] as HTMLElement).scrollIntoView({ inline: 'center', block: 'nearest' });
+        updateCarouselState(2);
+      }
+    });
+
+    cardsContainer.addEventListener('scroll', () => {
+      if (!scrollTicking) {
+        requestAnimationFrame(() => {
+          const cards = cardsContainer.querySelectorAll('.plan-card');
+          const containerRect = cardsContainer.getBoundingClientRect();
+          const containerCenter = containerRect.left + containerRect.width / 2;
+          let closestIndex = 0;
+          let closestDistance = Infinity;
+
+          cards.forEach((card, i) => {
+            const cardRect = card.getBoundingClientRect();
+            const cardCenter = cardRect.left + cardRect.width / 2;
+            const distance = Math.abs(cardCenter - containerCenter);
+            if (distance < closestDistance) {
+              closestDistance = distance;
+              closestIndex = i;
+            }
+          });
+
+          updateCarouselState(closestIndex);
+          scrollTicking = false;
+        });
+        scrollTicking = true;
+      }
+    }, { passive: true });
+
+    // Strip click → scroll to card
+    stripItems.forEach((item) => {
+      item.addEventListener('click', () => {
+        const index = parseInt((item as HTMLElement).dataset.index || '0');
+        const cards = cardsContainer.querySelectorAll('.plan-card');
+        if (cards[index]) {
+          (cards[index] as HTMLElement).scrollIntoView({
+            behavior: 'smooth',
+            inline: 'center',
+            block: 'nearest',
+          });
+        }
+      });
+    });
+  }
+
+  // ─── ROI Calculator ───
+  const revenueSlider = document.getElementById('calc-revenue') as HTMLInputElement;
+  const branchesSlider = document.getElementById('calc-branches') as HTMLInputElement;
+  const revenueDisplay = document.getElementById('calc-revenue-display');
+  const branchesDisplay = document.getElementById('calc-branches-display');
+  const moneyEl = document.getElementById('calc-money');
+  const hoursEl = document.getElementById('calc-hours');
+  const fteEl = document.getElementById('calc-fte');
+  const sacsCostEl = document.getElementById('calc-sacs-cost');
+  const roiEl = document.getElementById('calc-roi');
+  const planNameEl = document.getElementById('calc-plan-name');
+  const planOptions = document.querySelectorAll<HTMLButtonElement>('.calc-plan-opt');
+  const benefitCheckboxes = document.querySelectorAll<HTMLInputElement>('.calc-benefit input[type="checkbox"]');
+  let selectedPlanPrice = 900;
+  let selectedPlanName = 'Controla';
+
+  function formatMoney(n: number): string {
+    if (n >= 1000000) return '$' + (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (n >= 1000) return '$' + Math.round(n).toLocaleString('es-MX');
+    return '$' + Math.round(n);
+  }
+
+  // Plan selector
+  planOptions.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      planOptions.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedPlanPrice = parseInt(btn.dataset.price || '900');
+      selectedPlanName = btn.dataset.plan || 'controla';
+      selectedPlanName = selectedPlanName.charAt(0).toUpperCase() + selectedPlanName.slice(1);
+      calculateROI();
+    });
+  });
+
+  function calculateROI() {
+    const revenue = parseInt(revenueSlider?.value || '1000000');
+    const branches = parseInt(branchesSlider?.value || '3');
+
+    if (revenueDisplay) {
+      if (revenue >= 1000000) {
+        revenueDisplay.textContent = '$' + (revenue / 1000000).toFixed(1).replace(/\.0$/, '') + 'M MXN';
+      } else {
+        revenueDisplay.textContent = '$' + (revenue / 1000).toFixed(0) + 'K MXN';
+      }
+    }
+    if (branchesDisplay) branchesDisplay.textContent = String(branches);
+
+    let totalPct = 0;
+    let totalHrsMonth = 0;
+
+    benefitCheckboxes.forEach((cb) => {
+      const pct = parseFloat(cb.dataset.pct || '0');
+      const hrs = parseFloat(cb.dataset.hrs || '0');
+      const row = cb.closest('.calc-benefit');
+      const pctEl = row?.querySelector('.calc-benefit-pct');
+      const saveEl = row?.querySelector('.calc-benefit-save');
+
+      if (!cb.checked) {
+        if (pctEl) pctEl.textContent = '';
+        if (saveEl) saveEl.textContent = '';
+        return;
+      }
+
+      totalPct += pct;
+      totalHrsMonth += hrs * branches;
+
+      if (pctEl) {
+        if (pct > 0) pctEl.textContent = pct + '%';
+        else pctEl.textContent = '';
+      }
+
+      if (saveEl) {
+        const moneySave = revenue * (pct / 100);
+        const hrsSave = hrs * branches * 12;
+        if (pct > 0 && hrs > 0) saveEl.textContent = formatMoney(moneySave) + ' · ' + hrsSave + 'h';
+        else if (pct > 0) saveEl.textContent = formatMoney(moneySave);
+        else if (hrs > 0) saveEl.textContent = hrsSave + 'h/año';
+      }
+    });
+
+    const totalMoney = revenue * (totalPct / 100);
+    const totalHrsYear = totalHrsMonth * 12;
+    const fte = totalHrsYear / 1920;
+    const sacsCost = branches * selectedPlanPrice * 10; // annual = 10 months (2 months free)
+    const roi = sacsCost > 0 ? totalMoney / sacsCost : 0;
+
+    if (moneyEl) moneyEl.textContent = formatMoney(totalMoney);
+    if (hoursEl) hoursEl.textContent = totalHrsYear.toLocaleString('es-MX');
+    if (fteEl) fteEl.textContent = fte.toFixed(1);
+    if (planNameEl) planNameEl.textContent = selectedPlanName;
+    if (sacsCostEl) sacsCostEl.textContent = formatMoney(sacsCost) + ' MXN/año';
+    if (roiEl) roiEl.textContent = roi.toFixed(1) + 'x';
+  }
+
+  revenueSlider?.addEventListener('input', calculateROI);
+  branchesSlider?.addEventListener('input', calculateROI);
+  benefitCheckboxes.forEach((cb) => cb.addEventListener('change', calculateROI));
+  calculateROI();
+</script>

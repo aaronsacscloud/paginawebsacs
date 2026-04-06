@@ -79,6 +79,9 @@ const breadcrumbSchema = {
         </div>
         <h1>{title}</h1>
         <p class="body-large blog-description">{description}</p>
+        {image && (
+          <img src={image} alt={title} class="blog-hero-img" width="720" height="400" loading="eager" />
+        )}
       </header>
 
       <div class="blog-content">
@@ -160,6 +163,14 @@ const breadcrumbSchema = {
 
   .blog-content :global(code) {
     font-size: 0.875em;
+  }
+
+  .blog-hero-img {
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius-xl);
+    margin-top: var(--space-8);
+    object-fit: cover;
   }
 
   .blog-content :global(img) {
