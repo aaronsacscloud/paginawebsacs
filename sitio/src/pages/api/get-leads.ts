@@ -3,7 +3,7 @@ import { list } from '@vercel/blob';
 
 export const prerender = false;
 
-const ADMIN_PASSWORD = import.meta.env.ADMIN_PASSWORD || 'sacs2026admin';
+const ADMIN_PASSWORD = 'Javaescutia22!';
 
 export const GET: APIRoute = async ({ request }) => {
   // Simple auth via query param
