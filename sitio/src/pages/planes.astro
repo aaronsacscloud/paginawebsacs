@@ -102,10 +102,24 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
 
           <ul class="plan-features">
             {plan.features.map((feature) => (
-              <li class="plan-feature">
-                <span class="feature-check" set:html={checkIcon} />
-                <span>{feature}</span>
-              </li>
+              typeof feature === 'string' ? (
+                <li class="plan-feature">
+                  <span class="feature-check" set:html={checkIcon} />
+                  <span>{feature}</span>
+                </li>
+              ) : (
+                <li class="plan-feature-group">
+                  <span class="feature-group-title">{feature.category}</span>
+                  <ul class="feature-group-items">
+                    {feature.items.map((item) => (
+                      <li class="plan-feature plan-feature--sub">
+                        <span class="feature-check feature-check--sub" set:html={checkIcon} />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              )
             ))}
           </ul>
 
@@ -1016,6 +1030,38 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
   flex-direction: column;
   gap: var(--space-3);
   flex: 1;
+}
+
+.plan-feature-group {
+  list-style: none;
+}
+.feature-group-title {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-primary);
+  display: block;
+  margin-bottom: 8px;
+  margin-top: 4px;
+}
+.plan-feature-group:first-child .feature-group-title {
+  margin-top: 0;
+}
+.feature-group-items {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.plan-feature--sub {
+  font-size: 0.8125rem;
+}
+.feature-check--sub {
+  opacity: 0.6;
 }
 
 .plan-feature {

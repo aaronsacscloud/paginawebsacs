@@ -23,7 +23,7 @@ export interface Plan {
   highlighted: boolean;
   inheritsFrom?: string;
   cta: { label: string; href: string; variant: 'primary' | 'secondary' };
-  features: string[];
+  features: (string | { category: string; items: string[] })[];
   services: string[];
 }
 
@@ -58,18 +58,15 @@ export const plans: Plan[] = [
     highlighted: false,
     cta: { label: 'Prueba 7 días gratis', href: '/prueba-gratis', variant: 'secondary' },
     features: [
-      'Punto de venta online y offline',
-      'Tickets por WhatsApp',
-      'Productos con variantes (talla, color)',
-      'Cortes de caja y arqueos',
-      'Códigos de barras y QR',
-      'Tienda en línea básica',
-      'Cambios, devoluciones y cancelaciones',
+      { category: 'Ventas', items: ['Punto de venta online y offline', 'Tienda en línea básica integrada', 'Cotizaciones', 'Pedidos y apartados', 'Ventas a crédito'] },
+      { category: 'Canales', items: ['Facebook, Instagram y WhatsApp', 'TikTok Shop', 'Productos visibles en ChatGPT'] },
+      { category: 'Productos', items: ['Productos con variantes', 'Cambios, devoluciones y cancelaciones', 'Etiquetas con código de barras'] },
+      { category: 'Operación', items: ['Control básico de inventario', 'Cortes de caja y arqueos', 'Tickets por WhatsApp'] },
+      { category: 'Facturación', items: ['20 folios incluidos'] },
     ],
     services: [
       '1 sucursal',
-      'Reunión de introducción',
-      'Soporte 24/7 (<10 min)',
+      'Soporte 9 AM–5 PM (<30 min)',
     ],
   },
   {
@@ -83,20 +80,16 @@ export const plans: Plan[] = [
     inheritsFrom: 'Vende',
     cta: { label: 'Prueba 7 días gratis', href: '/prueba-gratis', variant: 'secondary' },
     features: [
-      'Inventario multi-sucursal en tiempo real',
-      'Conteo físico desde el celular',
-      'Órdenes de compra y recepción',
-      'Traspasos entre sucursales',
-      'Facturación CFDI 4.0',
-      'Cotizaciones, apartados y pedidos',
-      'Créditos y cuentas por cobrar',
-      'Metas y comisiones por vendedor',
+      { category: 'Inventario avanzado', items: ['Multi-sucursal en tiempo real', 'Gestión de CEDIS', 'Traspasos entre sucursales', 'Reabasto sugerido', 'Alertas de stock bajo o exceso'] },
+      { category: 'Conteos y trazabilidad', items: ['Conteo físico desde el celular', 'Conteos cíclicos programados', 'Kardex y trazabilidad', 'Control de mermas'] },
+      { category: 'Compras y gastos', items: ['Órdenes de compra y cuentas por pagar', 'Recepción contra orden de compra', 'Control de gastos', 'Complementos de pago y notas de crédito'] },
+      { category: 'Clientes y equipo', items: ['CRM e historial de clientes', 'Metas y comisiones por vendedor', 'Permisos por usuario y sucursal'] },
+      { category: 'Reportes y auditoría', items: ['ABC, sell-through y rotación', 'Costeo y utilidad por producto', 'Auditoría de movimientos'] },
     ],
     services: [
       'Multi-sucursal',
-      'Ejecutivo de cuenta',
-      'Reunión mensual',
-      'Soporte 24/7 (<30 min)',
+      'Reunión de introducción',
+      'Soporte 9 AM–5 PM (<30 min)',
       'Migración gratis (3 días)',
     ],
   },
@@ -112,13 +105,15 @@ export const plans: Plan[] = [
     inheritsFrom: 'Controla',
     cta: { label: 'Prueba 7 días gratis', href: '/prueba-gratis', variant: 'primary' },
     features: [
-      'Monedero electrónico y puntos de lealtad',
-      'Recompensas por niveles de compra',
-      'Promociones 2x1, 3x2 y por volumen',
-      'Activación automática por fechas o eventos',
-      'Perfil omnicanal de cada cliente',
-      'Sync inventario con Meta, TikTok y Google',
+      'Monedero electrónico y programa de lealtad',
+      'Niveles de lealtad y recompensas personalizadas',
+      'Redención de puntos en tu tienda en línea',
+      'Notificaciones automáticas por WhatsApp',
+      'Ventas de impulso y venta cruzada',
+      'Promociones avanzadas',
+      'Portal de clientes con tu marca, imagen y enlace personalizado',
       'Portal de autofacturación con tu marca',
+      'Funciones avanzadas de eCommerce para impulsar recompra y fidelización',
     ],
     services: [
       'Multi-sucursal',
@@ -139,12 +134,14 @@ export const plans: Plan[] = [
     inheritsFrom: 'Fideliza',
     cta: { label: 'Agenda una demo', href: '/contacto', variant: 'secondary' },
     features: [
-      'Nivelación de inventarios con IA',
-      'Reglas automáticas de reabastecimiento',
-      'Fichas de producto con IA (foto a catálogo)',
-      'Agente IA: reportes, auditorías y alertas',
-      'Detección de anomalías y robos',
-      'Descuento por volumen en licencias',
+      'Nivelación automática de inventario entre sucursales con IA',
+      'Reglas inteligentes de reabastecimiento',
+      'AXO IA para consultar, operar y automatizar procesos',
+      'Automatización de tareas clave para ahorrar tiempo y reducir errores',
+      'Inteligencia operativa para tomar mejores decisiones',
+      'Alertas personalizadas y acciones sugeridas',
+      'Consumo de IA adicional según uso',
+      'Integración con más de 600 aplicaciones',
     ],
     services: [
       'Multi-sucursal',
