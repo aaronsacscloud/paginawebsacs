@@ -815,21 +815,28 @@ const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
   const SHEET_WEBHOOK = 'https://script.google.com/macros/s/AKfycbwJZ6VLnjKeIJ8Jh3H4vDoUicD59cEUQFxMhpEYFzQSmWHVToLYC0t2xHtRqhNlEUxp/exec';
 
   function sendLeadToSheet(paso: string, plan?: string) {
-    const formData = new FormData();
-    formData.append('nombre', (document.getElementById('nombre') as HTMLInputElement).value);
-    formData.append('empresa', (document.getElementById('empresa') as HTMLInputElement).value);
-    formData.append('giro', (document.getElementById('giro') as HTMLSelectElement).value);
-    formData.append('sucursales', (document.getElementById('sucursales') as HTMLSelectElement).value);
-    formData.append('whatsapp', (document.getElementById('whatsapp') as HTMLInputElement).value);
-    formData.append('email', (document.getElementById('email') as HTMLInputElement).value);
-    formData.append('paso', paso);
-    formData.append('plan', plan || '');
+    const data = {
+      nombre: (document.getElementById('nombre') as HTMLInputElement).value,
+      empresa: (document.getElementById('empresa') as HTMLInputElement).value,
+      giro: (document.getElementById('giro') as HTMLSelectElement).value,
+      sucursales: (document.getElementById('sucursales') as HTMLSelectElement).value,
+      whatsapp: (document.getElementById('whatsapp') as HTMLInputElement).value,
+      email: (document.getElementById('email') as HTMLInputElement).value,
+      paso,
+      plan: plan || '',
+    };
 
-    // Send as FormData (works with no-cors)
+    // Use hidden iframe + form to POST (most reliable for Google Apps Script)
+    const params = new URLSearchParams(data).toString();
+    const img = new Image();
+    img.src = SHEET_WEBHOOK + '?' + params;
+
+    // Also try POST as backup
     fetch(SHEET_WEBHOOK, {
       method: 'POST',
       mode: 'no-cors',
-      body: formData,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params,
     }).catch(() => {});
   }
 
