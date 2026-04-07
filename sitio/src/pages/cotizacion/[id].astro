@@ -1,13 +1,22 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { supabase } from '../../lib/supabase';
+import { plans } from '../../data/plans';
 
 export const prerender = false;
 
 const { id } = Astro.params;
+const isPaidReturn = Astro.url.searchParams.get('paid') === '1';
 const { data: quote } = await supabase.from('quotes').select('*').eq('id', id).single();
 
 if (!quote) return Astro.redirect('/404');
+
+// Auto-expire: if vigencia passed and status is still sent/draft, mark as expired
+const isExpired = quote.vigencia && new Date(quote.vigencia) < new Date();
+if (isExpired && quote.estado !== 'expired' && quote.estado !== 'accepted' && quote.estado !== 'paid') {
+  await supabase.from('quotes').update({ estado: 'expired' }).eq('id', id);
+  quote.estado = 'expired';
+}
 
 // Fetch bank account if linked
 let bankAccount: any = null;
@@ -18,16 +27,52 @@ if (quote.bank_account_id) {
 
 const items = Array.isArray(quote.items) ? quote.items : [];
 const template = quote.template || 'modern';
-const isExpired = quote.vigencia && new Date(quote.vigencia) < new Date();
+
+// Parse meta from notas for logo_url
+const notasSep = '\n---META---\n';
+const notasIdx = (quote.notas || '').indexOf(notasSep);
+const quoteMeta = notasIdx >= 0 ? (() => { try { return JSON.parse(quote.notas.slice(notasIdx + notasSep.length)); } catch { return {}; } })() : {};
+const logoUrl = quoteMeta.logo_url || '';
+const ivaMode = quoteMeta.iva_mode || (quote.iva_incluido ? 'suma' : 'sin');
 const daysLeft = quote.vigencia ? Math.ceil((new Date(quote.vigencia).getTime() - Date.now()) / 86400000) : 0;
 const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
-const fecha = new Date(quote.created_at).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
-const vigenciaFecha = quote.vigencia ? new Date(quote.vigencia).toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+const fmtDate = (d: string | null) => {
+  if (!d) return '';
+  const date = new Date(d.length === 10 ? d + 'T12:00:00' : d);
+  if (isNaN(date.getTime())) return '';
+  const day = date.getDate();
+  const month = date.toLocaleDateString('es-MX', { month: 'short' }).replace('.', '');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+const fecha = fmtDate(quote.created_at);
+const vigenciaFecha = fmtDate(quote.vigencia);
 
 // Classify items
 const planItems = items.filter((i: any) => i.tipo === 'plan');
-const uniqueItems = items.filter((i: any) => i.tipo === 'extra' && !i.recurrente);
+const uniqueItems = items.filter((i: any) => i.tipo === 'extra' && !i.recurrente && !i.es_promocion);
 const recurringItems = items.filter((i: any) => i.tipo === 'extra' && i.recurrente);
+const promoItems = items.filter((i: any) => i.es_promocion);
+
+// Build plan features for "Qué incluye tu plan" section
+const planFeatures = planItems.map((pi: any) => {
+  const planData = plans.find(p => p.id === pi.nombre?.toLowerCase());
+  if (!planData) return null;
+  // Collect features from this plan + all inherited plans
+  const allFeatures: { category: string; items: string[] }[] = [];
+  let current: typeof planData | undefined = planData;
+  const visited = new Set<string>();
+  while (current && !visited.has(current.id)) {
+    visited.add(current.id);
+    for (const f of current.features) {
+      if (typeof f === 'object' && 'category' in f) {
+        allFeatures.push(f);
+      }
+    }
+    current = current.inheritsFrom ? plans.find(p => p.name === current!.inheritsFrom) : undefined;
+  }
+  return { planName: planData.name, features: allFeatures.reverse(), services: planData.services };
+}).filter(Boolean);
 
 // Calculate payment breakdown
 const annualPlanTotal = planItems.filter((i: any) => i.periodo === 'anual').reduce((s: number, i: any) => s + (i.subtotal || 0), 0);
@@ -46,23 +91,40 @@ const summary = planNames ? `${planNames} para ${sucTotal} sucursal${sucTotal > 
 // Next annual renewal date
 const nextAnnualDate = new Date();
 nextAnnualDate.setFullYear(nextAnnualDate.getFullYear() + 1);
-const nextAnnualStr = nextAnnualDate.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
+const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
 ---
 
 <BaseLayout title={`Cotización ${quote.numero} — Sacs`} description={`Cotización para ${quote.empresa}`}>
 
-<div class:list={['quote-page', `quote-${template}`]} id="quote-doc">
-  <div class="quote-container">
+<div class:list={['quote-page', `quote-${template}`, { 'quote-expired-page': isExpired }]} id="quote-doc">
+  <div class="quote-container" style="position:relative">
+    {isExpired && (
+      <div class="quote-stamp">
+        <div class="quote-stamp-text">VENCIDA</div>
+      </div>
+    )}
+
+    {isPaidReturn && (
+      <div class="quote-paid-banner">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12a10 10 0 11-5.93-9.14" stroke="#fff" stroke-width="2.5"/><path d="M22 4L12 14.01l-3-3" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>
+        <span>Pago recibido. Tu servicio se activa de inmediato.</span>
+      </div>
+    )}
+
     <!-- Header -->
     <div class="quote-header">
       <div class="quote-logo">
-        <span class="quote-logo-text">Sacs</span>
+        {logoUrl ? (
+          <img src={logoUrl} alt={quote.empresa} class="quote-client-logo" width="120" height="48" loading="eager" />
+        ) : (
+          <span class="quote-logo-text">Sacs</span>
+        )}
         <span class="quote-logo-tag">Cotización</span>
       </div>
       <div class="quote-meta">
         <div class="quote-number">{quote.numero}</div>
         <div class="quote-date">Fecha: {fecha}</div>
-        <div class="quote-date">Vigencia: {quote.vigencia}</div>
+        <div class="quote-date">Vigencia: {vigenciaFecha}</div>
         {!isExpired && daysLeft > 0 && <div class="quote-validity">Válida hasta {vigenciaFecha}</div>}
         {isExpired && <div class="quote-expired">Cotización vencida</div>}
       </div>
@@ -88,17 +150,14 @@ const nextAnnualStr = nextAnnualDate.toLocaleDateString('es-MX', { month: 'long'
           <span class="quote-timer-unit">horas</span>
           <span class="quote-timer-num" id="timer-mins">0</span>
           <span class="quote-timer-unit">min</span>
+          <span class="quote-timer-num" id="timer-secs">0</span>
+          <span class="quote-timer-unit">seg</span>
         </div>
         {quote.descuento_global > 0 && (
           <div class="quote-timer-savings">Los descuentos de esta cotización representan un ahorro de {fmt(quote.subtotal * quote.descuento_global / 100)} {quote.moneda}</div>
         )}
       </div>
     )}
-
-    <!-- Executive summary -->
-    <div class="quote-summary">
-      {summary}
-    </div>
 
     <!-- Items table -->
     <table class="quote-table">
@@ -120,10 +179,12 @@ const nextAnnualStr = nextAnnualDate.toLocaleDateString('es-MX', { month: 'long'
           const savings = isAnnual ? monthlyFull - annualPrice : 0;
           const hasDiscount = item.tipo === 'plan' && parseFloat(item.descuento_pct || 0) > 0;
           const beforeDiscount = (item.precio_unitario || 0) * suc * (isAnnual ? 10 : 1);
+          const isPromo = item.es_promocion;
 
           return (
-            <tr>
+            <tr class:list={[{ 'qt-promo-row': isPromo }]}>
               <td class="qt-concept">
+                {isPromo && <span class="qt-promo-badge">PROMOCION</span>}
                 <strong>{item.tipo === 'plan' ? `Plan ${item.nombre}` : item.nombre}</strong>
                 {item.tipo === 'plan' && (
                   <div class="qt-desc">
@@ -132,15 +193,23 @@ const nextAnnualStr = nextAnnualDate.toLocaleDateString('es-MX', { month: 'long'
                   </div>
                 )}
                 {item.descripcion && <div class="qt-desc">{item.descripcion}</div>}
+                {item.nota && <div class="qt-nota">{item.nota}</div>}
               </td>
               <td class="qt-detail">
-                {item.tipo === 'plan' ? (isAnnual ? 'Anual' : 'Mensual') : item.recurrente ? 'Recurrente' : 'Único'}
+                {isPromo ? 'Promoción' : item.tipo === 'plan' ? (isAnnual ? 'Anual' : 'Mensual') : item.recurrente ? 'Recurrente' : 'Único'}
               </td>
               <td class="qt-qty">{item.tipo === 'plan' ? `${suc} suc.` : '1'}</td>
-              <td class="qt-price">{fmt(item.precio_unitario || item.monto || 0)}</td>
+              <td class="qt-price">
+                {isPromo && item.precio_original ? <span class="qt-strikethrough">{fmt(item.precio_original)}</span> : ''}
+                {fmt(item.precio_unitario || item.monto || 0)}
+              </td>
               <td class="qt-subtotal">
                 {hasDiscount && <span class="qt-strikethrough">{fmt(beforeDiscount)}</span>}
-                {fmt(item.subtotal || item.monto || 0)} {quote.moneda}
+                {isPromo && item.precio_original ? (
+                  <span><span class="qt-strikethrough">{fmt(item.precio_original)}</span> <span class="qt-promo-price">{fmt(0)}</span></span>
+                ) : (
+                  <span>{fmt(item.subtotal || item.monto || 0)} {quote.moneda}</span>
+                )}
               </td>
             </tr>
           );
@@ -160,14 +229,20 @@ const nextAnnualStr = nextAnnualDate.toLocaleDateString('es-MX', { month: 'long'
           <span>-{fmt(quote.descuento_tipo === 'pct' ? (quote.subtotal || 0) * quote.descuento_global / 100 : quote.descuento_global)} {quote.moneda}</span>
         </div>
       )}
-      {quote.iva_incluido && (
+      {ivaMode === 'suma' && (
         <div class="quote-total-row">
           <span>IVA (16%)</span>
+          <span>+{fmt(quote.iva_monto || 0)} {quote.moneda}</span>
+        </div>
+      )}
+      {ivaMode === 'incluido' && (
+        <div class="quote-total-row" style="font-size:0.75rem;color:#999">
+          <span>IVA incluido en precios</span>
           <span>{fmt(quote.iva_monto || 0)} {quote.moneda}</span>
         </div>
       )}
       <div class="quote-total-row quote-total-final">
-        <span>Total</span>
+        <span>Total {ivaMode === 'incluido' ? '(IVA incluido)' : ''}</span>
         <span>{fmt(quote.total || 0)} {quote.moneda}</span>
       </div>
     </div>
@@ -230,6 +305,43 @@ const nextAnnualStr = nextAnnualDate.toLocaleDateString('es-MX', { month: 'long'
       </div>
     )}
 
+    <!-- Plan features -->
+    {planFeatures.length > 0 && (
+      <div class="quote-features">
+        <div class="quote-features-title">Que incluye tu plan</div>
+        {planFeatures.map((pf: any) => (
+          <div class="quote-plan-features">
+            <div class="quote-plan-name">Plan {pf.planName}</div>
+            <div class="quote-features-grid">
+              {pf.features.map((cat: any) => (
+                <div class="quote-feature-cat">
+                  <div class="quote-feature-cat-name">{cat.category}</div>
+                  <ul class="quote-feature-list">
+                    {cat.items.map((item: string) => (
+                      <li class="quote-feature-item">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;margin-top:2px"><path d="M20 6L9 17l-5-5" stroke="#2AB5A0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            {pf.services.length > 0 && (
+              <div class="quote-services">
+                <div class="quote-feature-cat-name">Servicios incluidos</div>
+                <div class="quote-services-list">
+                  {pf.services.map((s: string) => (
+                    <span class="quote-service-tag">{s}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    )}
+
     <!-- Conditions -->
     {quote.condiciones && (
       <div class="quote-conditions">
@@ -274,17 +386,78 @@ const nextAnnualStr = nextAnnualDate.toLocaleDateString('es-MX', { month: 'long'
 
   <!-- Actions (hidden in print) -->
   <div class="quote-actions no-print">
-    {quote.estado !== 'accepted' && !isExpired && (
-      <button class="quote-action-btn quote-action-accept" id="btn-accept">Aceptar cotización</button>
-    )}
     {quote.estado === 'accepted' && (
       <div class="quote-accepted-badge">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12a10 10 0 11-5.93-9.14" stroke="currentColor" stroke-width="2"/><path d="M22 4L12 14.01l-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12a10 10 0 11-5.93-9.14" stroke="currentColor" stroke-width="2"/><path d="M22 4L12 14.01l-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         Cotización aceptada {quote.aceptado_por ? `por ${quote.aceptado_por}` : ''}
       </div>
     )}
-    <button class="quote-action-btn quote-action-pdf" onclick="window.print()">Descargar PDF</button>
-    <a class="quote-action-btn quote-action-wa" href={`https://wa.me/?text=${encodeURIComponent(`Hola, te comparto la cotización ${quote.numero} de Sacs: https://www.sacscloud.com/cotizacion/${quote.id}`)}`} target="_blank">Compartir por WhatsApp</a>
+    {isExpired ? (
+      <div class="quote-expired-notice">
+        <div class="quote-expired-notice-title">Esta cotización ha vencido</div>
+        <div class="quote-expired-notice-text">Los precios y condiciones ya no son vigentes. Contactanos para recibir una cotización actualizada.</div>
+        <a class="quote-action-btn" href={`https://wa.me/5215512345678?text=${encodeURIComponent(`Hola, la cotización ${quote.numero} venció. Me gustaría recibir una cotización actualizada.`)}`} target="_blank" rel="noopener">Solicitar recotización</a>
+      </div>
+    ) : (
+      <div class="quote-actions-row">
+        <button class="quote-action-btn" id="btn-comments">Realizar comentarios</button>
+        <button class="quote-action-btn" id="btn-share">Compartir por correo</button>
+        <button class="quote-action-btn" onclick="window.print()">Descargar PDF</button>
+      </div>
+    )}
+  </div>
+
+  <!-- Comments modal -->
+  <div class="quote-modal-overlay no-print" id="comments-section" style="display:none">
+    <div class="quote-modal">
+      <div class="quote-modal-header">
+        <span class="quote-modal-title">Comentarios</span>
+        <button class="quote-modal-close" id="btn-close-comments">✕</button>
+      </div>
+      <div class="quote-comments-thread" id="comments-thread">
+        <div class="quote-comments-empty" id="comments-empty">Sin comentarios aun. Escribe tu primera pregunta o solicitud.</div>
+      </div>
+      <div class="quote-modal-footer">
+        <input type="text" id="comment-name" placeholder="Tu nombre" class="quote-modal-input" />
+        <textarea id="comment-text" placeholder="Escribe tu comentario, pregunta o solicitud..." class="quote-modal-input" rows="3"></textarea>
+        <button class="quote-modal-btn" id="btn-send-comment">Enviar comentario</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Share modal -->
+  <div class="quote-modal-overlay no-print" id="share-section" style="display:none">
+    <div class="quote-modal">
+      <div class="quote-modal-header">
+        <span class="quote-modal-title">Compartir por correo</span>
+        <button class="quote-modal-close" id="btn-close-share">✕</button>
+      </div>
+      <div class="quote-modal-body">
+        <p class="quote-modal-hint">Envia esta cotización a alguien mas. Se abrira tu cliente de correo con el link incluido.</p>
+        <div class="quote-share-grid">
+          <div>
+            <label class="quote-share-label">Para</label>
+            <input type="email" id="share-to" placeholder="correo@ejemplo.com" class="quote-modal-input" />
+          </div>
+          <div>
+            <label class="quote-share-label">Tu nombre</label>
+            <input type="text" id="share-from" placeholder="Tu nombre" class="quote-modal-input" value={quote.contacto || ''} />
+          </div>
+          <div style="grid-column:1/-1">
+            <label class="quote-share-label">Asunto</label>
+            <input type="text" id="share-subject" class="quote-modal-input" value={`Cotización ${quote.numero} — ${quote.empresa}`} />
+          </div>
+          <div style="grid-column:1/-1">
+            <label class="quote-share-label">Mensaje</label>
+            <textarea id="share-body" class="quote-modal-input" rows="4">{`Hola,\n\nTe comparto esta cotización para tu revision:\n\nhttps://www.sacscloud.com/cotizacion/${quote.id}\n\nSaludos`}</textarea>
+          </div>
+        </div>
+      </div>
+      <div class="quote-modal-footer" style="flex-direction:row">
+        <button class="quote-modal-btn" id="btn-send-share">Abrir correo</button>
+        <button class="quote-modal-btn quote-modal-btn--secondary" onclick="window.print()">Descargar PDF</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -299,13 +472,21 @@ const nextAnnualStr = nextAnnualDate.toLocaleDateString('es-MX', { month: 'long'
 /* ─── Header ─── */
 .quote-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 40px 40px 24px; border-bottom: 1px solid #f0f0f0; }
 .quote-logo { display: flex; align-items: center; gap: 10px; }
+.quote-client-logo { max-width: 120px; max-height: 48px; width: auto; height: auto; object-fit: contain; }
 .quote-logo-text { font-family: var(--font-logo); font-size: 2rem; font-weight: 700; color: #1a1a1a; }
 .quote-logo-tag { font-size: 0.6875rem; font-weight: 700; color: var(--color-primary); background: rgba(75,123,229,0.08); padding: 3px 10px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.08em; }
 .quote-meta { text-align: right; }
 .quote-number { font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: #1a1a1a; }
 .quote-date { font-size: 0.8125rem; color: #999; margin-top: 2px; }
-.quote-validity { font-size: 0.6875rem; font-weight: 700; color: var(--color-secondary); background: rgba(42,181,160,0.08); padding: 3px 10px; border-radius: 20px; display: inline-block; margin-top: 8px; }
-.quote-expired { font-size: 0.6875rem; font-weight: 700; color: #E54B4B; background: rgba(229,75,75,0.08); padding: 3px 10px; border-radius: 20px; display: inline-block; margin-top: 8px; }
+.quote-validity { font-size: 0.6875rem; font-weight: 600; color: #999; margin-top: 8px; }
+.quote-expired { font-size: 0.6875rem; font-weight: 700; color: #E54B4B; margin-top: 8px; }
+.quote-paid-banner { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 24px; background: #4B7BE5; color: #fff; font-size: 0.875rem; font-weight: 600; }
+
+/* ─── Expired stamp ─── */
+.quote-stamp { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-18deg); z-index: 10; pointer-events: none; }
+.quote-stamp-text { font-family: var(--font-display); font-size: 5rem; font-weight: 900; color: rgba(229,75,75,0.12); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; border: 6px solid rgba(229,75,75,0.12); border-radius: 12px; padding: 8px 40px; }
+.quote-expired-page .quote-container > *:not(.quote-stamp) { opacity: 0.5; }
+.quote-expired-page .quote-container > .quote-stamp { opacity: 1; }
 
 /* ─── Client ─── */
 .quote-client { padding: 24px 40px; }
@@ -319,6 +500,7 @@ const nextAnnualStr = nextAnnualDate.toLocaleDateString('es-MX', { month: 'long'
 .quote-table td { padding: 16px; font-size: 0.875rem; color: #555; border-bottom: 1px solid #f5f5f5; }
 .quote-table td strong { color: #1a1a1a; }
 .qt-desc { font-size: 0.75rem; color: #999; margin-top: 2px; }
+.qt-nota { font-size: 0.6875rem; color: #4B7BE5; margin-top: 4px; font-style: italic; }
 .qt-detail, .qt-qty { white-space: nowrap; }
 .qt-price, .qt-subtotal { text-align: right; white-space: nowrap; font-weight: 600; }
 .quote-table th.qt-price, .quote-table th.qt-subtotal { text-align: right; }
@@ -348,8 +530,8 @@ const nextAnnualStr = nextAnnualDate.toLocaleDateString('es-MX', { month: 'long'
 
 /* ─── Pay link ─── */
 .quote-pay-link { padding: 24px 40px; text-align: center; border-top: 1px solid #f0f0f0; }
-.quote-pay-btn { display: inline-block; padding: 16px 48px; background: #2AB5A0; color: #fff; font-size: 1.0625rem; font-weight: 700; border-radius: 50px; text-decoration: none; transition: all 0.2s ease; }
-.quote-pay-btn:hover { background: #239688; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(42,181,160,0.3); }
+.quote-pay-btn { display: inline-block; padding: 16px 48px; background: #4B7BE5; color: #fff; font-size: 1.0625rem; font-weight: 700; border-radius: 8px; text-decoration: none; transition: all 0.2s ease; }
+.quote-pay-btn:hover { background: #3D6BD4; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(75,123,229,0.3); }
 .quote-pay-note { font-size: 0.6875rem; color: #999; margin-top: 8px; }
 
 .quote-dark .quote-pay-link { border-color: rgba(255,255,255,0.08); }
@@ -396,15 +578,48 @@ const nextAnnualStr = nextAnnualDate.toLocaleDateString('es-MX', { month: 'long'
 .quote-footer-contact { font-size: 0.6875rem; color: #aaa; }
 
 /* ─── Actions ─── */
-.quote-actions { display: flex; gap: 10px; justify-content: center; margin-top: 24px; flex-wrap: wrap; }
-.quote-action-btn { padding: 12px 24px; border-radius: 50px; font-size: 0.875rem; font-weight: 600; cursor: pointer; text-decoration: none; border: none; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; }
-.quote-action-accept { background: #1a1a1a; color: #fff; }
-.quote-action-accept:hover { background: #333; }
-.quote-action-pdf { background: #f0f0f0; color: #555; }
-.quote-action-pdf:hover { background: #e0e0e0; }
-.quote-action-wa { background: #e8f5e9; color: #2e7d32; }
-.quote-action-wa:hover { background: #c8e6c9; }
-.quote-accepted-badge { display: flex; align-items: center; gap: 6px; font-size: 0.875rem; font-weight: 700; color: #2AB5A0; }
+.quote-actions { display: flex; gap: 8px; justify-content: center; margin-top: 24px; flex-wrap: wrap; }
+.quote-action-btn { padding: 10px 20px; border-radius: 6px; font-size: 0.8125rem; font-weight: 600; cursor: pointer; text-decoration: none; border: 1px solid #ddd; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; background: #fff; color: #333; transition: background 0.15s; }
+.quote-action-btn:hover { background: #f5f5f5; }
+.quote-actions-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.quote-accepted-badge { display: flex; align-items: center; gap: 6px; font-size: 0.8125rem; font-weight: 600; color: #2AB5A0; }
+.quote-expired-notice { text-align: center; padding: 8px 0; }
+.quote-expired-notice-title { font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: #1a1a1a; margin-bottom: 4px; }
+.quote-expired-notice-text { font-size: 0.8125rem; color: #999; margin-bottom: 16px; line-height: 1.5; }
+
+/* ─── Modal ─── */
+.quote-modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; padding: 24px; }
+.quote-modal { background: #fff; border-radius: 16px; width: 100%; max-width: 480px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 24px 64px rgba(0,0,0,0.15); }
+.quote-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #f0f0f0; }
+.quote-modal-title { font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: #1a1a1a; }
+.quote-modal-close { background: none; border: none; width: 32px; height: 32px; border-radius: 8px; font-size: 1.125rem; color: #999; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
+.quote-modal-close:hover { background: #f5f5f5; }
+.quote-modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+.quote-modal-footer { padding: 16px 24px; border-top: 1px solid #f0f0f0; display: flex; flex-direction: column; gap: 8px; }
+.quote-modal-input { width: 100%; padding: 10px 14px; font-size: 0.8125rem; border: 1px solid #e0e0e0; border-radius: 8px; font-family: inherit; box-sizing: border-box; outline: none; resize: none; transition: border-color 0.15s; }
+.quote-modal-input:focus { border-color: #bbb; }
+.quote-modal-btn { width: 100%; padding: 12px; font-size: 0.8125rem; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; background: #1a1a1a; color: #fff; transition: background 0.15s; }
+.quote-modal-btn:hover { background: #333; }
+.quote-modal-btn--secondary { background: #f5f5f5; color: #555; }
+.quote-modal-btn--secondary:hover { background: #eee; }
+.quote-modal-hint { font-size: 0.8125rem; color: #999; margin: 0 0 16px; line-height: 1.5; }
+
+/* ─── Comments thread ─── */
+.quote-comments-thread { padding: 20px 24px; max-height: 300px; overflow-y: auto; flex: 1; }
+.quote-comments-empty { font-size: 0.8125rem; color: #ccc; text-align: center; padding: 32px 0; }
+.quote-comment { margin-bottom: 16px; }
+.quote-comment:last-child { margin-bottom: 0; }
+.quote-comment-bubble { padding: 10px 14px; border-radius: 12px; font-size: 0.8125rem; line-height: 1.5; color: #333; }
+.quote-comment--prospect .quote-comment-bubble { background: #f5f5f5; border-bottom-left-radius: 4px; }
+.quote-comment--admin .quote-comment-bubble { background: #f0f0f0; border-bottom-right-radius: 4px; }
+.quote-comment-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; padding: 0 4px; }
+.quote-comment-name { font-size: 0.5625rem; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 0.04em; }
+.quote-comment--admin .quote-comment-name { color: #999; }
+.quote-comment-time { font-size: 0.5rem; color: #ddd; }
+
+/* ─── Share form ─── */
+.quote-share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.quote-share-label { display: block; font-size: 0.5625rem; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
 
 /* ─── Dark template ─── */
 .quote-dark .quote-container { background: #1a1a1a; color: #fff; }
@@ -425,6 +640,7 @@ const nextAnnualStr = nextAnnualDate.toLocaleDateString('es-MX', { month: 'long'
 .quote-dark .quote-footer { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
 .quote-dark .quote-footer-logo { color: #fff; }
 .quote-dark .qt-desc { color: rgba(255,255,255,0.35); }
+.quote-dark .qt-nota { color: rgba(42,181,160,0.8); }
 
 /* ─── Classic template ─── */
 .quote-classic .quote-container { border-radius: 0; box-shadow: none; border: 2px solid #1a1a1a; }
@@ -435,6 +651,34 @@ const nextAnnualStr = nextAnnualDate.toLocaleDateString('es-MX', { month: 'long'
 .quote-classic .quote-footer { background: #1a1a1a; }
 .quote-classic .quote-footer-logo, .quote-classic .quote-footer-tagline, .quote-classic .quote-footer-contact { color: #fff; }
 
+/* ─── Promotion ─── */
+.qt-promo-row { background: rgba(42,181,160,0.03); }
+.qt-promo-badge { display: inline-block; font-size: 0.5625rem; font-weight: 800; color: #fff; background: #2AB5A0; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+.qt-promo-price { color: #2AB5A0; font-weight: 800; font-size: 1rem; }
+
+.quote-dark .qt-promo-row { background: rgba(42,181,160,0.06); }
+
+/* ─── Plan Features ─── */
+.quote-features { padding: 24px 40px; border-top: 1px solid #f0f0f0; }
+.quote-features-title { font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: #1a1a1a; margin-bottom: 20px; }
+.quote-plan-features { margin-bottom: 20px; }
+.quote-plan-name { font-size: 0.6875rem; font-weight: 700; color: var(--color-primary, #4B7BE5); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #f0f0f0; }
+.quote-features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 24px; }
+.quote-feature-cat { margin-bottom: 8px; }
+.quote-feature-cat-name { font-size: 0.6875rem; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+.quote-feature-list { list-style: none; margin: 0; padding: 0; }
+.quote-feature-item { display: flex; align-items: flex-start; gap: 6px; font-size: 0.75rem; color: #555; padding: 3px 0; line-height: 1.4; }
+.quote-services { margin-top: 12px; }
+.quote-services-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.quote-service-tag { font-size: 0.6875rem; font-weight: 600; color: #2AB5A0; background: rgba(42,181,160,0.08); padding: 4px 10px; border-radius: 20px; }
+
+.quote-dark .quote-features { border-color: rgba(255,255,255,0.08); }
+.quote-dark .quote-features-title { color: #fff; }
+.quote-dark .quote-plan-name { color: #2AB5A0; border-color: rgba(255,255,255,0.08); }
+.quote-dark .quote-feature-cat-name { color: rgba(255,255,255,0.4); }
+.quote-dark .quote-feature-item { color: rgba(255,255,255,0.6); }
+.quote-dark .quote-service-tag { background: rgba(42,181,160,0.12); }
+
 /* ─── Print ─── */
 @media print {
   .no-print { display: none !important; }
@@ -442,6 +686,7 @@ const nextAnnualStr = nextAnnualDate.toLocaleDateString('es-MX', { month: 'long'
   .quote-container { box-shadow: none; border-radius: 0; }
   body { background: #fff !important; }
   @page { margin: 1cm; }
+  .quote-features-grid { grid-template-columns: 1fr 1fr; }
 }
 
 /* ─── Mobile ─── */
@@ -454,6 +699,8 @@ const nextAnnualStr = nextAnnualDate.toLocaleDateString('es-MX', { month: 'long'
   .quote-totals { padding: 16px 20px; }
   .quote-conditions { padding: 16px 20px; }
   .quote-footer { flex-direction: column; gap: 8px; padding: 16px 20px; }
+  .quote-features { padding: 20px; }
+  .quote-features-grid { grid-template-columns: 1fr; }
 }
 </style>
 
@@ -469,38 +716,134 @@ const nextAnnualStr = nextAnnualDate.toLocaleDateString('es-MX', { month: 'long'
       const days = Math.floor(diff / 86400000);
       const hours = Math.floor((diff % 86400000) / 3600000);
       const mins = Math.floor((diff % 3600000) / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
       const dEl = document.getElementById('timer-days');
       const hEl = document.getElementById('timer-hours');
       const mEl = document.getElementById('timer-mins');
+      const sEl = document.getElementById('timer-secs');
       if (dEl) dEl.textContent = String(days);
       if (hEl) hEl.textContent = String(hours);
       if (mEl) mEl.textContent = String(mins);
+      if (sEl) sEl.textContent = String(secs);
     }
     updateTimer();
-    setInterval(updateTimer, 60000);
+    setInterval(updateTimer, 1000);
   }
 
-  const acceptBtn = document.getElementById('btn-accept');
-  if (acceptBtn) {
-    acceptBtn.addEventListener('click', async () => {
-      const name = prompt('Tu nombre para aceptar la cotización:');
-      if (!name) return;
+  // ─── Track view ───
+  const quoteId = window.location.pathname.split('/').pop();
+  if (quoteId) {
+    fetch('/api/revenue/quote-view', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: quoteId }),
+    }).catch(() => {});
+  }
 
-      const quoteId = window.location.pathname.split('/').pop();
-      acceptBtn.textContent = 'Procesando...';
+  // ─── Comments ───
+  const commentsSection = document.getElementById('comments-section');
+  const commentsThread = document.getElementById('comments-thread');
+  const commentsEmpty = document.getElementById('comments-empty');
+  const btnComments = document.getElementById('btn-comments');
+  const btnClose = document.getElementById('btn-close-comments');
+  const btnSend = document.getElementById('btn-send-comment');
 
-      await fetch('/api/revenue/quotes', {
-        method: 'PUT',
+  function fmtCommentDate(d: string) {
+    const date = new Date(d);
+    const day = date.getDate();
+    const month = date.toLocaleDateString('es-MX', { month: 'short' }).replace('.', '');
+    const time = date.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+    return `${day}/${month} ${time}`;
+  }
+
+  function renderComments(comments: any[]) {
+    if (!commentsThread) return;
+    if (comments.length === 0) {
+      if (commentsEmpty) commentsEmpty.style.display = '';
+      return;
+    }
+    if (commentsEmpty) commentsEmpty.style.display = 'none';
+    // Remove old comments (keep empty placeholder)
+    commentsThread.querySelectorAll('.quote-comment').forEach(el => el.remove());
+    comments.forEach((c: any) => {
+      const div = document.createElement('div');
+      div.className = `quote-comment quote-comment--${c.from || 'prospect'}`;
+      div.innerHTML = `
+        <div class="quote-comment-bubble">${c.text.replace(/</g, '&lt;').replace(/\n/g, '<br>')}</div>
+        <div class="quote-comment-meta">
+          <span class="quote-comment-name">${c.from === 'admin' ? 'Sacs' : (c.name || 'Cliente').replace(/</g, '&lt;')}</span>
+          <span class="quote-comment-time">${fmtCommentDate(c.at)}</span>
+        </div>
+      `;
+      commentsThread.appendChild(div);
+    });
+    commentsThread.scrollTop = commentsThread.scrollHeight;
+  }
+
+  async function loadComments() {
+    const res = await fetch(`/api/revenue/quote-comments?id=${quoteId}`);
+    const data = await res.json();
+    renderComments(data.comments || []);
+  }
+
+  if (btnComments && commentsSection) {
+    btnComments.addEventListener('click', () => {
+      commentsSection.style.display = '';
+      if (shareSection) shareSection.style.display = 'none';
+      loadComments();
+    });
+    commentsSection.addEventListener('click', (e) => { if (e.target === commentsSection) commentsSection.style.display = 'none'; });
+  }
+  if (btnClose && commentsSection) {
+    btnClose.addEventListener('click', () => {
+      commentsSection.style.display = 'none';
+    });
+  }
+  if (btnSend) {
+    btnSend.addEventListener('click', async () => {
+      const nameEl = document.getElementById('comment-name') as HTMLInputElement;
+      const textEl = document.getElementById('comment-text') as HTMLTextAreaElement;
+      const name = nameEl?.value.trim();
+      const text = textEl?.value.trim();
+      if (!text) return;
+      btnSend.textContent = 'Enviando...';
+      const res = await fetch('/api/revenue/quote-comments', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: quoteId,
-          estado: 'accepted',
-          aceptado_por: name,
-          aceptado_fecha: new Date().toISOString(),
-        }),
+        body: JSON.stringify({ id: quoteId, from: 'prospect', name: name || 'Cliente', text }),
       });
+      const data = await res.json();
+      renderComments(data.comments || []);
+      if (textEl) textEl.value = '';
+      btnSend.textContent = 'Enviar comentario';
+    });
+  }
 
-      window.location.reload();
+  // ─── Share by email ───
+  const shareSection = document.getElementById('share-section');
+  const btnShare = document.getElementById('btn-share');
+  const btnCloseShare = document.getElementById('btn-close-share');
+  const btnSendShare = document.getElementById('btn-send-share');
+
+  if (btnShare && shareSection) {
+    btnShare.addEventListener('click', () => {
+      shareSection.style.display = '';
+      if (commentsSection) commentsSection.style.display = 'none';
+    });
+    shareSection.addEventListener('click', (e) => { if (e.target === shareSection) shareSection.style.display = 'none'; });
+  }
+  if (btnCloseShare && shareSection) {
+    btnCloseShare.addEventListener('click', () => { shareSection.style.display = 'none'; });
+  }
+  if (btnSendShare) {
+    btnSendShare.addEventListener('click', () => {
+      const to = (document.getElementById('share-to') as HTMLInputElement)?.value.trim();
+      const from = (document.getElementById('share-from') as HTMLInputElement)?.value.trim();
+      const subject = (document.getElementById('share-subject') as HTMLInputElement)?.value.trim();
+      const body = (document.getElementById('share-body') as HTMLTextAreaElement)?.value.trim();
+      if (!to) { alert('Ingresa el correo del destinatario'); return; }
+      const finalBody = (from ? `De: ${from}\n\n` : '') + body;
+      window.location.href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject || 'Cotización')}&body=${encodeURIComponent(finalBody)}`;
     });
   }
 </script>
