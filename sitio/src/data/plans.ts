@@ -107,7 +107,7 @@ export const plans: Plan[] = [
       { category: 'Lealtad', items: ['Monedero electrónico y programa de lealtad', 'Niveles y recompensas personalizadas', 'Redención de puntos en tu tienda en línea'] },
       { category: 'Ventas y promociones', items: ['Notificaciones automáticas por WhatsApp', 'Ventas de impulso y venta cruzada', 'Promociones avanzadas'] },
       { category: 'Portales con tu marca', items: ['Portal de clientes personalizado', 'Portal de autofacturación', 'eCommerce avanzado para recompra y fidelización'] },
-      { category: 'Addons', items: ['3 créditos de Addons incluidos', 'Addons especializados por giro', 'Instala y cambia cuando quieras'] },
+      { category: 'Addons de especialización', items: ['3 créditos de Addons incluidos', 'Especializados para tu giro de negocio', 'Instala y cambia cuando quieras'] },
     ],
     services: [
       'Multi-sucursal',
