@@ -58,7 +58,7 @@ export const plans: Plan[] = [
     highlighted: false,
     cta: { label: 'Inicia ahora', href: '/registro?plan=vende', variant: 'secondary' },
     features: [
-      { category: 'Venta en tienda física', items: ['Punto de venta online y offline', 'Guarda ventas y recupéralas después', 'Cambios, devoluciones y cancelaciones', 'Cortes de caja y arqueos', 'Tickets por WhatsApp', 'Cotizaciones', 'Pedidos y apartados', 'Ventas a crédito'] },
+      { category: 'Venta en tienda física', items: ['Punto de venta online y offline', 'Guarda ventas y recupéralas después', 'Cambios, devoluciones y cancelaciones', 'Cortes de caja y arqueos', 'Tickets por WhatsApp', 'Cotizaciones', 'Pedidos y apartados', 'Ventas a crédito', 'Listas de precios', 'Precios por volumen'] },
       { category: 'Venta en línea', items: ['Tienda en línea integrada al inventario físico', 'Facebook, Instagram y WhatsApp', 'TikTok Shop', 'Productos visibles en ChatGPT'] },
       { category: 'Productos', items: ['Productos simples', 'Productos con variantes', 'Kits y productos compuestos', 'Control básico de inventario', 'Etiquetas con código de barras'] },
       { category: 'Facturación', items: ['20 folios incluidos'] },
