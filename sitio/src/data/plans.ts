@@ -104,7 +104,7 @@ export const plans: Plan[] = [
     inheritsFrom: 'Controla',
     cta: { label: 'Inicia ahora', href: '/registro?plan=fideliza', variant: 'primary' },
     features: [
-      { category: 'Programa de lealtad', items: ['Monedero electrónico y programa de lealtad', 'Niveles y recompensas personalizadas', 'Redención de puntos en tu tienda en línea'] },
+      { category: 'Programa de lealtad omnicanal', items: ['Monedero electrónico y programa de lealtad', 'Niveles y recompensas personalizadas', 'Redención de puntos en tienda física y en línea'] },
       { category: 'Ventas y promociones', items: ['Notificaciones automáticas por WhatsApp', 'Ventas de impulso y venta cruzada', 'Promociones avanzadas'] },
       { category: 'Portales con tu marca', items: ['Portal de clientes personalizado', 'Portal de autofacturación', 'eCommerce avanzado para recompra y fidelización'] },
       { category: 'Addons de especialización', items: ['3 créditos de Addons incluidos', 'Especializados para tu giro de negocio', 'Instala y cambia cuando quieras'] },
