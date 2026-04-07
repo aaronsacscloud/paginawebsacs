@@ -94,7 +94,7 @@ export const plans: Plan[] = [
   },
   {
     id: 'fideliza',
-    name: 'Fideliza y Multiplica',
+    name: 'Fideliza³',
     description: 'Para marcas que quieren clientes que regresan.',
     monthly: { mxn: 1400, usd: 70, eur: 65, brl: 364, cop: 294000, ars: 63000, clp: 66500, pen: 266, gbp: 56 },
     annual: { mxn: 1167, usd: 58, eur: 54, brl: 302, cop: 243600, ars: 52200, clp: 55100, pen: 220, gbp: 46 },
@@ -125,7 +125,7 @@ export const plans: Plan[] = [
     annual: { mxn: 2417, usd: 121, eur: 111, brl: 629, cop: 508200, ars: 108900, clp: 114950, pen: 460, gbp: 96 },
     annualTotal: { mxn: 29000, usd: 1450, eur: 1334, brl: 7540, cop: 6090000, ars: 1305000, clp: 1377500, pen: 5510, gbp: 1150 },
     highlighted: false,
-    inheritsFrom: 'Fideliza y Multiplica',
+    inheritsFrom: 'Fideliza³',
     cta: { label: 'Inicia ahora', href: '/registro?plan=automatiza', variant: 'secondary' },
     features: [
       { category: 'Automatización por área', items: ['Inventario: nivelación, reabasto y traspasos automáticos con IA', 'Operaciones: workflows personalizados que eliminan tareas repetitivas', 'Administración: reportes automáticos a tu medida, sin configurar nada'] },
@@ -382,6 +382,6 @@ export const pricingFaqs: FAQ[] = [
   },
   {
     question: '¿El soporte tiene costo adicional?',
-    answer: 'No. Todos los planes incluyen soporte 24/7 por chat y WhatsApp. Los planes Controla, Fideliza y Multiplica, y Automatiza incluyen ejecutivo de cuenta dedicado.',
+    answer: 'No. Todos los planes incluyen soporte 24/7 por chat y WhatsApp. Los planes Controla, Fideliza³ y Automatiza incluyen ejecutivo de cuenta dedicado.',
   },
 ];
