@@ -9,6 +9,13 @@ const { data: quote } = await supabase.from('quotes').select('*').eq('id', id).s
 
 if (!quote) return Astro.redirect('/404');
 
+// Fetch bank account if linked
+let bankAccount: any = null;
+if (quote.bank_account_id) {
+  const { data: ba } = await supabase.from('bank_accounts').select('*').eq('id', quote.bank_account_id).single();
+  bankAccount = ba;
+}
+
 const items = Array.isArray(quote.items) ? quote.items : [];
 const template = quote.template || 'modern';
 const isExpired = quote.vigencia && new Date(quote.vigencia) < new Date();
@@ -69,6 +76,24 @@ const nextAnnualStr = nextAnnualDate.toLocaleDateString('es-MX', { month: 'long'
       {quote.email && <div class="quote-client-detail">{quote.email}</div>}
       {quote.whatsapp && <div class="quote-client-detail">{quote.whatsapp}</div>}
     </div>
+
+    <!-- Urgency timer -->
+    {!isExpired && daysLeft > 0 && daysLeft <= 15 && (
+      <div class:list={['quote-timer', { 'quote-timer--urgent': daysLeft <= 5 }]}>
+        <div class="quote-timer-label">{quote.urgencia === 'oferta' ? 'Oferta especial' : 'Esta cotización'} vence en</div>
+        <div class="quote-timer-countdown" id="countdown" data-expires={quote.vigencia}>
+          <span class="quote-timer-num" id="timer-days">{daysLeft}</span>
+          <span class="quote-timer-unit">días</span>
+          <span class="quote-timer-num" id="timer-hours">0</span>
+          <span class="quote-timer-unit">horas</span>
+          <span class="quote-timer-num" id="timer-mins">0</span>
+          <span class="quote-timer-unit">min</span>
+        </div>
+        {quote.descuento_global > 0 && (
+          <div class="quote-timer-savings">Los descuentos de esta cotización representan un ahorro de {fmt(quote.subtotal * quote.descuento_global / 100)} {quote.moneda}</div>
+        )}
+      </div>
+    )}
 
     <!-- Executive summary -->
     <div class="quote-summary">
@@ -213,6 +238,28 @@ const nextAnnualStr = nextAnnualDate.toLocaleDateString('es-MX', { month: 'long'
       </div>
     )}
 
+    <!-- Bank account -->
+    {bankAccount && quote.mostrar_banco && (
+      <div class="quote-bank">
+        <div class="quote-bank-title">Datos para transferencia</div>
+        <div class="quote-bank-grid">
+          <div class="quote-bank-item"><span class="quote-bank-label">Banco</span><span class="quote-bank-value">{bankAccount.banco}</span></div>
+          <div class="quote-bank-item"><span class="quote-bank-label">Titular</span><span class="quote-bank-value">{bankAccount.titular}</span></div>
+          <div class="quote-bank-item"><span class="quote-bank-label">Cuenta</span><span class="quote-bank-value">{bankAccount.cuenta}</span></div>
+          <div class="quote-bank-item"><span class="quote-bank-label">CLABE</span><span class="quote-bank-value" style="font-family:monospace;letter-spacing:0.05em">{bankAccount.clabe}</span></div>
+          {bankAccount.rfc && <div class="quote-bank-item"><span class="quote-bank-label">RFC</span><span class="quote-bank-value">{bankAccount.rfc}</span></div>}
+        </div>
+      </div>
+    )}
+
+    <!-- Payment link -->
+    {quote.link_pago && (
+      <div class="quote-pay-link">
+        <a href={quote.link_pago} target="_blank" rel="noopener" class="quote-pay-btn">Pagar ahora</a>
+        <div class="quote-pay-note">Pago seguro. Al completar el pago, tu servicio se activa de inmediato.</div>
+      </div>
+    )}
+
     <!-- Footer -->
     <div class="quote-footer">
       <div class="quote-footer-brand">
@@ -275,6 +322,37 @@ const nextAnnualStr = nextAnnualDate.toLocaleDateString('es-MX', { month: 'long'
 .qt-detail, .qt-qty { white-space: nowrap; }
 .qt-price, .qt-subtotal { text-align: right; white-space: nowrap; font-weight: 600; }
 .quote-table th.qt-price, .quote-table th.qt-subtotal { text-align: right; }
+
+/* ─── Timer ─── */
+.quote-timer { padding: 24px 40px; background: linear-gradient(135deg, #4B7BE5, #3D6BD4); text-align: center; color: #fff; }
+.quote-timer--urgent { background: linear-gradient(135deg, #E54B4B, #c62828); }
+.quote-timer-label { font-size: 0.8125rem; font-weight: 500; opacity: 0.8; margin-bottom: 8px; }
+.quote-timer-countdown { display: flex; justify-content: center; align-items: baseline; gap: 4px; }
+.quote-timer-num { font-family: var(--font-display); font-size: 2.5rem; font-weight: 800; line-height: 1; }
+.quote-timer-unit { font-size: 0.75rem; font-weight: 500; opacity: 0.7; margin-right: 12px; }
+.quote-timer-savings { font-size: 0.8125rem; font-weight: 600; margin-top: 12px; opacity: 0.9; }
+
+.quote-dark .quote-timer { background: linear-gradient(135deg, #2AB5A0, #1a8a76); }
+.quote-dark .quote-timer--urgent { background: linear-gradient(135deg, #E54B4B, #c62828); }
+
+/* ─── Bank account ─── */
+.quote-bank { padding: 24px 40px; border-top: 1px solid #f0f0f0; }
+.quote-bank-title { font-size: 0.625rem; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+.quote-bank-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.quote-bank-item { display: flex; flex-direction: column; }
+.quote-bank-label { font-size: 0.625rem; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; }
+.quote-bank-value { font-size: 0.875rem; font-weight: 600; color: #1a1a1a; margin-top: 2px; }
+
+.quote-dark .quote-bank { border-color: rgba(255,255,255,0.08); }
+.quote-dark .quote-bank-value { color: #fff; }
+
+/* ─── Pay link ─── */
+.quote-pay-link { padding: 24px 40px; text-align: center; border-top: 1px solid #f0f0f0; }
+.quote-pay-btn { display: inline-block; padding: 16px 48px; background: #2AB5A0; color: #fff; font-size: 1.0625rem; font-weight: 700; border-radius: 50px; text-decoration: none; transition: all 0.2s ease; }
+.quote-pay-btn:hover { background: #239688; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(42,181,160,0.3); }
+.quote-pay-note { font-size: 0.6875rem; color: #999; margin-top: 8px; }
+
+.quote-dark .quote-pay-link { border-color: rgba(255,255,255,0.08); }
 
 /* ─── Summary ─── */
 .quote-summary { padding: 0 40px 20px; font-size: 1rem; font-weight: 600; color: var(--color-primary); line-height: 1.5; font-style: italic; }
@@ -380,6 +458,28 @@ const nextAnnualStr = nextAnnualDate.toLocaleDateString('es-MX', { month: 'long'
 </style>
 
 <script>
+  // Countdown timer
+  const countdown = document.getElementById('countdown');
+  if (countdown) {
+    const expires = new Date(countdown.dataset.expires + 'T23:59:59').getTime();
+    function updateTimer() {
+      const now = Date.now();
+      const diff = expires - now;
+      if (diff <= 0) return;
+      const days = Math.floor(diff / 86400000);
+      const hours = Math.floor((diff % 86400000) / 3600000);
+      const mins = Math.floor((diff % 3600000) / 60000);
+      const dEl = document.getElementById('timer-days');
+      const hEl = document.getElementById('timer-hours');
+      const mEl = document.getElementById('timer-mins');
+      if (dEl) dEl.textContent = String(days);
+      if (hEl) hEl.textContent = String(hours);
+      if (mEl) mEl.textContent = String(mins);
+    }
+    updateTimer();
+    setInterval(updateTimer, 60000);
+  }
+
   const acceptBtn = document.getElementById('btn-accept');
   if (acceptBtn) {
     acceptBtn.addEventListener('click', async () => {

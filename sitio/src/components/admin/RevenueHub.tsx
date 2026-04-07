@@ -11,7 +11,7 @@ interface Client {
   fecha_inicio: string; fecha_renovacion: string; estado: string; notas: string;
 }
 
-type Tab = 'dashboard' | 'clientes' | 'pagos' | 'cotizaciones';
+type Tab = 'dashboard' | 'clientes' | 'pagos' | 'cotizaciones' | 'config';
 
 export default function RevenueHub() {
   const [tab, setTab] = useState<Tab>('dashboard');
@@ -24,14 +24,18 @@ export default function RevenueHub() {
   const [payForm, setPayForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const [quoteForm, setQuoteForm] = useState<any>({});
+  const [bankAccounts, setBankAccounts] = useState<any[]>([]);
+  const [bankForm, setBankForm] = useState<any>({});
 
   const load = async () => {
-    const [d, c] = await Promise.all([
+    const [d, c, ba] = await Promise.all([
       fetch('/api/revenue/dashboard').then(r => r.json()),
       fetch('/api/revenue/clients').then(r => r.json()),
+      fetch('/api/revenue/bank-accounts').then(r => r.json()),
     ]);
     setDash(d);
     setClients(Array.isArray(c) ? c : []);
+    setBankAccounts(Array.isArray(ba) ? ba : []);
   };
 
   useEffect(() => { load(); }, []);
@@ -448,6 +452,32 @@ export default function RevenueHub() {
                 <div><label style={S.label}>Moneda</label><select value={qf.moneda} onChange={e => setQf({ ...qf, moneda: e.target.value })} style={S.input}><option value="MXN">MXN</option><option value="USD">USD</option></select></div>
                 <div><label style={S.label}>Template</label><select value={qf.template} onChange={e => setQf({ ...qf, template: e.target.value })} style={S.input}><option value="modern">Modern</option><option value="dark">Dark</option><option value="classic">Classic</option></select></div>
               </div>
+
+              {/* Bank account */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+                <div>
+                  <label style={S.label}>Cuenta bancaria</label>
+                  <select value={qf.bank_account_id || ''} onChange={e => setQf({ ...qf, bank_account_id: e.target.value || null, mostrar_banco: !!e.target.value })} style={S.input}>
+                    <option value="">Sin cuenta bancaria</option>
+                    {bankAccounts.map((ba: any) => <option key={ba.id} value={ba.id}>{ba.banco} - {ba.cuenta} {ba.es_default ? '(default)' : ''}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={S.label}>Urgencia</label>
+                  <select value={qf.urgencia || 'normal'} onChange={e => setQf({ ...qf, urgencia: e.target.value })} style={S.input}>
+                    <option value="normal">Normal (15 días)</option>
+                    <option value="urgente">Urgente (5 días)</option>
+                    <option value="oferta">Oferta limitada (3 días)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Link de pago */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={S.label}>Link de pago (opcional)</label>
+                <input value={qf.link_pago || ''} onChange={e => setQf({ ...qf, link_pago: e.target.value })} placeholder="https://..." style={S.input} />
+              </div>
+
               <div><label style={S.label}>Condiciones</label><textarea value={qf.condiciones || ''} onChange={e => setQf({ ...qf, condiciones: e.target.value })} style={{ ...S.input, height: 60 }} /></div>
 
               <button onClick={createQuote} disabled={saving || !items.length || !qf.empresa} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', width: '100%', marginTop: 16, justifyContent: 'center' }}>{saving ? 'Guardando...' : qf.id ? 'Guardar cambios' : 'Crear y enviar cotización'}</button>
@@ -468,7 +498,7 @@ export default function RevenueHub() {
             <span style={{ fontFamily: "'Clash Display',sans-serif", fontSize: '1.25rem', fontWeight: 700 }}>Sacs</span>
             <span style={{ fontSize: '0.5625rem', fontWeight: 700, color: '#2AB5A0', background: 'rgba(42,181,160,0.08)', padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>Revenue</span>
           </div>
-          {(['dashboard', 'clientes', 'pagos', 'cotizaciones'] as Tab[]).map(t => (
+          {(['dashboard', 'clientes', 'pagos', 'cotizaciones', 'config'] as Tab[]).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{ padding: '14px 16px', fontSize: '0.8125rem', fontWeight: tab === t ? 700 : 500, color: tab === t ? '#1a1a1a' : '#999', background: 'none', border: 'none', borderBottom: tab === t ? '2px solid #1a1a1a' : '2px solid transparent', cursor: 'pointer', textTransform: 'capitalize' as const }}>{t}</button>
           ))}
         </div>
@@ -484,6 +514,45 @@ export default function RevenueHub() {
         {tab === 'clientes' && <ClientsView />}
         {tab === 'pagos' && <PaymentsView />}
         {tab === 'cotizaciones' && <QuotesView />}
+        {tab === 'config' && (
+          <div>
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 800, marginBottom: 16 }}>Cuentas bancarias</h2>
+            <div style={{ ...S.card, marginBottom: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr auto', gap: 8, alignItems: 'end' }}>
+                <div><label style={S.label}>Banco</label><input value={bankForm.banco || ''} onChange={e => setBankForm({ ...bankForm, banco: e.target.value })} placeholder="Ej. BBVA" style={S.input} /></div>
+                <div><label style={S.label}>Cuenta</label><input value={bankForm.cuenta || ''} onChange={e => setBankForm({ ...bankForm, cuenta: e.target.value })} placeholder="Número de cuenta" style={S.input} /></div>
+                <div><label style={S.label}>CLABE</label><input value={bankForm.clabe || ''} onChange={e => setBankForm({ ...bankForm, clabe: e.target.value })} placeholder="18 dígitos" style={S.input} /></div>
+                <div><label style={S.label}>RFC</label><input value={bankForm.rfc || ''} onChange={e => setBankForm({ ...bankForm, rfc: e.target.value })} placeholder="RFC" style={S.input} /></div>
+                <div><label style={S.label}>Titular</label><input value={bankForm.titular || ''} onChange={e => setBankForm({ ...bankForm, titular: e.target.value })} placeholder="Nombre" style={S.input} /></div>
+                <button onClick={async () => {
+                  if (!bankForm.banco) return;
+                  await fetch('/api/revenue/bank-accounts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...bankForm, es_default: bankAccounts.length === 0 }) });
+                  setBankForm({});
+                  load();
+                }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff' }}>Agregar</button>
+              </div>
+            </div>
+            <div style={S.card}>
+              <table style={S.table}>
+                <thead><tr>{['Banco', 'Cuenta', 'CLABE', 'RFC', 'Titular', 'Default', ''].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {bankAccounts.length === 0 && <tr><td colSpan={7} style={{ ...S.td, textAlign: 'center' as const, color: '#ccc', padding: 32 }}>Sin cuentas bancarias</td></tr>}
+                  {bankAccounts.map((ba: any) => (
+                    <tr key={ba.id}>
+                      <td style={{ ...S.td, fontWeight: 700 }}>{ba.banco}</td>
+                      <td style={S.td}>{ba.cuenta}</td>
+                      <td style={S.td}>{ba.clabe}</td>
+                      <td style={S.td}>{ba.rfc}</td>
+                      <td style={S.td}>{ba.titular}</td>
+                      <td style={S.td}>{ba.es_default ? <span style={{ ...S.badge, background: '#e8f5e9', color: '#2e7d32' }}>Default</span> : <button onClick={async () => { await fetch('/api/revenue/bank-accounts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: ba.id, es_default: true }) }); load(); }} style={S.btnSmall}>Hacer default</button>}</td>
+                      <td style={S.td}><button onClick={async () => { await fetch('/api/revenue/bank-accounts', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: ba.id }) }); load(); }} style={{ ...S.btnSmall, color: '#E54B4B' }}>Eliminar</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
