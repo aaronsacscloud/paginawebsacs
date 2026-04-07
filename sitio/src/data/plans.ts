@@ -80,7 +80,7 @@ export const plans: Plan[] = [
     cta: { label: 'Inicia ahora', href: '/registro?plan=controla', variant: 'secondary' },
     features: [
       { category: 'Inventario avanzado', items: ['Multi-sucursal en tiempo real', 'Gestión de CEDIS', 'Traspasos entre sucursales', 'Reabasto sugerido', 'Alertas de stock bajo o exceso'] },
-      { category: 'Conteos y trazabilidad', items: ['Conteo físico desde el celular', 'Conteos cíclicos programados', 'Kardex y trazabilidad', 'Control de mermas'] },
+      { category: 'Conteos y trazabilidad', items: ['Conteo físico desde el celular', 'Conteos cíclicos programados', 'Kardex y trazabilidad', 'Control de mermas y pérdidas en tienda'] },
       { category: 'Compras y gastos', items: ['Órdenes de compra y cuentas por pagar', 'Recepción contra orden de compra', 'Control de gastos', 'Complementos de pago y notas de crédito'] },
       { category: 'Clientes y equipo', items: ['CRM e historial de clientes', 'Metas y comisiones por vendedor', 'Permisos por usuario y sucursal'] },
       { category: 'Reportes y auditoría', items: ['ABC, sell-through y rotación', 'Costeo y utilidad por producto', 'Auditoría de movimientos'] },
