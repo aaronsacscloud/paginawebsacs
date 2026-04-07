@@ -83,7 +83,8 @@ export const plans: Plan[] = [
       { category: 'Conteos y trazabilidad', items: ['Conteo físico desde el celular', 'Conteos cíclicos programados', 'Kardex y trazabilidad', 'Control de mermas y pérdidas en tienda'] },
       { category: 'Compras y gastos', items: ['Órdenes de compra y cuentas por pagar', 'Recepción contra orden de compra', 'Control de gastos', 'Complementos de pago y notas de crédito'] },
       { category: 'Clientes y equipo', items: ['CRM e historial de clientes', 'Metas y comisiones por vendedor', 'Permisos por usuario y sucursal'] },
-      { category: 'Reportes y auditoría', items: ['+50 reportes de ventas, inventario y finanzas', '20+ KPIs para medir tu operación', 'ABC, sell-through y rotación', 'Costeo y utilidad por producto', 'Auditoría de movimientos'] },
+      { category: 'Reportes y auditoría', items: ['50+ reportes de ventas, inventario y finanzas', '20+ KPIs para medir tu operación', 'ABC, sell-through y rotación', 'Costeo y utilidad por producto', 'Auditoría de movimientos'] },
+      { category: 'Addons', items: ['3 créditos de Addons incluidos', 'Addons especializados por giro (moda, restaurantes, etc.)', 'Instala y cambia cuando quieras'] },
     ],
     services: [
       'Multi-sucursal',
