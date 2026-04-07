@@ -1107,27 +1107,37 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
 /* Services */
 .plan-services {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .plan-services-label {
-  width: 100%;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.6875rem;
+  font-weight: 700;
   color: var(--color-text-tertiary);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 2px;
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
 }
 
 .plan-service {
-  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
   font-weight: 500;
   color: var(--color-text-secondary);
-  background: var(--color-bg-secondary);
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
+  line-height: 1.4;
+}
+
+.plan-service::before {
+  content: '';
+  flex-shrink: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  opacity: 0.5;
 }
 
 /* Carousel dots */
