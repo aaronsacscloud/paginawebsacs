@@ -34,6 +34,12 @@ const notasIdx = (quote.notas || '').indexOf(notasSep);
 const quoteMeta = notasIdx >= 0 ? (() => { try { return JSON.parse(quote.notas.slice(notasIdx + notasSep.length)); } catch { return {}; } })() : {};
 const logoUrl = quoteMeta.logo_url || '';
 const ivaMode = quoteMeta.iva_mode || (quote.iva_incluido ? 'suma' : 'sin');
+const showTimer = quoteMeta.mostrar_timer !== undefined ? quoteMeta.mostrar_timer : true;
+const showFeatures = quoteMeta.mostrar_features !== undefined ? quoteMeta.mostrar_features : true;
+const showDesglose = quoteMeta.mostrar_desglose !== undefined ? quoteMeta.mostrar_desglose : true;
+const showCondiciones = quoteMeta.mostrar_condiciones !== undefined ? quoteMeta.mostrar_condiciones : true;
+const showKeyPoints = quoteMeta.mostrar_key_points !== undefined ? quoteMeta.mostrar_key_points : true;
+const keyPoints = quoteMeta.key_points || [];
 const daysLeft = quote.vigencia ? Math.ceil((new Date(quote.vigencia).getTime() - Date.now()) / 86400000) : 0;
 const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
 const fmtDate = (d: string | null) => {
@@ -51,7 +57,9 @@ const vigenciaFecha = fmtDate(quote.vigencia);
 // Classify items
 const planItems = items.filter((i: any) => i.tipo === 'plan');
 const uniqueItems = items.filter((i: any) => i.tipo === 'extra' && !i.recurrente && !i.es_promocion);
-const recurringItems = items.filter((i: any) => i.tipo === 'extra' && i.recurrente);
+const recurringMonthlyItems = items.filter((i: any) => i.tipo === 'extra' && i.recurrente && i.periodo_extra !== 'anual');
+const recurringAnnualItems = items.filter((i: any) => i.tipo === 'extra' && i.recurrente && i.periodo_extra === 'anual');
+const recurringItems = [...recurringMonthlyItems, ...recurringAnnualItems];
 const promoItems = items.filter((i: any) => i.es_promocion);
 
 // Build plan features for "Qué incluye tu plan" section
@@ -139,8 +147,28 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
       {quote.whatsapp && <div class="quote-client-detail">{quote.whatsapp}</div>}
     </div>
 
+    <!-- Key points -->
+    {showKeyPoints && keyPoints.length > 0 && (
+      <div class="quote-key-points">
+        <div class="quote-key-points-title">Minuta de la reunión</div>
+        <div class="quote-key-points-list">
+          {keyPoints.map((kp: any) => (
+            <div class="quote-key-point">
+              <div class="quote-key-point-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#4B7BE5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="quote-key-point-content">
+                <div class="quote-key-point-title">{kp.title}</div>
+                <div class="quote-key-point-detail">{kp.detail}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
     <!-- Urgency timer -->
-    {!isExpired && daysLeft > 0 && daysLeft <= 15 && (
+    {showTimer && !isExpired && daysLeft > 0 && daysLeft <= 15 && (
       <div class:list={['quote-timer', { 'quote-timer--urgent': daysLeft <= 5 }]}>
         <div class="quote-timer-label">{quote.urgencia === 'oferta' ? 'Oferta especial' : 'Esta cotización'} vence en</div>
         <div class="quote-timer-countdown" id="countdown" data-expires={quote.vigencia}>
@@ -196,7 +224,7 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
                 {item.nota && <div class="qt-nota">{item.nota}</div>}
               </td>
               <td class="qt-detail">
-                {isPromo ? 'Promoción' : item.tipo === 'plan' ? (isAnnual ? 'Anual' : 'Mensual') : item.recurrente ? 'Recurrente' : 'Único'}
+                {isPromo ? 'Promoción' : item.tipo === 'plan' ? (isAnnual ? 'Anual' : 'Mensual') : item.periodo_extra === 'anual' ? 'Anual' : item.recurrente ? 'Mensual' : 'Único'}
               </td>
               <td class="qt-qty">{item.tipo === 'plan' ? `${suc} suc.` : '1'}</td>
               <td class="qt-price">
@@ -248,7 +276,7 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
     </div>
 
     <!-- Payment breakdown -->
-    {(annualPlanTotal > 0 || uniqueTotal > 0 || monthlyRecurring > 0) && (
+    {showDesglose && (annualPlanTotal > 0 || uniqueTotal > 0 || monthlyRecurring > 0) && (
       <div class="quote-payments">
         <div class="quote-payments-title">Resumen de pagos</div>
 
@@ -278,27 +306,30 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
           </div>
         </div>
 
-        {monthlyRecurring > 0 && (
+        {(monthlyPlanTotal > 0 || recurringMonthlyItems.length > 0) && (
           <div class="quote-payment-block">
             <div class="quote-payment-label">Pago mensual recurrente</div>
             {planItems.filter((i: any) => i.periodo === 'mensual').map((i: any) => (
               <div class="quote-payment-line"><span>Plan {i.nombre} · {i.sucursales} suc.</span><span>{fmt(i.subtotal || 0)}</span></div>
             ))}
-            {recurringItems.map((i: any) => (
+            {recurringMonthlyItems.map((i: any) => (
               <div class="quote-payment-line"><span>{i.nombre}</span><span>{fmt(i.monto || 0)}</span></div>
             ))}
             <div class="quote-payment-total">
               <span>Total mensual {quote.iva_incluido ? '(+IVA)' : ''}</span>
-              <span>{fmt(monthlyRecurring)} {quote.moneda}/mes</span>
+              <span>{fmt(monthlyPlanTotal + recurringMonthlyItems.reduce((s: number, i: any) => s + (parseFloat(i.monto) || 0), 0))} {quote.moneda}/mes</span>
             </div>
           </div>
         )}
 
-        {annualPlanTotal > 0 && (
+        {(annualPlanTotal > 0 || recurringAnnualItems.length > 0) && (
           <div class="quote-payment-block">
             <div class="quote-payment-label">Próxima renovación anual: {nextAnnualStr}</div>
             {planItems.filter((i: any) => i.periodo === 'anual').map((i: any) => (
               <div class="quote-payment-line"><span>Renovación Plan {i.nombre} · {i.sucursales} suc.</span><span>{fmt(i.subtotal || 0)}</span></div>
+            ))}
+            {recurringAnnualItems.map((i: any) => (
+              <div class="quote-payment-line"><span>{i.nombre} (anual)</span><span>{fmt(i.subtotal || 0)}</span></div>
             ))}
           </div>
         )}
@@ -306,7 +337,7 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
     )}
 
     <!-- Plan features -->
-    {planFeatures.length > 0 && (
+    {showFeatures && planFeatures.length > 0 && (
       <div class="quote-features">
         <div class="quote-features-title">Que incluye tu plan</div>
         {planFeatures.map((pf: any) => (
@@ -343,7 +374,7 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
     )}
 
     <!-- Conditions -->
-    {quote.condiciones && (
+    {showCondiciones && quote.condiciones && (
       <div class="quote-conditions">
         <div class="quote-conditions-title">Condiciones</div>
         <div class="quote-conditions-text">{quote.condiciones}</div>
@@ -371,6 +402,47 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
         <div class="quote-pay-note">Pago seguro. Al completar el pago, tu servicio se activa de inmediato.</div>
       </div>
     )}
+
+    <!-- Version history -->
+    {(quoteMeta.versions || []).length > 1 && (
+      <div class="quote-versions">
+        <div class="quote-versions-header">
+          <span class="quote-versions-title">Historial de versiones</span>
+          <span class="quote-versions-current">Version actual: v{(quoteMeta.versions || []).length}</span>
+        </div>
+        <div class="quote-versions-list">
+          {(quoteMeta.versions || []).slice().reverse().map((ver: any, i: number) => {
+            const isCurrent = i === 0;
+            const prev = i < (quoteMeta.versions || []).length - 1 ? (quoteMeta.versions || []).slice().reverse()[i + 1] : null;
+            const diff = prev ? ver.total - prev.total : 0;
+            return (
+              <div class:list={['quote-version-item', { 'quote-version-current': isCurrent }]}>
+                <div class="quote-version-dot" />
+                <div class="quote-version-content">
+                  <div class="quote-version-label">
+                    <strong>v{ver.v}</strong>
+                    {isCurrent && <span class="quote-version-badge">Actual</span>}
+                  </div>
+                  <div class="quote-version-detail">
+                    {fmtDate(ver.at)} · {ver.items_count} concepto{ver.items_count !== 1 ? 's' : ''} · {fmt(ver.total)} {ver.moneda || 'MXN'}
+                    {diff !== 0 && !isCurrent && (
+                      <span class={diff > 0 ? 'quote-version-up' : 'quote-version-down'}>
+                        {diff > 0 ? '+' : ''}{fmt(diff)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    )}
+
+    <!-- Legal -->
+    <div class="quote-legal">
+      Al aceptar esta cotización, confirmas que has leído y aceptas nuestros <a href="https://www.sacscloud.com/terminos" target="_blank" rel="noopener">Términos y condiciones</a> y nuestro <a href="https://www.sacscloud.com/privacidad" target="_blank" rel="noopener">Aviso de privacidad</a>.
+    </div>
 
     <!-- Footer -->
     <div class="quote-footer">
@@ -571,6 +643,13 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
 .quote-conditions-title { font-size: 0.625rem; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
 .quote-conditions-text { font-size: 0.8125rem; color: #888; line-height: 1.6; white-space: pre-line; }
 
+/* ─── Legal ─── */
+.quote-legal { padding: 16px 40px; font-size: 0.625rem; color: #bbb; line-height: 1.6; border-top: 1px solid #f0f0f0; }
+.quote-legal a { color: #999; text-decoration: underline; }
+.quote-legal a:hover { color: #555; }
+.quote-dark .quote-legal { border-color: rgba(255,255,255,0.08); color: rgba(255,255,255,0.3); }
+.quote-dark .quote-legal a { color: rgba(255,255,255,0.45); }
+
 /* ─── Footer ─── */
 .quote-footer { padding: 24px 40px; background: #fafafa; border-top: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
 .quote-footer-logo { font-family: var(--font-logo); font-size: 1rem; font-weight: 700; color: #1a1a1a; }
@@ -651,6 +730,47 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
 .quote-classic .quote-footer { background: #1a1a1a; }
 .quote-classic .quote-footer-logo, .quote-classic .quote-footer-tagline, .quote-classic .quote-footer-contact { color: #fff; }
 
+/* ─── Key Points ─── */
+.quote-key-points { padding: 24px 40px; border-top: 1px solid #f0f0f0; }
+.quote-key-points-title { font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: #1a1a1a; margin-bottom: 16px; }
+.quote-key-points-list { display: flex; flex-direction: column; gap: 12px; }
+.quote-key-point { display: flex; gap: 12px; align-items: flex-start; }
+.quote-key-point-icon { flex-shrink: 0; margin-top: 2px; }
+.quote-key-point-content { flex: 1; }
+.quote-key-point-title { font-size: 0.875rem; font-weight: 700; color: #1a1a1a; margin-bottom: 2px; }
+.quote-key-point-detail { font-size: 0.75rem; color: #888; line-height: 1.5; }
+
+.quote-dark .quote-key-points { border-color: rgba(255,255,255,0.08); }
+.quote-dark .quote-key-points-title { color: #fff; }
+.quote-dark .quote-key-point-title { color: #fff; }
+.quote-dark .quote-key-point-detail { color: rgba(255,255,255,0.5); }
+.quote-dark .quote-key-point-icon svg path { stroke: #2AB5A0; }
+
+/* ─── Versions ─── */
+.quote-versions { padding: 20px 40px; border-top: 1px solid #f0f0f0; }
+.quote-versions-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.quote-versions-title { font-size: 0.625rem; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: 0.08em; }
+.quote-versions-current { font-size: 0.625rem; font-weight: 700; color: #4B7BE5; }
+.quote-versions-list { position: relative; padding-left: 16px; }
+.quote-version-item { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; position: relative; }
+.quote-version-item::before { content: ''; position: absolute; left: -13px; top: 16px; bottom: -6px; width: 1px; background: #eee; }
+.quote-version-item:last-child::before { display: none; }
+.quote-version-dot { width: 7px; height: 7px; border-radius: 50%; background: #ddd; flex-shrink: 0; margin-top: 5px; margin-left: -20px; position: relative; z-index: 1; }
+.quote-version-current .quote-version-dot { background: #4B7BE5; width: 9px; height: 9px; }
+.quote-version-content { flex: 1; }
+.quote-version-label { font-size: 0.75rem; font-weight: 700; color: #1a1a1a; display: flex; align-items: center; gap: 6px; }
+.quote-version-badge { font-size: 0.5rem; font-weight: 700; color: #4B7BE5; background: rgba(75,123,229,0.08); padding: 1px 6px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.06em; }
+.quote-version-detail { font-size: 0.6875rem; color: #999; margin-top: 1px; }
+.quote-version-up { color: #E54B4B; font-weight: 600; margin-left: 4px; }
+.quote-version-down { color: #2AB5A0; font-weight: 600; margin-left: 4px; }
+
+.quote-dark .quote-versions { border-color: rgba(255,255,255,0.08); }
+.quote-dark .quote-version-label { color: #fff; }
+.quote-dark .quote-version-detail { color: rgba(255,255,255,0.4); }
+.quote-dark .quote-version-item::before { background: rgba(255,255,255,0.08); }
+.quote-dark .quote-version-dot { background: rgba(255,255,255,0.2); }
+.quote-dark .quote-version-current .quote-version-dot { background: #2AB5A0; }
+
 /* ─── Promotion ─── */
 .qt-promo-row { background: rgba(42,181,160,0.03); }
 .qt-promo-badge { display: inline-block; font-size: 0.5625rem; font-weight: 800; color: #fff; background: #2AB5A0; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
@@ -681,12 +801,38 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
 
 /* ─── Print ─── */
 @media print {
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
   .no-print { display: none !important; }
-  .quote-page { padding: 0; }
+  .quote-page { padding: 0; max-width: none; }
   .quote-container { box-shadow: none; border-radius: 0; }
-  body { background: #fff !important; }
-  @page { margin: 1cm; }
+  .quote-modal-overlay { display: none !important; }
+  body { background: #fff !important; margin: 0; }
+  @page { margin: 0.8cm; size: A4; }
   .quote-features-grid { grid-template-columns: 1fr 1fr; }
+  .quote-header { padding: 28px 32px 18px; }
+  .quote-logo-tag { background: rgba(75,123,229,0.08) !important; color: var(--color-primary) !important; }
+  .quote-validity { color: #999 !important; }
+  .quote-expired { color: #E54B4B !important; }
+  .quote-timer { background: #4B7BE5 !important; color: #fff !important; }
+  .quote-timer--urgent { background: #E54B4B !important; }
+  .qt-promo-badge { background: #2AB5A0 !important; color: #fff !important; }
+  .qt-promo-row { background: rgba(42,181,160,0.03) !important; }
+  .qt-savings { color: #2AB5A0 !important; }
+  .quote-total-row.quote-discount { color: #2AB5A0 !important; }
+  .quote-total-row.quote-total-final { border-top: 2px solid #1a1a1a !important; }
+  .quote-table th { background: #fafafa !important; }
+  .quote-payment-block { background: #fafafa !important; }
+  .quote-footer { background: #fafafa !important; }
+  .quote-pay-btn { background: #4B7BE5 !important; color: #fff !important; }
+  .quote-service-tag { background: rgba(42,181,160,0.08) !important; color: #2AB5A0 !important; }
+  .quote-paid-banner { background: #4B7BE5 !important; color: #fff !important; }
+  .quote-stamp-text { color: rgba(229,75,75,0.12) !important; border-color: rgba(229,75,75,0.12) !important; }
+  .qt-nota { color: #4B7BE5 !important; }
+  .quote-plan-name { color: #4B7BE5 !important; }
+  .quote-feature-item svg path { stroke: #2AB5A0 !important; }
+  .quote-key-point-icon svg path { stroke: #4B7BE5 !important; }
+  .quote-version-current .quote-version-dot { background: #4B7BE5 !important; }
+  .quote-version-badge { background: rgba(75,123,229,0.08) !important; color: #4B7BE5 !important; }
 }
 
 /* ─── Mobile ─── */
@@ -730,9 +876,10 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
     setInterval(updateTimer, 1000);
   }
 
-  // ─── Track view ───
+  // ─── Track view (skip if admin) ───
   const quoteId = window.location.pathname.split('/').pop();
-  if (quoteId) {
+  const isAdmin = new URLSearchParams(window.location.search).has('admin');
+  if (quoteId && !isAdmin) {
     fetch('/api/revenue/quote-view', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

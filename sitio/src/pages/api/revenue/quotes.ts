@@ -37,10 +37,12 @@ export const GET: APIRoute = async ({ url }) => {
 export const POST: APIRoute = async ({ request }) => {
   const body = await request.json();
   const clean = pick(body, QUOTE_FIELDS);
+  const folioOffset = parseInt(body._folio_offset) || 0;
 
   // Auto-generate quote number
   const { count } = await supabase.from('quotes').select('*', { count: 'exact', head: true });
-  const num = `COT-${String((count || 0) + 1).padStart(3, '0')}`;
+  const nextNum = Math.max((count || 0) + 1, folioOffset + 1);
+  const num = `COT-${String(nextNum).padStart(3, '0')}`;
 
   const { data, error } = await supabase.from('quotes').insert({
     ...clean,

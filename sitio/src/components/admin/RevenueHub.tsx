@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { plans as plansData } from '../../data/plans';
 
 const PLANS = ['vende', 'controla', 'fideliza', 'automatiza'];
 const PLAN_PRICES: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 2900 };
@@ -368,6 +369,12 @@ export default function RevenueHub() {
     const [qSort, setQSort] = useState<{ col: string; asc: boolean }>({ col: 'created_at', asc: false });
     const [qPage, setQPage] = useState(0);
     const PER_PAGE = 10;
+    // Transcript analysis
+    const [showTranscriptModal, setShowTranscriptModal] = useState(false);
+    const [transcript, setTranscript] = useState('');
+    const [analyzing, setAnalyzing] = useState(false);
+    const [analysisResult, setAnalysisResult] = useState<any>(null);
+    const [showReview, setShowReview] = useState(false);
 
     useEffect(() => {
       fetch('/api/revenue/quotes').then(r => r.json()).then(d => setQuotes(Array.isArray(d) ? d : []));
@@ -395,8 +402,11 @@ export default function RevenueHub() {
         const sub = p * suc * (isAnn ? 10 : 1);
         const disc = sub * (parseFloat(arr[idx].descuento_pct || 0) / 100);
         arr[idx].subtotal = sub - disc;
-      } else {
-        arr[idx].subtotal = parseFloat(arr[idx].monto) || 0;
+      } else if (!arr[idx].es_promocion) {
+        const base = parseFloat(arr[idx].monto) || 0;
+        const pe = arr[idx].periodo_extra || (arr[idx].recurrente ? 'mensual' : 'unico');
+        arr[idx].recurrente = pe === 'mensual' || pe === 'anual';
+        arr[idx].subtotal = pe === 'anual' ? base * 10 : base;
       }
       setQf({ ...qf, items: arr });
     };
@@ -423,14 +433,36 @@ export default function RevenueHub() {
       if (qf.logo_url) meta.logo_url = qf.logo_url;
       else delete meta.logo_url;
       meta.iva_mode = ivaMode;
+      meta.mostrar_timer = qf.mostrar_timer !== undefined ? qf.mostrar_timer : true;
+      meta.mostrar_features = qf.mostrar_features !== undefined ? qf.mostrar_features : true;
+      meta.mostrar_desglose = qf.mostrar_desglose !== undefined ? qf.mostrar_desglose : true;
+      meta.mostrar_condiciones = qf.mostrar_condiciones !== undefined ? qf.mostrar_condiciones : true;
+      meta.mostrar_key_points = qf.mostrar_key_points !== undefined ? qf.mostrar_key_points : true;
+      if (qf.key_points?.length) meta.key_points = qf.key_points;
+      else delete meta.key_points;
+
+      // Version tracking
+      if (!meta.versions) meta.versions = [];
+      if (!isEdit) {
+        // First version
+        meta.versions.push({ v: 1, at: new Date().toISOString(), total: Math.round(grandTotal), items_count: items.length, moneda: qf.moneda || 'MXN' });
+      } else {
+        // New version on edit — snapshot current state
+        const nextV = (meta.versions.length || 0) + 1;
+        meta.versions.push({ v: nextV, at: new Date().toISOString(), total: Math.round(grandTotal), items_count: items.length, moneda: qf.moneda || 'MXN' });
+      }
+
       notas = serializeMeta(text, meta);
       if (!isEdit) {
         notas = addTimelineEvent(notas, 'created');
         notas = addTimelineEvent(notas, 'sent');
+      } else {
+        notas = addTimelineEvent(notas, 'edited');
       }
       // Remove frontend-only fields
-      const { _custom_days, logo_url, iva_mode: _im, _pago_mode, ...rest } = qf;
-      const body = { ...rest, notas, subtotal: itemsSubtotal, iva_incluido: ivaMode !== 'sin', iva_monto: Math.round(ivaMonto), total: Math.round(grandTotal), estado: rest.estado || 'sent' };
+      const { _custom_days, logo_url, iva_mode: _im, _pago_mode, mostrar_timer: _mt, mostrar_features: _mf, mostrar_desglose: _md, mostrar_condiciones: _mc, mostrar_key_points: _mkp, key_points: _kp, ...rest } = qf;
+      const folioOffset = typeof window !== 'undefined' ? parseInt(localStorage.getItem('sacs_folio_offset') || '0') || 0 : 0;
+      const body = { ...rest, notas, subtotal: itemsSubtotal, iva_incluido: ivaMode !== 'sin', iva_monto: Math.round(ivaMonto), total: Math.round(grandTotal), estado: rest.estado || 'sent', _folio_offset: folioOffset };
 
       // Save quote first
       const res = await fetch('/api/revenue/quotes', { method: isEdit ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -530,7 +562,10 @@ export default function RevenueHub() {
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800 }}>Cotizaciones <span style={{ fontWeight: 400, color: '#aaa', fontSize: '0.875rem' }}>({filtered.length})</span></h2>
-          <button onClick={() => { setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida. Soporte 24/7. Sin contratos.' }); setShowDrawer(true); }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff' }}>+ Nueva cotización</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => { setTranscript(''); setAnalysisResult(null); setShowTranscriptModal(true); }} style={{ ...S.btn, background: '#f5f5f5', color: '#555' }}>Generar desde transcripción</button>
+            <button onClick={() => { setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida. Soporte 24/7. Sin contratos.' }); setShowDrawer(true); }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff' }}>+ Nueva cotización</button>
+          </div>
         </div>
 
         {/* Search + filters */}
@@ -595,8 +630,8 @@ export default function RevenueHub() {
                       ) : <span style={{ color: '#ddd', fontSize: '0.75rem' }}>—</span>}
                     </td>
                     <td style={S.td}>
-                      <button onClick={() => { const { meta: m } = parseMeta(q.notas); setQf({ ...q, items: Array.isArray(q.items) ? q.items : [], logo_url: m.logo_url || '', iva_mode: m.iva_mode || (q.iva_incluido ? 'suma' : 'sin') }); setShowDrawer(true); }} style={S.btnSmall}>Editar</button>
-                      <a href={`/cotizacion/${q.id}`} target="_blank" rel="noopener" style={{ ...S.btnSmall, textDecoration: 'none', display: 'inline-flex' }}>Ver</a>
+                      <button onClick={() => { const { meta: m } = parseMeta(q.notas); setQf({ ...q, items: Array.isArray(q.items) ? q.items : [], logo_url: m.logo_url || '', iva_mode: m.iva_mode || (q.iva_incluido ? 'suma' : 'sin'), mostrar_timer: m.mostrar_timer !== undefined ? m.mostrar_timer : true, mostrar_features: m.mostrar_features !== undefined ? m.mostrar_features : true, mostrar_desglose: m.mostrar_desglose !== undefined ? m.mostrar_desglose : true, mostrar_condiciones: m.mostrar_condiciones !== undefined ? m.mostrar_condiciones : true, mostrar_key_points: m.mostrar_key_points !== undefined ? m.mostrar_key_points : true, key_points: m.key_points || [] }); setShowDrawer(true); }} style={S.btnSmall}>Editar</button>
+                      <a href={`/cotizacion/${q.id}?admin=1`} target="_blank" rel="noopener" style={{ ...S.btnSmall, textDecoration: 'none', display: 'inline-flex' }}>Ver</a>
                       <button onClick={() => duplicateQuote(q)} style={S.btnSmall}>Duplicar</button>
                       <button onClick={() => { navigator.clipboard.writeText(`https://www.sacscloud.com/cotizacion/${q.id}`); const btn = document.activeElement as HTMLButtonElement; btn.textContent = 'Copiado'; setTimeout(() => { btn.textContent = 'Copiar'; }, 1500); }} style={{ ...S.btnSmall, background: '#f3e8ff', color: '#7c3aed' }}>Copiar</button>
                       <a href={`https://wa.me/?text=${encodeURIComponent(`Cotización ${q.numero}: https://www.sacscloud.com/cotizacion/${q.id}`)}`} target="_blank" rel="noopener" style={{ ...S.btnSmall, background: '#e8f5e9', color: '#2e7d32', textDecoration: 'none', display: 'inline-flex' }}>WA</a>
@@ -627,15 +662,207 @@ export default function RevenueHub() {
           )}
         </div>
 
+        {/* ─── Transcript Modal ─── */}
+        {showTranscriptModal && !showReview && (
+          <div style={S.overlay} onClick={e => { if (e.target === e.currentTarget) setShowTranscriptModal(false); }}>
+            <div style={{ ...S.modal, maxWidth: 640 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+                <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800 }}>Generar cotización desde transcripción</h3>
+                <button onClick={() => setShowTranscriptModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#999' }}>✕</button>
+              </div>
+              <p style={{ fontSize: '0.8125rem', color: '#999', margin: '0 0 12px' }}>Pega la transcripción de tu llamada. La IA extraerá los datos del cliente, recomendará un plan y generará los puntos clave.</p>
+              <textarea value={transcript} onChange={e => setTranscript(e.target.value)} placeholder="Pega aquí la transcripción completa de la llamada..." style={{ ...S.input, height: 320, resize: 'vertical' as const, fontSize: '0.75rem', lineHeight: 1.6 }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                <span style={{ fontSize: '0.625rem', color: '#ccc' }}>{transcript.length.toLocaleString()} caracteres</span>
+                <button onClick={async () => {
+                  if (transcript.length < 100) { alert('La transcripción es muy corta. Mínimo 100 caracteres.'); return; }
+                  setAnalyzing(true);
+                  try {
+                    const res = await fetch('/api/revenue/analyze-transcript', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ transcript }) });
+                    const data = await res.json();
+                    if (data.error) { alert(data.error); setAnalyzing(false); return; }
+                    setAnalysisResult(data);
+                    setShowReview(true);
+                  } catch { alert('Error de conexión. Intenta de nuevo.'); }
+                  setAnalyzing(false);
+                }} disabled={analyzing || transcript.length < 100} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', opacity: analyzing || transcript.length < 100 ? 0.5 : 1 }}>
+                  {analyzing ? 'Analizando...' : 'Analizar con IA'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─── Analysis Review Screen ─── */}
+        {showReview && analysisResult && (
+          <div style={{ position: 'fixed' as const, inset: 0, zIndex: 200, background: '#f5f6f8', display: 'flex', flexDirection: 'column' as const }}>
+            <div style={{ background: '#fff', borderBottom: '1px solid #eee', padding: '10px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800 }}>Resultado del análisis</h3>
+                {analysisResult.confidence != null && (
+                  <span style={{ fontSize: '0.625rem', fontWeight: 700, color: analysisResult.confidence >= 0.7 ? '#2AB5A0' : '#E8A838', background: analysisResult.confidence >= 0.7 ? 'rgba(42,181,160,0.08)' : 'rgba(232,168,56,0.08)', padding: '2px 8px', borderRadius: 4 }}>
+                    Confianza: {Math.round(analysisResult.confidence * 100)}%
+                  </span>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => {
+                  const r = analysisResult;
+                  const rec = r.recommendation || {};
+                  const planPrice = PLAN_PRICES[rec.plan] || 900;
+                  const discPct = parseFloat(rec.descuento_pct) || 0;
+                  const suc = parseInt(rec.sucursales) || 1;
+                  const isAnn = rec.periodo === 'anual';
+                  const planSub = planPrice * suc * (isAnn ? 10 : 1);
+                  const planDisc = planSub * (discPct / 100);
+                  const planItems: any[] = [{
+                    tipo: 'plan', nombre: rec.plan || 'controla',
+                    sucursales: suc, precio_unitario: planPrice,
+                    periodo: rec.periodo || 'mensual',
+                    descuento_pct: discPct,
+                    subtotal: planSub - planDisc,
+                  }];
+                  const extraItems = (rec.extras || []).map((e: any) => ({
+                    tipo: 'extra', nombre: e.nombre, monto: e.monto || 0,
+                    descripcion: e.descripcion || '', nota: e.nota || '',
+                    periodo_extra: e.periodo_extra || 'unico',
+                    recurrente: e.periodo_extra === 'mensual' || e.periodo_extra === 'anual',
+                    subtotal: e.periodo_extra === 'anual' ? (e.monto || 0) * 10 : (e.monto || 0),
+                  }));
+                  // Promoción
+                  const promo = rec.promocion;
+                  if (promo?.aplicar) {
+                    extraItems.push({
+                      tipo: 'extra', nombre: promo.nombre || 'Implementación y configuración',
+                      descripcion: promo.descripcion || 'Setup inicial, migración y capacitación. Aplica al contratar plan anual.',
+                      monto: 0, precio_original: promo.precio_original || IMPL_PRICES[rec.plan] || 4000,
+                      es_promocion: true, recurrente: false, subtotal: 0,
+                    });
+                  }
+                  // IVA mode
+                  const ivaMode = rec.iva_mode || 'sin';
+                  // Notas extra → condiciones
+                  const notasExtra = (r.notas_extra || []).filter(Boolean);
+                  const condBase = 'Precios en MXN. Migracion incluida. Soporte 24/7. Sin contratos.';
+                  const condiciones = notasExtra.length > 0 ? condBase + '\n\n' + notasExtra.join('\n') : condBase;
+                  setQf({
+                    empresa: r.client?.empresa || '', contacto: r.client?.contacto || '',
+                    email: r.client?.email || '', whatsapp: r.client?.whatsapp || '',
+                    items: [...planItems, ...extraItems],
+                    iva_incluido: ivaMode !== 'sin', iva_mode: ivaMode,
+                    descuento_global: 0, descuento_tipo: 'pct',
+                    moneda: 'MXN', template: 'modern', condiciones,
+                    key_points: r.key_points || [], mostrar_key_points: true,
+                  });
+                  setShowReview(false); setShowTranscriptModal(false); setShowDrawer(true);
+                }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff' }}>Aplicar al formulario</button>
+                <button onClick={() => { setShowReview(false); setShowTranscriptModal(false); }} style={{ ...S.btn, background: '#f5f5f5', color: '#555' }}>Descartar</button>
+              </div>
+            </div>
+            <div style={{ flex: 1, overflow: 'auto', padding: 24 }}>
+              <div style={{ maxWidth: 800, margin: '0 auto', display: 'grid', gap: 16 }}>
+                {/* Client info */}
+                <div style={S.card}>
+                  <h3 style={S.cardTitle}>Cliente detectado</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    <div><label style={S.label}>Empresa</label><input value={analysisResult.client?.empresa || ''} onChange={e => setAnalysisResult({ ...analysisResult, client: { ...analysisResult.client, empresa: e.target.value } })} style={S.input} /></div>
+                    <div><label style={S.label}>Contacto</label><input value={analysisResult.client?.contacto || ''} onChange={e => setAnalysisResult({ ...analysisResult, client: { ...analysisResult.client, contacto: e.target.value } })} style={S.input} /></div>
+                    <div><label style={S.label}>Email</label><input value={analysisResult.client?.email || ''} onChange={e => setAnalysisResult({ ...analysisResult, client: { ...analysisResult.client, email: e.target.value } })} style={S.input} /></div>
+                    <div><label style={S.label}>WhatsApp</label><input value={analysisResult.client?.whatsapp || ''} onChange={e => setAnalysisResult({ ...analysisResult, client: { ...analysisResult.client, whatsapp: e.target.value } })} style={S.input} /></div>
+                  </div>
+                </div>
+
+                {/* Plan recommendation */}
+                <div style={S.card}>
+                  <h3 style={S.cardTitle}>Plan recomendado</h3>
+                  <div style={{ background: '#f8f9fb', borderRadius: 8, padding: 12, marginBottom: 12 }}>
+                    <div style={{ fontSize: '0.75rem', color: '#999', fontStyle: 'italic' as const }}>{analysisResult.recommendation?.reasoning}</div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                    <div><label style={S.label}>Plan</label><select value={analysisResult.recommendation?.plan || 'controla'} onChange={e => setAnalysisResult({ ...analysisResult, recommendation: { ...analysisResult.recommendation, plan: e.target.value } })} style={S.input}>{PLANS.map(p => <option key={p} value={p}>{p} (${PLAN_PRICES[p]}/mes)</option>)}</select></div>
+                    <div><label style={S.label}>Sucursales</label><input type="number" value={analysisResult.recommendation?.sucursales || 1} onChange={e => setAnalysisResult({ ...analysisResult, recommendation: { ...analysisResult.recommendation, sucursales: parseInt(e.target.value) || 1 } })} style={S.input} /></div>
+                    <div><label style={S.label}>Periodo</label><select value={analysisResult.recommendation?.periodo || 'mensual'} onChange={e => setAnalysisResult({ ...analysisResult, recommendation: { ...analysisResult.recommendation, periodo: e.target.value } })} style={S.input}><option value="mensual">Mensual</option><option value="anual">Anual</option></select></div>
+                  </div>
+                  {(analysisResult.recommendation?.extras || []).length > 0 && (
+                    <div style={{ marginTop: 12 }}>
+                      <div style={S.label}>Extras sugeridos</div>
+                      {analysisResult.recommendation.extras.map((ex: any, i: number) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '1px solid #f5f5f5' }}>
+                          <span style={{ flex: 1, fontSize: '0.8125rem' }}><strong>{ex.nombre}</strong> — {ex.descripcion} <span style={{ color: '#2AB5A0', fontWeight: 700 }}>{fmt(ex.monto || 0)}</span></span>
+                          <button onClick={() => { const extras = [...analysisResult.recommendation.extras]; extras.splice(i, 1); setAnalysisResult({ ...analysisResult, recommendation: { ...analysisResult.recommendation, extras } }); }} style={{ ...S.btnSmall, color: '#E54B4B' }}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* IVA, Descuento, Promo */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 12 }}>
+                    <div><label style={S.label}>IVA</label><select value={analysisResult.recommendation?.iva_mode || 'sin'} onChange={e => setAnalysisResult({ ...analysisResult, recommendation: { ...analysisResult.recommendation, iva_mode: e.target.value } })} style={S.input}><option value="sin">Sin IVA</option><option value="suma">Sumar 16%</option><option value="incluido">Incluido en precios</option></select></div>
+                    <div><label style={S.label}>Descuento plan (%)</label><input type="number" value={analysisResult.recommendation?.descuento_pct || 0} onChange={e => setAnalysisResult({ ...analysisResult, recommendation: { ...analysisResult.recommendation, descuento_pct: parseFloat(e.target.value) || 0 } })} style={S.input} /></div>
+                  </div>
+                  {analysisResult.recommendation?.promocion?.aplicar && (
+                    <div style={{ marginTop: 10, padding: 10, background: '#ecfdf5', borderRadius: 8, border: '1px solid #2AB5A0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <span style={{ fontSize: '0.5625rem', fontWeight: 800, color: '#fff', background: '#2AB5A0', padding: '1px 6px', borderRadius: 3, marginRight: 6 }}>PROMO</span>
+                        <strong style={{ fontSize: '0.8125rem' }}>{analysisResult.recommendation.promocion.nombre}</strong>
+                        <span style={{ fontSize: '0.75rem', color: '#999', marginLeft: 8 }}><s>{fmt(analysisResult.recommendation.promocion.precio_original || 0)}</s> → $0</span>
+                      </div>
+                      <button onClick={() => setAnalysisResult({ ...analysisResult, recommendation: { ...analysisResult.recommendation, promocion: { ...analysisResult.recommendation.promocion, aplicar: false } } })} style={{ ...S.btnSmall, color: '#E54B4B' }}>✕</button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Notas extra */}
+                {(analysisResult.notas_extra || []).length > 0 && (
+                  <div style={S.card}>
+                    <h3 style={S.cardTitle}>Notas extra</h3>
+                    <p style={{ fontSize: '0.6875rem', color: '#999', margin: '0 0 8px' }}>Observaciones adicionales que se agregan a las condiciones de la cotización</p>
+                    {analysisResult.notas_extra.map((nota: string, i: number) => (
+                      <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6, alignItems: 'center' }}>
+                        <input value={nota} onChange={e => { const n = [...analysisResult.notas_extra]; n[i] = e.target.value; setAnalysisResult({ ...analysisResult, notas_extra: n }); }} style={{ ...S.input, flex: 1, fontSize: '0.75rem' }} />
+                        <button onClick={() => { const n = [...analysisResult.notas_extra]; n.splice(i, 1); setAnalysisResult({ ...analysisResult, notas_extra: n }); }} style={{ ...S.btnSmall, color: '#E54B4B' }}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Key points (Minuta) */}
+                <div style={S.card}>
+                  <h3 style={S.cardTitle}>Minuta de la reunión ({(analysisResult.key_points || []).length})</h3>
+                  <p style={{ fontSize: '0.6875rem', color: '#999', margin: '0 0 12px' }}>Estos puntos aparecerán en la cotización como "Minuta de la reunión"</p>
+                  {(analysisResult.key_points || []).map((kp: any, i: number) => (
+                    <div key={i} style={{ background: '#f8f9fb', borderRadius: 8, padding: 12, marginBottom: 8, borderLeft: '3px solid #4B7BE5' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                        <div style={{ flex: 1 }}>
+                          <input value={kp.title} onChange={e => { const kps = [...analysisResult.key_points]; kps[i] = { ...kps[i], title: e.target.value }; setAnalysisResult({ ...analysisResult, key_points: kps }); }} style={{ ...S.input, fontWeight: 700, marginBottom: 4 }} />
+                          <textarea value={kp.detail} onChange={e => { const kps = [...analysisResult.key_points]; kps[i] = { ...kps[i], detail: e.target.value }; setAnalysisResult({ ...analysisResult, key_points: kps }); }} rows={2} style={{ ...S.input, fontSize: '0.75rem' }} />
+                        </div>
+                        <button onClick={() => { const kps = [...analysisResult.key_points]; kps.splice(i, 1); setAnalysisResult({ ...analysisResult, key_points: kps }); }} style={{ ...S.btnSmall, color: '#E54B4B', flexShrink: 0 }}>✕</button>
+                      </div>
+                    </div>
+                  ))}
+                  <button onClick={() => setAnalysisResult({ ...analysisResult, key_points: [...(analysisResult.key_points || []), { title: '', detail: '' }] })} style={S.btnSmall}>+ Agregar punto</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ─── Quote Drawer ─── */}
         {showDrawer && (
-          <div style={{ position: 'fixed' as const, inset: 0, zIndex: 200, display: 'flex', justifyContent: 'flex-end' }}>
-            <div onClick={() => setShowDrawer(false)} style={{ flex: 1, background: 'rgba(0,0,0,0.3)' }} />
-            <div style={{ width: 520, maxWidth: '95vw', background: '#fff', overflowY: 'auto' as const, boxShadow: '-4px 0 20px rgba(0,0,0,0.1)', padding: 24 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-                <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800 }}>{qf.id ? `Editar ${qf.numero || 'cotización'}` : 'Nueva cotización'}</h3>
+          <div style={{ position: 'fixed' as const, inset: 0, zIndex: 200, background: '#f5f6f8', display: 'flex', flexDirection: 'column' as const }}>
+            {/* Top bar */}
+            <div style={{ background: '#fff', borderBottom: '1px solid #eee', padding: '10px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800 }}>{qf.id ? `Editar ${qf.numero || 'cotización'}` : 'Nueva cotización'}</h3>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <button onClick={createQuote} disabled={saving || !items.length || !qf.empresa} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', fontSize: '0.75rem', padding: '6px 16px' }}>{saving ? 'Guardando...' : qf.id ? 'Guardar cambios' : 'Crear y enviar'}</button>
                 <button onClick={() => setShowDrawer(false)} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#999' }}>✕</button>
               </div>
+            </div>
+            {/* Split layout */}
+            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+            {/* Left: Form */}
+            <div style={{ width: 480, flexShrink: 0, background: '#fff', overflowY: 'auto' as const, padding: 24, borderRight: '1px solid #eee' }}>
 
               {/* Client */}
               <div style={S.label}>Cliente</div>
@@ -694,13 +921,17 @@ export default function RevenueHub() {
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                         <span style={{ fontSize: '0.5625rem', fontWeight: 800, color: '#fff', background: '#2AB5A0', padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}>Promocion</span>
+                        <span style={{ fontSize: '0.5625rem', color: '#999' }}>Al contratar plan anual</span>
                       </div>
-                      <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#1a1a1a', marginBottom: 2 }}>{item.nombre}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: 8 }}>{item.descripcion}</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 6, marginBottom: 6 }}>
+                        <div><label style={{ ...S.label, marginTop: 0 }}>Concepto</label><input value={item.nombre || ''} onChange={e => updateItem(idx, 'nombre', e.target.value)} style={S.input} /></div>
+                        <div><label style={{ ...S.label, marginTop: 0 }}>Valor original</label><input type="number" value={item.precio_original || ''} onChange={e => updateItem(idx, 'precio_original', parseFloat(e.target.value) || 0)} style={S.input} /></div>
+                        <div style={{ gridColumn: '1/-1' }}><label style={{ ...S.label, marginTop: 0 }}>Descripción</label><input value={item.descripcion || ''} onChange={e => updateItem(idx, 'descripcion', e.target.value)} style={S.input} /></div>
+                      </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                        <span style={{ fontSize: '0.75rem', color: '#999' }}>Valor original:</span>
                         <span style={{ textDecoration: 'line-through', color: '#ccc', fontWeight: 600 }}>{fmt(item.precio_original || 0)}</span>
                         <span style={{ fontSize: '1.125rem', fontWeight: 800, color: '#2AB5A0' }}>$0</span>
+                        <span style={{ fontSize: '0.625rem', color: '#999', marginLeft: 4 }}>Gratis al contratar plan anual</span>
                       </div>
                       <input value={item.nota || ''} onChange={e => updateItem(idx, 'nota', e.target.value)} placeholder="Nota (opcional)" style={{ ...S.input, fontSize: '0.6875rem' }} />
                     </div>
@@ -710,7 +941,7 @@ export default function RevenueHub() {
                         <div><label style={{ ...S.label, marginTop: 0 }}>Concepto</label><input value={item.nombre || ''} onChange={e => updateItem(idx, 'nombre', e.target.value)} placeholder="Ej. Implementación" style={S.input} /></div>
                         <div><label style={{ ...S.label, marginTop: 0 }}>Monto</label><input type="number" value={item.monto || ''} onChange={e => updateItem(idx, 'monto', e.target.value)} style={S.input} /></div>
                         <div><label style={{ ...S.label, marginTop: 0 }}>Descripción</label><input value={item.descripcion || ''} onChange={e => updateItem(idx, 'descripcion', e.target.value)} style={S.input} /></div>
-                        <div><label style={{ ...S.label, marginTop: 0 }}>Recurrente</label><select value={item.recurrente ? 'si' : 'no'} onChange={e => updateItem(idx, 'recurrente', e.target.value === 'si')} style={S.input}><option value="no">No (único)</option><option value="si">Sí (mensual)</option></select></div>
+                        <div><label style={{ ...S.label, marginTop: 0 }}>Periodo</label><select value={item.periodo_extra || (item.recurrente ? 'mensual' : 'unico')} onChange={e => updateItem(idx, 'periodo_extra', e.target.value)} style={S.input}><option value="unico">Unico</option><option value="mensual">Mensual</option><option value="anual">Anual (×10 meses)</option></select></div>
                       </div>
                       <div style={{ marginTop: 6 }}><input value={item.nota || ''} onChange={e => updateItem(idx, 'nota', e.target.value)} placeholder="Nota (opcional)" style={{ ...S.input, fontSize: '0.6875rem' }} /></div>
                     </div>
@@ -720,12 +951,15 @@ export default function RevenueHub() {
               ))}
               <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
                 <button onClick={addPlanItem} style={{ ...S.btnSmall, flex: 1 }}>+ Plan Sacs</button>
-                <button onClick={addExtraItem} style={{ ...S.btnSmall, flex: 1 }}>+ Concepto extra</button>
+                <button onClick={addExtraItem} style={{ ...S.btnSmall, flex: 1 }}>+ Extra</button>
                 <button onClick={() => {
                   const mainPlan = items.find((i: any) => i.tipo === 'plan')?.nombre || 'controla';
                   const precio = IMPL_PRICES[mainPlan] || 4000;
-                  setQf({ ...qf, items: [...items, { tipo: 'extra', nombre: 'Implementacion y configuracion', descripcion: 'Setup inicial, migracion de datos y capacitacion', monto: 0, precio_original: precio, es_promocion: true, recurrente: false, subtotal: 0 }] });
-                }} style={{ ...S.btnSmall, flex: 1, background: '#e8f5e9', color: '#2e7d32' }}>+ Promocion</button>
+                  setQf({ ...qf, items: [...items, { tipo: 'extra', nombre: 'Implementacion y configuracion', descripcion: 'Setup inicial, migracion de datos y capacitacion. Aplica al contratar plan anual.', monto: 0, precio_original: precio, es_promocion: true, recurrente: false, subtotal: 0 }] });
+                }} style={{ ...S.btnSmall, flex: 1, background: '#f8f9fb', color: '#2AB5A0', borderColor: '#2AB5A0' }}>+ Promo impl.</button>
+                <button onClick={() => {
+                  setQf({ ...qf, items: [...items, { tipo: 'extra', nombre: '', descripcion: '', monto: 0, precio_original: 0, es_promocion: true, recurrente: false, subtotal: 0 }] });
+                }} style={{ ...S.btnSmall, flex: 1, background: '#f8f9fb', color: '#2AB5A0', borderColor: '#2AB5A0' }}>+ Promo custom</button>
               </div>
 
               {/* Totals & Config */}
@@ -846,15 +1080,51 @@ export default function RevenueHub() {
                 )}
               </div>
 
+              {/* Visibility toggles */}
+              <div style={{ marginBottom: 12 }}>
+                <div style={S.label}>Mostrar en cotización</div>
+                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, background: '#f8f9fb', borderRadius: 8, padding: 10 }}>
+                  {[
+                    { key: 'mostrar_timer', label: 'Contador de tiempo (urgencia)', default: true },
+                    { key: 'mostrar_features', label: 'Detalle del plan (qué incluye)', default: true },
+                    { key: 'mostrar_desglose', label: 'Resumen de pagos', default: true },
+                    { key: 'mostrar_condiciones', label: 'Condiciones', default: true },
+                    { key: 'mostrar_key_points', label: 'Minuta de la reunión', default: true },
+                  ].map(opt => (
+                    <label key={opt.key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.75rem', color: '#555', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={qf[opt.key] !== undefined ? qf[opt.key] : opt.default} onChange={e => setQf({ ...qf, [opt.key]: e.target.checked })} />
+                      {opt.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               <div><label style={S.label}>Condiciones</label><textarea value={qf.condiciones || ''} onChange={e => setQf({ ...qf, condiciones: e.target.value })} style={{ ...S.input, height: 60 }} /></div>
+
+              {/* Key points */}
+              {(qf.key_points || []).length > 0 && (
+                <div style={{ marginTop: 12 }}>
+                  <div style={S.label}>Puntos clave ({qf.key_points.length})</div>
+                  {qf.key_points.map((kp: any, i: number) => (
+                    <div key={i} style={{ background: '#f8f9fb', borderRadius: 8, padding: 10, marginBottom: 6, borderLeft: '3px solid #4B7BE5', display: 'flex', gap: 8 }}>
+                      <div style={{ flex: 1 }}>
+                        <input value={kp.title} onChange={e => { const kps = [...qf.key_points]; kps[i] = { ...kps[i], title: e.target.value }; setQf({ ...qf, key_points: kps }); }} placeholder="Título" style={{ ...S.input, fontWeight: 700, fontSize: '0.75rem', marginBottom: 4 }} />
+                        <input value={kp.detail} onChange={e => { const kps = [...qf.key_points]; kps[i] = { ...kps[i], detail: e.target.value }; setQf({ ...qf, key_points: kps }); }} placeholder="Detalle" style={{ ...S.input, fontSize: '0.6875rem' }} />
+                      </div>
+                      <button onClick={() => { const kps = [...qf.key_points]; kps.splice(i, 1); setQf({ ...qf, key_points: kps }); }} style={{ ...S.btnSmall, color: '#E54B4B', alignSelf: 'flex-start' }}>✕</button>
+                    </div>
+                  ))}
+                  <button onClick={() => setQf({ ...qf, key_points: [...(qf.key_points || []), { title: '', detail: '' }] })} style={S.btnSmall}>+ Agregar punto</button>
+                </div>
+              )}
 
               {/* Timeline */}
               {qf.id && (() => {
                 const { meta } = parseMeta(qf.notas);
                 const timeline = meta.timeline || [];
                 const views = meta.views || 0;
-                const eventLabels: Record<string, string> = { created: 'Creada', sent: 'Enviada', viewed: 'Vista', accepted: 'Aceptada', paid: 'Pagada', comment: 'Comentario', reply: 'Respuesta' };
-                const eventColors: Record<string, string> = { created: '#999', sent: '#4B7BE5', viewed: '#6C5CE7', accepted: '#2AB5A0', paid: '#2e7d32', comment: '#E8A838', reply: '#4B7BE5' };
+                const eventLabels: Record<string, string> = { created: 'Creada', sent: 'Enviada', viewed: 'Vista', accepted: 'Aceptada', paid: 'Pagada', comment: 'Comentario', reply: 'Respuesta', edited: 'Editada' };
+                const eventColors: Record<string, string> = { created: '#999', sent: '#4B7BE5', viewed: '#6C5CE7', accepted: '#2AB5A0', paid: '#2e7d32', comment: '#E8A838', reply: '#4B7BE5', edited: '#E8A838' };
                 // Deduplicate: show only first occurrence of each event type (except viewed which shows count)
                 const uniqueEvents: any[] = [];
                 const seen = new Set<string>();
@@ -920,7 +1190,190 @@ export default function RevenueHub() {
                 ) : null;
               })()}
 
-              <button onClick={createQuote} disabled={saving || !items.length || !qf.empresa} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', width: '100%', marginTop: 16, justifyContent: 'center' }}>{saving ? 'Guardando...' : qf.id ? 'Guardar cambios' : 'Crear y enviar cotización'}</button>
+            </div>
+            {/* Right: Preview */}
+            <div style={{ flex: 1, overflowY: 'auto' as const, padding: 32 }}>
+              <div style={{ width: '100%', maxWidth: 640, margin: '0 auto', background: '#fff', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+                {/* Preview Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '28px 32px 18px', borderBottom: '1px solid #f0f0f0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontFamily: "'Clash Display',sans-serif", fontSize: '1.5rem', fontWeight: 700 }}>Sacs</span>
+                    <span style={{ fontSize: '0.5625rem', fontWeight: 700, color: '#4B7BE5', background: 'rgba(75,123,229,0.08)', padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>Cotización</span>
+                  </div>
+                  <div style={{ textAlign: 'right' as const }}>
+                    <div style={{ fontSize: '1rem', fontWeight: 800 }}>{qf.numero || 'COT-XXX'}</div>
+                    <div style={{ fontSize: '0.6875rem', color: '#999' }}>Vigencia: {fmtDate(qf.vigencia)}</div>
+                  </div>
+                </div>
+
+                {/* Preview Client */}
+                <div style={{ padding: '16px 32px' }}>
+                  <div style={{ fontSize: '0.5rem', fontWeight: 600, color: '#aaa', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 2 }}>Cotización para:</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#1a1a1a' }}>{qf.empresa || 'Empresa'}</div>
+                  {qf.contacto && <div style={{ fontSize: '0.75rem', color: '#888' }}>{qf.contacto}</div>}
+                  {qf.email && <div style={{ fontSize: '0.75rem', color: '#888' }}>{qf.email}</div>}
+                </div>
+
+                {/* Preview Key Points */}
+                {(qf.key_points || []).length > 0 && (qf.mostrar_key_points !== false) && (
+                  <div style={{ padding: '14px 32px', borderTop: '1px solid #f0f0f0' }}>
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#1a1a1a', marginBottom: 8 }}>Minuta de la reunión</div>
+                    {qf.key_points.map((kp: any, i: number) => (
+                      <div key={i} style={{ display: 'flex', gap: 8, padding: '5px 0', alignItems: 'flex-start' }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 2 }}><path d="M20 6L9 17l-5-5" stroke="#4B7BE5" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        <div>
+                          <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#1a1a1a' }}>{kp.title}</div>
+                          <div style={{ fontSize: '0.5625rem', color: '#999' }}>{kp.detail}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Preview Table */}
+                <table style={{ width: '100%', borderCollapse: 'collapse' as const }}>
+                  <thead>
+                    <tr>
+                      {['Concepto', 'Detalle', 'Precio', 'Subtotal'].map(h => (
+                        <th key={h} style={{ fontSize: '0.5rem', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.06em', color: '#aaa', padding: '8px 12px', textAlign: h === 'Precio' || h === 'Subtotal' ? 'right' as const : 'left' as const, background: '#fafafa', borderTop: '1px solid #f0f0f0', borderBottom: '1px solid #f0f0f0' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.length === 0 && <tr><td colSpan={4} style={{ padding: 24, textAlign: 'center' as const, color: '#ddd', fontSize: '0.75rem' }}>Agrega conceptos al formulario</td></tr>}
+                    {items.map((item: any, i: number) => {
+                      const isP = item.tipo === 'plan';
+                      const isPromo = item.es_promocion;
+                      const suc = parseInt(item.sucursales) || 1;
+                      const isAnn = item.periodo === 'anual';
+                      return (
+                        <tr key={i} style={{ borderBottom: '1px solid #f5f5f5', background: isPromo ? 'rgba(42,181,160,0.02)' : 'transparent' }}>
+                          <td style={{ padding: '10px 12px', fontSize: '0.75rem' }}>
+                            {isPromo && <span style={{ display: 'inline-block', fontSize: '0.4375rem', fontWeight: 800, color: '#fff', background: '#2AB5A0', padding: '1px 5px', borderRadius: 3, textTransform: 'uppercase' as const, marginBottom: 2, marginRight: 4 }}>Promo</span>}
+                            <strong style={{ color: '#1a1a1a' }}>{isP ? `Plan ${item.nombre}` : (item.nombre || '—')}</strong>
+                            {isP && <div style={{ fontSize: '0.5625rem', color: '#bbb' }}>{fmt(item.precio_unitario || 0)}/suc × {suc} suc. × {isAnn ? '10 meses' : '1 mes'}</div>}
+                            {item.descripcion && <div style={{ fontSize: '0.5625rem', color: '#bbb' }}>{item.descripcion}</div>}
+                            {item.nota && <div style={{ fontSize: '0.5625rem', color: '#4B7BE5', fontStyle: 'italic' as const }}>{item.nota}</div>}
+                          </td>
+                          <td style={{ padding: '10px 8px', fontSize: '0.6875rem', color: '#888' }}>{isPromo ? 'Promo' : isP ? (isAnn ? 'Anual' : 'Mensual') : item.periodo_extra === 'anual' ? 'Anual' : item.recurrente ? 'Mensual' : 'Único'}</td>
+                          <td style={{ padding: '10px 8px', fontSize: '0.6875rem', textAlign: 'right' as const, fontWeight: 600 }}>
+                            {isPromo ? <span style={{ textDecoration: 'line-through', color: '#ccc' }}>{fmt(item.precio_original || 0)}</span> : fmt(item.precio_unitario || item.monto || 0)}
+                          </td>
+                          <td style={{ padding: '10px 12px', fontSize: '0.6875rem', textAlign: 'right' as const, fontWeight: 600 }}>
+                            {isPromo ? <span style={{ color: '#2AB5A0', fontWeight: 800 }}>$0</span> : fmt(item.subtotal || item.monto || 0)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+
+                {/* Preview Totals */}
+                <div style={{ padding: '16px 32px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#888', marginBottom: 4 }}><span>Subtotal</span><span>{fmt(itemsSubtotal)}</span></div>
+                  {parseFloat(qf.descuento_global) > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#2AB5A0', marginBottom: 4 }}><span>Descuento</span><span>-{fmt(globalDisc)}</span></div>}
+                  {ivaMode !== 'sin' && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#888', marginBottom: 4 }}><span>{ivaMode === 'incluido' ? 'IVA incluido' : 'IVA (16%)'}</span><span>{fmt(ivaMonto)}</span></div>}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.125rem', fontWeight: 800, borderTop: '2px solid #1a1a1a', paddingTop: 8, marginTop: 4 }}>
+                    <span>Total {ivaMode === 'incluido' ? '(IVA incl.)' : ''}</span><span style={{ color: '#2AB5A0' }}>{fmt(grandTotal)} {qf.moneda}</span>
+                  </div>
+                </div>
+
+                {/* Preview Payment Breakdown */}
+                {(qf.mostrar_desglose !== false) && items.some((i: any) => i.tipo === 'plan') && (() => {
+                  const pPlans = items.filter((i: any) => i.tipo === 'plan');
+                  const pUnique = items.filter((i: any) => i.tipo === 'extra' && !i.recurrente && !i.es_promocion);
+                  const pMonthly = items.filter((i: any) => i.tipo === 'extra' && i.recurrente && i.periodo_extra !== 'anual');
+                  const pAnnualPlans = pPlans.filter((i: any) => i.periodo === 'anual');
+                  const pMonthlyPlans = pPlans.filter((i: any) => i.periodo === 'mensual');
+                  return (
+                    <div style={{ padding: '14px 32px', borderTop: '1px solid #f0f0f0' }}>
+                      <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#1a1a1a', marginBottom: 8 }}>Resumen de pagos</div>
+                      <div style={{ background: '#fafafa', borderRadius: 8, padding: 10, marginBottom: 6, fontSize: '0.625rem' }}>
+                        <div style={{ fontWeight: 700, color: '#666', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 4, fontSize: '0.5rem' }}>Primer pago</div>
+                        {pPlans.map((i: any, idx: number) => <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', color: '#666', padding: '2px 0' }}><span>Plan {i.nombre} ({i.periodo})</span><span>{fmt(i.subtotal || 0)}</span></div>)}
+                        {pUnique.map((i: any, idx: number) => <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', color: '#666', padding: '2px 0' }}><span>{i.nombre}</span><span>{fmt(i.monto || 0)}</span></div>)}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, borderTop: '1px solid #e0e0e0', paddingTop: 4, marginTop: 4 }}><span>Total primer pago</span><span>{fmt(grandTotal)} {qf.moneda}</span></div>
+                      </div>
+                      {(pMonthlyPlans.length > 0 || pMonthly.length > 0) && (
+                        <div style={{ background: '#fafafa', borderRadius: 8, padding: 10, marginBottom: 6, fontSize: '0.625rem' }}>
+                          <div style={{ fontWeight: 700, color: '#666', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 4, fontSize: '0.5rem' }}>Pago mensual recurrente</div>
+                          {pMonthlyPlans.map((i: any, idx: number) => <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', color: '#666', padding: '2px 0' }}><span>Plan {i.nombre}</span><span>{fmt(i.subtotal || 0)}</span></div>)}
+                          {pMonthly.map((i: any, idx: number) => <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', color: '#666', padding: '2px 0' }}><span>{i.nombre}</span><span>{fmt(i.monto || 0)}</span></div>)}
+                        </div>
+                      )}
+                      {pAnnualPlans.length > 0 && (
+                        <div style={{ background: '#fafafa', borderRadius: 8, padding: 10, fontSize: '0.625rem' }}>
+                          <div style={{ fontWeight: 700, color: '#666', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 4, fontSize: '0.5rem' }}>Renovación anual</div>
+                          {pAnnualPlans.map((i: any, idx: number) => <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', color: '#666', padding: '2px 0' }}><span>Plan {i.nombre}</span><span>{fmt(i.subtotal || 0)}</span></div>)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Preview Plan Features */}
+                {(qf.mostrar_features !== false) && items.filter((i: any) => i.tipo === 'plan').length > 0 && (() => {
+                  const planItems = items.filter((i: any) => i.tipo === 'plan');
+                  const features = planItems.map((pi: any) => {
+                    const pd = plansData.find(p => p.id === pi.nombre?.toLowerCase());
+                    if (!pd) return null;
+                    const allF: { category: string; items: string[] }[] = [];
+                    let cur: typeof pd | undefined = pd;
+                    const visited = new Set<string>();
+                    while (cur && !visited.has(cur.id)) {
+                      visited.add(cur.id);
+                      for (const f of cur.features) { if (typeof f === 'object' && 'category' in f) allF.push(f); }
+                      cur = cur.inheritsFrom ? plansData.find(p => p.name === cur!.inheritsFrom) : undefined;
+                    }
+                    return { name: pd.name, features: allF.reverse(), services: pd.services };
+                  }).filter(Boolean);
+                  return features.length > 0 ? (
+                    <div style={{ padding: '14px 32px', borderTop: '1px solid #f0f0f0' }}>
+                      <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#1a1a1a', marginBottom: 10 }}>Que incluye tu plan</div>
+                      {features.map((pf: any, fi: number) => (
+                        <div key={fi}>
+                          <div style={{ fontSize: '0.5rem', fontWeight: 700, color: '#4B7BE5', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 6, paddingBottom: 4, borderBottom: '1px solid #f0f0f0' }}>Plan {pf.name}</div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 16px', marginBottom: 10 }}>
+                            {pf.features.map((cat: any, ci: number) => (
+                              <div key={ci}>
+                                <div style={{ fontSize: '0.5rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, marginBottom: 2 }}>{cat.category}</div>
+                                {cat.items.map((item: string, ii: number) => (
+                                  <div key={ii} style={{ display: 'flex', gap: 4, fontSize: '0.5rem', color: '#666', padding: '1px 0', alignItems: 'flex-start' }}>
+                                    <svg width="8" height="8" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 1 }}><path d="M20 6L9 17l-5-5" stroke="#2AB5A0" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                    <span>{item}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            ))}
+                          </div>
+                          {pf.services.length > 0 && (
+                            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' as const, marginBottom: 8 }}>
+                              {pf.services.map((s: string, si: number) => (
+                                <span key={si} style={{ fontSize: '0.5rem', fontWeight: 600, color: '#2AB5A0', background: 'rgba(42,181,160,0.08)', padding: '2px 6px', borderRadius: 10 }}>{s}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : null;
+                })()}
+
+                {/* Preview Conditions */}
+                {(qf.mostrar_condiciones !== false) && qf.condiciones && (
+                  <div style={{ padding: '14px 32px', borderTop: '1px solid #f0f0f0' }}>
+                    <div style={{ fontSize: '0.5rem', fontWeight: 600, color: '#aaa', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 4 }}>Condiciones</div>
+                    <div style={{ fontSize: '0.625rem', color: '#999', lineHeight: 1.6, whiteSpace: 'pre-line' as const }}>{qf.condiciones}</div>
+                  </div>
+                )}
+
+                {/* Preview Footer */}
+                <div style={{ padding: '14px 32px', background: '#fafafa', borderTop: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', fontSize: '0.5625rem', color: '#bbb' }}>
+                  <span><strong style={{ color: '#1a1a1a', fontFamily: "'Clash Display',sans-serif" }}>Sacs</strong> Sistema operativo para retailers</span>
+                  <span>www.sacscloud.com</span>
+                </div>
+              </div>
+            </div>
             </div>
           </div>
         )}
@@ -956,6 +1409,39 @@ export default function RevenueHub() {
         {tab === 'cotizaciones' && <QuotesView />}
         {tab === 'config' && (
           <div>
+            {/* Folio config */}
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 800, marginBottom: 16 }}>Folio de cotizaciones</h2>
+            <div style={{ ...S.card, marginBottom: 24 }}>
+              <div style={{ fontSize: '0.75rem', color: '#999', marginBottom: 12 }}>El siguiente folio sera COT- seguido del numero que configures. Usa esto para iniciar desde un numero mas alto.</div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'end' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={S.label}>Siguiente numero de folio</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#999' }}>COT-</span>
+                    <input id="folio-input" type="number" min="1" placeholder="Ej. 100" defaultValue="" style={S.input} />
+                  </div>
+                </div>
+                <button onClick={async () => {
+                  const input = document.getElementById('folio-input') as HTMLInputElement;
+                  const val = parseInt(input?.value);
+                  if (!val || val < 1) { alert('Ingresa un numero valido'); return; }
+                  // We store the folio offset by creating dummy count records or using a config approach
+                  // Simplest: store in a special quote with estado='_config'
+                  const res = await fetch('/api/revenue/quotes');
+                  const all = await res.json();
+                  const currentCount = Array.isArray(all) ? all.filter((q: any) => q.estado !== '_config').length : 0;
+                  if (val <= currentCount) { alert(`Ya tienes ${currentCount} cotizaciones. El folio debe ser mayor a ${currentCount}.`); return; }
+                  // Store config in localStorage and use it in the API
+                  localStorage.setItem('sacs_folio_offset', String(val - 1));
+                  alert(`Listo. La proxima cotización sera COT-${String(val).padStart(3, '0')}`);
+                  input.value = '';
+                }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff' }}>Guardar</button>
+              </div>
+              {typeof window !== 'undefined' && localStorage.getItem('sacs_folio_offset') && (
+                <div style={{ fontSize: '0.6875rem', color: '#4B7BE5', marginTop: 8 }}>Offset configurado: +{localStorage.getItem('sacs_folio_offset')}</div>
+              )}
+            </div>
+
             <h2 style={{ fontSize: '1.125rem', fontWeight: 800, marginBottom: 16 }}>Cuentas bancarias</h2>
             <div style={{ ...S.card, marginBottom: 16 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr auto', gap: 8, alignItems: 'end' }}>
