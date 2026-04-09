@@ -1,5 +1,5 @@
 ---
-import { navLinks } from '../data/navigation';
+import { navLinks, type BusinessSector } from '../data/navigation';
 import { t, getLocalizedUrl } from '../i18n/utils';
 import { locales, languageNames, defaultLocale } from '../i18n/config';
 import type { Locale } from '../i18n/config';
@@ -7,6 +7,19 @@ import type { Locale } from '../i18n/config';
 interface Props { locale?: Locale; }
 const { locale = 'es' } = Astro.props;
 const currentPath = Astro.url.pathname;
+
+const sectorIcons: Record<string, string> = {
+  restaurant: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 2v7c0 1.1.9 2 2 2h2v11h2V11h2c1.1 0 2-.9 2-2V2H3zm4 7H5V4h2v5zm2 0V4h2v5H9z" fill="currentColor" opacity="0.5"/><path d="M7 9H5V4h2v5z" fill="currentColor"/><path d="M9 9V4h2v5H9z" fill="currentColor"/><path d="M18 2v20h2V2h-2z" fill="currentColor" opacity="0.3"/><path d="M17 2c0 0-2 .5-2 4s2 4 2 4v12h2V2h-2z" fill="currentColor"/></svg>`,
+  cafe: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 19h18v2H2v-2z" fill="currentColor" opacity="0.3"/><path d="M6 4.5c0-.28.22-.5.5-.5h9c.28 0 .5.22.5.5V6h1.5C18.88 6 20 7.12 20 8.5S18.88 11 17.5 11H16v1c0 2.21-1.79 4-4 4H9c-2.21 0-4-1.79-4-4V4.5zM16 9h1.5c.28 0 .5-.22.5-.5S17.78 8 17.5 8H16v1z" fill="currentColor"/><path d="M7.5 1.5l-.7 1.2M11 1l-.5 1.5M14.5 1.5l.7 1.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/></svg>`,
+  bar: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 22h8" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.3"/><path d="M12 17v5" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.3"/><path d="M5 2l7 10 7-10H5z" fill="currentColor" opacity="0.15"/><path d="M5 2l7 10 7-10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7.5 7h9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/><circle cx="17" cy="5" r="2" fill="currentColor" opacity="0.6"/></svg>`,
+  fastfood: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 14h18v1c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2v-1z" fill="currentColor" opacity="0.3"/><path d="M3 14h18c0-3-3.13-5.45-6-6.12V7c0-.55-.45-1-1-1h-4c-.55 0-1 .45-1 1v.88C6.13 8.55 3 11 3 14z" fill="currentColor"/><rect x="3" y="17" width="18" height="2" rx="1" fill="currentColor" opacity="0.6"/><path d="M6 14h2v1H6v-1zm4 0h2v1h-2v-1zm4 0h2v1h-2v-1z" fill="white" opacity="0.5"/></svg>`,
+  clothing: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14.5 2l3 3.5L21 4l1 5-4.5 2.5V21h-11V11.5L2 9l1-5 3.5 1.5L9.5 2h5z" fill="currentColor" opacity="0.15"/><path d="M14.5 2l3 3.5L21 4l1 5-4.5 2.5V21h-11V11.5L2 9l1-5 3.5 1.5L9.5 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 2C9.5 2 10 5 12 5s2.5-3 2.5-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/></svg>`,
+  beauty: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 9.5C6 5.36 9.36 2 13.5 2c1.48 0 2.87.43 4.03 1.17" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.4"/><path d="M9 16.47V21.5a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-5.03" fill="currentColor" opacity="0.2"/><path d="M6 9.5c0 2.1.85 4 2.23 5.38A7.47 7.47 0 0 0 13.5 17c2.07 0 3.95-.84 5.3-2.2A7.49 7.49 0 0 0 21 9.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M9 16.47V21.5a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-5.03" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 8l1-3 1 3-1 1-1-1z" fill="currentColor"/></svg>`,
+  grocery: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4H6z" fill="currentColor" opacity="0.12"/><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4H6z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 6h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M16 10a4 4 0 0 1-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  bakery: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 17c-4.42 0-8-1.34-8-3v3c0 1.66 3.58 3 8 3s8-1.34 8-3v-3c0 1.66-3.58 3-8 3z" fill="currentColor" opacity="0.3"/><ellipse cx="12" cy="14" rx="8" ry="3" fill="currentColor" opacity="0.15"/><path d="M5 9.5C5 6.46 8.13 4 12 4s7 2.46 7 5.5c0 .52-.1 1.02-.28 1.5H5.28A4.4 4.4 0 0 1 5 9.5z" fill="currentColor"/><path d="M4 14c0-1.66 3.58-3 8-3s8 1.34 8 3-3.58 3-8 3-8-1.34-8-3z" stroke="currentColor" stroke-width="1.5"/><path d="M9 7c.5-.5 1.5-1 3-1s2.5.5 3 1" stroke="white" stroke-width="1" stroke-linecap="round" opacity="0.4"/></svg>`,
+  jewelry: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 3h12l4 6-10 13L2 9l4-6z" fill="currentColor" opacity="0.1"/><path d="M6 3h12l4 6-10 13L2 9l4-6z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M2 9h20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 22l4-13M12 22L8 9" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" opacity="0.5"/><path d="M8.5 3L10 9m5.5-6L14 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/></svg>`,
+  professional: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="7" width="20" height="14" rx="2" fill="currentColor" opacity="0.12"/><rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 12v4M10 14h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M2 12h20" stroke="currentColor" stroke-width="1.5" opacity="0.2"/></svg>`,
+};
 ---
 
 <header class="nav" id="nav">
@@ -19,13 +32,13 @@ const currentPath = Astro.url.pathname;
 
     <nav class="nav-links" aria-label="Navegación principal">
       {navLinks.map((link) => (
-        <div class:list={['nav-item', { 'has-dropdown': !!link.pillars }]}>
+        <div class:list={['nav-item', { 'has-dropdown': !!(link.pillars || link.sectors) }]}>
           <a
             href={getLocalizedUrl(link.href, locale)}
             class:list={['nav-link', { active: currentPath.startsWith(link.href) && link.href !== '/' }]}
           >
             {link.label}
-            {link.pillars && (
+            {(link.pillars || link.sectors) && (
               <svg class="nav-chevron" width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true">
                 <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
@@ -55,6 +68,39 @@ const currentPath = Astro.url.pathname;
                 <div class="mega-footer">
                   <a href={getLocalizedUrl('/producto', locale)} class="mega-footer-link">
                     {t('nav.viewPlatform', locale)}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {link.sectors && (
+            <div class="mega-dropdown sectors-dropdown">
+              <div class="mega-dropdown-inner container">
+                <div class="sectors-header">
+                  <div class="sectors-title-group">
+                    <span class="sectors-eyebrow">Soluciones por industria</span>
+                    <span class="sectors-title">Giros de Negocio</span>
+                  </div>
+                  <span class="sectors-subtitle">SACS se adapta a tu giro. Descubre cómo potenciamos cada industria.</span>
+                </div>
+                <div class="sectors-grid">
+                  {link.sectors.map((sector) => (
+                    <a href={getLocalizedUrl(sector.href, locale)} class="sector-card">
+                      <div class="sector-icon" style={`color: ${sector.color}; background: ${sector.bgColor};`}>
+                        <Fragment set:html={sectorIcons[sector.iconId]} />
+                      </div>
+                      <div class="sector-info">
+                        <span class="sector-name">{sector.label}</span>
+                        <span class="sector-desc">{sector.description}</span>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+                <div class="mega-footer">
+                  <a href={getLocalizedUrl('/giros', locale)} class="mega-footer-link">
+                    Ver todos los giros de negocio
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                   </a>
                 </div>
@@ -104,6 +150,20 @@ const currentPath = Astro.url.pathname;
                   </div>
                 </div>
               ))}
+            </>
+          ) : link.sectors ? (
+            <>
+              <span class="mobile-link mobile-link-header">{link.label}</span>
+              <div class="mobile-sectors-grid">
+                {link.sectors.map((sector) => (
+                  <a href={getLocalizedUrl(sector.href, locale)} class="mobile-sector-card">
+                    <div class="mobile-sector-icon" style={`color: ${sector.color}; background: ${sector.bgColor};`}>
+                      <Fragment set:html={sectorIcons[sector.iconId]} />
+                    </div>
+                    <span class="mobile-sector-name">{sector.label}</span>
+                  </a>
+                ))}
+              </div>
             </>
           ) : (
             <a href={getLocalizedUrl(link.href, locale)} class="mobile-link">{link.label}</a>
@@ -688,6 +748,177 @@ const currentPath = Astro.url.pathname;
     .mobile-menu {
       display: none;
     }
+  }
+
+  /* ─── Sectors dropdown ─── */
+  .sectors-dropdown .mega-dropdown-inner {
+    padding-top: 28px;
+    padding-bottom: 20px;
+  }
+
+  .sectors-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .sectors-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sectors-eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-primary, #4B7BE5);
+  }
+
+  .sectors-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+    letter-spacing: -0.02em;
+  }
+
+  .sectors-subtitle {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-tertiary, #9ca3af);
+    max-width: 320px;
+    text-align: right;
+    line-height: 1.4;
+  }
+
+  .sectors-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+  }
+
+  .sector-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 20px 12px 16px;
+    border-radius: 14px;
+    text-decoration: none;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
+    position: relative;
+  }
+
+  .sector-card:hover {
+    background: rgba(0, 0, 0, 0.025);
+    border-color: rgba(0, 0, 0, 0.06);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+    text-decoration: none;
+  }
+
+  .sector-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
+    flex-shrink: 0;
+  }
+
+  .sector-card:hover .sector-icon {
+    transform: scale(1.08);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  .sector-icon :global(svg) {
+    width: 28px;
+    height: 28px;
+  }
+
+  .sector-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sector-name {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+
+  .sector-desc {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--color-text-tertiary, #9ca3af);
+    line-height: 1.35;
+  }
+
+  .sector-card:hover .sector-name {
+    color: var(--color-primary, #4B7BE5);
+  }
+
+  /* ─── Mobile sectors ─── */
+  .mobile-sectors-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: var(--space-2) var(--space-3);
+    margin-bottom: var(--space-2);
+  }
+
+  .mobile-sector-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 8px;
+    border-radius: 12px;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.2s ease;
+  }
+
+  .mobile-sector-card:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+    text-decoration: none;
+  }
+
+  .mobile-sector-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .mobile-sector-icon :global(svg) {
+    width: 24px;
+    height: 24px;
+  }
+
+  .mobile-sector-name {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #fff;
+    text-align: center;
+    line-height: 1.2;
   }
 
   /* Mobile perf: replace expensive backdrop-filter */
