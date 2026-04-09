@@ -80,31 +80,13 @@ const sectorIcons: Record<string, string> = {
           {link.sectors && (
             <div class="mega-dropdown sectors-dropdown">
               <div class="mega-dropdown-inner container">
-                <div class="sectors-header">
-                  <div class="sectors-title-group">
-                    <span class="sectors-eyebrow">Soluciones por industria</span>
-                    <span class="sectors-title">Giros de Negocio</span>
-                  </div>
-                  <span class="sectors-subtitle">SACS se adapta a tu giro. Descubre cómo potenciamos cada industria.</span>
-                </div>
                 <div class="sectors-grid">
                   {link.sectors.map((sector) => (
-                    <a href={getLocalizedUrl(sector.href, locale)} class="sector-card">
-                      <div class="sector-icon" style={`color: ${sector.color}; background: ${sector.bgColor};`}>
-                        <Fragment set:html={sectorIcons[sector.iconId]} />
-                      </div>
-                      <div class="sector-info">
-                        <span class="sector-name">{sector.label}</span>
-                        <span class="sector-desc">{sector.description}</span>
-                      </div>
+                    <a href={getLocalizedUrl(sector.href, locale)} class="sector-card" style={`--sector-color: ${sector.color};`}>
+                      <span class="sector-name">{sector.label}</span>
+                      <span class="sector-desc">{sector.description}</span>
                     </a>
                   ))}
-                </div>
-                <div class="mega-footer">
-                  <a href={getLocalizedUrl('/giros', locale)} class="mega-footer-link">
-                    Ver todos los giros de negocio
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                  </a>
                 </div>
               </div>
             </div>
@@ -168,14 +150,7 @@ const sectorIcons: Record<string, string> = {
                 <div class="mobile-sectors-list">
                   {link.sectors.map((sector) => (
                     <a href={getLocalizedUrl(sector.href, locale)} class="mobile-sector-row">
-                      <div class="mobile-sector-row-icon" style={`color: ${sector.color}; background: ${sector.bgColor};`}>
-                        <Fragment set:html={sectorIcons[sector.iconId]} />
-                      </div>
-                      <div class="mobile-sector-row-text">
-                        <span class="mobile-sector-row-name">{sector.label}</span>
-                        <span class="mobile-sector-row-desc">{sector.description}</span>
-                      </div>
-                      <svg class="mobile-sector-row-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                      <span class="mobile-sector-row-name">{sector.label}</span>
                     </a>
                   ))}
                 </div>
@@ -809,171 +784,67 @@ const sectorIcons: Record<string, string> = {
     }
   }
 
-  /* ─── Sectors dropdown (Desktop) ─── */
+  /* ─── Sectors dropdown (Desktop) — Squarespace minimal ─── */
   .sectors-dropdown .mega-dropdown-inner {
-    padding-top: 32px;
+    padding-top: 24px;
     padding-bottom: 24px;
-  }
-
-  .sectors-header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    margin-bottom: 28px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  }
-
-  .sectors-title-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .sectors-eyebrow {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--color-primary, #4B7BE5);
-    background: linear-gradient(135deg, var(--color-primary, #4B7BE5), var(--color-secondary, #2AB5A0));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .sectors-title {
-    font-family: var(--font-display, 'Sora', sans-serif);
-    font-size: 1.375rem;
-    font-weight: 800;
-    color: var(--color-text-primary, #1a1a2e);
-    letter-spacing: -0.03em;
-  }
-
-  .sectors-subtitle {
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: var(--color-text-tertiary, #9ca3af);
-    max-width: 320px;
-    text-align: right;
-    line-height: 1.4;
   }
 
   .sectors-grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 4px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
   }
 
   .sector-card {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    text-align: center;
-    padding: 24px 12px 18px;
-    border-radius: 16px;
+    gap: 4px;
+    padding: 16px 20px;
     text-decoration: none;
-    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    border: 1.5px solid transparent;
+    transition: background 0.2s ease;
+    border-radius: 10px;
     position: relative;
-    overflow: hidden;
-  }
-
-  .sector-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 16px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    background: radial-gradient(ellipse at center top, var(--hover-glow, rgba(75, 123, 229, 0.06)) 0%, transparent 70%);
   }
 
   .sector-card:hover {
-    border-color: rgba(0, 0, 0, 0.08);
-    transform: translateY(-4px);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+    background: rgba(0, 0, 0, 0.03);
     text-decoration: none;
   }
 
-  .sector-card:hover::before {
-    opacity: 1;
-  }
-
-  .sector-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 14px;
-    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
-    flex-shrink: 0;
-    position: relative;
-    z-index: 1;
-    border: 1.5px solid rgba(0, 0, 0, 0.04);
-  }
-
-  .sector-card:hover .sector-icon {
-    transform: scale(1.1) translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-  }
-
-  .sector-icon :global(svg) {
-    width: 28px;
-    height: 28px;
-  }
-
-  .sector-info {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    position: relative;
-    z-index: 1;
-  }
-
   .sector-name {
-    font-size: 0.875rem;
-    font-weight: 700;
+    font-size: 0.9375rem;
+    font-weight: 600;
     color: var(--color-text-primary, #1a1a2e);
     line-height: 1.2;
     letter-spacing: -0.01em;
     transition: color 0.2s ease;
   }
 
+  .sector-card:hover .sector-name {
+    color: var(--sector-color, var(--color-primary, #4B7BE5));
+  }
+
   .sector-desc {
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     font-weight: 500;
     color: var(--color-text-tertiary, #9ca3af);
     line-height: 1.35;
-    transition: color 0.2s ease;
   }
 
-  .sector-card:hover .sector-name {
-    color: var(--color-text-primary, #1a1a2e);
-  }
-
-  .sector-card:hover .sector-desc {
-    color: var(--color-text-secondary, #6b7280);
-  }
-
-  /* ─── Mobile sectors — Light theme list ─── */
+  /* ─── Mobile sectors — Minimal list ─── */
   .mobile-sectors-list {
     display: flex;
     flex-direction: column;
-    gap: 1px;
-    padding: 4px 4px 12px;
+    padding: 4px 0 12px;
   }
 
   .mobile-sector-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 11px 12px;
-    border-radius: 12px;
+    display: block;
+    padding: 10px 16px;
     text-decoration: none;
-    transition: all 0.2s ease;
+    transition: background 0.2s ease;
+    border-radius: 8px;
   }
 
   .mobile-sector-row:hover,
@@ -982,56 +853,16 @@ const sectorIcons: Record<string, string> = {
     text-decoration: none;
   }
 
-  .mobile-sector-row-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .mobile-sector-row-icon :global(svg) {
-    width: 22px;
-    height: 22px;
-  }
-
-  .mobile-sector-row-text {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    flex: 1;
-    min-width: 0;
-  }
-
   .mobile-sector-row-name {
     font-size: 0.9375rem;
-    font-weight: 600;
-    color: var(--color-text-primary, #1a1a2e);
-    line-height: 1.3;
-    letter-spacing: -0.01em;
-  }
-
-  .mobile-sector-row-desc {
-    font-size: 0.75rem;
     font-weight: 500;
-    color: var(--color-text-tertiary, #8c8c8c);
+    color: var(--color-text-secondary, #4A4A4A);
     line-height: 1.3;
   }
 
-  .mobile-sector-row-arrow {
-    width: 16px;
-    height: 16px;
-    color: rgba(0, 0, 0, 0.15);
-    flex-shrink: 0;
-    transition: color 0.2s ease, transform 0.2s ease;
-  }
-
-  .mobile-sector-row:hover .mobile-sector-row-arrow,
-  .mobile-sector-row:active .mobile-sector-row-arrow {
+  .mobile-sector-row:hover .mobile-sector-row-name,
+  .mobile-sector-row:active .mobile-sector-row-name {
     color: var(--color-primary, #4B7BE5);
-    transform: translateX(2px);
   }
 
   /* Mobile perf: replace expensive backdrop-filter */
