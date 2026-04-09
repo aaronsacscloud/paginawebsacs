@@ -40,6 +40,14 @@ const showDesglose = quoteMeta.mostrar_desglose !== undefined ? quoteMeta.mostra
 const showCondiciones = quoteMeta.mostrar_condiciones !== undefined ? quoteMeta.mostrar_condiciones : true;
 const showKeyPoints = quoteMeta.mostrar_key_points !== undefined ? quoteMeta.mostrar_key_points : true;
 const keyPoints = quoteMeta.key_points || [];
+const showRoi = quoteMeta.mostrar_roi || false;
+const roi = quoteMeta.roi || null;
+const showAntesDesp = quoteMeta.mostrar_antes_despues || false;
+const antesDesp = quoteMeta.antes_despues || [];
+const showFirma = quoteMeta.mostrar_firma !== undefined ? quoteMeta.mostrar_firma : true;
+const showQr = quoteMeta.mostrar_qr !== undefined ? quoteMeta.mostrar_qr : true;
+const showAnimaciones = quoteMeta.mostrar_animaciones !== undefined ? quoteMeta.mostrar_animaciones : true;
+const quoteUrl = `https://www.sacscloud.com/cotizacion/${id}`;
 const daysLeft = quote.vigencia ? Math.ceil((new Date(quote.vigencia).getTime() - Date.now()) / 86400000) : 0;
 const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
 const fmtDate = (d: string | null) => {
@@ -104,7 +112,7 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
 
 <BaseLayout title={`Cotización ${quote.numero} — Sacs`} description={`Cotización para ${quote.empresa}`}>
 
-<div class:list={['quote-page', `quote-${template}`, { 'quote-expired-page': isExpired }]} id="quote-doc">
+<div class:list={['quote-page', `quote-${template}`, { 'quote-expired-page': isExpired }]} id="quote-doc" data-no-animations={showAnimaciones ? undefined : true}>
   <div class="quote-container" style="position:relative">
     {isExpired && (
       <div class="quote-stamp">
@@ -257,6 +265,15 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
           <span>-{fmt(quote.descuento_tipo === 'pct' ? (quote.subtotal || 0) * quote.descuento_global / 100 : quote.descuento_global)} {quote.moneda}</span>
         </div>
       )}
+      {promoItems.length > 0 && (() => {
+        const promoSavings = promoItems.reduce((s: number, i: any) => s + (i.precio_original || 0), 0);
+        return promoSavings > 0 ? (
+          <div class="quote-total-row quote-discount">
+            <span>Ahorro por promociones ({promoItems.length})</span>
+            <span>-{fmt(promoSavings)} {quote.moneda}</span>
+          </div>
+        ) : null;
+      })()}
       {ivaMode === 'suma' && (
         <div class="quote-total-row">
           <span>IVA (16%)</span>
@@ -271,7 +288,7 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
       )}
       <div class="quote-total-row quote-total-final">
         <span>Total {ivaMode === 'incluido' ? '(IVA incluido)' : ''}</span>
-        <span>{fmt(quote.total || 0)} {quote.moneda}</span>
+        <span class="count-up" data-count={quote.total || 0} data-suffix={` ${quote.moneda}`}>{fmt(quote.total || 0)} {quote.moneda}</span>
       </div>
     </div>
 
@@ -302,7 +319,7 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
           ))}
           <div class="quote-payment-total">
             <span>Total primer pago {quote.iva_incluido ? '(con IVA)' : ''}</span>
-            <span>{fmt(quote.total || 0)} {quote.moneda}</span>
+            <span class="count-up" data-count={quote.total || 0} data-suffix={` ${quote.moneda}`}>{fmt(quote.total || 0)} {quote.moneda}</span>
           </div>
         </div>
 
@@ -333,6 +350,50 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
             ))}
           </div>
         )}
+      </div>
+    )}
+
+    <!-- ROI -->
+    {showRoi && roi && roi.ahorro_mensual > 0 && (
+      <div class="quote-roi">
+        <div class="quote-roi-title">Retorno de inversión estimado</div>
+        <div class="quote-roi-problem">{roi.problema}</div>
+        <div class="quote-roi-numbers">
+          <div class="quote-roi-stat">
+            <div class="quote-roi-value" data-count={roi.ahorro_mensual}>{fmt(roi.ahorro_mensual)}</div>
+            <div class="quote-roi-label">Ahorro mensual estimado</div>
+          </div>
+          <div class="quote-roi-stat">
+            <div class="quote-roi-value" data-count={roi.ahorro_mensual * 12}>{fmt(roi.ahorro_mensual * 12)}</div>
+            <div class="quote-roi-label">Ahorro anual proyectado</div>
+          </div>
+        </div>
+        <div class="quote-roi-detail">{roi.detalle}</div>
+      </div>
+    )}
+
+    <!-- Antes vs Después -->
+    {showAntesDesp && antesDesp.length > 0 && (
+      <div class="quote-comparison">
+        <div class="quote-comparison-title">Antes vs Después</div>
+        <table class="quote-comparison-table">
+          <thead>
+            <tr>
+              <th class="quote-comp-th">Aspecto</th>
+              <th class="quote-comp-th quote-comp-before">Hoy</th>
+              <th class="quote-comp-th quote-comp-after">Con SACS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {antesDesp.map((row: any) => (
+              <tr>
+                <td class="quote-comp-td quote-comp-aspect">{row.aspecto}</td>
+                <td class="quote-comp-td quote-comp-before-cell">{row.antes}</td>
+                <td class="quote-comp-td quote-comp-after-cell">{row.despues}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     )}
 
@@ -438,6 +499,68 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
         </div>
       </div>
     )}
+
+    <!-- QR Code -->
+    {showQr && (
+      <div class="quote-qr">
+        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(quoteUrl)}&color=1a1a1a&bgcolor=ffffff`} alt="QR" width="80" height="80" loading="lazy" class="quote-qr-img" />
+        <div class="quote-qr-text">Escanea para ver esta cotización</div>
+      </div>
+    )}
+
+    <!-- Signature -->
+    {showFirma && !isExpired && quote.estado !== 'accepted' && quote.estado !== 'paid' && (
+      <div class="quote-signature no-print" id="signature-section">
+        <div class="quote-signature-title">Firma de aceptación</div>
+        <div class="quote-signature-hint">Firma con tu dedo o mouse para aceptar esta cotización</div>
+        <canvas id="signature-canvas" class="quote-signature-canvas" width="500" height="150"></canvas>
+        <div class="quote-signature-actions">
+          <button class="quote-action-btn" id="btn-clear-sig">Limpiar</button>
+          <button class="quote-action-btn" id="btn-accept-sig" style="background:#1a1a1a;color:#fff">Aceptar cotización</button>
+        </div>
+      </div>
+    )}
+
+    <!-- Accept name modal -->
+    <div class="quote-modal-overlay no-print" id="accept-modal" style="display:none">
+      <div class="quote-modal" style="max-width:400px">
+        <div class="quote-modal-header">
+          <span class="quote-modal-title">Aceptar cotización</span>
+          <button class="quote-modal-close" id="btn-close-accept">✕</button>
+        </div>
+        <div class="quote-modal-body">
+          <p style="font-size:0.8125rem;color:#666;margin:0 0 16px;line-height:1.5">Ingresa tu nombre completo para confirmar la aceptación de esta cotización.</p>
+          <label style="display:block;font-size:0.5625rem;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Nombre completo</label>
+          <input type="text" id="accept-name-input" placeholder="Ej. Mariana López" class="quote-modal-input" />
+        </div>
+        <div class="quote-modal-footer" style="flex-direction:row">
+          <button class="quote-modal-btn quote-modal-btn--secondary" id="btn-cancel-accept">Cancelar</button>
+          <button class="quote-modal-btn" id="btn-confirm-accept">Aceptar</button>
+        </div>
+      </div>
+    </div>
+
+    {quote.estado === 'accepted' && quote.aceptado_por && (
+      <div class="quote-signed">
+        {quoteMeta.firma_base64 && (
+          <img src={quoteMeta.firma_base64} alt="Firma" class="quote-signed-img" />
+        )}
+        <div class="quote-signed-label">Cotización aceptada por {quote.aceptado_por}</div>
+        <div class="quote-signed-date">{fmtDate(quote.aceptado_fecha)}</div>
+      </div>
+    )}
+
+    <!-- Success overlay (hidden, shown after acceptance) -->
+    <div class="quote-success-overlay no-print" id="success-overlay" style="display:none">
+      <div class="quote-success-content">
+        <div class="quote-success-check">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" stroke="#2AB5A0" stroke-width="1.5"/><path d="M7 12.5l3 3 7-7" stroke="#2AB5A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="quote-success-title">Cotización aceptada</div>
+        <div class="quote-success-text">Gracias por tu confianza. Nos pondremos en contacto contigo pronto.</div>
+      </div>
+      <div class="quote-confetti" id="confetti-container"></div>
+    </div>
 
     <!-- Legal -->
     <div class="quote-legal">
@@ -643,6 +766,68 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
 .quote-conditions-title { font-size: 0.625rem; font-weight: 600; color: #aaa; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
 .quote-conditions-text { font-size: 0.8125rem; color: #888; line-height: 1.6; white-space: pre-line; }
 
+/* ─── ROI ─── */
+.quote-roi { padding: 24px 40px; border-top: 1px solid #f0f0f0; }
+.quote-roi-title { font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: #1a1a1a; margin-bottom: 8px; }
+.quote-roi-problem { font-size: 0.8125rem; color: #888; margin-bottom: 16px; line-height: 1.5; }
+.quote-roi-numbers { display: flex; gap: 16px; margin-bottom: 12px; }
+.quote-roi-stat { flex: 1; background: #f8f9fb; border-radius: 10px; padding: 16px; text-align: center; }
+.quote-roi-value { font-family: var(--font-display); font-size: 1.75rem; font-weight: 800; color: #2AB5A0; }
+.quote-roi-label { font-size: 0.625rem; color: #999; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
+.quote-roi-detail { font-size: 0.75rem; color: #aaa; font-style: italic; }
+.quote-dark .quote-roi { border-color: rgba(255,255,255,0.08); }
+.quote-dark .quote-roi-title { color: #fff; }
+.quote-dark .quote-roi-stat { background: rgba(255,255,255,0.03); }
+
+/* ─── Comparison ─── */
+.quote-comparison { padding: 24px 40px; border-top: 1px solid #f0f0f0; }
+.quote-comparison-title { font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: #1a1a1a; margin-bottom: 12px; }
+.quote-comparison-table { width: 100%; border-collapse: collapse; }
+.quote-comp-th { font-size: 0.625rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 12px; border-bottom: 1px solid #f0f0f0; }
+.quote-comp-th.quote-comp-before { color: #ccc; text-align: center; }
+.quote-comp-th.quote-comp-after { color: #2AB5A0; text-align: center; }
+.quote-comp-td { padding: 10px 12px; font-size: 0.8125rem; border-bottom: 1px solid #f5f5f5; }
+.quote-comp-aspect { font-weight: 700; color: #1a1a1a; }
+.quote-comp-before-cell { color: #ccc; text-align: center; text-decoration: line-through; }
+.quote-comp-after-cell { color: #1a1a1a; text-align: center; font-weight: 600; }
+.quote-dark .quote-comparison { border-color: rgba(255,255,255,0.08); }
+.quote-dark .quote-comparison-title { color: #fff; }
+.quote-dark .quote-comp-aspect { color: #fff; }
+.quote-dark .quote-comp-after-cell { color: #2AB5A0; }
+
+/* ─── QR ─── */
+.quote-qr { padding: 20px 40px; border-top: 1px solid #f0f0f0; display: flex; flex-direction: column; align-items: center; }
+.quote-qr-img { border-radius: 6px; display: block; }
+.quote-qr-text { font-size: 0.625rem; color: #ccc; margin-top: 6px; }
+
+/* ─── Signature ─── */
+.quote-signature { padding: 24px 40px; border-top: 1px solid #f0f0f0; }
+.quote-signature-title { font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: #1a1a1a; margin-bottom: 4px; }
+.quote-signature-hint { font-size: 0.75rem; color: #999; margin-bottom: 12px; }
+.quote-signature-canvas { width: 100%; height: 150px; border: 1px solid #e0e0e0; border-radius: 8px; cursor: crosshair; touch-action: none; }
+.quote-signature-actions { display: flex; gap: 8px; margin-top: 8px; }
+.quote-signed { padding: 24px 40px; border-top: 1px solid #f0f0f0; text-align: center; }
+.quote-signed-img { max-width: 240px; height: auto; margin: 0 auto 8px; display: block; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px; }
+.quote-signed-label { font-size: 0.875rem; font-weight: 700; color: #2AB5A0; }
+.quote-signed-date { font-size: 0.6875rem; color: #999; }
+
+/* ─── Success overlay ─── */
+.quote-success-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(255,255,255,0.95); display: flex; align-items: center; justify-content: center; }
+.quote-success-content { text-align: center; animation: successFadeIn 0.5s ease; }
+.quote-success-check { margin-bottom: 16px; animation: successPop 0.6s ease; }
+.quote-success-title { font-family: var(--font-display); font-size: 1.75rem; font-weight: 800; color: #1a1a1a; margin-bottom: 8px; }
+.quote-success-text { font-size: 0.9375rem; color: #999; }
+@keyframes successFadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes successPop { 0% { transform: scale(0); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+/* Confetti */
+.quote-confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 2001; }
+.confetti-piece { position: absolute; width: 10px; height: 10px; top: -10px; animation: confettiFall linear forwards; }
+@keyframes confettiFall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
 /* ─── Legal ─── */
 .quote-legal { padding: 16px 40px; font-size: 0.625rem; color: #bbb; line-height: 1.6; border-top: 1px solid #f0f0f0; }
 .quote-legal a { color: #999; text-decoration: underline; }
@@ -831,6 +1016,11 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
   .quote-plan-name { color: #4B7BE5 !important; }
   .quote-feature-item svg path { stroke: #2AB5A0 !important; }
   .quote-key-point-icon svg path { stroke: #4B7BE5 !important; }
+  .quote-roi-stat { background: #f8f9fb !important; }
+  .quote-roi-value { color: #2AB5A0 !important; }
+  .quote-comp-after-cell { color: #1a1a1a !important; }
+  .quote-comp-before-cell { color: #ccc !important; }
+  .quote-signature { display: none !important; }
   .quote-version-current .quote-version-dot { background: #4B7BE5 !important; }
   .quote-version-badge { background: rgba(75,123,229,0.08) !important; color: #4B7BE5 !important; }
 }
@@ -992,5 +1182,138 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
       const finalBody = (from ? `De: ${from}\n\n` : '') + body;
       window.location.href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject || 'Cotización')}&body=${encodeURIComponent(finalBody)}`;
     });
+  }
+
+  // ─── Animated numbers (count-up) ───
+  const animationsEnabled = !document.querySelector('[data-no-animations]');
+  if (animationsEnabled) {
+    document.querySelectorAll('[data-count]').forEach(el => {
+      const target = parseInt((el as HTMLElement).dataset.count || '0');
+      if (!target) return;
+      const suffix = (el as HTMLElement).dataset.suffix || '';
+      let current = 0;
+      const duration = 1200;
+      const steps = 50;
+      const stepValue = target / steps;
+      const stepTime = duration / steps;
+      const interval = setInterval(() => {
+        current += stepValue;
+        if (current >= target) { current = target; clearInterval(interval); }
+        (el as HTMLElement).textContent = '$' + Math.round(current).toLocaleString('es-MX') + suffix;
+      }, stepTime);
+    });
+  }
+
+
+  // ─── Signature canvas ───
+  const sigCanvas = document.getElementById('signature-canvas') as HTMLCanvasElement;
+  if (sigCanvas) {
+    const ctx = sigCanvas.getContext('2d');
+    let drawing = false;
+    let hasDrawn = false;
+
+    // Set canvas resolution
+    const rect = sigCanvas.getBoundingClientRect();
+    sigCanvas.width = rect.width * 2;
+    sigCanvas.height = rect.height * 2;
+    if (ctx) {
+      ctx.scale(2, 2);
+      ctx.strokeStyle = '#1a1a1a';
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+    }
+
+    function getPos(e: MouseEvent | TouchEvent) {
+      const r = sigCanvas.getBoundingClientRect();
+      const t = 'touches' in e ? e.touches[0] : e;
+      return { x: t.clientX - r.left, y: t.clientY - r.top };
+    }
+
+    sigCanvas.addEventListener('mousedown', (e) => { drawing = true; const p = getPos(e); ctx?.beginPath(); ctx?.moveTo(p.x, p.y); });
+    sigCanvas.addEventListener('mousemove', (e) => { if (!drawing || !ctx) return; hasDrawn = true; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+    sigCanvas.addEventListener('mouseup', () => { drawing = false; });
+    sigCanvas.addEventListener('mouseleave', () => { drawing = false; });
+    sigCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); drawing = true; const p = getPos(e); ctx?.beginPath(); ctx?.moveTo(p.x, p.y); }, { passive: false });
+    sigCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); if (!drawing || !ctx) return; hasDrawn = true; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }, { passive: false });
+    sigCanvas.addEventListener('touchend', () => { drawing = false; });
+
+    document.getElementById('btn-clear-sig')?.addEventListener('click', () => {
+      ctx?.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+      hasDrawn = false;
+    });
+
+    const acceptModal = document.getElementById('accept-modal');
+    const acceptInput = document.getElementById('accept-name-input') as HTMLInputElement;
+
+    document.getElementById('btn-accept-sig')?.addEventListener('click', () => {
+      if (!hasDrawn) { alert('Dibuja tu firma primero'); return; }
+      if (acceptModal) { acceptModal.style.display = ''; acceptInput?.focus(); }
+    });
+
+    document.getElementById('btn-close-accept')?.addEventListener('click', () => { if (acceptModal) acceptModal.style.display = 'none'; });
+    document.getElementById('btn-cancel-accept')?.addEventListener('click', () => { if (acceptModal) acceptModal.style.display = 'none'; });
+    acceptModal?.addEventListener('click', (e) => { if (e.target === acceptModal) acceptModal.style.display = 'none'; });
+
+    document.getElementById('btn-confirm-accept')?.addEventListener('click', async () => {
+      const name = acceptInput?.value.trim();
+      if (!name) { acceptInput?.focus(); return; }
+      const btn = document.getElementById('btn-confirm-accept') as HTMLButtonElement;
+      btn.textContent = 'Procesando...';
+      btn.disabled = true;
+
+      // Capture signature as base64
+      const firmaBase64 = sigCanvas ? sigCanvas.toDataURL('image/png') : '';
+
+      // Save firma in meta via notas field
+      const notasRes = await fetch(`/api/revenue/quote-view?id=${quoteId}`);
+      const notasData = await notasRes.json();
+      // Read current notas to preserve meta
+      const quoteRes = await fetch(`/api/revenue/quotes?id=${quoteId}`);
+      const quoteData = await quoteRes.json();
+      let notas = quoteData.notas || '';
+      const sep = '\n---META---\n';
+      const sepIdx = notas.indexOf(sep);
+      let metaText = sepIdx >= 0 ? notas.slice(0, sepIdx) : notas;
+      let metaObj: any = {};
+      if (sepIdx >= 0) { try { metaObj = JSON.parse(notas.slice(sepIdx + sep.length)); } catch {} }
+      metaObj.firma_base64 = firmaBase64;
+      if (!metaObj.timeline) metaObj.timeline = [];
+      metaObj.timeline.push({ event: 'accepted', at: new Date().toISOString() });
+      notas = metaText + sep + JSON.stringify(metaObj);
+
+      await fetch('/api/revenue/quotes', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: quoteId, estado: 'accepted', aceptado_por: name, aceptado_fecha: new Date().toISOString(), notas }),
+      });
+
+      // Close modal, show success + confetti
+      if (acceptModal) acceptModal.style.display = 'none';
+      const successOverlay = document.getElementById('success-overlay');
+      if (successOverlay) {
+        successOverlay.style.display = '';
+        // Generate confetti
+        const container = document.getElementById('confetti-container');
+        if (container) {
+          const colors = ['#4B7BE5', '#2AB5A0', '#E8A838', '#6C5CE7', '#E54B4B', '#1a1a1a'];
+          for (let i = 0; i < 80; i++) {
+            const piece = document.createElement('div');
+            piece.className = 'confetti-piece';
+            piece.style.left = Math.random() * 100 + '%';
+            piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+            piece.style.width = (Math.random() * 8 + 6) + 'px';
+            piece.style.height = (Math.random() * 8 + 6) + 'px';
+            piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+            piece.style.animationDuration = (Math.random() * 2 + 1.5) + 's';
+            piece.style.animationDelay = (Math.random() * 1) + 's';
+            container.appendChild(piece);
+          }
+        }
+      }
+      setTimeout(() => { window.location.reload(); }, 3000);
+    });
+
+    acceptInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('btn-confirm-accept')?.click(); });
   }
 </script>

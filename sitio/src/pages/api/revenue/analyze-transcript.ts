@@ -86,6 +86,14 @@ RESPONDE ÚNICAMENTE con este JSON (sin texto adicional):
   "notas_extra": [
     "nota adicional relevante para la cotización que no es minuta"
   ],
+  "roi": {
+    "problema": "descripción del problema actual y su costo estimado",
+    "ahorro_mensual": 0,
+    "detalle": "cómo se calcula el ahorro"
+  },
+  "antes_despues": [
+    { "aspecto": "nombre del aspecto", "antes": "cómo es hoy", "despues": "cómo será con SACS" }
+  ],
   "confidence": 0.8
 }
 
@@ -119,6 +127,19 @@ REGLAS PARA IVA:
 REGLAS PARA DESCUENTO:
 - Si se mencionó un descuento o negociación de precio, pon el porcentaje acordado
 - Si no se mencionó descuento, pon 0
+
+REGLAS PARA ROI:
+- Estima el ahorro mensual basado en problemas mencionados (pérdidas de inventario, tiempo perdido, ventas perdidas)
+- Si mencionaron un número concreto (ej. "200 piezas perdidas"), úsalo para calcular
+- Si no hay datos concretos, estima conservadoramente basado en el tamaño del negocio
+- El detalle debe explicar de dónde sale el número
+
+REGLAS PARA ANTES/DESPUÉS:
+- 4-6 comparaciones máximo
+- Cada aspecto debe ser algo mencionado en la llamada
+- "antes" = situación actual del cliente
+- "despues" = cómo será con SACS
+- Sé específico, no genérico
 
 REGLAS PARA PROMOCION:
 - Si el plan es anual, sugiere promoción de implementación gratis (aplicar: true)

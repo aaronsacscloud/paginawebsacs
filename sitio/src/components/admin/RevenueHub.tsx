@@ -438,18 +438,34 @@ export default function RevenueHub() {
       meta.mostrar_desglose = qf.mostrar_desglose !== undefined ? qf.mostrar_desglose : true;
       meta.mostrar_condiciones = qf.mostrar_condiciones !== undefined ? qf.mostrar_condiciones : true;
       meta.mostrar_key_points = qf.mostrar_key_points !== undefined ? qf.mostrar_key_points : true;
+      meta.mostrar_roi = qf.mostrar_roi || false;
+      meta.mostrar_antes_despues = qf.mostrar_antes_despues || false;
+      meta.mostrar_firma = qf.mostrar_firma !== undefined ? qf.mostrar_firma : true;
+      meta.mostrar_qr = qf.mostrar_qr !== undefined ? qf.mostrar_qr : true;
+      meta.mostrar_animaciones = qf.mostrar_animaciones !== undefined ? qf.mostrar_animaciones : true;
       if (qf.key_points?.length) meta.key_points = qf.key_points;
       else delete meta.key_points;
+      if (qf.roi) meta.roi = qf.roi;
+      else delete meta.roi;
+      if (qf.antes_despues?.length) meta.antes_despues = qf.antes_despues;
+      else delete meta.antes_despues;
 
-      // Version tracking
+      // Version tracking — full snapshot for navigation
       if (!meta.versions) meta.versions = [];
+      const snapshot = {
+        at: new Date().toISOString(), total: Math.round(grandTotal),
+        items_count: items.length, moneda: qf.moneda || 'MXN',
+        items: JSON.parse(JSON.stringify(items)),
+        subtotal: itemsSubtotal, iva_monto: Math.round(ivaMonto),
+        descuento_global: parseFloat(qf.descuento_global) || 0,
+        descuento_tipo: qf.descuento_tipo || 'pct',
+        condiciones: qf.condiciones || '',
+      };
       if (!isEdit) {
-        // First version
-        meta.versions.push({ v: 1, at: new Date().toISOString(), total: Math.round(grandTotal), items_count: items.length, moneda: qf.moneda || 'MXN' });
+        meta.versions.push({ v: 1, ...snapshot });
       } else {
-        // New version on edit — snapshot current state
         const nextV = (meta.versions.length || 0) + 1;
-        meta.versions.push({ v: nextV, at: new Date().toISOString(), total: Math.round(grandTotal), items_count: items.length, moneda: qf.moneda || 'MXN' });
+        meta.versions.push({ v: nextV, ...snapshot });
       }
 
       notas = serializeMeta(text, meta);
@@ -460,7 +476,7 @@ export default function RevenueHub() {
         notas = addTimelineEvent(notas, 'edited');
       }
       // Remove frontend-only fields
-      const { _custom_days, logo_url, iva_mode: _im, _pago_mode, mostrar_timer: _mt, mostrar_features: _mf, mostrar_desglose: _md, mostrar_condiciones: _mc, mostrar_key_points: _mkp, key_points: _kp, ...rest } = qf;
+      const { _custom_days, logo_url, iva_mode: _im, _pago_mode, mostrar_timer: _mt, mostrar_features: _mf, mostrar_desglose: _md, mostrar_condiciones: _mc, mostrar_key_points: _mkp, key_points: _kp, roi: _roi, antes_despues: _ad, mostrar_roi: _mr, mostrar_antes_despues: _mad, mostrar_firma: _msf, mostrar_qr: _mq, mostrar_animaciones: _ma, ...rest } = qf;
       const folioOffset = typeof window !== 'undefined' ? parseInt(localStorage.getItem('sacs_folio_offset') || '0') || 0 : 0;
       const body = { ...rest, notas, subtotal: itemsSubtotal, iva_incluido: ivaMode !== 'sin', iva_monto: Math.round(ivaMonto), total: Math.round(grandTotal), estado: rest.estado || 'sent', _folio_offset: folioOffset };
 
@@ -630,7 +646,7 @@ export default function RevenueHub() {
                       ) : <span style={{ color: '#ddd', fontSize: '0.75rem' }}>—</span>}
                     </td>
                     <td style={S.td}>
-                      <button onClick={() => { const { meta: m } = parseMeta(q.notas); setQf({ ...q, items: Array.isArray(q.items) ? q.items : [], logo_url: m.logo_url || '', iva_mode: m.iva_mode || (q.iva_incluido ? 'suma' : 'sin'), mostrar_timer: m.mostrar_timer !== undefined ? m.mostrar_timer : true, mostrar_features: m.mostrar_features !== undefined ? m.mostrar_features : true, mostrar_desglose: m.mostrar_desglose !== undefined ? m.mostrar_desglose : true, mostrar_condiciones: m.mostrar_condiciones !== undefined ? m.mostrar_condiciones : true, mostrar_key_points: m.mostrar_key_points !== undefined ? m.mostrar_key_points : true, key_points: m.key_points || [] }); setShowDrawer(true); }} style={S.btnSmall}>Editar</button>
+                      <button onClick={() => { const { meta: m } = parseMeta(q.notas); setQf({ ...q, items: Array.isArray(q.items) ? q.items : [], logo_url: m.logo_url || '', iva_mode: m.iva_mode || (q.iva_incluido ? 'suma' : 'sin'), mostrar_timer: m.mostrar_timer !== undefined ? m.mostrar_timer : true, mostrar_features: m.mostrar_features !== undefined ? m.mostrar_features : true, mostrar_desglose: m.mostrar_desglose !== undefined ? m.mostrar_desglose : true, mostrar_condiciones: m.mostrar_condiciones !== undefined ? m.mostrar_condiciones : true, mostrar_key_points: m.mostrar_key_points !== undefined ? m.mostrar_key_points : true, key_points: m.key_points || [], roi: m.roi || null, antes_despues: m.antes_despues || [], mostrar_roi: m.mostrar_roi || false, mostrar_antes_despues: m.mostrar_antes_despues || false, mostrar_firma: m.mostrar_firma !== undefined ? m.mostrar_firma : true, mostrar_qr: m.mostrar_qr !== undefined ? m.mostrar_qr : true, mostrar_animaciones: m.mostrar_animaciones !== undefined ? m.mostrar_animaciones : true }); setShowDrawer(true); }} style={S.btnSmall}>Editar</button>
                       <a href={`/cotizacion/${q.id}?admin=1`} target="_blank" rel="noopener" style={{ ...S.btnSmall, textDecoration: 'none', display: 'inline-flex' }}>Ver</a>
                       <button onClick={() => duplicateQuote(q)} style={S.btnSmall}>Duplicar</button>
                       <button onClick={() => { navigator.clipboard.writeText(`https://www.sacscloud.com/cotizacion/${q.id}`); const btn = document.activeElement as HTMLButtonElement; btn.textContent = 'Copiado'; setTimeout(() => { btn.textContent = 'Copiar'; }, 1500); }} style={{ ...S.btnSmall, background: '#f3e8ff', color: '#7c3aed' }}>Copiar</button>
@@ -753,6 +769,9 @@ export default function RevenueHub() {
                     descuento_global: 0, descuento_tipo: 'pct',
                     moneda: 'MXN', template: 'modern', condiciones,
                     key_points: r.key_points || [], mostrar_key_points: true,
+                    roi: r.roi || null, mostrar_roi: !!(r.roi?.ahorro_mensual),
+                    antes_despues: r.antes_despues || [], mostrar_antes_despues: (r.antes_despues || []).length > 0,
+                    mostrar_firma: true, mostrar_qr: true, mostrar_animaciones: true,
                   });
                   setShowReview(false); setShowTranscriptModal(false); setShowDrawer(true);
                 }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff' }}>Aplicar al formulario</button>
@@ -1090,6 +1109,11 @@ export default function RevenueHub() {
                     { key: 'mostrar_desglose', label: 'Resumen de pagos', default: true },
                     { key: 'mostrar_condiciones', label: 'Condiciones', default: true },
                     { key: 'mostrar_key_points', label: 'Minuta de la reunión', default: true },
+                    { key: 'mostrar_roi', label: 'Calculadora de ROI', default: false },
+                    { key: 'mostrar_antes_despues', label: 'Antes vs Después', default: false },
+                    { key: 'mostrar_firma', label: 'Firma digital', default: true },
+                    { key: 'mostrar_qr', label: 'Código QR', default: true },
+                    { key: 'mostrar_animaciones', label: 'Números animados', default: true },
                   ].map(opt => (
                     <label key={opt.key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.75rem', color: '#555', cursor: 'pointer' }}>
                       <input type="checkbox" checked={qf[opt.key] !== undefined ? qf[opt.key] : opt.default} onChange={e => setQf({ ...qf, [opt.key]: e.target.checked })} />
@@ -1115,6 +1139,37 @@ export default function RevenueHub() {
                     </div>
                   ))}
                   <button onClick={() => setQf({ ...qf, key_points: [...(qf.key_points || []), { title: '', detail: '' }] })} style={S.btnSmall}>+ Agregar punto</button>
+                </div>
+              )}
+
+              {/* ROI editor */}
+              {qf.mostrar_roi && (
+                <div style={{ marginTop: 12 }}>
+                  <div style={S.label}>Calculadora de ROI</div>
+                  <div style={{ background: '#f8f9fb', borderRadius: 8, padding: 12 }}>
+                    <div style={{ marginBottom: 6 }}><label style={{ ...S.label, marginTop: 0 }}>Problema actual del cliente</label><textarea value={qf.roi?.problema || ''} onChange={e => setQf({ ...qf, roi: { ...(qf.roi || {}), problema: e.target.value } })} placeholder="Ej. Pierden 200 piezas al mes por falta de control" style={{ ...S.input, height: 40, fontSize: '0.6875rem' }} /></div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                      <div><label style={{ ...S.label, marginTop: 0 }}>Ahorro mensual ($)</label><input type="number" value={qf.roi?.ahorro_mensual || ''} onChange={e => setQf({ ...qf, roi: { ...(qf.roi || {}), ahorro_mensual: parseFloat(e.target.value) || 0 } })} placeholder="Ej. 15000" style={S.input} /></div>
+                      <div><label style={{ ...S.label, marginTop: 0 }}>Ahorro anual ($)</label><div style={{ ...S.input, background: '#f0f0f0', color: '#2AB5A0', fontWeight: 700 }}>{fmt((qf.roi?.ahorro_mensual || 0) * 12)}</div></div>
+                    </div>
+                    <div style={{ marginTop: 6 }}><label style={{ ...S.label, marginTop: 0 }}>Detalle del calculo</label><input value={qf.roi?.detalle || ''} onChange={e => setQf({ ...qf, roi: { ...(qf.roi || {}), detalle: e.target.value } })} placeholder="Cómo se estima este ahorro" style={{ ...S.input, fontSize: '0.6875rem' }} /></div>
+                  </div>
+                </div>
+              )}
+
+              {/* Antes/Después editor */}
+              {qf.mostrar_antes_despues && (
+                <div style={{ marginTop: 12 }}>
+                  <div style={S.label}>Antes vs Después</div>
+                  {(qf.antes_despues || []).map((row: any, i: number) => (
+                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 4, marginBottom: 4 }}>
+                      <input value={row.aspecto || ''} onChange={e => { const a = [...(qf.antes_despues || [])]; a[i] = { ...a[i], aspecto: e.target.value }; setQf({ ...qf, antes_despues: a }); }} placeholder="Aspecto" style={{ ...S.input, fontSize: '0.6875rem' }} />
+                      <input value={row.antes || ''} onChange={e => { const a = [...(qf.antes_despues || [])]; a[i] = { ...a[i], antes: e.target.value }; setQf({ ...qf, antes_despues: a }); }} placeholder="Hoy" style={{ ...S.input, fontSize: '0.6875rem', color: '#ccc' }} />
+                      <input value={row.despues || ''} onChange={e => { const a = [...(qf.antes_despues || [])]; a[i] = { ...a[i], despues: e.target.value }; setQf({ ...qf, antes_despues: a }); }} placeholder="Con SACS" style={{ ...S.input, fontSize: '0.6875rem' }} />
+                      <button onClick={() => { const a = [...(qf.antes_despues || [])]; a.splice(i, 1); setQf({ ...qf, antes_despues: a }); }} style={{ ...S.btnSmall, color: '#E54B4B' }}>✕</button>
+                    </div>
+                  ))}
+                  <button onClick={() => setQf({ ...qf, antes_despues: [...(qf.antes_despues || []), { aspecto: '', antes: '', despues: '' }] })} style={S.btnSmall}>+ Agregar fila</button>
                 </div>
               )}
 
@@ -1277,6 +1332,47 @@ export default function RevenueHub() {
                     <span>Total {ivaMode === 'incluido' ? '(IVA incl.)' : ''}</span><span style={{ color: '#2AB5A0' }}>{fmt(grandTotal)} {qf.moneda}</span>
                   </div>
                 </div>
+
+                {/* Preview ROI */}
+                {qf.mostrar_roi && qf.roi?.ahorro_mensual > 0 && (
+                  <div style={{ padding: '14px 32px', borderTop: '1px solid #f0f0f0' }}>
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#1a1a1a', marginBottom: 8 }}>Retorno de inversión estimado</div>
+                    {qf.roi.problema && <div style={{ fontSize: '0.5625rem', color: '#999', marginBottom: 8 }}>{qf.roi.problema}</div>}
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <div style={{ flex: 1, background: '#f8f9fb', borderRadius: 8, padding: 10, textAlign: 'center' as const }}>
+                        <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#2AB5A0' }}>{fmt(qf.roi.ahorro_mensual)}</div>
+                        <div style={{ fontSize: '0.4375rem', color: '#999', textTransform: 'uppercase' as const }}>Ahorro mensual</div>
+                      </div>
+                      <div style={{ flex: 1, background: '#f8f9fb', borderRadius: 8, padding: 10, textAlign: 'center' as const }}>
+                        <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#2AB5A0' }}>{fmt(qf.roi.ahorro_mensual * 12)}</div>
+                        <div style={{ fontSize: '0.4375rem', color: '#999', textTransform: 'uppercase' as const }}>Ahorro anual</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Preview Antes vs Después */}
+                {qf.mostrar_antes_despues && (qf.antes_despues || []).length > 0 && (
+                  <div style={{ padding: '14px 32px', borderTop: '1px solid #f0f0f0' }}>
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#1a1a1a', marginBottom: 8 }}>Antes vs Después</div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' as const, fontSize: '0.5625rem' }}>
+                      <thead><tr>
+                        <th style={{ padding: '4px 6px', textAlign: 'left' as const, color: '#aaa', fontWeight: 600 }}>Aspecto</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'center' as const, color: '#ccc', fontWeight: 600 }}>Hoy</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'center' as const, color: '#2AB5A0', fontWeight: 600 }}>Con SACS</th>
+                      </tr></thead>
+                      <tbody>
+                        {(qf.antes_despues || []).map((row: any, i: number) => (
+                          <tr key={i} style={{ borderBottom: '1px solid #f5f5f5' }}>
+                            <td style={{ padding: '4px 6px', fontWeight: 700, color: '#1a1a1a' }}>{row.aspecto}</td>
+                            <td style={{ padding: '4px 6px', textAlign: 'center' as const, color: '#ccc', textDecoration: 'line-through' }}>{row.antes}</td>
+                            <td style={{ padding: '4px 6px', textAlign: 'center' as const, fontWeight: 600 }}>{row.despues}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
 
                 {/* Preview Payment Breakdown */}
                 {(qf.mostrar_desglose !== false) && items.some((i: any) => i.tipo === 'plan') && (() => {
