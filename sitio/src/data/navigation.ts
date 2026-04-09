@@ -118,6 +118,14 @@ export const businessSectors: BusinessSector[] = [
     color: '#F59E0B',
     bgColor: 'rgba(245, 158, 11, 0.1)',
   },
+  {
+    label: 'Parques y Atracciones',
+    description: 'Merchandise en parques, museos y venues',
+    href: '/giros/parques-y-atracciones',
+    iconId: 'themepark',
+    color: '#E11D48',
+    bgColor: 'rgba(225, 29, 72, 0.1)',
+  },
 ];
 
 export const navLinks: NavLink[] = [
