@@ -138,51 +138,47 @@ const sectorIcons: Record<string, string> = {
       {navLinks.map((link) => (
         <>
           {link.pillars ? (
-            <>
-              <span class="mobile-link mobile-link-header">{link.label}</span>
-              {link.pillars.map((pillar) => (
-                <div class="mobile-pillar">
-                  <a href={getLocalizedUrl(pillar.href, locale)} class="mobile-pillar-verb">{pillar.verb}</a>
-                  <div class="mobile-sub-links">
-                    {pillar.items.map((item) => (
-                      <a href={getLocalizedUrl(item.href, locale)} class="mobile-sub-link">{item.label}</a>
-                    ))}
+            <div class="mobile-accordion">
+              <button class="mobile-accordion-trigger" aria-expanded="false">
+                <span>{link.label}</span>
+                <svg class="mobile-accordion-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="mobile-accordion-content">
+                {link.pillars.map((pillar) => (
+                  <div class="mobile-pillar">
+                    <a href={getLocalizedUrl(pillar.href, locale)} class="mobile-pillar-verb">{pillar.verb}</a>
+                    <div class="mobile-sub-links">
+                      {pillar.items.map((item) => (
+                        <a href={getLocalizedUrl(item.href, locale)} class="mobile-sub-link">{item.label}</a>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </>
+                ))}
+              </div>
+            </div>
           ) : link.sectors ? (
-            <>
-              <span class="mobile-link mobile-link-header">{link.label}</span>
-              <div class="mobile-sectors-scroll-wrapper">
-                <div class="mobile-sectors-scroll">
+            <div class="mobile-accordion">
+              <button class="mobile-accordion-trigger" aria-expanded="false">
+                <span>{link.label}</span>
+                <svg class="mobile-accordion-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="mobile-accordion-content">
+                <div class="mobile-sectors-list">
                   {link.sectors.map((sector) => (
-                    <a href={getLocalizedUrl(sector.href, locale)} class="mobile-sector-chip">
-                      <div class="mobile-sector-icon-wrap" style={`background: linear-gradient(135deg, ${sector.color}22, ${sector.color}44); border-color: ${sector.color}33;`}>
-                        <div class="mobile-sector-icon" style={`color: ${sector.color};`}>
-                          <Fragment set:html={sectorIcons[sector.iconId]} />
-                        </div>
+                    <a href={getLocalizedUrl(sector.href, locale)} class="mobile-sector-row">
+                      <div class="mobile-sector-row-icon" style={`color: ${sector.color}; background: ${sector.bgColor};`}>
+                        <Fragment set:html={sectorIcons[sector.iconId]} />
                       </div>
-                      <span class="mobile-sector-label">{sector.label}</span>
+                      <div class="mobile-sector-row-text">
+                        <span class="mobile-sector-row-name">{sector.label}</span>
+                        <span class="mobile-sector-row-desc">{sector.description}</span>
+                      </div>
+                      <svg class="mobile-sector-row-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
                     </a>
                   ))}
                 </div>
               </div>
-              <div class="mobile-sectors-list">
-                {link.sectors.map((sector) => (
-                  <a href={getLocalizedUrl(sector.href, locale)} class="mobile-sector-row">
-                    <div class="mobile-sector-row-icon" style={`color: ${sector.color}; background: linear-gradient(135deg, ${sector.color}15, ${sector.color}30);`}>
-                      <Fragment set:html={sectorIcons[sector.iconId]} />
-                    </div>
-                    <div class="mobile-sector-row-text">
-                      <span class="mobile-sector-row-name">{sector.label}</span>
-                      <span class="mobile-sector-row-desc">{sector.description}</span>
-                    </div>
-                    <svg class="mobile-sector-row-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-                  </a>
-                ))}
-              </div>
-            </>
+            </div>
           ) : (
             <a href={getLocalizedUrl(link.href, locale)} class="mobile-link">{link.label}</a>
           )}
@@ -618,19 +614,20 @@ const sectorIcons: Record<string, string> = {
     transform: translateY(-6.5px) rotate(-45deg);
   }
 
-  /* ─── Mobile menu ─── */
+  /* ─── Mobile menu (White theme) ─── */
   .mobile-menu {
     position: fixed;
     top: 71px;
     left: 0;
     right: 0;
     bottom: 0;
-    background: #0f0f1a;
-    padding: var(--space-6) var(--space-5);
+    background: #fff;
+    padding: var(--space-4) var(--space-5);
     transform: translateX(100%);
     transition: transform 0.3s var(--ease-default);
     z-index: 999;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .mobile-menu.open {
@@ -640,60 +637,101 @@ const sectorIcons: Record<string, string> = {
   .mobile-nav {
     display: flex;
     flex-direction: column;
-    gap: var(--space-1);
+    gap: 2px;
   }
 
   .mobile-link {
-    font-size: 1.125rem;
+    font-size: 1.0625rem;
     font-weight: 600;
-    color: #fff;
+    color: var(--color-text-primary, #1a1a2e);
     text-decoration: none;
-    padding: var(--space-3) var(--space-4);
-    border-radius: 8px;
+    padding: 14px 16px;
+    border-radius: 12px;
     transition: background 0.2s ease;
   }
 
   .mobile-link:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(0, 0, 0, 0.03);
     text-decoration: none;
-  }
-
-  .mobile-link-header {
-    color: rgba(255, 255, 255, 0.4);
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    padding-bottom: var(--space-1);
-    cursor: default;
-  }
-
-  .mobile-link-header:hover {
-    background: none;
   }
 
   .mobile-link-secondary {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-text-tertiary, #8c8c8c);
     font-weight: 500;
   }
 
+  /* ─── Accordion ─── */
+  .mobile-accordion {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .mobile-accordion:first-child {
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .mobile-accordion-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 16px 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+    letter-spacing: -0.01em;
+    transition: color 0.2s ease;
+  }
+
+  .mobile-accordion-trigger:hover {
+    color: var(--color-primary, #4B7BE5);
+  }
+
+  .mobile-accordion-chevron {
+    width: 18px;
+    height: 18px;
+    color: var(--color-text-tertiary, #8c8c8c);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .mobile-accordion-trigger[aria-expanded="true"] .mobile-accordion-chevron {
+    transform: rotate(180deg);
+    color: var(--color-primary, #4B7BE5);
+  }
+
+  .mobile-accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+    opacity: 0;
+  }
+
+  .mobile-accordion-content.is-open {
+    opacity: 1;
+  }
+
+  /* ─── Pillars in accordion ─── */
   .mobile-pillar {
-    margin-bottom: var(--space-2);
+    margin-bottom: var(--space-1);
   }
 
   .mobile-pillar-verb {
-    font-size: 1rem;
+    font-size: 0.9375rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--color-text-primary, #1a1a2e);
     text-decoration: none;
-    padding: var(--space-2) var(--space-4);
+    padding: 10px 16px;
     display: block;
-    transition: opacity 0.2s ease;
+    transition: color 0.2s ease;
   }
 
   .mobile-pillar-verb:hover {
     text-decoration: none;
-    opacity: 0.8;
+    color: var(--color-primary, #4B7BE5);
   }
 
   .mobile-sub-links {
@@ -706,21 +744,22 @@ const sectorIcons: Record<string, string> = {
   .mobile-sub-link {
     font-size: 0.9375rem;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--color-text-secondary, #4A4A4A);
     text-decoration: none;
-    padding: var(--space-2) var(--space-4);
-    border-radius: 6px;
-    transition: color 0.2s ease;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: color 0.2s ease, background 0.2s ease;
   }
 
   .mobile-sub-link:hover {
-    color: #fff;
+    color: var(--color-primary, #4B7BE5);
+    background: rgba(75, 123, 229, 0.04);
     text-decoration: none;
   }
 
   .mobile-divider {
     height: 1px;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(0, 0, 0, 0.06);
     margin: var(--space-3) var(--space-4);
   }
 
@@ -744,22 +783,22 @@ const sectorIcons: Record<string, string> = {
   }
 
   .btn-mobile-primary {
-    background: #fff;
-    color: #0f0f1a;
+    background: var(--color-text-primary, #1a1a2e);
+    color: #fff;
   }
 
   .btn-mobile-primary:hover {
-    background: #f0f0f0;
+    background: #2a2a3e;
   }
 
   .btn-mobile-outline {
     background: transparent;
-    color: #fff;
-    border: 1.5px solid rgba(255, 255, 255, 0.3);
+    color: var(--color-text-primary, #1a1a2e);
+    border: 1.5px solid rgba(0, 0, 0, 0.15);
   }
 
   .btn-mobile-outline:hover {
-    border-color: rgba(255, 255, 255, 0.6);
+    border-color: rgba(0, 0, 0, 0.3);
   }
 
   @media (min-width: 1024px) {
@@ -917,115 +956,38 @@ const sectorIcons: Record<string, string> = {
     color: var(--color-text-secondary, #6b7280);
   }
 
-  /* ─── Mobile sectors — Premium horizontal scroll ─── */
-  .mobile-sectors-scroll-wrapper {
-    margin: var(--space-2) 0 var(--space-4);
-    margin-left: calc(-1 * var(--space-5));
-    margin-right: calc(-1 * var(--space-5));
-    padding-left: var(--space-5);
-    overflow: hidden;
-    display: none;
-  }
-
-  .mobile-sectors-scroll {
-    display: flex;
-    gap: 10px;
-    overflow-x: auto;
-    padding-bottom: 8px;
-    padding-right: var(--space-5);
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-
-  .mobile-sectors-scroll::-webkit-scrollbar {
-    display: none;
-  }
-
-  .mobile-sector-chip {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    min-width: 88px;
-    padding: 16px 10px 14px;
-    border-radius: 16px;
-    text-decoration: none;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    transition: all 0.25s ease;
-    flex-shrink: 0;
-  }
-
-  .mobile-sector-chip:hover,
-  .mobile-sector-chip:active {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.12);
-    text-decoration: none;
-    transform: translateY(-2px);
-  }
-
-  .mobile-sector-icon-wrap {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid transparent;
-    flex-shrink: 0;
-  }
-
-  .mobile-sector-icon-wrap :global(svg) {
-    width: 24px;
-    height: 24px;
-  }
-
-  .mobile-sector-label {
-    font-size: 0.6875rem;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.85);
-    text-align: center;
-    line-height: 1.2;
-    letter-spacing: -0.01em;
-  }
-
-  /* ─── Mobile sectors — Premium list ─── */
+  /* ─── Mobile sectors — Light theme list ─── */
   .mobile-sectors-list {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    padding: 0 var(--space-2);
-    margin-bottom: var(--space-3);
+    gap: 1px;
+    padding: 4px 4px 12px;
   }
 
   .mobile-sector-row {
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 12px 14px;
-    border-radius: 14px;
+    padding: 11px 12px;
+    border-radius: 12px;
     text-decoration: none;
     transition: all 0.2s ease;
-    position: relative;
   }
 
   .mobile-sector-row:hover,
   .mobile-sector-row:active {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(0, 0, 0, 0.03);
     text-decoration: none;
   }
 
   .mobile-sector-row-icon {
-    width: 44px;
-    height: 44px;
+    width: 42px;
+    height: 42px;
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    border: 1px solid rgba(255, 255, 255, 0.06);
   }
 
   .mobile-sector-row-icon :global(svg) {
@@ -1044,7 +1006,7 @@ const sectorIcons: Record<string, string> = {
   .mobile-sector-row-name {
     font-size: 0.9375rem;
     font-weight: 600;
-    color: #fff;
+    color: var(--color-text-primary, #1a1a2e);
     line-height: 1.3;
     letter-spacing: -0.01em;
   }
@@ -1052,21 +1014,21 @@ const sectorIcons: Record<string, string> = {
   .mobile-sector-row-desc {
     font-size: 0.75rem;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--color-text-tertiary, #8c8c8c);
     line-height: 1.3;
   }
 
   .mobile-sector-row-arrow {
     width: 16px;
     height: 16px;
-    color: rgba(255, 255, 255, 0.2);
+    color: rgba(0, 0, 0, 0.15);
     flex-shrink: 0;
     transition: color 0.2s ease, transform 0.2s ease;
   }
 
   .mobile-sector-row:hover .mobile-sector-row-arrow,
   .mobile-sector-row:active .mobile-sector-row-arrow {
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--color-primary, #4B7BE5);
     transform: translateX(2px);
   }
 
@@ -1161,6 +1123,40 @@ const sectorIcons: Record<string, string> = {
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeAll();
+  });
+
+  // ─── Accordion toggle ───
+  const accordionTriggers = document.querySelectorAll('.mobile-accordion-trigger');
+
+  accordionTriggers.forEach((trigger) => {
+    trigger.addEventListener('click', () => {
+      const isOpen = trigger.getAttribute('aria-expanded') === 'true';
+      const content = trigger.nextElementSibling as HTMLElement | null;
+
+      // Close other accordions
+      accordionTriggers.forEach((other) => {
+        if (other !== trigger) {
+          other.setAttribute('aria-expanded', 'false');
+          const otherContent = other.nextElementSibling as HTMLElement | null;
+          if (otherContent) {
+            otherContent.style.maxHeight = '0';
+            otherContent.classList.remove('is-open');
+          }
+        }
+      });
+
+      // Toggle current
+      trigger.setAttribute('aria-expanded', String(!isOpen));
+      if (content) {
+        if (!isOpen) {
+          content.style.maxHeight = content.scrollHeight + 'px';
+          content.classList.add('is-open');
+        } else {
+          content.style.maxHeight = '0';
+          content.classList.remove('is-open');
+        }
+      }
+    });
   });
 
   // ─── Hamburger toggle ───
