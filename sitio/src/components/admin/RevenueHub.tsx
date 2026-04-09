@@ -443,6 +443,8 @@ export default function RevenueHub() {
       meta.mostrar_firma = qf.mostrar_firma !== undefined ? qf.mostrar_firma : true;
       meta.mostrar_qr = qf.mostrar_qr !== undefined ? qf.mostrar_qr : true;
       meta.mostrar_animaciones = qf.mostrar_animaciones !== undefined ? qf.mostrar_animaciones : true;
+      meta.mostrar_timeline = qf.mostrar_timeline !== undefined ? qf.mostrar_timeline : true;
+      meta.timeline_tipo = qf.timeline_tipo || '1suc';
       if (qf.key_points?.length) meta.key_points = qf.key_points;
       else delete meta.key_points;
       if (qf.roi) meta.roi = qf.roi;
@@ -476,7 +478,7 @@ export default function RevenueHub() {
         notas = addTimelineEvent(notas, 'edited');
       }
       // Remove frontend-only fields
-      const { _custom_days, logo_url, iva_mode: _im, _pago_mode, mostrar_timer: _mt, mostrar_features: _mf, mostrar_desglose: _md, mostrar_condiciones: _mc, mostrar_key_points: _mkp, key_points: _kp, roi: _roi, antes_despues: _ad, mostrar_roi: _mr, mostrar_antes_despues: _mad, mostrar_firma: _msf, mostrar_qr: _mq, mostrar_animaciones: _ma, ...rest } = qf;
+      const { _custom_days, logo_url, iva_mode: _im, _pago_mode, mostrar_timer: _mt, mostrar_features: _mf, mostrar_desglose: _md, mostrar_condiciones: _mc, mostrar_key_points: _mkp, key_points: _kp, roi: _roi, antes_despues: _ad, mostrar_roi: _mr, mostrar_antes_despues: _mad, mostrar_firma: _msf, mostrar_qr: _mq, mostrar_animaciones: _ma, mostrar_timeline: _mtl, timeline_tipo: _tt, ...rest } = qf;
       const folioOffset = typeof window !== 'undefined' ? parseInt(localStorage.getItem('sacs_folio_offset') || '0') || 0 : 0;
       const body = { ...rest, notas, subtotal: itemsSubtotal, iva_incluido: ivaMode !== 'sin', iva_monto: Math.round(ivaMonto), total: Math.round(grandTotal), estado: rest.estado || 'sent', _folio_offset: folioOffset };
 
@@ -646,7 +648,7 @@ export default function RevenueHub() {
                       ) : <span style={{ color: '#ddd', fontSize: '0.75rem' }}>—</span>}
                     </td>
                     <td style={S.td}>
-                      <button onClick={() => { const { meta: m } = parseMeta(q.notas); setQf({ ...q, items: Array.isArray(q.items) ? q.items : [], logo_url: m.logo_url || '', iva_mode: m.iva_mode || (q.iva_incluido ? 'suma' : 'sin'), mostrar_timer: m.mostrar_timer !== undefined ? m.mostrar_timer : true, mostrar_features: m.mostrar_features !== undefined ? m.mostrar_features : true, mostrar_desglose: m.mostrar_desglose !== undefined ? m.mostrar_desglose : true, mostrar_condiciones: m.mostrar_condiciones !== undefined ? m.mostrar_condiciones : true, mostrar_key_points: m.mostrar_key_points !== undefined ? m.mostrar_key_points : true, key_points: m.key_points || [], roi: m.roi || null, antes_despues: m.antes_despues || [], mostrar_roi: m.mostrar_roi || false, mostrar_antes_despues: m.mostrar_antes_despues || false, mostrar_firma: m.mostrar_firma !== undefined ? m.mostrar_firma : true, mostrar_qr: m.mostrar_qr !== undefined ? m.mostrar_qr : true, mostrar_animaciones: m.mostrar_animaciones !== undefined ? m.mostrar_animaciones : true }); setShowDrawer(true); }} style={S.btnSmall}>Editar</button>
+                      <button onClick={() => { const { meta: m } = parseMeta(q.notas); setQf({ ...q, items: Array.isArray(q.items) ? q.items : [], logo_url: m.logo_url || '', iva_mode: m.iva_mode || (q.iva_incluido ? 'suma' : 'sin'), mostrar_timer: m.mostrar_timer !== undefined ? m.mostrar_timer : true, mostrar_features: m.mostrar_features !== undefined ? m.mostrar_features : true, mostrar_desglose: m.mostrar_desglose !== undefined ? m.mostrar_desglose : true, mostrar_condiciones: m.mostrar_condiciones !== undefined ? m.mostrar_condiciones : true, mostrar_key_points: m.mostrar_key_points !== undefined ? m.mostrar_key_points : true, key_points: m.key_points || [], roi: m.roi || null, antes_despues: m.antes_despues || [], mostrar_roi: m.mostrar_roi || false, mostrar_antes_despues: m.mostrar_antes_despues || false, mostrar_firma: m.mostrar_firma !== undefined ? m.mostrar_firma : true, mostrar_qr: m.mostrar_qr !== undefined ? m.mostrar_qr : true, mostrar_animaciones: m.mostrar_animaciones !== undefined ? m.mostrar_animaciones : true, mostrar_timeline: m.mostrar_timeline !== undefined ? m.mostrar_timeline : true, timeline_tipo: m.timeline_tipo || '1suc' }); setShowDrawer(true); }} style={S.btnSmall}>Editar</button>
                       <a href={`/cotizacion/${q.id}?admin=1`} target="_blank" rel="noopener" style={{ ...S.btnSmall, textDecoration: 'none', display: 'inline-flex' }}>Ver</a>
                       <button onClick={() => duplicateQuote(q)} style={S.btnSmall}>Duplicar</button>
                       <button onClick={() => { navigator.clipboard.writeText(`https://www.sacscloud.com/cotizacion/${q.id}`); const btn = document.activeElement as HTMLButtonElement; btn.textContent = 'Copiado'; setTimeout(() => { btn.textContent = 'Copiar'; }, 1500); }} style={{ ...S.btnSmall, background: '#f3e8ff', color: '#7c3aed' }}>Copiar</button>
@@ -1111,6 +1113,7 @@ export default function RevenueHub() {
                     { key: 'mostrar_key_points', label: 'Minuta de la reunión', default: true },
                     { key: 'mostrar_roi', label: 'Calculadora de ROI', default: false },
                     { key: 'mostrar_antes_despues', label: 'Antes vs Después', default: false },
+                    { key: 'mostrar_timeline', label: 'Timeline de implementación', default: true },
                     { key: 'mostrar_firma', label: 'Firma digital', default: true },
                     { key: 'mostrar_qr', label: 'Código QR', default: true },
                     { key: 'mostrar_animaciones', label: 'Números animados', default: true },
@@ -1121,6 +1124,17 @@ export default function RevenueHub() {
                     </label>
                   ))}
                 </div>
+                {/* Timeline type selector */}
+                {(qf.mostrar_timeline !== undefined ? qf.mostrar_timeline : true) && (
+                  <div style={{ marginTop: 8 }}>
+                    <label style={{ ...S.label, marginTop: 0 }}>Tipo de timeline</label>
+                    <select value={qf.timeline_tipo || '1suc'} onChange={e => setQf({ ...qf, timeline_tipo: e.target.value })} style={S.input}>
+                      <option value="1suc">1 sucursal — Arrancando su primera tienda</option>
+                      <option value="2a5suc">2–5 sucursales — Creciendo y necesita orden</option>
+                      <option value="5massuc">5+ sucursales — Operación compleja, automatización</option>
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div><label style={S.label}>Condiciones</label><textarea value={qf.condiciones || ''} onChange={e => setQf({ ...qf, condiciones: e.target.value })} style={{ ...S.input, height: 60 }} /></div>
