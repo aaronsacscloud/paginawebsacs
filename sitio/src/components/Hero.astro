@@ -137,6 +137,38 @@ const useCases = [
           </div>
         </div>
       </div>
+
+      <!-- Mobile hero image -->
+      <div class="hero-mobile-visual">
+        <div class="hero-mobile-image-wrapper">
+          <img
+            src="/images/hero-sacs-store.webp"
+            alt="Persona usando SACS en tablet en su tienda de ropa"
+            class="hero-mobile-image"
+            width="900"
+            height="600"
+            loading="eager"
+          />
+          <div class="hero-mobile-notif hero-mobile-notif-1" aria-hidden="true">
+            <div class="hmn-icon hmn-icon-shop">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M20 4H4v2l1 1v11h14V7l1-1V4zM9 18v-4h6v4H9zm9 0h-1v-5a1 1 0 00-1-1H8a1 1 0 00-1 1v5H6V7.5l-.5-.5h13l-.5.5V18z"/><path d="M3 2h18a1 1 0 011 1v1H2V3a1 1 0 011-1z"/></svg>
+            </div>
+            <div class="hmn-body">
+              <span class="hmn-title">Tienda en línea</span>
+              <span class="hmn-msg">Pedido #384 — $1,290</span>
+            </div>
+          </div>
+          <div class="hero-mobile-notif hero-mobile-notif-2" aria-hidden="true">
+            <div class="hmn-icon hmn-icon-inv">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            </div>
+            <div class="hmn-body">
+              <span class="hmn-title">Inventario</span>
+              <span class="hmn-msg">Transferir 40 uds. a Suc. Centro</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Hero image + floating notifications -->
@@ -1588,6 +1620,104 @@ const useCases = [
 
   @media (min-width: 768px) {
     .hero-badge-divider { display: block; }
+  }
+
+  /* ─── Mobile hero image ─── */
+  .hero-mobile-visual {
+    display: block;
+    margin-top: var(--space-8);
+    position: relative;
+  }
+
+  @media (min-width: 1024px) {
+    .hero-mobile-visual {
+      display: none;
+    }
+  }
+
+  .hero-mobile-image-wrapper {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  .hero-mobile-image {
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    object-position: center 55%;
+    display: block;
+  }
+
+  /* ─── Mobile floating notifs ─── */
+  .hero-mobile-notif {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 12px;
+    padding: 8px 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    animation: mobileNotifIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .hero-mobile-notif-1 {
+    top: 12%;
+    right: 4%;
+    animation-delay: 0.8s;
+  }
+
+  .hero-mobile-notif-2 {
+    bottom: 12%;
+    left: 4%;
+    animation-delay: 1.2s;
+  }
+
+  @keyframes mobileNotifIn {
+    from { opacity: 0; transform: translateY(8px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .hmn-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .hmn-icon-shop {
+    background: linear-gradient(135deg, #4B7BE5, #3B6BD4);
+  }
+
+  .hmn-icon-inv {
+    background: linear-gradient(135deg, #2AB5A0, #1DA090);
+  }
+
+  .hmn-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .hmn-title {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+    line-height: 1.2;
+  }
+
+  .hmn-msg {
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: var(--color-text-tertiary, #8c8c8c);
+    line-height: 1.3;
   }
 
   /* ─── Hero image (right side) ─── */
