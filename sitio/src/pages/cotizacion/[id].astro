@@ -574,6 +574,59 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
       </div>
     </div>
 
+    <!-- Conscious Commerce -->
+    <div class="quote-conscious">
+      <div class="quote-conscious-label">Comercio Consciente</div>
+      <div class="quote-conscious-heading">Cada letra de SACS tiene un propósito</div>
+      <div class="quote-conscious-grid">
+        <div class="quote-conscious-letter">
+          <div class="quote-conscious-char">S</div>
+          <div class="quote-conscious-word">Ser</div>
+          <div class="quote-conscious-desc">Ser auténticos en todo lo que hacemos</div>
+        </div>
+        <div class="quote-conscious-letter">
+          <div class="quote-conscious-char">A</div>
+          <div class="quote-conscious-word">Avanzar</div>
+          <div class="quote-conscious-desc">Avanzar con tecnología que resuelve problemas reales</div>
+        </div>
+        <div class="quote-conscious-letter">
+          <div class="quote-conscious-char">C</div>
+          <div class="quote-conscious-word">Crear</div>
+          <div class="quote-conscious-desc">Crear experiencias que inspiran</div>
+        </div>
+        <div class="quote-conscious-letter">
+          <div class="quote-conscious-char">S</div>
+          <div class="quote-conscious-word">Sembrar</div>
+          <div class="quote-conscious-desc">Sembrar semillas para el futuro de nuestras comunidades</div>
+        </div>
+      </div>
+      <div class="quote-conscious-impact">
+        <div class="quote-conscious-impact-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" stroke="#2AB5A0" stroke-width="1.5"/><path d="M8 12l3 3 5-5" stroke="#2AB5A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="quote-conscious-impact-text">El 10% de tu licencia genera cambio real: capacitación digital, apoyo a emprendedores locales y conservación de ecosistemas en México.</div>
+      </div>
+    </div>
+
+    <!-- AXO Copilot -->
+    <div class="quote-axo">
+      <div class="quote-axo-content">
+        <div class="quote-axo-badge">Incluido en tu plan</div>
+        <div class="quote-axo-title">AXO — Tu copiloto IA</div>
+        <div class="quote-axo-desc">Pregúntale lo que quieras de tu negocio y actúa al instante. Detecta problemas antes de que pasen, predice demanda y genera órdenes de compra automáticas.</div>
+        <div class="quote-axo-features">
+          <div class="quote-axo-feat"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#4B7BE5" stroke-width="2.5" stroke-linecap="round"/></svg><span>Consulta ventas, inventario y KPIs en lenguaje natural</span></div>
+          <div class="quote-axo-feat"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#4B7BE5" stroke-width="2.5" stroke-linecap="round"/></svg><span>Detecta anomalías y te sugiere qué hacer</span></div>
+          <div class="quote-axo-feat"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#4B7BE5" stroke-width="2.5" stroke-linecap="round"/></svg><span>Aprende de tu operación y se vuelve más inteligente</span></div>
+        </div>
+      </div>
+      <div class="quote-axo-video">
+        <video autoplay loop muted playsinline width="200" height="200">
+          <source src="/videos/axo-flying.mp4" type="video/mp4" />
+        </video>
+      </div>
+    </div>
+
     <!-- Implementation timeline -->
     <div class="quote-timeline-section">
       <div class="quote-timeline-header">
@@ -1007,6 +1060,40 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
 .quote-why-stat { text-align: center; }
 .quote-why-stat-num { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: #4B7BE5; }
 .quote-why-stat-label { font-size: 0.625rem; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* ─── Conscious Commerce ─── */
+.quote-conscious { padding: 32px 40px; border-top: 1px solid #f0f0f0; text-align: center; }
+.quote-conscious-label { font-size: 0.5625rem; font-weight: 700; color: #2AB5A0; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 6px; }
+.quote-conscious-heading { font-family: var(--font-display); font-size: 1.125rem; font-weight: 800; color: #1a1a1a; margin-bottom: 24px; }
+.quote-conscious-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.quote-conscious-letter { padding: 16px 8px; border-radius: 10px; background: #fafafa; }
+.quote-conscious-char { font-family: var(--font-display); font-size: 2rem; font-weight: 900; color: #4B7BE5; line-height: 1; }
+.quote-conscious-word { font-size: 0.75rem; font-weight: 800; color: #1a1a1a; margin-top: 4px; }
+.quote-conscious-desc { font-size: 0.5625rem; color: #999; margin-top: 4px; line-height: 1.4; }
+.quote-conscious-impact { display: flex; align-items: flex-start; gap: 10px; background: rgba(42,181,160,0.04); border-radius: 10px; padding: 14px 16px; text-align: left; }
+.quote-conscious-impact-icon { flex-shrink: 0; margin-top: 1px; }
+.quote-conscious-impact-text { font-size: 0.75rem; color: #666; line-height: 1.6; }
+
+.quote-dark .quote-conscious { border-color: rgba(255,255,255,0.08); }
+.quote-dark .quote-conscious-heading { color: #fff; }
+.quote-dark .quote-conscious-letter { background: rgba(255,255,255,0.03); }
+.quote-dark .quote-conscious-word { color: #fff; }
+.quote-dark .quote-conscious-impact { background: rgba(42,181,160,0.06); }
+
+/* ─── AXO ─── */
+.quote-axo { padding: 24px 40px; border-top: 1px solid #f0f0f0; display: flex; align-items: center; gap: 24px; }
+.quote-axo-content { flex: 1; }
+.quote-axo-badge { font-size: 0.5rem; font-weight: 700; color: #4B7BE5; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+.quote-axo-title { font-family: var(--font-display); font-size: 1.125rem; font-weight: 800; color: #1a1a1a; margin-bottom: 6px; }
+.quote-axo-desc { font-size: 0.75rem; color: #888; line-height: 1.6; margin-bottom: 12px; }
+.quote-axo-features { display: flex; flex-direction: column; gap: 4px; }
+.quote-axo-feat { display: flex; align-items: center; gap: 6px; font-size: 0.6875rem; color: #555; }
+.quote-axo-video { flex-shrink: 0; }
+.quote-axo-video video { width: 160px; height: 160px; object-fit: cover; border-radius: 50%; }
+
+.quote-dark .quote-axo { border-color: rgba(255,255,255,0.08); }
+.quote-dark .quote-axo-title { color: #fff; }
+.quote-dark .quote-axo-feat { color: rgba(255,255,255,0.6); }
 
 /* ─── Implementation Timeline ─── */
 .quote-timeline-section { padding: 32px 40px; border-top: 1px solid #f0f0f0; }
