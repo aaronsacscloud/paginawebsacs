@@ -1,0 +1,144 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import GiroHero from '../../components/giros/GiroHero.astro';
+import GiroFeatures from '../../components/giros/GiroFeatures.astro';
+import GiroSplitSection from '../../components/giros/GiroSplitSection.astro';
+import GiroStats from '../../components/giros/GiroStats.astro';
+import GiroTestimonial from '../../components/giros/GiroTestimonial.astro';
+import GiroFAQ from '../../components/giros/GiroFAQ.astro';
+import FinalCTA from '../../components/FinalCTA.astro';
+
+const features = [
+  {
+    icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,
+    title: 'POS personalizable',
+    description: 'Configura tu pantalla de venta por colección, temporada o marca. Cobra en segundos con la interfaz más intuitiva del mercado.',
+  },
+  {
+    icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/><path d="M9 6v12"/></svg>`,
+    title: 'Tallas, colores y variantes',
+    description: 'Gestiona cada SKU con atributos de talla, color y temporada. Lleva el control exacto de lo que tienes en cada sucursal.',
+  },
+  {
+    icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7v10l10 5 10-5V7L12 2z"/><path d="M12 12v10M2 7l10 5 10-5"/></svg>`,
+    title: 'Devoluciones y cambios',
+    description: 'Procesa cambios de talla y devoluciones en cualquier sucursal con unos cuantos taps. Sin fricciones para tu cliente.',
+  },
+  {
+    icon: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>`,
+    title: 'Multi-sucursal',
+    description: 'Opera todas tus tiendas desde un solo dashboard. Visibilidad total de ventas, inventario y equipo en tiempo real.',
+  },
+];
+
+const stats = [
+  { value: '+3,000', label: 'Marcas activas en México y Latam' },
+  { value: '99.9%', label: 'Uptime garantizado' },
+  { value: '+45%', label: 'Incremento en fidelización' },
+  { value: '30 días', label: 'Implementación completa' },
+];
+
+const faqs = [
+  {
+    question: '¿SACS maneja variantes de talla y color?',
+    answer: 'Sí. Puedes crear productos con múltiples variantes de talla, color, material y cualquier atributo personalizado. Cada variante tiene su propio SKU, código de barras e inventario independiente por sucursal.',
+  },
+  {
+    question: '¿Puedo conectar mi tienda en línea?',
+    answer: 'SACS incluye comercio electrónico integrado, o puedes conectar tu tienda existente en Shopify, WooCommerce u otra plataforma. El inventario se sincroniza en tiempo real entre todos tus canales de venta.',
+  },
+  {
+    question: '¿Cómo funciona la gestión de inventario multi-sucursal?',
+    answer: 'Todo tu inventario se sincroniza automáticamente entre sucursales y canales. Puedes transferir mercancía entre tiendas, recibir alertas de reabasto y generar órdenes de compra a proveedores directamente desde la plataforma.',
+  },
+  {
+    question: '¿Puedo procesar devoluciones y cambios de talla?',
+    answer: 'Sí. Los cambios y devoluciones se procesan en cualquier sucursal, sin importar dónde se hizo la compra original. El inventario se ajusta automáticamente y el historial del cliente se actualiza en tiempo real.',
+  },
+  {
+    question: '¿Qué reportes puedo ver?',
+    answer: 'Tienes acceso a reportes de ventas por producto, marca, categoría, sucursal y periodo. También reportes de inventario como rotación, merma, costo de mercancía vendida (COGS) y márgenes de utilidad.',
+  },
+  {
+    question: '¿Cuánto tiempo toma implementar SACS?',
+    answer: 'La mayoría de marcas de ropa están operando en menos de 30 días. Incluimos migración de datos, capacitación de equipo y soporte dedicado durante la implementación sin costo adicional.',
+  },
+];
+---
+
+<BaseLayout
+  title="SACS para Marcas de Ropa — Punto de Venta y Gestión de Inventario"
+  description="Software de punto de venta diseñado para marcas de ropa, boutiques y apparel retail. Gestiona inventario por talla y color, vende en tienda y en línea, fideliza clientes."
+>
+  <GiroHero
+    eyebrow="SACS para Marcas de Ropa"
+    title="El punto de venta diseñado para tu marca de ropa."
+    subtitle="Gestiona inventario por talla y color, vende en tienda y en línea, y fideliza a tus clientes. Todo desde una sola plataforma."
+    primaryCTA={{ label: 'Empieza gratis', href: '/prueba-gratis' }}
+    secondaryCTA={{ label: 'Agenda una demo', href: '/contacto' }}
+    image="/images/hero-sacs-store.webp"
+    imageAlt="Persona usando SACS en tablet en su tienda de ropa"
+  />
+
+  <GiroFeatures features={features} />
+
+  <GiroSplitSection
+    title="Inventario que se mueve contigo"
+    description="Olvídate de contar a mano o depender de Excel. SACS sincroniza tu inventario entre todas tus sucursales y canales de venta en tiempo real."
+    points={[
+      'Sincronización automática entre sucursales y bodegas',
+      'Alertas inteligentes cuando es hora de reabastecer',
+      'Órdenes de compra a proveedores en minutos',
+      'Conteo de inventario con cámara del celular',
+      'Transferencias de mercancía entre tiendas',
+    ]}
+    image="/images/screen-pos.webp"
+    imageAlt="Dashboard de inventario SACS mostrando productos por talla y color"
+    imageSide="left"
+  />
+
+  <GiroSplitSection
+    title="Vende en todos los canales"
+    description="Tu tienda física, tu tienda en línea y tus redes sociales conectados. Un solo inventario, una sola plataforma."
+    points={[
+      'Tienda en línea integrada con tu POS',
+      'Venta por WhatsApp Commerce',
+      'Publica en Instagram Shopping y Google',
+      'Compra en línea, recoge en tienda (BOPIS)',
+      'Pedidos y envíos desde un solo lugar',
+    ]}
+    image="/images/screen-ecommerce.webp"
+    imageAlt="Tienda en línea SACS sincronizada con punto de venta"
+    imageSide="right"
+  />
+
+  <GiroSplitSection
+    title="Conoce a tus clientes, hazlos volver"
+    description="Cada venta construye el perfil de tu cliente. Usa esa información para crear experiencias personalizadas que generan lealtad."
+    points={[
+      'Perfiles de cliente con historial de compras completo',
+      'Programa de lealtad con puntos y recompensas',
+      'Campañas automáticas por email y SMS',
+      'Descuentos personalizados por segmento',
+      'Seguimiento de clientes VIP y frecuentes',
+    ]}
+    image="/images/fideliza-loyalty.webp"
+    imageAlt="CRM de clientes SACS con programa de lealtad"
+    imageSide="left"
+  />
+
+  <GiroStats stats={stats} />
+
+  <GiroTestimonial
+    quote="Pasamos de 1 a 42 sucursales con SACS. La visibilidad total del inventario entre tiendas y el programa de lealtad nos permitieron crecer sin perder el control. Hoy nuestro customer lifetime value creció más de 300%."
+    name="La Bella Pandita"
+    role="Directora General"
+    company="La Bella Pandita"
+    stat="+300%"
+    statLabel="Customer Lifetime Value"
+  />
+
+  <GiroFAQ faqs={faqs} />
+
+  <FinalCTA locale="es" />
+</BaseLayout>

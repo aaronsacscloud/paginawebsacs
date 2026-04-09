@@ -1,0 +1,147 @@
+---
+interface Props {
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  primaryCTA: { label: string; href: string };
+  secondaryCTA: { label: string; href: string };
+  image: string;
+  imageAlt: string;
+}
+
+const { eyebrow, title, subtitle, primaryCTA, secondaryCTA, image, imageAlt } = Astro.props;
+---
+
+<section class="giro-hero">
+  <div class="giro-hero-inner container">
+    <div class="giro-hero-text">
+      <span class="giro-hero-eyebrow">{eyebrow}</span>
+      <h1 class="giro-hero-title">{title}</h1>
+      <p class="giro-hero-subtitle">{subtitle}</p>
+      <div class="giro-hero-ctas">
+        <a href={primaryCTA.href} class="giro-btn giro-btn-primary">{primaryCTA.label}</a>
+        <a href={secondaryCTA.href} class="giro-btn giro-btn-outline">{secondaryCTA.label}</a>
+      </div>
+    </div>
+    <div class="giro-hero-visual">
+      <img src={image} alt={imageAlt} class="giro-hero-image" width="900" height="600" loading="eager" />
+    </div>
+  </div>
+</section>
+
+<style>
+  .giro-hero {
+    padding: 120px 0 60px;
+    background: var(--color-bg-primary, #FAFAF8);
+  }
+
+  .giro-hero-inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  @media (min-width: 1024px) {
+    .giro-hero {
+      padding: 140px 0 80px;
+    }
+    .giro-hero-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-12);
+      align-items: center;
+    }
+  }
+
+  .giro-hero-text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .giro-hero-eyebrow {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--color-primary, #4B7BE5);
+  }
+
+  .giro-hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3.25rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    color: var(--color-text-primary);
+  }
+
+  .giro-hero-subtitle {
+    font-size: clamp(1rem, 1.5vw, 1.125rem);
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+    max-width: 480px;
+  }
+
+  .giro-hero-ctas {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: var(--space-2);
+  }
+
+  @media (min-width: 480px) {
+    .giro-hero-ctas {
+      flex-direction: row;
+    }
+  }
+
+  .giro-btn {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 14px 28px;
+    border-radius: 12px;
+    text-decoration: none;
+    text-align: center;
+    line-height: 1;
+    transition: all 0.2s ease;
+  }
+
+  .giro-btn-primary {
+    background: #2563EB;
+    color: #fff;
+  }
+
+  .giro-btn-primary:hover {
+    background: #1D4FD7;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
+    text-decoration: none;
+  }
+
+  .giro-btn-outline {
+    background: transparent;
+    color: var(--color-text-primary);
+    border: 1.5px solid rgba(0, 0, 0, 0.15);
+  }
+
+  .giro-btn-outline:hover {
+    border-color: rgba(0, 0, 0, 0.3);
+    text-decoration: none;
+  }
+
+  .giro-hero-visual {
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.08);
+  }
+
+  .giro-hero-image {
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+  }
+</style>

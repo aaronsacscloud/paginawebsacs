@@ -1,0 +1,85 @@
+---
+interface Feature {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+interface Props {
+  features: Feature[];
+}
+
+const { features } = Astro.props;
+---
+
+<section class="giro-features">
+  <div class="giro-features-inner container">
+    <div class="giro-features-grid">
+      {features.map((feature) => (
+        <div class="giro-feature-card">
+          <div class="giro-feature-icon" set:html={feature.icon} />
+          <h3 class="giro-feature-title">{feature.title}</h3>
+          <p class="giro-feature-desc">{feature.description}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .giro-features {
+    padding: var(--space-16) 0;
+    background: #fff;
+  }
+
+  .giro-features-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  @media (min-width: 640px) {
+    .giro-features-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .giro-features-grid {
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-8);
+    }
+  }
+
+  .giro-feature-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .giro-feature-icon {
+    color: var(--color-text-tertiary, #8c8c8c);
+    width: 32px;
+    height: 32px;
+  }
+
+  .giro-feature-icon :global(svg) {
+    width: 32px;
+    height: 32px;
+  }
+
+  .giro-feature-title {
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+
+  .giro-feature-desc {
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    color: var(--color-text-secondary);
+  }
+</style>

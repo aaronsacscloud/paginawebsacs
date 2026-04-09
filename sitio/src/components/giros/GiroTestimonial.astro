@@ -1,0 +1,112 @@
+---
+interface Props {
+  quote: string;
+  name: string;
+  role: string;
+  company: string;
+  stat?: string;
+  statLabel?: string;
+}
+
+const { quote, name, role, company, stat, statLabel } = Astro.props;
+---
+
+<section class="giro-testimonial">
+  <div class="giro-testimonial-inner container">
+    <div class="giro-testimonial-card">
+      <svg class="giro-testimonial-quote-mark" width="40" height="32" viewBox="0 0 40 32" fill="none" aria-hidden="true">
+        <path d="M0 20.8C0 13.12 2.08 7.84 6.24 4.96 8.32 3.2 10.72 2.08 13.44 1.6L14.72 5.44C11.52 6.24 9.28 7.84 8 10.24 7.36 11.52 7.2 12.64 7.52 13.6H14.4V30.4H0V20.8ZM22.4 20.8C22.4 13.12 24.48 7.84 28.64 4.96 30.72 3.2 33.12 2.08 35.84 1.6L37.12 5.44C33.92 6.24 31.68 7.84 30.4 10.24 29.76 11.52 29.6 12.64 29.92 13.6H36.8V30.4H22.4V20.8Z" fill="currentColor"/>
+      </svg>
+      <blockquote class="giro-testimonial-text">{quote}</blockquote>
+      <div class="giro-testimonial-author">
+        <div class="giro-testimonial-author-info">
+          <span class="giro-testimonial-name">{name}</span>
+          <span class="giro-testimonial-role">{role}, {company}</span>
+        </div>
+        {stat && statLabel && (
+          <div class="giro-testimonial-stat">
+            <span class="giro-testimonial-stat-value">{stat}</span>
+            <span class="giro-testimonial-stat-label">{statLabel}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .giro-testimonial {
+    padding: var(--space-16) 0;
+    background: var(--color-bg-primary, #FAFAF8);
+  }
+
+  .giro-testimonial-inner {
+    max-width: 800px;
+  }
+
+  .giro-testimonial-card {
+    position: relative;
+  }
+
+  .giro-testimonial-quote-mark {
+    color: rgba(0, 0, 0, 0.06);
+    margin-bottom: var(--space-4);
+  }
+
+  .giro-testimonial-text {
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 2.5vw, 1.625rem);
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: -0.02em;
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-6);
+  }
+
+  .giro-testimonial-author {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-6);
+    padding-top: var(--space-5);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .giro-testimonial-author-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .giro-testimonial-name {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+  }
+
+  .giro-testimonial-role {
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary);
+  }
+
+  .giro-testimonial-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+  }
+
+  .giro-testimonial-stat-value {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--color-primary);
+    letter-spacing: -0.02em;
+  }
+
+  .giro-testimonial-stat-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-tertiary);
+  }
+</style>

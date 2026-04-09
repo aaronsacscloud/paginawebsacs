@@ -1,0 +1,132 @@
+---
+interface FAQ {
+  question: string;
+  answer: string;
+}
+
+interface Props {
+  title?: string;
+  faqs: FAQ[];
+}
+
+const { title = 'Preguntas frecuentes', faqs } = Astro.props;
+---
+
+<section class="giro-faq">
+  <div class="giro-faq-inner container">
+    <h2 class="giro-faq-title">{title}</h2>
+    <div class="giro-faq-list">
+      {faqs.map((faq, i) => (
+        <div class="giro-faq-item">
+          <button class="giro-faq-trigger" aria-expanded="false" data-faq-index={i}>
+            <span>{faq.question}</span>
+            <svg class="giro-faq-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="giro-faq-answer">
+            <p>{faq.answer}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .giro-faq {
+    padding: var(--space-16) 0;
+    background: #fff;
+  }
+
+  .giro-faq-inner {
+    max-width: 720px;
+  }
+
+  .giro-faq-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 800;
+    color: var(--color-text-primary);
+    letter-spacing: -0.03em;
+    text-align: center;
+    margin-bottom: var(--space-10);
+  }
+
+  .giro-faq-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .giro-faq-item {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .giro-faq-item:first-child {
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .giro-faq-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    width: 100%;
+    padding: 20px 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    text-align: left;
+    line-height: 1.4;
+  }
+
+  .giro-faq-chevron {
+    flex-shrink: 0;
+    color: var(--color-text-tertiary);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .giro-faq-trigger[aria-expanded="true"] .giro-faq-chevron {
+    transform: rotate(180deg);
+  }
+
+  .giro-faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .giro-faq-answer p {
+    padding-bottom: 20px;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+  }
+</style>
+
+<script>
+  const faqTriggers = document.querySelectorAll('.giro-faq-trigger');
+
+  faqTriggers.forEach((trigger) => {
+    trigger.addEventListener('click', () => {
+      const isOpen = trigger.getAttribute('aria-expanded') === 'true';
+      const answer = trigger.nextElementSibling as HTMLElement | null;
+
+      // Close all others
+      faqTriggers.forEach((other) => {
+        if (other !== trigger) {
+          other.setAttribute('aria-expanded', 'false');
+          const otherAnswer = other.nextElementSibling as HTMLElement | null;
+          if (otherAnswer) otherAnswer.style.maxHeight = '0';
+        }
+      });
+
+      trigger.setAttribute('aria-expanded', String(!isOpen));
+      if (answer) {
+        answer.style.maxHeight = !isOpen ? answer.scrollHeight + 'px' : '0';
+      }
+    });
+  });
+</script>
