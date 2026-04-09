@@ -562,6 +562,82 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
       <div class="quote-confetti" id="confetti-container"></div>
     </div>
 
+    <!-- Why SACS -->
+    <div class="quote-why">
+      <div class="quote-why-title">¿Por qué Sacs?</div>
+      <div class="quote-why-text">Somos el sistema operativo para retailers que creen que vender bien y hacer el bien pueden ir de la mano. Construimos tecnología con propósito: cada marca que crece con nosotros impulsa comercio más consciente, más conectado y más humano.</div>
+      <div class="quote-why-stats">
+        <div class="quote-why-stat"><div class="quote-why-stat-num">500+</div><div class="quote-why-stat-label">Marcas activas</div></div>
+        <div class="quote-why-stat"><div class="quote-why-stat-num">42M+</div><div class="quote-why-stat-label">Transacciones procesadas</div></div>
+        <div class="quote-why-stat"><div class="quote-why-stat-num">8</div><div class="quote-why-stat-label">Países</div></div>
+      </div>
+    </div>
+
+    <!-- Case studies carousel -->
+    <div class="quote-cases">
+      <div class="quote-cases-title">Marcas que crecen con Sacs</div>
+      <div class="quote-cases-track" id="cases-track">
+        <div class="quote-case-card">
+          <img src="/images/case-shakira-merch.webp" alt="Liveshow Merchandising" class="quote-case-img" width="400" height="240" loading="lazy" />
+          <div class="quote-case-body">
+            <div class="quote-case-tag" style="background:#E84393">Entretenimiento</div>
+            <div class="quote-case-name">Liveshow Merchandising</div>
+            <div class="quote-case-desc">100+ puntos de venta simultáneos en conciertos de Shakira, Metallica y Karol G.</div>
+            <div class="quote-case-metrics">
+              <span><strong>150K+</strong> transacciones</span>
+              <span><strong>75%</strong> más rápido</span>
+            </div>
+            <div class="quote-case-quote">"Con SACS no perdemos una sola venta, ni en el concierto más grande."</div>
+          </div>
+        </div>
+        <div class="quote-case-card">
+          <img src="/images/case-bella-pandita.webp" alt="La Bella Pandita" class="quote-case-img" width="400" height="240" loading="lazy" />
+          <div class="quote-case-body">
+            <div class="quote-case-tag" style="background:#6C5CE7">Moda y hogar</div>
+            <div class="quote-case-name">La Bella Pandita</div>
+            <div class="quote-case-desc">De 1 tienda piloto a 42 sucursales sincronizadas en 3 años.</div>
+            <div class="quote-case-metrics">
+              <span><strong>+300%</strong> lifetime value</span>
+              <span><strong>45%</strong> clientes leales</span>
+            </div>
+            <div class="quote-case-quote">"Dejamos de ser solo retail físico para convertirnos en una operación omnicanal integrada."</div>
+          </div>
+        </div>
+        <div class="quote-case-card">
+          <img src="/images/case-sandmade.webp" alt="Sandmade Swimwear" class="quote-case-img" width="400" height="240" loading="lazy" />
+          <div class="quote-case-body">
+            <div class="quote-case-tag" style="background:#2AB5A0">Swimwear</div>
+            <div class="quote-case-name">Sandmade Swimwear</div>
+            <div class="quote-case-desc">8 boutiques en Tulum, Playa del Carmen, Holbox y Los Cabos con inventario unificado.</div>
+            <div class="quote-case-metrics">
+              <span><strong>98%</strong> precisión inventario</span>
+              <span><strong>20s</strong> por transacción</span>
+            </div>
+            <div class="quote-case-quote">"Cada venta se convirtió en una oportunidad de conectar auténticamente con el cliente."</div>
+          </div>
+        </div>
+        <div class="quote-case-card">
+          <img src="/images/case-casa-maca.webp" alt="Casa Maca" class="quote-case-img" width="400" height="240" loading="lazy" />
+          <div class="quote-case-body">
+            <div class="quote-case-tag" style="background:#E8A838;color:#1a1a1a">Moda consciente</div>
+            <div class="quote-case-name">Casa Maca</div>
+            <div class="quote-case-desc">Moda sustentable desde Guadalajara. 2 boutiques + e-commerce + social commerce conectados.</div>
+            <div class="quote-case-metrics">
+              <span><strong>-80%</strong> trabajo manual</span>
+              <span><strong>+25%</strong> ticket promedio</span>
+            </div>
+            <div class="quote-case-quote">"Casa Maca diseña desde la intuición, pero ahora opera con datos."</div>
+          </div>
+        </div>
+      </div>
+      <div class="quote-cases-dots" id="cases-dots">
+        <button class="quote-cases-dot active" data-idx="0"></button>
+        <button class="quote-cases-dot" data-idx="1"></button>
+        <button class="quote-cases-dot" data-idx="2"></button>
+        <button class="quote-cases-dot" data-idx="3"></button>
+      </div>
+    </div>
+
     <!-- Legal -->
     <div class="quote-legal">
       Al aceptar esta cotización, confirmas que has leído y aceptas nuestros <a href="https://www.sacscloud.com/terminos" target="_blank" rel="noopener">Términos y condiciones</a> y nuestro <a href="https://www.sacscloud.com/privacidad" target="_blank" rel="noopener">Aviso de privacidad</a>.
@@ -828,6 +904,45 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
   100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
 }
 
+/* ─── Why SACS ─── */
+.quote-why { padding: 32px 40px; border-top: 1px solid #f0f0f0; text-align: center; }
+.quote-why-title { font-family: var(--font-display); font-size: 1.125rem; font-weight: 800; color: #1a1a1a; margin-bottom: 10px; }
+.quote-why-text { font-size: 0.8125rem; color: #888; line-height: 1.7; max-width: 480px; margin: 0 auto 20px; }
+.quote-why-stats { display: flex; justify-content: center; gap: 32px; }
+.quote-why-stat { text-align: center; }
+.quote-why-stat-num { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: #4B7BE5; }
+.quote-why-stat-label { font-size: 0.625rem; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* ─── Cases carousel ─── */
+.quote-cases { padding: 24px 0 32px; border-top: 1px solid #f0f0f0; overflow: hidden; }
+.quote-cases-title { font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: #1a1a1a; margin-bottom: 16px; padding: 0 40px; }
+.quote-cases-track { display: flex; gap: 16px; padding: 0 40px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
+.quote-cases-track::-webkit-scrollbar { display: none; }
+.quote-case-card { min-width: 280px; max-width: 300px; flex-shrink: 0; border-radius: 12px; overflow: hidden; border: 1px solid #f0f0f0; scroll-snap-align: start; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.quote-case-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+.quote-case-img { width: 100%; height: 160px; object-fit: cover; display: block; }
+.quote-case-body { padding: 14px 16px; }
+.quote-case-tag { display: inline-block; font-size: 0.5rem; font-weight: 800; color: #fff; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+.quote-case-name { font-family: var(--font-display); font-size: 0.9375rem; font-weight: 800; color: #1a1a1a; margin-bottom: 4px; }
+.quote-case-desc { font-size: 0.6875rem; color: #999; line-height: 1.5; margin-bottom: 8px; }
+.quote-case-metrics { display: flex; gap: 12px; margin-bottom: 8px; }
+.quote-case-metrics span { font-size: 0.625rem; color: #666; }
+.quote-case-metrics strong { color: #2AB5A0; }
+.quote-case-quote { font-size: 0.6875rem; color: #aaa; font-style: italic; line-height: 1.5; border-left: 2px solid #f0f0f0; padding-left: 10px; }
+.quote-cases-dots { display: flex; justify-content: center; gap: 6px; margin-top: 12px; }
+.quote-cases-dot { width: 8px; height: 8px; border-radius: 50%; border: none; background: #e0e0e0; cursor: pointer; padding: 0; transition: background 0.2s; }
+.quote-cases-dot.active { background: #1a1a1a; width: 20px; border-radius: 4px; }
+
+.quote-dark .quote-why { border-color: rgba(255,255,255,0.08); }
+.quote-dark .quote-why-title { color: #fff; }
+.quote-dark .quote-why-text { color: rgba(255,255,255,0.5); }
+.quote-dark .quote-cases { border-color: rgba(255,255,255,0.08); }
+.quote-dark .quote-cases-title { color: #fff; }
+.quote-dark .quote-case-card { border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); }
+.quote-dark .quote-case-name { color: #fff; }
+.quote-dark .quote-cases-dot { background: rgba(255,255,255,0.15); }
+.quote-dark .quote-cases-dot.active { background: #fff; }
+
 /* ─── Legal ─── */
 .quote-legal { padding: 16px 40px; font-size: 0.625rem; color: #bbb; line-height: 1.6; border-top: 1px solid #f0f0f0; }
 .quote-legal a { color: #999; text-decoration: underline; }
@@ -1021,6 +1136,10 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
   .quote-comp-after-cell { color: #1a1a1a !important; }
   .quote-comp-before-cell { color: #ccc !important; }
   .quote-signature { display: none !important; }
+  .quote-why-stat-num { color: #4B7BE5 !important; }
+  .quote-case-tag { color: #fff !important; }
+  .quote-cases-dots { display: none !important; }
+  .quote-cases-track { overflow: visible !important; flex-wrap: wrap !important; }
   .quote-version-current .quote-version-dot { background: #4B7BE5 !important; }
   .quote-version-badge { background: rgba(75,123,229,0.08) !important; color: #4B7BE5 !important; }
 }
@@ -1182,6 +1301,35 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
       const finalBody = (from ? `De: ${from}\n\n` : '') + body;
       window.location.href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject || 'Cotización')}&body=${encodeURIComponent(finalBody)}`;
     });
+  }
+
+  // ─── Cases carousel ───
+  const casesTrack = document.getElementById('cases-track');
+  const casesDots = document.querySelectorAll('.quote-cases-dot');
+  if (casesTrack && casesDots.length) {
+    casesDots.forEach(dot => {
+      dot.addEventListener('click', () => {
+        const idx = parseInt((dot as HTMLElement).dataset.idx || '0');
+        const card = casesTrack.children[idx] as HTMLElement;
+        if (card) casesTrack.scrollTo({ left: card.offsetLeft - 40, behavior: 'smooth' });
+      });
+    });
+    casesTrack.addEventListener('scroll', () => {
+      const scrollLeft = casesTrack.scrollLeft;
+      let activeIdx = 0;
+      for (let i = 0; i < casesTrack.children.length; i++) {
+        const child = casesTrack.children[i] as HTMLElement;
+        if (child.offsetLeft - 40 <= scrollLeft + 20) activeIdx = i;
+      }
+      casesDots.forEach((d, i) => d.classList.toggle('active', i === activeIdx));
+    }, { passive: true });
+    // Auto-scroll every 4s
+    let autoIdx = 0;
+    setInterval(() => {
+      autoIdx = (autoIdx + 1) % casesTrack.children.length;
+      const card = casesTrack.children[autoIdx] as HTMLElement;
+      if (card) casesTrack.scrollTo({ left: card.offsetLeft - 40, behavior: 'smooth' });
+    }, 4000);
   }
 
   // ─── Animated numbers (count-up) ───
