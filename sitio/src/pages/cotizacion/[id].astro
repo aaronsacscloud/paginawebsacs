@@ -908,16 +908,16 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
 .quote-table th.qt-price, .quote-table th.qt-subtotal { text-align: right; }
 
 /* ─── Timer ─── */
-.quote-timer { padding: 24px 40px; background: linear-gradient(135deg, #4B7BE5, #3D6BD4); text-align: center; color: #fff; }
-.quote-timer--urgent { background: linear-gradient(135deg, #E54B4B, #c62828); }
+.quote-timer { padding: 24px 40px; background: #1a1a1a; text-align: center; color: #fff; }
+.quote-timer--urgent { background: #1a1a1a; }
 .quote-timer-label { font-size: 0.8125rem; font-weight: 500; opacity: 0.8; margin-bottom: 8px; }
 .quote-timer-countdown { display: flex; justify-content: center; align-items: baseline; gap: 4px; }
 .quote-timer-num { font-family: var(--font-display); font-size: 2.5rem; font-weight: 800; line-height: 1; }
 .quote-timer-unit { font-size: 0.75rem; font-weight: 500; opacity: 0.7; margin-right: 12px; }
 .quote-timer-savings { font-size: 0.8125rem; font-weight: 600; margin-top: 12px; opacity: 0.9; }
 
-.quote-dark .quote-timer { background: linear-gradient(135deg, #2AB5A0, #1a8a76); }
-.quote-dark .quote-timer--urgent { background: linear-gradient(135deg, #E54B4B, #c62828); }
+.quote-dark .quote-timer { background: rgba(255,255,255,0.05); }
+.quote-dark .quote-timer--urgent { background: rgba(255,255,255,0.05); }
 
 /* ─── Bank account ─── */
 .quote-bank { padding: 24px 40px; border-top: 1px solid #f0f0f0; }
@@ -1314,8 +1314,8 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
   .quote-logo-tag { background: rgba(75,123,229,0.08) !important; color: var(--color-primary) !important; }
   .quote-validity { color: #999 !important; }
   .quote-expired { color: #E54B4B !important; }
-  .quote-timer { background: #4B7BE5 !important; color: #fff !important; }
-  .quote-timer--urgent { background: #E54B4B !important; }
+  .quote-timer { background: #1a1a1a !important; color: #fff !important; }
+  .quote-timer--urgent { background: #1a1a1a !important; }
   .qt-promo-badge { background: #2AB5A0 !important; color: #fff !important; }
   .qt-promo-row { background: rgba(42,181,160,0.03) !important; }
   .qt-savings { color: #2AB5A0 !important; }
