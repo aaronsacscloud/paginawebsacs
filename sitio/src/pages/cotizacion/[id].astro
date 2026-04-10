@@ -191,9 +191,18 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
           <span class="quote-timer-num" id="timer-secs">0</span>
           <span class="quote-timer-unit">seg</span>
         </div>
-        {quote.descuento_global > 0 && (
-          <div class="quote-timer-savings">Los descuentos de esta cotización representan un ahorro de {fmt(quote.subtotal * quote.descuento_global / 100)} {quote.moneda}</div>
-        )}
+        {(() => {
+          const globalSaving = quote.descuento_global > 0 ? (quote.descuento_tipo === 'pct' ? (quote.subtotal || 0) * quote.descuento_global / 100 : quote.descuento_global) : 0;
+          const promoSaving = promoItems.reduce((s: number, i: any) => s + (i.precio_original || 0), 0);
+          const annualSaving = planItems.filter((i: any) => i.periodo === 'anual').reduce((s: number, i: any) => {
+            const suc = parseInt(i.sucursales) || 1;
+            return s + (i.precio_unitario || 0) * suc * 2;
+          }, 0);
+          const totalSaving = globalSaving + promoSaving + annualSaving;
+          return totalSaving > 0 ? (
+            <div class="quote-timer-savings">Los descuentos de esta cotización representan un ahorro de {fmt(totalSaving)} {quote.moneda}</div>
+          ) : null;
+        })()}
       </div>
     )}
 
