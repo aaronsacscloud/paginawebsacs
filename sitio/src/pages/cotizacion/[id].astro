@@ -516,13 +516,6 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
       </div>
     )}
 
-    <!-- QR Code -->
-    {showQr && (
-      <div class="quote-qr">
-        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(quoteUrl)}&color=1a1a1a&bgcolor=ffffff`} alt="QR" width="80" height="80" loading="lazy" class="quote-qr-img" />
-        <div class="quote-qr-text">Escanea para ver esta cotización</div>
-      </div>
-    )}
 
     <!-- Signature -->
     {showFirma && !isExpired && quote.estado !== 'accepted' && quote.estado !== 'paid' && (
