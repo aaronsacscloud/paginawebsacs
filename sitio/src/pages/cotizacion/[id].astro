@@ -350,22 +350,32 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
           </div>
         )}
 
-        {(annualPlanTotal > 0 || recurringAnnualItems.length > 0) && (
-          <div class="quote-payment-block">
-            <div class="quote-payment-label">Próxima renovación anual: {nextAnnualStr}</div>
-            {planItems.filter((i: any) => i.periodo === 'anual').map((i: any) => (
-              <div class="quote-payment-line"><span>Renovación Plan {i.nombre} · {i.sucursales} suc.</span><span>{fmt(i.subtotal || 0)}</span></div>
-            ))}
-            {recurringAnnualItems.map((i: any) => (
-              <div class="quote-payment-line"><span>{i.nombre} (anual)</span><span>{fmt(i.subtotal || 0)}</span></div>
-            ))}
-            {planItems.some((i: any) => i.periodo === 'anual' && parseFloat(i.descuento_pct || 0) > 0) && (
-              <div class="quote-payment-line" style="font-size:0.6875rem;color:#2AB5A0;font-style:italic">
-                <span>El precio con descuento se mantiene en renovaciones futuras</span>
-              </div>
-            )}
-          </div>
-        )}
+        {(annualPlanTotal > 0 || recurringAnnualItems.length > 0) && (() => {
+          const discGlobal = quote.descuento_global > 0 ? (quote.descuento_tipo === 'pct' ? quote.descuento_global / 100 : 0) : 0;
+          const hasAnyDiscount = discGlobal > 0 || planItems.some((i: any) => i.periodo === 'anual' && parseFloat(i.descuento_pct || 0) > 0);
+          return (
+            <div class="quote-payment-block">
+              <div class="quote-payment-label">Próxima renovación anual: {nextAnnualStr}</div>
+              {planItems.filter((i: any) => i.periodo === 'anual').map((i: any) => {
+                const renewalPrice = discGlobal > 0 ? (i.subtotal || 0) * (1 - discGlobal) : (i.subtotal || 0);
+                return (
+                  <div class="quote-payment-line"><span>Renovación Plan {i.nombre} · {i.sucursales} suc.</span><span>{fmt(renewalPrice)}</span></div>
+                );
+              })}
+              {recurringAnnualItems.map((i: any) => {
+                const renewalPrice = discGlobal > 0 ? (i.subtotal || 0) * (1 - discGlobal) : (i.subtotal || 0);
+                return (
+                  <div class="quote-payment-line"><span>{i.nombre} (anual)</span><span>{fmt(renewalPrice)}</span></div>
+                );
+              })}
+              {hasAnyDiscount && (
+                <div class="quote-payment-line" style="font-size:0.6875rem;color:#2AB5A0;font-style:italic">
+                  <span>El precio con descuento se mantiene en renovaciones futuras</span>
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </div>
     )}
 
