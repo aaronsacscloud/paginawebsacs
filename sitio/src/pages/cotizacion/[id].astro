@@ -309,26 +309,7 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
         <div class="quote-payments-title">Resumen de pagos</div>
 
         <div class="quote-payment-block">
-          <div class="quote-payment-label">Primer pago</div>
-          {planItems.map((i: any) => (
-            <div class="quote-payment-line">
-              <span>Plan {i.nombre} ({i.periodo}) · {i.sucursales} suc.</span>
-              <span>{fmt(i.subtotal || 0)}</span>
-            </div>
-          ))}
-          {uniqueItems.map((i: any) => (
-            <div class="quote-payment-line">
-              <span>{i.nombre} (único)</span>
-              <span>{fmt(i.monto || i.subtotal || 0)}</span>
-            </div>
-          ))}
-          {recurringItems.map((i: any) => (
-            <div class="quote-payment-line">
-              <span>{i.nombre}</span>
-              <span>{fmt(i.monto || i.subtotal || 0)}</span>
-            </div>
-          ))}
-          <div class="quote-payment-total">
+          <div class="quote-payment-total" style="border:none;margin:0;padding:0">
             <span>Total primer pago {quote.iva_incluido ? '(con IVA)' : ''}</span>
             <span class="count-up" data-count={quote.total || 0} data-suffix={` ${quote.moneda}`}>{fmt(quote.total || 0)} {quote.moneda}</span>
           </div>
