@@ -1333,28 +1333,33 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
 
 /* ─── Mobile ─── */
 @media (max-width: 640px) {
+  /* Force page to never exceed viewport */
+  .quote-page { padding: 0; overflow-x: hidden; }
+  .quote-container { max-width: 100vw; overflow-x: hidden; }
+
   .quote-header { flex-direction: column; gap: 16px; padding: 24px 20px 20px; }
   .quote-meta { text-align: left; }
   .quote-client { padding: 20px; }
 
-  /* Table: prevent horizontal overflow */
-  .quote-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .quote-table thead, .quote-table tbody, .quote-table tr { display: table; width: 100%; table-layout: fixed; }
-  .quote-table th, .quote-table td { padding: 10px 6px; font-size: 0.7rem; word-break: break-word; }
+  /* Table: fixed layout to prevent overflow */
+  .quote-table { width: 100%; table-layout: fixed; }
+  .quote-table th, .quote-table td { padding: 10px 6px; font-size: 0.7rem; word-break: break-word; overflow: hidden; text-overflow: ellipsis; }
   .qt-detail { display: none; }
-  .qt-concept { width: 42%; }
+  .qt-concept { width: 40%; }
   .qt-qty { width: 14%; text-align: center; }
-  .qt-price { width: 22%; }
-  .qt-subtotal { width: 22%; }
-  .qt-desc { font-size: 0.65rem; }
+  .qt-price { width: 23%; }
+  .qt-subtotal { width: 23%; }
+  .qt-desc { font-size: 0.65rem; white-space: normal; }
   .qt-nota { font-size: 0.6rem; }
   .qt-strikethrough { font-size: 0.6rem; }
 
   /* Totals and all 40px-padded sections → 20px */
   .quote-totals { padding: 16px 20px; }
+  .quote-total-row { font-size: 0.8rem; }
   .quote-total-row.quote-total-final { font-size: 1.1rem; }
   .quote-payments { padding: 16px 20px; }
   .quote-payment-line { font-size: 0.75rem; }
+  .quote-payment-total { font-size: 0.85rem; }
   .quote-conditions { padding: 16px 20px; }
   .quote-roi { padding: 20px; }
   .quote-roi-numbers { flex-direction: column; gap: 10px; }
@@ -1364,7 +1369,7 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
   .quote-pay-link { padding: 20px; }
   .quote-summary { padding: 0 20px 16px; }
   .quote-why { padding: 24px 20px; }
-  .quote-why-stats { gap: 16px; }
+  .quote-why-stats { gap: 16px; flex-wrap: wrap; }
   .quote-qr { padding: 16px 20px; }
   .quote-signature { padding: 20px; }
   .quote-signed { padding: 20px; }
@@ -1372,14 +1377,17 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
   .quote-timeline-section { padding: 24px 20px; }
 
   /* Conscious Commerce: SACS grid 2×2 */
-  .quote-conscious { padding: 24px 20px; }
-  .quote-conscious-grid { grid-template-columns: repeat(2, 1fr); }
+  .quote-conscious { padding: 24px 20px; overflow-x: hidden; }
+  .quote-conscious-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
+  .quote-conscious-letter { min-width: 0; }
+  .quote-conscious-desc { font-size: 0.5rem; }
 
   /* Journey steps: 2×2 grid, hide arrows */
-  .quote-conscious-journey-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .quote-conscious-jarrow { display: none; }
+  .quote-conscious-journey-steps { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 12px; }
+  .quote-conscious-jarrow { display: none !important; }
   .quote-conscious-jstep { min-width: 0; }
   .quote-conscious-jdesc { font-size: 0.5rem; }
+  .quote-conscious-jnum { font-size: 1.25rem; }
 
   .quote-footer { flex-direction: column; gap: 8px; padding: 16px 20px; }
   .quote-features { padding: 20px; }
@@ -1388,11 +1396,15 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
   /* Cases carousel padding */
   .quote-cases-title { padding: 0 20px; }
   .quote-cases-track { padding: 0 20px; }
+  .quote-case-card { min-width: 240px; }
 
   /* Timer savings text */
   .quote-timer { padding: 16px 20px; }
   .quote-timer-savings { font-size: 0.75rem; }
   .quote-timer-num { font-size: 1.75rem; }
+
+  /* Stamp */
+  .quote-stamp-text { font-size: 3rem; padding: 6px 20px; }
 }
 </style>
 
