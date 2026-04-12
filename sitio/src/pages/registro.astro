@@ -816,17 +816,19 @@ const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
     sendLeadToSheet('Paso 1 completado');
 
     // TikTok: enhanced matching + InitiateCheckout
-    if (typeof ttq !== 'undefined') {
-      const email = (document.getElementById('signup-email') as HTMLInputElement)?.value || '';
-      const phone = (document.getElementById('signup-whatsapp') as HTMLInputElement)?.value || '';
-      ttq.identify({ email, phone_number: phone });
-      const planPrices: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 2900 };
-      ttq.track('InitiateCheckout', {
-        content_name: selectedPlan || 'unknown',
-        value: planPrices[selectedPlan] || 0,
-        currency: 'MXN',
-      });
-    }
+    try {
+      if (typeof ttq !== 'undefined') {
+        const email = (document.getElementById('signup-email') as HTMLInputElement)?.value || '';
+        const phone = (document.getElementById('signup-whatsapp') as HTMLInputElement)?.value || '';
+        ttq.identify({ email, phone_number: phone });
+        const planPrices: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 2900 };
+        ttq.track('InitiateCheckout', {
+          content_name: selectedPlan || 'unknown',
+          value: planPrices[selectedPlan] || 0,
+          currency: 'MXN',
+        });
+      }
+    } catch {}
 
     goToStep(2);
   });
@@ -940,14 +942,16 @@ const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
         sendLeadToSheet('Registro completado', selectedPlan);
 
         // TikTok: registration complete with value
-        if (typeof ttq !== 'undefined') {
-          const planPrices: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 2900 };
-          ttq.track('CompleteRegistration', {
-            content_name: selectedPlan || 'unknown',
-            value: planPrices[selectedPlan] || 0,
-            currency: 'MXN',
-          });
-        }
+        try {
+          if (typeof ttq !== 'undefined') {
+            const planPrices: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 2900 };
+            ttq.track('CompleteRegistration', {
+              content_name: selectedPlan || 'unknown',
+              value: planPrices[selectedPlan] || 0,
+              currency: 'MXN',
+            });
+          }
+        } catch {}
 
         window.location.href = '/bienvenida';
       } else {
