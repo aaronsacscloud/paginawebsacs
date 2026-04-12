@@ -2787,9 +2787,25 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
 
 <script>
   // TikTok: user viewed pricing page
-  if (typeof ttq !== 'undefined') {
-    ttq.track('ViewContent', { content_id: 'planes', content_name: 'planes' });
-  }
+  try {
+    if (typeof ttq !== 'undefined') {
+      ttq.track('ViewContent', { content_id: 'planes', content_name: 'planes', content_type: 'product' });
+      // AddToCart when clicking "Inicia ahora"
+      document.querySelectorAll('.plan-cta').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const card = btn.closest('[data-plan]') as HTMLElement;
+          const planId = card?.dataset.plan || 'unknown';
+          const prices: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 2900 };
+          ttq.track('AddToCart', {
+            contents: [{ content_id: planId, content_name: planId }],
+            content_type: 'product',
+            value: prices[planId] || 0,
+            currency: 'MXN',
+          });
+        });
+      });
+    }
+  } catch {}
 
   // ─── Toggle state management ───
   const root = document.getElementById('pricing-root');

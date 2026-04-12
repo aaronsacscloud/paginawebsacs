@@ -285,6 +285,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         const data: Record<string, string> = {};
         formData.forEach((v, k) => { data[k] = v as string; });
 
+        // Save email for enhanced matching on future visits
+        try { localStorage.setItem('sacs_visitor_email', data.email || ''); } catch {}
+
         await fetch('/api/save-lead', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

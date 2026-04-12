@@ -652,4 +652,12 @@ const websiteSchema = {
 
   <FAQAccordion locale="es" />
   <FinalCTA locale="es" />
+
+  <script>
+    try {
+      if (typeof ttq !== 'undefined') {
+        ttq.track('ViewContent', { content_id: 'homepage', content_name: 'homepage', content_type: 'product' });
+      }
+    } catch {}
+  </script>
 </BaseLayout>

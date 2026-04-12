@@ -874,6 +874,9 @@ const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
     step1Fields.forEach((f) => { if (!validateField(f)) allValid = false; });
     if (!allValid) return;
 
+    // Save email for enhanced matching on future visits
+    try { localStorage.setItem('sacs_visitor_email', (document.getElementById('email') as HTMLInputElement)?.value || ''); } catch {}
+
     // Send lead to Google Sheet immediately
     sendLeadToSheet('Paso 1 completado');
 
