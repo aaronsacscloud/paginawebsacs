@@ -109,6 +109,17 @@ export const POST: APIRoute = async ({ request }) => {
         aceptado_fecha: new Date().toISOString(),
       }).eq('id', quoteId);
 
+      // TikTok: quote paid via Stripe
+      const { data: quoteData } = await supabase.from('quotes').select('email, whatsapp, total, empresa').eq('id', quoteId).single();
+      if (quoteData) {
+        await sendTikTokPayment(
+          quoteData.email || '',
+          quoteData.whatsapp || '',
+          'cotizacion-' + (quoteData.empresa || '').slice(0, 20),
+          quoteData.total || 0
+        );
+      }
+
       // Add timeline event
       const { data: quote } = await supabase.from('quotes').select('notas').eq('id', quoteId).single();
       if (quote) {

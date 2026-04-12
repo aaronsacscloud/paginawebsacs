@@ -519,6 +519,19 @@ export default function RevenueHub() {
       setSaving(false);
     };
 
+    const markQuotePaid = async (q: any) => {
+      if (!confirm(`¿Marcar cotización ${q.numero} como pagada?`)) return;
+      setSaving(true);
+      await fetch('/api/revenue/mark-paid', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quoteId: q.id }),
+      });
+      const d = await fetch('/api/revenue/quotes').then(r => r.json());
+      setQuotes(Array.isArray(d) ? d : []);
+      setSaving(false);
+    };
+
     const duplicateQuote = async (q: any) => {
       const copy = { ...q, id: undefined, numero: undefined, estado: 'draft', created_at: undefined };
       setSaving(true);
@@ -651,6 +664,7 @@ export default function RevenueHub() {
                       <button onClick={() => { const { meta: m } = parseMeta(q.notas); setQf({ ...q, items: Array.isArray(q.items) ? q.items : [], logo_url: m.logo_url || '', iva_mode: m.iva_mode || (q.iva_incluido ? 'suma' : 'sin'), mostrar_timer: m.mostrar_timer !== undefined ? m.mostrar_timer : true, mostrar_features: m.mostrar_features !== undefined ? m.mostrar_features : true, mostrar_desglose: m.mostrar_desglose !== undefined ? m.mostrar_desglose : true, mostrar_condiciones: m.mostrar_condiciones !== undefined ? m.mostrar_condiciones : true, mostrar_key_points: m.mostrar_key_points !== undefined ? m.mostrar_key_points : true, key_points: m.key_points || [], roi: m.roi || null, antes_despues: m.antes_despues || [], mostrar_roi: m.mostrar_roi || false, mostrar_antes_despues: m.mostrar_antes_despues || false, mostrar_firma: m.mostrar_firma !== undefined ? m.mostrar_firma : true, mostrar_qr: m.mostrar_qr !== undefined ? m.mostrar_qr : true, mostrar_animaciones: m.mostrar_animaciones !== undefined ? m.mostrar_animaciones : true, mostrar_timeline: m.mostrar_timeline !== undefined ? m.mostrar_timeline : true, timeline_tipo: m.timeline_tipo || '1suc' }); setShowDrawer(true); }} style={S.btnSmall}>Editar</button>
                       <a href={`/cotizacion/${q.id}?admin=1`} target="_blank" rel="noopener" style={{ ...S.btnSmall, textDecoration: 'none', display: 'inline-flex' }}>Ver</a>
                       <button onClick={() => duplicateQuote(q)} style={S.btnSmall}>Duplicar</button>
+                      {q.estado !== 'paid' && <button onClick={() => markQuotePaid(q)} style={{ ...S.btnSmall, background: '#e8f5e9', color: '#2e7d32' }}>Pagada</button>}
                       <button onClick={() => { navigator.clipboard.writeText(`https://www.sacscloud.com/cotizacion/${q.id}`); const btn = document.activeElement as HTMLButtonElement; btn.textContent = 'Copiado'; setTimeout(() => { btn.textContent = 'Copiar'; }, 1500); }} style={{ ...S.btnSmall, background: '#f3e8ff', color: '#7c3aed' }}>Copiar</button>
                       <a href={`https://wa.me/?text=${encodeURIComponent(`Cotización ${q.numero}: https://www.sacscloud.com/cotizacion/${q.id}`)}`} target="_blank" rel="noopener" style={{ ...S.btnSmall, background: '#e8f5e9', color: '#2e7d32', textDecoration: 'none', display: 'inline-flex' }}>WA</a>
                       <a href={`mailto:${q.email || ''}?subject=${encodeURIComponent(`Cotización ${q.numero} - Sacs`)}&body=${encodeURIComponent(`Hola ${q.contacto || ''},\n\nTe comparto tu cotización:\nhttps://www.sacscloud.com/cotizacion/${q.id}\n\nQuedo al pendiente.\nSaludos`)}`} style={{ ...S.btnSmall, background: '#e3f2fd', color: '#1565c0', textDecoration: 'none', display: 'inline-flex' }}>Email</a>
