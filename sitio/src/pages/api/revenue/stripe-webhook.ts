@@ -31,6 +31,7 @@ async function sendTikTokPayment(email: string, phone: string, plan: string, amo
       },
     },
     properties: {
+      content_id: plan || 'subscription',
       content_name: plan || 'subscription',
       value: amount,
       currency: 'MXN',

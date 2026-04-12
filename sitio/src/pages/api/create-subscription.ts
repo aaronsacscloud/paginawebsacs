@@ -31,6 +31,7 @@ async function sendTikTokEvent(email: string, phone: string, planId: string, val
       },
     },
     properties: {
+      content_id: planId,
       content_name: planId,
       value,
       currency: 'MXN',

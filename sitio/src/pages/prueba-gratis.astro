@@ -270,6 +270,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         if (typeof ttq !== 'undefined') {
           ttq.identify({ email: data.email || '', phone_number: data.whatsapp || '' });
           ttq.track('SubmitForm', {
+            content_id: 'prueba-gratis',
             content_name: 'prueba-gratis',
           });
         }

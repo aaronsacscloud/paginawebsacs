@@ -62,6 +62,16 @@ export default function LeadsTable() {
         arr: editArr, nextFollowup: editFollowup, plan: editPlan,
       }),
     });
+    // Notify TikTok when lead becomes a paying customer
+    if (editStage === 'cliente' && selected.stage !== 'cliente') {
+      await fetch('/api/track-payment', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: selected.email, phone: selected.whatsapp,
+          plan: editPlan || selected.plan || 'manual', amount: parseInt(editArr) || selected.arr || 0,
+        }),
+      }).catch(() => {});
+    }
     await load();
     const updated = leads.find(l => l.id === selected.id);
     if (updated) openDetail({ ...updated, stage: editStage, arr: parseInt(editArr)||0, nextFollowup: editFollowup, plan: editPlan });
@@ -85,6 +95,16 @@ export default function LeadsTable() {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ customerId: lead.id, stage: newStage }),
     });
+    // Notify TikTok when lead becomes a paying customer
+    if (newStage === 'cliente') {
+      await fetch('/api/track-payment', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: lead.email, phone: lead.whatsapp,
+          plan: lead.plan || 'manual', amount: lead.arr || 0,
+        }),
+      }).catch(() => {});
+    }
     load();
   };
 

@@ -839,14 +839,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
     // TikTok: track ViewContent on contact page
     if (typeof ttq !== 'undefined') {
-      ttq.track('ViewContent', { content_name: 'contacto-demo' });
+      ttq.track('ViewContent', { content_id: 'contacto', content_name: 'contacto-demo' });
     }
 
     // Calendly: track when someone schedules a demo
     window.addEventListener('message', (e) => {
       if (e.origin === 'https://calendly.com' && e.data?.event === 'calendly.event_scheduled') {
         if (typeof ttq !== 'undefined') {
-          ttq.track('Schedule', { content_name: 'demo-calendly' });
+          ttq.track('Schedule', { content_id: 'demo', content_name: 'demo-calendly' });
         }
       }
     });
