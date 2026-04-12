@@ -425,6 +425,11 @@ export default function RevenueHub() {
     const grandTotal = ivaMode === 'suma' ? afterDisc + (afterDisc * 0.16) : afterDisc;
 
     const createQuote = async () => {
+      // Validate required fields for TikTok tracking
+      if (!qf.empresa?.trim() || !qf.email?.trim() || !qf.whatsapp?.trim()) {
+        alert('Empresa, Email y WhatsApp son obligatorios');
+        return;
+      }
       setSaving(true);
       const isEdit = !!qf.id;
       // Store logo_url in meta, add timeline events
@@ -902,10 +907,10 @@ export default function RevenueHub() {
               {/* Client */}
               <div style={S.label}>Cliente</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
-                <input value={qf.empresa || ''} onChange={e => setQf({ ...qf, empresa: e.target.value })} placeholder="Empresa" style={S.input} />
+                <input value={qf.empresa || ''} onChange={e => setQf({ ...qf, empresa: e.target.value })} placeholder="Empresa *" required style={{ ...S.input, borderColor: !qf.empresa ? '#fca5a5' : undefined }} />
                 <input value={qf.contacto || ''} onChange={e => setQf({ ...qf, contacto: e.target.value })} placeholder="Contacto" style={S.input} />
-                <input value={qf.email || ''} onChange={e => setQf({ ...qf, email: e.target.value })} placeholder="Email" style={S.input} />
-                <input value={qf.whatsapp || ''} onChange={e => setQf({ ...qf, whatsapp: e.target.value })} placeholder="WhatsApp" style={S.input} />
+                <input value={qf.email || ''} onChange={e => setQf({ ...qf, email: e.target.value })} placeholder="Email *" required type="email" style={{ ...S.input, borderColor: !qf.email ? '#fca5a5' : undefined }} />
+                <input value={qf.whatsapp || ''} onChange={e => setQf({ ...qf, whatsapp: e.target.value })} placeholder="WhatsApp *" required type="tel" style={{ ...S.input, borderColor: !qf.whatsapp ? '#fca5a5' : undefined }} />
               </div>
 
               {/* Client logo */}
