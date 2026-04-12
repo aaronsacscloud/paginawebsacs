@@ -5,24 +5,21 @@ export const prerender = false;
 
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || '';
 const SHEET_ID = import.meta.env.GOOGLE_SHEETS_SPREADSHEET_ID || '';
-const CLIENT_EMAIL = import.meta.env.GOOGLE_SHEETS_CLIENT_EMAIL || '';
 
-function getPrivateKey(): string {
-  const b64 = import.meta.env.GOOGLE_SHEETS_PRIVATE_KEY_B64 || '';
-  if (b64) return Buffer.from(b64, 'base64').toString('utf-8');
-  return (import.meta.env.GOOGLE_SHEETS_PRIVATE_KEY || '').replace(/\\n/g, '\n');
-}
-const PRIVATE_KEY = getPrivateKey();
-
-async function appendToSheet(data: Record<string, string>) {
-  if (!SHEET_ID || !CLIENT_EMAIL || !PRIVATE_KEY) return;
-
-  const auth = new google.auth.JWT({
-    email: CLIENT_EMAIL,
-    key: PRIVATE_KEY,
+function getGoogleAuth() {
+  const b64 = import.meta.env.GOOGLE_SERVICE_ACCOUNT_B64 || '';
+  if (!b64) return null;
+  const creds = JSON.parse(Buffer.from(b64, 'base64').toString('utf-8'));
+  return new google.auth.GoogleAuth({
+    credentials: creds,
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
-  await auth.authorize();
+}
+
+async function appendToSheet(data: Record<string, string>) {
+  if (!SHEET_ID) return;
+  const auth = getGoogleAuth();
+  if (!auth) return;
 
   const sheets = google.sheets({ version: 'v4', auth });
 
@@ -90,13 +87,6 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Save to Google Sheets
     let sheetError = null;
-    const debugInfo = {
-      hasSheetId: !!SHEET_ID,
-      hasEmail: !!CLIENT_EMAIL,
-      hasKey: !!PRIVATE_KEY,
-      keyStart: PRIVATE_KEY?.substring(0, 30) || 'empty',
-      keyLen: PRIVATE_KEY?.length || 0,
-    };
     try {
       await appendToSheet(data);
     } catch (sheetErr: any) {
@@ -104,7 +94,7 @@ export const POST: APIRoute = async ({ request }) => {
       console.error('Google Sheets error:', sheetError);
     }
 
-    return new Response(JSON.stringify({ success: true, id: result.id, sheetError, debugInfo }), {
+    return new Response(JSON.stringify({ success: true, id: result.id, sheetError }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     });
