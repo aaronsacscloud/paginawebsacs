@@ -79,8 +79,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     const result = await res.json();
 
-    // Save to Google Sheets (non-blocking)
-    appendToSheet(data).catch(() => {});
+    // Save to Google Sheets
+    try {
+      await appendToSheet(data);
+    } catch (sheetErr) {
+      console.error('Google Sheets error:', sheetErr);
+    }
 
     return new Response(JSON.stringify({ success: true, id: result.id }), {
       status: 200,
