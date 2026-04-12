@@ -17,9 +17,12 @@ const PRIVATE_KEY = getPrivateKey();
 async function appendToSheet(data: Record<string, string>) {
   if (!SHEET_ID || !CLIENT_EMAIL || !PRIVATE_KEY) return;
 
-  const auth = new google.auth.JWT(CLIENT_EMAIL, undefined, PRIVATE_KEY, [
-    'https://www.googleapis.com/auth/spreadsheets',
-  ]);
+  const auth = new google.auth.JWT({
+    email: CLIENT_EMAIL,
+    key: PRIVATE_KEY,
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  });
+  await auth.authorize();
 
   const sheets = google.sheets({ version: 'v4', auth });
 
