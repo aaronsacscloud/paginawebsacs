@@ -16,7 +16,22 @@ function getGoogleAuth() {
   });
 }
 
-async function appendToSheet(data: Record<string, string>) {
+function parseUserAgent(ua: string): { device: string; browser: string } {
+  const isMobile = /Mobile|Android|iPhone|iPad/i.test(ua);
+  const isTablet = /iPad|Tablet/i.test(ua);
+  const device = isTablet ? 'Tablet' : isMobile ? 'Móvil' : 'Computadora';
+
+  let browser = 'Otro';
+  if (/Edg\//i.test(ua)) browser = 'Edge';
+  else if (/OPR|Opera/i.test(ua)) browser = 'Opera';
+  else if (/Chrome/i.test(ua)) browser = 'Chrome';
+  else if (/Safari/i.test(ua)) browser = 'Safari';
+  else if (/Firefox/i.test(ua)) browser = 'Firefox';
+
+  return { device, browser };
+}
+
+async function appendToSheet(data: Record<string, string>, userAgent: string) {
   if (!SHEET_ID) return;
   const auth = getGoogleAuth();
   if (!auth) return;
@@ -26,6 +41,8 @@ async function appendToSheet(data: Record<string, string>) {
   const now = new Date();
   const fecha = now.toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', year: 'numeric', month: '2-digit', day: '2-digit' });
   const hora = now.toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' });
+
+  const { device, browser } = parseUserAgent(userAgent);
 
   const row = [
     fecha,
@@ -38,6 +55,8 @@ async function appendToSheet(data: Record<string, string>) {
     data.sucursales || '',
     data.plan || '',
     data.paso || '',
+    device,
+    browser,
     data.score || '0',
     data.totalTime || '0',
     data.pageCount || '0',
@@ -46,7 +65,7 @@ async function appendToSheet(data: Record<string, string>) {
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: SHEET_ID,
-    range: 'Leads!A:N',
+    range: 'Leads!A:P',
     valueInputOption: 'USER_ENTERED',
     requestBody: { values: [row] },
   });
@@ -87,7 +106,8 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Save to Google Sheets
     try {
-      await appendToSheet(data);
+      const userAgent = request.headers.get('user-agent') || '';
+      await appendToSheet(data, userAgent);
     } catch (sheetErr) {
       console.error('Google Sheets error:', sheetErr);
     }
