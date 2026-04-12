@@ -815,6 +815,13 @@ const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
     // Send lead to Google Sheet immediately
     sendLeadToSheet('Paso 1 completado');
 
+    // TikTok: lead initiated checkout
+    if (typeof ttq !== 'undefined') {
+      ttq.track('InitiateCheckout', {
+        content_name: selectedPlan || 'unknown',
+      });
+    }
+
     goToStep(2);
   });
 
@@ -925,6 +932,14 @@ const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
 
       if (data.success) {
         sendLeadToSheet('Registro completado', selectedPlan);
+
+        // TikTok: registration complete
+        if (typeof ttq !== 'undefined') {
+          ttq.track('CompleteRegistration', {
+            content_name: selectedPlan || 'unknown',
+          });
+        }
+
         window.location.href = '/bienvenida';
       } else {
         const errEl = document.getElementById('card-errors');
