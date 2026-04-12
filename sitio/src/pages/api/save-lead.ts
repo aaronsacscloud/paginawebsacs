@@ -6,7 +6,13 @@ export const prerender = false;
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || '';
 const SHEET_ID = import.meta.env.GOOGLE_SHEETS_SPREADSHEET_ID || '';
 const CLIENT_EMAIL = import.meta.env.GOOGLE_SHEETS_CLIENT_EMAIL || '';
-const PRIVATE_KEY = (import.meta.env.GOOGLE_SHEETS_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+
+function getPrivateKey(): string {
+  const b64 = import.meta.env.GOOGLE_SHEETS_PRIVATE_KEY_B64 || '';
+  if (b64) return Buffer.from(b64, 'base64').toString('utf-8');
+  return (import.meta.env.GOOGLE_SHEETS_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+}
+const PRIVATE_KEY = getPrivateKey();
 
 async function appendToSheet(data: Record<string, string>) {
   if (!SHEET_ID || !CLIENT_EMAIL || !PRIVATE_KEY) return;
