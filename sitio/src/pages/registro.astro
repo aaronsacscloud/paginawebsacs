@@ -815,10 +815,16 @@ const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
     // Send lead to Google Sheet immediately
     sendLeadToSheet('Paso 1 completado');
 
-    // TikTok: lead initiated checkout
+    // TikTok: enhanced matching + InitiateCheckout
     if (typeof ttq !== 'undefined') {
+      const email = (document.getElementById('signup-email') as HTMLInputElement)?.value || '';
+      const phone = (document.getElementById('signup-whatsapp') as HTMLInputElement)?.value || '';
+      ttq.identify({ email, phone_number: phone });
+      const planPrices: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 2900 };
       ttq.track('InitiateCheckout', {
         content_name: selectedPlan || 'unknown',
+        value: planPrices[selectedPlan] || 0,
+        currency: 'MXN',
       });
     }
 
@@ -933,10 +939,13 @@ const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
       if (data.success) {
         sendLeadToSheet('Registro completado', selectedPlan);
 
-        // TikTok: registration complete
+        // TikTok: registration complete with value
         if (typeof ttq !== 'undefined') {
+          const planPrices: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 2900 };
           ttq.track('CompleteRegistration', {
             content_name: selectedPlan || 'unknown',
+            value: planPrices[selectedPlan] || 0,
+            currency: 'MXN',
           });
         }
 

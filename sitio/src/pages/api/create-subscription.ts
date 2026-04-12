@@ -1,11 +1,51 @@
 import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
+import { createHash } from 'crypto';
 
 export const prerender = false;
 
 const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2025-03-31.basil',
 });
+
+const TIKTOK_TOKEN = (import.meta.env.TIKTOK_ACCESS_TOKEN || '').trim();
+const TIKTOK_PIXEL = 'CUT9GN3C77UAVCG32N00';
+
+function sha256(value: string): string {
+  return createHash('sha256').update(value.trim().toLowerCase()).digest('hex');
+}
+
+async function sendTikTokEvent(email: string, phone: string, planId: string, value: number, ip: string, ua: string) {
+  if (!TIKTOK_TOKEN) return;
+  const event = {
+    pixel_code: TIKTOK_PIXEL,
+    event: 'CompletePayment',
+    event_id: `pay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    timestamp: new Date().toISOString(),
+    context: {
+      user_agent: ua,
+      ip,
+      user: {
+        email: email ? sha256(email) : undefined,
+        phone: phone ? sha256(phone) : undefined,
+      },
+    },
+    properties: {
+      content_name: planId,
+      value,
+      currency: 'MXN',
+    },
+  };
+
+  await fetch('https://business-api.tiktok.com/open_api/v1.3/event/track/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Token': TIKTOK_TOKEN,
+    },
+    body: JSON.stringify({ event_source: 'web', event_source_id: TIKTOK_PIXEL, data: [event] }),
+  }).catch(() => {});
+}
 
 // Plan price IDs — replace with real Stripe Price IDs after creating products
 const PRICE_MAP: Record<string, { monthly: string; annual: string }> = {
@@ -93,6 +133,12 @@ export const POST: APIRoute = async ({ request }) => {
         billing: billingPeriod,
       },
     });
+
+    // TikTok server-side: CompletePayment
+    const planPrices: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 2900 };
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || '';
+    const ua = request.headers.get('user-agent') || '';
+    sendTikTokEvent(email, whatsapp || '', planId, planPrices[planId] || 0, ip, ua).catch(() => {});
 
     return new Response(
       JSON.stringify({
