@@ -4,7 +4,7 @@ import { google } from 'googleapis';
 export const prerender = false;
 
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || '';
-const SHEET_ID = import.meta.env.GOOGLE_SHEETS_SPREADSHEET_ID || '';
+const SHEET_ID = (import.meta.env.GOOGLE_SHEETS_SPREADSHEET_ID || '').trim();
 
 function getGoogleAuth() {
   const b64 = import.meta.env.GOOGLE_SERVICE_ACCOUNT_B64 || '';
