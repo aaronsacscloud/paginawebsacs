@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
+import { createHash } from 'crypto';
 import { supabase } from '../../../lib/supabase';
 
 export const prerender = false;
@@ -9,6 +10,42 @@ const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY || '', {
 });
 
 const endpointSecret = import.meta.env.STRIPE_WEBHOOK_SECRET || '';
+const TIKTOK_TOKEN = (import.meta.env.TIKTOK_ACCESS_TOKEN || '').trim();
+const TIKTOK_PIXEL = 'CUT9GN3C77UAVCG32N00';
+
+function sha256(value: string): string {
+  return createHash('sha256').update(value.trim().toLowerCase()).digest('hex');
+}
+
+async function sendTikTokPayment(email: string, phone: string, plan: string, amount: number) {
+  if (!TIKTOK_TOKEN) return;
+  const event = {
+    pixel_code: TIKTOK_PIXEL,
+    event: 'CompletePayment',
+    event_id: `stripe_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    timestamp: new Date().toISOString(),
+    context: {
+      user: {
+        email: email ? sha256(email) : undefined,
+        phone: phone ? sha256(phone) : undefined,
+      },
+    },
+    properties: {
+      content_name: plan || 'subscription',
+      value: amount,
+      currency: 'MXN',
+    },
+  };
+
+  await fetch('https://business-api.tiktok.com/open_api/v1.3/event/track/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Token': TIKTOK_TOKEN,
+    },
+    body: JSON.stringify({ event_source: 'web', event_source_id: TIKTOK_PIXEL, data: [event] }),
+  }).catch(() => {});
+}
 
 export const POST: APIRoute = async ({ request }) => {
   const body = await request.text();
@@ -26,6 +63,30 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ error: `Webhook error: ${err.message}` }), { status: 400, headers: { 'Content-Type': 'application/json' } });
   }
 
+  // ─── Subscription payment (first after trial or recurring) ───
+  if (event.type === 'invoice.paid') {
+    const invoice = event.data.object as Stripe.Invoice;
+    const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id;
+
+    if (customerId && invoice.subscription) {
+      try {
+        const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer;
+        const sub = await stripe.subscriptions.retrieve(
+          typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription.id
+        );
+        const plan = sub.metadata?.plan || customer.metadata?.plan || '';
+        const email = customer.email || '';
+        const phone = customer.phone || '';
+        const amount = (invoice.amount_paid || 0) / 100;
+
+        await sendTikTokPayment(email, phone, plan, amount);
+      } catch (err) {
+        console.error('TikTok event error:', err);
+      }
+    }
+  }
+
+  // ─── Quote payment ───
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
     const quoteId = session.metadata?.quote_id;
