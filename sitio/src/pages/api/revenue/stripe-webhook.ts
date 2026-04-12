@@ -17,8 +17,18 @@ function sha256(value: string): string {
   return createHash('sha256').update(value.trim().toLowerCase()).digest('hex');
 }
 
+function toE164(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('+')) return digits;
+  if (digits.length === 10) return '+52' + digits;
+  if (digits.length > 10 && !digits.startsWith('0')) return '+' + digits;
+  return '+52' + digits;
+}
+
 async function sendTikTokPayment(email: string, phone: string, plan: string, amount: number) {
   if (!TIKTOK_TOKEN) return;
+  const e164 = toE164(phone);
   const event = {
     pixel_code: TIKTOK_PIXEL,
     event: 'CompletePayment',
@@ -27,7 +37,7 @@ async function sendTikTokPayment(email: string, phone: string, plan: string, amo
     context: {
       user: {
         email: email ? sha256(email) : undefined,
-        phone: phone ? sha256(phone) : undefined,
+        phone: e164 ? sha256(e164) : undefined,
       },
     },
     properties: {

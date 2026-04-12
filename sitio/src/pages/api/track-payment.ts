@@ -10,9 +10,19 @@ function sha256(value: string): string {
   return createHash('sha256').update(value.trim().toLowerCase()).digest('hex');
 }
 
+function toE164(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('+')) return digits;
+  if (digits.length === 10) return '+52' + digits;
+  if (digits.length > 10 && !digits.startsWith('0')) return '+' + digits;
+  return '+52' + digits;
+}
+
 export const POST: APIRoute = async ({ request }) => {
   try {
     const { email, phone, plan, amount } = await request.json();
+    const e164 = toE164(phone || '');
 
     if (!TIKTOK_TOKEN) {
       return new Response(JSON.stringify({ success: false, error: 'TikTok token not configured' }), {
@@ -29,7 +39,7 @@ export const POST: APIRoute = async ({ request }) => {
       context: {
         user: {
           email: email ? sha256(email) : undefined,
-          phone: phone ? sha256(phone) : undefined,
+          phone: e164 ? sha256(e164) : undefined,
         },
       },
       properties: {

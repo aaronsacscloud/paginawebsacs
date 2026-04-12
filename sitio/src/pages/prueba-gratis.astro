@@ -65,8 +65,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
           <div class="signup-field" data-validate="phone">
             <label for="whatsapp">WhatsApp</label>
-            <input type="tel" id="whatsapp" name="whatsapp" placeholder="55 1234 5678" required autocomplete="tel" />
-            <span class="field-status">&check;</span>
+            <div class="signup-phone-row">
+              <select id="phone-lada" class="signup-lada" aria-label="Lada">
+                <option value="+52" selected>MX +52</option>
+                <option value="+1">US +1</option>
+                <option value="+57">CO +57</option>
+                <option value="+54">AR +54</option>
+                <option value="+56">CL +56</option>
+                <option value="+51">PE +51</option>
+                <option value="+55">BR +55</option>
+                <option value="+34">ES +34</option>
+                <option value="+44">UK +44</option>
+              </select>
+              <div style="flex:1;position:relative">
+                <input type="tel" id="whatsapp" name="whatsapp" placeholder="55 1234 5678" required autocomplete="tel" />
+                <span class="field-status">&check;</span>
+              </div>
+            </div>
           </div>
 
           <div class="signup-field" data-validate="email">
@@ -153,6 +168,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 .signup-field.valid .field-status { display: flex; background: var(--color-secondary); color: #fff; }
 .signup-field.invalid .field-status { display: flex; background: var(--color-error); color: #fff; }
 .signup-field select { background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%238C8C8C' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; padding-right: 40px; }
+.signup-phone-row { display: flex; gap: 8px; align-items: flex-start; }
+.signup-lada { font-family: var(--font-body); font-size: 0.875rem; font-weight: 600; padding: 12px 8px; border: 1.5px solid var(--color-border); border-radius: var(--radius-md); background: #fff; color: var(--color-text-primary); cursor: pointer; min-width: 90px; appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238C8C8C' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px; }
+.signup-lada:focus { border-color: var(--color-primary); outline: none; }
 .signup-field input::placeholder { color: var(--color-text-tertiary); }
 .signup-field input:focus, .signup-field select:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(75, 123, 229, 0.1); }
 
@@ -268,7 +286,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         // TikTok: free trial signup
         if (typeof ttq !== 'undefined') {
-          ttq.identify({ email: data.email || '', phone_number: data.whatsapp || '' });
+          const lada = (document.getElementById('phone-lada') as HTMLSelectElement)?.value || '+52';
+          const cleanPhone = (data.whatsapp || '').replace(/\D/g, '');
+          const e164Phone = cleanPhone ? lada + cleanPhone : '';
+          ttq.identify({ email: data.email || '', phone_number: e164Phone });
           ttq.track('SubmitForm', {
             content_id: 'prueba-gratis',
             content_name: 'prueba-gratis',
