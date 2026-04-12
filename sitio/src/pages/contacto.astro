@@ -836,6 +836,21 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const msg = encodeURIComponent('Hola, me interesa agendar una demo de Sacs. Estaba viendo: ' + window.location.href);
       waLink.href = `https://wa.me/5215536634392?text=${msg}`;
     }
+
+    // TikTok: track ViewContent on contact page
+    if (typeof ttq !== 'undefined') {
+      ttq.track('ViewContent', { content_name: 'contacto-demo' });
+    }
+
+    // Calendly: track when someone schedules a demo
+    window.addEventListener('message', (e) => {
+      if (e.origin === 'https://calendly.com' && e.data?.event === 'calendly.event_scheduled') {
+        if (typeof ttq !== 'undefined') {
+          ttq.track('Schedule', { content_name: 'demo-calendly' });
+        }
+      }
+    });
+
     // Always start at top
     window.scrollTo(0, 0);
   }

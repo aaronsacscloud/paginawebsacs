@@ -263,8 +263,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         await fetch('/api/save-lead', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...data, step: 'Registro completado' }),
+          body: JSON.stringify({ ...data, paso: 'Prueba gratis completada' }),
         }).catch(() => {});
+
+        // TikTok: free trial signup
+        if (typeof ttq !== 'undefined') {
+          ttq.identify({ email: data.email || '', phone_number: data.whatsapp || '' });
+          ttq.track('SubmitForm', {
+            content_name: 'prueba-gratis',
+          });
+        }
 
         window.location.href = '/bienvenida';
       } catch {
