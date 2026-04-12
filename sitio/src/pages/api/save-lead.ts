@@ -86,13 +86,15 @@ export const POST: APIRoute = async ({ request }) => {
     const result = await res.json();
 
     // Save to Google Sheets
+    let sheetError = null;
     try {
       await appendToSheet(data);
-    } catch (sheetErr) {
-      console.error('Google Sheets error:', sheetErr);
+    } catch (sheetErr: any) {
+      sheetError = sheetErr?.message || String(sheetErr);
+      console.error('Google Sheets error:', sheetError);
     }
 
-    return new Response(JSON.stringify({ success: true, id: result.id }), {
+    return new Response(JSON.stringify({ success: true, id: result.id, sheetError }), {
       status: 200,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     });
