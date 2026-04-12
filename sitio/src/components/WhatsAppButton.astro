@@ -199,6 +199,14 @@ const DEFAULT_MESSAGE = t('whatsapp.message', locale);
       const message = link.dataset.message;
       const fullMessage = `${message} ${window.location.href}`;
       link.href = `https://wa.me/${number}?text=${encodeURIComponent(fullMessage)}`;
+
+      link.addEventListener('click', () => {
+        try {
+          if (typeof ttq !== 'undefined') {
+            ttq.track('Contact', { content_id: 'whatsapp-trial', content_name: 'whatsapp-prueba-7-dias', content_type: 'product' });
+          }
+        } catch {}
+      });
     }
 
     const float = document.getElementById('whatsapp-float');

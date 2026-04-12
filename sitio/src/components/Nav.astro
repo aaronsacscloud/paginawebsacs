@@ -100,9 +100,10 @@ const sectorIcons: Record<string, string> = {
 
     <div class="nav-actions">
       <a href="https://app.sacscloud.com/" class="nav-action-link">Iniciar sesion</a>
-      <a href="/prueba-gratis" class="nav-action-link">Empieza gratis</a>
-      <a href="/contacto" class="btn-nav-cta">Agenda una demo</a>
+      <a href="/prueba-gratis" class="btn-nav-cta">Prueba 7 dias gratis</a>
     </div>
+
+    <a href="/prueba-gratis" class="btn-nav-mobile-cta">Prueba 7 dias gratis</a>
 
     <button
       class="nav-hamburger"
@@ -551,6 +552,28 @@ const sectorIcons: Record<string, string> = {
     text-decoration: none;
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
+  }
+
+  /* ─── Mobile CTA (visible only on mobile) ─── */
+  .btn-nav-mobile-cta {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+    color: #fff;
+    text-decoration: none;
+    white-space: nowrap;
+    margin-left: auto;
+  }
+
+  @media (min-width: 1024px) {
+    .btn-nav-mobile-cta {
+      display: none;
+    }
   }
 
   /* ─── Hamburger ─── */

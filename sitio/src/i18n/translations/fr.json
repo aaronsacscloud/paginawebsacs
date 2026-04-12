@@ -8,7 +8,7 @@
     "pricing": "Tarifs",
     "caseStudies": "Cas clients",
     "login": "Se connecter",
-    "startFree": "Essai gratuit",
+    "startFree": "Essai 7 jours gratuit",
     "bookDemo": "Reserver une demo",
     "openMenu": "Ouvrir le menu",
     "closeMenu": "Fermer le menu",
@@ -44,7 +44,7 @@
     "subtitle": "De l'entrepot au comptoir a la boutique en ligne. Ventes, stocks, clients et fidelite en un seul endroit."
   },
   "cta": {
-    "startFree": "Essai gratuit",
+    "startFree": "Essai 7 jours gratuit",
     "bookDemo": "Reserver une demo",
     "tryFree": "Essai 7 jours gratuit",
     "viewAll": "Voir tout",
@@ -61,8 +61,8 @@
     "demoDesc": "Nous vous montrons Sacs avec les donnees de votre entreprise. 30 min, sans engagement.",
     "demoCta": "Reserver un creneau",
     "startTitle": "Commencez\nmaintenant",
-    "startDesc": "Creez votre compte gratuit et configurez votre magasin en 15 minutes. Sans carte bancaire.",
-    "startCta": "Essai gratuit"
+    "startDesc": "Testez toutes les fonctionnalites pendant 7 jours. Sans carte bancaire.",
+    "startCta": "Essai 7 jours gratuit"
   },
   "blog": {
     "eyebrow": "Blog",
@@ -159,9 +159,9 @@
     "close": "Fermer"
   },
   "whatsapp": {
-    "tooltip": "Besoin d'aide?",
+    "tooltip": "Essai 7 jours gratuit",
     "aria": "Contacter par WhatsApp",
-    "message": "Bonjour, je souhaite en savoir plus sur Sacs. Je consultais:"
+    "message": "Bonjour! Je veux essayer Sacs gratuitement pendant 7 jours. Je consultais:"
   },
   "faq": {
     "title": "Questions frequentes",
@@ -181,9 +181,9 @@
     "a6": "Oui. Notre equipe vous aide a migrer votre catalogue, clients et historique de ventes sans cout supplementaire. Le processus prend 1 a 3 jours."
   },
   "finalCta": {
-    "title": "Commencez aujourd'hui. C'est gratuit.",
-    "desc": "Configurez votre entreprise en 15 minutes. Sans carte bancaire, sans contrat.",
-    "btn": "Creer un compte gratuit"
+    "title": "Essayez Sacs gratuitement 7 jours.",
+    "desc": "Toutes les fonctionnalites. Sans carte bancaire. Sans contrat. Annulez quand vous voulez.",
+    "btn": "Commencez votre essai gratuit"
   },
   "common": {
     "backToAll": "Tous les cas clients",
@@ -191,7 +191,7 @@
     "noCommitment": "Sans engagement, sans carte bancaire",
     "yourBusiness": "Votre entreprise pourrait etre la prochaine.",
     "configure15": "Configurez votre entreprise en 15 minutes. Sans carte bancaire, sans contrat.",
-    "freeAccount": "Creer un compte gratuit",
+    "freeAccount": "Essai 7 jours gratuit",
     "skipToContent": "Aller au contenu"
   }
 }

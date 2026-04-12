@@ -57,7 +57,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 <option value="2-3">2 a 3</option>
                 <option value="4-10">4 a 10</option>
                 <option value="11-20">11 a 20</option>
-                <option value="20+">Mas de 20</option>
+                <option value="20-50">20 a 50</option>
+                <option value="50-100">50 a 100</option>
+                <option value="100+">100+</option>
               </select>
               <span class="field-status">&check;</span>
             </div>
@@ -288,10 +290,20 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         // Save email for enhanced matching on future visits
         try { localStorage.setItem('sacs_visitor_email', data.email || ''); } catch {}
 
+        // Collect UTMs from URL or sessionStorage
+        const urlP = new URLSearchParams(window.location.search);
+        const utmKeys = ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','ttclid'];
+        const utmParts: string[] = [];
+        utmKeys.forEach(k => {
+          const v = urlP.get(k) || sessionStorage.getItem(k) || '';
+          if (v) utmParts.push(`${k}=${v}`);
+        });
+        const utmTag = utmParts.length ? ' | ' + utmParts.join(' | ') : '';
+
         await fetch('/api/save-lead', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...data, paso: 'Prueba gratis completada' }),
+          body: JSON.stringify({ ...data, paso: 'Prueba gratis completada' + utmTag }),
         }).catch(() => {});
 
         // TikTok: free trial signup

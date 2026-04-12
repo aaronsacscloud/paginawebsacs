@@ -8,7 +8,7 @@
     "pricing": "Prezzi",
     "caseStudies": "Casi di successo",
     "login": "Accedi",
-    "startFree": "Prova gratuita",
+    "startFree": "Prova 7 giorni gratis",
     "bookDemo": "Prenota una demo",
     "openMenu": "Apri menu",
     "closeMenu": "Chiudi menu",
@@ -44,7 +44,7 @@
     "subtitle": "Dal magazzino al bancone al negozio online. Vendite, stock, clienti e fedelta in un unico posto."
   },
   "cta": {
-    "startFree": "Prova gratuita",
+    "startFree": "Prova 7 giorni gratis",
     "bookDemo": "Prenota una demo",
     "tryFree": "Prova 7 giorni gratis",
     "viewAll": "Vedi tutto",
@@ -61,8 +61,8 @@
     "demoDesc": "Ti mostriamo Sacs con i dati della tua attivita. 30 min, senza impegno.",
     "demoCta": "Prenota un orario",
     "startTitle": "Inizia\nora",
-    "startDesc": "Crea il tuo account gratuito e configura il tuo negozio in 15 minuti. Senza carta di credito.",
-    "startCta": "Prova gratuita"
+    "startDesc": "Prova tutte le funzionalita per 7 giorni. Senza carta di credito.",
+    "startCta": "Prova 7 giorni gratis"
   },
   "blog": {
     "eyebrow": "Blog",
@@ -159,9 +159,9 @@
     "close": "Chiudi"
   },
   "whatsapp": {
-    "tooltip": "Hai bisogno di aiuto?",
+    "tooltip": "Prova 7 giorni gratis",
     "aria": "Contatta via WhatsApp",
-    "message": "Ciao, sono interessato a saperne di piu su Sacs. Stavo guardando:"
+    "message": "Ciao! Voglio provare Sacs gratis per 7 giorni. Stavo guardando:"
   },
   "faq": {
     "title": "Domande frequenti",
@@ -181,9 +181,9 @@
     "a6": "Si. Il nostro team ti aiuta a migrare catalogo, clienti e storico vendite senza costi aggiuntivi. Il processo richiede 1-3 giorni."
   },
   "finalCta": {
-    "title": "Inizia oggi. E gratuito.",
-    "desc": "Configura la tua attivita in 15 minuti. Senza carta di credito, senza contratti.",
-    "btn": "Crea account gratuito"
+    "title": "Prova Sacs gratis per 7 giorni.",
+    "desc": "Tutte le funzionalita. Senza carta di credito. Senza contratti. Annulla quando vuoi.",
+    "btn": "Inizia la tua prova gratuita"
   },
   "common": {
     "backToAll": "Tutti i casi di successo",
@@ -191,7 +191,7 @@
     "noCommitment": "Senza impegno, senza carta di credito",
     "yourBusiness": "La tua attivita potrebbe essere la prossima.",
     "configure15": "Configura la tua attivita in 15 minuti. Senza carta di credito, senza contratti.",
-    "freeAccount": "Crea account gratuito",
+    "freeAccount": "Prova 7 giorni gratis",
     "skipToContent": "Vai al contenuto"
   }
 }

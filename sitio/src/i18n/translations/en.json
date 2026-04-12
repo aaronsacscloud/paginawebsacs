@@ -8,7 +8,7 @@
     "pricing": "Pricing",
     "caseStudies": "Case Studies",
     "login": "Log in",
-    "startFree": "Start free",
+    "startFree": "Try 7 days free",
     "bookDemo": "Book a demo",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
@@ -44,7 +44,7 @@
     "subtitle": "From warehouse to counter to online store. Sales, stock, customers, and loyalty in one place."
   },
   "cta": {
-    "startFree": "Start free",
+    "startFree": "Try 7 days free",
     "bookDemo": "Book a demo",
     "tryFree": "Try 7 days free",
     "viewAll": "View all",
@@ -61,8 +61,8 @@
     "demoDesc": "We show you Sacs with your business data. 30 min, no strings attached.",
     "demoCta": "Reserve a spot",
     "startTitle": "Start\nnow",
-    "startDesc": "Create your free account and set up your store in 15 minutes. No credit card.",
-    "startCta": "Start free"
+    "startDesc": "Try all features for 7 days. No credit card required.",
+    "startCta": "Try 7 days free"
   },
   "blog": {
     "eyebrow": "Blog",
@@ -159,9 +159,9 @@
     "close": "Close"
   },
   "whatsapp": {
-    "tooltip": "Need help?",
+    "tooltip": "Try 7 days free",
     "aria": "Contact via WhatsApp",
-    "message": "Hi, I'm interested in learning more about Sacs. I was looking at:"
+    "message": "Hi! I want to try Sacs free for 7 days. I was looking at:"
   },
   "faq": {
     "title": "Frequently asked questions",
@@ -181,9 +181,9 @@
     "a6": "Yes. Our onboarding team helps you migrate your catalog, customers, and sales history at no extra cost. The typical process takes 1 to 3 business days."
   },
   "finalCta": {
-    "title": "Start today. It's free.",
-    "desc": "Set up your business in 15 minutes. No credit card, no contracts.",
-    "btn": "Create free account"
+    "title": "Try Sacs free for 7 days.",
+    "desc": "All features included. No credit card. No contracts. Cancel anytime.",
+    "btn": "Start your free trial"
   },
   "common": {
     "backToAll": "All case studies",
@@ -191,7 +191,7 @@
     "noCommitment": "No commitment, no credit card",
     "yourBusiness": "Your business could be next.",
     "configure15": "Set up your business in 15 minutes. No credit card, no contracts.",
-    "freeAccount": "Create free account",
+    "freeAccount": "Try 7 days free",
     "skipToContent": "Skip to content"
   }
 }

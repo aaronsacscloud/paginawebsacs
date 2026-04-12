@@ -8,7 +8,7 @@
     "pricing": "Planes",
     "caseStudies": "Casos de exito",
     "login": "Iniciar sesion",
-    "startFree": "Empieza gratis",
+    "startFree": "Prueba 7 dias gratis",
     "bookDemo": "Agenda una demo",
     "openMenu": "Abrir menu",
     "closeMenu": "Cerrar menu",
@@ -44,7 +44,7 @@
     "subtitle": "De la bodega al mostrador a la tienda en linea. Ventas, stock, clientes y lealtad en un solo lugar."
   },
   "cta": {
-    "startFree": "Empieza gratis",
+    "startFree": "Prueba 7 dias gratis",
     "bookDemo": "Agenda una demo",
     "tryFree": "Prueba 7 dias gratis",
     "viewAll": "Ver todos",
@@ -61,8 +61,8 @@
     "demoDesc": "Te mostramos Sacs con datos de tu negocio. 30 min, sin compromiso.",
     "demoCta": "Reservar horario",
     "startTitle": "Inicia\nahora",
-    "startDesc": "Crea tu cuenta gratis y configura tu tienda en 15 minutos. Sin tarjeta.",
-    "startCta": "Empieza gratis"
+    "startDesc": "Prueba todas las funciones 7 dias. Sin tarjeta de credito.",
+    "startCta": "Prueba 7 dias gratis"
   },
   "blog": {
     "eyebrow": "Blog",
@@ -159,9 +159,9 @@
     "close": "Cerrar"
   },
   "whatsapp": {
-    "tooltip": "Necesitas ayuda?",
+    "tooltip": "Prueba 7 dias gratis",
     "aria": "Contactar por WhatsApp",
-    "message": "Hola, me interesa conocer mas sobre Sacs. Estaba viendo:"
+    "message": "Hola! Quiero probar Sacs 7 dias gratis. Estaba viendo:"
   },
   "faq": {
     "title": "Preguntas frecuentes",
@@ -181,9 +181,9 @@
     "a6": "Si. Nuestro equipo de onboarding te ayuda a migrar tu catalogo, clientes e historial de ventas sin costo adicional. El proceso tipico toma de 1 a 3 dias habiles."
   },
   "finalCta": {
-    "title": "Empieza hoy. Es gratis.",
-    "desc": "Configura tu negocio en 15 minutos. Sin tarjeta de credito, sin contratos.",
-    "btn": "Crear cuenta gratis"
+    "title": "Prueba Sacs gratis 7 dias.",
+    "desc": "Todas las funciones. Sin tarjeta de credito. Sin contratos. Cancela cuando quieras.",
+    "btn": "Empieza tu prueba gratis"
   },
   "common": {
     "backToAll": "Todos los casos de exito",
@@ -191,7 +191,7 @@
     "noCommitment": "Sin compromiso, sin tarjeta",
     "yourBusiness": "Tu negocio puede ser el siguiente.",
     "configure15": "Configura tu negocio en 15 minutos. Sin tarjeta de credito, sin contratos.",
-    "freeAccount": "Crear cuenta gratis",
+    "freeAccount": "Prueba 7 dias gratis",
     "skipToContent": "Saltar al contenido"
   }
 }
