@@ -1,13 +1,56 @@
 import type { APIRoute } from 'astro';
+import { google } from 'googleapis';
 
 export const prerender = false;
 
 const STRIPE_KEY = import.meta.env.STRIPE_SECRET_KEY || '';
+const SHEET_ID = import.meta.env.GOOGLE_SHEETS_SPREADSHEET_ID || '';
+const CLIENT_EMAIL = import.meta.env.GOOGLE_SHEETS_CLIENT_EMAIL || '';
+const PRIVATE_KEY = (import.meta.env.GOOGLE_SHEETS_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+
+async function appendToSheet(data: Record<string, string>) {
+  if (!SHEET_ID || !CLIENT_EMAIL || !PRIVATE_KEY) return;
+
+  const auth = new google.auth.JWT(CLIENT_EMAIL, undefined, PRIVATE_KEY, [
+    'https://www.googleapis.com/auth/spreadsheets',
+  ]);
+
+  const sheets = google.sheets({ version: 'v4', auth });
+
+  const now = new Date();
+  const fecha = now.toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', year: 'numeric', month: '2-digit', day: '2-digit' });
+  const hora = now.toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' });
+
+  const row = [
+    fecha,
+    hora,
+    data.nombre || '',
+    data.empresa || '',
+    data.email || '',
+    data.whatsapp || '',
+    data.giro || '',
+    data.sucursales || '',
+    data.plan || '',
+    data.paso || '',
+    data.score || '0',
+    data.totalTime || '0',
+    data.pageCount || '0',
+    data.pagesVisited || '',
+  ];
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SHEET_ID,
+    range: 'Leads!A:N',
+    valueInputOption: 'USER_ENTERED',
+    requestBody: { values: [row] },
+  });
+}
 
 export const POST: APIRoute = async ({ request }) => {
   try {
     const data = await request.json();
 
+    // Save to Stripe
     const params = new URLSearchParams();
     params.append('email', data.email || `lead-${Date.now()}@noemail.com`);
     params.append('name', data.nombre || '');
@@ -19,7 +62,6 @@ export const POST: APIRoute = async ({ request }) => {
     params.append('metadata[plan]', data.plan || '');
     params.append('metadata[source]', 'website-lead');
     params.append('metadata[fecha]', new Date().toISOString());
-    // Tracking data
     params.append('metadata[score]', data.score || '0');
     params.append('metadata[totalTime]', data.totalTime || '0');
     params.append('metadata[pagesVisited]', (data.pagesVisited || '').substring(0, 500));
@@ -36,6 +78,9 @@ export const POST: APIRoute = async ({ request }) => {
     });
 
     const result = await res.json();
+
+    // Save to Google Sheets (non-blocking)
+    appendToSheet(data).catch(() => {});
 
     return new Response(JSON.stringify({ success: true, id: result.id }), {
       status: 200,
