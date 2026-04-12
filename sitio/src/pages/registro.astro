@@ -801,7 +801,10 @@ const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
   }
 
   fields.forEach((field) => {
-    const input = field.querySelector('input, select');
+    const type = field.dataset.validate;
+    const input = type === 'phone'
+      ? field.querySelector('input[type="tel"]')
+      : field.querySelector('input, select');
     if (input) {
       input.addEventListener('input', () => validateField(field));
       input.addEventListener('change', () => validateField(field));

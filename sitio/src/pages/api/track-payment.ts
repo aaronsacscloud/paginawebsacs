@@ -35,7 +35,7 @@ export const POST: APIRoute = async ({ request }) => {
       pixel_code: TIKTOK_PIXEL,
       event: 'CompletePayment',
       event_id: `manual_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      timestamp: new Date().toISOString(),
+      event_time: Math.floor(Date.now() / 1000),
       context: {
         user: {
           email: email ? sha256(email) : undefined,
@@ -43,8 +43,8 @@ export const POST: APIRoute = async ({ request }) => {
         },
       },
       properties: {
-        content_id: plan || 'manual',
-        content_name: plan || 'manual',
+        contents: [{ content_id: plan || 'manual', content_name: plan || 'manual' }],
+        content_type: 'product',
         value: amount || 0,
         currency: 'MXN',
       },

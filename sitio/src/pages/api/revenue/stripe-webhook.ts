@@ -33,7 +33,7 @@ async function sendTikTokPayment(email: string, phone: string, plan: string, amo
     pixel_code: TIKTOK_PIXEL,
     event: 'CompletePayment',
     event_id: `stripe_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-    timestamp: new Date().toISOString(),
+    event_time: Math.floor(Date.now() / 1000),
     context: {
       user: {
         email: email ? sha256(email) : undefined,
@@ -41,8 +41,8 @@ async function sendTikTokPayment(email: string, phone: string, plan: string, amo
       },
     },
     properties: {
-      content_id: plan || 'subscription',
-      content_name: plan || 'subscription',
+      contents: [{ content_id: plan || 'subscription', content_name: plan || 'subscription' }],
+      content_type: 'product',
       value: amount,
       currency: 'MXN',
     },

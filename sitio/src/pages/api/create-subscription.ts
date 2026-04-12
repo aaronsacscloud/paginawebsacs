@@ -31,7 +31,7 @@ async function sendTikTokEvent(email: string, phone: string, planId: string, val
     pixel_code: TIKTOK_PIXEL,
     event: 'CompletePayment',
     event_id: `pay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-    timestamp: new Date().toISOString(),
+    event_time: Math.floor(Date.now() / 1000),
     context: {
       user_agent: ua,
       ip,
@@ -41,8 +41,8 @@ async function sendTikTokEvent(email: string, phone: string, planId: string, val
       },
     },
     properties: {
-      content_id: planId,
-      content_name: planId,
+      contents: [{ content_id: planId, content_name: planId }],
+      content_type: 'product',
       value,
       currency: 'MXN',
     },
