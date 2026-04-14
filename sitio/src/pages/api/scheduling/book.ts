@@ -555,10 +555,10 @@ export const POST: APIRoute = async ({ request }) => {
     if (showReschedule || showCancel) {
       extrasHtml += `<div style="text-align:center;margin-bottom:16px;">`;
       if (showReschedule) {
-        extrasHtml += `<a href="https://www.sacscloud.com/api/scheduling/reschedule?token=${booking.token_reagendar}" style="color:#4B7BE5;font-size:0.8125rem;margin-right:16px;">Reagendar</a>`;
+        extrasHtml += `<a href="https://www.sacscloud.com/agendar/reagendar?token=${booking.token_reagendar}" style="color:#4B7BE5;font-size:0.8125rem;margin-right:16px;">Reagendar</a>`;
       }
       if (showCancel) {
-        extrasHtml += `<a href="https://www.sacscloud.com/api/scheduling/cancel?token=${booking.token_cancelar}" style="color:#999;font-size:0.8125rem;">Cancelar</a>`;
+        extrasHtml += `<a href="https://www.sacscloud.com/agendar/cancelar?token=${booking.token_cancelar}" style="color:#999;font-size:0.8125rem;">Cancelar</a>`;
       }
       extrasHtml += `</div>`;
     }
@@ -590,7 +590,7 @@ export const POST: APIRoute = async ({ request }) => {
         meetLink ? `📹 ${meetLink}` : '',
         ``,
         `Para reagendar o cancelar:`,
-        `https://www.sacscloud.com/api/scheduling/cancel?token=${booking.token_cancelar}`,
+        `https://www.sacscloud.com/agendar/cancelar?token=${booking.token_cancelar}`,
       ].filter(Boolean).join('\n');
 
       const baseUrl = import.meta.env.SITE || 'https://www.sacscloud.com';
@@ -772,8 +772,8 @@ export const POST: APIRoute = async ({ request }) => {
   return new Response(
     JSON.stringify({
       booking: { ...booking, google_event_id, google_meet_link },
-      cancel_url: `/api/scheduling/cancel?token=${booking.token_cancelar}`,
-      reschedule_url: `/api/scheduling/reschedule?token=${booking.token_reagendar}`,
+      cancel_url: `/agendar/cancelar?token=${booking.token_cancelar}`,
+      reschedule_url: `/agendar/reagendar?token=${booking.token_reagendar}`,
       google_meet_link,
       recurring_bookings: recurringBookings.length > 0 ? recurringBookings : undefined,
     }),

@@ -286,6 +286,19 @@ function ReservasView() {
     load();
   };
 
+  const rescheduleBooking = async (bookingId: string) => {
+    const newDate = prompt('Nueva fecha (YYYY-MM-DD):', new Date(Date.now() + 86400000).toISOString().slice(0, 10));
+    if (!newDate) return;
+    const newTime = prompt('Nueva hora (HH:MM):', '10:00');
+    if (!newTime) return;
+    await fetch(`/api/scheduling/reschedule?admin=1`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ booking_id: bookingId, nueva_fecha: newDate, nueva_hora: newTime, timezone: 'America/Mexico_City' }),
+    });
+    load();
+  };
+
   // Stats
   const total = bookings.length;
   const proximas = bookings.filter(b => b.estado === 'pendiente' || b.estado === 'confirmada').length;
@@ -360,6 +373,7 @@ function ReservasView() {
                   onMarkRealizada={() => updateBookingEstado(b.id, 'realizada')}
                   onMarkNoShow={() => updateBookingEstado(b.id, 'no_show')}
                   onCancel={() => cancelBooking(b.id)}
+                  onReschedule={() => rescheduleBooking(b.id)}
                 />
               ))}
             </tbody>
@@ -377,6 +391,7 @@ function BookingRow({
   onMarkRealizada,
   onMarkNoShow,
   onCancel,
+  onReschedule,
 }: {
   booking: Booking;
   expanded: boolean;
@@ -384,6 +399,7 @@ function BookingRow({
   onMarkRealizada: () => void;
   onMarkNoShow: () => void;
   onCancel: () => void;
+  onReschedule: () => void;
 }) {
   const estadoColor = ESTADO_COLORS[b.estado] || '#999';
   const estadoLabel = ESTADO_LABELS[b.estado] || b.estado;
@@ -428,6 +444,9 @@ function BookingRow({
               </button>
               <button onClick={onMarkNoShow} style={{ ...btn, background: '#FEF2F2', color: '#DC2626', padding: '4px 8px', fontSize: '0.6875rem' }}>
                 No show
+              </button>
+              <button onClick={onReschedule} style={{ ...btn, background: '#fff3e0', color: '#e65100', padding: '4px 8px', fontSize: '0.6875rem' }}>
+                Reagendar
               </button>
               <button onClick={onCancel} style={{ ...btn, background: '#f5f5f5', color: '#999', padding: '4px 8px', fontSize: '0.6875rem' }}>
                 Cancelar

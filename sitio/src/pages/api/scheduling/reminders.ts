@@ -127,8 +127,8 @@ export const GET: APIRoute = async ({ url }) => {
       ${(booking as any).google_meet_link ? `<p style="margin:8px 0 0;"><a href="${(booking as any).google_meet_link}" style="color:#4B7BE5;font-weight:600;">📹 Unirse a Google Meet</a></p>` : ''}
     </div>
     <div style="text-align:center;">
-      <a href="https://www.sacscloud.com/api/scheduling/reschedule?token=${(booking as any).token_reagendar}" style="color:#4B7BE5;font-size:0.8125rem;margin-right:16px;">Reagendar</a>
-      <a href="https://www.sacscloud.com/api/scheduling/cancel?token=${(booking as any).token_cancelar}" style="color:#999;font-size:0.8125rem;">Cancelar</a>
+      <a href="https://www.sacscloud.com/agendar/reagendar?token=${(booking as any).token_reagendar}" style="color:#4B7BE5;font-size:0.8125rem;margin-right:16px;">Reagendar</a>
+      <a href="https://www.sacscloud.com/agendar/cancelar?token=${(booking as any).token_cancelar}" style="color:#999;font-size:0.8125rem;">Cancelar</a>
     </div>`;
 
           const reminderHtml = buildEmailHtml(heading24, body24, extras24);
@@ -224,8 +224,8 @@ export const GET: APIRoute = async ({ url }) => {
       ${(booking as any).google_meet_link ? `<p style="margin:8px 0 0;"><a href="${(booking as any).google_meet_link}" style="color:#4B7BE5;font-weight:600;">📹 Unirse a Google Meet</a></p>` : ''}
     </div>
     <div style="text-align:center;">
-      <a href="https://www.sacscloud.com/api/scheduling/reschedule?token=${(booking as any).token_reagendar}" style="color:#4B7BE5;font-size:0.8125rem;margin-right:16px;">Reagendar</a>
-      <a href="https://www.sacscloud.com/api/scheduling/cancel?token=${(booking as any).token_cancelar}" style="color:#999;font-size:0.8125rem;">Cancelar</a>
+      <a href="https://www.sacscloud.com/agendar/reagendar?token=${(booking as any).token_reagendar}" style="color:#4B7BE5;font-size:0.8125rem;margin-right:16px;">Reagendar</a>
+      <a href="https://www.sacscloud.com/agendar/cancelar?token=${(booking as any).token_cancelar}" style="color:#999;font-size:0.8125rem;">Cancelar</a>
     </div>`;
 
           const reminderHtml1h = buildEmailHtml(heading1h, body1h, extras1h);

@@ -72,8 +72,9 @@ function generateToken(): string {
   return token;
 }
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, url }) => {
   const body = await request.json();
+  const isAdmin = url.searchParams.get('admin') === '1';
 
   const { booking_id, token, nueva_fecha, nueva_hora, timezone } = body;
 
@@ -95,9 +96,11 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ error: 'Booking not found' }), { status: 404 });
   }
 
-  // Verify token
-  if (!token || token !== oldBooking.token_reagendar) {
-    return new Response(JSON.stringify({ error: 'Invalid reschedule token' }), { status: 403 });
+  // Verify token (unless admin)
+  if (!isAdmin) {
+    if (!token || token !== oldBooking.token_reagendar) {
+      return new Response(JSON.stringify({ error: 'Invalid reschedule token' }), { status: 403 });
+    }
   }
 
   // Check booking is reschedulable
@@ -213,7 +216,7 @@ export const POST: APIRoute = async ({ request }) => {
       ${newBooking.google_meet_link ? `<p style="margin:8px 0 0;"><a href="${newBooking.google_meet_link}" style="color:#4B7BE5;font-weight:600;">📹 Unirse a Google Meet</a></p>` : ''}
     </div>
     <div style="text-align:center;">
-      <a href="https://www.sacscloud.com/api/scheduling/cancel?token=${newBooking.token_cancelar}" style="color:#999;font-size:0.8125rem;">Cancelar</a>
+      <a href="https://www.sacscloud.com/agendar/cancelar?token=${newBooking.token_cancelar}" style="color:#999;font-size:0.8125rem;">Cancelar</a>
     </div>`;
 
       const rescheduleHtml = buildEmailHtml(rescheduleHeading, rescheduleBody, extrasReschedule);
@@ -221,11 +224,26 @@ export const POST: APIRoute = async ({ request }) => {
     } catch { /* Reschedule email is non-critical */ }
   }
 
+  // Send WhatsApp notification
+  if (oldBooking.invitee_whatsapp) {
+    try {
+      const baseUrl = import.meta.env.SITE || 'https://www.sacscloud.com';
+      await fetch(`${baseUrl}/api/kapso/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: oldBooking.invitee_whatsapp,
+          message: `Tu reunión con SACS ha sido reagendada.\n\nNueva fecha: ${nueva_fecha}\nNueva hora: ${nueva_hora}\n${newBooking.google_meet_link ? 'Link: ' + newBooking.google_meet_link : ''}`,
+        }),
+      });
+    } catch {}
+  }
+
   return new Response(
     JSON.stringify({
       booking: newBooking,
-      cancel_url: `/scheduling/cancel?token=${token_cancelar}`,
-      reschedule_url: `/scheduling/reschedule?token=${token_reagendar}`,
+      cancel_url: `/agendar/cancelar?token=${token_cancelar}`,
+      reschedule_url: `/agendar/reagendar?token=${token_reagendar}`,
     }),
     { status: 201 },
   );

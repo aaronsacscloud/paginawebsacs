@@ -109,7 +109,7 @@ export const GET: APIRoute = async ({ url }) => {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([week, count]) => ({ week, count }));
 
-  // By event type
+  // By event type (simple counts for backward compat)
   const eventTypeCounts: Record<string, number> = {};
   for (const b of all) {
     if (b.event_type_id) {
@@ -135,6 +135,44 @@ export const GET: APIRoute = async ({ url }) => {
     }
   }
 
+  // Per event type detailed metrics
+  const nDaysAgo = sinceISO;
+  const { data: activeEventTypes } = await supabase.from('event_types').select('id, nombre, color').eq('activo', true);
+
+  const byEventTypeDetailed: Array<{
+    id: string;
+    nombre: string;
+    color: string;
+    total: number;
+    realizada: number;
+    no_show: number;
+    cancelada: number;
+    reagendada: number;
+    completion_rate: number;
+    no_show_rate: number;
+  }> = [];
+
+  for (const et of (activeEventTypes || [])) {
+    const { count: etTotal } = await supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('event_type_id', et.id).gte('fecha', nDaysAgo);
+    const { count: etRealizada } = await supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('event_type_id', et.id).eq('estado', 'realizada').gte('fecha', nDaysAgo);
+    const { count: etNoShow } = await supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('event_type_id', et.id).eq('estado', 'no_show').gte('fecha', nDaysAgo);
+    const { count: etCancelada } = await supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('event_type_id', et.id).eq('estado', 'cancelada').gte('fecha', nDaysAgo);
+    const { count: etReagendada } = await supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('event_type_id', et.id).eq('estado', 'reagendada').gte('fecha', nDaysAgo);
+
+    byEventTypeDetailed.push({
+      id: et.id,
+      nombre: et.nombre,
+      color: et.color || '#4B7BE5',
+      total: etTotal || 0,
+      realizada: etRealizada || 0,
+      no_show: etNoShow || 0,
+      cancelada: etCancelada || 0,
+      reagendada: etReagendada || 0,
+      completion_rate: (etTotal || 0) > 0 ? Math.round(((etRealizada || 0) / (etTotal || 0)) * 100) : 0,
+      no_show_rate: ((etRealizada || 0) + (etNoShow || 0)) > 0 ? Math.round(((etNoShow || 0) / ((etRealizada || 0) + (etNoShow || 0))) * 100) : 0,
+    });
+  }
+
   return new Response(
     JSON.stringify({
       period_days: days,
@@ -147,6 +185,7 @@ export const GET: APIRoute = async ({ url }) => {
       popular_hour: popularHour,
       by_week: byWeek,
       by_event_type: byEventType,
+      by_event_type_detailed: byEventTypeDetailed,
     }),
     {
       status: 200,

@@ -148,26 +148,10 @@ const pageContent: Record<string, any> = {
           { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>', title: 'ABC y rotación', description: 'Identifica productos estrella y estancados.' },
         ],
       },
-      {
-        label: 'Facturación',
-        title: 'Factura desde el punto de venta en un click',
-        description: 'CFDI al momento del cobro, factura global automática y autofacturación.',
-        image: '/images/screen-pos.webp',
-        imageAlt: 'Facturación electrónica en SACS',
-        link: { label: 'Ver facturación electrónica', href: '/producto/facturacion-electronica' },
-        details: [
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8"/></svg>', title: 'CFDI desde el POS', description: 'Factura al momento del cobro en un solo paso.' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>', title: 'Factura global automática', description: 'Para ventas a público en general, sin configurar nada.' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>', title: 'Portal de autofacturación', description: 'Tu cliente se factura solo desde su portal.' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/></svg>', title: '20 folios incluidos', description: 'Folios de facturación incluidos en el plan.' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 6L6 18M6 6l12 12"/></svg>', title: 'Cancelación de facturas', description: 'Cancela y genera notas de crédito desde el sistema.' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>', title: 'Complementos de pago', description: 'Gestiona complementos y notas de crédito.' },
-        ],
-      },
     ],
     testimonials: [
       {
-        bg: 'linear-gradient(135deg, #1a1a2e 0%, #16213E 100%)',
+        bg: '#f2f2f2',
         eyebrow: 'Marcas de Ropa',
         quote: 'Desde que cambiamos a SACS, el cobro es instantáneo. Mis vendedoras ya no necesitan capacitación especial, es tan fácil como usar el celular.',
         name: 'María García',
@@ -175,7 +159,7 @@ const pageContent: Record<string, any> = {
         image: '/images/hero-sacs-store.webp',
       },
       {
-        bg: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)',
+        bg: '#eef4f0',
         eyebrow: 'Merchandising',
         quote: 'Vendemos en ferias y conciertos. Necesitábamos un POS que funcionara sin internet y que mis 15 vendedores pudieran usar desde su celular. SACS fue la respuesta.',
         name: 'Carlos Mendoza',
@@ -183,7 +167,7 @@ const pageContent: Record<string, any> = {
         image: '/images/hero-sacs-store.webp',
       },
       {
-        bg: 'linear-gradient(135deg, #1a1a2e 0%, #2d1b4e 100%)',
+        bg: '#f0eef4',
         eyebrow: 'Moda Consciente',
         quote: 'Lo que más valoro es que el punto de venta y el ecommerce comparten el mismo inventario. Ya no vendemos lo que no hay en stock.',
         name: 'Andrea López',
@@ -988,7 +972,7 @@ const isLive = feature.status === 'live' && content;
     margin-top: 1px;
   }
 
-  /* ═══ Testimonials Full-Screen ═══ */
+  /* ═══ Testimonials (Square-style) ═══ */
   .pf-testimonials {
     position: relative;
     overflow: hidden;
@@ -1020,15 +1004,15 @@ const isLive = feature.status === 'live' && content;
 
   @media (min-width: 1024px) {
     .pf-testimonial-inner {
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1.3fr 1fr;
     }
   }
 
-  /* Image left */
+  /* Image left — full height */
   .pf-testimonial-image {
     position: relative;
     overflow: hidden;
-    min-height: 300px;
+    min-height: 350px;
   }
 
   .pf-testimonial-image img {
@@ -1036,6 +1020,14 @@ const isLive = feature.status === 'live' && content;
     height: 100%;
     object-fit: cover;
     display: block;
+    position: absolute;
+    inset: 0;
+  }
+
+  @media (min-width: 1024px) {
+    .pf-testimonial-image {
+      min-height: 100vh;
+    }
   }
 
   /* Text right */
@@ -1043,7 +1035,7 @@ const isLive = feature.status === 'live' && content;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: clamp(40px, 6vw, 80px) clamp(24px, 4vw, 64px);
+    padding: clamp(48px, 6vw, 80px) clamp(32px, 5vw, 72px);
   }
 
   .pf-testimonial-eyebrow {
@@ -1081,7 +1073,7 @@ const isLive = feature.status === 'live' && content;
     margin-top: 4px;
   }
 
-  /* Dots inside text */
+  /* Dots */
   .pf-testimonials-dots {
     display: flex;
     gap: 8px;
