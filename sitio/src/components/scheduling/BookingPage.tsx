@@ -333,18 +333,7 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
   const [showConfetti, setShowConfetti] = useState(false);
   const [typingIndicator, setTypingIndicator] = useState(false);
 
-  // Typing indicator — show "someone else is viewing" periodically on step 2
-  const showTypingFeature = (eventType as any).routing_rules?.mostrar_typing !== false;
-  useEffect(() => {
-    if (step !== 2 || !showTypingFeature) return;
-    const show = () => {
-      setTypingIndicator(true);
-      setTimeout(() => setTypingIndicator(false), 3500);
-    };
-    const timeout = setTimeout(show, 6000 + Math.random() * 4000);
-    const interval = setInterval(show, 18000 + Math.random() * 12000);
-    return () => { clearTimeout(timeout); clearInterval(interval); };
-  }, [step, selectedDate]);
+  // showTypingFeature defined here, useEffect moved after all useState
 
   useEffect(() => {
     fetch('/api/scheduling/social-proof')
@@ -441,6 +430,19 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
     };
     fetchSlots();
   }, [viewYear, viewMonth, timezone, eventType.slug]);
+
+  // ── Typing indicator (moved here to avoid TDZ — selectedDate must be declared first) ──
+  const showTypingFeature = (eventType as any).routing_rules?.mostrar_typing !== false;
+  useEffect(() => {
+    if (step !== 2 || !showTypingFeature) return;
+    const show = () => {
+      setTypingIndicator(true);
+      setTimeout(() => setTypingIndicator(false), 3500);
+    };
+    const timeout = setTimeout(show, 6000 + Math.random() * 4000);
+    const interval = setInterval(show, 18000 + Math.random() * 12000);
+    return () => { clearTimeout(timeout); clearInterval(interval); };
+  }, [step, selectedDate]);
 
   // ── Month navigation ──
   const prevMonth = () => {
@@ -541,7 +543,7 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
   };
 
   // ── Render header (shared across steps) ──
-  const renderHeader = () => (
+  function renderHeader() { return (
     <div style={styles.header}>
       {branding.logo_url ? (
         <img
@@ -582,10 +584,10 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
         </span>
       </div>
     </div>
-  );
+  ); }
 
   // ── Step 1: Calendar ──
-  const renderCalendar = () => {
+  function renderCalendar() {
     const daysInMonth = getDaysInMonth(viewYear, viewMonth);
     const firstDay = getFirstDayOfWeek(viewYear, viewMonth);
     const cells: (number | null)[] = [];
@@ -786,7 +788,7 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
   };
 
   // ── Step 2: Time selection ──
-  const renderTimeSelection = () => {
+  function renderTimeSelection() {
     if (!selectedDate) return null;
     const slots = availableDates[selectedDate] || [];
 
@@ -1066,7 +1068,7 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
   };
 
   // ── Step 3: Info form ──
-  const renderForm = () => {
+  function renderForm() {
     const requiredQuestionsFilled = questions.filter(q => q.required && q.activo !== false).every(q => (formData.answers[q.id] || '').trim());
     const isValid = formData.nombre.trim() && formData.email.trim() && formData.whatsapp.trim() && requiredQuestionsFilled;
 
@@ -1266,7 +1268,7 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
   };
 
   // ── Step 4: Confirmation ──
-  const renderConfirmation = () => {
+  function renderConfirmation() {
     if (!bookingResult || !selectedDate || !selectedTime) return null;
 
     const meetingTitle = `${eventType.nombre} — Sacs`;

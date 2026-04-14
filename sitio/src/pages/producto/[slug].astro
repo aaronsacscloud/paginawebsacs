@@ -101,46 +101,6 @@ const pageContent: Record<string, any> = {
     interruptStrike: 'tu punto de venta tampoco',
     showcaseTabs: [
       {
-        label: 'Cobrar',
-        title: 'Cobra en segundos desde cualquier dispositivo',
-        description: 'Tablet, celular o computadora. Acepta tarjeta, efectivo, transferencia y más. Sin hardware especial, sin configuración compleja.',
-        image: '/images/screen-pos.webp',
-        imageAlt: 'Proceso de cobro en SACS POS',
-        link: null,
-        details: [
-          {
-            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>',
-            title: 'Todos los métodos de pago',
-            description: 'Tarjeta, efectivo, transferencia SPEI, OXXO y link de pago. Sin terminales obligatorias.',
-          },
-          {
-            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
-            title: 'Funciona sin internet',
-            description: 'Sigue cobrando offline. Las ventas se sincronizan cuando vuelve la conexión.',
-          },
-          {
-            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
-            title: 'Ticket por WhatsApp',
-            description: 'Envía el ticket digital al WhatsApp de tu cliente. Sin papel, sin impresora.',
-          },
-          {
-            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
-            title: 'Cortes de caja automáticos',
-            description: 'Cierra caja con un tap. Arqueo de efectivo, detección de faltantes y reporte del día.',
-          },
-          {
-            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
-            title: 'Múltiples cajeros',
-            description: 'Cada vendedor con su sesión. Comisiones y permisos por rol.',
-          },
-          {
-            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>',
-            title: 'Cotizaciones al instante',
-            description: 'Genera cotizaciones con tu logo. El cliente paga desde el link.',
-          },
-        ],
-      },
-      {
         label: 'Inventario',
         title: 'Tu inventario siempre al día, en tiempo real',
         description: 'Cada venta descuenta stock automáticamente. Multi-sucursal sincronizado, alertas de reabasto y control total.',
@@ -203,6 +163,32 @@ const pageContent: Record<string, any> = {
           { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 6L6 18M6 6l12 12"/></svg>', title: 'Cancelación de facturas', description: 'Cancela y genera notas de crédito desde el sistema.' },
           { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>', title: 'Complementos de pago', description: 'Gestiona complementos y notas de crédito.' },
         ],
+      },
+    ],
+    testimonials: [
+      {
+        bg: 'linear-gradient(135deg, #1a1a2e 0%, #16213E 100%)',
+        eyebrow: 'Marcas de Ropa',
+        quote: 'Desde que cambiamos a SACS, el cobro es instantáneo. Mis vendedoras ya no necesitan capacitación especial, es tan fácil como usar el celular.',
+        name: 'María García',
+        role: 'Fundadora, La Bella Pandita · 42 sucursales',
+        image: '/images/hero-sacs-store.webp',
+      },
+      {
+        bg: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)',
+        eyebrow: 'Merchandising',
+        quote: 'Vendemos en ferias y conciertos. Necesitábamos un POS que funcionara sin internet y que mis 15 vendedores pudieran usar desde su celular. SACS fue la respuesta.',
+        name: 'Carlos Mendoza',
+        role: 'Director, Liveshow Merchandising · +1,500 puntos de venta',
+        image: '/images/hero-sacs-store.webp',
+      },
+      {
+        bg: 'linear-gradient(135deg, #1a1a2e 0%, #2d1b4e 100%)',
+        eyebrow: 'Moda Consciente',
+        quote: 'Lo que más valoro es que el punto de venta y el ecommerce comparten el mismo inventario. Ya no vendemos lo que no hay en stock.',
+        name: 'Andrea López',
+        role: 'Co-fundadora, Casa Maca · 2 sucursales',
+        image: '/images/hero-sacs-store.webp',
       },
     ],
     faqs: [
@@ -279,6 +265,33 @@ const isLive = feature.status === 'live' && content;
       <ZoomTypo text={content.interrupt} strikeText={content.interruptStrike} />
 
       <ProductFeatureShowcase items={content.showcaseTabs.map((t: any, i: number) => ({ ...t, num: i + 1 }))} />
+
+      <section class="pf-testimonials" id="pf-testimonials">
+        <div class="pf-testimonials-track" id="pf-testimonials-track">
+          {content.testimonials.map((t: any, i: number) => (
+            <div class={`pf-testimonial-slide${i === 0 ? ' active' : ''}`} data-testimonial={i} style={`background:${t.bg}`}>
+              <div class="pf-testimonial-inner">
+                <div class="pf-testimonial-image">
+                  {t.image && <img src={t.image} alt={t.name} width="800" height="1000" loading="lazy" />}
+                </div>
+                <div class="pf-testimonial-text">
+                  <span class="pf-testimonial-eyebrow">{t.eyebrow}</span>
+                  <blockquote class="pf-testimonial-quote">{t.quote}</blockquote>
+                  <div class="pf-testimonial-author">
+                    <span class="pf-testimonial-name">{t.name}</span>
+                    <span class="pf-testimonial-role">{t.role}</span>
+                  </div>
+                  <div class="pf-testimonials-dots">
+                    {content.testimonials.map((_: any, di: number) => (
+                      <button class={`pf-dot${di === i ? ' active' : ''}`} data-dot={di} type="button" aria-label={`Testimonio ${di + 1}`}></button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <section class="pf-plans">
         <div class="pf-plans-inner container">
@@ -975,6 +988,126 @@ const isLive = feature.status === 'live' && content;
     margin-top: 1px;
   }
 
+  /* ═══ Testimonials Full-Screen ═══ */
+  .pf-testimonials {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .pf-testimonials-track {
+    position: relative;
+  }
+
+  .pf-testimonial-slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.7s ease;
+    pointer-events: none;
+  }
+
+  .pf-testimonial-slide.active {
+    opacity: 1;
+    pointer-events: auto;
+    position: relative;
+  }
+
+  .pf-testimonial-inner {
+    display: grid;
+    grid-template-columns: 1fr;
+    min-height: 100vh;
+  }
+
+  @media (min-width: 1024px) {
+    .pf-testimonial-inner {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  /* Image left */
+  .pf-testimonial-image {
+    position: relative;
+    overflow: hidden;
+    min-height: 300px;
+  }
+
+  .pf-testimonial-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Text right */
+  .pf-testimonial-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(40px, 6vw, 80px) clamp(24px, 4vw, 64px);
+  }
+
+  .pf-testimonial-eyebrow {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.35);
+    margin-bottom: 24px;
+  }
+
+  .pf-testimonial-quote {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.375rem, 2.5vw, 2rem);
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.02em;
+    line-height: 1.35;
+    margin: 0 0 32px;
+  }
+
+  .pf-testimonial-name {
+    display: block;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .pf-testimonial-role {
+    display: block;
+    font-size: 0.8125rem;
+    color: rgba(255, 255, 255, 0.45);
+    margin-top: 4px;
+  }
+
+  /* Dots inside text */
+  .pf-testimonials-dots {
+    display: flex;
+    gap: 8px;
+    margin-top: 40px;
+  }
+
+  .pf-dot {
+    width: 32px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s ease, width 0.3s ease;
+    padding: 0;
+  }
+
+  .pf-dot.active {
+    background: #fff;
+    width: 48px;
+  }
+
+  .pf-dot:hover {
+    background: rgba(255, 255, 255, 0.4);
+  }
+
   /* ═══ Coming Soon (fallback) ═══ */
   .pf-hero {
     padding: clamp(60px, 10vw, 120px) 0 clamp(40px, 6vw, 60px);
@@ -1119,5 +1252,45 @@ const isLive = feature.status === 'live' && content;
     revealSections.forEach((section) => revealObserver.observe(section));
   } else {
     document.querySelectorAll('.reveal-section').forEach((s) => s.classList.add('visible'));
+  }
+
+  // ═══ Testimonial Carousel ═══
+  const tSlides = document.querySelectorAll<HTMLElement>('[data-testimonial]');
+  const tDots = document.querySelectorAll<HTMLButtonElement>('[data-dot]');
+  let tCurrent = 0;
+  let tTimer: ReturnType<typeof setInterval> | null = null;
+
+  function setTestimonial(idx: number) {
+    tSlides.forEach((s) => s.classList.remove('active'));
+    tDots.forEach((d) => d.classList.remove('active'));
+    tSlides[idx]?.classList.add('active');
+    tDots[idx]?.classList.add('active');
+    tCurrent = idx;
+  }
+
+  function nextTestimonial() {
+    setTestimonial((tCurrent + 1) % tSlides.length);
+  }
+
+  if (tSlides.length > 1) {
+    tTimer = setInterval(nextTestimonial, 5000);
+
+    tDots.forEach((dot) => {
+      dot.addEventListener('click', () => {
+        const idx = parseInt(dot.dataset.dot || '0', 10);
+        setTestimonial(idx);
+        if (tTimer) clearInterval(tTimer);
+        tTimer = setInterval(nextTestimonial, 5000);
+      });
+    });
+
+    // Pause on visibility change
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        if (tTimer) clearInterval(tTimer);
+      } else {
+        tTimer = setInterval(nextTestimonial, 5000);
+      }
+    });
   }
 </script>

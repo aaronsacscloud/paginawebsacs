@@ -1,66 +1,42 @@
 ---
 export const prerender = false;
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import BookingPage from '../../components/scheduling/BookingPage';
+import BookingLoader from '../../components/scheduling/BookingLoader';
 import { supabase } from '../../lib/supabase';
 
 const slug = Astro.params.slug || 'demo';
 
 let eventType: any = null;
 let questions: any[] = [];
-let errorMsg = '';
 
 try {
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from('event_types')
     .select('*')
     .eq('slug', slug)
     .eq('activo', true)
     .single();
-
-  if (error) errorMsg = error.message;
   eventType = data;
 
   if (eventType?.owner_id) {
-    const { data: host } = await supabase
-      .from('team_members')
-      .select('nombre, email')
-      .eq('id', eventType.owner_id)
-      .single();
+    const { data: host } = await supabase.from('team_members').select('nombre, email').eq('id', eventType.owner_id).single();
     if (host) eventType.team_members = host;
   }
 
   if (eventType) {
-    const { data: q } = await supabase
-      .from('booking_questions')
-      .select('*')
-      .eq('event_type_id', eventType.id)
-      .eq('activo', true)
-      .order('orden');
+    const { data: q } = await supabase.from('booking_questions').select('*').eq('event_type_id', eventType.id).eq('activo', true).order('orden');
     questions = q || [];
   }
-} catch (e: any) {
-  errorMsg = e?.message || String(e);
+} catch {}
+
+if (!eventType) {
+  return new Response('<html><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;"><p>Evento no encontrado</p></body></html>', { status: 404, headers: { 'Content-Type': 'text/html' } });
 }
 ---
 
-{eventType ? (
-  <BaseLayout title={`Agendar ${eventType.nombre} — Sacs`} description={eventType.descripcion || 'Agenda tu sesión con SACS'} noindex={true}>
-    <BookingPage client:only="react" eventType={eventType} questions={questions} />
-  </BaseLayout>
-) : (
-  <html lang="es">
-    <head><meta charset="UTF-8" /><title>Error</title></head>
-    <body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#fafafa;">
-      <div style="text-align:center;padding:48px;">
-        <h2>No se encontró el evento</h2>
-        <p style="color:#888;">Slug: {slug}</p>
-        <p style="color:#cc0000;font-size:0.875rem;">{errorMsg}</p>
-        <a href="/contacto" style="color:#4B7BE5;">Volver</a>
-      </div>
-    </body>
-  </html>
-)}
+<BaseLayout title={`Agendar ${eventType.nombre} — Sacs`} description={eventType.descripcion || 'Agenda tu sesión con SACS'} noindex={true}>
+  <BookingLoader client:only="react" eventType={eventType} questions={questions} />
+</BaseLayout>
 
 <style is:global>
   .nav, .wa-bar, footer { display: none !important; }
