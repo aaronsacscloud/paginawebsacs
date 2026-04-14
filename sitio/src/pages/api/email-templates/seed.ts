@@ -134,7 +134,7 @@ const TEMPLATES = [
       {
         type: 'button',
         label: 'Agenda tu siguiente sesi\u00f3n',
-        href: 'https://calendly.com/sacs-demo/configuracion',
+        href: '/agendar/configuracion',
         color: '#4B7BE5',
         text_color: '#FFFFFF',
         padding: '8px 32px 24px 32px',

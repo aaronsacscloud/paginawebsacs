@@ -167,12 +167,13 @@ function slugify(s: string): string {
 
 // ─── Main Component ───
 export default function SchedulingTab() {
-  const [subTab, setSubTab] = useState<'reservas' | 'tipos' | 'disponibilidad'>('reservas');
+  const [subTab, setSubTab] = useState<'reservas' | 'tipos' | 'disponibilidad' | 'estadisticas'>('reservas');
 
   const subTabs = [
     { id: 'reservas' as const, label: 'Reservas' },
     { id: 'tipos' as const, label: 'Tipos de Evento' },
     { id: 'disponibilidad' as const, label: 'Disponibilidad' },
+    { id: 'estadisticas' as const, label: 'Estadisticas' },
   ];
 
   return (
@@ -204,6 +205,7 @@ export default function SchedulingTab() {
         {subTab === 'reservas' && <ReservasView />}
         {subTab === 'tipos' && <TiposEventoView />}
         {subTab === 'disponibilidad' && <DisponibilidadView />}
+        {subTab === 'estadisticas' && <EstadisticasView />}
       </div>
     </div>
   );
@@ -1297,6 +1299,292 @@ function DisponibilidadView() {
             ))}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// Sub-tab 4: Estadisticas
+// ═══════════════════════════════════════════════════════════
+interface StatsData {
+  period_days: number;
+  total: number;
+  by_estado: Record<string, number>;
+  no_show_rate: number;
+  cancel_rate: number;
+  avg_lead_time_days: number;
+  popular_day: { day: number; label: string; count: number };
+  popular_hour: { hour: string; count: number };
+  by_week: { week: string; count: number }[];
+  by_event_type: { nombre: string; count: number; color: string }[];
+}
+
+function EstadisticasView() {
+  const [stats, setStats] = useState<StatsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [days, setDays] = useState(30);
+
+  const load = async (d: number) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/scheduling/stats?days=${d}`);
+      const data = await res.json();
+      setStats(data);
+    } catch {
+      // silent
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { load(days); }, [days]);
+
+  const kpiCard: React.CSSProperties = {
+    background: '#fff',
+    borderRadius: 12,
+    padding: '20px 24px',
+    border: '1px solid #f0f0f0',
+    flex: '1 1 0',
+    minWidth: 140,
+  };
+
+  const statsCard: React.CSSProperties = {
+    background: '#fff',
+    borderRadius: 12,
+    padding: '20px 24px',
+    border: '1px solid #f0f0f0',
+  };
+
+  if (loading && !stats) {
+    return <div style={{ textAlign: 'center', padding: 48, color: '#bbb' }}>Cargando estadisticas...</div>;
+  }
+
+  if (!stats) {
+    return <div style={{ textAlign: 'center', padding: 48, color: '#bbb' }}>No se pudieron cargar las estadisticas</div>;
+  }
+
+  // Find max for bar chart
+  const maxWeekCount = Math.max(...stats.by_week.map(w => w.count), 1);
+
+  // Format week label
+  const fmtWeekLabel = (w: string) => {
+    const [, m, d] = w.split('-').map(Number);
+    const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    return `${d} ${months[m - 1]}`;
+  };
+
+  // Hour display
+  const fmtHourDisplay = (h: string) => {
+    const [hr, min] = h.split(':').map(Number);
+    const ampm = hr >= 12 ? 'PM' : 'AM';
+    const h12 = hr === 0 ? 12 : hr > 12 ? hr - 12 : hr;
+    return `${h12}:${String(min).padStart(2, '0')} ${ampm}`;
+  };
+
+  // Estado colors/labels for status bars
+  const estadoEntries = Object.entries(stats.by_estado).sort((a, b) => b[1] - a[1]);
+  const maxEstadoCount = Math.max(...estadoEntries.map(([, c]) => c), 1);
+
+  return (
+    <div style={{ padding: '16px 24px' }}>
+      {/* Period selector */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <h3 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 700, color: '#1A1A1A' }}>
+          Estadisticas de Agenda
+        </h3>
+        <div style={{ display: 'flex', gap: 4 }}>
+          {[
+            { d: 7, label: '7 dias' },
+            { d: 30, label: '30 dias' },
+            { d: 90, label: '90 dias' },
+          ].map(opt => (
+            <button
+              key={opt.d}
+              onClick={() => setDays(opt.d)}
+              style={{
+                ...btn,
+                background: days === opt.d ? '#1A1A1A' : '#f5f5f5',
+                color: days === opt.d ? '#fff' : '#555',
+                padding: '6px 12px',
+                fontSize: '0.75rem',
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading && (
+        <div style={{ textAlign: 'center', padding: 12, color: '#bbb', fontSize: '0.8125rem', marginBottom: 12 }}>
+          Actualizando...
+        </div>
+      )}
+
+      {/* KPI Cards */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+        <div style={kpiCard}>
+          <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 6 }}>
+            Total reservas
+          </div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1A1A1A' }}>{stats.total}</div>
+        </div>
+        <div style={kpiCard}>
+          <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 6 }}>
+            No-show rate
+          </div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: stats.no_show_rate > 15 ? '#DC2626' : stats.no_show_rate > 5 ? '#E8A838' : '#2e7d32' }}>
+            {stats.no_show_rate}%
+          </div>
+        </div>
+        <div style={kpiCard}>
+          <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 6 }}>
+            Cancelacion rate
+          </div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: stats.cancel_rate > 20 ? '#DC2626' : stats.cancel_rate > 10 ? '#E8A838' : '#2e7d32' }}>
+            {stats.cancel_rate}%
+          </div>
+        </div>
+        <div style={kpiCard}>
+          <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 6 }}>
+            Lead time promedio
+          </div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#4B7BE5' }}>
+            {stats.avg_lead_time_days}<span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#999', marginLeft: 4 }}>dias</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Bar chart: Bookings by week */}
+      <div style={{ ...statsCard, marginBottom: 20 }}>
+        <h4 style={{ margin: '0 0 16px', fontSize: '0.8125rem', fontWeight: 700, color: '#1A1A1A' }}>
+          Reservas por semana
+        </h4>
+        {stats.by_week.length === 0 ? (
+          <div style={{ fontSize: '0.8125rem', color: '#bbb', padding: '16px 0' }}>Sin datos</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {stats.by_week.map(w => (
+              <div key={w.week} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontSize: '0.75rem', color: '#999', minWidth: 55, textAlign: 'right' as const }}>
+                  {fmtWeekLabel(w.week)}
+                </span>
+                <div style={{ flex: 1, height: 24, background: '#f5f5f5', borderRadius: 6, overflow: 'hidden', position: 'relative' as const }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${(w.count / maxWeekCount) * 100}%`,
+                    background: '#4B7BE5',
+                    borderRadius: 6,
+                    minWidth: w.count > 0 ? 4 : 0,
+                    transition: 'width 0.3s ease',
+                  }} />
+                </div>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1A1A1A', minWidth: 24, textAlign: 'right' as const }}>
+                  {w.count}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Bottom row: 3 cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 12 }}>
+        {/* Popular times */}
+        <div style={statsCard}>
+          <h4 style={{ margin: '0 0 16px', fontSize: '0.8125rem', fontWeight: 700, color: '#1A1A1A' }}>
+            Horarios populares
+          </h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
+              <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#999', textTransform: 'uppercase' as const, marginBottom: 4 }}>
+                Dia mas popular
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: '1rem', fontWeight: 700, color: '#1A1A1A' }}>
+                  {stats.popular_day.label}
+                </span>
+                <span style={{
+                  fontSize: '0.6875rem', fontWeight: 600, color: '#4B7BE5',
+                  background: '#EBF1FC', padding: '2px 8px', borderRadius: 4,
+                }}>
+                  {stats.popular_day.count} reservas
+                </span>
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#999', textTransform: 'uppercase' as const, marginBottom: 4 }}>
+                Hora mas popular
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: '1rem', fontWeight: 700, color: '#1A1A1A' }}>
+                  {fmtHourDisplay(stats.popular_hour.hour)}
+                </span>
+                <span style={{
+                  fontSize: '0.6875rem', fontWeight: 600, color: '#2AB5A0',
+                  background: '#E6F7F4', padding: '2px 8px', borderRadius: 4,
+                }}>
+                  {stats.popular_hour.count} reservas
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* By event type */}
+        <div style={statsCard}>
+          <h4 style={{ margin: '0 0 16px', fontSize: '0.8125rem', fontWeight: 700, color: '#1A1A1A' }}>
+            Por tipo de evento
+          </h4>
+          {stats.by_event_type.length === 0 ? (
+            <div style={{ fontSize: '0.8125rem', color: '#bbb' }}>Sin datos</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {stats.by_event_type.map(et => (
+                <div key={et.nombre} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: et.color, flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.8125rem', color: '#555', flex: 1 }}>{et.nombre}</span>
+                  <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1A1A1A' }}>{et.count}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* By status */}
+        <div style={statsCard}>
+          <h4 style={{ margin: '0 0 16px', fontSize: '0.8125rem', fontWeight: 700, color: '#1A1A1A' }}>
+            Por estado
+          </h4>
+          {estadoEntries.length === 0 ? (
+            <div style={{ fontSize: '0.8125rem', color: '#bbb' }}>Sin datos</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {estadoEntries.map(([estado, count]) => {
+                const color = ESTADO_COLORS[estado] || '#999';
+                const estadoLabel = ESTADO_LABELS[estado] || estado;
+                return (
+                  <div key={estado}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color }}>{estadoLabel}</span>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1A1A1A' }}>{count}</span>
+                    </div>
+                    <div style={{ height: 6, background: '#f5f5f5', borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%',
+                        width: `${(count / maxEstadoCount) * 100}%`,
+                        background: color,
+                        borderRadius: 3,
+                        minWidth: count > 0 ? 3 : 0,
+                        transition: 'width 0.3s ease',
+                      }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

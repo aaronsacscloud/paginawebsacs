@@ -1,0 +1,43 @@
+---
+export const prerender = false;
+import BookingPage from '../../../components/scheduling/BookingPage';
+import { supabase } from '../../../lib/supabase';
+
+const { slug } = Astro.params;
+
+const { data: eventType } = await supabase
+  .from('event_types')
+  .select('*, team_members(*)')
+  .eq('slug', slug)
+  .eq('activo', true)
+  .single();
+
+if (!eventType) return new Response('Not found', { status: 404 });
+
+const { data: questions } = await supabase
+  .from('booking_questions')
+  .select('*')
+  .eq('event_type_id', eventType.id)
+  .eq('activo', true)
+  .order('orden');
+---
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agendar {eventType.nombre}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif; background: transparent; }
+  </style>
+  <link rel="preload" href="/fonts/PlusJakartaSans-Regular.woff2" as="font" type="font/woff2" crossorigin />
+  <style>
+    @font-face { font-family: 'Plus Jakarta Sans'; src: url('/fonts/PlusJakartaSans-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+    @font-face { font-family: 'Plus Jakarta Sans'; src: url('/fonts/PlusJakartaSans-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+    @font-face { font-family: 'Sora'; src: url('/fonts/Sora-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+  </style>
+</head>
+<body>
+  <BookingPage client:load eventType={eventType} questions={questions || []} />
+</body>
+</html>

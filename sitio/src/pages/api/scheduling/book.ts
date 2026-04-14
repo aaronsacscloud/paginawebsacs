@@ -283,7 +283,126 @@ export const POST: APIRoute = async ({ request }) => {
     console.error('Google Calendar event creation failed:', gcalErr);
   }
 
-  // 10. Log activity
+  // 10. Send confirmation email to host
+  try {
+    // hostMember was loaded in step 9 for GCal; re-fetch if needed
+    let hostEmail: string | null = null;
+    const { data: hostForEmail } = await supabase
+      .from('team_members')
+      .select('email')
+      .eq('id', eventType.owner_id)
+      .single();
+    if (hostForEmail?.email) {
+      hostEmail = hostForEmail.email;
+    }
+
+    if (hostEmail) {
+      const meetLink = google_meet_link || '';
+      const fechaDisplay = (() => {
+        const [y, mo, d] = fecha.split('-').map(Number);
+        const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+        return `${d} ${months[mo - 1]} ${y}`;
+      })();
+      const horaDisplay = (() => {
+        const [h, m] = hora_inicio.split(':').map(Number);
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+        return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+      })();
+
+      // Build answers HTML
+      let answersHtml = '';
+      if (answers && Array.isArray(answers) && answers.length > 0) {
+        answersHtml = `
+          <tr><td style="padding:16px 0 8px 0;font-size:0.6875rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.06em;">Respuestas personalizadas</td></tr>
+          ${answers.map((a: { question_id: string; valor: string }) => `<tr><td style="padding:4px 0;font-size:0.875rem;color:#555;">${a.valor}</td></tr>`).join('')}
+        `;
+      }
+
+      const emailHtml = `
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <tr><td style="background:#1A1A1A;padding:20px 24px;border-radius:12px 12px 0 0;">
+    <span style="font-size:1.25rem;font-weight:700;color:#fff;">Sacs</span>
+    <span style="font-size:0.625rem;font-weight:700;color:#4B7BE5;background:rgba(75,123,229,0.15);padding:2px 8px;border-radius:4px;margin-left:8px;">NUEVA DEMO</span>
+  </td></tr>
+  <tr><td style="background:#fff;padding:24px;">
+    <h2 style="margin:0 0 20px 0;font-size:1.125rem;font-weight:700;color:#1A1A1A;">Nueva Demo Agendada</h2>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+      <tr><td style="padding:16px 0 8px 0;font-size:0.6875rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.06em;">Datos del invitado</td></tr>
+      <tr><td style="padding:4px 0;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:6px 0;font-size:0.875rem;color:#999;width:110px;">Nombre</td>
+            <td style="padding:6px 0;font-size:0.875rem;font-weight:600;color:#1A1A1A;">${nombre}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;font-size:0.875rem;color:#999;width:110px;">Email</td>
+            <td style="padding:6px 0;font-size:0.875rem;color:#555;">${email}</td>
+          </tr>
+          ${whatsapp ? `<tr><td style="padding:6px 0;font-size:0.875rem;color:#999;width:110px;">WhatsApp</td><td style="padding:6px 0;font-size:0.875rem;color:#555;">${whatsapp}</td></tr>` : ''}
+          ${empresa ? `<tr><td style="padding:6px 0;font-size:0.875rem;color:#999;width:110px;">Empresa</td><td style="padding:6px 0;font-size:0.875rem;font-weight:600;color:#1A1A1A;">${empresa}</td></tr>` : ''}
+          ${giro ? `<tr><td style="padding:6px 0;font-size:0.875rem;color:#999;width:110px;">Giro</td><td style="padding:6px 0;font-size:0.875rem;color:#555;">${giro}</td></tr>` : ''}
+          ${sucursales ? `<tr><td style="padding:6px 0;font-size:0.875rem;color:#999;width:110px;">Sucursales</td><td style="padding:6px 0;font-size:0.875rem;color:#555;">${sucursales}</td></tr>` : ''}
+        </table>
+      </td></tr>
+    </table>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#FAFAF8;border-radius:8px;padding:16px;margin-bottom:20px;">
+      <tr><td style="padding:8px 16px;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr><td style="padding:0 0 8px 0;font-size:0.6875rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.06em;">Detalles de la reunion</td></tr>
+          <tr>
+            <td style="padding:4px 0;font-size:0.875rem;color:#999;width:110px;">Tipo</td>
+            <td style="padding:4px 0;font-size:0.875rem;font-weight:600;color:#1A1A1A;">${eventType.nombre}</td>
+          </tr>
+          <tr>
+            <td style="padding:4px 0;font-size:0.875rem;color:#999;width:110px;">Fecha</td>
+            <td style="padding:4px 0;font-size:0.875rem;font-weight:600;color:#1A1A1A;">${fechaDisplay}</td>
+          </tr>
+          <tr>
+            <td style="padding:4px 0;font-size:0.875rem;color:#999;width:110px;">Hora</td>
+            <td style="padding:4px 0;font-size:0.875rem;font-weight:600;color:#1A1A1A;">${horaDisplay}</td>
+          </tr>
+          <tr>
+            <td style="padding:4px 0;font-size:0.875rem;color:#999;width:110px;">Duracion</td>
+            <td style="padding:4px 0;font-size:0.875rem;color:#555;">${eventType.duracion_minutos} minutos</td>
+          </tr>
+          ${meetLink ? `<tr><td style="padding:4px 0;font-size:0.875rem;color:#999;width:110px;">Google Meet</td><td style="padding:4px 0;font-size:0.875rem;"><a href="${meetLink}" style="color:#4B7BE5;text-decoration:none;font-weight:600;">${meetLink}</a></td></tr>` : ''}
+        </table>
+      </td></tr>
+    </table>
+
+    ${answersHtml ? `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">${answersHtml}</table>` : ''}
+
+    ${notas ? `<table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;"><tr><td style="padding:0 0 4px 0;font-size:0.6875rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.06em;">Notas del invitado</td></tr><tr><td style="padding:4px 0;font-size:0.875rem;color:#555;font-style:italic;">${notas}</td></tr></table>` : ''}
+  </td></tr>
+  <tr><td style="background:#fafafa;padding:16px 24px;border-radius:0 0 12px 12px;text-align:center;">
+    <a href="https://www.sacscloud.com/admin/crm?tab=agenda" style="display:inline-block;padding:12px 32px;background:#4B7BE5;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">Ver en CRM</a>
+  </td></tr>
+</table>`;
+
+      // Fire-and-forget internal email send
+      try {
+        const baseUrl = import.meta.env.SITE || 'https://www.sacscloud.com';
+        await fetch(`${baseUrl}/api/email/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: hostEmail,
+            subject: `Nueva demo agendada: ${nombre} - ${empresa || ''}`,
+            html: emailHtml,
+          }),
+        });
+      } catch (emailFetchErr) {
+        console.error('Failed to send host notification email:', emailFetchErr);
+      }
+    }
+  } catch (emailErr) {
+    console.error('Host email notification failed:', emailErr);
+  }
+
+  // 11. Log activity
   await supabase.from('activities').insert({
     contact_id,
     company_id,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 // ─── Types ───
 interface EventTypeData {
@@ -269,6 +269,23 @@ export default function BookingPage({ eventType, questions }: Props) {
     catch { return 'America/Mexico_City'; }
   });
 
+  // ── Activity tracking ──
+  const sessionRef = useRef<string>('');
+  const formStartedRef = useRef(false);
+
+  const trackEvent = (event: string, meta?: any) => {
+    fetch('/api/scheduling/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event, slug: eventType.slug, session_id: sessionRef.current, metadata: meta }),
+    }).catch(() => {});
+  };
+
+  useEffect(() => {
+    sessionRef.current = crypto.randomUUID();
+    trackEvent('page_view');
+  }, []);
+
   // Step 1: Date selection
   const now = new Date();
   const [viewYear, setViewYear] = useState(now.getFullYear());
@@ -386,6 +403,7 @@ export default function BookingPage({ eventType, questions }: Props) {
 
       const result = await res.json();
       setBookingResult(result);
+      trackEvent('form_submitted', { date: selectedDate, time: selectedTime, booking_id: result.id });
       setStep(4);
     } catch {
       setFormError('Error de conexion. Intenta de nuevo.');
@@ -518,6 +536,7 @@ export default function BookingPage({ eventType, questions }: Props) {
                     setSelectedDate(dateStr);
                     setSelectedTime(null);
                     setStep(2);
+                    trackEvent('date_selected', { date: dateStr });
                   }
                 }}
                 onMouseEnter={(e) => {
@@ -605,7 +624,7 @@ export default function BookingPage({ eventType, questions }: Props) {
               return (
                 <button
                   key={slot}
-                  onClick={() => setSelectedTime(slot)}
+                  onClick={() => { setSelectedTime(slot); trackEvent('time_selected', { date: selectedDate, time: slot }); }}
                   style={{
                     padding: '12px 20px',
                     borderRadius: 10,
@@ -699,7 +718,7 @@ export default function BookingPage({ eventType, questions }: Props) {
             onChange={(e) => updateField('nombre', e.target.value)}
             placeholder="Tu nombre completo"
             style={styles.input}
-            onFocus={(e) => { e.currentTarget.style.borderColor = '#4B7BE5'; }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = '#4B7BE5'; if (!formStartedRef.current) { formStartedRef.current = true; trackEvent('form_started'); } }}
             onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; }}
           />
         </div>
@@ -712,7 +731,7 @@ export default function BookingPage({ eventType, questions }: Props) {
             onChange={(e) => updateField('email', e.target.value)}
             placeholder="tu@empresa.com"
             style={styles.input}
-            onFocus={(e) => { e.currentTarget.style.borderColor = '#4B7BE5'; }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = '#4B7BE5'; if (!formStartedRef.current) { formStartedRef.current = true; trackEvent('form_started'); } }}
             onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; }}
           />
         </div>
@@ -725,7 +744,7 @@ export default function BookingPage({ eventType, questions }: Props) {
             onChange={(e) => updateField('whatsapp', e.target.value)}
             placeholder="+52 55 1234 5678"
             style={styles.input}
-            onFocus={(e) => { e.currentTarget.style.borderColor = '#4B7BE5'; }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = '#4B7BE5'; if (!formStartedRef.current) { formStartedRef.current = true; trackEvent('form_started'); } }}
             onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; }}
           />
         </div>

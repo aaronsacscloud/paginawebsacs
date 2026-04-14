@@ -101,5 +101,40 @@ export const GET: APIRoute = async ({ url }) => {
     }
   }
 
-  return new Response(JSON.stringify(stats));
+  // ---------- 3. Auto-detect no-shows ----------
+  // Bookings that ended 2+ hours ago still marked as confirmada
+  const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+  const noShowDate = twoHoursAgo.toISOString().slice(0, 10);
+  const noShowTime = twoHoursAgo.toISOString().slice(11, 16);
+
+  const { data: potentialNoShows } = await supabase
+    .from('bookings')
+    .select('id, contact_id, deal_id, host_id, fecha, hora_fin, event_types(nombre)')
+    .eq('estado', 'confirmada')
+    .lte('fecha', noShowDate);
+
+  let noShowCount = 0;
+  for (const booking of (potentialNoShows || [])) {
+    // Check if meeting ended 2+ hours ago
+    if (booking.fecha < noShowDate || (booking.fecha === noShowDate && booking.hora_fin <= noShowTime)) {
+      // Mark as no_show
+      await supabase.from('bookings').update({ estado: 'no_show' }).eq('id', booking.id);
+
+      // Log activity
+      if (booking.contact_id) {
+        await supabase.from('activities').insert({
+          contact_id: booking.contact_id,
+          deal_id: booking.deal_id,
+          tipo: 'demo_no_show',
+          titulo: `No show: ${(booking.event_types as any)?.nombre || 'Demo'} - ${booking.fecha} ${booking.hora_fin}`,
+          metadata: { booking_id: booking.id, auto_detected: true },
+          automatico: true,
+        });
+      }
+
+      noShowCount++;
+    }
+  }
+
+  return new Response(JSON.stringify({ ...stats, no_shows_detected: noShowCount }));
 };
