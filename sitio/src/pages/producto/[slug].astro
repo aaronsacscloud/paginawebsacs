@@ -2,6 +2,7 @@
 import ProductLayout from '../../layouts/ProductLayout.astro';
 import GiroHero from '../../components/giros/GiroHero.astro';
 import ZoomTypo from '../../components/ZoomTypo.astro';
+import ProductShowcaseTabs from '../../components/ProductShowcaseTabs.astro';
 import GiroFeatures from '../../components/giros/GiroFeatures.astro';
 import GiroSplitSection from '../../components/giros/GiroSplitSection.astro';
 import GiroStats from '../../components/giros/GiroStats.astro';
@@ -97,6 +98,48 @@ const pageContent: Record<string, any> = {
     },
     interrupt: 'Tu negocio no para,',
     interruptStrike: 'tu punto de venta tampoco',
+    showcaseTabs: [
+      {
+        label: 'Cobrar',
+        title: 'Cobra en segundos desde cualquier dispositivo',
+        description: 'Tablet, celular o computadora. Acepta tarjeta, efectivo, transferencia y más. Sin hardware especial, sin configuración compleja.',
+        image: '/images/screen-pos.webp',
+        imageAlt: 'Proceso de cobro en SACS POS',
+        link: null,
+      },
+      {
+        label: 'Inventario',
+        title: 'Tu inventario siempre al día, en tiempo real',
+        description: 'Cada venta descuenta stock automáticamente. Multi-sucursal sincronizado, alertas de reabasto y control total desde el punto de venta.',
+        image: '/images/screen-pos.webp',
+        imageAlt: 'Inventario en SACS POS',
+        link: { label: 'Ver inventario omnicanal', href: '/producto/inventario-omnicanal' },
+      },
+      {
+        label: 'Clientes',
+        title: 'Cada venta construye la relación con tu cliente',
+        description: 'Captura datos al cobrar, acumula puntos de lealtad automáticos y sugiere productos basados en historial de compras.',
+        image: '/images/screen-pos.webp',
+        imageAlt: 'CRM en SACS POS',
+        link: { label: 'Ver clientes y CRM', href: '/producto/clientes-y-crm' },
+      },
+      {
+        label: 'Reportes',
+        title: 'Dashboards claros con las métricas que importan',
+        description: 'Ventas por producto, vendedor y sucursal. Margen de utilidad, comparativas y KPIs en tiempo real. Sin Excel.',
+        image: '/images/screen-pos.webp',
+        imageAlt: 'Reportes de ventas en SACS',
+        link: { label: 'Ver reportes y analítica', href: '/producto/reportes-y-analitica' },
+      },
+      {
+        label: 'Facturación',
+        title: 'Factura desde el punto de venta en un click',
+        description: 'CFDI al momento del cobro, factura global automática y portal de autofacturación para tus clientes. Todo integrado.',
+        image: '/images/screen-pos.webp',
+        imageAlt: 'Facturación electrónica en SACS',
+        link: { label: 'Ver facturación electrónica', href: '/producto/facturacion-electronica' },
+      },
+    ],
     faqs: [
       { question: '¿Necesito hardware especial para usar el POS?', answer: 'No. SACS funciona en cualquier dispositivo con navegador: tablet, celular o computadora. Si ya tienes una terminal bancaria, la puedes seguir usando. No es obligatorio comprar nada.' },
       { question: '¿Funciona sin internet?', answer: 'Sí. SACS tiene modo offline que te permite seguir cobrando. Cuando vuelve la conexión, todas las ventas se sincronizan automáticamente.' },
@@ -169,6 +212,8 @@ const isLive = feature.status === 'live' && content;
       </div>
 
       <ZoomTypo text={content.interrupt} strikeText={content.interruptStrike} />
+
+      <ProductShowcaseTabs tabs={content.showcaseTabs} />
 
       <GiroFAQ faqs={content.faqs} />
     </Fragment>

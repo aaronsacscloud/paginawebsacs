@@ -33,7 +33,7 @@ const { tabs } = Astro.props;
       </div>
       <div class="pst-desc-wrap">
         {tabs.map((tab, i) => (
-          <div class={`pst-desc${i === 0 ? ' active' : ''}`} data-pst-desc={i}>
+          <div class={`pst-desc${i === 0 ? ' active' : ''}`} data-pst-desc={i} data-pst-title={tab.title}>
             <p class="pst-desc-text">{tab.description}</p>
             {tab.link && (
               <a href={tab.link.href} class="pst-desc-link">

@@ -1136,8 +1136,8 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
           </div>
         ))}
 
-        {/* Recurrence toggle (Feature 21) - show for non-individual events or when duration >= 30 min */}
-        {eventType.tipo_reunion !== 'individual' || eventType.duracion_minutos >= 30 ? (
+        {/* Recurrence toggle - only show if enabled in event type config */}
+        {(eventType as any).routing_rules?.mostrar_recurrencia ? (
           <div style={{ ...styles.fieldGroup, background: '#F7F8FA', borderRadius: 10, padding: '14px 16px' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: recurrenceEnabled ? 12 : 0 }}>
               <input
@@ -1369,6 +1369,43 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
           </div>
         )}
         {renderHeader()}
+
+        {/* Step indicator */}
+        {step < 4 && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0, padding: '16px 24px 0' }}>
+            {[
+              { n: 1, label: 'Fecha' },
+              { n: 2, label: 'Hora' },
+              { n: 3, label: 'Datos' },
+            ].map((s, i) => (
+              <div key={s.n} style={{ display: 'flex', alignItems: 'center' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: '50%',
+                    background: step >= s.n ? primaryColor : '#f0f0f0',
+                    color: step >= s.n ? '#fff' : '#bbb',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '0.6875rem', fontWeight: 700,
+                    transition: 'all 0.3s ease',
+                  }}>{step > s.n ? '✓' : s.n}</div>
+                  <span style={{
+                    fontSize: '0.5625rem', fontWeight: 600,
+                    color: step >= s.n ? '#1a1a1a' : '#bbb',
+                    transition: 'color 0.3s ease',
+                  }}>{s.label}</span>
+                </div>
+                {i < 2 && (
+                  <div style={{
+                    width: 40, height: 2, background: step > s.n ? primaryColor : '#e0e0e0',
+                    margin: '0 8px', marginBottom: 18,
+                    transition: 'background 0.3s ease',
+                  }} />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         <div style={styles.body}>
           {step === 1 && renderCalendar()}
           {step === 2 && renderTimeSelection()}
