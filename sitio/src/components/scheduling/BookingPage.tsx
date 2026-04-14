@@ -1285,6 +1285,20 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
           </a>
         </div>
 
+        {/* QR Code for calendar */}
+        <div style={{ textAlign: 'center' as const, marginBottom: 16, padding: '16px', background: '#fafafa', borderRadius: 12 }}>
+          <img
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(gcalLink)}&bgcolor=fafafa&color=1a1a1a&margin=0`}
+            alt="QR Calendar"
+            width={140}
+            height={140}
+            style={{ borderRadius: 8 }}
+          />
+          <div style={{ fontSize: '0.6875rem', color: '#999', marginTop: 8 }}>
+            Escanea para guardar en tu calendario
+          </div>
+        </div>
+
         {/* ═══ SURPRISE OFFER ═══ */}
         {oferta.mostrar_oferta && (
           <div style={{ background: 'linear-gradient(135deg, #faf5ff 0%, #f0f9ff 50%, #f0fdf4 100%)', borderRadius: 14, padding: '20px', border: '1.5px solid #e9d5ff', marginBottom: 16 }}>
