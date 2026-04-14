@@ -15,7 +15,6 @@ const activePillar = pillars.find((p) => p.id === currentPillar)!;
     <!-- Left: Pillar selector -->
     <div class="psn-pillar-selector" id="psn-pillar-selector">
       <button class="psn-pillar-btn" type="button" aria-expanded="false" aria-controls="psn-pillar-dropdown">
-        <span class="psn-pillar-dot" style={`background:${activePillar.color}`}></span>
         <span class="psn-pillar-label">{activePillar.verb}</span>
         <svg class="psn-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
       </button>
@@ -25,7 +24,6 @@ const activePillar = pillars.find((p) => p.id === currentPillar)!;
             href={`/producto/${p.features[0].slug}`}
             class={`psn-pillar-option${p.id === currentPillar ? ' active' : ''}`}
           >
-            <span class="psn-pillar-dot" style={`background:${p.color}`}></span>
             <span class="psn-option-verb">{p.verb}</span>
             <span class="psn-option-desc">{p.description}</span>
           </a>
@@ -39,7 +37,6 @@ const activePillar = pillars.find((p) => p.id === currentPillar)!;
         <a
           href={`/producto/${f.slug}`}
           class={`psn-feature-link${f.slug === currentSlug ? ' active' : ''}`}
-          style={f.slug === currentSlug ? `--accent:${activePillar.color}` : ''}
         >
           {f.label}
         </a>
@@ -94,13 +91,6 @@ const activePillar = pillars.find((p) => p.id === currentPillar)!;
     background: rgba(0, 0, 0, 0.04);
   }
 
-  .psn-pillar-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
   .psn-pillar-label {
     font-size: 1rem;
     font-weight: 700;
@@ -144,12 +134,13 @@ const activePillar = pillars.find((p) => p.id === currentPillar)!;
 
   .psn-pillar-option {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
+    align-items: baseline;
+    gap: 12px;
+    padding: 10px 14px;
     border-radius: 8px;
     text-decoration: none;
     transition: background 0.15s ease;
+    white-space: nowrap;
   }
 
   .psn-pillar-option:hover {
@@ -219,7 +210,7 @@ const activePillar = pillars.find((p) => p.id === currentPillar)!;
   .psn-feature-link.active {
     color: var(--color-text-primary, #1a1a2e);
     font-weight: 600;
-    border-bottom-color: var(--accent, #1a1a2e);
+    border-bottom-color: var(--color-text-primary, #1a1a2e);
   }
 
   /* ─── Mobile ─── */
