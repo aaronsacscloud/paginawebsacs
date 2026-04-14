@@ -1077,6 +1077,19 @@ function QuestionsManager({ eventTypeId }: { eventTypeId: string }) {
     load();
   };
 
+  const moveQuestion = async (q: any, direction: 'up' | 'down') => {
+    const idx = questions.findIndex((x: any) => x.id === q.id);
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= questions.length) return;
+    const other = questions[swapIdx];
+    // Swap orden values
+    await Promise.all([
+      fetch('/api/scheduling/questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update', id: q.id, orden: other.orden }) }),
+      fetch('/api/scheduling/questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update', id: other.id, orden: q.orden }) }),
+    ]);
+    load();
+  };
+
   const TIPO_LABELS: Record<string, string> = { text: 'Texto', textarea: 'Texto largo', select: 'Selección', radio: 'Radio', checkbox: 'Checkbox', number: 'Número', phone: 'Teléfono' };
 
   return (
@@ -1098,12 +1111,25 @@ function QuestionsManager({ eventTypeId }: { eventTypeId: string }) {
         <div style={{ fontSize: '0.8125rem', color: '#bbb', padding: '12px 0' }}>Sin campos adicionales. Agrega uno.</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {questions.map(q => (
+          {questions.map((q, idx) => (
             <div key={q.id} style={{
               display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
               background: q.activo ? '#fff' : '#fafafa', borderRadius: 8, border: '1px solid #f0f0f0',
               opacity: q.activo ? 1 : 0.5,
             }}>
+              {/* Order arrows */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0, flexShrink: 0 }}>
+                <button
+                  onClick={() => moveQuestion(q, 'up')}
+                  disabled={idx === 0}
+                  style={{ background: 'none', border: 'none', cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? '#e0e0e0' : '#999', fontSize: '0.75rem', padding: '0 2px', lineHeight: 1 }}
+                >▲</button>
+                <button
+                  onClick={() => moveQuestion(q, 'down')}
+                  disabled={idx === questions.length - 1}
+                  style={{ background: 'none', border: 'none', cursor: idx === questions.length - 1 ? 'default' : 'pointer', color: idx === questions.length - 1 ? '#e0e0e0' : '#999', fontSize: '0.75rem', padding: '0 2px', lineHeight: 1 }}
+                >▼</button>
+              </div>
               {/* Visible toggle */}
               <div
                 onClick={() => toggleVisible(q)}
