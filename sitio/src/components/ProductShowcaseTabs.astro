@@ -1,0 +1,285 @@
+---
+interface Tab {
+  label: string;
+  title: string;
+  description: string;
+  image: string;
+  imageAlt: string;
+  link?: { label: string; href: string };
+}
+
+interface Props {
+  tabs: Tab[];
+}
+
+const { tabs } = Astro.props;
+---
+
+<section class="pst-section" id="pst-section">
+  <div class="pst-inner">
+    <!-- Title (changes per tab) -->
+    <h2 class="pst-title" id="pst-title">{tabs[0].title}</h2>
+
+    <!-- Visual + description -->
+    <div class="pst-content container">
+      <div class="pst-visual">
+        <div class="pst-frame">
+          {tabs.map((tab, i) => (
+            <div class={`pst-slide${i === 0 ? ' active' : ''}`} data-pst-slide={i}>
+              <img src={tab.image} alt={tab.imageAlt} width="1200" height="675" loading="lazy" />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div class="pst-desc-wrap">
+        {tabs.map((tab, i) => (
+          <div class={`pst-desc${i === 0 ? ' active' : ''}`} data-pst-desc={i}>
+            <p class="pst-desc-text">{tab.description}</p>
+            {tab.link && (
+              <a href={tab.link.href} class="pst-desc-link">
+                {tab.link.label}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </a>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Tab pills -->
+    <div class="pst-tabs container">
+      {tabs.map((tab, i) => (
+        <button
+          class={`pst-tab${i === 0 ? ' active' : ''}`}
+          data-pst-tab={i}
+          type="button"
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .pst-section {
+    background: var(--color-bg-primary, #FAFAF8);
+    padding: clamp(64px, 8vw, 100px) 0;
+  }
+
+  .pst-inner {
+    text-align: center;
+  }
+
+  /* Title */
+  .pst-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    color: var(--color-text-primary, #1a1a2e);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin: 0 auto clamp(32px, 4vw, 48px);
+    max-width: 800px;
+    padding: 0 var(--space-5, 20px);
+    transition: opacity 0.3s ease;
+  }
+
+  /* Content: visual + description side by side */
+  .pst-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6, 24px);
+    align-items: center;
+    margin-bottom: clamp(32px, 4vw, 48px);
+  }
+
+  @media (min-width: 1024px) {
+    .pst-content {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: clamp(32px, 4vw, 56px);
+      align-items: center;
+      text-align: left;
+    }
+  }
+
+  /* Visual frame */
+  .pst-visual {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--color-bg-secondary, #F5F3EE);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.06);
+  }
+
+  .pst-frame {
+    position: relative;
+    aspect-ratio: 16 / 9;
+  }
+
+  .pst-slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+
+  .pst-slide.active {
+    opacity: 1;
+  }
+
+  .pst-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Description */
+  .pst-desc-wrap {
+    position: relative;
+    min-height: 100px;
+  }
+
+  .pst-desc {
+    opacity: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  .pst-desc.active {
+    opacity: 1;
+    position: relative;
+    pointer-events: auto;
+  }
+
+  .pst-desc-text {
+    font-size: clamp(0.9375rem, 1.2vw, 1.0625rem);
+    line-height: 1.6;
+    color: var(--color-text-secondary, #4A4A4A);
+    margin: 0 0 var(--space-4, 16px);
+  }
+
+  .pst-desc-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--color-primary, #4B7BE5);
+    text-decoration: none;
+    transition: gap 0.2s ease;
+  }
+
+  .pst-desc-link:hover {
+    gap: 10px;
+    text-decoration: none;
+  }
+
+  /* Tab pills */
+  .pst-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .pst-tab {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-tertiary, #8c8c8c);
+    background: transparent;
+    border: 1.5px solid rgba(0, 0, 0, 0.1);
+    border-radius: var(--radius-full, 50px);
+    padding: 10px 22px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .pst-tab:hover {
+    color: var(--color-text-primary, #1a1a2e);
+    border-color: rgba(0, 0, 0, 0.25);
+  }
+
+  .pst-tab.active {
+    color: #fff;
+    background: var(--color-text-primary, #1a1a2e);
+    border-color: var(--color-text-primary, #1a1a2e);
+  }
+
+  /* Mobile */
+  @media (max-width: 767px) {
+    .pst-tabs {
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .pst-tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .pst-tab {
+      font-size: 0.8125rem;
+      padding: 8px 18px;
+    }
+  }
+</style>
+
+<script>
+  const tabs = document.querySelectorAll<HTMLButtonElement>('[data-pst-tab]');
+  const slides = document.querySelectorAll<HTMLElement>('[data-pst-slide]');
+  const descs = document.querySelectorAll<HTMLElement>('[data-pst-desc]');
+  const title = document.getElementById('pst-title');
+
+  // Build titles array from tab data
+  const titles: string[] = [];
+  slides.forEach((slide) => {
+    const img = slide.querySelector('img');
+    // We'll use data attributes instead
+  });
+
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const idx = tab.dataset.pstTab;
+
+      // Update tabs
+      tabs.forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      // Update slides
+      slides.forEach((s) => s.classList.remove('active'));
+      const activeSlide = document.querySelector(`[data-pst-slide="${idx}"]`);
+      activeSlide?.classList.add('active');
+
+      // Update descriptions
+      descs.forEach((d) => d.classList.remove('active'));
+      const activeDesc = document.querySelector(`[data-pst-desc="${idx}"]`);
+      activeDesc?.classList.add('active');
+
+      // Update title with fade
+      if (title) {
+        title.style.opacity = '0';
+        setTimeout(() => {
+          const tabTitles = document.querySelectorAll<HTMLElement>('[data-pst-desc]');
+          const activeItem = tabTitles[Number(idx)];
+          const newTitle = activeItem?.dataset.pstTitle;
+          if (newTitle) title.textContent = newTitle;
+          title.style.opacity = '1';
+        }, 200);
+      }
+    });
+  });
+</script>

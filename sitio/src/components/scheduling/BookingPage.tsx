@@ -898,11 +898,42 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {scarcityMode && allSlotsForDay.length > 3 && !showAllSlots && (
-              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#9A3412', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#9A3412', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9A3412" strokeWidth="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                 Últimos horarios disponibles
               </div>
             )}
+
+            {/* Inline activity toast */}
+            {currentToast && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '10px 14px', marginBottom: 4,
+                background: 'linear-gradient(135deg, #f0fdf4 0%, #f0f9ff 100%)',
+                borderRadius: 10, border: '1px solid #d1fae5',
+                opacity: toastVisible ? 1 : 0,
+                maxHeight: toastVisible ? 60 : 0,
+                overflow: 'hidden',
+                transition: 'opacity 0.5s ease, max-height 0.5s ease',
+              }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: '50%',
+                  background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '0.6875rem', fontWeight: 800, color: '#16a34a', flexShrink: 0,
+                  border: '2px solid #bbf7d0',
+                }}>{currentToast.nombre?.charAt(0)}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#1a1a1a' }}>
+                    {currentToast.nombre} agendó una demo
+                  </div>
+                  <div style={{ fontSize: '0.625rem', color: '#6b7280' }}>
+                    para el {currentToast.dia} · {currentToast.hace}
+                  </div>
+                </div>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', flexShrink: 0 }} />
+              </div>
+            )}
+
             {displaySlots.map(slot => {
               const isSelected = slot === selectedTime;
               const endTime = addMinutes(slot, eventType.duracion_minutos);
@@ -1346,33 +1377,7 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
         </div>
       </div>
 
-      {/* Activity Toast - Social Proof */}
-      {toastVisible && currentToast && (
-        <div style={{
-          position: 'fixed', bottom: 24, left: 24, zIndex: 1000,
-          background: '#fff', borderRadius: 12, padding: '12px 16px',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.12)', border: '1px solid #f0f0f0',
-          display: 'flex', alignItems: 'center', gap: 10, maxWidth: 300,
-          animation: 'slideUp 0.3s ease',
-          opacity: toastVisible ? 1 : 0,
-          transform: toastVisible ? 'translateY(0)' : 'translateY(20px)',
-          transition: 'opacity 0.3s, transform 0.3s',
-        }}>
-          <div style={{
-            width: 32, height: 32, borderRadius: '50%', background: '#E8F5E9',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '0.75rem', fontWeight: 700, color: '#2e7d32', flexShrink: 0,
-          }}>{currentToast.nombre?.charAt(0) || '?'}</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#1a1a1a' }}>
-              {currentToast.nombre} agendó una demo
-            </div>
-            <div style={{ fontSize: '0.6875rem', color: '#999' }}>
-              para el {currentToast.dia} · {currentToast.hace}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Toast moved inline above time slots */}
     </div>
   );
 }

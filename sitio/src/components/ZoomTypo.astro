@@ -1,0 +1,122 @@
+---
+interface Props {
+  text: string;
+  strikeText?: string;
+}
+
+const { text, strikeText } = Astro.props;
+const id = `zt-${Math.random().toString(36).slice(2, 8)}`;
+---
+
+<section class="zt-section" id={id}>
+  <div class="zt-sticky">
+    <div class="zt-text-wrap">
+      <h2 class="zt-text" data-zt-text>
+        {text}{strikeText && (<>{' '}<span class="zt-strike-text">{strikeText}</span></>)}
+      </h2>
+    </div>
+  </div>
+</section>
+
+<style>
+  .zt-section {
+    position: relative;
+    height: 300vh;
+    background: #0A0A0A;
+  }
+
+  .zt-sticky {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .zt-text-wrap {
+    position: relative;
+    width: 100%;
+    text-align: center;
+    padding: 0 clamp(24px, 5vw, 64px);
+  }
+
+  .zt-text {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: #fff;
+    margin: 0;
+    font-size: clamp(3rem, 8vw, 6rem);
+    transform: scale(var(--zt-scale, 8));
+    transform-origin: center center;
+  }
+
+  .zt-strike-text {
+    position: relative;
+    text-decoration: line-through;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 0.06em;
+    transition: text-decoration-color 0.5s ease, color 0.5s ease 0.1s;
+  }
+
+  .zt-strike-text.struck {
+    text-decoration-color: #E53E3E;
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .zt-text {
+      transform: scale(1) !important;
+    }
+    .zt-section {
+      height: auto;
+      padding: clamp(80px, 12vw, 160px) 0;
+    }
+  }
+</style>
+
+<script define:vars={{ id }}>
+  const section = document.getElementById(id);
+  const text = section?.querySelector('[data-zt-text]');
+
+  if (section && text && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const ZT_SCALE_START = 8;
+    const ZT_SCALE_END = 1;
+    let ticking = false;
+    let xFired = false;
+    const strikeText = text.querySelector('.zt-strike-text');
+
+    const update = () => {
+      const rect = section.getBoundingClientRect();
+      const sH = section.offsetHeight;
+      const vh = window.innerHeight;
+      const scrolled = -rect.top;
+      const scrollable = sH - vh;
+      const progress = Math.max(0, Math.min(1, scrolled / scrollable));
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const scale = ZT_SCALE_START - (ZT_SCALE_START - ZT_SCALE_END) * eased;
+
+      text.style.setProperty('--zt-scale', String(scale));
+
+      if (progress > 0.85 && !xFired) {
+        xFired = true;
+        if (strikeText) strikeText.classList.add('struck');
+      } else if (progress < 0.8 && xFired) {
+        xFired = false;
+        if (strikeText) strikeText.classList.remove('struck');
+      }
+    };
+
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(() => { update(); ticking = false; });
+        ticking = true;
+      }
+    }, { passive: true });
+
+    update();
+  }
+</script>
