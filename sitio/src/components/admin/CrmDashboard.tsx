@@ -5,6 +5,7 @@ import DealsTab from './crm/DealsTab';
 import AutomationsTab from './crm/AutomationsTab';
 import SchedulingTab from './crm/SchedulingTab';
 import ContactProfile from './crm/ContactProfile';
+import DashboardTab from './crm/DashboardTab';
 import RevenueHub from './RevenueHub';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
@@ -55,7 +56,7 @@ export default function CrmDashboard() {
   };
 
   // Map CRM tab to RevenueHub tab
-  const revenueTab = (['clientes', 'cotizaciones', 'pagos', 'dashboard', 'config'].includes(tab)) ? tab : 'dashboard';
+  const revenueTab = (['clientes', 'cotizaciones', 'pagos', 'config'].includes(tab)) ? tab : 'dashboard';
 
   return (
     <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", minHeight: '100vh', background: '#f5f6f8', display: 'flex', flexDirection: 'column' }}>
@@ -100,6 +101,8 @@ export default function CrmDashboard() {
         <SchedulingTab />
       ) : tab === 'automations' ? (
         <ErrorBoundary><AutomationsTab /></ErrorBoundary>
+      ) : tab === 'dashboard' ? (
+        <ErrorBoundary><DashboardTab /></ErrorBoundary>
       ) : (
         <RevenueHub _initialTab={revenueTab as any} _hideNav={true} />
       )}

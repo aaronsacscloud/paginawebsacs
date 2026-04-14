@@ -73,5 +73,24 @@
 
   // Expose for signup form
   window.__sacsVisitor = getVisitor;
+
+  // Visitor identification for CRM
+  try {
+    const visitorEmail = localStorage.getItem('sacs_visitor_email');
+    const visitorId = localStorage.getItem('sacs_visitor_id');
+    if (visitorEmail || visitorId) {
+      fetch('/api/tracking/identify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: visitorEmail || null,
+          visitor_id: visitorId || null,
+          page_url: window.location.pathname,
+          page_title: document.title,
+          referrer: document.referrer || null,
+        }),
+      }).catch(() => {});
+    }
+  } catch {}
 })();
 </script>
