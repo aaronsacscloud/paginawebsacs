@@ -11,6 +11,14 @@
     {
       "path": "/api/scheduling/google/sync?key=sacs-cron-2026",
       "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/crm/score-leads?key=sacs-cron-2026",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/crm/churn-alerts?key=sacs-cron-2026",
+      "schedule": "0 15 * * *"
     }
   ]
 }

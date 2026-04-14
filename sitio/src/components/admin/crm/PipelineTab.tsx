@@ -58,6 +58,10 @@ export default function PipelineTab() {
   const [editFollowup, setEditFollowup] = useState('');
   const [noteText, setNoteText] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [csvText, setCsvText] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<any>(null);
 
   const load = async () => {
     setLoading(true);
@@ -196,6 +200,8 @@ export default function PipelineTab() {
             {view === 'pipeline' ? '☰ Tabla' : '▦ Pipeline'}
           </button>
           <button onClick={load} style={{ ...btn, background: '#f5f5f5', color: '#555' }}>↻</button>
+          <a href="/api/crm/contacts/export" style={{ ...btn, background: '#f5f5f5', color: '#555', textDecoration: 'none' }}>📥 Exportar</a>
+          <button onClick={() => setShowImport(true)} style={{ ...btn, background: '#f5f5f5', color: '#555' }}>📤 Importar</button>
         </div>
       </div>
 
@@ -320,6 +326,51 @@ export default function PipelineTab() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import CSV Modal */}
+      {showImport && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 24, width: '90%', maxWidth: 600, maxHeight: '80vh', overflow: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h3 style={{ margin: 0, fontWeight: 800 }}>Importar contactos (CSV)</h3>
+              <button onClick={() => { setShowImport(false); setImportResult(null); setCsvText(''); }} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer' }}>✕</button>
+            </div>
+            <p style={{ fontSize: '0.75rem', color: '#999', marginBottom: 12 }}>Formato: nombre, email, whatsapp, empresa, giro, sucursales, plan_interes</p>
+            <textarea
+              value={csvText}
+              onChange={e => setCsvText(e.target.value)}
+              placeholder={'nombre,email,whatsapp,empresa,giro,sucursales,plan\nJuan Pérez,juan@email.com,5551234567,Tienda X,Moda y ropa,3,controla'}
+              rows={10}
+              style={{ width: '100%', padding: 12, fontSize: '0.8125rem', border: '1px solid #e0e0e0', borderRadius: 8, fontFamily: 'monospace', boxSizing: 'border-box' as const, resize: 'vertical' }}
+            />
+            {importResult && (
+              <div style={{ marginTop: 12, padding: 12, background: '#f8f9fb', borderRadius: 8, fontSize: '0.8125rem' }}>
+                <div>Creados: <strong style={{ color: '#2AB5A0' }}>{importResult.created}</strong></div>
+                <div>Omitidos (duplicados): <strong>{importResult.skipped}</strong></div>
+                {importResult.errors?.length > 0 && <div style={{ color: '#E54B4B', marginTop: 4 }}>Errores: {importResult.errors.join(', ')}</div>}
+              </div>
+            )}
+            <button
+              onClick={async () => {
+                setImporting(true);
+                const res = await fetch('/api/crm/contacts/import', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ csv: csvText }),
+                });
+                const result = await res.json();
+                setImportResult(result);
+                setImporting(false);
+                load();
+              }}
+              disabled={importing || !csvText.trim()}
+              style={{ ...btn, background: '#1a1a1a', color: '#fff', width: '100%', marginTop: 12, justifyContent: 'center' }}
+            >
+              {importing ? 'Importando...' : 'Importar'}
+            </button>
           </div>
         </div>
       )}

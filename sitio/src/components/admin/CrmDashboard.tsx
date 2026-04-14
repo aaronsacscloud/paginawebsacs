@@ -1,4 +1,4 @@
-import { useState, Component } from 'react';
+import { useState, useEffect, Component } from 'react';
 import type { ReactNode } from 'react';
 import PipelineTab from './crm/PipelineTab';
 import DealsTab from './crm/DealsTab';
@@ -47,6 +47,15 @@ function getInitialTab(): Tab {
 export default function CrmDashboard() {
   const [tab, setTab] = useState<Tab>(getInitialTab);
   const [profileContactId, setProfileContactId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [showSearch, setShowSearch] = useState(false);
+
+  useEffect(() => {
+    const close = () => setShowSearch(false);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, []);
 
   const switchTab = (t: Tab) => {
     setTab(t);
@@ -89,6 +98,75 @@ export default function CrmDashboard() {
               }}
             >{t.label}</button>
           ))}
+        </div>
+        {/* Global Search */}
+        <div style={{ position: 'relative', marginLeft: 'auto' }} onClick={e => e.stopPropagation()}>
+          <input
+            value={searchQuery}
+            onChange={async (e) => {
+              setSearchQuery(e.target.value);
+              if (e.target.value.length >= 2) {
+                const res = await fetch(`/api/crm/search?q=${encodeURIComponent(e.target.value)}`);
+                const data = await res.json();
+                setSearchResults(data.results || []);
+                setShowSearch(true);
+              } else {
+                setShowSearch(false);
+              }
+            }}
+            onFocus={() => { if (searchResults.length) setShowSearch(true); }}
+            placeholder="Buscar contactos, empresas, deals..."
+            style={{
+              padding: '6px 12px 6px 32px', fontSize: '0.8125rem',
+              border: '1px solid #e0e0e0', borderRadius: 8, outline: 'none',
+              fontFamily: 'inherit', width: 240, background: '#fafafa',
+            }}
+          />
+          {/* Search icon */}
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2"
+            style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }}>
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          {/* Results dropdown */}
+          {showSearch && searchResults.length > 0 && (
+            <div style={{
+              position: 'absolute', top: '100%', right: 0, marginTop: 4,
+              width: 320, maxHeight: 400, overflowY: 'auto',
+              background: '#fff', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+              border: '1px solid #f0f0f0', zIndex: 200,
+            }}>
+              {searchResults.map((r: any, i: number) => {
+                const typeLabel = ({ contact: '\u{1F464}', company: '\u{1F3E2}', deal: '\u{1F4B0}', quote: '\u{1F4C4}' } as Record<string, string>)[r.type] || '';
+                const typeColor = ({ contact: '#4B7BE5', company: '#6C5CE7', deal: '#2AB5A0', quote: '#F39C12' } as Record<string, string>)[r.type] || '#999';
+                return (
+                  <div key={i}
+                    onClick={() => {
+                      if (r.type === 'contact') setProfileContactId(r.id);
+                      setShowSearch(false);
+                      setSearchQuery('');
+                    }}
+                    style={{
+                      padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid #f5f5f5',
+                      display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.8125rem',
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f8f9fb'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#fff'; }}
+                  >
+                    <span style={{ fontSize: '1rem' }}>{typeLabel}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, color: '#1a1a1a' }}>{r.nombre || r.numero || r.empresa}</div>
+                      <div style={{ fontSize: '0.6875rem', color: '#999' }}>
+                        {r.email || r.plan || r.stage || r.estado || ''}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '0.5625rem', fontWeight: 700, color: typeColor, background: typeColor + '15', padding: '2px 6px', borderRadius: 10 }}>
+                      {r.type}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
