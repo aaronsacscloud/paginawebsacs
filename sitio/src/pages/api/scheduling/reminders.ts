@@ -20,7 +20,7 @@ export const GET: APIRoute = async ({ url }) => {
 
   const { data: bookings24h } = await supabase
     .from('bookings')
-    .select('id, contact_id, deal_id, fecha, hora_inicio, nombre_invitado, event_types(nombre)')
+    .select('id, contact_id, deal_id, fecha, hora_inicio, nombre_invitado, whatsapp_invitado, event_types(nombre)')
     .eq('fecha', tomorrowStr)
     .eq('recordatorio_24h_enviado', false)
     .eq('estado', 'confirmada');
@@ -48,6 +48,22 @@ export const GET: APIRoute = async ({ url }) => {
         .update({ recordatorio_24h_enviado: true })
         .eq('id', booking.id);
 
+      // Send SMS/WhatsApp reminder (Feature 11)
+      if ((booking as any).whatsapp_invitado) {
+        try {
+          const baseUrl = import.meta.env.SITE || 'https://www.sacscloud.com';
+          await fetch(`${baseUrl}/api/scheduling/sms/send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: (booking as any).whatsapp_invitado,
+              message: `Recordatorio: Tu demo con SACS es mañana a las ${booking.hora_inicio}. ¡Te esperamos!`,
+              channel: 'whatsapp',
+            }),
+          });
+        } catch { /* SMS reminder is non-critical */ }
+      }
+
       stats.reminders_24h++;
     }
   }
@@ -67,7 +83,7 @@ export const GET: APIRoute = async ({ url }) => {
 
   const { data: bookings1h } = await supabase
     .from('bookings')
-    .select('id, contact_id, deal_id, fecha, hora_inicio, nombre_invitado, event_types(nombre)')
+    .select('id, contact_id, deal_id, fecha, hora_inicio, nombre_invitado, whatsapp_invitado, event_types(nombre)')
     .eq('fecha', todayStr)
     .eq('recordatorio_1h_enviado', false)
     .eq('estado', 'confirmada')
@@ -96,6 +112,22 @@ export const GET: APIRoute = async ({ url }) => {
         .from('bookings')
         .update({ recordatorio_1h_enviado: true })
         .eq('id', booking.id);
+
+      // Send SMS/WhatsApp reminder (Feature 11)
+      if ((booking as any).whatsapp_invitado) {
+        try {
+          const baseUrl = import.meta.env.SITE || 'https://www.sacscloud.com';
+          await fetch(`${baseUrl}/api/scheduling/sms/send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: (booking as any).whatsapp_invitado,
+              message: `Recordatorio: Tu demo con SACS es hoy a las ${booking.hora_inicio}. ¡Te esperamos!`,
+              channel: 'whatsapp',
+            }),
+          });
+        } catch { /* SMS reminder is non-critical */ }
+      }
 
       stats.reminders_1h++;
     }

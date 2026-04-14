@@ -69,8 +69,67 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ error: 'Event type not found' }), { status: 404 });
   }
 
-  // 2. Validate the slot is still available
-  const slotValid = await validateSlotAvailable(eventType, fecha, hora_inicio);
+  // 1b. Round-robin host assignment (Feature 13)
+  let assignedHostId = eventType.owner_id;
+
+  if (eventType.tipo_reunion === 'round_robin' && eventType.host_ids?.length > 0) {
+    // Find host with fewest bookings this week for load balancing
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    const weekStartStr = weekStart.toISOString().slice(0, 10);
+
+    const hostCounts: Record<string, number> = {};
+    for (const hid of eventType.host_ids) {
+      const { count } = await supabase
+        .from('bookings')
+        .select('*', { count: 'exact', head: true })
+        .eq('host_id', hid)
+        .eq('estado', 'confirmada')
+        .gte('fecha', weekStartStr);
+      hostCounts[hid] = count || 0;
+    }
+
+    // Pick host with minimum bookings
+    assignedHostId = eventType.host_ids.reduce((min: string, hid: string) =>
+      (hostCounts[hid] || 0) < (hostCounts[min] || 0) ? hid : min
+    , eventType.host_ids[0]);
+  }
+
+  // 1c. Lead routing rules override (Feature 14)
+  if (eventType.routing_rules?.rules?.length > 0) {
+    const formData: Record<string, string> = {
+      empresa: empresa || '',
+      giro: giro || '',
+      sucursales: String(sucursales || ''),
+      nombre: nombre || '',
+      email: email || '',
+      whatsapp: whatsapp || '',
+    };
+
+    for (const rule of eventType.routing_rules.rules) {
+      const { condition, assign_to } = rule;
+      if (!condition || !assign_to) continue;
+
+      const fieldValue = formData[condition.field] || '';
+      let match = false;
+
+      switch (condition.operator) {
+        case 'eq': match = fieldValue === condition.value; break;
+        case 'gte': match = parseInt(String(fieldValue)) >= parseInt(condition.value); break;
+        case 'lte': match = parseInt(String(fieldValue)) <= parseInt(condition.value); break;
+        case 'contains': match = String(fieldValue).toLowerCase().includes(String(condition.value).toLowerCase()); break;
+        case 'in': match = Array.isArray(condition.value) && condition.value.includes(fieldValue); break;
+      }
+
+      if (match) {
+        assignedHostId = assign_to;
+        break; // First match wins
+      }
+    }
+  }
+
+  // 2. Validate the slot is still available (use assignedHostId for validation)
+  const slotValid = await validateSlotAvailable({ ...eventType, owner_id: assignedHostId }, fecha, hora_inicio);
   if (!slotValid.available) {
     return new Response(
       JSON.stringify({ error: slotValid.reason || 'Slot is no longer available' }),
@@ -175,7 +234,7 @@ export const POST: APIRoute = async ({ request }) => {
       contact_id,
       company_id,
       stage: 'demo_agendada',
-      owner_id: eventType.owner_id,
+      owner_id: assignedHostId,
     })
     .select('id')
     .single();
@@ -192,7 +251,7 @@ export const POST: APIRoute = async ({ request }) => {
     .from('bookings')
     .insert({
       event_type_id: eventType.id,
-      host_id: eventType.owner_id,
+      host_id: assignedHostId,
       contact_id,
       deal_id,
       fecha,
@@ -248,10 +307,10 @@ export const POST: APIRoute = async ({ request }) => {
     const { data: hostMember } = await supabase
       .from('team_members')
       .select('email')
-      .eq('id', eventType.owner_id)
+      .eq('id', assignedHostId)
       .single();
 
-    const gcalResult = await createCalendarEvent(eventType.owner_id, {
+    const gcalResult = await createCalendarEvent(assignedHostId, {
       summary: `${eventType.nombre} — ${nombre} (${empresa || ''})`,
       description: [
         `Contacto: ${nombre}`,
@@ -290,7 +349,7 @@ export const POST: APIRoute = async ({ request }) => {
     const { data: hostForEmail } = await supabase
       .from('team_members')
       .select('email')
-      .eq('id', eventType.owner_id)
+      .eq('id', assignedHostId)
       .single();
     if (hostForEmail?.email) {
       hostEmail = hostForEmail.email;
@@ -402,7 +461,30 @@ export const POST: APIRoute = async ({ request }) => {
     console.error('Host email notification failed:', emailErr);
   }
 
-  // 11. Log activity
+  // 11. Send SMS/WhatsApp confirmation to invitee (Feature 11)
+  if (whatsapp) {
+    try {
+      const meetInfo = google_meet_link ? `\nLink: ${google_meet_link}` : '';
+      const [y, mo, d] = fecha.split('-').map(Number);
+      const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+      const dateStr = `${d} ${months[mo - 1]} ${y}`;
+      const [h, m] = hora_inicio.split(':').map(Number);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      const timeStr = `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+
+      const smsMessage = `✅ Confirmado! Tu ${eventType.nombre} con SACS es el ${dateStr} a las ${timeStr} (${eventType.duracion_minutos} min).${meetInfo}\n\nPara cancelar o reagendar: https://www.sacscloud.com/api/scheduling/cancel?token=${booking.token_cancelar}`;
+
+      const baseUrl = import.meta.env.SITE || 'https://www.sacscloud.com';
+      await fetch(`${baseUrl}/api/scheduling/sms/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: whatsapp, message: smsMessage, channel: 'whatsapp' }),
+      });
+    } catch { /* WhatsApp confirmation is non-critical */ }
+  }
+
+  // 12. Log activity
   await supabase.from('activities').insert({
     contact_id,
     company_id,
@@ -420,7 +502,7 @@ export const POST: APIRoute = async ({ request }) => {
     automatico: true,
   });
 
-  // 11. Return booking with tokens and Meet link
+  // 13. Return booking with tokens and Meet link
   return new Response(
     JSON.stringify({
       booking: { ...booking, google_event_id, google_meet_link },

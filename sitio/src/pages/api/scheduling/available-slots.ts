@@ -123,80 +123,98 @@ export const GET: APIRoute = async ({ url }) => {
     owner_id,
   } = eventType;
 
-  // 2. Load host availability schedule
-  const { data: schedules, error: schedErr } = await supabase
-    .from('availability_schedules')
-    .select('*')
-    .eq('team_member_id', owner_id)
-    .eq('activo', true)
-    .order('es_default', { ascending: false })
-    .limit(1);
+  // Determine which hosts to check availability for (Feature 13: Round-Robin)
+  const isRoundRobin = eventType.tipo_reunion === 'round_robin' && eventType.host_ids?.length > 0;
+  const hostIds: string[] = isRoundRobin ? eventType.host_ids : [owner_id];
 
-  if (schedErr || !schedules || schedules.length === 0) {
+  // 2. Load availability schedules, overrides, bookings, and gcal busy for ALL hosts
+  interface HostData {
+    hostTz: string;
+    weeklyHours: WeeklyHours;
+    overridesMap: Map<string, Override>;
+    bookingsByDate: Map<string, Booking[]>;
+    gcalBusyByDate: Map<string, Array<{ start: string; end: string }>>;
+  }
+
+  const hostsData = new Map<string, HostData>();
+
+  for (const hostId of hostIds) {
+    // Load schedule
+    const { data: schedules } = await supabase
+      .from('availability_schedules')
+      .select('*')
+      .eq('team_member_id', hostId)
+      .eq('activo', true)
+      .order('es_default', { ascending: false })
+      .limit(1);
+
+    if (!schedules || schedules.length === 0) continue;
+
+    const schedule = schedules[0];
+    const hostTz: string = schedule.timezone || 'America/Mexico_City';
+    const weeklyHours: WeeklyHours = schedule.weekly_hours;
+
+    // Load overrides
+    const { data: overridesRaw } = await supabase
+      .from('availability_overrides')
+      .select('fecha, ranges')
+      .eq('team_member_id', hostId)
+      .gte('fecha', from)
+      .lte('fecha', to);
+
+    const overridesMap = new Map<string, Override>();
+    for (const ov of (overridesRaw || []) as Override[]) {
+      overridesMap.set(ov.fecha, ov);
+    }
+
+    // Load bookings
+    const { data: bookingsRaw } = await supabase
+      .from('bookings')
+      .select('fecha, hora_inicio, hora_fin')
+      .eq('host_id', hostId)
+      .eq('estado', 'confirmada')
+      .gte('fecha', from)
+      .lte('fecha', to);
+
+    const bookingsByDate = new Map<string, Booking[]>();
+    for (const b of (bookingsRaw || []) as Booking[]) {
+      const list = bookingsByDate.get(b.fecha) || [];
+      list.push(b);
+      bookingsByDate.set(b.fecha, list);
+    }
+
+    // Load Google Calendar busy times
+    const gcalBusyByDate = new Map<string, Array<{ start: string; end: string }>>();
+    try {
+      const busy = await getFreeBusy(
+        hostId,
+        `${from}T00:00:00-06:00`,
+        `${to}T23:59:59-06:00`
+      );
+      for (const b of busy) {
+        if (!b.start || !b.end) continue;
+        const startDate = b.start.slice(0, 10);
+        const startTime = b.start.slice(11, 16);
+        const endTime = b.end.slice(11, 16);
+        const list = gcalBusyByDate.get(startDate) || [];
+        list.push({ start: startTime, end: endTime });
+        gcalBusyByDate.set(startDate, list);
+      }
+    } catch {}
+
+    hostsData.set(hostId, { hostTz, weeklyHours, overridesMap, bookingsByDate, gcalBusyByDate });
+  }
+
+  if (hostsData.size === 0) {
     return new Response(
       JSON.stringify({ error: 'No availability schedule found for host' }),
       { status: 404 },
     );
   }
 
-  const schedule = schedules[0];
-  const hostTz: string = schedule.timezone || 'America/Mexico_City';
-  const weeklyHours: WeeklyHours = schedule.weekly_hours;
-
-  // 3. Load overrides for the date range
-  const { data: overridesRaw } = await supabase
-    .from('availability_overrides')
-    .select('fecha, ranges')
-    .eq('team_member_id', owner_id)
-    .gte('fecha', from)
-    .lte('fecha', to);
-
-  const overridesMap = new Map<string, Override>();
-  for (const ov of (overridesRaw || []) as Override[]) {
-    overridesMap.set(ov.fecha, ov);
-  }
-
-  // 4. Load existing confirmed bookings for the host in the date range
-  const { data: bookingsRaw } = await supabase
-    .from('bookings')
-    .select('fecha, hora_inicio, hora_fin')
-    .eq('host_id', owner_id)
-    .eq('estado', 'confirmada')
-    .gte('fecha', from)
-    .lte('fecha', to);
-
-  const bookings = (bookingsRaw || []) as Booking[];
-
-  // Index bookings by date for fast lookup
-  const bookingsByDate = new Map<string, Booking[]>();
-  for (const b of bookings) {
-    const list = bookingsByDate.get(b.fecha) || [];
-    list.push(b);
-    bookingsByDate.set(b.fecha, list);
-  }
-
-  // 4b. Load Google Calendar busy times (if connected)
-  const gcalBusy: Array<{ start: string; end: string }> = [];
-  try {
-    const busy = await getFreeBusy(
-      owner_id,
-      `${from}T00:00:00-06:00`,
-      `${to}T23:59:59-06:00`
-    );
-    gcalBusy.push(...busy);
-  } catch {}
-
-  // Convert Google busy times to per-date HH:MM ranges
-  const gcalBusyByDate = new Map<string, Array<{ start: string; end: string }>>();
-  for (const b of gcalBusy) {
-    if (!b.start || !b.end) continue;
-    const startDate = b.start.slice(0, 10);
-    const startTime = b.start.slice(11, 16);
-    const endTime = b.end.slice(11, 16);
-    const list = gcalBusyByDate.get(startDate) || [];
-    list.push({ start: startTime, end: endTime });
-    gcalBusyByDate.set(startDate, list);
-  }
+  // Use the first host's timezone as the reference timezone
+  const firstHostData = hostsData.values().next().value!;
+  const hostTz = firstHostData.hostTz;
 
   // 5. Calculate slots for each date
   const now = nowInTimezone(hostTz);
@@ -217,88 +235,123 @@ export const GET: APIRoute = async ({ url }) => {
 
     const dow = dateToDow(dateStr);
     const dowStr = String(dow);
-
-    let dayRanges: { start: string; end: string }[] | null = null;
-
-    // 5b. Check overrides
-    const override = overridesMap.get(dateStr);
-    if (override) {
-      if (override.ranges === null) {
-        // Blocked day
-        continue;
-      }
-      dayRanges = override.ranges;
-    }
-
-    // 5c. Get weekly hours for day-of-week
-    if (!dayRanges) {
-      const dayConfig = weeklyHours[dowStr];
-      if (!dayConfig || !dayConfig.enabled) continue;
-      dayRanges = dayConfig.ranges;
-    }
-
-    if (!dayRanges || dayRanges.length === 0) continue;
-
-    const dayBookings = bookingsByDate.get(dateStr) || [];
-    const dayBookingCount = dayBookings.length;
     const slots: string[] = [];
 
-    // 5e. Generate slots for each time range
-    for (const range of dayRanges) {
-      let slotStart = range.start;
+    // Collect all unique time ranges across all hosts for this date
+    const allTimeRanges: { start: string; end: string }[] = [];
 
+    for (const [, hd] of hostsData) {
+      let dayRanges: { start: string; end: string }[] | null = null;
+
+      const override = hd.overridesMap.get(dateStr);
+      if (override) {
+        if (override.ranges === null) continue; // This host blocked
+        dayRanges = override.ranges;
+      }
+
+      if (!dayRanges) {
+        const dayConfig = hd.weeklyHours[dowStr];
+        if (!dayConfig || !dayConfig.enabled) continue;
+        dayRanges = dayConfig.ranges;
+      }
+
+      if (dayRanges) {
+        for (const r of dayRanges) {
+          // Add if not already present
+          if (!allTimeRanges.some(existing => existing.start === r.start && existing.end === r.end)) {
+            allTimeRanges.push(r);
+          }
+        }
+      }
+    }
+
+    if (allTimeRanges.length === 0) continue;
+
+    // Sort ranges by start time
+    allTimeRanges.sort((a, b) => a.start.localeCompare(b.start));
+
+    // Generate candidate slot times from all ranges
+    const candidateSlots = new Set<string>();
+    for (const range of allTimeRanges) {
+      let slotStart = range.start;
       while (true) {
         const slotEnd = addMinutes(slotStart, duracion_minutos);
-
-        // Slot must fit within range
         if (timeToMinutes(slotEnd) > timeToMinutes(range.end)) break;
+        candidateSlots.add(slotStart);
+        slotStart = addMinutes(slotStart, duracion_minutos);
+      }
+    }
 
-        const slotStartWithBuffer = addMinutes(slotStart, -(buffer_antes || 0));
-        const slotEndWithBuffer = addMinutes(slotEnd, buffer_despues || 0);
+    // For each candidate slot, check if ANY host is available
+    for (const slotStart of Array.from(candidateSlots).sort()) {
+      const slotEnd = addMinutes(slotStart, duracion_minutos);
 
-        let available = true;
+      // Check aviso minimo
+      if (dateStr === now.date) {
+        const slotMinutes = timeToMinutes(slotStart);
+        if (slotMinutes < nowMinutes + avisoMinutes) continue;
+      } else if (dateStr < now.date) {
+        continue;
+      }
 
-        // Check aviso minimo: slot must be > now + aviso_minimo_horas
-        if (dateStr === now.date) {
-          const slotMinutes = timeToMinutes(slotStart);
-          if (slotMinutes < nowMinutes + avisoMinutes) {
-            available = false;
-          }
-        } else if (dateStr < now.date) {
-          available = false;
+      let anyHostAvailable = false;
+
+      for (const [, hd] of hostsData) {
+        // Check if this host has this time range available
+        let dayRanges: { start: string; end: string }[] | null = null;
+        const override = hd.overridesMap.get(dateStr);
+        if (override) {
+          if (override.ranges === null) continue;
+          dayRanges = override.ranges;
         }
+        if (!dayRanges) {
+          const dayConfig = hd.weeklyHours[dowStr];
+          if (!dayConfig || !dayConfig.enabled) continue;
+          dayRanges = dayConfig.ranges;
+        }
+        if (!dayRanges) continue;
+
+        // Slot must fit within one of the host's ranges
+        const fitsRange = dayRanges.some(
+          (r) => slotStart >= r.start && timeToMinutes(slotEnd) <= timeToMinutes(r.end),
+        );
+        if (!fitsRange) continue;
+
+        const dayBookings = hd.bookingsByDate.get(dateStr) || [];
 
         // Check max reservas dia
-        if (available && max_reservas_dia && dayBookingCount + slots.length >= max_reservas_dia) {
-          available = false;
-        }
+        if (max_reservas_dia && dayBookings.length >= max_reservas_dia) continue;
 
-        // Check conflicts with existing bookings (with buffers)
-        if (available) {
-          for (const booking of dayBookings) {
-            if (timesOverlap(slotStartWithBuffer, slotEndWithBuffer, booking.hora_inicio, booking.hora_fin)) {
-              available = false;
-              break;
-            }
+        // Check booking conflicts
+        const slotStartWithBuffer = addMinutes(slotStart, -(buffer_antes || 0));
+        const slotEndWithBuffer = addMinutes(slotEnd, buffer_despues || 0);
+        let conflict = false;
+        for (const booking of dayBookings) {
+          if (timesOverlap(slotStartWithBuffer, slotEndWithBuffer, booking.hora_inicio, booking.hora_fin)) {
+            conflict = true;
+            break;
           }
         }
+        if (conflict) continue;
 
-        // Check conflicts with Google Calendar busy times
-        if (available) {
-          const gcalDay = gcalBusyByDate.get(dateStr) || [];
-          for (const busy of gcalDay) {
-            if (timesOverlap(slotStart, slotEnd, busy.start, busy.end)) {
-              available = false;
-              break;
-            }
+        // Check Google Calendar conflicts
+        const gcalDay = hd.gcalBusyByDate.get(dateStr) || [];
+        let gcalConflict = false;
+        for (const busy of gcalDay) {
+          if (timesOverlap(slotStart, slotEnd, busy.start, busy.end)) {
+            gcalConflict = true;
+            break;
           }
         }
+        if (gcalConflict) continue;
 
-        if (available) {
-          slots.push(slotStart);
-        }
+        // This host is available for this slot
+        anyHostAvailable = true;
+        break;
+      }
 
-        slotStart = addMinutes(slotStart, duracion_minutos);
+      if (anyHostAvailable) {
+        slots.push(slotStart);
       }
     }
 
