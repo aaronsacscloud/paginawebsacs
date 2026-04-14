@@ -1067,10 +1067,15 @@ function QuestionsManager({ eventTypeId }: { eventTypeId: string }) {
   };
 
   const toggleRequired = async (q: any) => {
+    const newRequired = !q.required;
+    // When toggling, move to end of the new group
+    const targetGroup = newRequired ? requiredQs : optionalQs;
+    const maxOrden = targetGroup.length > 0 ? Math.max(...targetGroup.map((x: any) => x.orden)) : 0;
+    const newOrden = newRequired ? maxOrden + 1 : 100 + maxOrden + 1; // Opcionales empiezan en 100+
     await fetch('/api/scheduling/questions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'update', id: q.id, required: !q.required }),
+      body: JSON.stringify({ action: 'update', id: q.id, required: newRequired, orden: newOrden }),
     });
     load();
   };
@@ -1085,12 +1090,17 @@ function QuestionsManager({ eventTypeId }: { eventTypeId: string }) {
     load();
   };
 
+  // Split questions into required and optional groups
+  const requiredQs = questions.filter((q: any) => q.required);
+  const optionalQs = questions.filter((q: any) => !q.required);
+
   const moveQuestion = async (q: any, direction: 'up' | 'down') => {
-    const idx = questions.findIndex((x: any) => x.id === q.id);
+    // Only move within same group (required or optional)
+    const group = q.required ? requiredQs : optionalQs;
+    const idx = group.findIndex((x: any) => x.id === q.id);
     const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= questions.length) return;
-    const other = questions[swapIdx];
-    // Swap orden values
+    if (swapIdx < 0 || swapIdx >= group.length) return;
+    const other = group[swapIdx];
     await Promise.all([
       fetch('/api/scheduling/questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update', id: q.id, orden: other.orden }) }),
       fetch('/api/scheduling/questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update', id: other.id, orden: q.orden }) }),
@@ -1098,7 +1108,42 @@ function QuestionsManager({ eventTypeId }: { eventTypeId: string }) {
     load();
   };
 
+  const canMoveUp = (q: any) => {
+    const group = q.required ? requiredQs : optionalQs;
+    return group.findIndex((x: any) => x.id === q.id) > 0;
+  };
+  const canMoveDown = (q: any) => {
+    const group = q.required ? requiredQs : optionalQs;
+    return group.findIndex((x: any) => x.id === q.id) < group.length - 1;
+  };
+
   const TIPO_LABELS: Record<string, string> = { text: 'Texto', textarea: 'Texto largo', select: 'Selección', radio: 'Radio', checkbox: 'Checkbox', number: 'Número', phone: 'Teléfono' };
+
+  const renderQuestionRow = (q: any) => (
+    <div key={q.id} style={{
+      display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+      background: q.activo ? '#fff' : '#fafafa', borderRadius: 8, border: '1px solid #f0f0f0',
+      opacity: q.activo ? 1 : 0.5,
+    }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 0, flexShrink: 0 }}>
+        <button onClick={() => moveQuestion(q, 'up')} disabled={!canMoveUp(q)}
+          style={{ background: 'none', border: 'none', cursor: canMoveUp(q) ? 'pointer' : 'default', color: canMoveUp(q) ? '#999' : '#e0e0e0', fontSize: '0.75rem', padding: '0 2px', lineHeight: 1 }}>▲</button>
+        <button onClick={() => moveQuestion(q, 'down')} disabled={!canMoveDown(q)}
+          style={{ background: 'none', border: 'none', cursor: canMoveDown(q) ? 'pointer' : 'default', color: canMoveDown(q) ? '#999' : '#e0e0e0', fontSize: '0.75rem', padding: '0 2px', lineHeight: 1 }}>▼</button>
+      </div>
+      <div onClick={() => toggleVisible(q)} style={{ width: 32, height: 18, borderRadius: 9, cursor: 'pointer', background: q.activo ? '#2AB5A0' : '#ddd', position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
+        <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2, left: q.activo ? 16 : 2, transition: 'left 0.2s' }} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#1a1a1a' }}>{q.label}</div>
+        <div style={{ fontSize: '0.625rem', color: '#999' }}>{TIPO_LABELS[q.tipo] || q.tipo}{q.options ? ` (${q.options.length} opciones)` : ''}</div>
+      </div>
+      <button onClick={() => toggleRequired(q)} style={{ padding: '2px 8px', borderRadius: 10, fontSize: '0.5625rem', fontWeight: 700, cursor: 'pointer', border: 'none', background: q.required ? '#4B7BE5' : '#f0f0f0', color: q.required ? '#fff' : '#999' }}>
+        {q.required ? 'Obligatorio' : 'Opcional'}
+      </button>
+      <button onClick={() => removeQuestion(q.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: '1rem', padding: '0 4px' }}>×</button>
+    </div>
+  );
 
   return (
     <div style={{ marginTop: 12, padding: '12px 0 0', borderTop: '1px solid #f0f0f0' }}>
@@ -1118,58 +1163,25 @@ function QuestionsManager({ eventTypeId }: { eventTypeId: string }) {
       ) : questions.length === 0 && !showAdd ? (
         <div style={{ fontSize: '0.8125rem', color: '#bbb', padding: '12px 0' }}>Sin campos adicionales. Agrega uno.</div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {questions.map((q, idx) => (
-            <div key={q.id} style={{
-              display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
-              background: q.activo ? '#fff' : '#fafafa', borderRadius: 8, border: '1px solid #f0f0f0',
-              opacity: q.activo ? 1 : 0.5,
-            }}>
-              {/* Order arrows */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 0, flexShrink: 0 }}>
-                <button
-                  onClick={() => moveQuestion(q, 'up')}
-                  disabled={idx === 0}
-                  style={{ background: 'none', border: 'none', cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? '#e0e0e0' : '#999', fontSize: '0.75rem', padding: '0 2px', lineHeight: 1 }}
-                >▲</button>
-                <button
-                  onClick={() => moveQuestion(q, 'down')}
-                  disabled={idx === questions.length - 1}
-                  style={{ background: 'none', border: 'none', cursor: idx === questions.length - 1 ? 'default' : 'pointer', color: idx === questions.length - 1 ? '#e0e0e0' : '#999', fontSize: '0.75rem', padding: '0 2px', lineHeight: 1 }}
-                >▼</button>
+        <div>
+          {/* Required fields group */}
+          {requiredQs.length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: '0.5625rem', fontWeight: 700, color: '#4B7BE5', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 6 }}>Obligatorios</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {requiredQs.map(q => renderQuestionRow(q))}
               </div>
-              {/* Visible toggle */}
-              <div
-                onClick={() => toggleVisible(q)}
-                style={{
-                  width: 32, height: 18, borderRadius: 9, cursor: 'pointer',
-                  background: q.activo ? '#2AB5A0' : '#ddd', position: 'relative', flexShrink: 0,
-                  transition: 'background 0.2s',
-                }}
-              >
-                <div style={{
-                  width: 14, height: 14, borderRadius: '50%', background: '#fff',
-                  position: 'absolute', top: 2, left: q.activo ? 16 : 2, transition: 'left 0.2s',
-                }} />
-              </div>
-              {/* Label + tipo */}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#1a1a1a' }}>{q.label}</div>
-                <div style={{ fontSize: '0.625rem', color: '#999' }}>{TIPO_LABELS[q.tipo] || q.tipo}{q.options ? ` (${q.options.length} opciones)` : ''}</div>
-              </div>
-              {/* Required toggle */}
-              <button
-                onClick={() => toggleRequired(q)}
-                style={{
-                  padding: '2px 8px', borderRadius: 10, fontSize: '0.5625rem', fontWeight: 700, cursor: 'pointer', border: 'none',
-                  background: q.required ? '#4B7BE5' : '#f0f0f0',
-                  color: q.required ? '#fff' : '#999',
-                }}
-              >{q.required ? 'Obligatorio' : 'Opcional'}</button>
-              {/* Delete */}
-              <button onClick={() => removeQuestion(q.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: '1rem', padding: '0 4px' }}>×</button>
             </div>
-          ))}
+          )}
+          {/* Optional fields group */}
+          {optionalQs.length > 0 && (
+            <div>
+              <div style={{ fontSize: '0.5625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 6 }}>Opcionales</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {optionalQs.map(q => renderQuestionRow(q))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

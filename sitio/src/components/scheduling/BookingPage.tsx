@@ -972,7 +972,7 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
         </div>
 
         {/* All configurable fields from booking_questions */}
-        {questions.filter(q => q.activo !== false).map(q => (
+        {[...questions.filter(q => q.activo !== false && q.required), ...questions.filter(q => q.activo !== false && !q.required)].map(q => (
           <div key={q.id} style={styles.fieldGroup}>
             <label style={styles.label}>{q.label}{q.required ? ' *' : ''}</label>
             {(q.tipo === 'text' || q.tipo === 'phone' || q.tipo === 'number') && (
