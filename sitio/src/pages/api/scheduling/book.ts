@@ -192,7 +192,7 @@ export const POST: APIRoute = async ({ request }) => {
         utm_medium: utm_medium || null,
         utm_campaign: utm_campaign || null,
         giro: giro || null,
-        sucursales_interes: sucursales || null,
+        sucursales_interes: parseInt(String(sucursales)) || null,
       })
       .select('id')
       .single();
@@ -218,7 +218,7 @@ export const POST: APIRoute = async ({ request }) => {
         .insert({
           nombre: empresa,
           giro: giro || null,
-          sucursales: sucursales || 1,
+          sucursales: parseInt(String(sucursales)) || 1,
         })
         .select('id')
         .single();

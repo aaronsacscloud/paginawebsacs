@@ -1,10 +1,25 @@
-import { useState } from 'react';
+import { useState, Component } from 'react';
+import type { ReactNode } from 'react';
 import PipelineTab from './crm/PipelineTab';
 import DealsTab from './crm/DealsTab';
 import AutomationsTab from './crm/AutomationsTab';
 import SchedulingTab from './crm/SchedulingTab';
 import ContactProfile from './crm/ContactProfile';
 import RevenueHub from './RevenueHub';
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
+  state = { error: null as string | null };
+  static getDerivedStateFromError(error: Error) { return { error: error.message }; }
+  render() {
+    if (this.state.error) return (
+      <div style={{ padding: 48, textAlign: 'center', color: '#E54B4B' }}>
+        <h3>Error en el componente</h3>
+        <pre style={{ fontSize: '0.75rem', color: '#888', marginTop: 12, textAlign: 'left', maxWidth: 600, margin: '12px auto', background: '#f5f5f5', padding: 16, borderRadius: 8, overflow: 'auto' }}>{this.state.error}</pre>
+      </div>
+    );
+    return this.props.children;
+  }
+}
 
 type Tab = 'pipeline' | 'deals' | 'agenda' | 'automations' | 'clientes' | 'cotizaciones' | 'pagos' | 'dashboard' | 'config';
 
@@ -84,7 +99,7 @@ export default function CrmDashboard() {
       ) : tab === 'agenda' ? (
         <SchedulingTab />
       ) : tab === 'automations' ? (
-        <AutomationsTab />
+        <ErrorBoundary><AutomationsTab /></ErrorBoundary>
       ) : (
         <RevenueHub _initialTab={revenueTab as any} _hideNav={true} />
       )}
