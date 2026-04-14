@@ -40,7 +40,7 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   if (body.action === 'update') {
-    const { id, ...updates } = body;
+    const { id, action: _a, ...updates } = body;
     const { data, error } = await supabase
       .from('booking_questions')
       .update(updates)

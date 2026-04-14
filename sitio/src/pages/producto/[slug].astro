@@ -147,20 +147,6 @@ const isLive = feature.status === 'live' && content;
         </div>
       </section>
 
-      <section class="pf-features-section reveal-section">
-        <div class="container">
-          <div class="pf-features-grid">
-            {content.features.map((f: any, i: number) => (
-              <div class="pf-feature-card reveal-item" style={`--reveal-delay: ${i * 100}ms`}>
-                <div class="pf-feature-icon" set:html={f.icon} />
-                <h3 class="pf-feature-title">{f.title}</h3>
-                <p class="pf-feature-desc">{f.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {content.splits.map((split: any, i: number) => (
         <section class={`pf-split reveal-section${i % 2 !== 0 ? ' pf-split--alt' : ''}`}>
           <div class={`pf-split-inner container${split.imageSide === 'right' ? ' pf-split--reverse' : ''}`}>
