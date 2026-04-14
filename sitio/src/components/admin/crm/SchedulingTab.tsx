@@ -668,6 +668,13 @@ function EventTypeModal({
     slot_interval_minutos: (eventType as any)?.slot_interval_minutos || '',
     modo_escasez: eventType?.routing_rules?.modo_escasez || false,
     mostrar_recurrencia: eventType?.routing_rules?.mostrar_recurrencia || false,
+    oferta_activa: eventType?.routing_rules?.oferta?.mostrar_oferta !== false,
+    trial_dias: eventType?.routing_rules?.oferta?.trial_dias || 7,
+    descuento_pct: eventType?.routing_rules?.oferta?.descuento_pct || 35,
+    migracion_valor: eventType?.routing_rules?.oferta?.migracion_valor || 9000,
+    consultoria_horas: eventType?.routing_rules?.oferta?.consultoria_horas || 3,
+    consultoria_valor: eventType?.routing_rules?.oferta?.consultoria_valor || 8000,
+    _showOferta: false,
     buffer_antes_minutos: eventType?.buffer_antes_minutos || 0,
     buffer_despues_minutos: eventType?.buffer_despues_minutos || 0,
     aviso_minimo_horas: eventType?.aviso_minimo_horas || 2,
@@ -723,6 +730,16 @@ function EventTypeModal({
         slot_interval_minutos: form.slot_interval_minutos ? Number(form.slot_interval_minutos) : null,
         modo_escasez: form.modo_escasez || false,
         mostrar_recurrencia: form.mostrar_recurrencia || false,
+        oferta: {
+          mostrar_oferta: form.oferta_activa !== false,
+          trial_dias: form.trial_dias || 7,
+          descuento_pct: form.descuento_pct || 35,
+          descuento_plan: 'anual',
+          migracion_gratis: true,
+          migracion_valor: form.migracion_valor || 9000,
+          consultoria_horas: form.consultoria_horas || 3,
+          consultoria_valor: form.consultoria_valor || 8000,
+        },
       },
     };
 
@@ -877,6 +894,50 @@ function EventTypeModal({
             <input type="checkbox" checked={form.mostrar_recurrencia || false} onChange={e => updateForm('mostrar_recurrencia', e.target.checked)} style={{ accentColor: '#4B7BE5' }} />
             Permitir repetir reunión (recurrencia semanal/quincenal)
           </label>
+        </div>
+
+        {/* ── Offer Configuration ── */}
+        <div style={{ marginBottom: 16, border: '1px solid #f0f0f0', borderRadius: 10, overflow: 'hidden' }}>
+          <button
+            onClick={() => updateForm('_showOferta', !form._showOferta)}
+            style={{ width: '100%', padding: '12px 16px', background: '#fff', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: 'inherit' }}
+          >
+            <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1a1a1a' }}>Oferta post-agendamiento</span>
+            <span style={{ color: '#999', fontSize: '0.75rem' }}>{form._showOferta ? '▲' : '▼'}</span>
+          </button>
+          {form._showOferta && (
+            <div style={{ padding: '0 16px 16px' }}>
+              <div style={{ fontSize: '0.6875rem', color: '#999', marginBottom: 12 }}>Se muestra al cliente después de confirmar su cita</div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.8125rem', color: '#555', marginBottom: 12 }}>
+                <input type="checkbox" checked={form.oferta_activa !== false} onChange={e => updateForm('oferta_activa', e.target.checked)} style={{ accentColor: '#4B7BE5' }} />
+                Mostrar oferta especial
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                <div>
+                  <label style={label}>Días de prueba</label>
+                  <input type="number" value={form.trial_dias || 7} onChange={e => updateForm('trial_dias', Number(e.target.value))} style={input} />
+                </div>
+                <div>
+                  <label style={label}>% Descuento</label>
+                  <input type="number" value={form.descuento_pct || 35} onChange={e => updateForm('descuento_pct', Number(e.target.value))} style={input} />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                <div>
+                  <label style={label}>Valor migración ($)</label>
+                  <input type="number" value={form.migracion_valor || 9000} onChange={e => updateForm('migracion_valor', Number(e.target.value))} style={input} />
+                </div>
+                <div>
+                  <label style={label}>Horas consultoría</label>
+                  <input type="number" value={form.consultoria_horas || 3} onChange={e => updateForm('consultoria_horas', Number(e.target.value))} style={input} />
+                </div>
+              </div>
+              <div>
+                <label style={label}>Valor consultoría ($)</label>
+                <input type="number" value={form.consultoria_valor || 8000} onChange={e => updateForm('consultoria_valor', Number(e.target.value))} style={input} />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── Email Customization Section ── */}
