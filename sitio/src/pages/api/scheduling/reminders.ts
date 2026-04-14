@@ -92,7 +92,7 @@ export const GET: APIRoute = async ({ url }) => {
       if ((booking as any).invitee_whatsapp) {
         try {
           const baseUrl = import.meta.env.SITE || 'https://www.sacscloud.com';
-          await fetch(`${baseUrl}/api/scheduling/sms/send`, {
+          await fetch(`${baseUrl}/api/kapso/send`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -189,7 +189,7 @@ export const GET: APIRoute = async ({ url }) => {
       if ((booking as any).invitee_whatsapp) {
         try {
           const baseUrl = import.meta.env.SITE || 'https://www.sacscloud.com';
-          await fetch(`${baseUrl}/api/scheduling/sms/send`, {
+          await fetch(`${baseUrl}/api/kapso/send`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

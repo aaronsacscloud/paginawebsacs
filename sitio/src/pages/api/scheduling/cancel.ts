@@ -209,7 +209,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         suggestionsText,
       ].join('\n');
 
-      await fetch(`${baseUrl}/api/scheduling/sms/send`, {
+      await fetch(`${baseUrl}/api/kapso/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

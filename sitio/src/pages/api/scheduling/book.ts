@@ -594,7 +594,7 @@ export const POST: APIRoute = async ({ request }) => {
       ].filter(Boolean).join('\n');
 
       const baseUrl = import.meta.env.SITE || 'https://www.sacscloud.com';
-      await fetch(`${baseUrl}/api/scheduling/sms/send`, {
+      await fetch(`${baseUrl}/api/kapso/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: whatsapp, message: smsMessage, channel: 'whatsapp' }),

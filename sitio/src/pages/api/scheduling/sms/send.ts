@@ -14,7 +14,7 @@ export const prerender = false;
  *   TWILIO_WHATSAPP_NUMBER (for WhatsApp, e.g., whatsapp:+15551234567)
  *
  * Usage:
- *   POST /api/scheduling/sms/send
+ *   POST /api/kapso/send
  *   Body: { to: "+525512345678", message: "...", channel: "sms" | "whatsapp" }
  *
  * Twilio integration code (uncomment when ready):
