@@ -1,0 +1,36 @@
+---
+export const prerender = false;
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import BookingPage from '../../components/scheduling/BookingPage';
+import { supabase } from '../../lib/supabase';
+
+const { slug } = Astro.params;
+
+// Load event type
+const { data: eventType } = await supabase
+  .from('event_types')
+  .select('*, team_members(*)')
+  .eq('slug', slug)
+  .eq('activo', true)
+  .single();
+
+if (!eventType) return Astro.redirect('/404');
+
+// Load custom questions
+const { data: questions } = await supabase
+  .from('booking_questions')
+  .select('*')
+  .eq('event_type_id', eventType.id)
+  .eq('activo', true)
+  .order('orden');
+---
+
+<BaseLayout title={`Agendar ${eventType.nombre} — Sacs`} description={eventType.descripcion || `Agenda tu ${eventType.nombre} con el equipo de Sacs`} noindex={true}>
+  <BookingPage client:load eventType={eventType} questions={questions || []} />
+</BaseLayout>
+
+<style is:global>
+  /* Hide website nav/footer for clean booking experience */
+  .nav, .wa-bar, footer { display: none !important; }
+  main { padding: 0 !important; margin: 0 !important; }
+</style>

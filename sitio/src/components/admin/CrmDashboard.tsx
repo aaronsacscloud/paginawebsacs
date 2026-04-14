@@ -2,14 +2,16 @@ import { useState } from 'react';
 import PipelineTab from './crm/PipelineTab';
 import DealsTab from './crm/DealsTab';
 import AutomationsTab from './crm/AutomationsTab';
+import SchedulingTab from './crm/SchedulingTab';
 import ContactProfile from './crm/ContactProfile';
 import RevenueHub from './RevenueHub';
 
-type Tab = 'pipeline' | 'deals' | 'automations' | 'clientes' | 'cotizaciones' | 'pagos' | 'dashboard' | 'config';
+type Tab = 'pipeline' | 'deals' | 'agenda' | 'automations' | 'clientes' | 'cotizaciones' | 'pagos' | 'dashboard' | 'config';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'pipeline', label: 'Contactos' },
   { id: 'deals', label: 'Deals' },
+  { id: 'agenda', label: 'Agenda' },
   { id: 'automations', label: 'Automatizaciones' },
   { id: 'clientes', label: 'Clientes' },
   { id: 'cotizaciones', label: 'Cotizaciones' },
@@ -79,6 +81,8 @@ export default function CrmDashboard() {
         <PipelineTab />
       ) : tab === 'deals' ? (
         <DealsTab />
+      ) : tab === 'agenda' ? (
+        <SchedulingTab />
       ) : tab === 'automations' ? (
         <AutomationsTab />
       ) : (

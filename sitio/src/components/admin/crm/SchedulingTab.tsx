@@ -1,0 +1,1303 @@
+import { useState, useEffect } from 'react';
+
+// ─── Types ───
+interface EventType {
+  id: string;
+  nombre: string;
+  slug: string;
+  descripcion: string | null;
+  duracion_minutos: number;
+  buffer_antes_minutos: number;
+  buffer_despues_minutos: number;
+  aviso_minimo_horas: number;
+  max_reservas_dia: number | null;
+  max_dias_adelanto: number;
+  tipo_reunion: string;
+  ubicacion_tipo: string;
+  color: string;
+  owner_id: string | null;
+  activo: boolean;
+}
+
+interface Booking {
+  id: string;
+  created_at: string;
+  fecha: string;
+  hora_inicio: string;
+  hora_fin: string;
+  invitee_nombre: string;
+  invitee_email: string;
+  invitee_whatsapp: string | null;
+  invitee_empresa: string | null;
+  estado: string;
+  google_meet_link: string | null;
+  contact_id: string | null;
+  deal_id: string | null;
+  notas?: string | null;
+  answers?: Record<string, string> | null;
+  event_types?: { nombre: string; duracion_minutos: number; color: string };
+}
+
+interface AvailabilitySlot {
+  dia_semana: number; // 0=Lun, 1=Mar ... 6=Dom
+  hora_inicio: string;
+  hora_fin: string;
+  activo: boolean;
+}
+
+interface AvailabilityOverride {
+  id: string;
+  fecha: string;
+  tipo: 'bloqueo' | 'especial';
+  hora_inicio: string | null;
+  hora_fin: string | null;
+}
+
+interface BookingQuestion {
+  id: string;
+  event_type_id: string;
+  tipo: string;
+  label: string;
+  placeholder: string | null;
+  required: boolean;
+  options: string[] | null;
+  orden: number;
+  activo: boolean;
+}
+
+// ─── Constants ───
+const DIA_LABELS = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo'];
+const ESTADO_LABELS: Record<string, string> = {
+  pendiente: 'Pendiente',
+  confirmada: 'Confirmada',
+  realizada: 'Realizada',
+  no_show: 'No show',
+  cancelada: 'Cancelada',
+  reagendada: 'Reagendada',
+};
+const ESTADO_COLORS: Record<string, string> = {
+  pendiente: '#E8A838',
+  confirmada: '#4B7BE5',
+  realizada: '#2e7d32',
+  no_show: '#DC2626',
+  cancelada: '#999',
+  reagendada: '#6C5CE7',
+};
+const DURATION_OPTIONS = [15, 30, 45, 60];
+const BUFFER_OPTIONS = [0, 5, 10, 15];
+const AVISO_OPTIONS = [1, 2, 4, 8, 24];
+const MAX_DIAS_OPTIONS = [7, 14, 30, 60];
+const UBICACION_OPTIONS = [
+  { value: 'google_meet', label: 'Google Meet' },
+  { value: 'zoom', label: 'Zoom' },
+  { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'telefono', label: 'Telefono' },
+  { value: 'presencial', label: 'Presencial' },
+];
+const PRESET_COLORS = ['#4B7BE5', '#2AB5A0', '#6C5CE7', '#E8A838', '#DC2626', '#059669'];
+
+const MONTH_NAMES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
+
+// ─── Shared Styles ───
+const btn: React.CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.8125rem',
+  fontWeight: 600, padding: '8px 14px', borderRadius: 8, border: 'none',
+  cursor: 'pointer', fontFamily: 'inherit',
+};
+const input: React.CSSProperties = {
+  width: '100%', padding: '10px 12px', fontSize: '0.8125rem',
+  border: '1px solid #e0e0e0', borderRadius: 8, outline: 'none',
+  fontFamily: 'inherit', marginBottom: 8, boxSizing: 'border-box' as const,
+};
+const selectStyle: React.CSSProperties = {
+  ...input,
+  appearance: 'none' as const,
+  backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")`,
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'right 12px center',
+  paddingRight: 32,
+};
+const label: React.CSSProperties = {
+  display: 'block', fontSize: '0.75rem', fontWeight: 600,
+  color: '#555', marginBottom: 4,
+};
+const td: React.CSSProperties = { padding: '10px 14px', color: '#555', fontSize: '0.8125rem' };
+const thStyle: React.CSSProperties = {
+  padding: '10px 14px', fontSize: '0.6875rem', fontWeight: 700,
+  color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.06em',
+  textAlign: 'left' as const, borderBottom: '1px solid #f0f0f0',
+};
+const card: React.CSSProperties = {
+  background: '#fff', borderRadius: 12, border: '1px solid #f0f0f0',
+  padding: 20, marginBottom: 12,
+};
+const modalOverlay: React.CSSProperties = {
+  position: 'fixed' as const, inset: 0, background: 'rgba(0,0,0,0.3)',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  zIndex: 1000, padding: 16,
+};
+const modalContent: React.CSSProperties = {
+  background: '#fff', borderRadius: 14, maxWidth: 520, width: '100%',
+  maxHeight: '90vh', overflowY: 'auto' as const, padding: 28,
+};
+
+// ─── Helpers ───
+function fmtDate(d: string): string {
+  if (!d) return '—';
+  const [y, m, day] = d.split('-').map(Number);
+  const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  return `${day} ${months[m - 1]} ${y}`;
+}
+
+function fmtTime(t: string): string {
+  if (!t) return '—';
+  const [h, m] = t.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+
+function slugify(s: string): string {
+  return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+// ─── Main Component ───
+export default function SchedulingTab() {
+  const [subTab, setSubTab] = useState<'reservas' | 'tipos' | 'disponibilidad'>('reservas');
+
+  const subTabs = [
+    { id: 'reservas' as const, label: 'Reservas' },
+    { id: 'tipos' as const, label: 'Tipos de Evento' },
+    { id: 'disponibilidad' as const, label: 'Disponibilidad' },
+  ];
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      {/* Sub-tab nav */}
+      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #f0f0f0', background: '#fff', padding: '0 24px' }}>
+        {subTabs.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setSubTab(t.id)}
+            style={{
+              ...btn,
+              background: 'none',
+              borderRadius: 0,
+              padding: '12px 16px',
+              color: subTab === t.id ? '#1A1A1A' : '#999',
+              fontWeight: subTab === t.id ? 700 : 500,
+              borderBottom: subTab === t.id ? '2px solid #4B7BE5' : '2px solid transparent',
+              marginBottom: -1,
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Sub-tab content */}
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        {subTab === 'reservas' && <ReservasView />}
+        {subTab === 'tipos' && <TiposEventoView />}
+        {subTab === 'disponibilidad' && <DisponibilidadView />}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// Sub-tab 1: Reservas
+// ═══════════════════════════════════════════════════════════
+function ReservasView() {
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [eventTypes, setEventTypes] = useState<EventType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Filters
+  const [filterEstado, setFilterEstado] = useState('');
+  const [filterEventType, setFilterEventType] = useState('');
+  const [filterFrom, setFilterFrom] = useState('');
+  const [filterTo, setFilterTo] = useState('');
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (filterEstado) params.set('estado', filterEstado);
+      if (filterEventType) params.set('event_type_id', filterEventType);
+      if (filterFrom) params.set('from', filterFrom);
+      if (filterTo) params.set('to', filterTo);
+
+      const [bRes, etRes] = await Promise.all([
+        fetch(`/api/scheduling/bookings?${params.toString()}`),
+        fetch('/api/scheduling/event-types'),
+      ]);
+      const bData = await bRes.json();
+      const etData = await etRes.json();
+      setBookings(Array.isArray(bData) ? bData : []);
+      setEventTypes(Array.isArray(etData) ? etData : []);
+    } catch {
+      // silent
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, [filterEstado, filterEventType, filterFrom, filterTo]);
+
+  const updateBookingEstado = async (bookingId: string, estado: string) => {
+    await fetch('/api/scheduling/bookings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: bookingId, estado }),
+    });
+    load();
+  };
+
+  const cancelBooking = async (bookingId: string) => {
+    await fetch('/api/scheduling/cancel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ booking_id: bookingId, admin: 1 }),
+    });
+    load();
+  };
+
+  // Stats
+  const total = bookings.length;
+  const proximas = bookings.filter(b => b.estado === 'pendiente' || b.estado === 'confirmada').length;
+  const realizadas = bookings.filter(b => b.estado === 'realizada').length;
+  const noShow = bookings.filter(b => b.estado === 'no_show').length;
+  const canceladas = bookings.filter(b => b.estado === 'cancelada').length;
+
+  return (
+    <div>
+      {/* Stats */}
+      <div style={{ display: 'flex', gap: 16, padding: '16px 24px', background: '#fff', borderBottom: '1px solid #f0f0f0', flexWrap: 'wrap' }}>
+        {[
+          { l: 'Total', v: total, c: '#1A1A1A' },
+          { l: 'Proximas', v: proximas, c: '#4B7BE5' },
+          { l: 'Realizadas', v: realizadas, c: '#2e7d32' },
+          { l: 'No-show', v: noShow, c: '#DC2626' },
+          { l: 'Canceladas', v: canceladas, c: '#999' },
+        ].map(s => (
+          <div key={s.l} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: '1rem', fontWeight: 800, color: s.c }}>{s.v}</span>
+            <span style={{ fontSize: '0.625rem', color: '#999', fontWeight: 500 }}>{s.l}</span>
+          </div>
+        ))}
+        <div style={{ flex: 1 }} />
+        <button onClick={load} style={{ ...btn, background: '#f5f5f5', color: '#555' }}>↻</button>
+      </div>
+
+      {/* Filters */}
+      <div style={{ display: 'flex', gap: 8, padding: '12px 24px', background: '#FAFAF8', borderBottom: '1px solid #f0f0f0', flexWrap: 'wrap', alignItems: 'center' }}>
+        <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} style={{ ...selectStyle, width: 'auto', marginBottom: 0, minWidth: 130 }}>
+          <option value="">Todos los estados</option>
+          {Object.entries(ESTADO_LABELS).map(([k, v]) => (
+            <option key={k} value={k}>{v}</option>
+          ))}
+        </select>
+        <select value={filterEventType} onChange={e => setFilterEventType(e.target.value)} style={{ ...selectStyle, width: 'auto', marginBottom: 0, minWidth: 150 }}>
+          <option value="">Todos los tipos</option>
+          {eventTypes.map(et => (
+            <option key={et.id} value={et.id}>{et.nombre}</option>
+          ))}
+        </select>
+        <input type="date" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} style={{ ...input, width: 'auto', marginBottom: 0 }} placeholder="Desde" />
+        <input type="date" value={filterTo} onChange={e => setFilterTo(e.target.value)} style={{ ...input, width: 'auto', marginBottom: 0 }} placeholder="Hasta" />
+      </div>
+
+      {/* Table */}
+      <div style={{ padding: '16px 24px' }}>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 48, color: '#bbb' }}>Cargando...</div>
+        ) : bookings.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 48, color: '#bbb' }}>No hay reservas</div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' as const }}>
+            <thead>
+              <tr>
+                <th style={thStyle}>Fecha</th>
+                <th style={thStyle}>Hora</th>
+                <th style={thStyle}>Invitado</th>
+                <th style={thStyle}>Empresa</th>
+                <th style={thStyle}>Tipo</th>
+                <th style={thStyle}>Estado</th>
+                <th style={thStyle}>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bookings.map(b => (
+                <BookingRow
+                  key={b.id}
+                  booking={b}
+                  expanded={expandedId === b.id}
+                  onToggle={() => setExpandedId(expandedId === b.id ? null : b.id)}
+                  onMarkRealizada={() => updateBookingEstado(b.id, 'realizada')}
+                  onMarkNoShow={() => updateBookingEstado(b.id, 'no_show')}
+                  onCancel={() => cancelBooking(b.id)}
+                />
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function BookingRow({
+  booking: b,
+  expanded,
+  onToggle,
+  onMarkRealizada,
+  onMarkNoShow,
+  onCancel,
+}: {
+  booking: Booking;
+  expanded: boolean;
+  onToggle: () => void;
+  onMarkRealizada: () => void;
+  onMarkNoShow: () => void;
+  onCancel: () => void;
+}) {
+  const estadoColor = ESTADO_COLORS[b.estado] || '#999';
+  const estadoLabel = ESTADO_LABELS[b.estado] || b.estado;
+  const isActionable = b.estado === 'pendiente' || b.estado === 'confirmada';
+
+  return (
+    <>
+      <tr
+        onClick={onToggle}
+        style={{ cursor: 'pointer', borderBottom: expanded ? 'none' : '1px solid #f0f0f0' }}
+      >
+        <td style={td}>{fmtDate(b.fecha)}</td>
+        <td style={td}>{fmtTime(b.hora_inicio)}</td>
+        <td style={{ ...td, fontWeight: 600, color: '#1A1A1A' }}>{b.invitee_nombre}</td>
+        <td style={td}>{b.invitee_empresa || '—'}</td>
+        <td style={td}>
+          {b.event_types && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: b.event_types.color }} />
+              {b.event_types.nombre}
+            </span>
+          )}
+        </td>
+        <td style={td}>
+          <span style={{
+            display: 'inline-block',
+            padding: '3px 10px',
+            borderRadius: 6,
+            fontSize: '0.6875rem',
+            fontWeight: 700,
+            background: estadoColor + '18',
+            color: estadoColor,
+          }}>
+            {estadoLabel}
+          </span>
+        </td>
+        <td style={td} onClick={(e) => e.stopPropagation()}>
+          {isActionable && (
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button onClick={onMarkRealizada} style={{ ...btn, background: '#ECFDF5', color: '#059669', padding: '4px 8px', fontSize: '0.6875rem' }}>
+                Realizada
+              </button>
+              <button onClick={onMarkNoShow} style={{ ...btn, background: '#FEF2F2', color: '#DC2626', padding: '4px 8px', fontSize: '0.6875rem' }}>
+                No show
+              </button>
+              <button onClick={onCancel} style={{ ...btn, background: '#f5f5f5', color: '#999', padding: '4px 8px', fontSize: '0.6875rem' }}>
+                Cancelar
+              </button>
+            </div>
+          )}
+        </td>
+      </tr>
+      {expanded && (
+        <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
+          <td colSpan={7} style={{ padding: '12px 14px', background: '#FAFAF8' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, fontSize: '0.8125rem' }}>
+              <div>
+                <span style={{ color: '#999', fontWeight: 600, fontSize: '0.6875rem', display: 'block', marginBottom: 2 }}>EMAIL</span>
+                <span style={{ color: '#555' }}>{b.invitee_email}</span>
+              </div>
+              {b.invitee_whatsapp && (
+                <div>
+                  <span style={{ color: '#999', fontWeight: 600, fontSize: '0.6875rem', display: 'block', marginBottom: 2 }}>WHATSAPP</span>
+                  <span style={{ color: '#555' }}>{b.invitee_whatsapp}</span>
+                </div>
+              )}
+              {b.google_meet_link && (
+                <div>
+                  <span style={{ color: '#999', fontWeight: 600, fontSize: '0.6875rem', display: 'block', marginBottom: 2 }}>GOOGLE MEET</span>
+                  <a href={b.google_meet_link} target="_blank" rel="noopener noreferrer" style={{ color: '#4B7BE5', textDecoration: 'none', fontWeight: 600 }}>
+                    {b.google_meet_link}
+                  </a>
+                </div>
+              )}
+              {b.notas && (
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <span style={{ color: '#999', fontWeight: 600, fontSize: '0.6875rem', display: 'block', marginBottom: 2 }}>NOTAS</span>
+                  <span style={{ color: '#555' }}>{b.notas}</span>
+                </div>
+              )}
+              {b.answers && Object.keys(b.answers).length > 0 && (
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <span style={{ color: '#999', fontWeight: 600, fontSize: '0.6875rem', display: 'block', marginBottom: 4 }}>RESPUESTAS</span>
+                  {Object.entries(b.answers).map(([k, v]) => (
+                    <div key={k} style={{ color: '#555', marginBottom: 2 }}>
+                      <strong>{k}:</strong> {v}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// Sub-tab 2: Tipos de Evento
+// ═══════════════════════════════════════════════════════════
+function TiposEventoView() {
+  const [eventTypes, setEventTypes] = useState<EventType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState<EventType | null>(null);
+  const [showQuestionsFor, setShowQuestionsFor] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/scheduling/event-types');
+      const data = await res.json();
+      setEventTypes(Array.isArray(data) ? data : []);
+    } catch {
+      // silent
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const toggleActivo = async (et: EventType) => {
+    await fetch('/api/scheduling/event-types', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: et.id, activo: !et.activo }),
+    });
+    load();
+  };
+
+  const copyLink = (slug: string) => {
+    const link = `${window.location.origin}/agendar/${slug}`;
+    navigator.clipboard.writeText(link).then(() => {
+      setCopied(slug);
+      setTimeout(() => setCopied(null), 2000);
+    });
+  };
+
+  return (
+    <div style={{ padding: '16px 24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <h3 style={{ margin: 0, fontSize: '0.9375rem', fontWeight: 700, color: '#1A1A1A' }}>Tipos de Evento</h3>
+        <button onClick={() => { setEditing(null); setShowModal(true); }} style={{ ...btn, background: '#1a1a1a', color: '#fff' }}>
+          + Nuevo tipo
+        </button>
+      </div>
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: 48, color: '#bbb' }}>Cargando...</div>
+      ) : eventTypes.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: 48, color: '#bbb' }}>No hay tipos de evento</div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
+          {eventTypes.map(et => (
+            <div key={et.id} style={{ ...card, position: 'relative' as const, opacity: et.activo ? 1 : 0.6 }}>
+              {/* Color bar */}
+              <div style={{ position: 'absolute' as const, top: 0, left: 0, right: 0, height: 4, background: et.color, borderRadius: '12px 12px 0 0' }} />
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 4 }}>
+                <div>
+                  <h4 style={{ margin: '0 0 4px', fontSize: '0.9375rem', fontWeight: 700, color: '#1A1A1A' }}>
+                    {et.nombre}
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '0.75rem', color: '#999' }}>/{et.slug}</p>
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                  <span style={{ fontSize: '0.6875rem', color: '#999' }}>{et.activo ? 'Activo' : 'Inactivo'}</span>
+                  <div
+                    onClick={() => toggleActivo(et)}
+                    style={{
+                      width: 36,
+                      height: 20,
+                      borderRadius: 10,
+                      background: et.activo ? '#4B7BE5' : '#E0E0E0',
+                      position: 'relative' as const,
+                      cursor: 'pointer',
+                      transition: 'background 0.2s',
+                    }}
+                  >
+                    <div style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: '50%',
+                      background: '#fff',
+                      position: 'absolute' as const,
+                      top: 2,
+                      left: et.activo ? 18 : 2,
+                      transition: 'left 0.2s',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+                    }} />
+                  </div>
+                </label>
+              </div>
+
+              {et.descripcion && (
+                <p style={{ margin: '8px 0 0', fontSize: '0.8125rem', color: '#777', lineHeight: 1.4 }}>
+                  {et.descripcion}
+                </p>
+              )}
+
+              <div style={{ display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  fontSize: '0.6875rem', fontWeight: 600, color: '#777',
+                  background: '#f5f5f5', padding: '4px 8px', borderRadius: 6,
+                }}>
+                  {et.duracion_minutos} min
+                </span>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  fontSize: '0.6875rem', fontWeight: 600, color: '#777',
+                  background: '#f5f5f5', padding: '4px 8px', borderRadius: 6,
+                }}>
+                  {UBICACION_OPTIONS.find(u => u.value === et.ubicacion_tipo)?.label || et.ubicacion_tipo}
+                </span>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  fontSize: '0.6875rem', fontWeight: 600, color: '#777',
+                  background: '#f5f5f5', padding: '4px 8px', borderRadius: 6,
+                }}>
+                  {et.max_dias_adelanto}d adelanto
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', gap: 6, marginTop: 16 }}>
+                <button
+                  onClick={() => { setEditing(et); setShowModal(true); }}
+                  style={{ ...btn, background: '#f5f5f5', color: '#555', flex: 1, justifyContent: 'center' }}
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => copyLink(et.slug)}
+                  style={{ ...btn, background: '#EBF1FC', color: '#4B7BE5', flex: 1, justifyContent: 'center' }}
+                >
+                  {copied === et.slug ? 'Copiado!' : 'Copiar link'}
+                </button>
+                <button
+                  onClick={() => setShowQuestionsFor(showQuestionsFor === et.id ? null : et.id)}
+                  style={{ ...btn, background: '#f5f5f5', color: '#555' }}
+                >
+                  Preguntas
+                </button>
+              </div>
+
+              {showQuestionsFor === et.id && (
+                <QuestionsManager eventTypeId={et.id} />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showModal && (
+        <EventTypeModal
+          eventType={editing}
+          onClose={() => { setShowModal(false); setEditing(null); }}
+          onSaved={() => { setShowModal(false); setEditing(null); load(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── Event Type Modal ──
+function EventTypeModal({
+  eventType,
+  onClose,
+  onSaved,
+}: {
+  eventType: EventType | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [form, setForm] = useState({
+    nombre: eventType?.nombre || '',
+    slug: eventType?.slug || '',
+    descripcion: eventType?.descripcion || '',
+    duracion_minutos: eventType?.duracion_minutos || 30,
+    buffer_antes_minutos: eventType?.buffer_antes_minutos || 0,
+    buffer_despues_minutos: eventType?.buffer_despues_minutos || 0,
+    aviso_minimo_horas: eventType?.aviso_minimo_horas || 2,
+    max_reservas_dia: eventType?.max_reservas_dia ?? '',
+    max_dias_adelanto: eventType?.max_dias_adelanto || 30,
+    ubicacion_tipo: eventType?.ubicacion_tipo || 'google_meet',
+    color: eventType?.color || '#4B7BE5',
+  });
+  const [saving, setSaving] = useState(false);
+
+  const updateForm = (field: string, value: string | number) => {
+    setForm(prev => {
+      const updated = { ...prev, [field]: value };
+      if (field === 'nombre' && !eventType) {
+        updated.slug = slugify(value as string);
+      }
+      return updated;
+    });
+  };
+
+  const handleSave = async () => {
+    if (!form.nombre.trim() || !form.slug.trim()) return;
+    setSaving(true);
+
+    const payload: Record<string, unknown> = {
+      nombre: form.nombre,
+      slug: form.slug,
+      descripcion: form.descripcion || null,
+      duracion_minutos: form.duracion_minutos,
+      buffer_antes_minutos: form.buffer_antes_minutos,
+      buffer_despues_minutos: form.buffer_despues_minutos,
+      aviso_minimo_horas: form.aviso_minimo_horas,
+      max_reservas_dia: form.max_reservas_dia === '' ? null : Number(form.max_reservas_dia),
+      max_dias_adelanto: form.max_dias_adelanto,
+      ubicacion_tipo: form.ubicacion_tipo,
+      color: form.color,
+    };
+
+    if (eventType) {
+      payload.id = eventType.id;
+    }
+
+    await fetch('/api/scheduling/event-types', {
+      method: eventType ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    setSaving(false);
+    onSaved();
+  };
+
+  return (
+    <div style={modalOverlay} onClick={onClose}>
+      <div style={modalContent} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#1A1A1A' }}>
+            {eventType ? 'Editar tipo de evento' : 'Nuevo tipo de evento'}
+          </h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.25rem', color: '#999' }}>
+            &times;
+          </button>
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <label style={label}>Nombre *</label>
+          <input value={form.nombre} onChange={e => updateForm('nombre', e.target.value)} style={input} placeholder="Ej: Demo personalizada" />
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <label style={label}>Slug *</label>
+          <input value={form.slug} onChange={e => updateForm('slug', e.target.value)} style={input} placeholder="demo-personalizada" />
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <label style={label}>Descripcion</label>
+          <textarea
+            value={form.descripcion}
+            onChange={e => updateForm('descripcion', e.target.value)}
+            style={{ ...input, resize: 'vertical' as const }}
+            rows={2}
+            placeholder="Descripcion opcional del tipo de evento"
+          />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+          <div>
+            <label style={label}>Duracion (min)</label>
+            <select value={form.duracion_minutos} onChange={e => updateForm('duracion_minutos', Number(e.target.value))} style={selectStyle}>
+              {DURATION_OPTIONS.map(d => <option key={d} value={d}>{d} min</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={label}>Ubicacion</label>
+            <select value={form.ubicacion_tipo} onChange={e => updateForm('ubicacion_tipo', e.target.value)} style={selectStyle}>
+              {UBICACION_OPTIONS.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+          <div>
+            <label style={label}>Buffer antes (min)</label>
+            <select value={form.buffer_antes_minutos} onChange={e => updateForm('buffer_antes_minutos', Number(e.target.value))} style={selectStyle}>
+              {BUFFER_OPTIONS.map(b => <option key={b} value={b}>{b} min</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={label}>Buffer despues (min)</label>
+            <select value={form.buffer_despues_minutos} onChange={e => updateForm('buffer_despues_minutos', Number(e.target.value))} style={selectStyle}>
+              {BUFFER_OPTIONS.map(b => <option key={b} value={b}>{b} min</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
+          <div>
+            <label style={label}>Aviso minimo (hrs)</label>
+            <select value={form.aviso_minimo_horas} onChange={e => updateForm('aviso_minimo_horas', Number(e.target.value))} style={selectStyle}>
+              {AVISO_OPTIONS.map(a => <option key={a} value={a}>{a}h</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={label}>Max reservas/dia</label>
+            <input
+              type="number"
+              value={form.max_reservas_dia}
+              onChange={e => updateForm('max_reservas_dia', e.target.value)}
+              style={input}
+              placeholder="Sin limite"
+              min={0}
+            />
+          </div>
+          <div>
+            <label style={label}>Max dias adelanto</label>
+            <select value={form.max_dias_adelanto} onChange={e => updateForm('max_dias_adelanto', Number(e.target.value))} style={selectStyle}>
+              {MAX_DIAS_OPTIONS.map(d => <option key={d} value={d}>{d} dias</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* Color picker */}
+        <div style={{ marginBottom: 20 }}>
+          <label style={label}>Color</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {PRESET_COLORS.map(c => (
+              <button
+                key={c}
+                onClick={() => updateForm('color', c)}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  background: c,
+                  border: form.color === c ? '3px solid #1A1A1A' : '3px solid transparent',
+                  cursor: 'pointer',
+                  transition: 'border-color 0.15s',
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button onClick={onClose} style={{ ...btn, background: '#f5f5f5', color: '#555' }}>
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving || !form.nombre.trim() || !form.slug.trim()}
+            style={{ ...btn, background: '#1a1a1a', color: '#fff', opacity: saving ? 0.5 : 1 }}
+          >
+            {saving ? 'Guardando...' : eventType ? 'Guardar cambios' : 'Crear tipo'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Questions Manager ──
+function QuestionsManager({ eventTypeId }: { eventTypeId: string }) {
+  const [questions, setQuestions] = useState<BookingQuestion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newQ, setNewQ] = useState({ tipo: 'text', label: '', placeholder: '', required: false, options: '' });
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/scheduling/event-types?id=${eventTypeId}&include=questions`);
+      const data = await res.json();
+      setQuestions(Array.isArray(data.questions) ? data.questions : []);
+    } catch {
+      // silent
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, [eventTypeId]);
+
+  const addQuestion = async () => {
+    if (!newQ.label.trim()) return;
+    await fetch('/api/scheduling/event-types', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'add_question',
+        event_type_id: eventTypeId,
+        tipo: newQ.tipo,
+        label: newQ.label,
+        placeholder: newQ.placeholder || null,
+        required: newQ.required,
+        options: newQ.tipo === 'select' ? newQ.options.split(',').map(o => o.trim()).filter(Boolean) : null,
+      }),
+    });
+    setNewQ({ tipo: 'text', label: '', placeholder: '', required: false, options: '' });
+    setShowAdd(false);
+    load();
+  };
+
+  const removeQuestion = async (questionId: string) => {
+    await fetch('/api/scheduling/event-types', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'remove_question',
+        question_id: questionId,
+      }),
+    });
+    load();
+  };
+
+  return (
+    <div style={{ marginTop: 12, padding: '12px 0 0', borderTop: '1px solid #f0f0f0' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const }}>Preguntas personalizadas</span>
+        <button onClick={() => setShowAdd(!showAdd)} style={{ ...btn, background: '#f5f5f5', color: '#555', padding: '4px 8px', fontSize: '0.6875rem' }}>
+          {showAdd ? 'Cancelar' : '+ Agregar'}
+        </button>
+      </div>
+
+      {loading ? (
+        <div style={{ fontSize: '0.8125rem', color: '#bbb', padding: '8px 0' }}>Cargando...</div>
+      ) : questions.length === 0 && !showAdd ? (
+        <div style={{ fontSize: '0.8125rem', color: '#bbb', padding: '8px 0' }}>Sin preguntas</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {questions.map(q => (
+            <div key={q.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', background: '#FAFAF8', borderRadius: 6 }}>
+              <div>
+                <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#1A1A1A' }}>{q.label}</span>
+                <span style={{ fontSize: '0.6875rem', color: '#999', marginLeft: 6 }}>{q.tipo}{q.required ? ' *' : ''}</span>
+              </div>
+              <button onClick={() => removeQuestion(q.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', fontSize: '0.875rem', padding: '2px 4px' }}>
+                &times;
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showAdd && (
+        <div style={{ marginTop: 8, padding: 12, background: '#FAFAF8', borderRadius: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+            <div>
+              <label style={{ ...label, fontSize: '0.6875rem' }}>Tipo</label>
+              <select value={newQ.tipo} onChange={e => setNewQ(p => ({ ...p, tipo: e.target.value }))} style={{ ...selectStyle, fontSize: '0.75rem', padding: '6px 8px' }}>
+                <option value="text">Texto</option>
+                <option value="textarea">Texto largo</option>
+                <option value="select">Seleccion</option>
+                <option value="checkbox">Checkbox</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ ...label, fontSize: '0.6875rem' }}>Label</label>
+              <input value={newQ.label} onChange={e => setNewQ(p => ({ ...p, label: e.target.value }))} style={{ ...input, fontSize: '0.75rem', padding: '6px 8px' }} placeholder="Pregunta" />
+            </div>
+          </div>
+          {newQ.tipo === 'select' && (
+            <div style={{ marginBottom: 8 }}>
+              <label style={{ ...label, fontSize: '0.6875rem' }}>Opciones (separadas por coma)</label>
+              <input value={newQ.options} onChange={e => setNewQ(p => ({ ...p, options: e.target.value }))} style={{ ...input, fontSize: '0.75rem', padding: '6px 8px' }} placeholder="Opcion 1, Opcion 2, Opcion 3" />
+            </div>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', fontSize: '0.75rem', color: '#555' }}>
+              <input type="checkbox" checked={newQ.required} onChange={e => setNewQ(p => ({ ...p, required: e.target.checked }))} />
+              Obligatoria
+            </label>
+            <button onClick={addQuestion} disabled={!newQ.label.trim()} style={{ ...btn, background: '#4B7BE5', color: '#fff', padding: '4px 10px', fontSize: '0.6875rem', opacity: newQ.label.trim() ? 1 : 0.5 }}>
+              Agregar
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// Sub-tab 3: Disponibilidad
+// ═══════════════════════════════════════════════════════════
+function DisponibilidadView() {
+  const [schedule, setSchedule] = useState<AvailabilitySlot[]>([]);
+  const [overrides, setOverrides] = useState<AvailabilityOverride[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [timezoneDisplay, setTimezoneDisplay] = useState('');
+
+  // Override form
+  const [overrideDate, setOverrideDate] = useState('');
+  const [overrideTipo, setOverrideTipo] = useState<'bloqueo' | 'especial'>('bloqueo');
+  const [overrideStart, setOverrideStart] = useState('09:00');
+  const [overrideEnd, setOverrideEnd] = useState('17:00');
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [avRes, ovRes] = await Promise.all([
+        fetch('/api/scheduling/availability'),
+        fetch('/api/scheduling/availability-overrides'),
+      ]);
+      const avData = await avRes.json();
+      const ovData = await ovRes.json();
+
+      if (Array.isArray(avData) && avData.length > 0) {
+        setSchedule(avData);
+      } else {
+        // Default schedule: Mon-Fri 9-18
+        const defaults: AvailabilitySlot[] = [];
+        for (let i = 0; i < 7; i++) {
+          defaults.push({
+            dia_semana: i,
+            hora_inicio: '09:00',
+            hora_fin: '18:00',
+            activo: i < 5, // Mon-Fri active
+          });
+        }
+        setSchedule(defaults);
+      }
+
+      setOverrides(Array.isArray(ovData) ? ovData : []);
+
+      try {
+        setTimezoneDisplay(Intl.DateTimeFormat().resolvedOptions().timeZone);
+      } catch {
+        setTimezoneDisplay('America/Mexico_City');
+      }
+    } catch {
+      // silent
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const toggleDay = (dia: number) => {
+    setSchedule(prev => prev.map(s =>
+      s.dia_semana === dia ? { ...s, activo: !s.activo } : s,
+    ));
+  };
+
+  const updateSlotTime = (dia: number, field: 'hora_inicio' | 'hora_fin', value: string) => {
+    setSchedule(prev => prev.map(s =>
+      s.dia_semana === dia ? { ...s, [field]: value } : s,
+    ));
+  };
+
+  const addSlot = (dia: number) => {
+    const existing = schedule.filter(s => s.dia_semana === dia);
+    const lastEnd = existing.length > 0 ? existing[existing.length - 1].hora_fin : '09:00';
+    setSchedule(prev => [
+      ...prev,
+      { dia_semana: dia, hora_inicio: lastEnd, hora_fin: '18:00', activo: true },
+    ]);
+  };
+
+  const removeSlot = (dia: number, index: number) => {
+    const slotsForDay = schedule.filter(s => s.dia_semana === dia);
+    if (slotsForDay.length <= 1) return; // Keep at least one
+    const slotToRemove = slotsForDay[index];
+    let removedCount = 0;
+    setSchedule(prev => prev.filter(s => {
+      if (s.dia_semana === dia && s.hora_inicio === slotToRemove.hora_inicio && s.hora_fin === slotToRemove.hora_fin && removedCount === 0) {
+        removedCount++;
+        return false;
+      }
+      return true;
+    }));
+  };
+
+  const saveSchedule = async () => {
+    setSaving(true);
+    await fetch('/api/scheduling/availability', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slots: schedule }),
+    });
+    setSaving(false);
+  };
+
+  const addOverride = async () => {
+    if (!overrideDate) return;
+    const payload: Record<string, unknown> = {
+      fecha: overrideDate,
+      tipo: overrideTipo,
+    };
+    if (overrideTipo === 'especial') {
+      payload.hora_inicio = overrideStart;
+      payload.hora_fin = overrideEnd;
+    }
+
+    await fetch('/api/scheduling/availability-overrides', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    setOverrideDate('');
+    load();
+  };
+
+  const deleteOverride = async (id: string) => {
+    await fetch('/api/scheduling/availability-overrides', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    load();
+  };
+
+  if (loading) {
+    return <div style={{ textAlign: 'center', padding: 48, color: '#bbb' }}>Cargando...</div>;
+  }
+
+  // Group schedule by day
+  const scheduleByDay: Record<number, AvailabilitySlot[]> = {};
+  for (let d = 0; d < 7; d++) {
+    scheduleByDay[d] = schedule.filter(s => s.dia_semana === d);
+    if (scheduleByDay[d].length === 0) {
+      scheduleByDay[d] = [{ dia_semana: d, hora_inicio: '09:00', hora_fin: '18:00', activo: false }];
+    }
+  }
+
+  return (
+    <div style={{ padding: '16px 24px' }}>
+      {/* Timezone display */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        </svg>
+        <span style={{ fontSize: '0.8125rem', color: '#777' }}>Zona horaria: <strong style={{ color: '#1A1A1A' }}>{timezoneDisplay}</strong></span>
+      </div>
+
+      {/* Weekly schedule */}
+      <div style={{ ...card, marginBottom: 24 }}>
+        <h3 style={{ margin: '0 0 16px', fontSize: '0.9375rem', fontWeight: 700, color: '#1A1A1A' }}>
+          Horario semanal
+        </h3>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {[0, 1, 2, 3, 4, 5, 6].map(dia => {
+            const slots = scheduleByDay[dia];
+            const isActive = slots.some(s => s.activo);
+
+            return (
+              <div key={dia} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '8px 0', borderBottom: dia < 6 ? '1px solid #f5f5f5' : 'none' }}>
+                {/* Toggle */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 120 }}>
+                  <div
+                    onClick={() => toggleDay(dia)}
+                    style={{
+                      width: 36,
+                      height: 20,
+                      borderRadius: 10,
+                      background: isActive ? '#4B7BE5' : '#E0E0E0',
+                      position: 'relative' as const,
+                      cursor: 'pointer',
+                      transition: 'background 0.2s',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <div style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: '50%',
+                      background: '#fff',
+                      position: 'absolute' as const,
+                      top: 2,
+                      left: isActive ? 18 : 2,
+                      transition: 'left 0.2s',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+                    }} />
+                  </div>
+                  <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: isActive ? '#1A1A1A' : '#bbb', minWidth: 70 }}>
+                    {DIA_LABELS[dia]}
+                  </span>
+                </div>
+
+                {/* Time ranges */}
+                {isActive ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+                    {slots.filter(s => s.activo).map((slot, idx) => (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <input
+                          type="time"
+                          value={slot.hora_inicio}
+                          onChange={e => {
+                            const newSchedule = [...schedule];
+                            const allForDay = newSchedule.filter(s => s.dia_semana === dia && s.activo);
+                            if (allForDay[idx]) allForDay[idx].hora_inicio = e.target.value;
+                            setSchedule(newSchedule);
+                          }}
+                          style={{ ...input, width: 'auto', marginBottom: 0, fontSize: '0.8125rem', padding: '6px 10px' }}
+                        />
+                        <span style={{ color: '#999', fontSize: '0.8125rem' }}>—</span>
+                        <input
+                          type="time"
+                          value={slot.hora_fin}
+                          onChange={e => {
+                            const newSchedule = [...schedule];
+                            const allForDay = newSchedule.filter(s => s.dia_semana === dia && s.activo);
+                            if (allForDay[idx]) allForDay[idx].hora_fin = e.target.value;
+                            setSchedule(newSchedule);
+                          }}
+                          style={{ ...input, width: 'auto', marginBottom: 0, fontSize: '0.8125rem', padding: '6px 10px' }}
+                        />
+                        {slots.filter(s => s.activo).length > 1 && (
+                          <button
+                            onClick={() => removeSlot(dia, idx)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', fontSize: '1rem', padding: '2px 4px' }}
+                          >
+                            &times;
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => addSlot(dia)}
+                      style={{ ...btn, background: 'none', color: '#4B7BE5', padding: '2px 0', fontSize: '0.75rem', justifyContent: 'flex-start' }}
+                    >
+                      + Agregar rango
+                    </button>
+                  </div>
+                ) : (
+                  <span style={{ fontSize: '0.8125rem', color: '#ccc', padding: '6px 0' }}>No disponible</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            onClick={saveSchedule}
+            disabled={saving}
+            style={{ ...btn, background: '#1a1a1a', color: '#fff', opacity: saving ? 0.5 : 1 }}
+          >
+            {saving ? 'Guardando...' : 'Guardar horario'}
+          </button>
+        </div>
+      </div>
+
+      {/* Date overrides */}
+      <div style={card}>
+        <h3 style={{ margin: '0 0 16px', fontSize: '0.9375rem', fontWeight: 700, color: '#1A1A1A' }}>
+          Excepciones de fecha
+        </h3>
+
+        {/* Add override form */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 16 }}>
+          <div>
+            <label style={label}>Fecha</label>
+            <input type="date" value={overrideDate} onChange={e => setOverrideDate(e.target.value)} style={{ ...input, marginBottom: 0 }} />
+          </div>
+          <div>
+            <label style={label}>Tipo</label>
+            <select value={overrideTipo} onChange={e => setOverrideTipo(e.target.value as 'bloqueo' | 'especial')} style={{ ...selectStyle, marginBottom: 0 }}>
+              <option value="bloqueo">Bloquear dia</option>
+              <option value="especial">Horario especial</option>
+            </select>
+          </div>
+          {overrideTipo === 'especial' && (
+            <>
+              <div>
+                <label style={label}>Desde</label>
+                <input type="time" value={overrideStart} onChange={e => setOverrideStart(e.target.value)} style={{ ...input, marginBottom: 0, width: 'auto' }} />
+              </div>
+              <div>
+                <label style={label}>Hasta</label>
+                <input type="time" value={overrideEnd} onChange={e => setOverrideEnd(e.target.value)} style={{ ...input, marginBottom: 0, width: 'auto' }} />
+              </div>
+            </>
+          )}
+          <button
+            onClick={addOverride}
+            disabled={!overrideDate}
+            style={{ ...btn, background: '#4B7BE5', color: '#fff', opacity: overrideDate ? 1 : 0.5, marginBottom: 0 }}
+          >
+            Agregar
+          </button>
+        </div>
+
+        {/* Existing overrides */}
+        {overrides.length === 0 ? (
+          <div style={{ fontSize: '0.8125rem', color: '#bbb', padding: '8px 0' }}>Sin excepciones configuradas</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {overrides.map(ov => (
+              <div
+                key={ov.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 12px',
+                  background: ov.tipo === 'bloqueo' ? '#FEF2F2' : '#FFFBEB',
+                  borderRadius: 8,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{
+                    display: 'inline-block',
+                    padding: '2px 8px',
+                    borderRadius: 4,
+                    fontSize: '0.6875rem',
+                    fontWeight: 700,
+                    background: ov.tipo === 'bloqueo' ? '#DC262618' : '#E8A83818',
+                    color: ov.tipo === 'bloqueo' ? '#DC2626' : '#E8A838',
+                  }}>
+                    {ov.tipo === 'bloqueo' ? 'Bloqueado' : 'Especial'}
+                  </span>
+                  <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#1A1A1A' }}>
+                    {fmtDate(ov.fecha)}
+                  </span>
+                  {ov.tipo === 'especial' && ov.hora_inicio && ov.hora_fin && (
+                    <span style={{ fontSize: '0.8125rem', color: '#777' }}>
+                      {ov.hora_inicio} — {ov.hora_fin}
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => deleteOverride(ov.id)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', fontSize: '1rem', padding: '2px 6px' }}
+                >
+                  &times;
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
