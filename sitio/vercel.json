@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/automations/process?key=sacs-cron-2026",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}

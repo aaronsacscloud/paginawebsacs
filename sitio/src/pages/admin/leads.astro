@@ -1,15 +1,13 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import LeadsTable from '../../components/admin/LeadsTable';
+// Redirect to unified CRM
 ---
-
-<BaseLayout title="CRM — Leads" description="Panel de leads de Sacs">
-<LeadsTable client:only="react" />
-</BaseLayout>
-
-<style is:global>
-nav, .nav, header, footer, .whatsapp-float, .final-cta {
-  display: none !important;
-}
-main { padding: 0 !important; margin: 0 !important; }
-</style>
+<html>
+<head>
+  <meta http-equiv="refresh" content="0;url=/admin/crm?tab=pipeline" />
+  <title>Redirecting...</title>
+</head>
+<body>
+  <script is:inline>window.location.replace('/admin/crm?tab=pipeline');</script>
+  <p>Redirigiendo a <a href="/admin/crm?tab=pipeline">CRM SACS</a>...</p>
+</body>
+</html>

@@ -44,8 +44,13 @@ interface Client {
 
 type Tab = 'dashboard' | 'clientes' | 'pagos' | 'cotizaciones' | 'config';
 
-export default function RevenueHub() {
-  const [tab, setTab] = useState<Tab>('dashboard');
+interface RevenueHubProps {
+  _initialTab?: Tab;
+  _hideNav?: boolean;
+}
+
+export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = {}) {
+  const [tab, setTab] = useState<Tab>(_initialTab || 'dashboard');
   const [dash, setDash] = useState<any>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [selected, setSelected] = useState<Client | null>(null);
@@ -73,6 +78,11 @@ export default function RevenueHub() {
   };
 
   useEffect(() => { load(); }, []);
+
+  // Sync tab when controlled by CrmDashboard
+  useEffect(() => {
+    if (_initialTab && _initialTab !== tab) setTab(_initialTab);
+  }, [_initialTab]);
 
   // ─── Dashboard ───
   const DashboardView = () => {
@@ -1514,6 +1524,7 @@ export default function RevenueHub() {
   return (
     <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", minHeight: '100vh', background: '#f5f6f8' }}>
       {/* Nav */}
+      {!_hideNav && (
       <div style={{ background: '#fff', borderBottom: '1px solid #eee', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 0', marginRight: 32 }}>
@@ -1529,6 +1540,7 @@ export default function RevenueHub() {
           <button onClick={load} style={{ ...S.btn, background: '#f5f5f5', color: '#555' }}>↻</button>
         </div>
       </div>
+      )}
 
       {/* Content */}
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px' }}>

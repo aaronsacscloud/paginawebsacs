@@ -68,6 +68,9 @@ const allSubs = steps.flatMap((s, stepIdx) =>
   s.subs.map((sub) => ({ ...sub, stepIdx, stepId: s.id, stepTitle: s.title, bgKey: s.bgKey }))
 );
 
+// Scroll-driven animation covers subs 0-5 (Vende ×4 + Controla first 2)
+// Subs 6-9 are still accessible via click on the nav pills
+
 // Backward compat for platform accordion
 const useCases = [
   { id: 'pos', title: 'Vende desde cualquier punto', desc: 'Convierte cualquier dispositivo en un punto de venta. Cobra con tarjeta, efectivo o transferencia en segundos.', cta: 'Ver más' },
@@ -908,6 +911,42 @@ const useCases = [
             <div class="mc-card-desc">Tu tienda en línea conectada al mismo inventario y clientes.</div>
           </div>
         </div>
+        <div class="mc-card">
+          <div class="mc-card-visual mc-apt-visual">
+            <div class="mc-apt-ui">
+              <div class="mc-apt-topbar">
+                <span class="mc-apt-title">Apartado #APT-3847</span>
+                <span class="mc-apt-badge">En proceso</span>
+              </div>
+              <div class="mc-apt-client">María García · Suc. Polanco</div>
+              <div class="mc-apt-product">
+                <div class="mc-apt-thumb"></div>
+                <div class="mc-apt-info">
+                  <div class="mc-apt-name">Blazer Rosa</div>
+                  <div class="mc-apt-meta">Talla M · $2,490</div>
+                </div>
+              </div>
+              <div class="mc-apt-payments">
+                <div class="mc-apt-row"><span>Anticipo 20%</span><span class="mc-apt-paid">$498 ✓</span></div>
+                <div class="mc-apt-row"><span>2do pago</span><span class="mc-apt-paid">$996 ✓</span></div>
+                <div class="mc-apt-row"><span>Pago final</span><span class="mc-apt-pending">$996</span></div>
+              </div>
+              <div class="mc-apt-bar"><div class="mc-apt-fill"></div></div>
+              <div class="mc-apt-summary">$1,494 de $2,490 · Vence 2 mayo</div>
+            </div>
+          </div>
+          <div class="mc-card-body">
+            <div class="mc-card-title">Pedidos y Apartados</div>
+            <div class="mc-card-desc">Configura apartados con anticipo, plazos y recordatorios automáticos.</div>
+          </div>
+        </div>
+        <div class="mc-card">
+          <div class="mc-card-visual"><img src="/images/social-commerce-devices.webp" alt="Redes Sociales y IA SACS" loading="lazy" width="800" height="600"></div>
+          <div class="mc-card-body">
+            <div class="mc-card-title">Redes Sociales & IA</div>
+            <div class="mc-card-desc">Vende en TikTok, Instagram, Facebook y ChatGPT con stock sincronizado.</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -918,6 +957,52 @@ const useCases = [
         <h2 class="mc-step-title">Controla tu stock en tiempo real</h2>
       </div>
       <div class="mc-carousel">
+        <div class="mc-card">
+          <div class="mc-card-visual mc-cat-visual">
+            <div class="mc-cat-ui">
+              <div class="mc-cat-topbar">
+                <span class="mc-cat-title">Catálogo de productos</span>
+                <span class="mc-cat-count">65 productos</span>
+              </div>
+              <div class="mc-cat-tabs">
+                <span class="mc-cat-tab mc-cat-tab--active">Productos</span>
+                <span class="mc-cat-tab">Disponibles</span>
+                <span class="mc-cat-tab">Agotados</span>
+              </div>
+              <div class="mc-cat-table">
+                <div class="mc-cat-header">
+                  <span class="mc-cat-col-name">Producto</span>
+                  <span class="mc-cat-col-stock">Stock</span>
+                  <span class="mc-cat-col-loc">Ubicaciones</span>
+                </div>
+                <div class="mc-cat-row">
+                  <span class="mc-cat-col-name"><img src="/images/prod-cream.webp" alt="" width="80" height="80" loading="lazy" class="mc-cat-thumb"/>Crema Gloss</span>
+                  <span class="mc-cat-col-stock"><span class="mc-cat-pill mc-cat-pill--ok">20</span></span>
+                  <span class="mc-cat-col-loc"><span class="mc-cat-loc">Polanco</span><span class="mc-cat-loc">En línea</span></span>
+                </div>
+                <div class="mc-cat-row mc-cat-row--alert">
+                  <span class="mc-cat-col-name"><img src="/images/prod-honey.webp" alt="" width="80" height="80" loading="lazy" class="mc-cat-thumb"/>Miel de Agave</span>
+                  <span class="mc-cat-col-stock"><span class="mc-cat-pill mc-cat-pill--low">3</span></span>
+                  <span class="mc-cat-col-loc"><span class="mc-cat-loc">Condesa</span></span>
+                </div>
+                <div class="mc-cat-row">
+                  <span class="mc-cat-col-name"><img src="/images/prod-soap.webp" alt="" width="80" height="80" loading="lazy" class="mc-cat-thumb"/>Jabón Lavanda</span>
+                  <span class="mc-cat-col-stock"><span class="mc-cat-pill mc-cat-pill--ok">56</span></span>
+                  <span class="mc-cat-col-loc"><span class="mc-cat-loc">Polanco</span><span class="mc-cat-loc">CEDIS</span></span>
+                </div>
+                <div class="mc-cat-row">
+                  <span class="mc-cat-col-name"><img src="/images/prod-chocolate.webp" alt="" width="80" height="80" loading="lazy" class="mc-cat-thumb"/>Chocolate 70%</span>
+                  <span class="mc-cat-col-stock"><span class="mc-cat-pill mc-cat-pill--ok">89</span></span>
+                  <span class="mc-cat-col-loc"><span class="mc-cat-loc">Polanco</span><span class="mc-cat-loc">WhatsApp</span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="mc-card-body">
+            <div class="mc-card-title">Inventario multi-sucursal</div>
+            <div class="mc-card-desc">Stock por sucursal y CEDIS en tiempo real, siempre sincronizado.</div>
+          </div>
+        </div>
         <div class="mc-card">
           <div class="mc-card-visual"><img src="/images/conteo-fisico-real.webp" alt="Conteo físico de inventario" loading="lazy" width="900" height="1117"></div>
           <div class="mc-card-body">
@@ -1913,7 +1998,7 @@ const useCases = [
       var(--color-bg-primary, #FAFAF8) calc((1 - var(--tablet-bg-progress)) * 100%),
       #f5f5f7
     );
-    height: 1200vh;
+    height: 720vh;
     position: relative;
     transition: background 0.05s linear;
   }
@@ -2878,6 +2963,46 @@ const useCases = [
       width: 100%; height: 100%; object-fit: cover;
     }
 
+    /* ── Mini Apartados UI ── */
+    .mc-apt-visual { background: #fff; padding: 12px; }
+    .mc-apt-ui { font-family: var(--font-body); font-size: 11px; color: #333; }
+    .mc-apt-topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .mc-apt-title { font-weight: 700; font-size: 12px; color: #1a1a2e; }
+    .mc-apt-badge { font-size: 9px; font-weight: 600; padding: 2px 8px; border-radius: 99px; border: 1px solid #2AB5A0; color: #2AB5A0; }
+    .mc-apt-client { color: #888; font-size: 10px; margin-bottom: 10px; }
+    .mc-apt-product { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding: 8px; background: #fafafa; border-radius: 8px; }
+    .mc-apt-thumb { width: 32px; height: 32px; border-radius: 6px; background: #f0c4c4; flex-shrink: 0; }
+    .mc-apt-name { font-weight: 700; font-size: 11px; color: #1a1a2e; }
+    .mc-apt-meta { font-size: 10px; color: #888; }
+    .mc-apt-payments { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+    .mc-apt-row { display: flex; justify-content: space-between; font-size: 10px; }
+    .mc-apt-paid { color: #2AB5A0; font-weight: 600; }
+    .mc-apt-pending { color: #E8A838; font-weight: 600; }
+    .mc-apt-bar { height: 4px; background: #eee; border-radius: 4px; overflow: hidden; margin-bottom: 4px; }
+    .mc-apt-fill { height: 100%; width: 60%; background: linear-gradient(90deg, #2AB5A0, #4B7BE5); border-radius: 4px; }
+    .mc-apt-summary { font-size: 9px; color: #888; text-align: center; }
+
+    /* ── Mini Catálogo UI ── */
+    .mc-cat-visual { background: #fff; padding: 14px; }
+    .mc-cat-ui { font-family: var(--font-body); color: #333; -webkit-font-smoothing: antialiased; }
+    .mc-cat-topbar { display: flex; align-items: baseline; gap: 6px; margin-bottom: 10px; }
+    .mc-cat-title { font-weight: 700; font-size: 13px; color: #1a1a2e; }
+    .mc-cat-count { font-size: 11px; color: #999; }
+    .mc-cat-tabs { display: flex; gap: 12px; margin-bottom: 10px; padding-bottom: 7px; border-bottom: 1px solid #eee; }
+    .mc-cat-tab { font-size: 11px; color: #999; }
+    .mc-cat-tab--active { color: #4B7BE5; font-weight: 600; border-bottom: 2px solid #4B7BE5; padding-bottom: 5px; margin-bottom: -8px; }
+    .mc-cat-header { display: grid; grid-template-columns: 1fr 44px 1fr; gap: 6px; padding: 4px 0; font-size: 9px; color: #aaa; text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em; }
+    .mc-cat-row { display: grid; grid-template-columns: 1fr 44px 1fr; gap: 6px; align-items: center; padding: 6px 0; border-bottom: 1px solid #f5f5f5; }
+    .mc-cat-row--alert { background: #fff5f5; margin: 0 -14px; padding-left: 14px; padding-right: 14px; }
+    .mc-cat-col-name { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mc-cat-thumb { width: 28px; height: 28px; border-radius: 6px; object-fit: cover; flex-shrink: 0; image-rendering: -webkit-optimize-contrast; }
+    .mc-cat-col-stock { text-align: center; }
+    .mc-cat-pill { display: inline-block; font-size: 11px; font-weight: 700; min-width: 24px; text-align: center; padding: 2px 6px; border-radius: 6px; }
+    .mc-cat-pill--ok { background: #E8F5E9; color: #2e7d32; }
+    .mc-cat-pill--low { background: #FFF3E0; color: #e65100; }
+    .mc-cat-col-loc { display: flex; flex-wrap: wrap; gap: 3px; }
+    .mc-cat-loc { font-size: 9px; padding: 2px 5px; border-radius: 4px; background: #f0f0f0; color: #666; white-space: nowrap; }
+
     .mc-card-body { padding: 14px 16px 18px; }
     .mc-card-title {
       font-family: var(--font-display); font-size: 16px; font-weight: 700;
@@ -3268,7 +3393,7 @@ const useCases = [
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #2AB5A0;
+    color: var(--color-text-tertiary, #8C8C8C);
     margin-bottom: 16px;
   }
   .inv-intel-title {
@@ -6833,28 +6958,26 @@ const useCases = [
     }
 
     .sq-features-media {
-      padding: 0 16px;
+      padding: 16px;
       position: sticky;
       top: 70px;
       z-index: 2;
       background: #fff;
-      padding-top: 16px;
-      padding-bottom: 16px;
     }
 
     .sq-features-img-wrap {
-      border-radius: 16px;
-      max-height: 45vh;
-      aspect-ratio: 9 / 14;
-      max-width: 240px;
+      max-height: 55vh;
+      aspect-ratio: 9 / 16;
+      max-width: 200px;
       margin: 0 auto;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-      border: 6px solid #1A1A1A;
-      border-radius: 28px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      border: none;
+      border-radius: 16px;
+      background: transparent;
     }
 
     .sq-features-img {
-      border-radius: 22px;
+      border-radius: 12px;
     }
 
     .sq-features-content {
@@ -7131,6 +7254,8 @@ const useCases = [
     { stepIdx: 2, title: 'Recomienda lo que van a amar' },
     { stepIdx: 3, title: 'Tu negocio con IA integrada' },
   ];
+  // Scroll-driven animation only covers first 6 subs; rest accessible via click
+  const scrollDrivenCount = 6;
 
   // Map step index to bg layer index (1:1)
   const bgKeys = ['pos', 'stock', 'crm', 'ai'];
@@ -7176,11 +7301,14 @@ const useCases = [
   // Flag to ignore scroll-driven updates during programmatic scrolls
   let scrollLocked = false;
   let scrollLockTimer: ReturnType<typeof setTimeout> | null = null;
+  // When a beyond-scroll sub is active, prevent scroll handler from overriding
+  let pinnedBeyondScroll = false;
 
-  function lockScroll() {
+  function lockScroll(beyondRange = false) {
     scrollLocked = true;
+    pinnedBeyondScroll = beyondRange;
     if (scrollLockTimer) clearTimeout(scrollLockTimer);
-    scrollLockTimer = setTimeout(() => { scrollLocked = false; }, 800);
+    scrollLockTimer = setTimeout(() => { scrollLocked = false; }, beyondRange ? 1500 : 800);
   }
 
   if (!prefersReducedMotion && !isMobile && tabletSection && tabletFrame) {
@@ -7189,17 +7317,20 @@ const useCases = [
     const vh = window.innerHeight;
 
     const onTabletScroll = () => {
-      if (rafPending || scrollLocked) return;
+      if (rafPending || scrollLocked || pinnedBeyondScroll) return;
       rafPending = true;
       requestAnimationFrame(() => {
         rafPending = false;
-        if (scrollLocked) return;
+        if (scrollLocked || pinnedBeyondScroll) return;
         const rect = tabletSection.getBoundingClientRect();
         const sectionH = tabletSection.offsetHeight;
         const scrolled = -rect.top;
         const scrollable = sectionH - vh;
 
-        if (scrolled < 0 || scrolled > scrollable) return;
+        if (scrolled < 0 || scrolled > scrollable) {
+          pinnedBeyondScroll = false;
+          return;
+        }
 
         const totalProgress = scrolled / scrollable;
 
@@ -7223,8 +7354,7 @@ const useCases = [
           (totalProgress - slideStart) / (slideEnd - slideStart)
         ));
 
-        const numSubs = tabletSlides.length;
-        const subIdx = Math.min(numSubs - 1, Math.floor(slideProgress * numSubs));
+        const subIdx = Math.min(scrollDrivenCount - 1, Math.floor(slideProgress * scrollDrivenCount));
 
         if (subIdx !== lastSubIdx) {
           setActiveSub(subIdx);
@@ -7271,22 +7401,32 @@ const useCases = [
     if (stepFirstSub[entry.stepIdx] === undefined) stepFirstSub[entry.stepIdx] = i;
   });
 
+  // Helper: scroll to a sub index within the scroll-driven section
+  function scrollToSub(subIdx: number) {
+    if (!tabletSection || isMobile) return;
+    const sectionH = tabletSection.offsetHeight;
+    const vh = window.innerHeight;
+    const scrollable = sectionH - vh;
+    const sectionTop = tabletSection.getBoundingClientRect().top + window.scrollY;
+    if (subIdx < scrollDrivenCount) {
+      // Within scroll-driven range: scroll to calculated position
+      const slideStart = 0.06;
+      const slideEnd = 0.95;
+      const subProgress = subIdx / scrollDrivenCount;
+      const totalProgress = slideStart + subProgress * (slideEnd - slideStart);
+      window.scrollTo({ top: sectionTop + totalProgress * scrollable, behavior: 'smooth' });
+    } else {
+      // Beyond scroll range: scroll to end of section so sticky content is visible
+      window.scrollTo({ top: sectionTop + scrollable * 0.92, behavior: 'smooth' });
+    }
+  }
+
   vpills.forEach((pill, stepIdx) => {
     pill.addEventListener('click', () => {
       const firstSubIdx = stepFirstSub[stepIdx] ?? 0;
-      lockScroll();
+      lockScroll(firstSubIdx >= scrollDrivenCount);
       setActiveSub(firstSubIdx);
-      if (tabletSection && !isMobile) {
-        const sectionH = tabletSection.offsetHeight;
-        const vh = window.innerHeight;
-        const scrollable = sectionH - vh;
-        const slideStart = 0.06;
-        const slideEnd = 0.95;
-        const subProgress = firstSubIdx / tabletSlides.length;
-        const totalProgress = slideStart + subProgress * (slideEnd - slideStart);
-        const sectionTop = tabletSection.getBoundingClientRect().top + window.scrollY;
-        window.scrollTo({ top: sectionTop + totalProgress * scrollable, behavior: 'smooth' });
-      }
+      scrollToSub(firstSubIdx);
     });
   });
 
@@ -7294,19 +7434,9 @@ const useCases = [
   subPills.forEach((pill) => {
     pill.addEventListener('click', () => {
       const globalIdx = parseInt(pill.dataset.subGlobal || '0', 10);
-      lockScroll();
+      lockScroll(globalIdx >= scrollDrivenCount);
       setActiveSub(globalIdx);
-      if (tabletSection && !isMobile) {
-        const sectionH = tabletSection.offsetHeight;
-        const vh = window.innerHeight;
-        const scrollable = sectionH - vh;
-        const slideStart = 0.06;
-        const slideEnd = 0.95;
-        const subProgress = globalIdx / tabletSlides.length;
-        const totalProgress = slideStart + subProgress * (slideEnd - slideStart);
-        const sectionTop = tabletSection.getBoundingClientRect().top + window.scrollY;
-        window.scrollTo({ top: sectionTop + totalProgress * scrollable, behavior: 'smooth' });
-      }
+      scrollToSub(globalIdx);
     });
   });
 
@@ -7336,6 +7466,7 @@ const useCases = [
   const sqPhoneBg = document.querySelector<HTMLElement>('.sq-phone-bg');
 
   if (sqBlocks.length > 0 && sqImgs.length > 0) {
+    const isMobile = window.innerWidth < 1024;
     const sqObserver = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -7348,6 +7479,9 @@ const useCases = [
                 img.classList.toggle('sq-img--active', img.dataset.sqSrc === newSrc);
               });
             }
+            // Mark active block
+            sqBlocks.forEach(b => b.classList.remove('active'));
+            block.classList.add('active');
             // Update background color
             if (sqPhoneBg) {
               sqPhoneBg.dataset.bgStep = String(idx + 1);
@@ -7355,7 +7489,7 @@ const useCases = [
           }
         });
       },
-      { threshold: 0.6 }
+      { threshold: isMobile ? 0.3 : 0.6, rootMargin: isMobile ? '-30% 0px -30% 0px' : '0px' }
     );
     sqBlocks.forEach(b => sqObserver.observe(b));
   }

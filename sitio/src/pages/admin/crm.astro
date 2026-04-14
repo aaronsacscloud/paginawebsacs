@@ -1,0 +1,15 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CrmDashboard from '../../components/admin/CrmDashboard';
+---
+
+<BaseLayout title="CRM — Sacs" description="CRM interno de Sacs" noindex={true}>
+<CrmDashboard client:only="react" />
+</BaseLayout>
+
+<style is:global>
+nav, .nav, header, footer, .wa-bar, .final-cta {
+  display: none !important;
+}
+main { padding: 0 !important; margin: 0 !important; }
+</style>

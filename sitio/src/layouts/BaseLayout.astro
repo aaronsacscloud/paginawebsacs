@@ -181,6 +181,16 @@ const allSchemas = structuredData
         font-style: normal;
         font-display: swap;
       }
+
+      /* Critical: hide nav dropdowns & mobile menu before component CSS loads */
+      .mega-dropdown { visibility: hidden; opacity: 0; position: absolute; }
+      .mega-backdrop { display: none; }
+      .mega-backdrop.active { display: block; }
+      .mobile-menu { display: none; }
+      .mobile-menu.open { display: block; }
+      .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; height: 71px; background: #fff; }
+      .nav-inner { display: flex; align-items: center; height: 100%; }
+      .wa-bar { opacity: 0; pointer-events: none; }
     </style>
   </head>
   <body>
@@ -307,11 +317,9 @@ const allSchemas = structuredData
         const modal = document.getElementById('cs-modal');
         const closeBtn = document.getElementById('cs-modal-close');
 
-        // Links that should trigger the modal: href="#" or href containing /producto#
+        // Links that should trigger the modal
         const comingSoonSelectors = [
           'a[href="#"]',
-          'a[href^="/producto#"]',
-          'a[href="/producto"]',
           'a[href="/nosotros"]',
           'a[href="/manifiesto"]',
           'a[href="/componentes"]',

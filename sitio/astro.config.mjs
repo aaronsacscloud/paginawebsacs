@@ -9,7 +9,7 @@ export default defineConfig({
   site: 'https://www.sacscloud.com',
   output: 'static',
   adapter: vercel(),
-  integrations: [sitemap(), react()],
+  integrations: [sitemap({ filter: (page) => !page.includes('/admin/') }), react()],
   image: {
     domains: [],
   },

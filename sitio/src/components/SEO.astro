@@ -17,7 +17,7 @@ const {
   canonical,
 } = Astro.props;
 
-const siteUrl = Astro.site?.toString().replace(/\/$/, '') || 'https://sacs.com.mx';
+const siteUrl = Astro.site?.toString().replace(/\/$/, '') || 'https://www.sacscloud.com';
 const pageUrl = canonical || new URL(Astro.url.pathname, siteUrl).toString();
 const imageUrl = new URL(image, siteUrl).toString();
 const fullTitle = title === 'SACS' ? title : `${title} | SACS`;

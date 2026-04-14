@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { google } from 'googleapis';
+import { supabase } from '../../lib/supabase';
 
 export const prerender = false;
 
@@ -104,7 +105,98 @@ export const POST: APIRoute = async ({ request }) => {
 
     const result = await res.json();
 
-    // Save to Google Sheets
+    // Save to Supabase CRM (primary)
+    try {
+      // Find or create company
+      let company_id: string | null = null;
+      if (data.empresa) {
+        const { data: existingCo } = await supabase
+          .from('companies')
+          .select('id')
+          .eq('nombre', data.empresa)
+          .limit(1)
+          .single();
+
+        if (existingCo) {
+          company_id = existingCo.id;
+        } else {
+          const { data: newCo } = await supabase
+            .from('companies')
+            .insert({ nombre: data.empresa, giro: data.giro || null, sucursales: parseInt(data.sucursales) || 1 })
+            .select('id')
+            .single();
+          if (newCo) company_id = newCo.id;
+        }
+      }
+
+      // Determine lifecycle stage from score
+      const score = parseInt(data.score) || 0;
+      const lifecycle_stage = score >= 40 ? 'lead_calificado' : 'lead';
+
+      // Check if contact already exists (by email)
+      const email = data.email || `lead-${Date.now()}@noemail.com`;
+      const { data: existingContact } = await supabase
+        .from('contacts')
+        .select('id')
+        .eq('email', email)
+        .limit(1)
+        .single();
+
+      let contactId: string | null = null;
+      if (existingContact) {
+        // Update existing
+        contactId = existingContact.id;
+        await supabase.from('contacts').update({
+          lead_score: score,
+          total_time_on_site: parseInt(data.totalTime) || 0,
+          pages_visited: data.pagesVisited || null,
+          page_count: parseInt(data.pageCount) || 0,
+          lifecycle_stage,
+          plan_interes: data.plan || null,
+        }).eq('id', contactId);
+      } else {
+        // Create new
+        const { data: newContact } = await supabase
+          .from('contacts')
+          .insert({
+            nombre: data.nombre || 'Sin nombre',
+            email,
+            whatsapp: data.whatsapp || null,
+            tipo: 'lead',
+            lifecycle_stage,
+            fuente: 'website-form',
+            lead_score: score,
+            total_time_on_site: parseInt(data.totalTime) || 0,
+            pages_visited: data.pagesVisited || null,
+            page_count: parseInt(data.pageCount) || 0,
+            visitor_id: data.visitorId || null,
+            company_id,
+            plan_interes: data.plan || null,
+            giro: data.giro || null,
+            sucursales_interes: parseInt(data.sucursales) || null,
+            stripe_customer_id: result.id || null,
+          })
+          .select('id')
+          .single();
+        if (newContact) contactId = newContact.id;
+      }
+
+      // Log activity
+      if (contactId) {
+        await supabase.from('activities').insert({
+          contact_id: contactId,
+          company_id,
+          tipo: 'lead_created',
+          titulo: `Lead desde formulario web: ${data.nombre || email}`,
+          metadata: { score, plan: data.plan, giro: data.giro, sucursales: data.sucursales },
+          automatico: true,
+        });
+      }
+    } catch (crmErr) {
+      console.error('CRM save error:', crmErr);
+    }
+
+    // Save to Google Sheets (backup)
     try {
       const userAgent = request.headers.get('user-agent') || '';
       await appendToSheet(data, userAgent);

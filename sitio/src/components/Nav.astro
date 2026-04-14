@@ -51,11 +51,14 @@ const sectorIcons: Record<string, string> = {
             <div class="mega-dropdown">
               <div class="mega-dropdown-inner container">
                 <div class="mega-pillars">
-                  {link.pillars.map((pillar) => (
-                    <div class="mega-pillar">
+                  {link.pillars.map((pillar, pi) => (
+                    <div class={`mega-pillar mega-pillar--${pi}`}>
                       <a href={getLocalizedUrl(pillar.href, locale)} class="mega-pillar-header">
-                        <span class="mega-pillar-verb">{pillar.verb}</span>
-                        <span class="mega-pillar-desc">{pillar.description}</span>
+                        <span class="mega-pillar-num">{pi + 1}</span>
+                        <div class="mega-pillar-text">
+                          <span class="mega-pillar-verb">{pillar.verb}</span>
+                          <span class="mega-pillar-desc">{pillar.description}</span>
+                        </div>
                       </a>
                       <div class="mega-pillar-links">
                         {pillar.items.map((item) => (
@@ -68,10 +71,28 @@ const sectorIcons: Record<string, string> = {
                   ))}
                 </div>
                 <div class="mega-footer">
-                  <a href={getLocalizedUrl('/producto', locale)} class="mega-footer-link">
-                    {t('nav.viewPlatform', locale)}
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                  </a>
+                  <div class="mega-footer-cards">
+                    <a href={getLocalizedUrl('/contacto', locale)} class="mega-footer-card">
+                      <div class="mega-footer-card-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>
+                      </div>
+                      <div class="mega-footer-card-text">
+                        <span class="mega-footer-card-title">Agenda una demo</span>
+                        <span class="mega-footer-card-desc">Te mostramos SACS con datos de tu negocio. 30 min.</span>
+                      </div>
+                      <svg class="mega-footer-card-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
+                    <a href={getLocalizedUrl('/prueba-gratis', locale)} class="mega-footer-card">
+                      <div class="mega-footer-card-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                      </div>
+                      <div class="mega-footer-card-text">
+                        <span class="mega-footer-card-title">Empieza gratis</span>
+                        <span class="mega-footer-card-desc">Configura tu tienda en 15 minutos. Sin tarjeta.</span>
+                      </div>
+                      <svg class="mega-footer-card-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -103,7 +124,21 @@ const sectorIcons: Record<string, string> = {
       <a href="/prueba-gratis" class="btn-nav-cta">Prueba 7 dias gratis</a>
     </div>
 
-    <a href="/prueba-gratis" class="btn-nav-mobile-cta">Prueba 7 dias gratis</a>
+    <a
+      id="nav-whatsapp-mobile"
+      href={`https://wa.me/5215536634392`}
+      class="nav-whatsapp-mobile"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Escríbenos por WhatsApp"
+      data-number="5215536634392"
+      data-message={t('whatsapp.message', locale)}
+    >
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+      </svg>
+      <span class="nav-wa-label">WhatsApp</span>
+    </a>
 
     <button
       class="nav-hamburger"
@@ -216,9 +251,8 @@ const sectorIcons: Record<string, string> = {
   .nav-inner {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     height: 100%;
-    gap: var(--space-8);
+    gap: var(--space-4);
   }
 
   /* ─── Logo ─── */
@@ -273,7 +307,7 @@ const sectorIcons: Record<string, string> = {
 
   .nav-link.active {
     color: var(--color-text-primary);
-    font-weight: 700;
+    font-weight: 600;
   }
 
   .nav-chevron {
@@ -338,7 +372,9 @@ const sectorIcons: Record<string, string> = {
   }
 
   .mega-pillar-header {
-    display: block;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
     text-decoration: none;
     margin-bottom: 16px;
     padding-bottom: 12px;
@@ -351,10 +387,26 @@ const sectorIcons: Record<string, string> = {
     opacity: 0.8;
   }
 
+  /* Numbered label per pillar */
+  .mega-pillar-num {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--color-text-tertiary, #b0b0b0);
+    flex-shrink: 0;
+    margin-top: 1px;
+    letter-spacing: -0.02em;
+  }
+
+  .mega-pillar-text {
+    display: flex;
+    flex-direction: column;
+  }
+
   .mega-pillar-verb {
     display: block;
     font-family: var(--font-display, 'Sora', sans-serif);
-    font-size: 1.125rem;
+    font-size: 1.0625rem;
     font-weight: 700;
     color: var(--color-text-primary, #1a1a2e);
     letter-spacing: -0.02em;
@@ -363,7 +415,7 @@ const sectorIcons: Record<string, string> = {
 
   .mega-pillar-desc {
     display: block;
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
     font-weight: 500;
     color: var(--color-text-tertiary, #9ca3af);
     margin-top: 2px;
@@ -377,41 +429,103 @@ const sectorIcons: Record<string, string> = {
   }
 
   .mega-pillar-link {
-    font-size: 0.9375rem;
+    font-size: 0.875rem;
     font-weight: 500;
     color: var(--color-text-secondary, #6b7280);
     text-decoration: none;
-    padding: 8px 0;
-    transition: color 0.15s ease;
+    padding: 7px 10px;
+    margin-left: -10px;
+    margin-right: -4px;
+    border-radius: 6px;
+    border-left: 2px solid transparent;
+    transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
     line-height: 1.3;
   }
 
   .mega-pillar-link:hover {
     color: var(--color-text-primary, #1a1a2e);
+    background: rgba(0, 0, 0, 0.03);
     text-decoration: none;
   }
 
-  /* ─── Footer link ─── */
+  /* Left border on hover */
+  .mega-pillar-link:hover { border-left-color: var(--color-text-tertiary, #b0b0b0); }
+
+  /* ─── Footer CTA cards ─── */
   .mega-footer {
     margin-top: 20px;
-    padding-top: 16px;
+    padding-top: 20px;
     border-top: 1px solid rgba(0, 0, 0, 0.06);
   }
 
-  .mega-footer-link {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: var(--color-text-secondary, #9ca3af);
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: color 0.15s ease;
+  .mega-footer-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
   }
 
-  .mega-footer-link:hover {
-    color: var(--color-text-primary, #1a1a2e);
+  .mega-footer-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: var(--color-bg-primary, #FAFAF8);
     text-decoration: none;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .mega-footer-card:hover {
+    background: rgba(0, 0, 0, 0.04);
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+
+  .mega-footer-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: #fff;
+    color: var(--color-text-primary, #1a1a2e);
+    flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+
+  .mega-footer-card-text {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mega-footer-card-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+    line-height: 1.2;
+  }
+
+  .mega-footer-card-desc {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--color-text-tertiary, #9ca3af);
+    line-height: 1.3;
+    margin-top: 1px;
+  }
+
+  .mega-footer-card-arrow {
+    color: var(--color-text-tertiary, #9ca3af);
+    flex-shrink: 0;
+    transition: transform 0.2s ease, color 0.2s ease;
+  }
+
+  .mega-footer-card:hover .mega-footer-card-arrow {
+    transform: translateX(3px);
+    color: var(--color-text-primary, #1a1a2e);
   }
 
   /* ─── Backdrop ─── */
@@ -441,6 +555,7 @@ const sectorIcons: Record<string, string> = {
     align-items: center;
     gap: var(--space-1);
     flex-shrink: 0;
+    margin-left: auto;
   }
 
   @media (min-width: 1024px) {
@@ -532,14 +647,14 @@ const sectorIcons: Record<string, string> = {
   /* CTA button */
   .btn-nav-cta {
     font-family: var(--font-display);
-    font-size: 1rem;
+    font-size: 0.875rem;
     font-weight: 700;
-    padding: 14px 28px;
-    border-radius: 12px;
+    padding: 10px 22px;
+    border-radius: 8px;
     background: #2563EB;
     color: #fff;
     text-decoration: none;
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, background 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
     white-space: nowrap;
     line-height: 1;
     display: inline-flex;
@@ -550,28 +665,48 @@ const sectorIcons: Record<string, string> = {
   .btn-nav-cta:hover {
     background: #1D4FD7;
     text-decoration: none;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.25);
   }
 
-  /* ─── Mobile CTA (visible only on mobile) ─── */
+  /* ─── Mobile CTA (hidden, kept for desktop) ─── */
   .btn-nav-mobile-cta {
+    display: none;
+  }
+
+  /* ─── Mobile WhatsApp button ─── */
+  .nav-whatsapp-mobile {
     display: inline-flex;
     align-items: center;
-    font-family: var(--font-body);
-    font-size: 0.75rem;
-    font-weight: 700;
-    padding: 8px 16px;
+    gap: 6px;
+    margin-left: auto;
+    padding: 7px 14px;
     border-radius: var(--radius-full);
-    background: var(--color-primary);
+    background: #25D366;
     color: #fff;
     text-decoration: none;
+    flex-shrink: 0;
     white-space: nowrap;
-    margin-left: auto;
+  }
+
+  .nav-wa-label {
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+
+  .nav-whatsapp-mobile:hover {
+    text-decoration: none;
+  }
+
+  .nav-whatsapp-mobile:focus-visible {
+    outline: 2px solid #25D366;
+    outline-offset: 2px;
   }
 
   @media (min-width: 1024px) {
-    .btn-nav-mobile-cta {
+    .nav-whatsapp-mobile {
       display: none;
     }
   }
@@ -644,17 +779,21 @@ const sectorIcons: Record<string, string> = {
   }
 
   .mobile-link {
+    display: flex;
+    align-items: center;
+    font-family: var(--font-display, 'Sora', sans-serif);
     font-size: 1.0625rem;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--color-text-primary, #1a1a2e);
+    letter-spacing: -0.01em;
     text-decoration: none;
-    padding: 14px 16px;
-    border-radius: 12px;
-    transition: background 0.2s ease;
+    padding: 16px 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    transition: color 0.2s ease;
   }
 
   .mobile-link:hover {
-    background: rgba(0, 0, 0, 0.03);
+    color: var(--color-primary, #4B7BE5);
     text-decoration: none;
   }
 
@@ -1088,4 +1227,21 @@ const sectorIcons: Record<string, string> = {
   }, { passive: true });
 
   updateNav();
+
+  // ─── Mobile WhatsApp: set message + tracking ───
+  const navWa = document.getElementById('nav-whatsapp-mobile') as HTMLAnchorElement;
+  if (navWa) {
+    const waNum = navWa.dataset.number;
+    const waMsg = navWa.dataset.message;
+    const waFull = `${waMsg} ${window.location.href}`;
+    navWa.href = `https://wa.me/${waNum}?text=${encodeURIComponent(waFull)}`;
+
+    navWa.addEventListener('click', () => {
+      try {
+        if (typeof ttq !== 'undefined') {
+          ttq.track('Contact', { content_id: 'whatsapp-nav-mobile', content_name: 'whatsapp-nav-header', content_type: 'product' });
+        }
+      } catch {}
+    });
+  }
 </script>

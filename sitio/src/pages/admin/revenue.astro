@@ -1,15 +1,13 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import RevenueHub from '../../components/admin/RevenueHub';
+// Redirect to unified CRM
 ---
-
-<BaseLayout title="Revenue Hub — Sacs" description="Dashboard de ingresos y clientes">
-<RevenueHub client:only="react" />
-</BaseLayout>
-
-<style is:global>
-nav, .nav, header, footer, .whatsapp-float, .final-cta {
-  display: none !important;
-}
-main { padding: 0 !important; margin: 0 !important; }
-</style>
+<html>
+<head>
+  <meta http-equiv="refresh" content="0;url=/admin/crm?tab=dashboard" />
+  <title>Redirecting...</title>
+</head>
+<body>
+  <script is:inline>window.location.replace('/admin/crm?tab=dashboard');</script>
+  <p>Redirigiendo a <a href="/admin/crm?tab=dashboard">CRM SACS</a>...</p>
+</body>
+</html>
