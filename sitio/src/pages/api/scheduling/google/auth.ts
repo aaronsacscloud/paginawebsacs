@@ -14,5 +14,8 @@ export const GET: APIRoute = async ({ url }) => {
   }
 
   const authUrl = getAuthUrl(teamMemberId);
-  return new Response(JSON.stringify({ url: authUrl }));
+  return new Response(null, {
+    status: 302,
+    headers: { 'Location': authUrl },
+  });
 };

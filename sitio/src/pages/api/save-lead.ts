@@ -192,6 +192,41 @@ export const POST: APIRoute = async ({ request }) => {
           automatico: true,
         });
       }
+      // Auto-enroll new lead in welcome automation
+      try {
+        const { data: welcomeAutos } = await supabase
+          .from('automations')
+          .select('id, enrollment_triggers, suppression_stages')
+          .eq('estado', 'activo');
+
+        for (const auto of (welcomeAutos || [])) {
+          const triggers = auto.enrollment_triggers || [];
+          const shouldEnroll = triggers.some((t: any) =>
+            t.type === 'lifecycle_stage_change' && (t.config?.new_stage === 'lead' || t.config?.new_stage === 'lead_calificado')
+          );
+          if (!shouldEnroll) continue;
+          if (auto.suppression_stages?.includes(lifecycle_stage)) continue;
+
+          const { data: firstStep } = await supabase
+            .from('automation_steps')
+            .select('id')
+            .eq('automation_id', auto.id)
+            .is('parent_step_id', null)
+            .order('orden')
+            .limit(1)
+            .maybeSingle();
+
+          if (firstStep && contactId) {
+            await supabase.from('automation_enrollments').insert({
+              automation_id: auto.id,
+              contact_id: contactId,
+              current_step_id: firstStep.id,
+              next_action_at: new Date().toISOString(),
+              enrollment_trigger: { type: 'lead_created', source: 'website-form' },
+            }).catch(() => {}); // Ignore duplicates
+          }
+        }
+      } catch {}
     } catch (crmErr) {
       console.error('CRM save error:', crmErr);
     }

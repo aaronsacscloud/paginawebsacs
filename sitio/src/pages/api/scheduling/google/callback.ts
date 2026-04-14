@@ -1,7 +1,6 @@
 import type { APIRoute } from 'astro';
-import { exchangeCode, getOAuth2Client } from '../../../../lib/google-calendar';
+import { exchangeCode } from '../../../../lib/google-calendar';
 import { supabase } from '../../../../lib/supabase';
-import { google } from 'googleapis';
 
 export const prerender = false;
 
@@ -33,12 +32,19 @@ export const GET: APIRoute = async ({ url }) => {
   try {
     const tokens = await exchangeCode(code);
 
-    // Get user email from Google
-    const client = getOAuth2Client();
-    client.setCredentials(tokens);
-    const oauth2 = google.oauth2({ version: 'v2', auth: client });
-    const userInfo = await oauth2.userinfo.get();
-    const email = userInfo.data.email || '';
+    // Get user email from the ID token (no extra API call needed)
+    let email = '';
+    try {
+      if (tokens.id_token) {
+        const payload = JSON.parse(Buffer.from(tokens.id_token.split('.')[1], 'base64').toString());
+        email = payload.email || '';
+      }
+    } catch {}
+    // Fallback: get from team member record
+    if (!email) {
+      const { data: tm } = await supabase.from('team_members').select('email').eq('id', teamMemberId).single();
+      email = tm?.email || 'calendar@sacscloud.com';
+    }
 
     // Upsert calendar connection
     await supabase.from('calendar_connections').upsert({

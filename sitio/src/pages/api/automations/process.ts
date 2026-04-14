@@ -3,6 +3,40 @@ import { supabase } from '../../../lib/supabase';
 
 export const prerender = false;
 
+const RESEND_API_KEY = (import.meta.env.RESEND_API_KEY || '').trim();
+
+// ── Token replacement & tracking helpers ─────────────────────────────
+
+function replaceTokens(html: string, contact: any, company: any): string {
+  if (!html) return '';
+  return html
+    .replace(/\{\{contact\.nombre\}\}/g, contact?.nombre || '')
+    .replace(/\{\{contact\.apellido\}\}/g, contact?.apellido || '')
+    .replace(/\{\{contact\.email\}\}/g, contact?.email || '')
+    .replace(/\{\{contact\.whatsapp\}\}/g, contact?.whatsapp || '')
+    .replace(/\{\{contact\.giro\}\}/g, contact?.giro || '')
+    .replace(/\{\{contact\.plan_interes\}\}/g, contact?.plan_interes || '')
+    .replace(/\{\{company\.nombre\}\}/g, company?.nombre || '')
+    .replace(/\{\{company\.plan\}\}/g, company?.plan || '')
+    .replace(/\{\{company\.sucursales\}\}/g, String(company?.sucursales || ''))
+    .replace(/\{\{unsubscribe_url\}\}/g, `https://www.sacscloud.com/api/email/unsubscribe?email=${encodeURIComponent(contact?.email || '')}`)
+    .replace(/\{\{current_year\}\}/g, String(new Date().getFullYear()));
+}
+
+function injectTracking(html: string, emailSendId: string): string {
+  // Inject open tracking pixel before </body>
+  const pixel = `<img src="https://www.sacscloud.com/api/email/track-open?sid=${emailSendId}" width="1" height="1" style="display:block" />`;
+  html = html.replace('</body>', `${pixel}</body>`);
+
+  // Rewrite links for click tracking
+  html = html.replace(/href="(https?:\/\/[^"]+)"/g, (match, url) => {
+    if (url.includes('track-open') || url.includes('track-click') || url.includes('unsubscribe')) return match;
+    return `href="https://www.sacscloud.com/api/email/track-click?sid=${emailSendId}&url=${encodeURIComponent(url)}"`;
+  });
+
+  return html;
+}
+
 // ── Condition evaluator ───────────────────────────────────────────────
 
 function evaluateCondition(condition: any, contact: any, company: any): boolean {
@@ -252,8 +286,15 @@ export const GET: APIRoute = async ({ url, request }) => {
               }
             }
 
-            // Create email_sends record
-            await supabase.from('email_sends').insert({
+            // Load the template
+            const { data: template } = await supabase
+              .from('email_templates')
+              .select('*')
+              .eq('id', stepConfig.template_id)
+              .single();
+
+            // Create email_sends record first (need ID for tracking)
+            const { data: emailSend } = await supabase.from('email_sends').insert({
               template_id: stepConfig.template_id,
               contact_id: contact.id,
               email: contact.email,
@@ -261,18 +302,65 @@ export const GET: APIRoute = async ({ url, request }) => {
               automation_id: automation.id,
               enrollment_id: enrollment.id,
               step_id: currentStep.id,
-            });
+            }).select('id').single();
+
+            // Actually send the email via Resend API
+            if (template && emailSend && RESEND_API_KEY && contact.email) {
+              try {
+                // Compile template HTML with personalization tokens
+                let htmlBody = template.html_compilado || template.html || '';
+                htmlBody = replaceTokens(htmlBody, contact, company);
+
+                // Inject open tracking pixel and click tracking URLs
+                const trackedHtml = injectTracking(htmlBody, emailSend.id);
+
+                const res = await fetch('https://api.resend.com/emails', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${RESEND_API_KEY}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    from: 'SACS <onboarding@resend.dev>',
+                    to: [contact.email],
+                    subject: replaceTokens(template.asunto || '', contact, company),
+                    html: trackedHtml,
+                  }),
+                });
+
+                const sendResult = await res.json();
+
+                if (sendResult.id) {
+                  await supabase.from('email_sends').update({
+                    estado: 'sent',
+                    sent_at: new Date().toISOString(),
+                    provider_message_id: sendResult.id,
+                  }).eq('id', emailSend.id);
+                } else {
+                  await supabase.from('email_sends').update({
+                    estado: 'failed',
+                    error_message: sendResult.message || 'Unknown Resend error',
+                  }).eq('id', emailSend.id);
+                }
+              } catch (sendErr: any) {
+                await supabase.from('email_sends').update({
+                  estado: 'failed',
+                  error_message: sendErr?.message || 'Send exception',
+                }).eq('id', emailSend.id);
+              }
+            }
 
             // Log activity
             await supabase.from('activities').insert({
               contact_id: contact.id,
               company_id: contact.company_id || null,
               tipo: 'email_automation_sent',
-              titulo: `Email de automatización encolado: ${automation.nombre}`,
+              titulo: `Email de automatización enviado: ${automation.nombre}`,
               metadata: {
                 automation_id: automation.id,
                 template_id: stepConfig.template_id,
                 step_id: currentStep.id,
+                email_send_id: emailSend?.id || null,
               },
               automatico: true,
             });

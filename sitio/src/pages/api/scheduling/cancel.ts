@@ -5,6 +5,19 @@ import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 
 export const prerender = false;
 
+const RESEND_API_KEY = (import.meta.env.RESEND_API_KEY || '').trim();
+
+async function sendEmail(to: string, subject: string, html: string) {
+  if (!RESEND_API_KEY || !to) return;
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: 'SACS <onboarding@resend.dev>', to: [to], subject, html }),
+    });
+  } catch {}
+}
+
 export const POST: APIRoute = async ({ request, url }) => {
   const body = await request.json();
   const isAdmin = url.searchParams.get('admin') === '1';
@@ -179,6 +192,29 @@ export const POST: APIRoute = async ({ request, url }) => {
         }),
       });
     } catch { /* SMS is non-critical */ }
+  }
+
+  // Send cancellation email to invitee
+  if (booking.email_invitado) {
+    try {
+      const suggestionsHtml = suggestions.length > 0
+        ? `<p style="margin:16px 0 8px;font-size:0.875rem;color:#1A1A1A;font-weight:600;">¿Te gustaría reagendar?</p>
+           <div style="display:flex;gap:8px;flex-wrap:wrap;">
+           ${suggestions.map((s: any) => `<a href="${s.url}" style="display:inline-block;padding:8px 16px;background:#F8F9FB;border-radius:8px;color:#4B7BE5;text-decoration:none;font-size:0.8125rem;font-weight:600;border:1px solid #e0e0e0;">${s.fecha} ${s.hora}</a>`).join('')}
+           </div>`
+        : '';
+
+      const cancelHtml = `
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <tr><td style="background:#fff;padding:32px;border-radius:12px;border:1px solid #f0f0f0;">
+    <h2 style="margin:0 0 8px;font-size:1.125rem;color:#1A1A1A;">Tu reunión ha sido cancelada</h2>
+    <p style="color:#888;margin:0 0 16px;">La reunión del ${booking.fecha} a las ${booking.hora_inicio} ha sido cancelada.</p>
+    ${motivo ? `<p style="color:#999;font-size:0.8125rem;">Motivo: ${motivo}</p>` : ''}
+    ${suggestionsHtml}
+  </td></tr>
+</table>`;
+      await sendEmail(booking.email_invitado, 'Tu reunión con SACS ha sido cancelada', cancelHtml);
+    } catch { /* Cancellation email is non-critical */ }
   }
 
   return new Response(

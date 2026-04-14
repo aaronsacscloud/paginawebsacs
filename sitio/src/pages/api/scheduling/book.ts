@@ -5,6 +5,19 @@ import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 
 export const prerender = false;
 
+const RESEND_API_KEY = (import.meta.env.RESEND_API_KEY || '').trim();
+
+async function sendEmail(to: string, subject: string, html: string) {
+  if (!RESEND_API_KEY || !to) return;
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: 'SACS <onboarding@resend.dev>', to: [to], subject, html }),
+    });
+  } catch {}
+}
+
 function addMinutes(time: string, minutes: number): string {
   const [h, m] = time.split(':').map(Number);
   const total = h * 60 + m + minutes;
@@ -463,6 +476,59 @@ export const POST: APIRoute = async ({ request }) => {
     console.error('Host email notification failed:', emailErr);
   }
 
+  // 10b. Send confirmation email to invitee
+  try {
+    const fechaDisplay = (() => {
+      const [y, mo, d] = fecha.split('-').map(Number);
+      const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+      const days = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+      const dow = new Date(y, mo-1, d).getDay();
+      return `${days[dow]} ${d} de ${months[mo-1]} ${y}`;
+    })();
+    const horaDisplay = (() => {
+      const [h, m] = hora_inicio.split(':').map(Number);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+    })();
+
+    const inviteeEmailHtml = `
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <tr><td style="background:#4B7BE5;padding:24px 32px;border-radius:12px 12px 0 0;text-align:center;">
+    <span style="font-size:1.5rem;font-weight:700;color:#fff;">SACS</span>
+  </td></tr>
+  <tr><td style="background:#fff;padding:32px;">
+    <h2 style="margin:0 0 8px;font-size:1.25rem;color:#1A1A1A;">¡Tu demo está confirmada!</h2>
+    <p style="color:#888;margin:0 0 24px;font-size:0.9375rem;">Hola ${nombre}, tu reunión con SACS ha sido agendada.</p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#F8F9FB;border-radius:10px;padding:20px;margin-bottom:24px;">
+      <tr><td style="padding:8px 16px;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr><td style="padding:6px 0;font-size:0.875rem;color:#999;width:100px;">📅 Fecha</td><td style="padding:6px 0;font-size:0.875rem;font-weight:700;color:#1A1A1A;">${fechaDisplay}</td></tr>
+          <tr><td style="padding:6px 0;font-size:0.875rem;color:#999;">⏰ Hora</td><td style="padding:6px 0;font-size:0.875rem;font-weight:700;color:#1A1A1A;">${horaDisplay}</td></tr>
+          <tr><td style="padding:6px 0;font-size:0.875rem;color:#999;">⏱ Duración</td><td style="padding:6px 0;font-size:0.875rem;color:#555;">${eventType.duracion_minutos} minutos</td></tr>
+          ${google_meet_link ? `<tr><td style="padding:6px 0;font-size:0.875rem;color:#999;">📹 Link</td><td style="padding:6px 0;"><a href="${google_meet_link}" style="color:#4B7BE5;font-weight:600;text-decoration:none;">${google_meet_link}</a></td></tr>` : ''}
+        </table>
+      </td></tr>
+    </table>
+
+    ${google_meet_link ? `<div style="text-align:center;margin-bottom:24px;"><a href="${google_meet_link}" style="display:inline-block;padding:14px 40px;background:#4B7BE5;color:#fff;border-radius:10px;text-decoration:none;font-weight:700;font-size:0.9375rem;">Unirse a la reunión</a></div>` : ''}
+
+    <div style="text-align:center;margin-bottom:16px;">
+      <a href="https://www.sacscloud.com/api/scheduling/reschedule?token=${booking.token_reagendar}" style="color:#4B7BE5;font-size:0.8125rem;margin-right:16px;">Reagendar</a>
+      <a href="https://www.sacscloud.com/api/scheduling/cancel?token=${booking.token_cancelar}" style="color:#999;font-size:0.8125rem;">Cancelar</a>
+    </div>
+  </td></tr>
+  <tr><td style="background:#FAFAF8;padding:16px 32px;border-radius:0 0 12px 12px;text-align:center;">
+    <span style="font-size:0.75rem;color:#bbb;">SACS — Sistema operativo para retailers</span>
+  </td></tr>
+</table>`;
+
+    await sendEmail(email, '✅ Tu demo con SACS está confirmada', inviteeEmailHtml);
+  } catch (inviteeEmailErr) {
+    console.error('Invitee email notification failed:', inviteeEmailErr);
+  }
+
   // 11. Send SMS/WhatsApp confirmation to invitee (Feature 11)
   if (whatsapp) {
     try {
@@ -512,6 +578,67 @@ export const POST: APIRoute = async ({ request }) => {
     },
     automatico: true,
   });
+
+  // 12b. Auto-enroll in automations triggered by 'demo_agendada'
+  try {
+    const { data: activeAutomations } = await supabase
+      .from('automations')
+      .select('id, enrollment_triggers, suppression_stages, total_enrolled')
+      .eq('estado', 'activo');
+
+    for (const auto of (activeAutomations || [])) {
+      const triggers = auto.enrollment_triggers || [];
+      const shouldEnroll = triggers.some((t: any) => {
+        if (t.type === 'lifecycle_stage_change' && t.config?.new_stage === 'lead_calificado') return true;
+        if (t.type === 'lifecycle_stage_change' && t.config?.new_stage === 'oportunidad') return true;
+        return false;
+      });
+
+      if (!shouldEnroll) continue;
+
+      // Check suppression
+      const contactStage = 'lead_calificado'; // booking sets this
+      if (auto.suppression_stages?.includes(contactStage)) continue;
+
+      // Check not already enrolled
+      const { data: existing } = await supabase
+        .from('automation_enrollments')
+        .select('id')
+        .eq('automation_id', auto.id)
+        .eq('contact_id', contact_id)
+        .eq('estado', 'activo')
+        .limit(1)
+        .maybeSingle();
+
+      if (existing) continue;
+
+      // Get first step
+      const { data: firstStep } = await supabase
+        .from('automation_steps')
+        .select('id')
+        .eq('automation_id', auto.id)
+        .is('parent_step_id', null)
+        .order('orden')
+        .limit(1)
+        .maybeSingle();
+
+      if (firstStep) {
+        await supabase.from('automation_enrollments').insert({
+          automation_id: auto.id,
+          contact_id,
+          current_step_id: firstStep.id,
+          next_action_at: new Date().toISOString(),
+          enrollment_trigger: { type: 'booking_created', booking_id: booking.id },
+        });
+
+        await supabase.from('automations').update({
+          total_enrolled: (auto.total_enrolled || 0) + 1,
+        }).eq('id', auto.id);
+      }
+    }
+  } catch (autoEnrollErr) {
+    console.error('Auto-enrollment after booking failed:', autoEnrollErr);
+  }
 
   // 13. Recurring bookings (Feature 21)
   let recurringBookings: Array<{ id: string; fecha: string; hora_inicio: string }> = [];

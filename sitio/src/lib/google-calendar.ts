@@ -1,14 +1,16 @@
 import { google } from 'googleapis';
 import { supabase } from './supabase';
 
-const CLIENT_ID = import.meta.env.GOOGLE_CALENDAR_CLIENT_ID || '';
-const CLIENT_SECRET = import.meta.env.GOOGLE_CALENDAR_CLIENT_SECRET || '';
-const REDIRECT_URI = import.meta.env.GOOGLE_CALENDAR_REDIRECT_URI || 'https://www.sacscloud.com/api/scheduling/google/callback';
+const CLIENT_ID = (import.meta.env.GOOGLE_CALENDAR_CLIENT_ID || '').trim();
+const CLIENT_SECRET = (import.meta.env.GOOGLE_CALENDAR_CLIENT_SECRET || '').trim();
+const REDIRECT_URI = (import.meta.env.GOOGLE_CALENDAR_REDIRECT_URI || 'https://www.sacscloud.com/api/scheduling/google/callback').trim();
 
 const SCOPES = [
   'https://www.googleapis.com/auth/calendar.readonly',
   'https://www.googleapis.com/auth/calendar.events',
   'https://www.googleapis.com/auth/calendar.freebusy',
+  'openid',
+  'email',
 ];
 
 export function getOAuth2Client() {

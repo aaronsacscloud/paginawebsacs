@@ -5,6 +5,19 @@ import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 
 export const prerender = false;
 
+const RESEND_API_KEY = (import.meta.env.RESEND_API_KEY || '').trim();
+
+async function sendEmail(to: string, subject: string, html: string) {
+  if (!RESEND_API_KEY || !to) return;
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: 'SACS <onboarding@resend.dev>', to: [to], subject, html }),
+    });
+  } catch {}
+}
+
 function addMinutes(time: string, minutes: number): string {
   const [h, m] = time.split(':').map(Number);
   const total = h * 60 + m + minutes;
@@ -147,6 +160,30 @@ export const POST: APIRoute = async ({ request }) => {
     old_booking: oldBooking,
     new_booking: newBooking,
   });
+
+  // Send reschedule email to invitee
+  if (oldBooking.email_invitado) {
+    try {
+      const rescheduleHtml = `
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <tr><td style="background:#fff;padding:32px;border-radius:12px;border:1px solid #f0f0f0;">
+    <h2 style="margin:0 0 8px;font-size:1.125rem;color:#1A1A1A;">✅ Tu reunión ha sido reagendada</h2>
+    <p style="color:#888;margin:0 0 16px;">Tu reunión con SACS ha sido movida a una nueva fecha.</p>
+    <div style="background:#FFF3E0;border-radius:8px;padding:12px 16px;margin-bottom:12px;">
+      <p style="margin:0;font-size:0.8125rem;color:#999;text-decoration:line-through;">Anterior: ${oldBooking.fecha} a las ${oldBooking.hora_inicio}</p>
+    </div>
+    <div style="background:#E8F5E9;border-radius:8px;padding:12px 16px;margin-bottom:16px;">
+      <p style="margin:0;font-size:0.9375rem;font-weight:700;color:#2e7d32;">Nueva: ${nueva_fecha} a las ${nueva_hora}</p>
+      ${newBooking.google_meet_link ? `<p style="margin:8px 0 0;"><a href="${newBooking.google_meet_link}" style="color:#4B7BE5;font-weight:600;">📹 Unirse a Google Meet</a></p>` : ''}
+    </div>
+    <div style="text-align:center;">
+      <a href="https://www.sacscloud.com/api/scheduling/cancel?token=${newBooking.token_cancelar}" style="color:#999;font-size:0.8125rem;">Cancelar</a>
+    </div>
+  </td></tr>
+</table>`;
+      await sendEmail(oldBooking.email_invitado, '✅ Tu reunión con SACS ha sido reagendada', rescheduleHtml);
+    } catch { /* Reschedule email is non-critical */ }
+  }
 
   return new Response(
     JSON.stringify({

@@ -3,11 +3,8 @@ import { supabase } from '../../../lib/supabase';
 
 export const prerender = false;
 
-/**
- * Email send endpoint — placeholder until Resend is integrated.
- * Currently logs the send to email_sends table with estado='queued'.
- * When Resend is connected, this will actually send via their API.
- */
+const RESEND_API_KEY = (import.meta.env.RESEND_API_KEY || '').trim();
+
 export const POST: APIRoute = async ({ request }) => {
   const body = await request.json();
   const { to, subject, html, text, contact_id, template_id, automation_id, enrollment_id, step_id } = body;
@@ -29,17 +26,44 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ error: 'contact_unsubscribed', message: 'Email is unsubscribed' }), { status: 200 });
   }
 
-  // TODO: Replace with Resend API call
-  // const resend = new Resend(process.env.RESEND_API_KEY);
-  // const { data, error } = await resend.emails.send({
-  //   from: 'SACS <hola@sacscloud.com>',
-  //   to: [to],
-  //   subject,
-  //   html,
-  //   text,
-  // });
+  // Send via Resend
+  let providerMessageId: string | null = null;
+  let estado = 'queued';
+  let errorMessage: string | null = null;
 
-  // For now, log as queued
+  if (RESEND_API_KEY) {
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: 'SACS <onboarding@resend.dev>',
+          to: [to],
+          subject,
+          html: html || undefined,
+          text: text || undefined,
+        }),
+      });
+
+      const result = await res.json();
+
+      if (result.id) {
+        providerMessageId = result.id;
+        estado = 'sent';
+      } else {
+        errorMessage = result.message || result.error || 'Unknown Resend error';
+        estado = 'failed';
+      }
+    } catch (err) {
+      errorMessage = String(err);
+      estado = 'failed';
+    }
+  }
+
+  // Log to email_sends table
   const { data: send, error } = await supabase
     .from('email_sends')
     .insert({
@@ -50,8 +74,10 @@ export const POST: APIRoute = async ({ request }) => {
       step_id: step_id || null,
       email_to: to,
       email_provider: 'resend',
-      estado: 'queued', // Will be 'sent' once Resend is connected
-      // provider_message_id: data?.id, // From Resend response
+      provider_message_id: providerMessageId,
+      estado,
+      sent_at: estado === 'sent' ? new Date().toISOString() : null,
+      error_message: errorMessage,
     })
     .select()
     .single();
@@ -60,5 +86,10 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 
-  return new Response(JSON.stringify({ id: send?.id, status: 'queued', message: 'Email queued (Resend not yet connected)' }));
+  return new Response(JSON.stringify({
+    id: send?.id,
+    provider_id: providerMessageId,
+    status: estado,
+    error: errorMessage,
+  }));
 };
