@@ -46,7 +46,7 @@ export const POST: APIRoute = async ({ request }) => {
     cancel_url || `https://www.sacscloud.com/agendar/${booking.event_types?.slug || 'demo'}`,
   );
   params.append('metadata[booking_id]', booking_id);
-  params.append('customer_email', booking.email_invitado);
+  params.append('customer_email', booking.invitee_email);
 
   const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
     method: 'POST',

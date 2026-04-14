@@ -118,10 +118,10 @@ export const POST: APIRoute = async ({ request }) => {
       hora_inicio: nueva_hora,
       hora_fin: nueva_hora_fin,
       timezone: timezone || oldBooking.timezone || 'America/Mexico_City',
-      nombre_invitado: oldBooking.nombre_invitado,
-      email_invitado: oldBooking.email_invitado,
-      whatsapp_invitado: oldBooking.whatsapp_invitado,
-      empresa_invitado: oldBooking.empresa_invitado,
+      invitee_nombre: oldBooking.invitee_nombre,
+      invitee_email: oldBooking.invitee_email,
+      invitee_whatsapp: oldBooking.invitee_whatsapp,
+      invitee_empresa: oldBooking.invitee_empresa,
       notas: oldBooking.notas,
       estado: 'confirmada',
       token_cancelar,
@@ -162,7 +162,7 @@ export const POST: APIRoute = async ({ request }) => {
   });
 
   // Send reschedule email to invitee
-  if (oldBooking.email_invitado) {
+  if (oldBooking.invitee_email) {
     try {
       const rescheduleHtml = `
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;font-family:'Helvetica Neue',Arial,sans-serif;">
@@ -181,7 +181,7 @@ export const POST: APIRoute = async ({ request }) => {
     </div>
   </td></tr>
 </table>`;
-      await sendEmail(oldBooking.email_invitado, '✅ Tu reunión con SACS ha sido reagendada', rescheduleHtml);
+      await sendEmail(oldBooking.invitee_email, '✅ Tu reunión con SACS ha sido reagendada', rescheduleHtml);
     } catch { /* Reschedule email is non-critical */ }
   }
 

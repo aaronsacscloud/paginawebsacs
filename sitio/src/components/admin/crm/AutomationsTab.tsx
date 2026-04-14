@@ -358,13 +358,25 @@ function AutomationDetail({ id, onBack }: { id: string; onBack: () => void }) {
       setNombre(autoData.nombre);
       setDescripcion(autoData.descripcion || '');
       setTipo(autoData.tipo);
-      setTriggers(autoData.enrollment_triggers || []);
+      const rawTriggers = autoData.enrollment_triggers;
+      // Normalize triggers: API may return object or array, with 'conditions' instead of 'config'
+      const normalizeTrigger = (t: any) => {
+        if (!t || !t.type) return null;
+        if (t.config) return t; // Already in expected format
+        // Convert from {type, conditions} to {type, config}
+        const cond = t.conditions?.[0] || {};
+        if (t.type === 'lifecycle_stage_change') return { type: t.type, config: { stage: cond.value || 'lead' } };
+        if (t.type === 'property_change') return { type: t.type, config: { property: cond.property || '', operator: cond.operator || 'eq', value: cond.value || '' } };
+        return { type: t.type, config: {} };
+      };
+      const triggerArr = Array.isArray(rawTriggers) ? rawTriggers : rawTriggers ? [rawTriggers] : [];
+      setTriggers(triggerArr.map(normalizeTrigger).filter(Boolean));
       setGoalEnabled(!!autoData.goal_criteria);
       if (autoData.goal_criteria) {
         setGoalType(autoData.goal_criteria.type || 'lifecycle_stage_reached');
         setGoalStage(autoData.goal_criteria.stage || 'cliente');
       }
-      setSuppressionStages(autoData.suppression_stages || []);
+      setSuppressionStages(Array.isArray(autoData.suppression_stages) ? autoData.suppression_stages : []);
       setAllowReenrollment(autoData.allow_reenrollment);
     } catch { /* ignore */ }
     setLoading(false);

@@ -161,7 +161,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   }
 
   // Include suggestions in SMS/WhatsApp notification if available
-  if (suggestions.length > 0 && booking.whatsapp_invitado) {
+  if (suggestions.length > 0 && booking.invitee_whatsapp) {
     try {
       const baseUrl = import.meta.env.SITE || 'https://www.sacscloud.com';
       const suggestionsText = suggestions
@@ -186,7 +186,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to: booking.whatsapp_invitado,
+          to: booking.invitee_whatsapp,
           message: smsMessage,
           channel: 'whatsapp',
         }),
@@ -195,7 +195,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   }
 
   // Send cancellation email to invitee
-  if (booking.email_invitado) {
+  if (booking.invitee_email) {
     try {
       const suggestionsHtml = suggestions.length > 0
         ? `<p style="margin:16px 0 8px;font-size:0.875rem;color:#1A1A1A;font-weight:600;">¿Te gustaría reagendar?</p>
@@ -213,7 +213,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     ${suggestionsHtml}
   </td></tr>
 </table>`;
-      await sendEmail(booking.email_invitado, 'Tu reunión con SACS ha sido cancelada', cancelHtml);
+      await sendEmail(booking.invitee_email, 'Tu reunión con SACS ha sido cancelada', cancelHtml);
     } catch { /* Cancellation email is non-critical */ }
   }
 

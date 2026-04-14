@@ -33,7 +33,7 @@ export const GET: APIRoute = async ({ url }) => {
 
   const { data: bookings24h } = await supabase
     .from('bookings')
-    .select('id, contact_id, deal_id, fecha, hora_inicio, nombre_invitado, whatsapp_invitado, email_invitado, google_meet_link, token_cancelar, token_reagendar, event_types(nombre)')
+    .select('id, contact_id, deal_id, fecha, hora_inicio, invitee_nombre, invitee_whatsapp, invitee_email, google_meet_link, token_cancelar, token_reagendar, event_types(nombre)')
     .eq('fecha', tomorrowStr)
     .eq('recordatorio_24h_enviado', false)
     .eq('estado', 'confirmada');
@@ -62,14 +62,14 @@ export const GET: APIRoute = async ({ url }) => {
         .eq('id', booking.id);
 
       // Send SMS/WhatsApp reminder (Feature 11)
-      if ((booking as any).whatsapp_invitado) {
+      if ((booking as any).invitee_whatsapp) {
         try {
           const baseUrl = import.meta.env.SITE || 'https://www.sacscloud.com';
           await fetch(`${baseUrl}/api/scheduling/sms/send`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              to: (booking as any).whatsapp_invitado,
+              to: (booking as any).invitee_whatsapp,
               message: `Recordatorio: Tu demo con SACS es mañana a las ${booking.hora_inicio}. ¡Te esperamos!`,
               channel: 'whatsapp',
             }),
@@ -78,12 +78,12 @@ export const GET: APIRoute = async ({ url }) => {
       }
 
       // Send email reminder (24h)
-      if ((booking as any).email_invitado) {
+      if ((booking as any).invitee_email) {
         const reminderHtml = `
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;font-family:'Helvetica Neue',Arial,sans-serif;">
   <tr><td style="background:#fff;padding:32px;border-radius:12px;border:1px solid #f0f0f0;">
     <h2 style="margin:0 0 8px;font-size:1.125rem;color:#1A1A1A;">⏰ Recordatorio: Tu demo es mañana</h2>
-    <p style="color:#888;margin:0 0 16px;">Hola ${(booking as any).nombre_invitado}, te recordamos tu reunión con SACS.</p>
+    <p style="color:#888;margin:0 0 16px;">Hola ${(booking as any).invitee_nombre}, te recordamos tu reunión con SACS.</p>
     <div style="background:#F8F9FB;border-radius:8px;padding:16px;margin-bottom:16px;">
       <p style="margin:0;font-size:0.875rem;"><strong>📅 ${booking.fecha}</strong> a las <strong>${booking.hora_inicio}</strong></p>
       ${(booking as any).google_meet_link ? `<p style="margin:8px 0 0;"><a href="${(booking as any).google_meet_link}" style="color:#4B7BE5;font-weight:600;">📹 Unirse a Google Meet</a></p>` : ''}
@@ -94,7 +94,7 @@ export const GET: APIRoute = async ({ url }) => {
     </div>
   </td></tr>
 </table>`;
-        await sendEmail((booking as any).email_invitado, '⏰ Recordatorio: Tu demo con SACS es mañana', reminderHtml);
+        await sendEmail((booking as any).invitee_email, '⏰ Recordatorio: Tu demo con SACS es mañana', reminderHtml);
       }
 
       stats.reminders_24h++;
@@ -116,7 +116,7 @@ export const GET: APIRoute = async ({ url }) => {
 
   const { data: bookings1h } = await supabase
     .from('bookings')
-    .select('id, contact_id, deal_id, fecha, hora_inicio, nombre_invitado, whatsapp_invitado, email_invitado, google_meet_link, token_cancelar, token_reagendar, event_types(nombre)')
+    .select('id, contact_id, deal_id, fecha, hora_inicio, invitee_nombre, invitee_whatsapp, invitee_email, google_meet_link, token_cancelar, token_reagendar, event_types(nombre)')
     .eq('fecha', todayStr)
     .eq('recordatorio_1h_enviado', false)
     .eq('estado', 'confirmada')
@@ -147,14 +147,14 @@ export const GET: APIRoute = async ({ url }) => {
         .eq('id', booking.id);
 
       // Send SMS/WhatsApp reminder (Feature 11)
-      if ((booking as any).whatsapp_invitado) {
+      if ((booking as any).invitee_whatsapp) {
         try {
           const baseUrl = import.meta.env.SITE || 'https://www.sacscloud.com';
           await fetch(`${baseUrl}/api/scheduling/sms/send`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              to: (booking as any).whatsapp_invitado,
+              to: (booking as any).invitee_whatsapp,
               message: `Recordatorio: Tu demo con SACS es hoy a las ${booking.hora_inicio}. ¡Te esperamos!`,
               channel: 'whatsapp',
             }),
@@ -163,12 +163,12 @@ export const GET: APIRoute = async ({ url }) => {
       }
 
       // Send email reminder (1h)
-      if ((booking as any).email_invitado) {
+      if ((booking as any).invitee_email) {
         const reminderHtml1h = `
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;font-family:'Helvetica Neue',Arial,sans-serif;">
   <tr><td style="background:#fff;padding:32px;border-radius:12px;border:1px solid #f0f0f0;">
     <h2 style="margin:0 0 8px;font-size:1.125rem;color:#1A1A1A;">⏰ Tu demo con SACS empieza en 1 hora</h2>
-    <p style="color:#888;margin:0 0 16px;">Hola ${(booking as any).nombre_invitado}, te recordamos tu reunión con SACS es hoy.</p>
+    <p style="color:#888;margin:0 0 16px;">Hola ${(booking as any).invitee_nombre}, te recordamos tu reunión con SACS es hoy.</p>
     <div style="background:#F8F9FB;border-radius:8px;padding:16px;margin-bottom:16px;">
       <p style="margin:0;font-size:0.875rem;"><strong>📅 ${booking.fecha}</strong> a las <strong>${booking.hora_inicio}</strong></p>
       ${(booking as any).google_meet_link ? `<p style="margin:8px 0 0;"><a href="${(booking as any).google_meet_link}" style="color:#4B7BE5;font-weight:600;">📹 Unirse a Google Meet</a></p>` : ''}
@@ -179,7 +179,7 @@ export const GET: APIRoute = async ({ url }) => {
     </div>
   </td></tr>
 </table>`;
-        await sendEmail((booking as any).email_invitado, '⏰ Tu demo con SACS empieza en 1 hora', reminderHtml1h);
+        await sendEmail((booking as any).invitee_email, '⏰ Tu demo con SACS empieza en 1 hora', reminderHtml1h);
       }
 
       stats.reminders_1h++;
