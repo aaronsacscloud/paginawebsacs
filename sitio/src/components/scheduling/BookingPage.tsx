@@ -1212,129 +1212,161 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
     const meetingLocation = bookingResult.google_meet_link || locationLabel(eventType.ubicacion_tipo);
     const gcalLink = generateGcalLink(meetingTitle, selectedDate, selectedTime, eventType.duracion_minutos, meetingDesc, meetingLocation);
 
-    const waMessage = encodeURIComponent(
-      `Hola! Acabo de agendar mi ${eventType.nombre} para el ${formatDateLong(selectedDate)} a las ${to12h(selectedTime)}. Confirmado!`,
-    );
-    const waLink = `https://wa.me/?text=${waMessage}`;
+    // Configurable offer (from routing_rules.oferta or defaults)
+    const oferta = (eventType as any).routing_rules?.oferta || {
+      trial_dias: 7,
+      descuento_pct: 35,
+      descuento_plan: 'anual',
+      migracion_gratis: true,
+      migracion_valor: 9000,
+      consultoria_horas: 3,
+      consultoria_valor: 8000,
+      mostrar_oferta: true,
+    };
 
     return (
-      <div style={{ textAlign: 'center' as const }}>
-        {/* Green check */}
-        <div style={{
-          width: 64,
-          height: 64,
-          borderRadius: '50%',
-          background: '#ECFDF5',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          margin: '0 auto 16px',
-        }}>
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
+      <div>
+        {/* Success header */}
+        <div style={{ textAlign: 'center' as const, marginBottom: 20 }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: '50%', background: '#ECFDF5',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px',
+          }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+          </div>
+          <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: '1.25rem', fontWeight: 700, color: '#1A1A1A', margin: '0 0 4px' }}>
+            ¡Felicidades! Tu sesión está confirmada
+          </h2>
+          <p style={{ fontSize: '0.8125rem', color: '#777', margin: 0 }}>
+            Tu consultor te estará esperando. Te enviaremos confirmación por WhatsApp y email.
+          </p>
         </div>
 
-        <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: '1.25rem', fontWeight: 700, color: '#1A1A1A', margin: '0 0 4px' }}>
-          Listo! Tu reunion esta agendada
-        </h2>
-        <p style={{ fontSize: '0.875rem', color: '#777', margin: '0 0 24px' }}>
-          {branding.confirmation_message || 'Te enviamos una confirmacion por email.'}
-        </p>
-
-        {/* Details card */}
-        <div style={{
-          background: '#F7F8FA',
-          borderRadius: 12,
-          padding: '20px',
-          textAlign: 'left' as const,
-          marginBottom: 24,
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 4, height: 4, borderRadius: '50%', background: eventType.color, flexShrink: 0 }} />
-              <span style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#1A1A1A' }}>{eventType.nombre}</span>
+        {/* Meeting summary card */}
+        <div style={{ background: '#F7F8FA', borderRadius: 12, padding: '16px 20px', marginBottom: 16 }}>
+          <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 10 }}>Resumen de tu reunión</div>
+          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+              <span style={{ color: '#777' }}>Sesión</span>
+              <span style={{ fontWeight: 700, color: '#1A1A1A' }}>{eventType.nombre}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-              </svg>
-              <span style={{ fontSize: '0.875rem', color: '#555' }}>
-                {formatDateLong(selectedDate)}, {to12h(selectedTime)} - {to12h(addMinutes(selectedTime, eventType.duracion_minutos))}
-              </span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+              <span style={{ color: '#777' }}>Fecha</span>
+              <span style={{ fontWeight: 600, color: '#1A1A1A' }}>{formatDateLong(selectedDate)}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-              </svg>
-              <span style={{ fontSize: '0.875rem', color: '#555' }}>{eventType.duracion_minutos} minutos</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+              <span style={{ color: '#777' }}>Hora</span>
+              <span style={{ fontWeight: 600, color: '#1A1A1A' }}>{to12h(selectedTime)} - {to12h(addMinutes(selectedTime, eventType.duracion_minutos))}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-              </svg>
-              <span style={{ fontSize: '0.875rem', color: '#555' }}>{hostName}</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
-              </svg>
-              <span style={{ fontSize: '0.875rem', color: '#555' }}>{locationLabel(eventType.ubicacion_tipo)}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+              <span style={{ color: '#777' }}>Consultor</span>
+              <span style={{ fontWeight: 600, color: '#1A1A1A' }}>{hostName}</span>
             </div>
             {bookingResult.google_meet_link && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#777" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M15 10l5-3v10l-5-3" /><rect x="1" y="6" width="14" height="12" rx="2" ry="2" />
-                </svg>
-                <a
-                  href={bookingResult.google_meet_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ fontSize: '0.875rem', color: primaryColor, fontWeight: 600, textDecoration: 'none' }}
-                >
-                  Unirse a Google Meet
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', alignItems: 'center' }}>
+                <span style={{ color: '#777' }}>Link</span>
+                <a href={bookingResult.google_meet_link} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, color: primaryColor, textDecoration: 'none', fontSize: '0.75rem' }}>
+                  Google Meet →
                 </a>
               </div>
             )}
           </div>
         </div>
 
-        {/* Action buttons */}
-        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
-          <a
-            href={gcalLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ ...styles.btnPrimary, textDecoration: 'none', background: primaryColor }}
-          >
-            Agregar a Google Calendar
+        {/* Action buttons - calendar + whatsapp */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          <a href={gcalLink} target="_blank" rel="noopener noreferrer" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 12px', background: '#fff', border: '1.5px solid #e0e0e0', borderRadius: 10, textDecoration: 'none', fontSize: '0.75rem', fontWeight: 600, color: '#1A1A1A' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Agregar al calendario
           </a>
-          <a
-            href={waLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ ...styles.btnOutline, width: '100%', justifyContent: 'center', boxSizing: 'border-box' as const }}
-          >
-            Enviar por WhatsApp
+          <a href={`https://wa.me/?text=${encodeURIComponent(`Acabo de agendar mi ${eventType.nombre} con SACS para el ${formatDateLong(selectedDate)} a las ${to12h(selectedTime)}`)}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 12px', background: '#25D366', border: 'none', borderRadius: 10, textDecoration: 'none', fontSize: '0.75rem', fontWeight: 600, color: '#fff' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
+            WhatsApp
           </a>
-          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginTop: 4 }}>
-            {bookingResult.token_reagendar && (
-              <a
-                href={`/agendar/${eventType.slug}?reschedule=${bookingResult.token_reagendar}`}
-                style={{ ...styles.link, fontSize: '0.8125rem' }}
-              >
-                Reagendar
-              </a>
-            )}
-            {bookingResult.token_cancelar && (
-              <a
-                href={`/agendar/${eventType.slug}?cancel=${bookingResult.token_cancelar}`}
-                style={{ ...styles.link, fontSize: '0.8125rem', color: '#DC2626' }}
-              >
-                Cancelar
-              </a>
-            )}
+        </div>
+
+        {/* ═══ SURPRISE OFFER ═══ */}
+        {oferta.mostrar_oferta && (
+          <div style={{ background: 'linear-gradient(135deg, #faf5ff 0%, #f0f9ff 50%, #f0fdf4 100%)', borderRadius: 14, padding: '20px', border: '1.5px solid #e9d5ff', marginBottom: 16 }}>
+            <div style={{ textAlign: 'center' as const, marginBottom: 16 }}>
+              <div style={{ fontSize: '1.5rem', marginBottom: 4 }}>🎉</div>
+              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: '1rem', fontWeight: 800, color: '#1A1A1A', marginBottom: 4 }}>
+                ¡Sorpresa! Tenemos algo especial para ti
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#777' }}>
+                Mientras esperas tu sesión, prueba SACS y llega preparado
+              </div>
+            </div>
+
+            {/* Offer items */}
+            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+              {/* Free trial */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: '#fff', borderRadius: 10, border: '1px solid #f0f0f0' }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1rem' }}>🚀</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1A1A1A' }}>Prueba gratis de {oferta.trial_dias} días</div>
+                  <div style={{ fontSize: '0.6875rem', color: '#777' }}>Experimenta SACS antes de tu sesión</div>
+                </div>
+                <span style={{ fontSize: '0.5625rem', fontWeight: 800, color: '#16a34a', background: '#dcfce7', padding: '2px 8px', borderRadius: 20 }}>GRATIS</span>
+              </div>
+
+              {/* Discount */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: '#fff', borderRadius: 10, border: '1px solid #f0f0f0' }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#fce7f3', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1rem' }}>💰</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1A1A1A' }}>{oferta.descuento_pct}% de descuento en plan {oferta.descuento_plan}</div>
+                  <div style={{ fontSize: '0.6875rem', color: '#777' }}>Solo durante estos {oferta.trial_dias} días de prueba</div>
+                </div>
+                <span style={{ fontSize: '0.5625rem', fontWeight: 800, color: '#9333ea', background: '#f3e8ff', padding: '2px 8px', borderRadius: 20 }}>-{oferta.descuento_pct}%</span>
+              </div>
+
+              {/* Migration */}
+              {oferta.migracion_gratis && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: '#fff', borderRadius: 10, border: '1px solid #f0f0f0' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: '#d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1rem' }}>📦</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1A1A1A' }}>Migración gratis</div>
+                    <div style={{ fontSize: '0.6875rem', color: '#777' }}>Valor normal: <s>${oferta.migracion_valor?.toLocaleString()}</s> MXN</div>
+                  </div>
+                  <span style={{ fontSize: '0.5625rem', fontWeight: 800, color: '#16a34a', background: '#dcfce7', padding: '2px 8px', borderRadius: 20 }}>GRATIS</span>
+                </div>
+              )}
+
+              {/* Consultancy */}
+              {oferta.consultoria_horas > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: '#fff', borderRadius: 10, border: '1px solid #f0f0f0' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1rem' }}>👨‍💼</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1A1A1A' }}>{oferta.consultoria_horas}h de consultoría con experto</div>
+                    <div style={{ fontSize: '0.6875rem', color: '#777' }}>Valor normal: <s>${oferta.consultoria_valor?.toLocaleString()}</s> MXN</div>
+                  </div>
+                  <span style={{ fontSize: '0.5625rem', fontWeight: 800, color: '#16a34a', background: '#dcfce7', padding: '2px 8px', borderRadius: 20 }}>GRATIS</span>
+                </div>
+              )}
+            </div>
+
+            {/* CTA */}
+            <a href="/prueba-gratis" target="_blank" rel="noopener noreferrer" style={{
+              display: 'block', textAlign: 'center' as const, padding: '14px 24px', marginTop: 16,
+              background: '#1A1A1A', color: '#fff', borderRadius: 10, textDecoration: 'none',
+              fontWeight: 700, fontSize: '0.875rem',
+            }}>
+              Activar mi prueba gratis de {oferta.trial_dias} días
+            </a>
+            <div style={{ textAlign: 'center' as const, fontSize: '0.625rem', color: '#999', marginTop: 6 }}>
+              Sin tarjeta de crédito · Se cancela en cualquier momento
+            </div>
           </div>
+        )}
+
+        {/* Reschedule/Cancel links */}
+        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginTop: 4 }}>
+          {bookingResult.token_reagendar && (
+            <a href={`/agendar/${eventType.slug}?reschedule=${bookingResult.token_reagendar}`} style={{ ...styles.link, fontSize: '0.75rem' }}>Reagendar</a>
+          )}
+          {bookingResult.token_cancelar && (
+            <a href={`/agendar/${eventType.slug}?cancel=${bookingResult.token_cancelar}`} style={{ ...styles.link, fontSize: '0.75rem', color: '#DC2626' }}>Cancelar</a>
+          )}
         </div>
 
         {/* Footer */}

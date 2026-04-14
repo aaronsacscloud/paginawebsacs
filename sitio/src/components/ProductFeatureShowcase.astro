@@ -17,77 +17,69 @@ const { items } = Astro.props;
 ---
 
 <section class="pfs-section" id="pfs-section">
-  <div class="pfs-sticky">
-    <!-- Title -->
-    <div class="pfs-header">
-      <h2 class="pfs-title" id="pfs-title">{items[0].title}</h2>
+  <!-- Title -->
+  <div class="pfs-header">
+    <h2 class="pfs-title" id="pfs-title">{items[0].title}</h2>
+  </div>
+
+  <!-- 3-column: pills | tablet | detail -->
+  <div class="pfs-3col">
+    <!-- Left: pills -->
+    <nav class="pfs-pills" aria-label="Funcionalidades">
+      {items.map((item, i) => (
+        <button
+          class={`pfs-pill${i === 0 ? ' active' : ''}`}
+          data-pfs-idx={i}
+          type="button"
+        >
+          <span class="pfs-pill-num">{item.num}</span>
+          <span class="pfs-pill-label">{item.label}</span>
+        </button>
+      ))}
+    </nav>
+
+    <!-- Center: tablet -->
+    <div class="pfs-tablet-wrap">
+      <div class="pfs-tablet">
+        <div class="pfs-tablet-camera"></div>
+        <div class="pfs-tablet-screen">
+          {items.map((item, i) => (
+            <div class={`pfs-slide${i === 0 ? ' active' : ''}`} data-pfs-slide={i}>
+              <img src={item.image} alt={item.imageAlt} width="1200" height="800" loading="lazy" />
+            </div>
+          ))}
+        </div>
+        <div class="pfs-tablet-home"></div>
+      </div>
     </div>
 
-    <div class="pfs-3col container">
-      <!-- Left: vertical pills -->
-      <nav class="pfs-pills" aria-label="Funcionalidades">
-        {items.map((item, i) => (
-          <button
-            class={`pfs-pill${i === 0 ? ' active' : ''}`}
-            data-pfs-idx={i}
-            type="button"
-          >
-            <span class="pfs-pill-num">{item.num}</span>
-            <span class="pfs-pill-label">{item.label}</span>
-          </button>
-        ))}
-      </nav>
-
-      <!-- Center: visual (tablet frame) -->
-      <div class="pfs-visual">
-        <div class="pfs-frame">
-          <div class="pfs-camera"></div>
-          <div class="pfs-screen">
-            {items.map((item, i) => (
-              <div class={`pfs-slide${i === 0 ? ' active' : ''}`} data-pfs-slide={i}>
-                <img src={item.image} alt={item.imageAlt} width="1200" height="800" loading="lazy" />
-              </div>
-            ))}
-          </div>
+    <!-- Right: detail -->
+    <div class="pfs-detail">
+      {items.map((item, i) => (
+        <div class={`pfs-detail-item${i === 0 ? ' active' : ''}`} data-pfs-detail={i} data-pfs-title={item.title}>
+          <p class="pfs-detail-desc">{item.description}</p>
+          {item.link && (
+            <a href={item.link.href} class="pfs-detail-link">
+              {item.link.label}
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          )}
         </div>
-      </div>
-
-      <!-- Right: description -->
-      <div class="pfs-detail">
-        {items.map((item, i) => (
-          <div class={`pfs-detail-item${i === 0 ? ' active' : ''}`} data-pfs-detail={i} data-pfs-title={item.title}>
-            <p class="pfs-detail-desc">{item.description}</p>
-            {item.link && (
-              <a href={item.link.href} class="pfs-detail-link">
-                {item.link.label}
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </a>
-            )}
-          </div>
-        ))}
-      </div>
+      ))}
     </div>
   </div>
 </section>
 
 <style>
   .pfs-section {
-    position: relative;
     background: var(--color-bg-primary, #FAFAF8);
-    padding: clamp(64px, 8vw, 100px) 0;
+    padding: clamp(64px, 8vw, 100px) 0 clamp(64px, 8vw, 100px);
   }
 
-  .pfs-sticky {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-  }
-
-  /* Header */
+  /* ─── Header ─── */
   .pfs-header {
     text-align: center;
-    margin-bottom: clamp(32px, 4vw, 56px);
+    margin-bottom: clamp(32px, 4vw, 48px);
     padding: 0 var(--space-5, 20px);
   }
 
@@ -99,35 +91,40 @@ const { items } = Astro.props;
     letter-spacing: -0.03em;
     line-height: 1.05;
     margin: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.25s ease;
   }
 
-  /* 3-column layout */
+  /* ─── 3-column layout ─── */
   .pfs-3col {
     display: flex;
     flex-direction: column;
     gap: var(--space-6, 24px);
     align-items: center;
+    padding: 0 var(--space-5, 20px);
   }
 
   @media (min-width: 1024px) {
     .pfs-3col {
       display: grid;
-      grid-template-columns: 200px 1fr 280px;
-      gap: var(--space-6, 24px);
+      grid-template-columns: 210px 1fr 260px;
+      gap: 0;
       align-items: center;
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 0 var(--space-5, 20px);
     }
   }
 
   /* ─── Pills (left) ─── */
   .pfs-pills {
     display: flex;
-    gap: 6px;
+    gap: 4px;
     overflow-x: auto;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
     width: 100%;
     justify-content: center;
+    order: 2;
   }
 
   .pfs-pills::-webkit-scrollbar { display: none; }
@@ -138,6 +135,7 @@ const { items } = Astro.props;
       overflow: visible;
       width: auto;
       justify-content: flex-start;
+      order: 0;
     }
   }
 
@@ -155,13 +153,8 @@ const { items } = Astro.props;
     font-family: var(--font-display, 'Sora', sans-serif);
   }
 
-  .pfs-pill:hover {
-    background: rgba(0, 0, 0, 0.04);
-  }
-
-  .pfs-pill.active {
-    background: rgba(0, 0, 0, 0.06);
-  }
+  .pfs-pill:hover { background: rgba(0, 0, 0, 0.04); }
+  .pfs-pill.active { background: rgba(0, 0, 0, 0.06); }
 
   .pfs-pill-num {
     display: inline-flex;
@@ -170,8 +163,7 @@ const { items } = Astro.props;
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: transparent;
-    border: 1.5px solid rgba(0, 0, 0, 0.15);
+    border: 1.5px solid rgba(0, 0, 0, 0.12);
     font-size: 0.75rem;
     font-weight: 700;
     color: var(--color-text-tertiary, #8c8c8c);
@@ -197,36 +189,50 @@ const { items } = Astro.props;
     font-weight: 700;
   }
 
-  /* ─── Visual (center) ─── */
-  .pfs-visual {
+  /* ─── Tablet (center) ─── */
+  .pfs-tablet-wrap {
     width: 100%;
-    max-width: 700px;
+    display: flex;
+    justify-content: center;
+    order: 1;
   }
 
-  .pfs-frame {
-    background: #f5f5f5;
-    border-radius: 16px;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    overflow: hidden;
-    position: relative;
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.06);
+  .pfs-tablet {
+    width: 100%;
+    max-width: 780px;
+    background: linear-gradient(145deg, #e8e8e8 0%, #f5f5f5 50%, #e8e8e8 100%);
+    border-radius: 24px;
+    padding: 14px 14px 8px;
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.04),
+      0 8px 24px rgba(0, 0, 0, 0.06),
+      0 24px 48px rgba(0, 0, 0, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(0, 0, 0, 0.06);
   }
 
-  .pfs-camera {
+  .pfs-tablet-camera {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #d4d4d4;
-    margin: 8px auto;
+    background: #ccc;
+    margin: 0 auto 10px;
   }
 
-  .pfs-screen {
+  .pfs-tablet-screen {
     position: relative;
     aspect-ratio: 4 / 3;
     overflow: hidden;
     background: #fff;
-    margin: 0 8px 8px;
-    border-radius: 8px;
+    border-radius: 6px;
+  }
+
+  .pfs-tablet-home {
+    width: 40px;
+    height: 5px;
+    border-radius: 3px;
+    background: #ccc;
+    margin: 10px auto 4px;
   }
 
   .pfs-slide {
@@ -236,9 +242,7 @@ const { items } = Astro.props;
     transition: opacity 0.5s ease;
   }
 
-  .pfs-slide.active {
-    opacity: 1;
-  }
+  .pfs-slide.active { opacity: 1; }
 
   .pfs-slide img {
     width: 100%;
@@ -250,13 +254,16 @@ const { items } = Astro.props;
   /* ─── Detail (right) ─── */
   .pfs-detail {
     position: relative;
-    min-height: 120px;
+    min-height: 100px;
+    order: 3;
     text-align: center;
+    padding: 0 var(--space-4, 16px);
   }
 
   @media (min-width: 1024px) {
     .pfs-detail {
       text-align: left;
+      padding: 0 0 0 var(--space-6, 24px);
     }
   }
 
@@ -311,20 +318,16 @@ const { items } = Astro.props;
     pill.addEventListener('click', () => {
       const idx = pill.dataset.pfsIdx;
 
-      // Update pills
       pills.forEach((p) => p.classList.remove('active'));
       pill.classList.add('active');
 
-      // Update slides
       slides.forEach((s) => s.classList.remove('active'));
       document.querySelector(`[data-pfs-slide="${idx}"]`)?.classList.add('active');
 
-      // Update details
       details.forEach((d) => d.classList.remove('active'));
       const activeDetail = document.querySelector<HTMLElement>(`[data-pfs-detail="${idx}"]`);
       activeDetail?.classList.add('active');
 
-      // Update title with fade
       if (title) {
         title.style.opacity = '0';
         setTimeout(() => {
