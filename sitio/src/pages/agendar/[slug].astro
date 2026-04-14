@@ -46,7 +46,7 @@ try {
 
 {eventType ? (
   <BaseLayout title={`Agendar ${eventType.nombre} — Sacs`} description={eventType.descripcion || 'Agenda tu sesión con SACS'} noindex={true}>
-    <BookingPage client:load eventType={eventType} questions={questions} />
+    <BookingPage client:only="react" eventType={eventType} questions={questions} />
   </BaseLayout>
 ) : (
   <html lang="es">
