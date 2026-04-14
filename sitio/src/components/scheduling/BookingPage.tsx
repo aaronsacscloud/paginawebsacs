@@ -324,6 +324,40 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
       .catch(() => {});
   }, []);
 
+  // ── Social Proof & Urgency ──
+  const [socialProof, setSocialProof] = useState<any>(null);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [currentToast, setCurrentToast] = useState<any>(null);
+  const toastIndexRef = useRef(0);
+  const [showAllSlots, setShowAllSlots] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/scheduling/social-proof')
+      .then(r => r.json())
+      .then(data => setSocialProof(data))
+      .catch(() => {});
+  }, []);
+
+  // Toast rotation - show a new toast every 25-40 seconds
+  useEffect(() => {
+    if (!socialProof?.toasts?.length) return;
+
+    const showToast = () => {
+      const toast = socialProof.toasts[toastIndexRef.current % socialProof.toasts.length];
+      setCurrentToast(toast);
+      setToastVisible(true);
+      toastIndexRef.current++;
+      setTimeout(() => setToastVisible(false), 4500);
+    };
+
+    // First toast after 8 seconds
+    const firstTimeout = setTimeout(showToast, 8000);
+    // Then every 25-40 seconds
+    const interval = setInterval(showToast, 25000 + Math.random() * 15000);
+
+    return () => { clearTimeout(firstTimeout); clearInterval(interval); };
+  }, [socialProof]);
+
   // Computed primary color from branding
   const primaryColor = branding.primary_color || '#4B7BE5';
 
@@ -618,6 +652,7 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
                   if (hasSlots) {
                     setSelectedDate(dateStr);
                     setSelectedTime(null);
+                    setShowAllSlots(false);
                     setShowWaitlistForm(false);
                     setWaitlistDone(false);
                     setStep(2);
@@ -625,6 +660,7 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
                   } else if (isFull) {
                     setSelectedDate(dateStr);
                     setSelectedTime(null);
+                    setShowAllSlots(false);
                     setShowWaitlistForm(true);
                     setWaitlistDone(false);
                     setStep(2);
@@ -684,6 +720,16 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
             ))}
           </select>
         </div>
+
+        {/* Viewers indicator */}
+        {socialProof && (
+          <div style={{ textAlign: 'center', fontSize: '0.6875rem', color: '#999', marginTop: 8 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2AB5A0', display: 'inline-block' }} />
+              {socialProof.viewers} personas viendo esta página
+            </span>
+          </div>
+        )}
       </div>
     );
   };
@@ -815,6 +861,25 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
       );
     }
 
+    // Scarcity mode logic
+    const allSlotsForDay = slots;
+    const scarcityMode = true;
+    const popularTimes = new Set(socialProof?.popular_times || []);
+
+    // In scarcity mode, show only 2-3 slots unless expanded
+    const displaySlots = (!scarcityMode || showAllSlots)
+      ? allSlotsForDay
+      : (() => {
+          if (allSlotsForDay.length <= 3) return allSlotsForDay;
+          // Pick 2-3 spread-out slots (not all adjacent)
+          const indices = new Set<number>();
+          indices.add(0);
+          indices.add(Math.floor(allSlotsForDay.length / 2));
+          if (allSlotsForDay.length > 4) indices.add(allSlotsForDay.length - 2);
+          return Array.from(indices).sort((a, b) => a - b).map(i => allSlotsForDay[i]);
+        })();
+    const hiddenCount = allSlotsForDay.length - displaySlots.length;
+
     return (
       <div>
         <button
@@ -828,11 +893,17 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
           {formatDateLong(selectedDate)}
         </h2>
 
-        {slots.length === 0 ? (
+        {allSlotsForDay.length === 0 ? (
           <p style={{ color: '#999', fontSize: '0.875rem' }}>No hay horarios disponibles para esta fecha.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {slots.map(slot => {
+            {scarcityMode && allSlotsForDay.length > 3 && !showAllSlots && (
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#9A3412', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9A3412" strokeWidth="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                Últimos horarios disponibles
+              </div>
+            )}
+            {displaySlots.map(slot => {
               const isSelected = slot === selectedTime;
               const endTime = addMinutes(slot, eventType.duracion_minutos);
               return (
@@ -868,6 +939,9 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
                 >
                   <span>
                     {to12h(slot)}
+                    {popularTimes.has(slot) && (
+                      <span style={{ fontSize: '0.5rem', fontWeight: 700, color: '#9A3412', background: '#FFF7ED', padding: '1px 5px', borderRadius: 6, marginLeft: 6 }}>Popular</span>
+                    )}
                     {eventType.tipo_reunion === 'grupal' && slotCapacity[selectedDate!] && slotCapacity[selectedDate!][slot] !== undefined && (
                       <span style={{ fontSize: '0.75rem', fontWeight: 400, marginLeft: 8, opacity: 0.7 }}>
                         ({slotCapacity[selectedDate!][slot]} {slotCapacity[selectedDate!][slot] === 1 ? 'lugar disponible' : 'lugares disponibles'})
@@ -882,6 +956,14 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
                 </button>
               );
             })}
+            {scarcityMode && hiddenCount > 0 && !showAllSlots && (
+              <button
+                onClick={() => setShowAllSlots(true)}
+                style={{ width: '100%', padding: '10px', background: 'none', border: '1px dashed #ddd', borderRadius: 10, cursor: 'pointer', color: '#999', fontSize: '0.8125rem', fontFamily: 'inherit', marginTop: 6 }}
+              >
+                + Ver {hiddenCount} horarios más
+              </button>
+            )}
           </div>
         )}
 
@@ -1245,6 +1327,16 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
   return (
     <div style={styles.wrapper}>
       <div style={isConfirmation ? styles.cardWide : styles.card}>
+        {/* Social Proof Banner */}
+        {socialProof && (
+          <div style={{
+            background: '#FFF7ED', padding: '8px 16px', textAlign: 'center',
+            fontSize: '0.75rem', color: '#9A3412', fontWeight: 600,
+            borderBottom: '1px solid #FED7AA',
+          }}>
+            {socialProof.bookings_this_week} personas agendaron esta semana
+          </div>
+        )}
         {renderHeader()}
         <div style={styles.body}>
           {step === 1 && renderCalendar()}
@@ -1253,6 +1345,34 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
           {step === 4 && renderConfirmation()}
         </div>
       </div>
+
+      {/* Activity Toast - Social Proof */}
+      {toastVisible && currentToast && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: 24, zIndex: 1000,
+          background: '#fff', borderRadius: 12, padding: '12px 16px',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.12)', border: '1px solid #f0f0f0',
+          display: 'flex', alignItems: 'center', gap: 10, maxWidth: 300,
+          animation: 'slideUp 0.3s ease',
+          opacity: toastVisible ? 1 : 0,
+          transform: toastVisible ? 'translateY(0)' : 'translateY(20px)',
+          transition: 'opacity 0.3s, transform 0.3s',
+        }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: '50%', background: '#E8F5E9',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '0.75rem', fontWeight: 700, color: '#2e7d32', flexShrink: 0,
+          }}>{currentToast.nombre?.charAt(0) || '?'}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#1a1a1a' }}>
+              {currentToast.nombre} agendó una demo
+            </div>
+            <div style={{ fontSize: '0.6875rem', color: '#999' }}>
+              para el {currentToast.dia} · {currentToast.hace}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

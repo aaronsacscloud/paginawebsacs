@@ -666,6 +666,7 @@ function EventTypeModal({
     descripcion: eventType?.descripcion || '',
     duracion_minutos: eventType?.duracion_minutos || 30,
     slot_interval_minutos: (eventType as any)?.slot_interval_minutos || '',
+    modo_escasez: eventType?.routing_rules?.modo_escasez || false,
     buffer_antes_minutos: eventType?.buffer_antes_minutos || 0,
     buffer_despues_minutos: eventType?.buffer_despues_minutos || 0,
     aviso_minimo_horas: eventType?.aviso_minimo_horas || 2,
@@ -689,7 +690,7 @@ function EventTypeModal({
     }));
   };
 
-  const updateForm = (field: string, value: string | number) => {
+  const updateForm = (field: string, value: string | number | boolean) => {
     setForm(prev => {
       const updated = { ...prev, [field]: value };
       if (field === 'nombre' && !eventType) {
@@ -719,6 +720,7 @@ function EventTypeModal({
         ...(eventType?.routing_rules || {}),
         emails: emailConfig,
         slot_interval_minutos: form.slot_interval_minutos ? Number(form.slot_interval_minutos) : null,
+        modo_escasez: form.modo_escasez || false,
       },
     };
 
@@ -862,6 +864,12 @@ function EventTypeModal({
             ))}
           </div>
         </div>
+
+        {/* Scarcity mode toggle */}
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.8125rem', color: '#555', marginBottom: 8 }}>
+          <input type="checkbox" checked={form.modo_escasez || false} onChange={e => updateForm('modo_escasez', e.target.checked)} style={{ accentColor: '#4B7BE5' }} />
+          Modo escasez (mostrar solo 2-3 horarios por día)
+        </label>
 
         {/* ── Email Customization Section ── */}
         <div style={{ marginBottom: 20, border: '1px solid #f0f0f0', borderRadius: 10, overflow: 'hidden' }}>
