@@ -1,0 +1,20 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import ProductSubnav from '../components/ProductSubnav.astro';
+import type { PillarId } from '../data/product';
+
+interface Props {
+  title: string;
+  description: string;
+  currentSlug: string;
+  currentPillar: PillarId;
+  noindex?: boolean;
+}
+
+const { title, description, currentSlug, currentPillar, noindex } = Astro.props;
+---
+
+<BaseLayout title={title} description={description} noindex={noindex}>
+  <ProductSubnav currentSlug={currentSlug} currentPillar={currentPillar} />
+  <slot />
+</BaseLayout>

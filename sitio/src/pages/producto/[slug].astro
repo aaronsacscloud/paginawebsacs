@@ -1,0 +1,683 @@
+---
+import ProductLayout from '../../layouts/ProductLayout.astro';
+import GiroHero from '../../components/giros/GiroHero.astro';
+import GiroFeatures from '../../components/giros/GiroFeatures.astro';
+import GiroSplitSection from '../../components/giros/GiroSplitSection.astro';
+import GiroStats from '../../components/giros/GiroStats.astro';
+import GiroTestimonial from '../../components/giros/GiroTestimonial.astro';
+import GiroFAQ from '../../components/giros/GiroFAQ.astro';
+import FinalCTA from '../../components/FinalCTA.astro';
+import { pillars, getFeatureBySlug, getPillarForFeature, getAllSlugs } from '../../data/product';
+
+export function getStaticPaths() {
+  return getAllSlugs().map((slug) => ({ params: { slug } }));
+}
+
+const { slug } = Astro.params;
+const feature = getFeatureBySlug(slug!)!;
+const pillar = getPillarForFeature(slug!)!;
+
+// ─── Page content per slug (live pages only) ───
+const pageContent: Record<string, any> = {
+  'punto-de-venta': {
+    hero: {
+      eyebrow: 'Punto de Venta',
+      title: 'Cobra desde cualquier dispositivo. Sin hardware especial.',
+      subtitle: 'Convierte cualquier tablet, celular o computadora en un punto de venta completo. Acepta tarjeta, efectivo, transferencia y más en segundos.',
+      image: '/images/screen-pos.webp',
+      imageAlt: 'Punto de Venta SACS en tablet mostrando el proceso de cobro',
+    },
+    features: [
+      {
+        icon: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>',
+        title: 'Todos los métodos de pago',
+        description: 'Tarjeta de crédito y débito, efectivo, transferencia, OXXO y más. Sin terminales obligatorias.',
+      },
+      {
+        icon: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+        title: 'Funciona sin internet',
+        description: 'Sigue cobrando aunque se caiga la conexión. Las ventas se sincronizan cuando vuelve la red.',
+      },
+      {
+        icon: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
+        title: 'Ticket por WhatsApp',
+        description: 'Envía el ticket digital al WhatsApp de tu cliente. Sin papel, sin impresora obligatoria.',
+      },
+      {
+        icon: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
+        title: 'Múltiples cajeros',
+        description: 'Cada vendedor con su sesión. Cortes de caja individuales, comisiones y permisos por rol.',
+      },
+    ],
+    splits: [
+      {
+        title: 'Cortes de caja y arqueos en segundos',
+        description: 'Al final del turno, cierra caja con un tap. SACS calcula la diferencia entre lo cobrado y lo que hay en efectivo.',
+        points: [
+          'Corte de caja por cajero o por turno',
+          'Arqueo de efectivo con conteo rápido',
+          'Historial completo de movimientos del día',
+          'Detección automática de faltantes',
+        ],
+        image: '/images/screen-pos.webp',
+        imageAlt: 'Corte de caja en SACS mostrando resumen del día',
+        imageSide: 'left',
+      },
+      {
+        title: 'Cotizaciones que se convierten en ventas',
+        description: 'Genera cotizaciones profesionales desde el punto de venta. Tu cliente recibe un PDF por WhatsApp y puede pagar en línea.',
+        points: [
+          'Cotización con tu logo y datos fiscales',
+          'Envío por WhatsApp o email en un click',
+          'El cliente paga desde el link de la cotización',
+          'Se convierte en venta automáticamente',
+        ],
+        image: '/images/screen-pos.webp',
+        imageAlt: 'Cotización generada desde SACS con opción de pago en línea',
+        imageSide: 'right',
+      },
+      {
+        title: 'Ventas a crédito y listas de precios',
+        description: 'Vende a crédito a tus clientes de confianza. Configura listas de precios por tipo de cliente: mayoreo, menudeo, empleados.',
+        points: [
+          'Crédito con límite configurable por cliente',
+          'Listas de precios por tipo de cliente',
+          'Precios por volumen automáticos',
+          'Seguimiento de saldos pendientes',
+        ],
+        image: '/images/screen-pos.webp',
+        imageAlt: 'Configuración de listas de precios en SACS',
+        imageSide: 'left',
+      },
+    ],
+    stats: [
+      { value: '+3,000', label: 'Tiendas usando SACS POS' },
+      { value: '2 seg', label: 'Tiempo promedio de cobro' },
+      { value: '99.9%', label: 'Uptime del sistema' },
+      { value: '0', label: 'Hardware obligatorio' },
+    ],
+    testimonial: {
+      quote: 'Desde que cambiamos a SACS, el cobro es instantáneo. Mis vendedoras ya no necesitan capacitación especial, es tan fácil como usar el celular.',
+      name: 'María García',
+      role: 'Fundadora',
+      company: 'La Bella Pandita',
+      stat: '42',
+      statLabel: 'sucursales usando SACS POS',
+    },
+    faqs: [
+      { question: '¿Necesito hardware especial para usar el POS?', answer: 'No. SACS funciona en cualquier dispositivo con navegador: tablet, celular o computadora. Si ya tienes una terminal bancaria, la puedes seguir usando. No es obligatorio comprar nada.' },
+      { question: '¿Funciona sin internet?', answer: 'Sí. SACS tiene modo offline que te permite seguir cobrando. Cuando vuelve la conexión, todas las ventas se sincronizan automáticamente.' },
+      { question: '¿Puedo tener varios cajeros al mismo tiempo?', answer: 'Sí. Cada vendedor puede tener su propia sesión con permisos específicos. Los cortes de caja son individuales por cajero o por turno.' },
+      { question: '¿Cómo recibe el ticket mi cliente?', answer: 'Puedes enviar el ticket por WhatsApp, email o imprimirlo. La opción de WhatsApp es la más popular: rápida, sin papel y el cliente siempre lo tiene a la mano.' },
+      { question: '¿Se integra con mi terminal bancaria actual?', answer: 'SACS se integra con las principales terminales bancarias en México. También puedes cobrar con link de pago, transferencia SPEI o en efectivo.' },
+      { question: '¿Puedo facturar desde el punto de venta?', answer: 'Sí. Genera CFDI directamente desde el POS al momento del cobro, o deja que tu cliente se autofacture desde el portal de clientes.' },
+    ],
+  },
+};
+
+const content = pageContent[slug!];
+const isLive = feature.status === 'live' && content;
+---
+
+<ProductLayout
+  title={feature.title}
+  description={feature.description}
+  currentSlug={slug!}
+  currentPillar={pillar.id}
+  noindex={feature.status === 'coming-soon'}
+>
+  {isLive && (
+    <Fragment>
+      <GiroHero
+        eyebrow={content.hero.eyebrow}
+        title={content.hero.title}
+        subtitle={content.hero.subtitle}
+        image={content.hero.image}
+        imageAlt={content.hero.imageAlt}
+        primaryCTA={{ label: 'Prueba gratis', href: '/prueba-gratis' }}
+        secondaryCTA={{ label: 'Agenda una demo', href: '/contacto' }}
+      />
+
+      <section class="pf-features-section reveal-section">
+        <div class="container">
+          <div class="pf-features-grid">
+            {content.features.map((f: any, i: number) => (
+              <div class="pf-feature-card reveal-item" style={`--reveal-delay: ${i * 100}ms`}>
+                <div class="pf-feature-icon" set:html={f.icon} />
+                <h3 class="pf-feature-title">{f.title}</h3>
+                <p class="pf-feature-desc">{f.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {content.splits.map((split: any, i: number) => (
+        <section class={`pf-split reveal-section${i % 2 !== 0 ? ' pf-split--alt' : ''}`}>
+          <div class={`pf-split-inner container${split.imageSide === 'right' ? ' pf-split--reverse' : ''}`}>
+            <div class="pf-split-media reveal-item" style="--reveal-delay: 0ms">
+              <img src={split.image} alt={split.imageAlt} width="900" height="675" loading="lazy" />
+            </div>
+            <div class="pf-split-content reveal-item" style="--reveal-delay: 150ms">
+              <h2 class="pf-split-title">{split.title}</h2>
+              <p class="pf-split-desc">{split.description}</p>
+              <ul class="pf-split-points">
+                {split.points.map((point: string) => (
+                  <li class="pf-split-point">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2AB5A0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+      ))}
+
+      <section class="pf-stats reveal-section">
+        <div class="pf-stats-inner container">
+          {content.stats.map((stat: any, i: number) => (
+            <div class="pf-stat reveal-item" style={`--reveal-delay: ${i * 120}ms`}>
+              <span class="pf-stat-value">{stat.value}</span>
+              <span class="pf-stat-label">{stat.label}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section class="pf-testimonial reveal-section">
+        <div class="pf-testimonial-inner container">
+          <div class="pf-testimonial-card reveal-item">
+            <svg class="pf-quote-mark" width="40" height="32" viewBox="0 0 40 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12.4 32C8.53 32 5.33 30.56 2.8 27.68C0.93 25.15 0 21.97 0 18.13C0 13.33 1.33 9.2 4 5.73C6.67 2.27 10.27 0 14.8 0L16.4 3.47C13.53 4.27 11.2 5.87 9.4 8.27C7.6 10.67 6.67 13.27 6.53 16.07C7.73 15.27 9.07 14.87 10.53 14.87C12.93 14.87 14.93 15.67 16.53 17.27C18.13 18.87 18.93 20.93 18.93 23.47C18.93 25.87 18.07 27.93 16.33 29.67C14.6 31.07 12.6 32 12.4 32ZM33.2 32C29.33 32 26.13 30.56 23.6 27.68C21.73 25.15 20.8 21.97 20.8 18.13C20.8 13.33 22.13 9.2 24.8 5.73C27.47 2.27 31.07 0 35.6 0L37.2 3.47C34.33 4.27 32 5.87 30.2 8.27C28.4 10.67 27.47 13.27 27.33 16.07C28.53 15.27 29.87 14.87 31.33 14.87C33.73 14.87 35.73 15.67 37.33 17.27C38.93 18.87 39.73 20.93 39.73 23.47C39.73 25.87 38.87 27.93 37.13 29.67C35.4 31.07 33.4 32 33.2 32Z" fill="rgba(0,0,0,0.04)"/>
+            </svg>
+            <blockquote class="pf-testimonial-quote">{content.testimonial.quote}</blockquote>
+            <div class="pf-testimonial-footer">
+              <div class="pf-testimonial-author">
+                <span class="pf-testimonial-name">{content.testimonial.name}</span>
+                <span class="pf-testimonial-role">{content.testimonial.role}, {content.testimonial.company}</span>
+              </div>
+              {content.testimonial.stat && (
+                <div class="pf-testimonial-stat">
+                  <span class="pf-testimonial-stat-value">{content.testimonial.stat}</span>
+                  <span class="pf-testimonial-stat-label">{content.testimonial.statLabel}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <GiroFAQ faqs={content.faqs} />
+    </Fragment>
+  )}
+
+  {!isLive && (
+    <Fragment>
+      <section class="pf-hero">
+        <div class="pf-hero-inner container">
+          <span class="pf-eyebrow">{feature.hero.eyebrow}</span>
+          <h1 class="pf-headline">{feature.hero.headline}</h1>
+          <p class="pf-subtitle">{feature.hero.subtitle}</p>
+        </div>
+      </section>
+
+      <section class="pf-coming-soon">
+        <div class="pf-cs-inner container">
+          <div class="pf-cs-card">
+            <div class="pf-cs-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={pillar.color} stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            </div>
+            <h2 class="pf-cs-title">Estamos preparando esta sección</h2>
+            <p class="pf-cs-desc">Pronto tendrás toda la información de <strong>{feature.label}</strong> aquí. Mientras tanto, agenda una demo y te la mostramos en vivo.</p>
+            <div class="pf-cs-actions">
+              <a href="/contacto" class="pf-cs-btn pf-cs-btn--primary">Agenda una demo</a>
+              <a href="/prueba-gratis" class="pf-cs-btn pf-cs-btn--secondary">Prueba gratis</a>
+            </div>
+          </div>
+
+          <div class="pf-cs-explore">
+            <h3 class="pf-cs-explore-title">Explora más de {pillar.verb}</h3>
+            <div class="pf-cs-explore-grid">
+              {pillar.features.filter(f => f.slug !== slug).map((f) => (
+                <a href={`/producto/${f.slug}`} class="pf-cs-explore-link">
+                  <span class="pf-cs-explore-name">{f.label}</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    </Fragment>
+  )}
+
+  <FinalCTA />
+</ProductLayout>
+
+<style>
+  /* ═══ Scroll Reveal System ═══ */
+  .reveal-item {
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+
+  .reveal-section.visible .reveal-item {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal-item {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+
+  /* ═══ Feature Cards ═══ */
+  .pf-features-section {
+    padding: clamp(64px, 8vw, 96px) 0;
+    background: #fff;
+  }
+
+  .pf-features-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6, 24px);
+  }
+
+  @media (min-width: 640px) {
+    .pf-features-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (min-width: 1024px) {
+    .pf-features-grid { grid-template-columns: repeat(4, 1fr); gap: var(--space-8, 32px); }
+  }
+
+  .pf-feature-card {
+    padding: var(--space-6, 24px);
+    border-radius: 16px;
+    transition: background 0.2s ease, box-shadow 0.3s ease, transform 0.3s ease;
+  }
+
+  .pf-feature-card:hover {
+    background: var(--color-bg-primary, #FAFAF8);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+    transform: translateY(-4px);
+  }
+
+  .pf-feature-icon {
+    color: var(--color-text-tertiary, #8c8c8c);
+    margin-bottom: var(--space-4, 16px);
+  }
+
+  .pf-feature-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+    letter-spacing: -0.01em;
+    margin: 0 0 var(--space-2, 8px);
+  }
+
+  .pf-feature-desc {
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    color: var(--color-text-secondary, #4A4A4A);
+    margin: 0;
+  }
+
+  /* ═══ Split Sections ═══ */
+  .pf-split {
+    padding: clamp(64px, 8vw, 100px) 0;
+  }
+
+  .pf-split--alt {
+    background: var(--color-bg-primary, #FAFAF8);
+  }
+
+  .pf-split-inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8, 32px);
+  }
+
+  @media (min-width: 1024px) {
+    .pf-split-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(48px, 5vw, 80px);
+      align-items: center;
+    }
+
+    .pf-split--reverse {
+      direction: rtl;
+    }
+
+    .pf-split--reverse > * {
+      direction: ltr;
+    }
+  }
+
+  .pf-split-media {
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--color-bg-secondary, #F5F3EE);
+  }
+
+  .pf-split-media img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    display: block;
+  }
+
+  .pf-split-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 16px);
+  }
+
+  .pf-split-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+    font-weight: 800;
+    color: var(--color-text-primary, #1a1a2e);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin: 0;
+  }
+
+  .pf-split-desc {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--color-text-secondary, #4A4A4A);
+    margin: 0;
+  }
+
+  .pf-split-points {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-2, 8px) 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+  }
+
+  .pf-split-point {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3, 12px);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: var(--color-text-secondary, #4A4A4A);
+  }
+
+  .pf-split-point svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* ═══ Stats Bar ═══ */
+  .pf-stats {
+    background: var(--color-bg-dark-deep, #1A1A2E);
+    padding: clamp(48px, 6vw, 80px) 0;
+  }
+
+  .pf-stats-inner {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-8, 32px);
+    text-align: center;
+  }
+
+  @media (min-width: 768px) {
+    .pf-stats-inner { grid-template-columns: repeat(4, 1fr); }
+  }
+
+  .pf-stat-value {
+    display: block;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: var(--space-2, 8px);
+  }
+
+  .pf-stat-label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.3;
+  }
+
+  /* ═══ Testimonial ═══ */
+  .pf-testimonial {
+    padding: clamp(64px, 8vw, 100px) 0;
+    background: var(--color-bg-primary, #FAFAF8);
+  }
+
+  .pf-testimonial-inner {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .pf-testimonial-card {
+    position: relative;
+    padding: clamp(32px, 5vw, 48px) 0;
+  }
+
+  .pf-quote-mark {
+    margin-bottom: var(--space-6, 24px);
+  }
+
+  .pf-testimonial-quote {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.25rem, 2.5vw, 1.625rem);
+    font-weight: 600;
+    color: var(--color-text-primary, #1a1a2e);
+    letter-spacing: -0.02em;
+    line-height: 1.45;
+    margin: 0 0 var(--space-8, 32px);
+  }
+
+  .pf-testimonial-footer {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-6, 24px);
+    padding-top: var(--space-6, 24px);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .pf-testimonial-author {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .pf-testimonial-name {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+  }
+
+  .pf-testimonial-role {
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary, #8c8c8c);
+  }
+
+  .pf-testimonial-stat {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .pf-testimonial-stat-value {
+    display: block;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--color-primary, #4B7BE5);
+    line-height: 1;
+  }
+
+  .pf-testimonial-stat-label {
+    font-size: 0.75rem;
+    color: var(--color-text-tertiary, #8c8c8c);
+    line-height: 1.3;
+  }
+
+  /* ═══ Coming Soon (fallback) ═══ */
+  .pf-hero {
+    padding: clamp(60px, 10vw, 120px) 0 clamp(40px, 6vw, 60px);
+    background: var(--color-bg-primary, #FAFAF8);
+  }
+
+  .pf-hero-inner { max-width: 800px; }
+
+  .pf-eyebrow {
+    display: inline-block;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-text-tertiary, #8c8c8c);
+    margin-bottom: 16px;
+  }
+
+  .pf-headline {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    color: var(--color-text-primary, #1a1a2e);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin: 0 0 20px;
+  }
+
+  .pf-subtitle {
+    font-size: clamp(1rem, 1.5vw, 1.1875rem);
+    line-height: 1.6;
+    color: var(--color-text-secondary, #4A4A4A);
+    max-width: 600px;
+    margin: 0;
+  }
+
+  .pf-coming-soon { padding: clamp(40px, 6vw, 80px) 0; }
+  .pf-cs-inner { max-width: 800px; }
+
+  .pf-cs-card {
+    text-align: center;
+    padding: clamp(32px, 5vw, 56px);
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    margin-bottom: 48px;
+  }
+
+  .pf-cs-icon { margin-bottom: 20px; }
+
+  .pf-cs-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+    margin: 0 0 12px;
+  }
+
+  .pf-cs-desc {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--color-text-secondary, #6b7280);
+    max-width: 480px;
+    margin: 0 auto 28px;
+  }
+
+  .pf-cs-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  .pf-cs-btn {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    padding: 14px 28px;
+    border-radius: var(--radius-full, 50px);
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: inline-block;
+  }
+
+  .pf-cs-btn:hover { transform: translateY(-2px); text-decoration: none; }
+  .pf-cs-btn--primary { background: var(--color-text-primary, #1a1a2e); color: #fff; }
+  .pf-cs-btn--primary:hover { box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); }
+  .pf-cs-btn--secondary { background: transparent; color: var(--color-text-primary, #1a1a2e); border: 1.5px solid rgba(0, 0, 0, 0.15); }
+  .pf-cs-btn--secondary:hover { border-color: rgba(0, 0, 0, 0.3); }
+
+  .pf-cs-explore-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+    margin: 0 0 16px;
+  }
+
+  .pf-cs-explore-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 8px;
+  }
+
+  .pf-cs-explore-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: background 0.15s ease;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .pf-cs-explore-link:hover { background: rgba(0, 0, 0, 0.03); text-decoration: none; }
+  .pf-cs-explore-name { font-size: 0.875rem; font-weight: 600; color: var(--color-text-primary, #1a1a2e); }
+  .pf-cs-explore-link svg { color: var(--color-text-tertiary, #8c8c8c); transition: transform 0.2s ease; }
+  .pf-cs-explore-link:hover svg { transform: translateX(3px); color: var(--color-text-primary, #1a1a2e); }
+
+  @media (max-width: 767px) {
+    .pf-cs-explore-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+  // ═══ Scroll Reveal with stagger ═══
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (!prefersReducedMotion) {
+    const revealSections = document.querySelectorAll('.reveal-section');
+
+    const revealObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+    );
+
+    revealSections.forEach((section) => revealObserver.observe(section));
+  } else {
+    document.querySelectorAll('.reveal-section').forEach((s) => s.classList.add('visible'));
+  }
+</script>

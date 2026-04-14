@@ -1,0 +1,351 @@
+---
+import { pillars, type PillarId } from '../data/product';
+
+interface Props {
+  currentSlug: string;
+  currentPillar: PillarId;
+}
+
+const { currentSlug, currentPillar } = Astro.props;
+const activePillar = pillars.find((p) => p.id === currentPillar)!;
+---
+
+<div class="product-subnav" id="product-subnav">
+  <div class="product-subnav-inner container">
+    <!-- Left: Pillar selector -->
+    <div class="psn-pillar-selector" id="psn-pillar-selector">
+      <button class="psn-pillar-btn" type="button" aria-expanded="false" aria-controls="psn-pillar-dropdown">
+        <span class="psn-pillar-dot" style={`background:${activePillar.color}`}></span>
+        <span class="psn-pillar-label">{activePillar.verb}</span>
+        <svg class="psn-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="psn-pillar-dropdown" id="psn-pillar-dropdown">
+        {pillars.map((p) => (
+          <a
+            href={`/producto/${p.features[0].slug}`}
+            class={`psn-pillar-option${p.id === currentPillar ? ' active' : ''}`}
+          >
+            <span class="psn-pillar-dot" style={`background:${p.color}`}></span>
+            <span class="psn-option-verb">{p.verb}</span>
+            <span class="psn-option-desc">{p.description}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <!-- Right: Feature links -->
+    <nav class="psn-features" aria-label="Funcionalidades" id="psn-features">
+      {activePillar.features.map((f) => (
+        <a
+          href={`/producto/${f.slug}`}
+          class={`psn-feature-link${f.slug === currentSlug ? ' active' : ''}`}
+          style={f.slug === currentSlug ? `--accent:${activePillar.color}` : ''}
+        >
+          {f.label}
+        </a>
+      ))}
+    </nav>
+  </div>
+</div>
+
+<style>
+  .product-subnav {
+    position: sticky;
+    top: 71px;
+    z-index: 999;
+    background: #fff;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+    transition: top 0.3s ease;
+  }
+
+  .product-subnav.nav-hidden {
+    top: 0;
+  }
+
+  .product-subnav-inner {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    height: 64px;
+  }
+
+  /* ─── Pillar Selector ─── */
+  .psn-pillar-selector {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .psn-pillar-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 12px 6px 8px;
+    border-radius: 8px;
+    transition: background 0.15s ease;
+    font-family: var(--font-display, 'Sora', sans-serif);
+  }
+
+  .psn-pillar-btn:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  .psn-pillar-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .psn-pillar-label {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+    letter-spacing: -0.01em;
+  }
+
+  .psn-chevron {
+    color: var(--color-text-tertiary, #8c8c8c);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .psn-pillar-btn[aria-expanded="true"] .psn-chevron {
+    transform: rotate(180deg);
+  }
+
+  /* Dropdown */
+  .psn-pillar-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    padding: 6px;
+    min-width: 260px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-4px);
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+    z-index: 10;
+  }
+
+  .psn-pillar-dropdown.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .psn-pillar-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: background 0.15s ease;
+  }
+
+  .psn-pillar-option:hover {
+    background: rgba(0, 0, 0, 0.04);
+    text-decoration: none;
+  }
+
+  .psn-pillar-option.active {
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  .psn-option-verb {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+  }
+
+  .psn-option-desc {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-tertiary, #8c8c8c);
+    margin-left: auto;
+  }
+
+  /* ─── Feature Links ─── */
+  .psn-features {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .psn-features::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Fade hint for scrollable overflow */
+  .psn-features {
+    mask-image: linear-gradient(to right, #000 90%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, #000 90%, transparent 100%);
+  }
+
+  .psn-feature-link {
+    font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--color-text-secondary, #6b7280);
+    text-decoration: none;
+    padding: 18px 20px;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s ease, border-color 0.15s ease;
+    line-height: 1;
+  }
+
+  .psn-feature-link:hover {
+    color: var(--color-text-primary, #1a1a2e);
+    text-decoration: none;
+  }
+
+  .psn-feature-link.active {
+    color: var(--color-text-primary, #1a1a2e);
+    font-weight: 600;
+    border-bottom-color: var(--accent, #1a1a2e);
+  }
+
+  /* ─── Mobile ─── */
+  @media (max-width: 1023px) {
+    .product-subnav-inner {
+      flex-direction: column;
+      height: auto;
+      padding-top: 10px;
+      padding-bottom: 0;
+      gap: 0;
+    }
+
+    .psn-pillar-selector {
+      width: 100%;
+      padding-bottom: 8px;
+    }
+
+    .psn-pillar-btn {
+      width: 100%;
+    }
+
+    .psn-pillar-dropdown {
+      left: 0;
+      right: 0;
+      min-width: unset;
+    }
+
+    .psn-features {
+      width: 100%;
+      padding: 0;
+      gap: 0;
+      border-top: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .psn-feature-link {
+      font-size: 0.8125rem;
+      padding: 12px 14px;
+    }
+  }
+
+  /* Mobile performance: no backdrop-filter */
+  @media (max-width: 767px) {
+    .product-subnav {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+  }
+</style>
+
+<script>
+  // Pillar dropdown toggle
+  const btn = document.querySelector<HTMLButtonElement>('.psn-pillar-btn');
+  const dropdown = document.getElementById('psn-pillar-dropdown');
+
+  if (btn && dropdown) {
+    btn.addEventListener('click', () => {
+      const isOpen = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', String(!isOpen));
+      dropdown.classList.toggle('open');
+    });
+
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+      if (!(e.target as Element)?.closest('.psn-pillar-selector')) {
+        btn.setAttribute('aria-expanded', 'false');
+        dropdown.classList.remove('open');
+      }
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        btn.setAttribute('aria-expanded', 'false');
+        dropdown.classList.remove('open');
+      }
+    });
+  }
+
+  // Hide main nav when scrolling down, show when scrolling up
+  const mainNav = document.getElementById('nav');
+  const subnav = document.getElementById('product-subnav');
+  let lastScrollY = 0;
+  let navHidden = false;
+  let subnavTicking = false;
+
+  function updateNavVisibility() {
+    const scrollY = window.scrollY;
+    const shouldHide = scrollY > 120 && scrollY > lastScrollY;
+    const shouldShow = scrollY < lastScrollY || scrollY <= 71;
+
+    if (shouldHide && !navHidden) {
+      mainNav?.style.setProperty('transform', 'translateY(-100%)');
+      subnav?.classList.add('nav-hidden');
+      navHidden = true;
+    } else if (shouldShow && navHidden) {
+      mainNav?.style.setProperty('transform', 'translateY(0)');
+      subnav?.classList.remove('nav-hidden');
+      navHidden = false;
+    }
+
+    lastScrollY = scrollY;
+  }
+
+  if (mainNav) {
+    mainNav.style.transition = 'transform 0.3s ease';
+  }
+
+  window.addEventListener('scroll', () => {
+    if (!subnavTicking) {
+      requestAnimationFrame(() => {
+        updateNavVisibility();
+        subnavTicking = false;
+      });
+      subnavTicking = true;
+    }
+  }, { passive: true });
+
+  // Auto-scroll active feature link into view on mobile
+  const featuresNav = document.getElementById('psn-features');
+  const activeLink = featuresNav?.querySelector<HTMLElement>('.psn-feature-link.active');
+  if (featuresNav && activeLink) {
+    requestAnimationFrame(() => {
+      const navRect = featuresNav.getBoundingClientRect();
+      const linkRect = activeLink.getBoundingClientRect();
+      const scrollLeft = linkRect.left - navRect.left - (navRect.width / 2) + (linkRect.width / 2);
+      featuresNav.scrollBy({ left: scrollLeft, behavior: 'smooth' });
+    });
+  }
+</script>
