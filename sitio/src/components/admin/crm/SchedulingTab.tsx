@@ -17,6 +17,7 @@ interface EventType {
   color: string;
   owner_id: string | null;
   activo: boolean;
+  routing_rules?: Record<string, any> | null;
 }
 
 interface Booking {
@@ -83,7 +84,7 @@ const ESTADO_COLORS: Record<string, string> = {
   cancelada: '#999',
   reagendada: '#6C5CE7',
 };
-const DURATION_OPTIONS = [15, 30, 45, 60];
+const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120];
 const BUFFER_OPTIONS = [0, 5, 10, 15];
 const AVISO_OPTIONS = [1, 2, 4, 8, 24];
 const MAX_DIAS_OPTIONS = [7, 14, 30, 60];
@@ -95,6 +96,22 @@ const UBICACION_OPTIONS = [
   { value: 'presencial', label: 'Presencial' },
 ];
 const PRESET_COLORS = ['#4B7BE5', '#2AB5A0', '#6C5CE7', '#E8A838', '#DC2626', '#059669'];
+
+const DEFAULT_EMAIL_CONFIG: Record<string, any> = {
+  confirmation: { subject: '\u2705 Tu demo con SACS est\u00e1 confirmada', heading: '\u00a1Tu demo est\u00e1 confirmada!', body: 'Hola {{nombre}}, tu reuni\u00f3n con SACS ha sido agendada.', show_meet_link: true, show_reschedule_link: true, show_cancel_link: true },
+  reminder_24h: { subject: '\u23f0 Recordatorio: Tu demo es ma\u00f1ana', heading: 'Recordatorio: Tu demo es ma\u00f1ana', body: 'Hola {{nombre}}, te recordamos tu reuni\u00f3n con SACS.', enabled: true },
+  reminder_1h: { subject: '\u23f0 Tu demo empieza en 1 hora', heading: 'Tu demo empieza en 1 hora', body: 'Hola {{nombre}}, tu reuni\u00f3n empieza pronto.', enabled: true },
+  cancellation: { subject: 'Tu reuni\u00f3n con SACS ha sido cancelada', heading: 'Tu reuni\u00f3n ha sido cancelada', body: 'La reuni\u00f3n ha sido cancelada.', show_suggestions: true },
+  reschedule: { subject: '\u2705 Tu reuni\u00f3n ha sido reagendada', heading: 'Tu reuni\u00f3n ha sido reagendada', body: 'Tu reuni\u00f3n con SACS ha sido movida a una nueva fecha.' },
+};
+
+const EMAIL_TABS: { key: string; label: string }[] = [
+  { key: 'confirmation', label: 'Confirmaci\u00f3n' },
+  { key: 'reminder_24h', label: 'Recordatorio 24h' },
+  { key: 'reminder_1h', label: 'Recordatorio 1h' },
+  { key: 'cancellation', label: 'Cancelaci\u00f3n' },
+  { key: 'reschedule', label: 'Reagendamiento' },
+];
 
 const MONTH_NAMES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -657,6 +674,19 @@ function EventTypeModal({
     color: eventType?.color || '#4B7BE5',
   });
   const [saving, setSaving] = useState(false);
+  const [emailConfig, setEmailConfig] = useState<Record<string, any>>(() => {
+    const saved = eventType?.routing_rules?.emails;
+    return saved ? { ...DEFAULT_EMAIL_CONFIG, ...saved } : { ...DEFAULT_EMAIL_CONFIG };
+  });
+  const [showEmailConfig, setShowEmailConfig] = useState(false);
+  const [activeEmailTab, setActiveEmailTab] = useState('confirmation');
+
+  const updateEmailField = (emailKey: string, field: string, value: string | boolean) => {
+    setEmailConfig(prev => ({
+      ...prev,
+      [emailKey]: { ...prev[emailKey], [field]: value },
+    }));
+  };
 
   const updateForm = (field: string, value: string | number) => {
     setForm(prev => {
@@ -684,6 +714,7 @@ function EventTypeModal({
       max_dias_adelanto: form.max_dias_adelanto,
       ubicacion_tipo: form.ubicacion_tipo,
       color: form.color,
+      routing_rules: { ...(eventType?.routing_rules || {}), emails: emailConfig },
     };
 
     if (eventType) {
@@ -809,6 +840,141 @@ function EventTypeModal({
               />
             ))}
           </div>
+        </div>
+
+        {/* ── Email Customization Section ── */}
+        <div style={{ marginBottom: 20, border: '1px solid #f0f0f0', borderRadius: 10, overflow: 'hidden' }}>
+          <button
+            onClick={() => setShowEmailConfig(!showEmailConfig)}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '12px 16px', background: '#FAFAF8', border: 'none', cursor: 'pointer',
+              fontFamily: 'inherit', fontSize: '0.8125rem', fontWeight: 700, color: '#1A1A1A',
+            }}
+          >
+            <span>Personalizar correos</span>
+            <span style={{ fontSize: '0.75rem', color: '#999', transition: 'transform 0.2s', transform: showEmailConfig ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+              &#9660;
+            </span>
+          </button>
+
+          {showEmailConfig && (
+            <div style={{ padding: 16 }}>
+              {/* Email sub-tabs */}
+              <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #f0f0f0', marginBottom: 16, flexWrap: 'wrap' }}>
+                {EMAIL_TABS.map(tab => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveEmailTab(tab.key)}
+                    style={{
+                      ...btn,
+                      background: 'none',
+                      borderRadius: 0,
+                      padding: '8px 12px',
+                      fontSize: '0.6875rem',
+                      color: activeEmailTab === tab.key ? '#4B7BE5' : '#999',
+                      fontWeight: activeEmailTab === tab.key ? 700 : 500,
+                      borderBottom: activeEmailTab === tab.key ? '2px solid #4B7BE5' : '2px solid transparent',
+                      marginBottom: -1,
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Active email tab content */}
+              {EMAIL_TABS.map(tab => {
+                if (tab.key !== activeEmailTab) return null;
+                const cfg = emailConfig[tab.key] || {};
+                const showEnabled = tab.key === 'reminder_24h' || tab.key === 'reminder_1h';
+
+                return (
+                  <div key={tab.key} style={{ background: '#FAFAF8', borderRadius: 8, padding: 14 }}>
+                    {/* Enabled toggle for reminders */}
+                    {showEnabled && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '0.8125rem', color: '#555' }}>
+                          <input
+                            type="checkbox"
+                            checked={cfg.enabled !== false}
+                            onChange={e => updateEmailField(tab.key, 'enabled', e.target.checked)}
+                          />
+                          Enviar este recordatorio
+                        </label>
+                      </div>
+                    )}
+
+                    <div style={{ marginBottom: 10 }}>
+                      <label style={label}>Asunto</label>
+                      <input
+                        value={cfg.subject || ''}
+                        onChange={e => updateEmailField(tab.key, 'subject', e.target.value)}
+                        style={input}
+                        placeholder="Asunto del correo"
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: 10 }}>
+                      <label style={label}>Titulo del email</label>
+                      <input
+                        value={cfg.heading || ''}
+                        onChange={e => updateEmailField(tab.key, 'heading', e.target.value)}
+                        style={input}
+                        placeholder="Titulo principal del email"
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: 10 }}>
+                      <label style={label}>Mensaje</label>
+                      <textarea
+                        value={cfg.body || ''}
+                        onChange={e => updateEmailField(tab.key, 'body', e.target.value)}
+                        style={{ ...input, resize: 'vertical' as const }}
+                        rows={3}
+                        placeholder="Cuerpo del mensaje"
+                      />
+                      <div style={{ fontSize: '0.625rem', color: '#999', marginTop: -4, marginBottom: 4 }}>
+                        Tokens disponibles: <code style={{ background: '#eee', padding: '1px 4px', borderRadius: 3 }}>{'{{nombre}}'}</code>{' '}
+                        <code style={{ background: '#eee', padding: '1px 4px', borderRadius: 3 }}>{'{{empresa}}'}</code>{' '}
+                        <code style={{ background: '#eee', padding: '1px 4px', borderRadius: 3 }}>{'{{fecha}}'}</code>{' '}
+                        <code style={{ background: '#eee', padding: '1px 4px', borderRadius: 3 }}>{'{{hora}}'}</code>{' '}
+                        <code style={{ background: '#eee', padding: '1px 4px', borderRadius: 3 }}>{'{{duracion}}'}</code>{' '}
+                        <code style={{ background: '#eee', padding: '1px 4px', borderRadius: 3 }}>{'{{meet_link}}'}</code>
+                      </div>
+                    </div>
+
+                    {/* Specific toggles per email type */}
+                    {tab.key === 'confirmation' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '0.75rem', color: '#555' }}>
+                          <input type="checkbox" checked={cfg.show_meet_link !== false} onChange={e => updateEmailField(tab.key, 'show_meet_link', e.target.checked)} />
+                          Mostrar enlace de Google Meet
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '0.75rem', color: '#555' }}>
+                          <input type="checkbox" checked={cfg.show_reschedule_link !== false} onChange={e => updateEmailField(tab.key, 'show_reschedule_link', e.target.checked)} />
+                          Mostrar enlace para reagendar
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '0.75rem', color: '#555' }}>
+                          <input type="checkbox" checked={cfg.show_cancel_link !== false} onChange={e => updateEmailField(tab.key, 'show_cancel_link', e.target.checked)} />
+                          Mostrar enlace para cancelar
+                        </label>
+                      </div>
+                    )}
+
+                    {tab.key === 'cancellation' && (
+                      <div>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '0.75rem', color: '#555' }}>
+                          <input type="checkbox" checked={cfg.show_suggestions !== false} onChange={e => updateEmailField(tab.key, 'show_suggestions', e.target.checked)} />
+                          Sugerir nuevos horarios
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>

@@ -7,6 +7,33 @@ export const prerender = false;
 
 const RESEND_API_KEY = (import.meta.env.RESEND_API_KEY || '').trim();
 
+function replaceEmailTokens(text: string, data: { nombre?: string; empresa?: string; fecha?: string; hora?: string; duracion?: number; meet_link?: string }): string {
+  return (text || '')
+    .replace(/\{\{nombre\}\}/g, data.nombre || '')
+    .replace(/\{\{empresa\}\}/g, data.empresa || '')
+    .replace(/\{\{fecha\}\}/g, data.fecha || '')
+    .replace(/\{\{hora\}\}/g, data.hora || '')
+    .replace(/\{\{duracion\}\}/g, String(data.duracion || 30))
+    .replace(/\{\{meet_link\}\}/g, data.meet_link || '');
+}
+
+function buildEmailHtml(heading: string, body: string, extras: string = ''): string {
+  return `
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <tr><td style="background:#4B7BE5;padding:24px 32px;border-radius:12px 12px 0 0;text-align:center;">
+    <span style="font-size:1.5rem;font-weight:700;color:#fff;">SACS</span>
+  </td></tr>
+  <tr><td style="background:#fff;padding:32px;">
+    <h2 style="margin:0 0 12px;font-size:1.25rem;color:#1A1A1A;">${heading}</h2>
+    <p style="color:#666;margin:0 0 24px;font-size:0.9375rem;line-height:1.6;">${body}</p>
+    ${extras}
+  </td></tr>
+  <tr><td style="background:#FAFAF8;padding:16px 32px;border-radius:0 0 12px 12px;text-align:center;">
+    <span style="font-size:0.75rem;color:#bbb;">SACS — Sistema operativo para retailers</span>
+  </td></tr>
+</table>`;
+}
+
 async function sendEmail(to: string, subject: string, html: string) {
   if (!RESEND_API_KEY || !to) return;
   try {
@@ -31,7 +58,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   // Load booking
   const { data: booking, error: bErr } = await supabase
     .from('bookings')
-    .select('*, event_types(nombre, slug)')
+    .select('*, event_types(nombre, slug, routing_rules, duracion_minutos)')
     .eq('id', booking_id)
     .single();
 
@@ -197,23 +224,34 @@ export const POST: APIRoute = async ({ request, url }) => {
   // Send cancellation email to invitee
   if (booking.invitee_email) {
     try {
-      const suggestionsHtml = suggestions.length > 0
-        ? `<p style="margin:16px 0 8px;font-size:0.875rem;color:#1A1A1A;font-weight:600;">¿Te gustaría reagendar?</p>
+      const emailCfgCancel = (booking.event_types as any)?.routing_rules?.emails?.cancellation || {};
+      const tokenData = {
+        nombre: booking.invitee_nombre || '',
+        empresa: booking.invitee_empresa || '',
+        fecha: booking.fecha,
+        hora: booking.hora_inicio,
+        duracion: (booking.event_types as any)?.duracion_minutos,
+        meet_link: booking.google_meet_link || '',
+      };
+      const cancelSubject = replaceEmailTokens(emailCfgCancel.subject || 'Tu reunión con SACS ha sido cancelada', tokenData);
+      const cancelHeading = replaceEmailTokens(emailCfgCancel.heading || 'Tu reunión ha sido cancelada', tokenData);
+      const cancelBody = replaceEmailTokens(emailCfgCancel.body || 'La reunión del {{fecha}} a las {{hora}} ha sido cancelada.', tokenData);
+
+      let extrasCancel = '';
+      if (motivo) {
+        extrasCancel += `<p style="color:#999;font-size:0.8125rem;">Motivo: ${motivo}</p>`;
+      }
+
+      // Only show suggestions if not explicitly disabled
+      if (emailCfgCancel.show_suggestions !== false && suggestions.length > 0) {
+        extrasCancel += `<p style="margin:16px 0 8px;font-size:0.875rem;color:#1A1A1A;font-weight:600;">¿Te gustaría reagendar?</p>
            <div style="display:flex;gap:8px;flex-wrap:wrap;">
            ${suggestions.map((s: any) => `<a href="${s.url}" style="display:inline-block;padding:8px 16px;background:#F8F9FB;border-radius:8px;color:#4B7BE5;text-decoration:none;font-size:0.8125rem;font-weight:600;border:1px solid #e0e0e0;">${s.fecha} ${s.hora}</a>`).join('')}
-           </div>`
-        : '';
+           </div>`;
+      }
 
-      const cancelHtml = `
-<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <tr><td style="background:#fff;padding:32px;border-radius:12px;border:1px solid #f0f0f0;">
-    <h2 style="margin:0 0 8px;font-size:1.125rem;color:#1A1A1A;">Tu reunión ha sido cancelada</h2>
-    <p style="color:#888;margin:0 0 16px;">La reunión del ${booking.fecha} a las ${booking.hora_inicio} ha sido cancelada.</p>
-    ${motivo ? `<p style="color:#999;font-size:0.8125rem;">Motivo: ${motivo}</p>` : ''}
-    ${suggestionsHtml}
-  </td></tr>
-</table>`;
-      await sendEmail(booking.invitee_email, 'Tu reunión con SACS ha sido cancelada', cancelHtml);
+      const cancelHtml = buildEmailHtml(cancelHeading, cancelBody, extrasCancel);
+      await sendEmail(booking.invitee_email, cancelSubject, cancelHtml);
     } catch { /* Cancellation email is non-critical */ }
   }
 

@@ -5,6 +5,33 @@ export const prerender = false;
 
 const RESEND_API_KEY = (import.meta.env.RESEND_API_KEY || '').trim();
 
+function replaceEmailTokens(text: string, data: { nombre?: string; empresa?: string; fecha?: string; hora?: string; duracion?: number; meet_link?: string }): string {
+  return (text || '')
+    .replace(/\{\{nombre\}\}/g, data.nombre || '')
+    .replace(/\{\{empresa\}\}/g, data.empresa || '')
+    .replace(/\{\{fecha\}\}/g, data.fecha || '')
+    .replace(/\{\{hora\}\}/g, data.hora || '')
+    .replace(/\{\{duracion\}\}/g, String(data.duracion || 30))
+    .replace(/\{\{meet_link\}\}/g, data.meet_link || '');
+}
+
+function buildEmailHtml(heading: string, body: string, extras: string = ''): string {
+  return `
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <tr><td style="background:#4B7BE5;padding:24px 32px;border-radius:12px 12px 0 0;text-align:center;">
+    <span style="font-size:1.5rem;font-weight:700;color:#fff;">SACS</span>
+  </td></tr>
+  <tr><td style="background:#fff;padding:32px;">
+    <h2 style="margin:0 0 12px;font-size:1.25rem;color:#1A1A1A;">${heading}</h2>
+    <p style="color:#666;margin:0 0 24px;font-size:0.9375rem;line-height:1.6;">${body}</p>
+    ${extras}
+  </td></tr>
+  <tr><td style="background:#FAFAF8;padding:16px 32px;border-radius:0 0 12px 12px;text-align:center;">
+    <span style="font-size:0.75rem;color:#bbb;">SACS — Sistema operativo para retailers</span>
+  </td></tr>
+</table>`;
+}
+
 async function sendEmail(to: string, subject: string, html: string) {
   if (!RESEND_API_KEY || !to) return;
   try {
@@ -33,7 +60,7 @@ export const GET: APIRoute = async ({ url }) => {
 
   const { data: bookings24h } = await supabase
     .from('bookings')
-    .select('id, contact_id, deal_id, fecha, hora_inicio, invitee_nombre, invitee_whatsapp, invitee_email, google_meet_link, token_cancelar, token_reagendar, event_types(nombre)')
+    .select('id, contact_id, deal_id, fecha, hora_inicio, invitee_nombre, invitee_whatsapp, invitee_email, invitee_empresa, google_meet_link, token_cancelar, token_reagendar, event_types(nombre, routing_rules, duracion_minutos)')
     .eq('fecha', tomorrowStr)
     .eq('recordatorio_24h_enviado', false)
     .eq('estado', 'confirmada');
@@ -79,11 +106,22 @@ export const GET: APIRoute = async ({ url }) => {
 
       // Send email reminder (24h)
       if ((booking as any).invitee_email) {
-        const reminderHtml = `
-<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <tr><td style="background:#fff;padding:32px;border-radius:12px;border:1px solid #f0f0f0;">
-    <h2 style="margin:0 0 8px;font-size:1.125rem;color:#1A1A1A;">⏰ Recordatorio: Tu demo es mañana</h2>
-    <p style="color:#888;margin:0 0 16px;">Hola ${(booking as any).invitee_nombre}, te recordamos tu reunión con SACS.</p>
+        const emailCfg24 = (booking.event_types as any)?.routing_rules?.emails?.reminder_24h;
+        // Skip if explicitly disabled
+        if (emailCfg24?.enabled !== false) {
+          const tokenData = {
+            nombre: (booking as any).invitee_nombre || '',
+            empresa: (booking as any).invitee_empresa || '',
+            fecha: booking.fecha,
+            hora: booking.hora_inicio,
+            duracion: (booking.event_types as any)?.duracion_minutos,
+            meet_link: (booking as any).google_meet_link || '',
+          };
+          const subject24 = replaceEmailTokens(emailCfg24?.subject || '⏰ Recordatorio: Tu demo con SACS es mañana', tokenData);
+          const heading24 = replaceEmailTokens(emailCfg24?.heading || '⏰ Recordatorio: Tu demo es mañana', tokenData);
+          const body24 = replaceEmailTokens(emailCfg24?.body || 'Hola {{nombre}}, te recordamos tu reunión con SACS.', tokenData);
+
+          let extras24 = `
     <div style="background:#F8F9FB;border-radius:8px;padding:16px;margin-bottom:16px;">
       <p style="margin:0;font-size:0.875rem;"><strong>📅 ${booking.fecha}</strong> a las <strong>${booking.hora_inicio}</strong></p>
       ${(booking as any).google_meet_link ? `<p style="margin:8px 0 0;"><a href="${(booking as any).google_meet_link}" style="color:#4B7BE5;font-weight:600;">📹 Unirse a Google Meet</a></p>` : ''}
@@ -91,10 +129,11 @@ export const GET: APIRoute = async ({ url }) => {
     <div style="text-align:center;">
       <a href="https://www.sacscloud.com/api/scheduling/reschedule?token=${(booking as any).token_reagendar}" style="color:#4B7BE5;font-size:0.8125rem;margin-right:16px;">Reagendar</a>
       <a href="https://www.sacscloud.com/api/scheduling/cancel?token=${(booking as any).token_cancelar}" style="color:#999;font-size:0.8125rem;">Cancelar</a>
-    </div>
-  </td></tr>
-</table>`;
-        await sendEmail((booking as any).invitee_email, '⏰ Recordatorio: Tu demo con SACS es mañana', reminderHtml);
+    </div>`;
+
+          const reminderHtml = buildEmailHtml(heading24, body24, extras24);
+          await sendEmail((booking as any).invitee_email, subject24, reminderHtml);
+        }
       }
 
       stats.reminders_24h++;
@@ -116,7 +155,7 @@ export const GET: APIRoute = async ({ url }) => {
 
   const { data: bookings1h } = await supabase
     .from('bookings')
-    .select('id, contact_id, deal_id, fecha, hora_inicio, invitee_nombre, invitee_whatsapp, invitee_email, google_meet_link, token_cancelar, token_reagendar, event_types(nombre)')
+    .select('id, contact_id, deal_id, fecha, hora_inicio, invitee_nombre, invitee_whatsapp, invitee_email, invitee_empresa, google_meet_link, token_cancelar, token_reagendar, event_types(nombre, routing_rules, duracion_minutos)')
     .eq('fecha', todayStr)
     .eq('recordatorio_1h_enviado', false)
     .eq('estado', 'confirmada')
@@ -164,11 +203,22 @@ export const GET: APIRoute = async ({ url }) => {
 
       // Send email reminder (1h)
       if ((booking as any).invitee_email) {
-        const reminderHtml1h = `
-<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <tr><td style="background:#fff;padding:32px;border-radius:12px;border:1px solid #f0f0f0;">
-    <h2 style="margin:0 0 8px;font-size:1.125rem;color:#1A1A1A;">⏰ Tu demo con SACS empieza en 1 hora</h2>
-    <p style="color:#888;margin:0 0 16px;">Hola ${(booking as any).invitee_nombre}, te recordamos tu reunión con SACS es hoy.</p>
+        const emailCfg1h = (booking.event_types as any)?.routing_rules?.emails?.reminder_1h;
+        // Skip if explicitly disabled
+        if (emailCfg1h?.enabled !== false) {
+          const tokenData1h = {
+            nombre: (booking as any).invitee_nombre || '',
+            empresa: (booking as any).invitee_empresa || '',
+            fecha: booking.fecha,
+            hora: booking.hora_inicio,
+            duracion: (booking.event_types as any)?.duracion_minutos,
+            meet_link: (booking as any).google_meet_link || '',
+          };
+          const subject1h = replaceEmailTokens(emailCfg1h?.subject || '⏰ Tu demo con SACS empieza en 1 hora', tokenData1h);
+          const heading1h = replaceEmailTokens(emailCfg1h?.heading || '⏰ Tu demo con SACS empieza en 1 hora', tokenData1h);
+          const body1h = replaceEmailTokens(emailCfg1h?.body || 'Hola {{nombre}}, te recordamos tu reunión con SACS es hoy.', tokenData1h);
+
+          let extras1h = `
     <div style="background:#F8F9FB;border-radius:8px;padding:16px;margin-bottom:16px;">
       <p style="margin:0;font-size:0.875rem;"><strong>📅 ${booking.fecha}</strong> a las <strong>${booking.hora_inicio}</strong></p>
       ${(booking as any).google_meet_link ? `<p style="margin:8px 0 0;"><a href="${(booking as any).google_meet_link}" style="color:#4B7BE5;font-weight:600;">📹 Unirse a Google Meet</a></p>` : ''}
@@ -176,10 +226,11 @@ export const GET: APIRoute = async ({ url }) => {
     <div style="text-align:center;">
       <a href="https://www.sacscloud.com/api/scheduling/reschedule?token=${(booking as any).token_reagendar}" style="color:#4B7BE5;font-size:0.8125rem;margin-right:16px;">Reagendar</a>
       <a href="https://www.sacscloud.com/api/scheduling/cancel?token=${(booking as any).token_cancelar}" style="color:#999;font-size:0.8125rem;">Cancelar</a>
-    </div>
-  </td></tr>
-</table>`;
-        await sendEmail((booking as any).invitee_email, '⏰ Tu demo con SACS empieza en 1 hora', reminderHtml1h);
+    </div>`;
+
+          const reminderHtml1h = buildEmailHtml(heading1h, body1h, extras1h);
+          await sendEmail((booking as any).invitee_email, subject1h, reminderHtml1h);
+        }
       }
 
       stats.reminders_1h++;

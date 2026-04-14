@@ -7,6 +7,33 @@ export const prerender = false;
 
 const RESEND_API_KEY = (import.meta.env.RESEND_API_KEY || '').trim();
 
+function replaceEmailTokens(text: string, data: { nombre?: string; empresa?: string; fecha?: string; hora?: string; duracion?: number; meet_link?: string }): string {
+  return (text || '')
+    .replace(/\{\{nombre\}\}/g, data.nombre || '')
+    .replace(/\{\{empresa\}\}/g, data.empresa || '')
+    .replace(/\{\{fecha\}\}/g, data.fecha || '')
+    .replace(/\{\{hora\}\}/g, data.hora || '')
+    .replace(/\{\{duracion\}\}/g, String(data.duracion || 30))
+    .replace(/\{\{meet_link\}\}/g, data.meet_link || '');
+}
+
+function buildEmailHtml(heading: string, body: string, extras: string = ''): string {
+  return `
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;font-family:'Helvetica Neue',Arial,sans-serif;">
+  <tr><td style="background:#4B7BE5;padding:24px 32px;border-radius:12px 12px 0 0;text-align:center;">
+    <span style="font-size:1.5rem;font-weight:700;color:#fff;">SACS</span>
+  </td></tr>
+  <tr><td style="background:#fff;padding:32px;">
+    <h2 style="margin:0 0 12px;font-size:1.25rem;color:#1A1A1A;">${heading}</h2>
+    <p style="color:#666;margin:0 0 24px;font-size:0.9375rem;line-height:1.6;">${body}</p>
+    ${extras}
+  </td></tr>
+  <tr><td style="background:#FAFAF8;padding:16px 32px;border-radius:0 0 12px 12px;text-align:center;">
+    <span style="font-size:0.75rem;color:#bbb;">SACS — Sistema operativo para retailers</span>
+  </td></tr>
+</table>`;
+}
+
 async function sendEmail(to: string, subject: string, html: string) {
   if (!RESEND_API_KEY || !to) return;
   try {
@@ -164,11 +191,20 @@ export const POST: APIRoute = async ({ request }) => {
   // Send reschedule email to invitee
   if (oldBooking.invitee_email) {
     try {
-      const rescheduleHtml = `
-<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;font-family:'Helvetica Neue',Arial,sans-serif;">
-  <tr><td style="background:#fff;padding:32px;border-radius:12px;border:1px solid #f0f0f0;">
-    <h2 style="margin:0 0 8px;font-size:1.125rem;color:#1A1A1A;">✅ Tu reunión ha sido reagendada</h2>
-    <p style="color:#888;margin:0 0 16px;">Tu reunión con SACS ha sido movida a una nueva fecha.</p>
+      const emailCfgReschedule = (eventType as any)?.routing_rules?.emails?.reschedule || {};
+      const tokenData = {
+        nombre: oldBooking.invitee_nombre || '',
+        empresa: oldBooking.invitee_empresa || '',
+        fecha: nueva_fecha,
+        hora: nueva_hora,
+        duracion: eventType.duracion_minutos,
+        meet_link: newBooking.google_meet_link || '',
+      };
+      const rescheduleSubject = replaceEmailTokens(emailCfgReschedule.subject || '✅ Tu reunión con SACS ha sido reagendada', tokenData);
+      const rescheduleHeading = replaceEmailTokens(emailCfgReschedule.heading || '✅ Tu reunión ha sido reagendada', tokenData);
+      const rescheduleBody = replaceEmailTokens(emailCfgReschedule.body || 'Tu reunión con SACS ha sido movida a una nueva fecha.', tokenData);
+
+      const extrasReschedule = `
     <div style="background:#FFF3E0;border-radius:8px;padding:12px 16px;margin-bottom:12px;">
       <p style="margin:0;font-size:0.8125rem;color:#999;text-decoration:line-through;">Anterior: ${oldBooking.fecha} a las ${oldBooking.hora_inicio}</p>
     </div>
@@ -178,10 +214,10 @@ export const POST: APIRoute = async ({ request }) => {
     </div>
     <div style="text-align:center;">
       <a href="https://www.sacscloud.com/api/scheduling/cancel?token=${newBooking.token_cancelar}" style="color:#999;font-size:0.8125rem;">Cancelar</a>
-    </div>
-  </td></tr>
-</table>`;
-      await sendEmail(oldBooking.invitee_email, '✅ Tu reunión con SACS ha sido reagendada', rescheduleHtml);
+    </div>`;
+
+      const rescheduleHtml = buildEmailHtml(rescheduleHeading, rescheduleBody, extrasReschedule);
+      await sendEmail(oldBooking.invitee_email, rescheduleSubject, rescheduleHtml);
     } catch { /* Reschedule email is non-critical */ }
   }
 
