@@ -280,12 +280,21 @@ const BRANDING_DEFAULTS: BrandingConfig = {
 };
 
 // ─── Main Component ───
-export default function BookingPage({ eventType, questions }: Props) {
+export default function BookingPage({ eventType, questions: initialQuestions }: Props) {
   const [step, setStep] = useState(1);
   const [timezone, setTimezone] = useState(() => {
     try { return Intl.DateTimeFormat().resolvedOptions().timeZone; }
     catch { return 'America/Mexico_City'; }
   });
+
+  // ── Load questions dynamically (not from static props) ──
+  const [questions, setQuestions] = useState<QuestionData[]>(initialQuestions || []);
+  useEffect(() => {
+    fetch(`/api/scheduling/questions?event_type_id=${eventType.id}`)
+      .then(r => r.json())
+      .then(data => { if (Array.isArray(data) && data.length > 0) setQuestions(data); })
+      .catch(() => {});
+  }, [eventType.id]);
 
   // ── Branding ──
   const [branding, setBranding] = useState<BrandingConfig>(BRANDING_DEFAULTS);

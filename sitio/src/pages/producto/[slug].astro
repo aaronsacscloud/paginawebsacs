@@ -163,40 +163,6 @@ const isLive = feature.status === 'live' && content;
         ))}
       </section>
 
-      <section class="pf-stats reveal-section">
-        <div class="pf-stats-inner container">
-          {content.stats.map((stat: any, i: number) => (
-            <div class="pf-stat reveal-item" style={`--reveal-delay: ${i * 120}ms`}>
-              <span class="pf-stat-value">{stat.value}</span>
-              <span class="pf-stat-label">{stat.label}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section class="pf-testimonial reveal-section">
-        <div class="pf-testimonial-inner container">
-          <div class="pf-testimonial-card reveal-item">
-            <svg class="pf-quote-mark" width="40" height="32" viewBox="0 0 40 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12.4 32C8.53 32 5.33 30.56 2.8 27.68C0.93 25.15 0 21.97 0 18.13C0 13.33 1.33 9.2 4 5.73C6.67 2.27 10.27 0 14.8 0L16.4 3.47C13.53 4.27 11.2 5.87 9.4 8.27C7.6 10.67 6.67 13.27 6.53 16.07C7.73 15.27 9.07 14.87 10.53 14.87C12.93 14.87 14.93 15.67 16.53 17.27C18.13 18.87 18.93 20.93 18.93 23.47C18.93 25.87 18.07 27.93 16.33 29.67C14.6 31.07 12.6 32 12.4 32ZM33.2 32C29.33 32 26.13 30.56 23.6 27.68C21.73 25.15 20.8 21.97 20.8 18.13C20.8 13.33 22.13 9.2 24.8 5.73C27.47 2.27 31.07 0 35.6 0L37.2 3.47C34.33 4.27 32 5.87 30.2 8.27C28.4 10.67 27.47 13.27 27.33 16.07C28.53 15.27 29.87 14.87 31.33 14.87C33.73 14.87 35.73 15.67 37.33 17.27C38.93 18.87 39.73 20.93 39.73 23.47C39.73 25.87 38.87 27.93 37.13 29.67C35.4 31.07 33.4 32 33.2 32Z" fill="rgba(0,0,0,0.04)"/>
-            </svg>
-            <blockquote class="pf-testimonial-quote">{content.testimonial.quote}</blockquote>
-            <div class="pf-testimonial-footer">
-              <div class="pf-testimonial-author">
-                <span class="pf-testimonial-name">{content.testimonial.name}</span>
-                <span class="pf-testimonial-role">{content.testimonial.role}, {content.testimonial.company}</span>
-              </div>
-              {content.testimonial.stat && (
-                <div class="pf-testimonial-stat">
-                  <span class="pf-testimonial-stat-value">{content.testimonial.stat}</span>
-                  <span class="pf-testimonial-stat-label">{content.testimonial.statLabel}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
       <GiroFAQ faqs={content.faqs} />
     </Fragment>
   )}
@@ -269,7 +235,7 @@ const isLive = feature.status === 'live' && content;
 
   /* ═══ Centered Hero (Square-style) ═══ */
   .pf-hero-centered {
-    padding: clamp(80px, 10vw, 140px) 0 0;
+    padding: clamp(80px, 10vw, 140px) 0 clamp(40px, 5vw, 64px);
     background: #fff;
     text-align: center;
   }
@@ -415,14 +381,9 @@ const isLive = feature.status === 'live' && content;
   /* ═══ Square-style Showcase Blocks ═══ */
   .sq-showcase {
     padding: clamp(64px, 8vw, 100px) 0 0;
-    background: #fff;
-    border: 1px solid rgba(0, 0, 0, 0.12);
-    border-bottom: none;
+    background: #f2f2f2;
     border-radius: 24px 24px 0 0;
     margin-top: clamp(40px, 5vw, 64px);
-    margin-left: auto;
-    margin-right: auto;
-    max-width: calc(var(--max-width, 1280px) + 80px);
   }
 
   .sq-showcase-heading {
@@ -450,13 +411,13 @@ const isLive = feature.status === 'live' && content;
   @media (min-width: 768px) {
     .sq-block-inner {
       display: grid;
-      grid-template-columns: 1fr 1.2fr;
+      grid-template-columns: 1fr 1.5fr;
       gap: clamp(48px, 5vw, 80px);
       align-items: center;
     }
 
     .sq-block--flip .sq-block-inner {
-      grid-template-columns: 1.2fr 1fr;
+      grid-template-columns: 1.5fr 1fr;
     }
 
     .sq-block--flip .sq-block-text {
