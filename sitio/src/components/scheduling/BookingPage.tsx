@@ -237,6 +237,31 @@ function formatDateLong(dateStr: string): string {
   return `${dayName} ${d} de ${monthName}`;
 }
 
+function convertHostTimeToLocal(time24: string, dateStr: string, hostTz: string, localTz: string): string {
+  if (hostTz === localTz) return time24;
+  try {
+    const refDate = new Date(`${dateStr}T12:00:00Z`);
+    const hostOffset = getOffsetMinutes(hostTz, refDate);
+    const localOffset = getOffsetMinutes(localTz, refDate);
+    const [h, m] = time24.split(':').map(Number);
+    const totalMinHost = h * 60 + m;
+    const utcMin = totalMinHost - hostOffset;
+    const localMin = utcMin + localOffset;
+    const adjusted = ((localMin % 1440) + 1440) % 1440;
+    const newH = Math.floor(adjusted / 60);
+    const newM = adjusted % 60;
+    return `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
+  } catch {
+    return time24;
+  }
+}
+
+function getOffsetMinutes(tz: string, date: Date): number {
+  const utcStr = date.toLocaleString('en-US', { timeZone: 'UTC' });
+  const tzStr = date.toLocaleString('en-US', { timeZone: tz });
+  return (new Date(tzStr).getTime() - new Date(utcStr).getTime()) / 60000;
+}
+
 function getDaysInMonth(year: number, month: number): number {
   return new Date(year, month + 1, 0).getDate();
 }
@@ -750,6 +775,11 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
               <option key={tz.value} value={tz.value}>{tz.label}</option>
             ))}
           </select>
+          {timezone !== 'America/Mexico_City' && (
+            <div style={{ fontSize: '0.625rem', color: '#999', textAlign: 'center', marginTop: 4 }}>
+              Horarios mostrados en tu zona horaria
+            </div>
+          )}
         </div>
 
         {/* Viewers indicator */}
@@ -966,8 +996,10 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
             )}
 
             {displaySlots.map(slot => {
+              const hostTz = 'America/Mexico_City';
+              const localSlot = convertHostTimeToLocal(slot, selectedDate!, hostTz, timezone);
               const isSelected = slot === selectedTime;
-              const endTime = addMinutes(slot, eventType.duracion_minutos);
+              const localEndTime = addMinutes(localSlot, eventType.duracion_minutos);
               return (
                 <button
                   key={slot}
@@ -1000,7 +1032,7 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
                   }}
                 >
                   <span>
-                    {to12h(slot)}
+                    {to12h(localSlot)}
                     {popularTimes.has(slot) && (
                       <span style={{ fontSize: '0.5rem', fontWeight: 700, color: '#9A3412', background: '#FFF7ED', padding: '1px 5px', borderRadius: 6, marginLeft: 6 }}>Popular</span>
                     )}
@@ -1012,7 +1044,7 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
                   </span>
                   {isSelected && (
                     <span style={{ fontSize: '0.8125rem', opacity: 0.85 }}>
-                      {to12h(slot)} - {to12h(endTime)}
+                      {to12h(localSlot)} - {to12h(localEndTime)}
                     </span>
                   )}
                 </button>
@@ -1096,7 +1128,7 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
             </svg>
             <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1A1A1A' }}>
-              {formatDateLong(selectedDate)}, {to12h(selectedTime)} - {to12h(addMinutes(selectedTime, eventType.duracion_minutos))}
+              {formatDateLong(selectedDate)}, {to12h(convertHostTimeToLocal(selectedTime, selectedDate, 'America/Mexico_City', timezone))} - {to12h(addMinutes(convertHostTimeToLocal(selectedTime, selectedDate, 'America/Mexico_City', timezone), eventType.duracion_minutos))}
             </span>
           </div>
         )}
@@ -1320,7 +1352,7 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
               <span style={{ color: '#777' }}>Hora</span>
-              <span style={{ fontWeight: 600, color: '#1A1A1A' }}>{to12h(selectedTime)} - {to12h(addMinutes(selectedTime, eventType.duracion_minutos))}</span>
+              <span style={{ fontWeight: 600, color: '#1A1A1A' }}>{to12h(convertHostTimeToLocal(selectedTime, selectedDate, 'America/Mexico_City', timezone))} - {to12h(addMinutes(convertHostTimeToLocal(selectedTime, selectedDate, 'America/Mexico_City', timezone), eventType.duracion_minutos))}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
               <span style={{ color: '#777' }}>Consultor</span>
@@ -1343,7 +1375,7 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             Agregar al calendario
           </a>
-          <a href={`https://wa.me/?text=${encodeURIComponent(`Acabo de agendar mi ${eventType.nombre} con SACS para el ${formatDateLong(selectedDate)} a las ${to12h(selectedTime)}`)}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 12px', background: '#25D366', border: 'none', borderRadius: 10, textDecoration: 'none', fontSize: '0.75rem', fontWeight: 600, color: '#fff' }}>
+          <a href={`https://wa.me/?text=${encodeURIComponent(`Acabo de agendar mi ${eventType.nombre} con SACS para el ${formatDateLong(selectedDate)} a las ${to12h(convertHostTimeToLocal(selectedTime, selectedDate, 'America/Mexico_City', timezone))}`)}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 12px', background: '#25D366', border: 'none', borderRadius: 10, textDecoration: 'none', fontSize: '0.75rem', fontWeight: 600, color: '#fff' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>
             Confirmar por WhatsApp
           </a>

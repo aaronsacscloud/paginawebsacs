@@ -544,6 +544,9 @@ export const POST: APIRoute = async ({ request }) => {
       </td></tr>
     </table>`;
 
+    // Confirm attendance button
+    extrasHtml += `<div style="text-align:center;margin-bottom:20px;"><a href="https://www.sacscloud.com/api/scheduling/confirm-attendance?token=${booking.token_cancelar}" style="display:inline-block;padding:12px 32px;background:#059669;color:#fff;border-radius:10px;text-decoration:none;font-weight:700;font-size:0.875rem;">Confirmar mi asistencia</a></div>`;
+
     // Meet link button
     if ((emailCfg.show_meet_link !== false) && google_meet_link) {
       extrasHtml += `<div style="text-align:center;margin-bottom:24px;"><a href="${google_meet_link}" style="display:inline-block;padding:14px 40px;background:#4B7BE5;color:#fff;border-radius:10px;text-decoration:none;font-weight:700;font-size:0.9375rem;">Unirse a la reunión</a></div>`;

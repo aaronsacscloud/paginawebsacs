@@ -151,28 +151,28 @@ const pageContent: Record<string, any> = {
     ],
     testimonials: [
       {
-        bg: '#f2f2f2',
-        eyebrow: 'Marcas de Ropa',
+        bg: '#e8e4c0',
+        image: '/images/testimonials/maria-garcia.webp',
         quote: 'Desde que cambiamos a SACS, el cobro es instantáneo. Mis vendedoras ya no necesitan capacitación especial, es tan fácil como usar el celular.',
         name: 'María García',
-        role: 'Fundadora, La Bella Pandita · 42 sucursales',
-        image: '/images/hero-sacs-store.webp',
+        business: 'La Bella Pandita',
+        location: '42 sucursales',
       },
       {
-        bg: '#eef4f0',
-        eyebrow: 'Merchandising',
+        bg: '#d4e0d2',
+        image: '/images/testimonials/carlos-mendoza.webp',
         quote: 'Vendemos en ferias y conciertos. Necesitábamos un POS que funcionara sin internet y que mis 15 vendedores pudieran usar desde su celular. SACS fue la respuesta.',
         name: 'Carlos Mendoza',
-        role: 'Director, Liveshow Merchandising · +1,500 puntos de venta',
-        image: '/images/hero-sacs-store.webp',
+        business: 'Liveshow Merchandising',
+        location: '+1,500 puntos de venta',
       },
       {
-        bg: '#f0eef4',
-        eyebrow: 'Moda Consciente',
+        bg: '#e0dcd0',
+        image: '/images/testimonials/andrea-lopez.webp',
         quote: 'Lo que más valoro es que el punto de venta y el ecommerce comparten el mismo inventario. Ya no vendemos lo que no hay en stock.',
         name: 'Andrea López',
-        role: 'Co-fundadora, Casa Maca · 2 sucursales',
-        image: '/images/hero-sacs-store.webp',
+        business: 'Casa Maca',
+        location: '2 sucursales',
       },
     ],
     faqs: [
@@ -254,26 +254,42 @@ const isLive = feature.status === 'live' && content;
         <div class="pf-testimonials-track" id="pf-testimonials-track">
           {content.testimonials.map((t: any, i: number) => (
             <div class={`pf-testimonial-slide${i === 0 ? ' active' : ''}`} data-testimonial={i} style={`background:${t.bg}`}>
-              <div class="pf-testimonial-inner">
-                <div class="pf-testimonial-image">
-                  {t.image && <img src={t.image} alt={t.name} width="800" height="1000" loading="lazy" />}
+              <div class="pf-testimonial-layout container">
+                <div class="pf-testimonial-photo">
+                  <img src={t.image} alt={t.name} width="480" height="600" loading="lazy" />
                 </div>
-                <div class="pf-testimonial-text">
-                  <span class="pf-testimonial-eyebrow">{t.eyebrow}</span>
-                  <blockquote class="pf-testimonial-quote">{t.quote}</blockquote>
-                  <div class="pf-testimonial-author">
-                    <span class="pf-testimonial-name">{t.name}</span>
-                    <span class="pf-testimonial-role">{t.role}</span>
-                  </div>
-                  <div class="pf-testimonials-dots">
-                    {content.testimonials.map((_: any, di: number) => (
-                      <button class={`pf-dot${di === i ? ' active' : ''}`} data-dot={di} type="button" aria-label={`Testimonio ${di + 1}`}></button>
-                    ))}
+                <div class="pf-testimonial-content">
+                  <blockquote class="pf-testimonial-quote">&ldquo;{t.quote}&rdquo;</blockquote>
+                  <div class="pf-testimonial-attribution">
+                    <div class="pf-testimonial-logo">
+                      <img src="/images/sacs-icon-dark.svg" alt="SACS" width="56" height="56" loading="lazy" />
+                    </div>
+                    <div class="pf-testimonial-info">
+                      <span class="pf-testimonial-name">{t.name}</span>
+                      <span class="pf-testimonial-business">{t.business}</span>
+                      <span class="pf-testimonial-location">{t.location}</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           ))}
+        </div>
+        <div class="pf-testimonials-nav container">
+          <div class="pf-testimonials-arrows">
+            <button class="pf-arrow pf-arrow--prev" id="pf-prev" type="button" aria-label="Testimonio anterior">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            </button>
+            <button class="pf-arrow pf-arrow--next" id="pf-next" type="button" aria-label="Siguiente testimonio">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+            <a href="/contacto" class="pf-testimonials-readmore">Leer más</a>
+          </div>
+          <div class="pf-testimonials-dots">
+            {content.testimonials.map((_: any, i: number) => (
+              <button class={`pf-dot${i === 0 ? ' active' : ''}`} data-dot={i} type="button" aria-label={`Testimonio ${i + 1}`}></button>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -996,108 +1012,166 @@ const isLive = feature.status === 'live' && content;
     position: relative;
   }
 
-  .pf-testimonial-inner {
+  .pf-testimonial-layout {
     display: grid;
     grid-template-columns: 1fr;
-    min-height: 100vh;
+    gap: 32px;
+    padding: clamp(48px, 8vw, 100px) 0;
+    align-items: center;
   }
 
-  @media (min-width: 1024px) {
-    .pf-testimonial-inner {
-      grid-template-columns: 1.3fr 1fr;
+  @media (min-width: 768px) {
+    .pf-testimonial-layout {
+      grid-template-columns: minmax(320px, 420px) 1fr;
+      gap: clamp(40px, 5vw, 80px);
     }
   }
 
-  /* Image left — full height */
-  .pf-testimonial-image {
+  .pf-testimonial-photo {
     position: relative;
-    overflow: hidden;
-    min-height: 350px;
   }
 
-  .pf-testimonial-image img {
+  .pf-testimonial-photo img {
     width: 100%;
-    height: 100%;
+    max-width: 420px;
+    height: auto;
+    aspect-ratio: 4 / 5;
     object-fit: cover;
+    border-radius: 4px;
     display: block;
-    position: absolute;
-    inset: 0;
   }
 
-  @media (min-width: 1024px) {
-    .pf-testimonial-image {
-      min-height: 100vh;
-    }
-  }
-
-  /* Text right */
-  .pf-testimonial-text {
+  .pf-testimonial-content {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: clamp(48px, 6vw, 80px) clamp(32px, 5vw, 72px);
-  }
-
-  .pf-testimonial-eyebrow {
-    display: inline-block;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: rgba(255, 255, 255, 0.35);
-    margin-bottom: 24px;
+    gap: 48px;
   }
 
   .pf-testimonial-quote {
     font-family: var(--font-display, 'Sora', sans-serif);
-    font-size: clamp(1.375rem, 2.5vw, 2rem);
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: -0.02em;
-    line-height: 1.35;
-    margin: 0 0 32px;
+    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    font-weight: 800;
+    color: #1a1a1a;
+    letter-spacing: -0.025em;
+    line-height: 1.3;
+    margin: 0;
+  }
+
+  .pf-testimonial-attribution {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .pf-testimonial-logo {
+    flex-shrink: 0;
+  }
+
+  .pf-testimonial-logo img {
+    width: 56px;
+    height: 56px;
+    border-radius: 8px;
+    display: block;
+  }
+
+  .pf-testimonial-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
   }
 
   .pf-testimonial-name {
     display: block;
     font-family: var(--font-display, 'Sora', sans-serif);
-    font-size: 1rem;
+    font-size: 0.9375rem;
     font-weight: 700;
-    color: #fff;
+    color: #1a1a1a;
   }
 
-  .pf-testimonial-role {
+  .pf-testimonial-business {
+    display: block;
+    font-size: 0.875rem;
+    color: #1a1a1a;
+    font-weight: 500;
+  }
+
+  .pf-testimonial-location {
     display: block;
     font-size: 0.8125rem;
-    color: rgba(255, 255, 255, 0.45);
-    margin-top: 4px;
+    color: rgba(26, 26, 26, 0.55);
+  }
+
+  /* Navigation bar */
+  .pf-testimonials-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: clamp(48px, 6vw, 80px);
+  }
+
+  .pf-testimonials-arrows {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .pf-arrow {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #1a1a1a;
+    padding: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .pf-arrow:hover {
+    opacity: 0.6;
+  }
+
+  .pf-testimonials-readmore {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    margin-left: 8px;
+    transition: opacity 0.2s ease;
+  }
+
+  .pf-testimonials-readmore:hover {
+    opacity: 0.6;
   }
 
   /* Dots */
   .pf-testimonials-dots {
     display: flex;
     gap: 8px;
-    margin-top: 40px;
+    align-items: center;
   }
 
   .pf-dot {
-    width: 32px;
-    height: 4px;
-    border-radius: 2px;
-    background: rgba(255, 255, 255, 0.2);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(26, 26, 26, 0.2);
     border: none;
     cursor: pointer;
-    transition: background 0.3s ease, width 0.3s ease;
+    transition: background 0.3s ease;
     padding: 0;
   }
 
   .pf-dot.active {
-    background: #fff;
-    width: 48px;
+    background: #1a1a1a;
   }
 
   .pf-dot:hover {
-    background: rgba(255, 255, 255, 0.4);
+    background: rgba(26, 26, 26, 0.45);
   }
 
   /* ═══ Coming Soon (fallback) ═══ */

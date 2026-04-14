@@ -126,6 +126,9 @@ export const GET: APIRoute = async ({ url }) => {
       <p style="margin:0;font-size:0.875rem;"><strong>📅 ${booking.fecha}</strong> a las <strong>${booking.hora_inicio}</strong></p>
       ${(booking as any).google_meet_link ? `<p style="margin:8px 0 0;"><a href="${(booking as any).google_meet_link}" style="color:#4B7BE5;font-weight:600;">📹 Unirse a Google Meet</a></p>` : ''}
     </div>
+    <div style="text-align:center;margin-bottom:20px;">
+      <a href="https://www.sacscloud.com/api/scheduling/confirm-attendance?token=${(booking as any).token_cancelar}" style="display:inline-block;padding:12px 32px;background:#059669;color:#fff;border-radius:10px;text-decoration:none;font-weight:700;font-size:0.875rem;">Confirmar mi asistencia</a>
+    </div>
     <div style="text-align:center;">
       <a href="https://www.sacscloud.com/agendar/reagendar?token=${(booking as any).token_reagendar}" style="color:#4B7BE5;font-size:0.8125rem;margin-right:16px;">Reagendar</a>
       <a href="https://www.sacscloud.com/agendar/cancelar?token=${(booking as any).token_cancelar}" style="color:#999;font-size:0.8125rem;">Cancelar</a>
@@ -222,6 +225,9 @@ export const GET: APIRoute = async ({ url }) => {
     <div style="background:#F8F9FB;border-radius:8px;padding:16px;margin-bottom:16px;">
       <p style="margin:0;font-size:0.875rem;"><strong>📅 ${booking.fecha}</strong> a las <strong>${booking.hora_inicio}</strong></p>
       ${(booking as any).google_meet_link ? `<p style="margin:8px 0 0;"><a href="${(booking as any).google_meet_link}" style="color:#4B7BE5;font-weight:600;">📹 Unirse a Google Meet</a></p>` : ''}
+    </div>
+    <div style="text-align:center;margin-bottom:20px;">
+      <a href="https://www.sacscloud.com/api/scheduling/confirm-attendance?token=${(booking as any).token_cancelar}" style="display:inline-block;padding:12px 32px;background:#059669;color:#fff;border-radius:10px;text-decoration:none;font-weight:700;font-size:0.875rem;">Confirmar mi asistencia</a>
     </div>
     <div style="text-align:center;">
       <a href="https://www.sacscloud.com/agendar/reagendar?token=${(booking as any).token_reagendar}" style="color:#4B7BE5;font-size:0.8125rem;margin-right:16px;">Reagendar</a>
