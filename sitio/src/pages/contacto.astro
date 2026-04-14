@@ -1,5 +1,25 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import BookingPage from '../components/scheduling/BookingPage';
+import { supabase } from '../lib/supabase';
+
+export const prerender = false;
+
+// Load demo event type for inline booking
+let bookingEventType: any = null;
+let bookingQuestions: any[] = [];
+try {
+  const { data: et } = await supabase.from('event_types').select('*').eq('slug', 'demo').eq('activo', true).single();
+  if (et) {
+    bookingEventType = et;
+    if (et.owner_id) {
+      const { data: host } = await supabase.from('team_members').select('nombre, email').eq('id', et.owner_id).single();
+      if (host) bookingEventType.team_members = host;
+    }
+    const { data: q } = await supabase.from('booking_questions').select('*').eq('event_type_id', et.id).eq('activo', true).order('orden');
+    bookingQuestions = q || [];
+  }
+} catch {}
 ---
 
 <BaseLayout
@@ -76,7 +96,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       </div>
     </div>
     <div class="ct-hero-cal" id="demo">
-      <iframe src="/agendar/demo" width="100%" height="800" style="border:none;border-radius:16px;min-height:800px;" loading="eager"></iframe>
+      {bookingEventType ? (
+        <BookingPage client:only="react" eventType={bookingEventType} questions={bookingQuestions} />
+      ) : (
+        <div style="text-align:center;padding:40px;">
+          <a href="/agendar/demo" style="display:inline-block;padding:16px 40px;background:#4B7BE5;color:#fff;border-radius:12px;text-decoration:none;font-weight:700;">Agendar mi demo</a>
+        </div>
+      )}
     </div>
   </div>
 </section>
