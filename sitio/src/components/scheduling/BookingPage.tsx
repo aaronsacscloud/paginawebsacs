@@ -330,6 +330,21 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
   const [currentToast, setCurrentToast] = useState<any>(null);
   const toastIndexRef = useRef(0);
   const [showAllSlots, setShowAllSlots] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [typingIndicator, setTypingIndicator] = useState(false);
+
+  // Typing indicator — show "someone else is viewing" periodically on step 2
+  const showTypingFeature = (eventType as any).routing_rules?.mostrar_typing !== false;
+  useEffect(() => {
+    if (step !== 2 || !showTypingFeature) return;
+    const show = () => {
+      setTypingIndicator(true);
+      setTimeout(() => setTypingIndicator(false), 3500);
+    };
+    const timeout = setTimeout(show, 6000 + Math.random() * 4000);
+    const interval = setInterval(show, 18000 + Math.random() * 12000);
+    return () => { clearTimeout(timeout); clearInterval(interval); };
+  }, [step, selectedDate]);
 
   useEffect(() => {
     fetch('/api/scheduling/social-proof')
@@ -502,6 +517,8 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
       const result = await res.json();
       setBookingResult(result);
       trackEvent('form_submitted', { date: selectedDate, time: selectedTime, booking_id: result.id });
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 3000);
       setStep(4);
     } catch {
       setFormError('Error de conexion. Intenta de nuevo.');
@@ -689,6 +706,18 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
                     height: 4,
                     borderRadius: '50%',
                     background: isSelected ? '#fff' : primaryColor,
+                  }} />
+                )}
+                {/* "Casi lleno" orange dot for days with 1-3 slots */}
+                {hasSlots && !isSelected && !isPast && availableDates[dateStr]?.length <= 3 && (
+                  <span style={{
+                    position: 'absolute' as const,
+                    top: 3,
+                    right: 3,
+                    width: 5,
+                    height: 5,
+                    borderRadius: '50%',
+                    background: '#F97316',
                   }} />
                 )}
               </button>
@@ -994,6 +1023,39 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
               >
                 + Ver {hiddenCount} horarios más
               </button>
+            )}
+
+            {/* Typing indicator — "someone else is viewing" */}
+            {typingIndicator && showTypingFeature && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', marginTop: 8,
+                background: '#fff', borderRadius: 10, border: '1px solid #f0f0f0',
+                opacity: typingIndicator ? 1 : 0, transition: 'opacity 0.4s ease',
+              }}>
+                <div style={{ display: 'flex', gap: 3 }}>
+                  {[0, 1, 2].map(i => (
+                    <div key={i} style={{
+                      width: 5, height: 5, borderRadius: '50%', background: '#bbb',
+                      animation: `typingDot 1.2s ease-in-out ${i * 0.2}s infinite`,
+                    }} />
+                  ))}
+                </div>
+                <span style={{ fontSize: '0.6875rem', color: '#999' }}>Alguien más está viendo este horario...</span>
+                <style>{`@keyframes typingDot { 0%,100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.1); } }`}</style>
+              </div>
+            )}
+
+            {/* "Casi lleno" indicator */}
+            {allSlotsForDay.length <= 3 && allSlotsForDay.length > 0 && (
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 10,
+                padding: '8px 12px', background: '#FFF7ED', borderRadius: 8, border: '1px solid #FED7AA',
+              }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#F97316' }} />
+                <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: '#9A3412' }}>
+                  Casi lleno — {allSlotsForDay.length === 1 ? 'queda 1 espacio' : `quedan ${allSlotsForDay.length} espacios`}
+                </span>
+              </div>
             )}
           </div>
         )}
@@ -1453,7 +1515,38 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
         </div>
       </div>
 
-      {/* Toast moved inline above time slots */}
+      {/* Confetti animation */}
+      {showConfetti && (
+        <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9999, overflow: 'hidden' }}>
+          {Array.from({ length: 60 }).map((_, i) => {
+            const colors = ['#4B7BE5', '#2AB5A0', '#F39C12', '#E54B4B', '#6C5CE7', '#25D366', '#ff6b6b', '#ffd93d'];
+            const color = colors[i % colors.length];
+            const left = Math.random() * 100;
+            const delay = Math.random() * 0.8;
+            const size = 6 + Math.random() * 8;
+            const rotation = Math.random() * 360;
+            return (
+              <div key={i} style={{
+                position: 'absolute',
+                left: `${left}%`,
+                top: -20,
+                width: size,
+                height: size * (Math.random() > 0.5 ? 1 : 0.6),
+                background: color,
+                borderRadius: Math.random() > 0.5 ? '50%' : '2px',
+                transform: `rotate(${rotation}deg)`,
+                animation: `confettiFall ${1.5 + Math.random() * 1.5}s ease-in ${delay}s forwards`,
+              }} />
+            );
+          })}
+          <style>{`
+            @keyframes confettiFall {
+              0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+              100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+            }
+          `}</style>
+        </div>
+      )}
     </div>
   );
 }

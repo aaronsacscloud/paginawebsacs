@@ -10,6 +10,7 @@ import GiroTestimonial from '../../components/giros/GiroTestimonial.astro';
 import GiroFAQ from '../../components/giros/GiroFAQ.astro';
 import FinalCTA from '../../components/FinalCTA.astro';
 import { pillars, getFeatureBySlug, getPillarForFeature, getAllSlugs } from '../../data/product';
+import { plans } from '../../data/plans';
 
 export function getStaticPaths() {
   return getAllSlugs().map((slug) => ({ params: { slug } }));
@@ -106,6 +107,38 @@ const pageContent: Record<string, any> = {
         image: '/images/screen-pos.webp',
         imageAlt: 'Proceso de cobro en SACS POS',
         link: null,
+        details: [
+          {
+            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>',
+            title: 'Todos los métodos de pago',
+            description: 'Tarjeta, efectivo, transferencia SPEI, OXXO y link de pago. Sin terminales obligatorias.',
+          },
+          {
+            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+            title: 'Funciona sin internet',
+            description: 'Sigue cobrando offline. Las ventas se sincronizan cuando vuelve la conexión.',
+          },
+          {
+            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
+            title: 'Ticket por WhatsApp',
+            description: 'Envía el ticket digital al WhatsApp de tu cliente. Sin papel, sin impresora.',
+          },
+          {
+            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+            title: 'Cortes de caja automáticos',
+            description: 'Cierra caja con un tap. Arqueo de efectivo, detección de faltantes y reporte del día.',
+          },
+          {
+            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
+            title: 'Múltiples cajeros',
+            description: 'Cada vendedor con su sesión. Comisiones y permisos por rol.',
+          },
+          {
+            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>',
+            title: 'Cotizaciones al instante',
+            description: 'Genera cotizaciones con tu logo. El cliente paga desde el link.',
+          },
+        ],
       },
       {
         label: 'Inventario',
@@ -214,6 +247,53 @@ const isLive = feature.status === 'live' && content;
       <ZoomTypo text={content.interrupt} strikeText={content.interruptStrike} />
 
       <ProductFeatureShowcase items={content.showcaseTabs.map((t: any, i: number) => ({ ...t, num: i + 1 }))} />
+
+      <section class="pf-plans">
+        <div class="pf-plans-inner container">
+          <div class="pf-plans-header">
+            <div>
+              <h2 class="pf-plans-title">Punto de venta incluido en el plan Vende</h2>
+              <p class="pf-plans-subtitle">Todo lo que necesitas para empezar a cobrar desde $600 MXN/mes.</p>
+            </div>
+            <a href="/planes" class="pf-plans-link">Ver todos los planes
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+          </div>
+          <div class="pf-plan-single">
+            <div class="pf-plan-single-top">
+              <div class="pf-plan-single-price-col">
+                <span class="pf-plan-name">Vende</span>
+                <div class="pf-plan-price-row">
+                  <span class="pf-plan-price">$600</span>
+                  <span class="pf-plan-period">MXN /mes por sucursal</span>
+                </div>
+                <p class="pf-plan-annual">Pago anual: <strong>$500/mes</strong> · $6,000/año <span class="pf-plan-save">Ahorra 2 meses</span></p>
+              </div>
+              <div class="pf-plan-single-ctas">
+                <a href="/prueba-gratis" class="pf-plan-cta pf-plan-cta--solid">Prueba 7 días gratis</a>
+                <a href="/registro?plan=vende" class="pf-plan-cta">Inicia ahora</a>
+              </div>
+            </div>
+            <div class="pf-plan-features-grid">
+              {plans[0].features.map((group: any) => (
+                typeof group === 'object' && group.category && (
+                  <div class="pf-plan-feature-group">
+                    <h4 class="pf-plan-feature-cat">{group.category}</h4>
+                    <ul class="pf-plan-feature-list">
+                      {group.items.map((item: string) => (
+                        <li class="pf-plan-feature-item">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2AB5A0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
 
       <GiroFAQ faqs={content.faqs} />
     </Fragment>
@@ -643,6 +723,224 @@ const isLive = feature.status === 'live' && content;
     font-size: 0.75rem;
     color: var(--color-text-tertiary, #8c8c8c);
     line-height: 1.3;
+  }
+
+  /* ═══ Mini Plans ═══ */
+  .pf-plans {
+    padding: clamp(64px, 8vw, 100px) 0;
+    background: #fff;
+  }
+
+  .pf-plans-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: clamp(32px, 4vw, 48px);
+    flex-wrap: wrap;
+  }
+
+  .pf-plans-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+    font-weight: 800;
+    color: var(--color-text-primary, #1a1a2e);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin: 0;
+  }
+
+  .pf-plans-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-secondary, #4A4A4A);
+    text-decoration: none;
+    padding: 10px 20px;
+    border: 1.5px solid rgba(0, 0, 0, 0.12);
+    border-radius: var(--radius-full, 50px);
+    transition: border-color 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .pf-plans-link:hover {
+    border-color: rgba(0, 0, 0, 0.3);
+    text-decoration: none;
+  }
+
+  .pf-plans-subtitle {
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--color-text-secondary, #4A4A4A);
+    margin: 8px 0 0;
+  }
+
+  .pf-plan-single {
+    background: var(--color-bg-primary, #FAFAF8);
+    border-radius: 20px;
+    padding: clamp(28px, 4vw, 40px);
+  }
+
+  .pf-plan-single-top {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-bottom: clamp(24px, 3vw, 32px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    margin-bottom: clamp(24px, 3vw, 32px);
+  }
+
+  @media (min-width: 768px) {
+    .pf-plan-single-top {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
+
+  .pf-plan-name {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--color-text-tertiary, #8c8c8c);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .pf-plan-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+
+  .pf-plan-price {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    font-weight: 800;
+    color: var(--color-text-primary, #1a1a2e);
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  .pf-plan-period {
+    font-size: 0.875rem;
+    color: var(--color-text-tertiary, #8c8c8c);
+  }
+
+  .pf-plan-annual {
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary, #8c8c8c);
+    margin: 8px 0 0;
+  }
+
+  .pf-plan-annual strong {
+    color: var(--color-text-primary, #1a1a2e);
+  }
+
+  .pf-plan-save {
+    display: inline-block;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #2AB5A0;
+    background: rgba(42, 181, 160, 0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 6px;
+  }
+
+  .pf-plan-single-ctas {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .pf-plan-cta {
+    display: inline-block;
+    text-align: center;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.875rem;
+    font-weight: 700;
+    padding: 12px 28px;
+    border-radius: var(--radius-full, 50px);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    color: var(--color-text-primary, #1a1a2e);
+    border: 1.5px solid rgba(0, 0, 0, 0.15);
+    background: transparent;
+    white-space: nowrap;
+  }
+
+  .pf-plan-cta:hover {
+    border-color: rgba(0, 0, 0, 0.3);
+    text-decoration: none;
+  }
+
+  .pf-plan-cta--solid {
+    background: var(--color-text-primary, #1a1a2e);
+    color: #fff;
+    border-color: var(--color-text-primary, #1a1a2e);
+  }
+
+  .pf-plan-cta--solid:hover {
+    background: #2a2a3e;
+    border-color: #2a2a3e;
+  }
+
+  /* Features grid */
+  .pf-plan-features-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(24px, 3vw, 32px);
+  }
+
+  @media (min-width: 640px) {
+    .pf-plan-features-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .pf-plan-features-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  .pf-plan-feature-cat {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0 0 12px;
+  }
+
+  .pf-plan-feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .pf-plan-feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: var(--color-text-secondary, #4A4A4A);
+  }
+
+  .pf-plan-feature-item svg {
+    flex-shrink: 0;
+    margin-top: 1px;
   }
 
   /* ═══ Coming Soon (fallback) ═══ */

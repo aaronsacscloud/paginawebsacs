@@ -674,6 +674,7 @@ function EventTypeModal({
     migracion_valor: eventType?.routing_rules?.oferta?.migracion_valor || 9000,
     consultoria_horas: eventType?.routing_rules?.oferta?.consultoria_horas || 3,
     consultoria_valor: eventType?.routing_rules?.oferta?.consultoria_valor || 8000,
+    mostrar_typing: eventType?.routing_rules?.mostrar_typing !== false,
     _showOferta: false,
     buffer_antes_minutos: eventType?.buffer_antes_minutos || 0,
     buffer_despues_minutos: eventType?.buffer_despues_minutos || 0,
@@ -730,6 +731,7 @@ function EventTypeModal({
         slot_interval_minutos: form.slot_interval_minutos ? Number(form.slot_interval_minutos) : null,
         modo_escasez: form.modo_escasez || false,
         mostrar_recurrencia: form.mostrar_recurrencia || false,
+        mostrar_typing: form.mostrar_typing !== false,
         oferta: {
           mostrar_oferta: form.oferta_activa !== false,
           trial_dias: form.trial_dias || 7,
@@ -893,6 +895,10 @@ function EventTypeModal({
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.8125rem', color: '#555' }}>
             <input type="checkbox" checked={form.mostrar_recurrencia || false} onChange={e => updateForm('mostrar_recurrencia', e.target.checked)} style={{ accentColor: '#4B7BE5' }} />
             Permitir repetir reunión (recurrencia semanal/quincenal)
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: '0.8125rem', color: '#555' }}>
+            <input type="checkbox" checked={form.mostrar_typing !== false} onChange={e => updateForm('mostrar_typing', e.target.checked)} style={{ accentColor: '#4B7BE5' }} />
+            Mostrar "Alguien más está viendo este horario"
           </label>
         </div>
 
