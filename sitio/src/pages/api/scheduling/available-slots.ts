@@ -122,6 +122,7 @@ export const GET: APIRoute = async ({ url }) => {
     max_reservas_dia,
     max_dias_adelanto,
     owner_id,
+    slot_interval_minutos,
   } = eventType;
 
   // Determine which hosts to check availability for (Feature 13: Round-Robin)
@@ -275,6 +276,8 @@ export const GET: APIRoute = async ({ url }) => {
     allTimeRanges.sort((a, b) => a.start.localeCompare(b.start));
 
     // Generate candidate slot times from all ranges
+    // slot_interval_minutos controls the spacing between slots (default = duracion_minutos)
+    const interval = slot_interval_minutos || duracion_minutos;
     const candidateSlots = new Set<string>();
     for (const range of allTimeRanges) {
       let slotStart = range.start;
@@ -282,7 +285,7 @@ export const GET: APIRoute = async ({ url }) => {
         const slotEnd = addMinutes(slotStart, duracion_minutos);
         if (timeToMinutes(slotEnd) > timeToMinutes(range.end)) break;
         candidateSlots.add(slotStart);
-        slotStart = addMinutes(slotStart, duracion_minutos);
+        slotStart = addMinutes(slotStart, interval);
       }
     }
 

@@ -51,4 +51,9 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='companies' AND column_name='next_invoice_date') THEN
     ALTER TABLE companies ADD COLUMN next_invoice_date date;
   END IF;
+
+  -- Event types extras
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='event_types' AND column_name='slot_interval_minutos') THEN
+    ALTER TABLE event_types ADD COLUMN slot_interval_minutos int;
+  END IF;
 END $$;

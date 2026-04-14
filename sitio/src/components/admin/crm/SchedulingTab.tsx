@@ -665,6 +665,7 @@ function EventTypeModal({
     slug: eventType?.slug || '',
     descripcion: eventType?.descripcion || '',
     duracion_minutos: eventType?.duracion_minutos || 30,
+    slot_interval_minutos: (eventType as any)?.slot_interval_minutos || '',
     buffer_antes_minutos: eventType?.buffer_antes_minutos || 0,
     buffer_despues_minutos: eventType?.buffer_despues_minutos || 0,
     aviso_minimo_horas: eventType?.aviso_minimo_horas || 2,
@@ -707,6 +708,7 @@ function EventTypeModal({
       slug: form.slug,
       descripcion: form.descripcion || null,
       duracion_minutos: form.duracion_minutos,
+      slot_interval_minutos: form.slot_interval_minutos ? Number(form.slot_interval_minutos) : null,
       buffer_antes_minutos: form.buffer_antes_minutos,
       buffer_despues_minutos: form.buffer_despues_minutos,
       aviso_minimo_horas: form.aviso_minimo_horas,
@@ -766,13 +768,24 @@ function EventTypeModal({
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
           <div>
-            <label style={label}>Duracion (min)</label>
+            <label style={label}>Duración (min)</label>
             <select value={form.duracion_minutos} onChange={e => updateForm('duracion_minutos', Number(e.target.value))} style={selectStyle}>
               {DURATION_OPTIONS.map(d => <option key={d} value={d}>{d} min</option>)}
             </select>
           </div>
           <div>
-            <label style={label}>Ubicacion</label>
+            <label style={label}>Intervalo de slots</label>
+            <select value={form.slot_interval_minutos} onChange={e => updateForm('slot_interval_minutos', e.target.value)} style={selectStyle}>
+              <option value="">Igual a duración</option>
+              <option value="15">Cada 15 min</option>
+              <option value="30">Cada 30 min</option>
+              <option value="45">Cada 45 min</option>
+              <option value="60">Cada 60 min</option>
+            </select>
+            <div style={{ fontSize: '0.625rem', color: '#999', marginTop: 2 }}>Espaciado entre horarios disponibles</div>
+          </div>
+          <div>
+            <label style={label}>Ubicación</label>
             <select value={form.ubicacion_tipo} onChange={e => updateForm('ubicacion_tipo', e.target.value)} style={selectStyle}>
               {UBICACION_OPTIONS.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
             </select>
