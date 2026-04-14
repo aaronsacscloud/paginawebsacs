@@ -18,23 +18,21 @@ const { items } = Astro.props;
 
 <section class="pfs-section">
   {items.map((item, i) => (
-    <div class={`pfs-block${i % 2 !== 0 ? ' pfs-block--flip' : ''}`}>
-      <div class="pfs-block-inner container">
+    <div class="pfs-block">
+      <!-- Text top-left -->
+      <div class="pfs-block-header container">
         <div class="pfs-block-text">
           <h2 class="pfs-block-title">{item.title}</h2>
           <p class="pfs-block-desc">{item.description}</p>
-          {item.link && (
-            <a href={item.link.href} class="pfs-block-link">
-              {item.link.label}
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </a>
-          )}
         </div>
-        <div class="pfs-block-visual">
-          <div class="pfs-block-bg"></div>
+      </div>
+      <!-- Tablet with bg -->
+      <div class="pfs-block-visual">
+        <div class="pfs-block-bg"></div>
+        <div class="pfs-tablet-container container">
           <div class="pfs-tablet">
             <div class="pfs-tablet-screen">
-              <img src={item.image} alt={item.imageAlt} width="1200" height="800" loading="lazy" />
+              <img src={item.image} alt={item.imageAlt} width="1400" height="900" loading="lazy" />
             </div>
             <div class="pfs-tablet-home"></div>
           </div>
@@ -50,44 +48,14 @@ const { items } = Astro.props;
   }
 
   .pfs-block {
-    padding: clamp(48px, 6vw, 80px) 0;
+    padding-top: clamp(48px, 6vw, 80px);
     overflow: hidden;
-  }
-
-  .pfs-block:nth-child(even) {
-    background: var(--color-bg-primary, #FAFAF8);
-  }
-
-  .pfs-block-inner {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-8, 32px);
-  }
-
-  @media (min-width: 1024px) {
-    .pfs-block-inner {
-      display: grid;
-      grid-template-columns: 1fr 1.4fr;
-      gap: clamp(40px, 4vw, 64px);
-      align-items: center;
-    }
-
-    .pfs-block--flip .pfs-block-inner {
-      grid-template-columns: 1.4fr 1fr;
-    }
-
-    .pfs-block--flip .pfs-block-text {
-      order: 2;
-    }
-
-    .pfs-block--flip .pfs-block-visual {
-      order: 1;
-    }
   }
 
   /* ─── Text ─── */
   .pfs-block-text {
-    max-width: 440px;
+    max-width: 500px;
+    margin-bottom: clamp(32px, 4vw, 48px);
   }
 
   .pfs-block-title {
@@ -97,78 +65,56 @@ const { items } = Astro.props;
     color: var(--color-text-primary, #1a1a2e);
     letter-spacing: -0.03em;
     line-height: 1.1;
-    margin: 0 0 var(--space-4, 16px);
+    margin: 0 0 12px;
   }
 
   .pfs-block-desc {
     font-size: 0.9375rem;
-    line-height: 1.65;
+    line-height: 1.6;
     color: var(--color-text-secondary, #4A4A4A);
     margin: 0;
   }
 
-  .pfs-block-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--font-display, 'Sora', sans-serif);
-    font-size: 0.875rem;
-    font-weight: 700;
-    color: var(--color-text-primary, #1a1a2e);
-    text-decoration: none;
-    margin-top: var(--space-5, 20px);
-    transition: gap 0.2s ease;
-  }
-
-  .pfs-block-link:hover {
-    gap: 10px;
-    text-decoration: none;
-  }
-
-  /* ─── Visual ─── */
+  /* ─── Visual area ─── */
   .pfs-block-visual {
     position: relative;
-    display: flex;
-    justify-content: center;
+    padding-bottom: clamp(48px, 6vw, 80px);
   }
 
   .pfs-block-bg {
     position: absolute;
-    top: -10%;
-    right: -20%;
-    width: 120%;
-    height: 120%;
-    background: linear-gradient(135deg, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0.08) 100%);
-    border-radius: 24px;
-    z-index: 0;
+    top: 25%;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, #c4b5a0 0%, #8b7d6b 40%, #5a4f42 100%);
+    border-radius: 24px 24px 0 0;
   }
 
-  .pfs-block--flip .pfs-block-bg {
-    right: auto;
-    left: -20%;
-  }
-
-  /* ─── Tablet mockup ─── */
-  .pfs-tablet {
+  /* ─── Tablet ─── */
+  .pfs-tablet-container {
     position: relative;
     z-index: 1;
+    display: flex;
+    justify-content: center;
+  }
+
+  .pfs-tablet {
     width: 100%;
-    max-width: 640px;
+    max-width: 900px;
     background: #fff;
     border-radius: 20px;
-    padding: 10px 10px 6px;
+    padding: 14px 14px 8px;
     box-shadow:
-      0 4px 12px rgba(0, 0, 0, 0.06),
-      0 16px 48px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(0, 0, 0, 0.06);
+      0 8px 24px rgba(0, 0, 0, 0.1),
+      0 32px 80px rgba(0, 0, 0, 0.12);
   }
 
   .pfs-tablet-screen {
-    position: relative;
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 3 / 2;
     overflow: hidden;
     background: #f5f5f5;
-    border-radius: 12px;
+    border-radius: 10px;
   }
 
   .pfs-tablet-screen img {
@@ -179,14 +125,14 @@ const { items } = Astro.props;
   }
 
   .pfs-tablet-home {
-    width: 36px;
-    height: 4px;
-    border-radius: 2px;
+    width: 40px;
+    height: 5px;
+    border-radius: 3px;
     background: #d4d4d4;
-    margin: 8px auto 4px;
+    margin: 10px auto 4px;
   }
 
-  /* ─── Reveal animation ─── */
+  /* ─── Reveal ─── */
   .pfs-block-text,
   .pfs-block-visual {
     opacity: 0;
@@ -214,25 +160,38 @@ const { items } = Astro.props;
       transition: none;
     }
   }
+
+  @media (max-width: 767px) {
+    .pfs-block-bg {
+      border-radius: 16px 16px 0 0;
+    }
+    .pfs-tablet {
+      border-radius: 14px;
+      padding: 8px 8px 6px;
+    }
+    .pfs-tablet-screen {
+      border-radius: 6px;
+    }
+  }
 </style>
 
 <script>
   const blocks = document.querySelectorAll('.pfs-block');
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  if (!prefersReducedMotion && blocks.length > 0) {
-    const observer = new IntersectionObserver(
+  if (!reduced && blocks.length > 0) {
+    const obs = new IntersectionObserver(
       (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-            observer.unobserve(entry.target);
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add('visible');
+            obs.unobserve(e.target);
           }
         });
       },
-      { threshold: 0.15, rootMargin: '0px 0px -40px 0px' }
+      { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
     );
-    blocks.forEach((block) => observer.observe(block));
+    blocks.forEach((b) => obs.observe(b));
   } else {
     blocks.forEach((b) => b.classList.add('visible'));
   }
