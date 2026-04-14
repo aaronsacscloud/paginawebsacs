@@ -107,8 +107,31 @@ const { items } = Astro.props;
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(180deg, #c4b5a0 0%, #8b7d6b 40%, #5a4f42 100%);
     border-radius: 24px 24px 0 0;
+  }
+
+  .pfs-block:nth-child(1) .pfs-block-bg {
+    background: linear-gradient(180deg, #4B7BE5 0%, #6B9BF7 50%, #a8c4fa 100%);
+  }
+
+  .pfs-block:nth-child(2) .pfs-block-bg {
+    background: linear-gradient(180deg, #6B9BF7 0%, #a8c4fa 50%, #cfdffb 100%);
+  }
+
+  .pfs-block:nth-child(3) .pfs-block-bg {
+    background: linear-gradient(180deg, #a8c4fa 0%, #cfdffb 50%, #e8f0fd 100%);
+  }
+
+  .pfs-block:nth-child(4) .pfs-block-bg {
+    background: linear-gradient(180deg, #cfdffb 0%, #e8f0fd 50%, #f5f8ff 100%);
+  }
+
+  .pfs-block:nth-child(5) .pfs-block-bg {
+    background: linear-gradient(180deg, #e8f0fd 0%, #f5f8ff 50%, #ffffff 100%);
+  }
+
+  .pfs-block:nth-child(n+6) .pfs-block-bg {
+    background: linear-gradient(180deg, #f0f5ff 0%, #ffffff 100%);
   }
 
   /* ─── Tablet ─── */

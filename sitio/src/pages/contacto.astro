@@ -96,13 +96,32 @@ try {
       </div>
     </div>
     <div class="ct-hero-cal" id="demo">
-      {bookingEventType ? (
-        <BookingPage client:only="react" eventType={bookingEventType} questions={bookingQuestions} />
-      ) : (
-        <div style="text-align:center;padding:40px;">
-          <a href="/agendar/demo" style="display:inline-block;padding:16px 40px;background:#4B7BE5;color:#fff;border-radius:12px;text-decoration:none;font-weight:700;">Agendar mi demo</a>
+      <div class="ct-booking-wrapper">
+        <div class="ct-booking-card">
+          <div class="ct-booking-header">
+            <span class="ct-booking-logo">Sacs</span>
+            <span class="ct-booking-badge">Demo</span>
+          </div>
+          <h3 class="ct-booking-title">Demo personalizada</h3>
+          <p class="ct-booking-meta">30 min · Google Meet · Sin compromiso</p>
+          <p class="ct-booking-desc">Te mostramos SACS funcionando con datos reales de tu negocio. Elige el horario que mejor te funcione.</p>
+          <a href="/agendar/demo" class="ct-booking-btn">Seleccionar horario</a>
+          <p class="ct-booking-note">Sin tarjeta de crédito · Cancela cuando quieras</p>
         </div>
-      )}
+      </div>
+      <style>
+        .ct-booking-wrapper { display: flex; align-items: center; justify-content: center; min-height: 400px; }
+        .ct-booking-card { background: #fff; border-radius: 16px; padding: 40px 32px; text-align: center; box-shadow: 0 2px 16px rgba(0,0,0,0.06); border: 1px solid #f0f0f0; max-width: 380px; width: 100%; }
+        .ct-booking-header { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px; }
+        .ct-booking-logo { font-family: 'Clash Display', sans-serif; font-size: 1.25rem; font-weight: 700; }
+        .ct-booking-badge { font-size: 0.5625rem; font-weight: 700; color: #4B7BE5; background: rgba(75,123,229,0.08); padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.08em; }
+        .ct-booking-title { font-family: 'Sora', sans-serif; font-size: 1.25rem; font-weight: 700; margin: 0 0 8px; color: #1a1a1a; }
+        .ct-booking-meta { font-size: 0.75rem; color: #999; margin: 0 0 16px; }
+        .ct-booking-desc { font-size: 0.875rem; color: #666; line-height: 1.6; margin: 0 0 24px; }
+        .ct-booking-btn { display: block; padding: 14px 32px; background: #4B7BE5; color: #fff; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 0.9375rem; transition: background 0.2s; }
+        .ct-booking-btn:hover { background: #3a63c4; text-decoration: none; color: #fff; }
+        .ct-booking-note { font-size: 0.6875rem; color: #bbb; margin: 12px 0 0; }
+      </style>
     </div>
   </div>
 </section>
