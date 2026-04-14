@@ -708,7 +708,6 @@ function EventTypeModal({
       slug: form.slug,
       descripcion: form.descripcion || null,
       duracion_minutos: form.duracion_minutos,
-      slot_interval_minutos: form.slot_interval_minutos ? Number(form.slot_interval_minutos) : null,
       buffer_antes_minutos: form.buffer_antes_minutos,
       buffer_despues_minutos: form.buffer_despues_minutos,
       aviso_minimo_horas: form.aviso_minimo_horas,
@@ -716,21 +715,30 @@ function EventTypeModal({
       max_dias_adelanto: form.max_dias_adelanto,
       ubicacion_tipo: form.ubicacion_tipo,
       color: form.color,
-      routing_rules: { ...(eventType?.routing_rules || {}), emails: emailConfig },
+      routing_rules: {
+        ...(eventType?.routing_rules || {}),
+        emails: emailConfig,
+        slot_interval_minutos: form.slot_interval_minutos ? Number(form.slot_interval_minutos) : null,
+      },
     };
 
     if (eventType) {
       payload.id = eventType.id;
     }
 
-    await fetch('/api/scheduling/event-types', {
+    const res = await fetch('/api/scheduling/event-types', {
       method: eventType ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
+    const result = await res.json();
 
     setSaving(false);
-    onSaved();
+    if (result.error) {
+      alert('Error al guardar: ' + result.error);
+    } else {
+      onSaved();
+    }
   };
 
   return (

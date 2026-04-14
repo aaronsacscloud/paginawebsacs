@@ -415,10 +415,14 @@ const isLive = feature.status === 'live' && content;
   /* ═══ Square-style Showcase Blocks ═══ */
   .sq-showcase {
     padding: clamp(64px, 8vw, 100px) 0 0;
-    background: var(--color-bg-primary, #FAFAF8);
-    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-bottom: none;
     border-radius: 24px 24px 0 0;
     margin-top: clamp(40px, 5vw, 64px);
+    margin-left: auto;
+    margin-right: auto;
+    max-width: calc(var(--max-width, 1280px) + 80px);
   }
 
   .sq-showcase-heading {

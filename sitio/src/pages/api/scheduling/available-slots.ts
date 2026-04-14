@@ -122,8 +122,10 @@ export const GET: APIRoute = async ({ url }) => {
     max_reservas_dia,
     max_dias_adelanto,
     owner_id,
-    slot_interval_minutos,
+    routing_rules,
   } = eventType;
+  // slot_interval can be a column OR stored in routing_rules (fallback)
+  const slot_interval_minutos = eventType.slot_interval_minutos || routing_rules?.slot_interval_minutos || null;
 
   // Determine which hosts to check availability for (Feature 13: Round-Robin)
   const isRoundRobin = eventType.tipo_reunion === 'round_robin' && eventType.host_ids?.length > 0;
