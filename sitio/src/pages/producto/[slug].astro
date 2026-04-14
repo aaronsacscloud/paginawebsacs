@@ -2,7 +2,7 @@
 import ProductLayout from '../../layouts/ProductLayout.astro';
 import GiroHero from '../../components/giros/GiroHero.astro';
 import ZoomTypo from '../../components/ZoomTypo.astro';
-import ProductShowcaseTabs from '../../components/ProductShowcaseTabs.astro';
+import ProductFeatureShowcase from '../../components/ProductFeatureShowcase.astro';
 import GiroFeatures from '../../components/giros/GiroFeatures.astro';
 import GiroSplitSection from '../../components/giros/GiroSplitSection.astro';
 import GiroStats from '../../components/giros/GiroStats.astro';
@@ -213,7 +213,7 @@ const isLive = feature.status === 'live' && content;
 
       <ZoomTypo text={content.interrupt} strikeText={content.interruptStrike} />
 
-      <ProductShowcaseTabs tabs={content.showcaseTabs} />
+      <ProductFeatureShowcase items={content.showcaseTabs.map((t: any, i: number) => ({ ...t, num: i + 1 }))} />
 
       <GiroFAQ faqs={content.faqs} />
     </Fragment>

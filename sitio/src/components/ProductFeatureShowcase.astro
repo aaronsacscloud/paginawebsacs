@@ -1,0 +1,338 @@
+---
+interface FeatureItem {
+  num: number;
+  label: string;
+  title: string;
+  description: string;
+  image: string;
+  imageAlt: string;
+  link?: { label: string; href: string };
+}
+
+interface Props {
+  items: FeatureItem[];
+}
+
+const { items } = Astro.props;
+---
+
+<section class="pfs-section" id="pfs-section">
+  <div class="pfs-sticky">
+    <!-- Title -->
+    <div class="pfs-header">
+      <h2 class="pfs-title" id="pfs-title">{items[0].title}</h2>
+    </div>
+
+    <div class="pfs-3col container">
+      <!-- Left: vertical pills -->
+      <nav class="pfs-pills" aria-label="Funcionalidades">
+        {items.map((item, i) => (
+          <button
+            class={`pfs-pill${i === 0 ? ' active' : ''}`}
+            data-pfs-idx={i}
+            type="button"
+          >
+            <span class="pfs-pill-num">{item.num}</span>
+            <span class="pfs-pill-label">{item.label}</span>
+          </button>
+        ))}
+      </nav>
+
+      <!-- Center: visual (tablet frame) -->
+      <div class="pfs-visual">
+        <div class="pfs-frame">
+          <div class="pfs-camera"></div>
+          <div class="pfs-screen">
+            {items.map((item, i) => (
+              <div class={`pfs-slide${i === 0 ? ' active' : ''}`} data-pfs-slide={i}>
+                <img src={item.image} alt={item.imageAlt} width="1200" height="800" loading="lazy" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: description -->
+      <div class="pfs-detail">
+        {items.map((item, i) => (
+          <div class={`pfs-detail-item${i === 0 ? ' active' : ''}`} data-pfs-detail={i} data-pfs-title={item.title}>
+            <p class="pfs-detail-desc">{item.description}</p>
+            {item.link && (
+              <a href={item.link.href} class="pfs-detail-link">
+                {item.link.label}
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </a>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .pfs-section {
+    position: relative;
+    background: var(--color-bg-primary, #FAFAF8);
+    padding: clamp(64px, 8vw, 100px) 0;
+  }
+
+  .pfs-sticky {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+
+  /* Header */
+  .pfs-header {
+    text-align: center;
+    margin-bottom: clamp(32px, 4vw, 56px);
+    padding: 0 var(--space-5, 20px);
+  }
+
+  .pfs-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.75rem, 4vw, 3rem);
+    font-weight: 800;
+    color: var(--color-text-primary, #1a1a2e);
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  /* 3-column layout */
+  .pfs-3col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6, 24px);
+    align-items: center;
+  }
+
+  @media (min-width: 1024px) {
+    .pfs-3col {
+      display: grid;
+      grid-template-columns: 200px 1fr 280px;
+      gap: var(--space-6, 24px);
+      align-items: center;
+    }
+  }
+
+  /* ─── Pills (left) ─── */
+  .pfs-pills {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pfs-pills::-webkit-scrollbar { display: none; }
+
+  @media (min-width: 1024px) {
+    .pfs-pills {
+      flex-direction: column;
+      overflow: visible;
+      width: auto;
+      justify-content: flex-start;
+    }
+  }
+
+  .pfs-pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    white-space: nowrap;
+    font-family: var(--font-display, 'Sora', sans-serif);
+  }
+
+  .pfs-pill:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  .pfs-pill.active {
+    background: rgba(0, 0, 0, 0.06);
+  }
+
+  .pfs-pill-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1.5px solid rgba(0, 0, 0, 0.15);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-text-tertiary, #8c8c8c);
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+  }
+
+  .pfs-pill.active .pfs-pill-num {
+    background: var(--color-text-primary, #1a1a2e);
+    border-color: var(--color-text-primary, #1a1a2e);
+    color: #fff;
+  }
+
+  .pfs-pill-label {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-text-tertiary, #8c8c8c);
+    transition: color 0.2s ease;
+  }
+
+  .pfs-pill.active .pfs-pill-label {
+    color: var(--color-text-primary, #1a1a2e);
+    font-weight: 700;
+  }
+
+  /* ─── Visual (center) ─── */
+  .pfs-visual {
+    width: 100%;
+    max-width: 700px;
+  }
+
+  .pfs-frame {
+    background: #f5f5f5;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.06);
+  }
+
+  .pfs-camera {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #d4d4d4;
+    margin: 8px auto;
+  }
+
+  .pfs-screen {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: #fff;
+    margin: 0 8px 8px;
+    border-radius: 8px;
+  }
+
+  .pfs-slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+
+  .pfs-slide.active {
+    opacity: 1;
+  }
+
+  .pfs-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* ─── Detail (right) ─── */
+  .pfs-detail {
+    position: relative;
+    min-height: 120px;
+    text-align: center;
+  }
+
+  @media (min-width: 1024px) {
+    .pfs-detail {
+      text-align: left;
+    }
+  }
+
+  .pfs-detail-item {
+    opacity: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+
+  .pfs-detail-item.active {
+    opacity: 1;
+    position: relative;
+    pointer-events: auto;
+  }
+
+  .pfs-detail-desc {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--color-text-secondary, #4A4A4A);
+    margin: 0 0 var(--space-4, 16px);
+  }
+
+  .pfs-detail-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--color-primary, #4B7BE5);
+    text-decoration: none;
+    transition: gap 0.2s ease;
+  }
+
+  .pfs-detail-link:hover {
+    gap: 10px;
+    text-decoration: none;
+  }
+</style>
+
+<script>
+  const pills = document.querySelectorAll<HTMLButtonElement>('[data-pfs-idx]');
+  const slides = document.querySelectorAll<HTMLElement>('[data-pfs-slide]');
+  const details = document.querySelectorAll<HTMLElement>('[data-pfs-detail]');
+  const title = document.getElementById('pfs-title');
+
+  pills.forEach((pill) => {
+    pill.addEventListener('click', () => {
+      const idx = pill.dataset.pfsIdx;
+
+      // Update pills
+      pills.forEach((p) => p.classList.remove('active'));
+      pill.classList.add('active');
+
+      // Update slides
+      slides.forEach((s) => s.classList.remove('active'));
+      document.querySelector(`[data-pfs-slide="${idx}"]`)?.classList.add('active');
+
+      // Update details
+      details.forEach((d) => d.classList.remove('active'));
+      const activeDetail = document.querySelector<HTMLElement>(`[data-pfs-detail="${idx}"]`);
+      activeDetail?.classList.add('active');
+
+      // Update title with fade
+      if (title) {
+        title.style.opacity = '0';
+        setTimeout(() => {
+          const newTitle = activeDetail?.dataset.pfsTitle;
+          if (newTitle) title.textContent = newTitle;
+          title.style.opacity = '1';
+        }, 200);
+      }
+    });
+  });
+</script>

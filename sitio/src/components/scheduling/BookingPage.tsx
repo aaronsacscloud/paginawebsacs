@@ -940,7 +940,7 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
               return (
                 <button
                   key={slot}
-                  onClick={() => { setSelectedTime(slot); trackEvent('time_selected', { date: selectedDate, time: slot }); }}
+                  onClick={() => { setSelectedTime(slot); trackEvent('time_selected', { date: selectedDate, time: slot }); setTimeout(() => setStep(3), 300); }}
                   style={{
                     padding: '12px 20px',
                     borderRadius: 10,
@@ -998,14 +998,7 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
           </div>
         )}
 
-        {selectedTime && (
-          <button
-            onClick={() => setStep(3)}
-            style={{ ...styles.btnPrimary, marginTop: 20, background: primaryColor }}
-          >
-            Confirmar
-          </button>
-        )}
+        {/* Auto-advances to step 3 on time selection — no confirm button needed */}
       </div>
     );
   };
