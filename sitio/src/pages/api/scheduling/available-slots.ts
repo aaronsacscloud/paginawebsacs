@@ -227,6 +227,7 @@ export const GET: APIRoute = async ({ url }) => {
   const maxDateStr = maxDate.toISOString().slice(0, 10);
 
   const dates: Record<string, string[]> = {};
+  const fullDatesSet: string[] = [];
   const allDates = dateRange(from, to);
 
   for (const dateStr of allDates) {
@@ -357,6 +358,20 @@ export const GET: APIRoute = async ({ url }) => {
 
     if (slots.length > 0) {
       dates[dateStr] = slots;
+    } else if (candidateSlots.size > 0 && max_reservas_dia) {
+      // Date had candidate slots but none are available — check if it's because max_reservas_dia was hit
+      // If any host has bookings >= max_reservas_dia, this date is "full"
+      let anyHostMaxed = false;
+      for (const [, hd] of hostsData) {
+        const dayBookings = hd.bookingsByDate.get(dateStr) || [];
+        if (dayBookings.length >= max_reservas_dia) {
+          anyHostMaxed = true;
+          break;
+        }
+      }
+      if (anyHostMaxed) {
+        fullDatesSet.push(dateStr);
+      }
     }
   }
 
@@ -364,6 +379,7 @@ export const GET: APIRoute = async ({ url }) => {
   return new Response(
     JSON.stringify({
       dates,
+      full_dates: fullDatesSet,
       event_type: eventType,
     }),
   );

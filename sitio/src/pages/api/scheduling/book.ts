@@ -464,7 +464,6 @@ export const POST: APIRoute = async ({ request }) => {
   // 11. Send SMS/WhatsApp confirmation to invitee (Feature 11)
   if (whatsapp) {
     try {
-      const meetInfo = google_meet_link ? `\nLink: ${google_meet_link}` : '';
       const [y, mo, d] = fecha.split('-').map(Number);
       const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
       const dateStr = `${d} ${months[mo - 1]} ${y}`;
@@ -473,7 +472,17 @@ export const POST: APIRoute = async ({ request }) => {
       const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
       const timeStr = `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
 
-      const smsMessage = `✅ Confirmado! Tu ${eventType.nombre} con SACS es el ${dateStr} a las ${timeStr} (${eventType.duracion_minutos} min).${meetInfo}\n\nPara cancelar o reagendar: https://www.sacscloud.com/api/scheduling/cancel?token=${booking.token_cancelar}`;
+      const meetLink = google_meet_link || '';
+      const smsMessage = [
+        `✅ *Demo confirmada con SACS*`,
+        ``,
+        `📅 ${dateStr} a las ${timeStr}`,
+        `⏱ ${eventType.duracion_minutos} minutos`,
+        meetLink ? `📹 ${meetLink}` : '',
+        ``,
+        `Para reagendar o cancelar:`,
+        `https://www.sacscloud.com/api/scheduling/cancel?token=${booking.token_cancelar}`,
+      ].filter(Boolean).join('\n');
 
       const baseUrl = import.meta.env.SITE || 'https://www.sacscloud.com';
       await fetch(`${baseUrl}/api/scheduling/sms/send`, {

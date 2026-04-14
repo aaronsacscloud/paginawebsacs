@@ -261,6 +261,23 @@ function generateGcalLink(
   return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${start}/${end}&details=${encodeURIComponent(description)}&location=${encodeURIComponent(location)}`;
 }
 
+// ─── Branding Config ───
+interface BrandingConfig {
+  logo_url: string;
+  primary_color: string;
+  welcome_message: string;
+  confirmation_message: string;
+  company_name: string;
+}
+
+const BRANDING_DEFAULTS: BrandingConfig = {
+  logo_url: '',
+  primary_color: '#4B7BE5',
+  welcome_message: '',
+  confirmation_message: '',
+  company_name: 'Sacs',
+};
+
 // ─── Main Component ───
 export default function BookingPage({ eventType, questions }: Props) {
   const [step, setStep] = useState(1);
@@ -268,6 +285,9 @@ export default function BookingPage({ eventType, questions }: Props) {
     try { return Intl.DateTimeFormat().resolvedOptions().timeZone; }
     catch { return 'America/Mexico_City'; }
   });
+
+  // ── Branding ──
+  const [branding, setBranding] = useState<BrandingConfig>(BRANDING_DEFAULTS);
 
   // ── Activity tracking ──
   const sessionRef = useRef<string>('');
@@ -286,6 +306,17 @@ export default function BookingPage({ eventType, questions }: Props) {
     trackEvent('page_view');
   }, []);
 
+  // ── Fetch branding config ──
+  useEffect(() => {
+    fetch('/api/scheduling/config')
+      .then(res => res.ok ? res.json() : BRANDING_DEFAULTS)
+      .then(data => setBranding({ ...BRANDING_DEFAULTS, ...data }))
+      .catch(() => {});
+  }, []);
+
+  // Computed primary color from branding
+  const primaryColor = branding.primary_color || '#4B7BE5';
+
   // Step 1: Date selection
   const now = new Date();
   const [viewYear, setViewYear] = useState(now.getFullYear());
@@ -293,6 +324,13 @@ export default function BookingPage({ eventType, questions }: Props) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [availableDates, setAvailableDates] = useState<Record<string, string[]>>({});
   const [loadingSlots, setLoadingSlots] = useState(false);
+
+  // Waitlist (Feature 20)
+  const [fullDates, setFullDates] = useState<string[]>([]);
+  const [showWaitlistForm, setShowWaitlistForm] = useState(false);
+  const [waitlistData, setWaitlistData] = useState({ nombre: '', email: '', whatsapp: '' });
+  const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
+  const [waitlistDone, setWaitlistDone] = useState(false);
 
   // Step 2: Time selection
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -327,7 +365,8 @@ export default function BookingPage({ eventType, questions }: Props) {
         );
         if (res.ok) {
           const data = await res.json();
-          setAvailableDates(data.slots || {});
+          setAvailableDates(data.slots || data.dates || {});
+          setFullDates(data.full_dates || []);
         }
       } catch {
         // silent
@@ -428,8 +467,24 @@ export default function BookingPage({ eventType, questions }: Props) {
   // ── Render header (shared across steps) ──
   const renderHeader = () => (
     <div style={styles.header}>
-      <p style={styles.logo}>Sacs</p>
+      {branding.logo_url ? (
+        <img
+          src={branding.logo_url}
+          alt={branding.company_name || 'Logo'}
+          style={{ height: 32, objectFit: 'contain' as const, marginBottom: 4 }}
+          loading="lazy"
+          width="auto"
+          height="32"
+        />
+      ) : (
+        <p style={styles.logo}>{branding.company_name || 'Sacs'}</p>
+      )}
       <h1 style={styles.eventName}>{eventType.nombre}</h1>
+      {branding.welcome_message && (
+        <p style={{ fontSize: '0.8125rem', color: '#777', margin: '4px 0 8px', lineHeight: 1.5 }}>
+          {branding.welcome_message}
+        </p>
+      )}
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
         <span style={styles.badge}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -504,9 +559,11 @@ export default function BookingPage({ eventType, questions }: Props) {
             }
             const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const hasSlots = availableDates[dateStr] && availableDates[dateStr].length > 0;
+            const isFull = fullDates.includes(dateStr);
             const isPast = dateStr < todayStr;
             const isSelected = dateStr === selectedDate;
             const isToday = dateStr === todayStr;
+            const isClickable = (!isPast && hasSlots) || (!isPast && isFull);
 
             const cellStyle: React.CSSProperties = {
               width: 44,
@@ -516,11 +573,11 @@ export default function BookingPage({ eventType, questions }: Props) {
               justifyContent: 'center',
               borderRadius: 12,
               fontSize: '0.875rem',
-              fontWeight: hasSlots ? 700 : 400,
-              cursor: hasSlots && !isPast ? 'pointer' : 'default',
-              border: 'none',
-              background: isSelected ? '#4B7BE5' : 'transparent',
-              color: isSelected ? '#fff' : isPast || !hasSlots ? '#ccc' : '#1A1A1A',
+              fontWeight: hasSlots || isFull ? 700 : 400,
+              cursor: isClickable ? 'pointer' : 'default',
+              border: isFull && !isPast ? `1.5px dashed ${primaryColor}` : 'none',
+              background: isSelected ? primaryColor : 'transparent',
+              color: isSelected ? '#fff' : isPast || (!hasSlots && !isFull) ? '#ccc' : isFull ? primaryColor : '#1A1A1A',
               transition: 'background 0.15s, color 0.15s',
               position: 'relative' as const,
               fontFamily: 'inherit',
@@ -530,18 +587,28 @@ export default function BookingPage({ eventType, questions }: Props) {
               <button
                 key={dateStr}
                 style={cellStyle}
-                disabled={isPast || !hasSlots}
+                disabled={!isClickable}
                 onClick={() => {
-                  if (hasSlots && !isPast) {
+                  if (isPast) return;
+                  if (hasSlots) {
                     setSelectedDate(dateStr);
                     setSelectedTime(null);
+                    setShowWaitlistForm(false);
+                    setWaitlistDone(false);
                     setStep(2);
                     trackEvent('date_selected', { date: dateStr });
+                  } else if (isFull) {
+                    setSelectedDate(dateStr);
+                    setSelectedTime(null);
+                    setShowWaitlistForm(true);
+                    setWaitlistDone(false);
+                    setStep(2);
+                    trackEvent('waitlist_date_selected', { date: dateStr });
                   }
                 }}
                 onMouseEnter={(e) => {
-                  if (hasSlots && !isPast && !isSelected) {
-                    (e.currentTarget as HTMLButtonElement).style.background = '#EBF1FC';
+                  if (isClickable && !isSelected) {
+                    (e.currentTarget as HTMLButtonElement).style.background = `${primaryColor}15`;
                   }
                 }}
                 onMouseLeave={(e) => {
@@ -560,7 +627,7 @@ export default function BookingPage({ eventType, questions }: Props) {
                     width: 4,
                     height: 4,
                     borderRadius: '50%',
-                    background: isSelected ? '#fff' : '#4B7BE5',
+                    background: isSelected ? '#fff' : primaryColor,
                   }} />
                 )}
               </button>
@@ -596,10 +663,132 @@ export default function BookingPage({ eventType, questions }: Props) {
     );
   };
 
+  // ── Waitlist submit handler ──
+  const handleWaitlistSubmit = async () => {
+    if (!selectedDate || !waitlistData.nombre.trim() || !waitlistData.email.trim()) return;
+    setWaitlistSubmitting(true);
+    try {
+      await fetch('/api/scheduling/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event_type_slug: eventType.slug,
+          fecha: selectedDate,
+          nombre: waitlistData.nombre,
+          email: waitlistData.email,
+          whatsapp: waitlistData.whatsapp,
+        }),
+      });
+      setWaitlistDone(true);
+      trackEvent('waitlist_submitted', { date: selectedDate });
+    } catch { /* silent */ }
+    setWaitlistSubmitting(false);
+  };
+
   // ── Step 2: Time selection ──
   const renderTimeSelection = () => {
     if (!selectedDate) return null;
     const slots = availableDates[selectedDate] || [];
+
+    // Show waitlist form if date is full
+    if (showWaitlistForm) {
+      return (
+        <div>
+          <button
+            onClick={() => { setStep(1); setSelectedTime(null); setShowWaitlistForm(false); setWaitlistDone(false); }}
+            style={{ ...styles.link, marginBottom: 16, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+          >
+            <span style={{ fontSize: '1rem' }}>&larr;</span> Cambiar fecha
+          </button>
+
+          <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: '1rem', fontWeight: 700, color: '#1A1A1A', margin: '0 0 8px' }}>
+            {formatDateLong(selectedDate)}
+          </h2>
+
+          {waitlistDone ? (
+            <div style={{ textAlign: 'center' as const, padding: '24px 0' }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: '50%', background: '#ECFDF5',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px',
+              }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+              <p style={{ fontSize: '0.9375rem', fontWeight: 700, color: '#1A1A1A', margin: '0 0 4px' }}>
+                Te anotamos en la lista de espera
+              </p>
+              <p style={{ fontSize: '0.8125rem', color: '#777', margin: 0 }}>
+                Te avisaremos si se abre un espacio para el {formatDateLong(selectedDate)}.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div style={{
+                background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 10,
+                padding: '12px 16px', marginBottom: 20,
+              }}>
+                <p style={{ fontSize: '0.8125rem', color: '#9A3412', margin: 0, lineHeight: 1.5 }}>
+                  Este dia esta lleno. Dejanos tus datos y te avisamos si se abre un espacio.
+                </p>
+              </div>
+
+              <div style={styles.fieldGroup}>
+                <label style={styles.label}>Nombre *</label>
+                <input
+                  type="text"
+                  value={waitlistData.nombre}
+                  onChange={(e) => setWaitlistData(prev => ({ ...prev, nombre: e.target.value }))}
+                  placeholder="Tu nombre completo"
+                  style={styles.input}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = primaryColor; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; }}
+                />
+              </div>
+
+              <div style={styles.fieldGroup}>
+                <label style={styles.label}>Email *</label>
+                <input
+                  type="email"
+                  value={waitlistData.email}
+                  onChange={(e) => setWaitlistData(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="tu@empresa.com"
+                  style={styles.input}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = primaryColor; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; }}
+                />
+              </div>
+
+              <div style={styles.fieldGroup}>
+                <label style={styles.label}>WhatsApp</label>
+                <input
+                  type="tel"
+                  value={waitlistData.whatsapp}
+                  onChange={(e) => setWaitlistData(prev => ({ ...prev, whatsapp: e.target.value }))}
+                  placeholder="+52 55 1234 5678"
+                  style={styles.input}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = primaryColor; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; }}
+                />
+              </div>
+
+              <button
+                onClick={handleWaitlistSubmit}
+                disabled={!waitlistData.nombre.trim() || !waitlistData.email.trim() || waitlistSubmitting}
+                style={{
+                  ...styles.btnPrimary,
+                  background: primaryColor,
+                  opacity: !waitlistData.nombre.trim() || !waitlistData.email.trim() || waitlistSubmitting ? 0.5 : 1,
+                  cursor: !waitlistData.nombre.trim() || !waitlistData.email.trim() || waitlistSubmitting ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {waitlistSubmitting ? 'Enviando...' : 'Unirme a la lista de espera'}
+              </button>
+            </>
+          )}
+        </div>
+      );
+    }
 
     return (
       <div>
@@ -628,8 +817,8 @@ export default function BookingPage({ eventType, questions }: Props) {
                   style={{
                     padding: '12px 20px',
                     borderRadius: 10,
-                    border: `1.5px solid ${isSelected ? '#4B7BE5' : '#E0E0E0'}`,
-                    background: isSelected ? '#4B7BE5' : '#fff',
+                    border: `1.5px solid ${isSelected ? primaryColor : '#E0E0E0'}`,
+                    background: isSelected ? primaryColor : '#fff',
                     color: isSelected ? '#fff' : '#1A1A1A',
                     fontSize: '0.9375rem',
                     fontWeight: isSelected ? 700 : 500,
@@ -643,7 +832,7 @@ export default function BookingPage({ eventType, questions }: Props) {
                   }}
                   onMouseEnter={(e) => {
                     if (!isSelected) {
-                      (e.currentTarget as HTMLButtonElement).style.borderColor = '#4B7BE5';
+                      (e.currentTarget as HTMLButtonElement).style.borderColor = primaryColor;
                     }
                   }}
                   onMouseLeave={(e) => {
@@ -667,7 +856,7 @@ export default function BookingPage({ eventType, questions }: Props) {
         {selectedTime && (
           <button
             onClick={() => setStep(3)}
-            style={{ ...styles.btnPrimary, marginTop: 20 }}
+            style={{ ...styles.btnPrimary, marginTop: 20, background: primaryColor }}
           >
             Confirmar
           </button>
@@ -700,7 +889,7 @@ export default function BookingPage({ eventType, questions }: Props) {
             alignItems: 'center',
             gap: 12,
           }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4B7BE5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={primaryColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
             </svg>
             <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1A1A1A' }}>
@@ -874,6 +1063,7 @@ export default function BookingPage({ eventType, questions }: Props) {
           disabled={!isValid || submitting}
           style={{
             ...styles.btnPrimary,
+            background: primaryColor,
             opacity: !isValid || submitting ? 0.5 : 1,
             cursor: !isValid || submitting ? 'not-allowed' : 'pointer',
           }}
@@ -920,7 +1110,7 @@ export default function BookingPage({ eventType, questions }: Props) {
           Listo! Tu reunion esta agendada
         </h2>
         <p style={{ fontSize: '0.875rem', color: '#777', margin: '0 0 24px' }}>
-          Te enviamos una confirmacion por email.
+          {branding.confirmation_message || 'Te enviamos una confirmacion por email.'}
         </p>
 
         {/* Details card */}
@@ -971,7 +1161,7 @@ export default function BookingPage({ eventType, questions }: Props) {
                   href={bookingResult.google_meet_link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ fontSize: '0.875rem', color: '#4B7BE5', fontWeight: 600, textDecoration: 'none' }}
+                  style={{ fontSize: '0.875rem', color: primaryColor, fontWeight: 600, textDecoration: 'none' }}
                 >
                   Unirse a Google Meet
                 </a>
@@ -986,7 +1176,7 @@ export default function BookingPage({ eventType, questions }: Props) {
             href={gcalLink}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ ...styles.btnPrimary, textDecoration: 'none' }}
+            style={{ ...styles.btnPrimary, textDecoration: 'none', background: primaryColor }}
           >
             Agregar a Google Calendar
           </a>

@@ -77,5 +77,41 @@ export const POST: APIRoute = async ({ request, url }) => {
     });
   }
 
+  // Check for waitlist entries on this date and notify
+  try {
+    const { data: waitlistEntries } = await supabase
+      .from('activities')
+      .select('*')
+      .eq('tipo', 'sistema')
+      .like('titulo', `Waitlist:%${booking.fecha}%`)
+      .limit(10);
+
+    if (waitlistEntries && waitlistEntries.length > 0) {
+      for (const entry of waitlistEntries) {
+        const meta = entry.metadata || {};
+        if (!meta.waitlist) continue;
+
+        // Log a system activity to flag the available space
+        await supabase.from('activities').insert({
+          contact_id: entry.contact_id || null,
+          tipo: 'sistema',
+          titulo: `Espacio disponible - notificar a ${meta.nombre || 'contacto'}`,
+          metadata: {
+            waitlist_notification: true,
+            original_waitlist_id: entry.id,
+            fecha: booking.fecha,
+            event_type_slug: meta.event_type_slug,
+            nombre: meta.nombre,
+            email: meta.email,
+            whatsapp: meta.whatsapp,
+          },
+          automatico: true,
+        });
+      }
+    }
+  } catch {
+    // Waitlist check is non-critical
+  }
+
   return new Response(JSON.stringify({ booking: updated }));
 };
