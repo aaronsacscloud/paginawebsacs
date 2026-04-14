@@ -9,6 +9,7 @@ interface EventTypeData {
   duracion_minutos: number;
   color: string;
   ubicacion_tipo: string;
+  tipo_reunion?: string;
   owner_id: string;
   team_members: { nombre: string; email: string } | null;
 }
@@ -334,6 +335,12 @@ export default function BookingPage({ eventType, questions }: Props) {
 
   // Step 2: Time selection
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [slotCapacity, setSlotCapacity] = useState<Record<string, Record<string, number>>>({});
+
+  // Recurrence (Feature 21)
+  const [recurrenceEnabled, setRecurrenceEnabled] = useState(false);
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState<'weekly' | 'biweekly'>('weekly');
+  const [recurrenceCount, setRecurrenceCount] = useState(4);
 
   // Step 3: Form
   const [formData, setFormData] = useState({
@@ -367,6 +374,7 @@ export default function BookingPage({ eventType, questions }: Props) {
           const data = await res.json();
           setAvailableDates(data.slots || data.dates || {});
           setFullDates(data.full_dates || []);
+          if (data.slot_capacity) setSlotCapacity(data.slot_capacity);
         }
       } catch {
         // silent
@@ -417,19 +425,20 @@ export default function BookingPage({ eventType, questions }: Props) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          event_type_id: eventType.id,
+          event_type_slug: eventType.slug,
           fecha: selectedDate,
           hora_inicio: selectedTime,
           hora_fin: addMinutes(selectedTime, eventType.duracion_minutos),
           timezone,
-          invitee_nombre: formData.nombre,
-          invitee_email: formData.email,
-          invitee_whatsapp: formData.whatsapp,
-          invitee_empresa: formData.empresa || null,
+          nombre: formData.nombre,
+          email: formData.email,
+          whatsapp: formData.whatsapp,
+          empresa: formData.empresa || null,
           giro: formData.giro || null,
           sucursales: formData.sucursales || null,
           notas: formData.notas || null,
           answers: formData.answers,
+          ...(recurrenceEnabled ? { recurrence: { frequency: recurrenceFrequency, count: recurrenceCount } } : {}),
         }),
       });
 
@@ -841,7 +850,14 @@ export default function BookingPage({ eventType, questions }: Props) {
                     }
                   }}
                 >
-                  <span>{to12h(slot)}</span>
+                  <span>
+                    {to12h(slot)}
+                    {eventType.tipo_reunion === 'grupal' && slotCapacity[selectedDate!] && slotCapacity[selectedDate!][slot] !== undefined && (
+                      <span style={{ fontSize: '0.75rem', fontWeight: 400, marginLeft: 8, opacity: 0.7 }}>
+                        ({slotCapacity[selectedDate!][slot]} {slotCapacity[selectedDate!][slot] === 1 ? 'lugar disponible' : 'lugares disponibles'})
+                      </span>
+                    )}
+                  </span>
                   {isSelected && (
                     <span style={{ fontSize: '0.8125rem', opacity: 0.85 }}>
                       {to12h(slot)} - {to12h(endTime)}
@@ -1043,6 +1059,50 @@ export default function BookingPage({ eventType, questions }: Props) {
             onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; }}
           />
         </div>
+
+        {/* Recurrence toggle (Feature 21) - show for non-individual events or when duration >= 30 min */}
+        {eventType.tipo_reunion !== 'individual' || eventType.duracion_minutos >= 30 ? (
+          <div style={{ ...styles.fieldGroup, background: '#F7F8FA', borderRadius: 10, padding: '14px 16px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: recurrenceEnabled ? 12 : 0 }}>
+              <input
+                type="checkbox"
+                checked={recurrenceEnabled}
+                onChange={(e) => setRecurrenceEnabled(e.target.checked)}
+                style={{ width: 18, height: 18, accentColor: primaryColor }}
+              />
+              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#1A1A1A' }}>
+                Repetir esta reunion?
+              </span>
+            </label>
+            {recurrenceEnabled && (
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 140 }}>
+                  <label style={{ ...styles.label, fontSize: '0.75rem' }}>Frecuencia</label>
+                  <select
+                    value={recurrenceFrequency}
+                    onChange={(e) => setRecurrenceFrequency(e.target.value as 'weekly' | 'biweekly')}
+                    style={{ ...styles.select, fontSize: '0.8125rem', padding: '8px 12px' }}
+                  >
+                    <option value="weekly">Semanal</option>
+                    <option value="biweekly">Quincenal</option>
+                  </select>
+                </div>
+                <div style={{ flex: 1, minWidth: 100 }}>
+                  <label style={{ ...styles.label, fontSize: '0.75rem' }}>Sesiones</label>
+                  <select
+                    value={recurrenceCount}
+                    onChange={(e) => setRecurrenceCount(Number(e.target.value))}
+                    style={{ ...styles.select, fontSize: '0.8125rem', padding: '8px 12px' }}
+                  >
+                    {[2, 3, 4, 5, 6, 7, 8].map(n => (
+                      <option key={n} value={n}>{n} sesiones</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : null}
 
         {formError && (
           <div style={{

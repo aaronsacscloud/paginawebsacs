@@ -9,6 +9,7 @@ const DEFAULTS = {
   welcome_message: '',
   confirmation_message: '',
   company_name: 'Sacs',
+  custom_domain: '',
 };
 
 const CONFIG_SLUG = '_branding';
@@ -36,12 +37,28 @@ export const PUT: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
 
-    const config = {
+    // Preserve existing webhooks when updating config
+    let existingWebhooks: any[] = [];
+    try {
+      const { data: existingRow } = await supabase
+        .from('event_types')
+        .select('descripcion')
+        .eq('slug', CONFIG_SLUG)
+        .single();
+      if (existingRow?.descripcion) {
+        const parsed = JSON.parse(existingRow.descripcion);
+        existingWebhooks = parsed.webhooks || [];
+      }
+    } catch {}
+
+    const config: Record<string, any> = {
       logo_url: body.logo_url || '',
       primary_color: body.primary_color || '#4B7BE5',
       welcome_message: body.welcome_message || '',
       confirmation_message: body.confirmation_message || '',
       company_name: body.company_name || 'Sacs',
+      custom_domain: body.custom_domain || '',
+      webhooks: body.webhooks ?? existingWebhooks,
     };
 
     // Upsert the branding config row

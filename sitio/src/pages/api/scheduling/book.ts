@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { createCalendarEvent } from '../../../lib/google-calendar';
+import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 
 export const prerender = false;
 
@@ -48,6 +49,7 @@ export const POST: APIRoute = async ({ request }) => {
     utm_source,
     utm_medium,
     utm_campaign,
+    recurrence,
   } = body;
 
   if (!event_type_slug || !fecha || !hora_inicio || !nombre || !email) {
@@ -511,13 +513,100 @@ export const POST: APIRoute = async ({ request }) => {
     automatico: true,
   });
 
-  // 13. Return booking with tokens and Meet link
+  // 13. Recurring bookings (Feature 21)
+  let recurringBookings: Array<{ id: string; fecha: string; hora_inicio: string }> = [];
+  if (recurrence && recurrence.frequency && recurrence.count > 1) {
+    const seriesId = booking.id; // Use first booking as series anchor
+    const intervalDays = recurrence.frequency === 'biweekly' ? 14 : 7;
+
+    for (let i = 1; i < recurrence.count; i++) {
+      const nextDate = new Date(fecha + 'T12:00:00');
+      nextDate.setDate(nextDate.getDate() + (intervalDays * i));
+      const nextDateStr = nextDate.toISOString().slice(0, 10);
+
+      const recurToken = generateToken();
+
+      const { data: recurBooking } = await supabase
+        .from('bookings')
+        .insert({
+          event_type_id: eventType.id,
+          host_id: assignedHostId,
+          contact_id,
+          deal_id,
+          fecha: nextDateStr,
+          hora_inicio,
+          hora_fin,
+          timezone: timezone || 'America/Mexico_City',
+          nombre_invitado: nombre,
+          email_invitado: email,
+          whatsapp_invitado: whatsapp || null,
+          empresa_invitado: empresa || null,
+          notas: `Recurrente ${i + 1}/${recurrence.count} (serie: ${seriesId})`,
+          estado: 'confirmada',
+          token_cancelar: recurToken,
+          token_reagendar: generateToken(),
+          utm_source: utm_source || null,
+          utm_medium: utm_medium || null,
+          utm_campaign: utm_campaign || null,
+        })
+        .select('id, fecha, hora_inicio')
+        .single();
+
+      if (recurBooking) {
+        recurringBookings.push(recurBooking);
+
+        // Create Google Calendar event for recurring booking
+        try {
+          const tz = timezone || 'America/Mexico_City';
+          const startDT = `${nextDateStr}T${hora_inicio}:00`;
+          const endDT = `${nextDateStr}T${hora_fin}:00`;
+          const { data: hostMember } = await supabase
+            .from('team_members')
+            .select('email')
+            .eq('id', assignedHostId)
+            .single();
+
+          await createCalendarEvent(assignedHostId, {
+            summary: `${eventType.nombre} — ${nombre} (${empresa || ''}) [${i + 1}/${recurrence.count}]`,
+            description: `Recurrente ${i + 1}/${recurrence.count}\nContacto: ${nombre}\nEmail: ${email}`,
+            startDateTime: startDT,
+            endDateTime: endDT,
+            timezone: tz,
+            attendeeEmail: email,
+            hostEmail: hostMember?.email,
+          });
+        } catch { /* GCal for recurring is non-critical */ }
+      }
+    }
+
+    // Log activity summarizing the series
+    await supabase.from('activities').insert({
+      contact_id,
+      company_id,
+      deal_id,
+      tipo: 'sistema',
+      titulo: `Serie recurrente creada: ${recurrence.count} sesiones ${recurrence.frequency === 'biweekly' ? 'quincenales' : 'semanales'}`,
+      metadata: {
+        series_id: seriesId,
+        frequency: recurrence.frequency,
+        count: recurrence.count,
+        bookings: [booking.id, ...recurringBookings.map(b => b.id)],
+      },
+      automatico: true,
+    });
+  }
+
+  // 14. Fire webhook
+  fireSchedulingWebhooks('booking.created', { booking, contact_id, deal_id });
+
+  // 15. Return booking with tokens and Meet link
   return new Response(
     JSON.stringify({
       booking: { ...booking, google_event_id, google_meet_link },
       cancel_url: `/api/scheduling/cancel?token=${booking.token_cancelar}`,
       reschedule_url: `/api/scheduling/reschedule?token=${booking.token_reagendar}`,
       google_meet_link,
+      recurring_bookings: recurringBookings.length > 0 ? recurringBookings : undefined,
     }),
     { status: 201 },
   );

@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { deleteCalendarEvent } from '../../../lib/google-calendar';
+import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 
 export const prerender = false;
 
@@ -17,7 +18,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   // Load booking
   const { data: booking, error: bErr } = await supabase
     .from('bookings')
-    .select('*, event_types(nombre)')
+    .select('*, event_types(nombre, slug)')
     .eq('id', booking_id)
     .single();
 
@@ -77,6 +78,9 @@ export const POST: APIRoute = async ({ request, url }) => {
     });
   }
 
+  // Fire webhook
+  fireSchedulingWebhooks('booking.cancelled', { booking, motivo: motivo || null });
+
   // Check for waitlist entries on this date and notify
   try {
     const { data: waitlistEntries } = await supabase
@@ -113,5 +117,74 @@ export const POST: APIRoute = async ({ request, url }) => {
     // Waitlist check is non-critical
   }
 
-  return new Response(JSON.stringify({ booking: updated }));
+  // Generate auto-rescheduling suggestions (Feature 25)
+  let suggestions: Array<{ fecha: string; hora: string; url: string }> = [];
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const weekLater = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+    const baseUrl = import.meta.env.SITE || 'https://www.sacscloud.com';
+    const eventSlug = booking.event_types?.slug || 'demo';
+
+    const slotsRes = await fetch(
+      `${baseUrl}/api/scheduling/available-slots?slug=${eventSlug}&from=${today}&to=${weekLater}&tz=America/Mexico_City`,
+    );
+    const slotsData = await slotsRes.json();
+
+    if (slotsData.dates) {
+      for (const [date, times] of Object.entries(slotsData.dates)) {
+        for (const time of times as string[]) {
+          if (suggestions.length >= 3) break;
+          suggestions.push({
+            fecha: date,
+            hora: time,
+            url: `${baseUrl}/agendar/${eventSlug}?date=${date}&time=${time}`,
+          });
+        }
+        if (suggestions.length >= 3) break;
+      }
+    }
+  } catch {
+    // Suggestions are non-critical
+  }
+
+  // Include suggestions in SMS/WhatsApp notification if available
+  if (suggestions.length > 0 && booking.whatsapp_invitado) {
+    try {
+      const baseUrl = import.meta.env.SITE || 'https://www.sacscloud.com';
+      const suggestionsText = suggestions
+        .map((s, i) => {
+          const [, mo, d] = s.fecha.split('-').map(Number);
+          const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+          const [h, m] = s.hora.split(':').map(Number);
+          const ampm = h >= 12 ? 'PM' : 'AM';
+          const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+          return `${i + 1}. ${d} ${months[mo - 1]} a las ${h12}:${String(m).padStart(2, '0')} ${ampm}\n   ${s.url}`;
+        })
+        .join('\n');
+
+      const smsMessage = [
+        `Tu reunion ha sido cancelada.`,
+        ``,
+        `Reagenda facilmente en uno de estos horarios:`,
+        suggestionsText,
+      ].join('\n');
+
+      await fetch(`${baseUrl}/api/scheduling/sms/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: booking.whatsapp_invitado,
+          message: smsMessage,
+          channel: 'whatsapp',
+        }),
+      });
+    } catch { /* SMS is non-critical */ }
+  }
+
+  return new Response(
+    JSON.stringify({
+      booking: updated,
+      suggestions: suggestions.length > 0 ? suggestions : undefined,
+    }),
+  );
 };

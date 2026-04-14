@@ -1,0 +1,176 @@
+---
+export const prerender = false;
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { supabase } from '../../../lib/supabase';
+
+const { id } = Astro.params;
+
+// Load poll
+const { data: activity } = await supabase
+  .from('activities')
+  .select('id, titulo, metadata, created_at')
+  .eq('id', id)
+  .single();
+
+const meta = activity?.metadata || {};
+const isPoll = meta.poll === true;
+const isClosed = meta.estado !== 'abierta';
+const opciones = meta.opciones || [];
+const titulo = activity?.titulo?.replace('Poll: ', '') || 'Encuesta de horarios';
+
+if (!activity || !isPoll) return Astro.redirect('/404');
+
+// Format dates for display
+const MONTH_NAMES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const DAY_NAMES = ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'];
+
+function formatOption(op: { fecha: string; hora: string }) {
+  const [y, mo, d] = op.fecha.split('-').map(Number);
+  const date = new Date(y, mo - 1, d);
+  const dayName = DAY_NAMES[date.getDay()];
+  const monthName = MONTH_NAMES[mo - 1];
+  const [h, m] = op.hora.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${dayName} ${d} ${monthName} — ${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+}
+---
+
+<BaseLayout title={`${titulo} — Sacs`} description="Elige tus horarios disponibles" noindex={true}>
+  <div id="poll-app" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#FAFAF8;padding:24px 16px;font-family:'Plus Jakarta Sans',sans-serif;">
+    <div style="background:#fff;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.08);width:100%;max-width:480px;overflow:hidden;">
+      <!-- Header -->
+      <div style="padding:28px 28px 20px;border-bottom:1px solid #f0f0f0;">
+        <p style="font-family:'Clash Display',sans-serif;font-size:1.25rem;font-weight:700;color:#1A1A1A;margin:0;letter-spacing:-0.02em;">Sacs</p>
+        <h1 style="font-family:'Sora',sans-serif;font-size:1.125rem;font-weight:700;color:#1A1A1A;margin:8px 0 4px;">{titulo}</h1>
+        <p style="font-size:0.8125rem;color:#777;margin:0;">Elige tus horarios disponibles</p>
+      </div>
+
+      <!-- Body -->
+      <div style="padding:24px 28px 28px;">
+        {isClosed ? (
+          <div style="text-align:center;padding:24px 0;">
+            <p style="font-size:0.9375rem;font-weight:700;color:#1A1A1A;margin:0 0 4px;">Esta encuesta esta cerrada</p>
+            <p style="font-size:0.8125rem;color:#777;margin:0;">Ya no se aceptan votos.</p>
+          </div>
+        ) : (
+          <form id="poll-form">
+            <!-- Options -->
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+              {opciones.map((op: { fecha: string; hora: string }, idx: number) => (
+                <label style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px solid #E0E0E0;border-radius:10px;cursor:pointer;transition:border-color 0.15s;">
+                  <input type="checkbox" name="selected" value={String(idx)} style="width:18px;height:18px;accent-color:#4B7BE5;" />
+                  <span style="font-size:0.9375rem;color:#1A1A1A;font-weight:500;">{formatOption(op)}</span>
+                </label>
+              ))}
+            </div>
+
+            <!-- Name -->
+            <div style="margin-bottom:16px;">
+              <label style="display:block;font-size:0.8125rem;font-weight:600;color:#555;margin-bottom:6px;">Nombre *</label>
+              <input
+                type="text"
+                name="nombre"
+                required
+                placeholder="Tu nombre completo"
+                style="width:100%;padding:12px 16px;font-size:0.9375rem;border:1.5px solid #E0E0E0;border-radius:10px;outline:none;font-family:inherit;box-sizing:border-box;color:#1A1A1A;background:#fff;"
+              />
+            </div>
+
+            <!-- Email -->
+            <div style="margin-bottom:20px;">
+              <label style="display:block;font-size:0.8125rem;font-weight:600;color:#555;margin-bottom:6px;">Email *</label>
+              <input
+                type="email"
+                name="email"
+                required
+                placeholder="tu@empresa.com"
+                style="width:100%;padding:12px 16px;font-size:0.9375rem;border:1.5px solid #E0E0E0;border-radius:10px;outline:none;font-family:inherit;box-sizing:border-box;color:#1A1A1A;background:#fff;"
+              />
+            </div>
+
+            <!-- Error message -->
+            <div id="poll-error" style="display:none;background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:0.875rem;color:#DC2626;"></div>
+
+            <!-- Submit -->
+            <button
+              type="submit"
+              style="display:inline-flex;align-items:center;justify-content:center;width:100%;padding:14px 20px;font-size:0.9375rem;font-weight:700;border:none;border-radius:10px;cursor:pointer;font-family:inherit;background:#4B7BE5;color:#fff;transition:opacity 0.15s;"
+            >
+              Enviar preferencias
+            </button>
+          </form>
+        )}
+
+        <!-- Success state (hidden by default) -->
+        <div id="poll-success" style="display:none;text-align:center;padding:24px 0;">
+          <div style="width:48px;height:48px;border-radius:50%;background:#ECFDF5;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
+          <p style="font-size:0.9375rem;font-weight:700;color:#1A1A1A;margin:0 0 4px;">Gracias, tus preferencias fueron registradas</p>
+          <p style="font-size:0.8125rem;color:#777;margin:0;">Te avisaremos cuando se confirme el horario.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script define:vars={{ pollId: id }}>
+    const form = document.getElementById('poll-form');
+    const successEl = document.getElementById('poll-success');
+    const errorEl = document.getElementById('poll-error');
+
+    if (form) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorEl.style.display = 'none';
+
+        const formData = new FormData(form);
+        const nombre = formData.get('nombre');
+        const email = formData.get('email');
+        const selectedBoxes = form.querySelectorAll('input[name="selected"]:checked');
+        const selected = Array.from(selectedBoxes).map(cb => parseInt(cb.value));
+
+        if (!nombre || !email) {
+          errorEl.textContent = 'Nombre y email son obligatorios.';
+          errorEl.style.display = 'block';
+          return;
+        }
+
+        if (selected.length === 0) {
+          errorEl.textContent = 'Selecciona al menos un horario.';
+          errorEl.style.display = 'block';
+          return;
+        }
+
+        const btn = form.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.textContent = 'Enviando...';
+        btn.style.opacity = '0.5';
+
+        try {
+          const res = await fetch('/api/scheduling/polls', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ poll_id: pollId, nombre, email, selected }),
+          });
+
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.error || 'Error al votar');
+          }
+
+          form.style.display = 'none';
+          successEl.style.display = 'block';
+        } catch (err) {
+          errorEl.textContent = err.message || 'Error de conexion. Intenta de nuevo.';
+          errorEl.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Enviar preferencias';
+          btn.style.opacity = '1';
+        }
+      });
+    }
+  </script>
+</BaseLayout>

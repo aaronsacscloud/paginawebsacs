@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { deleteCalendarEvent, createCalendarEvent } from '../../../lib/google-calendar';
+import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 
 export const prerender = false;
 
@@ -140,6 +141,12 @@ export const POST: APIRoute = async ({ request }) => {
       automatico: true,
     });
   }
+
+  // Fire webhook
+  fireSchedulingWebhooks('booking.rescheduled', {
+    old_booking: oldBooking,
+    new_booking: newBooking,
+  });
 
   return new Response(
     JSON.stringify({

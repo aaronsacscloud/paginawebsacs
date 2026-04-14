@@ -81,6 +81,7 @@ interface Booking {
   fecha: string;
   hora_inicio: string;
   hora_fin: string;
+  event_type_id?: string;
 }
 
 // ---------- route ----------
@@ -170,7 +171,7 @@ export const GET: APIRoute = async ({ url }) => {
     // Load bookings
     const { data: bookingsRaw } = await supabase
       .from('bookings')
-      .select('fecha, hora_inicio, hora_fin')
+      .select('fecha, hora_inicio, hora_fin, event_type_id')
       .eq('host_id', hostId)
       .eq('estado', 'confirmada')
       .gte('fecha', from)
@@ -228,6 +229,8 @@ export const GET: APIRoute = async ({ url }) => {
 
   const dates: Record<string, string[]> = {};
   const fullDatesSet: string[] = [];
+  const slotCapacity: Record<string, Record<string, number>> = {}; // date -> time -> remaining spots (group events only)
+  const isGroupEvent = eventType.tipo_reunion === 'grupal';
   const allDates = dateRange(from, to);
 
   for (const dateStr of allDates) {
@@ -320,17 +323,51 @@ export const GET: APIRoute = async ({ url }) => {
 
         const dayBookings = hd.bookingsByDate.get(dateStr) || [];
 
-        // Check max reservas dia
-        if (max_reservas_dia && dayBookings.length >= max_reservas_dia) continue;
+        // Check max reservas dia (for non-group events, this is a daily limit)
+        if (eventType.tipo_reunion !== 'grupal' && max_reservas_dia && dayBookings.length >= max_reservas_dia) continue;
 
         // Check booking conflicts
-        const slotStartWithBuffer = addMinutes(slotStart, -(buffer_antes || 0));
-        const slotEndWithBuffer = addMinutes(slotEnd, buffer_despues || 0);
         let conflict = false;
-        for (const booking of dayBookings) {
-          if (timesOverlap(slotStartWithBuffer, slotEndWithBuffer, booking.hora_inicio, booking.hora_fin)) {
+        if (eventType.tipo_reunion === 'grupal') {
+          // For group events, multiple bookings at the same time are OK up to a limit
+          // Repurpose max_reservas_dia as max participants per slot for group events
+          const sameTimeBookings = dayBookings.filter(b => b.hora_inicio === slotStart);
+          if (max_reservas_dia && sameTimeBookings.length >= max_reservas_dia) {
             conflict = true;
-            break;
+          }
+          // Don't check overlap for group events - only exact time matches matter
+        } else {
+          // Smart buffer: increase buffer when adjacent booking is a different event type
+          const dynamicBufferBefore = (() => {
+            const prevBooking = dayBookings
+              .filter((b) => b.hora_fin <= slotStart)
+              .sort((a, b) => b.hora_fin.localeCompare(a.hora_fin))[0];
+
+            if (prevBooking && prevBooking.event_type_id !== eventType.id) {
+              return Math.ceil((buffer_antes || 0) * 1.5);
+            }
+            return buffer_antes || 0;
+          })();
+
+          const dynamicBufferAfter = (() => {
+            const nextBooking = dayBookings
+              .filter((b) => b.hora_inicio >= slotEnd)
+              .sort((a, b) => a.hora_inicio.localeCompare(b.hora_inicio))[0];
+
+            if (nextBooking && nextBooking.event_type_id !== eventType.id) {
+              return Math.ceil((buffer_despues || 0) * 1.5);
+            }
+            return buffer_despues || 0;
+          })();
+
+          const slotStartWithBuffer = addMinutes(slotStart, -dynamicBufferBefore);
+          const slotEndWithBuffer = addMinutes(slotEnd, dynamicBufferAfter);
+
+          for (const booking of dayBookings) {
+            if (timesOverlap(slotStartWithBuffer, slotEndWithBuffer, booking.hora_inicio, booking.hora_fin)) {
+              conflict = true;
+              break;
+            }
           }
         }
         if (conflict) continue;
@@ -353,6 +390,19 @@ export const GET: APIRoute = async ({ url }) => {
 
       if (anyHostAvailable) {
         slots.push(slotStart);
+
+        // Track remaining capacity for group events
+        if (isGroupEvent && max_reservas_dia) {
+          let maxBooked = 0;
+          for (const [, hd] of hostsData) {
+            const dayBookings = hd.bookingsByDate.get(dateStr) || [];
+            const sameTimeCount = dayBookings.filter(b => b.hora_inicio === slotStart).length;
+            if (sameTimeCount > maxBooked) maxBooked = sameTimeCount;
+          }
+          const remaining = max_reservas_dia - maxBooked;
+          if (!slotCapacity[dateStr]) slotCapacity[dateStr] = {};
+          slotCapacity[dateStr][slotStart] = remaining;
+        }
       }
     }
 
@@ -381,6 +431,7 @@ export const GET: APIRoute = async ({ url }) => {
       dates,
       full_dates: fullDatesSet,
       event_type: eventType,
+      ...(isGroupEvent && Object.keys(slotCapacity).length > 0 ? { slot_capacity: slotCapacity } : {}),
     }),
   );
 };
