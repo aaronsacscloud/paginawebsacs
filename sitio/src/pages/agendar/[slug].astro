@@ -4,33 +4,65 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import BookingPage from '../../components/scheduling/BookingPage';
 import { supabase } from '../../lib/supabase';
 
-const { slug } = Astro.params;
+const slug = Astro.params.slug || 'demo';
 
-// Load event type
-const { data: eventType } = await supabase
-  .from('event_types')
-  .select('*, team_members(*)')
-  .eq('slug', slug)
-  .eq('activo', true)
-  .single();
+let eventType: any = null;
+let questions: any[] = [];
+let errorMsg = '';
 
-if (!eventType) return Astro.redirect('/404');
+try {
+  const { data, error } = await supabase
+    .from('event_types')
+    .select('*')
+    .eq('slug', slug)
+    .eq('activo', true)
+    .single();
 
-// Load custom questions
-const { data: questions } = await supabase
-  .from('booking_questions')
-  .select('*')
-  .eq('event_type_id', eventType.id)
-  .eq('activo', true)
-  .order('orden');
+  if (error) errorMsg = error.message;
+  eventType = data;
+
+  if (eventType?.owner_id) {
+    const { data: host } = await supabase
+      .from('team_members')
+      .select('nombre, email')
+      .eq('id', eventType.owner_id)
+      .single();
+    if (host) eventType.team_members = host;
+  }
+
+  if (eventType) {
+    const { data: q } = await supabase
+      .from('booking_questions')
+      .select('*')
+      .eq('event_type_id', eventType.id)
+      .eq('activo', true)
+      .order('orden');
+    questions = q || [];
+  }
+} catch (e: any) {
+  errorMsg = e?.message || String(e);
+}
 ---
 
-<BaseLayout title={`Agendar ${eventType.nombre} — Sacs`} description={eventType.descripcion || `Agenda tu ${eventType.nombre} con el equipo de Sacs`} noindex={true}>
-  <BookingPage client:load eventType={eventType} questions={questions || []} />
-</BaseLayout>
+{eventType ? (
+  <BaseLayout title={`Agendar ${eventType.nombre} — Sacs`} description={eventType.descripcion || 'Agenda tu sesión con SACS'} noindex={true}>
+    <BookingPage client:load eventType={eventType} questions={questions} />
+  </BaseLayout>
+) : (
+  <html lang="es">
+    <head><meta charset="UTF-8" /><title>Error</title></head>
+    <body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#fafafa;">
+      <div style="text-align:center;padding:48px;">
+        <h2>No se encontró el evento</h2>
+        <p style="color:#888;">Slug: {slug}</p>
+        <p style="color:#cc0000;font-size:0.875rem;">{errorMsg}</p>
+        <a href="/contacto" style="color:#4B7BE5;">Volver</a>
+      </div>
+    </body>
+  </html>
+)}
 
 <style is:global>
-  /* Hide website nav/footer for clean booking experience */
   .nav, .wa-bar, footer { display: none !important; }
   main { padding: 0 !important; margin: 0 !important; }
 </style>
