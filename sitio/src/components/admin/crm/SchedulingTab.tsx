@@ -1009,7 +1009,7 @@ function EventTypeModal({
 
 // ── Questions Manager ──
 function QuestionsManager({ eventTypeId }: { eventTypeId: string }) {
-  const [questions, setQuestions] = useState<BookingQuestion[]>([]);
+  const [questions, setQuestions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [newQ, setNewQ] = useState({ tipo: 'text', label: '', placeholder: '', required: false, options: '' });
@@ -1017,11 +1017,11 @@ function QuestionsManager({ eventTypeId }: { eventTypeId: string }) {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/scheduling/event-types?id=${eventTypeId}&include=questions`);
+      const res = await fetch(`/api/scheduling/questions?event_type_id=${eventTypeId}`);
       const data = await res.json();
-      setQuestions(Array.isArray(data.questions) ? data.questions : []);
+      setQuestions(Array.isArray(data) ? data : []);
     } catch {
-      // silent
+      setQuestions([]);
     }
     setLoading(false);
   };
@@ -1030,17 +1030,18 @@ function QuestionsManager({ eventTypeId }: { eventTypeId: string }) {
 
   const addQuestion = async () => {
     if (!newQ.label.trim()) return;
-    await fetch('/api/scheduling/event-types', {
+    await fetch('/api/scheduling/questions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        action: 'add_question',
+        action: 'add',
         event_type_id: eventTypeId,
         tipo: newQ.tipo,
         label: newQ.label,
         placeholder: newQ.placeholder || null,
         required: newQ.required,
-        options: newQ.tipo === 'select' ? newQ.options.split(',').map(o => o.trim()).filter(Boolean) : null,
+        options: newQ.tipo === 'select' ? newQ.options.split(',').map((o: string) => o.trim()).filter(Boolean) : null,
+        orden: questions.length + 1,
       }),
     });
     setNewQ({ tipo: 'text', label: '', placeholder: '', required: false, options: '' });
@@ -1048,77 +1049,132 @@ function QuestionsManager({ eventTypeId }: { eventTypeId: string }) {
     load();
   };
 
-  const removeQuestion = async (questionId: string) => {
-    await fetch('/api/scheduling/event-types', {
+  const toggleVisible = async (q: any) => {
+    await fetch('/api/scheduling/questions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'remove_question',
-        question_id: questionId,
-      }),
+      body: JSON.stringify({ action: 'toggle', id: q.id }),
     });
     load();
   };
 
+  const toggleRequired = async (q: any) => {
+    await fetch('/api/scheduling/questions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update', id: q.id, required: !q.required }),
+    });
+    load();
+  };
+
+  const removeQuestion = async (questionId: string) => {
+    if (!confirm('¿Eliminar esta pregunta?')) return;
+    await fetch('/api/scheduling/questions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', id: questionId }),
+    });
+    load();
+  };
+
+  const TIPO_LABELS: Record<string, string> = { text: 'Texto', textarea: 'Texto largo', select: 'Selección', radio: 'Radio', checkbox: 'Checkbox', number: 'Número', phone: 'Teléfono' };
+
   return (
     <div style={{ marginTop: 12, padding: '12px 0 0', borderTop: '1px solid #f0f0f0' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const }}>Preguntas personalizadas</span>
-        <button onClick={() => setShowAdd(!showAdd)} style={{ ...btn, background: '#f5f5f5', color: '#555', padding: '4px 8px', fontSize: '0.6875rem' }}>
-          {showAdd ? 'Cancelar' : '+ Agregar'}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}>Campos del formulario</span>
+        <button onClick={() => setShowAdd(!showAdd)} style={{ ...btn, background: '#f5f5f5', color: '#555', padding: '4px 10px', fontSize: '0.6875rem' }}>
+          {showAdd ? 'Cancelar' : '+ Agregar campo'}
         </button>
+      </div>
+
+      <div style={{ fontSize: '0.625rem', color: '#bbb', marginBottom: 8 }}>
+        Nombre, Email y WhatsApp siempre se muestran. Los campos de abajo son configurables.
       </div>
 
       {loading ? (
         <div style={{ fontSize: '0.8125rem', color: '#bbb', padding: '8px 0' }}>Cargando...</div>
       ) : questions.length === 0 && !showAdd ? (
-        <div style={{ fontSize: '0.8125rem', color: '#bbb', padding: '8px 0' }}>Sin preguntas</div>
+        <div style={{ fontSize: '0.8125rem', color: '#bbb', padding: '12px 0' }}>Sin campos adicionales. Agrega uno.</div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {questions.map(q => (
-            <div key={q.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 8px', background: '#FAFAF8', borderRadius: 6 }}>
-              <div>
-                <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#1A1A1A' }}>{q.label}</span>
-                <span style={{ fontSize: '0.6875rem', color: '#999', marginLeft: 6 }}>{q.tipo}{q.required ? ' *' : ''}</span>
+            <div key={q.id} style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+              background: q.activo ? '#fff' : '#fafafa', borderRadius: 8, border: '1px solid #f0f0f0',
+              opacity: q.activo ? 1 : 0.5,
+            }}>
+              {/* Visible toggle */}
+              <div
+                onClick={() => toggleVisible(q)}
+                style={{
+                  width: 32, height: 18, borderRadius: 9, cursor: 'pointer',
+                  background: q.activo ? '#2AB5A0' : '#ddd', position: 'relative', flexShrink: 0,
+                  transition: 'background 0.2s',
+                }}
+              >
+                <div style={{
+                  width: 14, height: 14, borderRadius: '50%', background: '#fff',
+                  position: 'absolute', top: 2, left: q.activo ? 16 : 2, transition: 'left 0.2s',
+                }} />
               </div>
-              <button onClick={() => removeQuestion(q.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', fontSize: '0.875rem', padding: '2px 4px' }}>
-                &times;
-              </button>
+              {/* Label + tipo */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#1a1a1a' }}>{q.label}</div>
+                <div style={{ fontSize: '0.625rem', color: '#999' }}>{TIPO_LABELS[q.tipo] || q.tipo}{q.options ? ` (${q.options.length} opciones)` : ''}</div>
+              </div>
+              {/* Required toggle */}
+              <button
+                onClick={() => toggleRequired(q)}
+                style={{
+                  padding: '2px 8px', borderRadius: 10, fontSize: '0.5625rem', fontWeight: 700, cursor: 'pointer', border: 'none',
+                  background: q.required ? '#4B7BE5' : '#f0f0f0',
+                  color: q.required ? '#fff' : '#999',
+                }}
+              >{q.required ? 'Obligatorio' : 'Opcional'}</button>
+              {/* Delete */}
+              <button onClick={() => removeQuestion(q.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ccc', fontSize: '1rem', padding: '0 4px' }}>×</button>
             </div>
           ))}
         </div>
       )}
 
       {showAdd && (
-        <div style={{ marginTop: 8, padding: 12, background: '#FAFAF8', borderRadius: 8 }}>
+        <div style={{ marginTop: 8, padding: 12, background: '#fafafa', borderRadius: 8, border: '1px solid #f0f0f0' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
             <div>
-              <label style={{ ...label, fontSize: '0.6875rem' }}>Tipo</label>
+              <label style={{ ...label, fontSize: '0.6875rem' }}>Tipo de campo</label>
               <select value={newQ.tipo} onChange={e => setNewQ(p => ({ ...p, tipo: e.target.value }))} style={{ ...selectStyle, fontSize: '0.75rem', padding: '6px 8px' }}>
                 <option value="text">Texto</option>
                 <option value="textarea">Texto largo</option>
-                <option value="select">Seleccion</option>
+                <option value="select">Selección (dropdown)</option>
+                <option value="number">Número</option>
+                <option value="phone">Teléfono</option>
                 <option value="checkbox">Checkbox</option>
               </select>
             </div>
             <div>
-              <label style={{ ...label, fontSize: '0.6875rem' }}>Label</label>
-              <input value={newQ.label} onChange={e => setNewQ(p => ({ ...p, label: e.target.value }))} style={{ ...input, fontSize: '0.75rem', padding: '6px 8px' }} placeholder="Pregunta" />
+              <label style={{ ...label, fontSize: '0.6875rem' }}>Nombre del campo</label>
+              <input value={newQ.label} onChange={e => setNewQ(p => ({ ...p, label: e.target.value }))} style={{ ...input, fontSize: '0.75rem', padding: '6px 8px' }} placeholder="Ej. Empresa" />
             </div>
+          </div>
+          <div style={{ marginBottom: 8 }}>
+            <label style={{ ...label, fontSize: '0.6875rem' }}>Placeholder</label>
+            <input value={newQ.placeholder} onChange={e => setNewQ(p => ({ ...p, placeholder: e.target.value }))} style={{ ...input, fontSize: '0.75rem', padding: '6px 8px' }} placeholder="Texto de ayuda (opcional)" />
           </div>
           {newQ.tipo === 'select' && (
             <div style={{ marginBottom: 8 }}>
               <label style={{ ...label, fontSize: '0.6875rem' }}>Opciones (separadas por coma)</label>
-              <input value={newQ.options} onChange={e => setNewQ(p => ({ ...p, options: e.target.value }))} style={{ ...input, fontSize: '0.75rem', padding: '6px 8px' }} placeholder="Opcion 1, Opcion 2, Opcion 3" />
+              <input value={newQ.options} onChange={e => setNewQ(p => ({ ...p, options: e.target.value }))} style={{ ...input, fontSize: '0.75rem', padding: '6px 8px' }} placeholder="Opción 1, Opción 2, Opción 3" />
             </div>
           )}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', fontSize: '0.75rem', color: '#555' }}>
-              <input type="checkbox" checked={newQ.required} onChange={e => setNewQ(p => ({ ...p, required: e.target.checked }))} />
-              Obligatoria
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: '0.75rem', color: '#555' }}>
+              <input type="checkbox" checked={newQ.required} onChange={e => setNewQ(p => ({ ...p, required: e.target.checked }))} style={{ accentColor: '#4B7BE5' }} />
+              Obligatorio
             </label>
-            <button onClick={addQuestion} disabled={!newQ.label.trim()} style={{ ...btn, background: '#4B7BE5', color: '#fff', padding: '4px 10px', fontSize: '0.6875rem', opacity: newQ.label.trim() ? 1 : 0.5 }}>
-              Agregar
+            <button onClick={addQuestion} disabled={!newQ.label.trim()} style={{ ...btn, background: '#1a1a1a', color: '#fff', padding: '6px 14px', fontSize: '0.6875rem', opacity: newQ.label.trim() ? 1 : 0.5 }}>
+              Agregar campo
             </button>
           </div>
         </div>

@@ -890,7 +890,7 @@ export default function BookingPage({ eventType, questions }: Props) {
 
   // ── Step 3: Info form ──
   const renderForm = () => {
-    const requiredQuestionsFilled = questions.filter(q => q.required).every(q => (formData.answers[q.id] || '').trim());
+    const requiredQuestionsFilled = questions.filter(q => q.required && q.activo !== false).every(q => (formData.answers[q.id] || '').trim());
     const isValid = formData.nombre.trim() && formData.email.trim() && formData.whatsapp.trim() && requiredQuestionsFilled;
 
     return (
@@ -963,7 +963,7 @@ export default function BookingPage({ eventType, questions }: Props) {
         </div>
 
         {/* All configurable fields from booking_questions */}
-        {questions.map(q => (
+        {questions.filter(q => q.activo !== false).map(q => (
           <div key={q.id} style={styles.fieldGroup}>
             <label style={styles.label}>{q.label}{q.required ? ' *' : ''}</label>
             {(q.tipo === 'text' || q.tipo === 'phone' || q.tipo === 'number') && (
