@@ -8,7 +8,7 @@ export const GET: APIRoute = async ({ url }) => {
   const slug = url.searchParams.get('slug');
 
   let query = supabase
-    .from('scheduling_event_types')
+    .from('event_types')
     .select('*')
     .order('created_at', { ascending: false });
 
@@ -24,7 +24,7 @@ export const POST: APIRoute = async ({ request }) => {
   const body = await request.json();
 
   const { data, error } = await supabase
-    .from('scheduling_event_types')
+    .from('event_types')
     .insert({
       nombre: body.nombre,
       slug: body.slug,
@@ -53,7 +53,7 @@ export const PUT: APIRoute = async ({ request }) => {
   if (!id) return new Response(JSON.stringify({ error: 'id required' }), { status: 400 });
 
   const { data, error } = await supabase
-    .from('scheduling_event_types')
+    .from('event_types')
     .update(updates)
     .eq('id', id)
     .select()

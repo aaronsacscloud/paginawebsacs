@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { deleteCalendarEvent, createCalendarEvent } from '../../../lib/google-calendar';
 
 export const prerender = false;
 
@@ -44,8 +45,8 @@ export const POST: APIRoute = async ({ request }) => {
 
   // Load old booking
   const { data: oldBooking, error: bErr } = await supabase
-    .from('scheduling_bookings')
-    .select('*, scheduling_event_types(*)')
+    .from('bookings')
+    .select('*, event_types(*)')
     .eq('id', booking_id)
     .single();
 
@@ -66,7 +67,7 @@ export const POST: APIRoute = async ({ request }) => {
     );
   }
 
-  const eventType = oldBooking.scheduling_event_types;
+  const eventType = oldBooking.event_types;
   if (!eventType) {
     return new Response(JSON.stringify({ error: 'Event type not found' }), { status: 500 });
   }
@@ -84,7 +85,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   // Mark old booking as reagendada
   await supabase
-    .from('scheduling_bookings')
+    .from('bookings')
     .update({ estado: 'reagendada' })
     .eq('id', booking_id);
 
@@ -93,7 +94,7 @@ export const POST: APIRoute = async ({ request }) => {
   const token_reagendar = generateToken();
 
   const { data: newBooking, error: nbErr } = await supabase
-    .from('scheduling_bookings')
+    .from('bookings')
     .insert({
       event_type_id: eventType.id,
       host_id: oldBooking.host_id,
@@ -178,7 +179,7 @@ async function validateSlotForReschedule(
 
   // Load host schedule
   const { data: schedules } = await supabase
-    .from('scheduling_availability')
+    .from('availability_schedules')
     .select('*')
     .eq('team_member_id', owner_id)
     .eq('activo', true)
@@ -230,7 +231,7 @@ async function validateSlotForReschedule(
 
   // Check override
   const { data: overrides } = await supabase
-    .from('scheduling_availability_overrides')
+    .from('availability_overrides')
     .select('ranges')
     .eq('team_member_id', owner_id)
     .eq('fecha', fecha)
@@ -267,7 +268,7 @@ async function validateSlotForReschedule(
 
   // Check existing bookings (excluding the one being rescheduled)
   const { data: dayBookings } = await supabase
-    .from('scheduling_bookings')
+    .from('bookings')
     .select('hora_inicio, hora_fin')
     .eq('host_id', owner_id)
     .eq('fecha', fecha)

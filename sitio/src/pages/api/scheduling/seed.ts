@@ -37,7 +37,7 @@ export const GET: APIRoute = async ({ url }) => {
   };
 
   const { data: schedule, error: schedErr } = await supabase
-    .from('scheduling_availability')
+    .from('availability_schedules')
     .insert({
       team_member_id: adminId,
       weekly_hours: weeklyHours,
@@ -105,7 +105,7 @@ export const GET: APIRoute = async ({ url }) => {
   ];
 
   const { data: eventTypes, error: etErr } = await supabase
-    .from('scheduling_event_types')
+    .from('event_types')
     .insert(eventTypesData)
     .select();
 
@@ -138,7 +138,7 @@ export const GET: APIRoute = async ({ url }) => {
     ];
 
     const { data: qData, error: qErr } = await supabase
-      .from('scheduling_booking_questions')
+      .from('booking_questions')
       .insert(questionsData)
       .select();
 

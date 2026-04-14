@@ -19,8 +19,8 @@ export const GET: APIRoute = async ({ url }) => {
   const tomorrowStr = tomorrow.toISOString().slice(0, 10);
 
   const { data: bookings24h } = await supabase
-    .from('scheduling_bookings')
-    .select('id, contact_id, deal_id, fecha, hora_inicio, nombre_invitado, scheduling_event_types(nombre)')
+    .from('bookings')
+    .select('id, contact_id, deal_id, fecha, hora_inicio, nombre_invitado, event_types(nombre)')
     .eq('fecha', tomorrowStr)
     .eq('recordatorio_24h_enviado', false)
     .eq('estado', 'confirmada');
@@ -33,7 +33,7 @@ export const GET: APIRoute = async ({ url }) => {
           contact_id: booking.contact_id,
           deal_id: booking.deal_id || null,
           tipo: 'sistema',
-          titulo: `Recordatorio 24h enviado: ${(booking.scheduling_event_types as { nombre: string } | null)?.nombre || 'Demo'} - ${booking.fecha} ${booking.hora_inicio}`,
+          titulo: `Recordatorio 24h enviado: ${(booking.event_types as { nombre: string } | null)?.nombre || 'Demo'} - ${booking.fecha} ${booking.hora_inicio}`,
           metadata: {
             booking_id: booking.id,
             reminder_type: '24h',
@@ -44,7 +44,7 @@ export const GET: APIRoute = async ({ url }) => {
 
       // Set flag
       await supabase
-        .from('scheduling_bookings')
+        .from('bookings')
         .update({ recordatorio_24h_enviado: true })
         .eq('id', booking.id);
 
@@ -66,8 +66,8 @@ export const GET: APIRoute = async ({ url }) => {
   const windowEnd = `${String(Math.floor(windowEndMinutes / 60)).padStart(2, '0')}:${String(windowEndMinutes % 60).padStart(2, '0')}`;
 
   const { data: bookings1h } = await supabase
-    .from('scheduling_bookings')
-    .select('id, contact_id, deal_id, fecha, hora_inicio, nombre_invitado, scheduling_event_types(nombre)')
+    .from('bookings')
+    .select('id, contact_id, deal_id, fecha, hora_inicio, nombre_invitado, event_types(nombre)')
     .eq('fecha', todayStr)
     .eq('recordatorio_1h_enviado', false)
     .eq('estado', 'confirmada')
@@ -82,7 +82,7 @@ export const GET: APIRoute = async ({ url }) => {
           contact_id: booking.contact_id,
           deal_id: booking.deal_id || null,
           tipo: 'sistema',
-          titulo: `Recordatorio 1h enviado: ${(booking.scheduling_event_types as { nombre: string } | null)?.nombre || 'Demo'} - ${booking.fecha} ${booking.hora_inicio}`,
+          titulo: `Recordatorio 1h enviado: ${(booking.event_types as { nombre: string } | null)?.nombre || 'Demo'} - ${booking.fecha} ${booking.hora_inicio}`,
           metadata: {
             booking_id: booking.id,
             reminder_type: '1h',
@@ -93,7 +93,7 @@ export const GET: APIRoute = async ({ url }) => {
 
       // Set flag
       await supabase
-        .from('scheduling_bookings')
+        .from('bookings')
         .update({ recordatorio_1h_enviado: true })
         .eq('id', booking.id);
 

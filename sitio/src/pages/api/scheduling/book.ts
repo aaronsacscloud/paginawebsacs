@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { createCalendarEvent } from '../../../lib/google-calendar';
 
 export const prerender = false;
 
@@ -58,7 +59,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   // 1. Load event type
   const { data: eventType, error: etErr } = await supabase
-    .from('scheduling_event_types')
+    .from('event_types')
     .select('*')
     .eq('slug', event_type_slug)
     .eq('activo', true)
@@ -188,7 +189,7 @@ export const POST: APIRoute = async ({ request }) => {
   const token_reagendar = generateToken();
 
   const { data: booking, error: bookErr } = await supabase
-    .from('scheduling_bookings')
+    .from('bookings')
     .insert({
       event_type_id: eventType.id,
       host_id: eventType.owner_id,
@@ -232,10 +233,57 @@ export const POST: APIRoute = async ({ request }) => {
       valor: a.valor,
     }));
 
-    await supabase.from('scheduling_booking_answers').insert(answerRows);
+    await supabase.from('booking_answers').insert(answerRows);
   }
 
-  // 9. Log activity
+  // 9. Create Google Calendar event with Meet link
+  let google_event_id: string | null = null;
+  let google_meet_link: string | null = null;
+  try {
+    const tz = timezone || 'America/Mexico_City';
+    const startDT = `${fecha}T${hora_inicio}:00`;
+    const endDT = `${fecha}T${hora_fin}:00`;
+
+    // Load host email
+    const { data: hostMember } = await supabase
+      .from('team_members')
+      .select('email')
+      .eq('id', eventType.owner_id)
+      .single();
+
+    const gcalResult = await createCalendarEvent(eventType.owner_id, {
+      summary: `${eventType.nombre} — ${nombre} (${empresa || ''})`,
+      description: [
+        `Contacto: ${nombre}`,
+        email ? `Email: ${email}` : '',
+        whatsapp ? `WhatsApp: ${whatsapp}` : '',
+        empresa ? `Empresa: ${empresa}` : '',
+        giro ? `Giro: ${giro}` : '',
+        sucursales ? `Sucursales: ${sucursales}` : '',
+        notas ? `\nNotas: ${notas}` : '',
+        `\nCRM: https://www.sacscloud.com/admin/crm?tab=pipeline`,
+      ].filter(Boolean).join('\n'),
+      startDateTime: startDT,
+      endDateTime: endDT,
+      timezone: tz,
+      attendeeEmail: email,
+      hostEmail: hostMember?.email,
+    });
+
+    if (gcalResult) {
+      google_event_id = gcalResult.eventId;
+      google_meet_link = gcalResult.meetLink;
+      // Update booking with Google data
+      await supabase.from('bookings').update({
+        google_event_id,
+        google_meet_link,
+      }).eq('id', booking.id);
+    }
+  } catch (gcalErr) {
+    console.error('Google Calendar event creation failed:', gcalErr);
+  }
+
+  // 10. Log activity
   await supabase.from('activities').insert({
     contact_id,
     company_id,
@@ -248,16 +296,18 @@ export const POST: APIRoute = async ({ request }) => {
       hora_inicio,
       hora_fin,
       booking_id: booking.id,
+      google_meet_link,
     },
     automatico: true,
   });
 
-  // 10. Return booking with tokens
+  // 11. Return booking with tokens and Meet link
   return new Response(
     JSON.stringify({
-      booking,
-      cancel_url: `/scheduling/cancel?token=${token_cancelar}`,
-      reschedule_url: `/scheduling/reschedule?token=${token_reagendar}`,
+      booking: { ...booking, google_event_id, google_meet_link },
+      cancel_url: `/api/scheduling/cancel?token=${booking.token_cancelar}`,
+      reschedule_url: `/api/scheduling/reschedule?token=${booking.token_reagendar}`,
+      google_meet_link,
     }),
     { status: 201 },
   );
@@ -290,7 +340,7 @@ async function validateSlotAvailable(
 
   // Load host schedule
   const { data: schedules } = await supabase
-    .from('scheduling_availability')
+    .from('availability_schedules')
     .select('*')
     .eq('team_member_id', owner_id)
     .eq('activo', true)
@@ -342,7 +392,7 @@ async function validateSlotAvailable(
 
   // Check override
   const { data: overrides } = await supabase
-    .from('scheduling_availability_overrides')
+    .from('availability_overrides')
     .select('ranges')
     .eq('team_member_id', owner_id)
     .eq('fecha', fecha)
@@ -379,7 +429,7 @@ async function validateSlotAvailable(
 
   // Check existing bookings
   const { data: dayBookings } = await supabase
-    .from('scheduling_bookings')
+    .from('bookings')
     .select('hora_inicio, hora_fin')
     .eq('host_id', owner_id)
     .eq('fecha', fecha)

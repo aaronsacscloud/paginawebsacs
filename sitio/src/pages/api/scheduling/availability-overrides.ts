@@ -13,7 +13,7 @@ export const GET: APIRoute = async ({ url }) => {
   }
 
   let query = supabase
-    .from('scheduling_availability_overrides')
+    .from('availability_overrides')
     .select('*')
     .eq('team_member_id', team_member_id)
     .order('fecha', { ascending: true });
@@ -34,7 +34,7 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   const { data, error } = await supabase
-    .from('scheduling_availability_overrides')
+    .from('availability_overrides')
     .insert({
       team_member_id: body.team_member_id,
       fecha: body.fecha,
@@ -55,7 +55,7 @@ export const DELETE: APIRoute = async ({ request }) => {
   }
 
   const { error } = await supabase
-    .from('scheduling_availability_overrides')
+    .from('availability_overrides')
     .delete()
     .eq('id', body.id);
 

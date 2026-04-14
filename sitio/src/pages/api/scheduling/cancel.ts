@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { deleteCalendarEvent } from '../../../lib/google-calendar';
 
 export const prerender = false;
 
@@ -15,8 +16,8 @@ export const POST: APIRoute = async ({ request, url }) => {
 
   // Load booking
   const { data: booking, error: bErr } = await supabase
-    .from('scheduling_bookings')
-    .select('*, scheduling_event_types(nombre)')
+    .from('bookings')
+    .select('*, event_types(nombre)')
     .eq('id', booking_id)
     .single();
 
@@ -41,7 +42,7 @@ export const POST: APIRoute = async ({ request, url }) => {
 
   // Update booking
   const { data: updated, error: upErr } = await supabase
-    .from('scheduling_bookings')
+    .from('bookings')
     .update({
       estado: 'cancelada',
       cancelacion_motivo: motivo || null,
@@ -53,13 +54,20 @@ export const POST: APIRoute = async ({ request, url }) => {
 
   if (upErr) return new Response(JSON.stringify({ error: upErr.message }), { status: 500 });
 
+  // Delete Google Calendar event if exists
+  if (booking.google_event_id && booking.host_id) {
+    try {
+      await deleteCalendarEvent(booking.host_id, booking.google_event_id);
+    } catch {}
+  }
+
   // Log activity
   if (booking.contact_id) {
     await supabase.from('activities').insert({
       contact_id: booking.contact_id,
       deal_id: booking.deal_id || null,
       tipo: 'demo_cancelada',
-      titulo: `Demo cancelada: ${booking.scheduling_event_types?.nombre || 'Demo'} - ${booking.fecha} ${booking.hora_inicio}`,
+      titulo: `Demo cancelada: ${booking.event_types?.nombre || 'Demo'} - ${booking.fecha} ${booking.hora_inicio}`,
       metadata: {
         booking_id,
         motivo: motivo || null,

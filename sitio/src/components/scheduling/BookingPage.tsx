@@ -264,7 +264,10 @@ function generateGcalLink(
 // ─── Main Component ───
 export default function BookingPage({ eventType, questions }: Props) {
   const [step, setStep] = useState(1);
-  const [timezone, setTimezone] = useState('America/Mexico_City');
+  const [timezone, setTimezone] = useState(() => {
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone; }
+    catch { return 'America/Mexico_City'; }
+  });
 
   // Step 1: Date selection
   const now = new Date();

@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { getFreeBusy } from '../../../lib/google-calendar';
 
 export const prerender = false;
 
@@ -99,7 +100,7 @@ export const GET: APIRoute = async ({ url }) => {
 
   // 1. Load event type
   const { data: eventType, error: etErr } = await supabase
-    .from('scheduling_event_types')
+    .from('event_types')
     .select('*')
     .eq('slug', slug)
     .eq('activo', true)
@@ -124,7 +125,7 @@ export const GET: APIRoute = async ({ url }) => {
 
   // 2. Load host availability schedule
   const { data: schedules, error: schedErr } = await supabase
-    .from('scheduling_availability')
+    .from('availability_schedules')
     .select('*')
     .eq('team_member_id', owner_id)
     .eq('activo', true)
@@ -144,7 +145,7 @@ export const GET: APIRoute = async ({ url }) => {
 
   // 3. Load overrides for the date range
   const { data: overridesRaw } = await supabase
-    .from('scheduling_availability_overrides')
+    .from('availability_overrides')
     .select('fecha, ranges')
     .eq('team_member_id', owner_id)
     .gte('fecha', from)
@@ -157,7 +158,7 @@ export const GET: APIRoute = async ({ url }) => {
 
   // 4. Load existing confirmed bookings for the host in the date range
   const { data: bookingsRaw } = await supabase
-    .from('scheduling_bookings')
+    .from('bookings')
     .select('fecha, hora_inicio, hora_fin')
     .eq('host_id', owner_id)
     .eq('estado', 'confirmada')
@@ -172,6 +173,29 @@ export const GET: APIRoute = async ({ url }) => {
     const list = bookingsByDate.get(b.fecha) || [];
     list.push(b);
     bookingsByDate.set(b.fecha, list);
+  }
+
+  // 4b. Load Google Calendar busy times (if connected)
+  const gcalBusy: Array<{ start: string; end: string }> = [];
+  try {
+    const busy = await getFreeBusy(
+      owner_id,
+      `${from}T00:00:00-06:00`,
+      `${to}T23:59:59-06:00`
+    );
+    gcalBusy.push(...busy);
+  } catch {}
+
+  // Convert Google busy times to per-date HH:MM ranges
+  const gcalBusyByDate = new Map<string, Array<{ start: string; end: string }>>();
+  for (const b of gcalBusy) {
+    if (!b.start || !b.end) continue;
+    const startDate = b.start.slice(0, 10);
+    const startTime = b.start.slice(11, 16);
+    const endTime = b.end.slice(11, 16);
+    const list = gcalBusyByDate.get(startDate) || [];
+    list.push({ start: startTime, end: endTime });
+    gcalBusyByDate.set(startDate, list);
   }
 
   // 5. Calculate slots for each date
@@ -253,6 +277,17 @@ export const GET: APIRoute = async ({ url }) => {
         if (available) {
           for (const booking of dayBookings) {
             if (timesOverlap(slotStartWithBuffer, slotEndWithBuffer, booking.hora_inicio, booking.hora_fin)) {
+              available = false;
+              break;
+            }
+          }
+        }
+
+        // Check conflicts with Google Calendar busy times
+        if (available) {
+          const gcalDay = gcalBusyByDate.get(dateStr) || [];
+          for (const busy of gcalDay) {
+            if (timesOverlap(slotStart, slotEnd, busy.start, busy.end)) {
               available = false;
               break;
             }

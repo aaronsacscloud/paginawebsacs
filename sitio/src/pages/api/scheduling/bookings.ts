@@ -10,8 +10,8 @@ export const GET: APIRoute = async ({ url }) => {
   const to = url.searchParams.get('to');
 
   let query = supabase
-    .from('scheduling_bookings')
-    .select('*, scheduling_event_types(id, nombre, slug, color, duracion_minutos)')
+    .from('bookings')
+    .select('*, event_types(id, nombre, slug, color, duracion_minutos)')
     .order('fecha', { ascending: true })
     .order('hora_inicio', { ascending: true });
 
@@ -32,8 +32,8 @@ export const PUT: APIRoute = async ({ request }) => {
 
   // Get current booking before update
   const { data: current, error: curErr } = await supabase
-    .from('scheduling_bookings')
-    .select('*, scheduling_event_types(nombre)')
+    .from('bookings')
+    .select('*, event_types(nombre)')
     .eq('id', id)
     .single();
 
@@ -42,7 +42,7 @@ export const PUT: APIRoute = async ({ request }) => {
   }
 
   const { data, error } = await supabase
-    .from('scheduling_bookings')
+    .from('bookings')
     .update(updates)
     .eq('id', id)
     .select()
@@ -66,7 +66,7 @@ export const PUT: APIRoute = async ({ request }) => {
       company_id: null,
       deal_id: current.deal_id,
       tipo: 'demo_realizada',
-      titulo: `Demo realizada: ${current.scheduling_event_types?.nombre || 'Demo'} - ${current.fecha}`,
+      titulo: `Demo realizada: ${current.event_types?.nombre || 'Demo'} - ${current.fecha}`,
       metadata: {
         booking_id: id,
         fecha: current.fecha,
@@ -83,7 +83,7 @@ export const PUT: APIRoute = async ({ request }) => {
       company_id: null,
       deal_id: current.deal_id,
       tipo: 'demo_no_show',
-      titulo: `No show: ${current.scheduling_event_types?.nombre || 'Demo'} - ${current.fecha}`,
+      titulo: `No show: ${current.event_types?.nombre || 'Demo'} - ${current.fecha}`,
       metadata: {
         booking_id: id,
         fecha: current.fecha,
