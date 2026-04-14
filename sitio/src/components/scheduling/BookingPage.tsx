@@ -415,6 +415,13 @@ export default function BookingPage({ eventType, questions }: Props) {
     }));
   };
 
+  // Extract answer by question label (for backward compatibility with empresa/giro/sucursales/notas)
+  const extractAnswer = (label: string): string => {
+    const q = questions.find(q => q.label.toLowerCase() === label.toLowerCase());
+    if (q) return formData.answers[q.id] || '';
+    return '';
+  };
+
   const handleSubmit = async () => {
     if (!selectedDate || !selectedTime) return;
     setSubmitting(true);
@@ -433,11 +440,11 @@ export default function BookingPage({ eventType, questions }: Props) {
           nombre: formData.nombre,
           email: formData.email,
           whatsapp: formData.whatsapp,
-          empresa: formData.empresa || null,
-          giro: formData.giro || null,
-          sucursales: formData.sucursales || null,
-          notas: formData.notas || null,
-          answers: formData.answers,
+          empresa: formData.empresa || extractAnswer('Empresa') || null,
+          giro: formData.giro || extractAnswer('Giro') || null,
+          sucursales: formData.sucursales || extractAnswer('Sucursales') || null,
+          notas: formData.notas || extractAnswer('Notas') || null,
+          answers: Object.entries(formData.answers).filter(([,v]) => v).map(([qid, valor]) => ({ question_id: qid, valor })),
           ...(recurrenceEnabled ? { recurrence: { frequency: recurrenceFrequency, count: recurrenceCount } } : {}),
         }),
       });
@@ -883,7 +890,8 @@ export default function BookingPage({ eventType, questions }: Props) {
 
   // ── Step 3: Info form ──
   const renderForm = () => {
-    const isValid = formData.nombre.trim() && formData.email.trim() && formData.whatsapp.trim();
+    const requiredQuestionsFilled = questions.filter(q => q.required).every(q => (formData.answers[q.id] || '').trim());
+    const isValid = formData.nombre.trim() && formData.email.trim() && formData.whatsapp.trim() && requiredQuestionsFilled;
 
     return (
       <div>
@@ -954,59 +962,18 @@ export default function BookingPage({ eventType, questions }: Props) {
           />
         </div>
 
-        <div style={styles.fieldGroup}>
-          <label style={styles.label}>Empresa</label>
-          <input
-            type="text"
-            value={formData.empresa}
-            onChange={(e) => updateField('empresa', e.target.value)}
-            placeholder="Nombre de tu empresa"
-            style={styles.input}
-            onFocus={(e) => { e.currentTarget.style.borderColor = '#4B7BE5'; }}
-            onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; }}
-          />
-        </div>
-
-        <div style={styles.fieldGroup}>
-          <label style={styles.label}>Giro</label>
-          <select
-            value={formData.giro}
-            onChange={(e) => updateField('giro', e.target.value)}
-            style={styles.select}
-          >
-            <option value="">Selecciona un giro</option>
-            {GIROS.map(g => (
-              <option key={g} value={g}>{g}</option>
-            ))}
-          </select>
-        </div>
-
-        <div style={styles.fieldGroup}>
-          <label style={styles.label}>Sucursales</label>
-          <select
-            value={formData.sucursales}
-            onChange={(e) => updateField('sucursales', e.target.value)}
-            style={styles.select}
-          >
-            <option value="">Selecciona</option>
-            {SUCURSALES_OPTIONS.map(s => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Custom questions */}
+        {/* All configurable fields from booking_questions */}
         {questions.map(q => (
           <div key={q.id} style={styles.fieldGroup}>
             <label style={styles.label}>{q.label}{q.required ? ' *' : ''}</label>
-            {q.tipo === 'text' && (
+            {(q.tipo === 'text' || q.tipo === 'phone' || q.tipo === 'number') && (
               <input
-                type="text"
+                type={q.tipo === 'phone' ? 'tel' : q.tipo === 'number' ? 'number' : 'text'}
                 value={formData.answers[q.id] || ''}
                 onChange={(e) => updateAnswer(q.id, e.target.value)}
                 placeholder={q.placeholder || ''}
                 style={styles.input}
-                onFocus={(e) => { e.currentTarget.style.borderColor = '#4B7BE5'; }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = primaryColor; }}
                 onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; }}
               />
             )}
@@ -1017,18 +984,18 @@ export default function BookingPage({ eventType, questions }: Props) {
                 placeholder={q.placeholder || ''}
                 rows={3}
                 style={{ ...styles.input, resize: 'vertical' as const }}
-                onFocus={(e) => { e.currentTarget.style.borderColor = '#4B7BE5'; }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = primaryColor; }}
                 onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; }}
               />
             )}
-            {q.tipo === 'select' && q.options && (
+            {(q.tipo === 'select' || q.tipo === 'radio') && q.options && (
               <select
                 value={formData.answers[q.id] || ''}
                 onChange={(e) => updateAnswer(q.id, e.target.value)}
                 style={styles.select}
               >
                 <option value="">{q.placeholder || 'Selecciona'}</option>
-                {q.options.map(opt => (
+                {q.options.map((opt: string) => (
                   <option key={opt} value={opt}>{opt}</option>
                 ))}
               </select>
@@ -1039,26 +1006,13 @@ export default function BookingPage({ eventType, questions }: Props) {
                   type="checkbox"
                   checked={formData.answers[q.id] === 'true'}
                   onChange={(e) => updateAnswer(q.id, e.target.checked ? 'true' : 'false')}
-                  style={{ width: 18, height: 18, accentColor: '#4B7BE5' }}
+                  style={{ width: 18, height: 18, accentColor: primaryColor }}
                 />
-                <span style={{ fontSize: '0.875rem', color: '#555' }}>{q.placeholder || 'Si'}</span>
+                <span style={{ fontSize: '0.875rem', color: '#555' }}>{q.placeholder || 'Sí'}</span>
               </label>
             )}
           </div>
         ))}
-
-        <div style={styles.fieldGroup}>
-          <label style={styles.label}>Notas</label>
-          <textarea
-            value={formData.notas}
-            onChange={(e) => updateField('notas', e.target.value)}
-            placeholder="Algo que debamos saber antes de la reunion?"
-            rows={3}
-            style={{ ...styles.input, resize: 'vertical' as const }}
-            onFocus={(e) => { e.currentTarget.style.borderColor = '#4B7BE5'; }}
-            onBlur={(e) => { e.currentTarget.style.borderColor = '#E0E0E0'; }}
-          />
-        </div>
 
         {/* Recurrence toggle (Feature 21) - show for non-individual events or when duration >= 30 min */}
         {eventType.tipo_reunion !== 'individual' || eventType.duracion_minutos >= 30 ? (

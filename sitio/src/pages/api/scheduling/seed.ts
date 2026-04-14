@@ -113,40 +113,31 @@ export const GET: APIRoute = async ({ url }) => {
     return new Response(JSON.stringify({ error: `Event types: ${etErr.message}` }), { status: 500 });
   }
 
-  // 4. Create booking questions for "Demo personalizada"
-  const demoEventType = eventTypes?.find((et) => et.slug === 'demo');
+  // 4. Create default booking questions for ALL event types
   let questions: unknown[] = [];
 
-  if (demoEventType) {
-    const questionsData = [
-      {
-        event_type_id: demoEventType.id,
-        pregunta: '¿Qué sistema usas actualmente?',
-        tipo: 'select',
-        options: ['Excel', 'Otro software', 'Ninguno'],
-        requerida: true,
-        orden: 1,
-      },
-      {
-        event_type_id: demoEventType.id,
-        pregunta: '¿Qué es lo que más te interesa resolver?',
-        tipo: 'textarea',
-        options: null,
-        requerida: false,
-        orden: 2,
-      },
+  for (const et of (eventTypes || [])) {
+    const defaultQuestions = [
+      { event_type_id: et.id, label: 'Empresa', tipo: 'text', placeholder: 'Nombre de tu empresa', required: true, options: null, orden: 1 },
+      { event_type_id: et.id, label: 'Giro', tipo: 'select', placeholder: 'Selecciona un giro', required: false, options: ['Moda y ropa', 'Calzado', 'Joyería', 'Novedades', 'Vinos y licores', 'Comestibles', 'Electrónica', 'Bicicletas', 'Supermercado', 'Franquicias', 'Otro'], orden: 2 },
+      { event_type_id: et.id, label: 'Sucursales', tipo: 'select', placeholder: 'Selecciona', required: false, options: ['1', '2-3', '4-5', '6-10', '10+'], orden: 3 },
+      { event_type_id: et.id, label: 'Notas', tipo: 'textarea', placeholder: 'Algo que debamos saber antes de la reunion?', required: false, options: null, orden: 10 },
     ];
 
-    const { data: qData, error: qErr } = await supabase
-      .from('booking_questions')
-      .insert(questionsData)
-      .select();
-
-    if (qErr) {
-      return new Response(JSON.stringify({ error: `Questions: ${qErr.message}` }), { status: 500 });
+    // Add custom questions only for demo
+    if (et.slug === 'demo') {
+      defaultQuestions.push(
+        { event_type_id: et.id, label: '¿Qué sistema usas actualmente?', tipo: 'select', placeholder: 'Selecciona', required: true, options: ['Excel', 'Otro software', 'Ninguno'], orden: 4 },
+        { event_type_id: et.id, label: '¿Qué es lo que más te interesa resolver?', tipo: 'textarea', placeholder: 'Cuéntanos...', required: false, options: null, orden: 5 },
+      );
     }
 
-    questions = qData || [];
+    const { data: qData } = await supabase
+      .from('booking_questions')
+      .insert(defaultQuestions)
+      .select();
+
+    if (qData) questions.push(...qData);
   }
 
   return new Response(
