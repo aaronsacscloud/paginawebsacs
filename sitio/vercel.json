@@ -27,6 +27,14 @@
     {
       "path": "/api/cron/renewals",
       "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/crm/compute-health",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/crm/detect-expansion",
+      "schedule": "0 6 * * *"
     }
   ]
 }

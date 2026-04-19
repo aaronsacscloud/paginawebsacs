@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import HealthScoreBadge from './HealthScoreBadge';
+import ExpansionSignalsBanner from './ExpansionSignalsBanner';
 
 // ─── Types ───
 interface Company {
@@ -6,6 +8,8 @@ interface Company {
   mrr: number; arr: number; estado_cuenta: string;
   fecha_renovacion: string | null; giro: string | null;
   rfc: string | null; razon_social: string | null;
+  health_score?: number | null; health_factors?: any;
+  health_computed_at?: string | null;
 }
 
 interface Contact {
@@ -825,6 +829,17 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                 }}>
                   {contact.companies.nombre}
                 </div>
+                {/* Health score badge (F6) */}
+                <div style={{ marginBottom: 14 }}>
+                  <HealthScoreBadge
+                    score={contact.companies.health_score}
+                    factors={contact.companies.health_factors}
+                    computed_at={contact.companies.health_computed_at}
+                    size="md"
+                  />
+                </div>
+                {/* Expansion signals (F6) — muestra si hay banner */}
+                <ExpansionSignalsBanner companyId={contact.companies.id} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {contact.companies.plan && (
                     <PropertyRow label="Plan">
