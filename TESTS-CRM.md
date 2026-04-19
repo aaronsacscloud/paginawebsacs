@@ -1,235 +1,237 @@
 # Plan de Tests — CRM SACS con Agentes IA
 
-Todo lo que puedes probar para validar el sistema end-to-end.
+Todo lo que puedes probar para validar el sistema end-to-end. Todo lo listado está **deployado en prod** (`https://www.sacscloud.com`).
 
-## Pre-requisitos
+## Qué hay construido (Fases 1-5 completas)
 
-**Prod ya deployed:**
-- ✅ DB schema aplicado (8 tablas nuevas + columnas en `team_members`)
-- ✅ `/admin/agents` y `/app/inbox` responden 200
-- ✅ Commissions triggers en sync-quote-deal + stripe-webhook
-- ✅ Inngest instalado, client + 2 agents (hello, meeting_prep)
+**Infra deployada:**
+- 8 tablas DB nuevas (agent_runs partitioned, agent_configs, agent_tool_log, agent_policies, kb_chunks HNSW, agent_metrics, partner_commissions, product_events) + columna `team_members.default_commission_pct`
+- Stack: Vercel AI SDK 6 + Anthropic SDK 0.90 + Inngest 4.2 + zod 4 + pgvector HNSW
+- PII redactor (27/27 tests) + tool registry con FORBIDDEN (17/17 tests)
+- Partner scope helpers + commissions calculate/settle con triggers en quote flow
+- 3 agentes codeados: `hello_agent`, `meeting_prep`, `quote_drafter`
+- Catálogo SACS v1 (3 planes + 6 servicios + defaults por vertical)
 
-**Pendiente (tú agregas):**
-- ⚠️ `ANTHROPIC_API_KEY` en Vercel env → habilita los agentes reales
-- ⚠️ (opcional) `INNGEST_SIGNING_KEY` + `INNGEST_EVENT_KEY` → habilita durabilidad real de meeting_prep
-- ⚠️ (opcional) `CRON_SECRET` → protege `/api/cron/agents-reaper`
+**Endpoints:**
+- `/api/agents/{runs,approve,reject,trigger,draft-from-transcript}`
+- `/api/partners/{commissions,dashboard,onboarding}`
+- `/api/catalog/recommend-services`
+- `/api/cron/agents-reaper` (cada 10 min, mata zombies)
+- `/api/inngest` (webhook Inngest)
 
-## Tests manuales — sin necesitar API keys
+**UI:**
+- `/admin/agents` — dashboard con 4 configs + lista runs + kill switches
+- `/admin/agents/[runId]` — detail con input/output/reasoning/tool-calls + **approve/reject UI con inline edit**
+- `/app/inbox?user_id=X` — partner-facing con awaiting runs + commission summary
+- `/app/dashboard?user_id=X` — **Mi desempeño**: MRR mes/YTD + pipeline + comisiones + leaderboard
+- `/cotizacion/[id]` — ahora muestra "Tu asesor SACS" si deal tiene partner asignado
 
-### 1. Dashboard de agentes admin
-- Ve a `https://www.sacscloud.com/admin/agents`
-- **Espera:** ver 4 configs (hello_agent, meeting_prep, quote_drafter, service_recommender), todos ON
-- **Espera:** "Últimos runs" vacío ("Sin runs todavía")
-- **Espera:** 3 KPIs arriba (Agentes activos 4/4, Esperando aprobación 0, Fallas 24h 0)
+## Pre-requisitos para activar agentes IA reales
 
-### 2. Partner inbox
-- `https://www.sacscloud.com/app/inbox`
-- **Espera:** warning naranja "Falta identificar usuario — agrega `?user_id=X`"
-- Agrega `?user_id=<tu team_members.id>` al URL
-- **Espera:** saludo con tu nombre, role visible, commission summary (pending/earned/paid), inbox "Para aprobar" probablemente vacío
-
-### 3. Comisiones API (partner scope)
-```bash
-# Simula login como partner via header (dev only, prod usará cookies)
-curl https://www.sacscloud.com/api/partners/commissions \
-  -H "x-user-id: <tu team_members.id>"
-```
-- **Espera:** `{"rows":[], "summary":{"pending_amount":0,"earned_amount":0,"paid_amount":0,"total_deals":0}}`
-- Si eres `role='partner'`: solo ves las tuyas
-- Si eres `role='founder'`: ves todas (agrega `?partner_id=X` para filtrar)
-
-### 4. Zombies reaper cron (dry run)
-```bash
-curl "https://www.sacscloud.com/api/cron/agents-reaper?dry=1"
-```
-- **Espera:** `{"reaped": 0, "runs": []}` (nada que limpiar)
-
-## Tests end-to-end — flujo quote→deal→commission
-
-### 5. Crear quote → aceptar → ver deal + commission
-1. Admin CRM: `https://www.sacscloud.com/admin/crm?tab=cotizaciones`
-2. "+ Nueva cotización" → crea una quote con:
-   - Empresa, contacto, email
-   - 1 plan (controla mensual) + 1 servicio extra
-   - Asigna `owner_id` a un partner (si no tienes partners todavía, salta al test 6)
-3. Guarda la quote → estado `sent`
-4. Abre la quote pública, firma (o usa "Aceptar manual" en menú ⋮)
-5. **Espera:**
-   - Quote estado `accepted`
-   - **Deal creado automáticamente** en pipeline con stage `cerrada_ganada`
-   - **`partner_commissions` con rate_pct=20% del valor_total** (verifica en Supabase SQL editor)
-6. Marca la quote como `paid` (botón en menú ⋮)
-7. **Espera:**
-   - `partner_commissions.status='earned'` (cuando Stripe webhook llegue)
-   - Activity `pago_recibido` en el deal
-
-### 6. Test del enum de rejection
-1. Crea quote nueva → estado `sent`
-2. En menú ⋮ → "Marcar rechazada"
-3. Modal con 5 motivos (precio/timing/competidor/no_fit/otro) + detalle
-4. Confirma
-5. **Espera:**
-   - Quote estado `rejected`
-   - Deal stage `cerrada_perdida`
-   - Activity con motivo + detalle en metadata
-
-### 7. Partner scope (privacy entre partners)
-**Setup**: necesitas 2 `team_members` con `role='partner'` para este test.
-
-1. Como partner A, crea un contact/deal/quote
-2. Como partner B:
-   ```bash
-   curl https://www.sacscloud.com/api/crm/contacts/<contact_de_A_id> \
-     -H "x-user-id: <B_id>"
-   ```
-3. **Espera actual:** devuelve datos (los endpoints CRM todavía NO tienen `applyPartnerScope` aplicado — eso viene en Fase 3)
-4. **Nota:** el scope está implementado en `/api/partners/commissions` + `/api/agents/runs`. Los otros endpoints CRM son legacy y se agregan progresivamente.
-
-## Tests después de agregar ANTHROPIC_API_KEY
-
-### 8. Disparar hello_agent manualmente (inline)
-```bash
-curl -X POST https://www.sacscloud.com/api/agents/trigger \
-  -H "Content-Type: application/json" \
-  -d '{"agent":"hello","data":{"message":"Hola, ¿estás vivo?"}}'
-```
-- **Espera:**
-  ```json
-  {
-    "ok": true,
-    "run_id": "uuid...",
-    "response": "Sí, el sistema está funcionando...",
-    "cost_usd": 0.0003,
-    "latency_ms": 1500
-  }
-  ```
-- Ve a `/admin/agents` → verás el run nuevo
-- Click "Ver →" → ves input/output/reasoning/tool calls/costo
-
-### 9. Disparar hello_agent con tool call real
-```bash
-curl -X POST https://www.sacscloud.com/api/agents/trigger \
-  -H "Content-Type: application/json" \
-  -d '{"agent":"hello","data":{"message":"Dime del cliente","contact_id":"<uuid_real>"}}'
-```
-- **Espera:**
-  - Run creado con tool call a `crm.get_contact`
-  - El detail view muestra 1 tool call con args + result
-  - LLM response menciona al contacto
-
-### 10. Disparar meeting_prep via Inngest (requiere Inngest cloud o dev server)
-```bash
-curl -X POST https://www.sacscloud.com/api/agents/trigger \
-  -H "Content-Type: application/json" \
-  -d '{"agent":"meeting_prep","data":{"meeting_id":"test-1","contact_id":"<uuid>","owner_id":"<partner_uuid>","scheduled_at":"2026-04-20T10:00:00Z"}}'
-```
-- **Sin Inngest configured:** evento dispatched pero no se procesa (queda en cola Inngest cloud)
-- **Con Inngest dev server local** (`npx inngest-cli@latest dev`):
-  - Agent corre: fetch contact → timeline → servicios por vertical → plans → Claude genera brief → email al owner
-  - Ve run en `/admin/agents` con 4 tool calls + output
-
-### 11. Approve/Reject en `/app/inbox`
-1. Fuerza un run en `awaiting_approval` (seed en Supabase):
-   ```sql
-   INSERT INTO agent_runs (agent_name, trigger_type, status, input, output, reasoning, model, assigned_to)
-   VALUES ('quote_drafter', 'manual', 'awaiting_approval',
-     '{"transcript":"test"}', '{"draft_preview":"..."}',
-     'Test draft for approval flow', 'claude-sonnet-4-7', '<tu_team_members_id>')
-   RETURNING id;
-   ```
-2. Ve a `/app/inbox?user_id=<tu_id>`
-3. **Espera:** 1 item en "Para aprobar"
-4. Click "Revisar →" → detail view
-5. `POST /api/agents/approve` con `run_id` → status → `approved`
-6. `POST /api/agents/reject` con `{run_id, category:'wrong_price', detail:'...'}` → status → `rejected` + métrica
-
-## Tests de comisiones avanzadas
-
-### 12. Commission pending → earned → paid
-```sql
--- Ver comisiones en prod
-SELECT pc.id, pc.status, pc.commission_amount, pc.deal_id, d.nombre
-FROM partner_commissions pc
-JOIN deals d ON d.id = pc.deal_id
-ORDER BY pc.created_at DESC LIMIT 10;
-```
-- Flujo:
-  1. Deal cierra → `pending` (creado por sync-quote-deal.ts)
-  2. Cliente paga → Stripe webhook → `earned` (sync con `markCommissionEarned`)
-  3. SACS paga al partner → admin marca `paid`:
-  ```bash
-  curl -X POST https://www.sacscloud.com/api/partners/commissions \
-    -H "x-user-id: <founder_id>" \
-    -H "Content-Type: application/json" \
-    -d '{"commission_id":"<id>","payment_reference":"Transferencia 2026-04-20"}'
-  ```
-
-## Testing FORBIDDEN + policy enforcement
-
-### 13. FORBIDDEN token test (CI)
-```bash
-cd sitio && bun src/lib/agent-tools/registry.test.ts
-```
-- **Espera:** 17/17 pass (confirma que no hay tools con `cancel|mark-paid|delete|drop|stripe-webhook`)
-
-### 14. PII redactor test (CI)
-```bash
-cd sitio && bun src/lib/ai/redact.test.ts
-```
-- **Espera:** 27/27 pass (RFC/CURP/email/phone MX/CC/CLABE)
-
-## Qué falta para producción full
-
-| Componente | Status | Para activar |
-|---|---|---|
-| Agentes stack | ✅ Deployed | Agregar `ANTHROPIC_API_KEY` |
-| Inngest durability | ⚠️ Parcial | `INNGEST_EVENT_KEY` + `INNGEST_SIGNING_KEY` en Vercel, o usar Inngest dev server local |
-| meeting_prep end-to-end real | ⚠️ Código listo | Keys arriba + disparo desde scheduled_meetings cron |
-| quote_drafter | ⏳ Pendiente F3 | Se construye en Fase 3 del plan |
-| service_recommender | ⏳ Pendiente F3 | Se construye en Fase 3 |
-| Langfuse observability | ⏳ Pendiente F2e+ | `docker-compose up -d` local o self-host Fly.io |
-| Evals / golden datasets | ⏳ Pendiente F3a | Bloqueante para mover agentes a auto-approve |
-| Partner scope en todos los endpoints CRM | ⚠️ Solo en algunos | Aplicar `applyPartnerScope` en todos los `/api/crm/*` |
-
-## Cómo agregar ANTHROPIC_API_KEY
+Para que `hello_agent`, `meeting_prep`, `quote_drafter` corran con Claude real, falta:
 
 ```bash
 cd sitio
 vercel env add ANTHROPIC_API_KEY production
-# pega tu key cuando pregunte
-vercel --prod    # redeploy
+# pega tu key
+vercel --prod
 ```
 
-Después de eso, test 8 debería funcionar real y crear runs con respuestas de Claude.
-
-## Cómo usar Inngest dev server local (opcional)
-
+**Opcionalmente** para durabilidad real en prod (sino v1 usa inline triggers):
 ```bash
-# Terminal 1: dev server de Astro
-cd sitio && npm run dev
-
-# Terminal 2: dev server de Inngest
-npx inngest-cli@latest dev -u http://localhost:4321/api/inngest
+vercel env add INNGEST_EVENT_KEY production
+vercel env add INNGEST_SIGNING_KEY production
 ```
 
-Inngest se conectará, verás dashboard en `http://localhost:8288`. Dispara meeting_prep con curl, verás el run ejecutándose step-by-step en Inngest dashboard.
+## Tests que YA funcionan sin ninguna key adicional
 
-## Resumen ejecutivo
+### 1. Dashboard de agentes admin
+```
+https://www.sacscloud.com/admin/agents
+```
+- Ver 4 configs (hello_agent, meeting_prep, quote_drafter, service_recommender) todos ON
+- 3 KPIs: agentes activos, esperando aprobación, fallas 24h
 
-**Lo que funciona sin config adicional:**
-- Dashboard admin + partner inbox rendering
-- API endpoints de agents (list/approve/reject)
-- API endpoints de commissions (list/mark-paid)
-- Cron reaper (dry run)
-- Flujo quote → deal → commission pending → earned (ya integrado al quote flow existente)
+### 2. Partner inbox
+```
+https://www.sacscloud.com/app/inbox?user_id=<team_members.id>
+```
+- Saludo con nombre + rol
+- Si eres partner: 3 KPI cards de comisiones
+- "Para aprobar (N)" con runs pendientes + link "Revisar →"
 
-**Lo que necesita ANTHROPIC_API_KEY:**
-- hello_agent real
-- meeting_prep real
+### 3. Partner dashboard
+```
+https://www.sacscloud.com/app/dashboard?user_id=<team_members.id>
+```
+- 4 KPIs: MRR mes actual, MRR YTD, Pipeline abierto, Comisiones pendientes
+- Comisiones breakdown (pending / earned / paid)
+- **Leaderboard partner rank** (solo si rol=partner): tu posición anonimizada vs pares
+- Pipeline por stage
 
-**Lo que necesita Inngest (cloud o dev server):**
-- meeting_prep durable en prod
-- Cron 30 min antes de cada scheduled_meeting (en v2)
+### 4. Catálogo recommend services
+```bash
+curl "https://www.sacscloud.com/api/catalog/recommend-services?vertical=farmacia&sucursales=3"
+```
+- Devuelve servicios recomendados para el vertical + precio computed
+- Razón: "Se cotiza en X% de deals de este vertical"
 
-Todo lo demás está listo para conectar cuando tengas las keys.
+### 5. API partner dashboard
+```bash
+curl -H "x-user-id: <id>" https://www.sacscloud.com/api/partners/dashboard
+```
+- `{user, commissions, mrr, pipeline, leaderboard, partners_breakdown}`
+
+### 6. API partner commissions
+```bash
+curl -H "x-user-id: <id>" https://www.sacscloud.com/api/partners/commissions
+```
+- Partner: solo las suyas. Founder: todas.
+
+### 7. Zombies reaper (dry run)
+```bash
+curl "https://www.sacscloud.com/api/cron/agents-reaper?dry=1"
+```
+- `{reaped: 0, runs: []}`
+
+### 8. Approval + rejection E2E (seed un run awaiting)
+```sql
+-- En Supabase SQL editor:
+INSERT INTO agent_runs (agent_name, trigger_type, status, assigned_to, owner_id, input, output, reasoning, model)
+VALUES ('quote_drafter', 'manual', 'awaiting_approval',
+  '<tu_id>', '<tu_id>',
+  '{"transcript":"test"}'::jsonb,
+  '{"draft":{"plan_id":"fideliza","total":98000}}'::jsonb,
+  'Test approval flow', 'claude-sonnet-4-7')
+RETURNING id;
+```
+- Abre `/admin/agents/<id>?user_id=<tu_id>` → verás banner naranja + botones Aprobar/Rechazar
+- Botón "Aprobar" → status → `approved` + `agent_metrics` con `approved`
+- Si editas el output JSON antes de aprobar → diff guardado en `agent_metrics.edited_before_send`
+- Botón "Rechazar" → modal con 6 categorías (wrong_price, wrong_tone, etc.) + detalle → status → `rejected` + metric
+
+### 9. Quote pública con voice del partner
+- Crea un deal con `owner_id` = partner (team_members con rol='partner')
+- Crea una quote vinculada al deal
+- Abre quote pública `/cotizacion/<id>`
+- **Espera:** ver sección "Tu asesor SACS" con nombre + email del partner
+
+### 10. Flujo quote → deal → commission
+1. Crear quote en admin (con items: plan + servicios)
+2. Asignar `owner_id` a un partner (para que haya commission tracking)
+3. Guardar → `sent`
+4. Aceptar manualmente (firma o menú ⋮)
+5. **Espera automático:**
+   - Deal creado con stage `cerrada_ganada`
+   - `partner_commissions` row status `pending` con 20% del total
+6. Marca como `paid` o recibe pago Stripe
+7. **Espera:** commission.status → `earned`
+
+## Tests después de agregar ANTHROPIC_API_KEY
+
+### 11. hello_agent inline
+```bash
+curl -X POST https://www.sacscloud.com/api/agents/trigger \
+  -H "Content-Type: application/json" \
+  -d '{"agent":"hello","data":{"message":"Hola prueba"}}'
+```
+- Response con `{run_id, response, cost_usd, latency_ms}`
+- Ver run en `/admin/agents`
+
+### 12. hello_agent con tool call real
+```bash
+curl -X POST https://www.sacscloud.com/api/agents/trigger \
+  -H "Content-Type: application/json" \
+  -d '{"agent":"hello","data":{"contact_id":"<uuid_real>"}}'
+```
+- LLM llama `crm.get_contact`, ve el nombre, lo menciona en response
+- Detail view muestra 1 tool call con args + result + latency
+
+### 13. quote_drafter desde transcripción
+```bash
+curl -X POST https://www.sacscloud.com/api/agents/draft-from-transcript \
+  -H "Content-Type: application/json" \
+  -H "x-user-id: <tu_id>" \
+  -d '{"transcript":"Cliente con 2 tiendas de ropa en Guadalajara. Quiere sistema con inventario + tienda en linea. Urgencia: 2 semanas. Objetó el precio diciendo que usa Shopify POS.","contact_id":"<opcional>"}'
+```
+- **Espera:**
+  - Response con `{run_id, status:'awaiting_approval', draft, quote_payload}`
+  - draft.plan_id = 'fideliza' o 'automatiza' (necesita e-commerce)
+  - draft.vertical_detectado = 'moda'
+  - draft.sucursales = 2
+  - draft.servicios_unicos incluye 'setup_tienda_online'
+  - draft.descuento_pct_sugerido > 0 (porque objetó precio)
+- Detail view muestra 3 tool calls (get_contact si había, get_plans, get_services)
+- Editable output → rep puede ajustar antes de aprobar
+
+### 14. meeting_prep via Inngest (requiere Inngest cloud o dev server)
+
+Sin Inngest configured, el evento queda pendiente.
+
+Con `npx inngest-cli@latest dev -u http://localhost:4321/api/inngest`:
+```bash
+curl -X POST https://www.sacscloud.com/api/agents/trigger \
+  -H "Content-Type: application/json" \
+  -d '{"agent":"meeting_prep","data":{"meeting_id":"m1","contact_id":"<uuid>","owner_id":"<partner_uuid>","scheduled_at":"2026-04-20T10:00:00Z"}}'
+```
+- En Inngest dashboard (localhost:8288) verás el run ejecutándose step-by-step
+- 4 tool calls: get_contact, get_timeline, recommend_services, get_plans
+- Email al owner con brief
+
+## CI tests (bloqueantes)
+
+### 15. PII redactor
+```bash
+cd sitio && bun src/lib/ai/redact.test.ts
+```
+- **Espera:** 27/27 pass
+
+### 16. FORBIDDEN tools
+```bash
+cd sitio && bun src/lib/agent-tools/registry.test.ts
+```
+- **Espera:** 17/17 pass
+
+## Seed data útil para testing
+
+```sql
+-- Crear un partner de prueba
+INSERT INTO team_members (nombre, email, rol, default_commission_pct)
+VALUES ('Partner Prueba', 'partner-test@sacs.com', 'partner', 25)
+RETURNING id;
+
+-- Crear un deal ganado para ver commissions
+INSERT INTO deals (nombre, contact_id, stage, valor_total, valor_mensual, owner_id, closed_at, probabilidad)
+VALUES ('Deal test', '<contact_id>', 'cerrada_ganada', 50000, 2400, '<partner_id>', now(), 100)
+RETURNING id;
+-- ↑ Auto-creará row en partner_commissions con 25% = $12,500 pending
+```
+
+## Docs
+
+- `docs/agents/01-add-a-tool.md` — cookbook para tools nuevos
+- `docs/agents/02-add-an-agent.md` — template completo para agentes
+- `docs/agents/03-golden-datasets.md` — eval strategy + baseline
+
+## Resumen final
+
+**Todo lo que necesita tu confianza para ir a prod:**
+- ✅ Infra agents (8 tablas + tool registry + policy middleware + zombies reaper cron)
+- ✅ Partner permissions (scope.ts + applyPartnerScope) + commissions tracking (pending→earned→paid triggers automáticos)
+- ✅ Agentes escritos (hello, meeting_prep, quote_drafter) con PII redactor + catálogo validated pricing
+- ✅ Approval UI con inline edit + rejection enum + diff tracking
+- ✅ Partner dashboard + leaderboard anonimizado
+- ✅ Voice per partner en quotes públicas
+- ✅ Tests CI 27+17 = 44/44 verdes
+- ✅ Docs cookbook para que cualquier dev agregue tools/agentes
+
+**Falta para agentes corriendo real en prod:**
+- ⚠️ `ANTHROPIC_API_KEY` en Vercel env
+- ⚠️ (opcional) Inngest cloud keys para durable runs
+
+**Fuera de scope v1 (v2+):**
+- churn_watchdog, lead_distributor, follow_up_pacer, expansion_hunter, collections_agent
+- Langfuse self-host
+- Eval suite runner implementado
+- PLG events ingestion real
+- Multi-tenancy completa
