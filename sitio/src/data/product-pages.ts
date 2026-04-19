@@ -1448,7 +1448,7 @@ export const pageContent: Record<string, any> = {
         quote: 'Mi supervisora facturaba CFDIs hasta tarde los sábados. Con el QR de autofacturación en cada ticket, más de la mitad de los clientes que pide factura lo hace solo desde su celular. Ella ya no toca un CFDI a mano — y la tienda cierra puntual.',
         name: 'Ricardo Mejía',
         business: 'Boutique Canela',
-        location: '22 sucursales · México',
+        location: '22 sucursales · Costa Rica',
       },
       {
         bg: '#f2ecea',
@@ -1525,7 +1525,8 @@ export const pageContent: Record<string, any> = {
         imageAlt: 'Pantalla de SACS mostrando stock consolidado por sucursal',
         link: null,
         featured: true,
-        variant: 'control-central',
+        variant: 'inv-global-matrix',
+        cardSize: 'lg',
       },
       {
         title: 'Cada canal descuenta del mismo pozo.',
@@ -1543,7 +1544,7 @@ export const pageContent: Record<string, any> = {
         imageAlt: 'Pantalla de estados de inventario en SACS: disponible, reservado, tránsito',
         link: { label: 'Ver apartados y pedidos', href: '/producto/apartados-y-pedidos' },
         featured: true,
-        variant: 'apartado-reserva',
+        variant: 'inv-states',
       },
       {
         title: 'Alertas que te avisan antes del quiebre.',
@@ -1552,7 +1553,7 @@ export const pageContent: Record<string, any> = {
         imageAlt: 'Pantalla de alertas de mínimos y caducidad en SACS',
         link: { label: 'Ver órdenes de compra', href: '/producto/ordenes-de-compra' },
         featured: true,
-        variant: 'promo-auto',
+        variant: 'inv-low-stock-alert',
       },
     ],
     testimonial: {
@@ -1771,7 +1772,8 @@ export const pageContent: Record<string, any> = {
         imageAlt: 'Empleado con celular escaneando etiqueta de código de barras en SACS',
         link: null,
         featured: true,
-        variant: 'checkout',
+        variant: 'count-scan-live',
+        cardSize: 'sm',
       },
       {
         title: 'Zonas asignadas. Responsables claros.',
@@ -1780,7 +1782,8 @@ export const pageContent: Record<string, any> = {
         imageAlt: 'Pantalla de asignación de zonas de conteo en SACS',
         link: null,
         featured: true,
-        variant: 'control-central',
+        variant: 'count-zones-progress',
+        cardSize: 'lg',
       },
       {
         title: 'Diferencia a la vista. Antes de ajustar nada.',
@@ -1789,7 +1792,7 @@ export const pageContent: Record<string, any> = {
         imageAlt: 'Reporte de diferencias de conteo físico en SACS',
         link: { label: 'Ver inventario omnicanal', href: '/producto/inventario-omnicanal' },
         featured: true,
-        variant: 'invoice-credit',
+        variant: 'count-variance-report',
       },
       {
         title: 'Conteos cíclicos para no parar la tienda.',
@@ -1951,8 +1954,8 @@ export const pageContent: Record<string, any> = {
         color: '#4a6aa8',
         quote: 'Descubrimos que una sucursal tenía mermas consistentemente en la misma categoría. Al verlo por zona y por persona identificamos el problema y lo corregimos. Sin el reporte por responsable nunca lo habríamos visto.',
         name: 'Valeria Mondragón',
-        business: 'Farmacias del Valle',
-        location: '22 sucursales · México',
+        business: 'Bella Novedades del Valle',
+        location: '22 sucursales · Costa Rica',
       },
       {
         bg: '#eef3ee',
@@ -1961,7 +1964,7 @@ export const pageContent: Record<string, any> = {
         color: '#5a8a5f',
         quote: 'Empezamos a hacer conteos cíclicos por familia cada semana y dejamos los inventarios generales anuales. El equipo ya sabe la rutina, y las diferencias son mucho más chicas cuando las atacas en bloques pequeños.',
         name: 'Rodrigo Tapia',
-        business: 'Librerías Pampa',
+        business: 'Papelería Pampa',
         location: '13 locales · Argentina',
       },
     ],
@@ -2026,7 +2029,8 @@ export const pageContent: Record<string, any> = {
         imageAlt: 'Pantalla de aprobación de traspasos propuestos en SACS',
         link: null,
         featured: true,
-        variant: 'promo-auto',
+        variant: 'reposicion-approval',
+        cardSize: 'lg',
       },
       {
         title: 'Orden de traspaso lista para bodega.',
@@ -2197,8 +2201,8 @@ export const pageContent: Record<string, any> = {
         color: '#4a6aa8',
         quote: 'El tema es que cada gerente defendía su inventario como propio. Con la propuesta basada en venta real, la discusión ya no es subjetiva — es lo que vendió la tienda del otro lado. Bajó el conflicto y subió la rotación.',
         name: 'Fernanda Bracho',
-        business: 'Óptica Visión Plus',
-        location: '24 sucursales · México',
+        business: 'Joyería Bracho Fina',
+        location: '24 sucursales · Guatemala',
       },
       {
         bg: '#eef3ee',
@@ -2263,7 +2267,8 @@ export const pageContent: Record<string, any> = {
         imageAlt: 'Pantalla de sugerencia de orden de compra generada por SACS',
         link: { label: 'Ver inventario omnicanal', href: '/producto/inventario-omnicanal' },
         featured: true,
-        variant: 'control-central',
+        variant: 'oc-suggestion-draft',
+        cardSize: 'lg',
       },
       {
         title: 'Orden al proveedor, con tus términos y tus precios.',
@@ -2281,7 +2286,7 @@ export const pageContent: Record<string, any> = {
         imageAlt: 'Empleado recibiendo mercancía con celular escaneando contra orden de compra',
         link: null,
         featured: true,
-        variant: 'apartado-transfer',
+        variant: 'oc-receive-scan',
       },
       {
         title: 'Concilia factura contra lo que recibiste.',
@@ -2290,7 +2295,8 @@ export const pageContent: Record<string, any> = {
         imageAlt: 'Pantalla de conciliación de factura contra orden de compra en SACS',
         link: { label: 'Ver facturación electrónica', href: '/producto/facturacion-electronica' },
         featured: true,
-        variant: 'invoice-credit',
+        variant: 'oc-reconcile-3way',
+        cardSize: 'lg',
       },
     ],
     testimonial: {
@@ -2434,7 +2440,7 @@ export const pageContent: Record<string, any> = {
         quote: 'Detectamos que un proveedor nos cobraba piezas que no llegaban — un porcentaje del total anual. Ese ahorro solo pagó el sistema. La recepción escaneada contra orden fue lo que cambió el juego.',
         name: 'Patricia Alcántara',
         business: 'Hogar Integral',
-        location: '18 sucursales · México',
+        location: '18 sucursales · República Dominicana',
       },
       {
         bg: '#eef1f6',
@@ -2443,8 +2449,8 @@ export const pageContent: Record<string, any> = {
         color: '#4a6aa8',
         quote: 'Antes la compra era una hoja de Excel que alguien mandaba por email y nadie sabía si había llegado. Ahora la OC está numerada, el proveedor la recibe por sistema y el estado lo vemos todos. Se acabaron las llamadas "oye, ¿llegó o no llegó?".',
         name: 'Héctor Márquez',
-        business: 'Electrónica Norte',
-        location: '9 sucursales · México',
+        business: 'Ferretería Márquez Norte',
+        location: '9 sucursales · Panamá',
       },
       {
         bg: '#eef3ee',
@@ -2508,7 +2514,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Gerente capturando gasto con foto de ticket desde celular en SACS',
           link: null,
           featured: true,
-          variant: 'control-central',
+          variant: 'expense-capture',
+          cardSize: 'sm',
         },
         {
           title: 'Cada gasto en su cajón. Cada cajón en su reporte.',
@@ -2517,7 +2524,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Pantalla de categorías de gastos en SACS con jerarquía',
           link: { label: 'Ver reportes y analítica', href: '/producto/reportes-y-analitica' },
           featured: true,
-          variant: 'invoice-credit',
+          variant: 'expense-categories-tree',
         },
         {
           title: 'Por sucursal, por categoría, por periodo.',
@@ -2526,7 +2533,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Reporte de gastos por sucursal con filtros en SACS',
           link: null,
           featured: true,
-          variant: 'invoice-country',
+          variant: 'expense-filters-report',
+          cardSize: 'lg',
         },
         {
           title: 'Autorización antes del pago, no después.',
@@ -2535,14 +2543,14 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Pantalla de autorización de gasto con PIN en SACS',
           link: { label: 'Ver cuentas por pagar', href: '/producto/cuentas-por-pagar' },
           featured: true,
-          variant: 'apartado-payment',
+          variant: 'expense-approval-pin',
         },
       ],
       testimonial: {
         quote: 'Antes el cierre de mes eran dos días enteros cuadrando tickets con los gerentes por WhatsApp. "¿Qué fue esto?" "No me acuerdo." Ahora cada gasto lo capturan ellos con foto al momento. Cuando llega fin de mes, el reporte ya está — yo solo reviso.',
         name: 'Patricia Nieves',
         role: 'Directora de Finanzas',
-        company: 'Óptica Milán',
+        company: 'Joyería Milán Nieves',
         stat: '2 días',
         statLabel: 'menos en el cierre contable mensual',
       },
@@ -2678,8 +2686,8 @@ export const pageContent: Record<string, any> = {
           color: '#b47a3a',
           quote: 'Antes el cierre de mes eran dos días enteros cuadrando tickets con los gerentes por WhatsApp. "¿Qué fue esto?" "No me acuerdo." Ahora cada gasto lo capturan ellos con foto al momento. Cuando llega fin de mes, el reporte ya está — yo solo reviso.',
           name: 'Patricia Nieves',
-          business: 'Óptica Milán',
-          location: '11 sucursales · México',
+          business: 'Joyería Milán Nieves',
+          location: '11 sucursales · República Dominicana',
         },
         {
           bg: '#eef1f6',
@@ -2688,7 +2696,7 @@ export const pageContent: Record<string, any> = {
           color: '#4a6aa8',
           quote: 'Detectamos un patrón raro de gastos de limpieza que crecía sin razón. El reporte comparativo nos dio la evidencia para abrir la investigación — un proveedor inflaba facturas. Sin el sistema, nadie lo notaba.',
           name: 'Rodrigo Iturbe',
-          business: 'Cafeterías Mistral',
+          business: 'Florerías Mistral',
           location: '14 sucursales · México',
         },
         {
@@ -2753,7 +2761,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Estado de cuenta de proveedor en SACS con facturas y pagos',
           link: null,
           featured: true,
-          variant: 'invoice-issue',
+          variant: 'ap-supplier-statement',
+          cardSize: 'lg',
         },
         {
           title: 'Complementos de pago con referencia cruzada.',
@@ -2762,7 +2771,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Aplicación de complemento de pago a múltiples facturas en SACS',
           link: { label: 'Ver control financiero', href: '/producto/control-financiero' },
           featured: true,
-          variant: 'invoice-country',
+          variant: 'ap-payment-split',
         },
         {
           title: 'Devuelves, el proveedor acredita, SACS aplica.',
@@ -2780,7 +2789,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Calendario de vencimientos de cuentas por pagar en SACS',
           link: null,
           featured: true,
-          variant: 'control-central',
+          variant: 'ap-due-calendar',
+          cardSize: 'lg',
         },
       ],
       testimonial: {
@@ -2933,7 +2943,7 @@ export const pageContent: Record<string, any> = {
           color: '#4a6aa8',
           quote: 'Un proveedor nos cobró dos veces la misma factura. Antes ni nos enterábamos. Ahora el sistema no deja capturar el mismo folio dos veces y me avisa si aplico un pago que ya estaba pagado. Recuperamos miles de pesos.',
           name: 'Rosario Devoto',
-          business: 'Panaderías La Vendimia',
+          business: 'Vinos La Vendimia',
           location: '12 sucursales · Argentina',
         },
         {
@@ -2943,8 +2953,8 @@ export const pageContent: Record<string, any> = {
           color: '#5a8a5f',
           quote: 'Las notas de crédito eran un desastre. El proveedor mandaba devolución, pasaban dos meses y yo seguía pagando el total. En SACS la aplico el mismo día, el saldo queda neto y la próxima transferencia ya sale correcta.',
           name: 'Hernando Bazán',
-          business: 'Distribuidora Andes',
-          location: '5 centros · Perú',
+          business: 'Ferretería Andes Bazán',
+          location: '5 sucursales · Bolivia',
         },
       ],
       faqs: [
@@ -3007,7 +3017,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Reporte de ventas con filtros cruzados en SACS',
           link: null,
           featured: true,
-          variant: 'endless-aisle',
+          variant: 'report-filter-cross',
         },
         {
           title: 'Inventario, clientes, gastos — la operación completa.',
@@ -3016,7 +3026,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Reportes cruzados de inventario y ventas en SACS',
           link: { label: 'Ver inventario omnicanal', href: '/producto/inventario-omnicanal' },
           featured: true,
-          variant: 'invoice-credit',
+          variant: 'report-modules-grid',
+          cardSize: 'lg',
         },
         {
           title: 'Exporta con el mismo corte que ves.',
@@ -3025,7 +3036,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Exportación de reporte a Excel desde SACS',
           link: { label: 'Ver control financiero', href: '/producto/control-financiero' },
           featured: true,
-          variant: 'apartado-payment',
+          variant: 'report-export-preview',
+          cardSize: 'sm',
         },
       ],
       testimonial: {
@@ -3243,7 +3255,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Cajero identificando a clienta en POS SACS al iniciar venta',
           link: null,
           featured: true,
-          variant: 'pickup',
+          variant: 'crm-identify',
         },
         {
           title: 'Un perfil que aprende de cada visita.',
@@ -3252,7 +3264,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Pantalla de perfil de cliente con historial de compras y notas en SACS',
           link: null,
           featured: true,
-          variant: 'apartado-payment',
+          variant: 'crm-profile-360',
+          cardSize: 'lg',
         },
         {
           title: 'Filtra tu base como un CRM — sin salir de SACS.',
@@ -3261,7 +3274,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Pantalla de segmentación de clientes con filtros en SACS',
           link: { label: 'Ver promociones', href: '/producto/promociones' },
           featured: true,
-          variant: 'promo-loyalty',
+          variant: 'crm-segment-builder',
         },
         {
           title: 'El conocimiento del vendedor, al equipo entero.',
@@ -3270,7 +3283,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Vendedora escribiendo nota en perfil de cliente en tablet SACS',
           link: null,
           featured: true,
-          variant: 'control-central',
+          variant: 'crm-seller-notes',
         },
       ],
       testimonial: {
@@ -3414,7 +3427,7 @@ export const pageContent: Record<string, any> = {
           quote: 'Antes cada tienda tenía su propia libreta de clientes frecuentes. Si un cliente pasaba de Polanco a Santa Fe, lo atendíamos como si fuera nuevo. Ahora el perfil viaja con él — el vendedor ya sabe quién es antes de saludar.',
           name: 'Regina Melgar',
           business: 'Casa Melgar Joyería',
-          location: '11 sucursales · México',
+          location: '11 sucursales · República Dominicana',
         },
         {
           bg: '#eef1f6',
@@ -3433,8 +3446,8 @@ export const pageContent: Record<string, any> = {
           color: '#5a8a5f',
           quote: 'La segmentación cambió cómo armamos campañas. Exportamos un segmento de clientes dormidos 90+ días, lo mandamos por Mailchimp y notamos regresos concretos — lo que con blast nunca lográbamos.',
           name: 'Carolina Prieto',
-          business: 'Óptica Visión Prieto',
-          location: '14 sucursales · Colombia',
+          business: 'Prieto Showroom',
+          location: '14 sucursales · Panamá',
         },
       ],
       faqs: [
@@ -3497,7 +3510,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Pantalla de niveles de lealtad y umbrales en SACS',
           link: null,
           featured: true,
-          variant: 'promo-auto',
+          variant: 'loyalty-tiers',
+          cardSize: 'lg',
         },
         {
           title: 'Monedero en todas tus sucursales.',
@@ -3506,7 +3520,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Cliente usando monedero de lealtad en otra sucursal SACS',
           link: { label: 'Ver clientes y CRM', href: '/producto/clientes-y-crm' },
           featured: true,
-          variant: 'control-central',
+          variant: 'loyalty-wallet-omni',
         },
         {
           title: 'Reglas de canje que tú controlas.',
@@ -3515,14 +3529,15 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Pantalla de configuración de reglas de canje de puntos en SACS',
           link: null,
           featured: true,
-          variant: 'promo-schedule',
+          variant: 'loyalty-rules',
+          cardSize: 'sm',
         },
       ],
       testimonial: {
         quote: 'Teníamos un programa de puntos con una app externa que nunca usaba el cajero. La mitad de las ventas pasaban sin puntos. Ahora con SACS los puntos se aplican al identificar al cliente — sin un paso extra. Pasamos de 35% de ventas identificadas a 78% en dos meses.',
         name: 'Santiago Huerta',
         role: 'Director de Marketing',
-        company: 'Dulcería Huerta',
+        company: 'Pandita Novedades Huerta',
         stat: '78%',
         statLabel: 'de ventas con cliente identificado vs 35% antes',
       },
@@ -3658,8 +3673,8 @@ export const pageContent: Record<string, any> = {
           color: '#b47a3a',
           quote: 'Pasamos de mayoría de tickets anónimos a identificar a la mayoría de clientes frecuentes en pocas semanas. El cajero ya no pregunta — el POS ya sabe quién eres por tu teléfono.',
           name: 'Santiago Huerta',
-          business: 'Dulcería Huerta',
-          location: '22 sucursales · México',
+          business: 'Pandita Novedades Huerta',
+          location: '22 sucursales · Costa Rica',
         },
         {
           bg: '#eef1f6',
@@ -3678,8 +3693,8 @@ export const pageContent: Record<string, any> = {
           color: '#5a8a5f',
           quote: 'El monedero se puede usar entre sucursales sin tarjeta de membresía ni número largo. El cliente da su teléfono y listo. Esa sola cosa nos quitó horas de soporte — ya nadie nos llama porque "perdió su tarjeta de puntos".',
           name: 'Raúl Estrada',
-          business: 'Panaderías El Horno',
-          location: '18 sucursales · México',
+          business: 'Juguetería El Horno',
+          location: '18 sucursales · República Dominicana',
         },
       ],
       faqs: [
@@ -3742,7 +3757,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Portal de cliente mostrando saldo de puntos y nivel de lealtad en móvil',
           link: { label: 'Ver programa de lealtad', href: '/producto/programa-de-lealtad' },
           featured: true,
-          variant: 'promo-loyalty',
+          variant: 'portal-points-view',
         },
         {
           title: 'Autofacturación sin dolor — para el cliente y para ti.',
@@ -3760,7 +3775,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Pantalla de historial de compras y apartados abiertos en portal de cliente SACS',
           link: { label: 'Ver apartados y pedidos', href: '/producto/apartados-y-pedidos' },
           featured: true,
-          variant: 'apartado-payment',
+          variant: 'portal-history-mobile',
+          cardSize: 'lg',
         },
       ],
       testimonial: {
@@ -3978,7 +3994,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Cajero vendiendo tarjeta de regalo en POS SACS',
           link: { label: 'Ver punto de venta', href: '/producto/punto-de-venta' },
           featured: true,
-          variant: 'checkout',
+          variant: 'gift-sell',
+          cardSize: 'sm',
         },
         {
           title: 'Canjear es restar del saldo — nada más.',
@@ -3987,7 +4004,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Cliente canjeando tarjeta de regalo con saldo parcial en POS SACS',
           link: null,
           featured: true,
-          variant: 'apartado-payment',
+          variant: 'gift-redeem',
         },
         {
           title: 'Digitales con envío programado.',
@@ -3996,7 +4013,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Tarjeta de regalo digital enviada por email con diseño de marca SACS',
           link: null,
           featured: true,
-          variant: 'online-branding',
+          variant: 'gift-digital-schedule',
+          cardSize: 'lg',
         },
         {
           title: 'Contabilidad limpia — sin sorpresas al cierre.',
@@ -4158,7 +4176,7 @@ export const pageContent: Record<string, any> = {
           color: '#4a6aa8',
           quote: 'En el piloto de fin de año arrancamos tarjetas digitales con envío programado. La fila de última hora para regalos de cumpleaños se descargó — todo se manda por email.',
           name: 'Damián Orellana',
-          business: 'Librería Orellana',
+          business: 'Papelería Orellana',
           location: '4 sucursales · Chile',
         },
         {
@@ -4223,7 +4241,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Vista previa de plantilla de email con marca aplicada en editor SACS',
           link: null,
           featured: true,
-          variant: 'invoice-portal',
+          variant: 'email-template-preview',
+          cardSize: 'lg',
         },
         {
           title: 'Segmenta por lo que hacen, no por lo que imaginas.',
@@ -4232,7 +4251,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Pantalla de segmentación por comportamiento de cliente en SACS',
           link: { label: 'Ver clientes y CRM', href: '/producto/clientes-y-crm' },
           featured: true,
-          variant: 'promo-loyalty',
+          variant: 'crm-segment-builder',
         },
         {
           title: 'Con tu proveedor de correo. Sin atarte a uno.',
@@ -4241,7 +4260,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Integraciones de proveedores de email conectadas en panel SACS',
           link: { label: 'Ver integraciones', href: '/producto/integraciones' },
           featured: true,
-          variant: 'control-central',
+          variant: 'email-provider-connect',
+          cardSize: 'sm',
         },
         {
           title: 'Después del envío, la verdad. ¿Vendió o no?',
@@ -4250,7 +4270,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Dashboard de atribución de ventas por campaña en SACS',
           link: { label: 'Ver analítica', href: '/producto/analitica' },
           featured: true,
-          variant: 'promo-auto',
+          variant: 'email-campaign-metrics',
         },
       ],
       testimonial: {
@@ -4404,7 +4424,7 @@ export const pageContent: Record<string, any> = {
           quote: 'No quería cambiar de proveedor de correo porque llevaba años construyendo la reputación del dominio. SACS se integró con el que ya usaba — yo solo armo la campaña y segmento, el envío corre por donde siempre.',
           name: 'Diego Faúndez',
           business: 'Tienda Alpaca Andina',
-          location: '4 locales · Chile',
+          location: '5 locales · Perú',
         },
         {
           bg: '#eef3ee',
@@ -4469,7 +4489,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Número WhatsApp Business verificado con marca de retailer en móvil',
           link: null,
           featured: true,
-          variant: 'agent-whatsapp',
+          variant: 'whatsapp-verified-profile',
         },
         {
           title: 'Plantillas aprobadas. Envíos a escala.',
@@ -4478,7 +4498,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Editor de plantillas de WhatsApp con estado de aprobación en SACS',
           link: null,
           featured: true,
-          variant: 'invoice-portal',
+          variant: 'whatsapp-template-approval',
         },
         {
           title: 'Campañas segmentadas. No blast a todos.',
@@ -4487,7 +4507,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Pantalla de segmento de clientes para campaña de WhatsApp',
           link: { label: 'Ver clientes y CRM', href: '/producto/clientes-y-crm' },
           featured: true,
-          variant: 'promo-loyalty',
+          variant: 'crm-segment-builder',
         },
         {
           title: 'Notificaciones que suman, no que molestan.',
@@ -4496,7 +4516,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Mensajes automáticos de WhatsApp notificando apartado por vencer y pedido listo',
           link: { label: 'Ver apartados y pedidos', href: '/producto/apartados-y-pedidos' },
           featured: true,
-          variant: 'promo-auto',
+          variant: 'whatsapp-notifications',
+          cardSize: 'lg',
         },
       ],
       testimonial: {
@@ -4640,7 +4661,7 @@ export const pageContent: Record<string, any> = {
           quote: 'Cerramos el piloto con BSP oficial. Dejamos de depender del WhatsApp personal de una vendedora, que se quemaba cuando mandaba muchos mensajes. Por fin tenemos un canal que no se nos cae.',
           name: 'Mariana Peñaloza',
           business: 'Colmena Accesorios',
-          location: '11 sucursales · México',
+          location: '11 sucursales · República Dominicana',
         },
         {
           bg: '#eef1f6',
@@ -4715,7 +4736,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Panel de suscripciones con cobro automático y reintentos en SACS',
           link: null,
           featured: true,
-          variant: 'apartado-payment',
+          variant: 'membership-recurring',
         },
         {
           title: 'Niveles con reglas claras. Beneficios sin ambigüedad.',
@@ -4724,7 +4745,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Tarjetas de niveles de membresía Bronze Silver Gold con beneficios',
           link: { label: 'Ver programa de lealtad', href: '/producto/programa-lealtad' },
           featured: true,
-          variant: 'promo-loyalty',
+          variant: 'membership-tiers-pricing',
+          cardSize: 'lg',
         },
         {
           title: 'La credencial vive en su celular.',
@@ -4733,7 +4755,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Credencial digital de membresía en Apple Wallet siendo escaneada en caja',
           link: null,
           featured: true,
-          variant: 'invoice-portal',
+          variant: 'membership-wallet-pass',
+          cardSize: 'lg',
         },
         {
           title: 'Retención medida. LTV entendido.',
@@ -4742,14 +4765,14 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Dashboard de métricas de suscripciones con MRR churn y LTV por nivel',
           link: { label: 'Ver analítica', href: '/producto/analitica' },
           featured: true,
-          variant: 'control-central',
+          variant: 'membership-mrr-dashboard',
         },
       ],
       testimonial: {
         quote: 'Lanzamos una membresía de $299 al mes con acceso a descuentos y preventas. A los 5 meses tenemos 420 socios activos, eso son $125 mil de ingreso recurrente que antes no existía. La recompra entre socios es 3× comparada con el cliente regular.',
         name: 'Sofía Arellano',
         role: 'Fundadora',
-        company: 'Club Maderas',
+        company: 'Club Maderas Vinos Vinos',
         stat: '$125k',
         statLabel: 'MRR recurrente desde cero en 5 meses',
       },
@@ -4885,8 +4908,8 @@ export const pageContent: Record<string, any> = {
           color: '#b47a3a',
           quote: 'Vamos a lanzar piloto de membresía con SACS — $299 al mes con descuento directo en compras y acceso a preventas. Esperamos construir ingreso recurrente que hoy no existe en nuestra operación.',
           name: 'Sofía Arellano',
-          business: 'Club Maderas',
-          location: '5 sucursales · México',
+          business: 'Club Maderas Vinos Vinos',
+          location: '5 sucursales · Paraguay',
         },
         {
           bg: '#eef1f6',
@@ -4960,7 +4983,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Especialista SACS anotando flujos operativos en pizarra con dueña de retail',
           link: null,
           featured: true,
-          variant: 'control-central',
+          variant: 'ai-diagnostico',
+          cardSize: 'lg',
         },
         {
           title: 'Flujos construidos con vos, no por ti.',
@@ -4969,7 +4993,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Especialista construyendo workflow con dueña de retail en videollamada',
           link: { label: 'Ver workflows', href: '/producto/workflows' },
           featured: true,
-          variant: 'agent-handoff',
+          variant: 'ai-session-live',
         },
         {
           title: 'Cohorte 1: diez retailers, seis meses.',
@@ -4978,7 +5002,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Sesión de onboarding de Cohorte 1 con equipo SACS y retailers',
           link: null,
           featured: true,
-          variant: 'agent-quote',
+          variant: 'ai-cohorte',
+          cardSize: 'sm',
         },
         {
           title: 'Sesión quincenal con agenda propia.',
@@ -4987,7 +5012,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Calendario de sesiones quincenales con especialista SACS',
           link: null,
           featured: true,
-          variant: 'promo-schedule',
+          variant: 'ai-agenda',
         },
       ],
       testimonial: {
@@ -5141,7 +5166,7 @@ export const pageContent: Record<string, any> = {
           quote: 'La diferencia es que el especialista sabe mi nombre, sabe qué marca manejamos y por qué cerramos los lunes. No tengo que explicarlo de cero cada sesión. En tres meses de piloto ya desplegamos cinco flujos — todos que yo pedí, ninguno de template.',
           name: 'Octavio Linares',
           business: 'Linares Indumentaria',
-          location: '12 locales · México',
+          location: '12 locales · Costa Rica',
         },
         {
           bg: '#eef3ee',
@@ -5205,7 +5230,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Dueña de retail preguntándole a AXO desde celular en su casa',
           link: null,
           featured: true,
-          variant: 'agent-whatsapp',
+          variant: 'axo-answer',
         },
         {
           title: 'Contexto cargado: sabe tu negocio, no solo tu industria.',
@@ -5214,7 +5239,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Onboarding de AXO cargando contexto operativo de retail',
           link: { label: 'Ver especialista IA', href: '/producto/especialista-ia' },
           featured: true,
-          variant: 'agent-quote',
+          variant: 'axo-context',
+          cardSize: 'sm',
         },
         {
           title: 'Fuente visible en cada respuesta.',
@@ -5223,7 +5249,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Respuesta de AXO con cita de fuente y link al reporte original',
           link: null,
           featured: true,
-          variant: 'invoice-portal',
+          variant: 'axo-source',
         },
         {
           title: 'Voz en piso, texto en oficina.',
@@ -5232,14 +5258,14 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Gerenta usando AXO por voz mientras atiende en piso de tienda',
           link: null,
           featured: true,
-          variant: 'agent-handoff',
+          variant: 'axo-voice',
         },
       ],
       testimonial: {
         quote: 'Estamos en early access, así que a veces AXO dice "todavía no sé responder eso" — y me gusta. Cuando contesta, contesta bien. La semana pasada le pregunté qué producto había bajado más versus febrero y me dio tres opciones con su fuente. Me ahorró entrar a seis pantallas distintas.',
         name: 'Bruno Sanguinetti',
         role: 'Director General',
-        company: 'Sanguinetti Retail',
+        company: 'Sanguinetti Juguetería',
         stat: 'Early access',
         statLabel: 'cohorte de AXO · Copiloto IA',
       },
@@ -5375,7 +5401,7 @@ export const pageContent: Record<string, any> = {
           color: '#b47a3a',
           quote: 'Estamos en early access, así que a veces AXO dice "todavía no sé responder eso" — y me gusta. Cuando contesta, contesta bien. La semana pasada le pregunté qué producto había bajado más versus febrero y me dio tres opciones con su fuente. Me ahorró entrar a seis pantallas distintas.',
           name: 'Bruno Sanguinetti',
-          business: 'Sanguinetti Retail',
+          business: 'Sanguinetti Juguetería',
           location: '18 tiendas · Uruguay y Paraguay',
         },
         {
@@ -5450,7 +5476,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Constructor visual de workflows con nodos arrastrables en SACS',
           link: null,
           featured: true,
-          variant: 'control-central',
+          variant: 'workflow-builder',
+          cardSize: 'lg',
         },
         {
           title: 'Triggers pensados para tiendas, no para SaaS.',
@@ -5459,7 +5486,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Lista de triggers disponibles en SACS con categorías de retail',
           link: { label: 'Ver alertas inteligentes', href: '/producto/alertas-inteligentes' },
           featured: true,
-          variant: 'promo-schedule',
+          variant: 'workflow-triggers',
         },
         {
           title: 'Condiciones que no te obligan a saber lógica booleana.',
@@ -5468,7 +5495,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Editor de condiciones con campos desplegables en SACS',
           link: null,
           featured: true,
-          variant: 'invoice-portal',
+          variant: 'workflow-conditions',
         },
         {
           title: 'Bitácora de ejecución con explicación.',
@@ -5477,7 +5504,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Bitácora de ejecución de workflow con explicación paso a paso',
           link: null,
           featured: true,
-          variant: 'agent-handoff',
+          variant: 'workflow-log',
         },
       ],
       testimonial: {
@@ -5695,7 +5722,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Gráfica de anomalía detectada en ventas con banda de normalidad aprendida',
           link: null,
           featured: true,
-          variant: 'control-central',
+          variant: 'alert-anomaly',
         },
         {
           title: 'Stock a punto de faltar, con contexto de reposición.',
@@ -5704,7 +5731,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Alerta de stock en riesgo con plazo de reposición y traspaso sugerido',
           link: { label: 'Ver inventario omnicanal', href: '/producto/inventario-omnicanal' },
           featured: true,
-          variant: 'endless-aisle',
+          variant: 'alert-stock',
         },
         {
           title: 'Clientes VIP que dejaron de venir, visibles a tiempo.',
@@ -5713,7 +5740,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Alerta de cliente VIP con baja recurrencia y historial de compras',
           link: null,
           featured: true,
-          variant: 'agent-whatsapp',
+          variant: 'alert-vip-churn',
         },
         {
           title: 'Acción sugerida con botón de ejecutar.',
@@ -5722,7 +5749,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Alerta con botones de acción sugerida directa',
           link: { label: 'Ver workflows', href: '/producto/workflows' },
           featured: true,
-          variant: 'agent-handoff',
+          variant: 'alert-action',
+          cardSize: 'sm',
         },
       ],
       testimonial: {
@@ -5885,7 +5913,7 @@ export const pageContent: Record<string, any> = {
           color: '#5a8a5f',
           quote: 'Lo que me convenció es que las alertas vienen con contexto. Antes veía "stock bajo" y no sabía si importaba. Ahora veo "a este ritmo te queda para 5 días y tu proveedor tarda 12". Eso es una decisión, no un aviso. Mis gerentes ya actúan sin pedirme autorización.',
           name: 'Ernesto Zambrano',
-          business: 'Zambrano Retail',
+          business: 'Zambrano Deportes',
           location: '9 tiendas · Ecuador',
         },
       ],
@@ -5940,7 +5968,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Dashboard SACS con gráficas de forecast y proyección mensual',
           link: { label: 'Ver control central', href: '/producto/control-central' },
           featured: true,
-          variant: 'control-central',
+          variant: 'forecast-kpi',
+          cardSize: 'lg',
         },
         {
           title: 'Cada mañana, un resumen escrito para ti.',
@@ -5949,7 +5978,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Email de resumen ejecutivo diario generado por SACS IA',
           link: null,
           featured: true,
-          variant: 'promo-schedule',
+          variant: 'forecast-digest',
         },
         {
           title: 'Margen real. No el que dice tu lista de precios.',
@@ -5958,7 +5987,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Reporte de rentabilidad por SKU con margen real desglosado',
           link: { label: 'Ver reportes contables', href: '/producto/reportes-contables' },
           featured: true,
-          variant: 'invoice-credit',
+          variant: 'forecast-margin',
         },
         {
           title: 'Alertas antes de la crisis. No después.',
@@ -5967,7 +5996,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Panel de alertas anticipadas de SACS con semáforos por SKU y sucursal',
           link: { label: 'Ver analytics omnicanal', href: '/producto/analytics-omnicanal' },
           featured: true,
-          variant: 'promo-auto',
+          variant: 'forecast-signal',
         },
       ],
       testimonial: {
@@ -6111,7 +6140,7 @@ export const pageContent: Record<string, any> = {
           quote: 'Yo abría el reporte todos los lunes y tardaba una hora en entender qué había pasado. Ahora me llega un párrafo a las 7 am que me dice exactamente qué hacer esa semana. Está en piloto, se equivoca a veces, pero ya me ahorra la hora.',
           name: 'Pablo Mendivil',
           business: 'Grupo Indumentaria Vértice',
-          location: '12 sucursales · México',
+          location: '12 sucursales · República Dominicana',
         },
         {
           bg: '#edf1f5',
@@ -6185,7 +6214,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Diagrama de ruteo entre Claude, GPT y Gemini en el orquestador SACS',
           link: { label: 'Ver agente de ventas', href: '/producto/agente-conversacional' },
           featured: true,
-          variant: 'agent-whatsapp',
+          variant: 'orq-routing',
+          cardSize: 'lg',
         },
         {
           title: 'La cotización que hace GPT, la revisa Claude.',
@@ -6194,7 +6224,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Cotización generada por un agente y revisada por otro en SACS',
           link: { label: 'Ver cotizador', href: '/producto/agente-conversacional' },
           featured: true,
-          variant: 'agent-quote',
+          variant: 'orq-pipeline',
         },
         {
           title: 'Cuando el caso se pone difícil, lo toma una persona.',
@@ -6212,7 +6242,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Panel de auditoría mostrando ruta de cada respuesta por modelo',
           link: null,
           featured: true,
-          variant: 'control-central',
+          variant: 'orq-audit',
         },
       ],
       testimonial: {
@@ -6360,7 +6390,7 @@ export const pageContent: Record<string, any> = {
         },
         {
           bg: '#edeff5',
-          image: '/images/testimonials/ramiro-quiñones.webp',
+          image: '/images/testimonials/ramiro-quinones.webp',
           initials: 'RQ',
           color: '#4e6ea5',
           quote: 'Lo que más me gustó es el handoff a humano. Antes la IA se peleaba con el cliente cuando no entendía. Ahora cuando se pierde, me pasa el caso con un resumen de 3 líneas y yo retomo como si hubiera estado ahí desde el principio. Cero cliente molesto.',
@@ -6375,7 +6405,7 @@ export const pageContent: Record<string, any> = {
           color: '#5e8f62',
           quote: 'Para mí el valor está en la bitácora. Cada vez que un cliente dice "me dijeron otra cosa", puedo abrir el hilo, ver qué modelo contestó qué, y corregir al instante. Antes era mi palabra contra la del cliente — ahora es el sistema el que muestra la verdad.',
           name: 'Tamara Ocampo',
-          business: 'Óptica Ocampo',
+          business: 'Ocampo Consigna Moda',
           location: '11 sucursales · Colombia',
         },
       ],
@@ -6430,7 +6460,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Fragmento de documentación de API REST de SACS con ejemplos',
           link: null,
           featured: true,
-          variant: 'invoice-portal',
+          variant: 'api-endpoint',
         },
         {
           title: 'Conectores listos para las herramientas que ya usas.',
@@ -6439,7 +6469,8 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Grid de logos de aplicaciones integradas con SACS',
           link: { label: 'Ver control central', href: '/producto/control-central' },
           featured: true,
-          variant: 'control-central',
+          variant: 'api-integrations',
+          cardSize: 'lg',
         },
         {
           title: 'Eventos que disparan tu automatización.',
@@ -6448,7 +6479,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Panel de configuración de webhooks y eventos en SACS',
           link: { label: 'Ver automatizaciones', href: '/producto/automatizaciones' },
           featured: true,
-          variant: 'promo-schedule',
+          variant: 'api-webhooks',
         },
         {
           title: 'Controla qué puede hacer cada integración.',
@@ -6457,7 +6488,7 @@ export const pageContent: Record<string, any> = {
           imageAlt: 'Panel de seguridad y gestión de tokens API en SACS',
           link: null,
           featured: true,
-          variant: 'invoice-country',
+          variant: 'api-tokens',
         },
       ],
       testimonial: {
@@ -6610,8 +6641,8 @@ export const pageContent: Record<string, any> = {
           color: '#4a6aa5',
           quote: 'Yo soy el dev interno. La documentación de SACS me dejó conectar Mailchimp y un CRM propio en un fin de semana. Webhooks firmados, rate limits claros, versionado semántico — es API de adulto, no de startup.',
           name: 'Ignacio Rolón',
-          business: 'Distribuidora Rolón',
-          location: '7 puntos de venta · Uruguay',
+          business: 'Papelerías Rolón',
+          location: '7 sucursales · Uruguay',
         },
         {
           bg: '#eef3ef',
