@@ -1154,17 +1154,31 @@ const initialTab = isClosed ? 'firma' : 'resumen';
 .quote-tab-panel.is-active { display: block; }
 @keyframes tabFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { .quote-tab-panel { animation: none; } }
+/* Constrain tab-panel inner content width on desktop for Squarespace-style breathing room */
+@media (min-width: 1024px) {
+  .quote-tab-panel > * { max-width: 680px; margin-left: auto; margin-right: auto; }
+  .quote-tab-panel > .impl-section { max-width: 680px; }
+  .quote-tab-panel > .quote-timeline-section { max-width: 760px; }
+  .quote-tab-panel > .quote-table,
+  .quote-tab-panel > .quote-totals,
+  .quote-tab-panel > .quote-tab-cross,
+  .quote-tab-panel > .quote-timer,
+  .quote-tab-panel > .quote-payments,
+  .quote-tab-panel > .quote-bank,
+  .quote-tab-panel > .quote-pay-link,
+  .quote-tab-panel > .quote-versions { max-width: 680px; margin-left: auto; margin-right: auto; }
+}
 
 /* ─── Resumen intro tile ─── */
-.quote-tab-intro { padding: 36px 40px 28px; }
-.quote-tab-intro-eyebrow { font-size: 0.6875rem; font-weight: 700; color: #999; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; }
-.quote-tab-intro-heading { font-family: var(--font-display); font-size: 1.75rem; font-weight: 300; color: #1a1a1a; line-height: 1.25; letter-spacing: -0.01em; margin-bottom: 24px; }
-.quote-tab-intro-total { display: flex; flex-direction: column; gap: 4px; padding-top: 20px; border-top: 1px solid #e5e5e5; margin-bottom: 28px; }
+.quote-tab-intro { padding: 56px 56px 48px; max-width: 680px; margin: 0 auto; }
+.quote-tab-intro-eyebrow { font-size: 0.6875rem; font-weight: 700; color: #999; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px; }
+.quote-tab-intro-heading { font-family: var(--font-display); font-size: 1.875rem; font-weight: 300; color: #1a1a1a; line-height: 1.25; letter-spacing: -0.015em; margin-bottom: 32px; }
+.quote-tab-intro-total { display: flex; flex-direction: column; gap: 6px; padding-top: 24px; border-top: 1px solid #e5e5e5; margin-bottom: 32px; }
 .quote-tab-intro-total-label { font-size: 0.6875rem; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.1em; }
-.quote-tab-intro-total-value { font-family: var(--font-display); font-size: 2.25rem; font-weight: 300; color: #1a1a1a; letter-spacing: -0.02em; }
-.quote-tab-intro-total-moneda { font-size: 1rem; color: #999; margin-left: 4px; font-weight: 400; }
+.quote-tab-intro-total-value { font-family: var(--font-display); font-size: 2.5rem; font-weight: 300; color: #1a1a1a; letter-spacing: -0.025em; line-height: 1; }
+.quote-tab-intro-total-moneda { font-size: 1rem; color: #999; margin-left: 6px; font-weight: 400; }
 .quote-tab-intro-nav { display: flex; flex-direction: column; gap: 0; border-top: 1px solid #e5e5e5; }
-.quote-tab-intro-link { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; color: #1a1a1a; text-decoration: none; border-bottom: 1px solid #e5e5e5; transition: color 0.15s ease; }
+.quote-tab-intro-link { display: flex; justify-content: space-between; align-items: center; padding: 18px 0; color: #1a1a1a; text-decoration: none; border-bottom: 1px solid #e5e5e5; transition: color 0.15s ease; }
 .quote-tab-intro-link:hover { color: #2AB5A0; }
 .quote-tab-intro-link-label { font-size: 0.9375rem; font-weight: 500; }
 .quote-tab-intro-link-arrow { font-size: 1rem; color: #999; transition: transform 0.15s ease; }
@@ -1261,7 +1275,7 @@ const initialTab = isClosed ? 'firma' : 'resumen';
 .quote-total-row.quote-total-final { font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: #1a1a1a; border-top: 2px solid #1a1a1a; padding-top: 12px; margin-top: 8px; }
 
 /* ─── Payment breakdown ─── */
-.quote-payments { padding: 20px 40px; border-top: 1px solid #f0f0f0; }
+.quote-payments { padding: 32px 40px; }
 .quote-payments-title { font-family: var(--font-display); font-size: 0.875rem; font-weight: 700; color: #1a1a1a; margin-bottom: 16px; }
 .quote-payment-block { margin-bottom: 16px; padding: 16px; background: #fafafa; border-radius: 10px; }
 .quote-payment-label { font-size: 0.6875rem; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
@@ -1539,14 +1553,15 @@ const initialTab = isClosed ? 'firma' : 'resumen';
 .quote-classic .quote-footer-logo, .quote-classic .quote-footer-tagline, .quote-classic .quote-footer-contact { color: #fff; }
 
 /* ─── Key Points ─── */
-.quote-key-points { padding: 24px 40px; border-top: 1px solid #f0f0f0; }
-.quote-key-points-title { font-family: var(--font-display); font-size: 1rem; font-weight: 800; color: #1a1a1a; margin-bottom: 16px; }
-.quote-key-points-list { display: flex; flex-direction: column; gap: 12px; }
-.quote-key-point { display: flex; gap: 12px; align-items: flex-start; }
-.quote-key-point-icon { flex-shrink: 0; margin-top: 2px; }
-.quote-key-point-content { flex: 1; }
-.quote-key-point-title { font-size: 0.875rem; font-weight: 700; color: #1a1a1a; margin-bottom: 2px; }
-.quote-key-point-detail { font-size: 0.75rem; color: #888; line-height: 1.5; }
+.quote-key-points { padding: 48px 56px; max-width: 680px; margin: 0 auto; }
+.quote-key-points-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 300; letter-spacing: -0.015em; color: #1a1a1a; margin-bottom: 28px; }
+.quote-key-points-list { display: flex; flex-direction: column; gap: 20px; }
+.quote-key-point { display: flex; gap: 14px; align-items: flex-start; padding-bottom: 18px; border-bottom: 1px solid #f0f0f0; }
+.quote-key-point:last-child { border-bottom: none; padding-bottom: 0; }
+.quote-key-point-icon { flex-shrink: 0; margin-top: 3px; }
+.quote-key-point-content { flex: 1; min-width: 0; }
+.quote-key-point-title { font-size: 0.9375rem; font-weight: 500; color: #1a1a1a; margin-bottom: 4px; letter-spacing: -0.005em; }
+.quote-key-point-detail { font-size: 0.8125rem; color: #666; line-height: 1.55; }
 
 .quote-dark .quote-key-points { border-color: rgba(255,255,255,0.08); }
 .quote-dark .quote-key-points-title { color: #fff; }
@@ -1654,69 +1669,91 @@ const initialTab = isClosed ? 'firma' : 'resumen';
 
 /* ─── Mobile ─── */
 @media (max-width: 640px) {
-  .quote-header { flex-direction: column; gap: 16px; padding: 24px 20px 20px; }
+  .quote-header { flex-direction: column; gap: 14px; padding: 28px 24px 20px; }
   .quote-meta { text-align: left; }
-  .quote-client { padding: 20px; }
-  .quote-table { font-size: 0.6875rem; }
-  .quote-table th, .quote-table td { padding: 8px 6px; font-size: 0.6875rem; }
+  .quote-client { padding: 20px 24px; }
+  .quote-stamp { top: 90px; right: 16px; }
+  .quote-stamp-text { font-size: 1.25rem; padding: 3px 12px; letter-spacing: 0.12em; }
+  .quote-expired-note { padding: 12px 24px; flex-wrap: wrap; }
+  /* Tab intro */
+  .quote-tab-intro { padding: 36px 24px 32px; }
+  .quote-tab-intro-heading { font-size: 1.5rem; margin-bottom: 24px; }
+  .quote-tab-intro-total-value { font-size: 2rem; }
+  /* Key points */
+  .quote-key-points { padding: 32px 24px; }
+  .quote-key-points-title { font-size: 1.25rem; margin-bottom: 20px; }
+  /* Table */
+  .quote-table { font-size: 0.75rem; }
+  .quote-table th, .quote-table td { padding: 10px 12px; }
   .qt-detail, .qt-qty { display: none; }
-  .qt-price { font-size: 0.625rem; }
-  .qt-subtotal { font-size: 0.6875rem; }
-  .qt-concept strong { font-size: 0.75rem; }
-  .qt-desc { font-size: 0.5625rem; }
-  .qt-nota { font-size: 0.5625rem; }
-  .qt-strikethrough { font-size: 0.5625rem; }
-  .quote-total-row { font-size: 0.75rem; }
-  .quote-total-row.quote-total-final { font-size: 1rem; }
-  .quote-payment-block { padding: 12px; font-size: 0.6875rem; }
-  .quote-payment-line { font-size: 0.6875rem; }
-  .quote-payment-total { font-size: 0.8125rem; }
+  .qt-price { font-size: 0.6875rem; }
+  .qt-subtotal { font-size: 0.75rem; }
+  .qt-concept strong { font-size: 0.8125rem; }
+  .qt-desc { font-size: 0.6875rem; }
+  .qt-nota { font-size: 0.6875rem; }
+  .qt-strikethrough { font-size: 0.625rem; }
+  .quote-total-row { font-size: 0.8125rem; }
+  .quote-total-row.quote-total-final { font-size: 1.125rem; }
+  .quote-totals { padding: 20px 24px; }
+  /* Timer */
+  .quote-timer { padding: 20px 24px; }
   .quote-timer-num { font-size: 1.75rem; }
-  .quote-timer-savings { font-size: 0.6875rem; }
-  .quote-totals { padding: 16px 20px; }
-  .quote-conditions { padding: 16px 20px; }
-  .quote-footer { flex-direction: column; gap: 8px; padding: 16px 20px; }
-  .quote-features { padding: 20px; }
+  .quote-timer-savings { font-size: 0.75rem; }
+  /* Payments */
+  .quote-payments { padding: 24px; }
+  .quote-payment-block { padding: 14px; }
+  .quote-payment-line { font-size: 0.75rem; }
+  .quote-payment-total { font-size: 0.875rem; }
+  /* Conditions */
+  .quote-conditions { padding: 20px 24px; }
+  /* Features */
+  .quote-features { padding: 24px; }
   .quote-features-grid { grid-template-columns: 1fr; }
-  /* Conscious Commerce mobile */
-  .quote-conscious { padding: 24px 20px; }
-  .quote-conscious-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  /* Cross-tab link */
+  .quote-tab-cross { padding: 0 24px 20px; }
+  /* Signed closed */
+  .quote-signed { padding: 32px 24px; }
+  .quote-signed--closed { padding: 40px 24px; }
+  .quote-signed-title { font-size: 1.375rem; }
+  .quote-signed-sub { font-size: 0.8125rem; }
+  /* Conscious Commerce */
+  .quote-conscious { padding: 32px 24px; }
+  .quote-conscious-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .quote-conscious-char { font-size: 1.25rem; }
-  .quote-conscious-journey-steps { flex-direction: column; gap: 12px; }
+  .quote-conscious-journey-steps { flex-direction: column; gap: 14px; }
   .quote-conscious-jarrow { display: none; }
-  .quote-conscious-jstep { text-align: left; display: flex; gap: 10px; align-items: flex-start; }
+  .quote-conscious-jstep { text-align: left; display: flex; gap: 12px; align-items: flex-start; }
   .quote-conscious-jnum { font-size: 1.25rem; flex-shrink: 0; }
   .quote-conscious-video video { width: 140px; height: 140px; }
-  /* ROI mobile */
-  .quote-roi { padding: 20px; }
-  .quote-roi-numbers { flex-direction: column; gap: 8px; }
-  /* Comparison mobile */
-  .quote-comparison { padding: 20px; }
-  .quote-comp-td, .quote-comp-th { padding: 6px 4px; font-size: 0.6875rem; }
-  /* Timeline mobile */
-  .quote-timeline-section { padding: 24px 20px; }
-  /* Why SACS mobile */
-  .quote-why { padding: 24px 20px; }
-  .quote-why-stats { gap: 16px; }
-  .quote-why-stat-num { font-size: 1.125rem; }
-  /* Cases mobile */
-  .quote-case-card { min-width: 240px; }
-  .quote-cases-track { padding: 0 20px; }
-  /* Key points mobile */
-  .quote-key-points { padding: 20px; }
-  /* Payments mobile */
-  .quote-payments { padding: 16px 20px; }
-  /* Bank mobile */
-  .quote-bank { padding: 16px 20px; }
+  /* ROI */
+  .quote-roi { padding: 24px; }
+  .quote-roi-numbers { flex-direction: column; gap: 10px; }
+  /* Comparison */
+  .quote-comparison { padding: 24px; }
+  .quote-comp-td, .quote-comp-th { padding: 8px 6px; font-size: 0.75rem; }
+  /* Timeline */
+  .quote-timeline-section { padding: 32px 24px; }
+  /* Why SACS */
+  .quote-why { padding: 32px 24px; }
+  .quote-why-stats { gap: 20px; }
+  .quote-why-stat-num { font-size: 1.25rem; }
+  /* Cases */
+  .quote-case-card { min-width: 260px; }
+  .quote-cases-title { padding: 0 24px; }
+  .quote-cases-track { padding: 0 24px; }
+  /* Bank */
+  .quote-bank { padding: 20px 24px; }
   .quote-bank-grid { grid-template-columns: 1fr; }
-  /* Legal mobile */
-  .quote-legal { padding: 12px 20px; }
-  /* Versions mobile */
-  .quote-versions { padding: 16px 20px; }
-  /* Signature mobile */
-  .quote-signature { padding: 20px; }
-  /* QR mobile */
-  .quote-qr { padding: 16px 20px; }
+  /* Legal */
+  .quote-legal { padding: 16px 24px; }
+  /* Versions */
+  .quote-versions { padding: 20px 24px; }
+  /* Signature */
+  .quote-signature { padding: 24px; }
+  /* QR */
+  .quote-qr { padding: 20px 24px; }
+  /* Footer */
+  .quote-footer { flex-direction: column; gap: 10px; padding: 20px 24px; text-align: center; }
 }
 </style>
 
