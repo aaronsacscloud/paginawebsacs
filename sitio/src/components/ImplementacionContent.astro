@@ -29,6 +29,13 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
 ---
 
 <section class={`impl-section impl-${variant}`}>
+  {isFull && quoteUrl && (
+    <a href={quoteUrl} class="impl-backlink" aria-label="Volver a la cotización">
+      <span class="impl-backlink-arrow" aria-hidden="true">←</span>
+      <span>Volver a tu cotización</span>
+    </a>
+  )}
+
   {isFull && (
     <div class="impl-hero">
       <div class="impl-hero-label">Proceso de implementación SACS</div>
@@ -233,6 +240,21 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
   )}
 </section>
 
+{isFull && !isAnnual && (
+  <div class="impl-sticky-bar" id="implStickyBar" aria-hidden="true">
+    <div class="impl-sticky-inner">
+      <div class="impl-sticky-text">
+        <span class="impl-sticky-highlight">¿Quieres toda esta implementación?</span>
+        <span class="impl-sticky-sub">Está incluida al cambiar a plan anual.</span>
+      </div>
+      <div class="impl-sticky-ctas">
+        <a href={waUrl} target="_blank" rel="noopener" class="impl-sticky-btn">Cambiar a anual</a>
+        {quoteUrl && <a href={quoteUrl} class="impl-sticky-btn impl-sticky-btn--ghost">Cotización</a>}
+      </div>
+    </div>
+  </div>
+)}
+
 <style>
   .impl-section {
     max-width: 1100px;
@@ -241,8 +263,38 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
     font-family: inherit;
     color: #1a1a1a;
   }
-  .impl-full { padding-top: 64px; padding-bottom: 64px; }
+  .impl-full { padding-top: 24px; padding-bottom: 64px; }
   .impl-condensed { padding: 40px 0; }
+
+  /* ── Back link at top of full variant ── */
+  .impl-backlink {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: #666;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #eee;
+    margin-bottom: 24px;
+    transition: all 0.2s ease;
+  }
+  .impl-backlink:hover {
+    color: #1a1a1a;
+    background: #f8f9fb;
+    border-color: #ddd;
+    transform: translateX(-2px);
+  }
+  .impl-backlink-arrow {
+    font-size: 1rem;
+    transition: transform 0.2s ease;
+  }
+  .impl-backlink:hover .impl-backlink-arrow {
+    transform: translateX(-2px);
+  }
 
   /* ── Hero ── */
   .impl-hero {
@@ -435,6 +487,12 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
     border-radius: 14px;
     padding: 20px 22px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .impl-step-body:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    border-color: color-mix(in srgb, var(--step-color) 30%, #f0f0f0);
   }
   .impl-step-badge {
     display: inline-block;
@@ -528,6 +586,11 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
     border: 1px solid #eee;
     border-radius: 14px;
     padding: 20px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .impl-included-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.06);
   }
   .impl-included-emoji {
     font-size: 1.75rem;
@@ -620,6 +683,11 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
     border: 1px solid #eee;
     border-radius: 14px;
     padding: 24px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .impl-outcome-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.08);
   }
   .impl-outcome-emoji { font-size: 1.75rem; margin-bottom: 10px; }
   .impl-outcome-title {
@@ -767,6 +835,11 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
     padding: 22px 16px;
     text-align: center;
     position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .impl-summary-step:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0,0,0,0.06);
   }
   .impl-summary-num {
     position: absolute;
@@ -874,6 +947,85 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
     color: #fff;
   }
 
+  /* ── Sticky conversion bar (monthly only) ── */
+  .impl-sticky-bar {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 720px;
+    width: calc(100% - 32px);
+    background: #1a1a1a;
+    color: #fff;
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+    z-index: 90;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform: translateX(-50%) translateY(20px);
+  }
+  .impl-sticky-bar.impl-sticky-bar--visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+  }
+  .impl-sticky-inner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 18px;
+  }
+  .impl-sticky-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .impl-sticky-highlight {
+    font-weight: 800;
+    font-size: 0.9375rem;
+    color: #fff;
+    line-height: 1.2;
+  }
+  .impl-sticky-sub {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.3;
+  }
+  .impl-sticky-ctas {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .impl-sticky-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 14px;
+    border-radius: 8px;
+    background: #2AB5A0;
+    color: #fff;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.15s ease, transform 0.15s ease;
+  }
+  .impl-sticky-btn:hover {
+    background: #24a090;
+    transform: translateY(-1px);
+  }
+  .impl-sticky-btn--ghost {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.25);
+  }
+  .impl-sticky-btn--ghost:hover {
+    background: rgba(255,255,255,0.08);
+  }
+
   /* ── Mobile ── */
   @media (max-width: 640px) {
     .impl-section { padding: 32px 16px; }
@@ -887,10 +1039,36 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
     .impl-footer-cta { padding: 32px 18px; }
     .impl-summary-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
     .impl-warn { flex-direction: column; gap: 10px; }
+    .impl-sticky-bar { bottom: 80px; }
+    .impl-sticky-inner { flex-direction: column; gap: 10px; padding: 12px 14px; }
+    .impl-sticky-ctas { width: 100%; }
+    .impl-sticky-btn { flex: 1; }
   }
 
   /* ── Print: hide from print ── */
   @media print {
-    .impl-section { display: none; }
+    .impl-section,
+    .impl-sticky-bar { display: none; }
   }
 </style>
+
+{isFull && !isAnnual && (
+  <script is:inline>
+    (() => {
+      const bar = document.getElementById('implStickyBar');
+      if (!bar) return;
+      const threshold = 600;
+      let visible = false;
+      const onScroll = () => {
+        const shouldShow = window.scrollY > threshold;
+        if (shouldShow !== visible) {
+          visible = shouldShow;
+          bar.classList.toggle('impl-sticky-bar--visible', visible);
+          bar.setAttribute('aria-hidden', visible ? 'false' : 'true');
+        }
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    })();
+  </script>
+)}
