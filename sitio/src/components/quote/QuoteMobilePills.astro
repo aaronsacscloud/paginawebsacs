@@ -1,31 +1,32 @@
 ---
+interface Tab { id: string; label: string; }
 interface Props {
   template: 'modern' | 'dark' | 'classic';
   total: number;
   moneda: string;
+  tabs: Tab[];
+  initialTab: string;
 }
-const { template, total, moneda } = Astro.props;
-
+const { template, total, moneda, tabs, initialTab } = Astro.props;
 const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
-
-const tabs = [
-  { id: 'tab-resumen', label: 'Resumen', step: 1 },
-  { id: 'tab-inversion', label: 'Inversión', step: 2 },
-  { id: 'tab-incluye', label: 'Incluye', step: 3 },
-  { id: 'tab-proceso', label: 'Proceso', step: 4 },
-  { id: 'tab-acepta', label: 'Acepta', step: 5 },
-];
+const pad = (n: number) => (n < 10 ? '0' + n : String(n));
 ---
 
 <div class={`qmp qmp--${template}`} id="quoteMobilePills">
-  <div class="qmp-total">
-    <span class="qmp-total-label">Total</span>
-    <span class="qmp-total-value">{fmt(total)} <span class="qmp-total-currency">{moneda}</span></span>
+  <div class="qmp-head">
+    <span class="qmp-head-label">Total</span>
+    <span class="qmp-head-value">{fmt(total)} <span class="qmp-head-moneda">{moneda}</span></span>
   </div>
-  <nav class="qmp-pills" aria-label="Navegación rápida">
-    {tabs.map(t => (
-      <a href={`#${t.id}`} class="qmp-pill" data-tab-link={t.id}>
-        <span class="qmp-pill-num">{t.step}</span>
+  <nav class="qmp-pills" aria-label="Secciones" role="tablist">
+    {tabs.map((t, i) => (
+      <a
+        href={`#${t.id}`}
+        class={`qmp-pill ${t.id === initialTab ? 'qmp-pill--active' : ''}`}
+        data-tab-link={t.id}
+        role="tab"
+        aria-selected={t.id === initialTab ? 'true' : 'false'}
+      >
+        <span class="qmp-pill-num">{pad(i + 1)}</span>
         <span class="qmp-pill-label">{t.label}</span>
       </a>
     ))}
@@ -33,115 +34,101 @@ const tabs = [
 </div>
 
 <style>
+  /* Squarespace-style mobile pills: monochrome, no gradients */
   .qmp {
     display: none;
     position: sticky;
     top: 0;
     z-index: 50;
-    padding: 10px 12px 12px;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    padding: 10px 16px 0;
   }
-  .qmp--modern { background: rgba(255,255,255,0.92); border-bottom: 1px solid #eee; }
-  .qmp--dark { background: rgba(26,26,26,0.92); border-bottom: 1px solid rgba(255,255,255,0.08); color: #fff; }
-  .qmp--classic { background: #fafafa; border-bottom: 1px solid #e0e0e0; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .qmp--modern { background: #fff; border-bottom: 1px solid #e5e5e5; }
+  .qmp--dark { background: #1a1a1a; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .qmp--classic { background: #fff; border-bottom: 1px solid #1a1a1a; }
 
-  .qmp-total {
+  .qmp-head {
     display: flex;
     align-items: baseline;
-    gap: 6px;
-    margin-bottom: 8px;
-    padding: 0 4px;
+    gap: 8px;
+    padding: 0 2px 8px;
   }
-  .qmp-total-label {
+  .qmp-head-label {
     font-size: 0.625rem;
     font-weight: 700;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
     color: #999;
   }
-  .qmp--dark .qmp-total-label { color: rgba(255,255,255,0.5); }
-  .qmp-total-value {
-    font-size: 0.9375rem;
-    font-weight: 800;
+  .qmp--dark .qmp-head-label { color: rgba(255,255,255,0.5); }
+  .qmp-head-value {
+    font-family: var(--font-display, inherit);
+    font-size: 1rem;
+    font-weight: 500;
     color: #1a1a1a;
+    letter-spacing: -0.01em;
   }
-  .qmp--dark .qmp-total-value { color: #fff; }
-  .qmp-total-currency {
-    font-size: 0.625rem;
-    font-weight: 600;
+  .qmp--dark .qmp-head-value { color: #fff; }
+  .qmp-head-moneda {
+    font-size: 0.6875rem;
     color: #999;
+    font-weight: 400;
     margin-left: 2px;
   }
+  .qmp--dark .qmp-head-moneda { color: rgba(255,255,255,0.5); }
 
   .qmp-pills {
     display: flex !important;
-    gap: 6px;
+    gap: 0;
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
     scroll-behavior: smooth;
-    padding: 2px;
-    margin: 0 -4px;
+    margin: 0 -16px;
+    padding: 0 16px;
   }
   .qmp-pills::-webkit-scrollbar { display: none; }
   .qmp-pill {
     display: inline-flex;
-    align-items: center;
+    align-items: baseline;
     gap: 6px;
-    padding: 7px 12px;
-    border-radius: 999px;
-    background: #f0f0f0;
-    color: #666;
+    padding: 12px 14px;
+    color: #999;
     text-decoration: none;
-    font-size: 0.75rem;
-    font-weight: 700;
     white-space: nowrap;
     flex-shrink: 0;
-    transition: background 0.15s ease, color 0.15s ease;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s ease, border-color 0.15s ease;
   }
-  .qmp--dark .qmp-pill { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); }
+  .qmp--dark .qmp-pill { color: rgba(255,255,255,0.5); }
+  .qmp-pill:hover { color: #1a1a1a; }
+  .qmp--dark .qmp-pill:hover { color: #fff; }
   .qmp-pill-num {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: rgba(0,0,0,0.08);
-    color: inherit;
-    font-size: 0.6875rem;
-    font-weight: 800;
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: #bbb;
+    letter-spacing: 0.04em;
   }
-  .qmp--dark .qmp-pill-num { background: rgba(255,255,255,0.12); }
+  .qmp--dark .qmp-pill-num { color: rgba(255,255,255,0.35); }
+  .qmp-pill-label {
+    font-size: 0.8125rem;
+    font-weight: 400;
+    letter-spacing: 0.002em;
+  }
   .qmp-pill.qmp-pill--active {
-    background: #1a1a1a;
-    color: #fff;
-  }
-  .qmp-pill.qmp-pill--active .qmp-pill-num {
-    background: #2AB5A0;
-    color: #fff;
-  }
-  .qmp--dark .qmp-pill.qmp-pill--active {
-    background: #fff;
     color: #1a1a1a;
+    border-bottom-color: #2AB5A0;
   }
-  .qmp-pill.qmp-pill--visited {
-    color: #2AB5A0;
-  }
-  .qmp-pill.qmp-pill--visited .qmp-pill-num {
-    background: #2AB5A0;
-    color: #fff;
-  }
+  .qmp-pill.qmp-pill--active .qmp-pill-num { color: #2AB5A0; }
+  .qmp-pill.qmp-pill--active .qmp-pill-label { font-weight: 500; }
+  .qmp--dark .qmp-pill.qmp-pill--active { color: #fff; }
+  .qmp-pill.qmp-pill--visited { color: #888; }
 
   @media (max-width: 1023px) {
     .qmp { display: block; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .qmp-pills { scroll-behavior: auto; }
     .qmp-pill { transition: none !important; }
+    .qmp-pills { scroll-behavior: auto; }
   }
-  @media print {
-    .qmp { display: none !important; }
-  }
+  @media print { .qmp { display: none !important; } }
 </style>

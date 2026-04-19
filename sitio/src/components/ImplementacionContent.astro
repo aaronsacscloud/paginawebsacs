@@ -46,7 +46,7 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
 
   {isFull && (
     <div class="impl-hero">
-      <div class="impl-hero-label">Proceso de implementación SACS</div>
+      <div class="impl-hero-label">Proceso de implementación</div>
       <h1 class="impl-hero-title">
         {greetingName ? `${greetingName}, ` : ''}empieza a operar en días, no en meses.
       </h1>
@@ -54,8 +54,9 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
         Tu negocio funcionando con SACS en menos de una semana. Nos encargamos de migrar tu información, capacitarte y dejarte operando. Todo incluido en tu plan anual.
       </p>
       <div class="impl-metrics">
-        {IMPL_METRICS.map(m => (
+        {IMPL_METRICS.map((m, i) => (
           <div class="impl-metric">
+            <div class="impl-metric-num">{String(i + 1).padStart(2, '0')}</div>
             <div class="impl-metric-value">{m.value}</div>
             <div class="impl-metric-label">{m.label}</div>
           </div>
@@ -74,8 +75,8 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
 
   {!isAnnual && (
     <div class="impl-warn">
-      <div class="impl-warn-icon">⚠</div>
       <div class="impl-warn-body">
+        <div class="impl-warn-eyebrow">Solo plan anual</div>
         <div class="impl-warn-title">Este proceso se incluye al contratar plan anual.</div>
         <p class="impl-warn-text">
           En plan mensual no aplica la migración completa ni las sesiones 1-a-1 con consultor. Contrata anual y te migramos toda tu información, capacitamos a tu equipo, y te damos 2 sesiones con un experto — todo sin costo adicional.
@@ -98,25 +99,19 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
   <!-- Process steps -->
   <div class="impl-steps">
     {IMPL_STEPS.map((step, idx) => (
-      <div class="impl-step" style={`--step-color:${step.color}`}>
+      <div class="impl-step">
         <div class="impl-step-rail">
-          <div class="impl-step-num">{idx + 1}</div>
-          {idx < IMPL_STEPS.length - 1 && <div class="impl-step-line"></div>}
+          <div class="impl-step-num">{String(idx + 1).padStart(2, '0')}</div>
         </div>
         <div class="impl-step-body">
           <div class="impl-step-badge">{step.dayBadge}</div>
-          <div class="impl-step-head">
-            <span class="impl-step-emoji" aria-hidden="true">{step.emoji}</span>
-            <h3 class="impl-step-title">{step.title}</h3>
-          </div>
+          <h3 class="impl-step-title">{step.title}</h3>
           <p class="impl-step-desc">{step.description}</p>
           <ul class="impl-step-bullets">
-            {step.bullets.map(b => <li><span class="impl-step-check">✓</span>{b}</li>)}
+            {step.bullets.map(b => <li><span class="impl-step-bullet-mark">·</span>{b}</li>)}
           </ul>
           {isFull && (
-            <div class="impl-step-duration" style={`background:${step.durationBadge.color}14;color:${step.durationBadge.color};border-color:${step.durationBadge.color}33`}>
-              {step.durationBadge.text}
-            </div>
+            <div class="impl-step-duration">{step.durationBadge.text}</div>
           )}
         </div>
       </div>
@@ -130,9 +125,9 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
       <p class="impl-included-desc">Además del proceso de implementación, tu plan anual incluye recursos de aprendizaje y soporte continuo para que nunca te quedes sin ayuda.</p>
     </div>
     <div class="impl-included-grid">
-      {INCLUIDO_ITEMS.map(item => (
+      {INCLUIDO_ITEMS.map((item, i) => (
         <div class="impl-included-card">
-          <div class="impl-included-emoji" aria-hidden="true">{item.emoji}</div>
+          <div class="impl-included-num">{String(i + 1).padStart(2, '0')}</div>
           <h4 class="impl-included-card-title">{item.title}</h4>
           <p class="impl-included-card-desc">{item.description}</p>
         </div>
@@ -149,9 +144,9 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
           <p class="impl-support-desc">Desde sesiones 1-a-1 con consultores hasta chat 24/7, tienes múltiples canales para resolver cualquier duda en el momento que la necesites.</p>
         </div>
         <div class="impl-support-grid">
-          {SOPORTE_ITEMS.map(s => (
+          {SOPORTE_ITEMS.map((s, i) => (
             <div class="impl-support-card">
-              <div class="impl-support-emoji" aria-hidden="true">{s.emoji}</div>
+              <div class="impl-support-num">{String(i + 1).padStart(2, '0')}</div>
               <h4 class="impl-support-card-title">{s.title}</h4>
               <p class="impl-support-card-desc">{s.description}</p>
               {s.badge && <div class="impl-support-badge">{s.badge}</div>}
@@ -167,13 +162,13 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
           <p class="impl-outcomes-desc">Tu negocio no solo opera en una tienda física. Tienes presencia digital completa con todos tus canales de venta sincronizados en un solo sistema.</p>
         </div>
         <div class="impl-outcomes-grid">
-          {OUTCOMES.map(o => (
+          {OUTCOMES.map((o, i) => (
             <div class="impl-outcome-card">
-              <div class="impl-outcome-emoji" aria-hidden="true">{o.emoji}</div>
+              <div class="impl-outcome-num">{String(i + 1).padStart(2, '0')}</div>
               <h4 class="impl-outcome-title">{o.title}</h4>
               <p class="impl-outcome-desc">{o.description}</p>
               <ul class="impl-outcome-bullets">
-                {o.bullets.map(b => <li><span class="impl-outcome-check">✓</span>{b}</li>)}
+                {o.bullets.map(b => <li><span class="impl-outcome-bullet-mark">·</span>{b}</li>)}
               </ul>
             </div>
           ))}
@@ -190,10 +185,10 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
           <h4 class="impl-grow-hero-title">Otra sucursal en menos de 7 días.</h4>
           <p class="impl-grow-hero-desc">Una vez que tienes la primera tienda operando, la información ya está en el sistema. Agregar otra sucursal es solo configurar un nuevo punto de venta — sin migración, sin capacitación desde cero.</p>
           <ul class="impl-grow-bullets">
-            <li><span class="impl-grow-check">✓</span>Misma información, nueva ubicación</li>
-            <li><span class="impl-grow-check">✓</span>Inventario independiente por sucursal</li>
-            <li><span class="impl-grow-check">✓</span>Reportes consolidados o por sucursal</li>
-            <li><span class="impl-grow-check">✓</span>Lo haces tú mismo con lo que ya aprendiste</li>
+            <li><span class="impl-grow-bullet-mark">·</span>Misma información, nueva ubicación</li>
+            <li><span class="impl-grow-bullet-mark">·</span>Inventario independiente por sucursal</li>
+            <li><span class="impl-grow-bullet-mark">·</span>Reportes consolidados o por sucursal</li>
+            <li><span class="impl-grow-bullet-mark">·</span>Lo haces tú mismo con lo que ya aprendiste</li>
           </ul>
         </div>
         <div class="impl-grow-stats">
@@ -215,8 +210,7 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
         <div class="impl-summary-grid">
           {SUMMARY_STEPS.map((s, i) => (
             <div class="impl-summary-step">
-              <div class="impl-summary-num">{i + 1}</div>
-              <div class="impl-summary-emoji" aria-hidden="true">{s.emoji}</div>
+              <div class="impl-summary-num">{String(i + 1).padStart(2, '0')}</div>
               <h4 class="impl-summary-step-title">{s.title}</h4>
               <p class="impl-summary-step-desc">{s.description}</p>
               <div class="impl-summary-timing">{s.timing}</div>
@@ -264,484 +258,481 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
 )}
 
 <style>
+  /* ═══════════════════════════════════════════════
+     Squarespace-style: monochromatic, typographic,
+     single accent (teal #2AB5A0), no gradients,
+     no shadows, generous whitespace.
+     ═══════════════════════════════════════════════ */
+
   .impl-section {
-    max-width: 1100px;
+    max-width: 960px;
     margin: 0 auto;
     padding: 48px 24px;
     font-family: inherit;
     color: #1a1a1a;
   }
-  .impl-full { padding-top: 24px; padding-bottom: 64px; }
-  .impl-condensed { padding: 40px 0; }
+  .impl-full { padding: 48px 32px 96px; }
+  .impl-condensed { padding: 48px 0; }
 
-  /* ── Top bar (back + share) ── */
+  /* ── Top bar ── */
   .impl-topbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 24px;
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e5e5e5;
   }
+  .impl-backlink,
   .impl-share {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 14px;
-    border-radius: 8px;
-    background: #fff;
-    border: 1px solid #eee;
+    padding: 0;
+    background: transparent;
+    border: none;
     color: #666;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    cursor: pointer;
     font-family: inherit;
-    transition: all 0.2s ease;
-  }
-  .impl-share:hover {
-    color: #1a1a1a;
-    background: #f8f9fb;
-    border-color: #ddd;
-    transform: translateY(-1px);
-  }
-  .impl-share.impl-share--copied {
-    background: #e0f2f1;
-    border-color: #2AB5A0;
-    color: #00695c;
-  }
-
-  /* ── Back link at top of full variant ── */
-  .impl-backlink {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    text-decoration: none;
-    color: #666;
     font-size: 0.8125rem;
-    font-weight: 600;
-    padding: 8px 14px;
-    border-radius: 8px;
-    background: #fff;
-    border: 1px solid #eee;
-    transition: all 0.2s ease;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.15s ease;
   }
-  .impl-backlink:hover {
-    color: #1a1a1a;
-    background: #f8f9fb;
-    border-color: #ddd;
-    transform: translateX(-2px);
-  }
-  .impl-backlink-arrow {
-    font-size: 1rem;
-    transition: transform 0.2s ease;
-  }
-  .impl-backlink:hover .impl-backlink-arrow {
-    transform: translateX(-2px);
-  }
+  .impl-backlink:hover,
+  .impl-share:hover { color: #2AB5A0; }
+  .impl-backlink-arrow { font-size: 1rem; line-height: 1; }
+  .impl-share.impl-share--copied { color: #2AB5A0; }
 
   /* ── Hero ── */
   .impl-hero {
-    text-align: center;
-    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-    color: #fff;
-    padding: 56px 32px;
-    border-radius: 24px;
-    margin-bottom: 48px;
+    padding: 64px 0 80px;
+    text-align: left;
+    border-bottom: 1px solid #e5e5e5;
+    margin-bottom: 64px;
   }
   .impl-hero-label {
     font-size: 0.6875rem;
     font-weight: 700;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: #2AB5A0;
-    margin-bottom: 16px;
+    color: #999;
+    margin-bottom: 24px;
   }
   .impl-hero-title {
-    font-size: clamp(1.75rem, 4vw, 2.75rem);
-    font-weight: 800;
+    font-family: var(--font-display, inherit);
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 300;
     line-height: 1.1;
-    margin: 0 0 16px;
-    color: #fff;
+    letter-spacing: -0.025em;
+    margin: 0 0 24px;
+    color: #1a1a1a;
+    max-width: 820px;
   }
   .impl-hero-desc {
-    font-size: 1rem;
+    font-size: 1.0625rem;
     line-height: 1.6;
-    color: rgba(255,255,255,0.75);
-    margin: 0 auto 32px;
-    max-width: 680px;
+    color: #666;
+    margin: 0 0 48px;
+    max-width: 640px;
   }
   .impl-metrics {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
-    margin-top: 32px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 40px;
+    margin-top: 48px;
+    padding-top: 32px;
+    border-top: 1px solid #e5e5e5;
   }
-  .impl-metric-value {
-    font-size: clamp(1.5rem, 3vw, 2.25rem);
-    font-weight: 800;
-    color: #2AB5A0;
-    margin-bottom: 6px;
-  }
-  .impl-metric-label {
-    font-size: 0.8125rem;
-    color: rgba(255,255,255,0.7);
-    line-height: 1.4;
-  }
-
-  /* ── Heading condensed ── */
-  .impl-heading { text-align: center; margin-bottom: 32px; }
-  .impl-heading-label {
-    font-size: 0.625rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: #4B7BE5;
-    margin-bottom: 10px;
-  }
-  .impl-heading-title {
-    font-size: clamp(1.375rem, 3vw, 1.875rem);
-    font-weight: 800;
-    line-height: 1.15;
-    margin: 0 0 8px;
-  }
-  .impl-heading-desc {
-    font-size: 0.875rem;
-    color: #777;
-    margin: 0;
-  }
-
-  /* ── Monthly warn banner ── */
-  .impl-warn {
-    display: flex;
-    gap: 16px;
-    background: linear-gradient(135deg, #fff7e8 0%, #fffaf0 100%);
-    border: 1px solid #E8A83844;
-    border-left: 4px solid #E8A838;
-    border-radius: 14px;
-    padding: 20px 24px;
-    margin-bottom: 32px;
-  }
-  .impl-warn-icon {
-    font-size: 1.5rem;
-    flex-shrink: 0;
-  }
-  .impl-warn-body { flex: 1; }
-  .impl-warn-title {
-    font-weight: 800;
-    font-size: 1rem;
-    margin-bottom: 6px;
-    color: #1a1a1a;
-  }
-  .impl-warn-text {
-    font-size: 0.8125rem;
-    color: #555;
-    line-height: 1.5;
-    margin: 0 0 12px;
-  }
-  .impl-warn-ctas {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  .impl-warn-cta {
-    display: inline-block;
-    padding: 8px 14px;
-    border-radius: 8px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-decoration: none;
-    transition: transform 0.15s, box-shadow 0.15s;
-  }
-  .impl-warn-cta--primary {
-    background: #1a1a1a;
-    color: #fff;
-  }
-  .impl-warn-cta--primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  }
-  .impl-warn-cta--ghost {
-    background: transparent;
-    color: #1a1a1a;
-    border: 1px solid #1a1a1a22;
-  }
-
-  /* ── Admin note ── */
-  .impl-nota {
-    background: #eef4ff;
-    border: 1px solid #4B7BE533;
-    border-radius: 10px;
-    padding: 12px 16px;
-    margin-bottom: 28px;
-    font-size: 0.8125rem;
-    color: #1a1a1a;
-    line-height: 1.5;
-  }
-  .impl-nota-label {
-    font-weight: 700;
-    color: #4B7BE5;
-    margin-right: 6px;
-  }
-
-  /* ── Steps ── */
-  .impl-steps {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    margin-bottom: 48px;
-  }
-  .impl-step {
-    display: grid;
-    grid-template-columns: 48px 1fr;
-    gap: 20px;
-    position: relative;
-    padding-bottom: 28px;
-  }
-  .impl-step:last-child { padding-bottom: 0; }
-  .impl-step-rail {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  .impl-step-num {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: var(--step-color);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.9375rem;
-    font-weight: 800;
-    flex-shrink: 0;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  }
-  .impl-step-line {
-    flex: 1;
-    width: 2px;
-    background: #e0e0e0;
-    margin-top: 8px;
-    min-height: 20px;
-  }
-  .impl-step-body {
-    background: #fff;
-    border: 1px solid #f0f0f0;
-    border-radius: 14px;
-    padding: 20px 22px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  }
-  .impl-step-body:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-    border-color: color-mix(in srgb, var(--step-color) 30%, #f0f0f0);
-  }
-  .impl-step-badge {
-    display: inline-block;
-    font-size: 0.625rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--step-color);
-    background: color-mix(in srgb, var(--step-color) 12%, #fff);
-    padding: 4px 10px;
-    border-radius: 999px;
-    margin-bottom: 10px;
-  }
-  .impl-step-head {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 8px;
-  }
-  .impl-step-emoji { font-size: 1.5rem; }
-  .impl-step-title {
-    font-size: 1.125rem;
-    font-weight: 800;
-    margin: 0;
-    line-height: 1.2;
-  }
-  .impl-step-desc {
-    font-size: 0.8125rem;
-    color: #666;
-    line-height: 1.55;
-    margin: 0 0 12px;
-  }
-  .impl-step-bullets {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 10px;
+  .impl-metric {
     display: flex;
     flex-direction: column;
     gap: 6px;
   }
-  .impl-step-bullets li {
+  .impl-metric-num {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: #bbb;
+    letter-spacing: 0.08em;
+  }
+  .impl-metric-value {
+    font-family: var(--font-display, inherit);
+    font-size: 1.875rem;
+    font-weight: 300;
+    color: #1a1a1a;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .impl-metric-label {
     font-size: 0.8125rem;
-    color: #333;
+    color: #999;
+    line-height: 1.4;
+  }
+
+  /* ── Condensed heading ── */
+  .impl-heading {
+    padding: 8px 0 32px;
+    margin-bottom: 32px;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  .impl-heading-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #999;
+    margin-bottom: 14px;
+  }
+  .impl-heading-title {
+    font-family: var(--font-display, inherit);
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 300;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    margin: 0 0 10px;
+    color: #1a1a1a;
+  }
+  .impl-heading-desc {
+    font-size: 0.9375rem;
+    color: #666;
     line-height: 1.5;
+    margin: 0;
+    max-width: 540px;
+  }
+
+  /* ── Monthly warn banner (mono) ── */
+  .impl-warn {
+    background: #fafafa;
+    border-left: 2px solid #1a1a1a;
+    padding: 24px 28px;
+    margin-bottom: 48px;
+  }
+  .impl-warn-body { display: flex; flex-direction: column; gap: 10px; }
+  .impl-warn-eyebrow {
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #999;
+  }
+  .impl-warn-title {
+    font-family: var(--font-display, inherit);
+    font-weight: 500;
+    font-size: 1.125rem;
+    color: #1a1a1a;
+    letter-spacing: -0.01em;
+  }
+  .impl-warn-text {
+    font-size: 0.875rem;
+    color: #666;
+    line-height: 1.55;
+    margin: 0;
+  }
+  .impl-warn-ctas {
     display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+  .impl-warn-cta {
+    display: inline-block;
+    padding: 12px 22px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .impl-warn-cta--primary { background: #1a1a1a; color: #fff; }
+  .impl-warn-cta--primary:hover { background: #2AB5A0; }
+  .impl-warn-cta--ghost {
+    background: transparent;
+    color: #1a1a1a;
+    border: 1px solid #1a1a1a;
+  }
+  .impl-warn-cta--ghost:hover { background: #1a1a1a; color: #fff; }
+
+  /* ── Admin note ── */
+  .impl-nota {
+    padding: 16px 0;
+    margin-bottom: 48px;
+    border-top: 1px solid #e5e5e5;
+    border-bottom: 1px solid #e5e5e5;
+    font-size: 0.875rem;
+    color: #666;
+    line-height: 1.5;
+  }
+  .impl-nota-label {
+    font-weight: 600;
+    color: #1a1a1a;
+    letter-spacing: 0.02em;
+    margin-right: 8px;
+  }
+
+  /* ── Steps (numbered, typographic, no shadows) ── */
+  .impl-steps {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 80px;
+  }
+  .impl-step {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    gap: 24px;
+    padding: 36px 0;
+    border-top: 1px solid #e5e5e5;
+  }
+  .impl-step:last-child { border-bottom: 1px solid #e5e5e5; }
+  .impl-step-rail {
+    display: flex;
+    align-items: flex-start;
+    padding-top: 4px;
+  }
+  .impl-step-num {
+    font-family: var(--font-display, inherit);
+    font-size: 1.875rem;
+    font-weight: 300;
+    color: #bbb;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .impl-step-body { min-width: 0; }
+  .impl-step-badge {
+    display: inline-block;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #999;
+    margin-bottom: 12px;
+  }
+  .impl-step-title {
+    font-family: var(--font-display, inherit);
+    font-size: 1.375rem;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+    margin: 0 0 10px;
+    color: #1a1a1a;
+  }
+  .impl-step-desc {
+    font-size: 0.9375rem;
+    color: #666;
+    line-height: 1.55;
+    margin: 0 0 20px;
+    max-width: 620px;
+  }
+  .impl-step-bullets {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 16px;
+    display: flex;
+    flex-direction: column;
     gap: 8px;
+  }
+  .impl-step-bullets li {
+    font-size: 0.875rem;
+    color: #444;
+    line-height: 1.55;
+    display: flex;
+    gap: 10px;
     align-items: flex-start;
   }
-  .impl-step-check {
+  .impl-step-bullet-mark {
     color: #2AB5A0;
-    font-weight: 800;
+    font-weight: 700;
     flex-shrink: 0;
+    font-size: 1rem;
+    line-height: 1.3;
   }
   .impl-step-duration {
     display: inline-block;
     font-size: 0.6875rem;
-    font-weight: 700;
-    padding: 5px 10px;
-    border-radius: 6px;
-    border: 1px solid;
-    margin-top: 8px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #999;
+    padding: 4px 0;
+    border-top: 1px solid #e5e5e5;
+    margin-top: 14px;
+    padding-top: 10px;
   }
 
   /* ── Incluido ── */
   .impl-included {
-    background: #f8f9fb;
-    border-radius: 20px;
-    padding: 40px 32px;
-    margin-bottom: 48px;
+    padding: 64px 0;
+    margin-bottom: 64px;
+    border-top: 1px solid #e5e5e5;
+    border-bottom: 1px solid #e5e5e5;
   }
-  .impl-included-head { text-align: center; margin-bottom: 28px; }
+  .impl-included-head {
+    margin-bottom: 48px;
+    max-width: 640px;
+  }
   .impl-included-title {
-    font-size: clamp(1.25rem, 2.5vw, 1.625rem);
-    font-weight: 800;
-    margin: 0 0 8px;
+    font-family: var(--font-display, inherit);
+    font-size: clamp(1.5rem, 2.6vw, 2rem);
+    font-weight: 300;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    margin: 0 0 12px;
+    color: #1a1a1a;
   }
   .impl-included-desc {
-    font-size: 0.875rem;
-    color: #777;
-    max-width: 620px;
-    margin: 0 auto;
-    line-height: 1.5;
+    font-size: 0.9375rem;
+    color: #666;
+    line-height: 1.55;
+    margin: 0;
   }
   .impl-included-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 40px 48px;
   }
   .impl-included-card {
-    background: #fff;
-    border: 1px solid #eee;
-    border-radius: 14px;
-    padding: 20px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
-  .impl-included-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.06);
-  }
-  .impl-included-emoji {
-    font-size: 1.75rem;
-    margin-bottom: 10px;
+  .impl-included-num {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: #bbb;
+    letter-spacing: 0.08em;
+    margin-bottom: 2px;
   }
   .impl-included-card-title {
-    font-size: 0.9375rem;
-    font-weight: 800;
-    margin: 0 0 6px;
+    font-family: var(--font-display, inherit);
+    font-size: 1.0625rem;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    margin: 0 0 4px;
+    color: #1a1a1a;
   }
   .impl-included-card-desc {
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     color: #666;
     line-height: 1.55;
     margin: 0;
   }
 
-  /* ── Soporte ── */
-  .impl-support { margin-bottom: 48px; }
-  .impl-support-head { text-align: center; margin-bottom: 28px; }
+  /* ── Support ── */
+  .impl-support {
+    padding: 48px 0;
+    margin-bottom: 64px;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  .impl-support-head { margin-bottom: 40px; max-width: 640px; }
   .impl-support-title {
-    font-size: clamp(1.25rem, 2.5vw, 1.625rem);
-    font-weight: 800;
-    margin: 0 0 8px;
+    font-family: var(--font-display, inherit);
+    font-size: clamp(1.5rem, 2.6vw, 2rem);
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin: 0 0 12px;
+    color: #1a1a1a;
   }
   .impl-support-desc {
-    font-size: 0.875rem;
-    color: #777;
-    max-width: 620px;
-    margin: 0 auto;
-    line-height: 1.5;
+    font-size: 0.9375rem;
+    color: #666;
+    line-height: 1.55;
+    margin: 0;
   }
   .impl-support-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 40px 48px;
   }
   .impl-support-card {
-    background: #fff;
-    border: 1px solid #eee;
-    border-radius: 14px;
-    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
-  .impl-support-emoji { font-size: 1.5rem; margin-bottom: 10px; }
+  .impl-support-num {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: #bbb;
+    letter-spacing: 0.08em;
+    margin-bottom: 2px;
+  }
   .impl-support-card-title {
-    font-size: 0.9375rem;
-    font-weight: 800;
+    font-family: var(--font-display, inherit);
+    font-size: 1.0625rem;
+    font-weight: 500;
+    letter-spacing: -0.005em;
     margin: 0 0 4px;
+    color: #1a1a1a;
   }
   .impl-support-card-desc {
-    font-size: 0.75rem;
+    font-size: 0.8125rem;
     color: #666;
-    line-height: 1.5;
-    margin: 0 0 10px;
+    line-height: 1.55;
+    margin: 0;
   }
   .impl-support-badge {
-    display: inline-block;
+    align-self: flex-start;
     font-size: 0.625rem;
     font-weight: 700;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    padding: 3px 8px;
-    border-radius: 5px;
-    background: #2AB5A014;
     color: #2AB5A0;
+    margin-top: 6px;
   }
 
   /* ── Outcomes ── */
-  .impl-outcomes { margin-bottom: 48px; }
-  .impl-outcomes-head { text-align: center; margin-bottom: 28px; }
+  .impl-outcomes {
+    padding: 48px 0;
+    margin-bottom: 64px;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  .impl-outcomes-head { margin-bottom: 48px; max-width: 640px; }
   .impl-outcomes-title {
-    font-size: clamp(1.25rem, 2.5vw, 1.625rem);
-    font-weight: 800;
-    margin: 0 0 8px;
+    font-family: var(--font-display, inherit);
+    font-size: clamp(1.5rem, 2.6vw, 2rem);
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin: 0 0 12px;
+    color: #1a1a1a;
   }
   .impl-outcomes-desc {
-    font-size: 0.875rem;
-    color: #777;
-    max-width: 680px;
-    margin: 0 auto;
-    line-height: 1.5;
+    font-size: 0.9375rem;
+    color: #666;
+    line-height: 1.55;
+    margin: 0;
   }
   .impl-outcomes-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 18px;
+    gap: 40px 48px;
   }
   .impl-outcome-card {
-    background: linear-gradient(160deg, #fff 0%, #f8f9fb 100%);
-    border: 1px solid #eee;
-    border-radius: 14px;
-    padding: 24px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
-  .impl-outcome-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+  .impl-outcome-num {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: #bbb;
+    letter-spacing: 0.08em;
   }
-  .impl-outcome-emoji { font-size: 1.75rem; margin-bottom: 10px; }
   .impl-outcome-title {
-    font-size: 1rem;
-    font-weight: 800;
-    margin: 0 0 6px;
+    font-family: var(--font-display, inherit);
+    font-size: 1.125rem;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    margin: 0 0 4px;
+    color: #1a1a1a;
   }
   .impl-outcome-desc {
     font-size: 0.8125rem;
     color: #666;
-    line-height: 1.5;
-    margin: 0 0 12px;
+    line-height: 1.55;
+    margin: 0 0 8px;
   }
   .impl-outcome-bullets {
     list-style: none;
@@ -752,373 +743,339 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
     gap: 6px;
   }
   .impl-outcome-bullets li {
-    font-size: 0.75rem;
-    color: #333;
-    line-height: 1.4;
+    font-size: 0.8125rem;
+    color: #444;
+    line-height: 1.55;
     display: flex;
-    gap: 6px;
+    gap: 8px;
     align-items: flex-start;
   }
-  .impl-outcome-check {
+  .impl-outcome-bullet-mark {
     color: #2AB5A0;
-    font-weight: 800;
+    font-weight: 700;
     flex-shrink: 0;
+    font-size: 0.9375rem;
+    line-height: 1.3;
   }
 
   /* ── Grow ── */
   .impl-grow {
-    background: #1a1a1a;
-    color: #fff;
-    border-radius: 20px;
-    padding: 40px 32px;
-    margin-bottom: 48px;
+    padding: 48px 0;
+    margin-bottom: 64px;
+    border-bottom: 1px solid #e5e5e5;
   }
-  .impl-grow-head { text-align: center; margin-bottom: 28px; }
+  .impl-grow-head { margin-bottom: 40px; max-width: 640px; }
   .impl-grow-title {
-    font-size: clamp(1.25rem, 2.5vw, 1.625rem);
-    font-weight: 800;
-    color: #fff;
-    margin: 0 0 8px;
+    font-family: var(--font-display, inherit);
+    font-size: clamp(1.5rem, 2.6vw, 2rem);
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin: 0 0 12px;
+    color: #1a1a1a;
   }
   .impl-grow-desc {
-    font-size: 0.875rem;
-    color: rgba(255,255,255,0.7);
-    max-width: 680px;
-    margin: 0 auto;
-    line-height: 1.5;
+    font-size: 0.9375rem;
+    color: #666;
+    line-height: 1.55;
+    margin: 0;
   }
   .impl-grow-hero {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 14px;
-    padding: 24px;
-    margin-bottom: 24px;
+    padding: 32px 0;
+    border-top: 1px solid #e5e5e5;
+    border-bottom: 1px solid #e5e5e5;
+    margin-bottom: 40px;
+    max-width: 780px;
   }
   .impl-grow-hero-title {
-    font-size: 1.25rem;
-    font-weight: 800;
-    color: #2AB5A0;
-    margin: 0 0 8px;
+    font-family: var(--font-display, inherit);
+    font-size: 1.5rem;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+    margin: 0 0 12px;
+    color: #1a1a1a;
   }
   .impl-grow-hero-desc {
-    font-size: 0.8125rem;
-    color: rgba(255,255,255,0.7);
-    line-height: 1.5;
-    margin: 0 0 14px;
+    font-size: 0.9375rem;
+    color: #666;
+    line-height: 1.55;
+    margin: 0 0 18px;
   }
   .impl-grow-bullets {
     list-style: none;
     padding: 0;
     margin: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: 8px;
   }
   .impl-grow-bullets li {
-    font-size: 0.8125rem;
-    color: rgba(255,255,255,0.9);
+    font-size: 0.875rem;
+    color: #444;
+    line-height: 1.55;
     display: flex;
-    gap: 8px;
+    gap: 10px;
     align-items: flex-start;
-    line-height: 1.4;
   }
-  .impl-grow-check {
+  .impl-grow-bullet-mark {
     color: #2AB5A0;
-    font-weight: 800;
+    font-weight: 700;
     flex-shrink: 0;
+    font-size: 1rem;
+    line-height: 1.3;
   }
   .impl-grow-stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 40px;
+    padding-top: 32px;
+    border-top: 1px solid #e5e5e5;
   }
-  .impl-grow-stat {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px;
-    padding: 18px;
-    text-align: center;
-  }
+  .impl-grow-stat { display: flex; flex-direction: column; gap: 4px; }
   .impl-grow-stat-value {
-    font-size: 1.125rem;
-    font-weight: 800;
-    color: #2AB5A0;
-    margin-bottom: 4px;
+    font-family: var(--font-display, inherit);
+    font-size: 1.5rem;
+    font-weight: 300;
+    letter-spacing: -0.015em;
+    color: #1a1a1a;
+    line-height: 1;
   }
   .impl-grow-stat-label {
-    font-size: 0.6875rem;
-    color: rgba(255,255,255,0.65);
+    font-size: 0.75rem;
+    color: #999;
     line-height: 1.4;
   }
 
   /* ── Summary ── */
-  .impl-summary { margin-bottom: 48px; }
-  .impl-summary-head { text-align: center; margin-bottom: 28px; }
+  .impl-summary {
+    padding: 48px 0;
+    margin-bottom: 64px;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  .impl-summary-head { margin-bottom: 48px; max-width: 640px; }
   .impl-summary-title {
-    font-size: clamp(1.25rem, 2.5vw, 1.625rem);
-    font-weight: 800;
-    margin: 0 0 8px;
+    font-family: var(--font-display, inherit);
+    font-size: clamp(1.5rem, 2.6vw, 2rem);
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin: 0 0 12px;
+    color: #1a1a1a;
   }
   .impl-summary-desc {
-    font-size: 0.875rem;
-    color: #777;
+    font-size: 0.9375rem;
+    color: #666;
+    line-height: 1.55;
     margin: 0;
   }
   .impl-summary-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 12px;
-    position: relative;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 40px 32px;
   }
   .impl-summary-step {
-    background: #fff;
-    border: 1px solid #eee;
-    border-radius: 14px;
-    padding: 22px 16px;
-    text-align: center;
-    position: relative;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  .impl-summary-step:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
   .impl-summary-num {
-    position: absolute;
-    top: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: #4B7BE5;
-    color: #fff;
-    font-size: 0.6875rem;
-    font-weight: 800;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    font-family: var(--font-display, inherit);
+    font-size: 1.625rem;
+    font-weight: 300;
+    color: #bbb;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 4px;
   }
-  .impl-summary-emoji { font-size: 1.75rem; margin-bottom: 8px; }
   .impl-summary-step-title {
-    font-size: 0.875rem;
-    font-weight: 800;
-    margin: 0 0 4px;
+    font-family: var(--font-display, inherit);
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    margin: 0;
+    color: #1a1a1a;
   }
   .impl-summary-step-desc {
-    font-size: 0.6875rem;
-    color: #777;
-    line-height: 1.4;
-    margin: 0 0 8px;
+    font-size: 0.8125rem;
+    color: #666;
+    line-height: 1.55;
+    margin: 0;
   }
   .impl-summary-timing {
-    font-size: 0.625rem;
-    font-weight: 700;
-    color: #4B7BE5;
-    letter-spacing: 0.06em;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
+    color: #2AB5A0;
+    margin-top: 4px;
   }
 
   /* ── Footer CTA ── */
   .impl-footer-cta {
-    text-align: center;
-    padding: 48px 24px;
-    background: linear-gradient(135deg, #f8f9fb 0%, #fff 100%);
-    border-radius: 20px;
-    border: 1px solid #eee;
+    padding: 64px 0 24px;
+    border-top: 1px solid #e5e5e5;
+    text-align: left;
   }
   .impl-footer-title {
-    font-size: clamp(1.375rem, 3vw, 1.875rem);
-    font-weight: 800;
-    margin: 0 0 12px;
+    font-family: var(--font-display, inherit);
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin: 0 0 16px;
+    color: #1a1a1a;
   }
   .impl-footer-desc {
-    font-size: 0.9375rem;
+    font-size: 1rem;
     color: #666;
-    max-width: 580px;
-    margin: 0 auto 24px;
     line-height: 1.55;
+    margin: 0 0 32px;
+    max-width: 560px;
   }
   .impl-footer-buttons {
     display: flex;
-    gap: 10px;
-    justify-content: center;
+    gap: 14px;
     flex-wrap: wrap;
   }
   .impl-btn {
     display: inline-block;
-    padding: 12px 22px;
-    border-radius: 10px;
-    font-size: 0.875rem;
-    font-weight: 700;
+    padding: 14px 28px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
     text-decoration: none;
-    transition: transform 0.15s, box-shadow 0.15s;
+    transition: background 0.15s ease, color 0.15s ease;
   }
-  .impl-btn--primary {
-    background: #1a1a1a;
-    color: #fff;
-  }
-  .impl-btn--primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.2);
-  }
+  .impl-btn--primary { background: #1a1a1a; color: #fff; }
+  .impl-btn--primary:hover { background: #2AB5A0; }
   .impl-btn--secondary {
-    background: #fff;
+    background: transparent;
     color: #1a1a1a;
-    border: 1px solid #1a1a1a33;
+    border: 1px solid #1a1a1a;
   }
+  .impl-btn--secondary:hover { background: #1a1a1a; color: #fff; }
 
-  /* ── Condensed CTA link ── */
+  /* ── Condensed CTA ── */
   .impl-cta {
-    text-align: center;
-    margin-top: 28px;
+    padding-top: 32px;
+    border-top: 1px solid #e5e5e5;
+    margin-top: 24px;
   }
   .impl-cta-link {
-    display: inline-block;
-    font-size: 0.875rem;
-    font-weight: 700;
-    color: #4B7BE5;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: #1a1a1a;
     text-decoration: none;
-    padding: 12px 24px;
-    border: 2px solid #4B7BE5;
-    border-radius: 10px;
-    transition: all 0.15s;
+    padding-bottom: 2px;
+    border-bottom: 1px solid #1a1a1a;
+    transition: color 0.15s ease, border-color 0.15s ease;
   }
   .impl-cta-link:hover {
-    background: #4B7BE5;
-    color: #fff;
+    color: #2AB5A0;
+    border-color: #2AB5A0;
   }
 
-  /* ── Sticky conversion bar (monthly only) ── */
+  /* ── Sticky conversion bar (monthly plans only) ── */
   .impl-sticky-bar {
     position: fixed;
+    left: 16px;
+    right: 16px;
     bottom: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    max-width: 720px;
-    width: calc(100% - 32px);
+    z-index: 100;
     background: #1a1a1a;
     color: #fff;
-    border-radius: 14px;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
-    z-index: 90;
+    padding: 14px 20px;
+    transform: translateY(120%);
     opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
     pointer-events: none;
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    transform: translateX(-50%) translateY(20px);
+    max-width: 720px;
+    margin: 0 auto;
   }
   .impl-sticky-bar.impl-sticky-bar--visible {
+    transform: translateY(0);
     opacity: 1;
     pointer-events: auto;
-    transform: translateX(-50%) translateY(0);
   }
   .impl-sticky-inner {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 16px;
-    padding: 12px 18px;
   }
-  .impl-sticky-text {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-  }
+  .impl-sticky-text { display: flex; flex-direction: column; gap: 2px; }
   .impl-sticky-highlight {
-    font-weight: 800;
-    font-size: 0.9375rem;
+    font-size: 0.875rem;
+    font-weight: 600;
     color: #fff;
-    line-height: 1.2;
   }
   .impl-sticky-sub {
     font-size: 0.75rem;
-    color: rgba(255,255,255,0.7);
-    line-height: 1.3;
+    color: rgba(255,255,255,0.6);
   }
-  .impl-sticky-ctas {
-    display: flex;
-    gap: 8px;
-    flex-shrink: 0;
-  }
+  .impl-sticky-ctas { display: flex; gap: 8px; flex-shrink: 0; }
   .impl-sticky-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 9px 14px;
-    border-radius: 8px;
+    display: inline-block;
+    padding: 10px 18px;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
     background: #2AB5A0;
     color: #fff;
-    font-size: 0.8125rem;
-    font-weight: 700;
-    text-decoration: none;
-    white-space: nowrap;
-    transition: background 0.15s ease, transform 0.15s ease;
+    transition: background 0.15s ease;
   }
-  .impl-sticky-btn:hover {
-    background: #24a090;
-    transform: translateY(-1px);
-  }
+  .impl-sticky-btn:hover { background: #fff; color: #1a1a1a; }
   .impl-sticky-btn--ghost {
     background: transparent;
     color: #fff;
-    border: 1px solid rgba(255,255,255,0.25);
+    border: 1px solid rgba(255,255,255,0.3);
   }
-  .impl-sticky-btn--ghost:hover {
-    background: rgba(255,255,255,0.08);
-  }
+  .impl-sticky-btn--ghost:hover { background: #fff; color: #1a1a1a; border-color: #fff; }
 
   /* ── Mobile ── */
-  @media (max-width: 640px) {
-    .impl-section { padding: 32px 16px; }
-    .impl-hero { padding: 40px 20px; }
-    .impl-metrics { grid-template-columns: 1fr; gap: 16px; }
-    .impl-step { grid-template-columns: 36px 1fr; gap: 14px; }
-    .impl-step-num { width: 32px; height: 32px; font-size: 0.8125rem; }
-    .impl-step-body { padding: 16px; }
-    .impl-included { padding: 28px 18px; }
-    .impl-grow { padding: 28px 18px; }
-    .impl-footer-cta { padding: 32px 18px; }
-    .impl-summary-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
-    .impl-warn { flex-direction: column; gap: 10px; }
-    .impl-sticky-bar { bottom: 80px; }
-    .impl-sticky-inner { flex-direction: column; gap: 10px; padding: 12px 14px; }
+  @media (max-width: 720px) {
+    .impl-section { padding: 32px 20px 80px; }
+    .impl-hero { padding: 40px 0 56px; margin-bottom: 40px; }
+    .impl-metrics { gap: 28px; padding-top: 24px; }
+    .impl-step { grid-template-columns: 48px 1fr; gap: 16px; padding: 28px 0; }
+    .impl-step-num { font-size: 1.5rem; }
+    .impl-included, .impl-support, .impl-outcomes, .impl-grow, .impl-summary {
+      padding: 40px 0;
+      margin-bottom: 48px;
+    }
+    .impl-included-grid, .impl-support-grid, .impl-outcomes-grid {
+      gap: 32px;
+    }
+    .impl-grow-stats { gap: 24px; }
+    .impl-footer-cta { padding: 48px 0 16px; }
+    .impl-warn { padding: 20px 22px; }
+    .impl-sticky-bar { bottom: 80px; left: 12px; right: 12px; padding: 12px 16px; }
+    .impl-sticky-inner { flex-direction: column; align-items: stretch; gap: 10px; }
     .impl-sticky-ctas { width: 100%; }
-    .impl-sticky-btn { flex: 1; }
+    .impl-sticky-btn { flex: 1; text-align: center; }
   }
 
-  /* ── Print: hide from print ── */
   @media print {
-    .impl-section,
-    .impl-sticky-bar { display: none; }
+    .impl-section, .impl-sticky-bar { display: none !important; }
   }
 
-  /* ── Reduced motion ── */
   @media (prefers-reduced-motion: reduce) {
     .impl-backlink,
-    .impl-backlink-arrow,
     .impl-share,
-    .impl-step-body,
-    .impl-included-card,
-    .impl-outcome-card,
-    .impl-summary-step,
     .impl-warn-cta,
     .impl-btn,
     .impl-cta-link,
     .impl-sticky-bar,
     .impl-sticky-btn {
       transition: none !important;
-    }
-    .impl-backlink:hover,
-    .impl-step-body:hover,
-    .impl-included-card:hover,
-    .impl-outcome-card:hover,
-    .impl-summary-step:hover,
-    .impl-share:hover,
-    .impl-btn--primary:hover,
-    .impl-warn-cta--primary:hover,
-    .impl-sticky-btn:hover {
-      transform: none !important;
     }
   }
 </style>

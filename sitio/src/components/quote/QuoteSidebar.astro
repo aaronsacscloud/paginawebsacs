@@ -1,6 +1,8 @@
 ---
+interface Tab { id: string; label: string; }
 interface Props {
-  quote: any;
+  tabs: Tab[];
+  initialTab: string;
   total: number;
   moneda: string;
   empresa: string;
@@ -15,11 +17,12 @@ interface Props {
 }
 
 const {
+  tabs,
+  initialTab,
   total,
   moneda,
   empresa,
   numero,
-  logoUrl,
   template,
   isAccepted,
   isPaid,
@@ -29,343 +32,262 @@ const {
 } = Astro.props;
 
 const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+const isClosed = isAccepted || isPaid;
 
-const tabs = [
-  { id: 'tab-resumen', label: 'Resumen', step: 1, icon: 'doc' },
-  { id: 'tab-inversion', label: 'Tu inversión', step: 2, icon: 'wallet' },
-  { id: 'tab-incluye', label: 'Qué incluye', step: 3, icon: 'check' },
-  { id: 'tab-proceso', label: 'Cómo arrancamos', step: 4, icon: 'rocket' },
-  { id: 'tab-acepta', label: 'Acepta', step: 5, icon: 'sign' },
-];
-
-// CTA context
+// CTA context (Squarespace-style: always black/white, minimal variants)
 let ctaLabel = 'Aceptar cotización';
-let ctaTarget = '#tab-acepta';
+let ctaTarget = '#firma';
 let ctaDisabled = false;
-let ctaVariant: 'primary' | 'paid' | 'accepted' | 'disabled' = 'primary';
+let ctaVariant: 'primary' | 'muted' | 'disabled' = 'primary';
 
-if (isExpired) {
+if (isExpired && !isClosed) {
   ctaLabel = 'Cotización vencida';
   ctaDisabled = true;
   ctaVariant = 'disabled';
 } else if (isPaid) {
-  ctaLabel = '✓ Pagada';
+  ctaLabel = 'Pagada';
   ctaDisabled = true;
-  ctaVariant = 'paid';
+  ctaVariant = 'muted';
 } else if (isAccepted && paymentLink) {
   ctaLabel = 'Pagar ahora';
   ctaTarget = paymentLink;
   ctaVariant = 'primary';
 } else if (isAccepted) {
-  ctaLabel = '✓ Aceptada';
+  ctaLabel = 'Aceptada';
   ctaDisabled = true;
-  ctaVariant = 'accepted';
+  ctaVariant = 'muted';
 }
+
+const pad = (n: number) => (n < 10 ? '0' + n : String(n));
 ---
 
-<aside class={`qsb qsb--${template}`} id="quoteSidebar" aria-label="Navegación de cotización">
-  <!-- Company header -->
+<aside class={`qsb qsb--${template}`} aria-label="Navegación de cotización">
+  <!-- Company -->
   <div class="qsb-head">
-    {logoUrl ? (
-      <img src={logoUrl} alt={empresa} class="qsb-logo" />
-    ) : (
-      <div class="qsb-logo-fallback">{(empresa || '?').slice(0, 2).toUpperCase()}</div>
-    )}
-    <div class="qsb-head-text">
-      <div class="qsb-empresa">{empresa}</div>
-      {numero && <div class="qsb-numero">{numero}</div>}
-    </div>
+    <div class="qsb-empresa">{empresa}</div>
+    {numero && <div class="qsb-numero">{numero}</div>}
   </div>
 
   <!-- Total -->
-  <div class="qsb-total-block">
+  <div class="qsb-total">
     <div class="qsb-total-label">Total</div>
-    <div class="qsb-total-value">
-      {fmt(total)}
-      <span class="qsb-total-currency">{moneda}</span>
-    </div>
-    {vigenciaFecha && !isPaid && !isAccepted && (
-      <div class="qsb-vigencia">Vigencia: <b>{vigenciaFecha}</b></div>
-    )}
+    <div class="qsb-total-value">{fmt(total)}</div>
+    <div class="qsb-total-sub">{moneda}{vigenciaFecha && !isClosed ? ` · Vigencia ${vigenciaFecha}` : ''}</div>
   </div>
 
-  <!-- Nav tabs -->
-  <nav class="qsb-nav" aria-label="Secciones de la cotización">
-    {tabs.map(t => (
-      <a href={`#${t.id}`} class="qsb-tab" data-tab-link={t.id}>
-        <span class="qsb-tab-num" aria-hidden="true">
-          <span class="qsb-tab-num-text">{t.step}</span>
-          <svg class="qsb-tab-check" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </span>
-        <span class="qsb-tab-icon" aria-hidden="true">
-          {t.icon === 'doc' && (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.6"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.6"/></svg>
-          )}
-          {t.icon === 'wallet' && (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="2" y="6" width="20" height="13" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M16 13h2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M2 10h20" stroke="currentColor" stroke-width="1.6"/></svg>
-          )}
-          {t.icon === 'check' && (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.6"/><path d="M8 12l3 3 5-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          )}
-          {t.icon === 'rocket' && (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" stroke="currentColor" stroke-width="1.6"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" stroke="currentColor" stroke-width="1.6"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" stroke="currentColor" stroke-width="1.6"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" stroke="currentColor" stroke-width="1.6"/></svg>
-          )}
-          {t.icon === 'sign' && (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 19l7-7 3 3-7 7-3-3z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 2l7.586 7.586" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="11" cy="11" r="2" stroke="currentColor" stroke-width="1.6"/></svg>
-          )}
-        </span>
+  <!-- Nav -->
+  <nav class="qsb-nav" aria-label="Secciones" role="tablist">
+    {tabs.map((t, i) => (
+      <a
+        href={`#${t.id}`}
+        class={`qsb-tab ${t.id === initialTab ? 'qsb-tab--active' : ''}`}
+        data-tab-link={t.id}
+        role="tab"
+        aria-selected={t.id === initialTab ? 'true' : 'false'}
+      >
+        <span class="qsb-tab-num">{pad(i + 1)}</span>
         <span class="qsb-tab-label">{t.label}</span>
       </a>
     ))}
   </nav>
-
-  <!-- Progress bar -->
-  <div class="qsb-progress" aria-hidden="true">
-    <div class="qsb-progress-bar" id="qsbProgressBar"></div>
-  </div>
 
   <!-- CTA -->
   <div class="qsb-cta-wrap">
     {ctaDisabled ? (
       <div class={`qsb-cta qsb-cta--${ctaVariant}`} aria-disabled="true">{ctaLabel}</div>
     ) : (
-      <a href={ctaTarget} class={`qsb-cta qsb-cta--${ctaVariant}`} data-tab-link={ctaTarget.startsWith('#') ? ctaTarget.slice(1) : undefined} target={ctaTarget.startsWith('http') ? '_blank' : undefined} rel={ctaTarget.startsWith('http') ? 'noopener' : undefined}>
+      <a
+        href={ctaTarget}
+        class={`qsb-cta qsb-cta--${ctaVariant}`}
+        data-tab-link={ctaTarget.startsWith('#') ? ctaTarget.slice(1) : undefined}
+        target={ctaTarget.startsWith('http') ? '_blank' : undefined}
+        rel={ctaTarget.startsWith('http') ? 'noopener' : undefined}
+      >
         {ctaLabel}
-        <span class="qsb-cta-arrow" aria-hidden="true">→</span>
       </a>
     )}
   </div>
 </aside>
 
 <style>
-  /* Base sidebar */
+  /* ─────────────────────────────────────────
+     Squarespace-style sidebar: typographic,
+     monochromatic, single accent (teal #2AB5A0)
+     ───────────────────────────────────────── */
+
   .qsb {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    padding: 20px;
-    border-radius: 16px;
+    gap: 32px;
+    padding: 28px 24px;
     font-family: inherit;
     font-size: 0.875rem;
+    background: transparent;
   }
-  .qsb--modern { background: #fff; border: 1px solid #f0f0f0; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
-  .qsb--dark { background: #1a1a1a; color: #fff; border: 1px solid rgba(255,255,255,0.08); }
-  .qsb--classic { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 0; }
+  .qsb--modern {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 0;
+  }
+  .qsb--dark {
+    background: #1a1a1a;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .qsb--classic {
+    background: #fff;
+    border: 1px solid #1a1a1a;
+  }
 
-  /* Head */
+  /* Head: company name + folio */
   .qsb-head {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    flex-direction: column;
+    gap: 4px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e5e5e5;
   }
-  .qsb-logo {
-    width: 40px; height: 40px;
-    object-fit: contain;
-    border-radius: 8px;
-    background: #fff;
-    border: 1px solid #f0f0f0;
-  }
-  .qsb-logo-fallback {
-    width: 40px; height: 40px;
-    border-radius: 8px;
-    background: #4B7BE5;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 0.8125rem;
-    flex-shrink: 0;
-  }
-  .qsb--dark .qsb-logo { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); }
-  .qsb-head-text { min-width: 0; flex: 1; }
+  .qsb--dark .qsb-head { border-color: rgba(255,255,255,0.1); }
   .qsb-empresa {
-    font-weight: 800;
-    font-size: 0.9375rem;
-    line-height: 1.2;
+    font-family: var(--font-display, inherit);
+    font-weight: 500;
+    font-size: 1rem;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: #1a1a1a;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
   }
+  .qsb--dark .qsb-empresa { color: #fff; }
   .qsb-numero {
     font-size: 0.6875rem;
+    font-weight: 500;
     color: #999;
-    letter-spacing: 0.04em;
-    font-weight: 700;
-    margin-top: 2px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
   .qsb--dark .qsb-numero { color: rgba(255,255,255,0.5); }
 
-  /* Total */
-  .qsb-total-block {
-    padding: 14px 16px;
-    background: linear-gradient(135deg, #2AB5A010 0%, #4B7BE510 100%);
-    border: 1px solid #2AB5A022;
-    border-radius: 12px;
+  /* Total: typographic, no gradient */
+  .qsb-total {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
-  .qsb--dark .qsb-total-block {
-    background: linear-gradient(135deg, rgba(42,181,160,0.14) 0%, rgba(75,123,229,0.1) 100%);
-    border-color: rgba(42,181,160,0.25);
-  }
-  .qsb--classic .qsb-total-block { border-radius: 0; }
   .qsb-total-label {
     font-size: 0.625rem;
     font-weight: 700;
-    color: #2AB5A0;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-  }
-  .qsb-total-value {
-    font-size: 1.625rem;
-    font-weight: 800;
-    line-height: 1;
-    color: inherit;
-  }
-  .qsb-total-currency {
-    font-size: 0.75rem;
-    font-weight: 600;
     color: #999;
-    margin-left: 4px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
   }
-  .qsb--dark .qsb-total-currency { color: rgba(255,255,255,0.55); }
-  .qsb-vigencia {
+  .qsb--dark .qsb-total-label { color: rgba(255,255,255,0.5); }
+  .qsb-total-value {
+    font-family: var(--font-display, inherit);
+    font-size: 2rem;
+    font-weight: 300;
+    line-height: 1;
+    color: #1a1a1a;
+    letter-spacing: -0.025em;
+  }
+  .qsb--dark .qsb-total-value { color: #fff; }
+  .qsb-total-sub {
     font-size: 0.6875rem;
-    color: #888;
-    margin-top: 6px;
+    color: #999;
+    letter-spacing: 0.02em;
   }
-  .qsb--dark .qsb-vigencia { color: rgba(255,255,255,0.55); }
+  .qsb--dark .qsb-total-sub { color: rgba(255,255,255,0.5); }
 
-  /* Nav (override global :global(nav) display:none on quote pages) */
+  /* Nav: typographic list, no icons */
   .qsb-nav {
     display: flex !important;
     flex-direction: column;
-    gap: 2px;
+    gap: 0;
+    border-top: 1px solid #e5e5e5;
   }
+  .qsb--dark .qsb-nav { border-color: rgba(255,255,255,0.1); }
   .qsb-tab {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-radius: 10px;
+    align-items: baseline;
+    gap: 14px;
+    padding: 14px 0 14px 12px;
     text-decoration: none;
     color: #666;
-    border-left: 3px solid transparent;
-    transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+    border-bottom: 1px solid #e5e5e5;
+    border-left: 1px solid transparent;
+    transition: color 0.18s ease, border-color 0.18s ease, padding-left 0.18s ease;
     position: relative;
   }
-  .qsb--dark .qsb-tab { color: rgba(255,255,255,0.55); }
-  .qsb--classic .qsb-tab { border-radius: 0; }
-  .qsb-tab:hover {
-    background: #f5f7fb;
-    color: #1a1a1a;
-  }
-  .qsb--dark .qsb-tab:hover { background: rgba(255,255,255,0.04); color: #fff; }
+  .qsb--dark .qsb-tab { color: rgba(255,255,255,0.55); border-bottom-color: rgba(255,255,255,0.1); }
+  .qsb-tab:hover { color: #1a1a1a; padding-left: 16px; }
+  .qsb--dark .qsb-tab:hover { color: #fff; }
   .qsb-tab.qsb-tab--active {
-    background: #eef2ff;
     color: #1a1a1a;
-    border-left-color: #4B7BE5;
+    border-left-color: #2AB5A0;
+    border-left-width: 2px;
+    padding-left: 16px;
   }
-  .qsb--dark .qsb-tab.qsb-tab--active {
-    background: rgba(75,123,229,0.15);
-    color: #fff;
-    border-left-color: #4B7BE5;
+  .qsb--dark .qsb-tab.qsb-tab--active { color: #fff; }
+  .qsb-tab.qsb-tab--visited { color: #999; }
+  .qsb-tab.qsb-tab--visited::before {
+    content: '·';
+    position: absolute;
+    left: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #2AB5A0;
+    font-size: 1.125rem;
+    line-height: 1;
   }
-  .qsb-tab.qsb-tab--visited .qsb-tab-num-text { display: none; }
-  .qsb-tab.qsb-tab--visited .qsb-tab-check { display: block; color: #2AB5A0; }
-  .qsb-tab.qsb-tab--visited .qsb-tab-num { background: #2AB5A014; border-color: #2AB5A044; color: #2AB5A0; }
   .qsb-tab-num {
-    width: 24px; height: 24px;
-    border-radius: 50%;
-    background: #f0f0f0;
-    border: 1px solid #e0e0e0;
-    color: #888;
-    font-size: 0.75rem;
-    font-weight: 800;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: #bbb;
+    letter-spacing: 0.04em;
     flex-shrink: 0;
-    transition: all 0.2s ease;
+    min-width: 20px;
   }
-  .qsb--dark .qsb-tab-num { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); }
-  .qsb-tab.qsb-tab--active .qsb-tab-num {
-    background: #4B7BE5; border-color: #4B7BE5; color: #fff;
-  }
-  .qsb-tab-check { display: none; }
-  .qsb-tab-icon {
-    color: #aaa;
-    display: flex;
-    align-items: center;
-  }
-  .qsb--dark .qsb-tab-icon { color: rgba(255,255,255,0.5); }
-  .qsb-tab.qsb-tab--active .qsb-tab-icon { color: #4B7BE5; }
+  .qsb--dark .qsb-tab-num { color: rgba(255,255,255,0.35); }
+  .qsb-tab.qsb-tab--active .qsb-tab-num { color: #2AB5A0; }
   .qsb-tab-label {
-    font-weight: 600;
-    font-size: 0.8125rem;
+    font-size: 0.9375rem;
+    font-weight: 400;
+    letter-spacing: 0.002em;
+    line-height: 1.3;
   }
-  .qsb-tab.qsb-tab--active .qsb-tab-label { font-weight: 700; }
-
-  /* Progress bar */
-  .qsb-progress {
-    height: 3px;
-    background: #f0f0f0;
-    border-radius: 3px;
-    overflow: hidden;
-  }
-  .qsb--dark .qsb-progress { background: rgba(255,255,255,0.08); }
-  .qsb-progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, #4B7BE5 0%, #2AB5A0 100%);
-    width: 0%;
-    transition: width 0.3s ease;
-  }
+  .qsb-tab.qsb-tab--active .qsb-tab-label { font-weight: 500; }
 
   /* CTA */
+  .qsb-cta-wrap { padding-top: 4px; }
   .qsb-cta {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 13px 16px;
-    border-radius: 10px;
-    font-weight: 800;
-    font-size: 0.9375rem;
-    text-decoration: none;
+    display: block;
+    padding: 16px 18px;
+    font-weight: 500;
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     text-align: center;
-    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
   }
-  .qsb--classic .qsb-cta { border-radius: 0; }
   .qsb-cta--primary {
     background: #1a1a1a;
     color: #fff;
+    cursor: pointer;
   }
   .qsb-cta--primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+    background: #2AB5A0;
   }
-  .qsb-cta--primary .qsb-cta-arrow {
-    transition: transform 0.15s ease;
-  }
-  .qsb-cta--primary:hover .qsb-cta-arrow {
-    transform: translateX(3px);
-  }
-  .qsb-cta--paid {
-    background: #e8f5e9;
-    color: #2e7d32;
-    cursor: default;
-  }
-  .qsb-cta--accepted {
-    background: #e0f2f1;
-    color: #00695c;
+  .qsb-cta--muted {
+    background: transparent;
+    color: #2AB5A0;
+    border: 1px solid #2AB5A0;
     cursor: default;
   }
   .qsb-cta--disabled {
-    background: #f5f5f5;
+    background: transparent;
     color: #999;
+    border: 1px solid #e5e5e5;
     cursor: not-allowed;
   }
   .qsb--dark .qsb-cta--primary {
@@ -376,24 +298,14 @@ if (isExpired) {
     background: #2AB5A0;
     color: #fff;
   }
-  .qsb--dark .qsb-cta--paid { background: rgba(46,125,50,0.2); color: #7ed185; }
-  .qsb--dark .qsb-cta--accepted { background: rgba(0,105,92,0.2); color: #4db6ac; }
-  .qsb--dark .qsb-cta--disabled { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.4); }
+  .qsb--dark .qsb-cta--disabled { color: rgba(255,255,255,0.35); border-color: rgba(255,255,255,0.12); }
 
   /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
-    .qsb-tab,
-    .qsb-tab-num,
-    .qsb-progress-bar,
-    .qsb-cta,
-    .qsb-cta-arrow {
-      transition: none !important;
-    }
-    .qsb-cta--primary:hover { transform: none !important; }
+    .qsb-tab, .qsb-cta { transition: none !important; }
+    .qsb-tab:hover { padding-left: 12px !important; }
+    .qsb-tab.qsb-tab--active { padding-left: 16px !important; }
   }
 
-  /* Print: hide */
-  @media print {
-    .qsb { display: none !important; }
-  }
+  @media print { .qsb { display: none !important; } }
 </style>

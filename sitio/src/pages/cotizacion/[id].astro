@@ -43,10 +43,13 @@ const showDesglose = quoteMeta.mostrar_desglose !== undefined ? quoteMeta.mostra
 const showCondiciones = quoteMeta.mostrar_condiciones !== undefined ? quoteMeta.mostrar_condiciones : true;
 const showKeyPoints = quoteMeta.mostrar_key_points !== undefined ? quoteMeta.mostrar_key_points : true;
 const keyPoints = quoteMeta.key_points || [];
+const hasKeyPoints = showKeyPoints && Array.isArray(keyPoints) && keyPoints.length > 0;
 const showRoi = quoteMeta.mostrar_roi || false;
 const roi = quoteMeta.roi || null;
+const hasRoi = showRoi && roi && roi.ahorro_mensual > 0;
 const showAntesDesp = quoteMeta.mostrar_antes_despues || false;
 const antesDesp = quoteMeta.antes_despues || [];
+const hasAntesDesp = showAntesDesp && Array.isArray(antesDesp) && antesDesp.length > 0;
 const showFirma = quoteMeta.mostrar_firma !== undefined ? quoteMeta.mostrar_firma : true;
 const showQr = quoteMeta.mostrar_qr !== undefined ? quoteMeta.mostrar_qr : true;
 const showAnimaciones = quoteMeta.mostrar_animaciones !== undefined ? quoteMeta.mostrar_animaciones : true;
@@ -55,6 +58,16 @@ const timelineTipo = quoteMeta.timeline_tipo || '1suc';
 const showImplementacion = quoteMeta.mostrar_implementacion !== undefined ? quoteMeta.mostrar_implementacion : true;
 const implementacionNota = quoteMeta.implementacion_nota || '';
 const isAnnualQuote = (Array.isArray(quote.items) ? quote.items : []).some((i: any) => i.tipo === 'plan' && i.periodo === 'anual');
+
+// Quote state flags (shared with sidebar + pills)
+const isAccepted = quote.estado === 'accepted';
+const isPaid = quote.estado === 'paid';
+const isClosed = isAccepted || isPaid; // either accepted or paid → no more "urgency"
+const hasFeatures = showFeatures; // computed later after planFeatures
+const hasCondiciones = showCondiciones && !!quote.condiciones && quote.condiciones.trim().length > 0;
+
+// Dynamic tabs — compute after planFeatures/payments info below
+// (Declared here so we can reuse flags; final array built after those computations.)
 const quoteUrl = `https://www.sacscloud.com/cotizacion/${id}`;
 const daysLeft = quote.vigencia ? Math.ceil((new Date(quote.vigencia).getTime() - Date.now()) / 86400000) : 0;
 const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
@@ -116,34 +129,74 @@ const summary = planNames ? `${planNames} para ${sucTotal} sucursal${sucTotal > 
 const nextAnnualDate = new Date();
 nextAnnualDate.setFullYear(nextAnnualDate.getFullYear() + 1);
 const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
+
+// Dynamic tabs — only include tabs whose underlying content exists
+const hasFeaturesReal = showFeatures && planFeatures.length > 0;
+const hasPagosContent = showDesglose && (annualPlanTotal > 0 || uniqueTotal > 0 || monthlyRecurring > 0);
+const hasTimelineReal = showTimeline && !!timelineTipo;
+const hasImplementacionReal = showImplementacion;
+
+const tabsDef = [
+  { id: 'resumen', label: 'Resumen', show: true },
+  { id: 'minuta', label: 'Minuta', show: hasKeyPoints },
+  { id: 'inversion', label: 'Inversión', show: items.length > 0 },
+  { id: 'pagos', label: 'Pagos', show: hasPagosContent },
+  { id: 'incluye', label: 'Incluye', show: hasFeaturesReal },
+  { id: 'roi', label: 'ROI', show: hasRoi },
+  { id: 'comparativa', label: 'Comparativa', show: hasAntesDesp },
+  { id: 'timeline', label: 'Timeline', show: hasTimelineReal },
+  { id: 'proceso', label: 'Proceso', show: hasImplementacionReal },
+  { id: 'condiciones', label: 'Condiciones', show: hasCondiciones },
+  { id: 'firma', label: isPaid ? 'Pagada' : (isAccepted ? 'Confirmación' : 'Aceptar'), show: showFirma || isClosed },
+];
+const visibleTabs = tabsDef.filter(t => t.show).map(({ id, label }) => ({ id, label }));
+const initialTab = isClosed ? 'firma' : 'resumen';
 ---
 
 <BaseLayout title={`Cotización ${quote.numero} — Sacs`} description={`Cotización para ${quote.empresa}`}>
 
-<QuoteMobilePills template={template} total={quote.total || 0} moneda={quote.moneda || 'MXN'} />
+<QuoteMobilePills
+  template={template}
+  total={quote.total || 0}
+  moneda={quote.moneda || 'MXN'}
+  tabs={visibleTabs}
+  initialTab={initialTab}
+/>
 
 <div class:list={['quote-layout', `quote-layout--${template}`]}>
   <aside class="quote-layout-sidebar no-print">
     <QuoteSidebar
-      quote={quote}
       total={quote.total || 0}
       moneda={quote.moneda || 'MXN'}
       empresa={quote.empresa}
       numero={quote.numero}
       logoUrl={logoUrl}
       template={template}
-      isAccepted={quote.estado === 'accepted'}
-      isPaid={quote.estado === 'paid'}
+      isAccepted={isAccepted}
+      isPaid={isPaid}
       isExpired={isExpired}
       paymentLink={quote.link_pago}
       vigenciaFecha={vigenciaFecha}
+      tabs={visibleTabs}
+      initialTab={initialTab}
     />
   </aside>
 
-<div class:list={['quote-page', `quote-${template}`, { 'quote-expired-page': isExpired }]} id="quote-doc" data-no-animations={showAnimaciones ? undefined : true}>
+<div class:list={['quote-page', `quote-${template}`, { 'quote-expired-page': isExpired && !isClosed }]} id="quote-doc" data-no-animations={showAnimaciones ? undefined : true} data-initial-tab={initialTab}>
   <div class="quote-container" style="position:relative">
-    {isExpired && (
-      <div class="quote-stamp">
+    {/* State stamp (only one visible at a time) */}
+    {isPaid && (
+      <div class="quote-stamp quote-stamp--paid">
+        <div class="quote-stamp-text">PAGADA</div>
+      </div>
+    )}
+    {isAccepted && !isPaid && (
+      <div class="quote-stamp quote-stamp--accepted">
+        <div class="quote-stamp-text">ACEPTADA</div>
+      </div>
+    )}
+    {isExpired && !isClosed && (
+      <div class="quote-stamp quote-stamp--expired">
         <div class="quote-stamp-text">VENCIDA</div>
       </div>
     )}
@@ -155,7 +208,14 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
       </div>
     )}
 
-    <!-- Header -->
+    {isExpired && isClosed && (
+      <div class="quote-expired-note">
+        <span class="quote-expired-note-label">Vigencia original terminada</span>
+        <span class="quote-expired-note-text">Esta cotización {isPaid ? 'fue pagada' : 'fue aceptada'} antes de la fecha de vencimiento.</span>
+      </div>
+    )}
+
+    <!-- Header (always visible) -->
     <div class="quote-header">
       <div class="quote-logo">
         {logoUrl ? (
@@ -169,12 +229,14 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
         <div class="quote-number">{quote.numero}</div>
         <div class="quote-date">Fecha: {fecha}</div>
         <div class="quote-date">Vigencia: {vigenciaFecha}</div>
-        {!isExpired && daysLeft > 0 && <div class="quote-validity">Válida hasta {vigenciaFecha}</div>}
-        {isExpired && <div class="quote-expired">Cotización vencida</div>}
+        {!isExpired && !isClosed && daysLeft > 0 && <div class="quote-validity">Válida hasta {vigenciaFecha}</div>}
+        {isExpired && !isClosed && <div class="quote-expired">Cotización vencida</div>}
+        {isAccepted && !isPaid && quote.aceptado_fecha && <div class="quote-validity" style="color:#2AB5A0">Aceptada {fmtDate(quote.aceptado_fecha)}</div>}
+        {isPaid && <div class="quote-validity" style="color:#2AB5A0">Pagada</div>}
       </div>
     </div>
 
-    <!-- Client info -->
+    <!-- Client info (always visible) -->
     <div class="quote-client">
       <div class="quote-client-label">Cotización para:</div>
       <div class="quote-client-name">{quote.empresa}</div>
@@ -183,16 +245,40 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
       {quote.whatsapp && <div class="quote-client-detail">{quote.whatsapp}</div>}
     </div>
 
-    <div class="tab-anchor" id="tab-resumen" aria-hidden="true"></div>
-    <!-- Key points -->
-    {showKeyPoints && keyPoints.length > 0 && (
+    {/* ═══════════════════════════════════════════════
+         TAB: RESUMEN — summary intro + high-level total
+         ═══════════════════════════════════════════════ */}
+    <section class="quote-tab-panel" data-tab="resumen" aria-labelledby="tab-label-resumen">
+      <div class="quote-tab-intro">
+        <div class="quote-tab-intro-eyebrow">Bienvenido</div>
+        <div class="quote-tab-intro-heading">{summary}</div>
+        <div class="quote-tab-intro-total">
+          <span class="quote-tab-intro-total-label">Inversión total</span>
+          <span class="quote-tab-intro-total-value">{fmt(quote.total || 0)} <span class="quote-tab-intro-total-moneda">{quote.moneda || 'MXN'}</span></span>
+        </div>
+        <div class="quote-tab-intro-nav">
+          {visibleTabs.filter(t => t.id !== 'resumen').slice(0, 3).map(t => (
+            <a href={`#${t.id}`} class="quote-tab-intro-link" data-tab-link={t.id}>
+              <span class="quote-tab-intro-link-label">{t.label}</span>
+              <span class="quote-tab-intro-link-arrow">→</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    {/* ═══════════════════════════════════════════════
+         TAB: MINUTA
+         ═══════════════════════════════════════════════ */}
+    {hasKeyPoints && (
+    <section class="quote-tab-panel" data-tab="minuta">
       <div class="quote-key-points">
         <div class="quote-key-points-title">Minuta de la reunión</div>
         <div class="quote-key-points-list">
           {keyPoints.map((kp: any) => (
             <div class="quote-key-point">
               <div class="quote-key-point-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#4B7BE5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
               <div class="quote-key-point-content">
                 <div class="quote-key-point-title">{kp.title}</div>
@@ -202,10 +288,15 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
           ))}
         </div>
       </div>
+    </section>
     )}
 
+    {/* ═══════════════════════════════════════════════
+         TAB: INVERSIÓN — timer (if not closed) + items + totals
+         ═══════════════════════════════════════════════ */}
+    <section class="quote-tab-panel" data-tab="inversion">
     <!-- Urgency timer -->
-    {showTimer && !isExpired && daysLeft > 0 && daysLeft <= 15 && (
+    {showTimer && !isExpired && !isClosed && daysLeft > 0 && daysLeft <= 15 && (
       <div class:list={['quote-timer', { 'quote-timer--urgent': daysLeft <= 5 }]}>
         <div class="quote-timer-label">{quote.urgencia === 'oferta' ? 'Oferta especial' : 'Esta cotización'} vence en</div>
         <div class="quote-timer-countdown" id="countdown" data-expires={quote.vigencia}>
@@ -233,7 +324,6 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
       </div>
     )}
 
-    <div class="tab-anchor" id="tab-inversion" aria-hidden="true"></div>
     <!-- Items table -->
     <table class="quote-table">
       <thead>
@@ -331,6 +421,21 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
       </div>
     </div>
 
+    {hasPagosContent && (
+      <div class="quote-tab-cross">
+        <a href="#pagos" data-tab-link="pagos" class="quote-tab-cross-link">
+          Ver desglose de pagos
+          <span class="quote-tab-cross-arrow">→</span>
+        </a>
+      </div>
+    )}
+    </section>
+
+    {/* ═══════════════════════════════════════════════
+         TAB: PAGOS — breakdown + bank + pay link
+         ═══════════════════════════════════════════════ */}
+    {hasPagosContent && (
+    <section class="quote-tab-panel" data-tab="pagos">
     <!-- Payment breakdown -->
     {showDesglose && (annualPlanTotal > 0 || uniqueTotal > 0 || monthlyRecurring > 0) && (
       <div class="quote-payments">
@@ -390,8 +495,14 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
         })()}
       </div>
     )}
+    </section>
+    )}
 
-    <div class="tab-anchor" id="tab-incluye" aria-hidden="true"></div>
+    {/* ═══════════════════════════════════════════════
+         TAB: ROI
+         ═══════════════════════════════════════════════ */}
+    {hasRoi && (
+    <section class="quote-tab-panel" data-tab="roi">
     <!-- ROI -->
     {showRoi && roi && roi.ahorro_mensual > 0 && (
       <div class="quote-roi">
@@ -410,7 +521,14 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
         <div class="quote-roi-detail">{roi.detalle}</div>
       </div>
     )}
+    </section>
+    )}
 
+    {/* ═══════════════════════════════════════════════
+         TAB: COMPARATIVA
+         ═══════════════════════════════════════════════ */}
+    {hasAntesDesp && (
+    <section class="quote-tab-panel" data-tab="comparativa">
     <!-- Antes vs Después -->
     {showAntesDesp && antesDesp.length > 0 && (
       <div class="quote-comparison">
@@ -435,7 +553,14 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
         </table>
       </div>
     )}
+    </section>
+    )}
 
+    {/* ═══════════════════════════════════════════════
+         TAB: INCLUYE
+         ═══════════════════════════════════════════════ */}
+    {hasFeaturesReal && (
+    <section class="quote-tab-panel" data-tab="incluye">
     <!-- Plan features -->
     {showFeatures && planFeatures.length > 0 && (
       <div class="quote-features">
@@ -472,7 +597,14 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
         ))}
       </div>
     )}
+    </section>
+    )}
 
+    {/* ═══════════════════════════════════════════════
+         TAB: CONDICIONES
+         ═══════════════════════════════════════════════ */}
+    {hasCondiciones && (
+    <section class="quote-tab-panel" data-tab="condiciones">
     <!-- Conditions -->
     {showCondiciones && quote.condiciones && (
       <div class="quote-conditions">
@@ -480,9 +612,12 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
         <div class="quote-conditions-text">{quote.condiciones}</div>
       </div>
     )}
+    </section>
+    )}
 
-    <!-- Bank account -->
+    {/* Bank account — belongs to PAGOS tab (rendered separately here so content stays near paylink) */}
     {bankAccount && quote.mostrar_banco && (
+    <section class="quote-tab-panel" data-tab="pagos">
       <div class="quote-bank">
         <div class="quote-bank-title">Datos para transferencia</div>
         <div class="quote-bank-grid">
@@ -493,18 +628,22 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
           {bankAccount.rfc && <div class="quote-bank-item"><span class="quote-bank-label">RFC</span><span class="quote-bank-value">{bankAccount.rfc}</span></div>}
         </div>
       </div>
+    </section>
     )}
 
-    <!-- Payment link -->
+    {/* Payment link — belongs to PAGOS tab */}
     {quote.link_pago && (
+    <section class="quote-tab-panel" data-tab="pagos">
       <div class="quote-pay-link">
         <a href={quote.link_pago} target="_blank" rel="noopener" class="quote-pay-btn">Pagar ahora</a>
         <div class="quote-pay-note">Pago seguro. Al completar el pago, tu servicio se activa de inmediato.</div>
       </div>
+    </section>
     )}
 
-    <!-- Version history -->
+    {/* Version history — show on INVERSION tab */}
     {(quoteMeta.versions || []).length > 1 && (
+    <section class="quote-tab-panel" data-tab="inversion">
       <div class="quote-versions">
         <div class="quote-versions-header">
           <span class="quote-versions-title">Historial de versiones</span>
@@ -537,6 +676,7 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
           })}
         </div>
       </div>
+    </section>
     )}
 
 
@@ -559,15 +699,36 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
       </div>
     </div>
 
-    {quote.estado === 'accepted' && quote.aceptado_por && (
-      <div class="quote-signed">
+    {/* ═══════════════════════════════════════════════
+         TAB: FIRMA / CONFIRMACIÓN
+         ═══════════════════════════════════════════════ */}
+    <section class="quote-tab-panel" data-tab="firma">
+    {isClosed ? (
+      <div class="quote-signed quote-signed--closed">
+        <div class="quote-signed-eyebrow">{isPaid ? 'Pago recibido' : 'Aceptada'}</div>
+        <div class="quote-signed-title">
+          {isPaid ? '¡Gracias! Tu servicio está activo.' : 'Gracias por confiar en SACS.'}
+        </div>
+        <div class="quote-signed-sub">
+          {isPaid
+            ? 'Tu pago fue procesado correctamente. El equipo SACS comenzará con tu implementación.'
+            : 'Nuestro equipo se pondrá en contacto contigo para iniciar la implementación.'}
+        </div>
         {quoteMeta.firma_base64 && (
           <img src={quoteMeta.firma_base64} alt="Firma" class="quote-signed-img" />
         )}
-        <div class="quote-signed-label">Cotización aceptada por {quote.aceptado_por}</div>
-        <div class="quote-signed-date">{fmtDate(quote.aceptado_fecha)}</div>
+        {quote.aceptado_por && (
+          <div class="quote-signed-label">Aceptada por {quote.aceptado_por}</div>
+        )}
+        {quote.aceptado_fecha && (
+          <div class="quote-signed-date">{fmtDate(quote.aceptado_fecha)}</div>
+        )}
+        {isAccepted && !isPaid && quote.link_pago && (
+          <a href={quote.link_pago} target="_blank" rel="noopener" class="quote-signed-cta">Pagar ahora</a>
+        )}
       </div>
-    )}
+    ) : null}
+    </section>
 
     <!-- Success overlay (hidden, shown after acceptance) -->
     <div class="quote-success-overlay no-print" id="success-overlay" style="display:none">
@@ -581,6 +742,8 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
       <div class="quote-confetti" id="confetti-container"></div>
     </div>
 
+    {/* Why SACS + Conscious — belong to FIRMA tab (conversion content) */}
+    <section class="quote-tab-panel" data-tab="firma">
     <!-- Why SACS -->
     <div class="quote-why">
       <div class="quote-why-title">¿Por qué Sacs?</div>
@@ -673,8 +836,13 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
 
       <div class="quote-conscious-closing">El futuro del comercio en México es consciente. Y empieza hoy.</div>
     </div>
+    </section>
 
-    <div class="tab-anchor" id="tab-proceso" aria-hidden="true"></div>
+    {/* ═══════════════════════════════════════════════
+         TAB: TIMELINE (visión a 90 días)
+         ═══════════════════════════════════════════════ */}
+    {hasTimelineReal && (
+    <section class="quote-tab-panel" data-tab="timeline">
     <!-- Implementation timeline (3 versions based on timelineTipo) -->
     {showTimeline && timelineTipo === '1suc' && (
       <div class="quote-timeline-section">
@@ -721,7 +889,14 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
         </div>
       </div>
     )}
+    </section>
+    )}
 
+    {/* ═══════════════════════════════════════════════
+         TAB: PROCESO (operativo Día 1 — Semana 2+)
+         ═══════════════════════════════════════════════ */}
+    {hasImplementacionReal && (
+    <section class="quote-tab-panel" data-tab="proceso">
     {showImplementacion && (
       <ImplementacionContent
         variant="condensed"
@@ -732,10 +907,12 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
         implementacionUrl={`/cotizacion/${id}/implementacion`}
       />
     )}
+    </section>
+    )}
 
-    <div class="tab-anchor" id="tab-acepta" aria-hidden="true"></div>
-    <!-- Signature (moved here so 'Acepta' tab lands on decision moment) -->
-    {showFirma && !isExpired && quote.estado !== 'accepted' && quote.estado !== 'paid' && (
+    {/* Signature — belongs to FIRMA tab */}
+    {showFirma && !isExpired && !isClosed && (
+    <section class="quote-tab-panel" data-tab="firma">
       <div class="quote-signature no-print" id="signature-section">
         <div class="quote-signature-title">Firma de aceptación</div>
         <div class="quote-signature-hint">Firma con tu dedo o mouse para aceptar esta cotización</div>
@@ -745,8 +922,11 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
           <button class="quote-action-btn" id="btn-accept-sig" style="background:#1a1a1a;color:#fff">Aceptar cotización</button>
         </div>
       </div>
+    </section>
     )}
 
+    {/* Case studies + legal — on FIRMA tab (social proof) */}
+    <section class="quote-tab-panel" data-tab="firma">
     <!-- Case studies carousel -->
     <div class="quote-cases">
       <div class="quote-cases-title">Marcas que crecen con Sacs</div>
@@ -802,8 +982,9 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
     <div class="quote-legal">
       Al aceptar esta cotización, confirmas que has leído y aceptas nuestros <a href="https://www.sacscloud.com/terminos" target="_blank" rel="noopener">Términos y condiciones</a> y nuestro <a href="https://www.sacscloud.com/privacidad" target="_blank" rel="noopener">Aviso de privacidad</a>.
     </div>
+    </section>
 
-    <!-- Footer -->
+    <!-- Footer (always visible) -->
     <div class="quote-footer">
       <div class="quote-footer-brand">
         <span class="quote-footer-logo">Sacs</span>
@@ -823,7 +1004,7 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
         Cotización aceptada {quote.aceptado_por ? `por ${quote.aceptado_por}` : ''}
       </div>
     )}
-    {isExpired ? (
+    {isExpired && !isClosed ? (
       <div class="quote-expired-notice">
         <div class="quote-expired-notice-title">Esta cotización ha vencido</div>
         <div class="quote-expired-notice-text">Los precios y condiciones ya no son vigentes. Contactanos para recibir una cotización actualizada.</div>
@@ -953,11 +1134,68 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
 .quote-expired { font-size: 0.6875rem; font-weight: 700; color: #E54B4B; margin-top: 8px; }
 .quote-paid-banner { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 24px; background: #4B7BE5; color: #fff; font-size: 0.875rem; font-weight: 600; }
 
-/* ─── Expired stamp ─── */
-.quote-stamp { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-18deg); z-index: 10; pointer-events: none; }
-.quote-stamp-text { font-family: var(--font-display); font-size: 5rem; font-weight: 900; color: rgba(229,75,75,0.12); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; border: 6px solid rgba(229,75,75,0.12); border-radius: 12px; padding: 8px 40px; }
-.quote-expired-page .quote-container > *:not(.quote-stamp) { opacity: 0.5; }
+/* ─── State stamp (expired / accepted / paid) ─── */
+.quote-stamp { position: absolute; top: 140px; right: 40px; transform: rotate(-8deg); z-index: 10; pointer-events: none; }
+.quote-stamp-text { font-family: var(--font-display); font-size: 1.75rem; font-weight: 900; letter-spacing: 0.15em; text-transform: uppercase; white-space: nowrap; border: 3px solid; border-radius: 4px; padding: 4px 16px; }
+.quote-stamp--expired .quote-stamp-text { color: rgba(229,75,75,0.35); border-color: rgba(229,75,75,0.35); }
+.quote-stamp--accepted .quote-stamp-text { color: rgba(42,181,160,0.45); border-color: rgba(42,181,160,0.45); }
+.quote-stamp--paid .quote-stamp-text { color: rgba(75,123,229,0.45); border-color: rgba(75,123,229,0.45); }
+/* Only dim when expired AND not closed (accepted/paid overrides the dim) */
+.quote-expired-page .quote-container > *:not(.quote-stamp):not(.quote-expired-note) { opacity: 0.5; }
 .quote-expired-page .quote-container > .quote-stamp { opacity: 1; }
+
+/* ─── Expired-but-closed note (informational, non-blocking) ─── */
+.quote-expired-note { padding: 12px 40px; background: #fafafa; border-bottom: 1px solid #f0f0f0; display: flex; gap: 10px; align-items: center; }
+.quote-expired-note-label { font-size: 0.625rem; font-weight: 700; color: #1a1a1a; text-transform: uppercase; letter-spacing: 0.08em; flex-shrink: 0; }
+.quote-expired-note-text { font-size: 0.75rem; color: #888; }
+
+/* ─── Tab panel content switcher ─── */
+.quote-tab-panel { display: none; animation: tabFade 220ms ease; }
+.quote-tab-panel.is-active { display: block; }
+@keyframes tabFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .quote-tab-panel { animation: none; } }
+
+/* ─── Resumen intro tile ─── */
+.quote-tab-intro { padding: 36px 40px 28px; }
+.quote-tab-intro-eyebrow { font-size: 0.6875rem; font-weight: 700; color: #999; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; }
+.quote-tab-intro-heading { font-family: var(--font-display); font-size: 1.75rem; font-weight: 300; color: #1a1a1a; line-height: 1.25; letter-spacing: -0.01em; margin-bottom: 24px; }
+.quote-tab-intro-total { display: flex; flex-direction: column; gap: 4px; padding-top: 20px; border-top: 1px solid #e5e5e5; margin-bottom: 28px; }
+.quote-tab-intro-total-label { font-size: 0.6875rem; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.1em; }
+.quote-tab-intro-total-value { font-family: var(--font-display); font-size: 2.25rem; font-weight: 300; color: #1a1a1a; letter-spacing: -0.02em; }
+.quote-tab-intro-total-moneda { font-size: 1rem; color: #999; margin-left: 4px; font-weight: 400; }
+.quote-tab-intro-nav { display: flex; flex-direction: column; gap: 0; border-top: 1px solid #e5e5e5; }
+.quote-tab-intro-link { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; color: #1a1a1a; text-decoration: none; border-bottom: 1px solid #e5e5e5; transition: color 0.15s ease; }
+.quote-tab-intro-link:hover { color: #2AB5A0; }
+.quote-tab-intro-link-label { font-size: 0.9375rem; font-weight: 500; }
+.quote-tab-intro-link-arrow { font-size: 1rem; color: #999; transition: transform 0.15s ease; }
+.quote-tab-intro-link:hover .quote-tab-intro-link-arrow { color: #2AB5A0; transform: translateX(4px); }
+.quote-dark .quote-tab-intro-heading, .quote-dark .quote-tab-intro-total-value, .quote-dark .quote-tab-intro-link { color: #fff; }
+.quote-dark .quote-tab-intro-total, .quote-dark .quote-tab-intro-nav, .quote-dark .quote-tab-intro-link { border-color: rgba(255,255,255,0.1); }
+.quote-dark .quote-tab-intro-eyebrow, .quote-dark .quote-tab-intro-total-moneda, .quote-dark .quote-tab-intro-total-label, .quote-dark .quote-tab-intro-link-arrow { color: rgba(255,255,255,0.5); }
+
+/* ─── Cross-tab link (e.g., "Ver desglose de pagos →") ─── */
+.quote-tab-cross { padding: 0 40px 24px; }
+.quote-tab-cross-link { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8125rem; font-weight: 600; color: #2AB5A0; text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; transition: border-color 0.15s ease; }
+.quote-tab-cross-link:hover { border-color: #2AB5A0; }
+.quote-tab-cross-arrow { transition: transform 0.15s ease; }
+.quote-tab-cross-link:hover .quote-tab-cross-arrow { transform: translateX(3px); }
+
+/* ─── Closed state (accepted / paid) signed card ─── */
+.quote-signed { padding: 32px 40px; text-align: center; border-top: 1px solid #f0f0f0; }
+.quote-signed--closed { padding: 48px 40px; border-top: none; background: #fafafa; }
+.quote-signed-eyebrow { font-size: 0.6875rem; font-weight: 700; color: #2AB5A0; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 12px; }
+.quote-signed-title { font-family: var(--font-display); font-size: 1.625rem; font-weight: 300; color: #1a1a1a; letter-spacing: -0.01em; line-height: 1.25; margin-bottom: 10px; }
+.quote-signed-sub { font-size: 0.875rem; color: #666; line-height: 1.6; max-width: 460px; margin: 0 auto 24px; }
+.quote-signed-img { max-width: 220px; height: auto; margin: 0 auto 12px; display: block; }
+.quote-signed-label { font-size: 0.8125rem; font-weight: 600; color: #1a1a1a; }
+.quote-signed-date { font-size: 0.75rem; color: #999; margin-top: 2px; }
+.quote-signed-cta { display: inline-block; margin-top: 20px; padding: 14px 32px; background: #1a1a1a; color: #fff; text-decoration: none; font-weight: 700; font-size: 0.875rem; letter-spacing: 0.02em; border-radius: 4px; transition: background 0.15s ease; }
+.quote-signed-cta:hover { background: #2AB5A0; }
+.quote-dark .quote-signed--closed { background: rgba(255,255,255,0.03); }
+.quote-dark .quote-signed-title, .quote-dark .quote-signed-label { color: #fff; }
+.quote-dark .quote-signed-sub { color: rgba(255,255,255,0.65); }
+.quote-dark .quote-signed-cta { background: #fff; color: #1a1a1a; }
+.quote-dark .quote-signed-cta:hover { background: #2AB5A0; color: #fff; }
 
 /* ─── Client ─── */
 .quote-client { padding: 24px 40px; }
@@ -1805,96 +2043,82 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
   }
 </script>
 
-<!-- Tab nav: IntersectionObserver + smooth scroll + progress bar -->
+<!-- Tab switcher: show only one panel at a time, URL-hash-synced -->
 <script is:inline>
   (() => {
-    const tabIds = ['tab-resumen', 'tab-inversion', 'tab-incluye', 'tab-proceso', 'tab-acepta'];
-    const anchors = tabIds.map(id => document.getElementById(id)).filter(Boolean);
-    if (!anchors.length) return;
+    const doc = document.getElementById('quote-doc');
+    if (!doc) return;
+    const defaultTab = doc.getAttribute('data-initial-tab') || 'resumen';
+    const panels = Array.from(document.querySelectorAll('.quote-tab-panel'));
+    const links = Array.from(document.querySelectorAll('[data-tab-link]'));
+    if (!panels.length) return;
 
-    const sidebarLinks = Array.from(document.querySelectorAll('[data-tab-link]'));
-    const progressBar = document.getElementById('qsbProgressBar');
-
-    const getActiveTab = () => {
-      const scrollY = window.scrollY + 120;
-      let active = tabIds[0];
-      for (const anchor of anchors) {
-        if (anchor.offsetTop <= scrollY) active = anchor.id;
-      }
-      return active;
-    };
+    // Collect tab ids that have at least one panel
+    const tabIdsWithPanels = new Set();
+    panels.forEach(p => {
+      const id = p.getAttribute('data-tab');
+      if (id) tabIdsWithPanels.add(id);
+    });
 
     const visited = new Set();
-    const updateUI = () => {
-      const active = getActiveTab();
-      const activeIdx = tabIds.indexOf(active);
-      // Mark all tabs up to and including active as visited
-      for (let i = 0; i <= activeIdx; i++) visited.add(tabIds[i]);
 
-      sidebarLinks.forEach(link => {
+    const setActive = (id, pushHash) => {
+      if (!tabIdsWithPanels.has(id)) id = defaultTab;
+      if (!tabIdsWithPanels.has(id)) {
+        // fallback: first panel's tab
+        const firstPanel = panels[0];
+        id = firstPanel ? (firstPanel.getAttribute('data-tab') || 'resumen') : 'resumen';
+      }
+      panels.forEach(p => p.classList.toggle('is-active', p.getAttribute('data-tab') === id));
+      visited.add(id);
+      links.forEach(link => {
         const target = link.getAttribute('data-tab-link');
         if (!target) return;
-        const targetIdx = tabIds.indexOf(target);
-        const isActive = target === active;
+        const isActive = target === id;
         const isVisited = visited.has(target) && !isActive;
         link.classList.toggle('qsb-tab--active', isActive && link.classList.contains('qsb-tab'));
         link.classList.toggle('qsb-tab--visited', isVisited && link.classList.contains('qsb-tab'));
         link.classList.toggle('qmp-pill--active', isActive && link.classList.contains('qmp-pill'));
         link.classList.toggle('qmp-pill--visited', isVisited && link.classList.contains('qmp-pill'));
+        if (link.setAttribute) {
+          link.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        }
       });
-
-      if (progressBar) {
-        const pct = ((activeIdx + 1) / tabIds.length) * 100;
-        progressBar.style.width = pct + '%';
+      if (pushHash) {
+        const url = id === defaultTab ? window.location.pathname + window.location.search : '#' + id;
+        try { history.replaceState(null, '', url); } catch (_) {}
+      }
+      // Scroll matching mobile pill into view
+      const pill = document.querySelector('.qmp-pill[data-tab-link="' + id + '"]');
+      pill?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+      // Scroll to top of content container for comfortable reading
+      const container = document.querySelector('.quote-container');
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        if (rect.top < -40) {
+          window.scrollTo({ top: window.scrollY + rect.top - 16, behavior: 'smooth' });
+        }
       }
     };
 
-    let ticking = false;
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => { updateUI(); ticking = false; });
-    };
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    updateUI();
-
-    // Smooth scroll + mark visited up to target on click
-    sidebarLinks.forEach(link => {
+    links.forEach(link => {
       const target = link.getAttribute('data-tab-link');
-      if (!target || !target.startsWith('tab-')) return;
+      if (!target || !tabIdsWithPanels.has(target)) return;
       link.addEventListener('click', (e) => {
         e.preventDefault();
-        const el = document.getElementById(target);
-        if (!el) return;
-        const targetIdx = tabIds.indexOf(target);
-        for (let i = 0; i <= targetIdx; i++) visited.add(tabIds[i]);
-        history.replaceState(null, '', '#' + target);
-        const y = el.getBoundingClientRect().top + window.scrollY - 20;
-        window.scrollTo({ top: y, behavior: 'smooth' });
-        // Scroll the active pill into view (mobile)
-        setTimeout(() => {
-          const pill = document.querySelector(`.qmp-pill[data-tab-link="${target}"]`);
-          pill?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
-        }, 50);
+        setActive(target, true);
       });
     });
 
-    // Deep link on load
-    if (window.location.hash) {
-      const initialTarget = window.location.hash.slice(1);
-      if (tabIds.includes(initialTarget)) {
-        const el = document.getElementById(initialTarget);
-        if (el) {
-          const idx = tabIds.indexOf(initialTarget);
-          for (let i = 0; i <= idx; i++) visited.add(tabIds[i]);
-          setTimeout(() => {
-            const y = el.getBoundingClientRect().top + window.scrollY - 20;
-            window.scrollTo({ top: y, behavior: 'auto' });
-            updateUI();
-          }, 100);
-        }
-      }
-    }
+    // Initial tab: from URL hash or default
+    const initialFromHash = window.location.hash ? window.location.hash.slice(1) : '';
+    const initial = (initialFromHash && tabIdsWithPanels.has(initialFromHash)) ? initialFromHash : defaultTab;
+    setActive(initial, false);
+
+    // React to hash changes (back/forward, manual edit)
+    window.addEventListener('hashchange', () => {
+      const id = window.location.hash ? window.location.hash.slice(1) : defaultTab;
+      setActive(id, false);
+    });
   })();
 </script>
