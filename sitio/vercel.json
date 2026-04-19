@@ -19,6 +19,14 @@
     {
       "path": "/api/crm/churn-alerts?key=sacs-cron-2026",
       "schedule": "0 15 * * *"
+    },
+    {
+      "path": "/api/cron/quotes-aging",
+      "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/renewals",
+      "schedule": "0 14 * * *"
     }
   ]
 }
