@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { getCurrentUser } from '../../../lib/auth/scope';
 
 export const prerender = false;
 
@@ -20,15 +21,44 @@ function pick(obj: Record<string, any>, fields: string[]): Record<string, any> {
   return result;
 }
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ request, url }) => {
+  const user = await getCurrentUser(request);
   const id = url.searchParams.get('id');
 
   if (id) {
+    // Public URL access needed (e.g., client accepting quote) — don't enforce scope on single lookup
     const { data, error } = await supabase.from('quotes').select('*').eq('id', id).single();
     if (error) return new Response(JSON.stringify({ error: error.message }), { status: 404, headers: { 'Content-Type': 'application/json' } });
     return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } });
   }
 
+  // List: apply partner scope when a user is identified.
+  // Quotes has no owner_id column — scope via deal_id → deals.owner_id or contact_id → contacts.owner_id
+  if (user && user.role === 'partner') {
+    // Fetch deal_ids owned by this partner
+    const { data: ownedDeals } = await supabase.from('deals').select('id').eq('owner_id', user.id);
+    const dealIds = (ownedDeals || []).map((d: any) => d.id);
+    const { data: ownedContacts } = await supabase.from('contacts').select('id').eq('owner_id', user.id);
+    const contactIds = (ownedContacts || []).map((c: any) => c.id);
+
+    if (dealIds.length === 0 && contactIds.length === 0) {
+      return new Response(JSON.stringify([]), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    const orParts: string[] = [];
+    if (dealIds.length) orParts.push(`deal_id.in.(${dealIds.join(',')})`);
+    if (contactIds.length) orParts.push(`contact_id.in.(${contactIds.join(',')})`);
+
+    const { data, error } = await supabase
+      .from('quotes').select('*')
+      .or(orParts.join(','))
+      .order('created_at', { ascending: false });
+
+    if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify(data || []), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }
+
+  // Founder/cs see all. Unauthenticated preserves legacy behavior (admin UI without auth header).
   const { data, error } = await supabase.from('quotes').select('*').order('created_at', { ascending: false });
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   return new Response(JSON.stringify(data || []), { status: 200, headers: { 'Content-Type': 'application/json' } });

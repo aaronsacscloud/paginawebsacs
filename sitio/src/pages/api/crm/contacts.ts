@@ -1,9 +1,11 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { getCurrentUser, applyPartnerScope } from '../../../lib/auth/scope';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ request, url }) => {
+  const user = await getCurrentUser(request);
   const search = url.searchParams.get('search') || '';
   const tipo = url.searchParams.get('tipo');
   const lifecycle = url.searchParams.get('lifecycle_stage');
@@ -22,6 +24,9 @@ export const GET: APIRoute = async ({ url }) => {
   if (search) {
     query = query.or(`nombre.ilike.%${search}%,email.ilike.%${search}%,whatsapp.ilike.%${search}%`);
   }
+
+  // Partner scope: only show contacts owned by the user (founder sees all)
+  query = applyPartnerScope(query, user, 'owner_id');
 
   const { data, error, count } = await query;
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });

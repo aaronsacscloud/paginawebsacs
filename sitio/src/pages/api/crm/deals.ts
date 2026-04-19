@@ -1,9 +1,11 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { getCurrentUser, applyPartnerScope } from '../../../lib/auth/scope';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ request, url }) => {
+  const user = await getCurrentUser(request);
   const stage = url.searchParams.get('stage');
   const contact_id = url.searchParams.get('contact_id');
 
@@ -15,6 +17,9 @@ export const GET: APIRoute = async ({ url }) => {
 
   if (stage) query = query.eq('stage', stage);
   if (contact_id) query = query.eq('contact_id', contact_id);
+
+  // Partner scope: only show deals owned by the user (founder sees all)
+  query = applyPartnerScope(query, user, 'owner_id');
 
   const { data, error } = await query;
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });

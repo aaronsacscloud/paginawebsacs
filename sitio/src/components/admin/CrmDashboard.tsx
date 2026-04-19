@@ -22,7 +22,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'dashboard' | 'pipeline' | 'deals' | 'agenda' | 'automations' | 'clientes' | 'cotizaciones' | 'pagos' | 'config';
+type Tab = 'dashboard' | 'pipeline' | 'deals' | 'agenda' | 'automations' | 'clientes' | 'cotizaciones' | 'pagos' | 'config' | 'agents' | 'desempeno';
 
 // SVG icons (Squarespace-style, clean strokes)
 const ICONS: Record<string, string> = {
@@ -59,6 +59,13 @@ const NAV_SECTIONS = [
     label: 'Marketing',
     items: [
       { id: 'automations' as Tab, label: 'Automatizaciones', icon: 'automations' },
+    ],
+  },
+  {
+    label: 'IA',
+    items: [
+      { id: 'agents' as Tab, label: 'Agentes IA', icon: 'automations' },
+      { id: 'desempeno' as Tab, label: 'Mi desempeño', icon: 'dashboard' },
     ],
   },
   {
@@ -261,6 +268,42 @@ export default function CrmDashboard() {
           <SchedulingTab />
         ) : tab === 'automations' ? (
           <ErrorBoundary><AutomationsTab /></ErrorBoundary>
+        ) : tab === 'agents' ? (
+          <div style={{ padding: 24 }}>
+            <h2 style={{ margin: '0 0 16px', fontSize: '1.25rem', fontWeight: 700 }}>Agentes IA</h2>
+            <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: 20 }}>
+              Dashboard completo de agentes con kill switches, approvals y traces.
+            </p>
+            <a href="/admin/agents" target="_blank" style={{
+              display: 'inline-block', padding: '10px 18px', background: '#1a1a1a', color: '#fff',
+              borderRadius: 6, textDecoration: 'none', fontWeight: 600, fontSize: '0.8125rem'
+            }}>Abrir dashboard de agentes →</a>
+            <div style={{ marginTop: 24, padding: 16, background: '#fafafa', borderRadius: 8, fontSize: '0.8125rem', color: '#555', lineHeight: 1.6 }}>
+              <div style={{ fontWeight: 600, marginBottom: 6 }}>Agentes disponibles:</div>
+              <ul style={{ margin: 0, paddingLeft: 20 }}>
+                <li><strong>hello_agent</strong> — demo + smoke test infra</li>
+                <li><strong>meeting_prep</strong> — brief 30 min antes de demos (auto)</li>
+                <li><strong>quote_drafter</strong> — transcripción → cotización (HITL)</li>
+                <li><strong>service_recommender</strong> — sugerencias de add-ons (auto)</li>
+                <li><strong>churn_watchdog</strong> — análisis de riesgo cada 6h (auto, cron)</li>
+                <li><strong>lead_distributor</strong> — routing automático de leads (auto, rules-only)</li>
+              </ul>
+            </div>
+          </div>
+        ) : tab === 'desempeno' ? (
+          <div style={{ padding: 24 }}>
+            <h2 style={{ margin: '0 0 16px', fontSize: '1.25rem', fontWeight: 700 }}>Mi desempeño</h2>
+            <p style={{ color: '#666', fontSize: '0.875rem', marginBottom: 20 }}>
+              MRR, comisiones, pipeline, leaderboard. Partners ven solo lo suyo; founder ve agregado.
+            </p>
+            <a href="/app/dashboard?user_id=YOUR_USER_ID" target="_blank" style={{
+              display: 'inline-block', padding: '10px 18px', background: '#1a1a1a', color: '#fff',
+              borderRadius: 6, textDecoration: 'none', fontWeight: 600, fontSize: '0.8125rem'
+            }}>Abrir dashboard de desempeño →</a>
+            <div style={{ marginTop: 12, fontSize: '0.75rem', color: '#888' }}>
+              Reemplaza YOUR_USER_ID con tu team_members.id
+            </div>
+          </div>
         ) : (
           <RevenueHub _initialTab={revenueTab as any} _hideNav={true} />
         )}

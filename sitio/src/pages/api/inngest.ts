@@ -7,6 +7,9 @@ import { inngest } from '../../inngest/client';
 import { helloAgent } from '../../inngest/agents/hello';
 import { meetingPrepAgent } from '../../inngest/agents/meeting-prep';
 import { quoteDrafterAgent } from '../../inngest/agents/quote-drafter';
+import { serviceRecommenderAgent } from '../../inngest/agents/service-recommender';
+import { churnWatchdogAgent } from '../../inngest/agents/churn-watchdog';
+import { leadDistributorAgent } from '../../inngest/agents/lead-distributor';
 
 export const prerender = false;
 
@@ -16,7 +19,9 @@ const handler = serve({
     helloAgent,
     meetingPrepAgent,
     quoteDrafterAgent,
-    // TODO: serviceRecommenderAgent
+    serviceRecommenderAgent,
+    churnWatchdogAgent,
+    leadDistributorAgent,
   ],
 });
 
