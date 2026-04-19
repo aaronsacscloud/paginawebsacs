@@ -59,7 +59,7 @@ export const pillars: Pillar[] = [
           headline: 'Tu tienda en línea, siempre conectada',
           subtitle: 'eCommerce integrado al inventario físico. Vende 24/7 sin duplicar operación.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'promociones',
@@ -72,7 +72,7 @@ export const pillars: Pillar[] = [
           headline: 'Promociones que mueven inventario',
           subtitle: 'Configura 3x2, descuentos por volumen, temporada y más. En tienda y en línea.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'apartados-y-pedidos',
@@ -85,7 +85,7 @@ export const pillars: Pillar[] = [
           headline: 'Apartados y pedidos sin complicaciones',
           subtitle: 'Anticipo, plazos, pagos parciales y recordatorios automáticos para tus clientes.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'social-commerce',
@@ -105,13 +105,13 @@ export const pillars: Pillar[] = [
         pillarId: 'vende',
         label: 'Agentic Commerce',
         title: 'Agentic Commerce — SACS',
-        description: 'Tus productos visibles en ChatGPT, Claude y asistentes de IA.',
+        description: 'Un agente de IA que atiende, cotiza, cobra y entrega por WhatsApp — con tu catálogo real.',
         hero: {
           eyebrow: 'Vende',
-          headline: 'Tus productos en la era de los agentes',
-          subtitle: 'Que ChatGPT, Claude y Gemini recomienden tus productos cuando alguien pregunte.',
+          headline: 'Un agente que vende como si conociera tu tienda',
+          subtitle: 'Porque la conoce. WhatsApp 24/7 con stock real, precios y promos de SACS.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'facturacion-electronica',
@@ -124,7 +124,7 @@ export const pillars: Pillar[] = [
           headline: 'Facturación electrónica sin fricción',
           subtitle: 'CFDI desde el punto de venta, autofacturación para clientes y factura global automática.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
     ],
   },
@@ -146,7 +146,7 @@ export const pillars: Pillar[] = [
           headline: 'Todo tu inventario sincronizado',
           subtitle: 'Stock por sucursal, CEDIS y canal de venta. Siempre en tiempo real.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'conteo-fisico',
@@ -159,7 +159,7 @@ export const pillars: Pillar[] = [
           headline: 'Conteo físico en segundos',
           subtitle: 'Escanea con tu celular, sin cerrar tienda. Conteos cíclicos programados.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'nivelacion-de-inventario',
@@ -172,7 +172,7 @@ export const pillars: Pillar[] = [
           headline: 'El producto correcto, en la sucursal correcta',
           subtitle: 'SACS nivela tu inventario automáticamente según la demanda de cada punto de venta.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'ordenes-de-compra',
@@ -185,7 +185,7 @@ export const pillars: Pillar[] = [
           headline: 'Compras organizadas, proveedores controlados',
           subtitle: 'Órdenes de compra por variante, recepción con validación y catálogos por proveedor.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'gastos',
@@ -198,7 +198,7 @@ export const pillars: Pillar[] = [
           headline: 'Cada peso, registrado',
           subtitle: 'Control de gastos operativos por sucursal. Sin hojas de cálculo.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'cuentas-por-pagar',
@@ -211,7 +211,7 @@ export const pillars: Pillar[] = [
           headline: 'Cuentas por pagar, siempre al día',
           subtitle: 'Saldos con proveedores, complementos de pago y notas de crédito en un solo lugar.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'reportes-y-analitica',
@@ -224,7 +224,7 @@ export const pillars: Pillar[] = [
           headline: 'Reportes que sí entiendes',
           subtitle: '50+ reportes, 20+ KPIs. Ventas, inventario, finanzas y equipo en dashboards claros.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
     ],
   },
@@ -246,7 +246,7 @@ export const pillars: Pillar[] = [
           headline: 'Conoce a cada cliente como si fuera el único',
           subtitle: 'Perfil 360° con historial de compras, preferencias y comportamiento omnicanal.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'programa-de-lealtad',
@@ -259,7 +259,7 @@ export const pillars: Pillar[] = [
           headline: 'Premia a tus mejores clientes',
           subtitle: 'Monedero electrónico, puntos por compra y niveles. Integrado al cobro, sin apps extra.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'portal-de-clientes',
@@ -272,7 +272,7 @@ export const pillars: Pillar[] = [
           headline: 'Un portal con tu marca para tus clientes',
           subtitle: 'Consulta de puntos, historial de compras, autofacturación y recompra en un solo lugar.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'tarjetas-de-regalo',
@@ -285,7 +285,7 @@ export const pillars: Pillar[] = [
           headline: 'Tarjetas de regalo que generan nuevos clientes',
           subtitle: 'Físicas y digitales, canjeables en cualquier sucursal y en tu tienda en línea.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'marketing-por-correo',
@@ -298,7 +298,7 @@ export const pillars: Pillar[] = [
           headline: 'Emails que tus clientes sí abren',
           subtitle: 'Campañas segmentadas, plantillas profesionales y métricas de apertura y conversión.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'marketing-por-whatsapp',
@@ -311,7 +311,7 @@ export const pillars: Pillar[] = [
           headline: 'Llega directo al WhatsApp de tus clientes',
           subtitle: 'Notificaciones automáticas, campañas y promociones donde tus clientes ya están.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'membresias-y-suscripciones',
@@ -324,7 +324,7 @@ export const pillars: Pillar[] = [
           headline: 'Ingresos recurrentes para tu marca',
           subtitle: 'Planes de membresía con cobro automático, renovación y beneficios por nivel.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
     ],
   },

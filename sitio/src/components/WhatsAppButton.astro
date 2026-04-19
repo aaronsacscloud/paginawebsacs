@@ -65,7 +65,8 @@ const DEFAULT_MESSAGE = t('whatsapp.message', locale);
     pointer-events: auto;
   }
 
-  .wa-bar.is-dismissed {
+  .wa-bar.is-dismissed,
+  .wa-bar.is-hidden-by-card {
     opacity: 0;
     transform: translateY(100%);
     pointer-events: none;
@@ -266,5 +267,21 @@ const DEFAULT_MESSAGE = t('whatsapp.message', locale);
         sessionStorage.setItem('wa-bar-dismissed', '1');
       }
     });
+
+    // Auto-hide when showcase featured cards are in view (to avoid covering their CTAs)
+    const watchTargets = document.querySelectorAll('.sq-featured-card');
+    if (bar && watchTargets.length > 0 && 'IntersectionObserver' in window) {
+      const activeCards = new Set<Element>();
+      const io = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) activeCards.add(entry.target);
+          else activeCards.delete(entry.target);
+        }
+        if (bar.classList.contains('is-dismissed')) return;
+        if (activeCards.size > 0) bar.classList.add('is-hidden-by-card');
+        else bar.classList.remove('is-hidden-by-card');
+      }, { rootMargin: '0px 0px -40% 0px' });
+      watchTargets.forEach((el) => io.observe(el));
+    }
   }
 </script>

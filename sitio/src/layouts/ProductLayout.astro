@@ -9,12 +9,13 @@ interface Props {
   currentSlug: string;
   currentPillar: PillarId;
   noindex?: boolean;
+  preloadImage?: string;
 }
 
-const { title, description, currentSlug, currentPillar, noindex } = Astro.props;
+const { title, description, currentSlug, currentPillar, noindex, preloadImage } = Astro.props;
 ---
 
-<BaseLayout title={title} description={description} noindex={noindex}>
+<BaseLayout title={title} description={description} noindex={noindex} preloadImage={preloadImage}>
   <ProductSubnav currentSlug={currentSlug} currentPillar={currentPillar} />
   <slot />
 </BaseLayout>

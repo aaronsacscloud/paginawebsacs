@@ -1,0 +1,546 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const stages = [
+  {
+    num: '01',
+    title: 'Arranque — "Quiero poner mi tienda de ropa"',
+    color: '#e8e4c0',
+    items: [
+      { keyword: 'cómo abrir mi tienda de ropa', volume: 'Alto', idea: 'Las 7 cosas que necesitas antes de abrir (la #5 nadie te dice)', url: 'https://www.tiktok.com/discover/como-abrir-mi-tienda-de-ropa' },
+      { keyword: 'hacer mi propia marca de ropa', volume: 'Alto', idea: 'Ya diseñaste tu marca, ahora ¿cómo la vendes? El sistema importa', url: 'https://www.tiktok.com/discover/hacer-mi-propia-marca-de-ropa' },
+      { keyword: 'nombres para emprendimientos de ropa', volume: 'Alto', idea: 'Tu nombre ya lo tienes. Lo que te falta es esto', url: 'https://www.tiktok.com/discover/nombres-para-emprendimientos-de-ropa' },
+      { keyword: 'contenido para marca de ropa', volume: 'Alto', idea: 'No solo necesitas contenido, necesitas ventas. Así las rastreo', url: 'https://www.tiktok.com/discover/contenido-para-marca-de-ropa' },
+      { keyword: 'logos para tienda de ropa online', volume: 'Medio', idea: 'Tu logo no vende. Tu proceso de cobro sí', url: 'https://www.tiktok.com/discover/logos-para-tienda-de-ropa-online' },
+    ],
+  },
+  {
+    num: '02',
+    title: 'Proveedores y Producto',
+    color: '#d4e0d2',
+    items: [
+      { keyword: 'proveedores de ropa para boutique México', volume: 'Muy alto', idea: 'Ya tienes proveedor. ¿Cómo registras lo que llega? (entrada de inventario)', url: 'https://www.tiktok.com/discover/proveedores-de-ropa-para-boutique-mexico' },
+      { keyword: 'ropa mayoreo para boutique', volume: 'Muy alto', idea: 'Compraste 200 piezas. ¿Cómo sabes cuál se vendió y cuál no?', url: 'https://www.tiktok.com/discover/ropa-mayoreo-para-boutique' },
+      { keyword: 'dónde comprar ropa de marca para vender', volume: 'Alto', idea: 'El problema no es encontrar producto, es controlarlo', url: 'https://www.tiktok.com/discover/donde-comprar-ropa-de-marca-para-vender' },
+      { keyword: 'ropa de marca mayoreo', volume: 'Alto', idea: 'Margen de ganancia real: así lo calculo por pieza', url: 'https://www.tiktok.com/discover/ropa-de-marca-mayoreo' },
+    ],
+  },
+  {
+    num: '03',
+    title: 'Inventario — EL DOLOR MÁS GRANDE',
+    color: '#e0dcd0',
+    highlight: true,
+    items: [
+      { keyword: 'inventario tienda de ropa Excel', volume: 'Muy alto', idea: 'Estás usando Excel para tu inventario de ropa. Esto va a pasar...', url: 'https://www.tiktok.com/discover/inventario-tienda-de-ropa-excel', star: true },
+      { keyword: 'cómo hacer inventario en Excel de una tienda de ropa', volume: 'Muy alto', idea: 'Excel no maneja tallas ni colores. Tu sistema sí debería', url: 'https://www.tiktok.com/discover/como-hacer-inventario-en-excel-de-una-tienda-de-ropa', star: true },
+      { keyword: 'plantilla Excel para tienda de ropa', volume: 'Muy alto', idea: 'La plantilla que usas tiene este error y no lo sabes', url: 'https://www.tiktok.com/discover/plantilla-excel-para-tienda-de-ropa', star: true },
+      { keyword: 'inventario en Excel con fotos', volume: 'Alto', idea: 'Fotos en Excel = archivo de 500MB que truena. Así se hace bien', url: 'https://www.tiktok.com/discover/inventario-en-excel-con-fotos' },
+      { keyword: 'app para inventario tienda', volume: 'Alto', idea: 'Probé 5 apps de inventario. Solo una maneja tallas y colores', url: 'https://www.tiktok.com/discover/app-para-inventario-tienda' },
+      { keyword: 'diagrama de flujo de venta de ropa', volume: 'Medio', idea: 'El flujo real de una venta de ropa en 2026', url: 'https://www.tiktok.com/discover/diagrama-de-flujo-de-venta-de-ropa' },
+    ],
+  },
+  {
+    num: '04',
+    title: 'Tienda física — Operación diaria',
+    color: '#dcd9c5',
+    items: [
+      { keyword: 'cómo cobrar en un punto de venta', volume: 'Alto', idea: 'Cobro en mi boutique en 2 segundos. Así se ve (screen recording)', url: 'https://www.tiktok.com/discover/como-cobrar-en-un-punto-de-venta' },
+      { keyword: 'cómo hacer corte de caja en tienda', volume: 'Alto', idea: 'Corte de caja sin contar billetes. 30 segundos', url: 'https://www.tiktok.com/discover/como-hacer-corte-de-caja-en-tienda' },
+      { keyword: 'sistema de apartado en punto de venta', volume: 'Medio', idea: 'Tus clientas apartan ropa. ¿Lo llevas en cuaderno?', url: 'https://www.tiktok.com/discover/sistema-de-apartado-en-punto-de-venta-eleventa' },
+      { keyword: 'control de ventas diarias en cuaderno', volume: 'Medio', idea: 'Cuaderno vs sistema: lo que pierdes por no saber qué vendes', url: 'https://www.tiktok.com/discover/control-de-ventas-diarias-en-cuaderno' },
+      { keyword: 'sistema de punto de venta gratis', volume: 'Alto', idea: 'POS gratis: lo que no te dicen (y cuándo sí vale la pena)', url: 'https://www.tiktok.com/discover/sistema-de-punto-de-venta-gratis' },
+    ],
+  },
+  {
+    num: '05',
+    title: 'Visual y experiencia en tienda',
+    color: '#e5e0c8',
+    items: [
+      { keyword: 'cómo exhibir ropa en la tienda', volume: 'Alto', idea: 'Exhibes bien pero ¿sabes qué prenda genera más venta? (reportes)', url: 'https://www.tiktok.com/discover/como-exhibir-ropa-en-la-tienda' },
+      { keyword: 'ideas para exhibir ropa en tienda', volume: 'Alto', idea: 'La exhibición atrae. Los datos te dicen QUÉ exhibir', url: 'https://www.tiktok.com/discover/ideas-para-exhibir-ropa-en-tienda' },
+      { keyword: 'cómo organizar mi tienda de ropa', volume: 'Alto', idea: 'Organizar tu tienda = organizar tu inventario. Empieza aquí', url: 'https://www.tiktok.com/discover/como-organizar-mi-tienda-de-ropa' },
+      { keyword: 'exhibidores para boutique', volume: 'Alto', idea: 'Exhibidor nuevo pero ¿sabes tu producto estrella?', url: 'https://www.tiktok.com/discover/exhibidores-para-boutique' },
+    ],
+  },
+  {
+    num: '06',
+    title: 'Crecimiento y omnicanal',
+    color: '#d8dcc5',
+    items: [
+      { keyword: 'cómo vender por WhatsApp', volume: 'Muy alto', idea: 'Vendo ropa por WhatsApp y mi inventario se actualiza solo', url: 'https://www.tiktok.com/discover/como-vender-por-whatsapp' },
+      { keyword: 'cómo abrir tienda de ropa online', volume: 'Alto', idea: 'Tu tienda física + online con el mismo inventario', url: 'https://www.tiktok.com/discover/como-abrir-una-tienda-de-ropa-online-en-estados-unidos' },
+      { keyword: 'cómo adquirir una franquicia de ropa', volume: 'Medio', idea: 'Antes de franquiciar, necesitas estos reportes', url: 'https://www.tiktok.com/discover/como-adquirir-una-franquicia-de-ropa' },
+    ],
+  },
+];
+
+const topVideos = {
+  hits: [
+    'Llevas tu inventario de ropa en Excel. Esto va a pasar — storytime del caos',
+    'Excel no maneja tallas y colores. Tu sistema debería — demo rápida talla S/M/L + color',
+    'Compraste 200 piezas al mayoreo. ¿Cuáles se vendieron? — reportes ABC',
+    'Vendí por WhatsApp y mi inventario se actualizó solo — screen recording real',
+    'Cobro en mi boutique en 2 seg desde el celular — POV vendedora',
+  ],
+  operation: [
+    'Corte de caja sin contar billetes — tutorial 30 seg',
+    'Mis clientas apartan ropa. Así lo controlo — sistema de apartados',
+    'Ticket por WhatsApp: así lo recibe tu clienta — satisfacción real',
+    '¿Cuál es tu prenda estrella? Así lo descubro — reporte producto más vendido',
+    'De cuaderno a sistema en 5 minutos — migración en vivo',
+  ],
+  growth: [
+    'Abrí mi segunda sucursal. Lo que necesité — multitienda',
+    'Mi tienda física y online comparten inventario — omnicanal',
+    'Comisiones por vendedora: así las calculo — gestión de equipo',
+    'Facturo desde el celular en 3 taps — CFDI rápido',
+    '5 errores al abrir tu boutique (el #1 es no tener sistema) — educativo',
+  ],
+};
+---
+
+<BaseLayout
+  title="TikTok Keywords para Fashion Retail — Guía SACS"
+  description="Mapa completo de keywords y ángulos de contenido en TikTok para fashion retail. Ideas específicas para tiendas de ropa, boutiques y marcas."
+  noindex={true}
+>
+  <section class="hero">
+    <div class="container">
+      <span class="eyebrow">Recursos internos · Content strategy</span>
+      <h1>TikTok Keywords<br/>para Fashion Retail</h1>
+      <p class="subtitle">Mapa de búsquedas reales en TikTok + ángulos de contenido orgánico para SACS. Organizado por etapa del negocio de fashion retail.</p>
+      <div class="meta">
+        <span class="meta-item">6 etapas</span>
+        <span class="meta-dot">·</span>
+        <span class="meta-item">28 keywords validadas</span>
+        <span class="meta-dot">·</span>
+        <span class="meta-item">15 ideas de video</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="insight">
+    <div class="container">
+      <div class="insight-box">
+        <span class="insight-label">La mina de oro</span>
+        <p>El cluster de <strong>"inventario + Excel + ropa"</strong> tiene miles de personas buscando plantillas de Excel para manejar su tienda de ropa. Cada uno de esos videos es una oportunidad de decir "hay algo mejor".</p>
+      </div>
+    </div>
+  </section>
+
+  {stages.map((stage) => (
+    <section class={`stage${stage.highlight ? ' stage--highlight' : ''}`} style={`background:${stage.color}`}>
+      <div class="container">
+        <div class="stage-head">
+          <span class="stage-num">Etapa {stage.num}</span>
+          <h2 class="stage-title">{stage.title}</h2>
+        </div>
+        <div class="stage-table">
+          <div class="stage-table-head">
+            <span>Keyword en TikTok</span>
+            <span>Volumen</span>
+            <span>Ángulo de video SACS</span>
+          </div>
+          {stage.items.map((item: any) => (
+            <a href={item.url} target="_blank" rel="noopener noreferrer" class={`stage-row${item.star ? ' stage-row--star' : ''}`}>
+              <span class="row-keyword">
+                {item.star && <span class="star">★</span>}
+                {item.keyword}
+                <svg class="row-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+              </span>
+              <span class={`row-volume row-volume--${item.volume.toLowerCase().replace(' ', '-')}`}>{item.volume}</span>
+              <span class="row-idea">{item.idea}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  ))}
+
+  <section class="top-videos">
+    <div class="container">
+      <span class="eyebrow eyebrow--dark">Plan de contenido</span>
+      <h2>Top 15 videos para fashion retail</h2>
+      <p class="section-intro">Ordenados por prioridad. Los primeros son los que más van a pegar.</p>
+
+      <div class="videos-grid">
+        <div class="videos-col">
+          <h3>Los que van a pegar más</h3>
+          <span class="col-tag">Dolor + volumen</span>
+          <ol>
+            {topVideos.hits.map((v) => <li>{v}</li>)}
+          </ol>
+        </div>
+        <div class="videos-col">
+          <h3>Los de operación</h3>
+          <span class="col-tag">Confianza</span>
+          <ol start="6">
+            {topVideos.operation.map((v) => <li>{v}</li>)}
+          </ol>
+        </div>
+        <div class="videos-col">
+          <h3>Los de crecimiento</h3>
+          <span class="col-tag">Aspiración</span>
+          <ol start="11">
+            {topVideos.growth.map((v) => <li>{v}</li>)}
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="container">
+      <h2>¿Listo para producir el contenido?</h2>
+      <p>Empieza con los 5 videos del cluster de inventario. Son los que tienen más dolor real y más búsqueda.</p>
+      <a href="/producto/punto-de-venta" class="cta-btn">Ver la página del POS</a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  :global(body) { background: #faf9f5; }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 clamp(20px, 4vw, 40px);
+  }
+
+  .hero {
+    padding: clamp(80px, 12vw, 140px) 0 clamp(60px, 8vw, 100px);
+    background: #1a1a1a;
+    color: #fff;
+  }
+
+  .eyebrow {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 24px;
+  }
+
+  .eyebrow--dark {
+    color: rgba(26, 26, 26, 0.55);
+  }
+
+  .hero h1 {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin: 0 0 24px;
+  }
+
+  .subtitle {
+    font-size: clamp(1.0625rem, 1.5vw, 1.25rem);
+    line-height: 1.5;
+    max-width: 640px;
+    color: rgba(255, 255, 255, 0.75);
+    margin: 0 0 40px;
+  }
+
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.6);
+    flex-wrap: wrap;
+  }
+
+  .meta-dot {
+    opacity: 0.4;
+  }
+
+  .insight {
+    padding: 64px 0;
+    background: #faf9f5;
+  }
+
+  .insight-box {
+    background: #fff;
+    border: 2px solid #1a1a1a;
+    border-radius: 12px;
+    padding: 32px clamp(24px, 4vw, 48px);
+    max-width: 860px;
+  }
+
+  .insight-label {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #1a1a1a;
+    background: #e8e4c0;
+    padding: 6px 12px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+  }
+
+  .insight-box p {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.25rem, 2vw, 1.625rem);
+    font-weight: 600;
+    line-height: 1.4;
+    color: #1a1a1a;
+    margin: 0;
+    letter-spacing: -0.015em;
+  }
+
+  .stage {
+    padding: clamp(60px, 8vw, 100px) 0;
+    transition: background 0.4s ease;
+  }
+
+  .stage--highlight {
+    border-top: 3px solid #1a1a1a;
+    border-bottom: 3px solid #1a1a1a;
+  }
+
+  .stage-head {
+    margin-bottom: 40px;
+  }
+
+  .stage-num {
+    display: inline-block;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: rgba(26, 26, 26, 0.55);
+    margin-bottom: 12px;
+  }
+
+  .stage-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.75rem, 3.5vw, 2.75rem);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+    color: #1a1a1a;
+    margin: 0;
+    max-width: 860px;
+  }
+
+  .stage-table {
+    background: rgba(255, 255, 255, 0.55);
+    border-radius: 12px;
+    overflow: hidden;
+    backdrop-filter: blur(4px);
+  }
+
+  .stage-table-head {
+    display: grid;
+    grid-template-columns: 1.3fr 0.5fr 1.8fr;
+    gap: 16px;
+    padding: 14px 24px;
+    background: rgba(26, 26, 26, 0.08);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #1a1a1a;
+  }
+
+  .stage-row {
+    display: grid;
+    grid-template-columns: 1.3fr 0.5fr 1.8fr;
+    gap: 16px;
+    padding: 20px 24px;
+    border-top: 1px solid rgba(26, 26, 26, 0.1);
+    color: #1a1a1a;
+    text-decoration: none;
+    transition: background 0.2s ease;
+    align-items: start;
+  }
+
+  .stage-row:hover {
+    background: rgba(255, 255, 255, 0.4);
+  }
+
+  .stage-row--star {
+    background: rgba(255, 255, 255, 0.35);
+  }
+
+  .row-keyword {
+    font-weight: 700;
+    font-size: 0.9375rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .star {
+    color: #c5a833;
+    font-size: 1.125rem;
+    line-height: 1;
+  }
+
+  .row-arrow {
+    opacity: 0.4;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .stage-row:hover .row-arrow {
+    opacity: 1;
+    transform: translate(2px, -2px);
+  }
+
+  .row-volume {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 99px;
+    display: inline-block;
+    width: fit-content;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .row-volume--muy-alto {
+    background: #1a1a1a;
+    color: #fff;
+  }
+
+  .row-volume--alto {
+    background: rgba(26, 26, 26, 0.12);
+    color: #1a1a1a;
+  }
+
+  .row-volume--medio {
+    background: rgba(26, 26, 26, 0.05);
+    color: rgba(26, 26, 26, 0.7);
+  }
+
+  .row-idea {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: rgba(26, 26, 26, 0.85);
+  }
+
+  @media (max-width: 768px) {
+    .stage-table-head { display: none; }
+    .stage-row {
+      grid-template-columns: 1fr;
+      gap: 8px;
+      padding: 20px;
+    }
+  }
+
+  .top-videos {
+    padding: clamp(80px, 10vw, 120px) 0;
+    background: #1a1a1a;
+    color: #fff;
+  }
+
+  .top-videos h2 {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.875rem, 4vw, 2.875rem);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    margin: 0 0 16px;
+  }
+
+  .section-intro {
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 1.0625rem;
+    max-width: 560px;
+    margin: 0 0 48px;
+  }
+
+  .videos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 32px;
+  }
+
+  .videos-col {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 28px;
+  }
+
+  .videos-col h3 {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0 0 8px;
+  }
+
+  .col-tag {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 24px;
+  }
+
+  .videos-col ol {
+    padding-left: 24px;
+    margin: 0;
+  }
+
+  .videos-col li {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 14px;
+  }
+
+  .videos-col li::marker {
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 700;
+  }
+
+  .cta {
+    padding: clamp(80px, 10vw, 120px) 0;
+    background: #e8e4c0;
+    text-align: center;
+  }
+
+  .cta h2 {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.875rem, 4vw, 2.875rem);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    color: #1a1a1a;
+    margin: 0 0 16px;
+  }
+
+  .cta p {
+    font-size: 1.125rem;
+    color: rgba(26, 26, 26, 0.75);
+    max-width: 560px;
+    margin: 0 auto 32px;
+    line-height: 1.5;
+  }
+
+  .cta-btn {
+    display: inline-block;
+    padding: 16px 32px;
+    background: #1a1a1a;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.9375rem;
+    border-radius: 8px;
+    transition: transform 0.2s ease, background 0.2s ease;
+  }
+
+  .cta-btn:hover {
+    transform: translateY(-2px);
+    background: #2a2a2a;
+  }
+</style>

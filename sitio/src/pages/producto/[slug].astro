@@ -11,6 +11,7 @@ import GiroFAQ from '../../components/giros/GiroFAQ.astro';
 import FinalCTA from '../../components/FinalCTA.astro';
 import { pillars, getFeatureBySlug, getPillarForFeature, getAllSlugs } from '../../data/product';
 import { plans } from '../../data/plans';
+import { pageContent } from '../../data/product-pages';
 
 export function getStaticPaths() {
   return getAllSlugs().map((slug) => ({ params: { slug } }));
@@ -20,171 +21,6 @@ const { slug } = Astro.params;
 const feature = getFeatureBySlug(slug!)!;
 const pillar = getPillarForFeature(slug!)!;
 
-// ─── Page content per slug (live pages only) ───
-const pageContent: Record<string, any> = {
-  'punto-de-venta': {
-    hero: {
-      eyebrow: 'SACS Punto de Venta',
-      title: 'Un punto de venta listo para tu negocio',
-      subtitle: 'Convierte cualquier dispositivo en un punto de venta completo. Tarjeta, efectivo, transferencia y más.',
-      image: '/images/screen-pos.webp',
-      imageAlt: 'Punto de Venta SACS en tablet mostrando el proceso de cobro',
-    },
-    features: [
-      {
-        icon: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>',
-        title: 'Todos los métodos de pago',
-        description: 'Tarjeta de crédito y débito, efectivo, transferencia, OXXO y más. Sin terminales obligatorias.',
-      },
-      {
-        icon: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
-        title: 'Funciona sin internet',
-        description: 'Sigue cobrando aunque se caiga la conexión. Las ventas se sincronizan cuando vuelve la red.',
-      },
-      {
-        icon: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
-        title: 'Ticket por WhatsApp',
-        description: 'Envía el ticket digital al WhatsApp de tu cliente. Sin papel, sin impresora obligatoria.',
-      },
-      {
-        icon: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
-        title: 'Múltiples cajeros',
-        description: 'Cada vendedor con su sesión. Cortes de caja individuales, comisiones y permisos por rol.',
-      },
-    ],
-    showcaseTitle: 'Vende más en cada punto de contacto',
-    blocks: [
-      {
-        title: 'Cobra como tu cliente prefiera.',
-        description: 'Tarjeta de crédito y débito, efectivo, transferencia SPEI, OXXO y más. Sin terminales obligatorias, sin comisiones ocultas. Acepta cualquier método de pago desde cualquier dispositivo.',
-        image: '/images/screen-pos.webp',
-        imageAlt: 'Métodos de pago en SACS POS',
-        link: null,
-      },
-      {
-        title: 'Cortes de caja y arqueos en segundos.',
-        description: 'Al final del turno, cierra caja con un tap. SACS calcula automáticamente la diferencia entre lo cobrado y lo que hay en efectivo. Cada cajero con su sesión, cortes individuales y detección de faltantes.',
-        image: '/images/screen-pos.webp',
-        imageAlt: 'Corte de caja en SACS mostrando resumen del día',
-        link: null,
-      },
-      {
-        title: 'Cotizaciones que se convierten en ventas.',
-        description: 'Genera cotizaciones profesionales con tu logo y datos fiscales. Tu cliente recibe un PDF por WhatsApp y puede pagar directo desde el link. La cotización se convierte en venta automáticamente.',
-        image: '/images/screen-pos.webp',
-        imageAlt: 'Cotización generada desde SACS con opción de pago en línea',
-        link: { label: 'Conoce más sobre cotizaciones', href: '/producto/apartados-y-pedidos' },
-      },
-      {
-        title: 'Vende a crédito con control total.',
-        description: 'Configura crédito con límite por cliente, listas de precios para mayoreo, menudeo y empleados, y precios por volumen automáticos. Todo integrado al punto de venta sin hojas de cálculo.',
-        image: '/images/screen-pos.webp',
-        imageAlt: 'Configuración de listas de precios en SACS',
-        link: null,
-      },
-    ],
-    stats: [
-      { value: '+3,000', label: 'Tiendas usando SACS POS' },
-      { value: '2 seg', label: 'Tiempo promedio de cobro' },
-      { value: '99.9%', label: 'Uptime del sistema' },
-      { value: '0', label: 'Hardware obligatorio' },
-    ],
-    testimonial: {
-      quote: 'Desde que cambiamos a SACS, el cobro es instantáneo. Mis vendedoras ya no necesitan capacitación especial, es tan fácil como usar el celular.',
-      name: 'María García',
-      role: 'Fundadora',
-      company: 'La Bella Pandita',
-      stat: '42',
-      statLabel: 'sucursales usando SACS POS',
-    },
-    interrupt: 'Tu negocio no para,',
-    interruptStrike: 'tu punto de venta tampoco',
-    showcaseTabs: [
-      {
-        label: 'Inventario',
-        title: 'Tu inventario siempre al día, en tiempo real',
-        description: 'Cada venta descuenta stock automáticamente. Multi-sucursal sincronizado, alertas de reabasto y control total.',
-        image: '/images/screen-pos.webp',
-        imageAlt: 'Inventario en SACS POS',
-        link: { label: 'Ver inventario omnicanal', href: '/producto/inventario-omnicanal' },
-        details: [
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>', title: 'Multi-sucursal en tiempo real', description: 'Stock sincronizado entre todas tus tiendas y CEDIS.' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 4v16"/></svg>', title: 'Traspasos entre sucursales', description: 'Mueve mercancía entre tiendas con un click.' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>', title: 'Alertas de stock bajo', description: 'Notificaciones automáticas cuando un producto está por agotarse.' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>', title: 'Kardex y trazabilidad', description: 'Historial completo de cada movimiento por producto.' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>', title: 'Conteo desde el celular', description: 'Escanea y actualiza inventario sin cerrar la tienda.' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>', title: 'Recepción con validación', description: 'Recibe contra orden de compra y detecta faltantes.' },
-        ],
-      },
-      {
-        label: 'Clientes',
-        title: 'Cada venta construye la relación con tu cliente',
-        description: 'Captura datos al cobrar, acumula puntos de lealtad y sugiere productos basados en historial.',
-        image: '/images/screen-pos.webp',
-        imageAlt: 'CRM en SACS POS',
-        link: { label: 'Ver clientes y CRM', href: '/producto/clientes-y-crm' },
-        details: [
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>', title: 'Registro automático', description: 'Captura datos del cliente al momento del cobro.' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>', title: 'Puntos de lealtad', description: 'Acumula puntos automáticamente con cada compra.' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>', title: 'Historial 360°', description: 'Todo lo que ha comprado, dónde y cuándo.' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>', title: 'Notificaciones WhatsApp', description: 'Envía promociones y recordatorios directo al celular.' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 00-8 0v2"/></svg>', title: 'Monedero electrónico', description: 'Cashback que el cliente canjea en su próxima compra.' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>', title: 'Segmentación inteligente', description: 'Agrupa clientes por comportamiento de compra.' },
-        ],
-      },
-      {
-        label: 'Reportes',
-        title: 'Dashboards claros con las métricas que importan',
-        description: 'Ventas por producto, vendedor y sucursal. Margen de utilidad y KPIs en tiempo real.',
-        image: '/images/screen-pos.webp',
-        imageAlt: 'Reportes de ventas en SACS',
-        link: { label: 'Ver reportes y analítica', href: '/producto/reportes-y-analitica' },
-        details: [
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>', title: 'Ventas por producto', description: 'Qué se vende más, dónde y cuándo.' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 20V10M18 20V4M6 20v-8"/></svg>', title: 'Margen de utilidad', description: 'Costeo y ganancia por producto en tiempo real.' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>', title: 'KPIs en tiempo real', description: '20+ indicadores para medir tu operación.' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>', title: 'Ventas por vendedor', description: 'Metas, comisiones y desempeño individual.' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>', title: 'Comparativas', description: 'Periodo vs periodo, sucursal vs sucursal.' },
-          { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>', title: 'ABC y rotación', description: 'Identifica productos estrella y estancados.' },
-        ],
-      },
-    ],
-    testimonials: [
-      {
-        bg: '#e8e4c0',
-        image: '/images/testimonials/maria-garcia.webp',
-        quote: 'Desde que cambiamos a SACS, el cobro es instantáneo. Mis vendedoras ya no necesitan capacitación especial, es tan fácil como usar el celular.',
-        name: 'María García',
-        business: 'La Bella Pandita',
-        location: '42 sucursales',
-      },
-      {
-        bg: '#d4e0d2',
-        image: '/images/testimonials/carlos-mendoza.webp',
-        quote: 'Vendemos en ferias y conciertos. Necesitábamos un POS que funcionara sin internet y que mis 15 vendedores pudieran usar desde su celular. SACS fue la respuesta.',
-        name: 'Carlos Mendoza',
-        business: 'Liveshow Merchandising',
-        location: '+1,500 puntos de venta',
-      },
-      {
-        bg: '#e0dcd0',
-        image: '/images/testimonials/andrea-lopez.webp',
-        quote: 'Lo que más valoro es que el punto de venta y el ecommerce comparten el mismo inventario. Ya no vendemos lo que no hay en stock.',
-        name: 'Andrea López',
-        business: 'Casa Maca',
-        location: '2 sucursales',
-      },
-    ],
-    faqs: [
-      { question: '¿Necesito hardware especial para usar el POS?', answer: 'No. SACS funciona en cualquier dispositivo con navegador: tablet, celular o computadora. Si ya tienes una terminal bancaria, la puedes seguir usando. No es obligatorio comprar nada.' },
-      { question: '¿Funciona sin internet?', answer: 'Sí. SACS tiene modo offline que te permite seguir cobrando. Cuando vuelve la conexión, todas las ventas se sincronizan automáticamente.' },
-      { question: '¿Puedo tener varios cajeros al mismo tiempo?', answer: 'Sí. Cada vendedor puede tener su propia sesión con permisos específicos. Los cortes de caja son individuales por cajero o por turno.' },
-      { question: '¿Cómo recibe el ticket mi cliente?', answer: 'Puedes enviar el ticket por WhatsApp, email o imprimirlo. La opción de WhatsApp es la más popular: rápida, sin papel y el cliente siempre lo tiene a la mano.' },
-      { question: '¿Se integra con mi terminal bancaria actual?', answer: 'SACS se integra con las principales terminales bancarias en México. También puedes cobrar con link de pago, transferencia SPEI o en efectivo.' },
-      { question: '¿Puedo facturar desde el punto de venta?', answer: 'Sí. Genera CFDI directamente desde el POS al momento del cobro, o deja que tu cliente se autofacture desde el portal de clientes.' },
-    ],
-  },
-};
 
 const content = pageContent[slug!];
 const isLive = feature.status === 'live' && content;
@@ -196,6 +32,7 @@ const isLive = feature.status === 'live' && content;
   currentSlug={slug!}
   currentPillar={pillar.id}
   noindex={feature.status === 'coming-soon'}
+  preloadImage={content?.hero?.image}
 >
   {isLive && (
     <Fragment>
@@ -225,7 +62,7 @@ const isLive = feature.status === 'live' && content;
         </div>
 
         {content.blocks.map((block: any, i: number) => (
-          <div class={`sq-block reveal-section${i % 2 === 0 ? '' : ' sq-block--flip'}`}>
+          <div class={`sq-block reveal-section${i % 2 === 0 ? '' : ' sq-block--flip'}${block.featured ? ' sq-block--featured' : ''}`}>
             <div class="sq-block-inner container">
               <div class="sq-block-text reveal-item" style="--reveal-delay: 0ms">
                 <h3 class="sq-block-title">{block.title}</h3>
@@ -238,7 +75,1229 @@ const isLive = feature.status === 'live' && content;
                 )}
               </div>
               <div class="sq-block-media reveal-item" style="--reveal-delay: 150ms">
-                <img src={block.image} alt={block.imageAlt} width="900" height="600" loading="lazy" />
+                {block.featured ? (
+                  <div class={`sq-featured sq-featured--${block.variant || 'checkout'}`}>
+                    <img src={block.image} alt={block.imageAlt} width="1024" height="1024" loading="lazy" />
+
+                    {(!block.variant || block.variant === 'checkout') && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge">
+                            <span class="sq-fc-dot"></span>
+                            Caja Chapalita
+                          </span>
+                          <span class="sq-fc-time">POS · iPad</span>
+                        </div>
+                        <div class="sq-fc-line">
+                          <div class="sq-fc-line-main">
+                            <span class="sq-fc-prod">Playera Blanca · M</span>
+                            <span class="sq-fc-qty">1 × $450.00</span>
+                          </div>
+                          <span class="sq-fc-price">$450.00</span>
+                        </div>
+                        <div class="sq-fc-line">
+                          <div class="sq-fc-line-main">
+                            <span class="sq-fc-prod">Jeans Wide Leg</span>
+                            <span class="sq-fc-qty">1 × $890.00</span>
+                          </div>
+                          <span class="sq-fc-price">$890.00</span>
+                        </div>
+                        <div class="sq-fc-total">
+                          <span>Total</span>
+                          <span class="sq-fc-total-val">$1,340.00</span>
+                        </div>
+                        <button class="sq-fc-cobrar" tabindex="-1">
+                          COBRAR
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </button>
+                      </div>
+                    )}
+
+                    {block.variant === 'pickup' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge">
+                            <span class="sq-fc-dot"></span>
+                            Listo para pickup
+                          </span>
+                          <span class="sq-fc-time">#4291</span>
+                        </div>
+                        <div class="sq-fc-customer">
+                          <span class="sq-fc-cust-name">María Fernández</span>
+                          <span class="sq-fc-cust-meta">Sucursal Chapalita · Tienda en línea</span>
+                        </div>
+                        <div class="sq-fc-line">
+                          <div class="sq-fc-line-main">
+                            <span class="sq-fc-prod">Vestido Verano · S</span>
+                            <span class="sq-fc-qty">1 × $1,290.00</span>
+                          </div>
+                          <span class="sq-fc-price">$1,290.00</span>
+                        </div>
+                        <div class="sq-fc-line">
+                          <div class="sq-fc-line-main">
+                            <span class="sq-fc-prod">Sandalia Kira · 24</span>
+                            <span class="sq-fc-qty">1 × $890.00</span>
+                          </div>
+                          <span class="sq-fc-price">$890.00</span>
+                        </div>
+                        <div class="sq-fc-qrrow">
+                          <div class="sq-fc-qr" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M3 3h7v7H3V3zm2 2v3h3V5H5zm9-2h7v7h-7V3zm2 2v3h3V5h-3zM3 14h7v7H3v-7zm2 2v3h3v-3H5zm11-2h2v2h-2v-2zm2 2h2v2h-2v-2zm-4 0h2v2h-2v-2zm4 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm-2-2h2v2h-2v-2zm4-6h2v2h-2v-2z"/></svg>
+                          </div>
+                          <div class="sq-fc-qr-text">
+                            <span class="sq-fc-qr-title">Escanea el QR del cliente</span>
+                            <span class="sq-fc-qr-meta">Entrega verificada · sin copiar datos</span>
+                          </div>
+                        </div>
+                        <button class="sq-fc-cobrar sq-fc-cobrar--pickup" tabindex="-1">
+                          ENTREGAR PEDIDO
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                        </button>
+                      </div>
+                    )}
+
+                    {block.variant === 'endless-aisle' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge">
+                            <span class="sq-fc-dot sq-fc-dot--blue"></span>
+                            Disponibilidad global
+                          </span>
+                          <span class="sq-fc-time">SKU #INX-RG18</span>
+                        </div>
+                        <div class="sq-fc-customer">
+                          <span class="sq-fc-cust-name">Inox Rose Gold · 18 oz</span>
+                          <span class="sq-fc-cust-meta">Consultado desde Sucursal Chapalita</span>
+                        </div>
+                        <div class="sq-fc-stock">
+                          <div class="sq-fc-stock-row">
+                            <div class="sq-fc-stock-left">
+                              <span class="sq-fc-stock-check sq-fc-stock-check--ok">✓</span>
+                              <span class="sq-fc-stock-name">Polanco</span>
+                            </div>
+                            <span class="sq-fc-stock-qty">2 en stock</span>
+                          </div>
+                          <div class="sq-fc-stock-row">
+                            <div class="sq-fc-stock-left">
+                              <span class="sq-fc-stock-check sq-fc-stock-check--ok">✓</span>
+                              <span class="sq-fc-stock-name">Santa Fe</span>
+                            </div>
+                            <span class="sq-fc-stock-qty">4 en stock</span>
+                          </div>
+                          <div class="sq-fc-stock-row sq-fc-stock-row--out">
+                            <div class="sq-fc-stock-left">
+                              <span class="sq-fc-stock-check sq-fc-stock-check--out">–</span>
+                              <span class="sq-fc-stock-name">Chapalita</span>
+                            </div>
+                            <span class="sq-fc-stock-qty">Agotado</span>
+                          </div>
+                        </div>
+                        <button class="sq-fc-cobrar sq-fc-cobrar--aisle" tabindex="-1">
+                          APARTAR Y TRASPASAR
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </button>
+                      </div>
+                    )}
+
+                    {block.variant === 'control-central' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge">
+                            <span class="sq-fc-dot"></span>
+                            En vivo · Dashboard
+                          </span>
+                          <span class="sq-fc-time">12 sucursales</span>
+                        </div>
+                        <div class="sq-fc-metric">
+                          <span class="sq-fc-metric-label">Ventas hoy</span>
+                          <div class="sq-fc-metric-row">
+                            <span class="sq-fc-metric-val">$184,320</span>
+                            <span class="sq-fc-metric-delta">↑ 12% vs ayer</span>
+                          </div>
+                          <svg class="sq-fc-metric-spark" viewBox="0 0 120 28" preserveAspectRatio="none" aria-hidden="true">
+                            <path d="M0 22 L12 18 L24 20 L36 14 L48 16 L60 10 L72 12 L84 6 L96 8 L108 4 L120 2" fill="none" stroke="#2AB5A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                          </svg>
+                        </div>
+                        <div class="sq-fc-ranking">
+                          <span class="sq-fc-ranking-title">Top sucursales</span>
+                          <div class="sq-fc-rank-row">
+                            <span class="sq-fc-rank-pos">1</span>
+                            <span class="sq-fc-rank-name">Polanco</span>
+                            <span class="sq-fc-rank-val">$42,180</span>
+                          </div>
+                          <div class="sq-fc-rank-row">
+                            <span class="sq-fc-rank-pos">2</span>
+                            <span class="sq-fc-rank-name">Santa Fe</span>
+                            <span class="sq-fc-rank-val">$38,910</span>
+                          </div>
+                          <div class="sq-fc-rank-row">
+                            <span class="sq-fc-rank-pos">3</span>
+                            <span class="sq-fc-rank-name">Chapalita</span>
+                            <span class="sq-fc-rank-val">$31,240</span>
+                          </div>
+                        </div>
+                        <button class="sq-fc-cobrar sq-fc-cobrar--dash" tabindex="-1">
+                          VER DASHBOARD
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </button>
+                      </div>
+                    )}
+
+                    {block.variant === 'promo-auto' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--promo">
+                            <span class="sq-fc-dot"></span>
+                            Promo detectada
+                          </span>
+                          <span class="sq-fc-time">POS · Auto</span>
+                        </div>
+                        <div class="sq-fc-line">
+                          <div class="sq-fc-line-main">
+                            <span class="sq-fc-prod">Blusa Lino · M</span>
+                            <span class="sq-fc-qty">1 × $790.00</span>
+                          </div>
+                          <span class="sq-fc-price">$790.00</span>
+                        </div>
+                        <div class="sq-fc-line">
+                          <div class="sq-fc-line-main">
+                            <span class="sq-fc-prod">Falda Plisada · 28</span>
+                            <span class="sq-fc-qty">1 × $690.00</span>
+                          </div>
+                          <span class="sq-fc-price">$690.00</span>
+                        </div>
+                        <div class="sq-fc-promo-row">
+                          <span class="sq-fc-promo-label">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                            Promo Verano · 15% off
+                          </span>
+                          <span class="sq-fc-promo-val">−$222.00</span>
+                        </div>
+                        <div class="sq-fc-total">
+                          <span>Total</span>
+                          <span class="sq-fc-total-val">$1,258.00</span>
+                        </div>
+                        <button class="sq-fc-cobrar" tabindex="-1">
+                          COBRAR
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </button>
+                      </div>
+                    )}
+
+                    {block.variant === 'promo-schedule' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--schedule">
+                            <span class="sq-fc-dot"></span>
+                            Happy hour · Activa
+                          </span>
+                          <span class="sq-fc-time">Martes</span>
+                        </div>
+                        <div class="sq-fc-sched-title">2x1 en bebidas · 15:00 – 18:00</div>
+                        <div class="sq-fc-sched-days">
+                          <span class="sq-fc-day">L</span>
+                          <span class="sq-fc-day sq-fc-day--active">M</span>
+                          <span class="sq-fc-day">M</span>
+                          <span class="sq-fc-day">J</span>
+                          <span class="sq-fc-day">V</span>
+                          <span class="sq-fc-day">S</span>
+                          <span class="sq-fc-day">D</span>
+                        </div>
+                        <div class="sq-fc-sched-branches">
+                          <span class="sq-fc-sched-branch-label">Sucursales:</span>
+                          <span class="sq-fc-branch-chip">Norte</span>
+                          <span class="sq-fc-branch-chip">Polanco</span>
+                          <span class="sq-fc-branch-chip sq-fc-branch-chip--more">+3</span>
+                        </div>
+                        <div class="sq-fc-sched-timer">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                          Termina en 1h 42m
+                        </div>
+                      </div>
+                    )}
+
+                    {block.variant === 'promo-code' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--code">
+                            <span class="sq-fc-dot"></span>
+                            Código aplicado
+                          </span>
+                          <span class="sq-fc-time">#7812</span>
+                        </div>
+                        <div class="sq-fc-code-tile">
+                          <div class="sq-fc-code-chip">BIENVENIDA20</div>
+                          <div class="sq-fc-code-meta">
+                            <span class="sq-fc-code-stat">
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                              Uso único por cliente
+                            </span>
+                            <span class="sq-fc-code-stat">Vigente hasta 31 mar</span>
+                          </div>
+                        </div>
+                        <div class="sq-fc-line">
+                          <div class="sq-fc-line-main">
+                            <span class="sq-fc-prod">Subtotal</span>
+                          </div>
+                          <span class="sq-fc-price">$1,450.00</span>
+                        </div>
+                        <div class="sq-fc-promo-row">
+                          <span class="sq-fc-promo-label">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8a2 2 0 00-2-2H6a2 2 0 00-2 2v4a2 2 0 012 2 2 2 0 00-2 2v4a2 2 0 002 2h12a2 2 0 002-2v-4a2 2 0 01-2-2 2 2 0 002-2z"/></svg>
+                            Descuento BIENVENIDA20
+                          </span>
+                          <span class="sq-fc-promo-val">−$290.00</span>
+                        </div>
+                        <div class="sq-fc-total">
+                          <span>Total</span>
+                          <span class="sq-fc-total-val">$1,160.00</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {block.variant === 'promo-loyalty' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--loyalty">
+                            <span class="sq-fc-dot"></span>
+                            Lealtad · Cliente VIP
+                          </span>
+                          <span class="sq-fc-time">+300 pts</span>
+                        </div>
+                        <div class="sq-fc-customer">
+                          <span class="sq-fc-cust-name">Lucía Herrera</span>
+                          <span class="sq-fc-cust-meta">4,820 pts · equivale a $482</span>
+                        </div>
+                        <div class="sq-fc-loyalty-row">
+                          <span class="sq-fc-loyalty-label">Promo: Gasta $500, gana 300 pts</span>
+                          <span class="sq-fc-loyalty-pts">+300 pts</span>
+                        </div>
+                        <div class="sq-fc-loyalty-bar" aria-hidden="true">
+                          <div class="sq-fc-loyalty-bar-fill" style="width:72%"></div>
+                        </div>
+                        <div class="sq-fc-loyalty-meta">
+                          <span>Próxima recompensa en 1,180 pts</span>
+                        </div>
+                        <div class="sq-fc-total">
+                          <span>Total</span>
+                          <span class="sq-fc-total-val">$1,240.00</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {block.variant === 'apartado-reserva' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--reserva">
+                            <span class="sq-fc-dot"></span>
+                            Apartado confirmado
+                          </span>
+                          <span class="sq-fc-time">#3812</span>
+                        </div>
+                        <div class="sq-fc-customer sq-fc-customer--reserva">
+                          <span class="sq-fc-cust-name">Valentina Nogueira</span>
+                          <span class="sq-fc-cust-meta">Vence en 15 días · 4 may</span>
+                        </div>
+                        <div class="sq-fc-line">
+                          <div class="sq-fc-line-main">
+                            <span class="sq-fc-prod">Vestido Zafiro · S</span>
+                            <span class="sq-fc-qty">1 × $2,460.00</span>
+                          </div>
+                          <span class="sq-fc-price">$2,460.00</span>
+                        </div>
+                        <div class="sq-fc-reserva-row">
+                          <span class="sq-fc-reserva-label">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                            Anticipo recibido · 25%
+                          </span>
+                          <span class="sq-fc-reserva-val">$615.00</span>
+                        </div>
+                        <div class="sq-fc-total">
+                          <span>Saldo pendiente</span>
+                          <span class="sq-fc-total-val sq-fc-total-val--reserva">$1,845.00</span>
+                        </div>
+                        <button class="sq-fc-cobrar sq-fc-cobrar--reserva" tabindex="-1">
+                          IMPRIMIR APARTADO
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </button>
+                      </div>
+                    )}
+
+                    {block.variant === 'apartado-payment' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--payment">
+                            <span class="sq-fc-dot"></span>
+                            Abono #3 de 4
+                          </span>
+                          <span class="sq-fc-time">#3812</span>
+                        </div>
+                        <div class="sq-fc-customer sq-fc-customer--payment">
+                          <span class="sq-fc-cust-name">Valentina Nogueira</span>
+                          <span class="sq-fc-cust-meta">Saldo $615 · Vence en 5 días</span>
+                        </div>
+                        <div class="sq-fc-payment-list">
+                          <div class="sq-fc-payment-row">
+                            <span class="sq-fc-payment-date">21 abr</span>
+                            <span class="sq-fc-payment-method">Tarjeta</span>
+                            <span class="sq-fc-payment-val">$615</span>
+                          </div>
+                          <div class="sq-fc-payment-row">
+                            <span class="sq-fc-payment-date">27 abr</span>
+                            <span class="sq-fc-payment-method">Efectivo</span>
+                            <span class="sq-fc-payment-val">$615</span>
+                          </div>
+                          <div class="sq-fc-payment-row sq-fc-payment-row--active">
+                            <span class="sq-fc-payment-date">Hoy</span>
+                            <span class="sq-fc-payment-method">Transferencia</span>
+                            <span class="sq-fc-payment-val">$615</span>
+                          </div>
+                        </div>
+                        <div class="sq-fc-loyalty-bar" aria-hidden="true">
+                          <div class="sq-fc-payment-bar-fill" style="width:75%"></div>
+                        </div>
+                        <div class="sq-fc-payment-meta">
+                          <span>$1,845 pagados · $615 restantes</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {block.variant === 'apartado-transfer' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--transfer">
+                            <span class="sq-fc-dot"></span>
+                            Apartado con traspaso
+                          </span>
+                          <span class="sq-fc-time">SKU #BOT-08</span>
+                        </div>
+                        <div class="sq-fc-customer sq-fc-customer--transfer">
+                          <span class="sq-fc-cust-name">Bota Cognac · 38</span>
+                          <span class="sq-fc-cust-meta">Apartado desde Sucursal Chapalita</span>
+                        </div>
+                        <div class="sq-fc-stock">
+                          <div class="sq-fc-stock-row">
+                            <div class="sq-fc-stock-left">
+                              <span class="sq-fc-stock-check sq-fc-stock-check--transfer">→</span>
+                              <span class="sq-fc-stock-name">Santa Fe</span>
+                            </div>
+                            <span class="sq-fc-stock-qty">3 disponibles</span>
+                          </div>
+                          <div class="sq-fc-stock-row sq-fc-stock-row--out">
+                            <div class="sq-fc-stock-left">
+                              <span class="sq-fc-stock-check sq-fc-stock-check--out">–</span>
+                              <span class="sq-fc-stock-name">Chapalita</span>
+                            </div>
+                            <span class="sq-fc-stock-qty">Agotado</span>
+                          </div>
+                        </div>
+                        <div class="sq-fc-transfer-eta">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                          Llega a Chapalita · jue 28 abr
+                        </div>
+                        <button class="sq-fc-cobrar sq-fc-cobrar--transfer" tabindex="-1">
+                          CONFIRMAR TRASPASO
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </button>
+                      </div>
+                    )}
+
+                    {block.variant === 'apartado-special' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--special">
+                            <span class="sq-fc-dot"></span>
+                            Pedido especial
+                          </span>
+                          <span class="sq-fc-time">#PE-214</span>
+                        </div>
+                        <div class="sq-fc-customer sq-fc-customer--special">
+                          <span class="sq-fc-cust-name">Bota Campera Cognac · 42</span>
+                          <span class="sq-fc-cust-meta">No en catálogo · fuera de stock red</span>
+                        </div>
+                        <div class="sq-fc-special-meta">
+                          <div class="sq-fc-special-row">
+                            <span class="sq-fc-special-label">Proveedor</span>
+                            <span class="sq-fc-special-val">Cueros Salta · OC #2241</span>
+                          </div>
+                          <div class="sq-fc-special-row">
+                            <span class="sq-fc-special-label">Entrega estimada</span>
+                            <span class="sq-fc-special-val">15–22 días</span>
+                          </div>
+                          <div class="sq-fc-special-row">
+                            <span class="sq-fc-special-label">Anticipo</span>
+                            <span class="sq-fc-special-val">$1,200 (50%)</span>
+                          </div>
+                        </div>
+                        <div class="sq-fc-special-notify">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                          Avisar al cliente al ingresar al inventario
+                        </div>
+                      </div>
+                    )}
+
+                    {block.variant === 'online-catalog' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--catalog">
+                            <span class="sq-fc-dot"></span>
+                            Catálogo en vivo
+                          </span>
+                          <span class="sq-fc-time">Sync hace 12s</span>
+                        </div>
+                        <div class="sq-fc-customer sq-fc-customer--catalog">
+                          <span class="sq-fc-cust-name">Blusa Lino · M</span>
+                          <span class="sq-fc-cust-meta">SKU #BL-204 · $790.00</span>
+                        </div>
+                        <div class="sq-fc-stock">
+                          <div class="sq-fc-stock-row">
+                            <div class="sq-fc-stock-left">
+                              <span class="sq-fc-stock-check sq-fc-stock-check--catalog">●</span>
+                              <span class="sq-fc-stock-name">Polanco</span>
+                            </div>
+                            <span class="sq-fc-stock-qty">4 en stock</span>
+                          </div>
+                          <div class="sq-fc-stock-row">
+                            <div class="sq-fc-stock-left">
+                              <span class="sq-fc-stock-check sq-fc-stock-check--catalog">●</span>
+                              <span class="sq-fc-stock-name">Santa Fe</span>
+                            </div>
+                            <span class="sq-fc-stock-qty">2 en stock</span>
+                          </div>
+                          <div class="sq-fc-stock-row sq-fc-stock-row--online">
+                            <div class="sq-fc-stock-left">
+                              <span class="sq-fc-stock-check sq-fc-stock-check--catalog">●</span>
+                              <span class="sq-fc-stock-name">Tienda online</span>
+                            </div>
+                            <span class="sq-fc-stock-qty">6 disponibles</span>
+                          </div>
+                        </div>
+                        <div class="sq-fc-catalog-sync">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0115-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 01-15 6.7L3 16"/></svg>
+                          Mismo catálogo en POS · web · marketplaces
+                        </div>
+                      </div>
+                    )}
+
+                    {block.variant === 'online-checkout' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--stripe">
+                            <span class="sq-fc-dot"></span>
+                            Stripe · Seguro
+                          </span>
+                          <span class="sq-fc-time">#7812</span>
+                        </div>
+                        <div class="sq-fc-line">
+                          <div class="sq-fc-line-main">
+                            <span class="sq-fc-prod">Subtotal (3 items)</span>
+                          </div>
+                          <span class="sq-fc-price">$2,340.00</span>
+                        </div>
+                        <div class="sq-fc-line">
+                          <div class="sq-fc-line-main">
+                            <span class="sq-fc-prod">Envío</span>
+                          </div>
+                          <span class="sq-fc-price">$0 · retiro</span>
+                        </div>
+                        <div class="sq-fc-stripe-method">
+                          <div class="sq-fc-stripe-card">
+                            <svg width="22" height="14" viewBox="0 0 24 16" fill="none" aria-hidden="true"><rect width="24" height="16" rx="2" fill="#1a1a2e"/><rect x="3" y="5" width="8" height="2" rx="0.5" fill="#ffd54f"/><rect x="3" y="9" width="5" height="1" rx="0.3" fill="#fff"/></svg>
+                            <span class="sq-fc-stripe-num">Visa •• 4242</span>
+                          </div>
+                          <span class="sq-fc-stripe-logo">stripe</span>
+                        </div>
+                        <div class="sq-fc-total">
+                          <span>Total</span>
+                          <span class="sq-fc-total-val sq-fc-total-val--stripe">$2,340.00</span>
+                        </div>
+                        <button class="sq-fc-cobrar sq-fc-cobrar--stripe" tabindex="-1">
+                          PAGAR
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                        </button>
+                      </div>
+                    )}
+
+                    {block.variant === 'agent-whatsapp' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--wa">
+                            <span class="sq-fc-dot"></span>
+                            Agente · en línea
+                          </span>
+                          <span class="sq-fc-time">Laura +52 55 ••</span>
+                        </div>
+                        <div class="sq-fc-chat">
+                          <div class="sq-fc-chat-bubble sq-fc-chat-bubble--user">
+                            ¿Tienen la bota cognac en 38?
+                          </div>
+                          <div class="sq-fc-chat-bubble sq-fc-chat-bubble--agent">
+                            Hola Laura! Tenemos 2 pares en Santa Fe. En tu sucursal habitual (Polanco) no hay, pero te los puedo transferir — llegan el jueves. ¿Te reservo un par?
+                          </div>
+                          <div class="sq-fc-chat-bubble sq-fc-chat-bubble--user">
+                            Sí porfa
+                          </div>
+                        </div>
+                        <div class="sq-fc-chat-meta">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
+                          Stock y cliente consultados en vivo
+                        </div>
+                      </div>
+                    )}
+
+                    {block.variant === 'agent-quote' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--quote">
+                            <span class="sq-fc-dot"></span>
+                            Cotización generada
+                          </span>
+                          <span class="sq-fc-time">#COT-842</span>
+                        </div>
+                        <div class="sq-fc-customer sq-fc-customer--quote">
+                          <span class="sq-fc-cust-name">Laura Herrera · cliente VIP</span>
+                          <span class="sq-fc-cust-meta">Reservado hasta mañana 18:00</span>
+                        </div>
+                        <div class="sq-fc-line">
+                          <div class="sq-fc-line-main">
+                            <span class="sq-fc-prod">Bota Cognac · 38</span>
+                            <span class="sq-fc-qty">1 × $2,890</span>
+                          </div>
+                          <span class="sq-fc-price">$2,890.00</span>
+                        </div>
+                        <div class="sq-fc-promo-row">
+                          <span class="sq-fc-promo-label">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                            Promo VIP · 15% off
+                          </span>
+                          <span class="sq-fc-promo-val">−$434.00</span>
+                        </div>
+                        <div class="sq-fc-total">
+                          <span>Total</span>
+                          <span class="sq-fc-total-val sq-fc-total-val--quote">$2,456.00</span>
+                        </div>
+                        <button class="sq-fc-cobrar sq-fc-cobrar--quote" tabindex="-1">
+                          ENVIAR POR WHATSAPP
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </button>
+                      </div>
+                    )}
+
+                    {block.variant === 'agent-payment' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--wapay">
+                            <span class="sq-fc-dot"></span>
+                            Link de pago enviado
+                          </span>
+                          <span class="sq-fc-time">WhatsApp</span>
+                        </div>
+                        <div class="sq-fc-chat">
+                          <div class="sq-fc-chat-bubble sq-fc-chat-bubble--agent">
+                            Te mando el link para que pagues:
+                          </div>
+                          <div class="sq-fc-paylink">
+                            <div class="sq-fc-paylink-row">
+                              <span class="sq-fc-paylink-label">Pagar</span>
+                              <span class="sq-fc-paylink-amount">$2,456.00</span>
+                            </div>
+                            <div class="sq-fc-paylink-url">stripe.com/pay/cs_pi82</div>
+                            <div class="sq-fc-paylink-cta">
+                              <span>Pagar con Stripe</span>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                            </div>
+                          </div>
+                          <div class="sq-fc-chat-bubble sq-fc-chat-bubble--agent sq-fc-chat-bubble--success">
+                            ✓ Pago recibido · Te mando comprobante
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {block.variant === 'agent-handoff' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--handoff">
+                            <span class="sq-fc-dot"></span>
+                            Traspaso a humano
+                          </span>
+                          <span class="sq-fc-time">→ Gabriela</span>
+                        </div>
+                        <div class="sq-fc-customer sq-fc-customer--handoff">
+                          <span class="sq-fc-cust-name">Javier Moreno</span>
+                          <span class="sq-fc-cust-meta">3 compras previas · cliente VIP · MX$18,500 LTV</span>
+                        </div>
+                        <div class="sq-fc-handoff-summary">
+                          <div class="sq-fc-handoff-title">Resumen del agente</div>
+                          <div class="sq-fc-handoff-text">
+                            Cliente pide devolución de bota talla 38 después de 45 días. Política: 30 días. Solicita excepción — escaló para decisión humana.
+                          </div>
+                        </div>
+                        <div class="sq-fc-handoff-meta">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                          Historial completo disponible en el chat
+                        </div>
+                      </div>
+                    )}
+
+                    {block.variant === 'invoice-issue' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--cfdi">
+                            <span class="sq-fc-dot"></span>
+                            CFDI 4.0 · Timbrada
+                          </span>
+                          <span class="sq-fc-time">Folio A-8421</span>
+                        </div>
+                        <div class="sq-fc-customer sq-fc-customer--cfdi">
+                          <span class="sq-fc-cust-name">Distribuidora Peralta S.A. de C.V.</span>
+                          <span class="sq-fc-cust-meta">RFC DPE920415AB2 · Régimen 601</span>
+                        </div>
+                        <div class="sq-fc-cfdi-meta">
+                          <div class="sq-fc-cfdi-row">
+                            <span class="sq-fc-cfdi-label">Uso del CFDI</span>
+                            <span class="sq-fc-cfdi-val">G03 · Gastos en general</span>
+                          </div>
+                          <div class="sq-fc-cfdi-row">
+                            <span class="sq-fc-cfdi-label">Forma de pago</span>
+                            <span class="sq-fc-cfdi-val">04 · Tarjeta crédito</span>
+                          </div>
+                          <div class="sq-fc-cfdi-row">
+                            <span class="sq-fc-cfdi-label">Subtotal + IVA 16%</span>
+                            <span class="sq-fc-cfdi-val">$1,450 + $232</span>
+                          </div>
+                        </div>
+                        <div class="sq-fc-total">
+                          <span>Total</span>
+                          <span class="sq-fc-total-val sq-fc-total-val--cfdi">$1,682.00</span>
+                        </div>
+                        <button class="sq-fc-cobrar sq-fc-cobrar--cfdi" tabindex="-1">
+                          DESCARGAR XML + PDF
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                        </button>
+                      </div>
+                    )}
+
+                    {block.variant === 'invoice-portal' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--portal">
+                            <span class="sq-fc-dot"></span>
+                            Autofacturación
+                          </span>
+                          <span class="sq-fc-time">factura.tumarca.mx</span>
+                        </div>
+                        <div class="sq-fc-portal">
+                          <div class="sq-fc-portal-qr" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M3 3h7v7H3V3zm2 2v3h3V5H5zm9-2h7v7h-7V3zm2 2v3h3V5h-3zM3 14h7v7H3v-7zm2 2v3h3v-3H5zm11-2h2v2h-2v-2zm2 2h2v2h-2v-2zm-4 0h2v2h-2v-2zm4 2h2v2h-2v-2zm-2 2h2v2h-2v-2zm-2-2h2v2h-2v-2zm4-6h2v2h-2v-2z"/></svg>
+                          </div>
+                          <div class="sq-fc-portal-text">
+                            <span class="sq-fc-portal-title">Escanea y factura tu ticket</span>
+                            <span class="sq-fc-portal-meta">Portal con tu marca · Ticket #7812</span>
+                          </div>
+                        </div>
+                        <div class="sq-fc-portal-steps">
+                          <div class="sq-fc-portal-step">1 · Escanea QR</div>
+                          <div class="sq-fc-portal-step">2 · Captura RFC + uso</div>
+                          <div class="sq-fc-portal-step sq-fc-portal-step--done">3 · CFDI al email</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {block.variant === 'invoice-credit' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--credit">
+                            <span class="sq-fc-dot"></span>
+                            Nota de crédito
+                          </span>
+                          <span class="sq-fc-time">Folio NC-221</span>
+                        </div>
+                        <div class="sq-fc-customer sq-fc-customer--credit">
+                          <span class="sq-fc-cust-name">Ligada a factura A-8421</span>
+                          <span class="sq-fc-cust-meta">Motivo SAT 02 · comprobantes con errores sin relación</span>
+                        </div>
+                        <div class="sq-fc-line">
+                          <div class="sq-fc-line-main">
+                            <span class="sq-fc-prod">Devolución · Blusa Lino M</span>
+                            <span class="sq-fc-qty">1 × $790 + IVA</span>
+                          </div>
+                          <span class="sq-fc-price">−$916.40</span>
+                        </div>
+                        <div class="sq-fc-credit-complemento">
+                          <span class="sq-fc-credit-label">Complemento de pago</span>
+                          <span class="sq-fc-credit-val">Timbrado · hoy 14:22</span>
+                        </div>
+                        <div class="sq-fc-total">
+                          <span>Nuevo saldo factura</span>
+                          <span class="sq-fc-total-val sq-fc-total-val--credit">$765.60</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {block.variant === 'invoice-country' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--country">
+                            <span class="sq-fc-dot"></span>
+                            Por país
+                          </span>
+                          <span class="sq-fc-time">LatAm</span>
+                        </div>
+                        <div class="sq-fc-country-list">
+                          <div class="sq-fc-country-row sq-fc-country-row--live">
+                            <span class="sq-fc-country-flag">🇲🇽</span>
+                            <span class="sq-fc-country-name">México · CFDI 4.0</span>
+                            <span class="sq-fc-country-status">En producción</span>
+                          </div>
+                          <div class="sq-fc-country-row">
+                            <span class="sq-fc-country-flag">🇨🇴</span>
+                            <span class="sq-fc-country-name">Colombia · DIAN</span>
+                            <span class="sq-fc-country-status sq-fc-country-status--next">Siguiente</span>
+                          </div>
+                          <div class="sq-fc-country-row">
+                            <span class="sq-fc-country-flag">🇪🇨</span>
+                            <span class="sq-fc-country-name">Ecuador · SRI</span>
+                            <span class="sq-fc-country-status sq-fc-country-status--queued">En fila</span>
+                          </div>
+                          <div class="sq-fc-country-row">
+                            <span class="sq-fc-country-flag">🇦🇷</span>
+                            <span class="sq-fc-country-name">Argentina · AFIP</span>
+                            <span class="sq-fc-country-status sq-fc-country-status--queued">Evaluando</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {block.variant === 'online-branding' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--brand">
+                            <span class="sq-fc-dot"></span>
+                            Editor en vivo
+                          </span>
+                          <span class="sq-fc-time">Tempo.com</span>
+                        </div>
+                        <div class="sq-fc-brand-preview">
+                          <div class="sq-fc-brand-header">
+                            <span class="sq-fc-brand-logo">TEMPO</span>
+                            <div class="sq-fc-brand-nav">
+                              <span></span>
+                              <span></span>
+                              <span></span>
+                            </div>
+                          </div>
+                          <div class="sq-fc-brand-hero">
+                            Carteras hechas a mano en Buenos Aires
+                          </div>
+                          <div class="sq-fc-brand-cta">Ver colección</div>
+                          <div class="sq-fc-brand-tiles">
+                            <div class="sq-fc-brand-tile"></div>
+                            <div class="sq-fc-brand-tile"></div>
+                            <div class="sq-fc-brand-tile"></div>
+                          </div>
+                        </div>
+                        <div class="sq-fc-brand-meta">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                          Paleta, tipografías y bloques editables
+                        </div>
+                      </div>
+                    )}
+
+                    {(!block.variant || block.variant === 'checkout') && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M12 18h.01"/></svg>
+                          Celular
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 18h.01"/></svg>
+                          Tablet
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                          PC
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'pickup' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                          Tienda online
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V10l9-7 9 7v11"/><path d="M9 21v-8h6v8"/></svg>
+                          Sucursal elegida
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM17 17h4M14 20h3M20 14v3M20 20h1"/></svg>
+                          Entrega con QR
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'endless-aisle' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                          Stock global
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 4v16"/></svg>
+                          Traspaso 1-click
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+                          Venta asegurada
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'control-central' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
+                          Tiempo real
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10M12 2a15.3 15.3 0 00-4 10 15.3 15.3 0 004 10M2 12h20"/></svg>
+                          Multi-sucursal
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/><rect x="2" y="6" width="20" height="12" rx="2" fill="none"/></svg>
+                          Móvil y web
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'promo-auto' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+                          Sin código
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
+                          Auto
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41L13.42 20.58a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><circle cx="7" cy="7" r="1"/></svg>
+                          Reglas
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'promo-schedule' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                          Por horario
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                          Recurrente
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                          Por sucursal
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'promo-code' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8a2 2 0 00-2-2H6a2 2 0 00-2 2v4M20 12a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4a2 2 0 012-2"/></svg>
+                          Un uso
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                          Por cliente
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg>
+                          Reactivación
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'promo-loyalty' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                          Puntos
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 00-8 0v2"/></svg>
+                          Monedero
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8a4 4 0 00-4-4H8a4 4 0 00-4 4v4"/><circle cx="12" cy="14" r="6"/><path d="M12 11v3l2 1"/></svg>
+                          Recompra
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'apartado-reserva' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M7 15h4"/></svg>
+                          Anticipo
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                          Vencimiento
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg>
+                          Bloqueo stock
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'apartado-payment' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                          Abonos
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 10h2M11 10h7M6 15h12"/></svg>
+                          Multi-método
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
+                          Progreso en vivo
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'apartado-transfer' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                          Stock global
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/><path d="M18 15l3 3-3 3"/></svg>
+                          Traspaso
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                          Aviso al cliente
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'apartado-special' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                          Fuera de catálogo
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>
+                          Orden de compra
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                          ETA proveedor
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'online-catalog' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0115-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 01-15 6.7L3 16"/></svg>
+                          Tiempo real
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16M9 4v16"/></svg>
+                          Un catálogo
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>
+                          Todos los canales
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'online-checkout' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M7 15h4"/></svg>
+                          Stripe
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/><circle cx="12" cy="18" r="1"/></svg>
+                          Apple Pay
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+                          Antifraude
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'agent-whatsapp' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                          WhatsApp 24/7
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4"/></svg>
+                          Stock real
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                          Cliente reconocido
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'agent-quote' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>
+                          Cotización
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41L13.42 20.58a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/></svg>
+                          Promo aplicada
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                          Reserva 24h
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'agent-payment' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M7 15h4"/></svg>
+                          Stripe
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+                          Pago en chat
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>
+                          CFDI listo
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'agent-handoff' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                          A humano
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>
+                          Resumen auto
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
+                          Historial
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'invoice-issue' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>
+                          CFDI 4.0
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                          Timbrado
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                          XML + PDF
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'invoice-portal' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                          QR en ticket
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                          Tu marca
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                          CFDI al email
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'invoice-credit' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14l-4-4 4-4M5 10h12a4 4 0 014 4v3"/></svg>
+                          Nota ligada
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                          Complemento
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
+                          Conciliado
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'invoice-country' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10"/></svg>
+                          Multi-país
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+                          Estándar fiscal
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                          Por demanda
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'online-branding' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                          Editor visual
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-5.52-4.48-10-10-10z"/></svg>
+                          Paleta
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6M12 4v16"/></svg>
+                          Tipografía
+                        </div>
+                      </Fragment>
+                    )}
+                  </div>
+                ) : (
+                  <img src={block.image} alt={block.imageAlt} width="900" height="600" loading="lazy" />
+                )}
               </div>
             </div>
           </div>
@@ -250,20 +1309,21 @@ const isLive = feature.status === 'live' && content;
 
       <ProductFeatureShowcase items={content.showcaseTabs.map((t: any, i: number) => ({ ...t, num: i + 1 }))} />
 
-      <section class="pf-testimonials" id="pf-testimonials">
+      <section class="pf-testimonials" id="pf-testimonials" style={`--tbg:${content.testimonials[0].bg};--taccent:${content.testimonials[0].color}`}>
+        <div class="pf-testimonials-bg" aria-hidden="true"></div>
         <div class="pf-testimonials-track" id="pf-testimonials-track">
           {content.testimonials.map((t: any, i: number) => (
-            <div class={`pf-testimonial-slide${i === 0 ? ' active' : ''}`} data-testimonial={i} style={`background:${t.bg}`}>
+            <div class={`pf-testimonial-slide${i === 0 ? ' active' : ''}`} data-testimonial={i} data-bg={t.bg} data-accent={t.color}>
               <div class="pf-testimonial-layout container">
-                <div class="pf-testimonial-photo">
-                  <img src={t.image} alt={t.name} width="480" height="600" loading="lazy" />
+                <div class="pf-testimonial-photo" style={`--placeholder-color:${t.color};--accent:${t.color}`}>
+                  <img src={t.image} alt={t.name} width="480" height="600" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+                  <div class="pf-testimonial-placeholder" style="display:none">
+                    <span>{t.initials}</span>
+                  </div>
                 </div>
                 <div class="pf-testimonial-content">
                   <blockquote class="pf-testimonial-quote">&ldquo;{t.quote}&rdquo;</blockquote>
                   <div class="pf-testimonial-attribution">
-                    <div class="pf-testimonial-logo">
-                      <img src="/images/sacs-icon-dark.svg" alt="SACS" width="56" height="56" loading="lazy" />
-                    </div>
                     <div class="pf-testimonial-info">
                       <span class="pf-testimonial-name">{t.name}</span>
                       <span class="pf-testimonial-business">{t.business}</span>
@@ -657,6 +1717,1808 @@ const isLive = feature.status === 'live' && content;
     border-radius: 12px;
   }
 
+  /* ═══ Featured block (photo + floating POS card) ═══ */
+  .sq-block--featured .sq-block-media {
+    background: transparent;
+    overflow: visible;
+  }
+
+  .sq-featured {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .sq-featured > img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+  }
+
+  /* Floating POS card */
+  .sq-featured-card {
+    position: absolute;
+    bottom: -28px;
+    left: -24px;
+    width: min(300px, 72%);
+    background: #fff;
+    border-radius: 14px;
+    padding: 14px 14px 12px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18), 0 6px 16px rgba(0, 0, 0, 0.08);
+    font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+    z-index: 2;
+    animation: sqFeaturedFloat 6s ease-in-out infinite;
+  }
+
+  @keyframes sqFeaturedFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  .sq-fc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .sq-fc-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--color-text-primary, #1a1a2e);
+  }
+
+  .sq-fc-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #2AB5A0;
+    box-shadow: 0 0 0 3px rgba(42, 181, 160, 0.18);
+    animation: sqFcPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes sqFcPulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(42, 181, 160, 0.18); }
+    50% { box-shadow: 0 0 0 5px rgba(42, 181, 160, 0.08); }
+  }
+
+  .sq-fc-time {
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: var(--color-text-tertiary, #8c8c8c);
+    letter-spacing: 0.02em;
+  }
+
+  .sq-fc-line {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0;
+  }
+
+  .sq-fc-line-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  .sq-fc-prod {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-primary, #1a1a2e);
+    line-height: 1.2;
+  }
+
+  .sq-fc-qty {
+    font-size: 0.625rem;
+    color: var(--color-text-tertiary, #8c8c8c);
+    line-height: 1.2;
+  }
+
+  .sq-fc-price {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+    flex-shrink: 0;
+  }
+
+  .sq-fc-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0 12px;
+    margin-top: 6px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-secondary, #4A4A4A);
+  }
+
+  .sq-fc-total-val {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 1.125rem;
+    font-weight: 800;
+    color: var(--color-text-primary, #1a1a2e);
+    letter-spacing: -0.02em;
+  }
+
+  .sq-fc-cobrar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 10px 14px;
+    background: #2563EB;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    cursor: default;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
+  }
+
+  /* Device pills */
+  .sq-featured-pill {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: #fff;
+    border-radius: 50px;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+    z-index: 3;
+    white-space: nowrap;
+  }
+
+  .sq-featured-pill svg {
+    color: #2563EB;
+  }
+
+  .sq-featured-pill--a {
+    top: 8%;
+    right: -10px;
+    animation: sqPillFloat 5s ease-in-out infinite;
+  }
+
+  .sq-featured-pill--b {
+    top: 40%;
+    right: -18px;
+    animation: sqPillFloat 5s ease-in-out infinite 1.2s;
+  }
+
+  .sq-featured-pill--c {
+    top: 72%;
+    right: -6px;
+    animation: sqPillFloat 5s ease-in-out infinite 2.4s;
+  }
+
+  /* Flip pills to left side on pickup variant to avoid covering customer's phone/QR */
+  .sq-featured--pickup .sq-featured-pill--a,
+  .sq-featured--pickup .sq-featured-pill--b,
+  .sq-featured--pickup .sq-featured-pill--c {
+    right: auto;
+  }
+
+  .sq-featured--pickup .sq-featured-pill--a {
+    top: 6%;
+    left: -12px;
+  }
+
+  .sq-featured--pickup .sq-featured-pill--b {
+    top: 38%;
+    left: -20px;
+  }
+
+  .sq-featured--pickup .sq-featured-pill--c {
+    top: 70%;
+    left: -8px;
+  }
+
+  /* Pickup variant: card sits bottom-right instead of bottom-left */
+  .sq-featured--pickup .sq-featured-card {
+    left: auto;
+    right: -24px;
+  }
+
+  /* Customer row (pickup) */
+  .sq-fc-customer {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px 0 8px;
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.08);
+    margin-bottom: 6px;
+  }
+
+  .sq-fc-cust-name {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+    letter-spacing: -0.01em;
+  }
+
+  .sq-fc-cust-meta {
+    font-size: 0.625rem;
+    color: var(--color-text-tertiary, #8c8c8c);
+    line-height: 1.2;
+  }
+
+  /* QR row (pickup) */
+  .sq-fc-qrrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    margin-top: 8px;
+    background: rgba(42, 181, 160, 0.08);
+    border-radius: 10px;
+  }
+
+  .sq-fc-qr {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border-radius: 8px;
+    color: #1a1a2e;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  }
+
+  .sq-fc-qr-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  .sq-fc-qr-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+    line-height: 1.2;
+  }
+
+  .sq-fc-qr-meta {
+    font-size: 0.625rem;
+    color: #2AB5A0;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  /* Pickup button — green instead of blue */
+  .sq-fc-cobrar--pickup {
+    background: #2AB5A0;
+    box-shadow: 0 4px 12px rgba(42, 181, 160, 0.32);
+    margin-top: 10px;
+  }
+
+  /* Blue variant of pulsing dot (endless-aisle) */
+  .sq-fc-dot--blue {
+    background: #2563EB;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+    animation: sqFcPulseBlue 2s ease-in-out infinite;
+  }
+
+  @keyframes sqFcPulseBlue {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18); }
+    50% { box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.08); }
+  }
+
+  /* ═══ Endless aisle variant — stock list ═══ */
+  .sq-featured--endless-aisle .sq-featured-card {
+    left: auto;
+    right: -24px;
+  }
+
+  .sq-featured--endless-aisle .sq-featured-pill--a,
+  .sq-featured--endless-aisle .sq-featured-pill--b,
+  .sq-featured--endless-aisle .sq-featured-pill--c {
+    right: auto;
+  }
+
+  .sq-featured--endless-aisle .sq-featured-pill--a {
+    top: 6%;
+    left: -12px;
+  }
+
+  .sq-featured--endless-aisle .sq-featured-pill--b {
+    top: 38%;
+    left: -20px;
+  }
+
+  .sq-featured--endless-aisle .sq-featured-pill--c {
+    top: 70%;
+    left: -8px;
+  }
+
+  .sq-fc-stock {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 4px 0 2px;
+  }
+
+  .sq-fc-stock-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 10px;
+    background: rgba(42, 181, 160, 0.08);
+    border-radius: 8px;
+  }
+
+  .sq-fc-stock-row--out {
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  .sq-fc-stock-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sq-fc-stock-check {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .sq-fc-stock-check--ok {
+    background: #2AB5A0;
+    color: #fff;
+  }
+
+  .sq-fc-stock-check--out {
+    background: rgba(0, 0, 0, 0.15);
+    color: #fff;
+  }
+
+  .sq-fc-stock-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-primary, #1a1a2e);
+  }
+
+  .sq-fc-stock-qty {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #2AB5A0;
+  }
+
+  .sq-fc-stock-row--out .sq-fc-stock-qty {
+    color: var(--color-text-tertiary, #8c8c8c);
+  }
+
+  .sq-fc-cobrar--aisle {
+    background: #2563EB;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.32);
+    margin-top: 12px;
+  }
+
+  /* ═══ Control central variant — dashboard ═══ */
+  .sq-featured--control-central .sq-featured-card {
+    /* default: bottom-left (existing) */
+  }
+
+  .sq-fc-metric {
+    padding: 10px 12px 12px;
+    margin-top: 4px;
+    background: linear-gradient(135deg, rgba(42, 181, 160, 0.08), rgba(37, 99, 235, 0.06));
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sq-fc-metric-label {
+    display: block;
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: var(--color-text-tertiary, #8c8c8c);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 2px;
+  }
+
+  .sq-fc-metric-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .sq-fc-metric-val {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--color-text-primary, #1a1a2e);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .sq-fc-metric-delta {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #2AB5A0;
+  }
+
+  .sq-fc-metric-spark {
+    display: block;
+    width: 100%;
+    height: 28px;
+    margin-top: 8px;
+  }
+
+  .sq-fc-ranking {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 10px;
+  }
+
+  .sq-fc-ranking-title {
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: var(--color-text-tertiary, #8c8c8c);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 2px;
+  }
+
+  .sq-fc-rank-row {
+    display: grid;
+    grid-template-columns: 18px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+  }
+
+  .sq-fc-rank-pos {
+    font-size: 0.625rem;
+    font-weight: 800;
+    color: #2563EB;
+    background: rgba(37, 99, 235, 0.1);
+    border-radius: 4px;
+    text-align: center;
+    line-height: 18px;
+    height: 18px;
+  }
+
+  .sq-fc-rank-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-primary, #1a1a2e);
+  }
+
+  .sq-fc-rank-val {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sq-fc-cobrar--dash {
+    background: #1a1a2e;
+    box-shadow: 0 4px 12px rgba(26, 26, 46, 0.32);
+    margin-top: 12px;
+  }
+
+  /* ─── Promo variant styles ─── */
+  .sq-fc-badge--promo,
+  .sq-fc-badge--schedule,
+  .sq-fc-badge--code,
+  .sq-fc-badge--loyalty {
+    padding: 4px 10px;
+    border-radius: 50px;
+  }
+
+  .sq-fc-badge--promo {
+    background: #fef1e7;
+    color: #c2490b;
+  }
+  .sq-fc-badge--promo .sq-fc-dot {
+    background: #ea7b24;
+    box-shadow: 0 0 0 3px rgba(234, 123, 36, 0.18);
+    animation-name: sqFcPulseOrange;
+  }
+
+  .sq-fc-badge--schedule {
+    background: #eef4ff;
+    color: #2753b8;
+  }
+  .sq-fc-badge--schedule .sq-fc-dot {
+    background: #3467db;
+    box-shadow: 0 0 0 3px rgba(52, 103, 219, 0.18);
+    animation-name: sqFcPulseBlue;
+  }
+
+  .sq-fc-badge--code {
+    background: #f1ecff;
+    color: #5735c2;
+  }
+  .sq-fc-badge--code .sq-fc-dot {
+    background: #7a4ae0;
+    box-shadow: 0 0 0 3px rgba(122, 74, 224, 0.18);
+    animation-name: sqFcPulsePurple;
+  }
+
+  .sq-fc-badge--loyalty {
+    background: #fff1c8;
+    color: #6b4b00;
+  }
+  .sq-fc-badge--loyalty .sq-fc-dot {
+    background: #b88900;
+    box-shadow: 0 0 0 3px rgba(184, 137, 0, 0.22);
+    animation-name: sqFcPulseGold;
+  }
+
+  @keyframes sqFcPulseOrange {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(234, 123, 36, 0.18); }
+    50% { box-shadow: 0 0 0 5px rgba(234, 123, 36, 0.08); }
+  }
+  @keyframes sqFcPulseBlue {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(52, 103, 219, 0.18); }
+    50% { box-shadow: 0 0 0 5px rgba(52, 103, 219, 0.08); }
+  }
+  @keyframes sqFcPulsePurple {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(122, 74, 224, 0.18); }
+    50% { box-shadow: 0 0 0 5px rgba(122, 74, 224, 0.08); }
+  }
+  @keyframes sqFcPulseGold {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(212, 163, 0, 0.2); }
+    50% { box-shadow: 0 0 0 5px rgba(212, 163, 0, 0.08); }
+  }
+
+  /* Promo row (discount applied line) */
+  .sq-fc-promo-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 10px;
+    margin: 6px -4px 0;
+    background: #fef4eb;
+    border-radius: 8px;
+    font-size: 0.6875rem;
+  }
+
+  .sq-fc-promo-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    color: #c2490b;
+  }
+
+  .sq-fc-promo-val {
+    font-weight: 700;
+    color: #c2490b;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Schedule variant */
+  .sq-fc-sched-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+    margin-top: 4px;
+    letter-spacing: -0.01em;
+  }
+
+  .sq-fc-sched-days {
+    display: flex;
+    gap: 5px;
+    margin-top: 2px;
+  }
+
+  .sq-fc-day {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f1f1f5;
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: #8c8c8c;
+  }
+
+  .sq-fc-day--active {
+    background: #3467db;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(52, 103, 219, 0.3);
+  }
+
+  .sq-fc-sched-branches {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  .sq-fc-sched-branch-label {
+    font-size: 0.625rem;
+    color: #8c8c8c;
+    margin-right: 2px;
+  }
+
+  .sq-fc-branch-chip {
+    padding: 2px 8px;
+    background: #eef4ff;
+    color: #2753b8;
+    border-radius: 50px;
+    font-size: 0.625rem;
+    font-weight: 600;
+  }
+
+  .sq-fc-branch-chip--more {
+    background: #f1f1f5;
+    color: #4a4a4a;
+  }
+
+  .sq-fc-sched-timer {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 10px;
+    background: #eef4ff;
+    color: #2753b8;
+    border-radius: 8px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    margin-top: 2px;
+    align-self: flex-start;
+  }
+
+  /* Code variant */
+  .sq-fc-code-tile {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px;
+    background: #faf7ff;
+    border: 1px dashed #c8b6f0;
+    border-radius: 10px;
+  }
+
+  .sq-fc-code-chip {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.9375rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #5735c2;
+  }
+
+  .sq-fc-code-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.625rem;
+    color: #6b6b75;
+  }
+
+  .sq-fc-code-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .sq-fc-code-stat svg {
+    color: #5735c2;
+  }
+
+  /* Loyalty variant */
+  .sq-fc-customer {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 8px 10px;
+    background: #fff4d0;
+    border-left: 3px solid #b88900;
+    border-radius: 6px;
+    margin-top: 2px;
+  }
+
+  .sq-fc-cust-name {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+  }
+
+  .sq-fc-cust-meta {
+    font-size: 0.625rem;
+    color: #6b4b00;
+    font-weight: 600;
+  }
+
+  .sq-fc-loyalty-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 0.6875rem;
+    padding: 6px 0 2px;
+  }
+
+  .sq-fc-loyalty-label {
+    font-weight: 600;
+    color: var(--color-text-secondary, #4A4A4A);
+  }
+
+  .sq-fc-loyalty-pts {
+    font-weight: 800;
+    color: #6b4b00;
+  }
+
+  .sq-fc-loyalty-bar {
+    width: 100%;
+    height: 6px;
+    background: #f1f1f5;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .sq-fc-loyalty-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #d4a300, #f2c200);
+    border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+
+  .sq-fc-loyalty-meta {
+    font-size: 0.625rem;
+    color: #6b6b75;
+    margin-top: 2px;
+  }
+
+  /* ─── Apartados variants ─── */
+  .sq-fc-badge--reserva,
+  .sq-fc-badge--payment,
+  .sq-fc-badge--transfer,
+  .sq-fc-badge--special {
+    padding: 4px 10px;
+    border-radius: 50px;
+  }
+
+  .sq-fc-badge--reserva {
+    background: #faf0e4;
+    color: #9a5e1c;
+  }
+  .sq-fc-badge--reserva .sq-fc-dot {
+    background: #d59850;
+    box-shadow: 0 0 0 3px rgba(213, 152, 80, 0.2);
+    animation-name: sqFcPulseAmber;
+  }
+
+  .sq-fc-badge--payment {
+    background: #eaf5ee;
+    color: #22694a;
+  }
+  .sq-fc-badge--payment .sq-fc-dot {
+    background: #2f9a6a;
+    box-shadow: 0 0 0 3px rgba(47, 154, 106, 0.2);
+    animation-name: sqFcPulseGreen;
+  }
+
+  .sq-fc-badge--transfer {
+    background: #e1eff3;
+    color: #155a6e;
+  }
+  .sq-fc-badge--transfer .sq-fc-dot {
+    background: #1e8aa5;
+    box-shadow: 0 0 0 3px rgba(30, 138, 165, 0.2);
+    animation-name: sqFcPulseTeal;
+  }
+
+  .sq-fc-badge--special {
+    background: #f1e6f3;
+    color: #6b387a;
+  }
+  .sq-fc-badge--special .sq-fc-dot {
+    background: #a260a9;
+    box-shadow: 0 0 0 3px rgba(162, 96, 169, 0.2);
+    animation-name: sqFcPulsePlum;
+  }
+
+  @keyframes sqFcPulseAmber {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(213, 152, 80, 0.2); }
+    50% { box-shadow: 0 0 0 5px rgba(213, 152, 80, 0.08); }
+  }
+  @keyframes sqFcPulseGreen {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(47, 154, 106, 0.2); }
+    50% { box-shadow: 0 0 0 5px rgba(47, 154, 106, 0.08); }
+  }
+  @keyframes sqFcPulseTeal {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(30, 138, 165, 0.2); }
+    50% { box-shadow: 0 0 0 5px rgba(30, 138, 165, 0.08); }
+  }
+  @keyframes sqFcPulsePlum {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(162, 96, 169, 0.2); }
+    50% { box-shadow: 0 0 0 5px rgba(162, 96, 169, 0.08); }
+  }
+
+  /* apartado-reserva customer (override background) */
+  .sq-fc-customer--reserva {
+    background: #fcf5ea;
+    border-left: 3px solid #d59850;
+  }
+  .sq-fc-customer--reserva .sq-fc-cust-meta {
+    color: #9a5e1c;
+  }
+
+  .sq-fc-reserva-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 10px;
+    margin: 6px -4px 0;
+    background: #faf0e4;
+    border-radius: 8px;
+    font-size: 0.6875rem;
+  }
+
+  .sq-fc-reserva-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    color: #9a5e1c;
+  }
+
+  .sq-fc-reserva-val {
+    font-weight: 700;
+    color: #9a5e1c;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sq-fc-total-val--reserva {
+    color: #9a5e1c;
+  }
+
+  .sq-fc-cobrar--reserva {
+    background: #9a5e1c;
+    box-shadow: 0 4px 12px rgba(154, 94, 28, 0.32);
+    margin-top: 12px;
+  }
+
+  /* apartado-payment */
+  .sq-fc-customer--payment {
+    background: #eff8f2;
+    border-left: 3px solid #2f9a6a;
+  }
+  .sq-fc-customer--payment .sq-fc-cust-meta {
+    color: #22694a;
+  }
+
+  .sq-fc-payment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  .sq-fc-payment-row {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    background: #f7fbf8;
+    border-radius: 6px;
+    font-size: 0.6875rem;
+    color: #4a4a4a;
+  }
+
+  .sq-fc-payment-row--active {
+    background: #eaf5ee;
+    color: #22694a;
+    font-weight: 700;
+  }
+
+  .sq-fc-payment-date {
+    font-weight: 700;
+    color: #22694a;
+    font-size: 0.625rem;
+  }
+
+  .sq-fc-payment-method {
+    color: #6b6b75;
+    font-size: 0.625rem;
+  }
+
+  .sq-fc-payment-val {
+    font-weight: 700;
+    color: #22694a;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sq-fc-payment-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2f9a6a, #4dc08a);
+    border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+
+  .sq-fc-payment-meta {
+    font-size: 0.625rem;
+    color: #22694a;
+    font-weight: 600;
+    margin-top: 2px;
+  }
+
+  /* apartado-transfer */
+  .sq-fc-customer--transfer {
+    background: #e9f2f5;
+    border-left: 3px solid #1e8aa5;
+  }
+  .sq-fc-customer--transfer .sq-fc-cust-meta {
+    color: #155a6e;
+  }
+
+  .sq-fc-stock-check--transfer {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #1e8aa5;
+    color: #fff;
+    font-size: 0.6875rem;
+    font-weight: 700;
+  }
+
+  .sq-fc-transfer-eta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #e1eff3;
+    color: #155a6e;
+    border-radius: 8px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    margin-top: 6px;
+    align-self: flex-start;
+  }
+
+  .sq-fc-cobrar--transfer {
+    background: #155a6e;
+    box-shadow: 0 4px 12px rgba(21, 90, 110, 0.32);
+    margin-top: 8px;
+  }
+
+  /* apartado-special */
+  .sq-fc-customer--special {
+    background: #f7edf8;
+    border-left: 3px solid #a260a9;
+  }
+  .sq-fc-customer--special .sq-fc-cust-meta {
+    color: #6b387a;
+  }
+
+  .sq-fc-special-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px;
+    background: #faf5fb;
+    border-radius: 8px;
+    font-size: 0.6875rem;
+    margin-top: 2px;
+  }
+
+  .sq-fc-special-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .sq-fc-special-label {
+    color: #6b6b75;
+    font-weight: 500;
+  }
+
+  .sq-fc-special-val {
+    font-weight: 700;
+    color: #6b387a;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  .sq-fc-special-notify {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #f1e6f3;
+    color: #6b387a;
+    border-radius: 8px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    margin-top: 6px;
+    align-self: flex-start;
+  }
+
+  /* ─── Tienda en línea variants ─── */
+  .sq-fc-badge--catalog,
+  .sq-fc-badge--stripe,
+  .sq-fc-badge--brand {
+    padding: 4px 10px;
+    border-radius: 50px;
+  }
+
+  .sq-fc-badge--catalog {
+    background: #e3eee9;
+    color: #1c6e62;
+  }
+  .sq-fc-badge--catalog .sq-fc-dot {
+    background: #2a9484;
+    box-shadow: 0 0 0 3px rgba(42, 148, 132, 0.2);
+    animation-name: sqFcPulseSea;
+  }
+
+  .sq-fc-badge--stripe {
+    background: #ecebf7;
+    color: #3c3892;
+  }
+  .sq-fc-badge--stripe .sq-fc-dot {
+    background: #5650b5;
+    box-shadow: 0 0 0 3px rgba(86, 80, 181, 0.2);
+    animation-name: sqFcPulseIndigo;
+  }
+
+  .sq-fc-badge--brand {
+    background: #f7e8ef;
+    color: #b24e74;
+  }
+  .sq-fc-badge--brand .sq-fc-dot {
+    background: #d66a92;
+    box-shadow: 0 0 0 3px rgba(214, 106, 146, 0.22);
+    animation-name: sqFcPulseCoral;
+  }
+
+  @keyframes sqFcPulseSea {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(42, 148, 132, 0.2); }
+    50% { box-shadow: 0 0 0 5px rgba(42, 148, 132, 0.08); }
+  }
+  @keyframes sqFcPulseIndigo {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(86, 80, 181, 0.2); }
+    50% { box-shadow: 0 0 0 5px rgba(86, 80, 181, 0.08); }
+  }
+  @keyframes sqFcPulseCoral {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(214, 106, 146, 0.22); }
+    50% { box-shadow: 0 0 0 5px rgba(214, 106, 146, 0.08); }
+  }
+
+  /* online-catalog */
+  .sq-fc-customer--catalog {
+    background: #eaf4f1;
+    border-left: 3px solid #2a9484;
+  }
+  .sq-fc-customer--catalog .sq-fc-cust-meta {
+    color: #1c6e62;
+  }
+
+  .sq-fc-stock-check--catalog {
+    color: #2a9484;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .sq-fc-stock-row--online {
+    background: #eaf4f1;
+    padding: 4px 6px;
+    border-radius: 6px;
+    font-weight: 600;
+  }
+
+  .sq-fc-catalog-sync {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #e3eee9;
+    color: #1c6e62;
+    border-radius: 8px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    margin-top: 6px;
+    align-self: flex-start;
+  }
+
+  /* online-checkout */
+  .sq-fc-stripe-method {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    background: #f6f5fb;
+    border: 1px solid #e4e2f1;
+    border-radius: 8px;
+    margin-top: 4px;
+  }
+
+  .sq-fc-stripe-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sq-fc-stripe-num {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: #3c3892;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sq-fc-stripe-logo {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.625rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #635bff;
+    text-transform: lowercase;
+  }
+
+  .sq-fc-total-val--stripe {
+    color: #3c3892;
+  }
+
+  .sq-fc-cobrar--stripe {
+    background: #635bff;
+    box-shadow: 0 4px 12px rgba(99, 91, 255, 0.32);
+    margin-top: 12px;
+  }
+
+  /* online-branding */
+  .sq-fc-brand-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px;
+    background: #faf6f8;
+    border: 1px solid #f0dfe7;
+    border-radius: 10px;
+    margin-top: 2px;
+  }
+
+  .sq-fc-brand-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .sq-fc-brand-logo {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: #b24e74;
+  }
+
+  .sq-fc-brand-nav {
+    display: flex;
+    gap: 4px;
+  }
+
+  .sq-fc-brand-nav span {
+    width: 10px;
+    height: 2px;
+    background: #d66a92;
+    border-radius: 2px;
+  }
+
+  .sq-fc-brand-hero {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+
+  .sq-fc-brand-cta {
+    align-self: flex-start;
+    padding: 4px 10px;
+    background: #b24e74;
+    color: #fff;
+    border-radius: 50px;
+    font-size: 0.625rem;
+    font-weight: 700;
+  }
+
+  .sq-fc-brand-tiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 4px;
+    margin-top: 2px;
+  }
+
+  .sq-fc-brand-tile {
+    aspect-ratio: 1;
+    background: linear-gradient(135deg, #f7e8ef, #e8ced9);
+    border-radius: 4px;
+  }
+
+  .sq-fc-brand-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #f7e8ef;
+    color: #b24e74;
+    border-radius: 8px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    margin-top: 6px;
+    align-self: flex-start;
+  }
+
+  /* ─── Agentic Commerce variants ─── */
+  .sq-fc-badge--wa,
+  .sq-fc-badge--wapay,
+  .sq-fc-badge--quote,
+  .sq-fc-badge--handoff {
+    padding: 4px 10px;
+    border-radius: 50px;
+  }
+
+  .sq-fc-badge--wa,
+  .sq-fc-badge--wapay {
+    background: #e3f4ea;
+    color: #1c6a3a;
+  }
+  .sq-fc-badge--wa .sq-fc-dot,
+  .sq-fc-badge--wapay .sq-fc-dot {
+    background: #25d366;
+    box-shadow: 0 0 0 3px rgba(37, 211, 102, 0.24);
+    animation-name: sqFcPulseWA;
+  }
+
+  .sq-fc-badge--quote {
+    background: #fff4e1;
+    color: #8a5a1c;
+  }
+  .sq-fc-badge--quote .sq-fc-dot {
+    background: #d69436;
+    box-shadow: 0 0 0 3px rgba(214, 148, 54, 0.2);
+    animation-name: sqFcPulseMustard;
+  }
+
+  .sq-fc-badge--handoff {
+    background: #eee8f7;
+    color: #5a3a92;
+  }
+  .sq-fc-badge--handoff .sq-fc-dot {
+    background: #7a5bcc;
+    box-shadow: 0 0 0 3px rgba(122, 91, 204, 0.22);
+    animation-name: sqFcPulseLavender;
+  }
+
+  @keyframes sqFcPulseWA {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(37, 211, 102, 0.24); }
+    50% { box-shadow: 0 0 0 5px rgba(37, 211, 102, 0.08); }
+  }
+  @keyframes sqFcPulseMustard {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(214, 148, 54, 0.2); }
+    50% { box-shadow: 0 0 0 5px rgba(214, 148, 54, 0.08); }
+  }
+  @keyframes sqFcPulseLavender {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(122, 91, 204, 0.22); }
+    50% { box-shadow: 0 0 0 5px rgba(122, 91, 204, 0.08); }
+  }
+
+  /* agent-whatsapp / agent-payment chat bubbles */
+  .sq-fc-chat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px 0;
+  }
+
+  .sq-fc-chat-bubble {
+    max-width: 86%;
+    padding: 6px 10px;
+    border-radius: 14px;
+    font-size: 0.6875rem;
+    line-height: 1.4;
+  }
+
+  .sq-fc-chat-bubble--user {
+    align-self: flex-end;
+    background: #dcf8c6;
+    color: #1c3517;
+    border-bottom-right-radius: 4px;
+  }
+
+  .sq-fc-chat-bubble--agent {
+    align-self: flex-start;
+    background: #f3f4f6;
+    color: #1a1a2e;
+    border-bottom-left-radius: 4px;
+  }
+
+  .sq-fc-chat-bubble--success {
+    background: #e3f4ea;
+    color: #1c6a3a;
+    font-weight: 600;
+  }
+
+  .sq-fc-chat-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: #e3f4ea;
+    color: #1c6a3a;
+    border-radius: 8px;
+    font-size: 0.625rem;
+    font-weight: 600;
+    margin-top: 4px;
+    align-self: flex-start;
+  }
+
+  /* agent-payment paylink card */
+  .sq-fc-paylink {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px;
+    background: #f3f4f6;
+    border-radius: 12px;
+    border: 1px solid #e4e2ea;
+    align-self: flex-start;
+    max-width: 92%;
+  }
+
+  .sq-fc-paylink-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .sq-fc-paylink-label {
+    font-size: 0.625rem;
+    color: #6b6b75;
+    font-weight: 600;
+  }
+
+  .sq-fc-paylink-amount {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.875rem;
+    font-weight: 800;
+    color: #1a1a2e;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sq-fc-paylink-url {
+    font-size: 0.625rem;
+    color: #635bff;
+    font-family: ui-monospace, SF Mono, Menlo, monospace;
+    letter-spacing: -0.02em;
+  }
+
+  .sq-fc-paylink-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: #635bff;
+    color: #fff;
+    border-radius: 6px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+  }
+
+  /* agent-quote */
+  .sq-featured--agent-quote .sq-featured-card {
+    background: linear-gradient(180deg, #faf1dc 0%, #fffdf7 72%);
+  }
+
+  .sq-fc-customer--quote {
+    background: #fff4de;
+    border-left: 3px solid #d69436;
+  }
+  .sq-fc-customer--quote .sq-fc-cust-meta {
+    color: #8a5a1c;
+  }
+
+  .sq-fc-total-val--quote {
+    color: #8a5a1c;
+  }
+
+  .sq-fc-cobrar--quote {
+    background: #25d366;
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.32);
+    margin-top: 12px;
+  }
+
+  /* agent-handoff */
+  .sq-fc-customer--handoff {
+    background: #f2eef9;
+    border-left: 3px solid #7a5bcc;
+  }
+  .sq-fc-customer--handoff .sq-fc-cust-meta {
+    color: #5a3a92;
+  }
+
+  .sq-fc-handoff-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    background: #faf7ff;
+    border-radius: 8px;
+    margin-top: 4px;
+  }
+
+  .sq-fc-handoff-title {
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: #5a3a92;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .sq-fc-handoff-text {
+    font-size: 0.6875rem;
+    color: #1a1a2e;
+    line-height: 1.4;
+  }
+
+  .sq-fc-handoff-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #eee8f7;
+    color: #5a3a92;
+    border-radius: 8px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    margin-top: 6px;
+    align-self: flex-start;
+  }
+
+  /* ─── Facturación Electrónica variants ─── */
+  .sq-fc-badge--cfdi,
+  .sq-fc-badge--portal,
+  .sq-fc-badge--credit,
+  .sq-fc-badge--country {
+    padding: 4px 10px;
+    border-radius: 50px;
+  }
+
+  .sq-fc-badge--cfdi {
+    background: #e7f2ec;
+    color: #1f5c3c;
+  }
+  .sq-fc-badge--cfdi .sq-fc-dot {
+    background: #2a8a5f;
+    box-shadow: 0 0 0 3px rgba(42, 138, 95, 0.22);
+    animation-name: sqFcPulseEmerald;
+  }
+
+  .sq-fc-badge--portal {
+    background: #eaeef7;
+    color: #2a4a9a;
+  }
+  .sq-fc-badge--portal .sq-fc-dot {
+    background: #4a6ab8;
+    box-shadow: 0 0 0 3px rgba(74, 106, 184, 0.2);
+    animation-name: sqFcPulseSteelblue;
+  }
+
+  .sq-fc-badge--credit {
+    background: #f7e8e6;
+    color: #8a3a2a;
+  }
+  .sq-fc-badge--credit .sq-fc-dot {
+    background: #c25a4a;
+    box-shadow: 0 0 0 3px rgba(194, 90, 74, 0.22);
+    animation-name: sqFcPulseBrick;
+  }
+
+  .sq-fc-badge--country {
+    background: #f2ede2;
+    color: #7a5a1c;
+  }
+  .sq-fc-badge--country .sq-fc-dot {
+    background: #b28a36;
+    box-shadow: 0 0 0 3px rgba(178, 138, 54, 0.2);
+    animation-name: sqFcPulseBronze;
+  }
+
+  @keyframes sqFcPulseEmerald {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(42, 138, 95, 0.22); }
+    50% { box-shadow: 0 0 0 5px rgba(42, 138, 95, 0.08); }
+  }
+  @keyframes sqFcPulseSteelblue {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(74, 106, 184, 0.2); }
+    50% { box-shadow: 0 0 0 5px rgba(74, 106, 184, 0.08); }
+  }
+  @keyframes sqFcPulseBrick {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(194, 90, 74, 0.22); }
+    50% { box-shadow: 0 0 0 5px rgba(194, 90, 74, 0.08); }
+  }
+  @keyframes sqFcPulseBronze {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(178, 138, 54, 0.2); }
+    50% { box-shadow: 0 0 0 5px rgba(178, 138, 54, 0.08); }
+  }
+
+  /* invoice-issue */
+  .sq-fc-customer--cfdi {
+    background: #edf5ef;
+    border-left: 3px solid #2a8a5f;
+  }
+  .sq-fc-customer--cfdi .sq-fc-cust-meta {
+    color: #1f5c3c;
+    font-family: ui-monospace, SF Mono, Menlo, monospace;
+  }
+
+  .sq-fc-cfdi-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 8px 10px;
+    background: #f7faf8;
+    border-radius: 8px;
+    margin-top: 2px;
+    font-size: 0.6875rem;
+  }
+
+  .sq-fc-cfdi-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .sq-fc-cfdi-label {
+    color: #6b6b75;
+    font-weight: 500;
+  }
+
+  .sq-fc-cfdi-val {
+    font-weight: 700;
+    color: #1f5c3c;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sq-fc-total-val--cfdi {
+    color: #1f5c3c;
+  }
+
+  .sq-fc-cobrar--cfdi {
+    background: #1f5c3c;
+    box-shadow: 0 4px 12px rgba(31, 92, 60, 0.32);
+    margin-top: 10px;
+  }
+
+  /* invoice-portal */
+  .sq-fc-portal {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: #f3f5fa;
+    border-radius: 10px;
+    margin-top: 2px;
+  }
+
+  .sq-fc-portal-qr {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: #fff;
+    border: 1px solid #e4e2ea;
+    border-radius: 6px;
+    color: #1a1a2e;
+    flex-shrink: 0;
+  }
+
+  .sq-fc-portal-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sq-fc-portal-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+  }
+
+  .sq-fc-portal-meta {
+    font-size: 0.625rem;
+    color: #2a4a9a;
+    font-weight: 600;
+  }
+
+  .sq-fc-portal-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-top: 6px;
+  }
+
+  .sq-fc-portal-step {
+    padding: 5px 10px;
+    background: #f3f5fa;
+    border-radius: 6px;
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: #6b6b75;
+  }
+
+  .sq-fc-portal-step--done {
+    background: #eaeef7;
+    color: #2a4a9a;
+  }
+
+  /* invoice-credit */
+  .sq-fc-customer--credit {
+    background: #faf0ee;
+    border-left: 3px solid #c25a4a;
+  }
+  .sq-fc-customer--credit .sq-fc-cust-meta {
+    color: #8a3a2a;
+  }
+
+  .sq-fc-credit-complemento {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: #f7e8e6;
+    border-radius: 6px;
+    font-size: 0.6875rem;
+    margin-top: 4px;
+  }
+
+  .sq-fc-credit-label {
+    font-weight: 600;
+    color: #8a3a2a;
+  }
+
+  .sq-fc-credit-val {
+    font-weight: 700;
+    color: #8a3a2a;
+  }
+
+  .sq-fc-total-val--credit {
+    color: #8a3a2a;
+  }
+
+  /* invoice-country */
+  .sq-fc-country-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 2px;
+  }
+
+  .sq-fc-country-row {
+    display: grid;
+    grid-template-columns: 24px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: #faf5e8;
+    border-radius: 6px;
+    font-size: 0.6875rem;
+  }
+
+  .sq-fc-country-row--live {
+    background: #e7f2ec;
+  }
+
+  .sq-fc-country-flag {
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .sq-fc-country-name {
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+  }
+
+  .sq-fc-country-status {
+    font-weight: 600;
+    color: #7a5a1c;
+    font-size: 0.625rem;
+    padding: 2px 6px;
+    background: #f2ede2;
+    border-radius: 50px;
+  }
+
+  .sq-fc-country-row--live .sq-fc-country-status {
+    background: #2a8a5f;
+    color: #fff;
+  }
+
+  .sq-fc-country-status--next {
+    background: #eaeef7;
+    color: #2a4a9a;
+  }
+
+  .sq-fc-country-status--queued {
+    background: #f2ede2;
+    color: #7a5a1c;
+  }
+
+  @keyframes sqPillFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+
+  /* Mobile: simplify overlays */
+  @media (max-width: 640px) {
+    .sq-featured-card {
+      bottom: -20px;
+      left: 8px;
+      right: 8px;
+      width: auto;
+      max-width: calc(100% - 16px);
+      padding: 12px;
+    }
+
+    .sq-featured-pill--a { top: 6%; right: -4px; padding: 6px 10px; font-size: 0.6875rem; }
+    .sq-featured-pill--b { top: 42%; right: -8px; padding: 6px 10px; font-size: 0.6875rem; }
+    .sq-featured-pill--c { top: 76%; right: -2px; padding: 6px 10px; font-size: 0.6875rem; }
+
+    .sq-featured--pickup .sq-featured-pill--a { left: -4px; top: 6%; }
+    .sq-featured--pickup .sq-featured-pill--b { left: -8px; top: 42%; }
+    .sq-featured--pickup .sq-featured-pill--c { left: -2px; top: 76%; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sq-featured-card,
+    .sq-featured-pill--a,
+    .sq-featured-pill--b,
+    .sq-featured-pill--c,
+    .sq-fc-dot {
+      animation: none;
+    }
+  }
+
   /* ═══ Stats Bar ═══ */
   .pf-stats {
     background: var(--color-bg-dark-deep, #1A1A2E);
@@ -902,6 +3764,7 @@ const isLive = feature.status === 'live' && content;
     display: flex;
     gap: 10px;
     flex-shrink: 0;
+    flex-wrap: wrap;
   }
 
   .pf-plan-cta {
@@ -988,14 +3851,76 @@ const isLive = feature.status === 'live' && content;
     margin-top: 1px;
   }
 
-  /* ═══ Testimonials (Square-style) ═══ */
+  /* ═══ Testimonials (Modern) ═══ */
   .pf-testimonials {
     position: relative;
     overflow: hidden;
+    background: var(--tbg, #f0e4d8);
+    transition: background 0.7s ease;
+    isolation: isolate;
+  }
+
+  .pf-testimonials-bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 1;
+    transition: opacity 0.7s ease;
+  }
+
+  .pf-testimonials-bg::before,
+  .pf-testimonials-bg::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(110px);
+    transition: background-color 0.7s ease;
+    will-change: transform;
+  }
+
+  .pf-testimonials-bg::before {
+    top: -15%;
+    right: -8%;
+    width: 60%;
+    aspect-ratio: 1;
+    background: var(--taccent, #B25A3C);
+    opacity: 0.85;
+  }
+
+  .pf-testimonials-bg::after {
+    bottom: -30%;
+    left: -10%;
+    width: 55%;
+    aspect-ratio: 1;
+    background: var(--taccent, #B25A3C);
+    opacity: 0.5;
+  }
+
+  /* Subtle grain/noise for a more premium feel */
+  .pf-testimonials::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background-image:
+      radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.3), transparent 40%),
+      radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.25), transparent 40%);
+  }
+
+  @media (max-width: 767px) {
+    .pf-testimonials-bg::before,
+    .pf-testimonials-bg::after {
+      filter: blur(70px);
+    }
+    .pf-testimonials-bg::before { opacity: 0.65; }
+    .pf-testimonials-bg::after { opacity: 0.35; }
   }
 
   .pf-testimonials-track {
     position: relative;
+    z-index: 2;
   }
 
   .pf-testimonial-slide {
@@ -1029,16 +3954,65 @@ const isLive = feature.status === 'live' && content;
 
   .pf-testimonial-photo {
     position: relative;
+    max-width: 460px;
   }
 
-  .pf-testimonial-photo img {
+  .pf-testimonial-photo::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translate(20px, 20px);
+    border-radius: 28px;
+    background: var(--accent, #B25A3C);
+    opacity: 0.55;
+    z-index: 0;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease;
+  }
+
+  .pf-testimonial-photo:hover::before {
+    transform: translate(26px, 26px);
+    opacity: 0.7;
+  }
+
+  .pf-testimonial-photo img,
+  .pf-testimonial-placeholder {
+    position: relative;
+    z-index: 1;
     width: 100%;
-    max-width: 420px;
-    height: auto;
+    max-width: 460px;
     aspect-ratio: 4 / 5;
     object-fit: cover;
-    border-radius: 4px;
+    border-radius: 28px;
     display: block;
+    box-shadow:
+      0 30px 60px rgba(16, 18, 32, 0.18),
+      0 10px 24px rgba(16, 18, 32, 0.08);
+  }
+
+  .pf-testimonial-placeholder {
+    height: auto;
+    background: var(--placeholder-color, #ccc);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  @media (max-width: 767px) {
+    .pf-testimonial-photo::before {
+      transform: translate(10px, 10px);
+    }
+    .pf-testimonial-photo img,
+    .pf-testimonial-placeholder {
+      border-radius: 22px;
+    }
+  }
+
+  .pf-testimonial-placeholder span {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 4rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: 0.05em;
   }
 
   .pf-testimonial-content {
@@ -1050,11 +4024,11 @@ const isLive = feature.status === 'live' && content;
 
   .pf-testimonial-quote {
     font-family: var(--font-display, 'Sora', sans-serif);
-    font-size: clamp(1.5rem, 3vw, 2.5rem);
+    font-size: clamp(1.625rem, 3.2vw, 2.75rem);
     font-weight: 800;
     color: #1a1a1a;
-    letter-spacing: -0.025em;
-    line-height: 1.3;
+    letter-spacing: -0.03em;
+    line-height: 1.25;
     margin: 0;
   }
 
@@ -1108,6 +4082,8 @@ const isLive = feature.status === 'live' && content;
     align-items: center;
     justify-content: space-between;
     padding-bottom: clamp(48px, 6vw, 80px);
+    position: relative;
+    z-index: 2;
   }
 
   .pf-testimonials-arrows {
@@ -1323,14 +4299,29 @@ const isLive = feature.status === 'live' && content;
   // ═══ Testimonial Carousel ═══
   const tSlides = document.querySelectorAll<HTMLElement>('[data-testimonial]');
   const tDots = document.querySelectorAll<HTMLButtonElement>('[data-dot]');
+  const tPrev = document.getElementById('pf-prev');
+  const tNext = document.getElementById('pf-next');
   let tCurrent = 0;
   let tTimer: ReturnType<typeof setInterval> | null = null;
+
+  function resetTimer() {
+    if (tTimer) clearInterval(tTimer);
+    tTimer = setInterval(nextTestimonial, 6000);
+  }
+
+  const tSection = document.getElementById('pf-testimonials');
 
   function setTestimonial(idx: number) {
     tSlides.forEach((s) => s.classList.remove('active'));
     tDots.forEach((d) => d.classList.remove('active'));
     tSlides[idx]?.classList.add('active');
     tDots[idx]?.classList.add('active');
+    const bg = tSlides[idx]?.dataset.bg;
+    const accent = tSlides[idx]?.dataset.accent;
+    if (tSection) {
+      if (bg) tSection.style.setProperty('--tbg', bg);
+      if (accent) tSection.style.setProperty('--taccent', accent);
+    }
     tCurrent = idx;
   }
 
@@ -1338,24 +4329,29 @@ const isLive = feature.status === 'live' && content;
     setTestimonial((tCurrent + 1) % tSlides.length);
   }
 
+  function prevTestimonial() {
+    setTestimonial((tCurrent - 1 + tSlides.length) % tSlides.length);
+  }
+
   if (tSlides.length > 1) {
-    tTimer = setInterval(nextTestimonial, 5000);
+    tTimer = setInterval(nextTestimonial, 6000);
+
+    tPrev?.addEventListener('click', () => { prevTestimonial(); resetTimer(); });
+    tNext?.addEventListener('click', () => { nextTestimonial(); resetTimer(); });
 
     tDots.forEach((dot) => {
       dot.addEventListener('click', () => {
         const idx = parseInt(dot.dataset.dot || '0', 10);
         setTestimonial(idx);
-        if (tTimer) clearInterval(tTimer);
-        tTimer = setInterval(nextTestimonial, 5000);
+        resetTimer();
       });
     });
 
-    // Pause on visibility change
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         if (tTimer) clearInterval(tTimer);
       } else {
-        tTimer = setInterval(nextTestimonial, 5000);
+        resetTimer();
       }
     });
   }

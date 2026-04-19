@@ -17,9 +17,10 @@ interface Props {
   noindex?: boolean;
   structuredData?: Record<string, unknown> | Record<string, unknown>[];
   locale?: Locale;
+  preloadImage?: string;
 }
 
-const { title, description, image, type, noindex, structuredData } = Astro.props;
+const { title, description, image, type, noindex, structuredData, preloadImage } = Astro.props;
 const locale = Astro.props.locale || getLangFromUrl(Astro.url);
 const hreflangLinks = getHreflangLinks(Astro.url.pathname);
 
@@ -58,7 +59,7 @@ const allSchemas = structuredData
     <link rel="preload" href="/fonts/PlusJakartaSans-Regular.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/Sora-ExtraBold.woff2" as="font" type="font/woff2" crossorigin />
     <!-- Preload hero image (above-fold, LCP element) -->
-    <link rel="preload" href="/images/hero-sacs-store.webp" as="image" type="image/webp" />
+    <link rel="preload" href={preloadImage || '/images/hero-sacs-store.webp'} as="image" type="image/webp" />
 
     <SEO
       title={title}
