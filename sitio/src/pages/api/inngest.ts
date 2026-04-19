@@ -6,6 +6,7 @@ import { serve } from 'inngest/astro';
 import { inngest } from '../../inngest/client';
 import { helloAgent } from '../../inngest/agents/hello';
 import { meetingPrepAgent } from '../../inngest/agents/meeting-prep';
+import { quoteDrafterAgent } from '../../inngest/agents/quote-drafter';
 
 export const prerender = false;
 
@@ -14,9 +15,8 @@ const handler = serve({
   functions: [
     helloAgent,
     meetingPrepAgent,
-    // Add more agents here:
-    // quoteDrafterAgent,
-    // serviceRecommenderAgent,
+    quoteDrafterAgent,
+    // TODO: serviceRecommenderAgent
   ],
 });
 

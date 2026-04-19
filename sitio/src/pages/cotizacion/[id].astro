@@ -28,6 +28,22 @@ if (quote.bank_account_id) {
   bankAccount = ba;
 }
 
+// Fetch partner/owner if deal has one assigned — for voice-per-partner in public quote
+let partnerAssigned: any = null;
+if (quote.deal_id) {
+  const { data: dealData } = await supabase.from('deals').select('owner_id').eq('id', quote.deal_id).maybeSingle();
+  if (dealData?.owner_id) {
+    const { data: partnerData } = await supabase
+      .from('team_members')
+      .select('id, nombre, email, rol')
+      .eq('id', dealData.owner_id)
+      .maybeSingle();
+    if (partnerData && (partnerData as any).rol === 'partner') {
+      partnerAssigned = partnerData;
+    }
+  }
+}
+
 const items = Array.isArray(quote.items) ? quote.items : [];
 const template = quote.template || 'modern';
 
@@ -244,6 +260,48 @@ const initialTab = isClosed ? 'firma' : 'resumen';
       {quote.email && <div class="quote-client-detail">{quote.email}</div>}
       {quote.whatsapp && <div class="quote-client-detail">{quote.whatsapp}</div>}
     </div>
+
+    {partnerAssigned && (
+      <div class="quote-asesor">
+        <div class="quote-asesor-label">Tu asesor SACS</div>
+        <div class="quote-asesor-name">{partnerAssigned.nombre}</div>
+        {partnerAssigned.email && <a href={`mailto:${partnerAssigned.email}`} class="quote-asesor-contact">{partnerAssigned.email}</a>}
+      </div>
+    )}
+
+    <style>
+      .quote-asesor {
+        padding: 16px 40px;
+        border-top: 1px solid #e5e5e5;
+        background: #fafafa;
+      }
+      .quote-asesor-label {
+        font-size: 0.625rem;
+        font-weight: 700;
+        color: #999;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 6px;
+      }
+      .quote-asesor-name {
+        font-family: var(--font-display, inherit);
+        font-size: 1.0625rem;
+        font-weight: 500;
+        color: #1a1a1a;
+        letter-spacing: -0.005em;
+      }
+      .quote-asesor-contact {
+        display: inline-block;
+        margin-top: 4px;
+        font-size: 0.8125rem;
+        color: #2AB5A0;
+        text-decoration: none;
+      }
+      .quote-asesor-contact:hover { text-decoration: underline; }
+      @media (max-width: 640px) {
+        .quote-asesor { padding: 14px 24px; }
+      }
+    </style>
 
     {/* ═══════════════════════════════════════════════
          TAB: RESUMEN — summary intro + high-level total

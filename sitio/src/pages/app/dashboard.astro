@@ -1,0 +1,173 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+export const prerender = false;
+
+const userId = Astro.url.searchParams.get('user_id');
+let user: any = null;
+let stats: any = null;
+
+if (userId) {
+  const { data: userData } = await supabase
+    .from('team_members')
+    .select('id, nombre, email, rol, default_commission_pct')
+    .eq('id', userId)
+    .maybeSingle();
+  user = userData ? { ...userData, role: (userData as any).rol } : null;
+
+  if (user) {
+    // Compute stats inline (same logic as /api/partners/dashboard)
+    const scopePartnerId = user.role === 'founder' ? null : user.id;
+    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+
+    let commQuery = supabase.from('partner_commissions').select('status, commission_amount, deal_id');
+    if (scopePartnerId) commQuery = commQuery.eq('partner_id', scopePartnerId);
+    const { data: commissions } = await commQuery;
+
+    let dealsQuery = supabase.from('deals').select('id, valor_total, valor_mensual, stage, closed_at, owner_id, probabilidad').is('archived_at', null);
+    if (scopePartnerId) dealsQuery = dealsQuery.eq('owner_id', scopePartnerId);
+    const { data: deals } = await dealsQuery;
+
+    const openDeals = (deals || []).filter(d => !['cerrada_ganada', 'cerrada_perdida'].includes(d.stage));
+    const wonDeals = (deals || []).filter(d => d.stage === 'cerrada_ganada');
+    const wonThisMonth = wonDeals.filter(d => d.closed_at && d.closed_at >= monthStart);
+
+    const commSummary = { pending: 0, earned: 0, paid: 0, total_deals: (commissions || []).length };
+    for (const c of commissions || []) {
+      const amt = Number(c.commission_amount) || 0;
+      if (c.status === 'pending') commSummary.pending += amt;
+      else if (c.status === 'earned') commSummary.earned += amt;
+      else if (c.status === 'paid') commSummary.paid += amt;
+    }
+
+    stats = {
+      commissions: commSummary,
+      mrr_this_month: Math.round(wonThisMonth.reduce((s, d) => s + (Number(d.valor_mensual) || 0), 0)),
+      mrr_ytd: Math.round(wonDeals.reduce((s, d) => s + (Number(d.valor_mensual) || 0), 0)),
+      pipeline_total: Math.round(openDeals.reduce((s, d) => s + (Number(d.valor_total) || 0), 0)),
+      pipeline_weighted: Math.round(openDeals.reduce((s, d) => s + (Number(d.valor_total) || 0) * (Number(d.probabilidad) || 0) / 100, 0)),
+      open_count: openDeals.length,
+      won_this_month: wonThisMonth.length,
+      won_ytd: wonDeals.length,
+    };
+
+    // Leaderboard for partners
+    if (user.role === 'partner') {
+      const { data: allPartners } = await supabase.from('team_members').select('id').eq('rol', 'partner');
+      const { data: allMonthDeals } = await supabase.from('deals').select('owner_id, valor_mensual').eq('stage', 'cerrada_ganada').gte('closed_at', monthStart);
+      const partnerMrr: Record<string, number> = {};
+      for (const p of allPartners || []) partnerMrr[p.id] = 0;
+      for (const d of allMonthDeals || []) {
+        if (d.owner_id) partnerMrr[d.owner_id] = (partnerMrr[d.owner_id] || 0) + (Number(d.valor_mensual) || 0);
+      }
+      const ranked = Object.entries(partnerMrr).map(([id, mrr]) => ({ id, mrr })).sort((a, b) => b.mrr - a.mrr);
+      stats.leaderboard = {
+        rank: ranked.findIndex(r => r.id === user.id) + 1,
+        total: ranked.length,
+        your_mrr: partnerMrr[user.id] || 0,
+        median: ranked[Math.floor(ranked.length / 2)]?.mrr || 0,
+        top: ranked[0]?.mrr || 0,
+      };
+    }
+  }
+}
+
+const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+---
+
+<BaseLayout title="Mi desempeño — SACS">
+  <div style="max-width:1000px;margin:0 auto;padding:32px 24px;font-family:-apple-system,Segoe UI,Helvetica,sans-serif">
+    {!user ? (
+      <div style="background:#fff3e0;border-left:3px solid #e65100;padding:16px 20px;border-radius:6px">
+        <div style="font-weight:600;color:#b35500;margin-bottom:6px">Falta identificar usuario</div>
+        <div style="color:#666;font-size:0.875rem">Agrega <code>?user_id=X</code> al URL. Auth middleware formal pendiente.</div>
+      </div>
+    ) : (
+      <>
+        <div style="margin-bottom:28px">
+          <div style="font-size:0.6875rem;color:#999;text-transform:uppercase;letter-spacing:0.08em;font-weight:600">
+            {user.role === 'founder' ? 'Vista Founder — Agregado' : 'Mi desempeño'}
+          </div>
+          <h1 style="font-size:1.75rem;font-weight:700;margin:4px 0 0;letter-spacing:-0.01em">{user.nombre || user.email}</h1>
+        </div>
+
+        {/* Top KPIs */}
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px">
+          <div style="background:#fff;border:1px solid #e5e5e5;padding:16px 18px;border-radius:8px">
+            <div style="font-size:0.625rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.08em">MRR mes actual</div>
+            <div style="font-size:1.375rem;font-weight:700;margin-top:4px">{fmt(stats.mrr_this_month)}</div>
+            <div style="font-size:0.6875rem;color:#888;margin-top:2px">{stats.won_this_month} deals ganados</div>
+          </div>
+          <div style="background:#fff;border:1px solid #e5e5e5;padding:16px 18px;border-radius:8px">
+            <div style="font-size:0.625rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.08em">MRR YTD</div>
+            <div style="font-size:1.375rem;font-weight:700;margin-top:4px">{fmt(stats.mrr_ytd)}</div>
+            <div style="font-size:0.6875rem;color:#888;margin-top:2px">{stats.won_ytd} deals totales</div>
+          </div>
+          <div style="background:#fff;border:1px solid #e5e5e5;padding:16px 18px;border-radius:8px">
+            <div style="font-size:0.625rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.08em">Pipeline abierto</div>
+            <div style="font-size:1.375rem;font-weight:700;margin-top:4px">{fmt(stats.pipeline_total)}</div>
+            <div style="font-size:0.6875rem;color:#888;margin-top:2px">{stats.open_count} deals · peso {fmt(stats.pipeline_weighted)}</div>
+          </div>
+          <div style="background:#fff;border:1px solid #e5e5e5;padding:16px 18px;border-radius:8px">
+            <div style="font-size:0.625rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.08em">Comisiones pendientes</div>
+            <div style="font-size:1.375rem;font-weight:700;margin-top:4px;color:#2e7d32">{fmt(stats.commissions.pending + stats.commissions.earned)}</div>
+            <div style="font-size:0.6875rem;color:#888;margin-top:2px">{fmt(stats.commissions.pending)} pend + {fmt(stats.commissions.earned)} ganadas</div>
+          </div>
+        </div>
+
+        {/* Commissions detail */}
+        <h2 style="font-size:1rem;font-weight:700;margin:0 0 12px">Comisiones</h2>
+        <div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px 18px;margin-bottom:32px">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+            <div>
+              <div style="font-size:0.625rem;color:#999;text-transform:uppercase;letter-spacing:0.06em">Pendiente (cliente aún no paga)</div>
+              <div style="font-size:1.125rem;font-weight:600;margin-top:4px">{fmt(stats.commissions.pending)}</div>
+            </div>
+            <div>
+              <div style="font-size:0.625rem;color:#999;text-transform:uppercase;letter-spacing:0.06em">Ganada (por cobrar de SACS)</div>
+              <div style="font-size:1.125rem;font-weight:600;margin-top:4px;color:#2e7d32">{fmt(stats.commissions.earned)}</div>
+            </div>
+            <div>
+              <div style="font-size:0.625rem;color:#999;text-transform:uppercase;letter-spacing:0.06em">Pagada (histórico)</div>
+              <div style="font-size:1.125rem;font-weight:600;margin-top:4px;color:#666">{fmt(stats.commissions.paid)}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Leaderboard (partners only) */}
+        {user.role === 'partner' && stats.leaderboard && (
+          <>
+            <h2 style="font-size:1rem;font-weight:700;margin:0 0 12px">Tu posición</h2>
+            <div style="background:linear-gradient(135deg,#fff 0%,#fafafa 100%);border:1px solid #e5e5e5;border-radius:8px;padding:20px 22px;margin-bottom:32px">
+              <div style="display:flex;align-items:center;gap:20px">
+                <div style="font-family:var(--font-display,inherit);font-size:3rem;font-weight:300;letter-spacing:-0.02em;color:#1a1a1a">
+                  {stats.leaderboard.rank}<span style="font-size:1rem;color:#999;font-weight:500">/{stats.leaderboard.total}</span>
+                </div>
+                <div style="flex:1">
+                  <div style="font-size:0.8125rem;color:#666;margin-bottom:6px">Tu MRR este mes: <strong style="color:#1a1a1a">{fmt(stats.leaderboard.your_mrr)}</strong></div>
+                  <div style="font-size:0.75rem;color:#888">Mediana partners: {fmt(stats.leaderboard.median)} · Top: {fmt(stats.leaderboard.top)}</div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Pipeline breakdown */}
+        {stats.open_count > 0 && (
+          <>
+            <h2 style="font-size:1rem;font-weight:700;margin:0 0 12px">Pipeline por stage</h2>
+            <div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px 18px;margin-bottom:32px">
+              <div style="color:#666;font-size:0.875rem">Total: <strong>{stats.open_count}</strong> deals · <strong>{fmt(stats.pipeline_total)}</strong></div>
+              <div style="color:#666;font-size:0.8125rem;margin-top:4px">Weighted (× probabilidad): <strong>{fmt(stats.pipeline_weighted)}</strong></div>
+            </div>
+          </>
+        )}
+
+        <div style="margin-top:40px">
+          <a href={`/app/inbox?user_id=${user.id}`} style="color:#2AB5A0;text-decoration:none;font-size:0.8125rem;font-weight:500">→ Ver mi inbox de aprobaciones</a>
+        </div>
+      </>
+    )}
+  </div>
+</BaseLayout>

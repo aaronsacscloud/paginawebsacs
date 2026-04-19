@@ -19,13 +19,32 @@ const { data: toolLogs } = await supabase
   .order('called_at', { ascending: true });
 
 if (!run) return Astro.redirect('/admin/agents');
+
+const isAwaiting = run.status === 'awaiting_approval';
+const outputJson = JSON.stringify(run.output || {}, null, 2);
+const inputJson = JSON.stringify(run.input || {}, null, 2);
 ---
 
 <BaseLayout title={`Run ${run.id.slice(0, 8)} — SACS Admin`}>
   <div style="max-width:1000px;margin:0 auto;padding:32px 24px;font-family:-apple-system,Segoe UI,Helvetica,sans-serif">
     <a href="/admin/agents" style="color:#666;font-size:0.8125rem;text-decoration:none">← Todos los runs</a>
     <h1 style="font-size:1.25rem;font-weight:700;margin:12px 0 4px;font-family:monospace">{run.agent_name}</h1>
-    <div style="color:#999;font-size:0.75rem;margin-bottom:24px">ID: {run.id}</div>
+    <div style="color:#999;font-size:0.75rem;margin-bottom:16px">ID: {run.id}</div>
+
+    {isAwaiting && (
+      <div style="background:#fff3e0;border-left:3px solid #e65100;padding:14px 18px;margin-bottom:20px;border-radius:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <div>
+            <div style="font-weight:600;color:#b35500;margin-bottom:2px">Esperando tu aprobación</div>
+            <div style="font-size:0.75rem;color:#666">Revisa el output (editable abajo) + motivos si rechazas.</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button id="btn-approve" style="background:#2e7d32;color:#fff;border:none;padding:10px 18px;border-radius:6px;font-weight:600;cursor:pointer;font-family:inherit;font-size:0.8125rem">Aprobar</button>
+            <button id="btn-open-reject" style="background:#fff;color:#c62828;border:1px solid #c62828;padding:10px 18px;border-radius:6px;font-weight:600;cursor:pointer;font-family:inherit;font-size:0.8125rem">Rechazar</button>
+          </div>
+        </div>
+      </div>
+    )}
 
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px">
       <div style="background:#fafafa;padding:10px 12px;border-radius:6px">
@@ -47,24 +66,33 @@ if (!run) return Astro.redirect('/admin/agents');
     </div>
 
     <h2 style="font-size:0.9375rem;font-weight:700;margin:0 0 8px">Input</h2>
-    <pre style="background:#0f172a;color:#e2e8f0;padding:16px;border-radius:8px;overflow-x:auto;font-size:0.75rem;line-height:1.5;margin-bottom:20px">{JSON.stringify(run.input, null, 2)}</pre>
+    <pre style="background:#0f172a;color:#e2e8f0;padding:16px;border-radius:8px;overflow-x:auto;font-size:0.75rem;line-height:1.5;margin-bottom:20px">{inputJson}</pre>
 
     {run.reasoning && (
       <>
-        <h2 style="font-size:0.9375rem;font-weight:700;margin:0 0 8px">Reasoning</h2>
+        <h2 style="font-size:0.9375rem;font-weight:700;margin:0 0 8px">Reasoning del agente</h2>
         <div style="background:#fff;border:1px solid #e5e5e5;padding:16px;border-radius:8px;font-size:0.875rem;line-height:1.6;margin-bottom:20px;white-space:pre-wrap">{run.reasoning}</div>
       </>
     )}
 
     {run.output && (
       <>
-        <h2 style="font-size:0.9375rem;font-weight:700;margin:0 0 8px">Output</h2>
-        <pre style="background:#0f172a;color:#e2e8f0;padding:16px;border-radius:8px;overflow-x:auto;font-size:0.75rem;line-height:1.5;margin-bottom:20px">{JSON.stringify(run.output, null, 2)}</pre>
+        <h2 style="font-size:0.9375rem;font-weight:700;margin:0 0 8px">
+          Output {isAwaiting && <span style="font-size:0.6875rem;color:#b35500;font-weight:500">(editable antes de aprobar)</span>}
+        </h2>
+        {isAwaiting ? (
+          <textarea id="output-editor" style="width:100%;min-height:280px;background:#0f172a;color:#e2e8f0;padding:16px;border-radius:8px;border:none;font-family:monospace;font-size:0.75rem;line-height:1.5;resize:vertical;margin-bottom:20px">{outputJson}</textarea>
+        ) : (
+          <pre style="background:#0f172a;color:#e2e8f0;padding:16px;border-radius:8px;overflow-x:auto;font-size:0.75rem;line-height:1.5;margin-bottom:20px">{outputJson}</pre>
+        )}
       </>
     )}
 
     <h2 style="font-size:0.9375rem;font-weight:700;margin:0 0 8px">Tool calls ({(toolLogs || []).length})</h2>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+      {(toolLogs || []).length === 0 && (
+        <div style="color:#aaa;font-size:0.8125rem;padding:12px;text-align:center">Sin tool calls</div>
+      )}
       {(toolLogs || []).map(tc => (
         <div style="background:#fff;border:1px solid #e5e5e5;border-radius:6px;padding:12px 14px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -86,4 +114,97 @@ if (!run) return Astro.redirect('/admin/agents');
       </>
     )}
   </div>
+
+  {/* Reject modal */}
+  <div id="reject-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;padding:24px">
+    <div style="background:#fff;border-radius:12px;padding:24px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+      <h3 style="margin:0 0 8px;font-size:1.0625rem;font-weight:700">Rechazar — ¿Por qué?</h3>
+      <p style="font-size:0.8125rem;color:#666;margin:0 0 18px">Tu respuesta mejora el modelo. Sé específico en el detalle.</p>
+
+      <label style="display:block;font-size:0.625rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Motivo</label>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px">
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e5e5e5;border-radius:6px;cursor:pointer;font-size:0.8125rem"><input type="radio" name="reason" value="wrong_price" /> Precio incorrecto</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e5e5e5;border-radius:6px;cursor:pointer;font-size:0.8125rem"><input type="radio" name="reason" value="wrong_tone" /> Tono equivocado</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e5e5e5;border-radius:6px;cursor:pointer;font-size:0.8125rem"><input type="radio" name="reason" value="missing_context" /> Contexto faltante</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e5e5e5;border-radius:6px;cursor:pointer;font-size:0.8125rem"><input type="radio" name="reason" value="hallucinated_fact" /> Alucinó datos</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e5e5e5;border-radius:6px;cursor:pointer;font-size:0.8125rem"><input type="radio" name="reason" value="dangerous_action" /> Acción peligrosa</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e5e5e5;border-radius:6px;cursor:pointer;font-size:0.8125rem"><input type="radio" name="reason" value="other" /> Otro</label>
+      </div>
+
+      <label style="display:block;font-size:0.625rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Detalle (opcional)</label>
+      <textarea id="reject-detail" rows="3" placeholder="Cuéntanos más..." style="width:100%;padding:8px 10px;border:1px solid #e0e0e0;border-radius:6px;font-family:inherit;font-size:0.8125rem;box-sizing:border-box;margin-bottom:14px"></textarea>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button id="btn-close-reject" style="background:#f5f5f5;color:#555;border:none;padding:10px 18px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:0.8125rem;font-weight:500">Cancelar</button>
+        <button id="btn-confirm-reject" style="background:#c62828;color:#fff;border:none;padding:10px 18px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:0.8125rem;font-weight:600">Confirmar rechazo</button>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline define:vars={{ runId }}>
+    const btnApprove = document.getElementById('btn-approve');
+    const btnOpenReject = document.getElementById('btn-open-reject');
+    const btnCloseReject = document.getElementById('btn-close-reject');
+    const btnConfirmReject = document.getElementById('btn-confirm-reject');
+    const modal = document.getElementById('reject-modal');
+    const outputEditor = document.getElementById('output-editor');
+
+    function getUserId() {
+      return new URLSearchParams(location.search).get('user_id') || '';
+    }
+
+    btnApprove?.addEventListener('click', async () => {
+      btnApprove.disabled = true;
+      btnApprove.textContent = 'Aprobando...';
+      let edited_output = null;
+      if (outputEditor && outputEditor.value.trim()) {
+        try {
+          edited_output = JSON.parse(outputEditor.value);
+        } catch (err) {
+          alert('Output editado no es JSON válido: ' + err.message);
+          btnApprove.disabled = false;
+          btnApprove.textContent = 'Aprobar';
+          return;
+        }
+      }
+      const res = await fetch('/api/agents/approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': getUserId() },
+        body: JSON.stringify({ run_id: runId, edited_output }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert('Error: ' + (data.error || res.status));
+        btnApprove.disabled = false;
+        btnApprove.textContent = 'Aprobar';
+        return;
+      }
+      location.reload();
+    });
+
+    btnOpenReject?.addEventListener('click', () => { if (modal) modal.style.display = 'flex'; });
+    btnCloseReject?.addEventListener('click', () => { if (modal) modal.style.display = 'none'; });
+    modal?.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+
+    btnConfirmReject?.addEventListener('click', async () => {
+      const reason = document.querySelector('input[name="reason"]:checked');
+      if (!reason) { alert('Selecciona un motivo'); return; }
+      const detail = document.getElementById('reject-detail')?.value || '';
+      btnConfirmReject.disabled = true;
+      btnConfirmReject.textContent = 'Rechazando...';
+      const res = await fetch('/api/agents/reject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': getUserId() },
+        body: JSON.stringify({ run_id: runId, category: reason.value, detail }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert('Error: ' + (data.error || res.status));
+        btnConfirmReject.disabled = false;
+        btnConfirmReject.textContent = 'Confirmar rechazo';
+        return;
+      }
+      location.reload();
+    });
+  </script>
 </BaseLayout>

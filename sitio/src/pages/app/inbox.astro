@@ -15,10 +15,10 @@ let summary: any = null;
 if (userId) {
   const { data: userData } = await supabase
     .from('team_members')
-    .select('id, nombre, email, role, default_commission_pct')
+    .select('id, nombre, email, rol, default_commission_pct')
     .eq('id', userId)
     .maybeSingle();
-  user = userData;
+  user = userData ? { ...userData, role: (userData as any).rol } : null;
 
   if (user) {
     // Fetch awaiting_approval runs assigned to this user or owned by them

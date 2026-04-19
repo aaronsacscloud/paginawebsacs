@@ -54,15 +54,16 @@ export async function getCurrentUser(request: Request): Promise<CurrentUser | nu
   const userId = request.headers.get('x-user-id');
   if (!userId) return null;
   const { supabase } = await import('../supabase');
+  // NOTE: la columna real es `rol` (español), no `role`. Mapeamos a role en la interface.
   const { data } = await supabase
     .from('team_members')
-    .select('id, role, email, nombre, default_commission_pct')
+    .select('id, rol, email, nombre, default_commission_pct')
     .eq('id', userId)
     .maybeSingle();
   if (!data) return null;
   return {
     id: data.id,
-    role: (data.role || 'partner') as CurrentUser['role'],
+    role: ((data as any).rol || 'partner') as CurrentUser['role'],
     email: data.email,
     nombre: data.nombre,
     default_commission_pct: data.default_commission_pct ?? 20,
