@@ -922,7 +922,39 @@ const initialTab = isClosed ? 'firma' : 'resumen';
           <button class="quote-action-btn" id="btn-accept-sig" style="background:#1a1a1a;color:#fff">Aceptar cotización</button>
         </div>
       </div>
+      <div class="quote-reject-wrap no-print">
+        <button class="quote-reject-btn" id="btn-open-reject">No estoy interesado</button>
+      </div>
     </section>
+    )}
+
+    {/* Reject modal — appears in firma panel */}
+    {showFirma && !isExpired && !isClosed && (
+    <div class="quote-modal-overlay no-print" id="reject-modal" style="display:none">
+      <div class="quote-modal" style="max-width:480px">
+        <div class="quote-modal-header">
+          <span class="quote-modal-title">¿Qué te hace decir no por ahora?</span>
+          <button class="quote-modal-close" id="btn-close-reject">✕</button>
+        </div>
+        <div class="quote-modal-body">
+          <p style="font-size:0.8125rem;color:#666;margin:0 0 16px;line-height:1.55">Tu respuesta nos ayuda a mejorar. Selecciona el motivo y, si quieres, agrega un detalle.</p>
+          <label style="display:block;font-size:0.5625rem;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Motivo</label>
+          <div class="quote-reject-reasons" id="reject-reasons">
+            <label class="quote-reject-reason"><input type="radio" name="reject-motivo" value="precio" /> <span>El precio está fuera de presupuesto</span></label>
+            <label class="quote-reject-reason"><input type="radio" name="reject-motivo" value="timing" /> <span>No es el momento / lo veo más adelante</span></label>
+            <label class="quote-reject-reason"><input type="radio" name="reject-motivo" value="competidor" /> <span>Elegí otra solución</span></label>
+            <label class="quote-reject-reason"><input type="radio" name="reject-motivo" value="no_fit" /> <span>No es lo que estaba buscando</span></label>
+            <label class="quote-reject-reason"><input type="radio" name="reject-motivo" value="otro" /> <span>Otro motivo</span></label>
+          </div>
+          <label style="display:block;font-size:0.5625rem;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;margin:14px 0 4px">Detalle (opcional)</label>
+          <textarea id="reject-detalle" rows="3" placeholder="Cuéntanos más..." class="quote-modal-input" style="resize:vertical"></textarea>
+        </div>
+        <div class="quote-modal-footer" style="flex-direction:row">
+          <button class="quote-modal-btn quote-modal-btn--secondary" id="btn-cancel-reject">Cancelar</button>
+          <button class="quote-modal-btn" id="btn-confirm-reject">Enviar respuesta</button>
+        </div>
+      </div>
+    </div>
     )}
 
     {/* Case studies + legal — on FIRMA tab (social proof) */}
@@ -1668,6 +1700,30 @@ const initialTab = isClosed ? 'firma' : 'resumen';
 }
 
 /* ─── Mobile ─── */
+/* ─── Reject button + reasons list ─── */
+.quote-reject-wrap { padding: 16px 40px 24px; text-align: center; }
+.quote-reject-btn {
+  background: transparent; border: none; color: #999;
+  font-size: 0.8125rem; font-weight: 500; font-family: inherit;
+  cursor: pointer; padding: 6px 12px; border-radius: 4px;
+  text-decoration: underline; text-decoration-color: #ddd;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+.quote-reject-btn:hover { color: #666; text-decoration-color: #666; }
+.quote-reject-reasons { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.quote-reject-reason {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border: 1px solid #e5e5e5; border-radius: 6px;
+  font-size: 0.8125rem; color: #555; cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.quote-reject-reason:hover { background: #fafafa; border-color: #d0d0d0; }
+.quote-reject-reason input[type="radio"] { margin: 0; flex-shrink: 0; cursor: pointer; }
+.quote-reject-reason input[type="radio"]:checked + span { color: #1a1a1a; font-weight: 600; }
+.quote-reject-success { padding: 32px 24px; text-align: center; }
+.quote-reject-success-title { font-family: var(--font-display); font-size: 1.25rem; font-weight: 500; color: #1a1a1a; margin-bottom: 10px; }
+.quote-reject-success-text { font-size: 0.875rem; color: #666; line-height: 1.55; }
+
 @media (max-width: 640px) {
   .quote-header { flex-direction: column; gap: 14px; padding: 28px 24px 20px; }
   .quote-meta { text-align: left; }
@@ -2077,6 +2133,64 @@ const initialTab = isClosed ? 'firma' : 'resumen';
     });
 
     acceptInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('btn-confirm-accept')?.click(); });
+  }
+
+  // ─── Reject flow ───
+  const rejectModal = document.getElementById('reject-modal');
+  const btnOpenReject = document.getElementById('btn-open-reject');
+  const btnCloseReject = document.getElementById('btn-close-reject');
+  const btnCancelReject = document.getElementById('btn-cancel-reject');
+  const btnConfirmReject = document.getElementById('btn-confirm-reject');
+
+  if (btnOpenReject && rejectModal) {
+    btnOpenReject.addEventListener('click', () => { rejectModal.style.display = ''; });
+  }
+  if (btnCloseReject && rejectModal) {
+    btnCloseReject.addEventListener('click', () => { rejectModal.style.display = 'none'; });
+  }
+  if (btnCancelReject && rejectModal) {
+    btnCancelReject.addEventListener('click', () => { rejectModal.style.display = 'none'; });
+  }
+  rejectModal?.addEventListener('click', (e) => { if (e.target === rejectModal) rejectModal.style.display = 'none'; });
+
+  if (btnConfirmReject) {
+    btnConfirmReject.addEventListener('click', async () => {
+      const motivoEl = document.querySelector('input[name="reject-motivo"]:checked') as HTMLInputElement | null;
+      const detalleEl = document.getElementById('reject-detalle') as HTMLTextAreaElement | null;
+      if (!motivoEl) { alert('Selecciona un motivo'); return; }
+      const btn = btnConfirmReject as HTMLButtonElement;
+      btn.textContent = 'Enviando...';
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/revenue/mark-rejected', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            quoteId,
+            motivo: motivoEl.value,
+            detalle: detalleEl?.value?.trim() || '',
+            from: 'client',
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          alert(data?.error || 'No pudimos registrar tu respuesta. Intenta de nuevo.');
+          btn.textContent = 'Enviar respuesta';
+          btn.disabled = false;
+          return;
+        }
+        // Replace modal body with thank-you
+        const modal = rejectModal?.querySelector('.quote-modal');
+        if (modal) {
+          modal.innerHTML = '<div class="quote-reject-success"><div class="quote-reject-success-title">Gracias por tu respuesta</div><div class="quote-reject-success-text">Quedamos al pendiente. Si en el futuro la situación cambia, con gusto retomamos la conversación.</div></div>';
+        }
+        setTimeout(() => { window.location.reload(); }, 2500);
+      } catch (err) {
+        alert('Error de conexión. Intenta de nuevo.');
+        btn.textContent = 'Enviar respuesta';
+        btn.disabled = false;
+      }
+    });
   }
 </script>
 

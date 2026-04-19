@@ -402,6 +402,9 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     // Manual accept modal
     const [acceptForm, setAcceptForm] = useState<any>(null); // { quoteId, numero, nombre, method, nota }
     const [acceptSaving, setAcceptSaving] = useState(false);
+    // Reject modal
+    const [rejectForm, setRejectForm] = useState<any>(null); // { quoteId, numero, motivo, detalle }
+    const [rejectSaving, setRejectSaving] = useState(false);
 
     useEffect(() => {
       fetch('/api/revenue/quotes').then(r => r.json()).then(d => setQuotes(Array.isArray(d) ? d : []));
@@ -581,6 +584,35 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       setAcceptForm({ quoteId: q.id, numero: q.numero, nombre: q.contacto || q.empresa || '', method: 'whatsapp', nota: '' });
     };
 
+    const openRejectModal = (q: any) => {
+      setRejectForm({ quoteId: q.id, numero: q.numero, empresa: q.empresa, motivo: '', detalle: '' });
+    };
+
+    const confirmReject = async () => {
+      if (!rejectForm) return;
+      if (!rejectForm.motivo) { alert('Selecciona el motivo'); return; }
+      setRejectSaving(true);
+      try {
+        const res = await fetch('/api/revenue/mark-rejected', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            quoteId: rejectForm.quoteId,
+            motivo: rejectForm.motivo,
+            detalle: rejectForm.detalle || '',
+            from: 'admin',
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) { alert(data?.error || 'Error al marcar como rechazada'); setRejectSaving(false); return; }
+        const d = await fetch('/api/revenue/quotes').then(r => r.json());
+        setQuotes(Array.isArray(d) ? d : []);
+        setRejectForm(null);
+      } finally {
+        setRejectSaving(false);
+      }
+    };
+
     const confirmAccept = async () => {
       if (!acceptForm) return;
       const nombre = String(acceptForm.nombre || '').trim();
@@ -612,13 +644,14 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     };
 
     // ─── Filter, search, sort, paginate ───
-    const estadoLabels: Record<string, string> = { draft: 'Borrador', sent: 'Enviada', accepted: 'Aceptada', paid: 'Pagada', expired: 'Vencida' };
+    const estadoLabels: Record<string, string> = { draft: 'Borrador', sent: 'Enviada', accepted: 'Aceptada', paid: 'Pagada', expired: 'Vencida', rejected: 'Rechazada' };
     const estadoColors: Record<string, { bg: string; fg: string; dot: string }> = {
       draft:    { bg: '#f5f5f5', fg: '#666',    dot: '#999' },
       sent:     { bg: '#fff3e0', fg: '#b35500', dot: '#e65100' },
       accepted: { bg: '#e8f5e9', fg: '#1b5e20', dot: '#2e7d32' },
       paid:     { bg: '#e3f2fd', fg: '#0d47a1', dot: '#1565c0' },
       expired:  { bg: '#fce4ec', fg: '#880e4f', dot: '#c62828' },
+      rejected: { bg: '#ffebee', fg: '#b71c1c', dot: '#e53935' },
     };
 
     // Saved views (HubSpot-style presets)
@@ -630,6 +663,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       { id: 'expiring', label: 'Por vencer' },         // sent con ≤ 5 días
       { id: 'stale', label: 'Sin actividad' },         // sent > 7 días sin vistas
       { id: 'hot', label: 'Más vistas' },              // views ≥ 5
+      { id: 'rejected', label: 'Rechazadas' },         // estado=rejected
     ];
 
     const now = Date.now();
@@ -654,6 +688,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       if (view === 'expiring') return q.estado === 'sent' && daysUntil(q.vigencia) >= 0 && daysUntil(q.vigencia) <= 5;
       if (view === 'stale') return q.estado === 'sent' && daysSince(q.created_at) > 7 && viewsCount === 0;
       if (view === 'hot') return viewsCount >= 5;
+      if (view === 'rejected') return q.estado === 'rejected';
       return true;
     };
 
@@ -939,7 +974,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
 
           {/* Estado quick chips */}
           <div style={{ display: 'flex', gap: 4 }}>
-            {['draft', 'sent', 'accepted', 'paid', 'expired'].map(st => {
+            {['draft', 'sent', 'accepted', 'paid', 'expired', 'rejected'].map(st => {
               const active = qFilter === st;
               const ec = estadoColors[st];
               const count = counts[st] || 0;
@@ -1090,6 +1125,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                             <button onClick={() => { duplicateQuote(q); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex' }}>📋 Duplicar</button>
                             {(q.estado === 'sent' || q.estado === 'draft' || q.estado === 'expired') && <button onClick={() => { openAcceptModal(q); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', color: '#00695c' }}>✓ Aceptar manualmente</button>}
                             {q.estado !== 'paid' && <button onClick={() => { markQuotePaid(q); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', color: '#2e7d32' }}>💵 Marcar pagada</button>}
+                            {(q.estado === 'sent' || q.estado === 'draft' || q.estado === 'expired') && <button onClick={() => { openRejectModal(q); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', color: '#c62828' }}>✕ Marcar rechazada</button>}
                             <div style={{ height: 1, background: '#f0f0f0', margin: '4px 0' }}></div>
                             <button onClick={() => { navigator.clipboard.writeText(`https://www.sacscloud.com/cotizacion/${q.id}`); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex' }}>🔗 Copiar link</button>
                             <button onClick={() => { navigator.clipboard.writeText(`https://www.sacscloud.com/cotizacion/${q.id}/implementacion`); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex' }}>⚡ Copiar link proceso</button>
@@ -1192,6 +1228,64 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 <button onClick={() => setAcceptForm(null)} disabled={acceptSaving} style={{ ...S.btn, background: '#f5f5f5', color: '#555' }}>Cancelar</button>
                 <button onClick={confirmAccept} disabled={acceptSaving || !acceptForm.nombre} style={{ ...S.btn, background: acceptSaving || !acceptForm.nombre ? '#bbb' : '#00695c', color: '#fff', cursor: acceptSaving || !acceptForm.nombre ? 'not-allowed' : 'pointer' }}>
                   {acceptSaving ? 'Firmando…' : 'Confirmar aceptación'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─── Reject Quote Modal ─── */}
+        {rejectForm && (
+          <div style={S.overlay} onClick={e => { if (e.target === e.currentTarget && !rejectSaving) setRejectForm(null); }}>
+            <div style={{ ...S.modal, maxWidth: 480 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800 }}>Marcar como rechazada — {rejectForm.numero}</h3>
+                <button onClick={() => setRejectForm(null)} disabled={rejectSaving} style={{ border: 'none', background: 'transparent', fontSize: '1.25rem', cursor: 'pointer', color: '#999' }}>✕</button>
+              </div>
+              <p style={{ fontSize: '0.8125rem', color: '#666', margin: '0 0 16px', lineHeight: 1.55 }}>Registra el motivo del rechazo. El deal asociado se moverá a <strong>Cerrada perdida</strong> con este motivo.</p>
+
+              <div style={{ marginBottom: 12 }}>
+                <label style={S.label}>Motivo</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {[
+                    { v: 'precio', l: 'Precio fuera de presupuesto' },
+                    { v: 'timing', l: 'No es el momento' },
+                    { v: 'competidor', l: 'Competidor elegido' },
+                    { v: 'no_fit', l: 'No es el producto que buscan' },
+                    { v: 'otro', l: 'Otro motivo' },
+                  ].map(opt => {
+                    const sel = rejectForm.motivo === opt.v;
+                    return (
+                      <label key={opt.v} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', border: `1px solid ${sel ? '#c62828' : '#e0e0e0'}`, borderRadius: 6, cursor: 'pointer', background: sel ? '#fff5f5' : '#fff', fontSize: '0.8125rem' }}>
+                        <input
+                          type="radio"
+                          name="admin-reject-motivo"
+                          value={opt.v}
+                          checked={sel}
+                          onChange={() => setRejectForm({ ...rejectForm, motivo: opt.v })}
+                        />
+                        <span style={{ color: sel ? '#c62828' : '#555', fontWeight: sel ? 600 : 500 }}>{opt.l}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={S.label}>Detalle interno (opcional)</label>
+                <textarea
+                  value={rejectForm.detalle}
+                  onChange={e => setRejectForm({ ...rejectForm, detalle: e.target.value })}
+                  rows={3}
+                  placeholder="Ej. comentario del cliente o análisis competitivo"
+                  style={{ ...S.input, resize: 'vertical' as const, fontFamily: 'inherit' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button onClick={() => setRejectForm(null)} disabled={rejectSaving} style={{ ...S.btn, background: '#f5f5f5', color: '#555' }}>Cancelar</button>
+                <button onClick={confirmReject} disabled={rejectSaving || !rejectForm.motivo} style={{ ...S.btn, background: rejectSaving || !rejectForm.motivo ? '#bbb' : '#c62828', color: '#fff', cursor: rejectSaving || !rejectForm.motivo ? 'not-allowed' : 'pointer' }}>
+                  {rejectSaving ? 'Guardando…' : 'Confirmar rechazo'}
                 </button>
               </div>
             </div>

@@ -88,8 +88,44 @@ export const PUT: APIRoute = async ({ request }) => {
   const body = await request.json();
   const { id } = body;
   const clean = pick(body, QUOTE_FIELDS);
+
+  // Fetch previous state before update to detect transitions
+  const { data: prev } = await supabase.from('quotes').select('estado, deal_id, total').eq('id', id).single();
+
   const { data, error } = await supabase.from('quotes').update(clean).eq('id', id).select().single();
 
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+
+  // ─── Sync to deal (non-blocking on errors) ───
+  try {
+    const { syncQuoteToDeal, advanceDealStage } = await import('../../../lib/crm/sync-quote-deal');
+    const items = Array.isArray(data?.items) ? data.items : [];
+    const monthlyPlan = items.filter((i: any) => i.tipo === 'plan' && i.periodo === 'mensual')
+      .reduce((s: number, i: any) => s + (i.subtotal || 0), 0);
+    const recurMonthly = items.filter((i: any) => i.tipo === 'extra' && i.recurrente && i.periodo_extra !== 'anual')
+      .reduce((s: number, i: any) => s + (i.monto || 0), 0);
+    const valorMensual = Math.round(monthlyPlan + recurMonthly);
+    const valorTotal = Math.round(data?.total || 0);
+
+    // Draft → sent transition: advance deal to cotizacion_enviada
+    const transitionedToSent = prev && prev.estado !== 'sent' && data?.estado === 'sent';
+    if (transitionedToSent) {
+      if (data?.deal_id) {
+        await advanceDealStage(data.deal_id, 'cotizacion_enviada', {
+          valor_total: valorTotal, valor_mensual: valorMensual, trigger: 'quote_sent',
+        });
+      } else {
+        await syncQuoteToDeal(id, {
+          targetStage: 'cotizacion_enviada', valor_total: valorTotal, valor_mensual: valorMensual, trigger: 'quote_sent',
+        });
+      }
+    } else if (data?.deal_id && (valorTotal !== (prev?.total || 0))) {
+      // Total changed → sync deal amounts without moving stage
+      await supabase.from('deals').update({ valor_total: valorTotal, valor_mensual: valorMensual }).eq('id', data.deal_id);
+    }
+  } catch (syncErr) {
+    console.error('[quotes PUT] deal sync error:', syncErr);
+  }
+
   return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } });
 };
