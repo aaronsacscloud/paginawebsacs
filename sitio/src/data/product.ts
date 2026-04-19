@@ -346,7 +346,7 @@ export const pillars: Pillar[] = [
           headline: 'Tu especialista en IA, dedicado a tu negocio',
           subtitle: 'Una persona real que diseña workflows, optimiza procesos y automatiza tu operación contigo.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'axo-copiloto-ia',
@@ -359,7 +359,7 @@ export const pillars: Pillar[] = [
           headline: 'AXO: el copiloto que entiende tu negocio',
           subtitle: 'Pregúntale lo que quieras, detecta problemas y aprende de tu operación cada día.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'workflows',
@@ -372,7 +372,7 @@ export const pillars: Pillar[] = [
           headline: 'Automatiza lo que se repite',
           subtitle: 'Reglas trigger → acción: stock bajo genera orden, nueva venta notifica y factura.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'alertas-inteligentes',
@@ -385,7 +385,7 @@ export const pillars: Pillar[] = [
           headline: 'Alertas antes de que sea problema',
           subtitle: 'Anomalías de venta, productos estancados, riesgo de quiebre. Por WhatsApp o email.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'reportes-predictivos',
@@ -398,7 +398,7 @@ export const pillars: Pillar[] = [
           headline: 'Reportes que predicen, no solo miden',
           subtitle: 'Forecast de demanda, resumen ejecutivo semanal y análisis de rentabilidad con IA.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'orquestador-de-agentes',
@@ -411,7 +411,7 @@ export const pillars: Pillar[] = [
           headline: 'Múltiples IAs trabajando para ti',
           subtitle: 'Claude, GPT y Gemini orquestados para reabasto, pricing y campañas en cadena.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'api-e-integraciones',
@@ -424,7 +424,7 @@ export const pillars: Pillar[] = [
           headline: 'Conecta SACS con todo tu stack',
           subtitle: '+600 apps: ERP, contabilidad, logística, marketing. API abierta para integraciones a la medida.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
     ],
   },
