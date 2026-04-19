@@ -2,29 +2,34 @@
 
 Todo lo que puedes probar para validar el sistema end-to-end. Todo lo listado está **deployado en prod** (`https://www.sacscloud.com`).
 
-## Qué hay construido (Fases 1-5 completas)
+## Qué hay construido (Fases 1-7 completas)
 
 **Infra deployada:**
 - 8 tablas DB nuevas (agent_runs partitioned, agent_configs, agent_tool_log, agent_policies, kb_chunks HNSW, agent_metrics, partner_commissions, product_events) + columna `team_members.default_commission_pct`
 - Stack: Vercel AI SDK 6 + Anthropic SDK 0.90 + Inngest 4.2 + zod 4 + pgvector HNSW
 - PII redactor (27/27 tests) + tool registry con FORBIDDEN (17/17 tests)
 - Partner scope helpers + commissions calculate/settle con triggers en quote flow
-- 3 agentes codeados: `hello_agent`, `meeting_prep`, `quote_drafter`
+- **6 agentes** codeados: `hello_agent`, `meeting_prep`, `quote_drafter`, `service_recommender`, `churn_watchdog`, `lead_distributor`
 - Catálogo SACS v1 (3 planes + 6 servicios + defaults por vertical)
+- **KB seed 12 entries** (playbooks + case studies + vertical guides)
+- **Eval runner** con 5+3 golden cases JSONL
+- **Partner scope aplicado** en /api/crm/contacts, deals, /api/revenue/quotes
 
 **Endpoints:**
 - `/api/agents/{runs,approve,reject,trigger,draft-from-transcript}`
 - `/api/partners/{commissions,dashboard,onboarding}`
 - `/api/catalog/recommend-services`
 - `/api/cron/agents-reaper` (cada 10 min, mata zombies)
-- `/api/inngest` (webhook Inngest)
+- `/api/cron/meeting-prep-dispatcher` (cada 15 min, dispara meeting_prep auto)
+- `/api/inngest` (webhook Inngest con 6 functions)
 
 **UI:**
-- `/admin/agents` — dashboard con 4 configs + lista runs + kill switches
+- `/admin/agents` — dashboard con 6 configs + lista runs + kill switches
 - `/admin/agents/[runId]` — detail con input/output/reasoning/tool-calls + **approve/reject UI con inline edit**
 - `/app/inbox?user_id=X` — partner-facing con awaiting runs + commission summary
 - `/app/dashboard?user_id=X` — **Mi desempeño**: MRR mes/YTD + pipeline + comisiones + leaderboard
 - `/cotizacion/[id]` — ahora muestra "Tu asesor SACS" si deal tiene partner asignado
+- **`/admin/crm` con tabs "Agentes IA" + "Mi desempeño"** integrados al sidebar
 
 ## Pre-requisitos para activar agentes IA reales
 
@@ -191,6 +196,64 @@ cd sitio && bun src/lib/ai/redact.test.ts
 cd sitio && bun src/lib/agent-tools/registry.test.ts
 ```
 - **Espera:** 17/17 pass
+
+### 17. Eval runner CLI
+```bash
+cd sitio && bun src/lib/ai/eval.ts quote-drafter
+```
+- **Espera:** "Loaded 5 eval cases" + lista con ⭐ critical
+
+### 18. Partner onboarding (founder only)
+```bash
+# GET: listar partners
+curl -H "x-user-id: <founder_id>" https://www.sacscloud.com/api/partners/onboarding
+
+# POST: crear partner nuevo
+curl -X POST https://www.sacscloud.com/api/partners/onboarding \
+  -H "Content-Type: application/json" \
+  -H "x-user-id: <founder_id>" \
+  -d '{"nombre":"Partner Nuevo","email":"nuevo@sacs.com","default_commission_pct":25}'
+```
+- **Espera:** `{ok:true, partner_id, tasks_created:5, next_steps:[...]}`
+- 5 activities tipo `tarea` con metadata `onboarding:true` creadas
+
+### 19. Partner scope en contacts/deals
+```bash
+# Partner solo ve sus contacts
+curl -H "x-user-id: <partner_id>" https://www.sacscloud.com/api/crm/contacts | python3 -c "import json,sys; d=json.loads(sys.stdin.read()); print('contacts:', len(d.get('contacts',[])))"
+
+# Founder ve todos
+curl -H "x-user-id: <founder_id>" https://www.sacscloud.com/api/crm/contacts | python3 -c "import json,sys; d=json.loads(sys.stdin.read()); print('contacts:', len(d.get('contacts',[])))"
+```
+- Partner: menos filas (solo `owner_id = partner.id`)
+- Founder: todas
+
+### 20. Lead distributor auto-routing
+```bash
+# Crear lead nuevo y disparar lead_distributor via Inngest event
+curl -X POST https://www.sacscloud.com/api/inngest \
+  -H "Content-Type: application/json" \
+  -d '{"name":"agent/lead-distributor.requested","data":{"contact_id":"<nuevo_contact_id>"}}'
+```
+- **Espera:** `owner_id` se asigna a partner con menos leads recientes (round-robin)
+- Activity registra la asignación con rule + partner_id
+
+### 21. Churn watchdog cron (con Inngest)
+- Cada 6h analiza automáticamente companies con health<60
+- Si risk_level yellow/red → crea task CSM con play
+- Verificable en `/admin/agents` con `agent_name=churn_watchdog`
+
+### 22. Meeting prep auto (cron)
+- Cada 15 min cron busca bookings próximos
+- Si hay uno en 25-35 min → dispatch Inngest event
+- `/api/cron/meeting-prep-dispatcher?dry=1` devuelve `{dispatched, window, bookings_found}`
+
+### 23. KB search (después de generar embeddings)
+```sql
+-- Ver KB content disponible
+SELECT source, title, substring(content, 1, 80) AS preview FROM kb_chunks ORDER BY source, title;
+```
+- **Espera:** 12 entries (4 playbooks + 4 case studies + 4 guides)
 
 ## Seed data útil para testing
 
