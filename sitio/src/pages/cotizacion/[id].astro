@@ -2,6 +2,7 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { supabase } from '../../lib/supabase';
 import { plans } from '../../data/plans';
+import ImplementacionContent from '../../components/ImplementacionContent.astro';
 
 export const prerender = false;
 
@@ -49,6 +50,9 @@ const showQr = quoteMeta.mostrar_qr !== undefined ? quoteMeta.mostrar_qr : true;
 const showAnimaciones = quoteMeta.mostrar_animaciones !== undefined ? quoteMeta.mostrar_animaciones : true;
 const showTimeline = quoteMeta.mostrar_timeline !== undefined ? quoteMeta.mostrar_timeline : true;
 const timelineTipo = quoteMeta.timeline_tipo || '1suc';
+const showImplementacion = quoteMeta.mostrar_implementacion !== undefined ? quoteMeta.mostrar_implementacion : true;
+const implementacionNota = quoteMeta.implementacion_nota || '';
+const isAnnualQuote = (Array.isArray(quote.items) ? quote.items : []).some((i: any) => i.tipo === 'plan' && i.periodo === 'anual');
 const quoteUrl = `https://www.sacscloud.com/cotizacion/${id}`;
 const daysLeft = quote.vigencia ? Math.ceil((new Date(quote.vigencia).getTime() - Date.now()) / 86400000) : 0;
 const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
@@ -703,6 +707,17 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
           <div class="quote-tl-step"><div class="quote-tl-marker"><div class="quote-tl-dot" style="background:#1a1a1a;box-shadow:0 0 0 2px #1a1a1a"></div></div><div class="quote-tl-content"><div class="quote-tl-badge" style="background:#1a1a1a">90 días</div><div class="quote-tl-heading">Piloto automático</div><div class="quote-tl-items"><div class="quote-tl-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#2AB5A0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Tu operación funcionando sin depender de personas clave</span></div><div class="quote-tl-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#2AB5A0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>IA optimizando compras, traspasos y reabasto continuamente</span></div><div class="quote-tl-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#2AB5A0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Abre nuevas tiendas en horas, no semanas</span></div><div class="quote-tl-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#2AB5A0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>+600 apps conectadas — tu ecosistema a la medida</span></div><div class="quote-tl-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#2AB5A0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Un negocio que escala sin que la complejidad escale con él</span></div></div><div class="quote-tl-result">De una operación que depende de ti a un negocio que se opera solo.</div></div></div>
         </div>
       </div>
+    )}
+
+    {showImplementacion && (
+      <ImplementacionContent
+        variant="condensed"
+        empresa={quote.empresa}
+        contacto={quote.contacto}
+        nota={implementacionNota}
+        isAnnual={isAnnualQuote}
+        implementacionUrl={`/cotizacion/${id}/implementacion`}
+      />
     )}
 
     <!-- Case studies carousel -->

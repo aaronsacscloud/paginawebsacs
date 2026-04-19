@@ -1,0 +1,895 @@
+---
+import {
+  IMPL_METRICS,
+  IMPL_STEPS,
+  INCLUIDO_ITEMS,
+  SOPORTE_ITEMS,
+  OUTCOMES,
+  CRECIMIENTO_STATS,
+  SUMMARY_STEPS,
+} from '../data/implementacion';
+
+interface Props {
+  variant: 'condensed' | 'full';
+  empresa?: string;
+  contacto?: string;
+  nota?: string;
+  isAnnual: boolean;
+  quoteUrl?: string;
+  implementacionUrl?: string;
+}
+
+const { variant, empresa, contacto, nota, isAnnual, quoteUrl, implementacionUrl } = Astro.props;
+const isCondensed = variant === 'condensed';
+const isFull = variant === 'full';
+const greetingName = empresa || contacto || '';
+const waNumber = '5215512345678';
+const waText = encodeURIComponent('Hola SACS, me interesa contratar el plan anual para incluir toda la implementación.');
+const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
+---
+
+<section class={`impl-section impl-${variant}`}>
+  {isFull && (
+    <div class="impl-hero">
+      <div class="impl-hero-label">Proceso de implementación SACS</div>
+      <h1 class="impl-hero-title">
+        {greetingName ? `${greetingName}, ` : ''}empieza a operar en días, no en meses.
+      </h1>
+      <p class="impl-hero-desc">
+        Tu negocio funcionando con SACS en menos de una semana. Nos encargamos de migrar tu información, capacitarte y dejarte operando. Todo incluido en tu plan anual.
+      </p>
+      <div class="impl-metrics">
+        {IMPL_METRICS.map(m => (
+          <div class="impl-metric">
+            <div class="impl-metric-value">{m.value}</div>
+            <div class="impl-metric-label">{m.label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )}
+
+  {isCondensed && (
+    <div class="impl-heading">
+      <div class="impl-heading-label">¿Qué sigue cuando contratas?</div>
+      <h2 class="impl-heading-title">Empieza a operar en días, no en meses.</h2>
+      <p class="impl-heading-desc">Tu negocio funcionando con SACS en menos de una semana. Así se ve el proceso completo:</p>
+    </div>
+  )}
+
+  {!isAnnual && (
+    <div class="impl-warn">
+      <div class="impl-warn-icon">⚠</div>
+      <div class="impl-warn-body">
+        <div class="impl-warn-title">Este proceso se incluye al contratar plan anual.</div>
+        <p class="impl-warn-text">
+          En plan mensual no aplica la migración completa ni las sesiones 1-a-1 con consultor. Contrata anual y te migramos toda tu información, capacitamos a tu equipo, y te damos 2 sesiones con un experto — todo sin costo adicional.
+        </p>
+        <div class="impl-warn-ctas">
+          <a href={waUrl} target="_blank" rel="noopener" class="impl-warn-cta impl-warn-cta--primary">Hablar con asesor</a>
+          {quoteUrl && <a href={quoteUrl} class="impl-warn-cta impl-warn-cta--ghost">Volver a tu cotización</a>}
+        </div>
+      </div>
+    </div>
+  )}
+
+  {nota && (
+    <div class="impl-nota">
+      <span class="impl-nota-label">Nota para ti:</span>
+      <span>{nota}</span>
+    </div>
+  )}
+
+  <!-- Process steps -->
+  <div class="impl-steps">
+    {IMPL_STEPS.map((step, idx) => (
+      <div class="impl-step" style={`--step-color:${step.color}`}>
+        <div class="impl-step-rail">
+          <div class="impl-step-num">{idx + 1}</div>
+          {idx < IMPL_STEPS.length - 1 && <div class="impl-step-line"></div>}
+        </div>
+        <div class="impl-step-body">
+          <div class="impl-step-badge">{step.dayBadge}</div>
+          <div class="impl-step-head">
+            <span class="impl-step-emoji">{step.emoji}</span>
+            <h3 class="impl-step-title">{step.title}</h3>
+          </div>
+          <p class="impl-step-desc">{step.description}</p>
+          <ul class="impl-step-bullets">
+            {step.bullets.map(b => <li><span class="impl-step-check">✓</span>{b}</li>)}
+          </ul>
+          {isFull && (
+            <div class="impl-step-duration" style={`background:${step.durationBadge.color}14;color:${step.durationBadge.color};border-color:${step.durationBadge.color}33`}>
+              {step.durationBadge.text}
+            </div>
+          )}
+        </div>
+      </div>
+    ))}
+  </div>
+
+  <!-- Incluido en tu plan -->
+  <div class="impl-included">
+    <div class="impl-included-head">
+      <h3 class="impl-included-title">{isAnnual ? 'Todo lo que recibes con tu pago anual.' : 'Lo que recibes al contratar plan anual.'}</h3>
+      <p class="impl-included-desc">Además del proceso de implementación, tu plan anual incluye recursos de aprendizaje y soporte continuo para que nunca te quedes sin ayuda.</p>
+    </div>
+    <div class="impl-included-grid">
+      {INCLUIDO_ITEMS.map(item => (
+        <div class="impl-included-card">
+          <div class="impl-included-emoji">{item.emoji}</div>
+          <h4 class="impl-included-card-title">{item.title}</h4>
+          <p class="impl-included-card-desc">{item.description}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  {isFull && (
+    <>
+      <!-- Soporte continuo -->
+      <div class="impl-support">
+        <div class="impl-support-head">
+          <h3 class="impl-support-title">Nunca te quedas sin ayuda.</h3>
+          <p class="impl-support-desc">Desde sesiones 1-a-1 con consultores hasta chat 24/7, tienes múltiples canales para resolver cualquier duda en el momento que la necesites.</p>
+        </div>
+        <div class="impl-support-grid">
+          {SOPORTE_ITEMS.map(s => (
+            <div class="impl-support-card">
+              <div class="impl-support-emoji">{s.emoji}</div>
+              <h4 class="impl-support-card-title">{s.title}</h4>
+              <p class="impl-support-card-desc">{s.description}</p>
+              {s.badge && <div class="impl-support-badge">{s.badge}</div>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- Lo que logras -->
+      <div class="impl-outcomes">
+        <div class="impl-outcomes-head">
+          <h3 class="impl-outcomes-title">Al final del proceso, tienes todo conectado.</h3>
+          <p class="impl-outcomes-desc">Tu negocio no solo opera en una tienda física. Tienes presencia digital completa con todos tus canales de venta sincronizados en un solo sistema.</p>
+        </div>
+        <div class="impl-outcomes-grid">
+          {OUTCOMES.map(o => (
+            <div class="impl-outcome-card">
+              <div class="impl-outcome-emoji">{o.emoji}</div>
+              <h4 class="impl-outcome-title">{o.title}</h4>
+              <p class="impl-outcome-desc">{o.description}</p>
+              <ul class="impl-outcome-bullets">
+                {o.bullets.map(b => <li><span class="impl-outcome-check">✓</span>{b}</li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- Crecimiento -->
+      <div class="impl-grow">
+        <div class="impl-grow-head">
+          <h3 class="impl-grow-title">Después del primer proceso, crecer es fácil.</h3>
+          <p class="impl-grow-desc">El primer proceso de implementación es el más complejo porque incluye toda la migración. Después de eso, agregar otra sucursal es rápido y sencillo.</p>
+        </div>
+        <div class="impl-grow-hero">
+          <h4 class="impl-grow-hero-title">Otra sucursal en menos de 7 días.</h4>
+          <p class="impl-grow-hero-desc">Una vez que tienes la primera tienda operando, la información ya está en el sistema. Agregar otra sucursal es solo configurar un nuevo punto de venta — sin migración, sin capacitación desde cero.</p>
+          <ul class="impl-grow-bullets">
+            <li><span class="impl-grow-check">✓</span>Misma información, nueva ubicación</li>
+            <li><span class="impl-grow-check">✓</span>Inventario independiente por sucursal</li>
+            <li><span class="impl-grow-check">✓</span>Reportes consolidados o por sucursal</li>
+            <li><span class="impl-grow-check">✓</span>Lo haces tú mismo con lo que ya aprendiste</li>
+          </ul>
+        </div>
+        <div class="impl-grow-stats">
+          {CRECIMIENTO_STATS.map(s => (
+            <div class="impl-grow-stat">
+              <div class="impl-grow-stat-value">{s.value}</div>
+              <div class="impl-grow-stat-label">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- Resumen visual -->
+      <div class="impl-summary">
+        <div class="impl-summary-head">
+          <h3 class="impl-summary-title">De pago a operación, así de simple.</h3>
+          <p class="impl-summary-desc">Tu recorrido completo en 5 pasos. Todo incluido, todo acompañado.</p>
+        </div>
+        <div class="impl-summary-grid">
+          {SUMMARY_STEPS.map((s, i) => (
+            <div class="impl-summary-step">
+              <div class="impl-summary-num">{i + 1}</div>
+              <div class="impl-summary-emoji">{s.emoji}</div>
+              <h4 class="impl-summary-step-title">{s.title}</h4>
+              <p class="impl-summary-step-desc">{s.description}</p>
+              <div class="impl-summary-timing">{s.timing}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- Footer CTAs -->
+      <div class="impl-footer-cta">
+        <h3 class="impl-footer-title">{isAnnual ? 'Todo listo para arrancar.' : 'Empieza a operar esta semana.'}</h3>
+        <p class="impl-footer-desc">
+          {isAnnual
+            ? 'Regresa a tu cotización cuando quieras o contáctanos si necesitas algo más.'
+            : 'Plan anual con implementación completa. Migración, capacitación, soporte y todos tus canales conectados. Tú solo mandas tu información — nosotros hacemos el resto.'}
+        </p>
+        <div class="impl-footer-buttons">
+          {quoteUrl && <a href={quoteUrl} class="impl-btn impl-btn--primary">← Volver a tu cotización</a>}
+          <a href={waUrl} target="_blank" rel="noopener" class="impl-btn impl-btn--secondary">Hablar con un asesor</a>
+        </div>
+      </div>
+    </>
+  )}
+
+  {isCondensed && implementacionUrl && (
+    <div class="impl-cta">
+      <a href={implementacionUrl} class="impl-cta-link">Ver proceso completo con soporte, outcomes y crecimiento →</a>
+    </div>
+  )}
+</section>
+
+<style>
+  .impl-section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 24px;
+    font-family: inherit;
+    color: #1a1a1a;
+  }
+  .impl-full { padding-top: 64px; padding-bottom: 64px; }
+  .impl-condensed { padding: 40px 0; }
+
+  /* ── Hero ── */
+  .impl-hero {
+    text-align: center;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    color: #fff;
+    padding: 56px 32px;
+    border-radius: 24px;
+    margin-bottom: 48px;
+  }
+  .impl-hero-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #2AB5A0;
+    margin-bottom: 16px;
+  }
+  .impl-hero-title {
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin: 0 0 16px;
+  }
+  .impl-hero-desc {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: rgba(255,255,255,0.75);
+    margin: 0 auto 32px;
+    max-width: 680px;
+  }
+  .impl-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    margin-top: 32px;
+  }
+  .impl-metric-value {
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+    font-weight: 800;
+    color: #2AB5A0;
+    margin-bottom: 6px;
+  }
+  .impl-metric-label {
+    font-size: 0.8125rem;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.4;
+  }
+
+  /* ── Heading condensed ── */
+  .impl-heading { text-align: center; margin-bottom: 32px; }
+  .impl-heading-label {
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #4B7BE5;
+    margin-bottom: 10px;
+  }
+  .impl-heading-title {
+    font-size: clamp(1.375rem, 3vw, 1.875rem);
+    font-weight: 800;
+    line-height: 1.15;
+    margin: 0 0 8px;
+  }
+  .impl-heading-desc {
+    font-size: 0.875rem;
+    color: #777;
+    margin: 0;
+  }
+
+  /* ── Monthly warn banner ── */
+  .impl-warn {
+    display: flex;
+    gap: 16px;
+    background: linear-gradient(135deg, #fff7e8 0%, #fffaf0 100%);
+    border: 1px solid #E8A83844;
+    border-left: 4px solid #E8A838;
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-bottom: 32px;
+  }
+  .impl-warn-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+  .impl-warn-body { flex: 1; }
+  .impl-warn-title {
+    font-weight: 800;
+    font-size: 1rem;
+    margin-bottom: 6px;
+    color: #1a1a1a;
+  }
+  .impl-warn-text {
+    font-size: 0.8125rem;
+    color: #555;
+    line-height: 1.5;
+    margin: 0 0 12px;
+  }
+  .impl-warn-ctas {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .impl-warn-cta {
+    display: inline-block;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .impl-warn-cta--primary {
+    background: #1a1a1a;
+    color: #fff;
+  }
+  .impl-warn-cta--primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .impl-warn-cta--ghost {
+    background: transparent;
+    color: #1a1a1a;
+    border: 1px solid #1a1a1a22;
+  }
+
+  /* ── Admin note ── */
+  .impl-nota {
+    background: #eef4ff;
+    border: 1px solid #4B7BE533;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 28px;
+    font-size: 0.8125rem;
+    color: #1a1a1a;
+    line-height: 1.5;
+  }
+  .impl-nota-label {
+    font-weight: 700;
+    color: #4B7BE5;
+    margin-right: 6px;
+  }
+
+  /* ── Steps ── */
+  .impl-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-bottom: 48px;
+  }
+  .impl-step {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 20px;
+    position: relative;
+    padding-bottom: 28px;
+  }
+  .impl-step:last-child { padding-bottom: 0; }
+  .impl-step-rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .impl-step-num {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--step-color);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9375rem;
+    font-weight: 800;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  .impl-step-line {
+    flex: 1;
+    width: 2px;
+    background: #e0e0e0;
+    margin-top: 8px;
+    min-height: 20px;
+  }
+  .impl-step-body {
+    background: #fff;
+    border: 1px solid #f0f0f0;
+    border-radius: 14px;
+    padding: 20px 22px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  }
+  .impl-step-badge {
+    display: inline-block;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--step-color);
+    background: color-mix(in srgb, var(--step-color) 12%, #fff);
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 10px;
+  }
+  .impl-step-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .impl-step-emoji { font-size: 1.5rem; }
+  .impl-step-title {
+    font-size: 1.125rem;
+    font-weight: 800;
+    margin: 0;
+    line-height: 1.2;
+  }
+  .impl-step-desc {
+    font-size: 0.8125rem;
+    color: #666;
+    line-height: 1.55;
+    margin: 0 0 12px;
+  }
+  .impl-step-bullets {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .impl-step-bullets li {
+    font-size: 0.8125rem;
+    color: #333;
+    line-height: 1.5;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .impl-step-check {
+    color: #2AB5A0;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .impl-step-duration {
+    display: inline-block;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid;
+    margin-top: 8px;
+  }
+
+  /* ── Incluido ── */
+  .impl-included {
+    background: #f8f9fb;
+    border-radius: 20px;
+    padding: 40px 32px;
+    margin-bottom: 48px;
+  }
+  .impl-included-head { text-align: center; margin-bottom: 28px; }
+  .impl-included-title {
+    font-size: clamp(1.25rem, 2.5vw, 1.625rem);
+    font-weight: 800;
+    margin: 0 0 8px;
+  }
+  .impl-included-desc {
+    font-size: 0.875rem;
+    color: #777;
+    max-width: 620px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+  .impl-included-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+  }
+  .impl-included-card {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 14px;
+    padding: 20px;
+  }
+  .impl-included-emoji {
+    font-size: 1.75rem;
+    margin-bottom: 10px;
+  }
+  .impl-included-card-title {
+    font-size: 0.9375rem;
+    font-weight: 800;
+    margin: 0 0 6px;
+  }
+  .impl-included-card-desc {
+    font-size: 0.75rem;
+    color: #666;
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  /* ── Soporte ── */
+  .impl-support { margin-bottom: 48px; }
+  .impl-support-head { text-align: center; margin-bottom: 28px; }
+  .impl-support-title {
+    font-size: clamp(1.25rem, 2.5vw, 1.625rem);
+    font-weight: 800;
+    margin: 0 0 8px;
+  }
+  .impl-support-desc {
+    font-size: 0.875rem;
+    color: #777;
+    max-width: 620px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+  .impl-support-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 14px;
+  }
+  .impl-support-card {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 14px;
+    padding: 18px;
+  }
+  .impl-support-emoji { font-size: 1.5rem; margin-bottom: 10px; }
+  .impl-support-card-title {
+    font-size: 0.9375rem;
+    font-weight: 800;
+    margin: 0 0 4px;
+  }
+  .impl-support-card-desc {
+    font-size: 0.75rem;
+    color: #666;
+    line-height: 1.5;
+    margin: 0 0 10px;
+  }
+  .impl-support-badge {
+    display: inline-block;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 5px;
+    background: #2AB5A014;
+    color: #2AB5A0;
+  }
+
+  /* ── Outcomes ── */
+  .impl-outcomes { margin-bottom: 48px; }
+  .impl-outcomes-head { text-align: center; margin-bottom: 28px; }
+  .impl-outcomes-title {
+    font-size: clamp(1.25rem, 2.5vw, 1.625rem);
+    font-weight: 800;
+    margin: 0 0 8px;
+  }
+  .impl-outcomes-desc {
+    font-size: 0.875rem;
+    color: #777;
+    max-width: 680px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+  .impl-outcomes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 18px;
+  }
+  .impl-outcome-card {
+    background: linear-gradient(160deg, #fff 0%, #f8f9fb 100%);
+    border: 1px solid #eee;
+    border-radius: 14px;
+    padding: 24px;
+  }
+  .impl-outcome-emoji { font-size: 1.75rem; margin-bottom: 10px; }
+  .impl-outcome-title {
+    font-size: 1rem;
+    font-weight: 800;
+    margin: 0 0 6px;
+  }
+  .impl-outcome-desc {
+    font-size: 0.8125rem;
+    color: #666;
+    line-height: 1.5;
+    margin: 0 0 12px;
+  }
+  .impl-outcome-bullets {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .impl-outcome-bullets li {
+    font-size: 0.75rem;
+    color: #333;
+    line-height: 1.4;
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+  }
+  .impl-outcome-check {
+    color: #2AB5A0;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  /* ── Grow ── */
+  .impl-grow {
+    background: #1a1a1a;
+    color: #fff;
+    border-radius: 20px;
+    padding: 40px 32px;
+    margin-bottom: 48px;
+  }
+  .impl-grow-head { text-align: center; margin-bottom: 28px; }
+  .impl-grow-title {
+    font-size: clamp(1.25rem, 2.5vw, 1.625rem);
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 8px;
+  }
+  .impl-grow-desc {
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.7);
+    max-width: 680px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+  .impl-grow-hero {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .impl-grow-hero-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #2AB5A0;
+    margin: 0 0 8px;
+  }
+  .impl-grow-hero-desc {
+    font-size: 0.8125rem;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.5;
+    margin: 0 0 14px;
+  }
+  .impl-grow-bullets {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px;
+  }
+  .impl-grow-bullets li {
+    font-size: 0.8125rem;
+    color: rgba(255,255,255,0.9);
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    line-height: 1.4;
+  }
+  .impl-grow-check {
+    color: #2AB5A0;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .impl-grow-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+  }
+  .impl-grow-stat {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 18px;
+    text-align: center;
+  }
+  .impl-grow-stat-value {
+    font-size: 1.125rem;
+    font-weight: 800;
+    color: #2AB5A0;
+    margin-bottom: 4px;
+  }
+  .impl-grow-stat-label {
+    font-size: 0.6875rem;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.4;
+  }
+
+  /* ── Summary ── */
+  .impl-summary { margin-bottom: 48px; }
+  .impl-summary-head { text-align: center; margin-bottom: 28px; }
+  .impl-summary-title {
+    font-size: clamp(1.25rem, 2.5vw, 1.625rem);
+    font-weight: 800;
+    margin: 0 0 8px;
+  }
+  .impl-summary-desc {
+    font-size: 0.875rem;
+    color: #777;
+    margin: 0;
+  }
+  .impl-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    position: relative;
+  }
+  .impl-summary-step {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 14px;
+    padding: 22px 16px;
+    text-align: center;
+    position: relative;
+  }
+  .impl-summary-num {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #4B7BE5;
+    color: #fff;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .impl-summary-emoji { font-size: 1.75rem; margin-bottom: 8px; }
+  .impl-summary-step-title {
+    font-size: 0.875rem;
+    font-weight: 800;
+    margin: 0 0 4px;
+  }
+  .impl-summary-step-desc {
+    font-size: 0.6875rem;
+    color: #777;
+    line-height: 1.4;
+    margin: 0 0 8px;
+  }
+  .impl-summary-timing {
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: #4B7BE5;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* ── Footer CTA ── */
+  .impl-footer-cta {
+    text-align: center;
+    padding: 48px 24px;
+    background: linear-gradient(135deg, #f8f9fb 0%, #fff 100%);
+    border-radius: 20px;
+    border: 1px solid #eee;
+  }
+  .impl-footer-title {
+    font-size: clamp(1.375rem, 3vw, 1.875rem);
+    font-weight: 800;
+    margin: 0 0 12px;
+  }
+  .impl-footer-desc {
+    font-size: 0.9375rem;
+    color: #666;
+    max-width: 580px;
+    margin: 0 auto 24px;
+    line-height: 1.55;
+  }
+  .impl-footer-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .impl-btn {
+    display: inline-block;
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .impl-btn--primary {
+    background: #1a1a1a;
+    color: #fff;
+  }
+  .impl-btn--primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+  }
+  .impl-btn--secondary {
+    background: #fff;
+    color: #1a1a1a;
+    border: 1px solid #1a1a1a33;
+  }
+
+  /* ── Condensed CTA link ── */
+  .impl-cta {
+    text-align: center;
+    margin-top: 28px;
+  }
+  .impl-cta-link {
+    display: inline-block;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #4B7BE5;
+    text-decoration: none;
+    padding: 12px 24px;
+    border: 2px solid #4B7BE5;
+    border-radius: 10px;
+    transition: all 0.15s;
+  }
+  .impl-cta-link:hover {
+    background: #4B7BE5;
+    color: #fff;
+  }
+
+  /* ── Mobile ── */
+  @media (max-width: 640px) {
+    .impl-section { padding: 32px 16px; }
+    .impl-hero { padding: 40px 20px; }
+    .impl-metrics { grid-template-columns: 1fr; gap: 16px; }
+    .impl-step { grid-template-columns: 36px 1fr; gap: 14px; }
+    .impl-step-num { width: 32px; height: 32px; font-size: 0.8125rem; }
+    .impl-step-body { padding: 16px; }
+    .impl-included { padding: 28px 18px; }
+    .impl-grow { padding: 28px 18px; }
+    .impl-footer-cta { padding: 32px 18px; }
+    .impl-summary-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+    .impl-warn { flex-direction: column; gap: 10px; }
+  }
+
+  /* ── Print: hide from print ── */
+  @media print {
+    .impl-section { display: none; }
+  }
+</style>

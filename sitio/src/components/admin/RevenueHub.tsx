@@ -385,6 +385,9 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     const [analyzing, setAnalyzing] = useState(false);
     const [analysisResult, setAnalysisResult] = useState<any>(null);
     const [showReview, setShowReview] = useState(false);
+    // Manual accept modal
+    const [acceptForm, setAcceptForm] = useState<any>(null); // { quoteId, numero, nombre, method, nota }
+    const [acceptSaving, setAcceptSaving] = useState(false);
 
     useEffect(() => {
       fetch('/api/revenue/quotes').then(r => r.json()).then(d => setQuotes(Array.isArray(d) ? d : []));
@@ -460,6 +463,9 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       meta.mostrar_animaciones = qf.mostrar_animaciones !== undefined ? qf.mostrar_animaciones : true;
       meta.mostrar_timeline = qf.mostrar_timeline !== undefined ? qf.mostrar_timeline : true;
       meta.timeline_tipo = qf.timeline_tipo || '1suc';
+      meta.mostrar_implementacion = qf.mostrar_implementacion !== undefined ? qf.mostrar_implementacion : true;
+      if (qf.implementacion_nota) meta.implementacion_nota = qf.implementacion_nota;
+      else delete meta.implementacion_nota;
       if (qf.key_points?.length) meta.key_points = qf.key_points;
       else delete meta.key_points;
       if (qf.roi) meta.roi = qf.roi;
@@ -493,7 +499,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
         notas = addTimelineEvent(notas, 'edited');
       }
       // Remove frontend-only fields
-      const { _custom_days, logo_url, iva_mode: _im, _pago_mode, mostrar_timer: _mt, mostrar_features: _mf, mostrar_desglose: _md, mostrar_condiciones: _mc, mostrar_key_points: _mkp, key_points: _kp, roi: _roi, antes_despues: _ad, mostrar_roi: _mr, mostrar_antes_despues: _mad, mostrar_firma: _msf, mostrar_qr: _mq, mostrar_animaciones: _ma, mostrar_timeline: _mtl, timeline_tipo: _tt, ...rest } = qf;
+      const { _custom_days, logo_url, iva_mode: _im, _pago_mode, mostrar_timer: _mt, mostrar_features: _mf, mostrar_desglose: _md, mostrar_condiciones: _mc, mostrar_key_points: _mkp, key_points: _kp, roi: _roi, antes_despues: _ad, mostrar_roi: _mr, mostrar_antes_despues: _mad, mostrar_firma: _msf, mostrar_qr: _mq, mostrar_animaciones: _ma, mostrar_timeline: _mtl, timeline_tipo: _tt, mostrar_implementacion: _mi, implementacion_nota: _in, ...rest } = qf;
       const folioOffset = typeof window !== 'undefined' ? parseInt(localStorage.getItem('sacs_folio_offset') || '0') || 0 : 0;
       const body = { ...rest, notas, subtotal: itemsSubtotal, iva_incluido: ivaMode !== 'sin', iva_monto: Math.round(ivaMonto), total: Math.round(grandTotal), estado: rest.estado || 'sent', _folio_offset: folioOffset };
 
@@ -545,6 +551,31 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       const d = await fetch('/api/revenue/quotes').then(r => r.json());
       setQuotes(Array.isArray(d) ? d : []);
       setSaving(false);
+    };
+
+    const openAcceptModal = (q: any) => {
+      setAcceptForm({ quoteId: q.id, numero: q.numero, nombre: q.contacto || q.empresa || '', method: 'whatsapp', nota: '' });
+    };
+
+    const confirmAccept = async () => {
+      if (!acceptForm) return;
+      const nombre = String(acceptForm.nombre || '').trim();
+      if (!nombre) { alert('Ingresa el nombre con el que se firmará'); return; }
+      setAcceptSaving(true);
+      try {
+        const res = await fetch('/api/revenue/mark-accepted', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ quoteId: acceptForm.quoteId, aceptado_por: nombre, method: acceptForm.method, nota_interna: acceptForm.nota }),
+        });
+        const data = await res.json();
+        if (!res.ok) { alert(data?.error || 'Error al aceptar la cotización'); setAcceptSaving(false); return; }
+        const d = await fetch('/api/revenue/quotes').then(r => r.json());
+        setQuotes(Array.isArray(d) ? d : []);
+        setAcceptForm(null);
+      } finally {
+        setAcceptSaving(false);
+      }
     };
 
     const duplicateQuote = async (q: any) => {
@@ -676,11 +707,13 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                       ) : <span style={{ color: '#ddd', fontSize: '0.75rem' }}>—</span>}
                     </td>
                     <td style={S.td}>
-                      <button onClick={() => { const { meta: m } = parseMeta(q.notas); setQf({ ...q, items: Array.isArray(q.items) ? q.items : [], logo_url: m.logo_url || '', iva_mode: m.iva_mode || (q.iva_incluido ? 'suma' : 'sin'), mostrar_timer: m.mostrar_timer !== undefined ? m.mostrar_timer : true, mostrar_features: m.mostrar_features !== undefined ? m.mostrar_features : true, mostrar_desglose: m.mostrar_desglose !== undefined ? m.mostrar_desglose : true, mostrar_condiciones: m.mostrar_condiciones !== undefined ? m.mostrar_condiciones : true, mostrar_key_points: m.mostrar_key_points !== undefined ? m.mostrar_key_points : true, key_points: m.key_points || [], roi: m.roi || null, antes_despues: m.antes_despues || [], mostrar_roi: m.mostrar_roi || false, mostrar_antes_despues: m.mostrar_antes_despues || false, mostrar_firma: m.mostrar_firma !== undefined ? m.mostrar_firma : true, mostrar_qr: m.mostrar_qr !== undefined ? m.mostrar_qr : true, mostrar_animaciones: m.mostrar_animaciones !== undefined ? m.mostrar_animaciones : true, mostrar_timeline: m.mostrar_timeline !== undefined ? m.mostrar_timeline : true, timeline_tipo: m.timeline_tipo || '1suc' }); setShowDrawer(true); }} style={S.btnSmall}>Editar</button>
+                      <button onClick={() => { const { meta: m } = parseMeta(q.notas); setQf({ ...q, items: Array.isArray(q.items) ? q.items : [], logo_url: m.logo_url || '', iva_mode: m.iva_mode || (q.iva_incluido ? 'suma' : 'sin'), mostrar_timer: m.mostrar_timer !== undefined ? m.mostrar_timer : true, mostrar_features: m.mostrar_features !== undefined ? m.mostrar_features : true, mostrar_desglose: m.mostrar_desglose !== undefined ? m.mostrar_desglose : true, mostrar_condiciones: m.mostrar_condiciones !== undefined ? m.mostrar_condiciones : true, mostrar_key_points: m.mostrar_key_points !== undefined ? m.mostrar_key_points : true, key_points: m.key_points || [], roi: m.roi || null, antes_despues: m.antes_despues || [], mostrar_roi: m.mostrar_roi || false, mostrar_antes_despues: m.mostrar_antes_despues || false, mostrar_firma: m.mostrar_firma !== undefined ? m.mostrar_firma : true, mostrar_qr: m.mostrar_qr !== undefined ? m.mostrar_qr : true, mostrar_animaciones: m.mostrar_animaciones !== undefined ? m.mostrar_animaciones : true, mostrar_timeline: m.mostrar_timeline !== undefined ? m.mostrar_timeline : true, timeline_tipo: m.timeline_tipo || '1suc', mostrar_implementacion: m.mostrar_implementacion !== undefined ? m.mostrar_implementacion : true, implementacion_nota: m.implementacion_nota || '' }); setShowDrawer(true); }} style={S.btnSmall}>Editar</button>
                       <a href={`/cotizacion/${q.id}?admin=1`} target="_blank" rel="noopener" style={{ ...S.btnSmall, textDecoration: 'none', display: 'inline-flex' }}>Ver</a>
                       <button onClick={() => duplicateQuote(q)} style={S.btnSmall}>Duplicar</button>
+                      {(q.estado === 'sent' || q.estado === 'draft' || q.estado === 'expired') && <button onClick={() => openAcceptModal(q)} style={{ ...S.btnSmall, background: '#e0f2f1', color: '#00695c' }}>Aceptar</button>}
                       {q.estado !== 'paid' && <button onClick={() => markQuotePaid(q)} style={{ ...S.btnSmall, background: '#e8f5e9', color: '#2e7d32' }}>Pagada</button>}
                       <button onClick={() => { navigator.clipboard.writeText(`https://www.sacscloud.com/cotizacion/${q.id}`); const btn = document.activeElement as HTMLButtonElement; btn.textContent = 'Copiado'; setTimeout(() => { btn.textContent = 'Copiar'; }, 1500); }} style={{ ...S.btnSmall, background: '#f3e8ff', color: '#7c3aed' }}>Copiar</button>
+                      <button onClick={() => { navigator.clipboard.writeText(`https://www.sacscloud.com/cotizacion/${q.id}/implementacion`); const btn = document.activeElement as HTMLButtonElement; btn.textContent = 'Copiado'; setTimeout(() => { btn.textContent = 'Proceso'; }, 1500); }} style={{ ...S.btnSmall, background: '#fff7e8', color: '#c77a00' }} title="Copiar link del proceso de implementación">Proceso</button>
                       <a href={`https://wa.me/?text=${encodeURIComponent(`Cotización ${q.numero}: https://www.sacscloud.com/cotizacion/${q.id}`)}`} target="_blank" rel="noopener" style={{ ...S.btnSmall, background: '#e8f5e9', color: '#2e7d32', textDecoration: 'none', display: 'inline-flex' }}>WA</a>
                       <a href={`mailto:${q.email || ''}?subject=${encodeURIComponent(`Cotización ${q.numero} - Sacs`)}&body=${encodeURIComponent(`Hola ${q.contacto || ''},\n\nTe comparto tu cotización:\nhttps://www.sacscloud.com/cotizacion/${q.id}\n\nQuedo al pendiente.\nSaludos`)}`} style={{ ...S.btnSmall, background: '#e3f2fd', color: '#1565c0', textDecoration: 'none', display: 'inline-flex' }}>Email</a>
                     </td>
@@ -708,6 +741,71 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             </div>
           )}
         </div>
+
+        {/* ─── Accept Quote Modal (admin manual acceptance) ─── */}
+        {acceptForm && (
+          <div style={S.overlay} onClick={e => { if (e.target === e.currentTarget && !acceptSaving) setAcceptForm(null); }}>
+            <div style={{ ...S.modal, maxWidth: 480 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800 }}>Aceptar cotización {acceptForm.numero}</h3>
+                <button onClick={() => !acceptSaving && setAcceptForm(null)} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#999' }}>✕</button>
+              </div>
+              <p style={{ fontSize: '0.75rem', color: '#888', margin: '0 0 16px', lineHeight: 1.5 }}>
+                El cliente cerró pero no firmó en la página. Se marcará como aceptada y se generará la firma automáticamente con el nombre que ingreses.
+              </p>
+
+              <div style={{ marginBottom: 14 }}>
+                <label style={S.label}>Nombre que firma</label>
+                <input
+                  type="text"
+                  value={acceptForm.nombre}
+                  onChange={e => setAcceptForm({ ...acceptForm, nombre: e.target.value })}
+                  placeholder="Ej. Mariana López"
+                  style={S.input}
+                  autoFocus
+                />
+              </div>
+
+              <div style={{ marginBottom: 14 }}>
+                <label style={S.label}>Método de aceptación</label>
+                <select value={acceptForm.method} onChange={e => setAcceptForm({ ...acceptForm, method: e.target.value })} style={S.input}>
+                  <option value="whatsapp">WhatsApp</option>
+                  <option value="verbal">Verbal / Llamada</option>
+                  <option value="email">Email</option>
+                  <option value="reunion">Reunión presencial</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: 14 }}>
+                <label style={S.label}>Nota interna (opcional)</label>
+                <textarea
+                  value={acceptForm.nota}
+                  onChange={e => setAcceptForm({ ...acceptForm, nota: e.target.value })}
+                  placeholder="Ej. Confirmó por WhatsApp el 15/abr a las 3pm"
+                  style={{ ...S.input, height: 70, resize: 'vertical' as const, fontSize: '0.75rem' }}
+                />
+                <div style={{ fontSize: '0.625rem', color: '#bbb', marginTop: 4 }}>Solo tú la ves. No se muestra al cliente.</div>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={S.label}>Vista previa de firma</label>
+                <div style={{ border: '1px dashed #e0e0e0', borderRadius: 8, padding: '12px 16px', background: '#fafafa', minHeight: 72, display: 'flex', alignItems: 'center' }}>
+                  <span style={{ fontFamily: "'Dancing Script','Brush Script MT','Lucida Handwriting','Segoe Script','Apple Chancery',cursive", fontSize: '2rem', fontStyle: 'italic', color: '#1a1a1a', transform: 'rotate(-3deg)', display: 'inline-block' }}>
+                    {acceptForm.nombre || 'Firma del cliente'}
+                  </span>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button onClick={() => setAcceptForm(null)} disabled={acceptSaving} style={{ ...S.btn, background: '#f5f5f5', color: '#555' }}>Cancelar</button>
+                <button onClick={confirmAccept} disabled={acceptSaving || !acceptForm.nombre} style={{ ...S.btn, background: acceptSaving || !acceptForm.nombre ? '#bbb' : '#00695c', color: '#fff', cursor: acceptSaving || !acceptForm.nombre ? 'not-allowed' : 'pointer' }}>
+                  {acceptSaving ? 'Firmando…' : 'Confirmar aceptación'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ─── Transcript Modal ─── */}
         {showTranscriptModal && !showReview && (
@@ -1143,6 +1241,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                     { key: 'mostrar_roi', label: 'Calculadora de ROI', default: false },
                     { key: 'mostrar_antes_despues', label: 'Antes vs Después', default: false },
                     { key: 'mostrar_timeline', label: 'Timeline de implementación', default: true },
+                    { key: 'mostrar_implementacion', label: 'Proceso de implementación (pasos operativos)', default: true },
                     { key: 'mostrar_firma', label: 'Firma digital', default: true },
                     { key: 'mostrar_qr', label: 'Código QR', default: true },
                     { key: 'mostrar_animaciones', label: 'Números animados', default: true },
@@ -1162,6 +1261,14 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                       <option value="2a5suc">2–5 sucursales — Creciendo y necesita orden</option>
                       <option value="5massuc">5+ sucursales — Operación compleja, automatización</option>
                     </select>
+                  </div>
+                )}
+                {/* Implementacion nota */}
+                {(qf.mostrar_implementacion !== undefined ? qf.mostrar_implementacion : true) && (
+                  <div style={{ marginTop: 8 }}>
+                    <label style={{ ...S.label, marginTop: 0 }}>Nota en proceso de implementación (opcional)</label>
+                    <textarea value={qf.implementacion_nota || ''} onChange={e => setQf({ ...qf, implementacion_nota: e.target.value })} placeholder="Ej. Tu migración incluye integración con SAP" style={{ ...S.input, height: 56, resize: 'vertical' as const, fontSize: '0.75rem' }} />
+                    <div style={{ fontSize: '0.625rem', color: '#bbb', marginTop: 4 }}>Se muestra al cliente en la cotización y en el link compartible del proceso.</div>
                   </div>
                 )}
               </div>
@@ -1553,7 +1660,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             {/* Folio config */}
             <h2 style={{ fontSize: '1.125rem', fontWeight: 800, marginBottom: 16 }}>Folio de cotizaciones</h2>
             <div style={{ ...S.card, marginBottom: 24 }}>
-              <div style={{ fontSize: '0.75rem', color: '#999', marginBottom: 12 }}>El siguiente folio sera COT- seguido del numero que configures. Usa esto para iniciar desde un numero mas alto.</div>
+              <div style={{ fontSize: '0.75rem', color: '#999', marginBottom: 12 }}>Este número se usa como <b>folio inicial</b>. A partir de él, cada cotización nueva se numera de forma consecutiva y nunca se repite.</div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'end' }}>
                 <div style={{ flex: 1 }}>
                   <label style={S.label}>Siguiente numero de folio</label>
@@ -1566,15 +1673,20 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   const input = document.getElementById('folio-input') as HTMLInputElement;
                   const val = parseInt(input?.value);
                   if (!val || val < 1) { alert('Ingresa un numero valido'); return; }
-                  // We store the folio offset by creating dummy count records or using a config approach
-                  // Simplest: store in a special quote with estado='_config'
+                  // Validar contra el folio más alto existente (no contra el conteo de filas)
                   const res = await fetch('/api/revenue/quotes');
                   const all = await res.json();
-                  const currentCount = Array.isArray(all) ? all.filter((q: any) => q.estado !== '_config').length : 0;
-                  if (val <= currentCount) { alert(`Ya tienes ${currentCount} cotizaciones. El folio debe ser mayor a ${currentCount}.`); return; }
-                  // Store config in localStorage and use it in the API
+                  let maxExisting = 0;
+                  if (Array.isArray(all)) {
+                    for (const q of all) {
+                      const m = String(q?.numero || '').match(/(\d+)\s*$/);
+                      if (m) maxExisting = Math.max(maxExisting, parseInt(m[1], 10));
+                    }
+                  }
+                  if (val <= maxExisting) { alert(`El folio más alto usado es COT-${String(maxExisting).padStart(3, '0')}. El siguiente debe ser mayor a ${maxExisting}.`); return; }
+                  // Guardamos offset = val-1 para mantener la convención (folioStart = offset + 1)
                   localStorage.setItem('sacs_folio_offset', String(val - 1));
-                  alert(`Listo. La proxima cotización sera COT-${String(val).padStart(3, '0')}`);
+                  alert(`Listo. La próxima cotización será COT-${String(val).padStart(3, '0')}. Las siguientes serán consecutivas.`);
                   input.value = '';
                 }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff' }}>Guardar</button>
               </div>
