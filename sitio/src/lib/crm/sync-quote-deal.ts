@@ -139,6 +139,28 @@ export async function advanceDealStage(dealId: string, targetStage: DealStage, c
     .select()
     .single();
 
+  // Commission: create pending commission when deal closes as won with an owner
+  if (targetStage === 'cerrada_ganada' && deal.owner_id) {
+    try {
+      const { createCommissionForDeal } = await import('../commissions/calculate');
+      await createCommissionForDeal({
+        deal_id: dealId,
+        partner_id: deal.owner_id,
+        deal_value: ctx.valor_total ?? deal.valor_total ?? 0,
+      });
+    } catch (err) {
+      console.error('[sync-quote-deal] commission create error:', err);
+    }
+  }
+  if (targetStage === 'cerrada_perdida') {
+    try {
+      const { cancelCommission } = await import('../commissions/calculate');
+      await cancelCommission(dealId, ctx.motivo_perdida || 'deal_lost');
+    } catch (err) {
+      console.error('[sync-quote-deal] commission cancel error:', err);
+    }
+  }
+
   await supabase.from('activities').insert({
     contact_id: deal.contact_id,
     company_id: deal.company_id,
@@ -207,6 +229,20 @@ export async function createDealFromQuote(quote: any, targetStage: DealStage, ct
 
   // Back-reference on quote
   await supabase.from('quotes').update({ deal_id: deal.id }).eq('id', quote.id);
+
+  // Commission when deal is born as won
+  if (targetStage === 'cerrada_ganada' && insertPayload.owner_id) {
+    try {
+      const { createCommissionForDeal } = await import('../commissions/calculate');
+      await createCommissionForDeal({
+        deal_id: deal.id,
+        partner_id: insertPayload.owner_id,
+        deal_value: insertPayload.valor_total,
+      });
+    } catch (err) {
+      console.error('[createDealFromQuote] commission create error:', err);
+    }
+  }
 
   // Activity
   await supabase.from('activities').insert({

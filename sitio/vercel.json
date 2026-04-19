@@ -35,6 +35,10 @@
     {
       "path": "/api/crm/detect-expansion",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/agents-reaper",
+      "schedule": "*/10 * * * *"
     }
   ]
 }

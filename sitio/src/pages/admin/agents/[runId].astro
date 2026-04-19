@@ -1,0 +1,89 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { supabase } from '../../../lib/supabase';
+
+export const prerender = false;
+
+const { runId } = Astro.params;
+
+const { data: run } = await supabase
+  .from('agent_runs')
+  .select('*')
+  .eq('id', runId)
+  .single();
+
+const { data: toolLogs } = await supabase
+  .from('agent_tool_log')
+  .select('*')
+  .eq('run_id', runId)
+  .order('called_at', { ascending: true });
+
+if (!run) return Astro.redirect('/admin/agents');
+---
+
+<BaseLayout title={`Run ${run.id.slice(0, 8)} — SACS Admin`}>
+  <div style="max-width:1000px;margin:0 auto;padding:32px 24px;font-family:-apple-system,Segoe UI,Helvetica,sans-serif">
+    <a href="/admin/agents" style="color:#666;font-size:0.8125rem;text-decoration:none">← Todos los runs</a>
+    <h1 style="font-size:1.25rem;font-weight:700;margin:12px 0 4px;font-family:monospace">{run.agent_name}</h1>
+    <div style="color:#999;font-size:0.75rem;margin-bottom:24px">ID: {run.id}</div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px">
+      <div style="background:#fafafa;padding:10px 12px;border-radius:6px">
+        <div style="font-size:0.625rem;color:#999;text-transform:uppercase;letter-spacing:0.06em">Status</div>
+        <div style="font-size:0.875rem;font-weight:600;margin-top:2px">{run.status}</div>
+      </div>
+      <div style="background:#fafafa;padding:10px 12px;border-radius:6px">
+        <div style="font-size:0.625rem;color:#999;text-transform:uppercase;letter-spacing:0.06em">Modelo</div>
+        <div style="font-size:0.875rem;font-weight:600;margin-top:2px;font-family:monospace">{run.model}</div>
+      </div>
+      <div style="background:#fafafa;padding:10px 12px;border-radius:6px">
+        <div style="font-size:0.625rem;color:#999;text-transform:uppercase;letter-spacing:0.06em">Costo</div>
+        <div style="font-size:0.875rem;font-weight:600;margin-top:2px">${Number(run.cost_usd || 0).toFixed(6)}</div>
+      </div>
+      <div style="background:#fafafa;padding:10px 12px;border-radius:6px">
+        <div style="font-size:0.625rem;color:#999;text-transform:uppercase;letter-spacing:0.06em">Latencia</div>
+        <div style="font-size:0.875rem;font-weight:600;margin-top:2px">{run.latency_ms || 0}ms</div>
+      </div>
+    </div>
+
+    <h2 style="font-size:0.9375rem;font-weight:700;margin:0 0 8px">Input</h2>
+    <pre style="background:#0f172a;color:#e2e8f0;padding:16px;border-radius:8px;overflow-x:auto;font-size:0.75rem;line-height:1.5;margin-bottom:20px">{JSON.stringify(run.input, null, 2)}</pre>
+
+    {run.reasoning && (
+      <>
+        <h2 style="font-size:0.9375rem;font-weight:700;margin:0 0 8px">Reasoning</h2>
+        <div style="background:#fff;border:1px solid #e5e5e5;padding:16px;border-radius:8px;font-size:0.875rem;line-height:1.6;margin-bottom:20px;white-space:pre-wrap">{run.reasoning}</div>
+      </>
+    )}
+
+    {run.output && (
+      <>
+        <h2 style="font-size:0.9375rem;font-weight:700;margin:0 0 8px">Output</h2>
+        <pre style="background:#0f172a;color:#e2e8f0;padding:16px;border-radius:8px;overflow-x:auto;font-size:0.75rem;line-height:1.5;margin-bottom:20px">{JSON.stringify(run.output, null, 2)}</pre>
+      </>
+    )}
+
+    <h2 style="font-size:0.9375rem;font-weight:700;margin:0 0 8px">Tool calls ({(toolLogs || []).length})</h2>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+      {(toolLogs || []).map(tc => (
+        <div style="background:#fff;border:1px solid #e5e5e5;border-radius:6px;padding:12px 14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div style="font-family:monospace;font-size:0.8125rem;font-weight:600">{tc.tool_name}</div>
+            <div style="font-size:0.6875rem;color:#999">{tc.latency_ms}ms {tc.error ? '· ❌ error' : '· ✓'}</div>
+          </div>
+          <details style="font-size:0.75rem;color:#666">
+            <summary style="cursor:pointer">Args + result</summary>
+            <pre style="background:#fafafa;padding:8px;border-radius:4px;overflow-x:auto;margin-top:6px;font-size:0.6875rem">{JSON.stringify({ args: tc.args, result: tc.result, error: tc.error }, null, 2)}</pre>
+          </details>
+        </div>
+      ))}
+    </div>
+
+    {run.error && (
+      <>
+        <h2 style="font-size:0.9375rem;font-weight:700;margin:0 0 8px;color:#c62828">Error</h2>
+        <pre style="background:#ffebee;color:#b71c1c;padding:16px;border-radius:8px;overflow-x:auto;font-size:0.75rem">{JSON.stringify(run.error, null, 2)}</pre>
+      </>
+    )}
+  </div>
+</BaseLayout>

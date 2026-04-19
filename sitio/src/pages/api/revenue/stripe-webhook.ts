@@ -261,6 +261,16 @@ export const POST: APIRoute = async ({ request }) => {
           automatico: true,
         });
 
+        // Commission: mark earned when payment received for a deal
+        if (quote?.deal_id) {
+          try {
+            const { markCommissionEarned } = await import('../../../lib/commissions/settle');
+            await markCommissionEarned(quote.deal_id);
+          } catch (err) {
+            console.error('[stripe-webhook] commission settle error:', err);
+          }
+        }
+
         // TikTok event
         if (quote) {
           await sendTikTokPayment(

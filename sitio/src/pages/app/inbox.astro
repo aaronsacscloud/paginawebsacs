@@ -1,0 +1,111 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+export const prerender = false;
+
+// TEMP: sin auth middleware real todavía, usar ?user_id=X en query para testing.
+// En producción esto lo resuelve getCurrentUser() desde cookie.
+const userId = Astro.url.searchParams.get('user_id');
+
+let runs: any[] = [];
+let user: any = null;
+let summary: any = null;
+
+if (userId) {
+  const { data: userData } = await supabase
+    .from('team_members')
+    .select('id, nombre, email, role, default_commission_pct')
+    .eq('id', userId)
+    .maybeSingle();
+  user = userData;
+
+  if (user) {
+    // Fetch awaiting_approval runs assigned to this user or owned by them
+    const { data: runsData } = await supabase
+      .from('agent_runs')
+      .select('id, created_at, agent_name, status, input, output, reasoning, deal_id, contact_id')
+      .eq('status', 'awaiting_approval')
+      .or(`owner_id.eq.${user.id},assigned_to.eq.${user.id}`)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    runs = runsData || [];
+
+    // Commission summary (only for partners)
+    if (user.role === 'partner') {
+      const { data: commissions } = await supabase
+        .from('partner_commissions')
+        .select('status, commission_amount')
+        .eq('partner_id', user.id);
+      summary = {
+        pending: (commissions || []).filter(c => c.status === 'pending').reduce((s, c) => s + Number(c.commission_amount), 0),
+        earned: (commissions || []).filter(c => c.status === 'earned').reduce((s, c) => s + Number(c.commission_amount), 0),
+        paid: (commissions || []).filter(c => c.status === 'paid').reduce((s, c) => s + Number(c.commission_amount), 0),
+      };
+    }
+  }
+}
+
+const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+---
+
+<BaseLayout title="Mi inbox — SACS">
+  <div style="max-width:900px;margin:0 auto;padding:32px 24px;font-family:-apple-system,Segoe UI,Helvetica,sans-serif">
+    {!user ? (
+      <div style="background:#fff3e0;border-left:3px solid #e65100;padding:16px 20px;border-radius:6px">
+        <div style="font-weight:600;color:#b35500;margin-bottom:6px">Falta identificar usuario</div>
+        <div style="color:#666;font-size:0.875rem">Agrega <code>?user_id=X</code> al URL. Auth middleware formal pendiente.</div>
+      </div>
+    ) : (
+      <>
+        <div style="margin-bottom:24px">
+          <div style="font-size:0.6875rem;color:#999;text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Hola</div>
+          <h1 style="font-size:1.75rem;font-weight:700;margin:4px 0 0;letter-spacing:-0.01em">{user.nombre || user.email}</h1>
+          <div style="color:#666;font-size:0.8125rem;margin-top:4px">Rol: <strong>{user.role}</strong></div>
+        </div>
+
+        {summary && user.role === 'partner' && (
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:32px">
+            <div style="background:#fff;border:1px solid #e5e5e5;padding:14px 16px;border-radius:8px">
+              <div style="font-size:0.625rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.08em">Comisión pendiente</div>
+              <div style="font-size:1.25rem;font-weight:700;margin-top:4px">{fmt(summary.pending)}</div>
+              <div style="font-size:0.6875rem;color:#888;margin-top:2px">Esperando que cliente pague</div>
+            </div>
+            <div style="background:#fff;border:1px solid #e5e5e5;padding:14px 16px;border-radius:8px">
+              <div style="font-size:0.625rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.08em">Comisión ganada</div>
+              <div style="font-size:1.25rem;font-weight:700;margin-top:4px;color:#2e7d32">{fmt(summary.earned)}</div>
+              <div style="font-size:0.6875rem;color:#888;margin-top:2px">Por cobrar de SACS</div>
+            </div>
+            <div style="background:#fff;border:1px solid #e5e5e5;padding:14px 16px;border-radius:8px">
+              <div style="font-size:0.625rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:0.08em">Comisión pagada</div>
+              <div style="font-size:1.25rem;font-weight:700;margin-top:4px">{fmt(summary.paid)}</div>
+              <div style="font-size:0.6875rem;color:#888;margin-top:2px">Histórico</div>
+            </div>
+          </div>
+        )}
+
+        <h2 style="font-size:1rem;font-weight:700;margin:0 0 12px">Para aprobar ({runs.length})</h2>
+        {runs.length === 0 ? (
+          <div style="background:#fafafa;border:1px solid #e5e5e5;padding:32px;border-radius:8px;text-align:center;color:#999">
+            <div style="font-size:2rem;margin-bottom:8px">✓</div>
+            <div>Nada pendiente. Todo al día.</div>
+          </div>
+        ) : (
+          <div style="display:flex;flex-direction:column;gap:8px">
+            {runs.map(r => (
+              <div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px 18px;display:flex;justify-content:space-between;align-items:center">
+                <div>
+                  <div style="font-weight:600;font-size:0.9375rem">{r.agent_name}</div>
+                  <div style="font-size:0.75rem;color:#666;margin-top:2px">
+                    {new Date(r.created_at).toLocaleDateString('es-MX')} · {new Date(r.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                </div>
+                <a href={`/admin/agents/${r.id}`} style="color:#1a56db;text-decoration:none;font-size:0.8125rem;font-weight:500">Revisar →</a>
+              </div>
+            ))}
+          </div>
+        )}
+      </>
+    )}
+  </div>
+</BaseLayout>
