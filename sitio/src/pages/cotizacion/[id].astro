@@ -3,6 +3,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { supabase } from '../../lib/supabase';
 import { plans } from '../../data/plans';
 import ImplementacionContent from '../../components/ImplementacionContent.astro';
+import QuoteSidebar from '../../components/quote/QuoteSidebar.astro';
+import QuoteMobilePills from '../../components/quote/QuoteMobilePills.astro';
 
 export const prerender = false;
 
@@ -118,6 +120,26 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
 
 <BaseLayout title={`Cotización ${quote.numero} — Sacs`} description={`Cotización para ${quote.empresa}`}>
 
+<QuoteMobilePills template={template} total={quote.total || 0} moneda={quote.moneda || 'MXN'} />
+
+<div class:list={['quote-layout', `quote-layout--${template}`]}>
+  <aside class="quote-layout-sidebar no-print">
+    <QuoteSidebar
+      quote={quote}
+      total={quote.total || 0}
+      moneda={quote.moneda || 'MXN'}
+      empresa={quote.empresa}
+      numero={quote.numero}
+      logoUrl={logoUrl}
+      template={template}
+      isAccepted={quote.estado === 'accepted'}
+      isPaid={quote.estado === 'paid'}
+      isExpired={isExpired}
+      paymentLink={quote.link_pago}
+      vigenciaFecha={vigenciaFecha}
+    />
+  </aside>
+
 <div class:list={['quote-page', `quote-${template}`, { 'quote-expired-page': isExpired }]} id="quote-doc" data-no-animations={showAnimaciones ? undefined : true}>
   <div class="quote-container" style="position:relative">
     {isExpired && (
@@ -161,6 +183,7 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
       {quote.whatsapp && <div class="quote-client-detail">{quote.whatsapp}</div>}
     </div>
 
+    <div class="tab-anchor" id="tab-resumen" aria-hidden="true"></div>
     <!-- Key points -->
     {showKeyPoints && keyPoints.length > 0 && (
       <div class="quote-key-points">
@@ -210,6 +233,7 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
       </div>
     )}
 
+    <div class="tab-anchor" id="tab-inversion" aria-hidden="true"></div>
     <!-- Items table -->
     <table class="quote-table">
       <thead>
@@ -367,6 +391,7 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
       </div>
     )}
 
+    <div class="tab-anchor" id="tab-incluye" aria-hidden="true"></div>
     <!-- ROI -->
     {showRoi && roi && roi.ahorro_mensual > 0 && (
       <div class="quote-roi">
@@ -515,19 +540,6 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
     )}
 
 
-    <!-- Signature -->
-    {showFirma && !isExpired && quote.estado !== 'accepted' && quote.estado !== 'paid' && (
-      <div class="quote-signature no-print" id="signature-section">
-        <div class="quote-signature-title">Firma de aceptación</div>
-        <div class="quote-signature-hint">Firma con tu dedo o mouse para aceptar esta cotización</div>
-        <canvas id="signature-canvas" class="quote-signature-canvas" width="500" height="150"></canvas>
-        <div class="quote-signature-actions">
-          <button class="quote-action-btn" id="btn-clear-sig">Limpiar</button>
-          <button class="quote-action-btn" id="btn-accept-sig" style="background:#1a1a1a;color:#fff">Aceptar cotización</button>
-        </div>
-      </div>
-    )}
-
     <!-- Accept name modal -->
     <div class="quote-modal-overlay no-print" id="accept-modal" style="display:none">
       <div class="quote-modal" style="max-width:400px">
@@ -662,6 +674,7 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
       <div class="quote-conscious-closing">El futuro del comercio en México es consciente. Y empieza hoy.</div>
     </div>
 
+    <div class="tab-anchor" id="tab-proceso" aria-hidden="true"></div>
     <!-- Implementation timeline (3 versions based on timelineTipo) -->
     {showTimeline && timelineTipo === '1suc' && (
       <div class="quote-timeline-section">
@@ -718,6 +731,20 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
         isAnnual={isAnnualQuote}
         implementacionUrl={`/cotizacion/${id}/implementacion`}
       />
+    )}
+
+    <div class="tab-anchor" id="tab-acepta" aria-hidden="true"></div>
+    <!-- Signature (moved here so 'Acepta' tab lands on decision moment) -->
+    {showFirma && !isExpired && quote.estado !== 'accepted' && quote.estado !== 'paid' && (
+      <div class="quote-signature no-print" id="signature-section">
+        <div class="quote-signature-title">Firma de aceptación</div>
+        <div class="quote-signature-hint">Firma con tu dedo o mouse para aceptar esta cotización</div>
+        <canvas id="signature-canvas" class="quote-signature-canvas" width="500" height="150"></canvas>
+        <div class="quote-signature-actions">
+          <button class="quote-action-btn" id="btn-clear-sig">Limpiar</button>
+          <button class="quote-action-btn" id="btn-accept-sig" style="background:#1a1a1a;color:#fff">Aceptar cotización</button>
+        </div>
+      </div>
     )}
 
     <!-- Case studies carousel -->
@@ -864,11 +891,51 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
     </div>
   </div>
 </div>
+</div>
 
 </BaseLayout>
 
 <style>
 :global(nav), :global(.nav), :global(header), :global(footer), :global(.whatsapp-float) { display: none !important; }
+
+/* 2-column layout: sidebar + content on desktop */
+.quote-layout {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 32px;
+  align-items: start;
+}
+.quote-layout-sidebar {
+  position: sticky;
+  top: 24px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.quote-layout-sidebar::-webkit-scrollbar { width: 6px; }
+.quote-layout-sidebar::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 3px; }
+.quote-layout .quote-page { max-width: 100%; margin: 0; padding: 0 0 24px; }
+
+/* Tab anchor: invisible marker, offset to account for scroll-into-view positioning */
+.tab-anchor {
+  height: 0;
+  scroll-margin-top: 24px;
+  visibility: hidden;
+}
+
+/* Mobile: no sidebar */
+@media (max-width: 1023px) {
+  .quote-layout {
+    grid-template-columns: 1fr;
+    padding: 8px 16px 40px;
+    gap: 0;
+  }
+  .quote-layout-sidebar { display: none; }
+  .tab-anchor { scroll-margin-top: 110px; }
+}
 
 .quote-page { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
 .quote-container { background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
@@ -1736,4 +1803,98 @@ const nextAnnualStr = fmtDate(nextAnnualDate.toISOString());
 
     acceptInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('btn-confirm-accept')?.click(); });
   }
+</script>
+
+<!-- Tab nav: IntersectionObserver + smooth scroll + progress bar -->
+<script is:inline>
+  (() => {
+    const tabIds = ['tab-resumen', 'tab-inversion', 'tab-incluye', 'tab-proceso', 'tab-acepta'];
+    const anchors = tabIds.map(id => document.getElementById(id)).filter(Boolean);
+    if (!anchors.length) return;
+
+    const sidebarLinks = Array.from(document.querySelectorAll('[data-tab-link]'));
+    const progressBar = document.getElementById('qsbProgressBar');
+
+    const getActiveTab = () => {
+      const scrollY = window.scrollY + 120;
+      let active = tabIds[0];
+      for (const anchor of anchors) {
+        if (anchor.offsetTop <= scrollY) active = anchor.id;
+      }
+      return active;
+    };
+
+    const visited = new Set();
+    const updateUI = () => {
+      const active = getActiveTab();
+      const activeIdx = tabIds.indexOf(active);
+      // Mark all tabs up to and including active as visited
+      for (let i = 0; i <= activeIdx; i++) visited.add(tabIds[i]);
+
+      sidebarLinks.forEach(link => {
+        const target = link.getAttribute('data-tab-link');
+        if (!target) return;
+        const targetIdx = tabIds.indexOf(target);
+        const isActive = target === active;
+        const isVisited = visited.has(target) && !isActive;
+        link.classList.toggle('qsb-tab--active', isActive && link.classList.contains('qsb-tab'));
+        link.classList.toggle('qsb-tab--visited', isVisited && link.classList.contains('qsb-tab'));
+        link.classList.toggle('qmp-pill--active', isActive && link.classList.contains('qmp-pill'));
+        link.classList.toggle('qmp-pill--visited', isVisited && link.classList.contains('qmp-pill'));
+      });
+
+      if (progressBar) {
+        const pct = ((activeIdx + 1) / tabIds.length) * 100;
+        progressBar.style.width = pct + '%';
+      }
+    };
+
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => { updateUI(); ticking = false; });
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    updateUI();
+
+    // Smooth scroll + mark visited up to target on click
+    sidebarLinks.forEach(link => {
+      const target = link.getAttribute('data-tab-link');
+      if (!target || !target.startsWith('tab-')) return;
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const el = document.getElementById(target);
+        if (!el) return;
+        const targetIdx = tabIds.indexOf(target);
+        for (let i = 0; i <= targetIdx; i++) visited.add(tabIds[i]);
+        history.replaceState(null, '', '#' + target);
+        const y = el.getBoundingClientRect().top + window.scrollY - 20;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+        // Scroll the active pill into view (mobile)
+        setTimeout(() => {
+          const pill = document.querySelector(`.qmp-pill[data-tab-link="${target}"]`);
+          pill?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+        }, 50);
+      });
+    });
+
+    // Deep link on load
+    if (window.location.hash) {
+      const initialTarget = window.location.hash.slice(1);
+      if (tabIds.includes(initialTarget)) {
+        const el = document.getElementById(initialTarget);
+        if (el) {
+          const idx = tabIds.indexOf(initialTarget);
+          for (let i = 0; i <= idx; i++) visited.add(tabIds[i]);
+          setTimeout(() => {
+            const y = el.getBoundingClientRect().top + window.scrollY - 20;
+            window.scrollTo({ top: y, behavior: 'auto' });
+            updateUI();
+          }, 100);
+        }
+      }
+    }
+  })();
 </script>

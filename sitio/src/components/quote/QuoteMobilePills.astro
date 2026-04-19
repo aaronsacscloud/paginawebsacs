@@ -1,0 +1,147 @@
+---
+interface Props {
+  template: 'modern' | 'dark' | 'classic';
+  total: number;
+  moneda: string;
+}
+const { template, total, moneda } = Astro.props;
+
+const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+
+const tabs = [
+  { id: 'tab-resumen', label: 'Resumen', step: 1 },
+  { id: 'tab-inversion', label: 'Inversión', step: 2 },
+  { id: 'tab-incluye', label: 'Incluye', step: 3 },
+  { id: 'tab-proceso', label: 'Proceso', step: 4 },
+  { id: 'tab-acepta', label: 'Acepta', step: 5 },
+];
+---
+
+<div class={`qmp qmp--${template}`} id="quoteMobilePills">
+  <div class="qmp-total">
+    <span class="qmp-total-label">Total</span>
+    <span class="qmp-total-value">{fmt(total)} <span class="qmp-total-currency">{moneda}</span></span>
+  </div>
+  <nav class="qmp-pills" aria-label="Navegación rápida">
+    {tabs.map(t => (
+      <a href={`#${t.id}`} class="qmp-pill" data-tab-link={t.id}>
+        <span class="qmp-pill-num">{t.step}</span>
+        <span class="qmp-pill-label">{t.label}</span>
+      </a>
+    ))}
+  </nav>
+</div>
+
+<style>
+  .qmp {
+    display: none;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    padding: 10px 12px 12px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .qmp--modern { background: rgba(255,255,255,0.92); border-bottom: 1px solid #eee; }
+  .qmp--dark { background: rgba(26,26,26,0.92); border-bottom: 1px solid rgba(255,255,255,0.08); color: #fff; }
+  .qmp--classic { background: #fafafa; border-bottom: 1px solid #e0e0e0; backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+  .qmp-total {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 8px;
+    padding: 0 4px;
+  }
+  .qmp-total-label {
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #999;
+  }
+  .qmp--dark .qmp-total-label { color: rgba(255,255,255,0.5); }
+  .qmp-total-value {
+    font-size: 0.9375rem;
+    font-weight: 800;
+    color: #1a1a1a;
+  }
+  .qmp--dark .qmp-total-value { color: #fff; }
+  .qmp-total-currency {
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: #999;
+    margin-left: 2px;
+  }
+
+  .qmp-pills {
+    display: flex !important;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: smooth;
+    padding: 2px;
+    margin: 0 -4px;
+  }
+  .qmp-pills::-webkit-scrollbar { display: none; }
+  .qmp-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: #f0f0f0;
+    color: #666;
+    text-decoration: none;
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .qmp--dark .qmp-pill { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); }
+  .qmp-pill-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.08);
+    color: inherit;
+    font-size: 0.6875rem;
+    font-weight: 800;
+  }
+  .qmp--dark .qmp-pill-num { background: rgba(255,255,255,0.12); }
+  .qmp-pill.qmp-pill--active {
+    background: #1a1a1a;
+    color: #fff;
+  }
+  .qmp-pill.qmp-pill--active .qmp-pill-num {
+    background: #2AB5A0;
+    color: #fff;
+  }
+  .qmp--dark .qmp-pill.qmp-pill--active {
+    background: #fff;
+    color: #1a1a1a;
+  }
+  .qmp-pill.qmp-pill--visited {
+    color: #2AB5A0;
+  }
+  .qmp-pill.qmp-pill--visited .qmp-pill-num {
+    background: #2AB5A0;
+    color: #fff;
+  }
+
+  @media (max-width: 1023px) {
+    .qmp { display: block; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .qmp-pills { scroll-behavior: auto; }
+    .qmp-pill { transition: none !important; }
+  }
+  @media print {
+    .qmp { display: none !important; }
+  }
+</style>
