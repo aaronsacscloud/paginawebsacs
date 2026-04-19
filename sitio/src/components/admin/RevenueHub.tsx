@@ -378,7 +378,21 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     const [qFilter, setQFilter] = useState<string>('all');
     const [qSort, setQSort] = useState<{ col: string; asc: boolean }>({ col: 'created_at', asc: false });
     const [qPage, setQPage] = useState(0);
-    const PER_PAGE = 10;
+    // HubSpot-style: saved views, advanced filters, bulk selection, column customization, density
+    const [qView, setQView] = useState<string>(() => typeof window !== 'undefined' ? (localStorage.getItem('sacs_q_view') || 'all') : 'all');
+    const [qPageSize, setQPageSize] = useState<number>(() => typeof window !== 'undefined' ? (parseInt(localStorage.getItem('sacs_q_pagesize') || '25') || 25) : 25);
+    const [qSelected, setQSelected] = useState<Set<string>>(new Set());
+    const [qDensity, setQDensity] = useState<'compact' | 'comfortable'>(() => typeof window !== 'undefined' ? ((localStorage.getItem('sacs_q_density') as any) || 'comfortable') : 'comfortable');
+    const [qVisibleCols, setQVisibleCols] = useState<Set<string>>(() => {
+      if (typeof window === 'undefined') return new Set(['numero', 'created_at', 'empresa', 'total', 'estado', 'views', 'actions']);
+      const saved = localStorage.getItem('sacs_q_cols');
+      return new Set(saved ? JSON.parse(saved) : ['numero', 'created_at', 'empresa', 'total', 'estado', 'views', 'actions']);
+    });
+    const [qShowColsMenu, setQShowColsMenu] = useState(false);
+    const [qShowFilterPopover, setQShowFilterPopover] = useState(false);
+    const [qFilters, setQFilters] = useState<Array<{ field: string; op: string; value: any }>>([]);
+    const [qMenuRow, setQMenuRow] = useState<string | null>(null);
+    const PER_PAGE = qPageSize;
     // Transcript analysis
     const [showTranscriptModal, setShowTranscriptModal] = useState(false);
     const [transcript, setTranscript] = useState('');
@@ -391,6 +405,16 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
 
     useEffect(() => {
       fetch('/api/revenue/quotes').then(r => r.json()).then(d => setQuotes(Array.isArray(d) ? d : []));
+    }, []);
+
+    // Close row menu / popovers on outside click
+    useEffect(() => {
+      const close = (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+        if (!target.closest('[data-q-menu]') && !target.closest('button[title="Más acciones"]')) setQMenuRow(null);
+      };
+      document.addEventListener('mousedown', close);
+      return () => document.removeEventListener('mousedown', close);
     }, []);
 
     // Ensure items is always an array
@@ -589,157 +613,524 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
 
     // ─── Filter, search, sort, paginate ───
     const estadoLabels: Record<string, string> = { draft: 'Borrador', sent: 'Enviada', accepted: 'Aceptada', paid: 'Pagada', expired: 'Vencida' };
-    const estadoColors: Record<string, { bg: string; fg: string }> = {
-      draft: { bg: '#f5f5f5', fg: '#999' },
-      sent: { bg: '#fff3e0', fg: '#e65100' },
-      accepted: { bg: '#e8f5e9', fg: '#2e7d32' },
-      paid: { bg: '#e3f2fd', fg: '#1565c0' },
-      expired: { bg: '#fce4ec', fg: '#c62828' },
+    const estadoColors: Record<string, { bg: string; fg: string; dot: string }> = {
+      draft:    { bg: '#f5f5f5', fg: '#666',    dot: '#999' },
+      sent:     { bg: '#fff3e0', fg: '#b35500', dot: '#e65100' },
+      accepted: { bg: '#e8f5e9', fg: '#1b5e20', dot: '#2e7d32' },
+      paid:     { bg: '#e3f2fd', fg: '#0d47a1', dot: '#1565c0' },
+      expired:  { bg: '#fce4ec', fg: '#880e4f', dot: '#c62828' },
+    };
+
+    // Saved views (HubSpot-style presets)
+    const savedViews = [
+      { id: 'all', label: 'Todas' },
+      { id: 'active', label: 'Activas' },              // draft + sent
+      { id: 'closing', label: 'En cierre' },           // accepted sin pagar
+      { id: 'paid', label: 'Pagadas' },
+      { id: 'expiring', label: 'Por vencer' },         // sent con ≤ 5 días
+      { id: 'stale', label: 'Sin actividad' },         // sent > 7 días sin vistas
+      { id: 'hot', label: 'Más vistas' },              // views ≥ 5
+    ];
+
+    const now = Date.now();
+    const daysSince = (iso: string | null | undefined) => {
+      if (!iso) return Infinity;
+      const t = new Date(iso).getTime();
+      if (isNaN(t)) return Infinity;
+      return (now - t) / 86400000;
+    };
+    const daysUntil = (iso: string | null | undefined) => {
+      if (!iso) return Infinity;
+      const t = new Date(iso).getTime();
+      if (isNaN(t)) return Infinity;
+      return (t - now) / 86400000;
+    };
+
+    const matchesView = (q: any, view: string, viewsCount: number) => {
+      if (view === 'all') return true;
+      if (view === 'active') return q.estado === 'draft' || q.estado === 'sent';
+      if (view === 'closing') return q.estado === 'accepted';
+      if (view === 'paid') return q.estado === 'paid';
+      if (view === 'expiring') return q.estado === 'sent' && daysUntil(q.vigencia) >= 0 && daysUntil(q.vigencia) <= 5;
+      if (view === 'stale') return q.estado === 'sent' && daysSince(q.created_at) > 7 && viewsCount === 0;
+      if (view === 'hot') return viewsCount >= 5;
+      return true;
+    };
+
+    const matchesAdvFilter = (q: any, f: { field: string; op: string; value: any }) => {
+      const val = q[f.field];
+      if (f.field === 'total') {
+        const n = Number(q.total || 0);
+        const v = Number(f.value);
+        if (f.op === 'gt') return n > v;
+        if (f.op === 'lt') return n < v;
+        if (f.op === 'eq') return n === v;
+      }
+      if (f.field === 'created_at' || f.field === 'vigencia') {
+        const d = daysSince(val);
+        const v = Number(f.value);
+        if (f.op === 'within') return d <= v;
+        if (f.op === 'older') return d > v;
+      }
+      if (f.field === 'estado') {
+        const list = Array.isArray(f.value) ? f.value : [f.value];
+        return list.includes(q.estado);
+      }
+      return true;
     };
 
     const filtered = quotes
-      .filter((q: any) => {
+      .map((q: any) => ({ q, views: parseMeta(q.notas).meta.views || 0 }))
+      .filter(({ q, views }) => {
+        if (!matchesView(q, qView, views)) return false;
         if (qFilter !== 'all' && q.estado !== qFilter) return false;
+        for (const f of qFilters) { if (!matchesAdvFilter(q, f)) return false; }
         if (!qSearch) return true;
         const s = qSearch.toLowerCase();
         return (q.numero || '').toLowerCase().includes(s) ||
           (q.empresa || '').toLowerCase().includes(s) ||
           (q.contacto || '').toLowerCase().includes(s) ||
-          (q.email || '').toLowerCase().includes(s);
+          (q.email || '').toLowerCase().includes(s) ||
+          (q.whatsapp || '').toLowerCase().includes(s) ||
+          String(q.total || '').includes(s);
       })
-      .sort((a: any, b: any) => {
+      .sort((a, b) => {
         const dir = qSort.asc ? 1 : -1;
-        if (qSort.col === 'total') return ((a.total || 0) - (b.total || 0)) * dir;
-        if (qSort.col === 'views') {
-          const va = parseMeta(a.notas).meta.views || 0;
-          const vb = parseMeta(b.notas).meta.views || 0;
-          return (va - vb) * dir;
-        }
-        const va = a[qSort.col] || '';
-        const vb = b[qSort.col] || '';
+        if (qSort.col === 'total') return ((a.q.total || 0) - (b.q.total || 0)) * dir;
+        if (qSort.col === 'views') return (a.views - b.views) * dir;
+        const va = a.q[qSort.col] || '';
+        const vb = b.q[qSort.col] || '';
         return va < vb ? -dir : va > vb ? dir : 0;
       });
 
-    const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-    const safePage = Math.min(qPage, totalPages - 1);
-    const paginated = filtered.slice(safePage * PER_PAGE, (safePage + 1) * PER_PAGE);
+    const filteredQuotes = filtered.map(x => x.q);
+    const filteredViewsMap = new Map(filtered.map(x => [x.q.id, x.views]));
 
-    // Count by estado
+    const totalPages = Math.max(1, Math.ceil(filteredQuotes.length / PER_PAGE));
+    const safePage = Math.min(qPage, totalPages - 1);
+    const paginated = filteredQuotes.slice(safePage * PER_PAGE, (safePage + 1) * PER_PAGE);
+
+    // Count by estado + view
     const counts: Record<string, number> = { all: quotes.length };
     quotes.forEach((q: any) => { counts[q.estado] = (counts[q.estado] || 0) + 1; });
+    const viewCounts: Record<string, number> = {};
+    savedViews.forEach(v => {
+      viewCounts[v.id] = quotes.filter((q: any) => matchesView(q, v.id, parseMeta(q.notas).meta.views || 0)).length;
+    });
+
+    // KPI stats
+    const totalPending = quotes.filter((q: any) => q.estado === 'sent' || q.estado === 'accepted').reduce((s: number, q: any) => s + (q.total || 0), 0);
+    const totalPaidThisMonth = quotes.filter((q: any) => {
+      if (q.estado !== 'paid') return false;
+      const d = new Date(q.updated_at || q.created_at);
+      const nd = new Date();
+      return d.getMonth() === nd.getMonth() && d.getFullYear() === nd.getFullYear();
+    }).reduce((s: number, q: any) => s + (q.total || 0), 0);
+    const activeCount = quotes.filter((q: any) => q.estado === 'sent' || q.estado === 'draft').length;
+    const avgTicket = quotes.length ? Math.round(quotes.reduce((s: number, q: any) => s + (q.total || 0), 0) / quotes.length) : 0;
+    const acceptedOrPaidCount = quotes.filter((q: any) => q.estado === 'accepted' || q.estado === 'paid').length;
+    const sentOrBetter = quotes.filter((q: any) => ['sent', 'accepted', 'paid', 'expired'].includes(q.estado)).length;
+    const conversionRate = sentOrBetter > 0 ? Math.round((acceptedOrPaidCount / sentOrBetter) * 100) : 0;
+
+    // Persist preferences
+    useEffect(() => { try { localStorage.setItem('sacs_q_view', qView); } catch {} }, [qView]);
+    useEffect(() => { try { localStorage.setItem('sacs_q_pagesize', String(qPageSize)); } catch {} }, [qPageSize]);
+    useEffect(() => { try { localStorage.setItem('sacs_q_density', qDensity); } catch {} }, [qDensity]);
+    useEffect(() => { try { localStorage.setItem('sacs_q_cols', JSON.stringify(Array.from(qVisibleCols))); } catch {} }, [qVisibleCols]);
+
+    // Bulk helpers
+    const toggleSelect = (id: string) => {
+      const next = new Set(qSelected);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      setQSelected(next);
+    };
+    const toggleSelectAll = () => {
+      const visible = paginated.map((q: any) => q.id);
+      const allSelected = visible.every(id => qSelected.has(id));
+      const next = new Set(qSelected);
+      if (allSelected) visible.forEach(id => next.delete(id));
+      else visible.forEach(id => next.add(id));
+      setQSelected(next);
+    };
+    const clearSelection = () => setQSelected(new Set());
+
+    const bulkMarkPaid = async () => {
+      if (qSelected.size === 0) return;
+      if (!confirm(`¿Marcar ${qSelected.size} cotización(es) como pagada(s)?`)) return;
+      setSaving(true);
+      for (const id of Array.from(qSelected)) {
+        await fetch('/api/revenue/mark-paid', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ quoteId: id }),
+        }).catch(() => {});
+      }
+      const d = await fetch('/api/revenue/quotes').then(r => r.json());
+      setQuotes(Array.isArray(d) ? d : []);
+      clearSelection();
+      setSaving(false);
+    };
+
+    const exportCsv = () => {
+      const rows = [['#', 'Fecha', 'Empresa', 'Contacto', 'Email', 'WhatsApp', 'Total', 'Moneda', 'Estado', 'Vigencia', 'Vistas']];
+      filteredQuotes.forEach((q: any) => {
+        const views = filteredViewsMap.get(q.id) || 0;
+        rows.push([
+          q.numero || '',
+          (q.created_at || '').slice(0, 10),
+          q.empresa || '',
+          q.contacto || '',
+          q.email || '',
+          q.whatsapp || '',
+          String(q.total || 0),
+          q.moneda || 'MXN',
+          estadoLabels[q.estado] || q.estado || '',
+          q.vigencia || '',
+          String(views),
+        ]);
+      });
+      const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cotizaciones-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 500);
+    };
+
+    const refreshQuotes = async () => {
+      const d = await fetch('/api/revenue/quotes').then(r => r.json());
+      setQuotes(Array.isArray(d) ? d : []);
+    };
+
+    const allColumns = [
+      { id: 'numero', label: '#' },
+      { id: 'created_at', label: 'Fecha' },
+      { id: 'empresa', label: 'Empresa' },
+      { id: 'total', label: 'Total' },
+      { id: 'vigencia', label: 'Vigencia' },
+      { id: 'estado', label: 'Estado' },
+      { id: 'views', label: 'Vistas' },
+      { id: 'actions', label: 'Acciones' },
+    ];
+
+    const rowPad = qDensity === 'compact' ? '6px 12px' : '12px 14px';
 
     const SortHeader = ({ col, label }: { col: string; label: string }) => (
-      <th style={{ ...S.th, cursor: 'pointer', userSelect: 'none' as const, whiteSpace: 'nowrap' as const }} onClick={() => setQSort({ col, asc: qSort.col === col ? !qSort.asc : col === 'total' || col === 'views' ? false : true })}>
-        {label} {qSort.col === col ? (qSort.asc ? '↑' : '↓') : ''}
+      <th style={{ ...S.th, cursor: 'pointer', userSelect: 'none' as const, whiteSpace: 'nowrap' as const, position: 'sticky' as const, top: 0, background: '#fafafa', zIndex: 2 }} onClick={() => setQSort({ col, asc: qSort.col === col ? !qSort.asc : col === 'total' || col === 'views' ? false : true })}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          {label}
+          <span style={{ color: qSort.col === col ? '#1a1a1a' : '#ddd', fontSize: '0.75rem' }}>{qSort.col === col ? (qSort.asc ? '↑' : '↓') : '⇅'}</span>
+        </span>
       </th>
     );
 
+    const removeFilter = (idx: number) => setQFilters(qFilters.filter((_, i) => i !== idx));
+    const addFilter = (f: { field: string; op: string; value: any }) => { setQFilters([...qFilters, f]); setQShowFilterPopover(false); setQPage(0); };
+    const allSelected = paginated.length > 0 && paginated.every((q: any) => qSelected.has(q.id));
+    const someSelected = paginated.some((q: any) => qSelected.has(q.id));
+
     return (
       <div>
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h2 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800 }}>Cotizaciones <span style={{ fontWeight: 400, color: '#aaa', fontSize: '0.875rem' }}>({filtered.length})</span></h2>
+        {/* ─── Top header: title + actions ─── */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 12 }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, letterSpacing: '-0.01em' }}>Cotizaciones</h2>
+            <div style={{ fontSize: '0.8125rem', color: '#888', marginTop: 2 }}>{quotes.length} totales · {filteredQuotes.length} en vista</div>
+          </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => { setTranscript(''); setAnalysisResult(null); setShowTranscriptModal(true); }} style={{ ...S.btn, background: '#f5f5f5', color: '#555' }}>Generar desde transcripción</button>
-            <button onClick={() => { setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida. Soporte 24/7. Sin contratos.' }); setShowDrawer(true); }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff' }}>+ Nueva cotización</button>
+            <button onClick={refreshQuotes} title="Actualizar" style={{ ...S.btn, background: '#fff', color: '#666', border: '1px solid #e0e0e0', padding: '8px 12px' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            </button>
+            <button onClick={exportCsv} style={{ ...S.btn, background: '#fff', color: '#666', border: '1px solid #e0e0e0', padding: '8px 14px' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Exportar
+            </button>
+            <button onClick={() => { setTranscript(''); setAnalysisResult(null); setShowTranscriptModal(true); }} style={{ ...S.btn, background: '#f5f5f5', color: '#555', padding: '8px 14px' }}>Transcripción</button>
+            <button onClick={() => { setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida. Soporte 24/7. Sin contratos.' }); setShowDrawer(true); }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', padding: '8px 18px' }}>+ Nueva cotización</button>
           </div>
         </div>
 
-        {/* Search + filters */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' as const, alignItems: 'center' }}>
-          <div style={{ position: 'relative' as const, flex: '1 1 220px' }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2" style={{ position: 'absolute' as const, left: 10, top: '50%', transform: 'translateY(-50%)' }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input value={qSearch} onChange={e => { setQSearch(e.target.value); setQPage(0); }} placeholder="Buscar por empresa, contacto, numero..." style={{ ...S.input, paddingLeft: 32 }} />
+        {/* ─── KPI stats row ─── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, marginBottom: 16 }}>
+          <div style={{ background: '#fff', border: '1px solid #e5e5e5', padding: '14px 16px', borderRadius: 8 }}>
+            <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Pendiente de pago</div>
+            <div style={{ fontSize: '1.375rem', fontWeight: 700, color: '#1a1a1a', marginTop: 4 }}>{fmt(totalPending)}</div>
+            <div style={{ fontSize: '0.6875rem', color: '#888', marginTop: 2 }}>{counts.sent || 0} enviadas · {counts.accepted || 0} aceptadas</div>
           </div>
+          <div style={{ background: '#fff', border: '1px solid #e5e5e5', padding: '14px 16px', borderRadius: 8 }}>
+            <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Pagado este mes</div>
+            <div style={{ fontSize: '1.375rem', fontWeight: 700, color: '#2e7d32', marginTop: 4 }}>{fmt(totalPaidThisMonth)}</div>
+            <div style={{ fontSize: '0.6875rem', color: '#888', marginTop: 2 }}>{counts.paid || 0} pagadas totales</div>
+          </div>
+          <div style={{ background: '#fff', border: '1px solid #e5e5e5', padding: '14px 16px', borderRadius: 8 }}>
+            <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Cotizaciones activas</div>
+            <div style={{ fontSize: '1.375rem', fontWeight: 700, color: '#1a1a1a', marginTop: 4 }}>{activeCount}</div>
+            <div style={{ fontSize: '0.6875rem', color: '#888', marginTop: 2 }}>Draft + enviadas</div>
+          </div>
+          <div style={{ background: '#fff', border: '1px solid #e5e5e5', padding: '14px 16px', borderRadius: 8 }}>
+            <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Ticket promedio</div>
+            <div style={{ fontSize: '1.375rem', fontWeight: 700, color: '#1a1a1a', marginTop: 4 }}>{fmt(avgTicket)}</div>
+            <div style={{ fontSize: '0.6875rem', color: '#888', marginTop: 2 }}>Todas las cotizaciones</div>
+          </div>
+          <div style={{ background: '#fff', border: '1px solid #e5e5e5', padding: '14px 16px', borderRadius: 8 }}>
+            <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Tasa de conversión</div>
+            <div style={{ fontSize: '1.375rem', fontWeight: 700, color: conversionRate >= 40 ? '#2e7d32' : '#1a1a1a', marginTop: 4 }}>{conversionRate}%</div>
+            <div style={{ fontSize: '0.6875rem', color: '#888', marginTop: 2 }}>Aceptadas / Enviadas</div>
+          </div>
+        </div>
+
+        {/* ─── Saved views tabs ─── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #e5e5e5', marginBottom: 12, overflowX: 'auto' as const }}>
+          {savedViews.map(v => {
+            const active = qView === v.id;
+            return (
+              <button key={v.id} onClick={() => { setQView(v.id); setQPage(0); clearSelection(); }} style={{
+                padding: '10px 16px',
+                background: 'transparent',
+                border: 'none',
+                borderBottom: active ? '2px solid #1a1a1a' : '2px solid transparent',
+                color: active ? '#1a1a1a' : '#666',
+                fontWeight: active ? 700 : 500,
+                fontSize: '0.8125rem',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                whiteSpace: 'nowrap' as const,
+                marginBottom: -1,
+              }}>
+                {v.label}
+                <span style={{ marginLeft: 6, fontSize: '0.6875rem', color: active ? '#1a1a1a' : '#aaa', fontWeight: 500 }}>{viewCounts[v.id] || 0}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ─── Search + filter + column tools ─── */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' as const, alignItems: 'center', position: 'relative' as const }}>
+          <div style={{ position: 'relative' as const, flex: '1 1 280px', maxWidth: 440 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2" style={{ position: 'absolute' as const, left: 12, top: '50%', transform: 'translateY(-50%)' }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input value={qSearch} onChange={e => { setQSearch(e.target.value); setQPage(0); }} placeholder="Buscar por empresa, contacto, email, WhatsApp, folio o monto..." style={{ ...S.input, paddingLeft: 36, height: 36, fontSize: '0.8125rem' }} />
+            {qSearch && (
+              <button onClick={() => { setQSearch(''); setQPage(0); }} style={{ position: 'absolute' as const, right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: '1rem', padding: 4 }}>✕</button>
+            )}
+          </div>
+
+          {/* Advanced filter button */}
+          <div style={{ position: 'relative' as const }}>
+            <button onClick={() => setQShowFilterPopover(!qShowFilterPopover)} style={{ ...S.btnSmall, padding: '0 14px', height: 36, display: 'inline-flex', alignItems: 'center', gap: 6, background: qFilters.length > 0 ? '#e8f0fe' : '#fff', color: qFilters.length > 0 ? '#1a56db' : '#555', borderColor: qFilters.length > 0 ? '#93c5fd' : '#e0e0e0' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              Filtros {qFilters.length > 0 && <span style={{ background: '#1a56db', color: '#fff', fontSize: '0.625rem', borderRadius: 10, padding: '1px 6px' }}>{qFilters.length}</span>}
+            </button>
+            {qShowFilterPopover && (
+              <div style={{ position: 'absolute' as const, top: 42, left: 0, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 10, padding: 16, minWidth: 280, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', zIndex: 100 }}>
+                <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Agregar filtro</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <button onClick={() => addFilter({ field: 'total', op: 'gt', value: 10000 })} style={{ ...S.btnSmall, justifyContent: 'flex-start', padding: '8px 10px', width: '100%' }}>Total &gt; $10,000</button>
+                  <button onClick={() => addFilter({ field: 'total', op: 'lt', value: 10000 })} style={{ ...S.btnSmall, justifyContent: 'flex-start', padding: '8px 10px', width: '100%' }}>Total &lt; $10,000</button>
+                  <button onClick={() => addFilter({ field: 'created_at', op: 'within', value: 7 })} style={{ ...S.btnSmall, justifyContent: 'flex-start', padding: '8px 10px', width: '100%' }}>Creada en últimos 7 días</button>
+                  <button onClick={() => addFilter({ field: 'created_at', op: 'within', value: 30 })} style={{ ...S.btnSmall, justifyContent: 'flex-start', padding: '8px 10px', width: '100%' }}>Creada en últimos 30 días</button>
+                  <button onClick={() => addFilter({ field: 'created_at', op: 'older', value: 30 })} style={{ ...S.btnSmall, justifyContent: 'flex-start', padding: '8px 10px', width: '100%' }}>Creada hace más de 30 días</button>
+                  <button onClick={() => addFilter({ field: 'estado', op: 'in', value: ['sent', 'accepted'] })} style={{ ...S.btnSmall, justifyContent: 'flex-start', padding: '8px 10px', width: '100%' }}>Enviadas + Aceptadas</button>
+                </div>
+                <button onClick={() => setQShowFilterPopover(false)} style={{ ...S.btnSmall, width: '100%', marginTop: 10, background: '#f5f5f5' }}>Cerrar</button>
+              </div>
+            )}
+          </div>
+
+          {/* Estado quick chips */}
           <div style={{ display: 'flex', gap: 4 }}>
-            {['all', 'draft', 'sent', 'accepted', 'paid'].map(st => {
+            {['draft', 'sent', 'accepted', 'paid', 'expired'].map(st => {
               const active = qFilter === st;
-              const label = st === 'all' ? 'Todas' : estadoLabels[st] || st;
+              const ec = estadoColors[st];
               const count = counts[st] || 0;
+              if (count === 0) return null;
               return (
-                <button key={st} onClick={() => { setQFilter(st); setQPage(0); }} style={{
-                  padding: '5px 12px', borderRadius: 20, border: active ? '1.5px solid #1a1a1a' : '1px solid #e0e0e0',
-                  background: active ? '#1a1a1a' : '#fff', color: active ? '#fff' : '#666',
-                  fontSize: '0.6875rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                <button key={st} onClick={() => { setQFilter(active ? 'all' : st); setQPage(0); }} style={{
+                  padding: '0 12px', height: 36, borderRadius: 6,
+                  border: active ? `1.5px solid ${ec.dot}` : '1px solid #e0e0e0',
+                  background: active ? ec.bg : '#fff',
+                  color: active ? ec.fg : '#666',
+                  fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
                 }}>
-                  {label} <span style={{ fontSize: '0.5625rem', opacity: 0.7 }}>{count}</span>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: ec.dot }}></span>
+                  {estadoLabels[st]} <span style={{ fontSize: '0.6875rem', opacity: 0.7, fontWeight: 500 }}>{count}</span>
                 </button>
               );
             })}
           </div>
+
+          <div style={{ flex: 1 }}></div>
+
+          {/* Density + columns */}
+          <button onClick={() => setQDensity(qDensity === 'compact' ? 'comfortable' : 'compact')} title={`Densidad: ${qDensity}`} style={{ ...S.btnSmall, padding: '0 10px', height: 36, background: '#fff' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div style={{ position: 'relative' as const }}>
+            <button onClick={() => setQShowColsMenu(!qShowColsMenu)} title="Columnas" style={{ ...S.btnSmall, padding: '0 14px', height: 36, background: '#fff', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+              Columnas
+            </button>
+            {qShowColsMenu && (
+              <div style={{ position: 'absolute' as const, top: 42, right: 0, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 10, padding: 12, minWidth: 200, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', zIndex: 100 }}>
+                <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Mostrar columnas</div>
+                {allColumns.map(c => (
+                  <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', fontSize: '0.8125rem', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={qVisibleCols.has(c.id)} onChange={() => {
+                      const next = new Set(qVisibleCols);
+                      if (next.has(c.id)) next.delete(c.id); else next.add(c.id);
+                      setQVisibleCols(next);
+                    }} />
+                    {c.label}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Table */}
-        <div style={S.card}>
-          <table style={S.table}>
-            <thead><tr>
-              <SortHeader col="numero" label="#" />
-              <SortHeader col="created_at" label="Fecha" />
-              <SortHeader col="empresa" label="Empresa" />
-              <SortHeader col="total" label="Total" />
-              <SortHeader col="estado" label="Estado" />
-              <SortHeader col="views" label="Vistas" />
-              <th style={S.th}>Acciones</th>
-            </tr></thead>
-            <tbody>
-              {paginated.length === 0 && <tr><td colSpan={7} style={{ ...S.td, textAlign: 'center' as const, color: '#ccc', padding: 32 }}>{qSearch || qFilter !== 'all' ? 'Sin resultados' : 'Sin cotizaciones'}</td></tr>}
-              {paginated.map((q: any) => {
-                const { meta } = parseMeta(q.notas);
-                const views = meta.views || 0;
-                const ec = estadoColors[q.estado] || estadoColors.draft;
-                return (
-                  <tr key={q.id} style={{ ...S.tr, transition: 'background 0.15s' }} onMouseEnter={e => (e.currentTarget.style.background = '#f8f9fb')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                    <td style={{ ...S.td, fontWeight: 700, color: '#4B7BE5' }}>{q.numero || '-'}</td>
-                    <td style={S.td}>{fmtDate(q.created_at)}</td>
-                    <td style={S.td}>
-                      <div style={{ fontWeight: 700, color: '#1a1a1a' }}>{q.empresa}</div>
-                      {q.contacto && <div style={{ fontSize: '0.625rem', color: '#aaa' }}>{q.contacto}</div>}
-                    </td>
-                    <td style={{ ...S.td, fontWeight: 700 }}>{fmt(q.total || 0)}</td>
-                    <td style={S.td}><span style={{ ...S.badge, background: ec.bg, color: ec.fg }}>{estadoLabels[q.estado] || q.estado}</span></td>
-                    <td style={S.td}>
-                      {views > 0 ? (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', fontWeight: 700, color: '#6C5CE7' }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" strokeWidth="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/></svg>
-                          {views}
+        {/* ─── Active filters chip bar ─── */}
+        {qFilters.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, flexWrap: 'wrap' as const }}>
+            <span style={{ fontSize: '0.6875rem', color: '#999', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Filtros:</span>
+            {qFilters.map((f, i) => {
+              let label = '';
+              if (f.field === 'total') label = `Total ${f.op === 'gt' ? '>' : f.op === 'lt' ? '<' : '='} ${fmt(f.value)}`;
+              else if (f.field === 'created_at') label = `Creada ${f.op === 'within' ? 'en últimos' : 'hace más de'} ${f.value}d`;
+              else if (f.field === 'estado') label = `Estado: ${(Array.isArray(f.value) ? f.value : [f.value]).map((s: string) => estadoLabels[s] || s).join(', ')}`;
+              return (
+                <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: '#e8f0fe', color: '#1a56db', fontSize: '0.75rem', fontWeight: 600, borderRadius: 14 }}>
+                  {label}
+                  <button onClick={() => removeFilter(i)} style={{ background: 'none', border: 'none', color: '#1a56db', cursor: 'pointer', padding: 0, fontSize: '0.875rem', lineHeight: 1 }}>✕</button>
+                </span>
+              );
+            })}
+            <button onClick={() => { setQFilters([]); setQPage(0); }} style={{ background: 'none', border: 'none', color: '#999', fontSize: '0.75rem', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}>Limpiar todo</button>
+          </div>
+        )}
+
+        {/* ─── Bulk selection bar (appears when 1+ selected) ─── */}
+        {qSelected.size > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', background: '#1a1a1a', color: '#fff', borderRadius: 8, marginBottom: 12 }}>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 600 }}>{qSelected.size} cotización(es) seleccionada(s)</span>
+            <div style={{ flex: 1 }}></div>
+            <button onClick={bulkMarkPaid} style={{ ...S.btnSmall, background: '#e8f5e9', color: '#2e7d32', borderColor: 'transparent' }}>Marcar como pagadas</button>
+            <button onClick={exportCsv} style={{ ...S.btnSmall, background: '#fff', color: '#1a1a1a', borderColor: 'transparent' }}>Exportar selección</button>
+            <button onClick={clearSelection} style={{ ...S.btnSmall, background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.3)' }}>Deseleccionar</button>
+          </div>
+        )}
+
+        {/* ─── Table ─── */}
+        <div style={{ ...S.card, padding: 0, overflow: 'hidden' }}>
+          <div style={{ overflowX: 'auto' as const }}>
+            <table style={S.table}>
+              <thead>
+                <tr>
+                  <th style={{ ...S.th, width: 36, padding: '8px 0 8px 16px', position: 'sticky' as const, top: 0, background: '#fafafa', zIndex: 2 }}>
+                    <input type="checkbox" checked={allSelected} ref={(el) => { if (el) el.indeterminate = someSelected && !allSelected; }} onChange={toggleSelectAll} />
+                  </th>
+                  {qVisibleCols.has('numero') && <SortHeader col="numero" label="#" />}
+                  {qVisibleCols.has('created_at') && <SortHeader col="created_at" label="Fecha" />}
+                  {qVisibleCols.has('empresa') && <SortHeader col="empresa" label="Empresa" />}
+                  {qVisibleCols.has('total') && <SortHeader col="total" label="Total" />}
+                  {qVisibleCols.has('vigencia') && <SortHeader col="vigencia" label="Vigencia" />}
+                  {qVisibleCols.has('estado') && <SortHeader col="estado" label="Estado" />}
+                  {qVisibleCols.has('views') && <SortHeader col="views" label="Vistas" />}
+                  {qVisibleCols.has('actions') && <th style={{ ...S.th, position: 'sticky' as const, top: 0, background: '#fafafa', zIndex: 2, textAlign: 'right' as const }}>Acciones</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {paginated.length === 0 && (
+                  <tr><td colSpan={Array.from(qVisibleCols).length + 1} style={{ ...S.td, textAlign: 'center' as const, color: '#aaa', padding: 48 }}>
+                    <div style={{ fontSize: '2rem', marginBottom: 8 }}>∅</div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#666' }}>Sin resultados</div>
+                    <div style={{ fontSize: '0.75rem', color: '#aaa', marginTop: 4 }}>Prueba limpiar los filtros o ajustar la búsqueda.</div>
+                  </td></tr>
+                )}
+                {paginated.map((q: any) => {
+                  const views = filteredViewsMap.get(q.id) || 0;
+                  const ec = estadoColors[q.estado] || estadoColors.draft;
+                  const isSel = qSelected.has(q.id);
+                  const days = q.vigencia ? Math.ceil(daysUntil(q.vigencia)) : null;
+                  return (
+                    <tr key={q.id} style={{ background: isSel ? '#f0f7ff' : 'transparent', transition: 'background 0.12s' }} onMouseEnter={e => { if (!isSel) (e.currentTarget.style.background = '#f8f9fb'); }} onMouseLeave={e => { if (!isSel) (e.currentTarget.style.background = 'transparent'); }}>
+                      <td style={{ padding: `${rowPad.split(' ')[0]} 0 ${rowPad.split(' ')[0]} 16px`, borderBottom: '1px solid #f0f0f0' }}>
+                        <input type="checkbox" checked={isSel} onChange={() => toggleSelect(q.id)} />
+                      </td>
+                      {qVisibleCols.has('numero') && <td style={{ ...S.td, padding: rowPad, fontWeight: 700, color: '#1a1a1a' }}>{q.numero || '-'}</td>}
+                      {qVisibleCols.has('created_at') && <td style={{ ...S.td, padding: rowPad, color: '#666', whiteSpace: 'nowrap' as const }}>{fmtDate(q.created_at)}</td>}
+                      {qVisibleCols.has('empresa') && <td style={{ ...S.td, padding: rowPad }}>
+                        <div style={{ fontWeight: 600, color: '#1a1a1a' }}>{q.empresa || '—'}</div>
+                        {(q.contacto || q.email) && <div style={{ fontSize: '0.6875rem', color: '#999', marginTop: 1 }}>{q.contacto}{q.contacto && q.email ? ' · ' : ''}{q.email}</div>}
+                      </td>}
+                      {qVisibleCols.has('total') && <td style={{ ...S.td, padding: rowPad, fontWeight: 700, color: '#1a1a1a', whiteSpace: 'nowrap' as const }}>{fmt(q.total || 0)} <span style={{ fontSize: '0.625rem', color: '#aaa', fontWeight: 500 }}>{q.moneda || 'MXN'}</span></td>}
+                      {qVisibleCols.has('vigencia') && <td style={{ ...S.td, padding: rowPad, whiteSpace: 'nowrap' as const, color: days !== null && days < 0 ? '#c62828' : days !== null && days <= 5 ? '#e65100' : '#666' }}>
+                        {q.vigencia ? (days !== null && days < 0 ? `Vencida hace ${-days}d` : days === 0 ? 'Vence hoy' : `${days}d`) : '—'}
+                      </td>}
+                      {qVisibleCols.has('estado') && <td style={{ ...S.td, padding: rowPad }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.6875rem', fontWeight: 700, padding: '3px 10px', borderRadius: 12, background: ec.bg, color: ec.fg }}>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: ec.dot }}></span>
+                          {estadoLabels[q.estado] || q.estado}
                         </span>
-                      ) : <span style={{ color: '#ddd', fontSize: '0.75rem' }}>—</span>}
-                    </td>
-                    <td style={S.td}>
-                      <button onClick={() => { const { meta: m } = parseMeta(q.notas); setQf({ ...q, items: Array.isArray(q.items) ? q.items : [], logo_url: m.logo_url || '', iva_mode: m.iva_mode || (q.iva_incluido ? 'suma' : 'sin'), mostrar_timer: m.mostrar_timer !== undefined ? m.mostrar_timer : true, mostrar_features: m.mostrar_features !== undefined ? m.mostrar_features : true, mostrar_desglose: m.mostrar_desglose !== undefined ? m.mostrar_desglose : true, mostrar_condiciones: m.mostrar_condiciones !== undefined ? m.mostrar_condiciones : true, mostrar_key_points: m.mostrar_key_points !== undefined ? m.mostrar_key_points : true, key_points: m.key_points || [], roi: m.roi || null, antes_despues: m.antes_despues || [], mostrar_roi: m.mostrar_roi || false, mostrar_antes_despues: m.mostrar_antes_despues || false, mostrar_firma: m.mostrar_firma !== undefined ? m.mostrar_firma : true, mostrar_qr: m.mostrar_qr !== undefined ? m.mostrar_qr : true, mostrar_animaciones: m.mostrar_animaciones !== undefined ? m.mostrar_animaciones : true, mostrar_timeline: m.mostrar_timeline !== undefined ? m.mostrar_timeline : true, timeline_tipo: m.timeline_tipo || '1suc', mostrar_implementacion: m.mostrar_implementacion !== undefined ? m.mostrar_implementacion : true, implementacion_nota: m.implementacion_nota || '' }); setShowDrawer(true); }} style={S.btnSmall}>Editar</button>
-                      <a href={`/cotizacion/${q.id}?admin=1`} target="_blank" rel="noopener" style={{ ...S.btnSmall, textDecoration: 'none', display: 'inline-flex' }}>Ver</a>
-                      <button onClick={() => duplicateQuote(q)} style={S.btnSmall}>Duplicar</button>
-                      {(q.estado === 'sent' || q.estado === 'draft' || q.estado === 'expired') && <button onClick={() => openAcceptModal(q)} style={{ ...S.btnSmall, background: '#e0f2f1', color: '#00695c' }}>Aceptar</button>}
-                      {q.estado !== 'paid' && <button onClick={() => markQuotePaid(q)} style={{ ...S.btnSmall, background: '#e8f5e9', color: '#2e7d32' }}>Pagada</button>}
-                      <button onClick={() => { navigator.clipboard.writeText(`https://www.sacscloud.com/cotizacion/${q.id}`); const btn = document.activeElement as HTMLButtonElement; btn.textContent = 'Copiado'; setTimeout(() => { btn.textContent = 'Copiar'; }, 1500); }} style={{ ...S.btnSmall, background: '#f3e8ff', color: '#7c3aed' }}>Copiar</button>
-                      <button onClick={() => { navigator.clipboard.writeText(`https://www.sacscloud.com/cotizacion/${q.id}/implementacion`); const btn = document.activeElement as HTMLButtonElement; btn.textContent = 'Copiado'; setTimeout(() => { btn.textContent = 'Proceso'; }, 1500); }} style={{ ...S.btnSmall, background: '#fff7e8', color: '#c77a00' }} title="Copiar link del proceso de implementación">Proceso</button>
-                      <a href={`https://wa.me/?text=${encodeURIComponent(`Cotización ${q.numero}: https://www.sacscloud.com/cotizacion/${q.id}`)}`} target="_blank" rel="noopener" style={{ ...S.btnSmall, background: '#e8f5e9', color: '#2e7d32', textDecoration: 'none', display: 'inline-flex' }}>WA</a>
-                      <a href={`mailto:${q.email || ''}?subject=${encodeURIComponent(`Cotización ${q.numero} - Sacs`)}&body=${encodeURIComponent(`Hola ${q.contacto || ''},\n\nTe comparto tu cotización:\nhttps://www.sacscloud.com/cotizacion/${q.id}\n\nQuedo al pendiente.\nSaludos`)}`} style={{ ...S.btnSmall, background: '#e3f2fd', color: '#1565c0', textDecoration: 'none', display: 'inline-flex' }}>Email</a>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      </td>}
+                      {qVisibleCols.has('views') && <td style={{ ...S.td, padding: rowPad }}>
+                        {views > 0 ? (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', fontWeight: 700, color: views >= 5 ? '#6C5CE7' : '#666' }}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" strokeWidth="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/></svg>
+                            {views}
+                          </span>
+                        ) : <span style={{ color: '#ddd', fontSize: '0.75rem' }}>—</span>}
+                      </td>}
+                      {qVisibleCols.has('actions') && <td style={{ ...S.td, padding: rowPad, textAlign: 'right' as const, whiteSpace: 'nowrap' as const, position: 'relative' as const }}>
+                        <a href={`/cotizacion/${q.id}?admin=1`} target="_blank" rel="noopener" style={{ ...S.btnSmall, textDecoration: 'none', display: 'inline-flex', marginRight: 4 }}>Ver</a>
+                        <button onClick={() => { const { meta: m } = parseMeta(q.notas); setQf({ ...q, items: Array.isArray(q.items) ? q.items : [], logo_url: m.logo_url || '', iva_mode: m.iva_mode || (q.iva_incluido ? 'suma' : 'sin'), mostrar_timer: m.mostrar_timer !== undefined ? m.mostrar_timer : true, mostrar_features: m.mostrar_features !== undefined ? m.mostrar_features : true, mostrar_desglose: m.mostrar_desglose !== undefined ? m.mostrar_desglose : true, mostrar_condiciones: m.mostrar_condiciones !== undefined ? m.mostrar_condiciones : true, mostrar_key_points: m.mostrar_key_points !== undefined ? m.mostrar_key_points : true, key_points: m.key_points || [], roi: m.roi || null, antes_despues: m.antes_despues || [], mostrar_roi: m.mostrar_roi || false, mostrar_antes_despues: m.mostrar_antes_despues || false, mostrar_firma: m.mostrar_firma !== undefined ? m.mostrar_firma : true, mostrar_qr: m.mostrar_qr !== undefined ? m.mostrar_qr : true, mostrar_animaciones: m.mostrar_animaciones !== undefined ? m.mostrar_animaciones : true, mostrar_timeline: m.mostrar_timeline !== undefined ? m.mostrar_timeline : true, timeline_tipo: m.timeline_tipo || '1suc', mostrar_implementacion: m.mostrar_implementacion !== undefined ? m.mostrar_implementacion : true, implementacion_nota: m.implementacion_nota || '' }); setShowDrawer(true); }} style={S.btnSmall}>Editar</button>
+                        <button onClick={(e) => { e.stopPropagation(); setQMenuRow(qMenuRow === q.id ? null : q.id); }} style={{ ...S.btnSmall, background: '#fff', padding: '4px 8px', marginRight: 0 }} title="Más acciones">⋮</button>
+                        {qMenuRow === q.id && (
+                          <div data-q-menu style={{ position: 'absolute' as const, right: 0, top: 34, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 8, padding: 6, minWidth: 200, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', zIndex: 50, textAlign: 'left' as const }}>
+                            <button onClick={() => { duplicateQuote(q); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex' }}>📋 Duplicar</button>
+                            {(q.estado === 'sent' || q.estado === 'draft' || q.estado === 'expired') && <button onClick={() => { openAcceptModal(q); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', color: '#00695c' }}>✓ Aceptar manualmente</button>}
+                            {q.estado !== 'paid' && <button onClick={() => { markQuotePaid(q); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', color: '#2e7d32' }}>💵 Marcar pagada</button>}
+                            <div style={{ height: 1, background: '#f0f0f0', margin: '4px 0' }}></div>
+                            <button onClick={() => { navigator.clipboard.writeText(`https://www.sacscloud.com/cotizacion/${q.id}`); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex' }}>🔗 Copiar link</button>
+                            <button onClick={() => { navigator.clipboard.writeText(`https://www.sacscloud.com/cotizacion/${q.id}/implementacion`); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex' }}>⚡ Copiar link proceso</button>
+                            <a href={`https://wa.me/?text=${encodeURIComponent(`Cotización ${q.numero}: https://www.sacscloud.com/cotizacion/${q.id}`)}`} target="_blank" rel="noopener" onClick={() => setQMenuRow(null)} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', textDecoration: 'none' }}>💬 Enviar WhatsApp</a>
+                            <a href={`mailto:${q.email || ''}?subject=${encodeURIComponent(`Cotización ${q.numero} - Sacs`)}&body=${encodeURIComponent(`Hola ${q.contacto || ''},\n\nTe comparto tu cotización:\nhttps://www.sacscloud.com/cotizacion/${q.id}\n\nQuedo al pendiente.\nSaludos`)}`} onClick={() => setQMenuRow(null)} style={{ ...S.btnSmall, width: '100%', marginRight: 0, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', textDecoration: 'none' }}>✉️ Enviar por email</a>
+                          </div>
+                        )}
+                      </td>}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0 0', borderTop: '1px solid #f0f0f0', marginTop: 4 }}>
-              <span style={{ fontSize: '0.6875rem', color: '#999' }}>
-                {safePage * PER_PAGE + 1}–{Math.min((safePage + 1) * PER_PAGE, filtered.length)} de {filtered.length}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderTop: '1px solid #f0f0f0', background: '#fafafa' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: '0.75rem', color: '#666' }}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                Por página:
+                <select value={qPageSize} onChange={e => { setQPageSize(parseInt(e.target.value)); setQPage(0); }} style={{ padding: '4px 8px', fontSize: '0.75rem', border: '1px solid #e0e0e0', borderRadius: 6, background: '#fff', fontFamily: 'inherit', cursor: 'pointer' }}>
+                  <option value="10">10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </label>
+              <span>
+                {filteredQuotes.length === 0 ? '0' : `${safePage * PER_PAGE + 1}–${Math.min((safePage + 1) * PER_PAGE, filteredQuotes.length)}`} de <strong>{filteredQuotes.length}</strong>
               </span>
-              <div style={{ display: 'flex', gap: 4 }}>
-                <button disabled={safePage === 0} onClick={() => setQPage(0)} style={{ ...S.btnSmall, opacity: safePage === 0 ? 0.3 : 1 }}>«</button>
-                <button disabled={safePage === 0} onClick={() => setQPage(safePage - 1)} style={{ ...S.btnSmall, opacity: safePage === 0 ? 0.3 : 1 }}>‹</button>
-                {Array.from({ length: totalPages }, (_, i) => (
-                  <button key={i} onClick={() => setQPage(i)} style={{ ...S.btnSmall, background: i === safePage ? '#1a1a1a' : '#fafafa', color: i === safePage ? '#fff' : '#666', borderColor: i === safePage ? '#1a1a1a' : '#e0e0e0', minWidth: 28, justifyContent: 'center' as const, display: 'inline-flex' }}>{i + 1}</button>
-                ))}
-                <button disabled={safePage >= totalPages - 1} onClick={() => setQPage(safePage + 1)} style={{ ...S.btnSmall, opacity: safePage >= totalPages - 1 ? 0.3 : 1 }}>›</button>
-                <button disabled={safePage >= totalPages - 1} onClick={() => setQPage(totalPages - 1)} style={{ ...S.btnSmall, opacity: safePage >= totalPages - 1 ? 0.3 : 1 }}>»</button>
-              </div>
             </div>
-          )}
+            {totalPages > 1 && (
+              <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                <button disabled={safePage === 0} onClick={() => setQPage(0)} style={{ ...S.btnSmall, opacity: safePage === 0 ? 0.3 : 1, marginRight: 0 }}>«</button>
+                <button disabled={safePage === 0} onClick={() => setQPage(safePage - 1)} style={{ ...S.btnSmall, opacity: safePage === 0 ? 0.3 : 1, marginRight: 0 }}>‹ Anterior</button>
+                <span style={{ fontSize: '0.75rem', color: '#666', padding: '0 10px' }}>Página <strong>{safePage + 1}</strong> de {totalPages}</span>
+                <button disabled={safePage >= totalPages - 1} onClick={() => setQPage(safePage + 1)} style={{ ...S.btnSmall, opacity: safePage >= totalPages - 1 ? 0.3 : 1, marginRight: 0 }}>Siguiente ›</button>
+                <button disabled={safePage >= totalPages - 1} onClick={() => setQPage(totalPages - 1)} style={{ ...S.btnSmall, opacity: safePage >= totalPages - 1 ? 0.3 : 1, marginRight: 0 }}>»</button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ─── Accept Quote Modal (admin manual acceptance) ─── */}
