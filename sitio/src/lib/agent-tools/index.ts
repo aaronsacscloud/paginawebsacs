@@ -9,7 +9,9 @@ export { isForbidden, FORBIDDEN_TOKENS } from './FORBIDDEN';
 import './crm/get-contact';
 import './crm/get-contact-timeline';
 
+// ─── Catalog tools (read-only, for quote_drafter + service_recommender) ───
+import './catalog/get-catalog';
+
 // Import future tools here:
 // import './quotes/draft-create';
-// import './catalog/get-services';
 // import './kb/search';
