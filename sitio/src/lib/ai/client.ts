@@ -11,14 +11,13 @@ export const anthropic = new Anthropic({
 
 // Model constants (centralized for easy version bump via canary)
 export const MODELS = {
-  sonnet: 'claude-sonnet-4-7' as const,
+  sonnet: 'claude-sonnet-4-5' as const,
   haiku: 'claude-haiku-4-5' as const,
   sonnet_fallback: 'claude-sonnet-4-5' as const,
 } as const;
 
 // Pricing per 1M tokens (input/output) in USD — for cost tracking
 export const PRICING: Record<string, { input: number; output: number; cache_read: number; cache_write: number }> = {
-  'claude-sonnet-4-7': { input: 3.00, output: 15.00, cache_read: 0.30, cache_write: 3.75 },
   'claude-sonnet-4-5': { input: 3.00, output: 15.00, cache_read: 0.30, cache_write: 3.75 },
   'claude-haiku-4-5': { input: 1.00, output: 5.00, cache_read: 0.10, cache_write: 1.25 },
 };
