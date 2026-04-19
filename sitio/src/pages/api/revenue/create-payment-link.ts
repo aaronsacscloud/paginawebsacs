@@ -72,8 +72,15 @@ export const POST: APIRoute = async ({ request }) => {
     }
   }
 
+  // Detect if quote has recurring items (plan mensual/anual, add-ons recurrentes).
+  // If yes, save payment method for future subscription creation.
+  const hasRecurring = Array.isArray(items) && items.some((i: any) =>
+    (i.tipo === 'plan' && (i.periodo === 'mensual' || i.periodo === 'anual')) ||
+    (i.tipo === 'extra' && i.recurrente)
+  );
+
   try {
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: 'payment',
       payment_method_types: ['card'],
       line_items: lineItems,
@@ -81,13 +88,26 @@ export const POST: APIRoute = async ({ request }) => {
       metadata: {
         quote_id,
         numero: numero || '',
+        has_recurring: hasRecurring ? '1' : '0',
       },
       success_url: `https://www.sacscloud.com/cotizacion/${quote_id}?paid=1`,
       cancel_url: `https://www.sacscloud.com/cotizacion/${quote_id}`,
       ...(expiresAt ? { expires_at: expiresAt } : {}),
-    });
+    };
 
-    return new Response(JSON.stringify({ url: session.url }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    // Save card for future off-session subscription charges
+    if (hasRecurring) {
+      sessionParams.payment_intent_data = {
+        setup_future_usage: 'off_session',
+        metadata: { quote_id, numero: numero || '' },
+      };
+      // Ensure customer is created (required for saved cards)
+      sessionParams.customer_creation = 'always';
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
+
+    return new Response(JSON.stringify({ url: session.url, has_recurring: hasRecurring }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
