@@ -29,11 +29,19 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
 ---
 
 <section class={`impl-section impl-${variant}`}>
-  {isFull && quoteUrl && (
-    <a href={quoteUrl} class="impl-backlink" aria-label="Volver a la cotización">
-      <span class="impl-backlink-arrow" aria-hidden="true">←</span>
-      <span>Volver a tu cotización</span>
-    </a>
+  {isFull && (
+    <div class="impl-topbar">
+      {quoteUrl && (
+        <a href={quoteUrl} class="impl-backlink" aria-label="Volver a la cotización">
+          <span class="impl-backlink-arrow" aria-hidden="true">←</span>
+          <span>Volver a tu cotización</span>
+        </a>
+      )}
+      <button type="button" class="impl-share" id="implShareBtn" aria-label="Compartir esta página">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="18" cy="5" r="3" stroke="currentColor" stroke-width="2"/><circle cx="6" cy="12" r="3" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="19" r="3" stroke="currentColor" stroke-width="2"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5" stroke="currentColor" stroke-width="2"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5" stroke="currentColor" stroke-width="2"/></svg>
+        <span class="impl-share-label">Compartir</span>
+      </button>
+    </div>
   )}
 
   {isFull && (
@@ -98,7 +106,7 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
         <div class="impl-step-body">
           <div class="impl-step-badge">{step.dayBadge}</div>
           <div class="impl-step-head">
-            <span class="impl-step-emoji">{step.emoji}</span>
+            <span class="impl-step-emoji" aria-hidden="true">{step.emoji}</span>
             <h3 class="impl-step-title">{step.title}</h3>
           </div>
           <p class="impl-step-desc">{step.description}</p>
@@ -124,7 +132,7 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
     <div class="impl-included-grid">
       {INCLUIDO_ITEMS.map(item => (
         <div class="impl-included-card">
-          <div class="impl-included-emoji">{item.emoji}</div>
+          <div class="impl-included-emoji" aria-hidden="true">{item.emoji}</div>
           <h4 class="impl-included-card-title">{item.title}</h4>
           <p class="impl-included-card-desc">{item.description}</p>
         </div>
@@ -143,7 +151,7 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
         <div class="impl-support-grid">
           {SOPORTE_ITEMS.map(s => (
             <div class="impl-support-card">
-              <div class="impl-support-emoji">{s.emoji}</div>
+              <div class="impl-support-emoji" aria-hidden="true">{s.emoji}</div>
               <h4 class="impl-support-card-title">{s.title}</h4>
               <p class="impl-support-card-desc">{s.description}</p>
               {s.badge && <div class="impl-support-badge">{s.badge}</div>}
@@ -161,7 +169,7 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
         <div class="impl-outcomes-grid">
           {OUTCOMES.map(o => (
             <div class="impl-outcome-card">
-              <div class="impl-outcome-emoji">{o.emoji}</div>
+              <div class="impl-outcome-emoji" aria-hidden="true">{o.emoji}</div>
               <h4 class="impl-outcome-title">{o.title}</h4>
               <p class="impl-outcome-desc">{o.description}</p>
               <ul class="impl-outcome-bullets">
@@ -208,7 +216,7 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
           {SUMMARY_STEPS.map((s, i) => (
             <div class="impl-summary-step">
               <div class="impl-summary-num">{i + 1}</div>
-              <div class="impl-summary-emoji">{s.emoji}</div>
+              <div class="impl-summary-emoji" aria-hidden="true">{s.emoji}</div>
               <h4 class="impl-summary-step-title">{s.title}</h4>
               <p class="impl-summary-step-desc">{s.description}</p>
               <div class="impl-summary-timing">{s.timing}</div>
@@ -266,6 +274,41 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
   .impl-full { padding-top: 24px; padding-bottom: 64px; }
   .impl-condensed { padding: 40px 0; }
 
+  /* ── Top bar (back + share) ── */
+  .impl-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .impl-share {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #eee;
+    color: #666;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s ease;
+  }
+  .impl-share:hover {
+    color: #1a1a1a;
+    background: #f8f9fb;
+    border-color: #ddd;
+    transform: translateY(-1px);
+  }
+  .impl-share.impl-share--copied {
+    background: #e0f2f1;
+    border-color: #2AB5A0;
+    color: #00695c;
+  }
+
   /* ── Back link at top of full variant ── */
   .impl-backlink {
     display: inline-flex;
@@ -279,7 +322,6 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
     border-radius: 8px;
     background: #fff;
     border: 1px solid #eee;
-    margin-bottom: 24px;
     transition: all 0.2s ease;
   }
   .impl-backlink:hover {
@@ -1050,7 +1092,68 @@ const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
     .impl-section,
     .impl-sticky-bar { display: none; }
   }
+
+  /* ── Reduced motion ── */
+  @media (prefers-reduced-motion: reduce) {
+    .impl-backlink,
+    .impl-backlink-arrow,
+    .impl-share,
+    .impl-step-body,
+    .impl-included-card,
+    .impl-outcome-card,
+    .impl-summary-step,
+    .impl-warn-cta,
+    .impl-btn,
+    .impl-cta-link,
+    .impl-sticky-bar,
+    .impl-sticky-btn {
+      transition: none !important;
+    }
+    .impl-backlink:hover,
+    .impl-step-body:hover,
+    .impl-included-card:hover,
+    .impl-outcome-card:hover,
+    .impl-summary-step:hover,
+    .impl-share:hover,
+    .impl-btn--primary:hover,
+    .impl-warn-cta--primary:hover,
+    .impl-sticky-btn:hover {
+      transform: none !important;
+    }
+  }
 </style>
+
+{isFull && (
+  <script is:inline>
+    (() => {
+      const btn = document.getElementById('implShareBtn');
+      if (!btn) return;
+      btn.addEventListener('click', async () => {
+        const url = window.location.href;
+        const title = document.title;
+        if (navigator.share) {
+          try {
+            await navigator.share({ title, text: 'Proceso de implementación SACS', url });
+            return;
+          } catch {}
+        }
+        try {
+          await navigator.clipboard.writeText(url);
+          const label = btn.querySelector('.impl-share-label');
+          const original = label ? label.textContent : 'Compartir';
+          btn.classList.add('impl-share--copied');
+          if (label) label.textContent = '¡Copiado!';
+          setTimeout(() => {
+            btn.classList.remove('impl-share--copied');
+            if (label) label.textContent = original;
+          }, 1800);
+        } catch {
+          alert(url);
+        }
+      });
+    })();
+  </script>
+)}
 
 {isFull && !isAnnual && (
   <script is:inline>
