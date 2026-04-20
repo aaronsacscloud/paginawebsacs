@@ -968,6 +968,40 @@ const isLive = feature.status === 'live' && content;
                       </div>
                     )}
 
+                    {block.variant === 'oc-pdf-brand' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--oc">
+                            <span class="sq-fc-dot"></span>
+                            OC al proveedor
+                          </span>
+                          <span class="sq-fc-time">#2241 · PDF</span>
+                        </div>
+                        <div class="sq-fc-oc-meta">
+                          <div class="sq-fc-oc-row">
+                            <span class="sq-fc-oc-label">Proveedor</span>
+                            <span class="sq-fc-oc-val">Cueros Salta</span>
+                          </div>
+                          <div class="sq-fc-oc-row">
+                            <span class="sq-fc-oc-label">Plazo de pago</span>
+                            <span class="sq-fc-oc-val">30 días · MXN</span>
+                          </div>
+                          <div class="sq-fc-oc-row">
+                            <span class="sq-fc-oc-label">Descuento volumen</span>
+                            <span class="sq-fc-oc-val">5% sobre $40k</span>
+                          </div>
+                        </div>
+                        <div class="sq-fc-total">
+                          <span>Total OC</span>
+                          <span class="sq-fc-total-val sq-fc-total-val--oc">$48,320.00</span>
+                        </div>
+                        <button class="sq-fc-cobrar sq-fc-cobrar--oc" tabindex="-1">
+                          ENVIAR AL PROVEEDOR
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                        </button>
+                      </div>
+                    )}
+
                     {block.variant === 'reposicion-approval' && (
                       <div class="sq-featured-card" aria-hidden="true">
                         <div class="sq-fc-header">
@@ -3212,6 +3246,23 @@ const isLive = feature.status === 'live' && content;
                         <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
                           Ajustable
+                        </div>
+                      </Fragment>
+                    )}
+
+                    {block.variant === 'oc-pdf-brand' && (
+                      <Fragment>
+                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+                          PDF con tu marca
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8h20"/></svg>
+                          Plazos y moneda
+                        </div>
+                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                          Email al proveedor
                         </div>
                       </Fragment>
                     )}
@@ -6622,6 +6673,45 @@ const isLive = feature.status === 'live' && content;
 
   .sq-fc-badge--amber { background: #fbf1dd; color: #7a5a1c; }
   .sq-fc-badge--amber .sq-fc-dot { background: #c28500; box-shadow: 0 0 0 3px rgba(194, 133, 0, 0.2); animation-name: sqFcPulseAmber; }
+
+  .sq-fc-badge--oc { background: #eef2ef; color: #2a573b; }
+  .sq-fc-badge--oc .sq-fc-dot { background: #3f8c5c; box-shadow: 0 0 0 3px rgba(63, 140, 92, 0.22); animation-name: sqFcPulseOc; }
+  @keyframes sqFcPulseOc {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(63, 140, 92, 0.22); }
+    50% { box-shadow: 0 0 0 5px rgba(63, 140, 92, 0.08); }
+  }
+
+  .sq-fc-oc-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px;
+    background: #f5f8f6;
+    border-radius: 8px;
+    margin-top: 2px;
+    font-size: 0.6875rem;
+  }
+  .sq-fc-oc-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .sq-fc-oc-label {
+    color: #6b6b75;
+    font-weight: 500;
+  }
+  .sq-fc-oc-val {
+    font-weight: 700;
+    color: #2a573b;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .sq-fc-total-val--oc { color: #2a573b; }
+  .sq-fc-cobrar--oc {
+    background: #2a573b;
+    box-shadow: 0 4px 12px rgba(42, 87, 59, 0.28);
+    margin-top: 10px;
+  }
 
   .sq-fc-badge--teal,
   .sq-fc-badge--split { background: #e2f1f4; color: #0f4a58; }

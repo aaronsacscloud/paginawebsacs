@@ -2277,7 +2277,7 @@ export const pageContent: Record<string, any> = {
         imageAlt: 'Orden de compra en PDF con marca de la tienda',
         link: null,
         featured: true,
-        variant: 'invoice-issue',
+        variant: 'oc-pdf-brand',
       },
       {
         title: 'Recibe escaneando. Detecta diferencias antes de firmar.',
