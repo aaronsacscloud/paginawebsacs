@@ -24,6 +24,31 @@ const pillar = getPillarForFeature(slug!)!;
 
 const content = pageContent[slug!];
 const isLive = feature.status === 'live' && content;
+
+// Plan selector: map each pillar to its plan id, then build a cumulative
+// feature list (shows the chosen plan + everything inherited from below).
+const pillarToPlanId: Record<string, string> = {
+  vende: 'vende',
+  controla: 'controla',
+  fideliza: 'fideliza',
+  automatiza: 'automatiza',
+};
+const planOrder = ['vende', 'controla', 'fideliza', 'automatiza'];
+const currentPlanId = pillarToPlanId[pillar.id] || 'vende';
+const currentPlanIdx = planOrder.indexOf(currentPlanId);
+const activePlan = plans.find((p) => p.id === currentPlanId) || plans[0];
+// Cumulative features: own features + every lower plan's features, oldest first
+const cumulativeFeatureGroups: any[] = [];
+for (let i = 0; i <= currentPlanIdx; i++) {
+  const p = plans.find((pp) => pp.id === planOrder[i]);
+  if (p) {
+    for (const f of p.features) {
+      if (typeof f === 'object' && f.category) {
+        cumulativeFeatureGroups.push({ ...f, planName: p.name });
+      }
+    }
+  }
+}
 ---
 
 <ProductLayout
@@ -4468,8 +4493,8 @@ const isLive = feature.status === 'live' && content;
         <div class="pf-plans-inner container">
           <div class="pf-plans-header">
             <div>
-              <h2 class="pf-plans-title">Punto de venta incluido en el plan Vende</h2>
-              <p class="pf-plans-subtitle">Todo lo que necesitas para empezar a cobrar desde $600 MXN/mes.</p>
+              <h2 class="pf-plans-title">{feature.label} incluido en el plan {activePlan.name}</h2>
+              <p class="pf-plans-subtitle">Todo lo que necesitas desde ${activePlan.monthly.mxn.toLocaleString('en-US')} MXN/mes{currentPlanIdx > 0 ? ` · incluye todo lo del plan ${plans.find((p) => p.id === planOrder[currentPlanIdx - 1])?.name}` : ''}.</p>
             </div>
             <a href="/planes" class="pf-plans-link">Ver todos los planes
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -4478,33 +4503,36 @@ const isLive = feature.status === 'live' && content;
           <div class="pf-plan-single">
             <div class="pf-plan-single-top">
               <div class="pf-plan-single-price-col">
-                <span class="pf-plan-name">Vende</span>
+                <span class="pf-plan-name">{activePlan.name}</span>
                 <div class="pf-plan-price-row">
-                  <span class="pf-plan-price">$600</span>
+                  <span class="pf-plan-price">${activePlan.monthly.mxn.toLocaleString('en-US')}</span>
                   <span class="pf-plan-period">MXN /mes por sucursal</span>
                 </div>
-                <p class="pf-plan-annual">Pago anual: <strong>$500/mes</strong> · $6,000/año <span class="pf-plan-save">Ahorra 2 meses</span></p>
+                <p class="pf-plan-annual">Pago anual: <strong>${activePlan.annual.mxn.toLocaleString('en-US')}/mes</strong> · ${activePlan.annualTotal.mxn.toLocaleString('en-US')}/año <span class="pf-plan-save">Ahorra 2 meses</span></p>
               </div>
               <div class="pf-plan-single-ctas">
                 <a href="/prueba-gratis" class="pf-plan-cta pf-plan-cta--solid">Prueba 7 días gratis</a>
-                <a href="/registro?plan=vende" class="pf-plan-cta">Inicia ahora</a>
+                <a href={activePlan.cta.href} class="pf-plan-cta">Inicia ahora</a>
               </div>
             </div>
             <div class="pf-plan-features-grid">
-              {plans[0].features.map((group: any) => (
-                typeof group === 'object' && group.category && (
-                  <div class="pf-plan-feature-group">
-                    <h4 class="pf-plan-feature-cat">{group.category}</h4>
-                    <ul class="pf-plan-feature-list">
-                      {group.items.map((item: string) => (
-                        <li class="pf-plan-feature-item">
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2AB5A0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )
+              {cumulativeFeatureGroups.map((group: any) => (
+                <div class="pf-plan-feature-group">
+                  <h4 class="pf-plan-feature-cat">
+                    {group.category}
+                    {currentPlanIdx > 0 && group.planName !== activePlan.name && (
+                      <span class="pf-plan-feature-from">Plan {group.planName}</span>
+                    )}
+                  </h4>
+                  <ul class="pf-plan-feature-list">
+                    {group.items.map((item: string) => (
+                      <li class="pf-plan-feature-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2AB5A0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
             </div>
           </div>
@@ -10312,6 +10340,21 @@ const isLive = feature.status === 'live' && content;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     margin: 0 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .pf-plan-feature-from {
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: #6b6b75;
+    background: #f2f2f5;
+    padding: 2px 8px;
+    border-radius: 50px;
+    text-transform: none;
+    letter-spacing: 0;
   }
 
   .pf-plan-feature-list {
