@@ -72,22 +72,25 @@ for (let i = 0; i <= currentPlanIdx; i++) {
         <div class="pf-hero-media container">
           <div class={`pf-hero-media-wrap${content.hero.video ? ' pf-hero-media-wrap--has-video' : ''}`}>
             {content.hero.video ? (
-              <div class="pf-hero-video-frame">
-                <video
-                  class="pf-hero-media-video"
-                  autoplay
-                  muted
-                  loop
-                  playsinline
-                  preload="metadata"
-                  poster={content.hero.videoPoster || content.hero.image}
-                  width="1200"
-                  height="1200"
-                  aria-label={content.hero.imageAlt}
-                >
-                  {content.hero.video.webm && <source src={content.hero.video.webm} type="video/webm" />}
-                  <source src={content.hero.video.mp4} type="video/mp4" />
-                </video>
+              <div class="pf-hero-video-frame pf-hero-video-frame--ipad">
+                <span class="pf-ipad-cam" aria-hidden="true"></span>
+                <div class="pf-ipad-screen">
+                  <video
+                    class="pf-hero-media-video"
+                    autoplay
+                    muted
+                    loop
+                    playsinline
+                    preload="metadata"
+                    poster={content.hero.videoPoster || content.hero.image}
+                    width="1200"
+                    height="1200"
+                    aria-label={content.hero.imageAlt}
+                  >
+                    {content.hero.video.webm && <source src={content.hero.video.webm} type="video/webm" />}
+                    <source src={content.hero.video.mp4} type="video/mp4" />
+                  </video>
+                </div>
               </div>
             ) : (
               <img src={content.hero.image} alt={content.hero.imageAlt} width="1200" height="675" loading="eager" fetchpriority="high" />
@@ -4764,13 +4767,53 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     position: relative;
     width: min(88%, 960px);
     aspect-ratio: 16 / 9;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow:
-      0 20px 60px rgba(40, 25, 10, 0.22),
-      0 8px 20px rgba(40, 25, 10, 0.12);
+    border-radius: 28px;
     transform: perspective(1200px) rotateX(2deg) rotateY(-1deg);
-    background: #fff;
+  }
+
+  /* iPad Pro–inspired bezel */
+  .pf-hero-video-frame--ipad {
+    padding: 18px 20px;
+    background:
+      linear-gradient(145deg, #2a2a2e 0%, #1a1a1e 35%, #161619 65%, #232326 100%);
+    box-shadow:
+      0 30px 70px rgba(0, 0, 0, 0.35),
+      0 12px 24px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.35);
+  }
+
+  .pf-hero-video-frame--ipad::before {
+    /* Subtle glass sheen across the top of the bezel */
+    content: '';
+    position: absolute;
+    inset: 1px 1px auto 1px;
+    height: 40%;
+    border-radius: 26px 26px 0 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 70%);
+    pointer-events: none;
+  }
+
+  .pf-hero-video-frame--ipad .pf-ipad-cam {
+    position: absolute;
+    top: 9px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #4a4a52, #0a0a0c);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    z-index: 2;
+  }
+
+  .pf-hero-video-frame--ipad .pf-ipad-screen {
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #000;
+    position: relative;
   }
 
   .pf-hero-media-wrap--has-video .pf-hero-video-frame .pf-hero-media-video {
@@ -4778,7 +4821,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     height: 100%;
     object-fit: cover;
     display: block;
-    background: #fff;
+    background: #000;
   }
 
   @media (max-width: 640px) {
