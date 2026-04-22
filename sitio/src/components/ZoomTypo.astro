@@ -56,15 +56,12 @@ const id = `zt-${Math.random().toString(36).slice(2, 8)}`;
 
   .zt-strike-text {
     position: relative;
-    text-decoration: line-through;
-    text-decoration-color: transparent;
-    text-decoration-thickness: 0.06em;
-    transition: text-decoration-color 0.5s ease, color 0.5s ease 0.1s;
+    color: rgba(255, 255, 255, 0.55);
+    transition: color 0.5s ease;
   }
 
   .zt-strike-text.struck {
-    text-decoration-color: #E53E3E;
-    color: rgba(255, 255, 255, 0.3);
+    color: #4B7BE5;
   }
 
   @media (prefers-reduced-motion: reduce) {

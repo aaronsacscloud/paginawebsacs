@@ -7,6 +7,11 @@ export const pageContent: Record<string, any> = {
       subtitle: 'Convierte cualquier dispositivo en un punto de venta completo. Tarjeta, efectivo, transferencia y más.',
       image: '/images/screen-pos.webp',
       imageAlt: 'Punto de Venta SACS en tablet mostrando el proceso de cobro',
+      video: {
+        mp4: '/videos/pos-demo.mp4',
+        webm: '/videos/pos-demo.webm',
+      },
+      videoPoster: '/videos/pos-demo-poster.webp',
     },
     features: [
       {

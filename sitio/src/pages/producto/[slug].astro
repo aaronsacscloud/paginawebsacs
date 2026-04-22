@@ -63,7 +63,6 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     <Fragment>
       <section class="pf-hero-centered">
         <div class="pf-hero-centered-inner container">
-          <span class="pf-hero-eyebrow">{content.hero.eyebrow}</span>
           <h1 class="pf-hero-title">{content.hero.title}</h1>
           <div class="pf-hero-ctas">
             <a href="/prueba-gratis" class="pf-hero-btn pf-hero-btn--outline">Prueba gratis</a>
@@ -71,9 +70,29 @@ for (let i = 0; i <= currentPlanIdx; i++) {
           </div>
         </div>
         <div class="pf-hero-media container">
-          <div class="pf-hero-media-wrap">
-            <img src={content.hero.image} alt={content.hero.imageAlt} width="1200" height="675" loading="eager" fetchpriority="high" />
-            <div class="pf-hero-media-overlay">
+          <div class={`pf-hero-media-wrap${content.hero.video ? ' pf-hero-media-wrap--has-video' : ''}`}>
+            {content.hero.video ? (
+              <div class="pf-hero-video-frame">
+                <video
+                  class="pf-hero-media-video"
+                  autoplay
+                  muted
+                  loop
+                  playsinline
+                  preload="metadata"
+                  poster={content.hero.videoPoster || content.hero.image}
+                  width="1200"
+                  height="1200"
+                  aria-label={content.hero.imageAlt}
+                >
+                  {content.hero.video.webm && <source src={content.hero.video.webm} type="video/webm" />}
+                  <source src={content.hero.video.mp4} type="video/mp4" />
+                </video>
+              </div>
+            ) : (
+              <img src={content.hero.image} alt={content.hero.imageAlt} width="1200" height="675" loading="eager" fetchpriority="high" />
+            )}
+            <div class="pf-hero-media-overlay" hidden>
               <p class="pf-hero-media-text">{content.hero.subtitle}</p>
             </div>
           </div>
@@ -4704,11 +4723,79 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     aspect-ratio: 16 / 9;
   }
 
-  .pf-hero-media-wrap img {
+  .pf-hero-media-wrap img,
+  .pf-hero-media-wrap .pf-hero-media-video {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
+  }
+
+  /* Square-style ambient hero: centered device with blurred warm backdrop */
+  .pf-hero-media-wrap--has-video {
+    display: grid;
+    place-items: center;
+    padding: clamp(24px, 5vw, 72px);
+    background-color: #EFE4D4;
+    isolation: isolate;
+  }
+
+  .pf-hero-media-wrap--has-video::before {
+    content: '';
+    position: absolute;
+    inset: -8%;
+    background-image: url('/images/pos-boutique-atencion.webp');
+    background-size: cover;
+    background-position: center;
+    filter: blur(28px) saturate(0.9) brightness(1.02);
+    transform: scale(1.08);
+    z-index: -2;
+  }
+
+  .pf-hero-media-wrap--has-video::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(135deg, rgba(255, 230, 200, 0.18), rgba(230, 200, 170, 0.22)),
+      radial-gradient(ellipse at center, transparent 50%, rgba(60, 40, 20, 0.18) 100%);
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .pf-hero-media-wrap--has-video .pf-hero-video-frame {
+    position: relative;
+    width: min(72%, 560px);
+    aspect-ratio: 1 / 1;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow:
+      0 20px 60px rgba(40, 25, 10, 0.22),
+      0 8px 20px rgba(40, 25, 10, 0.12);
+    transform: perspective(1200px) rotateX(2deg) rotateY(-1deg);
+    background: #fff;
+  }
+
+  .pf-hero-media-wrap--has-video .pf-hero-video-frame .pf-hero-media-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  @media (max-width: 640px) {
+    .pf-hero-media-wrap--has-video {
+      padding: clamp(16px, 4vw, 32px);
+    }
+    .pf-hero-media-wrap--has-video .pf-hero-video-frame {
+      width: min(88%, 420px);
+      transform: none;
+    }
+    /* Mobile perf: drop the heavy blur */
+    .pf-hero-media-wrap--has-video::before {
+      filter: saturate(0.9) brightness(1.02);
+      transform: scale(1.02);
+    }
   }
 
   .pf-hero-media-overlay {
