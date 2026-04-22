@@ -4737,8 +4737,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     place-items: center;
     padding: clamp(24px, 5vw, 80px);
     background:
-      radial-gradient(ellipse 80% 60% at 50% 55%, rgba(75, 123, 229, 0.45) 0%, rgba(75, 123, 229, 0) 65%),
-      radial-gradient(ellipse at 50% 40%, #2b3050 0%, #151a38 55%, #06070f 100%);
+      radial-gradient(ellipse at 50% 40%, #181818 0%, #0a0a0a 55%, #000 100%);
     isolation: isolate;
   }
 
@@ -4748,17 +4747,17 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     position: absolute;
     inset: 0;
     background-image:
-      linear-gradient(rgba(120, 160, 255, 0.13) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(120, 160, 255, 0.13) 1px, transparent 1px);
+      linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
     background-size: 60px 60px, 60px 60px;
-    mask-image: radial-gradient(ellipse at center, black 60%, transparent 100%);
-    -webkit-mask-image: radial-gradient(ellipse at center, black 60%, transparent 100%);
+    mask-image: radial-gradient(ellipse at center, black 55%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 55%, transparent 100%);
     z-index: 0;
     pointer-events: none;
   }
 
   .pf-hero-media-wrap--has-video::after {
-    /* Bright blue halo centered behind the device */
+    /* Subtle white halo behind device for depth */
     content: '';
     position: absolute;
     left: 50%;
@@ -4767,7 +4766,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     aspect-ratio: 1 / 1;
     max-height: 120%;
     transform: translate(-50%, -50%);
-    background: radial-gradient(circle at center, rgba(120, 170, 255, 0.7) 0%, rgba(75, 123, 229, 0.4) 18%, rgba(50, 90, 200, 0.18) 35%, rgba(75, 123, 229, 0) 60%);
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0) 55%);
     filter: blur(42px);
     z-index: 0;
     pointer-events: none;
@@ -4790,10 +4789,9 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     background:
       linear-gradient(145deg, #2a2a2e 0%, #1a1a1e 35%, #161619 65%, #232326 100%);
     box-shadow:
-      0 0 80px 20px rgba(95, 145, 255, 0.38),
-      0 0 160px 40px rgba(75, 123, 229, 0.22),
-      0 30px 70px rgba(0, 0, 0, 0.45),
-      0 12px 24px rgba(0, 0, 0, 0.28),
+      0 0 60px 12px rgba(255, 255, 255, 0.05),
+      0 30px 70px rgba(0, 0, 0, 0.55),
+      0 12px 24px rgba(0, 0, 0, 0.4),
       inset 0 1px 0 rgba(255, 255, 255, 0.08),
       inset 0 -1px 0 rgba(0, 0, 0, 0.35);
   }
