@@ -4771,18 +4771,18 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     place-items: center;
     padding: clamp(24px, 5vw, 80px);
     background:
-      radial-gradient(ellipse at 50% 40%, #181818 0%, #0a0a0a 55%, #000 100%);
+      radial-gradient(ellipse at 50% 40%, #ffffff 0%, #f7f7f9 60%, #ececf0 100%);
     isolation: isolate;
   }
 
   .pf-hero-media-wrap--has-video::before {
-    /* Tech grid overlay */
+    /* Tech grid overlay (dark on white) */
     content: '';
     position: absolute;
     inset: 0;
     background-image:
-      linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+      linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
     background-size: 60px 60px, 60px 60px;
     mask-image: radial-gradient(ellipse at center, black 55%, transparent 100%);
     -webkit-mask-image: radial-gradient(ellipse at center, black 55%, transparent 100%);
@@ -4791,7 +4791,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
   }
 
   .pf-hero-media-wrap--has-video::after {
-    /* Subtle white halo behind device for depth */
+    /* Soft darker halo for depth on white */
     content: '';
     position: absolute;
     left: 50%;
@@ -4800,7 +4800,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     aspect-ratio: 1 / 1;
     max-height: 120%;
     transform: translate(-50%, -50%);
-    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0) 55%);
+    background: radial-gradient(circle at center, rgba(0, 0, 0, 0.06) 0%, rgba(0, 0, 0, 0.03) 30%, rgba(0, 0, 0, 0) 60%);
     filter: blur(42px);
     z-index: 0;
     pointer-events: none;
@@ -4823,9 +4823,9 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     background:
       linear-gradient(145deg, #2a2a2e 0%, #1a1a1e 35%, #161619 65%, #232326 100%);
     box-shadow:
-      0 0 60px 12px rgba(255, 255, 255, 0.05),
-      0 30px 70px rgba(0, 0, 0, 0.55),
-      0 12px 24px rgba(0, 0, 0, 0.4),
+      0 40px 80px rgba(0, 0, 0, 0.22),
+      0 16px 32px rgba(0, 0, 0, 0.14),
+      0 4px 12px rgba(0, 0, 0, 0.08),
       inset 0 1px 0 rgba(255, 255, 255, 0.08),
       inset 0 -1px 0 rgba(0, 0, 0, 0.35);
   }
