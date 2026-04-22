@@ -92,9 +92,6 @@ for (let i = 0; i <= currentPlanIdx; i++) {
             ) : (
               <img src={content.hero.image} alt={content.hero.imageAlt} width="1200" height="675" loading="eager" fetchpriority="high" />
             )}
-            <div class="pf-hero-media-overlay" hidden>
-              <p class="pf-hero-media-text">{content.hero.subtitle}</p>
-            </div>
           </div>
         </div>
       </section>
@@ -4765,8 +4762,8 @@ for (let i = 0; i <= currentPlanIdx; i++) {
 
   .pf-hero-media-wrap--has-video .pf-hero-video-frame {
     position: relative;
-    width: min(72%, 560px);
-    aspect-ratio: 1 / 1;
+    width: min(82%, 820px);
+    aspect-ratio: 4 / 3;
     border-radius: 16px;
     overflow: hidden;
     box-shadow:
@@ -4779,8 +4776,9 @@ for (let i = 0; i <= currentPlanIdx; i++) {
   .pf-hero-media-wrap--has-video .pf-hero-video-frame .pf-hero-media-video {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     display: block;
+    background: #fff;
   }
 
   @media (max-width: 640px) {
@@ -4788,7 +4786,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
       padding: clamp(16px, 4vw, 32px);
     }
     .pf-hero-media-wrap--has-video .pf-hero-video-frame {
-      width: min(88%, 420px);
+      width: min(94%, 520px);
       transform: none;
     }
     /* Mobile perf: drop the heavy blur */
