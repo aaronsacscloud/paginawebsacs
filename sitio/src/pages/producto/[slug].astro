@@ -77,6 +77,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                 <div class="pf-ipad-screen">
                   <video
                     class="pf-hero-media-video"
+                    id="pf-hero-video"
                     autoplay
                     muted
                     loop
@@ -90,6 +91,10 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                     {content.hero.video.webm && <source src={content.hero.video.webm} type="video/webm" />}
                     <source src={content.hero.video.mp4} type="video/mp4" />
                   </video>
+                  <button type="button" class="pf-hero-video-toggle" id="pf-hero-video-toggle" aria-label="Pausar video">
+                    <svg class="pf-hero-video-icon pf-hero-video-icon--play" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                    <svg class="pf-hero-video-icon pf-hero-video-icon--pause" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>
+                  </button>
                 </div>
               </div>
             ) : (
@@ -4605,6 +4610,35 @@ for (let i = 0; i <= currentPlanIdx; i++) {
   <FinalCTA />
 </ProductLayout>
 
+<script>
+  // Hero video play/pause on click
+  (() => {
+    const video = document.getElementById('pf-hero-video') as HTMLVideoElement | null;
+    const toggle = document.getElementById('pf-hero-video-toggle') as HTMLButtonElement | null;
+    if (!video) return;
+    const screen = video.parentElement;
+    if (!screen) return;
+    screen.setAttribute('data-paused', 'false');
+    const setState = (paused: boolean) => {
+      screen.setAttribute('data-paused', paused ? 'true' : 'false');
+      if (toggle) toggle.setAttribute('aria-label', paused ? 'Reproducir video' : 'Pausar video');
+    };
+    const togglePlay = (e: Event) => {
+      e.preventDefault();
+      if (video.paused) {
+        video.play().then(() => setState(false)).catch(() => setState(true));
+      } else {
+        video.pause();
+        setState(true);
+      }
+    };
+    screen.addEventListener('click', togglePlay);
+    toggle?.addEventListener('click', (e) => { e.stopPropagation(); togglePlay(e); });
+    video.addEventListener('play', () => setState(false));
+    video.addEventListener('pause', () => setState(true));
+  })();
+</script>
+
 <style>
   /* ═══ Scroll Reveal System ═══ */
   .reveal-item {
@@ -4827,6 +4861,52 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     overflow: hidden;
     background: #000;
     position: relative;
+    cursor: pointer;
+  }
+
+  .pf-hero-video-toggle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    border: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease, background 0.2s ease;
+    z-index: 2;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .pf-ipad-screen:hover .pf-hero-video-toggle,
+  .pf-ipad-screen:focus-within .pf-hero-video-toggle,
+  .pf-ipad-screen[data-paused="true"] .pf-hero-video-toggle {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .pf-hero-video-toggle:hover {
+    background: rgba(0, 0, 0, 0.75);
+  }
+
+  .pf-hero-video-icon {
+    display: none;
+  }
+  .pf-ipad-screen[data-paused="false"] .pf-hero-video-icon--pause,
+  .pf-ipad-screen:not([data-paused]) .pf-hero-video-icon--pause {
+    display: block;
+  }
+  .pf-ipad-screen[data-paused="true"] .pf-hero-video-icon--play {
+    display: block;
   }
 
   .pf-hero-media-wrap--has-video .pf-hero-video-frame .pf-hero-media-video {
