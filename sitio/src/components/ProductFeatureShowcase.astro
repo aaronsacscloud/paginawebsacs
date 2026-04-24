@@ -12,6 +12,7 @@ interface FeatureItem {
   description: string;
   image: string;
   imageAlt: string;
+  video?: { mp4: string; webm?: string; poster?: string; aspectRatio?: string };
   link?: { label: string; href: string };
   details?: DetailPoint[];
 }
@@ -38,8 +39,29 @@ const { items } = Astro.props;
         <div class="pfs-block-bg"></div>
         <div class="pfs-tablet-container container">
           <div class="pfs-tablet">
-            <div class="pfs-tablet-screen">
-              <img src={item.image} alt={item.imageAlt} width="1400" height="900" loading="lazy" />
+            <div
+              class={`pfs-tablet-screen${item.video ? ' pfs-tablet-screen--video' : ''}`}
+              style={item.video?.aspectRatio ? `aspect-ratio:${item.video.aspectRatio}` : undefined}
+            >
+              {item.video ? (
+                <video
+                  class="pfs-tablet-video"
+                  data-pfs-video
+                  poster={item.video.poster}
+                  muted
+                  loop
+                  playsinline
+                  preload="none"
+                  controlslist="nodownload nofullscreen noremoteplayback"
+                  disablepictureinpicture
+                  aria-label={item.imageAlt}
+                >
+                  {item.video.webm && <source src={item.video.webm} type="video/webm" />}
+                  <source src={item.video.mp4} type="video/mp4" />
+                </video>
+              ) : (
+                <img src={item.image} alt={item.imageAlt} width="1400" height="900" loading="lazy" />
+              )}
             </div>
             <div class="pfs-tablet-home"></div>
           </div>
@@ -160,11 +182,27 @@ const { items } = Astro.props;
     border-radius: 10px;
   }
 
-  .pfs-tablet-screen img {
+  .pfs-tablet-screen img,
+  .pfs-tablet-screen video {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
+  }
+
+  .pfs-tablet-screen--video {
+    background: #f5f5f5;
+  }
+
+  .pfs-tablet-screen--video video {
+    cursor: pointer;
+  }
+
+  .pfs-tablet-screen--video video::-webkit-media-controls,
+  .pfs-tablet-screen--video video::-webkit-media-controls-panel,
+  .pfs-tablet-screen--video video::-webkit-media-controls-start-playback-button {
+    display: none !important;
+    -webkit-appearance: none;
   }
 
   .pfs-tablet-home {
@@ -296,5 +334,52 @@ const { items } = Astro.props;
     blocks.forEach((b) => obs.observe(b));
   } else {
     blocks.forEach((b) => b.classList.add('visible'));
+  }
+
+  const videos = document.querySelectorAll<HTMLVideoElement>('video[data-pfs-video]');
+  if (videos.length > 0) {
+    const isUserPaused = (v: HTMLVideoElement) => v.dataset.userPaused === '1';
+
+    videos.forEach((v) => {
+      v.removeAttribute('controls');
+      v.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (v.paused) {
+          v.dataset.userPaused = '0';
+          v.play().catch(() => {});
+        } else {
+          v.dataset.userPaused = '1';
+          v.pause();
+        }
+      });
+    });
+
+    const playWhenVisible = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const v = entry.target as HTMLVideoElement;
+          if (entry.isIntersecting) {
+            if (v.preload !== 'auto') v.preload = 'auto';
+            if (!isUserPaused(v)) v.play().catch(() => {});
+          } else {
+            v.pause();
+          }
+        });
+      },
+      { threshold: 0.25 }
+    );
+    videos.forEach((v) => playWhenVisible.observe(v));
+
+    const onVisibility = () => {
+      videos.forEach((v) => {
+        if (document.hidden) {
+          v.pause();
+        } else if (!isUserPaused(v)) {
+          const r = v.getBoundingClientRect();
+          if (r.top < window.innerHeight && r.bottom > 0) v.play().catch(() => {});
+        }
+      });
+    };
+    document.addEventListener('visibilitychange', onVisibility);
   }
 </script>

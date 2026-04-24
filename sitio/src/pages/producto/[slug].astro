@@ -118,6 +118,21 @@ for (let i = 0; i <= currentPlanIdx; i++) {
               <div class="sq-block-text reveal-item" style="--reveal-delay: 0ms">
                 <h3 class="sq-block-title">{block.title}</h3>
                 <p class="sq-block-desc">{block.description}</p>
+                {block.bullets && (
+                  <ul class="sq-block-bullets">
+                    {block.bullets.map((bullet: any) => (
+                      <li class="sq-block-bullet">
+                        <span class="sq-block-bullet-icon" aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+                        </span>
+                        <span class="sq-block-bullet-text">
+                          <strong class="sq-block-bullet-label">{bullet.label}</strong>
+                          <span class="sq-block-bullet-detail">{bullet.detail}</span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 {block.link && (
                   <a href={block.link.href} class="sq-block-link">
                     {block.link.label}
@@ -2876,73 +2891,9 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                       </div>
                     )}
 
-                    {(!block.variant || block.variant === 'checkout') && (
-                      <Fragment>
-                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M12 18h.01"/></svg>
-                          Celular
-                        </div>
-                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 18h.01"/></svg>
-                          Tablet
-                        </div>
-                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-                          PC
-                        </div>
-                      </Fragment>
-                    )}
 
-                    {block.variant === 'pickup' && (
-                      <Fragment>
-                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-                          Tienda online
-                        </div>
-                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V10l9-7 9 7v11"/><path d="M9 21v-8h6v8"/></svg>
-                          Sucursal elegida
-                        </div>
-                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM17 17h4M14 20h3M20 14v3M20 20h1"/></svg>
-                          Entrega con QR
-                        </div>
-                      </Fragment>
-                    )}
 
-                    {block.variant === 'endless-aisle' && (
-                      <Fragment>
-                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                          Stock global
-                        </div>
-                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 4v16"/></svg>
-                          Traspaso 1-click
-                        </div>
-                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
-                          Venta asegurada
-                        </div>
-                      </Fragment>
-                    )}
 
-                    {block.variant === 'control-central' && (
-                      <Fragment>
-                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>
-                          Tiempo real
-                        </div>
-                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10M12 2a15.3 15.3 0 00-4 10 15.3 15.3 0 004 10M2 12h20"/></svg>
-                          Multi-sucursal
-                        </div>
-                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/><rect x="2" y="6" width="20" height="12" rx="2" fill="none"/></svg>
-                          Móvil y web
-                        </div>
-                      </Fragment>
-                    )}
 
                     {block.variant === 'promo-auto' && (
                       <Fragment>
@@ -5140,6 +5091,54 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     line-height: 1.65;
     color: var(--color-text-secondary, #4A4A4A);
     margin: 0;
+  }
+
+  .sq-block-bullets {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-5, 20px) 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .sq-block-bullet {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .sq-block-bullet-icon {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(37, 99, 235, 0.1);
+    color: #2563EB;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+  }
+
+  .sq-block-bullet-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sq-block-bullet-label {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--color-text-primary, #1a1a2e);
+    line-height: 1.3;
+  }
+
+  .sq-block-bullet-detail {
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--color-text-secondary, #4A4A4A);
   }
 
   .sq-block-link {

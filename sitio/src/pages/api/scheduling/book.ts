@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { google } from 'googleapis';
 import { supabase } from '../../../lib/supabase';
 import { createCalendarEvent } from '../../../lib/google-calendar';
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
@@ -6,6 +7,63 @@ import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 export const prerender = false;
 
 const RESEND_API_KEY = (import.meta.env.RESEND_API_KEY || '').trim();
+const SHEET_ID = (import.meta.env.GOOGLE_SHEETS_SPREADSHEET_ID || '').trim();
+
+function getSheetsAuth() {
+  const b64 = import.meta.env.GOOGLE_SERVICE_ACCOUNT_B64 || '';
+  if (!b64) return null;
+  try {
+    const creds = JSON.parse(Buffer.from(b64, 'base64').toString('utf-8'));
+    return new google.auth.GoogleAuth({
+      credentials: creds,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+  } catch { return null; }
+}
+
+async function appendBookingToSheet(data: {
+  nombre: string;
+  empresa?: string;
+  email: string;
+  whatsapp?: string;
+  giro?: string;
+  sucursales?: number;
+  fecha: string;
+  hora_inicio: string;
+  event_type: string;
+}) {
+  if (!SHEET_ID) return;
+  const auth = getSheetsAuth();
+  if (!auth) return;
+  const sheets = google.sheets({ version: 'v4', auth });
+  const now = new Date();
+  const fechaRegistro = now.toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', year: 'numeric', month: '2-digit', day: '2-digit' });
+  const horaRegistro = now.toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit' });
+  const row = [
+    fechaRegistro,
+    horaRegistro,
+    data.nombre || '',
+    data.empresa || '',
+    data.email || '',
+    data.whatsapp || '',
+    data.giro || '',
+    String(data.sucursales || ''),
+    `Demo ${data.fecha} ${data.hora_inicio}`,
+    `📅 BOOKING-${(data.event_type || 'demo').toUpperCase()}`,
+    '',
+    '',
+    '',
+    '',
+    '',
+    '',
+  ];
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SHEET_ID,
+    range: 'Leads!A:P',
+    valueInputOption: 'USER_ENTERED',
+    requestBody: { values: [row] },
+  });
+}
 
 function replaceEmailTokens(text: string, data: { nombre?: string; empresa?: string; fecha?: string; hora?: string; duracion?: number; meet_link?: string }): string {
   return (text || '')
@@ -766,6 +824,23 @@ export const POST: APIRoute = async ({ request }) => {
       },
       automatico: true,
     });
+  }
+
+  // 13b. Google Sheets backup (fire-and-forget, marcado como BOOKING)
+  try {
+    await appendBookingToSheet({
+      nombre,
+      empresa,
+      email,
+      whatsapp,
+      giro,
+      sucursales: typeof sucursales === 'number' ? sucursales : parseInt(sucursales || '') || undefined,
+      fecha,
+      hora_inicio,
+      event_type: eventType.slug,
+    });
+  } catch (sheetErr) {
+    console.error('Google Sheets booking log failed:', sheetErr);
   }
 
   // 14. Fire webhook

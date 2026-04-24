@@ -39,21 +39,31 @@ export const pageContent: Record<string, any> = {
     blocks: [
       {
         title: 'Atiende al cliente, no a la caja.',
-        description: 'Consulta stock en tiempo real, comparte fichas de producto, recomienda según el historial de compra del cliente y cobra con tarjeta, efectivo, SPEI u OXXO — todo desde un mismo dispositivo. Celular, tablet o PC: atiende donde el cliente esté.',
+        description: 'El POS se mueve contigo — tableta, teléfono o PC. Consulta stock, muestra fotos, recomienda y cobra desde cualquier punto de la tienda, sin regresar a la caja.',
         image: '/images/pos-boutique-atencion.webp',
         imageAlt: 'Vendedora atendiendo a clienta con SACS POS en tablet dentro de boutique',
         link: null,
         featured: true,
         variant: 'checkout',
+        bullets: [
+          { label: 'En cualquier lugar de la tienda', detail: 'Tablet, celular o PC — atiendes junto al probador, en el piso de venta o donde el cliente esté.' },
+          { label: 'Venta consultiva al instante', detail: 'Consulta stock, muestra fotos y fichas, y recomienda según el historial de compra del cliente.' },
+          { label: 'Cobra como el cliente prefiera', detail: 'Tarjeta, efectivo, SPEI, OXXO o transferencia — cierras la venta en el mismo dispositivo donde la iniciaste.' },
+        ],
       },
       {
         title: 'Cada sucursal, un centro de pickup inteligente.',
-        description: 'El pedido de tu tienda en línea aparece automáticamente en el POS de la sucursal que el cliente eligió. Cuando llega, escanea su QR y entregas — sin buscar, sin copiar datos, sin llamadas. Tienda online, inventario y sucursales, conectadas en un mismo sistema.',
+        description: 'Tu tienda en línea y tus sucursales son el mismo sistema — el pedido aparece en el POS correcto y el cliente recoge con un QR, sin llamadas ni capturas a mano.',
         image: '/images/pos-pickup-qr.webp',
         imageAlt: 'Vendedora entregando paquete a clienta que muestra QR de pickup en tienda',
         link: { label: 'Ver apartados y pedidos', href: '/producto/apartados-y-pedidos' },
         featured: true,
         variant: 'pickup',
+        bullets: [
+          { label: 'Pedido directo al POS correcto', detail: 'Apenas el cliente confirma en la tienda online, el pedido aparece en la sucursal que eligió.' },
+          { label: 'Inventario sincronizado', detail: 'Lo que se vende online descuenta en tiempo real del stock físico de esa sucursal.' },
+          { label: 'Entrega con QR', detail: 'El cliente muestra su QR, lo escaneas, se cierra el pedido. Sin verificar ID ni capturar datos a mano.' },
+        ],
       },
       {
         title: 'Vende lo que tienes en otra sucursal.',
@@ -63,6 +73,11 @@ export const pageContent: Record<string, any> = {
         link: { label: 'Ver inventario omnicanal', href: '/producto/inventario-omnicanal' },
         featured: true,
         variant: 'endless-aisle',
+        bullets: [
+          { label: 'Stock global', detail: 'Consulta inventario de todas las sucursales sin salir del POS.' },
+          { label: 'Traspaso 1-click', detail: 'Agenda envío o traspaso al momento, sin llamadas entre tiendas.' },
+          { label: 'Venta asegurada', detail: 'Cobras ahora aunque el producto esté en otra sucursal.' },
+        ],
       },
       {
         title: 'Todas tus sucursales, una sola vista.',
@@ -72,6 +87,7 @@ export const pageContent: Record<string, any> = {
         link: { label: 'Ver reportes y analítica', href: '/producto/reportes-y-analitica' },
         featured: true,
         variant: 'control-central',
+        cardPosition: 'bottom-right',
       },
     ],
     stats: [
@@ -97,6 +113,12 @@ export const pageContent: Record<string, any> = {
         description: 'Talla que no quedó, color equivocado, cliente que cambió de opinión. SACS automatiza cada caso con la lógica correcta de retail — proteges el ingreso, el cliente queda tranquilo y tu operación no se detiene.',
         image: '/images/screen-pos.webp',
         imageAlt: 'Flujo de cambios y devoluciones en SACS POS',
+        video: {
+          mp4: '/videos/tab-cambios-devoluciones.mp4',
+          webm: '/videos/tab-cambios-devoluciones.webm',
+          poster: '/videos/tab-cambios-devoluciones-poster.webp',
+          aspectRatio: '2056 / 1080',
+        },
         link: null,
         details: [
           {

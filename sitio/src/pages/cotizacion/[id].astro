@@ -70,6 +70,7 @@ const showFirma = quoteMeta.mostrar_firma !== undefined ? quoteMeta.mostrar_firm
 const showQr = quoteMeta.mostrar_qr !== undefined ? quoteMeta.mostrar_qr : true;
 const showAnimaciones = quoteMeta.mostrar_animaciones !== undefined ? quoteMeta.mostrar_animaciones : true;
 const showTimeline = quoteMeta.mostrar_timeline !== undefined ? quoteMeta.mostrar_timeline : true;
+const showPorqueSacs = quoteMeta.mostrar_porque_sacs !== undefined ? quoteMeta.mostrar_porque_sacs : true;
 const timelineTipo = quoteMeta.timeline_tipo || '1suc';
 const showImplementacion = quoteMeta.mostrar_implementacion !== undefined ? quoteMeta.mostrar_implementacion : true;
 const implementacionNota = quoteMeta.implementacion_nota || '';
@@ -153,20 +154,17 @@ const hasTimelineReal = showTimeline && !!timelineTipo;
 const hasImplementacionReal = showImplementacion;
 
 const tabsDef = [
-  { id: 'resumen', label: 'Resumen', show: true },
   { id: 'minuta', label: 'Minuta', show: hasKeyPoints },
-  { id: 'inversion', label: 'Inversión', show: items.length > 0 },
-  { id: 'pagos', label: 'Pagos', show: hasPagosContent },
-  { id: 'incluye', label: 'Incluye', show: hasFeaturesReal },
+  { id: 'inversion', label: 'Inversión', show: items.length > 0 || hasPagosContent || hasFeaturesReal || hasTimelineReal },
   { id: 'roi', label: 'ROI', show: hasRoi },
   { id: 'comparativa', label: 'Comparativa', show: hasAntesDesp },
-  { id: 'timeline', label: 'Timeline', show: hasTimelineReal },
   { id: 'proceso', label: 'Proceso', show: hasImplementacionReal },
   { id: 'condiciones', label: 'Condiciones', show: hasCondiciones },
-  { id: 'firma', label: isPaid ? 'Pagada' : (isAccepted ? 'Confirmación' : 'Aceptar'), show: showFirma || isClosed },
+  { id: 'porque', label: '¿Por qué SACS?', show: showPorqueSacs && (showFirma || isClosed) },
+  { id: 'firma', label: isPaid ? 'Pagada' : (isAccepted ? 'Confirmación' : 'Firmar y aceptar'), show: showFirma || isClosed },
 ];
 const visibleTabs = tabsDef.filter(t => t.show).map(({ id, label }) => ({ id, label }));
-const initialTab = isClosed ? 'firma' : 'resumen';
+const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 ---
 
 <BaseLayout title={`Cotización ${quote.numero} — Sacs`} description={`Cotización para ${quote.empresa}`}>
@@ -200,34 +198,10 @@ const initialTab = isClosed ? 'firma' : 'resumen';
 
 <div class:list={['quote-page', `quote-${template}`, { 'quote-expired-page': isExpired && !isClosed }]} id="quote-doc" data-no-animations={showAnimaciones ? undefined : true} data-initial-tab={initialTab}>
   <div class="quote-container" style="position:relative">
-    {/* State stamp (only one visible at a time) */}
-    {isPaid && (
-      <div class="quote-stamp quote-stamp--paid">
-        <div class="quote-stamp-text">PAGADA</div>
-      </div>
-    )}
-    {isAccepted && !isPaid && (
-      <div class="quote-stamp quote-stamp--accepted">
-        <div class="quote-stamp-text">ACEPTADA</div>
-      </div>
-    )}
-    {isExpired && !isClosed && (
-      <div class="quote-stamp quote-stamp--expired">
-        <div class="quote-stamp-text">VENCIDA</div>
-      </div>
-    )}
-
     {isPaidReturn && (
       <div class="quote-paid-banner">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12a10 10 0 11-5.93-9.14" stroke="#fff" stroke-width="2.5"/><path d="M22 4L12 14.01l-3-3" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>
         <span>Pago recibido. Tu servicio se activa de inmediato.</span>
-      </div>
-    )}
-
-    {isExpired && isClosed && (
-      <div class="quote-expired-note">
-        <span class="quote-expired-note-label">Vigencia original terminada</span>
-        <span class="quote-expired-note-text">Esta cotización {isPaid ? 'fue pagada' : 'fue aceptada'} antes de la fecha de vencimiento.</span>
       </div>
     )}
 
@@ -242,13 +216,24 @@ const initialTab = isClosed ? 'firma' : 'resumen';
         <span class="quote-logo-tag">Cotización</span>
       </div>
       <div class="quote-meta">
+        {isPaid && (
+          <span class="quote-status quote-status--paid"><span class="quote-status-dot"></span>Pagada</span>
+        )}
+        {isAccepted && !isPaid && (
+          <span class="quote-status quote-status--accepted"><span class="quote-status-dot"></span>Aceptada</span>
+        )}
+        {isExpired && !isClosed && (
+          <span class="quote-status quote-status--expired"><span class="quote-status-dot"></span>Vencida</span>
+        )}
+        {!isExpired && !isClosed && !isAccepted && !isPaid && daysLeft > 0 && (
+          <span class="quote-status quote-status--active"><span class="quote-status-dot"></span>Activa</span>
+        )}
         <div class="quote-number">{quote.numero}</div>
-        <div class="quote-date">Fecha: {fecha}</div>
-        <div class="quote-date">Vigencia: {vigenciaFecha}</div>
-        {!isExpired && !isClosed && daysLeft > 0 && <div class="quote-validity">Válida hasta {vigenciaFecha}</div>}
-        {isExpired && !isClosed && <div class="quote-expired">Cotización vencida</div>}
-        {isAccepted && !isPaid && quote.aceptado_fecha && <div class="quote-validity" style="color:#2AB5A0">Aceptada {fmtDate(quote.aceptado_fecha)}</div>}
-        {isPaid && <div class="quote-validity" style="color:#2AB5A0">Pagada</div>}
+        <div class="quote-date">Emitida {fecha}</div>
+        {!isExpired && !isClosed && daysLeft > 0 && <div class="quote-date">Válida hasta {vigenciaFecha} · {daysLeft}d restantes</div>}
+        {isExpired && !isClosed && <div class="quote-date">Venció el {vigenciaFecha}</div>}
+        {isAccepted && !isPaid && quote.aceptado_fecha && <div class="quote-date" style="color:#1e8471;font-weight:600">Aceptada el {fmtDate(quote.aceptado_fecha)}</div>}
+        {isPaid && quote.aceptado_fecha && <div class="quote-date" style="color:#3764c4;font-weight:600">Pagada · Aceptada el {fmtDate(quote.aceptado_fecha)}</div>}
       </div>
     </div>
 
@@ -304,24 +289,12 @@ const initialTab = isClosed ? 'firma' : 'resumen';
     </style>
 
     {/* ═══════════════════════════════════════════════
-         TAB: RESUMEN — summary intro + high-level total
+         HERO DE BIENVENIDA (vive dentro del tab Inversión)
          ═══════════════════════════════════════════════ */}
-    <section class="quote-tab-panel" data-tab="resumen" aria-labelledby="tab-label-resumen">
+    <section class="quote-tab-panel" data-tab="inversion">
       <div class="quote-tab-intro">
         <div class="quote-tab-intro-eyebrow">Bienvenido</div>
         <div class="quote-tab-intro-heading">{summary}</div>
-        <div class="quote-tab-intro-total">
-          <span class="quote-tab-intro-total-label">Inversión total</span>
-          <span class="quote-tab-intro-total-value">{fmt(quote.total || 0)} <span class="quote-tab-intro-total-moneda">{quote.moneda || 'MXN'}</span></span>
-        </div>
-        <div class="quote-tab-intro-nav">
-          {visibleTabs.filter(t => t.id !== 'resumen').slice(0, 3).map(t => (
-            <a href={`#${t.id}`} class="quote-tab-intro-link" data-tab-link={t.id}>
-              <span class="quote-tab-intro-link-label">{t.label}</span>
-              <span class="quote-tab-intro-link-arrow">→</span>
-            </a>
-          ))}
-        </div>
       </div>
     </section>
 
@@ -479,21 +452,13 @@ const initialTab = isClosed ? 'firma' : 'resumen';
       </div>
     </div>
 
-    {hasPagosContent && (
-      <div class="quote-tab-cross">
-        <a href="#pagos" data-tab-link="pagos" class="quote-tab-cross-link">
-          Ver desglose de pagos
-          <span class="quote-tab-cross-arrow">→</span>
-        </a>
-      </div>
-    )}
     </section>
 
     {/* ═══════════════════════════════════════════════
-         TAB: PAGOS — breakdown + bank + pay link
+         PAGOS (ahora vive dentro del tab Inversión)
          ═══════════════════════════════════════════════ */}
     {hasPagosContent && (
-    <section class="quote-tab-panel" data-tab="pagos">
+    <section class="quote-tab-panel" data-tab="inversion">
     <!-- Payment breakdown -->
     {showDesglose && (annualPlanTotal > 0 || uniqueTotal > 0 || monthlyRecurring > 0) && (
       <div class="quote-payments">
@@ -615,10 +580,10 @@ const initialTab = isClosed ? 'firma' : 'resumen';
     )}
 
     {/* ═══════════════════════════════════════════════
-         TAB: INCLUYE
+         INCLUYE (ahora vive dentro del tab Inversión)
          ═══════════════════════════════════════════════ */}
     {hasFeaturesReal && (
-    <section class="quote-tab-panel" data-tab="incluye">
+    <section class="quote-tab-panel" data-tab="inversion">
     <!-- Plan features -->
     {showFeatures && planFeatures.length > 0 && (
       <div class="quote-features">
@@ -673,9 +638,9 @@ const initialTab = isClosed ? 'firma' : 'resumen';
     </section>
     )}
 
-    {/* Bank account — belongs to PAGOS tab (rendered separately here so content stays near paylink) */}
+    {/* Datos bancarios (viven dentro del tab Inversión) */}
     {bankAccount && quote.mostrar_banco && (
-    <section class="quote-tab-panel" data-tab="pagos">
+    <section class="quote-tab-panel" data-tab="inversion">
       <div class="quote-bank">
         <div class="quote-bank-title">Datos para transferencia</div>
         <div class="quote-bank-grid">
@@ -689,9 +654,9 @@ const initialTab = isClosed ? 'firma' : 'resumen';
     </section>
     )}
 
-    {/* Payment link — belongs to PAGOS tab */}
+    {/* Link de pago (vive dentro del tab Inversión) */}
     {quote.link_pago && (
-    <section class="quote-tab-panel" data-tab="pagos">
+    <section class="quote-tab-panel" data-tab="inversion">
       <div class="quote-pay-link">
         <a href={quote.link_pago} target="_blank" rel="noopener" class="quote-pay-btn">Pagar ahora</a>
         <div class="quote-pay-note">Pago seguro. Al completar el pago, tu servicio se activa de inmediato.</div>
@@ -800,8 +765,9 @@ const initialTab = isClosed ? 'firma' : 'resumen';
       <div class="quote-confetti" id="confetti-container"></div>
     </div>
 
-    {/* Why SACS + Conscious — belong to FIRMA tab (conversion content) */}
-    <section class="quote-tab-panel" data-tab="firma">
+    {/* Why SACS + Conscious — tab "¿Por qué SACS?" (configurable) */}
+    {showPorqueSacs && (
+    <section class="quote-tab-panel" data-tab="porque">
     <!-- Why SACS -->
     <div class="quote-why">
       <div class="quote-why-title">¿Por qué Sacs?</div>
@@ -895,12 +861,13 @@ const initialTab = isClosed ? 'firma' : 'resumen';
       <div class="quote-conscious-closing">El futuro del comercio en México es consciente. Y empieza hoy.</div>
     </div>
     </section>
+    )}
 
     {/* ═══════════════════════════════════════════════
-         TAB: TIMELINE (visión a 90 días)
+         TIMELINE (ahora vive dentro del tab Inversión)
          ═══════════════════════════════════════════════ */}
     {hasTimelineReal && (
-    <section class="quote-tab-panel" data-tab="timeline">
+    <section class="quote-tab-panel" data-tab="inversion">
     <!-- Implementation timeline (3 versions based on timelineTipo) -->
     {showTimeline && timelineTipo === '1suc' && (
       <div class="quote-timeline-section">
@@ -1015,8 +982,9 @@ const initialTab = isClosed ? 'firma' : 'resumen';
     </div>
     )}
 
-    {/* Case studies + legal — on FIRMA tab (social proof) */}
-    <section class="quote-tab-panel" data-tab="firma">
+    {/* Case studies — tab "¿Por qué SACS?" (social proof, configurable) */}
+    {showPorqueSacs && (
+    <section class="quote-tab-panel" data-tab="porque">
     <!-- Case studies carousel -->
     <div class="quote-cases">
       <div class="quote-cases-title">Marcas que crecen con Sacs</div>
@@ -1067,8 +1035,11 @@ const initialTab = isClosed ? 'firma' : 'resumen';
         <button class="quote-cases-dot" data-idx="2"></button>
       </div>
     </div>
+    </section>
+    )}
 
-    <!-- Legal -->
+    {/* Legal — vive dentro del tab Firmar y aceptar */}
+    <section class="quote-tab-panel" data-tab="firma">
     <div class="quote-legal">
       Al aceptar esta cotización, confirmas que has leído y aceptas nuestros <a href="https://www.sacscloud.com/terminos" target="_blank" rel="noopener">Términos y condiciones</a> y nuestro <a href="https://www.sacscloud.com/privacidad" target="_blank" rel="noopener">Aviso de privacidad</a>.
     </div>
@@ -1224,15 +1195,20 @@ const initialTab = isClosed ? 'firma' : 'resumen';
 .quote-expired { font-size: 0.6875rem; font-weight: 700; color: #E54B4B; margin-top: 8px; }
 .quote-paid-banner { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 24px; background: #4B7BE5; color: #fff; font-size: 0.875rem; font-weight: 600; }
 
-/* ─── State stamp (expired / accepted / paid) ─── */
-.quote-stamp { position: absolute; top: 140px; right: 40px; transform: rotate(-8deg); z-index: 10; pointer-events: none; }
-.quote-stamp-text { font-family: var(--font-display); font-size: 1.75rem; font-weight: 900; letter-spacing: 0.15em; text-transform: uppercase; white-space: nowrap; border: 3px solid; border-radius: 4px; padding: 4px 16px; }
-.quote-stamp--expired .quote-stamp-text { color: rgba(229,75,75,0.35); border-color: rgba(229,75,75,0.35); }
-.quote-stamp--accepted .quote-stamp-text { color: rgba(42,181,160,0.45); border-color: rgba(42,181,160,0.45); }
-.quote-stamp--paid .quote-stamp-text { color: rgba(75,123,229,0.45); border-color: rgba(75,123,229,0.45); }
-/* Only dim when expired AND not closed (accepted/paid overrides the dim) */
-.quote-expired-page .quote-container > *:not(.quote-stamp):not(.quote-expired-note) { opacity: 0.5; }
-.quote-expired-page .quote-container > .quote-stamp { opacity: 1; }
+/* ─── Status pill (active / expired / accepted / paid) ─── */
+.quote-status { display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px 5px 10px; border-radius: 999px; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 10px; line-height: 1; }
+.quote-status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.quote-status--active { background: rgba(153,153,153,0.1); color: #666; }
+.quote-status--active .quote-status-dot { background: #999; box-shadow: 0 0 0 3px rgba(153,153,153,0.12); }
+.quote-status--accepted { background: rgba(42,181,160,0.12); color: #1e8471; }
+.quote-status--accepted .quote-status-dot { background: #2AB5A0; box-shadow: 0 0 0 3px rgba(42,181,160,0.18); }
+.quote-status--paid { background: rgba(75,123,229,0.12); color: #3764c4; }
+.quote-status--paid .quote-status-dot { background: #4B7BE5; box-shadow: 0 0 0 3px rgba(75,123,229,0.18); }
+.quote-status--expired { background: rgba(229,75,75,0.1); color: #b93333; }
+.quote-status--expired .quote-status-dot { background: #E54B4B; box-shadow: 0 0 0 3px rgba(229,75,75,0.15); }
+/* Only dim when expired AND not closed (accepted/paid = full opacity, informational only) */
+.quote-expired-page .quote-container > *:not(.quote-expired-note):not(.quote-header) { opacity: 0.55; }
+.quote-expired-page .quote-container > .quote-header { opacity: 1; }
 
 /* ─── Expired-but-closed note (informational, non-blocking) ─── */
 .quote-expired-note { padding: 12px 40px; background: #fafafa; border-bottom: 1px solid #f0f0f0; display: flex; gap: 10px; align-items: center; }
@@ -1739,7 +1715,6 @@ const initialTab = isClosed ? 'firma' : 'resumen';
   .quote-pay-btn { background: #4B7BE5 !important; color: #fff !important; }
   .quote-service-tag { background: rgba(42,181,160,0.08) !important; color: #2AB5A0 !important; }
   .quote-paid-banner { background: #4B7BE5 !important; color: #fff !important; }
-  .quote-stamp-text { color: rgba(229,75,75,0.12) !important; border-color: rgba(229,75,75,0.12) !important; }
   .qt-nota { color: #4B7BE5 !important; }
   .quote-plan-name { color: #4B7BE5 !important; }
   .quote-feature-item svg path { stroke: #2AB5A0 !important; }
@@ -1786,8 +1761,7 @@ const initialTab = isClosed ? 'firma' : 'resumen';
   .quote-header { flex-direction: column; gap: 14px; padding: 28px 24px 20px; }
   .quote-meta { text-align: left; }
   .quote-client { padding: 20px 24px; }
-  .quote-stamp { top: 90px; right: 16px; }
-  .quote-stamp-text { font-size: 1.25rem; padding: 3px 12px; letter-spacing: 0.12em; }
+  .quote-status { margin-bottom: 8px; }
   .quote-expired-note { padding: 12px 24px; flex-wrap: wrap; }
   /* Tab intro */
   .quote-tab-intro { padding: 36px 24px 32px; }
