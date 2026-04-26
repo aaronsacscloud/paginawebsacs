@@ -682,6 +682,122 @@ const supportItems = [
                     </div>
                   </div>
                 </div>
+              ) : block.variant === 'customer-panel' ? (
+                <div class="tau-stage tau-stage--cust" aria-hidden="true">
+                  <div class="tau-frame">
+                    <div class="tau-topbar">
+                      <span class="tau-brand">mara.shop</span>
+                      <span class="tau-tab">Mi cuenta · María</span>
+                      <span class="tau-status"><i></i>en vivo</span>
+                    </div>
+
+                    <div class="tau-event">
+                      <span class="tau-evt tau-cevt--a"><i class="tau-evt-dot tau-evt-dot--amber"></i>Pedido #4732 · estamos preparando tu pedido</span>
+                      <span class="tau-evt tau-cevt--b"><i class="tau-evt-dot tau-evt-dot--green"></i>Listo para recoger en Polanco · escanea tu QR</span>
+                      <span class="tau-evt tau-cevt--c"><i class="tau-evt-dot tau-evt-dot--purple"></i>+87 puntos ganados · ahora eres SACS Gold</span>
+                      <span class="tau-evt tau-cevt--d"><i class="tau-evt-dot tau-evt-dot--blue"></i>Para ti: 3 piezas según tus últimas compras</span>
+                    </div>
+
+                    <div class="tau-cust-grid">
+                      <div class="tau-cust-card">
+                        <div class="tau-cust-greet">
+                          <strong class="tau-cust-name">Hola, María</strong>
+                          <span class="tau-cust-sub">Bienvenida de vuelta a mara.shop</span>
+                        </div>
+                        <div class="tau-loyalty">
+                          <div class="tau-loyalty-head">
+                            <span class="tau-loyalty-tier">
+                              <i class="tau-loyalty-star" aria-hidden="true">★</i>
+                              <span class="tau-loyalty-tier-pre">SACS Silver</span>
+                              <span class="tau-loyalty-tier-post">SACS Gold</span>
+                            </span>
+                            <span class="tau-loyalty-pts">
+                              <span class="tau-loyalty-pts-pre">1,153 pts</span>
+                              <span class="tau-loyalty-pts-post">1,240 pts</span>
+                            </span>
+                          </div>
+                          <div class="tau-loyalty-bar">
+                            <span class="tau-loyalty-fill"></span>
+                          </div>
+                          <div class="tau-loyalty-meta">
+                            <span class="tau-loyalty-meta-pre">Te faltan 347 pts para Gold</span>
+                            <span class="tau-loyalty-meta-post">Te faltan 260 pts para Platinum</span>
+                          </div>
+                          <div class="tau-loyalty-pop">
+                            <span>+87 pts</span>
+                            <small>ganados con tu última compra</small>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="tau-order-card">
+                        <div class="tau-order-head">
+                          <div class="tau-order-id">
+                            <span class="tau-order-eyebrow">Pedido</span>
+                            <strong class="tau-order-num">#4732</strong>
+                          </div>
+                          <div class="tau-order-status-wrap">
+                            <span class="tau-order-status tau-order-status--a">En preparación</span>
+                            <span class="tau-order-status tau-order-status--b">Listo para recoger</span>
+                            <span class="tau-order-status tau-order-status--c">✓ Recogido</span>
+                          </div>
+                        </div>
+
+                        <div class="tau-order-progress">
+                          <span class="tau-step"><i></i><span>Recibido</span></span>
+                          <span class="tau-step tau-step--prep"><i></i><span>Preparando</span></span>
+                          <span class="tau-step tau-step--ready"><i></i><span>Listo</span></span>
+                          <span class="tau-step tau-step--done"><i></i><span>Entregado</span></span>
+                        </div>
+
+                        <div class="tau-order-update">
+                          <span class="tau-order-update-line tau-ou--a">Última actualización · hace 4 min</span>
+                          <span class="tau-order-update-line tau-ou--b">Polanco · listo desde las 2:14 pm</span>
+                          <span class="tau-order-update-line tau-ou--c">Recogido por María · 2:38 pm</span>
+                        </div>
+
+                        <div class="tau-order-actions">
+                          <button type="button" class="tau-order-btn tau-order-btn--a">
+                            <span class="tau-order-btn-text">Cambiar a envío a domicilio</span>
+                          </button>
+                          <button type="button" class="tau-order-btn tau-order-btn--b">
+                            <span class="tau-order-qr">
+                              <span></span><span></span><span></span><span></span>
+                            </span>
+                            <span class="tau-order-btn-text">Recoger con QR</span>
+                          </button>
+                          <button type="button" class="tau-order-btn tau-order-btn--c">
+                            <span class="tau-order-btn-text">Comprar otra vez · $117</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="tau-recos">
+                      <div class="tau-recos-head">
+                        <strong>Para ti</strong>
+                        <span>basado en tus últimas compras</span>
+                      </div>
+                      <div class="tau-recos-row">
+                        <div class="tau-reco">
+                          <span class="tau-reco-img" style="background: linear-gradient(135deg, #DCC9B8 0%, #B89A82 100%)"></span>
+                          <span class="tau-reco-name">Bandas de entreno</span>
+                          <span class="tau-reco-price">$30</span>
+                        </div>
+                        <div class="tau-reco">
+                          <span class="tau-reco-img" style="background: linear-gradient(135deg, #C7D5C2 0%, #98AE93 100%)"></span>
+                          <span class="tau-reco-name">Top Sole · M</span>
+                          <span class="tau-reco-price">$45</span>
+                        </div>
+                        <div class="tau-reco">
+                          <span class="tau-reco-img" style="background: linear-gradient(135deg, #DDD0E3 0%, #B59FC2 100%)"></span>
+                          <span class="tau-reco-name">Tote canvas</span>
+                          <span class="tau-reco-price">$28</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <img src={block.image} alt={block.imageAlt} width="1024" height="1024" loading="lazy" />
               )}
@@ -3217,5 +3333,373 @@ const supportItems = [
     .tau-modal-pill { font-size: 9px; padding: 3px 7px; }
     .tau-po-btn { min-width: 130px; height: 28px; }
     .tau-po-btn-pre, .tau-po-btn-post { font-size: 10px; }
+  }
+
+  /* === Customer panel variant === */
+  /* 14s loop: preparing (0-30%) → ready+QR (30-55%) → recogido+puntos (55-80%) → recos highlight (80-100%) */
+  .tau-stage--cust .tau-frame { padding: 16px; gap: 10px; }
+
+  .tau-cevt--a { animation: tauCevtA 14s linear infinite; }
+  .tau-cevt--b { animation: tauCevtB 14s linear infinite; }
+  .tau-cevt--c { animation: tauCevtC 14s linear infinite; }
+  .tau-cevt--d { animation: tauCevtD 14s linear infinite; }
+  @keyframes tauCevtA { 0%, 1% { opacity: 0; } 3%, 28% { opacity: 1; } 30%, 100% { opacity: 0; } }
+  @keyframes tauCevtB { 0%, 30% { opacity: 0; } 32%, 53% { opacity: 1; } 55%, 100% { opacity: 0; } }
+  @keyframes tauCevtC { 0%, 55% { opacity: 0; } 57%, 78% { opacity: 1; } 80%, 100% { opacity: 0; } }
+  @keyframes tauCevtD { 0%, 80% { opacity: 0; } 82%, 96% { opacity: 1; } 98%, 100% { opacity: 0; } }
+
+  .tau-cust-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 1.1fr;
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* === LEFT: customer + loyalty card === */
+  .tau-cust-card {
+    background: #FBFAF6;
+    border: 1px solid #ECE7DD;
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+  }
+  .tau-cust-greet { display: flex; flex-direction: column; gap: 1px; }
+  .tau-cust-name { font-size: 14px; font-weight: 800; color: #1F1A18; letter-spacing: -0.01em; }
+  .tau-cust-sub { font-size: 10px; color: #6F6657; font-weight: 600; }
+
+  .tau-loyalty {
+    background: #FFFFFF;
+    border: 1px solid #ECE7DD;
+    border-radius: 8px;
+    padding: 10px 11px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    position: relative;
+    overflow: hidden;
+  }
+  .tau-loyalty-head { display: flex; justify-content: space-between; align-items: center; }
+  .tau-loyalty-tier {
+    position: relative;
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 800; color: #1F1A18;
+    min-width: 95px;
+  }
+  .tau-loyalty-star { color: #E8A838; font-style: normal; font-size: 12px; }
+  .tau-loyalty-tier-pre,
+  .tau-loyalty-tier-post {
+    opacity: 0;
+    white-space: nowrap;
+  }
+  .tau-loyalty-tier-pre { position: relative; animation: tauCustShowPre 14s linear infinite; }
+  .tau-loyalty-tier-post {
+    position: absolute; left: 14px;
+    color: #B27317;
+    animation: tauCustShowPost 14s linear infinite;
+  }
+
+  .tau-loyalty-pts {
+    position: relative;
+    display: inline-block;
+    min-width: 70px;
+    height: 16px;
+    text-align: right;
+    font-size: 11px; font-weight: 800;
+  }
+  .tau-loyalty-pts-pre,
+  .tau-loyalty-pts-post {
+    position: absolute; right: 0; top: 0;
+    opacity: 0;
+  }
+  .tau-loyalty-pts-pre { color: #5A5147; animation: tauCustShowPre 14s linear infinite; }
+  .tau-loyalty-pts-post { color: #2D8C5F; animation: tauCustShowPostPop 14s linear infinite; }
+
+  .tau-loyalty-bar {
+    height: 6px;
+    background: #F0EBE0;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .tau-loyalty-fill {
+    display: block; height: 100%;
+    background: linear-gradient(90deg, #E8A838 0%, #C77F18 100%);
+    border-radius: 3px;
+    width: 67%;
+    animation: tauLoyaltyFill 14s linear infinite;
+  }
+  @keyframes tauLoyaltyFill { 0%, 55% { width: 67%; } 65%, 100% { width: 78%; } }
+
+  .tau-loyalty-meta {
+    position: relative; height: 14px;
+    font-size: 9.5px; font-weight: 600;
+  }
+  .tau-loyalty-meta-pre,
+  .tau-loyalty-meta-post {
+    position: absolute; inset: 0; opacity: 0;
+  }
+  .tau-loyalty-meta-pre { color: #6F6657; animation: tauCustShowPre 14s linear infinite; }
+  .tau-loyalty-meta-post { color: #1F1A18; animation: tauCustShowPost 14s linear infinite; }
+
+  .tau-loyalty-pop {
+    position: absolute;
+    bottom: 8px; right: 10px;
+    background: #1F6B43;
+    color: #FFFFFF;
+    border-radius: 999px;
+    padding: 5px 12px;
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 800;
+    box-shadow: 0 6px 18px rgba(31, 107, 67, 0.25);
+    transform: scale(0.8) translateY(8px);
+    opacity: 0;
+    animation: tauLoyaltyPop 14s linear infinite;
+  }
+  .tau-loyalty-pop small { font-size: 8.5px; font-weight: 600; opacity: 0.85; }
+  @keyframes tauLoyaltyPop {
+    0%, 56% { opacity: 0; transform: scale(0.8) translateY(8px); }
+    60% { opacity: 1; transform: scale(1.08) translateY(0); }
+    65%, 78% { opacity: 1; transform: scale(1) translateY(0); }
+    80%, 100% { opacity: 0; transform: scale(0.95) translateY(-4px); }
+  }
+
+  /* === RIGHT: order card === */
+  .tau-order-card {
+    background: #FFFFFF;
+    border: 1px solid #ECE7DD;
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+  }
+  .tau-order-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .tau-order-id { display: flex; flex-direction: column; gap: 1px; }
+  .tau-order-eyebrow {
+    font-size: 9px; color: #968B7C; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .tau-order-num { font-size: 16px; font-weight: 800; color: #1F1A18; letter-spacing: -0.01em; }
+
+  .tau-order-status-wrap { position: relative; min-width: 130px; height: 24px; }
+  .tau-order-status {
+    position: absolute; right: 0; top: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 10.5px; font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+    opacity: 0;
+  }
+  .tau-order-status--a { background: #FBEFD2; color: #B27317; animation: tauOsA 14s linear infinite; }
+  .tau-order-status--b { background: #DDF2E5; color: #1F6B43; animation: tauOsB 14s linear infinite; }
+  .tau-order-status--c { background: #1F6B43; color: #FFFFFF; animation: tauOsC 14s linear infinite; }
+  @keyframes tauOsA { 0%, 1% { opacity: 0; } 3%, 28% { opacity: 1; } 30%, 100% { opacity: 0; } }
+  @keyframes tauOsB { 0%, 30% { opacity: 0; } 32%, 53% { opacity: 1; } 55%, 100% { opacity: 0; } }
+  @keyframes tauOsC { 0%, 55% { opacity: 0; } 57%, 100% { opacity: 1; } }
+
+  /* Progress steps */
+  .tau-order-progress {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    background: #F8F5EE;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #ECE7DD;
+  }
+  .tau-step {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    font-size: 8.5px; color: #968B7C; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    text-align: center;
+  }
+  .tau-step i {
+    width: 18px; height: 6px;
+    background: #E0DACE;
+    border-radius: 3px;
+  }
+  /* step 1 (Recibido) — always done */
+  .tau-step:nth-child(1) i { background: #2563EB; }
+  .tau-step:nth-child(1) { color: #1F1A18; }
+  /* step 2 (Preparando) — done by phase b */
+  .tau-step--prep i { background: #E0DACE; animation: tauStepPrep 14s linear infinite; }
+  .tau-step--prep { animation: tauStepPrepText 14s linear infinite; }
+  @keyframes tauStepPrep { 0%, 8% { background: #E0DACE; } 10%, 100% { background: #2563EB; } }
+  @keyframes tauStepPrepText { 0%, 8% { color: #968B7C; } 10%, 100% { color: #1F1A18; } }
+  /* step 3 (Listo) — active during phase b */
+  .tau-step--ready i { background: #E0DACE; animation: tauStepReady 14s linear infinite; }
+  .tau-step--ready { animation: tauStepReadyText 14s linear infinite; }
+  @keyframes tauStepReady { 0%, 30% { background: #E0DACE; } 33%, 100% { background: #2D8C5F; } }
+  @keyframes tauStepReadyText { 0%, 30% { color: #968B7C; } 33%, 100% { color: #1F1A18; } }
+  /* step 4 (Entregado) — done in phase c */
+  .tau-step--done i { background: #E0DACE; animation: tauStepDone 14s linear infinite; }
+  .tau-step--done { animation: tauStepDoneText 14s linear infinite; }
+  @keyframes tauStepDone { 0%, 55% { background: #E0DACE; } 58%, 100% { background: #1F6B43; } }
+  @keyframes tauStepDoneText { 0%, 55% { color: #968B7C; } 58%, 100% { color: #1F1A18; } }
+
+  /* Update line */
+  .tau-order-update { position: relative; height: 16px; font-size: 10px; color: #5A5147; font-weight: 600; }
+  .tau-order-update-line { position: absolute; inset: 0; opacity: 0; }
+  .tau-ou--a { animation: tauOsA 14s linear infinite; }
+  .tau-ou--b { color: #1F6B43; animation: tauOsB 14s linear infinite; }
+  .tau-ou--c { color: #1F6B43; animation: tauOsC 14s linear infinite; }
+
+  /* Action buttons */
+  .tau-order-actions { position: relative; height: 38px; margin-top: auto; }
+  .tau-order-btn {
+    position: absolute; inset: 0;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    border: none;
+    border-radius: 8px;
+    font-size: 11.5px; font-weight: 700;
+    padding: 0 14px;
+    cursor: default;
+    opacity: 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  }
+  .tau-order-btn--a {
+    background: #FFFFFF;
+    border: 1.5px solid #2563EB;
+    color: #2563EB;
+    animation: tauOsA 14s linear infinite;
+  }
+  .tau-order-btn--b {
+    background: #2563EB;
+    color: #FFFFFF;
+    animation: tauOsB 14s linear infinite;
+  }
+  .tau-order-btn--c {
+    background: #1F6B43;
+    color: #FFFFFF;
+    animation: tauOsC 14s linear infinite;
+  }
+
+  /* Mini QR icon */
+  .tau-order-qr {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5px;
+    width: 14px; height: 14px;
+  }
+  .tau-order-qr span {
+    background: #FFFFFF;
+    border-radius: 1px;
+  }
+  .tau-order-qr span:nth-child(2) { background: rgba(255, 255, 255, 0.6); }
+  .tau-order-qr span:nth-child(3) { background: rgba(255, 255, 255, 0.6); }
+
+  /* === Bottom: recommendations === */
+  .tau-recos {
+    background: #FBFAF6;
+    border: 1px solid #ECE7DD;
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transform: scale(1);
+    animation: tauRecosHighlight 14s linear infinite;
+  }
+  @keyframes tauRecosHighlight {
+    0%, 78% { box-shadow: none; transform: scale(1); }
+    82% { box-shadow: 0 8px 24px rgba(37, 99, 235, 0.18); transform: scale(1.01); }
+    93% { box-shadow: 0 8px 24px rgba(37, 99, 235, 0.18); transform: scale(1.01); }
+    97%, 100% { box-shadow: none; transform: scale(1); }
+  }
+  .tau-recos-head {
+    display: flex; align-items: baseline; gap: 8px;
+    font-size: 11px;
+  }
+  .tau-recos-head strong { color: #1F1A18; font-weight: 800; letter-spacing: -0.005em; }
+  .tau-recos-head span { color: #6F6657; font-weight: 600; font-size: 10px; }
+  .tau-recos-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .tau-reco {
+    background: #FFFFFF;
+    border: 1px solid #ECE7DD;
+    border-radius: 8px;
+    padding: 7px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transform: translateY(6px);
+    opacity: 0.6;
+    animation: tauRecoShow 14s linear infinite;
+  }
+  .tau-reco:nth-child(1) { animation-delay: 0s; }
+  .tau-reco:nth-child(2) { animation-delay: 0.15s; }
+  .tau-reco:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes tauRecoShow {
+    0%, 78% { transform: translateY(6px); opacity: 0.6; }
+    82%, 96% { transform: translateY(0); opacity: 1; }
+    98%, 100% { transform: translateY(0); opacity: 0.85; }
+  }
+  .tau-reco-img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1.2 / 1;
+    border-radius: 6px;
+  }
+  .tau-reco-name { font-size: 9.5px; font-weight: 700; color: #1F1A18; }
+  .tau-reco-price { font-size: 10px; font-weight: 800; color: #2563EB; }
+
+  /* Shared show/hide for pre/post pairs */
+  @keyframes tauCustShowPre {
+    0%, 53% { opacity: 1; }
+    56%, 100% { opacity: 0; }
+  }
+  @keyframes tauCustShowPost {
+    0%, 53% { opacity: 0; }
+    58%, 100% { opacity: 1; }
+  }
+  @keyframes tauCustShowPostPop {
+    0%, 56% { opacity: 0; transform: scale(0.92); }
+    59% { opacity: 1; transform: scale(1.18); }
+    63%, 100% { opacity: 1; transform: scale(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tau-stage--cust *,
+    .tau-stage--cust *::before,
+    .tau-stage--cust *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+    .tau-cevt--b, .tau-order-status--b, .tau-order-btn--b, .tau-ou--b {
+      opacity: 1 !important;
+    }
+    .tau-cevt--a, .tau-cevt--c, .tau-cevt--d,
+    .tau-order-status--a, .tau-order-status--c,
+    .tau-order-btn--a, .tau-order-btn--c,
+    .tau-ou--a, .tau-ou--c,
+    .tau-loyalty-pop, .tau-loyalty-tier-post, .tau-loyalty-pts-post, .tau-loyalty-meta-post {
+      opacity: 0 !important;
+    }
+    .tau-loyalty-tier-pre, .tau-loyalty-pts-pre, .tau-loyalty-meta-pre {
+      opacity: 1 !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .tau-stage--cust .tau-frame { padding: 12px; gap: 8px; }
+    .tau-cust-grid { grid-template-columns: 1fr; gap: 8px; }
+    .tau-cust-name { font-size: 12px; }
+    .tau-loyalty-tier, .tau-loyalty-pts { font-size: 10px; }
+    .tau-order-num { font-size: 13px; }
+    .tau-order-status { font-size: 9.5px; padding: 3px 8px; }
+    .tau-step { font-size: 7.5px; }
+    .tau-order-btn { font-size: 10.5px; }
+    .tau-recos-row { grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
+    .tau-reco-name { font-size: 8.5px; }
+    .tau-reco-price { font-size: 9px; }
+    .tau-loyalty-pop { font-size: 10px; padding: 4px 9px; }
   }
 </style>
