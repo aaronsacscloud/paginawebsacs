@@ -831,7 +831,7 @@ export const pageContent: Record<string, any> = {
   'tienda-en-linea': {
     hero: {
       eyebrow: 'SACS Tienda en Línea',
-      title: 'Un solo catálogo. Una sola caja. Online y en piso.',
+      title: 'Un solo inventario. Tus tiendas físicas y tu tienda en línea, en tiempo real.',
       subtitle: 'Tu tienda en línea ya no vive aparte. Cada venta online baja stock en la sucursal correcta y cada cambio en caja se refleja en tu sitio al instante.',
       image: '/images/tienda-online-hero.webp',
       imageAlt: 'Dueña de boutique revisando tienda en línea conectada a inventario físico',

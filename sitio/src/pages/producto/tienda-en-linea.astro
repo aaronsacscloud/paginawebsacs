@@ -231,7 +231,7 @@ const supportItems = [
   description={feature.description}
   currentSlug={slug}
   currentPillar={pillar.id}
-  preloadImage={content?.hero?.image}
+  preloadImage="/images/cm-boutique.webp"
 >
   <section class="pf-hero-centered">
     <div class="pf-hero-centered-inner container">
@@ -249,11 +249,273 @@ const supportItems = [
             <div class="pf-hero-video-frame pf-hero-video-frame--ipad">
               <span class="pf-ipad-cam" aria-hidden="true"></span>
               <div class="pf-ipad-screen">
-                {content.hero.image ? (
-                  <img src={content.hero.image} alt={content.hero.imageAlt} width="1200" height="675" loading="eager" fetchpriority="high" />
-                ) : (
-                  <div class="pf-ipad-placeholder" aria-hidden="true"></div>
-                )}
+                <div class="pf-storemock" aria-hidden="true">
+                  <div class="pf-storemock-stage">
+
+                    <div class="pf-pos">
+                      <div class="pf-pos-head">
+                        <div class="pf-pos-user">
+                          <div class="pf-pos-avatar">L</div>
+                          <div class="pf-pos-userinfo">
+                            <span class="pf-pos-name">Lucía</span>
+                            <span class="pf-pos-caja">Caja Mara CDMX <span class="pf-pos-conn"><i class="pf-pos-conn-dot"></i> Conexión estable</span></span>
+                          </div>
+                        </div>
+                        <button class="pf-pos-actions">▦ Más acciones ▾</button>
+                      </div>
+
+                      <div class="pf-pos-body">
+                        <div class="pf-pos-left">
+                          <div class="pf-pos-search">
+                            <span class="pf-pos-search-icon">⌕</span>
+                            <span class="pf-pos-search-ph">Busca el nombre del producto, sku o código de barras</span>
+                          </div>
+                          <div class="pf-pos-tiles">
+                            <div class="pf-pos-tile pf-pos-tile--quick">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="#5DA866" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h2l2.4 11.2a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.6L21 8H6"/><circle cx="9" cy="20" r="1"/><circle cx="17" cy="20" r="1"/></svg>
+                              <span class="pf-pos-tile-name">Venta rápida</span>
+                            </div>
+                            <div class="pf-pos-tile" style="background:#9DC881"><span class="pf-pos-tile-name">NOVEDADES</span><span class="pf-pos-tile-tag">Carpeta</span></div>
+                            <div class="pf-pos-tile" style="background:#C9A4DD"><span class="pf-pos-tile-name">ROPA</span><span class="pf-pos-tile-tag">Carpeta</span></div>
+                            <div class="pf-pos-tile" style="background:#9CCDD2"><span class="pf-pos-tile-name">CALZADO</span><span class="pf-pos-tile-tag">Carpeta</span></div>
+                            <div class="pf-pos-tile pf-pos-tile--product">
+                              <div class="pf-pos-tile-img">
+                                <img src="/images/cm-boutique.webp" alt="" width="160" height="160" loading="eager" fetchpriority="high" />
+                              </div>
+                              <span class="pf-pos-tile-name">Blusa Sole</span>
+                              <span class="pf-pos-tile-price">$1,290</span>
+                            </div>
+                            <div class="pf-pos-tile" style="background:#D480D2"><span class="pf-pos-tile-name">BELLEZA</span><span class="pf-pos-tile-tag">Carpeta</span></div>
+                            <div class="pf-pos-tile" style="background:#BCD0EE"><span class="pf-pos-tile-name">VESTIDOS</span><span class="pf-pos-tile-tag">Carpeta</span></div>
+                            <div class="pf-pos-tile" style="background:#4F837E"><span class="pf-pos-tile-name">PROMOCIONES</span><span class="pf-pos-tile-tag">Carpeta</span></div>
+                          </div>
+                        </div>
+
+                        <div class="pf-pos-right">
+                          <div class="pf-pos-tabs">
+                            <span>Guardar</span>
+                            <span>Ventas</span>
+                            <span>Pedidos</span>
+                            <span class="pf-pos-tab-clear">Limpiar</span>
+                          </div>
+                          <div class="pf-pos-customer">
+                            <span class="pf-pos-customer-tag">EN PISO</span>
+                            <span class="pf-pos-customer-id">Sofía R. · pago directo</span>
+                          </div>
+                          <div class="pf-pos-cart">
+                            <div class="pf-pos-cart-row">
+                              <div class="pf-pos-cart-thumb"><img src="/images/cm-boutique.webp" alt="" width="40" height="50" loading="lazy" /></div>
+                              <div class="pf-pos-cart-info">
+                                <span class="pf-pos-cart-name">Blusa Sole</span>
+                                <span class="pf-pos-cart-variant">Talla M · Crema · 1 pieza</span>
+                              </div>
+                              <span class="pf-pos-cart-price">1,290.00</span>
+                            </div>
+                            <div class="pf-pos-stockpill">
+                              <span class="pf-pos-stockpill-label">Stock Blusa Sole · sincronizando</span>
+                              <span class="pf-pos-stockpill-num">
+                                <span class="pf-pos-stock-from">12</span>
+                                <span class="pf-pos-stock-arrow">→</span>
+                                <span class="pf-pos-stock-to">11</span>
+                              </span>
+                              <span class="pf-pos-stockpill-sync"><i class="pf-pos-syncdot"></i> POS y tienda online en línea</span>
+                            </div>
+                          </div>
+                          <div class="pf-pos-totals">
+                            <div class="pf-pos-totals-row"><span>Subtotal</span><span class="pf-pos-totals-amt">$1,112.07</span></div>
+                            <div class="pf-pos-totals-row pf-pos-totals-row--muted"><span>IVA 16%</span><span>$177.93</span></div>
+                          </div>
+                          <button type="button" class="pf-pos-pay">
+                            <span class="pf-pos-pay-label pf-pos-pay-label--idle">
+                              <span class="pf-pos-pay-text">COBRAR EN PISO</span>
+                              <span class="pf-pos-pay-amt">$1,290.00 <small>MXN</small></span>
+                            </span>
+                            <span class="pf-pos-pay-label pf-pos-pay-label--done">
+                              <span class="pf-pos-pay-text">✓ COBRADO</span>
+                              <span class="pf-pos-pay-amt-done">Sincronizando con mara.shop…</span>
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="pf-online">
+                      <div class="pf-online-bar">
+                        <span class="pf-online-dots"><i></i><i></i><i></i></span>
+                        <span class="pf-online-urls">
+                          <span class="pf-online-url pf-online-url--catalog">mara.shop / tienda</span>
+                          <span class="pf-online-url pf-online-url--pdp">mara.shop / blusa-sole</span>
+                          <span class="pf-online-url pf-online-url--cart">mara.shop / bolsa</span>
+                          <span class="pf-online-url pf-online-url--confirm">mara.shop / pedido / m-1042</span>
+                        </span>
+                        <span class="pf-online-bag">
+                          <span class="pf-online-bag-icon" aria-hidden="true">⌒</span>
+                          Bolsa ·
+                          <span class="pf-online-bag-count">
+                            <span class="pf-online-bag-count--zero">0</span>
+                            <span class="pf-online-bag-count--one">1</span>
+                          </span>
+                        </span>
+                      </div>
+                      <div class="pf-online-site">
+                        <header class="pf-online-nav">
+                          <span class="pf-online-logo">Mara</span>
+                          <nav class="pf-online-links">
+                            <span>Tienda</span>
+                            <span>Lookbook</span>
+                            <span>Atelier</span>
+                            <span>Diario</span>
+                          </nav>
+                          <span class="pf-online-search">⌕</span>
+                        </header>
+
+                        <div class="pf-online-stage">
+
+                          <section class="pf-scene pf-scene--catalog">
+                            <div class="pf-cat-head">
+                              <span class="pf-cat-eyebrow">Edición Otoño · 26</span>
+                              <span class="pf-cat-meta">12 piezas · stock real desde POS</span>
+                            </div>
+                            <div class="pf-cat-grid">
+                              <article class="pf-cat-tile">
+                                <div class="pf-cat-tile-img"><img src="/images/reco-blazer.webp" alt="" width="220" height="280" loading="lazy" /></div>
+                                <span class="pf-cat-tile-name">Saco Liana</span>
+                                <span class="pf-cat-tile-price">$2,490</span>
+                              </article>
+                              <article class="pf-cat-tile pf-cat-tile--featured">
+                                <div class="pf-cat-tile-img">
+                                  <img src="/images/cm-boutique.webp" alt="" width="220" height="280" loading="eager" fetchpriority="high" />
+                                  <span class="pf-cat-tile-stockbadge">
+                                    <span class="pf-cat-tile-stockbadge-dot"></span>
+                                    <span class="pf-cat-tile-stockbadge-text">Quedan <b>11</b> · stock real</span>
+                                  </span>
+                                </div>
+                                <span class="pf-cat-tile-name">Blusa Sole</span>
+                                <span class="pf-cat-tile-price">$1,290</span>
+                                <div class="pf-cat-tile-cursor" aria-hidden="true"></div>
+                              </article>
+                              <article class="pf-cat-tile">
+                                <div class="pf-cat-tile-img"><img src="/images/reco-falda.webp" alt="" width="220" height="280" loading="lazy" /></div>
+                                <span class="pf-cat-tile-name">Falda Otoño</span>
+                                <span class="pf-cat-tile-price">$1,790</span>
+                              </article>
+                              <article class="pf-cat-tile">
+                                <div class="pf-cat-tile-img"><img src="/images/reco-blusa.webp" alt="" width="220" height="280" loading="lazy" /></div>
+                                <span class="pf-cat-tile-name">Top Marina</span>
+                                <span class="pf-cat-tile-price">$1,490</span>
+                              </article>
+                            </div>
+                          </section>
+
+                          <section class="pf-scene pf-scene--pdp">
+                            <span class="pf-pdp-back">← Tienda</span>
+                            <div class="pf-pdp-grid">
+                              <div class="pf-pdp-img">
+                                <img src="/images/cm-boutique.webp" alt="" width="320" height="400" loading="lazy" />
+                              </div>
+                              <div class="pf-pdp-info">
+                                <span class="pf-pdp-eyebrow">Edición Otoño</span>
+                                <h3 class="pf-pdp-title">Blusa Sole</h3>
+                                <span class="pf-pdp-price">$1,290.00 <small>MXN</small></span>
+                                <p class="pf-pdp-desc">Algodón orgánico bordado a mano. Cuello redondo, mangas globo.</p>
+                                <div class="pf-pdp-section">
+                                  <span class="pf-pdp-label">Talla</span>
+                                  <div class="pf-pdp-sizes">
+                                    <span>XS</span><span>S</span><span class="pf-pdp-size--active">M</span><span>L</span>
+                                  </div>
+                                </div>
+                                <div class="pf-pdp-stock">
+                                  <span class="pf-pdp-stock-dot"></span>
+                                  <span>11 en inventario · listo en 24h</span>
+                                </div>
+                                <button class="pf-pdp-add" type="button">
+                                  <span class="pf-pdp-add-label pf-pdp-add-label--idle">AGREGAR A BOLSA</span>
+                                  <span class="pf-pdp-add-label pf-pdp-add-label--done">✓ AGREGADO</span>
+                                </button>
+                              </div>
+                            </div>
+                          </section>
+
+                          <section class="pf-scene pf-scene--cart">
+                            <div class="pf-cart-overlay"></div>
+                            <aside class="pf-cart-drawer">
+                              <header class="pf-cart-head">
+                                <span>Tu bolsa · 1 pieza</span>
+                                <span class="pf-cart-close">×</span>
+                              </header>
+                              <div class="pf-cart-row">
+                                <div class="pf-cart-row-img"><img src="/images/cm-boutique.webp" alt="" width="64" height="80" loading="lazy" /></div>
+                                <div class="pf-cart-row-info">
+                                  <span class="pf-cart-row-name">Blusa Sole</span>
+                                  <span class="pf-cart-row-meta">Talla M · Crema</span>
+                                  <span class="pf-cart-row-qty">Cantidad: 1</span>
+                                </div>
+                                <span class="pf-cart-row-price">$1,290</span>
+                              </div>
+                              <div class="pf-cart-totals">
+                                <div class="pf-cart-totals-row"><span>Subtotal</span><span>$1,112.07</span></div>
+                                <div class="pf-cart-totals-row pf-cart-totals-row--muted"><span>IVA 16%</span><span>$177.93</span></div>
+                                <div class="pf-cart-totals-row pf-cart-totals-row--total"><span>Total</span><span>$1,290.00 MXN</span></div>
+                              </div>
+                              <button class="pf-cart-pay" type="button">
+                                <span class="pf-cart-pay-label pf-cart-pay-label--idle">PAGAR · $1,290 MXN →</span>
+                                <span class="pf-cart-pay-label pf-cart-pay-label--processing">PROCESANDO PAGO…</span>
+                              </button>
+                              <span class="pf-cart-trust">Envío seguro · 24h en CDMX</span>
+                            </aside>
+                          </section>
+
+                          <section class="pf-scene pf-scene--confirm">
+                            <div class="pf-confirm-card">
+                              <div class="pf-confirm-check">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>
+                              </div>
+                              <h3 class="pf-confirm-title">Pedido confirmado</h3>
+                              <p class="pf-confirm-id">#M-1042 · Blusa Sole · Talla M</p>
+                              <div class="pf-confirm-amount">$1,290.00 MXN</div>
+                              <div class="pf-confirm-pickup">
+                                <span class="pf-confirm-pickup-icon" aria-hidden="true">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-4h15L21 9"/><path d="M3 9v10h18V9"/><path d="M9 13h6"/></svg>
+                                </span>
+                                <div class="pf-confirm-pickup-text">
+                                  <strong>Recoge en tienda</strong>
+                                  <span>Caja Mara CDMX · listo en 2h</span>
+                                </div>
+                              </div>
+                            </div>
+                          </section>
+
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="pf-pos-toast" aria-hidden="true">
+                      <span class="pf-pos-toast-dot"></span>
+                      <div class="pf-pos-toast-text">
+                        <strong>Sincronizado con tu sitio</strong>
+                        <span>mara.shop · −1 pieza Blusa Sole</span>
+                      </div>
+                    </div>
+
+                    <div class="pf-pos-modal" aria-hidden="true">
+                      <div class="pf-pos-modal-backdrop"></div>
+                      <div class="pf-pos-modal-card">
+                        <div class="pf-pos-modal-icon">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>
+                        </div>
+                        <span class="pf-pos-modal-eyebrow">Stock actualizado en tienda en línea</span>
+                        <div class="pf-pos-modal-stock">
+                          <span class="pf-pos-modal-from">12</span>
+                          <span class="pf-pos-modal-arrow">→</span>
+                          <span class="pf-pos-modal-to">11</span>
+                          <span class="pf-pos-modal-units">piezas</span>
+                        </div>
+                        <p class="pf-pos-modal-meta">Blusa Sole · Talla M · sincronizado con mara.shop</p>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -261,6 +523,49 @@ const supportItems = [
       </div>
     </div>
   </section>
+
+  <div class="tol-showcase-wrap">
+    <section class="tol-showcase reveal-section">
+      <div class="tol-showcase-inner container">
+        <h2 class="tol-showcase-heading reveal-item">{content.showcaseTitle}</h2>
+      </div>
+
+      {content.blocks.map((block: any, i: number) => (
+        <div class={`tol-block reveal-section${i % 2 === 0 ? '' : ' tol-block--flip'}`}>
+          <div class="tol-block-inner container">
+            <div class="tol-block-text reveal-item" style="--reveal-delay: 0ms">
+              <h3 class="tol-block-title">{block.title}</h3>
+              <p class="tol-block-desc">{block.description}</p>
+              {block.bullets && (
+                <ul class="tol-block-bullets">
+                  {block.bullets.map((bullet: any) => (
+                    <li class="tol-block-bullet">
+                      <span class="tol-block-bullet-icon" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+                      </span>
+                      <span class="tol-block-bullet-text">
+                        <strong class="tol-block-bullet-label">{bullet.label}</strong>
+                        <span class="tol-block-bullet-detail">{bullet.detail}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {block.link && (
+                <a href={block.link.href} class="tol-block-link">
+                  {block.link.label}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg>
+                </a>
+              )}
+            </div>
+            <div class="tol-block-media reveal-item" style="--reveal-delay: 150ms">
+              <img src={block.image} alt={block.imageAlt} width="1024" height="1024" loading="lazy" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </section>
+  </div>
 
   <StoresShowcase
     eyebrow="Tiendas reales hechas con SACS"
@@ -379,6 +684,15 @@ const supportItems = [
         });
       }
     }
+  })();
+
+  // ─── Pause all storemock animations when tab hidden (saves CPU) ───
+  (() => {
+    const mock = document.querySelector('.pf-storemock') as HTMLElement | null;
+    if (!mock) return;
+    document.addEventListener('visibilitychange', () => {
+      mock.classList.toggle('pf-storemock--paused', document.hidden);
+    });
   })();
 
   // ─── Scroll reveal observer (shared sq2-* + reveal-section) ───
@@ -525,7 +839,7 @@ const supportItems = [
   .pf-hero-media-wrap--mock {
     display: grid;
     place-items: center;
-    padding: clamp(24px, 5vw, 80px);
+    padding: clamp(16px, 3vw, 40px);
     background: radial-gradient(ellipse at 50% 40%, #ffffff 0%, #f7f7f9 60%, #ececf0 100%);
     isolation: isolate;
   }
@@ -575,7 +889,7 @@ const supportItems = [
 
   .pf-ipad-perspective {
     position: relative;
-    width: min(88%, 960px);
+    width: min(96%, 1200px);
     aspect-ratio: 16 / 9;
     transform:
       perspective(1400px)
@@ -610,7 +924,7 @@ const supportItems = [
   .pf-hero-video-frame--ipad {
     width: 100%;
     height: 100%;
-    padding: 18px 20px;
+    padding: 14px 16px;
     background:
       linear-gradient(145deg, #2a2a2e 0%, #1a1a1e 35%, #161619 65%, #232326 100%);
     box-shadow:
@@ -687,6 +1001,1483 @@ const supportItems = [
     position: relative;
   }
 
+  /* ═══ Shopify-style purchase flow — 16s loop ═══
+     Story (the customer journey, then POS as punchline):
+        0% –  20%  Catalog (Mara fashion catalog with 4 real product photos)
+       20% –  22%  Catalog → PDP cross-fade
+       22% –  42%  PDP (Shopify-style detail page — Add to bolsa pressed at 38%)
+       42% –  44%  PDP → cart cross-fade
+       44% –  60%  Cart drawer (Pagar pressed at 56%)
+       60% –  62%  Cart → confirmation cross-fade
+       62% –  72%  Pedido confirmado · sincronizando con POS
+       72% –  74%  Confirm → POS cross-fade
+       74% –  98%  POS recibe pedido online · stockpill 12→11 emphatic, pay morphs to PAGADO
+       98% – 100%  POS → catalog reset
+  */
+  .pf-storemock {
+    position: absolute;
+    inset: 0;
+    background: #EFE9DF;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+  }
+
+  .pf-storemock-stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+    align-items: stretch;
+    justify-items: center;
+    padding: 14px;
+  }
+
+  /* All scenes share the same grid cell */
+  .pf-pos,
+  .pf-online,
+  .pf-pos-toast,
+  .pf-pos-modal {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .pf-pos,
+  .pf-online {
+    height: 100%;
+    width: 100%;
+  }
+
+  /* ── POS scene — Phase 1 (0-46% of 16s): sale at the counter ───── */
+  .pf-pos {
+    background: #FFFFFF;
+    border-radius: 6px;
+    box-shadow: 0 14px 32px rgba(31, 26, 24, 0.18), 0 4px 12px rgba(31, 26, 24, 0.08);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    color: #1F1A18;
+    font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+    animation: posShow 16s ease-in-out infinite;
+    will-change: opacity, transform;
+  }
+
+  @keyframes posShow {
+    0%, 26%   { opacity: 1; transform: translateY(0) scale(1); }
+    29%       { opacity: 0; transform: translateY(-12px) scale(0.985); }
+    97%       { opacity: 0; transform: translateY(12px) scale(0.985); }
+    100%      { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* Header */
+  .pf-pos-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 18px;
+    border-bottom: 1px solid rgba(31, 26, 24, 0.06);
+    flex-shrink: 0;
+  }
+  .pf-pos-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .pf-pos-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #FFE4A5;
+    color: #1F1A18;
+    display: grid;
+    place-items: center;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: -0.02em;
+  }
+  .pf-pos-userinfo { display: flex; flex-direction: column; gap: 1px; line-height: 1.2; }
+  .pf-pos-name { font-size: 12px; font-weight: 700; color: #1F1A18; }
+  .pf-pos-caja {
+    font-size: 9.5px;
+    color: rgba(31, 26, 24, 0.55);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .pf-pos-conn { display: inline-flex; align-items: center; gap: 4px; }
+  .pf-pos-conn-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #5DA866;
+    box-shadow: 0 0 0 0 rgba(93, 168, 102, 0.5);
+    animation: posConnPulse 1.6s ease-out infinite;
+  }
+  @keyframes posConnPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(93, 168, 102, 0.55); }
+    70%  { box-shadow: 0 0 0 5px rgba(93, 168, 102, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(93, 168, 102, 0); }
+  }
+  .pf-pos-actions {
+    border: 1px solid rgba(31, 26, 24, 0.12);
+    background: #fff;
+    color: #1F1A18;
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+  }
+
+  /* Body */
+  .pf-pos-body {
+    flex: 1;
+    display: flex;
+    gap: 0;
+    min-height: 0;
+  }
+
+  /* Left col */
+  .pf-pos-left {
+    flex: 1.6;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px 18px;
+    min-width: 0;
+    background: #FAFAFB;
+  }
+  .pf-pos-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    border: 1px solid rgba(31, 26, 24, 0.08);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 11px;
+    color: rgba(31, 26, 24, 0.45);
+    flex-shrink: 0;
+  }
+  .pf-pos-search-icon { color: rgba(31, 26, 24, 0.35); font-size: 13px; }
+  .pf-pos-search-ph { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .pf-pos-tiles {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 10px;
+    min-height: 0;
+  }
+  .pf-pos-tile {
+    position: relative;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    overflow: hidden;
+    color: #fff;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(31, 26, 24, 0.04);
+  }
+  .pf-pos-tile--quick {
+    background: #fff;
+    color: #1F1A18;
+    border: 1px solid rgba(31, 26, 24, 0.06);
+    gap: 8px;
+  }
+  .pf-pos-tile--quick svg {
+    width: 26px;
+    height: 26px;
+  }
+  .pf-pos-tile-name {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+  }
+  .pf-pos-tile--quick .pf-pos-tile-name {
+    font-weight: 600;
+    color: rgba(31, 26, 24, 0.7);
+    font-size: 10.5px;
+  }
+  .pf-pos-tile-tag {
+    position: absolute;
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: 0.04em;
+  }
+  /* Featured product tile (Blusa Sole) — pulse syncs to stock arrival in POS scene */
+  .pf-pos-tile--product {
+    background: #fff;
+    color: #1F1A18;
+    border: 2px solid rgba(37, 99, 235, 0.18);
+    padding: 0;
+    gap: 0;
+    overflow: hidden;
+    animation: posProductTilePulse 16s ease-out infinite;
+  }
+  @keyframes posProductTilePulse {
+    0%, 8%    { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); border-color: rgba(31, 26, 24, 0.08); }
+    11%       { box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.22); border-color: #2563EB; }
+    15%, 26%  { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); border-color: #2563EB; }
+    29%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); border-color: rgba(31, 26, 24, 0.08); }
+  }
+  .pf-pos-tile-img {
+    flex: 1;
+    width: 100%;
+    background: #F4EFE6;
+    overflow: hidden;
+    min-height: 0;
+  }
+  .pf-pos-tile-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .pf-pos-tile--product .pf-pos-tile-name {
+    padding: 6px 8px 0;
+    font-family: 'Times New Roman', Georgia, serif;
+    font-weight: 500;
+    color: #1F1A18;
+    font-size: 11px;
+    letter-spacing: -0.01em;
+  }
+  .pf-pos-tile-price {
+    padding: 0 8px 6px;
+    font-size: 9.5px;
+    font-weight: 600;
+    color: #2563EB;
+    letter-spacing: 0.02em;
+  }
+
+  /* Right col (cart) */
+  .pf-pos-right {
+    flex: 1;
+    background: #FFF;
+    border-left: 1px solid rgba(31, 26, 24, 0.06);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .pf-pos-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid rgba(31, 26, 24, 0.06);
+    padding: 8px 14px 0;
+    flex-shrink: 0;
+  }
+  .pf-pos-tabs span {
+    flex: 1;
+    text-align: center;
+    padding: 8px 0;
+    font-size: 9.5px;
+    font-weight: 600;
+    color: rgba(31, 26, 24, 0.5);
+    border-bottom: 2px solid transparent;
+  }
+  .pf-pos-tabs span:first-child {
+    color: #1F1A18;
+    border-bottom-color: #1F1A18;
+  }
+  .pf-pos-tab-clear { color: rgba(220, 80, 80, 0.7) !important; }
+
+  .pf-pos-customer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(31, 26, 24, 0.06);
+    font-size: 10.5px;
+    color: #1F1A18;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    flex-shrink: 0;
+  }
+  .pf-pos-customer-clear {
+    margin-left: auto;
+    color: rgba(31, 26, 24, 0.4);
+    font-size: 13px;
+    line-height: 1;
+  }
+
+  .pf-pos-cart {
+    flex: 1;
+    padding: 10px 14px;
+    overflow: hidden;
+    min-height: 0;
+    position: relative;
+  }
+  .pf-pos-cart-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(31, 26, 24, 0.06);
+  }
+  .pf-pos-cart-thumb {
+    width: 32px;
+    height: 40px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #F4EFE6;
+    flex-shrink: 0;
+  }
+  .pf-pos-cart-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .pf-pos-cart-info { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .pf-pos-cart-name { font-size: 10.5px; font-weight: 600; color: #1F1A18; }
+  .pf-pos-cart-variant { font-size: 9px; color: rgba(31, 26, 24, 0.5); }
+  .pf-pos-cart-qty {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #F4F2EE;
+    border-radius: 8px;
+    padding: 3px 4px;
+  }
+  .pf-pos-cart-qty button {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 0;
+    background: transparent;
+    color: rgba(31, 26, 24, 0.7);
+    font-size: 12px;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .pf-pos-cart-qty span {
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 12px;
+    text-align: center;
+  }
+  .pf-pos-cart-price {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #1F1A18;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Stockpill — the punchline. Fires when online order syncs to POS (78-92%) */
+  .pf-pos-stockpill {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: #EAF4ED;
+    border: 1px solid rgba(45, 140, 95, 0.22);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    opacity: 0;
+    transform: translateY(8px);
+    animation: posStockpill 16s ease-out infinite;
+  }
+  @keyframes posStockpill {
+    0%, 12%   { opacity: 0; transform: translateY(10px) scale(0.94); }
+    15%       { opacity: 1; transform: translateY(0) scale(1.06); box-shadow: 0 8px 20px rgba(45, 140, 95, 0.22); }
+    18%, 25%  { opacity: 1; transform: translateY(0) scale(1); box-shadow: 0 4px 12px rgba(45, 140, 95, 0.14); }
+    28%, 100% { opacity: 0; transform: translateY(8px) scale(0.96); }
+  }
+  .pf-pos-stockpill-label {
+    font-size: 8.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: rgba(31, 26, 24, 0.55);
+  }
+  .pf-pos-stockpill-num {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 22px;
+    font-weight: 700;
+    color: #2D6B3F;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .pf-pos-stock-from {
+    color: rgba(31, 26, 24, 0.4);
+    text-decoration: line-through;
+    text-decoration-thickness: 1.5px;
+    font-weight: 600;
+  }
+  .pf-pos-stock-arrow { color: rgba(31, 26, 24, 0.45); font-size: 13px; }
+  .pf-pos-stock-to { color: #2D6B3F; }
+  .pf-pos-stockpill-sync {
+    font-size: 9px;
+    color: #2D6B3F;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 1px;
+  }
+  .pf-pos-syncdot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #5DA866;
+    animation: posConnPulse 1.4s ease-out infinite;
+  }
+
+  /* Totals */
+  .pf-pos-totals {
+    padding: 10px 14px;
+    border-top: 1px solid rgba(31, 26, 24, 0.06);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .pf-pos-totals-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10.5px;
+    color: #1F1A18;
+  }
+  .pf-pos-totals-row--muted { color: rgba(31, 26, 24, 0.55); font-size: 9.5px; }
+  .pf-pos-totals-amt {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* COBRAR button — starts blue (PROCESANDO ONLINE) at 76%, morphs to green PAGADO at 80% */
+  .pf-pos-pay {
+    position: relative;
+    margin: 12px 14px 14px;
+    height: 56px;
+    border: 0;
+    border-radius: 12px;
+    background: #2563EB;
+    color: #fff;
+    cursor: pointer;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28);
+    animation: posPayBtn 16s ease-out infinite;
+    will-change: background-color, transform, box-shadow;
+  }
+  @keyframes posPayBtn {
+    0%, 12%   { background: #2563EB; transform: scale(1); box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28); }
+    14%       { background: #1D4FD7; transform: scale(0.985); box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4); }
+    16%       { background: #2D8C5F; transform: scale(1); box-shadow: 0 6px 18px rgba(45, 140, 95, 0.36); }
+    26%       { background: #2D8C5F; box-shadow: 0 4px 14px rgba(45, 140, 95, 0.28); }
+    29%, 100% { background: #2563EB; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28); }
+  }
+  .pf-pos-pay-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 18px;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-weight: 700;
+    will-change: opacity, transform;
+  }
+  .pf-pos-pay-label--idle { animation: posPayIdle 16s ease-out infinite; }
+  .pf-pos-pay-label--done { animation: posPayDone 16s ease-out infinite; justify-content: center; gap: 12px; }
+
+  @keyframes posPayIdle {
+    0%, 14%   { opacity: 1; transform: translateY(0); }
+    16%, 100% { opacity: 0; transform: translateY(-10px); }
+  }
+  @keyframes posPayDone {
+    0%, 14%   { opacity: 0; transform: translateY(10px); }
+    17%, 26%  { opacity: 1; transform: translateY(0); }
+    29%, 100% { opacity: 0; transform: translateY(10px); }
+  }
+
+  .pf-pos-pay-text {
+    font-size: 13px;
+    letter-spacing: 0.16em;
+  }
+  .pf-pos-pay-amt {
+    font-size: 17px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+  .pf-pos-pay-amt small { font-size: 9px; opacity: 0.7; margin-left: 3px; letter-spacing: 0.06em; }
+  .pf-pos-pay-amt-done {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    opacity: 0.92;
+  }
+
+  /* ── Online flow shell (catalog → PDP → cart → confirm) — 0-72% of 16s ─ */
+  .pf-online {
+    background: #F8F4EF;
+    border-radius: 8px;
+    box-shadow: 0 14px 32px rgba(31, 26, 24, 0.18), 0 4px 12px rgba(31, 26, 24, 0.08);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    color: #1F1A18;
+    font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+    animation: onlineShow 16s ease-in-out infinite;
+    will-change: opacity;
+  }
+  @keyframes onlineShow {
+    0%, 28%   { opacity: 0; }
+    32%, 95%  { opacity: 1; }
+    98%, 100% { opacity: 0; }
+  }
+
+  /* Browser chrome (URL morphs across scenes, bag count animates 0→1) */
+  .pf-online-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #ECE4D7;
+    border-bottom: 1px solid rgba(31, 26, 24, 0.08);
+    font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+    font-size: 9px;
+    color: rgba(31, 26, 24, 0.6);
+    flex-shrink: 0;
+  }
+  .pf-online-dots { display: flex; gap: 4px; flex-shrink: 0; }
+  .pf-online-dots i {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: rgba(31, 26, 24, 0.18);
+  }
+  .pf-online-dots i:nth-child(1) { background: #E07159; }
+  .pf-online-dots i:nth-child(2) { background: #D8A93A; }
+  .pf-online-dots i:nth-child(3) { background: #5DA866; }
+
+  .pf-online-urls {
+    position: relative;
+    flex: 1;
+    height: 18px;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 6px;
+  }
+  .pf-online-url {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 10px;
+    font-size: 9px;
+    letter-spacing: 0.04em;
+    font-weight: 500;
+    color: #1F1A18;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0;
+    will-change: opacity;
+  }
+  .pf-online-url--catalog { animation: urlCatalog 16s ease-in-out infinite; }
+  .pf-online-url--pdp     { animation: urlPdp 16s ease-in-out infinite; }
+  .pf-online-url--cart    { animation: urlCart 16s ease-in-out infinite; }
+  .pf-online-url--confirm { animation: urlConfirm 16s ease-in-out infinite; }
+
+  @keyframes urlCatalog { 0%, 30% { opacity: 0; } 32%, 46% { opacity: 1; } 49%, 100% { opacity: 0; } }
+  @keyframes urlPdp     { 0%, 47% { opacity: 0; } 49%, 62% { opacity: 1; } 65%, 100% { opacity: 0; } }
+  @keyframes urlCart    { 0%, 63% { opacity: 0; } 65%, 78% { opacity: 1; } 81%, 100% { opacity: 0; } }
+  @keyframes urlConfirm { 0%, 79% { opacity: 0; } 81%, 94% { opacity: 1; } 97%, 100% { opacity: 0; } }
+
+  .pf-online-bag {
+    flex-shrink: 0;
+    font-weight: 600;
+    color: #1F1A18;
+    letter-spacing: 0.04em;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 9px;
+  }
+  .pf-online-bag-icon { font-size: 11px; opacity: 0.55; }
+  .pf-online-bag-count {
+    position: relative;
+    width: 8px;
+    height: 12px;
+    display: inline-block;
+  }
+  .pf-online-bag-count > span {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-variant-numeric: tabular-nums;
+    will-change: opacity, transform;
+  }
+  .pf-online-bag-count--zero { animation: bagZero 16s ease-out infinite; }
+  .pf-online-bag-count--one { animation: bagOne 16s ease-out infinite; }
+  @keyframes bagZero { 0%, 60% { opacity: 1; transform: translateY(0); } 63%, 100% { opacity: 0; transform: translateY(-6px); } }
+  @keyframes bagOne  { 0%, 60% { opacity: 0; transform: translateY(6px); } 64%, 94% { opacity: 1; transform: translateY(0); } 97%, 100% { opacity: 0; transform: translateY(-6px); } }
+
+  /* Site shell */
+  .pf-online-site {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    color: #1F1A18;
+    font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+  }
+  .pf-online-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 22px;
+    border-bottom: 1px solid rgba(31, 26, 24, 0.08);
+    flex-shrink: 0;
+  }
+  .pf-online-logo {
+    font-family: 'Times New Roman', Georgia, serif;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    font-style: italic;
+  }
+  .pf-online-links {
+    display: flex;
+    gap: 18px;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(31, 26, 24, 0.78);
+  }
+  .pf-online-search { font-size: 14px; color: rgba(31, 26, 24, 0.7); }
+
+  /* Scene stage — all 4 online scenes share this container */
+  .pf-online-stage {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .pf-scene {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    will-change: opacity, transform;
+  }
+  .pf-scene--catalog { animation: sceneCatalog 16s ease-in-out infinite; }
+  .pf-scene--pdp     { animation: scenePdp 16s ease-in-out infinite; }
+  .pf-scene--cart    { animation: sceneCart 16s ease-in-out infinite; }
+  .pf-scene--confirm { animation: sceneConfirm 16s ease-in-out infinite; }
+
+  @keyframes sceneCatalog { 0%, 30% { opacity: 0; transform: translateY(8px); } 32%, 46% { opacity: 1; transform: translateY(0); } 49%, 100% { opacity: 0; transform: translateY(-8px); } }
+  @keyframes scenePdp     { 0%, 47% { opacity: 0; transform: translateY(8px); } 49%, 62% { opacity: 1; transform: translateY(0); } 65%, 100% { opacity: 0; transform: translateY(-8px); } }
+  @keyframes sceneCart    { 0%, 63% { opacity: 0; transform: translateY(8px); } 65%, 78% { opacity: 1; transform: translateY(0); } 81%, 100% { opacity: 0; transform: translateY(-8px); } }
+  @keyframes sceneConfirm { 0%, 79% { opacity: 0; transform: scale(0.96); } 81%, 94% { opacity: 1; transform: scale(1); } 97%, 100% { opacity: 0; transform: scale(0.94); } }
+
+  /* ─── Scene 1: Catalog grid (4 real apparel photos) ─── */
+  .pf-scene--catalog { padding: 14px 22px 16px; gap: 10px; }
+  .pf-cat-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .pf-cat-eyebrow {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #B05B3B;
+    font-weight: 700;
+  }
+  .pf-cat-meta {
+    font-size: 9px;
+    color: rgba(31, 26, 24, 0.55);
+    letter-spacing: 0.04em;
+  }
+  .pf-cat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    flex: 1;
+    min-height: 0;
+  }
+  .pf-cat-tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+  .pf-cat-tile-img {
+    aspect-ratio: 4 / 5;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #EFE4D2;
+    position: relative;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .pf-cat-tile-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .pf-cat-tile-name {
+    font-family: 'Times New Roman', Georgia, serif;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #1F1A18;
+    letter-spacing: -0.01em;
+    margin-top: 4px;
+  }
+  .pf-cat-tile-price {
+    font-size: 9.5px;
+    color: rgba(31, 26, 24, 0.7);
+    letter-spacing: 0.04em;
+  }
+  /* Prominent stock badge overlaid on the featured tile image */
+  .pf-cat-tile-stockbadge {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: #FFFFFF;
+    border-radius: 999px;
+    box-shadow: 0 6px 14px rgba(31, 26, 24, 0.18), 0 0 0 1px rgba(45, 140, 95, 0.16);
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 10px;
+    font-weight: 600;
+    color: #2D6B3F;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    z-index: 2;
+  }
+  .pf-cat-tile-stockbadge b {
+    font-weight: 800;
+    font-size: 11px;
+    color: #2D6B3F;
+  }
+  .pf-cat-tile-stockbadge-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #2D8C5F;
+    box-shadow: 0 0 0 0 rgba(45, 140, 95, 0.5);
+    animation: posConnPulse 1.6s ease-out infinite;
+  }
+  .pf-cat-tile-stockbadge-text {
+    line-height: 1;
+  }
+  .pf-cat-tile--featured .pf-cat-tile-img {
+    animation: catFeatPulse 16s ease-out infinite;
+  }
+  @keyframes catFeatPulse {
+    0%, 40%   { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+    44%       { transform: scale(1.03); box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.22); }
+    47%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+  }
+  .pf-cat-tile-cursor {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    bottom: 24%;
+    right: 14%;
+    background: #2563EB;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4);
+    opacity: 0;
+    animation: catCursor 16s ease-out infinite;
+  }
+  @keyframes catCursor {
+    0%, 36%   { opacity: 0; transform: translateY(8px) scale(0.7); }
+    40%       { opacity: 1; transform: translateY(0) scale(1.1); }
+    44%       { opacity: 1; transform: translateY(0) scale(0.85); }
+    48%, 100% { opacity: 0; transform: translateY(0) scale(0.85); }
+  }
+
+  /* ─── Scene 2: PDP (Shopify-style product detail) ─── */
+  .pf-scene--pdp { padding: 12px 22px 16px; }
+  .pf-pdp-back {
+    font-size: 9px;
+    color: rgba(31, 26, 24, 0.55);
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+    flex-shrink: 0;
+  }
+  .pf-pdp-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 16px;
+    flex: 1;
+    min-height: 0;
+  }
+  .pf-pdp-img {
+    border-radius: 6px;
+    overflow: hidden;
+    background: #EFE4D2;
+    height: 100%;
+    min-height: 0;
+  }
+  .pf-pdp-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .pf-pdp-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+  .pf-pdp-eyebrow {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 8.5px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #B05B3B;
+    font-weight: 700;
+  }
+  .pf-pdp-title {
+    font-family: 'Times New Roman', Georgia, serif;
+    font-weight: 400;
+    font-size: 22px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: #1F1A18;
+    margin: 2px 0 0;
+  }
+  .pf-pdp-price {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 14px;
+    font-weight: 700;
+    color: #1F1A18;
+    margin: 2px 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .pf-pdp-price small { font-size: 9px; opacity: 0.6; margin-left: 3px; letter-spacing: 0.06em; }
+  .pf-pdp-desc {
+    font-size: 9.5px;
+    line-height: 1.5;
+    color: rgba(31, 26, 24, 0.7);
+    margin: 0 0 4px;
+  }
+  .pf-pdp-section { display: flex; flex-direction: column; gap: 4px; }
+  .pf-pdp-label {
+    font-size: 8px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(31, 26, 24, 0.55);
+    font-weight: 700;
+  }
+  .pf-pdp-sizes { display: flex; gap: 6px; }
+  .pf-pdp-sizes span {
+    width: 24px;
+    height: 24px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(31, 26, 24, 0.18);
+    border-radius: 4px;
+    font-size: 9.5px;
+    font-weight: 600;
+    color: rgba(31, 26, 24, 0.7);
+    background: #fff;
+  }
+  .pf-pdp-size--active {
+    border-color: #1F1A18 !important;
+    background: #1F1A18 !important;
+    color: #fff !important;
+  }
+  .pf-pdp-stock {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 9px;
+    color: #2D6B3F;
+    font-weight: 600;
+    margin-top: 4px;
+  }
+  .pf-pdp-stock-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #2D6B3F;
+    animation: posConnPulse 1.6s ease-out infinite;
+  }
+  .pf-pdp-add {
+    position: relative;
+    margin-top: 8px;
+    height: 38px;
+    border: 0;
+    border-radius: 8px;
+    background: #1F1A18;
+    color: #fff;
+    cursor: pointer;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(31, 26, 24, 0.18);
+    animation: pdpAddBtn 16s ease-out infinite;
+    will-change: background-color, transform;
+  }
+  @keyframes pdpAddBtn {
+    0%, 58%   { background: #1F1A18; transform: scale(1); }
+    60%       { background: #000; transform: scale(0.97); }
+    62%       { background: #2D8C5F; transform: scale(1); }
+    64%, 100% { background: #1F1A18; transform: scale(1); }
+  }
+  .pf-pdp-add-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    will-change: opacity;
+  }
+  .pf-pdp-add-label--idle { animation: pdpAddIdle 16s ease-out infinite; }
+  .pf-pdp-add-label--done { animation: pdpAddDone 16s ease-out infinite; }
+  @keyframes pdpAddIdle { 0%, 60% { opacity: 1; } 62%, 100% { opacity: 0; } }
+  @keyframes pdpAddDone { 0%, 60% { opacity: 0; } 62%, 64% { opacity: 1; } 66%, 100% { opacity: 0; } }
+
+  /* ─── Scene 3: Cart drawer (slides in from right) ─── */
+  .pf-scene--cart {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+  .pf-cart-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(31, 26, 24, 0.32);
+  }
+  .pf-cart-drawer {
+    position: relative;
+    width: 56%;
+    height: 100%;
+    background: #fff;
+    box-shadow: -10px 0 28px rgba(31, 26, 24, 0.12);
+    display: flex;
+    flex-direction: column;
+    padding: 16px 18px;
+    gap: 10px;
+    animation: cartDrawerSlide 16s ease-out infinite;
+    will-change: transform;
+  }
+  @keyframes cartDrawerSlide {
+    0%, 63%   { transform: translateX(105%); }
+    66%, 78%  { transform: translateX(0); }
+    81%, 100% { transform: translateX(105%); }
+  }
+  .pf-cart-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 12px;
+    font-weight: 700;
+    color: #1F1A18;
+    letter-spacing: -0.01em;
+    border-bottom: 1px solid rgba(31, 26, 24, 0.08);
+    padding-bottom: 10px;
+  }
+  .pf-cart-close {
+    color: rgba(31, 26, 24, 0.4);
+    font-size: 16px;
+    line-height: 1;
+  }
+  .pf-cart-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+    padding: 6px 0 10px;
+    border-bottom: 1px solid rgba(31, 26, 24, 0.06);
+  }
+  .pf-cart-row-img {
+    width: 44px;
+    height: 56px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #EFE4D2;
+    flex-shrink: 0;
+  }
+  .pf-cart-row-img img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+  }
+  .pf-cart-row-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+  .pf-cart-row-name {
+    font-family: 'Times New Roman', Georgia, serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: #1F1A18;
+  }
+  .pf-cart-row-meta { font-size: 9px; color: rgba(31, 26, 24, 0.55); }
+  .pf-cart-row-qty { font-size: 9px; color: rgba(31, 26, 24, 0.55); }
+  .pf-cart-row-price {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 11px;
+    font-weight: 700;
+    color: #1F1A18;
+    font-variant-numeric: tabular-nums;
+    align-self: center;
+  }
+  .pf-cart-totals {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px 0;
+  }
+  .pf-cart-totals-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #1F1A18;
+  }
+  .pf-cart-totals-row--muted { color: rgba(31, 26, 24, 0.55); font-size: 9px; }
+  .pf-cart-totals-row--total {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 11.5px;
+    font-weight: 700;
+    border-top: 1px solid rgba(31, 26, 24, 0.08);
+    padding-top: 8px;
+    margin-top: 4px;
+  }
+  .pf-cart-pay {
+    position: relative;
+    margin-top: auto;
+    height: 44px;
+    border: 0;
+    border-radius: 8px;
+    background: #1F1A18;
+    color: #fff;
+    cursor: pointer;
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(31, 26, 24, 0.2);
+    animation: cartPayBtn 16s ease-out infinite;
+    will-change: background-color, transform;
+  }
+  @keyframes cartPayBtn {
+    0%, 73%   { background: #1F1A18; transform: scale(1); }
+    75%       { background: #000; transform: scale(0.985); }
+    77%, 78%  { background: #1F1A18; transform: scale(1); }
+    81%, 100% { background: #1F1A18; transform: scale(1); }
+  }
+  .pf-cart-pay-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    will-change: opacity;
+  }
+  .pf-cart-pay-label--idle { animation: cartPayIdle 16s ease-out infinite; }
+  .pf-cart-pay-label--processing { animation: cartPayProcessing 16s ease-out infinite; }
+  @keyframes cartPayIdle { 0%, 74% { opacity: 1; } 76%, 100% { opacity: 0; } }
+  @keyframes cartPayProcessing { 0%, 74% { opacity: 0; } 76%, 78% { opacity: 1; } 81%, 100% { opacity: 0; } }
+  .pf-cart-trust {
+    text-align: center;
+    font-size: 8.5px;
+    color: rgba(31, 26, 24, 0.5);
+    letter-spacing: 0.04em;
+  }
+
+  /* ─── Scene 4: Order confirmation ─── */
+  .pf-scene--confirm {
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(180deg, #FAF7F1 0%, #F0E8D8 100%);
+  }
+  .pf-confirm-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 24px 32px;
+    text-align: center;
+  }
+  .pf-confirm-check {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #2D8C5F;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 8px 24px rgba(45, 140, 95, 0.35);
+    animation: confirmCheckPop 16s ease-out infinite;
+  }
+  .pf-confirm-check svg { width: 28px; height: 28px; }
+  @keyframes confirmCheckPop {
+    0%, 80%   { transform: scale(0.4); opacity: 0; }
+    83%       { transform: scale(1.15); opacity: 1; }
+    86%, 94%  { transform: scale(1); opacity: 1; }
+    97%, 100% { transform: scale(0.9); opacity: 0; }
+  }
+  .pf-confirm-title {
+    font-family: 'Times New Roman', Georgia, serif;
+    font-size: 22px;
+    font-weight: 400;
+    color: #1F1A18;
+    letter-spacing: -0.02em;
+    margin: 4px 0 0;
+  }
+  .pf-confirm-id {
+    font-size: 10px;
+    color: rgba(31, 26, 24, 0.65);
+    letter-spacing: 0.06em;
+    margin: 0;
+  }
+  .pf-confirm-amount {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 16px;
+    font-weight: 700;
+    color: #1F1A18;
+    margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .pf-confirm-sync {
+    margin-top: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: rgba(45, 140, 95, 0.12);
+    border-radius: 999px;
+    font-size: 9px;
+    color: #2D6B3F;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .pf-confirm-sync-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #2D8C5F;
+    animation: posConnPulse 1.4s ease-out infinite;
+  }
+  .pf-confirm-pickup {
+    margin-top: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #FFFFFF;
+    border: 1px solid rgba(45, 140, 95, 0.22);
+    border-radius: 12px;
+    box-shadow: 0 6px 16px rgba(45, 140, 95, 0.14);
+  }
+  .pf-confirm-pickup-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: rgba(45, 140, 95, 0.12);
+    color: #2D6B3F;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+  .pf-confirm-pickup-icon svg { width: 16px; height: 16px; }
+  .pf-confirm-pickup-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: left;
+  }
+  .pf-confirm-pickup-text strong {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 11px;
+    font-weight: 700;
+    color: #1F1A18;
+    letter-spacing: -0.01em;
+  }
+  .pf-confirm-pickup-text span {
+    font-size: 9.5px;
+    color: rgba(31, 26, 24, 0.6);
+    letter-spacing: 0.02em;
+  }
+
+  /* ─── POS customer field (online sale context) ─── */
+  .pf-pos-customer-tag {
+    background: #2563EB;
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+  }
+  .pf-pos-customer-id {
+    color: rgba(31, 26, 24, 0.65);
+    font-weight: 600;
+    font-size: 9.5px;
+  }
+
+  /* ─── POS toast (slides in during POS scene) ─── */
+  .pf-pos-toast {
+    place-self: start end;
+    margin: 14px;
+    background: #1F1A18;
+    color: #fff;
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 12px 28px rgba(31, 26, 24, 0.32);
+    opacity: 0;
+    transform: translateX(20px);
+    z-index: 5;
+    animation: posToast 16s ease-out infinite;
+    will-change: opacity, transform;
+    max-width: 230px;
+    pointer-events: none;
+  }
+  @keyframes posToast {
+    0%, 14%   { opacity: 0; transform: translateX(20px); }
+    17%       { opacity: 1; transform: translateX(0); }
+    25%       { opacity: 1; transform: translateX(0); }
+    28%, 100% { opacity: 0; transform: translateX(20px); }
+  }
+  .pf-pos-toast-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #5DA866;
+    animation: posConnPulse 1.6s ease-out infinite;
+    flex-shrink: 0;
+  }
+  .pf-pos-toast-text { display: flex; flex-direction: column; gap: 1px; }
+  .pf-pos-toast-text strong {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .pf-pos-toast-text span {
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: 0.02em;
+  }
+
+  /* ─── POS centered modal: "Stock actualizado en tienda en línea" ─── */
+  .pf-pos-modal {
+    place-self: stretch;
+    position: relative;
+    pointer-events: none;
+    z-index: 10;
+    display: grid;
+    place-items: center;
+    opacity: 0;
+    animation: posModal 16s ease-out infinite;
+    will-change: opacity;
+  }
+  @keyframes posModal {
+    0%, 17%   { opacity: 0; }
+    20%, 25%  { opacity: 1; }
+    28%, 100% { opacity: 0; }
+  }
+  .pf-pos-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(31, 26, 24, 0.42);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+  .pf-pos-modal-card {
+    position: relative;
+    background: #FFFFFF;
+    border-radius: 18px;
+    padding: 22px 28px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 24px 48px rgba(31, 26, 24, 0.28), 0 8px 16px rgba(31, 26, 24, 0.12);
+    max-width: 78%;
+    text-align: center;
+    transform: scale(0.86) translateY(12px);
+    animation: posModalCard 16s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    will-change: transform;
+  }
+  @keyframes posModalCard {
+    0%, 17%   { transform: scale(0.86) translateY(12px); }
+    20%       { transform: scale(1.04) translateY(0); }
+    22%, 25%  { transform: scale(1) translateY(0); }
+    28%, 100% { transform: scale(0.92) translateY(8px); }
+  }
+  .pf-pos-modal-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #2D8C5F;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 8px 20px rgba(45, 140, 95, 0.32);
+  }
+  .pf-pos-modal-icon svg { width: 24px; height: 24px; }
+  .pf-pos-modal-eyebrow {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(31, 26, 24, 0.65);
+    font-weight: 700;
+  }
+  .pf-pos-modal-stock {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 36px;
+    font-weight: 700;
+    color: #2D6B3F;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 12px;
+    font-variant-numeric: tabular-nums;
+    margin: 2px 0;
+  }
+  .pf-pos-modal-from {
+    color: rgba(31, 26, 24, 0.32);
+    text-decoration: line-through;
+    text-decoration-thickness: 2px;
+    font-weight: 600;
+  }
+  .pf-pos-modal-arrow {
+    color: rgba(31, 26, 24, 0.45);
+    font-size: 24px;
+    font-weight: 400;
+  }
+  .pf-pos-modal-to {
+    color: #2D6B3F;
+    font-size: 44px;
+    animation: posModalToPop 16s ease-out infinite;
+    will-change: transform;
+    display: inline-block;
+  }
+  @keyframes posModalToPop {
+    0%, 19%   { transform: scale(1); }
+    22%       { transform: scale(1.18); }
+    25%, 100% { transform: scale(1); }
+  }
+  .pf-pos-modal-units {
+    font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(31, 26, 24, 0.5);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    align-self: center;
+    margin-left: 4px;
+  }
+  .pf-pos-modal-meta {
+    font-size: 10px;
+    color: rgba(31, 26, 24, 0.6);
+    letter-spacing: 0.04em;
+    margin: 0;
+  }
+
+  /* Pause-all helper (tab hidden) */
+  .pf-storemock--paused,
+  .pf-storemock--paused * {
+    animation-play-state: paused !important;
+  }
+
+  /* Reduced-motion: show only catalog scene, no flow, no POS */
+  @media (prefers-reduced-motion: reduce) {
+    .pf-pos, .pf-pos-toast, .pf-pos-modal { display: none; }
+    .pf-online { animation: none; opacity: 1; }
+    .pf-scene { animation: none; opacity: 0; }
+    .pf-scene--catalog { opacity: 1; }
+    .pf-online-url { animation: none; opacity: 0; }
+    .pf-online-url--catalog { opacity: 1; }
+    .pf-online-bag-count--zero { animation: none; opacity: 1; }
+    .pf-online-bag-count--one { animation: none; opacity: 0; }
+    .pf-cat-tile--featured .pf-cat-tile-img,
+    .pf-cat-tile-cursor,
+    .pf-pdp-add, .pf-pdp-add-label--idle, .pf-pdp-add-label--done,
+    .pf-cart-drawer, .pf-cart-pay,
+    .pf-cart-pay-label--idle, .pf-cart-pay-label--processing,
+    .pf-confirm-check { animation: none; }
+  }
+
+  /* Small screens: drop catalog 4-col → 3-col, simplify POS layout */
+  @media (max-width: 640px) {
+    .pf-cat-grid { grid-template-columns: repeat(3, 1fr); }
+    .pf-cat-tile:nth-child(4) { display: none; }
+    .pf-pdp-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .pf-cart-drawer { width: 70%; padding: 12px 14px; }
+
+    .pf-pos-head { padding: 10px 12px; }
+    .pf-pos-actions { display: none; }
+    .pf-pos-body { flex-direction: column; }
+    .pf-pos-left {
+      flex: 1.4;
+      gap: 10px;
+      padding: 12px;
+    }
+    .pf-pos-tiles {
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: 1fr;
+      gap: 6px;
+    }
+    .pf-pos-tiles > .pf-pos-tile:nth-child(n+5) { display: none; }
+    .pf-pos-tile-name { font-size: 9px; }
+    .pf-pos-right {
+      flex: 1;
+      border-left: 0;
+      border-top: 1px solid rgba(31, 26, 24, 0.06);
+    }
+    .pf-pos-tabs span { padding: 6px 0; font-size: 8.5px; }
+    .pf-pos-pay { height: 44px; margin: 8px 12px 12px; }
+    .pf-pos-pay-text { font-size: 11px; }
+    .pf-pos-pay-amt { font-size: 14px; }
+    .pf-pos-toast { max-width: 180px; padding: 8px 10px; }
+    .pf-pos-toast-text strong { font-size: 9.5px; }
+    .pf-pos-toast-text span { font-size: 8px; }
+
+    .pf-pos-modal-card { padding: 16px 20px 14px; max-width: 86%; }
+    .pf-pos-modal-icon { width: 40px; height: 40px; }
+    .pf-pos-modal-icon svg { width: 20px; height: 20px; }
+    .pf-pos-modal-stock { font-size: 28px; gap: 8px; }
+    .pf-pos-modal-to { font-size: 34px; }
+    .pf-pos-modal-arrow { font-size: 18px; }
+    .pf-pos-modal-units { font-size: 9.5px; }
+    .pf-pos-modal-meta { font-size: 9px; }
+  }
+
   @keyframes heroFadeUp {
     from {
       opacity: 0;
@@ -731,5 +2522,158 @@ const supportItems = [
       opacity: 1;
       transform: none;
     }
+  }
+
+  /* ───────────────── tol-showcase: alternating text+image rows ───────────────── */
+  .tol-showcase-wrap {
+    background: #fff;
+    padding: clamp(40px, 5vw, 64px) clamp(16px, 2vw, 32px);
+  }
+
+  .tol-showcase {
+    padding: clamp(64px, 8vw, 100px) 0 clamp(48px, 6vw, 80px);
+    background: #f2f2f2;
+    border-radius: 24px;
+  }
+
+  .tol-showcase-heading {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.75rem, 4vw, 3rem);
+    font-weight: 800;
+    color: #1a1a2e;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin: 0 0 clamp(48px, 6vw, 80px);
+    max-width: 600px;
+  }
+
+  .tol-block {
+    padding: clamp(40px, 5vw, 64px) 0;
+  }
+
+  .tol-block-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  @media (min-width: 768px) {
+    .tol-block-inner {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr;
+      gap: clamp(48px, 5vw, 80px);
+      align-items: center;
+    }
+
+    .tol-block--flip .tol-block-inner {
+      grid-template-columns: 1.5fr 1fr;
+    }
+
+    .tol-block--flip .tol-block-text {
+      order: 2;
+    }
+
+    .tol-block--flip .tol-block-media {
+      order: 1;
+    }
+  }
+
+  .tol-block-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.375rem, 2.5vw, 1.875rem);
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin: 0 0 16px;
+  }
+
+  .tol-block-desc {
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    color: #4A4A4A;
+    margin: 0;
+  }
+
+  .tol-block-bullets {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .tol-block-bullet {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .tol-block-bullet-icon {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(37, 99, 235, 0.1);
+    color: #2563EB;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+  }
+
+  .tol-block-bullet-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .tol-block-bullet-label {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    line-height: 1.3;
+  }
+
+  .tol-block-bullet-detail {
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: #4A4A4A;
+  }
+
+  .tol-block-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    text-decoration: none;
+    margin-top: 20px;
+    transition: gap 0.2s ease;
+  }
+
+  .tol-block-link:hover {
+    gap: 10px;
+    text-decoration: none;
+  }
+
+  .tol-block-media {
+    border-radius: 16px;
+    overflow: hidden;
+    background: #F5F3EE;
+  }
+
+  .tol-block-media img {
+    width: 100%;
+    height: auto;
+    display: block;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
   }
 </style>
