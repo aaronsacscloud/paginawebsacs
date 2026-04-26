@@ -1,0 +1,237 @@
+---
+type Cell = 'full' | 'partial' | 'none';
+
+interface Row {
+  label: string;
+  note?: string;
+  values: Cell[];
+}
+
+interface Props {
+  title: string;
+  subtitle?: string;
+  competitors: string[];
+  rows: Row[];
+}
+
+const { title, subtitle, competitors, rows } = Astro.props;
+---
+
+<section class="cmp-compare reveal-section">
+  <div class="cmp-compare-inner container">
+    <div class="cmp-compare-header">
+      <h2 class="cmp-compare-title reveal-item">{title}</h2>
+      {subtitle && <p class="cmp-compare-subtitle reveal-item" style="--reveal-delay: 80ms">{subtitle}</p>}
+    </div>
+    <div class="cmp-compare-table-wrap reveal-item" style="--reveal-delay: 140ms">
+      <table class="cmp-compare-table">
+        <thead>
+          <tr>
+            <th class="cmp-compare-row-label" scope="col"></th>
+            {competitors.map((c, i) => (
+              <th scope="col" class={`cmp-compare-col${i === 0 ? ' cmp-compare-col--us' : ''}`}>{c}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr>
+              <th scope="row" class="cmp-compare-row-label">
+                <span class="cmp-compare-row-text">{row.label}</span>
+                {row.note && <span class="cmp-compare-row-note">{row.note}</span>}
+              </th>
+              {row.values.map((v, i) => (
+                <td class={`cmp-compare-cell cmp-compare-cell--${v}${i === 0 ? ' cmp-compare-cell--us' : ''}`}>
+                  {v === 'full' && (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-label="Sí"><path d="M5 12l5 5L20 7"/></svg>
+                  )}
+                  {v === 'partial' && (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-label="Parcial"><path d="M5 12h14"/></svg>
+                  )}
+                  {v === 'none' && (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-label="No"><path d="M6 6l12 12M18 6L6 18"/></svg>
+                  )}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    <div class="cmp-compare-legend" aria-hidden="true">
+      <span class="cmp-compare-legend-item"><span class="cmp-compare-legend-dot cmp-compare-legend-dot--full"></span> Incluido</span>
+      <span class="cmp-compare-legend-item"><span class="cmp-compare-legend-dot cmp-compare-legend-dot--partial"></span> Parcial / con add-ons</span>
+      <span class="cmp-compare-legend-item"><span class="cmp-compare-legend-dot cmp-compare-legend-dot--none"></span> No</span>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cmp-compare {
+    padding: clamp(72px, 10vw, 140px) 0;
+    background: #fff;
+  }
+
+  .cmp-compare-header {
+    max-width: 760px;
+    margin: 0 auto clamp(40px, 5vw, 64px);
+    text-align: center;
+  }
+
+  .cmp-compare-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    color: #1a1a2e;
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+    margin: 0 0 16px;
+  }
+
+  .cmp-compare-subtitle {
+    font-size: clamp(0.9375rem, 1.4vw, 1.0625rem);
+    color: #4A4A4A;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .cmp-compare-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .cmp-compare-table {
+    width: 100%;
+    min-width: 1080px;
+    border-collapse: collapse;
+    border-spacing: 0;
+    table-layout: fixed;
+  }
+
+  .cmp-compare-table thead th {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #4A4A4A;
+    text-align: center;
+    padding: 16px 6px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    background: #fafafa;
+  }
+
+  .cmp-compare-table thead th.cmp-compare-col--us {
+    color: #fff;
+    background: #1a1a2e;
+    border-radius: 12px 12px 0 0;
+    font-size: 0.95rem;
+    position: relative;
+  }
+
+  .cmp-compare-table thead th.cmp-compare-row-label {
+    background: transparent;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  }
+
+  .cmp-compare-table tbody tr {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .cmp-compare-row-label {
+    text-align: left;
+    padding: 18px 16px 18px 0;
+    width: 32%;
+    font-weight: 500;
+  }
+
+  .cmp-compare-row-text {
+    display: block;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1a1a2e;
+    line-height: 1.35;
+    margin-bottom: 4px;
+  }
+
+  .cmp-compare-row-note {
+    display: block;
+    font-size: 0.8125rem;
+    color: #8c8c8c;
+    line-height: 1.45;
+    font-weight: 400;
+  }
+
+  .cmp-compare-cell {
+    text-align: center;
+    padding: 18px 8px;
+    color: #b0b0b0;
+  }
+
+  .cmp-compare-cell--us {
+    background: rgba(75, 123, 229, 0.06);
+  }
+
+  .cmp-compare-cell--full {
+    color: #2A8F5F;
+  }
+
+  .cmp-compare-cell--us.cmp-compare-cell--full {
+    color: #4B7BE5;
+  }
+
+  .cmp-compare-cell--partial {
+    color: #c89a3c;
+  }
+
+  .cmp-compare-cell--none {
+    color: #d4d4d4;
+  }
+
+  .cmp-compare-cell svg {
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  .cmp-compare-table tbody tr:last-child .cmp-compare-cell--us {
+    border-radius: 0 0 12px 12px;
+  }
+
+  .cmp-compare-legend {
+    display: flex;
+    justify-content: center;
+    gap: clamp(16px, 3vw, 32px);
+    flex-wrap: wrap;
+    margin-top: clamp(28px, 4vw, 40px);
+    font-size: 0.8125rem;
+    color: #8c8c8c;
+  }
+
+  .cmp-compare-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .cmp-compare-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .cmp-compare-legend-dot--full { background: #2A8F5F; }
+  .cmp-compare-legend-dot--partial { background: #c89a3c; }
+  .cmp-compare-legend-dot--none { background: #d4d4d4; }
+
+  @media (max-width: 767px) {
+    .cmp-compare-row-label {
+      padding: 16px 12px 16px 0;
+    }
+    .cmp-compare-row-text {
+      font-size: 0.875rem;
+    }
+    .cmp-compare-row-note {
+      font-size: 0.75rem;
+    }
+  }
+</style>
