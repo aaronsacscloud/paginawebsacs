@@ -879,7 +879,7 @@ export const pageContent: Record<string, any> = {
         description: 'Capturas una orden de compra con cantidades por sucursal, la recibes con un folio y el inventario sube al instante en piso y en tu tienda en línea. Mismo catálogo, misma cifra, mismo segundo — sin botón de "publicar" ni cron nocturno.',
         image: '/images/tienda-online-unificacion.webp',
         imageAlt: 'Vista de SACS mostrando una orden de compra recibida y el stock actualizándose en piso y en mara.shop al mismo tiempo',
-        link: { label: 'Ver inventario omnicanal', href: '/producto/inventario-omnicanal' },
+        link: null,
         featured: true,
         variant: 'online-catalog',
         bullets: [
@@ -893,7 +893,7 @@ export const pageContent: Record<string, any> = {
         description: 'Tu cliente entra a su cuenta y ve su pedido en preparación, su QR para recoger en tienda, sus puntos de lealtad sumando y productos recomendados según lo que ya te compró. Todo lo que necesita para volver — sin abrir 4 apps ni revisar el correo.',
         image: '/images/tienda-online-fidelizacion.webp',
         imageAlt: 'Panel de cuenta del cliente en mara.shop mostrando estado del pedido, QR de retiro, puntos de lealtad y recomendaciones personalizadas',
-        link: { label: 'Ver programa de lealtad', href: '/producto/programa-de-lealtad' },
+        link: null,
         featured: true,
         variant: 'customer-panel',
         bullets: [
@@ -907,7 +907,7 @@ export const pageContent: Record<string, any> = {
         description: 'Mira lo que vendiste en piso, en línea y en ambos canales lado a lado. SACS te dice qué SKU sólo crece online, cuál sólo se mueve en piso y cuál vende parejo en los dos. Decides dónde subir stock, qué pieza convertir en drop digital y dónde no gastar otro peso de pauta.',
         image: '/images/tienda-online-analytics.webp',
         imageAlt: 'Tablet mostrando el dashboard de SACS con ventas segmentadas por canal — tienda física, tienda en línea y ambos — sostenido por una manager de tienda en una boutique moderna',
-        link: { label: 'Ver reportes y analítica', href: '/producto/reportes-y-analitica' },
+        link: null,
         featured: true,
         variant: 'online-analytics',
         bullets: [
