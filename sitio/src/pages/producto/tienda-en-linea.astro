@@ -2,6 +2,7 @@
 import ProductLayout from '../../layouts/ProductLayout.astro';
 import FinalCTA from '../../components/FinalCTA.astro';
 import PremiumTemplates from '../../components/squarespace/PremiumTemplates.astro';
+import KeyPointsRow from '../../components/squarespace/KeyPointsRow.astro';
 import ZoomTypo from '../../components/ZoomTypo.astro';
 import BentoGrid from '../../components/squarespace/BentoGrid.astro';
 import CreativeToolsGrid from '../../components/squarespace/CreativeToolsGrid.astro';
@@ -616,6 +617,27 @@ const supportItems = [
       </div>
     </div>
   </section>
+
+  <KeyPointsRow
+    title="Tu tienda física y tu tienda online, en una sola operación."
+    items={[
+      {
+        icon: 'inventory',
+        title: 'Un solo inventario, en tiempo real.',
+        description: 'Cada venta online baja stock en la sucursal correcta. Cada cambio en caja se refleja en tu sitio al instante.',
+      },
+      {
+        icon: 'store',
+        title: 'Pickup en tienda y envío local.',
+        description: 'Tus clientes recogen en la sucursal o lo envías con tu equipo. Tarifas y rutas en tiempo real.',
+      },
+      {
+        icon: 'chart',
+        title: 'Reportes que cruzan PDV y online.',
+        description: 'Vende donde sea y mide canal por canal en un solo dashboard — sin abrir cuatro herramientas.',
+      },
+    ]}
+  />
 
   <div class="tol-showcase-wrap">
     <section class="tol-showcase reveal-section">

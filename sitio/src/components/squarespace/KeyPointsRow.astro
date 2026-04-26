@@ -1,0 +1,109 @@
+---
+interface Item {
+  icon: 'inventory' | 'store' | 'chart' | 'truck' | 'shield' | 'sparkles';
+  title: string;
+  description: string;
+}
+
+interface Props {
+  title: string;
+  items: Item[];
+}
+
+const { title, items } = Astro.props;
+---
+
+<section class="kp-row reveal-section">
+  <div class="kp-row-inner container">
+    <h2 class="kp-row-title reveal-item">{title}</h2>
+
+    <div class="kp-row-grid">
+      {items.map((item, i) => (
+        <div class="kp-row-item reveal-item" style={`--reveal-delay: ${120 + i * 80}ms`}>
+          <div class="kp-row-icon" aria-hidden="true">
+            {item.icon === 'inventory' && (
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            )}
+            {item.icon === 'store' && (
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2 2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7"/></svg>
+            )}
+            {item.icon === 'chart' && (
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16V9"/><path d="M12 16V5"/><path d="M17 16v-4"/></svg>
+            )}
+            {item.icon === 'truck' && (
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+            )}
+            {item.icon === 'shield' && (
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+            )}
+            {item.icon === 'sparkles' && (
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></svg>
+            )}
+          </div>
+          <h3 class="kp-row-item-title">{item.title}</h3>
+          <p class="kp-row-item-desc">{item.description}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .kp-row {
+    background: #fff;
+    padding: clamp(72px, 10vw, 130px) 0 clamp(56px, 8vw, 100px);
+  }
+
+  .kp-row-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(2rem, 4.5vw, 3.5rem);
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+    max-width: 1100px;
+    margin: 0 0 clamp(48px, 7vw, 96px);
+  }
+
+  .kp-row-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(36px, 5vw, 64px);
+  }
+
+  @media (min-width: 768px) {
+    .kp-row-grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: clamp(40px, 4vw, 72px);
+    }
+  }
+
+  .kp-row-item {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .kp-row-icon {
+    color: #1a1a2e;
+    margin-bottom: clamp(28px, 4vw, 48px);
+  }
+
+  .kp-row-item-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1rem, 1.4vw, 1.125rem);
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: -0.01em;
+    line-height: 1.35;
+    margin: 0;
+  }
+
+  .kp-row-item-desc {
+    font-size: clamp(0.9375rem, 1.2vw, 1rem);
+    color: #4A4A4A;
+    line-height: 1.55;
+    margin: 0;
+    max-width: 360px;
+  }
+</style>
