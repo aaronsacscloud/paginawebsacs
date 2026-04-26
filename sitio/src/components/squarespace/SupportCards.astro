@@ -95,13 +95,16 @@ const { items } = Astro.props;
     font-size: 0.9375rem;
     line-height: 1.6;
     color: rgba(255, 255, 255, 0.65);
-    margin: 0 0 8px;
+    margin: 0;
   }
 
   .sq2-support-cta {
     display: inline-flex;
+    align-self: flex-start;
     align-items: center;
     gap: 8px;
+    margin-top: auto;
+    padding-top: clamp(20px, 2.5vw, 28px);
     font-family: var(--font-display, 'Sora', sans-serif);
     font-size: 0.8125rem;
     font-weight: 700;

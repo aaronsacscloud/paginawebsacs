@@ -5,6 +5,7 @@ import PremiumTemplates from '../../components/squarespace/PremiumTemplates.astr
 import BentoGrid from '../../components/squarespace/BentoGrid.astro';
 import CreativeToolsGrid from '../../components/squarespace/CreativeToolsGrid.astro';
 import DiscoveryTools from '../../components/squarespace/DiscoveryTools.astro';
+import PlatformPillars from '../../components/squarespace/PlatformPillars.astro';
 import RelatedProducts from '../../components/squarespace/RelatedProducts.astro';
 import HowToSteps from '../../components/squarespace/HowToSteps.astro';
 import SupportCards from '../../components/squarespace/SupportCards.astro';
@@ -79,8 +80,8 @@ const bentoItems = [
     eyebrow: 'Layouts inteligentes',
     title: 'Layouts que se adaptan al catálogo.',
     description: 'Si tu tienda tiene 50 SKUs muestra grid, si tiene 5000 propone navegación filtrable. La página se acomoda a tu inventario.',
-    image: '/images/screens/inventario-omnicanal-global.webp',
-    imageAlt: 'Layouts adaptados al tamaño de catálogo',
+    image: '/images/bento/bento-layouts.webp',
+    imageAlt: 'Tres iPhones mostrando la misma tienda Aurea en hero, ficha de producto y menú de filtros',
   },
   {
     eyebrow: 'AI redacta tus textos',
@@ -121,13 +122,13 @@ const creativeTools = [
 const discoveryItems = [
   {
     icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>',
-    title: 'SEO integrado',
-    description: 'Metadatos, sitemap, Open Graph y schema.org se generan solos por producto. Apuntas tu dominio y empiezas a indexar.',
+    title: 'SEO + AI Search',
+    description: 'Tu tienda nace lista para Google y para los LLMs. Schema, sitemap y llms.txt se generan solos por producto, así ChatGPT y Gemini pueden citarte cuando alguien pregunta.',
     image: '/images/discovery/disc-seo.webp',
     imageAlt: 'Panel de SEO de SACS con vista previa en Google y datos estructurados activos',
     bullets: [
-      'Sitemap.xml y robots.txt automáticos',
       'Schema product, breadcrumb y review',
+      'llms.txt + ai-sitemap para ChatGPT y Gemini',
       'Open Graph y Twitter Cards por SKU',
     ],
   },
@@ -154,6 +155,42 @@ const discoveryItems = [
       'Embudo de checkout en vivo',
       'SKU más vistos vs. más comprados',
     ],
+  },
+];
+
+const platformPillars = [
+  {
+    title: 'Edición visual',
+    description: 'Personaliza cada detalle de tu tienda con un editor drag-and-drop diseñado para tu marca.',
+    image: '/images/pillars/pillar-editing.webp',
+    imageAlt: 'Editor de SACS con un atelier de cerámica de Oaxaca seleccionado y panel de estilos flotando',
+    bg: '#2A2620',
+    href: '#bento',
+  },
+  {
+    title: 'Inteligencia de diseño',
+    description: 'AXO, tu copiloto creativo, genera fichas, copys e imágenes hechas para tu marca.',
+    image: '/images/pillars/pillar-ai.webp',
+    imageAlt: 'Composición editorial con tarjetas de marca, fuentes y materiales generados por la IA AXO',
+    bg: '#0F0F12',
+    href: '/producto/axo-copiloto-ia',
+  },
+  {
+    title: 'Email profesional',
+    description: 'hola@tumarca.com en minutos. Buzón con tu dominio + plantillas transaccionales listas.',
+    image: '/images/pillars/pillar-email.webp',
+    imageAlt: 'Insignia de email profesional con la dirección hola@aurea.com.mx sobre fondo azul suave',
+    bg: '#BFC8D2',
+    textColor: '#1a1a2e',
+    href: '/agendar/demo',
+  },
+  {
+    title: 'Dominios',
+    description: 'Registra tu dominio sin salir de SACS. SSL, WHOIS privacy y DNS premium incluidos.',
+    image: '/images/pillars/pillar-domain.webp',
+    imageAlt: 'Buscador de dominios con aurea.com.mx disponible y chips .org .net .info .shop',
+    bg: '#14151A',
+    href: '/agendar/demo',
   },
 ];
 
@@ -219,15 +256,15 @@ const supportItems = [
     eyebrow: 'Onboarding',
     title: 'Te acompañamos en el lanzamiento.',
     description: 'Un especialista te ayuda con la configuración inicial, importación de catálogo y conexión de dominio. Sin costo extra.',
-    href: '/contacto',
-    ctaLabel: 'Agendar onboarding',
+    href: '/agendar/demo',
+    ctaLabel: 'Agendar demo',
   },
   {
     eyebrow: 'Centro de ayuda',
     title: 'Documentación clara y soporte humano.',
     description: 'Guías paso a paso, videos tutoriales y un equipo que responde en español, en horario LatAm.',
-    href: '/centro-de-ayuda',
-    ctaLabel: 'Ir al centro de ayuda',
+    href: '/agendar/demo',
+    ctaLabel: 'Agendar demo',
   },
 ];
 ---
@@ -721,9 +758,15 @@ const supportItems = [
 
   <DiscoveryTools
     eyebrow="SEO + analítica"
-    title="Para que Google te encuentre y tú midas todo."
-    subtitle="Lo técnico lo resolvemos por ti. Tú concéntrate en vender."
+    title="Para que Google, ChatGPT y Gemini te encuentren."
+    subtitle="Las IAs ya son la nueva búsqueda. Lo técnico lo resolvemos por ti — tú concéntrate en vender."
     items={discoveryItems}
+  />
+
+  <PlatformPillars
+    title="Todo lo que necesitas, en una sola plataforma."
+    subtitle="Edición, IA, email profesional y dominio — incluidos. Sin contratar 4 herramientas distintas."
+    items={platformPillars}
   />
 
   <RelatedProducts
@@ -734,7 +777,6 @@ const supportItems = [
   />
 
   <HowToSteps
-    eyebrow="Cómo lanzar tu tienda"
     title="De catálogo a tienda publicada en 6 pasos."
     subtitle="La mayoría de nuestros clientes lo hace en menos de un día. Te acompañamos en cada paso si lo prefieres."
     steps={steps}
