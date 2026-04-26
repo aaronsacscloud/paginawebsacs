@@ -1,7 +1,7 @@
 ---
 import ProductLayout from '../../layouts/ProductLayout.astro';
 import FinalCTA from '../../components/FinalCTA.astro';
-import StoresShowcase from '../../components/squarespace/StoresShowcase.astro';
+import PremiumTemplates from '../../components/squarespace/PremiumTemplates.astro';
 import BentoGrid from '../../components/squarespace/BentoGrid.astro';
 import CreativeToolsGrid from '../../components/squarespace/CreativeToolsGrid.astro';
 import DiscoveryTools from '../../components/squarespace/DiscoveryTools.astro';
@@ -17,42 +17,38 @@ const pillar = getPillarForFeature(slug)!;
 const content = pageContent[slug];
 
 // ─── Datos específicos del rediseño Squarespace ───
-const stores = [
+const premiumTemplates = [
   {
-    name: 'Tempo Marroquinería',
-    category: 'Cuero · Argentina',
-    location: 'Buenos Aires',
-    image: '/images/testimonials/mariano-ferrer.webp',
-    imageAlt: 'Tempo Marroquinería — tienda de cuero en Argentina',
-    href: '#testimonios',
-    accent: '#3a8a5a',
+    industry: 'Moda',
+    name: 'Aurea',
+    tagline: 'Editorial limpio para una marca de moda con catálogo amplio y temporadas claras.',
+    image: '/images/templates/template-fashion.webp',
+    imageAlt: 'Plantilla AUREA — homepage de moda mujer con hero editorial, categorías y bestsellers',
+    accent: '#1F2233',
   },
   {
-    name: 'Aurea Joyas',
-    category: 'Joyería · Colombia',
-    location: 'Medellín',
-    image: '/images/testimonials/elena-vidal.webp',
-    imageAlt: 'Aurea Joyas — boutique de joyería en Colombia',
-    href: '#testimonios',
-    accent: '#b07c3c',
+    industry: 'Zapaterías',
+    name: 'Lares',
+    tagline: 'Construida para boutiques de calzado de autor: producto en grande, oficio al frente.',
+    image: '/images/templates/template-shoes.webp',
+    imageAlt: 'Plantilla LARES — homepage de zapatería premium con hero de Chelsea boot, taller artesanal y bestsellers',
+    accent: '#2A211A',
   },
   {
-    name: 'Grupo Castaño',
-    category: 'Calzado · Chile',
-    location: 'Santiago',
-    image: '/images/testimonials/julian-ponce.webp',
-    imageAlt: 'Grupo Castaño — multi-marca de calzado en Chile',
-    href: '#testimonios',
-    accent: '#4a6ab8',
+    industry: 'Belleza',
+    name: 'Lumen',
+    tagline: 'Pensada para skincare y maquillaje con activos estrella, rituales y science-first.',
+    image: '/images/templates/template-beauty.webp',
+    imageAlt: 'Plantilla LUMEN — homepage de skincare con hero de serum, ingredientes activos y rutinas',
+    accent: '#4A2C2A',
   },
   {
-    name: 'Camila Ocampo',
-    category: 'Calzado boutique · México',
-    location: 'CDMX',
-    image: '/images/testimonials/camila-ocampo.webp',
-    imageAlt: 'Boutique de calzado moderna en CDMX',
-    href: '#testimonios',
-    accent: '#c89a3c',
+    industry: 'Productos orgánicos',
+    name: 'Verde Origen',
+    tagline: 'Editorial cálido para despensa orgánica, productores aliados y entregas semanales.',
+    image: '/images/templates/template-organic.webp',
+    imageAlt: 'Plantilla VERDE ORIGEN — homepage de productos orgánicos con hero de mesa con cosecha, productores y recetas',
+    accent: '#1E3A2A',
   },
 ];
 
@@ -692,13 +688,11 @@ const supportItems = [
     </section>
   </div>
 
-  <StoresShowcase
-    eyebrow="Tiendas reales hechas con SACS"
-    title="Catálogos físicos que ya viven en línea."
-    subtitle="Cada una empezó como POS y conectó su tienda online en SACS. Mismo stock, misma caja, misma marca."
-    stores={stores}
-    ctaLabel="Ver casos de éxito"
-    ctaHref="/blog"
+  <PremiumTemplates
+    eyebrow="Plantillas de primer nivel"
+    title="Empieza con una base premium. Termina con tu marca."
+    subtitle="Plantillas pensadas para cada giro — moda, zapaterías, belleza, productos orgánicos. Editor visual sobre una base que ya está afinada para vender."
+    templates={premiumTemplates}
   />
 
   <BentoGrid

@@ -1,0 +1,304 @@
+---
+interface Template {
+  industry: string;
+  name: string;
+  tagline: string;
+  image: string;
+  imageAlt: string;
+  accent?: string;
+}
+
+interface Props {
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  templates: Template[];
+}
+
+const { eyebrow, title, subtitle, templates } = Astro.props;
+---
+
+<section class="pt-section reveal-section">
+  <div class="pt-inner container">
+    <header class="pt-header">
+      {eyebrow && <span class="pt-eyebrow reveal-item">{eyebrow}</span>}
+      <h2 class="pt-title reveal-item" style="--reveal-delay: 80ms">{title}</h2>
+      {subtitle && <p class="pt-subtitle reveal-item" style="--reveal-delay: 140ms">{subtitle}</p>}
+    </header>
+
+    <div class="pt-grid">
+      {templates.map((tpl, i) => (
+        <article
+          class="pt-card reveal-item"
+          style={`--reveal-delay: ${200 + i * 90}ms; --accent: ${tpl.accent || '#4B7BE5'}`}
+          data-pt-card
+        >
+          <div class="pt-window">
+            <div class="pt-browser-bar" aria-hidden="true">
+              <span class="pt-dot"></span>
+              <span class="pt-dot"></span>
+              <span class="pt-dot"></span>
+              <span class="pt-url">{tpl.name.toLowerCase().replace(/\s+/g, '')}.shop</span>
+            </div>
+            <div class="pt-scroller">
+              <img
+                class="pt-image"
+                src={tpl.image}
+                alt={tpl.imageAlt}
+                width="1024"
+                height="1536"
+                loading="lazy"
+              />
+            </div>
+            <span class="pt-hover-hint" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+              Pasa el cursor para ver más
+            </span>
+          </div>
+          <div class="pt-meta">
+            <span class="pt-industry">{tpl.industry}</span>
+            <h3 class="pt-name">{tpl.name}</h3>
+            <p class="pt-tagline">{tpl.tagline}</p>
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .pt-section {
+    background: #FFFFFF;
+    padding: clamp(72px, 10vw, 140px) 0;
+  }
+
+  .pt-header {
+    max-width: 760px;
+    margin: 0 auto clamp(48px, 6vw, 80px);
+    text-align: center;
+  }
+
+  .pt-eyebrow {
+    display: inline-block;
+    font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #4B7BE5;
+    margin-bottom: 16px;
+  }
+
+  .pt-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.875rem, 4.4vw, 3rem);
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: -0.035em;
+    line-height: 1.04;
+    margin: 0 0 18px;
+  }
+
+  .pt-subtitle {
+    font-size: clamp(0.9375rem, 1.4vw, 1.0625rem);
+    line-height: 1.65;
+    color: #4A4A4A;
+    margin: 0;
+    max-width: 600px;
+    margin-inline: auto;
+  }
+
+  .pt-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(28px, 3vw, 44px);
+  }
+
+  @media (min-width: 720px) {
+    .pt-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .pt-card {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .pt-window {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    background: #F5F2EC;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 18px 50px -28px rgba(20, 18, 30, 0.18), 0 1px 0 rgba(0,0,0,0.04) inset;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .pt-card:hover .pt-window {
+    transform: translateY(-4px);
+    box-shadow: 0 28px 70px -28px rgba(20, 18, 30, 0.28), 0 1px 0 rgba(0,0,0,0.04) inset;
+  }
+
+  .pt-browser-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    background: #FBF9F4;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    border-bottom: 1px solid rgba(20, 18, 30, 0.06);
+    z-index: 2;
+  }
+
+  .pt-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: rgba(20, 18, 30, 0.12);
+  }
+
+  .pt-dot:nth-child(1) { background: #FF6058; }
+  .pt-dot:nth-child(2) { background: #FFBC2E; }
+  .pt-dot:nth-child(3) { background: #29CC42; }
+
+  .pt-url {
+    margin-left: 12px;
+    font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: #6E6A60;
+    letter-spacing: 0.02em;
+  }
+
+  .pt-scroller {
+    position: absolute;
+    top: 30px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+  }
+
+  .pt-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: auto;
+    display: block;
+    transform: translateY(0);
+    transition: transform 6s cubic-bezier(0.65, 0, 0.35, 1);
+    will-change: transform;
+  }
+
+  /* On hover: scroll the image to reveal everything (img is taller than window)
+     window aspect 4/3 with width 100% → window height ≈ 75% of width.
+     image natural ratio is 1024:1536 (2:3) → image height ≈ 150% of width.
+     so we need translateY of -(150% - 75%) ≈ -75% of width = roughly -50% of image height. */
+  .pt-card:hover .pt-image,
+  .pt-card.is-touching .pt-image {
+    transform: translateY(-50%);
+  }
+
+  .pt-hover-hint {
+    position: absolute;
+    bottom: 14px;
+    left: 14px;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 11px;
+    background: rgba(20, 18, 30, 0.78);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: #FFFFFF;
+    font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    border-radius: 999px;
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+
+  .pt-card:hover .pt-hover-hint {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  .pt-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0 4px;
+  }
+
+  .pt-industry {
+    font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--accent, #4B7BE5);
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+  }
+
+  .pt-name {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+
+  .pt-tagline {
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    color: #5b5b5b;
+    margin: 0;
+  }
+
+  /* Mobile / coarse pointer: kill backdrop-filter and hover transforms */
+  @media (hover: none), (max-width: 720px) {
+    .pt-hover-hint {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      background: rgba(20, 18, 30, 0.86);
+    }
+    .pt-card:hover .pt-window {
+      transform: none;
+      box-shadow: 0 18px 50px -28px rgba(20, 18, 30, 0.18);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pt-image {
+      transition: none;
+    }
+    .pt-card:hover .pt-image,
+    .pt-card.is-touching .pt-image {
+      transform: translateY(-50%);
+    }
+  }
+</style>
+
+<script>
+  // On touch devices, toggle scroll on tap so users on mobile see the long page too.
+  if (typeof window !== 'undefined' && window.matchMedia('(hover: none)').matches) {
+    document.querySelectorAll<HTMLElement>('[data-pt-card]').forEach((card) => {
+      card.addEventListener('click', (e) => {
+        // ignore clicks bubbling from links inside (none for now, but future-proof)
+        if ((e.target as HTMLElement).closest('a')) return;
+        card.classList.toggle('is-touching');
+      });
+    });
+  }
+</script>
