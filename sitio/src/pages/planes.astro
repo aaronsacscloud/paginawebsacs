@@ -18,7 +18,7 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
 <section class="pricing-hero">
   <div class="container pricing-hero-inner">
     <h1 class="pricing-headline">Prueba gratis.<br/>Luego paga lo que necesitas.</h1>
-    <p class="pricing-subtitle">Empieza con nuestro plan Growth completo por 7 dias. Sin tarjeta. Despues, elige el plan que se ajuste a tu negocio.</p>
+    <p class="pricing-subtitle">Empieza con nuestro plan Fideliza completo por 7 dias. Sin tarjeta. Despues, elige el plan que se ajuste a tu negocio.</p>
     <a href="/prueba-gratis" class="pricing-hero-btn">Iniciar prueba gratis</a>
 
     <div class="pricing-toggles" id="pricing-toggles">
@@ -146,6 +146,29 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
   </div>
 </section>
 
+<!-- ═══ SECTION: Social Proof ═══ -->
+<section class="social-proof-section">
+  <div class="container social-proof-inner">
+    <h2 class="social-proof-title">Miles de marcas ya crecen con <span class="social-proof-title-logo">Sacs</span></h2>
+    <div class="social-proof-stats" role="list">
+      <div class="social-proof-stat" role="listitem">
+        <span class="social-proof-num"><span class="social-proof-count" data-count-to="3000" data-count-prefix="+" data-count-format="comma">+3,000</span></span>
+        <span class="social-proof-label">marcas confían en Sacs</span>
+      </div>
+      <div class="social-proof-sep" aria-hidden="true"></div>
+      <div class="social-proof-stat" role="listitem">
+        <span class="social-proof-num"><span class="social-proof-count" data-count-to="9" data-count-prefix="+$" data-count-format="int">+$9</span><span class="social-proof-unit">B</span></span>
+        <span class="social-proof-label">MXN en transacciones procesadas</span>
+      </div>
+      <div class="social-proof-sep" aria-hidden="true"></div>
+      <div class="social-proof-stat" role="listitem">
+        <span class="social-proof-num"><span class="social-proof-count" data-count-to="7" data-count-prefix="+" data-count-format="int">+7</span></span>
+        <span class="social-proof-label">países atendidos en LatAm</span>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ═══ SECTION: Enterprise ═══ -->
 <section class="enterprise-section">
   <div class="container enterprise-grid">
@@ -210,28 +233,28 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
 <section class="migration-section">
   <div class="container migration-grid">
     <div class="migration-content">
-      <h2 class="migration-title">Migrar es más fácil de lo que piensas</h2>
-      <p class="migration-desc">Nuestro equipo migra tu catálogo, clientes e historial de ventas. Tú solo validas. Sin perder un día de ventas.</p>
+      <h2 class="migration-title">Nosotros migramos todo por ti</h2>
+      <p class="migration-desc">Productos, clientes, apartados, pedidos, proveedores e historial completo. Tú no haces nada — nuestro equipo se encarga. Sin perder un día de ventas.</p>
       <div class="migration-steps">
         <div class="migration-step">
           <span class="migration-step-num">1</span>
           <div>
-            <span class="migration-step-title">Nos envías tu catálogo</span>
-            <span class="migration-step-desc">Excel, CSV o desde tu sistema actual. Nosotros lo formateamos.</span>
+            <span class="migration-step-title">Nos das acceso a tu información</span>
+            <span class="migration-step-desc">Excel, CSV o conexión directa a tu sistema actual. Nosotros nos encargamos del formato.</span>
           </div>
         </div>
         <div class="migration-step">
           <span class="migration-step-num">2</span>
           <div>
-            <span class="migration-step-title">Importamos todo en 1-3 días</span>
-            <span class="migration-step-desc">Productos, variantes, precios, clientes y proveedores.</span>
+            <span class="migration-step-title">Migramos todo en 1-3 días</span>
+            <span class="migration-step-desc">Productos, variantes, precios, clientes, apartados, pedidos, proveedores e historial de ventas. Tú solo validas.</span>
           </div>
         </div>
         <div class="migration-step">
           <span class="migration-step-num">3</span>
           <div>
             <span class="migration-step-title">Vendes desde el día 1</span>
-            <span class="migration-step-desc">Capacitación incluida. Tu ejecutivo te acompaña en cada paso.</span>
+            <span class="migration-step-desc">Capacitación incluida. Tu ejecutivo dedicado te acompaña en cada paso.</span>
           </div>
         </div>
       </div>
@@ -1156,6 +1179,110 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
   width: 20px;
   border-radius: 3px;
   background: var(--color-text-primary);
+}
+
+/* ═══════════════════════════════════════
+   SOCIAL PROOF
+   ═══════════════════════════════════════ */
+.social-proof-section {
+  padding: var(--space-28) 0;
+  background: var(--color-bg-primary);
+  border-top: 1px solid rgba(0,0,0,0.06);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .social-proof-section { padding: var(--space-32) 0; }
+}
+
+@media (min-width: 1024px) {
+  .social-proof-section { padding: clamp(120px, 14vw, 180px) 0; }
+}
+
+.social-proof-inner {
+  text-align: center;
+}
+
+.social-proof-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.875rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--color-text-primary);
+  margin: 0 auto clamp(60px, 9vw, 120px);
+  max-width: 780px;
+}
+
+.social-proof-title-logo {
+  color: var(--color-text-primary);
+}
+
+.social-proof-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(20px, 5vw, 80px);
+  flex-wrap: wrap;
+}
+
+.social-proof-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.social-proof-num {
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, 7vw, 5.5rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--color-primary);
+}
+
+.social-proof-unit {
+  font-size: 0.7em;
+  margin-left: 2px;
+}
+
+.social-proof-label {
+  font-size: clamp(0.85rem, 1.3vw, 1rem);
+  color: rgba(0,0,0,0.55);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  max-width: 220px;
+  line-height: 1.4;
+}
+
+.social-proof-sep {
+  width: 1px;
+  height: 90px;
+  background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.12), transparent);
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .social-proof-stats {
+    gap: 12px;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    padding: 0 4px;
+  }
+  .social-proof-stat { flex: 1; gap: 8px; }
+  .social-proof-num { font-size: 1.85rem; }
+  .social-proof-label { font-size: 0.7rem; max-width: 110px; }
+  .social-proof-sep { height: 56px; }
+}
+
+@media (max-width: 380px) {
+  .social-proof-num { font-size: 1.5rem; }
+  .social-proof-label { font-size: 0.62rem; }
+  .social-proof-stats { gap: 6px; }
+  .social-proof-sep { height: 44px; }
 }
 
 /* ═══════════════════════════════════════
@@ -3097,4 +3224,58 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
   branchesSlider?.addEventListener('input', calculateROI);
   benefitCheckboxes.forEach((cb) => cb.addEventListener('change', calculateROI));
   calculateROI();
+
+  // ─── Social proof: count-up on scroll into view ───
+  const socialProofSection = document.querySelector('.social-proof-section');
+  if (socialProofSection) {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const counters = socialProofSection.querySelectorAll<HTMLElement>('.social-proof-count');
+
+    const formatValue = (value: number, format: string, prefix: string): string => {
+      const rounded = Math.round(value);
+      const num = format === 'comma' ? rounded.toLocaleString('es-MX') : String(rounded);
+      return prefix + num;
+    };
+
+    // Reset to starting state so the animation is visible
+    if (!reduceMotion) {
+      counters.forEach((el) => {
+        const prefix = el.dataset.countPrefix || '';
+        const format = el.dataset.countFormat || 'int';
+        el.textContent = formatValue(0, format, prefix);
+      });
+    }
+
+    const animateCounter = (el: HTMLElement) => {
+      const target = parseInt(el.dataset.countTo || '0', 10);
+      const prefix = el.dataset.countPrefix || '';
+      const format = el.dataset.countFormat || 'int';
+      if (reduceMotion) {
+        el.textContent = formatValue(target, format, prefix);
+        return;
+      }
+      const duration = 1800;
+      const start = performance.now();
+      const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+      const tick = (now: number) => {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const value = easeOutCubic(progress) * target;
+        el.textContent = formatValue(value, format, prefix);
+        if (progress < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    };
+
+    const spObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          counters.forEach(animateCounter);
+          spObserver.disconnect();
+        }
+      });
+    }, { threshold: 0.35 });
+
+    spObserver.observe(socialProofSection);
+  }
 </script>

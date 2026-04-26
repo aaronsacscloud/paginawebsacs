@@ -153,6 +153,10 @@ export const plans: Plan[] = [
 // ─── Universal Features (all plans) ───
 
 export const universalFeatures: string[] = [
+  'Punto de venta',
+  'Tienda en línea',
+  'Vende en Facebook, Instagram y TikTok Shop',
+  'Aparece en Google, ChatGPT y Gemini',
   'Soporte 24/7 por chat y WhatsApp',
   'Dispositivos ilimitados',
   'Usuarios ilimitados',
