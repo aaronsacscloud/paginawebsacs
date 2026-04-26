@@ -12,13 +12,35 @@ import CompetitorComparison from '../../components/squarespace/CompetitorCompari
 import RelatedProducts from '../../components/squarespace/RelatedProducts.astro';
 import HowToSteps from '../../components/squarespace/HowToSteps.astro';
 import SupportCards from '../../components/squarespace/SupportCards.astro';
+import TestimonialStores from '../../components/squarespace/TestimonialStores.astro';
+import PlanIncluded from '../../components/squarespace/PlanIncluded.astro';
+import GiroFAQ from '../../components/giros/GiroFAQ.astro';
 import { getFeatureBySlug, getPillarForFeature } from '../../data/product';
 import { pageContent } from '../../data/product-pages';
+import { plans } from '../../data/plans';
 
 const slug = 'tienda-en-linea';
 const feature = getFeatureBySlug(slug)!;
 const pillar = getPillarForFeature(slug)!;
 const content = pageContent[slug];
+
+// Plan + cumulative features (mismo cálculo que [slug].astro)
+const planOrder = ['vende', 'controla', 'fideliza', 'automatiza'];
+const currentPlanId = pillar.id;
+const currentPlanIdx = planOrder.indexOf(currentPlanId);
+const activePlan = plans.find((p) => p.id === currentPlanId) || plans[0];
+const cumulativeFeatureGroups: Array<{ category: string; items: string[]; planName: string }> = [];
+for (let i = 0; i <= currentPlanIdx; i++) {
+  const p = plans.find((pp) => pp.id === planOrder[i]);
+  if (p) {
+    for (const f of p.features) {
+      if (typeof f === 'object' && (f as any).category) {
+        cumulativeFeatureGroups.push({ ...(f as any), planName: p.name });
+      }
+    }
+  }
+}
+const inheritedPlanName = currentPlanIdx > 0 ? plans.find((p) => p.id === planOrder[currentPlanIdx - 1])?.name : undefined;
 
 // ─── Datos específicos del rediseño Squarespace ───
 const premiumTemplates = [
@@ -316,6 +338,42 @@ const supportItems = [
     description: 'Guías paso a paso, videos tutoriales y un equipo que responde en español, en horario LatAm.',
     href: '/agendar/demo',
     ctaLabel: 'Agendar demo',
+  },
+];
+
+const storeTestimonials = [
+  {
+    bg: '#0a0a0a',
+    image: '/images/testimonials/stores/store-boreal.webp',
+    imageAlt: 'Interior de boutique de moda Boreal Atelier en Buenos Aires con doble altura, ventanales arqueados y paleta cálida',
+    initials: 'FP',
+    color: '#5b8a5f',
+    quote: 'Subimos toda la colección un viernes y el sábado ya estábamos vendiendo online a clientas que no llegan al local. Sin pelearnos con plugins ni con un programador externo.',
+    name: 'Florencia Peralta',
+    business: 'Boreal Atelier',
+    location: 'Buenos Aires, Argentina',
+  },
+  {
+    bg: '#0a0a0a',
+    image: '/images/testimonials/stores/store-maren.webp',
+    imageAlt: 'Joyería Estudio Marén en Bogotá con vitrinas curadas, paredes color esmeralda e iluminación de galería',
+    initials: 'LV',
+    color: '#c77a4a',
+    quote: 'Cada pieza tiene foto editorial, descripción larga y stock real por sucursal. Si alguien compra online la última de un anillo, la caja física lo sabe al instante.',
+    name: 'Lucía Vélez',
+    business: 'Estudio Marén Joyas',
+    location: 'Bogotá, Colombia',
+  },
+  {
+    bg: '#0a0a0a',
+    image: '/images/testimonials/stores/store-vega.webp',
+    imageAlt: 'Casa Vega, concept store multimarca en CDMX con techo marmoleado, racks de prendas de color y piso pulido',
+    initials: 'DC',
+    color: '#d4733a',
+    quote: 'Antes tenía Shopify por un lado y el POS por el otro. Ahora un solo catálogo, un solo inventario y un solo dashboard para nuestras 8 sucursales y la tienda online. Cambió cómo pienso el negocio.',
+    name: 'Daniela Cárdenas',
+    business: 'Casa Vega Concept',
+    location: 'Ciudad de México, México',
   },
 ];
 ---
@@ -853,6 +911,8 @@ const supportItems = [
     rows={competitorRows}
   />
 
+  <TestimonialStores items={storeTestimonials} />
+
   <RelatedProducts
     eyebrow="Funciona mejor con"
     title="Toda tu operación en SACS, no solo tu sitio."
@@ -867,6 +927,15 @@ const supportItems = [
   />
 
   <SupportCards items={supportItems} />
+
+  <PlanIncluded
+    featureLabel={feature.label}
+    plan={activePlan}
+    inheritedPlanName={inheritedPlanName}
+    featureGroups={cumulativeFeatureGroups}
+  />
+
+  <GiroFAQ faqs={content.faqs} />
 
   <FinalCTA />
 </ProductLayout>

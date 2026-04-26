@@ -30,32 +30,20 @@ const { eyebrow, title, subtitle, items } = Astro.props;
     </header>
 
     <div class="sq2-pillars-grid">
-      {items.map((item, i) => {
-        const Tag = (item.href ? 'a' : 'div') as 'a' | 'div';
-        const props = item.href ? { href: item.href } : {};
-        return (
-          <Tag
-            class="sq2-pillar reveal-item"
-            style={`--bg: ${item.bg}; --fg: ${item.textColor || '#fff'}; --reveal-delay: ${180 + i * 80}ms;`}
-            {...props}
-          >
-            <div class="sq2-pillar-text">
-              <h3 class="sq2-pillar-title">{item.title}</h3>
-              <p class="sq2-pillar-desc">{item.description}</p>
-            </div>
-            <div class="sq2-pillar-media">
-              <img src={item.image} alt={item.imageAlt} width="1024" height="1536" loading="lazy" />
-            </div>
-            {item.href && (
-              <span class="sq2-pillar-arrow" aria-hidden="true">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M5 12h14M13 5l7 7-7 7" />
-                </svg>
-              </span>
-            )}
-          </Tag>
-        );
-      })}
+      {items.map((item, i) => (
+        <div
+          class="sq2-pillar reveal-item"
+          style={`--bg: ${item.bg}; --fg: ${item.textColor || '#fff'}; --reveal-delay: ${180 + i * 80}ms;`}
+        >
+          <div class="sq2-pillar-text">
+            <h3 class="sq2-pillar-title">{item.title}</h3>
+            <p class="sq2-pillar-desc">{item.description}</p>
+          </div>
+          <div class="sq2-pillar-media">
+            <img src={item.image} alt={item.imageAlt} width="1024" height="1536" loading="lazy" />
+          </div>
+        </div>
+      ))}
     </div>
   </div>
 </section>
@@ -139,14 +127,6 @@ const { eyebrow, title, subtitle, items } = Astro.props;
     color: var(--fg);
     border-radius: 22px;
     overflow: hidden;
-    text-decoration: none;
-    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  a.sq2-pillar:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.18);
-    text-decoration: none;
   }
 
   .sq2-pillar-text {
@@ -187,28 +167,4 @@ const { eyebrow, title, subtitle, items } = Astro.props;
     display: block;
   }
 
-  .sq2-pillar-arrow {
-    position: absolute;
-    bottom: clamp(16px, 2vw, 22px);
-    right: clamp(16px, 2vw, 22px);
-    z-index: 3;
-    color: var(--fg);
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.3s ease;
-  }
-
-  a.sq2-pillar:hover .sq2-pillar-arrow {
-    transform: translateX(4px);
-  }
-
-  @media (max-width: 640px) {
-    a.sq2-pillar:hover {
-      transform: none;
-      box-shadow: none;
-    }
-  }
 </style>

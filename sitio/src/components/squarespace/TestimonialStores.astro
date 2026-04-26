@@ -1,0 +1,378 @@
+---
+interface Testimonial {
+  bg: string;
+  image: string;
+  imageAlt: string;
+  initials: string;
+  color: string;
+  quote: string;
+  name: string;
+  business: string;
+  location: string;
+}
+
+interface Props {
+  items: Testimonial[];
+}
+
+const { items } = Astro.props;
+const first = items[0];
+---
+
+<section class="ts-section" id="ts-section" style={`--tbg:${first.bg};--taccent:${first.color}`}>
+  <div class="ts-bg" aria-hidden="true"></div>
+  <div class="ts-track" id="ts-track">
+    {items.map((t, i) => (
+      <div class={`ts-slide${i === 0 ? ' active' : ''}`} data-ts={i} data-bg={t.bg} data-accent={t.color}>
+        <div class="ts-layout container">
+          <div class="ts-photo" style={`--placeholder-color:${t.color};--accent:${t.color}`}>
+            <img src={t.image} alt={t.imageAlt} width="480" height="600" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+            <div class="ts-placeholder" style="display:none">
+              <span>{t.initials}</span>
+            </div>
+          </div>
+          <div class="ts-content">
+            <blockquote class="ts-quote">&ldquo;{t.quote}&rdquo;</blockquote>
+            <div class="ts-attribution">
+              <div class="ts-info">
+                <span class="ts-name">{t.name}</span>
+                <span class="ts-business">{t.business}</span>
+                <span class="ts-location">{t.location}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+  <div class="ts-nav container">
+    <div class="ts-arrows">
+      <button class="ts-arrow ts-arrow--prev" id="ts-prev" type="button" aria-label="Testimonio anterior">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <button class="ts-arrow ts-arrow--next" id="ts-next" type="button" aria-label="Siguiente testimonio">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+    <div class="ts-dots">
+      {items.map((_, i) => (
+        <button class={`ts-dot${i === 0 ? ' active' : ''}`} data-ts-dot={i} type="button" aria-label={`Testimonio ${i + 1}`}></button>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .ts-section {
+    position: relative;
+    overflow: hidden;
+    background: var(--tbg, #0a0a0a);
+    transition: background 0.7s ease;
+    isolation: isolate;
+  }
+
+  .ts-bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 1;
+    transition: opacity 0.7s ease;
+  }
+
+  .ts-bg::before,
+  .ts-bg::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(110px);
+    transition: background-color 0.7s ease;
+    will-change: transform;
+  }
+
+  .ts-bg::before {
+    top: 10%;
+    left: 8%;
+    width: 28%;
+    aspect-ratio: 1;
+    background: var(--taccent, #B25A3C);
+    opacity: 0.18;
+  }
+
+  .ts-bg::after {
+    bottom: -10%;
+    left: -5%;
+    width: 22%;
+    aspect-ratio: 1;
+    background: var(--taccent, #B25A3C);
+    opacity: 0.12;
+  }
+
+  .ts-section::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.03), transparent 60%),
+      radial-gradient(ellipse at 50% 100%, rgba(0, 0, 0, 0.4), transparent 60%);
+  }
+
+  @media (max-width: 767px) {
+    .ts-bg::before,
+    .ts-bg::after { filter: blur(70px); }
+    .ts-bg::before { opacity: 0.14; }
+    .ts-bg::after { opacity: 0.08; }
+  }
+
+  .ts-track {
+    position: relative;
+    z-index: 2;
+  }
+
+  .ts-slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.7s ease;
+    pointer-events: none;
+  }
+
+  .ts-slide.active {
+    opacity: 1;
+    pointer-events: auto;
+    position: relative;
+  }
+
+  .ts-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: clamp(48px, 8vw, 100px) 0;
+    align-items: center;
+  }
+
+  @media (min-width: 768px) {
+    .ts-layout {
+      grid-template-columns: minmax(320px, 420px) 1fr;
+      gap: clamp(40px, 5vw, 80px);
+    }
+  }
+
+  .ts-photo {
+    position: relative;
+    max-width: 460px;
+  }
+
+  .ts-photo::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translate(20px, 20px);
+    border-radius: 28px;
+    background: var(--accent, #B25A3C);
+    opacity: 0.85;
+    z-index: 0;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease;
+  }
+
+  .ts-photo:hover::before {
+    transform: translate(26px, 26px);
+    opacity: 1;
+  }
+
+  .ts-photo img,
+  .ts-placeholder {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 460px;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    border-radius: 28px;
+    display: block;
+    box-shadow:
+      0 30px 60px rgba(0, 0, 0, 0.55),
+      0 10px 24px rgba(0, 0, 0, 0.35),
+      0 0 0 1px rgba(255, 255, 255, 0.04);
+  }
+
+  .ts-placeholder {
+    height: auto;
+    background: var(--placeholder-color, #ccc);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  @media (max-width: 767px) {
+    .ts-photo::before { transform: translate(10px, 10px); }
+    .ts-photo img,
+    .ts-placeholder { border-radius: 22px; }
+  }
+
+  .ts-placeholder span {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 4rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: 0.05em;
+  }
+
+  .ts-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 48px;
+  }
+
+  .ts-quote {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.625rem, 3.2vw, 2.75rem);
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.03em;
+    line-height: 1.25;
+    margin: 0;
+  }
+
+  .ts-attribution {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .ts-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .ts-name {
+    display: block;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: #f5f5f5;
+  }
+
+  .ts-business {
+    display: block;
+    font-size: 0.875rem;
+    color: rgba(245, 245, 245, 0.85);
+    font-weight: 500;
+  }
+
+  .ts-location {
+    display: block;
+    font-size: 0.8125rem;
+    color: rgba(245, 245, 245, 0.55);
+  }
+
+  .ts-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: clamp(48px, 6vw, 80px);
+    position: relative;
+    z-index: 2;
+  }
+
+  .ts-arrows {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .ts-arrow {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #f5f5f5;
+    padding: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .ts-arrow:hover { opacity: 0.6; }
+
+  .ts-dots {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .ts-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(245, 245, 245, 0.25);
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    padding: 0;
+  }
+
+  .ts-dot.active { background: #f5f5f5; }
+  .ts-dot:hover { background: rgba(245, 245, 245, 0.5); }
+</style>
+
+<script>
+  (() => {
+    const slides = document.querySelectorAll<HTMLElement>('[data-ts]');
+    const dots = document.querySelectorAll<HTMLButtonElement>('[data-ts-dot]');
+    const prev = document.getElementById('ts-prev');
+    const next = document.getElementById('ts-next');
+    const section = document.getElementById('ts-section');
+    if (!slides.length || !section) return;
+
+    let current = 0;
+    let timer: ReturnType<typeof setInterval> | null = null;
+
+    function set(idx: number) {
+      slides.forEach((s) => s.classList.remove('active'));
+      dots.forEach((d) => d.classList.remove('active'));
+      slides[idx]?.classList.add('active');
+      dots[idx]?.classList.add('active');
+      const bg = slides[idx]?.dataset.bg;
+      const accent = slides[idx]?.dataset.accent;
+      if (section) {
+        if (bg) section.style.setProperty('--tbg', bg);
+        if (accent) section.style.setProperty('--taccent', accent);
+      }
+      current = idx;
+    }
+
+    function nextSlide() { set((current + 1) % slides.length); }
+    function prevSlide() { set((current - 1 + slides.length) % slides.length); }
+    function reset() {
+      if (timer) clearInterval(timer);
+      timer = setInterval(nextSlide, 6000);
+    }
+
+    if (slides.length > 1) {
+      timer = setInterval(nextSlide, 6000);
+      prev?.addEventListener('click', () => { prevSlide(); reset(); });
+      next?.addEventListener('click', () => { nextSlide(); reset(); });
+      dots.forEach((dot) => {
+        dot.addEventListener('click', () => {
+          const idx = parseInt(dot.dataset.tsDot || '0', 10);
+          set(idx);
+          reset();
+        });
+      });
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          if (timer) clearInterval(timer);
+        } else {
+          reset();
+        }
+      });
+    }
+  })();
+</script>
