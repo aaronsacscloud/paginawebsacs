@@ -1,0 +1,431 @@
+---
+interface BentoItem {
+  eyebrow?: string;
+  title: string;
+  description: string;
+  image?: string;
+  imageAlt?: string;
+  span?: 'wide' | 'normal';
+  variant?: 'image' | 'visual' | 'plain';
+  visual?: 'edit' | 'palette' | 'sections' | 'ai';
+}
+
+interface Props {
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  items: BentoItem[];
+}
+
+const { eyebrow, title, subtitle, items } = Astro.props;
+---
+
+<section class="sq2-bento reveal-section">
+  <div class="sq2-bento-inner container">
+    <header class="sq2-bento-header">
+      {eyebrow && <span class="sq2-bento-eyebrow reveal-item">{eyebrow}</span>}
+      <h2 class="sq2-bento-title reveal-item" style="--reveal-delay: 80ms">{title}</h2>
+      {subtitle && <p class="sq2-bento-subtitle reveal-item" style="--reveal-delay: 140ms">{subtitle}</p>}
+    </header>
+
+    <div class="sq2-bento-grid">
+      {items.map((item, i) => (
+        <article
+          class={`sq2-bento-card reveal-item${item.span === 'wide' ? ' sq2-bento-card--wide' : ''}`}
+          style={`--reveal-delay: ${200 + i * 60}ms`}
+        >
+          <div class="sq2-bento-card-text">
+            {item.eyebrow && <span class="sq2-bento-card-eyebrow">{item.eyebrow}</span>}
+            <h3 class="sq2-bento-card-title">{item.title}</h3>
+            <p class="sq2-bento-card-desc">{item.description}</p>
+          </div>
+          <div class="sq2-bento-card-media">
+            {item.variant === 'visual' && item.visual === 'edit' && (
+              <div class="sq2-vis sq2-vis--edit" aria-hidden="true">
+                <div class="sq2-vis-bar"></div>
+                <div class="sq2-vis-block sq2-vis-block--lg">
+                  <div class="sq2-vis-handles">
+                    <span></span><span></span><span></span><span></span>
+                  </div>
+                </div>
+                <div class="sq2-vis-row">
+                  <div class="sq2-vis-block"></div>
+                  <div class="sq2-vis-block"></div>
+                </div>
+              </div>
+            )}
+            {item.variant === 'visual' && item.visual === 'palette' && (
+              <div class="sq2-vis sq2-vis--palette" aria-hidden="true">
+                <div class="sq2-vis-swatch" style="background:#1a1a2e"></div>
+                <div class="sq2-vis-swatch" style="background:#4B7BE5"></div>
+                <div class="sq2-vis-swatch" style="background:#E8A838"></div>
+                <div class="sq2-vis-swatch" style="background:#FAFAF8"></div>
+                <div class="sq2-vis-fontstack">
+                  <span class="sq2-vis-font sq2-vis-font--display">Aa</span>
+                  <span class="sq2-vis-font sq2-vis-font--serif">Aa</span>
+                  <span class="sq2-vis-font sq2-vis-font--mono">Aa</span>
+                </div>
+              </div>
+            )}
+            {item.variant === 'visual' && item.visual === 'sections' && (
+              <div class="sq2-vis sq2-vis--sections" aria-hidden="true">
+                <div class="sq2-vis-section sq2-vis-section--hero"></div>
+                <div class="sq2-vis-section sq2-vis-section--row">
+                  <span></span><span></span><span></span>
+                </div>
+                <div class="sq2-vis-section sq2-vis-section--cta"></div>
+              </div>
+            )}
+            {item.variant === 'visual' && item.visual === 'ai' && (
+              <div class="sq2-vis sq2-vis--ai" aria-hidden="true">
+                <div class="sq2-vis-prompt">
+                  <span class="sq2-vis-prompt-label">Describe tu marca</span>
+                  <span class="sq2-vis-prompt-cursor"></span>
+                </div>
+                <div class="sq2-vis-output">
+                  <span class="sq2-vis-line sq2-vis-line--lg"></span>
+                  <span class="sq2-vis-line"></span>
+                  <span class="sq2-vis-line sq2-vis-line--md"></span>
+                </div>
+              </div>
+            )}
+            {item.image && item.variant !== 'visual' && (
+              <img src={item.image} alt={item.imageAlt || ''} width="800" height="500" loading="lazy" />
+            )}
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .sq2-bento {
+    background: #F5F3EE;
+    padding: clamp(72px, 10vw, 140px) 0;
+  }
+
+  .sq2-bento-header {
+    max-width: 760px;
+    margin: 0 auto clamp(40px, 5vw, 64px);
+    text-align: center;
+  }
+
+  .sq2-bento-eyebrow {
+    display: inline-block;
+    font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #4B7BE5;
+    margin-bottom: 16px;
+  }
+
+  .sq2-bento-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin: 0 0 16px;
+  }
+
+  .sq2-bento-subtitle {
+    font-size: clamp(0.9375rem, 1.4vw, 1.0625rem);
+    line-height: 1.65;
+    color: #4A4A4A;
+    margin: 0;
+  }
+
+  .sq2-bento-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  @media (min-width: 768px) {
+    .sq2-bento-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+    .sq2-bento-card--wide {
+      grid-column: span 2;
+    }
+  }
+
+  .sq2-bento-card {
+    background: #fff;
+    border-radius: 22px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 360px;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .sq2-bento-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+  }
+
+  @media (min-width: 768px) {
+    .sq2-bento-card--wide {
+      flex-direction: row;
+      align-items: stretch;
+      min-height: 400px;
+    }
+    .sq2-bento-card--wide .sq2-bento-card-text {
+      flex: 0 0 42%;
+    }
+    .sq2-bento-card--wide .sq2-bento-card-media {
+      flex: 1;
+    }
+  }
+
+  .sq2-bento-card-text {
+    padding: clamp(28px, 3vw, 40px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .sq2-bento-card-eyebrow {
+    font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #4B7BE5;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+  }
+
+  .sq2-bento-card-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.125rem, 1.8vw, 1.375rem);
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin: 0;
+  }
+
+  .sq2-bento-card-desc {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: #4A4A4A;
+    margin: 0;
+  }
+
+  .sq2-bento-card-media {
+    background: #FAFAF8;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 220px;
+  }
+
+  .sq2-bento-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* ─── Visual mocks ─── */
+  .sq2-vis {
+    width: 100%;
+    height: 100%;
+    padding: clamp(20px, 3vw, 36px);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sq2-vis--edit .sq2-vis-bar {
+    height: 8px;
+    background: #e6e6ea;
+    border-radius: 999px;
+    width: 50%;
+  }
+
+  .sq2-vis-block {
+    background: #fff;
+    border: 1.5px solid #e6e6ea;
+    border-radius: 14px;
+    height: 100%;
+    flex: 1;
+    position: relative;
+  }
+
+  .sq2-vis-block--lg {
+    height: 120px;
+    background: linear-gradient(135deg, #4B7BE5 0%, #6B9BF7 100%);
+    border: none;
+  }
+
+  .sq2-vis-handles {
+    position: absolute;
+    inset: -6px;
+    pointer-events: none;
+  }
+
+  .sq2-vis-handles span {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid #4B7BE5;
+  }
+
+  .sq2-vis-handles span:nth-child(1) { top: 0; left: 0; }
+  .sq2-vis-handles span:nth-child(2) { top: 0; right: 0; }
+  .sq2-vis-handles span:nth-child(3) { bottom: 0; left: 0; }
+  .sq2-vis-handles span:nth-child(4) { bottom: 0; right: 0; }
+
+  .sq2-vis-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    flex: 1;
+  }
+
+  .sq2-vis--palette {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .sq2-vis-swatch {
+    border-radius: 14px;
+    aspect-ratio: 1 / 1;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04);
+  }
+
+  .sq2-vis-fontstack {
+    grid-column: span 4;
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .sq2-vis-font {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: #fff;
+    border: 1.5px solid #e6e6ea;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #1a1a2e;
+  }
+
+  .sq2-vis-font--display { font-family: var(--font-display, 'Sora', sans-serif); font-weight: 800; }
+  .sq2-vis-font--serif { font-family: 'Georgia', serif; font-weight: 400; }
+  .sq2-vis-font--mono { font-family: 'Courier New', monospace; font-weight: 500; }
+
+  .sq2-vis--sections {
+    gap: 8px;
+  }
+
+  .sq2-vis-section {
+    background: #fff;
+    border: 1.5px solid #e6e6ea;
+    border-radius: 10px;
+  }
+
+  .sq2-vis-section--hero {
+    flex: 1.4;
+    background: linear-gradient(135deg, #FAFAF8 0%, #f0e7d6 100%);
+    border-color: transparent;
+  }
+
+  .sq2-vis-section--row {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+    background: transparent;
+    border: none;
+  }
+
+  .sq2-vis-section--row span {
+    background: #fff;
+    border: 1.5px solid #e6e6ea;
+    border-radius: 10px;
+  }
+
+  .sq2-vis-section--cta {
+    flex: 0.6;
+    background: linear-gradient(135deg, #4B7BE5 0%, #6B9BF7 100%);
+    border: none;
+  }
+
+  .sq2-vis--ai {
+    gap: 16px;
+  }
+
+  .sq2-vis-prompt {
+    background: #fff;
+    border: 1.5px solid #e6e6ea;
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sq2-vis-prompt-label {
+    font-size: 0.875rem;
+    color: #6b6b6b;
+    font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+  }
+
+  .sq2-vis-prompt-cursor {
+    width: 2px;
+    height: 14px;
+    background: #4B7BE5;
+    animation: sq2BlinkCursor 1s steps(2) infinite;
+  }
+
+  @keyframes sq2BlinkCursor {
+    50% { opacity: 0; }
+  }
+
+  .sq2-vis-output {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 4px;
+  }
+
+  .sq2-vis-line {
+    height: 10px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #d6e1f7 0%, #FAFAF8 100%);
+  }
+
+  .sq2-vis-line--lg { width: 90%; }
+  .sq2-vis-line--md { width: 70%; }
+  .sq2-vis-line:not([class*="--"]) { width: 80%; }
+
+  @media (max-width: 767px) {
+    .sq2-bento-card:hover {
+      transform: none;
+      box-shadow: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sq2-vis-prompt-cursor { animation: none; }
+  }
+</style>

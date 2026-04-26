@@ -1,0 +1,366 @@
+---
+interface Tool {
+  title: string;
+  description: string;
+  image?: string;
+  imageAlt?: string;
+  visual?: 'devices' | 'media' | 'motion' | 'effects';
+  span?: 'wide' | 'normal';
+}
+
+interface Props {
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  items: Tool[];
+}
+
+const { eyebrow, title, subtitle, items } = Astro.props;
+---
+
+<section class="sq2-tools reveal-section">
+  <div class="sq2-tools-inner container">
+    <header class="sq2-tools-header">
+      {eyebrow && <span class="sq2-tools-eyebrow reveal-item">{eyebrow}</span>}
+      <h2 class="sq2-tools-title reveal-item" style="--reveal-delay: 80ms">{title}</h2>
+      {subtitle && <p class="sq2-tools-subtitle reveal-item" style="--reveal-delay: 140ms">{subtitle}</p>}
+    </header>
+
+    <div class="sq2-tools-grid">
+      {items.map((item, i) => (
+        <article
+          class={`sq2-tool reveal-item${item.span === 'wide' ? ' sq2-tool--wide' : ''}`}
+          style={`--reveal-delay: ${180 + i * 70}ms`}
+        >
+          <div class="sq2-tool-media">
+            {item.visual === 'devices' && (
+              <div class="sq2-tool-vis sq2-tool-vis--devices" aria-hidden="true">
+                <div class="sq2-tool-laptop">
+                  <div class="sq2-tool-laptop-screen"></div>
+                </div>
+                <div class="sq2-tool-tablet">
+                  <div class="sq2-tool-tablet-screen"></div>
+                </div>
+                <div class="sq2-tool-phone">
+                  <div class="sq2-tool-phone-screen"></div>
+                </div>
+              </div>
+            )}
+            {item.visual === 'media' && (
+              <div class="sq2-tool-vis sq2-tool-vis--media" aria-hidden="true">
+                <div class="sq2-tool-tile sq2-tool-tile--lg" style="background:linear-gradient(135deg,#FFD6A5,#FF8A65)"></div>
+                <div class="sq2-tool-tile" style="background:linear-gradient(135deg,#A5D8FF,#4B7BE5)"></div>
+                <div class="sq2-tool-tile" style="background:linear-gradient(135deg,#C5F0DA,#3a8a5a)"></div>
+                <div class="sq2-tool-tile" style="background:linear-gradient(135deg,#FFE4A5,#E8A838)"></div>
+                <div class="sq2-tool-tile sq2-tool-tile--video" style="background:linear-gradient(135deg,#1a1a2e,#3a3a52)">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>
+                </div>
+              </div>
+            )}
+            {item.visual === 'motion' && (
+              <div class="sq2-tool-vis sq2-tool-vis--motion" aria-hidden="true">
+                <div class="sq2-tool-motion-trail"><span></span><span></span><span></span><span></span></div>
+                <div class="sq2-tool-motion-card"></div>
+              </div>
+            )}
+            {item.visual === 'effects' && (
+              <div class="sq2-tool-vis sq2-tool-vis--effects" aria-hidden="true">
+                <div class="sq2-tool-fx-grid">
+                  <div class="sq2-tool-fx" style="background:linear-gradient(135deg,#4B7BE5,#6B9BF7)"></div>
+                  <div class="sq2-tool-fx" style="background:linear-gradient(135deg,#E8A838,#F0C56A);filter:hue-rotate(15deg)"></div>
+                  <div class="sq2-tool-fx" style="background:linear-gradient(135deg,#3a8a5a,#5fb37a)"></div>
+                  <div class="sq2-tool-fx" style="background:linear-gradient(135deg,#1a1a2e,#3a3a52)"></div>
+                </div>
+              </div>
+            )}
+            {item.image && !item.visual && (
+              <img src={item.image} alt={item.imageAlt || ''} width="800" height="500" loading="lazy" />
+            )}
+          </div>
+          <div class="sq2-tool-text">
+            <h3 class="sq2-tool-title">{item.title}</h3>
+            <p class="sq2-tool-desc">{item.description}</p>
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .sq2-tools {
+    background: #fff;
+    padding: clamp(72px, 10vw, 140px) 0;
+  }
+
+  .sq2-tools-header {
+    max-width: 760px;
+    margin: 0 auto clamp(40px, 5vw, 64px);
+    text-align: center;
+  }
+
+  .sq2-tools-eyebrow {
+    display: inline-block;
+    font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #4B7BE5;
+    margin-bottom: 16px;
+  }
+
+  .sq2-tools-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin: 0 0 16px;
+  }
+
+  .sq2-tools-subtitle {
+    font-size: clamp(0.9375rem, 1.4vw, 1.0625rem);
+    line-height: 1.65;
+    color: #4A4A4A;
+    margin: 0;
+  }
+
+  .sq2-tools-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  @media (min-width: 768px) {
+    .sq2-tools-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+    .sq2-tool--wide {
+      grid-column: span 2;
+    }
+  }
+
+  .sq2-tool {
+    background: #FAFAF8;
+    border-radius: 22px;
+    overflow: hidden;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sq2-tool:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+  }
+
+  .sq2-tool-media {
+    aspect-ratio: 16 / 10;
+    background: linear-gradient(135deg, #fff 0%, #f0e7d6 100%);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .sq2-tool-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .sq2-tool-text {
+    padding: 24px clamp(20px, 2.5vw, 32px) 28px;
+  }
+
+  .sq2-tool-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: -0.02em;
+    margin: 0 0 8px;
+  }
+
+  .sq2-tool-desc {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: #4A4A4A;
+    margin: 0;
+  }
+
+  /* ─── Devices visual ─── */
+  .sq2-tool-vis--devices {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: clamp(20px, 3vw, 40px);
+  }
+
+  .sq2-tool-laptop, .sq2-tool-tablet, .sq2-tool-phone {
+    background: #1a1a2e;
+    border-radius: 8px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+  }
+
+  .sq2-tool-laptop {
+    width: 55%;
+    max-width: 280px;
+    aspect-ratio: 16 / 10;
+    padding: 6px;
+  }
+
+  .sq2-tool-laptop-screen {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #4B7BE5 0%, #6B9BF7 100%);
+    border-radius: 4px;
+  }
+
+  .sq2-tool-tablet {
+    width: 22%;
+    max-width: 110px;
+    aspect-ratio: 4 / 5;
+    padding: 4px;
+  }
+
+  .sq2-tool-tablet-screen {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #FAFAF8 0%, #f0e7d6 100%);
+    border-radius: 4px;
+  }
+
+  .sq2-tool-phone {
+    width: 14%;
+    max-width: 64px;
+    aspect-ratio: 9 / 16;
+    padding: 3px;
+  }
+
+  .sq2-tool-phone-screen {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #E8A838 0%, #F0C56A 100%);
+    border-radius: 3px;
+  }
+
+  /* ─── Media tiles ─── */
+  .sq2-tool-vis--media {
+    width: 100%;
+    height: 100%;
+    padding: clamp(16px, 2vw, 24px);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .sq2-tool-tile {
+    border-radius: 12px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  .sq2-tool-tile--lg {
+    grid-row: span 2;
+  }
+
+  .sq2-tool-tile--video {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ─── Motion ─── */
+  .sq2-tool-vis--motion {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .sq2-tool-motion-trail {
+    position: absolute;
+    left: 10%;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 8px;
+  }
+
+  .sq2-tool-motion-trail span {
+    width: 80px;
+    height: 80px;
+    border-radius: 16px;
+    background: #4B7BE5;
+    opacity: 0.15;
+  }
+
+  .sq2-tool-motion-trail span:nth-child(1) { opacity: 0.1; }
+  .sq2-tool-motion-trail span:nth-child(2) { opacity: 0.2; }
+  .sq2-tool-motion-trail span:nth-child(3) { opacity: 0.4; }
+  .sq2-tool-motion-trail span:nth-child(4) { opacity: 0.7; }
+
+  .sq2-tool-motion-card {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #4B7BE5 0%, #6B9BF7 100%);
+    box-shadow: 0 12px 30px rgba(75, 123, 229, 0.4);
+    transform: translateX(60px);
+    animation: sq2MotionPulse 3s ease-in-out infinite;
+  }
+
+  @keyframes sq2MotionPulse {
+    0%, 100% { transform: translateX(60px) translateY(0); }
+    50% { transform: translateX(60px) translateY(-8px); }
+  }
+
+  /* ─── Effects ─── */
+  .sq2-tool-vis--effects {
+    width: 100%;
+    height: 100%;
+    padding: clamp(16px, 2vw, 24px);
+  }
+
+  .sq2-tool-fx-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    height: 100%;
+  }
+
+  .sq2-tool-fx {
+    border-radius: 14px;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.1);
+  }
+
+  @media (max-width: 767px) {
+    .sq2-tool:hover {
+      transform: none;
+      box-shadow: none;
+    }
+    .sq2-tool-motion-card {
+      animation: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sq2-tool-motion-card { animation: none; }
+  }
+</style>

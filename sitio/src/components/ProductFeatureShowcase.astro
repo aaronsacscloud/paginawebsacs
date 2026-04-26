@@ -59,8 +59,10 @@ const { items } = Astro.props;
                   {item.video.webm && <source src={item.video.webm} type="video/webm" />}
                   <source src={item.video.mp4} type="video/mp4" />
                 </video>
-              ) : (
+              ) : item.image ? (
                 <img src={item.image} alt={item.imageAlt} width="1400" height="900" loading="lazy" />
+              ) : (
+                <div class="pfs-tablet-placeholder" aria-hidden="true"></div>
               )}
             </div>
             <div class="pfs-tablet-home"></div>
@@ -133,27 +135,27 @@ const { items } = Astro.props;
   }
 
   .pfs-block:nth-child(1) .pfs-block-bg {
-    background: linear-gradient(180deg, #4B7BE5 0%, #6B9BF7 50%, #a8c4fa 100%);
+    background: linear-gradient(180deg, #2A5FD4 0%, #4B7BE5 55%, #6B9BF7 100%);
   }
 
   .pfs-block:nth-child(2) .pfs-block-bg {
-    background: linear-gradient(180deg, #6B9BF7 0%, #a8c4fa 50%, #cfdffb 100%);
+    background: linear-gradient(180deg, #3568D8 0%, #4B7BE5 55%, #6B9BF7 100%);
   }
 
   .pfs-block:nth-child(3) .pfs-block-bg {
-    background: linear-gradient(180deg, #a8c4fa 0%, #cfdffb 50%, #e8f0fd 100%);
+    background: linear-gradient(180deg, #3B6BD4 0%, #5588E8 55%, #7AA8F0 100%);
   }
 
   .pfs-block:nth-child(4) .pfs-block-bg {
-    background: linear-gradient(180deg, #cfdffb 0%, #e8f0fd 50%, #f5f8ff 100%);
+    background: linear-gradient(180deg, #4471DB 0%, #5E91EB 55%, #85B0F2 100%);
   }
 
   .pfs-block:nth-child(5) .pfs-block-bg {
-    background: linear-gradient(180deg, #e8f0fd 0%, #f5f8ff 50%, #ffffff 100%);
+    background: linear-gradient(180deg, #4B7BE5 0%, #6B9BF7 55%, #95BCF5 100%);
   }
 
   .pfs-block:nth-child(n+6) .pfs-block-bg {
-    background: linear-gradient(180deg, #f0f5ff 0%, #ffffff 100%);
+    background: linear-gradient(180deg, #5588E8 0%, #7AA8F0 100%);
   }
 
   /* ─── Tablet ─── */
@@ -192,6 +194,13 @@ const { items } = Astro.props;
 
   .pfs-tablet-screen--video {
     background: #f5f5f5;
+  }
+
+  .pfs-tablet-placeholder {
+    width: 100%;
+    height: 100%;
+    background: #f0f0f2;
+    display: block;
   }
 
   .pfs-tablet-screen--video video {

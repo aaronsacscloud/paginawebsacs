@@ -1,0 +1,133 @@
+---
+interface Step {
+  title: string;
+  description: string;
+}
+
+interface Props {
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  steps: Step[];
+}
+
+const { eyebrow, title, subtitle, steps } = Astro.props;
+---
+
+<section class="sq2-steps reveal-section">
+  <div class="sq2-steps-inner container">
+    <header class="sq2-steps-header">
+      {eyebrow && <span class="sq2-steps-eyebrow reveal-item">{eyebrow}</span>}
+      <h2 class="sq2-steps-title reveal-item" style="--reveal-delay: 80ms">{title}</h2>
+      {subtitle && <p class="sq2-steps-subtitle reveal-item" style="--reveal-delay: 140ms">{subtitle}</p>}
+    </header>
+
+    <ol class="sq2-steps-list">
+      {steps.map((step, i) => (
+        <li class="sq2-step reveal-item" style={`--reveal-delay: ${180 + i * 80}ms`}>
+          <span class="sq2-step-num">{String(i + 1).padStart(2, '0')}</span>
+          <div class="sq2-step-text">
+            <h3 class="sq2-step-title">{step.title}</h3>
+            <p class="sq2-step-desc">{step.description}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .sq2-steps {
+    background: #fff;
+    padding: clamp(72px, 10vw, 140px) 0;
+  }
+
+  .sq2-steps-header {
+    max-width: 760px;
+    margin: 0 auto clamp(40px, 5vw, 64px);
+    text-align: center;
+  }
+
+  .sq2-steps-eyebrow {
+    display: inline-block;
+    font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #E8A838;
+    margin-bottom: 16px;
+  }
+
+  .sq2-steps-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin: 0 0 16px;
+  }
+
+  .sq2-steps-subtitle {
+    font-size: clamp(0.9375rem, 1.4vw, 1.0625rem);
+    line-height: 1.65;
+    color: #4A4A4A;
+    margin: 0;
+  }
+
+  .sq2-steps-list {
+    list-style: none;
+    counter-reset: step;
+    padding: 0;
+    margin: 0;
+    max-width: 720px;
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(20px, 2.5vw, 32px);
+  }
+
+  .sq2-step {
+    display: flex;
+    gap: clamp(20px, 3vw, 32px);
+    align-items: flex-start;
+    padding: clamp(20px, 3vw, 28px) 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .sq2-step:last-child {
+    border-bottom: none;
+  }
+
+  .sq2-step-num {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+    font-weight: 200;
+    color: #E8A838;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    flex-shrink: 0;
+    min-width: 64px;
+  }
+
+  .sq2-step-text {
+    flex: 1;
+  }
+
+  .sq2-step-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: -0.02em;
+    margin: 0 0 6px;
+  }
+
+  .sq2-step-desc {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: #4A4A4A;
+    margin: 0;
+  }
+</style>

@@ -1,0 +1,97 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Partners — SACS" description="Programa de partners SACS: agencias, integradores y consultores que crecen con nosotros.">
+  <section class="coming-soon">
+    <div class="coming-soon-inner container">
+      <span class="coming-soon-eyebrow">Programa Partners SACS</span>
+      <h1 class="coming-soon-title">Próximamente</h1>
+      <p class="coming-soon-subtitle">Estamos preparando el programa de <strong>partners</strong> para agencias, integradores y consultores que quieren crecer con SACS. Muy pronto tendrás toda la información aquí.</p>
+      <div class="coming-soon-ctas">
+        <a href="/contacto" class="cs-btn cs-btn-primary">Quiero ser partner</a>
+        <a href="/" class="cs-btn cs-btn-outline">Volver al inicio</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .coming-soon {
+    min-height: calc(100vh - 71px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 120px 0 80px;
+    background: var(--color-bg-primary, #FAFAF8);
+  }
+  .coming-soon-inner {
+    max-width: 720px;
+    text-align: center;
+  }
+  .coming-soon-eyebrow {
+    display: inline-block;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #4B7BE5;
+    margin-bottom: 18px;
+  }
+  .coming-soon-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 800;
+    color: #1a1a2e;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin: 0 0 18px;
+  }
+  .coming-soon-subtitle {
+    font-size: 1.125rem;
+    color: rgba(26, 26, 46, 0.7);
+    line-height: 1.5;
+    margin: 0 auto 32px;
+    max-width: 540px;
+  }
+  .coming-soon-ctas {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .cs-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    text-decoration: none;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+  }
+  .cs-btn-primary {
+    background: #4B7BE5;
+    color: #fff;
+    border: 1px solid #4B7BE5;
+  }
+  .cs-btn-primary:hover {
+    background: #3a66cc;
+    border-color: #3a66cc;
+    color: #fff;
+    text-decoration: none;
+    transform: translateY(-1px);
+  }
+  .cs-btn-outline {
+    background: #fff;
+    color: #1a1a2e;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+  }
+  .cs-btn-outline:hover {
+    border-color: rgba(0, 0, 0, 0.35);
+    background: rgba(0, 0, 0, 0.02);
+    color: #1a1a2e;
+    text-decoration: none;
+  }
+</style>

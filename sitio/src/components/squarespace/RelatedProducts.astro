@@ -1,0 +1,200 @@
+---
+interface Item {
+  eyebrow: string;
+  title: string;
+  description: string;
+  image: string;
+  imageAlt: string;
+  href: string;
+  ctaLabel?: string;
+}
+
+interface Props {
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  items: Item[];
+}
+
+const { eyebrow, title, subtitle, items } = Astro.props;
+---
+
+<section class="sq2-related reveal-section">
+  <div class="sq2-related-inner container">
+    <header class="sq2-related-header">
+      {eyebrow && <span class="sq2-related-eyebrow reveal-item">{eyebrow}</span>}
+      <h2 class="sq2-related-title reveal-item" style="--reveal-delay: 80ms">{title}</h2>
+      {subtitle && <p class="sq2-related-subtitle reveal-item" style="--reveal-delay: 140ms">{subtitle}</p>}
+    </header>
+
+    <div class="sq2-related-grid">
+      {items.map((item, i) => (
+        <a class="sq2-related-card reveal-item" href={item.href} style={`--reveal-delay: ${180 + i * 80}ms`}>
+          <div class="sq2-related-card-media">
+            <img src={item.image} alt={item.imageAlt} width="600" height="450" loading="lazy" />
+          </div>
+          <div class="sq2-related-card-text">
+            <span class="sq2-related-card-eyebrow">{item.eyebrow}</span>
+            <h3 class="sq2-related-card-title">{item.title}</h3>
+            <p class="sq2-related-card-desc">{item.description}</p>
+            <span class="sq2-related-card-cta">
+              {item.ctaLabel || 'Conocer más'}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 12h14M13 5l7 7-7 7" />
+              </svg>
+            </span>
+          </div>
+        </a>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .sq2-related {
+    background: #F5F3EE;
+    padding: clamp(72px, 10vw, 140px) 0;
+  }
+
+  .sq2-related-header {
+    max-width: 760px;
+    margin: 0 auto clamp(40px, 5vw, 64px);
+    text-align: center;
+  }
+
+  .sq2-related-eyebrow {
+    display: inline-block;
+    font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #4B7BE5;
+    margin-bottom: 16px;
+  }
+
+  .sq2-related-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.75rem, 4vw, 2.75rem);
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin: 0 0 16px;
+  }
+
+  .sq2-related-subtitle {
+    font-size: clamp(0.9375rem, 1.4vw, 1.0625rem);
+    line-height: 1.65;
+    color: #4A4A4A;
+    margin: 0;
+  }
+
+  .sq2-related-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  @media (min-width: 768px) {
+    .sq2-related-grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+  }
+
+  .sq2-related-card {
+    background: #fff;
+    border-radius: 18px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .sq2-related-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+    text-decoration: none;
+  }
+
+  .sq2-related-card-media {
+    aspect-ratio: 16 / 10;
+    background: #FAFAF8;
+    overflow: hidden;
+  }
+
+  .sq2-related-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .sq2-related-card:hover .sq2-related-card-media img {
+    transform: scale(1.04);
+  }
+
+  .sq2-related-card-text {
+    padding: 24px clamp(20px, 2.5vw, 28px) 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+  }
+
+  .sq2-related-card-eyebrow {
+    font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #4B7BE5;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+  }
+
+  .sq2-related-card-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+
+  .sq2-related-card-desc {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: #4A4A4A;
+    margin: 0;
+    flex: 1;
+  }
+
+  .sq2-related-card-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #4B7BE5;
+    margin-top: 4px;
+    transition: gap 0.3s ease;
+  }
+
+  .sq2-related-card:hover .sq2-related-card-cta {
+    gap: 12px;
+  }
+
+  @media (max-width: 767px) {
+    .sq2-related-card:hover {
+      transform: none;
+      box-shadow: none;
+    }
+    .sq2-related-card:hover .sq2-related-card-media img {
+      transform: none;
+    }
+  }
+</style>

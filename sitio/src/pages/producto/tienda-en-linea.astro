@@ -1,0 +1,735 @@
+---
+import ProductLayout from '../../layouts/ProductLayout.astro';
+import FinalCTA from '../../components/FinalCTA.astro';
+import StoresShowcase from '../../components/squarespace/StoresShowcase.astro';
+import BentoGrid from '../../components/squarespace/BentoGrid.astro';
+import CreativeToolsGrid from '../../components/squarespace/CreativeToolsGrid.astro';
+import DiscoveryTools from '../../components/squarespace/DiscoveryTools.astro';
+import RelatedProducts from '../../components/squarespace/RelatedProducts.astro';
+import HowToSteps from '../../components/squarespace/HowToSteps.astro';
+import SupportCards from '../../components/squarespace/SupportCards.astro';
+import { getFeatureBySlug, getPillarForFeature } from '../../data/product';
+import { pageContent } from '../../data/product-pages';
+
+const slug = 'tienda-en-linea';
+const feature = getFeatureBySlug(slug)!;
+const pillar = getPillarForFeature(slug)!;
+const content = pageContent[slug];
+
+// ─── Datos específicos del rediseño Squarespace ───
+const stores = [
+  {
+    name: 'Tempo Marroquinería',
+    category: 'Cuero · Argentina',
+    location: 'Buenos Aires',
+    image: '/images/testimonials/mariano-ferrer.webp',
+    imageAlt: 'Tempo Marroquinería — tienda de cuero en Argentina',
+    href: '#testimonios',
+    accent: '#3a8a5a',
+  },
+  {
+    name: 'Aurea Joyas',
+    category: 'Joyería · Colombia',
+    location: 'Medellín',
+    image: '/images/testimonials/elena-vidal.webp',
+    imageAlt: 'Aurea Joyas — boutique de joyería en Colombia',
+    href: '#testimonios',
+    accent: '#b07c3c',
+  },
+  {
+    name: 'Grupo Castaño',
+    category: 'Calzado · Chile',
+    location: 'Santiago',
+    image: '/images/testimonials/julian-ponce.webp',
+    imageAlt: 'Grupo Castaño — multi-marca de calzado en Chile',
+    href: '#testimonios',
+    accent: '#4a6ab8',
+  },
+  {
+    name: 'Camila Ocampo',
+    category: 'Calzado boutique · México',
+    location: 'CDMX',
+    image: '/images/testimonials/camila-ocampo.webp',
+    imageAlt: 'Boutique de calzado moderna en CDMX',
+    href: '#testimonios',
+    accent: '#c89a3c',
+  },
+];
+
+const bentoItems = [
+  {
+    eyebrow: 'Editor con tu marca',
+    title: 'Hecho a tu medida.',
+    description: 'Edita hero, paleta, tipografías y bloques de historia desde un editor visual. Lo que ves es lo que ven tus clientes — sin programar, sin templates genéricos.',
+    variant: 'visual' as const,
+    visual: 'edit' as const,
+    span: 'wide' as const,
+  },
+  {
+    eyebrow: 'Drag-and-drop',
+    title: 'Edita arrastrando bloques.',
+    description: 'Mueves productos destacados, cambias el orden de secciones y todo se actualiza al instante. Sin republicar.',
+    variant: 'visual' as const,
+    visual: 'sections' as const,
+  },
+  {
+    eyebrow: 'Estilos preconfigurados',
+    title: 'Previsualiza paletas y fuentes.',
+    description: 'Cambias toda la paleta de tu tienda con un clic. Pruebas la fuente premium contra la sans neutra antes de publicar.',
+    variant: 'visual' as const,
+    visual: 'palette' as const,
+  },
+  {
+    eyebrow: 'Layouts inteligentes',
+    title: 'Layouts que se adaptan al catálogo.',
+    description: 'Si tu tienda tiene 50 SKUs muestra grid, si tiene 5000 propone navegación filtrable. La página se acomoda a tu inventario.',
+    image: '/images/screens/inventario-omnicanal-global.webp',
+    imageAlt: 'Layouts adaptados al tamaño de catálogo',
+  },
+  {
+    eyebrow: 'AI redacta tus textos',
+    title: 'Descripciones que venden, sin escribir cada SKU.',
+    description: 'Dale a SACS el atributo del producto y genera la descripción para tu sitio en tu tono. Ahorras semanas en ficha de producto.',
+    variant: 'visual' as const,
+    visual: 'ai' as const,
+  },
+];
+
+const creativeTools = [
+  {
+    title: 'Adaptado a todos los dispositivos.',
+    description: 'Tu tienda se ve sólida en escritorio, tablet y móvil. SACS optimiza el peso de imágenes, los breakpoints y la jerarquía sin que toques nada.',
+    visual: 'devices' as const,
+  },
+  {
+    title: 'Soporta todo tu contenido multimedia.',
+    description: 'Fotos, videos cortos de producto, lookbooks y reels. Tu galería entera vive en SACS y se publica con un clic.',
+    visual: 'media' as const,
+  },
+  {
+    title: 'Capta el interés con movimiento.',
+    description: 'Animaciones sutiles en el hero, en cards de producto y en CTAs. Sin ralentizar el sitio.',
+    visual: 'motion' as const,
+  },
+  {
+    title: 'Potencia el atractivo visual.',
+    description: 'Filtros, transiciones suaves y efectos hover que dan personalidad sin sentirse genéricos.',
+    visual: 'effects' as const,
+  },
+];
+
+const discoveryItems = [
+  {
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>',
+    title: 'SEO integrado',
+    description: 'Metadatos, sitemap, Open Graph y schema.org se generan solos por producto. Apuntas tu dominio y empiezas a indexar.',
+    bullets: [
+      'Sitemap.xml y robots.txt automáticos',
+      'Schema product, breadcrumb y review',
+      'Open Graph y Twitter Cards por SKU',
+    ],
+  },
+  {
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>',
+    title: 'Integraciones y extensiones',
+    description: 'Conecta con los pixels y APIs que ya usas. Sin instalar plugins, sin duplicar configuración.',
+    bullets: [
+      'Meta Pixel y Conversions API',
+      'Google Analytics 4 y Tag Manager',
+      'TikTok Pixel y eventos de carrito',
+    ],
+  },
+  {
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg>',
+    title: 'Analítica web nativa',
+    description: 'Reportes de tienda online sin abrir GA4. Conversiones, embudo y producto top desde SACS.',
+    bullets: [
+      'Conversión por canal y dispositivo',
+      'Embudo de checkout en vivo',
+      'SKU más vistos vs. más comprados',
+    ],
+  },
+];
+
+const relatedProducts = [
+  {
+    eyebrow: 'Punto de Venta',
+    title: 'Conecta tu tienda online con tu POS.',
+    description: 'Mismo catálogo, mismo cliente, misma caja. La caja física y el e-commerce dejan de ser sistemas distintos.',
+    image: '/images/pos-control-central.webp',
+    imageAlt: 'SACS Punto de Venta — pantalla principal',
+    href: '/producto/punto-de-venta',
+    ctaLabel: 'Conocer POS',
+  },
+  {
+    eyebrow: 'Programa de Lealtad',
+    title: 'Premia clientes online y de piso.',
+    description: 'Monedero electrónico nativo. El cliente acumula comprando online y canjea en piso, o al revés. Sin emails, sin apps separadas.',
+    image: '/images/lealtad-hero.webp',
+    imageAlt: 'SACS Programa de Lealtad — monedero',
+    href: '/producto/programa-de-lealtad',
+    ctaLabel: 'Conocer lealtad',
+  },
+  {
+    eyebrow: 'Marketing por WhatsApp',
+    title: 'Notificaciones de pedido por WhatsApp.',
+    description: 'Confirmación de compra, listo para retiro y reseña post-venta — todo por el canal donde el cliente realmente lee.',
+    image: '/images/marketing-whatsapp-hero.webp',
+    imageAlt: 'SACS Marketing por WhatsApp',
+    href: '/producto/marketing-por-whatsapp',
+    ctaLabel: 'Conocer marketing',
+  },
+];
+
+const steps = [
+  {
+    title: 'Conecta tu catálogo.',
+    description: 'Importa tu inventario de SACS POS o sube un CSV. Tus productos aparecen en el sitio con stock y precios al instante.',
+  },
+  {
+    title: 'Elige un estilo.',
+    description: 'Parte de una paleta y tipografía base. Después afinas — todo es editable.',
+  },
+  {
+    title: 'Personaliza tu landing.',
+    description: 'Hero, productos destacados, secciones de marca, lookbook. Edita arrastrando bloques.',
+  },
+  {
+    title: 'Configura el cobro.',
+    description: 'Conectas tu Stripe en minutos. Apple Pay, Google Pay y métodos locales activos por default.',
+  },
+  {
+    title: 'Conecta tu dominio.',
+    description: 'Apunta tu dominio (o subdominio) a SACS. Te damos los registros DNS exactos.',
+  },
+  {
+    title: 'Publica y empieza a vender.',
+    description: 'Un clic y tu tienda está en vivo. Recibes el primer pedido en tu POS y en tu correo simultáneamente.',
+  },
+];
+
+const supportItems = [
+  {
+    eyebrow: 'Onboarding',
+    title: 'Te acompañamos en el lanzamiento.',
+    description: 'Un especialista te ayuda con la configuración inicial, importación de catálogo y conexión de dominio. Sin costo extra.',
+    href: '/contacto',
+    ctaLabel: 'Agendar onboarding',
+  },
+  {
+    eyebrow: 'Centro de ayuda',
+    title: 'Documentación clara y soporte humano.',
+    description: 'Guías paso a paso, videos tutoriales y un equipo que responde en español, en horario LatAm.',
+    href: '/centro-de-ayuda',
+    ctaLabel: 'Ir al centro de ayuda',
+  },
+];
+---
+
+<ProductLayout
+  title={feature.title}
+  description={feature.description}
+  currentSlug={slug}
+  currentPillar={pillar.id}
+  preloadImage={content?.hero?.image}
+>
+  <section class="pf-hero-centered">
+    <div class="pf-hero-centered-inner container">
+      <h1 class="pf-hero-title">{content.hero.title}</h1>
+      <p class="pf-hero-subtitle">{content.hero.subtitle}</p>
+      <div class="pf-hero-ctas">
+        <a href="/prueba-gratis" class="pf-hero-btn pf-hero-btn--outline">Prueba gratis</a>
+        <a href="/contacto" class="pf-hero-btn pf-hero-btn--solid">Agenda una demo</a>
+      </div>
+    </div>
+    <div class="pf-hero-media container">
+      <div class="pf-hero-media-wrap pf-hero-media-wrap--mock">
+        <div class="pf-ipad-perspective" id="pf-ipad-perspective">
+          <div class="pf-ipad-idle">
+            <div class="pf-hero-video-frame pf-hero-video-frame--ipad">
+              <span class="pf-ipad-cam" aria-hidden="true"></span>
+              <div class="pf-ipad-screen">
+                {content.hero.image ? (
+                  <img src={content.hero.image} alt={content.hero.imageAlt} width="1200" height="675" loading="eager" fetchpriority="high" />
+                ) : (
+                  <div class="pf-ipad-placeholder" aria-hidden="true"></div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <StoresShowcase
+    eyebrow="Tiendas reales hechas con SACS"
+    title="Catálogos físicos que ya viven en línea."
+    subtitle="Cada una empezó como POS y conectó su tienda online en SACS. Mismo stock, misma caja, misma marca."
+    stores={stores}
+    ctaLabel="Ver casos de éxito"
+    ctaHref="/blog"
+  />
+
+  <BentoGrid
+    eyebrow="Diseño inteligente"
+    title="Crea una tienda en línea hecha a tu marca."
+    subtitle="No es una plantilla con tu logo pegado. Editor visual, IA que redacta y un sistema que se adapta a tu catálogo."
+    items={bentoItems}
+  />
+
+  <CreativeToolsGrid
+    eyebrow="Herramientas creativas"
+    title="Las herramientas que tu sitio necesita para destacar."
+    subtitle="Diseño responsive, contenido multimedia y micro-animaciones — sin sumar peso ni complicar el editor."
+    items={creativeTools}
+  />
+
+  <DiscoveryTools
+    eyebrow="SEO + analítica"
+    title="Para que Google te encuentre y tú midas todo."
+    subtitle="Lo técnico lo resolvemos por ti. Tú concéntrate en vender."
+    items={discoveryItems}
+  />
+
+  <RelatedProducts
+    eyebrow="Funciona mejor con"
+    title="Toda tu operación en SACS, no solo tu sitio."
+    subtitle="La tienda online es un canal. SACS es el sistema que conecta todos."
+    items={relatedProducts}
+  />
+
+  <HowToSteps
+    eyebrow="Cómo lanzar tu tienda"
+    title="De catálogo a tienda publicada en 6 pasos."
+    subtitle="La mayoría de nuestros clientes lo hace en menos de un día. Te acompañamos en cada paso si lo prefieres."
+    steps={steps}
+  />
+
+  <SupportCards items={supportItems} />
+
+  <FinalCTA />
+</ProductLayout>
+
+<script>
+  // ─── Hero iPad parallax + reveal ───
+  (() => {
+    const perspective = document.getElementById('pf-ipad-perspective') as HTMLElement | null;
+    if (!perspective) return;
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const touch = window.matchMedia('(hover: none), (pointer: coarse)').matches;
+
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              perspective.classList.add('is-visible');
+            }
+          }
+        },
+        { threshold: 0.25 },
+      );
+      io.observe(perspective);
+    } else {
+      perspective.classList.add('is-visible');
+    }
+
+    if (!reduced && !touch) {
+      const wrap = perspective.closest('.pf-hero-media-wrap') as HTMLElement | null;
+      if (wrap) {
+        let ticking = false;
+        let targetX = 0;
+        let targetY = 0;
+        let currentX = 0;
+        let currentY = 0;
+
+        const tick = () => {
+          currentX += (targetX - currentX) * 0.1;
+          currentY += (targetY - currentY) * 0.1;
+          perspective.style.setProperty('--tilt-x', `${currentX.toFixed(2)}deg`);
+          perspective.style.setProperty('--tilt-y', `${currentY.toFixed(2)}deg`);
+          if (Math.abs(targetX - currentX) > 0.01 || Math.abs(targetY - currentY) > 0.01) {
+            requestAnimationFrame(tick);
+          } else {
+            ticking = false;
+          }
+        };
+
+        wrap.addEventListener('mousemove', (e) => {
+          const rect = wrap.getBoundingClientRect();
+          const nx = (e.clientX - rect.left) / rect.width - 0.5;
+          const ny = (e.clientY - rect.top) / rect.height - 0.5;
+          targetY = nx * 6;
+          targetX = -ny * 4;
+          if (!ticking) {
+            ticking = true;
+            requestAnimationFrame(tick);
+          }
+        }, { passive: true });
+
+        wrap.addEventListener('mouseleave', () => {
+          targetX = 0;
+          targetY = 0;
+          if (!ticking) {
+            ticking = true;
+            requestAnimationFrame(tick);
+          }
+        });
+      }
+    }
+  })();
+
+  // ─── Scroll reveal observer (shared sq2-* + reveal-section) ───
+  (() => {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const sections = document.querySelectorAll('.reveal-section');
+
+    if (reduced || !('IntersectionObserver' in window)) {
+      sections.forEach((s) => s.classList.add('visible'));
+      return;
+    }
+
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            obs.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -40px 0px' },
+    );
+    sections.forEach((s) => obs.observe(s));
+  })();
+</script>
+
+<style is:global>
+  /* ═══ Reveal system shared with squarespace components ═══ */
+  .reveal-item {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+
+  .reveal-section.visible .reveal-item {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal-item {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
+</style>
+
+<style>
+  /* ═══ Hero centrado (iPad mock + grid gris) ═══ */
+  .pf-hero-centered {
+    padding: clamp(72px, 9vw, 130px) 0 0;
+    background: #fff;
+    text-align: center;
+  }
+
+  .pf-hero-centered-inner {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .pf-hero-title {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 800;
+    color: var(--color-text-primary, #1a1a2e);
+    letter-spacing: -0.04em;
+    line-height: 1.0;
+    margin: 0 0 24px;
+    animation: heroFadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+  }
+
+  .pf-hero-subtitle {
+    font-size: clamp(1rem, 1.6vw, 1.25rem);
+    line-height: 1.55;
+    color: #4A4A4A;
+    margin: 0 auto 32px;
+    max-width: 640px;
+    animation: heroFadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.22s both;
+  }
+
+  .pf-hero-ctas {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: clamp(40px, 5vw, 64px);
+    animation: heroFadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+  }
+
+  .pf-hero-btn {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    padding: 13px 28px;
+    border-radius: var(--radius-full, 50px);
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    display: inline-block;
+    line-height: 1;
+  }
+
+  .pf-hero-btn:hover {
+    transform: translateY(-2px);
+    text-decoration: none;
+  }
+
+  .pf-hero-btn--outline {
+    background: transparent;
+    color: var(--color-text-primary, #1a1a2e);
+    border: 1.5px solid rgba(0, 0, 0, 0.15);
+  }
+
+  .pf-hero-btn--outline:hover {
+    border-color: rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+
+  .pf-hero-btn--solid {
+    background: #2563EB;
+    color: #fff;
+    border: 1.5px solid transparent;
+  }
+
+  .pf-hero-btn--solid:hover {
+    background: #1D4FD7;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.25);
+  }
+
+  .pf-hero-media {
+    animation: heroFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both;
+  }
+
+  .pf-hero-media-wrap {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+  }
+
+  .pf-hero-media-wrap--mock {
+    display: grid;
+    place-items: center;
+    padding: clamp(24px, 5vw, 80px);
+    background: radial-gradient(ellipse at 50% 40%, #ffffff 0%, #f7f7f9 60%, #ececf0 100%);
+    isolation: isolate;
+  }
+
+  .pf-hero-media-wrap--mock::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+    background-size: 60px 60px, 60px 60px;
+    mask-image: radial-gradient(ellipse at center, black 55%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 55%, transparent 100%);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .pf-hero-media-wrap--mock::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(95%, 1100px);
+    aspect-ratio: 1 / 1;
+    max-height: 120%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle at center, rgba(0, 0, 0, 0.06) 0%, rgba(0, 0, 0, 0.03) 30%, rgba(0, 0, 0, 0) 60%);
+    filter: blur(42px);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .pf-ipad-placeholder {
+    width: 100%;
+    height: 100%;
+    background: #f0f0f2;
+    display: block;
+  }
+
+  .pf-hero-video-frame--ipad .pf-ipad-screen img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .pf-ipad-perspective {
+    position: relative;
+    width: min(88%, 960px);
+    aspect-ratio: 16 / 9;
+    transform:
+      perspective(1400px)
+      rotateX(var(--tilt-x, 0deg))
+      rotateY(var(--tilt-y, 0deg))
+      scale(var(--reveal-scale, 0.94));
+    opacity: var(--reveal-opacity, 0.6);
+    transition:
+      transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 0.7s ease-out;
+    transform-style: preserve-3d;
+    z-index: 1;
+  }
+
+  .pf-ipad-perspective.is-visible {
+    --reveal-scale: 1;
+    --reveal-opacity: 1;
+  }
+
+  .pf-ipad-idle {
+    width: 100%;
+    height: 100%;
+    animation: sacsIpadFloat 7s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  @keyframes sacsIpadFloat {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-6px); }
+  }
+
+  .pf-hero-video-frame--ipad {
+    width: 100%;
+    height: 100%;
+    padding: 18px 20px;
+    background:
+      linear-gradient(145deg, #2a2a2e 0%, #1a1a1e 35%, #161619 65%, #232326 100%);
+    box-shadow:
+      0 40px 80px rgba(0, 0, 0, 0.22),
+      0 16px 32px rgba(0, 0, 0, 0.14),
+      0 4px 12px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .pf-hero-video-frame--ipad::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      110deg,
+      transparent 0%,
+      transparent 35%,
+      rgba(255, 255, 255, 0.22) 48%,
+      rgba(255, 255, 255, 0.35) 50%,
+      rgba(255, 255, 255, 0.22) 52%,
+      transparent 65%,
+      transparent 100%
+    );
+    background-size: 250% 100%;
+    background-position: -150% 0;
+    pointer-events: none;
+    mix-blend-mode: screen;
+    opacity: 0;
+  }
+
+  .pf-ipad-perspective.is-visible .pf-hero-video-frame--ipad::after {
+    animation: sacsIpadSheen 1.6s ease-out 0.35s forwards;
+  }
+
+  @keyframes sacsIpadSheen {
+    0%   { background-position: -150% 0; opacity: 0; }
+    15%  { opacity: 1; }
+    100% { background-position: 250% 0; opacity: 0; }
+  }
+
+  .pf-hero-video-frame--ipad::before {
+    content: '';
+    position: absolute;
+    inset: 1px 1px auto 1px;
+    height: 40%;
+    border-radius: 26px 26px 0 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 70%);
+    pointer-events: none;
+  }
+
+  .pf-hero-video-frame--ipad .pf-ipad-cam {
+    position: absolute;
+    top: 9px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #4a4a52, #0a0a0c);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    z-index: 2;
+  }
+
+  .pf-hero-video-frame--ipad .pf-ipad-screen {
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #000;
+    position: relative;
+  }
+
+  @keyframes heroFadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .pf-hero-media-wrap--mock {
+      padding: clamp(16px, 4vw, 32px);
+    }
+    .pf-ipad-perspective {
+      width: min(94%, 560px);
+      transform: scale(var(--reveal-scale, 0.94));
+    }
+    .pf-ipad-perspective.is-visible {
+      --reveal-scale: 1;
+    }
+    .pf-ipad-idle { animation: none; }
+    .pf-hero-media-wrap--mock::before {
+      filter: saturate(0.9) brightness(1.02);
+      transform: scale(1.02);
+    }
+    .pf-hero-media-wrap--mock::after {
+      filter: blur(20px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pf-ipad-idle { animation: none; }
+    .pf-ipad-perspective { transition: none; }
+    .pf-ipad-perspective.is-visible .pf-hero-video-frame--ipad::after { animation: none; }
+    .pf-hero-title,
+    .pf-hero-subtitle,
+    .pf-hero-ctas,
+    .pf-hero-media {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>
