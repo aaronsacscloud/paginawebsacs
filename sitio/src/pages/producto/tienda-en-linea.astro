@@ -2,6 +2,7 @@
 import ProductLayout from '../../layouts/ProductLayout.astro';
 import FinalCTA from '../../components/FinalCTA.astro';
 import PremiumTemplates from '../../components/squarespace/PremiumTemplates.astro';
+import ManifestoStatement from '../../components/squarespace/ManifestoStatement.astro';
 import BentoGrid from '../../components/squarespace/BentoGrid.astro';
 import CreativeToolsGrid from '../../components/squarespace/CreativeToolsGrid.astro';
 import DiscoveryTools from '../../components/squarespace/DiscoveryTools.astro';
@@ -789,6 +790,11 @@ const supportItems = [
     title="Empieza con una base premium. Termina con tu marca."
     subtitle="Plantillas pensadas para cada giro — moda, zapaterías, belleza, productos orgánicos. Editor visual sobre una base que ya está afinada para vender."
     templates={premiumTemplates}
+  />
+
+  <ManifestoStatement
+    text="Tu negocio no para,"
+    accent="tu tienda online tampoco."
   />
 
   <BentoGrid
