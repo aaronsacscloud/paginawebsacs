@@ -4,6 +4,8 @@ interface Tool {
   title: string;
   description: string;
   bullets?: string[];
+  image?: string;
+  imageAlt?: string;
 }
 
 interface Props {
@@ -26,22 +28,29 @@ const { eyebrow, title, subtitle, items } = Astro.props;
 
     <div class="sq2-discovery-grid">
       {items.map((item, i) => (
-        <div class="sq2-discovery-card reveal-item" style={`--reveal-delay: ${180 + i * 80}ms`}>
-          <div class="sq2-discovery-icon" set:html={item.icon} />
-          <h3 class="sq2-discovery-card-title">{item.title}</h3>
-          <p class="sq2-discovery-card-desc">{item.description}</p>
-          {item.bullets && item.bullets.length > 0 && (
-            <ul class="sq2-discovery-list">
-              {item.bullets.map((b) => (
-                <li>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M5 12l5 5L20 7" />
-                  </svg>
-                  <span>{b}</span>
-                </li>
-              ))}
-            </ul>
+        <div class={`sq2-discovery-card reveal-item${item.image ? ' sq2-discovery-card--with-image' : ''}`} style={`--reveal-delay: ${180 + i * 80}ms`}>
+          {item.image && (
+            <div class="sq2-discovery-card-media">
+              <img src={item.image} alt={item.imageAlt || ''} width="1536" height="1024" loading="lazy" />
+            </div>
           )}
+          <div class="sq2-discovery-card-body">
+            {!item.image && <div class="sq2-discovery-icon" set:html={item.icon} />}
+            <h3 class="sq2-discovery-card-title">{item.title}</h3>
+            <p class="sq2-discovery-card-desc">{item.description}</p>
+            {item.bullets && item.bullets.length > 0 && (
+              <ul class="sq2-discovery-list">
+                {item.bullets.map((b) => (
+                  <li>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M5 12l5 5L20 7" />
+                    </svg>
+                    <span>{b}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       ))}
     </div>
@@ -107,6 +116,31 @@ const { eyebrow, title, subtitle, items } = Astro.props;
     border-radius: 18px;
     background: #FAFAF8;
     transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .sq2-discovery-card--with-image {
+    padding: 0;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .sq2-discovery-card-media {
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: #FAFAF8;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  .sq2-discovery-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .sq2-discovery-card--with-image .sq2-discovery-card-body {
+    padding: clamp(24px, 3vw, 32px) clamp(22px, 2.5vw, 30px) clamp(28px, 3vw, 36px);
   }
 
   .sq2-discovery-card:hover {
