@@ -876,16 +876,16 @@ export const pageContent: Record<string, any> = {
       },
       {
         title: 'Cada movimiento de piso, reflejado en tu sitio.',
-        description: 'Transferencias, cambios, devoluciones, recepciones y órdenes de compra de tus tiendas físicas se publican solas en tu sitio — con stock por sucursal y fecha de llegada visible para preorden. Sin botón de "publicar", sin cron nocturno, sin sincronización rota a las 3 am.',
+        description: 'Capturas una orden de compra con cantidades por sucursal, la recibes con un folio y el inventario sube al instante en piso y en tu tienda en línea. Mismo catálogo, misma cifra, mismo segundo — sin botón de "publicar" ni cron nocturno.',
         image: '/images/tienda-online-unificacion.webp',
-        imageAlt: 'Vista de SACS mostrando stock por sucursal, transferencias y órdenes de compra con fecha de llegada reflejándose en la tienda en línea',
+        imageAlt: 'Vista de SACS mostrando una orden de compra recibida y el stock actualizándose en piso y en mara.shop al mismo tiempo',
         link: { label: 'Ver inventario omnicanal', href: '/producto/inventario-omnicanal' },
         featured: true,
         variant: 'online-catalog',
         bullets: [
-          { label: 'Stock por sucursal, no agregado', detail: 'El cliente ve disponibilidad real por tienda — 3 en Polanco, 0 en Roma, 12 en CEDIS — para elegir retiro o envío sin sorpresas. No es un número único promediado.' },
-          { label: 'Transferencias, cambios y devoluciones reflejados solos', detail: 'Mueves stock entre sucursales, aceptas un cambio o procesas una devolución en piso, y el sitio recalcula al instante en cada tienda. Cero conciliación al cierre del día.' },
-          { label: 'Órdenes de compra con fecha de llegada', detail: 'Si una pieza viene en camino, el sitio muestra "Llega el 5 de mayo" y el cliente puede preordenarla antes de que aterrice. La mercancía recibida se publica al cargarse, sin botón de "publicar".' },
+          { label: 'Una OC distribuye por sucursal', detail: 'Capturas la orden con la cantidad que va a cada tienda — Polanco, Roma, CEDIS — en un solo flujo. Sin Excels ni emails al CEDIS para repartir después.' },
+          { label: 'Recepción con folio que cierra el círculo', detail: 'Marcas la recepción, SACS asigna folio y la OC queda cerrada con trazabilidad. Cada caja escaneada suma al stock real, sin captura manual.' },
+          { label: 'Stock que sube en piso y en línea al mismo segundo', detail: 'Las piezas recibidas aparecen al instante en tu POS y en tu sitio, con el desglose por sucursal correcto. El cliente ve "Polanco: 13", no un número promediado.' },
         ],
       },
       {
