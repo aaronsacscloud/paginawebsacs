@@ -759,7 +759,7 @@ export const pageContent: Record<string, any> = {
         title: 'Vende lo que todavía no está en piso.',
         description: 'El cliente quiere la bota en color cognac y no la tienes. En lugar de perder la venta, tomas el pedido especial con anticipo que cubre tu exposición. SACS conecta el apartado con tu orden de compra al proveedor — cuando el producto entra al inventario de la sucursal, el aviso al cliente queda listo para enviarse.',
         image: '/images/apartados-pedido-especial.webp',
-        imageAlt: 'Dueño de calzado tomando pedido especial con tablet SACS',
+        imageAlt: 'Pantalla de SACS POS gestionando pedido especial / backorder con orden de compra al proveedor',
         link: { label: 'Ver órdenes de compra', href: '/producto/ordenes-de-compra' },
         featured: true,
         bullets: [
@@ -879,6 +879,12 @@ export const pageContent: Record<string, any> = {
         description: 'Toma el pedido, cobra el anticipo y conecta el apartado con tu orden de compra al proveedor. Cuando el producto entra, el cliente ya fue notificado — y el saldo lo paga al retirar.',
         image: '',
         imageAlt: 'Pantalla de pedido especial bajo orden en SACS',
+        video: {
+          mp4: '/videos/backorders-pedidos.mp4',
+          webm: '/videos/backorders-pedidos.webm',
+          poster: '/videos/backorders-pedidos-poster.webp',
+          aspectRatio: '2068 / 1080',
+        },
         link: null,
         details: [
           {
