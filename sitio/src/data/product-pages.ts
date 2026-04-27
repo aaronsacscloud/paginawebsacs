@@ -340,7 +340,12 @@ export const pageContent: Record<string, any> = {
       title: 'Tu promo corre sola. En todas tus sucursales. A la hora exacta.',
       subtitle: 'Defínela una vez. SACS se encarga de que todas tus tiendas la apliquen igual, sin códigos en post-its ni cajeros que la olviden.',
       image: '/images/promo-hero.webp',
-      imageAlt: 'Configuración de promoción SACS aplicada en múltiples sucursales',
+      imageAlt: 'Dueña de boutique de moda revisando promociones en tablet',
+      video: {
+        mp4: '/videos/promociones-hero.mp4',
+        webm: '/videos/promociones-hero.webm',
+      },
+      videoPoster: '/videos/promociones-hero-poster.webp',
     },
     features: [
       {
@@ -370,19 +375,29 @@ export const pageContent: Record<string, any> = {
         title: 'Si cumple las reglas, se aplica. Punto.',
         description: 'Sin códigos. Sin que el cajero recuerde. Sin discusiones con el cliente en la fila. SACS reconoce producto, horario, sucursal y cliente — y dispara la promo automáticamente al cobrar.',
         image: '/images/promo-auto-aplicacion.webp',
-        imageAlt: 'Vendedora cobrando con promo aplicada automáticamente en SACS POS',
+        imageAlt: 'Cajera cobrando con promo aplicada automáticamente en POS de tienda boutique moderna y colorida',
         link: null,
         featured: true,
         variant: 'promo-auto',
+        bullets: [
+          { label: 'Cero códigos en caja', detail: 'El cajero no captura nada. SACS detecta la promo en el ticket apenas cumple las reglas — sin post-its ni hojas pegadas en la caja.' },
+          { label: 'Reglas declarativas', detail: 'Producto, categoría, horario, sucursal, tipo de cliente. Configura una vez, corre solo. Cambia una regla y se actualiza en todas las cajas al instante.' },
+          { label: 'Auto-aplicación al cobrar', detail: 'Al sumar productos al ticket, SACS evalúa promos activas y aplica la mejor combinación. El cliente ve el descuento desglosado, sin sorpresas.' },
+        ],
       },
       {
-        title: 'Happy hour los martes de 3 a 6. Solo sucursales Norte.',
+        title: 'Jueves al cierre: −15% de 6 a 9. Solo sucursales Polanco.',
         description: 'Configúralo una vez y se prende y apaga solo, semana tras semana. Horarios, recurrencias, fechas especiales — todo en un mismo sistema de reglas que trabaja por ti.',
         image: '/images/promo-horarios.webp',
-        imageAlt: 'Dueña programando horarios de promoción en tablet SACS',
+        imageAlt: 'Dueña configurando horarios de promoción en laptop dentro de boutique moderna con techo de listones de madera y luces LED lineales',
         link: { label: 'Ver reportes de promociones', href: '/producto/reportes-y-analitica' },
         featured: true,
         variant: 'promo-schedule',
+        bullets: [
+          { label: 'Por horario exacto', detail: 'Define hora de inicio y fin al minuto. La promo se prende y apaga sola — ideal para empujar ticket en hora pico o mover stock al cierre.' },
+          { label: 'Recurrencias inteligentes', detail: 'Diaria, semanal por días, mensual por patrón ("segundo martes") o cada N días. Configura una vez, corre por meses sin tocar nada.' },
+          { label: 'Por sucursal selectiva', detail: 'Activa la promo solo donde la necesitas — sucursales Norte, tiendas con sobre-stock, ubicaciones turísticas. Sin afectar el resto de la cadena.' },
+        ],
       },
       {
         title: 'Códigos que se queman al usarse.',
@@ -392,15 +407,25 @@ export const pageContent: Record<string, any> = {
         link: null,
         featured: true,
         variant: 'promo-code',
+        bullets: [
+          { label: 'Uso único, validado en cobro', detail: 'Apenas se aplica el código en una venta, SACS lo bloquea. El siguiente intento se rechaza con mensaje claro al cajero — sin discusión con el cliente.' },
+          { label: 'Por cliente identificado', detail: 'Liga el código a un cliente o segmento. Aunque circule en redes, solo cobra el descuento quien tú decidiste — bienvenida, VIP, recuperación.' },
+          { label: 'Trackeo por campaña', detail: 'Cada código deja huella. Mides cuántas ventas trajo cada influencer, cada email blast, cada anuncio — y replicas lo que sí funcionó.' },
+        ],
       },
       {
         title: 'La promo te da puntos, no solo descuento.',
         description: 'Gasta $500, llévate 200 puntos extra. Promos que alimentan tu programa de lealtad y traen al cliente de vuelta — no solo bajan el ticket de hoy.',
         image: '/images/promo-lealtad.webp',
-        imageAlt: 'Cliente acumulando puntos de lealtad tras promoción en SACS',
+        imageAlt: 'Clienta y vendedora en boutique de lujo aplicando promo que abona puntos al programa de lealtad',
         link: { label: 'Ver clientes y lealtad', href: '/producto/clientes-y-crm' },
         featured: true,
         variant: 'promo-loyalty',
+        bullets: [
+          { label: 'Cada promo, una recompensa', detail: 'En vez de descuento, el beneficio puede ser puntos extra al monedero del cliente. Misma campaña, mejor margen y más razón para volver.' },
+          { label: 'Acumulación inteligente', detail: 'Define multiplicadores por categoría, marca o segmento. Cliente VIP gana 3x, cliente nuevo 2x — todo configurado en una pantalla.' },
+          { label: 'Recompra medible', detail: 'Mides cuántos clientes regresaron a canjear, en cuántos días y cuánto gastaron — no solo el descuento del primer ticket.' },
+        ],
       },
     ],
     testimonial: {
@@ -419,7 +444,13 @@ export const pageContent: Record<string, any> = {
         title: 'Lo simple, desplegado a escala.',
         description: 'Porcentaje o monto fijo, por unidad o al total del ticket. Aplícalo donde necesites, cuando necesites, con las reglas que necesites.',
         image: '',
-        imageAlt: 'Configuración de descuento básico en SACS',
+        imageAlt: 'Configuración de descuento básico en SACS POS',
+        video: {
+          mp4: '/videos/promo-basico.mp4',
+          webm: '/videos/promo-basico.webm',
+          poster: '/videos/promo-basico-poster.webp',
+          aspectRatio: '2068 / 1080',
+        },
         link: null,
         details: [
           {
@@ -459,7 +490,13 @@ export const pageContent: Record<string, any> = {
         title: 'Compra esto, llévate aquello. Como sea que lo imagines.',
         description: 'Activador por cantidad de items o por monto gastado. El beneficio puede ser items gratis, % de descuento, precio fijo o puntos de lealtad. Toda la gimnasia del retail cubierta.',
         image: '',
-        imageAlt: 'Configuración de promoción avanzada con activador en SACS',
+        imageAlt: 'Configuración de promoción avanzada con activador en SACS POS',
+        video: {
+          mp4: '/videos/promo-avanzado.mp4',
+          webm: '/videos/promo-avanzado.webm',
+          poster: '/videos/promo-avanzado-poster.webp',
+          aspectRatio: '2068 / 1080',
+        },
         link: null,
         details: [
           {
@@ -499,7 +536,13 @@ export const pageContent: Record<string, any> = {
         title: 'Más lleva, más se ahorra. Automático.',
         description: 'Pieza 2 a -10%, pieza 3 a -20%, pieza 4 a -30%. SACS escala el descuento solo, sin fórmulas, sin hojas de cálculo, sin que el cajero haga la resta.',
         image: '',
-        imageAlt: 'Configuración de descuento progresivo escalonado en SACS',
+        imageAlt: 'Configuración de descuento progresivo escalonado en SACS POS',
+        video: {
+          mp4: '/videos/promo-progresivo.mp4',
+          webm: '/videos/promo-progresivo.webm',
+          poster: '/videos/promo-progresivo-poster.webp',
+          aspectRatio: '2068 / 1080',
+        },
         link: null,
         details: [
           {
@@ -585,7 +628,12 @@ export const pageContent: Record<string, any> = {
       title: 'Aparta hoy. Vende cuando el cliente esté listo.',
       subtitle: 'Toma anticipo, bloquea el stock, cobra a plazos y convierte el apartado en venta con un clic — en cualquier sucursal, con o sin el producto en piso.',
       image: '/images/apartados-hero.webp',
-      imageAlt: 'Vendedora cerrando un apartado con cliente en boutique SACS',
+      imageAlt: 'Pantalla de SACS POS procesando un pedido especial con apartado',
+      video: {
+        mp4: '/videos/abonos-pos.mp4',
+        webm: '/videos/abonos-pos.webm',
+      },
+      videoPoster: '/videos/abonos-pos-poster.webp',
     },
     features: [
       {
@@ -619,6 +667,13 @@ export const pageContent: Record<string, any> = {
         link: null,
         featured: true,
         variant: 'apartado-reserva',
+        cardPosition: 'top-right',
+        cardSize: 'sm',
+        bullets: [
+          { label: 'Anticipo cobrado al instante', detail: 'Tarjeta, efectivo, SPEI o transferencia desde el POS. El % mínimo se valida por política y queda registrado en la cuenta del cliente.' },
+          { label: 'Stock bloqueado al segundo', detail: 'La pieza queda apartada en el inventario en cuanto firmas: deja de aparecer como vendible en piso, online ni en otra sucursal hasta que el apartado se cierre o expire.' },
+          { label: 'Ticket con QR, saldo y fecha límite', detail: 'Imprimes o envías por email un comprobante con QR único, monto pagado, saldo pendiente y vencimiento. El cliente regresa, escaneas y cierras la venta sin teclear nada.' },
+        ],
       },
       {
         title: 'Cuotas, abonos y saldo — sin hoja de cálculo.',
@@ -628,6 +683,11 @@ export const pageContent: Record<string, any> = {
         link: { label: 'Ver control financiero', href: '/producto/control-financiero' },
         featured: true,
         variant: 'apartado-payment',
+        bullets: [
+          { label: 'Abona en cualquier sucursal', detail: 'Apartó en Polanco y abona en Santa Fe — SACS reconoce al cliente, muestra el saldo abierto y aplica el pago donde sea, en cualquier método (tarjeta, efectivo, SPEI o mixto).' },
+          { label: 'Saldo y plazo recalculados al instante', detail: 'Cada abono actualiza el saldo y la barra de progreso en vivo. Si lo configuraste, la fecha límite se extiende automáticamente con cada pago — sin Excel, sin llamadas internas para confirmar.' },
+          { label: 'Conversión a venta sin re-capturar', detail: 'Al cubrir el saldo, el apartado se cierra solo y genera la venta formal con factura si aplica. El stock se libera, el ticket se imprime y el cliente sale con su producto.' },
+        ],
       },
       {
         title: 'Tu inventario es uno. Aunque esté en otra sucursal.',
@@ -637,6 +697,11 @@ export const pageContent: Record<string, any> = {
         link: { label: 'Ver inventario omnicanal', href: '/producto/inventario-omnicanal' },
         featured: true,
         variant: 'apartado-transfer',
+        bullets: [
+          { label: 'Stock global desde el POS', detail: 'Consultas en segundos qué sucursal tiene la talla exacta — Polanco, Santa Fe, Chapalita o CEDIS — sin llamar a otra tienda ni salir de la pantalla de venta.' },
+          { label: 'Traspaso 1-click', detail: 'Apartas en Santa Fe la pieza que está en Polanco y SACS genera la orden de traspaso al instante. El equipo de origen recibe la tarea con prioridad y fecha objetivo.' },
+          { label: 'Aviso automático al cliente', detail: 'Cuando la prenda llega a la tienda de retiro, el cliente recibe email (y WhatsApp cuando conectes tu línea) avisando que ya puede pasar a recoger.' },
+        ],
       },
       {
         title: 'Vende lo que todavía no está en piso.',
@@ -645,6 +710,11 @@ export const pageContent: Record<string, any> = {
         imageAlt: 'Dueño de calzado tomando pedido especial con tablet SACS',
         link: { label: 'Ver órdenes de compra', href: '/producto/ordenes-de-compra' },
         featured: true,
+        bullets: [
+          { label: 'Anticipo que cubre tu exposición', detail: 'Tomas el pedido contra producto que aún no compras al proveedor. El % de anticipo lo defines tú — suficiente para asegurar que el cliente lo va a recoger sin que tu capital quede atado.' },
+          { label: 'Conexión con la orden de compra', detail: 'SACS vincula el pedido especial con tu OC al proveedor. Cuando la mercancía se recibe en CEDIS o sucursal, el sistema asigna automáticamente la unidad al apartado correcto.' },
+          { label: 'Notificación lista para enviarse', detail: 'Al ingresar el producto al inventario, el aviso al cliente queda redactado y listo. Apruebas, sale por email y el cliente programa su retiro o entrega.' },
+        ],
         variant: 'apartado-special',
       },
     ],
@@ -705,6 +775,12 @@ export const pageContent: Record<string, any> = {
         description: 'El cliente puede venir a abonar las veces que quiera. Cada movimiento queda registrado con método, sucursal y vendedor, y el saldo se recalcula al segundo.',
         image: '',
         imageAlt: 'Pantalla de historial de pagos parciales en SACS',
+        video: {
+          mp4: '/videos/abonos-pos.mp4',
+          webm: '/videos/abonos-pos.webm',
+          poster: '/videos/abonos-pos-poster.webp',
+          aspectRatio: '2068 / 1080',
+        },
         link: null,
         details: [
           {

@@ -145,7 +145,14 @@ for (let i = 0; i <= currentPlanIdx; i++) {
               <div class="sq-block-media reveal-item" style="--reveal-delay: 150ms">
                 {block.featured ? (
                   <div class={`sq-featured sq-featured--${block.variant || 'checkout'}${block.cardSize ? ' sq-featured--size-' + block.cardSize : ''}${block.cardPosition ? ' sq-featured--pos-' + block.cardPosition : ''}`}>
-                    <img src={block.image} alt={block.imageAlt} width="1024" height="1024" loading="lazy" />
+                    {block.video ? (
+                      <video class="sq-featured-video" autoplay muted loop playsinline preload="metadata" poster={block.video.poster} aria-label={block.imageAlt}>
+                        {block.video.webm && <source src={block.video.webm} type="video/webm" />}
+                        <source src={block.video.mp4} type="video/mp4" />
+                      </video>
+                    ) : (
+                      <img src={block.image} alt={block.imageAlt} width="1024" height="1024" loading="lazy" />
+                    )}
 
                     {(!block.variant || block.variant === 'checkout') && (
                       <div class="sq-featured-card" aria-hidden="true">
@@ -357,25 +364,25 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                         <div class="sq-fc-header">
                           <span class="sq-fc-badge sq-fc-badge--schedule">
                             <span class="sq-fc-dot"></span>
-                            Happy hour · Activa
+                            Cierre de jueves · Activa
                           </span>
-                          <span class="sq-fc-time">Martes</span>
+                          <span class="sq-fc-time">Jueves</span>
                         </div>
-                        <div class="sq-fc-sched-title">2x1 en bebidas · 15:00 – 18:00</div>
+                        <div class="sq-fc-sched-title">−15% en piso · 18:00 – 21:00</div>
                         <div class="sq-fc-sched-days">
                           <span class="sq-fc-day">L</span>
-                          <span class="sq-fc-day sq-fc-day--active">M</span>
                           <span class="sq-fc-day">M</span>
-                          <span class="sq-fc-day">J</span>
+                          <span class="sq-fc-day">M</span>
+                          <span class="sq-fc-day sq-fc-day--active">J</span>
                           <span class="sq-fc-day">V</span>
                           <span class="sq-fc-day">S</span>
                           <span class="sq-fc-day">D</span>
                         </div>
                         <div class="sq-fc-sched-branches">
                           <span class="sq-fc-sched-branch-label">Sucursales:</span>
-                          <span class="sq-fc-branch-chip">Norte</span>
                           <span class="sq-fc-branch-chip">Polanco</span>
-                          <span class="sq-fc-branch-chip sq-fc-branch-chip--more">+3</span>
+                          <span class="sq-fc-branch-chip">Roma</span>
+                          <span class="sq-fc-branch-chip sq-fc-branch-chip--more">+2</span>
                         </div>
                         <div class="sq-fc-sched-timer">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -424,31 +431,39 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                     )}
 
                     {block.variant === 'promo-loyalty' && (
-                      <div class="sq-featured-card" aria-hidden="true">
-                        <div class="sq-fc-header">
-                          <span class="sq-fc-badge sq-fc-badge--loyalty">
-                            <span class="sq-fc-dot"></span>
-                            Lealtad · Cliente VIP
-                          </span>
-                          <span class="sq-fc-time">+300 pts</span>
+                      <div class="sq-goldcard" aria-hidden="true">
+                        <div class="sq-goldcard-shine"></div>
+                        <div class="sq-goldcard-grid"></div>
+                        <div class="sq-goldcard-top">
+                          <span class="sq-goldcard-brand">SACS · Lealtad</span>
+                          <svg class="sq-goldcard-chip" width="34" height="26" viewBox="0 0 34 26" fill="none" aria-hidden="true">
+                            <rect x="0.5" y="0.5" width="33" height="25" rx="4" fill="url(#chipGrad)" stroke="rgba(60,40,5,0.4)"/>
+                            <path d="M11 0v6M17 0v6M23 0v6M11 20v6M17 20v6M23 20v6M0 13h7M27 13h7M11 7h12v12h-12z" stroke="rgba(60,40,5,0.55)" stroke-width="1"/>
+                            <defs>
+                              <linearGradient id="chipGrad" x1="0" y1="0" x2="34" y2="26" gradientUnits="userSpaceOnUse">
+                                <stop offset="0" stop-color="#F2D589"/>
+                                <stop offset="0.5" stop-color="#E0B85F"/>
+                                <stop offset="1" stop-color="#A37728"/>
+                              </linearGradient>
+                            </defs>
+                          </svg>
                         </div>
-                        <div class="sq-fc-customer">
-                          <span class="sq-fc-cust-name">Lucía Herrera</span>
-                          <span class="sq-fc-cust-meta">4,820 pts · equivale a $482</span>
+                        <div class="sq-goldcard-mid">
+                          <span class="sq-goldcard-pts-label">PUNTOS DISPONIBLES</span>
+                          <div class="sq-goldcard-pts-row">
+                            <span class="sq-goldcard-pts-num">5,120</span>
+                            <span class="sq-goldcard-pts-delta">+300</span>
+                          </div>
                         </div>
-                        <div class="sq-fc-loyalty-row">
-                          <span class="sq-fc-loyalty-label">Promo: Gasta $500, gana 300 pts</span>
-                          <span class="sq-fc-loyalty-pts">+300 pts</span>
-                        </div>
-                        <div class="sq-fc-loyalty-bar" aria-hidden="true">
-                          <div class="sq-fc-loyalty-bar-fill" style="width:72%"></div>
-                        </div>
-                        <div class="sq-fc-loyalty-meta">
-                          <span>Próxima recompensa en 1,180 pts</span>
-                        </div>
-                        <div class="sq-fc-total">
-                          <span>Total</span>
-                          <span class="sq-fc-total-val">$1,240.00</span>
+                        <div class="sq-goldcard-foot">
+                          <div class="sq-goldcard-foot-name">
+                            <span class="sq-goldcard-name-label">CLIENTE VIP</span>
+                            <span class="sq-goldcard-name">Lucía Herrera</span>
+                          </div>
+                          <div class="sq-goldcard-foot-tier">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(60,40,5,0.85)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                            <span>Gold</span>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -2897,90 +2912,11 @@ for (let i = 0; i <= currentPlanIdx; i++) {
 
 
 
-                    {block.variant === 'promo-auto' && (
-                      <Fragment>
-                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
-                          Sin código
-                        </div>
-                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
-                          Auto
-                        </div>
-                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41L13.42 20.58a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><circle cx="7" cy="7" r="1"/></svg>
-                          Reglas
-                        </div>
-                      </Fragment>
-                    )}
 
-                    {block.variant === 'promo-schedule' && (
-                      <Fragment>
-                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                          Por horario
-                        </div>
-                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                          Recurrente
-                        </div>
-                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                          Por sucursal
-                        </div>
-                      </Fragment>
-                    )}
 
-                    {block.variant === 'promo-code' && (
-                      <Fragment>
-                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8a2 2 0 00-2-2H6a2 2 0 00-2 2v4M20 12a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4a2 2 0 012-2"/></svg>
-                          Un uso
-                        </div>
-                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-                          Por cliente
-                        </div>
-                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg>
-                          Reactivación
-                        </div>
-                      </Fragment>
-                    )}
 
-                    {block.variant === 'promo-loyalty' && (
-                      <Fragment>
-                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                          Puntos
-                        </div>
-                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 00-8 0v2"/></svg>
-                          Monedero
-                        </div>
-                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8a4 4 0 00-4-4H8a4 4 0 00-4 4v4"/><circle cx="12" cy="14" r="6"/><path d="M12 11v3l2 1"/></svg>
-                          Recompra
-                        </div>
-                      </Fragment>
-                    )}
 
-                    {block.variant === 'apartado-reserva' && (
-                      <Fragment>
-                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M7 15h4"/></svg>
-                          Anticipo
-                        </div>
-                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                          Vencimiento
-                        </div>
-                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 3v18"/></svg>
-                          Bloqueo stock
-                        </div>
-                      </Fragment>
-                    )}
+                    {/* apartado-reserva: pills removed for cleaner image */}
 
                     {block.variant === 'apartado-payment' && (
                       <Fragment>
@@ -3016,22 +2952,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                       </Fragment>
                     )}
 
-                    {block.variant === 'apartado-special' && (
-                      <Fragment>
-                        <div class="sq-featured-pill sq-featured-pill--a" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                          Fuera de catálogo
-                        </div>
-                        <div class="sq-featured-pill sq-featured-pill--b" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>
-                          Orden de compra
-                        </div>
-                        <div class="sq-featured-pill sq-featured-pill--c" aria-hidden="true">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                          ETA proveedor
-                        </div>
-                      </Fragment>
-                    )}
+                    {/* apartado-special: pills removed for cleaner image */}
 
                     {block.variant === 'online-catalog' && (
                       <Fragment>
@@ -5249,7 +5170,8 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     isolation: isolate;
   }
 
-  .sq-featured > img {
+  .sq-featured > img,
+  .sq-featured > .sq-featured-video {
     width: 100%;
     height: auto;
     display: block;
@@ -5257,6 +5179,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
     aspect-ratio: 1 / 1;
     object-fit: cover;
+    background: #000;
   }
 
   /* Floating POS card */
@@ -5272,6 +5195,193 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
     z-index: 2;
     animation: sqFeaturedFloat 6s ease-in-out infinite;
+  }
+
+  /* ═══ Golden Loyalty Card 3D ═══ */
+  .sq-goldcard {
+    position: absolute;
+    bottom: -32px;
+    left: -28px;
+    width: min(320px, 76%);
+    aspect-ratio: 1.586 / 1;
+    border-radius: 18px;
+    padding: 18px 22px 18px;
+    font-family: var(--font-body, 'Plus Jakarta Sans', sans-serif);
+    z-index: 3;
+    overflow: hidden;
+    color: #4a350a;
+    background:
+      radial-gradient(120% 90% at 70% 0%, rgba(255, 240, 195, 0.55), transparent 55%),
+      radial-gradient(80% 80% at 20% 110%, rgba(120, 80, 15, 0.35), transparent 60%),
+      linear-gradient(135deg, #f6dc97 0%, #e3b95f 35%, #c89436 60%, #a3741f 100%);
+    box-shadow:
+      0 28px 60px rgba(80, 50, 5, 0.45),
+      0 12px 24px rgba(0, 0, 0, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.55),
+      inset 0 -1px 0 rgba(80, 50, 5, 0.35),
+      inset 0 0 0 1px rgba(255, 220, 150, 0.55);
+    transform: perspective(900px) rotateX(8deg) rotateY(-12deg) translateY(0);
+    transform-style: preserve-3d;
+    animation: sqGoldFloat 7s ease-in-out infinite;
+    isolation: isolate;
+  }
+
+  .sq-goldcard-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(125deg, transparent 35%, rgba(255, 255, 255, 0.18) 50%, transparent 65%),
+      repeating-linear-gradient(135deg, rgba(255, 235, 175, 0.18) 0 1.5px, transparent 1.5px 6px);
+    pointer-events: none;
+    z-index: 0;
+    mix-blend-mode: overlay;
+  }
+
+  .sq-goldcard-shine {
+    position: absolute;
+    top: -50%;
+    left: -30%;
+    width: 60%;
+    height: 200%;
+    background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%);
+    transform: rotate(15deg);
+    pointer-events: none;
+    z-index: 1;
+    animation: sqGoldShine 5.5s ease-in-out infinite;
+  }
+
+  .sq-goldcard-top,
+  .sq-goldcard-mid,
+  .sq-goldcard-foot {
+    position: relative;
+    z-index: 2;
+  }
+
+  .sq-goldcard-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .sq-goldcard-brand {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(60, 40, 5, 0.9);
+    text-shadow: 0 1px 0 rgba(255, 240, 200, 0.5);
+  }
+
+  .sq-goldcard-chip {
+    flex-shrink: 0;
+    border-radius: 4px;
+    box-shadow: inset 0 0 0 1px rgba(255, 235, 175, 0.6), 0 1px 2px rgba(60, 40, 5, 0.3);
+  }
+
+  .sq-goldcard-mid {
+    margin-top: clamp(14px, 2.5vw, 22px);
+  }
+
+  .sq-goldcard-pts-label {
+    display: block;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    color: rgba(60, 40, 5, 0.75);
+    margin-bottom: 4px;
+  }
+
+  .sq-goldcard-pts-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .sq-goldcard-pts-num {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: clamp(1.625rem, 3.6vw, 2.125rem);
+    font-weight: 800;
+    color: #3d2806;
+    letter-spacing: -0.02em;
+    text-shadow: 0 1px 0 rgba(255, 240, 200, 0.5);
+  }
+
+  .sq-goldcard-pts-delta {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #2a6e3c;
+    background: rgba(255, 250, 230, 0.85);
+    padding: 3px 8px;
+    border-radius: 999px;
+    box-shadow: 0 2px 6px rgba(60, 40, 5, 0.2);
+    animation: sqGoldDelta 3s ease-in-out infinite;
+  }
+
+  .sq-goldcard-foot {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: clamp(10px, 2vw, 14px);
+  }
+
+  .sq-goldcard-foot-name {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sq-goldcard-name-label {
+    font-size: 0.5625rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: rgba(60, 40, 5, 0.7);
+  }
+
+  .sq-goldcard-name {
+    font-family: var(--font-display, 'Sora', sans-serif);
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #3d2806;
+    letter-spacing: 0.04em;
+  }
+
+  .sq-goldcard-foot-tier {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: rgba(60, 40, 5, 0.85);
+    background: rgba(255, 250, 230, 0.55);
+    padding: 4px 8px;
+    border-radius: 999px;
+    box-shadow: inset 0 0 0 1px rgba(255, 220, 150, 0.7);
+  }
+
+  @keyframes sqGoldFloat {
+    0%, 100% { transform: perspective(900px) rotateX(8deg) rotateY(-12deg) translateY(0); }
+    50%      { transform: perspective(900px) rotateX(6deg) rotateY(-10deg) translateY(-8px); }
+  }
+
+  @keyframes sqGoldShine {
+    0%   { transform: rotate(15deg) translateX(-40%); opacity: 0; }
+    20%  { opacity: 0.9; }
+    60%  { opacity: 0.9; }
+    100% { transform: rotate(15deg) translateX(220%); opacity: 0; }
+  }
+
+  @keyframes sqGoldDelta {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50%      { transform: translateY(-2px) scale(1.04); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sq-goldcard,
+    .sq-goldcard-shine,
+    .sq-goldcard-pts-delta { animation: none !important; }
   }
 
   /* Size modifiers (applied on .sq-featured wrapper, cascade to inner card) */
@@ -5459,7 +5569,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
   }
 
   .sq-featured-pill svg {
-    color: #2563EB;
+    color: #4B7BE5;
   }
 
   .sq-featured-pill--a {
@@ -6083,13 +6193,13 @@ for (let i = 0; i <= currentPlanIdx; i++) {
   }
 
   .sq-fc-badge--reserva {
-    background: #faf0e4;
-    color: #9a5e1c;
+    background: #e7eefc;
+    color: #4B7BE5;
   }
   .sq-fc-badge--reserva .sq-fc-dot {
-    background: #d59850;
-    box-shadow: 0 0 0 3px rgba(213, 152, 80, 0.2);
-    animation-name: sqFcPulseAmber;
+    background: #4B7BE5;
+    box-shadow: 0 0 0 3px rgba(75, 123, 229, 0.2);
+    animation-name: sqFcPulseBlue;
   }
 
   .sq-fc-badge--payment {
@@ -6113,13 +6223,13 @@ for (let i = 0; i <= currentPlanIdx; i++) {
   }
 
   .sq-fc-badge--special {
-    background: #f1e6f3;
-    color: #6b387a;
+    background: #e7eefc;
+    color: #4B7BE5;
   }
   .sq-fc-badge--special .sq-fc-dot {
-    background: #a260a9;
-    box-shadow: 0 0 0 3px rgba(162, 96, 169, 0.2);
-    animation-name: sqFcPulsePlum;
+    background: #4B7BE5;
+    box-shadow: 0 0 0 3px rgba(75, 123, 229, 0.2);
+    animation-name: sqFcPulseBlue;
   }
 
   @keyframes sqFcPulseAmber {
@@ -6139,13 +6249,13 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     50% { box-shadow: 0 0 0 5px rgba(162, 96, 169, 0.08); }
   }
 
-  /* apartado-reserva customer (override background) */
+  /* apartado-reserva customer (SACS blue palette) */
   .sq-fc-customer--reserva {
-    background: #fcf5ea;
-    border-left: 3px solid #d59850;
+    background: #eef3fc;
+    border-left: 3px solid #4B7BE5;
   }
   .sq-fc-customer--reserva .sq-fc-cust-meta {
-    color: #9a5e1c;
+    color: #4B7BE5;
   }
 
   .sq-fc-reserva-row {
@@ -6155,7 +6265,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     gap: 12px;
     padding: 8px 10px;
     margin: 6px -4px 0;
-    background: #faf0e4;
+    background: #e7eefc;
     border-radius: 8px;
     font-size: 0.6875rem;
   }
@@ -6165,22 +6275,22 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     align-items: center;
     gap: 6px;
     font-weight: 600;
-    color: #9a5e1c;
+    color: #4B7BE5;
   }
 
   .sq-fc-reserva-val {
     font-weight: 700;
-    color: #9a5e1c;
+    color: #4B7BE5;
     font-variant-numeric: tabular-nums;
   }
 
   .sq-fc-total-val--reserva {
-    color: #9a5e1c;
+    color: #4B7BE5;
   }
 
   .sq-fc-cobrar--reserva {
-    background: #9a5e1c;
-    box-shadow: 0 4px 12px rgba(154, 94, 28, 0.32);
+    background: #4B7BE5;
+    box-shadow: 0 4px 12px rgba(75, 123, 229, 0.32);
     margin-top: 12px;
   }
 
@@ -6291,13 +6401,13 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     margin-top: 8px;
   }
 
-  /* apartado-special */
+  /* apartado-special (SACS palette: azul + dark navy) */
   .sq-fc-customer--special {
-    background: #f7edf8;
-    border-left: 3px solid #a260a9;
+    background: #eef3fc;
+    border-left: 3px solid #4B7BE5;
   }
   .sq-fc-customer--special .sq-fc-cust-meta {
-    color: #6b387a;
+    color: #4B7BE5;
   }
 
   .sq-fc-special-meta {
@@ -6305,7 +6415,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     flex-direction: column;
     gap: 4px;
     padding: 8px 10px;
-    background: #faf5fb;
+    background: #f5f7fc;
     border-radius: 8px;
     font-size: 0.6875rem;
     margin-top: 2px;
@@ -6324,7 +6434,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
 
   .sq-fc-special-val {
     font-weight: 700;
-    color: #6b387a;
+    color: #1a1a2e;
     font-variant-numeric: tabular-nums;
     text-align: right;
   }
@@ -6333,14 +6443,15 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 10px;
-    background: #f1e6f3;
-    color: #6b387a;
+    padding: 8px 12px;
+    background: #1a1a2e;
+    color: #fff;
     border-radius: 8px;
     font-size: 0.6875rem;
     font-weight: 600;
     margin-top: 6px;
     align-self: flex-start;
+    box-shadow: 0 2px 8px rgba(26, 26, 46, 0.2);
   }
 
   /* ─── Tienda en línea variants ─── */
