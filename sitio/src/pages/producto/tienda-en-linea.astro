@@ -2815,16 +2815,20 @@ const storeTestimonials = [
 
   @media (max-width: 640px) {
     .pf-hero-media-wrap--mock {
-      padding: clamp(16px, 4vw, 32px);
+      padding: clamp(6px, 1.6vw, 12px);
     }
     .pf-ipad-perspective {
-      width: min(94%, 560px);
-      transform: scale(var(--reveal-scale, 0.94));
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      transform: scale(var(--reveal-scale, 1));
     }
     .pf-ipad-perspective.is-visible {
-      --reveal-scale: 1;
+      --reveal-scale: 1.01;
     }
     .pf-ipad-idle { animation: none; }
+    .pf-hero-video-frame--ipad {
+      padding: 10px 12px;
+    }
     .pf-hero-media-wrap--mock::before {
       filter: saturate(0.9) brightness(1.02);
       transform: scale(1.02);

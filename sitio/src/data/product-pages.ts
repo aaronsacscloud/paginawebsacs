@@ -786,7 +786,13 @@ export const pageContent: Record<string, any> = {
         title: 'Aparta, recuerda, cobra y entrega — sin pensarlo.',
         description: 'Configura políticas de anticipo y plazo una vez, y deja que el sistema lleve el control: recordatorios, vencimientos, extensiones y conversión a venta automática al terminar de pagar.',
         image: '',
-        imageAlt: 'Pantalla de apartados en tablet SACS',
+        imageAlt: 'Pantalla de configuración de apartados en SACS POS',
+        video: {
+          mp4: '/videos/configuracion-pedidos.mp4',
+          webm: '/videos/configuracion-pedidos.webm',
+          poster: '/videos/configuracion-pedidos-poster.webp',
+          aspectRatio: '2068 / 1080',
+        },
         link: null,
         details: [
           {

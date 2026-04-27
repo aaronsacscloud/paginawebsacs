@@ -4948,17 +4948,21 @@ for (let i = 0; i <= currentPlanIdx; i++) {
 
   @media (max-width: 640px) {
     .pf-hero-media-wrap--mock {
-      padding: clamp(8px, 2vw, 16px);
+      padding: clamp(6px, 1.6vw, 12px);
     }
     .pf-ipad-perspective {
-      width: min(100%, 600px);
+      width: 100%;
+      aspect-ratio: 4 / 3;
       transform: scale(var(--reveal-scale, 1));
     }
     /* No mouse parallax on mobile */
     .pf-ipad-perspective.is-visible {
-      --reveal-scale: 1.02;
+      --reveal-scale: 1.01;
     }
     .pf-ipad-idle { animation: none; }
+    .pf-hero-video-frame--ipad {
+      padding: 10px 12px;
+    }
     /* Mobile perf: drop the heavy blur */
     .pf-hero-media-wrap--mock::before {
       filter: saturate(0.9) brightness(1.02);
@@ -6359,13 +6363,13 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     margin-top: 2px;
   }
 
-  /* apartado-transfer */
+  /* apartado-transfer (SACS palette: azul + dark navy) */
   .sq-fc-customer--transfer {
-    background: #e9f2f5;
-    border-left: 3px solid #1e8aa5;
+    background: #eef3fc;
+    border-left: 3px solid #4B7BE5;
   }
   .sq-fc-customer--transfer .sq-fc-cust-meta {
-    color: #155a6e;
+    color: #4B7BE5;
   }
 
   .sq-fc-stock-check--transfer {
@@ -6375,7 +6379,7 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: #1e8aa5;
+    background: #4B7BE5;
     color: #fff;
     font-size: 0.6875rem;
     font-weight: 700;
@@ -6386,8 +6390,8 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     align-items: center;
     gap: 6px;
     padding: 6px 10px;
-    background: #e1eff3;
-    color: #155a6e;
+    background: #eef3fc;
+    color: #4B7BE5;
     border-radius: 8px;
     font-size: 0.6875rem;
     font-weight: 600;
@@ -6396,8 +6400,8 @@ for (let i = 0; i <= currentPlanIdx; i++) {
   }
 
   .sq-fc-cobrar--transfer {
-    background: #155a6e;
-    box-shadow: 0 4px 12px rgba(21, 90, 110, 0.32);
+    background: #1a1a2e;
+    box-shadow: 0 4px 12px rgba(75, 123, 229, 0.32);
     margin-top: 8px;
   }
 
@@ -9432,47 +9436,99 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     50% { transform: translateY(-4px); }
   }
 
-  /* Mobile: simplify overlays + show more of the photo */
+  /* Mobile: show more of the photo + compact card overlay */
   @media (max-width: 640px) {
-    /* Photo: portrait aspect to show subjects more, plus bottom room for the card */
+    /* Photo: keep portrait so subjects are visible, but card is more compact below */
     .sq-featured {
-      margin-bottom: 240px;
+      margin-bottom: 180px;
     }
     .sq-featured > img,
     .sq-featured > .sq-featured-video {
       aspect-ratio: 4 / 5;
+      border-radius: 14px;
     }
 
-    /* Card: anchor TOP near photo bottom so overlap is fixed regardless of card height */
-    .sq-featured-card {
-      top: calc(100% - 56px);
+    /* Card: sit BELOW the photo with just a subtle 18px lip overlap — let the photo breathe.
+       Force this layout regardless of cardPosition modifier (top-right, etc.) on mobile. */
+    .sq-featured-card,
+    .sq-featured--pos-top-right .sq-featured-card,
+    .sq-featured--pos-top-left .sq-featured-card,
+    .sq-featured--pos-bottom-right .sq-featured-card,
+    .sq-featured--pos-center-bottom .sq-featured-card {
+      top: calc(100% - 18px);
       bottom: auto;
-      left: 12px;
-      right: 12px;
+      left: 16px;
+      right: 16px;
       width: auto;
-      max-width: calc(100% - 24px);
-      padding: 12px 14px;
+      max-width: calc(100% - 32px);
+      padding: 11px 13px 10px;
       border-radius: 12px;
-      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.14), 0 4px 10px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.12), 0 3px 8px rgba(0, 0, 0, 0.05);
+      transform: none;
+    }
+    .sq-featured--pos-center-bottom .sq-featured-card {
+      animation: sqFeaturedFloat 6s ease-in-out infinite;
     }
 
-    /* Goldcard: same anchor strategy */
+    /* Tighten internal card spacing */
+    .sq-featured-card .sq-fc-header {
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+    }
+    .sq-featured-card .sq-fc-customer {
+      padding: 7px 10px;
+    }
+    .sq-featured-card .sq-fc-customer .sq-fc-cust-name {
+      font-size: 0.8125rem;
+    }
+    .sq-featured-card .sq-fc-customer .sq-fc-cust-meta {
+      font-size: 0.6875rem;
+    }
+    .sq-featured-card .sq-fc-stock-row {
+      padding: 6px 8px;
+    }
+    .sq-featured-card .sq-fc-special-meta {
+      padding: 6px 9px;
+      gap: 3px;
+    }
+    .sq-featured-card .sq-fc-transfer-eta,
+    .sq-featured-card .sq-fc-special-notify {
+      padding: 6px 10px;
+      font-size: 0.625rem;
+    }
+    .sq-featured-card .sq-fc-cobrar {
+      padding: 9px 12px;
+      font-size: 0.6875rem;
+      margin-top: 6px;
+    }
+    .sq-featured-card .sq-fc-payment-bar {
+      margin-top: 6px;
+    }
+    .sq-featured-card .sq-fc-payment-row {
+      padding: 5px 0;
+    }
+    .sq-featured-card .sq-fc-payment-meta {
+      font-size: 0.625rem;
+    }
+
+    /* Floating pills slightly smaller and pulled in so they don't crowd the photo */
+    .sq-featured-pill--a { top: 8%; right: 6px; padding: 5px 9px; font-size: 0.625rem; }
+    .sq-featured-pill--b { top: 44%; right: 4px; padding: 5px 9px; font-size: 0.625rem; }
+    .sq-featured-pill--c { top: 76%; right: 6px; padding: 5px 9px; font-size: 0.625rem; }
+
+    .sq-featured--pickup .sq-featured-pill--a { left: 6px; top: 8%; }
+    .sq-featured--pickup .sq-featured-pill--b { left: 4px; top: 44%; }
+    .sq-featured--pickup .sq-featured-pill--c { left: 6px; top: 76%; }
+
+    /* Goldcard: same anchor strategy as the regular card */
     .sq-goldcard {
-      top: calc(100% - 56px);
+      top: calc(100% - 18px);
       bottom: auto;
-      left: 12px;
-      right: 12px;
+      left: 16px;
+      right: 16px;
       width: auto;
-      max-width: calc(100% - 24px);
+      max-width: calc(100% - 32px);
     }
-
-    .sq-featured-pill--a { top: 6%; right: -4px; padding: 6px 10px; font-size: 0.6875rem; }
-    .sq-featured-pill--b { top: 42%; right: -8px; padding: 6px 10px; font-size: 0.6875rem; }
-    .sq-featured-pill--c { top: 76%; right: -2px; padding: 6px 10px; font-size: 0.6875rem; }
-
-    .sq-featured--pickup .sq-featured-pill--a { left: -4px; top: 6%; }
-    .sq-featured--pickup .sq-featured-pill--b { left: -8px; top: 42%; }
-    .sq-featured--pickup .sq-featured-pill--c { left: -2px; top: 76%; }
   }
 
   @media (prefers-reduced-motion: reduce) {
