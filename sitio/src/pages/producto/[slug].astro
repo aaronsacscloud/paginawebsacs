@@ -4948,15 +4948,15 @@ for (let i = 0; i <= currentPlanIdx; i++) {
 
   @media (max-width: 640px) {
     .pf-hero-media-wrap--mock {
-      padding: clamp(16px, 4vw, 32px);
+      padding: clamp(8px, 2vw, 16px);
     }
     .pf-ipad-perspective {
-      width: min(94%, 560px);
-      transform: scale(var(--reveal-scale, 0.94));
+      width: min(100%, 600px);
+      transform: scale(var(--reveal-scale, 1));
     }
     /* No mouse parallax on mobile */
     .pf-ipad-perspective.is-visible {
-      --reveal-scale: 1;
+      --reveal-scale: 1.02;
     }
     .pf-ipad-idle { animation: none; }
     /* Mobile perf: drop the heavy blur */
@@ -9432,15 +9432,38 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     50% { transform: translateY(-4px); }
   }
 
-  /* Mobile: simplify overlays */
+  /* Mobile: simplify overlays + show more of the photo */
   @media (max-width: 640px) {
+    /* Photo: portrait aspect to show subjects more, plus bottom room for the card */
+    .sq-featured {
+      margin-bottom: 240px;
+    }
+    .sq-featured > img,
+    .sq-featured > .sq-featured-video {
+      aspect-ratio: 4 / 5;
+    }
+
+    /* Card: anchor TOP near photo bottom so overlap is fixed regardless of card height */
     .sq-featured-card {
-      bottom: -20px;
-      left: 8px;
-      right: 8px;
+      top: calc(100% - 56px);
+      bottom: auto;
+      left: 12px;
+      right: 12px;
       width: auto;
-      max-width: calc(100% - 16px);
-      padding: 12px;
+      max-width: calc(100% - 24px);
+      padding: 12px 14px;
+      border-radius: 12px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.14), 0 4px 10px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Goldcard: same anchor strategy */
+    .sq-goldcard {
+      top: calc(100% - 56px);
+      bottom: auto;
+      left: 12px;
+      right: 12px;
+      width: auto;
+      max-width: calc(100% - 24px);
     }
 
     .sq-featured-pill--a { top: 6%; right: -4px; padding: 6px 10px; font-size: 0.6875rem; }

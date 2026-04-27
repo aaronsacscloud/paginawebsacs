@@ -578,6 +578,58 @@ export const pageContent: Record<string, any> = {
         ],
       },
     ],
+    comparison: {
+      title: 'SACS Promociones frente al resto.',
+      subtitle: 'Lo que separa a SACS de Shopify, TiendaNube y demás: SACS no nace como e-commerce — nace como POS físico que se vuelve omnicanal. La promo que corre en piso, en línea y en WhatsApp es la misma, con las mismas reglas y la misma validación de margen.',
+      competitors: ['SACS', 'Shopify', 'TiendaNube', 'WooCommerce', 'Wix', 'Squarespace', 'VTEX'],
+      rows: [
+        {
+          label: 'Promos auto-aplicadas en POS sin que el cajero capture nada',
+          note: 'SACS lee producto, horario, sucursal y tipo de cliente y aplica la promo al cobrar — sin códigos en post-its.',
+          values: ['full', 'partial', 'none', 'none', 'none', 'none', 'partial'],
+        },
+        {
+          label: 'Validación de margen antes de publicar la promo',
+          note: 'Si el descuento quema tu margen mínimo, SACS te avisa antes — no después de mil tickets.',
+          values: ['full', 'none', 'none', 'none', 'none', 'none', 'partial'],
+        },
+        {
+          label: 'Promos por sucursal selectiva (una, varias o todas)',
+          note: 'Activa la promo solo en Polanco o solo en sucursales con sobre-stock — sin afectar el resto de la cadena.',
+          values: ['full', 'partial', 'none', 'none', 'none', 'none', 'partial'],
+        },
+        {
+          label: 'Recurrencias inteligentes (por horario, por día, por patrón)',
+          note: '"Segundo martes del mes", "jueves de 6 a 9", "cada 14 días" — configuras una vez y corre por meses sin tocar nada.',
+          values: ['full', 'partial', 'partial', 'partial', 'partial', 'partial', 'partial'],
+        },
+        {
+          label: 'Códigos de un solo uso ligados al cliente',
+          note: 'Apenas se aplica el código en una venta, SACS lo bloquea — ideal para influencers, email marketing y reactivación.',
+          values: ['full', 'full', 'partial', 'partial', 'partial', 'partial', 'full'],
+        },
+        {
+          label: 'Compra-X-lleva-Y y 3x2 nativos en POS físico',
+          note: 'SACS elige automáticamente el producto correcto del ticket — sin instalar plugin ni hackear el POS.',
+          values: ['full', 'partial', 'none', 'partial', 'none', 'none', 'partial'],
+        },
+        {
+          label: 'Descuentos progresivos escalonados (pieza 2 −10%, pieza 3 −20%)',
+          note: 'SACS escala el descuento solo, sin fórmulas, sin hojas de cálculo, sin que el cajero haga la resta.',
+          values: ['full', 'none', 'none', 'partial', 'none', 'none', 'partial'],
+        },
+        {
+          label: 'Promos que abonan puntos de lealtad en lugar de descuento',
+          note: '"Gasta $500, llévate 200 puntos extra" — la promo alimenta tu programa, no solo baja el ticket de hoy.',
+          values: ['full', 'partial', 'none', 'partial', 'none', 'none', 'partial'],
+        },
+        {
+          label: 'Reporte de lift y rentabilidad por promo nativo',
+          note: 'Cuánto vendiste con y sin la promo, qué SKUs movió, ticket promedio — sin armar GA4 ni cubo de BI aparte.',
+          values: ['full', 'partial', 'none', 'none', 'none', 'none', 'partial'],
+        },
+      ],
+    },
     testimonials: [
       {
         bg: '#0a0a0a',
@@ -888,6 +940,63 @@ export const pageContent: Record<string, any> = {
         location: 'México',
       },
     ],
+    comparison: {
+      title: 'SACS Apartados y Pedidos frente al resto.',
+      subtitle: 'Lo que separa a SACS de los POS y ERPs cuando se trata de apartar, abonar y entregar — sin perder la venta ni el cliente.',
+      competitors: ['SACS', 'Square', 'Clip', 'Loyverse', 'SICAR', 'Shopify POS', 'NetSuite'],
+      rows: [
+        {
+          label: 'Apartado con anticipo y bloqueo de stock al instante',
+          values: ['full', 'partial', 'none', 'partial', 'partial', 'none', 'partial'],
+          note: 'En SACS el anticipo se cobra y el stock se reserva en la misma operación — sin reportes paralelos.',
+        },
+        {
+          label: 'Abonos parciales en cualquier sucursal del mismo apartado',
+          values: ['full', 'none', 'none', 'partial', 'partial', 'none', 'partial'],
+          note: 'Apartó en Polanco y abona en Santa Fe — SACS reconoce al cliente y consolida el saldo al segundo.',
+        },
+        {
+          label: 'Recordatorios automáticos por email antes del vencimiento',
+          values: ['full', 'none', 'none', 'partial', 'partial', 'none', 'partial'],
+          note: 'SACS te avisa al cliente 3 días antes y el día del vencimiento — sin llamadas manuales.',
+        },
+        {
+          label: 'Comprobante con QR único, saldo y fecha de vencimiento',
+          values: ['full', 'partial', 'partial', 'partial', 'partial', 'none', 'partial'],
+          note: 'El cliente vuelve, escaneas el QR y cierras la venta sin teclear nada.',
+        },
+        {
+          label: 'Traspaso entre sucursales para cumplir un apartado',
+          values: ['full', 'none', 'none', 'none', 'partial', 'partial', 'full'],
+          note: 'Endless aisle real: aparta en Polanco la pieza que está en Santa Fe y SACS programa el traspaso.',
+        },
+        {
+          label: 'Pedido especial conectado a la orden de compra al proveedor',
+          values: ['full', 'none', 'none', 'none', 'partial', 'none', 'full'],
+          note: 'El apartado vive ligado a la OC. Cuando entra el producto al inventario, el aviso al cliente queda listo.',
+        },
+        {
+          label: 'Conversión automática de apartado a venta al liquidar',
+          values: ['full', 'partial', 'partial', 'partial', 'full', 'none', 'partial'],
+          note: 'Al cubrir el saldo, el apartado se cierra solo y genera la venta — con factura si aplica, sin re-capturar.',
+        },
+        {
+          label: 'Política de penalización configurable al cancelar',
+          values: ['full', 'none', 'none', 'none', 'partial', 'none', 'partial'],
+          note: 'Retención total, % de penalización o saldo a crédito — SACS aplica la regla automáticamente.',
+        },
+        {
+          label: 'Comisión del vendedor con regla de atribución multi-sucursal',
+          values: ['full', 'none', 'none', 'none', 'partial', 'none', 'partial'],
+          note: 'Define quién gana la comisión: el que apartó, el que cobró el saldo, o split — SACS respeta la regla.',
+        },
+        {
+          label: 'Reporte separado de apartados abiertos, por vencer y vencidos',
+          values: ['full', 'none', 'none', 'partial', 'full', 'none', 'partial'],
+          note: 'Los apartados son pasivo, no venta. SACS los muestra aparte para que el cierre del mes no los confunda.',
+        },
+      ],
+    },
     faqs: [
       { question: '¿Puedo cobrar distintos % de anticipo según el producto?', answer: 'Sí. Configuras políticas por categoría o por tipo de cliente. Por ejemplo: 20% para ropa, 50% para joyería y 100% para pedidos especiales bajo orden.' },
       { question: '¿Qué pasa si el cliente no termina de pagar en el plazo?', answer: 'El apartado pasa a estado "vencido". El stock se libera automáticamente y el anticipo queda como crédito en la cuenta del cliente o se retiene según tu política — tú decides al configurar.' },
