@@ -823,6 +823,133 @@ for (let i = 0; i <= currentPlanIdx; i++) {
                       </div>
                     )}
 
+                    {block.variant === 'ai-chatgpt' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--ai">
+                            <span class="sq-fc-dot"></span>
+                            ChatGPT · Shopping
+                          </span>
+                          <span class="sq-fc-time">openai.com</span>
+                        </div>
+                        <div class="sq-fc-ai-query">
+                          <span class="sq-fc-ai-q-icon">?</span>
+                          ¿dónde compro botas de cuero en CDMX?
+                        </div>
+                        <div class="sq-fc-ai-product">
+                          <div class="sq-fc-ai-prod-img" aria-hidden="true">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l4-7h8l4 7-2 4H5z"/><path d="M7 10V6a3 3 0 016 0v4"/></svg>
+                          </div>
+                          <div class="sq-fc-ai-prod-info">
+                            <span class="sq-fc-ai-prod-name">Bota Cognac · Talla 38</span>
+                            <span class="sq-fc-ai-prod-store">Calzados Libertador · Polanco</span>
+                          </div>
+                          <span class="sq-fc-ai-prod-price">$2,890</span>
+                        </div>
+                        <div class="sq-fc-chat-meta">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+                          Stock y precio consultados en vivo
+                        </div>
+                      </div>
+                    )}
+
+                    {block.variant === 'ai-feed' && (
+                      <div class="sq-featured-card sq-featured-card--feed" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--feed">
+                            <span class="sq-fc-dot"></span>
+                            JSON-LD · schema.org/Product
+                          </span>
+                          <span class="sq-fc-time">válido</span>
+                        </div>
+                        <pre class="sq-fc-code">{`{
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": "Bota Cognac",
+  "sku": "BC-38-COG",
+  "offers": {
+    "@type": "Offer",
+    "price": 2890,
+    "priceCurrency": "MXN",
+    "availability": "InStock"
+  }
+}`}</pre>
+                        <div class="sq-fc-chat-meta">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+                          Generado solo desde catálogo SACS
+                        </div>
+                      </div>
+                    )}
+
+                    {block.variant === 'ai-truth' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--truth">
+                            <span class="sq-fc-dot"></span>
+                            GET /api/product/BC-38-COG
+                          </span>
+                          <span class="sq-fc-time">200 OK</span>
+                        </div>
+                        <div class="sq-fc-truth-row">
+                          <span class="sq-fc-truth-label">Precio actual</span>
+                          <span class="sq-fc-truth-val">$2,890.00 MXN</span>
+                        </div>
+                        <div class="sq-fc-truth-row">
+                          <span class="sq-fc-truth-label">Promo aplicada</span>
+                          <span class="sq-fc-truth-val sq-fc-truth-val--promo">−15% VIP</span>
+                        </div>
+                        <div class="sq-fc-truth-row">
+                          <span class="sq-fc-truth-label">Stock Polanco</span>
+                          <span class="sq-fc-truth-val sq-fc-truth-val--ok">2 disponibles</span>
+                        </div>
+                        <div class="sq-fc-truth-row">
+                          <span class="sq-fc-truth-label">Stock Santa Fe</span>
+                          <span class="sq-fc-truth-val sq-fc-truth-val--out">agotado</span>
+                        </div>
+                        <div class="sq-fc-chat-meta">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+                          Respuesta en 80ms — sin feed nocturno
+                        </div>
+                      </div>
+                    )}
+
+                    {block.variant === 'ai-attribution' && (
+                      <div class="sq-featured-card" aria-hidden="true">
+                        <div class="sq-fc-header">
+                          <span class="sq-fc-badge sq-fc-badge--attr">
+                            <span class="sq-fc-dot"></span>
+                            Tráfico por motor de IA
+                          </span>
+                          <span class="sq-fc-time">últimos 30 d</span>
+                        </div>
+                        <div class="sq-fc-attr-row">
+                          <span class="sq-fc-attr-label">ChatGPT</span>
+                          <span class="sq-fc-attr-bar"><span class="sq-fc-attr-bar-fill" style="width:64%;background:#10a37f"></span></span>
+                          <span class="sq-fc-attr-val">38%</span>
+                        </div>
+                        <div class="sq-fc-attr-row">
+                          <span class="sq-fc-attr-label">Perplexity</span>
+                          <span class="sq-fc-attr-bar"><span class="sq-fc-attr-bar-fill" style="width:42%;background:#1c8b8d"></span></span>
+                          <span class="sq-fc-attr-val">25%</span>
+                        </div>
+                        <div class="sq-fc-attr-row">
+                          <span class="sq-fc-attr-label">Gemini</span>
+                          <span class="sq-fc-attr-bar"><span class="sq-fc-attr-bar-fill" style="width:36%;background:#4285f4"></span></span>
+                          <span class="sq-fc-attr-val">21%</span>
+                        </div>
+                        <div class="sq-fc-attr-row">
+                          <span class="sq-fc-attr-label">Claude</span>
+                          <span class="sq-fc-attr-bar"><span class="sq-fc-attr-bar-fill" style="width:18%;background:#cc7f5b"></span></span>
+                          <span class="sq-fc-attr-val">10%</span>
+                        </div>
+                        <div class="sq-fc-attr-row">
+                          <span class="sq-fc-attr-label">Bing Copilot</span>
+                          <span class="sq-fc-attr-bar"><span class="sq-fc-attr-bar-fill" style="width:10%;background:#737373"></span></span>
+                          <span class="sq-fc-attr-val">6%</span>
+                        </div>
+                      </div>
+                    )}
+
                     {block.variant === 'invoice-issue' && (
                       <div class="sq-featured-card" aria-hidden="true">
                         <div class="sq-fc-header">
@@ -6898,6 +7025,204 @@ for (let i = 0; i <= currentPlanIdx; i++) {
     font-weight: 600;
     margin-top: 6px;
     align-self: flex-start;
+  }
+
+  /* ─── Agentic Commerce / AI Discovery variants ─── */
+  .sq-fc-badge--ai,
+  .sq-fc-badge--feed,
+  .sq-fc-badge--truth,
+  .sq-fc-badge--attr {
+    padding: 4px 10px;
+    border-radius: 50px;
+  }
+  .sq-fc-badge--ai { background: #e6f5ef; color: #0a6b48; }
+  .sq-fc-badge--ai .sq-fc-dot { background: #10a37f; box-shadow: 0 0 0 3px rgba(16, 163, 127, 0.22); animation-name: sqFcPulseTeal; }
+  .sq-fc-badge--feed { background: #1e1e2e; color: #c5d4ff; font-family: 'SF Mono', 'JetBrains Mono', Menlo, monospace; font-size: 0.625rem; }
+  .sq-fc-badge--feed .sq-fc-dot { background: #6c8ef0; box-shadow: 0 0 0 3px rgba(108, 142, 240, 0.22); animation-name: sqFcPulseViolet; }
+  .sq-fc-badge--truth { background: #1e1e2e; color: #b3e6c0; font-family: 'SF Mono', 'JetBrains Mono', Menlo, monospace; font-size: 0.625rem; }
+  .sq-fc-badge--truth .sq-fc-dot { background: #44d27a; box-shadow: 0 0 0 3px rgba(68, 210, 122, 0.22); animation-name: sqFcPulseTeal; }
+  .sq-fc-badge--attr { background: #eef2fb; color: #2d3a73; }
+  .sq-fc-badge--attr .sq-fc-dot { background: #4a5ec8; box-shadow: 0 0 0 3px rgba(74, 94, 200, 0.22); animation-name: sqFcPulseViolet; }
+
+  @keyframes sqFcPulseTeal {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(16, 163, 127, 0.22); }
+    50% { box-shadow: 0 0 0 5px rgba(16, 163, 127, 0.08); }
+  }
+
+  /* ai-chatgpt */
+  .sq-fc-ai-query {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #f7f7f8;
+    border-radius: 12px;
+    color: #1a1a2e;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    font-style: italic;
+  }
+  .sq-fc-ai-q-icon {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #10a37f;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    font-style: normal;
+  }
+  .sq-fc-ai-product {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: #fff;
+    border: 1px solid #e8e8ec;
+    border-radius: 12px;
+    margin-top: 4px;
+  }
+  .sq-fc-ai-prod-img {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #f3e1c8 0%, #c89436 100%);
+    color: #5a3a14;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sq-fc-ai-prod-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    gap: 2px;
+  }
+  .sq-fc-ai-prod-name {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sq-fc-ai-prod-store {
+    font-size: 0.6875rem;
+    color: #6a6a78;
+    line-height: 1.2;
+  }
+  .sq-fc-ai-prod-price {
+    font-size: 0.9375rem;
+    font-weight: 800;
+    color: #1a1a2e;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ai-feed (JSON-LD code card) */
+  .sq-featured-card--feed {
+    background: #1e1e2e;
+    color: #d8e1ff;
+    border: 1px solid #2c2c40;
+  }
+  .sq-fc-code {
+    margin: 4px 0 0;
+    padding: 10px 12px;
+    background: #14141f;
+    border-radius: 10px;
+    color: #c5d4ff;
+    font-family: 'SF Mono', 'JetBrains Mono', Menlo, monospace;
+    font-size: 0.625rem;
+    line-height: 1.5;
+    white-space: pre;
+    overflow: hidden;
+    border: 1px solid #2a2a3e;
+  }
+  .sq-featured-card--feed .sq-fc-chat-meta {
+    background: rgba(68, 210, 122, 0.12);
+    color: #b3e6c0;
+  }
+
+  /* ai-truth (live endpoint response) */
+  .sq-fc-truth-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px dashed #ececf0;
+    font-size: 0.8125rem;
+  }
+  .sq-fc-truth-row:last-of-type {
+    border-bottom: none;
+  }
+  .sq-fc-truth-label {
+    color: #6a6a78;
+    font-weight: 500;
+  }
+  .sq-fc-truth-val {
+    color: #1a1a2e;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .sq-fc-truth-val--promo {
+    color: #c8730a;
+    background: #fdf3e2;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+  }
+  .sq-fc-truth-val--ok {
+    color: #0a6b48;
+  }
+  .sq-fc-truth-val--out {
+    color: #9a3a3a;
+  }
+
+  /* ai-attribution (bar chart) */
+  .sq-fc-attr-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 36px;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 0.75rem;
+  }
+  .sq-fc-attr-label {
+    color: #1a1a2e;
+    font-weight: 600;
+  }
+  .sq-fc-attr-bar {
+    position: relative;
+    height: 8px;
+    background: #f0f0f4;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .sq-fc-attr-bar-fill {
+    position: absolute;
+    inset: 0;
+    border-radius: 6px;
+    transform-origin: left center;
+    animation: sqFcAttrFill 1.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .sq-fc-attr-val {
+    color: #1a1a2e;
+    font-weight: 700;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  @keyframes sqFcAttrFill {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sq-fc-attr-bar-fill { animation: none; }
   }
 
   /* ─── Facturación Electrónica variants ─── */

@@ -98,7 +98,7 @@ export const pillars: Pillar[] = [
           headline: 'Vende donde están tus clientes',
           subtitle: 'TikTok, Instagram, Facebook y WhatsApp conectados a tu inventario en tiempo real.',
         },
-        status: 'coming-soon',
+        status: 'live',
       },
       {
         slug: 'agentic-commerce',
