@@ -78,6 +78,50 @@ const templates: Record<string, Template> = {
     `,
     text: `Hola ${d.contacto || ''}, te recordamos tu cotización ${d.numero}: ${d.quoteUrl}`,
   }),
+  payment_receipt_client: (d) => {
+    const fmt = (n: number) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
+    const metodoLabel: Record<string, string> = {
+      transferencia: 'Transferencia bancaria',
+      tarjeta: 'Tarjeta (Stripe)',
+      efectivo: 'Efectivo',
+      oxxo: 'OXXO',
+      otro: 'Otro',
+    };
+    const metodo = metodoLabel[d.metodo] || d.metodo || '—';
+    const itemsHtml = Array.isArray(d.items) && d.items.length
+      ? `<div style="margin:18px 0 8px"><div style="font-size:0.6875rem;color:#999;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Lo que adquirió</div>${d.items.map((it: any) => `<div style="display:flex;justify-content:space-between;font-size:0.875rem;color:#333;padding:4px 0;border-bottom:1px solid #f0f0f0"><span>${it.label}</span><span style="font-weight:600">${fmt(it.monto)}</span></div>`).join('')}</div>`
+      : '';
+    return {
+      subject: `Acuse de pago ${d.numero_acuse || ''} — SACS`,
+      html: `
+        <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a;background:#FAFAF8">
+          <div style="text-align:center;padding:8px 0 20px;border-bottom:1px solid #e5e5e5">
+            <div style="font-size:0.6875rem;color:#999;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px">Acuse de pago</div>
+            <div style="font-family:'Sora',sans-serif;font-size:1.5rem;font-weight:800;color:#1a1a1a;letter-spacing:-0.01em">${d.numero_acuse || '—'}</div>
+            <div style="display:inline-block;margin-top:10px;padding:4px 12px;background:#2AB5A0;color:#fff;font-size:0.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;border-radius:4px">Pago confirmado</div>
+          </div>
+          <p style="color:#555;line-height:1.6;margin:20px 0 12px">Hola ${d.contacto || ''},</p>
+          <p style="color:#555;line-height:1.6;margin:0 0 16px">Confirmamos la recepción de tu pago por <strong>${fmt(d.monto)}</strong> correspondiente a la cotización <strong>${d.quote_numero || ''}</strong>.</p>
+          <div style="background:#fff;border:1px solid #e5e5e5;padding:18px;border-radius:8px;margin:16px 0">
+            <table style="width:100%;font-size:0.875rem;color:#333;border-collapse:collapse">
+              <tr><td style="padding:6px 0;width:120px;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Método</td><td style="padding:6px 0;font-weight:600">${metodo}</td></tr>
+              <tr><td style="padding:6px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Fecha</td><td style="padding:6px 0">${d.fecha || '—'}</td></tr>
+              ${d.referencia ? `<tr><td style="padding:6px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Referencia</td><td style="padding:6px 0;font-family:monospace">${d.referencia}</td></tr>` : ''}
+              <tr><td style="padding:6px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Monto</td><td style="padding:6px 0;font-weight:800;font-size:1rem">${fmt(d.monto)}</td></tr>
+            </table>
+          </div>
+          ${itemsHtml}
+          ${d.saldoRestante > 0 ? `<div style="margin:16px 0;padding:14px;background:#fff8e1;border-left:3px solid #E8A838;font-size:0.875rem;color:#5a4a1f"><strong>Saldo restante:</strong> ${fmt(d.saldoRestante)} de ${fmt(d.totalCotizacion)}</div>` : `<div style="margin:16px 0;padding:14px;background:#e8f7f3;border-left:3px solid #2AB5A0;font-size:0.875rem;color:#1a5a4f"><strong>✓ Cotización pagada en su totalidad.</strong></div>`}
+          <div style="text-align:center;margin:24px 0">
+            <a href="${d.acuseUrl}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Ver acuse completo</a>
+          </div>
+          <p style="color:#999;font-size:0.75rem;line-height:1.5;margin:24px 0 0;text-align:center">Este acuse confirma la recepción de tu pago. No constituye un comprobante fiscal (CFDI).</p>
+          <p style="color:#bbb;font-size:0.6875rem;line-height:1.5;margin-top:12px;text-align:center">SACS Cloud · administracion@sacscloud.com</p>
+        </div>
+      `,
+      text: `Acuse ${d.numero_acuse}: pago de ${fmt(d.monto)} por ${metodo} recibido. Ver: ${d.acuseUrl}`,
+    };
+  },
   renewal_reminder: (d) => ({
     subject: `Tu renovación SACS se acerca — ${d.days} días`,
     html: `

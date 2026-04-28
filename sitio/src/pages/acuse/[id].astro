@@ -1,0 +1,723 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { supabase } from '../../lib/supabase';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+const isAdminMode = Astro.url.searchParams.has('admin');
+
+const { data: payment } = await supabase.from('payments').select('*').eq('id', id).single();
+if (!payment) return Astro.redirect('/404');
+
+let quote: any = null;
+let allPayments: any[] = [];
+if (payment.quote_id) {
+  const { data: q } = await supabase.from('quotes').select('id, numero, empresa, contacto, email, items, total, moneda, iva_incluido, created_at, estado').eq('id', payment.quote_id).single();
+  quote = q || null;
+  const { data: pgs } = await supabase.from('payments').select('id, monto, fecha, numero_acuse, metodo').eq('quote_id', payment.quote_id).order('fecha', { ascending: true });
+  allPayments = pgs || [];
+}
+
+const fmt = (n: number) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
+const fmtDecimal = (n: number) => Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtDate = (d: string | null) => {
+  if (!d) return '—';
+  const date = new Date(d.length === 10 ? d + 'T12:00:00' : d);
+  if (isNaN(date.getTime())) return '—';
+  const day = date.getDate();
+  const month = date.toLocaleDateString('es-MX', { month: 'long' });
+  const year = date.getFullYear();
+  return `${day} de ${month} de ${year}`;
+};
+
+const metodoLabel: Record<string, string> = {
+  transferencia: 'Transferencia bancaria',
+  tarjeta: 'Tarjeta de crédito o débito',
+  stripe: 'Tarjeta (Stripe)',
+  stripe_subscription: 'Suscripción recurrente (Stripe)',
+  efectivo: 'Efectivo',
+  oxxo: 'OXXO',
+  otro: 'Otro',
+};
+const metodoTexto = metodoLabel[payment.metodo] || payment.metodo || '—';
+
+const monto = Number(payment.monto || 0);
+const totalCotizacion = Number(quote?.total || 0);
+const totalPagado = allPayments.reduce((s, p) => s + Number(p.monto || 0), 0);
+const saldoRestante = Math.max(0, totalCotizacion - totalPagado);
+const porcentajeCubierto = totalCotizacion > 0 ? Math.min(100, Math.round((totalPagado / totalCotizacion) * 100)) : 100;
+
+const ivaIncluido = !!quote?.iva_incluido;
+const subtotal = ivaIncluido ? monto / 1.16 : monto;
+const ivaCalc = ivaIncluido ? monto - subtotal : 0;
+
+const quoteItems = Array.isArray(quote?.items) ? quote.items : [];
+let coveredItems: any[] = quoteItems;
+if (Array.isArray(payment.items_cubiertos) && payment.items_cubiertos.length > 0) {
+  const indices = new Set(payment.items_cubiertos.map((x: any) => Number(x)));
+  const filtered = quoteItems.filter((_: any, i: number) => indices.has(i));
+  if (filtered.length > 0) coveredItems = filtered;
+}
+
+const numeroPago = (() => {
+  const idx = allPayments.findIndex(p => p.id === payment.id);
+  return idx >= 0 ? idx + 1 : 1;
+})();
+const totalPagos = allPayments.length;
+
+const acuseAbsoluteUrl = `https://www.sacscloud.com/acuse/${payment.id}`;
+const cotizacionUrl = quote ? `/cotizacion/${quote.id}` : null;
+---
+
+<BaseLayout
+  title={`Acuse de pago ${payment.numero_acuse} — SACS`}
+  description={`Confirmación de pago por ${fmt(monto)} de ${quote?.empresa || 'cliente SACS'}`}
+  noindex={true}
+>
+
+<div class="acuse-page">
+
+  {/* ─── Acciones flotantes (no print) ─── */}
+  <div class="acuse-actions no-print">
+    <button class="acuse-action acuse-action--primary" id="btn-print" type="button">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Imprimir / Descargar PDF</span>
+    </button>
+    {cotizacionUrl && (
+      <a class="acuse-action" href={cotizacionUrl}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M14 3h7v7M10 21H3v-7M21 3l-9 9M3 21l9-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Ver cotización</span>
+      </a>
+    )}
+    {isAdminMode && (
+      <button class="acuse-action" id="btn-resend" type="button">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Reenviar por email</span>
+      </button>
+    )}
+  </div>
+
+  <div class="acuse-doc" id="acuse-doc">
+
+    {/* ─── Header ─── */}
+    <header class="acuse-header">
+      <div class="acuse-brand">
+        <svg width="80" height="32" viewBox="0 0 80 38" fill="none" aria-label="SACS">
+          <text x="0" y="29" font-family="'Clash Display', sans-serif" font-size="28" font-weight="700" fill="#1A1A1A">Sacs</text>
+        </svg>
+        <div class="acuse-brand-tag">Sistema operativo del retail moderno</div>
+      </div>
+      <div class="acuse-meta">
+        <div class="acuse-meta-eyebrow">Acuse de pago</div>
+        <div class="acuse-meta-numero">{payment.numero_acuse}</div>
+        <div class="acuse-meta-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Pago confirmado</span>
+        </div>
+      </div>
+    </header>
+
+    {/* ─── Cliente + Cotización ─── */}
+    <section class="acuse-block acuse-parties">
+      <div class="acuse-party">
+        <div class="acuse-party-label">Pagado por</div>
+        <div class="acuse-party-name">{quote?.empresa || '—'}</div>
+        {quote?.contacto && <div class="acuse-party-detail">{quote.contacto}</div>}
+        {quote?.email && <div class="acuse-party-detail acuse-party-detail--mono">{quote.email}</div>}
+      </div>
+      {quote && (
+        <div class="acuse-party">
+          <div class="acuse-party-label">Cotización</div>
+          <div class="acuse-party-name">{quote.numero}</div>
+          <div class="acuse-party-detail">Emitida el {fmtDate(quote.created_at)}</div>
+          <div class="acuse-party-detail acuse-party-detail--mono">
+            <a href={`/cotizacion/${quote.id}`}>www.sacscloud.com/cotizacion/{quote.id.slice(0, 8)}…</a>
+          </div>
+        </div>
+      )}
+    </section>
+
+    {/* ─── Datos del pago ─── */}
+    <section class="acuse-block acuse-payment">
+      <div class="acuse-section-title">Detalles del pago</div>
+      <table class="acuse-table acuse-table--meta">
+        <tbody>
+          <tr><td>Método de pago</td><td><strong>{metodoTexto}</strong></td></tr>
+          <tr><td>Fecha</td><td>{fmtDate(payment.fecha)}</td></tr>
+          {payment.referencia && <tr><td>Referencia</td><td class="acuse-mono">{payment.referencia}</td></tr>}
+          <tr><td>Pago</td><td>{numeroPago} de {totalPagos}</td></tr>
+        </tbody>
+      </table>
+
+      <div class="acuse-totals">
+        {ivaIncluido ? (
+          <>
+            <div class="acuse-totals-row"><span>Subtotal</span><span>${fmtDecimal(subtotal)} {quote?.moneda || 'MXN'}</span></div>
+            <div class="acuse-totals-row"><span>IVA 16%</span><span>${fmtDecimal(ivaCalc)} {quote?.moneda || 'MXN'}</span></div>
+          </>
+        ) : null}
+        <div class="acuse-totals-row acuse-totals-row--total">
+          <span>Total pagado</span>
+          <span class="acuse-totals-amount">{fmt(monto)} {quote?.moneda || 'MXN'}</span>
+        </div>
+      </div>
+    </section>
+
+    {/* ─── Items adquiridos ─── */}
+    {coveredItems.length > 0 && (
+      <section class="acuse-block">
+        <div class="acuse-section-title">Lo que adquiriste</div>
+        <table class="acuse-table acuse-table--items">
+          <tbody>
+            {coveredItems.map((it: any) => {
+              const label = it.tipo === 'plan'
+                ? `Plan ${it.nombre}${it.sucursales ? ` · ${it.sucursales} sucursal${Number(it.sucursales) > 1 ? 'es' : ''}` : ''}`
+                : it.nombre || 'Concepto';
+              const sub = it.tipo === 'plan'
+                ? (it.periodo === 'anual' ? 'Renovación anual' : it.periodo === 'mensual' ? 'Suscripción mensual' : '')
+                : (it.recurrente ? (it.periodo_extra === 'anual' ? 'Servicio anual recurrente' : 'Servicio mensual recurrente') : 'Servicio único');
+              return (
+                <tr>
+                  <td>
+                    <div class="acuse-item-name">{label}</div>
+                    {sub && <div class="acuse-item-sub">{sub}</div>}
+                  </td>
+                  <td class="acuse-item-amount">{fmt(it.subtotal || it.monto || 0)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </section>
+    )}
+
+    {/* ─── Saldo de la cotización ─── */}
+    {quote && totalCotizacion > 0 && (
+      <section class="acuse-block acuse-saldo">
+        <div class="acuse-section-title">Saldo de la cotización</div>
+        <div class="acuse-saldo-bar">
+          <div class="acuse-saldo-bar-fill" style={`width:${porcentajeCubierto}%`}></div>
+        </div>
+        <div class="acuse-saldo-grid">
+          <div class="acuse-saldo-stat">
+            <div class="acuse-saldo-label">Pagado</div>
+            <div class="acuse-saldo-value acuse-saldo-value--ok">{fmt(totalPagado)}</div>
+          </div>
+          <div class="acuse-saldo-stat">
+            <div class="acuse-saldo-label">Total</div>
+            <div class="acuse-saldo-value">{fmt(totalCotizacion)}</div>
+          </div>
+          <div class="acuse-saldo-stat">
+            <div class="acuse-saldo-label">{saldoRestante > 0 ? 'Saldo restante' : 'Estado'}</div>
+            <div class={`acuse-saldo-value ${saldoRestante > 0 ? 'acuse-saldo-value--pending' : 'acuse-saldo-value--ok'}`}>
+              {saldoRestante > 0 ? fmt(saldoRestante) : 'Cubierto'}
+            </div>
+          </div>
+        </div>
+
+        {totalPagos > 1 && (
+          <div class="acuse-history">
+            <div class="acuse-history-label">Historial de pagos</div>
+            {allPayments.map((p, i) => {
+              const active = p.id === payment.id;
+              const lbl = metodoLabel[p.metodo] || p.metodo;
+              return (
+                <a href={`/acuse/${p.id}`} class={`acuse-history-row${active ? ' is-current' : ''}`}>
+                  <span class="acuse-history-num">{i + 1}.</span>
+                  <span class="acuse-history-meta">
+                    <span class="acuse-history-acuse">{p.numero_acuse}</span>
+                    <span class="acuse-history-method">· {lbl}</span>
+                  </span>
+                  <span class="acuse-history-date">{fmtDate(p.fecha)}</span>
+                  <span class="acuse-history-amount">{fmt(p.monto)}</span>
+                </a>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    )}
+
+    {/* ─── Comprobante adjunto ─── */}
+    {payment.comprobante_url && (
+      <section class="acuse-block acuse-comprobante no-print">
+        <div class="acuse-section-title">Comprobante adjunto</div>
+        <a href={payment.comprobante_url} target="_blank" rel="noopener" class="acuse-comprobante-link">
+          {/\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test(payment.comprobante_url) ? (
+            <img src={payment.comprobante_url} alt="Comprobante de pago" class="acuse-comprobante-img" loading="lazy" />
+          ) : (
+            <div class="acuse-comprobante-pdf">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>Ver comprobante</span>
+            </div>
+          )}
+        </a>
+      </section>
+    )}
+
+    {/* ─── Notas internas (admin only) ─── */}
+    {payment.notas && isAdminMode && (
+      <section class="acuse-block acuse-notas no-print">
+        <div class="acuse-section-title">Notas internas</div>
+        <div class="acuse-notas-text">{payment.notas}</div>
+      </section>
+    )}
+
+    {/* ─── Footer ─── */}
+    <footer class="acuse-footer">
+      <div class="acuse-footer-disclaimer">
+        Este acuse confirma la recepción de tu pago por parte de SACS Cloud.
+        <br />
+        No constituye un comprobante fiscal digital (CFDI). Si requieres factura, solicítala a <a href="mailto:administracion@sacscloud.com">administracion@sacscloud.com</a>.
+      </div>
+      <div class="acuse-footer-meta">
+        <span>SACS Cloud · sacscloud.com · administracion@sacscloud.com</span>
+        <span>Documento generado el {fmtDate(payment.created_at || new Date().toISOString())}</span>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<style is:global>
+  /* Hide global chrome on the acuse page (but keep it for screen if needed) */
+  body:has(.acuse-page) .nav,
+  body:has(.acuse-page) .wa-bar,
+  body:has(.acuse-page) footer:not(.acuse-footer),
+  body:has(.acuse-page) .skip-link {
+    display: none !important;
+  }
+  body:has(.acuse-page) main { padding-top: 0 !important; }
+</style>
+
+<style>
+  .acuse-page {
+    background: #f5f3ee;
+    min-height: 100vh;
+    padding: 32px 16px 80px;
+    font-family: var(--font-body), -apple-system, sans-serif;
+    color: #1a1a1a;
+  }
+
+  .acuse-actions {
+    max-width: 720px;
+    margin: 0 auto 16px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .acuse-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid #e5e3dc;
+    color: #1a1a1a;
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 9px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  }
+  .acuse-action:hover {
+    background: #fafaf8;
+    border-color: #1a1a1a;
+    text-decoration: none;
+  }
+  .acuse-action--primary {
+    background: #1a1a1a;
+    color: #fff;
+    border-color: #1a1a1a;
+  }
+  .acuse-action--primary:hover {
+    background: #000;
+    color: #fff;
+  }
+
+  .acuse-doc {
+    max-width: 720px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 14px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+    padding: 56px 56px 40px;
+    color: #1a1a1a;
+  }
+
+  /* ─── Header ─── */
+  .acuse-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid #ececec;
+  }
+  .acuse-brand-tag {
+    margin-top: 6px;
+    font-size: 0.6875rem;
+    color: #999;
+    letter-spacing: 0.02em;
+  }
+  .acuse-meta { text-align: right; }
+  .acuse-meta-eyebrow {
+    font-size: 0.6875rem;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin-bottom: 6px;
+  }
+  .acuse-meta-numero {
+    font-family: var(--font-display, 'Sora'), -apple-system, sans-serif;
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #1a1a1a;
+    line-height: 1;
+  }
+  .acuse-meta-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 5px 12px;
+    background: #2AB5A0;
+    color: #fff;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-radius: 4px;
+  }
+
+  /* ─── Bloques ─── */
+  .acuse-block {
+    margin-top: 32px;
+  }
+  .acuse-section-title {
+    font-size: 0.625rem;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+
+  /* ─── Cliente + Cotización ─── */
+  .acuse-parties {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+  .acuse-party-label {
+    font-size: 0.625rem;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .acuse-party-name {
+    font-family: var(--font-display, 'Sora'), sans-serif;
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    line-height: 1.3;
+  }
+  .acuse-party-detail {
+    font-size: 0.8125rem;
+    color: #666;
+    margin-top: 2px;
+  }
+  .acuse-party-detail--mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.75rem;
+    word-break: break-all;
+  }
+  .acuse-party-detail a { color: #4B7BE5; text-decoration: none; }
+  .acuse-party-detail a:hover { text-decoration: underline; }
+
+  /* ─── Tablas ─── */
+  .acuse-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    color: #333;
+  }
+  .acuse-table--meta td {
+    padding: 8px 0;
+    border-bottom: 1px solid #f4f4f4;
+  }
+  .acuse-table--meta td:first-child {
+    width: 160px;
+    color: #999;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .acuse-mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.8125rem;
+  }
+
+  .acuse-table--items td {
+    padding: 12px 0;
+    border-bottom: 1px solid #f4f4f4;
+    vertical-align: top;
+  }
+  .acuse-table--items tr:last-child td { border-bottom: 0; }
+  .acuse-item-name {
+    font-weight: 600;
+    color: #1a1a1a;
+    font-size: 0.9375rem;
+  }
+  .acuse-item-sub {
+    margin-top: 2px;
+    font-size: 0.75rem;
+    color: #999;
+  }
+  .acuse-item-amount {
+    text-align: right;
+    font-weight: 700;
+    font-size: 0.9375rem;
+    white-space: nowrap;
+  }
+
+  /* ─── Totales ─── */
+  .acuse-totals {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #ececec;
+  }
+  .acuse-totals-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 0.875rem;
+    color: #666;
+  }
+  .acuse-totals-row--total {
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 1px solid #1a1a1a;
+    font-size: 1rem;
+    font-weight: 800;
+    color: #1a1a1a;
+  }
+  .acuse-totals-amount {
+    font-family: var(--font-display, 'Sora'), sans-serif;
+    font-size: 1.25rem;
+    letter-spacing: -0.01em;
+  }
+
+  /* ─── Saldo ─── */
+  .acuse-saldo {
+    background: #fafaf8;
+    border-radius: 10px;
+    padding: 24px;
+  }
+  .acuse-saldo-bar {
+    height: 8px;
+    background: #e5e3dc;
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+  .acuse-saldo-bar-fill {
+    height: 100%;
+    background: #2AB5A0;
+    transition: width 0.6s cubic-bezier(.4,0,.2,1);
+  }
+  .acuse-saldo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .acuse-saldo-label {
+    font-size: 0.625rem;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .acuse-saldo-value {
+    font-family: var(--font-display, 'Sora'), sans-serif;
+    font-size: 1.125rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: #1a1a1a;
+  }
+  .acuse-saldo-value--ok { color: #2AB5A0; }
+  .acuse-saldo-value--pending { color: #E8A838; }
+
+  .acuse-history {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid #ececec;
+  }
+  .acuse-history-label {
+    font-size: 0.625rem;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .acuse-history-row {
+    display: grid;
+    grid-template-columns: 24px 1fr auto auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    margin: 4px -12px;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    color: #555;
+    text-decoration: none;
+    transition: background 0.12s ease;
+  }
+  .acuse-history-row:hover {
+    background: rgba(0,0,0,0.03);
+    text-decoration: none;
+  }
+  .acuse-history-row.is-current {
+    background: rgba(42, 181, 160, 0.08);
+    color: #1a1a1a;
+  }
+  .acuse-history-num { color: #aaa; font-weight: 600; }
+  .acuse-history-meta { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .acuse-history-acuse { font-weight: 700; color: #1a1a1a; font-family: ui-monospace, monospace; font-size: 0.75rem; }
+  .acuse-history-method { color: #999; font-size: 0.75rem; }
+  .acuse-history-date { font-size: 0.75rem; color: #999; }
+  .acuse-history-amount { font-weight: 700; color: #1a1a1a; font-size: 0.875rem; }
+
+  /* ─── Comprobante ─── */
+  .acuse-comprobante-link {
+    display: block;
+    text-decoration: none;
+  }
+  .acuse-comprobante-img {
+    max-width: 280px;
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #ececec;
+  }
+  .acuse-comprobante-pdf {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 18px;
+    background: #fafaf8;
+    border: 1px solid #ececec;
+    border-radius: 8px;
+    color: #1a1a1a;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+  .acuse-comprobante-pdf:hover { background: #f0eee8; }
+
+  /* ─── Notas ─── */
+  .acuse-notas {
+    background: #fff8e1;
+    border-left: 3px solid #E8A838;
+    padding: 14px 18px;
+    border-radius: 4px;
+  }
+  .acuse-notas-text { font-size: 0.875rem; color: #5a4a1f; line-height: 1.5; white-space: pre-wrap; }
+
+  /* ─── Footer ─── */
+  .acuse-footer {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid #ececec;
+  }
+  .acuse-footer-disclaimer {
+    font-size: 0.75rem;
+    color: #888;
+    line-height: 1.6;
+  }
+  .acuse-footer-disclaimer a {
+    color: #4B7BE5;
+    text-decoration: none;
+  }
+  .acuse-footer-disclaimer a:hover { text-decoration: underline; }
+  .acuse-footer-meta {
+    margin-top: 14px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 0.6875rem;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* ─── Mobile ─── */
+  @media (max-width: 720px) {
+    .acuse-page { padding: 16px 12px 60px; }
+    .acuse-doc { padding: 32px 24px 28px; border-radius: 10px; }
+    .acuse-header { flex-direction: column; gap: 16px; }
+    .acuse-meta { text-align: left; }
+    .acuse-parties { grid-template-columns: 1fr; gap: 20px; }
+    .acuse-saldo-grid { grid-template-columns: 1fr; gap: 12px; }
+    .acuse-saldo-stat { display: flex; justify-content: space-between; align-items: baseline; }
+    .acuse-saldo-stat .acuse-saldo-label { margin-bottom: 0; }
+    .acuse-history-row {
+      grid-template-columns: 20px 1fr auto;
+      grid-template-areas: "num meta amount" "num date amount";
+      row-gap: 2px;
+    }
+    .acuse-history-num { grid-area: num; align-self: start; }
+    .acuse-history-meta { grid-area: meta; }
+    .acuse-history-date { grid-area: date; }
+    .acuse-history-amount { grid-area: amount; align-self: center; }
+    .acuse-footer-meta { flex-direction: column; gap: 4px; }
+  }
+
+  /* ─── Print ─── */
+  @media print {
+    .acuse-page { background: #fff; padding: 0; }
+    .acuse-doc { box-shadow: none; border-radius: 0; padding: 24px 32px; max-width: none; }
+    .no-print { display: none !important; }
+    .acuse-saldo { background: #fafafa !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .acuse-meta-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .acuse-saldo-bar-fill { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+
+<script>
+  const printBtn = document.getElementById('btn-print');
+  if (printBtn) printBtn.addEventListener('click', () => window.print());
+
+  const resendBtn = document.getElementById('btn-resend');
+  if (resendBtn) {
+    resendBtn.addEventListener('click', async () => {
+      const id = window.location.pathname.split('/').filter(Boolean).pop();
+      const original = resendBtn.innerHTML;
+      resendBtn.setAttribute('disabled', 'true');
+      resendBtn.innerHTML = '<span>Enviando…</span>';
+      try {
+        const res = await fetch(`/api/revenue/payments/${id}/send-acuse`, { method: 'POST' });
+        const data = await res.json();
+        if (data.ok) {
+          resendBtn.innerHTML = '<span>✓ Enviado</span>';
+          setTimeout(() => { resendBtn.innerHTML = original; resendBtn.removeAttribute('disabled'); }, 2200);
+        } else {
+          resendBtn.innerHTML = `<span>${data.reason || 'Error'}</span>`;
+          setTimeout(() => { resendBtn.innerHTML = original; resendBtn.removeAttribute('disabled'); }, 2800);
+        }
+      } catch (err) {
+        resendBtn.innerHTML = '<span>Error de red</span>';
+        setTimeout(() => { resendBtn.innerHTML = original; resendBtn.removeAttribute('disabled'); }, 2200);
+      }
+    });
+  }
+</script>
+
+</BaseLayout>

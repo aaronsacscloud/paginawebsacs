@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
 import { createHash } from 'crypto';
 import { supabase } from '../../../lib/supabase';
+import { sendAcuseEmail } from '../../../lib/payments/send-acuse';
 
 export const prerender = false;
 
@@ -99,12 +100,18 @@ async function insertPayment(row: {
     referencia: row.referencia || null,
     contact_id: row.contact_id || null,
     company_id: row.company_id || null,
+    quote_id: row.quote_id || null,
   };
   if (row.stripe_payment_id) payload.stripe_payment_id = row.stripe_payment_id;
-  const res = await supabase.from('payments').insert(payload).select().maybeSingle();
-  if (res.error && String(res.error.message || '').includes('stripe_payment_id')) {
-    delete payload.stripe_payment_id;
-    return supabase.from('payments').insert(payload).select().maybeSingle();
+  let res = await supabase.from('payments').insert(payload).select().maybeSingle();
+  // Retry path: drop columns that may not exist yet (pre-migration environments)
+  if (res.error) {
+    const msg = String(res.error.message || '');
+    if (msg.includes('quote_id')) { delete payload.quote_id; res = await supabase.from('payments').insert(payload).select().maybeSingle(); }
+    if (res.error && String(res.error.message || '').includes('stripe_payment_id')) {
+      delete payload.stripe_payment_id;
+      res = await supabase.from('payments').insert(payload).select().maybeSingle();
+    }
   }
   return res;
 }
@@ -249,6 +256,15 @@ export const POST: APIRoute = async ({ request }) => {
         });
 
         await appendQuoteTimeline(quoteId, { event: 'paid', source: 'stripe', amount });
+
+        // Auto-enviar acuse de pago al cliente (best-effort)
+        if (paymentRes?.data?.id) {
+          try {
+            await sendAcuseEmail(paymentRes.data.id);
+          } catch (err) {
+            console.error('[stripe-webhook] sendAcuseEmail error:', err);
+          }
+        }
 
         // Activity
         await supabase.from('activities').insert({

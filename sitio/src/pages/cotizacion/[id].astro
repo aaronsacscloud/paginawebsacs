@@ -28,6 +28,18 @@ if (quote.bank_account_id) {
   bankAccount = ba;
 }
 
+// Fetch pagos asociados a esta cotización (para panel "Pagos realizados")
+const { data: paymentsListRaw } = await supabase
+  .from('payments')
+  .select('id, fecha, monto, metodo, referencia, numero_acuse, comprobante_url, estado, notas, items_cubiertos')
+  .eq('quote_id', id)
+  .order('fecha', { ascending: true });
+const paymentsList = paymentsListRaw || [];
+const totalPagado = paymentsList.reduce((s: number, p: any) => s + Number(p.monto || 0), 0);
+const saldoRestante = Math.max(0, Number(quote.total || 0) - totalPagado);
+const porcentajePagado = (quote.total || 0) > 0 ? Math.min(100, Math.round((totalPagado / quote.total) * 100)) : 0;
+const isAdminMode = Astro.url.searchParams.has('admin');
+
 // Fetch partner/owner if deal has one assigned — for voice-per-partner in public quote
 let partnerAssigned: any = null;
 if (quote.deal_id) {
@@ -519,6 +531,164 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
       </div>
     )}
     </section>
+    )}
+
+    {/* ═══════════════════════════════════════════════
+         PAGOS REALIZADOS (vive dentro del tab Inversión)
+         ═══════════════════════════════════════════════ */}
+    <section class="quote-tab-panel" data-tab="inversion">
+      <div class={`qph${isPaid ? ' qph--paid' : ''}`}>
+        <div class="qph-head">
+          <div>
+            <div class="qph-title">{isPaid ? '✓ Pagada en su totalidad' : 'Pagos realizados'}</div>
+            <div class="qph-sub">
+              {paymentsList.length === 0
+                ? 'Sin pagos registrados todavía.'
+                : `${fmt(totalPagado)} de ${fmt(quote.total || 0)} ${quote.moneda || 'MXN'} · ${porcentajePagado}%`}
+            </div>
+          </div>
+          {isAdminMode && (
+            <button type="button" class="qph-btn-add" id="qph-btn-add">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+              <span>Registrar pago</span>
+            </button>
+          )}
+        </div>
+
+        {(quote.total || 0) > 0 && paymentsList.length > 0 && (
+          <div class="qph-bar"><div class="qph-bar-fill" style={`width:${porcentajePagado}%`}></div></div>
+        )}
+
+        {paymentsList.length === 0 ? (
+          <div class="qph-empty">
+            {isAdminMode
+              ? 'Cuando registres un pago, aparecerá aquí y se generará el acuse correspondiente para tu cliente.'
+              : 'Aún no hay pagos confirmados en esta cotización.'}
+          </div>
+        ) : (
+          <div class="qph-list">
+            {paymentsList.map((p: any, i: number) => {
+              const metodoDisplay = {
+                transferencia: 'Transferencia',
+                tarjeta: 'Tarjeta',
+                stripe: 'Tarjeta (Stripe)',
+                stripe_subscription: 'Suscripción',
+                efectivo: 'Efectivo',
+                oxxo: 'OXXO',
+                otro: 'Otro',
+              } as any;
+              return (
+                <div class="qph-row">
+                  <div class="qph-row-num">{i + 1}</div>
+                  <div class="qph-row-main">
+                    <div class="qph-row-line">
+                      <span class="qph-row-acuse">{p.numero_acuse || '—'}</span>
+                      <span class="qph-row-method">{metodoDisplay[p.metodo] || p.metodo}</span>
+                    </div>
+                    <div class="qph-row-meta">
+                      {fmtDate(p.fecha)}{p.referencia ? ` · ref. ${p.referencia}` : ''}
+                    </div>
+                  </div>
+                  <div class="qph-row-amount">{fmt(p.monto)}</div>
+                  <div class="qph-row-actions no-print">
+                    <a href={`/acuse/${p.id}${isAdminMode ? '?admin' : ''}`} class="qph-row-link">Ver acuse</a>
+                    {isAdminMode && (
+                      <button type="button" class="qph-row-resend" data-pid={p.id} data-email={quote.email || ''}>Reenviar</button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {!isPaid && saldoRestante > 0 && paymentsList.length > 0 && (
+          <div class="qph-balance">
+            <span>Saldo restante</span>
+            <strong>{fmt(saldoRestante)} {quote.moneda || 'MXN'}</strong>
+          </div>
+        )}
+      </div>
+    </section>
+
+    {/* ─── Admin modal: registrar pago ─── */}
+    {isAdminMode && (
+    <div class="quote-modal-overlay no-print" id="qph-modal" style="display:none">
+      <div class="quote-modal" style="max-width:520px">
+        <div class="quote-modal-header">
+          <span class="quote-modal-title">Registrar pago</span>
+          <button class="quote-modal-close" id="qph-close" type="button">✕</button>
+        </div>
+        <div class="quote-modal-body">
+          <div class="qph-form-grid">
+            <label class="qph-field">
+              <span>Monto ({quote.moneda || 'MXN'})</span>
+              <input type="number" id="qph-monto" step="0.01" min="0" value={saldoRestante > 0 ? saldoRestante : (quote.total || 0)} />
+            </label>
+            <label class="qph-field">
+              <span>Fecha del pago</span>
+              <input type="date" id="qph-fecha" value={new Date().toISOString().slice(0, 10)} />
+            </label>
+            <label class="qph-field">
+              <span>Método de pago</span>
+              <select id="qph-metodo">
+                <option value="transferencia">Transferencia bancaria</option>
+                <option value="tarjeta">Tarjeta de crédito o débito</option>
+                <option value="efectivo">Efectivo</option>
+                <option value="oxxo">OXXO</option>
+                <option value="otro">Otro</option>
+              </select>
+            </label>
+            <label class="qph-field">
+              <span>Referencia / # de operación</span>
+              <input type="text" id="qph-referencia" placeholder="Ej. SPEI-1234567" />
+            </label>
+          </div>
+
+          <label class="qph-field qph-field--full">
+            <span>Comprobante (foto del bauche, recibo OXXO, captura)</span>
+            <input type="file" id="qph-file" accept="image/*,application/pdf" />
+            <span class="qph-file-status" id="qph-file-status"></span>
+          </label>
+
+          {items.length > 0 && (
+            <div class="qph-field qph-field--full">
+              <span>¿Qué items cubre este pago?</span>
+              <div class="qph-items">
+                <label class="qph-item-check"><input type="checkbox" id="qph-items-all" checked /> Todos los conceptos de la cotización</label>
+                <div class="qph-items-list" id="qph-items-list" style="display:none">
+                  {items.map((it: any, i: number) => {
+                    const lbl = it.tipo === 'plan'
+                      ? `Plan ${it.nombre}${it.sucursales ? ` · ${it.sucursales} suc.` : ''}`
+                      : it.nombre || 'Concepto';
+                    return (
+                      <label class="qph-item-check">
+                        <input type="checkbox" data-idx={i} class="qph-item-cb" />
+                        <span>{lbl} <em>{fmt(it.subtotal || it.monto || 0)}</em></span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <label class="qph-field qph-field--full">
+            <span>Notas internas (opcional)</span>
+            <textarea id="qph-notas" rows="2" placeholder="Ej. Anticipo del 50% acordado en demo del 15-abr"></textarea>
+          </label>
+
+          <label class="qph-toggle-row">
+            <input type="checkbox" id="qph-enviar-email" checked />
+            <span>Enviar acuse por email a <strong>{quote.email || 'cliente'}</strong></span>
+          </label>
+        </div>
+        <div class="quote-modal-footer" style="flex-direction:row;gap:8px">
+          <button class="quote-modal-btn quote-modal-btn--secondary" id="qph-cancel" type="button">Cancelar</button>
+          <button class="quote-modal-btn" id="qph-submit" type="button">Guardar y generar acuse</button>
+        </div>
+      </div>
+    </div>
     )}
 
     {/* ═══════════════════════════════════════════════
@@ -1688,6 +1858,145 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-dark .quote-feature-item { color: rgba(255,255,255,0.6); }
 .quote-dark .quote-service-tag { background: rgba(42,181,160,0.12); }
 
+/* ─── Pagos realizados (panel + modal) ─── */
+.qph {
+  margin: 16px 40px;
+  padding: 28px 32px;
+  background: #fff;
+  border: 1px solid #ececec;
+  border-radius: 10px;
+}
+.qph--paid { background: linear-gradient(180deg, rgba(42,181,160,0.06) 0%, #fff 80%); border-color: rgba(42,181,160,0.25); }
+.qph-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 14px; }
+.qph-title { font-family: var(--font-display); font-size: 0.9375rem; font-weight: 800; letter-spacing: -0.01em; color: #1a1a1a; }
+.qph--paid .qph-title { color: #1a5a4f; }
+.qph-sub { font-size: 0.75rem; color: #888; margin-top: 4px; }
+.qph-btn-add {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #1a1a1a; color: #fff;
+  border: 0; border-radius: 6px;
+  padding: 8px 14px;
+  font-family: var(--font-body); font-size: 0.75rem; font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+}
+.qph-btn-add:hover { background: #000; }
+.qph-bar {
+  height: 6px;
+  background: #f0eee8;
+  border-radius: 99px;
+  overflow: hidden;
+  margin: 14px 0 18px;
+}
+.qph-bar-fill { height: 100%; background: #2AB5A0; transition: width 0.6s cubic-bezier(.4,0,.2,1); }
+.qph-empty {
+  font-size: 0.8125rem;
+  color: #999;
+  background: #fafafa;
+  border: 1px dashed #ececec;
+  padding: 16px;
+  border-radius: 8px;
+  text-align: center;
+  font-style: italic;
+}
+.qph-list { display: flex; flex-direction: column; gap: 8px; }
+.qph-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.qph-row:hover { border-color: #ececec; background: #fff; }
+.qph-row-num { font-family: var(--font-display); font-size: 0.75rem; font-weight: 700; color: #aaa; text-align: center; }
+.qph-row-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.qph-row-acuse { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.75rem; font-weight: 700; color: #1a1a1a; }
+.qph-row-method { font-size: 0.6875rem; color: #fff; background: #2AB5A0; padding: 2px 8px; border-radius: 99px; font-weight: 600; letter-spacing: 0.02em; }
+.qph-row-meta { margin-top: 2px; font-size: 0.6875rem; color: #888; }
+.qph-row-amount { font-family: var(--font-display); font-size: 0.9375rem; font-weight: 800; color: #1a1a1a; white-space: nowrap; }
+.qph-row-actions { display: flex; gap: 8px; align-items: center; }
+.qph-row-link { font-size: 0.6875rem; font-weight: 600; color: #4B7BE5; text-decoration: none; padding: 4px 10px; border-radius: 5px; border: 1px solid transparent; transition: border-color 0.12s ease; }
+.qph-row-link:hover { border-color: #4B7BE5; text-decoration: none; }
+.qph-row-resend { font-size: 0.6875rem; font-weight: 600; color: #888; background: none; border: 1px solid #ddd; padding: 4px 10px; border-radius: 5px; cursor: pointer; transition: border-color 0.12s ease, color 0.12s ease; }
+.qph-row-resend:hover:not(:disabled) { border-color: #1a1a1a; color: #1a1a1a; }
+.qph-row-resend:disabled { opacity: 0.6; cursor: default; }
+.qph-balance {
+  margin-top: 16px;
+  padding: 12px 14px;
+  background: #fff8e1;
+  border-left: 3px solid #E8A838;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8125rem;
+  color: #5a4a1f;
+}
+.qph-balance strong { font-family: var(--font-display); font-weight: 800; font-size: 0.9375rem; color: #1a1a1a; }
+
+/* Dark template support */
+.quote-dark .qph { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
+.quote-dark .qph-title { color: #fff; }
+.quote-dark .qph-sub { color: rgba(255,255,255,0.5); }
+.quote-dark .qph-row { background: rgba(255,255,255,0.04); }
+.quote-dark .qph-row:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); }
+.quote-dark .qph-row-acuse { color: #fff; }
+.quote-dark .qph-row-amount { color: #fff; }
+.quote-dark .qph-row-meta { color: rgba(255,255,255,0.4); }
+.quote-dark .qph-bar { background: rgba(255,255,255,0.08); }
+.quote-dark .qph-empty { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); }
+
+/* Modal "Registrar pago" */
+.qph-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 16px;
+  margin-bottom: 14px;
+}
+.qph-field { display: flex; flex-direction: column; gap: 6px; }
+.qph-field--full { grid-column: 1 / -1; }
+.qph-field > span:first-child { font-size: 0.5625rem; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.06em; }
+.qph-field input,
+.qph-field select,
+.qph-field textarea {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: #1a1a1a;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+.qph-field input:focus,
+.qph-field select:focus,
+.qph-field textarea:focus { border-color: #1a1a1a; }
+.qph-field textarea { resize: vertical; min-height: 60px; }
+.qph-file-status { font-size: 0.6875rem; color: #2AB5A0; min-height: 14px; }
+.qph-items { background: #fafafa; padding: 12px; border-radius: 6px; border: 1px solid #ececec; }
+.qph-items-list { margin-top: 10px; padding-top: 10px; border-top: 1px solid #ececec; display: flex; flex-direction: column; gap: 6px; }
+.qph-item-check { display: flex; align-items: center; gap: 8px; font-size: 0.8125rem; color: #555; cursor: pointer; }
+.qph-item-check input { margin: 0; cursor: pointer; }
+.qph-item-check em { font-style: normal; color: #999; margin-left: 6px; font-size: 0.75rem; }
+.qph-toggle-row { display: flex; align-items: center; gap: 10px; padding: 12px; background: rgba(75,123,229,0.06); border-radius: 6px; font-size: 0.8125rem; color: #1a1a1a; cursor: pointer; }
+.qph-toggle-row input { margin: 0; }
+
+@media (max-width: 640px) {
+  .qph { margin: 12px 16px; padding: 22px 20px; }
+  .qph-row { grid-template-columns: 24px 1fr auto; grid-template-areas: "num main amount" "num actions actions"; }
+  .qph-row-num { grid-area: num; }
+  .qph-row-main { grid-area: main; }
+  .qph-row-amount { grid-area: amount; align-self: center; }
+  .qph-row-actions { grid-area: actions; justify-content: flex-start; padding-top: 4px; }
+  .qph-form-grid { grid-template-columns: 1fr; }
+}
+
 /* ─── Print ─── */
 @media print {
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
@@ -2222,6 +2531,151 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
         btn.textContent = 'Enviar respuesta';
         btn.disabled = false;
       }
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  PAGOS REALIZADOS — modal admin "Registrar pago" + reenvío de acuse
+  // ═══════════════════════════════════════════════════════════════
+  {
+    const quoteIdForPay = window.location.pathname.split('/').filter(Boolean).pop() || '';
+    const modal = document.getElementById('qph-modal') as HTMLElement | null;
+    const btnAdd = document.getElementById('qph-btn-add');
+    const btnClose = document.getElementById('qph-close');
+    const btnCancel = document.getElementById('qph-cancel');
+    const btnSubmit = document.getElementById('qph-submit') as HTMLButtonElement | null;
+    const itemsAll = document.getElementById('qph-items-all') as HTMLInputElement | null;
+    const itemsList = document.getElementById('qph-items-list') as HTMLElement | null;
+    const fileInput = document.getElementById('qph-file') as HTMLInputElement | null;
+    const fileStatus = document.getElementById('qph-file-status');
+    let comprobanteUrl: string | null = null;
+
+    function openModal() {
+      if (!modal) return;
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+    function closeModal() {
+      if (!modal) return;
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    if (btnAdd) btnAdd.addEventListener('click', openModal);
+    if (btnClose) btnClose.addEventListener('click', closeModal);
+    if (btnCancel) btnCancel.addEventListener('click', closeModal);
+    if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+    if (itemsAll && itemsList) {
+      itemsAll.addEventListener('change', () => {
+        itemsList.style.display = itemsAll.checked ? 'none' : 'flex';
+      });
+    }
+
+    if (fileInput) {
+      fileInput.addEventListener('change', async () => {
+        const file = fileInput.files?.[0];
+        if (!file) return;
+        if (fileStatus) fileStatus.textContent = 'Subiendo...';
+        const fd = new FormData();
+        fd.append('file', file);
+        try {
+          const res = await fetch('/api/revenue/payment-comprobante', { method: 'POST', body: fd });
+          const data = await res.json();
+          if (data.url) {
+            comprobanteUrl = data.url;
+            if (fileStatus) fileStatus.textContent = '✓ Subido';
+          } else {
+            if (fileStatus) fileStatus.textContent = data.error || 'Error al subir';
+          }
+        } catch (err) {
+          if (fileStatus) fileStatus.textContent = 'Error de red';
+        }
+      });
+    }
+
+    if (btnSubmit) {
+      btnSubmit.addEventListener('click', async () => {
+        const monto = Number((document.getElementById('qph-monto') as HTMLInputElement)?.value || 0);
+        const fecha = (document.getElementById('qph-fecha') as HTMLInputElement)?.value;
+        const metodo = (document.getElementById('qph-metodo') as HTMLSelectElement)?.value;
+        const referencia = (document.getElementById('qph-referencia') as HTMLInputElement)?.value;
+        const notas = (document.getElementById('qph-notas') as HTMLTextAreaElement)?.value;
+        const enviarAcuse = (document.getElementById('qph-enviar-email') as HTMLInputElement)?.checked;
+        const usarTodos = itemsAll?.checked !== false;
+
+        if (!monto || monto <= 0) { alert('Captura un monto válido.'); return; }
+        if (!fecha) { alert('Captura la fecha.'); return; }
+
+        let itemsCubiertos: number[] | null = null;
+        if (!usarTodos) {
+          itemsCubiertos = Array.from(document.querySelectorAll<HTMLInputElement>('.qph-item-cb'))
+            .filter(cb => cb.checked)
+            .map(cb => Number(cb.dataset.idx));
+          if (itemsCubiertos.length === 0) {
+            alert('Selecciona al menos un concepto o marca "Todos".');
+            return;
+          }
+        }
+
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = 'Guardando...';
+
+        try {
+          const res = await fetch('/api/revenue/payments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              quote_id: quoteIdForPay,
+              fecha,
+              monto,
+              metodo,
+              referencia: referencia || null,
+              comprobante_url: comprobanteUrl,
+              notas: notas || null,
+              items_cubiertos: itemsCubiertos,
+              enviar_acuse: !!enviarAcuse,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok || data.error) {
+            alert(data.error || 'No se pudo registrar el pago.');
+            btnSubmit.disabled = false;
+            btnSubmit.textContent = 'Guardar y generar acuse';
+            return;
+          }
+          // Éxito → ir al acuse
+          if (data.id) {
+            window.location.href = `/acuse/${data.id}?admin`;
+          } else {
+            window.location.reload();
+          }
+        } catch (err) {
+          alert('Error de red. Intenta de nuevo.');
+          btnSubmit.disabled = false;
+          btnSubmit.textContent = 'Guardar y generar acuse';
+        }
+      });
+    }
+
+    // Reenviar acuse desde botones inline
+    document.querySelectorAll<HTMLButtonElement>('.qph-row-resend').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const pid = btn.dataset.pid;
+        if (!pid) return;
+        const original = btn.textContent || 'Reenviar';
+        btn.disabled = true;
+        btn.textContent = 'Enviando...';
+        try {
+          const res = await fetch(`/api/revenue/payments/${pid}/send-acuse`, { method: 'POST' });
+          const data = await res.json();
+          btn.textContent = data.ok ? '✓ Enviado' : (data.reason || 'Error');
+          setTimeout(() => { btn.textContent = original; btn.disabled = false; }, 2400);
+        } catch (err) {
+          btn.textContent = 'Error';
+          setTimeout(() => { btn.textContent = original; btn.disabled = false; }, 2400);
+        }
+      });
     });
   }
 </script>
