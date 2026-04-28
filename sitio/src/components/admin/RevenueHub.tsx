@@ -569,16 +569,28 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     };
 
     const markQuotePaid = async (q: any) => {
-      if (!confirm(`¿Marcar cotización ${q.numero} como pagada?`)) return;
+      const metodo = prompt(
+        `Marcar ${q.numero} como pagada.\n\n¿Con qué método pagó el cliente?\n(transferencia / tarjeta / efectivo / oxxo / otro)`,
+        'transferencia'
+      );
+      if (!metodo) return;
+      const referencia = prompt(`Referencia / # de operación (opcional):`, '') || '';
       setSaving(true);
-      await fetch('/api/revenue/mark-paid', {
+      const res = await fetch('/api/revenue/mark-paid', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quoteId: q.id }),
+        body: JSON.stringify({ quoteId: q.id, metodo: metodo.trim().toLowerCase(), referencia: referencia.trim() || null, enviar_acuse: true }),
       });
+      const data = await res.json().catch(() => ({}));
       const d = await fetch('/api/revenue/quotes').then(r => r.json());
       setQuotes(Array.isArray(d) ? d : []);
       setSaving(false);
+      if (data?.acuse_url) {
+        const goNow = confirm(`✓ Cotización marcada como pagada.\nAcuse generado: ${data.acuse_url}\n${data?.acuse_email?.ok ? 'Email enviado al cliente.' : 'No se pudo enviar el email automáticamente — abre el acuse y reenvíalo manualmente.'}\n\n¿Abrir el acuse ahora?`);
+        if (goNow) window.open(data.acuse_url + '?admin', '_blank');
+      } else {
+        alert('Cotización marcada como pagada (no se generó acuse — verifica que el total > 0).');
+      }
     };
 
     const openAcceptModal = (q: any) => {

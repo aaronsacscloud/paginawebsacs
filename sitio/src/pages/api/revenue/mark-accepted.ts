@@ -11,11 +11,15 @@ function escapeXml(s: string): string {
 
 function generateSignatureSVG(name: string): string {
   const clean = String(name || '').trim() || 'Cliente';
-  const width = Math.max(280, Math.min(560, clean.length * 24 + 40));
-  const height = 96;
   const fontSize = 44;
+  // Aproximación de ancho: cada char ~ 0.55em del fontSize en cursive italic
+  const width = Math.max(280, Math.min(620, Math.round(clean.length * fontSize * 0.55) + 48));
+  const height = 96;
   const escaped = escapeXml(clean);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><style>.sig{font-family:'Dancing Script','Brush Script MT','Lucida Handwriting','Segoe Script','Apple Chancery',cursive;font-size:${fontSize}px;fill:#1a1a1a;font-style:italic}</style><text x="24" y="${height - 28}" class="sig" transform="rotate(-3 ${width / 2} ${height / 2})">${escaped}</text></svg>`;
+  // Atributos inline (no <style>) — mas confiable para SVG-as-img cross-browser.
+  // font-family con cursive como fallback final por si las cursivas no estan disponibles.
+  const fontFamily = 'Dancing Script, Brush Script MT, Lucida Handwriting, Segoe Script, Apple Chancery, cursive';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><text x="24" y="${height - 28}" font-family="${fontFamily}" font-size="${fontSize}" font-style="italic" fill="#1a1a1a" transform="rotate(-3 ${width / 2} ${height / 2})">${escaped}</text></svg>`;
   const base64 = Buffer.from(svg, 'utf8').toString('base64');
   return `data:image/svg+xml;base64,${base64}`;
 }

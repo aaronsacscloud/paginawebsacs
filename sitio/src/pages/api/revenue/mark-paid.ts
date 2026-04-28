@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { createHash } from 'crypto';
 import { supabase } from '../../../lib/supabase';
+import { sendAcuseEmail } from '../../../lib/payments/send-acuse';
 
 export const prerender = false;
 
@@ -21,16 +22,53 @@ function toE164(phone: string): string {
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const { quoteId } = await request.json();
+    const body = await request.json();
+    const { quoteId, metodo, referencia, fecha, monto, enviar_acuse } = body || {};
     if (!quoteId) {
       return new Response(JSON.stringify({ error: 'quoteId required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
 
     // Update estado to paid
+    const nowIso = new Date().toISOString();
     await supabase.from('quotes').update({
       estado: 'paid',
-      aceptado_fecha: new Date().toISOString(),
+      aceptado_fecha: nowIso,
+      pagado_fecha: nowIso,
     }).eq('id', quoteId);
+
+    // ─── Auto-crear pago + acuse para cubrir el saldo restante ───
+    let acuseGenerated: any = null;
+    let createdPaymentId: string | null = null;
+    try {
+      const { data: q } = await supabase.from('quotes').select('total').eq('id', quoteId).single();
+      const total = Number(q?.total || 0);
+      // Suma de pagos existentes
+      const { data: existing } = await supabase.from('payments').select('monto').eq('quote_id', quoteId);
+      const yaPagado = (existing || []).reduce((s: number, p: any) => s + Number(p.monto || 0), 0);
+      const saldo = Math.max(0, total - yaPagado);
+      const montoPago = Number(monto || saldo); // si no hay saldo, no creamos pago duplicado
+      if (montoPago > 0) {
+        const { data: paymentRow, error: pErr } = await supabase.from('payments').insert({
+          quote_id: quoteId,
+          fecha: fecha || nowIso.slice(0, 10),
+          monto: montoPago,
+          metodo: metodo || 'otro',
+          referencia: referencia || null,
+          estado: 'confirmado',
+        }).select().single();
+        if (!pErr && paymentRow?.id) {
+          createdPaymentId = paymentRow.id;
+          // Envia el acuse por email (default true)
+          if (enviar_acuse !== false) {
+            try { acuseGenerated = await sendAcuseEmail(paymentRow.id); } catch (e) { acuseGenerated = { ok: false, reason: String(e) }; }
+          } else {
+            acuseGenerated = { ok: true, skipped_email: true };
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[mark-paid] acuse autogen error:', err);
+    }
 
     // Add timeline event
     const { data: quote } = await supabase.from('quotes').select('notas, email, whatsapp, total, empresa').eq('id', quoteId).single();
@@ -78,7 +116,12 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({
+      success: true,
+      payment_id: createdPaymentId,
+      acuse_url: createdPaymentId ? `/acuse/${createdPaymentId}` : null,
+      acuse_email: acuseGenerated,
+    }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });

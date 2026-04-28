@@ -908,7 +908,17 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
             : 'Nuestro equipo se pondrá en contacto contigo para iniciar la implementación.'}
         </div>
         {quoteMeta.firma_base64 && (
-          <img src={quoteMeta.firma_base64} alt="Firma" class="quote-signed-img" />
+          <img
+            src={quoteMeta.firma_base64}
+            alt=""
+            class="quote-signed-img"
+            onerror="this.style.display='none';const f=this.nextElementSibling;if(f&&f.classList.contains('quote-signed-fallback'))f.style.display='block'"
+          />
+        )}
+        {quote.aceptado_por && (
+          <div class="quote-signed-fallback" style="display:none">
+            <span>{quote.aceptado_por}</span>
+          </div>
         )}
         {quote.aceptado_por && (
           <div class="quote-signed-label">Aceptada por {quote.aceptado_por}</div>
@@ -1437,6 +1447,21 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-signed-title { font-family: var(--font-display); font-size: 1.625rem; font-weight: 300; color: #1a1a1a; letter-spacing: -0.01em; line-height: 1.25; margin-bottom: 10px; }
 .quote-signed-sub { font-size: 0.875rem; color: #666; line-height: 1.6; max-width: 460px; margin: 0 auto 24px; }
 .quote-signed-img { max-width: 220px; height: auto; margin: 0 auto 12px; display: block; }
+.quote-signed-fallback {
+  margin: 8px auto 14px;
+  padding: 0 0 8px;
+  max-width: 280px;
+  border-bottom: 1px solid #ddd;
+  text-align: center;
+}
+.quote-signed-fallback span {
+  font-family: 'Brush Script MT', 'Lucida Handwriting', 'Apple Chancery', cursive;
+  font-style: italic;
+  font-size: 1.875rem;
+  color: #1a1a1a;
+  display: inline-block;
+  transform: rotate(-3deg);
+}
 .quote-signed-label { font-size: 0.8125rem; font-weight: 600; color: #1a1a1a; }
 .quote-signed-date { font-size: 0.75rem; color: #999; margin-top: 2px; }
 .quote-signed-cta { display: inline-block; margin-top: 20px; padding: 14px 32px; background: #1a1a1a; color: #fff; text-decoration: none; font-weight: 700; font-size: 0.875rem; letter-spacing: 0.02em; border-radius: 4px; transition: background 0.15s ease; }
