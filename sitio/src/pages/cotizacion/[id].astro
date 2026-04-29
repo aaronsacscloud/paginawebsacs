@@ -165,9 +165,13 @@ const hasPagosContent = showDesglose && (annualPlanTotal > 0 || uniqueTotal > 0 
 const hasTimelineReal = showTimeline && !!timelineTipo;
 const hasImplementacionReal = showImplementacion;
 
+// Tab "Pagos": visible cuando hay pagos registrados, esta aceptada/pagada, o estamos en modo admin
+const showPagosTab = paymentsList.length > 0 || isAccepted || isPaid || isAdminMode;
+
 const tabsDef = [
   { id: 'minuta', label: 'Minuta', show: hasKeyPoints },
   { id: 'inversion', label: 'Inversión', show: items.length > 0 || hasPagosContent || hasFeaturesReal || hasTimelineReal },
+  { id: 'pagos', label: isPaid ? 'Pagos ✓' : (paymentsList.length > 0 ? `Pagos (${paymentsList.length})` : 'Pagos'), show: showPagosTab },
   { id: 'roi', label: 'ROI', show: hasRoi },
   { id: 'comparativa', label: 'Comparativa', show: hasAntesDesp },
   { id: 'proceso', label: 'Proceso', show: hasImplementacionReal },
@@ -534,9 +538,9 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
     )}
 
     {/* ═══════════════════════════════════════════════
-         PAGOS REALIZADOS (vive dentro del tab Inversión)
+         TAB: PAGOS — historial completo + registrar pago (admin)
          ═══════════════════════════════════════════════ */}
-    <section class="quote-tab-panel" data-tab="inversion">
+    <section class="quote-tab-panel" data-tab="pagos">
       <div class={`qph${isPaid ? ' qph--paid' : ''}`}>
         <div class="qph-head">
           <div>
