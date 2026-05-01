@@ -27,19 +27,19 @@ const steps = [
       { id: 'pos-pdv', label: 'Punto de Venta', desc: 'Cobra con tarjeta, efectivo o transferencia desde cualquier dispositivo. Funciona en iPad, celular o computadora — con o sin internet.', href: '/producto/punto-de-venta', image: '/images/screen-pos.webp' },
       { id: 'pos-apartados', label: 'Pedidos y Apartados', desc: 'Toma anticipo, bloquea el stock, cobra a plazos y convierte el apartado en venta cuando termina. Recordatorios automáticos por email y WhatsApp.', href: '/producto/apartados-y-pedidos', image: null },
       { id: 'pos-ecommerce', label: 'Tienda en línea', desc: 'Tu tienda en línea conectada al mismo inventario, clientes y precios. Cada venta online baja stock en la sucursal correcta al segundo.', href: '/producto/tienda-en-linea', image: null },
-      { id: 'pos-social', label: 'Social & WhatsApp Commerce', desc: 'Vende en TikTok, Instagram, Facebook y WhatsApp con catálogo, stock y cobro sincronizados — sin re-publicar nada.', href: '/producto/social-commerce', image: null },
+      { id: 'pos-social', label: 'Vende en META & TikTok Shop', desc: 'Conecta tu catálogo a Instagram, Facebook y TikTok Shop con stock y cobro sincronizados — sin re-publicar nada.', href: '/producto/social-commerce', image: null },
     ],
   },
   {
     id: 'stock',
     step: 2,
     verb: 'Controla',
-    title: 'Controla tu stock en tiempo real',
+    title: 'Controla tu operación en tiempo real',
     subtitle: 'Un solo inventario, todas tus sucursales.',
     bgKey: 'stock',
     subs: [
       { id: 'stock-inventario', label: 'Inventario multi-sucursal', desc: 'Stock por sucursal y CEDIS en tiempo real, sincronizado al segundo. Vende donde sea, descuenta donde corresponde.', href: '/producto/inventario-omnicanal', image: null },
-      { id: 'stock-conteo', label: 'Conteo físico', desc: 'Escanea códigos de barras con tu celular y actualiza el inventario en segundos. Sin laptops, sin Excel, sin paros operativos.', href: '/producto/conteo-fisico', image: null },
+      { id: 'stock-conteo', label: 'Auditoría y conteo físico', desc: 'Escanea códigos de barras con tu celular y actualiza el inventario en segundos. Audita por sucursal, sin laptops, sin Excel y sin paros operativos.', href: '/producto/conteo-fisico', image: null },
       { id: 'stock-alertas', label: 'Recepción de mercancía', desc: 'Recibe pedidos escaneando cajas, valida cantidades contra la OC y actualiza tu inventario al instante.', href: '/producto/ordenes-de-compra', image: null },
     ],
   },
@@ -440,6 +440,52 @@ const useCases = [
     </div>
   </div>
 
+  <!-- ── Vende continuation: WhatsApp Commerce (sq-features--sc) ── -->
+  <section class="sq-features sq-features--sc sq-features--unified">
+    <div class="sq-features-header sq-header-reveal">
+      <span class="sc-eyebrow">WhatsApp Commerce</span>
+      <h2 class="sc-title">Vende por WhatsApp.<br>Sin trabajo manual.</h2>
+      <p class="sc-subtitle">Tu cliente pregunta, SACS responde con catálogo, toma el pedido, cobra y confirma la entrega. Todo automático, directo en WhatsApp.</p>
+    </div>
+    <div class="sq-features-inner">
+      <div class="sq-features-media sq-media-reveal">
+        <div class="sq-phone-bg" aria-hidden="true">
+          <div class="sq-phone-bg-grid"></div>
+          <div class="sq-phone-bg-glow"></div>
+        </div>
+        <div class="sq-features-img-wrap">
+          <img src="/images/wa-chat-step1.webp" alt="Paso 1: Tu cliente te escribe" class="sq-features-img sq-img--active" data-sq-src="/images/wa-chat-step1.webp" width="409" height="826" loading="lazy" />
+          <img src="/images/wa-chat-step2.webp" alt="Paso 2: Explora el catálogo" class="sq-features-img" data-sq-src="/images/wa-chat-step2.webp" width="409" height="826" loading="lazy" />
+          <img src="/images/wa-chat-step3.webp" alt="Paso 3: Detalle del producto" class="sq-features-img" data-sq-src="/images/wa-chat-step3.webp" width="409" height="826" loading="lazy" />
+          <img src="/images/wa-chat-step4.webp" alt="Paso 4: Pago y confirmación" class="sq-features-img" data-sq-src="/images/wa-chat-step4.webp" width="409" height="826" loading="lazy" />
+          <img src="/images/wa-chat-step5.webp" alt="Paso 5: Pedido completado" class="sq-features-img" data-sq-src="/images/wa-chat-step5.webp" width="409" height="826" loading="lazy" />
+        </div>
+      </div>
+      <div class="sq-features-content">
+        <div class="sq-feature-block sq-feature-block--sc active" data-sq-idx="0" data-sq-img="/images/wa-chat-step1.webp">
+          <h3 class="sq-feature-title">Tu cliente te escribe</h3>
+          <p class="sq-feature-desc">El cliente pregunta por un producto en WhatsApp. SACS responde automáticamente con el catálogo disponible.</p>
+        </div>
+        <div class="sq-feature-block sq-feature-block--sc" data-sq-idx="0.5" data-sq-img="/images/wa-chat-step2.webp">
+          <h3 class="sq-feature-title">Explora el catálogo</h3>
+          <p class="sq-feature-desc">El cliente navega tu catálogo directo en WhatsApp. Productos, precios y stock sincronizados desde SACS en tiempo real.</p>
+        </div>
+        <div class="sq-feature-block sq-feature-block--sc" data-sq-idx="0.6" data-sq-img="/images/wa-chat-step3.webp">
+          <h3 class="sq-feature-title">Detalle del producto</h3>
+          <p class="sq-feature-desc">Ficha completa con foto, descripción, precio y botón de agregar al carrito. Todo dentro de WhatsApp.</p>
+        </div>
+        <div class="sq-feature-block sq-feature-block--sc" data-sq-idx="0.7" data-sq-img="/images/wa-chat-step4.webp">
+          <h3 class="sq-feature-title">Pago y confirmación</h3>
+          <p class="sq-feature-desc">El cliente paga directo en el chat. Recibe confirmación, link de seguimiento y factura automática.</p>
+        </div>
+        <div class="sq-feature-block sq-feature-block--sc" data-sq-idx="0.8" data-sq-img="/images/wa-chat-step5.webp">
+          <h3 class="sq-feature-title">Pedido completado</h3>
+          <p class="sq-feature-desc">Orden confirmada con link de pago y opciones de entrega. El pedido llega automáticamente a tu sistema SACS.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ── Pillar 2: Controla ── -->
   <div class="pillar-section pillar-section--stock pillar-section--left" data-pillar="stock">
     <div class="pillar-bg-pattern" aria-hidden="true"></div>
@@ -712,6 +758,49 @@ const useCases = [
       </div>
     </div>
   </div>
+
+  <!-- ── Controla continuation: Operación administrativa ── -->
+  <section class="ops-admin-section" aria-labelledby="ops-admin-title">
+    <div class="ops-admin-inner">
+      <div class="ops-admin-header">
+        <span class="ops-admin-eyebrow">Operación administrativa</span>
+        <h2 class="ops-admin-title" id="ops-admin-title">Y todo lo que mueve el dinero,<br />también bajo control.</h2>
+        <p class="ops-admin-desc">Gastos, compras, cuentas por pagar y por cobrar, conciliación bancaria — toda la administración en un solo lugar, conectada a tus ventas y a tu inventario.</p>
+      </div>
+      <div class="inv-intel-grid ops-admin-grid">
+        <div class="inv-intel-card" style="--i:0">
+          <span class="inv-intel-card-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M8 4h13l3 3v21l-3-2-3 2-3-2-3 2-4-2V4z" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 11h8M12 15h8M12 19h5" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" stroke-linecap="round"/><circle cx="22" cy="20" r="3" stroke="#2AB5A0" stroke-width="1.5"/><path d="M20.5 20l1 1 2-2" stroke="#2AB5A0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <h3 class="inv-intel-card-title">Gastos por sucursal</h3>
+          <p class="inv-intel-card-desc">Captura, categoriza y aprueba gastos desde el celular. Visibilidad en vivo del flujo por sucursal y por categoría.</p>
+        </div>
+        <div class="inv-intel-card" style="--i:1">
+          <span class="inv-intel-card-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="4" y="7" width="24" height="20" rx="2" stroke="rgba(255,255,255,0.85)" stroke-width="1.5"/><path d="M4 13h24" stroke="rgba(255,255,255,0.85)" stroke-width="1.5"/><path d="M9 4v5M23 4v5" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" stroke-linecap="round"/><circle cx="22" cy="20" r="4" fill="rgba(232,168,56,0.18)" stroke="#E8A838" stroke-width="1.5"/><path d="M22 18v2l1.5 1" stroke="#E8A838" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <h3 class="inv-intel-card-title">Cuentas por pagar</h3>
+          <p class="inv-intel-card-desc">Programa pagos a proveedores, recibe alertas antes del vencimiento y evita atrasos que cuesten relaciones.</p>
+        </div>
+        <div class="inv-intel-card" style="--i:2">
+          <span class="inv-intel-card-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="9" stroke="rgba(255,255,255,0.85)" stroke-width="1.5"/><path d="M13 13c0-1.5 1.3-2.5 3-2.5s3 1 3 2.5-1 2-3 2.5-3 1-3 2.5 1.3 2.5 3 2.5 3-1 3-2.5" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" stroke-linecap="round"/><path d="M16 9v2M16 21v2" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" stroke-linecap="round"/><path d="M22 6l4-2v4" stroke="#2AB5A0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <h3 class="inv-intel-card-title">Cuentas por cobrar</h3>
+          <p class="inv-intel-card-desc">Recordatorios automáticos por WhatsApp, email y SMS. Links de pago directos. Cobra sin perseguir clientes.</p>
+        </div>
+        <div class="inv-intel-card" style="--i:3">
+          <span class="inv-intel-card-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="3" y="9" width="26" height="18" rx="2" stroke="rgba(255,255,255,0.85)" stroke-width="1.5"/><path d="M3 14h26" stroke="rgba(255,255,255,0.85)" stroke-width="1.5"/><path d="M16 4l-4 4M16 4l4 4" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 4v4" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" stroke-linecap="round"/><path d="M8 20h4M16 20h2M22 20h2" stroke="#2AB5A0" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+          <h3 class="inv-intel-card-title">Conciliación bancaria</h3>
+          <p class="inv-intel-card-desc">Importa movimientos de tu banco y empareja automáticamente con ventas, gastos y transferencias. Cierre limpio cada mes.</p>
+        </div>
+        <div class="inv-intel-card" style="--i:4">
+          <span class="inv-intel-card-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M5 8h22l-2 16H7L5 8z" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" stroke-linejoin="round"/><path d="M11 8V5a3 3 0 016 0v3" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" stroke-linecap="round"/><path d="M14 16l2 2 4-4" stroke="#2AB5A0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <h3 class="inv-intel-card-title">Compras a proveedores</h3>
+          <p class="inv-intel-card-desc">Crea órdenes de compra, valida la recepción contra factura y descuenta del inventario al instante.</p>
+        </div>
+        <div class="inv-intel-card" style="--i:5">
+          <span class="inv-intel-card-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M4 26V6" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" stroke-linecap="round"/><path d="M4 26h24" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" stroke-linecap="round"/><path d="M8 22l5-7 4 3 5-9 4 5" stroke="#2AB5A0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="26" cy="14" r="2" fill="rgba(232,168,56,0.18)" stroke="#E8A838" stroke-width="1.2"/><path d="M22 8h6v3" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.3"/></svg></span>
+          <h3 class="inv-intel-card-title">Flujo de efectivo</h3>
+          <p class="inv-intel-card-desc">Visualiza ingresos vs egresos por sucursal y proyecta tu cash flow a 30, 60 y 90 días con datos reales.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- ── Pillar 3: Fideliza ── -->
   <div class="pillar-section pillar-section--crm pillar-section--right" data-pillar="crm">
@@ -1027,7 +1116,7 @@ const useCases = [
     <div class="mc-step mc-step--alt" id="mc-step-2" data-mc-step="2">
       <div class="mc-step-header">
         <div class="mc-step-num">2</div>
-        <h2 class="mc-step-title">Controla tu stock en tiempo real</h2>
+        <h2 class="mc-step-title">Controla tu operación en tiempo real</h2>
       </div>
       <div class="mc-carousel">
         <div class="mc-card">
@@ -1079,7 +1168,7 @@ const useCases = [
         <div class="mc-card">
           <div class="mc-card-visual"><img src="/images/conteo-fisico-real.webp" alt="Conteo físico de inventario" loading="lazy" width="900" height="1117"></div>
           <div class="mc-card-body">
-            <div class="mc-card-title">Conteo físico</div>
+            <div class="mc-card-title">Auditoría y conteo físico</div>
             <div class="mc-card-desc">Escanea con tu celular y actualiza el inventario en segundos.</div>
           </div>
         </div>
@@ -1133,52 +1222,6 @@ const useCases = [
             <div class="mc-card-desc">AXO analiza tus ventas, predice demanda y automatiza órdenes de compra.</div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ BLOQUE 2.3b: Social Commerce ═══ -->
-<section class="sq-features sq-features--sc">
-  <div class="sq-features-header sq-header-reveal">
-    <span class="sc-eyebrow">WhatsApp Commerce</span>
-    <h2 class="sc-title">Vende por WhatsApp.<br>Sin trabajo manual.</h2>
-    <p class="sc-subtitle">Tu cliente pregunta, SACS responde con catálogo, toma el pedido, cobra y confirma la entrega. Todo automático, directo en WhatsApp.</p>
-  </div>
-  <div class="sq-features-inner">
-    <div class="sq-features-media sq-media-reveal">
-      <div class="sq-phone-bg" aria-hidden="true">
-        <div class="sq-phone-bg-grid"></div>
-        <div class="sq-phone-bg-glow"></div>
-      </div>
-      <div class="sq-features-img-wrap">
-        <img src="/images/wa-chat-step1.webp" alt="Paso 1: Tu cliente te escribe" class="sq-features-img sq-img--active" data-sq-src="/images/wa-chat-step1.webp" width="409" height="826" loading="lazy" />
-        <img src="/images/wa-chat-step2.webp" alt="Paso 2: Explora el catálogo" class="sq-features-img" data-sq-src="/images/wa-chat-step2.webp" width="409" height="826" loading="lazy" />
-        <img src="/images/wa-chat-step3.webp" alt="Paso 3: Detalle del producto" class="sq-features-img" data-sq-src="/images/wa-chat-step3.webp" width="409" height="826" loading="lazy" />
-        <img src="/images/wa-chat-step4.webp" alt="Paso 4: Pago y confirmación" class="sq-features-img" data-sq-src="/images/wa-chat-step4.webp" width="409" height="826" loading="lazy" />
-        <img src="/images/wa-chat-step5.webp" alt="Paso 5: Pedido completado" class="sq-features-img" data-sq-src="/images/wa-chat-step5.webp" width="409" height="826" loading="lazy" />
-      </div>
-    </div>
-    <div class="sq-features-content">
-      <div class="sq-feature-block sq-feature-block--sc active" data-sq-idx="0" data-sq-img="/images/wa-chat-step1.webp">
-        <h3 class="sq-feature-title">Tu cliente te escribe</h3>
-        <p class="sq-feature-desc">El cliente pregunta por un producto en WhatsApp. SACS responde automáticamente con el catálogo disponible.</p>
-      </div>
-      <div class="sq-feature-block sq-feature-block--sc" data-sq-idx="0.5" data-sq-img="/images/wa-chat-step2.webp">
-        <h3 class="sq-feature-title">Explora el catálogo</h3>
-        <p class="sq-feature-desc">El cliente navega tu catálogo directo en WhatsApp. Productos, precios y stock sincronizados desde SACS en tiempo real.</p>
-      </div>
-      <div class="sq-feature-block sq-feature-block--sc" data-sq-idx="0.6" data-sq-img="/images/wa-chat-step3.webp">
-        <h3 class="sq-feature-title">Detalle del producto</h3>
-        <p class="sq-feature-desc">Ficha completa con foto, descripción, precio y botón de agregar al carrito. Todo dentro de WhatsApp.</p>
-      </div>
-      <div class="sq-feature-block sq-feature-block--sc" data-sq-idx="0.7" data-sq-img="/images/wa-chat-step4.webp">
-        <h3 class="sq-feature-title">Pago y confirmación</h3>
-        <p class="sq-feature-desc">El cliente paga directo en el chat. Recibe confirmación, link de seguimiento y factura automática.</p>
-      </div>
-      <div class="sq-feature-block sq-feature-block--sc" data-sq-idx="0.8" data-sq-img="/images/wa-chat-step5.webp">
-        <h3 class="sq-feature-title">Pedido completado</h3>
-        <p class="sq-feature-desc">Orden confirmada con link de pago y opciones de entrega. El pedido llega automáticamente a tu sistema SACS.</p>
       </div>
     </div>
   </div>
@@ -2561,42 +2604,36 @@ const useCases = [
     --center-distance: 0;
     --reveal-progress: 0;
   }
-  /* Palette: white, Squarespace gray, black */
-  .pillar-section--pos    { background: #ffffff; }
-  .pillar-section--stock  { background: #f5f5f7; }
+  /* Palette: Apple-inspired pillar rhythm
+     Vende       → off-white frío (#FBFBFD) — open, energético
+     Controla    → near-black (#1D1D1F) — control = autoridad visual
+     Fideliza    → white (#FFFFFF) — humano, claro y limpio
+     Automatiza  → soft Squarespace gray (#F5F5F7) con halo azul SACS — futurista calmo */
+  .pillar-section--pos    { background: #FBFBFD; }
+  .pillar-section--stock  { background: #1D1D1F; color: #fff; }
   .pillar-section--crm    { background: #ffffff; }
-  .pillar-section--ai     { background: #0a0a0a; color: #fff; }
+  .pillar-section--ai     { background: #F5F5F7; }
 
-  /* Soft seam between adjacent pillars (no hard cuts) */
-  .pillar-section--pos::after,
-  .pillar-section--crm::after {
-    content: "";
-    position: absolute;
-    inset: auto 0 0 0;
-    height: 120px;
-    background: linear-gradient(to bottom, rgba(245,245,247,0) 0%, rgba(245,245,247,1) 100%);
-    pointer-events: none;
-    z-index: 0;
-  }
-  .pillar-section--crm::after {
-    background: linear-gradient(to bottom, rgba(10,10,10,0) 0%, rgba(10,10,10,1) 100%);
-  }
+  /* Hard cuts between sections — no gradient seams (Apple style) */
 
-  /* Subtle pattern only on gray + dark sections */
+  /* Subtle dot patterns: white dots on dark stock, dark dots on gray AI with blue spotlight */
   .pillar-bg-pattern {
     position: absolute;
     inset: 0;
     pointer-events: none;
     opacity: 0;
   }
-  .pillar-section--stock .pillar-bg-pattern,
-  .pillar-section--ai .pillar-bg-pattern {
+  .pillar-section--stock .pillar-bg-pattern {
     opacity: 1;
-    background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.045) 1px, transparent 0);
+    background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.045) 1px, transparent 0);
     background-size: 28px 28px;
   }
   .pillar-section--ai .pillar-bg-pattern {
-    background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0);
+    opacity: 1;
+    background-image:
+      radial-gradient(ellipse 60% 50% at 50% 40%, rgba(75, 123, 229, 0.08) 0%, transparent 70%),
+      radial-gradient(circle at 1px 1px, rgba(0,0,0,0.045) 1px, transparent 0);
+    background-size: auto, 28px 28px;
   }
 
   .pillar-inner {
@@ -2656,7 +2693,7 @@ const useCases = [
     font-weight: 800;
     line-height: 1.04;
     letter-spacing: -0.03em;
-    color: #0a0a0a;
+    color: #1D1D1F;
     margin: 0 0 12px;
   }
 
@@ -2816,40 +2853,44 @@ const useCases = [
     max-width: 1180px !important;
     transform: none !important;
     box-shadow: none !important;
-    filter: drop-shadow(0 40px 80px rgba(0,0,0,0.14)) drop-shadow(0 16px 32px rgba(0,0,0,0.07));
+    /* Cool-tinted shadow that harmonizes with off-white frío bg of Vende */
+    filter: drop-shadow(0 40px 80px rgba(20, 30, 60, 0.13)) drop-shadow(0 16px 32px rgba(20, 30, 60, 0.07));
   }
+  /* Heavy dark shadow for Controla on near-black bg */
+  .pillar-section--stock .pillar-frame {
+    filter: drop-shadow(0 40px 80px rgba(0,0,0,0.55)) drop-shadow(0 16px 32px rgba(0,0,0,0.3));
+  }
+  /* Automatiza on light gray: standard cool drop-shadow (matches Vende treatment) */
   .pillar-section--ai .pillar-frame {
-    background: #1a1a1d;
-    filter: drop-shadow(0 40px 80px rgba(0,0,0,0.6)) drop-shadow(0 16px 32px rgba(0,0,0,0.3));
+    filter: drop-shadow(0 40px 80px rgba(20, 30, 60, 0.13)) drop-shadow(0 16px 32px rgba(20, 30, 60, 0.07));
   }
 
-  /* Dark variant for Automatiza */
-  .pillar-section--ai .pillar-h2 {
+  /* Dark variant — Controla (stock) only */
+  .pillar-section--stock .pillar-h2,
+  .pillar-section--stock .pillar-acc-label,
+  .pillar-section--stock .pillar-acc.is-open .pillar-acc-label,
+  .pillar-section--stock .pillar-acc-cta {
     color: #fff;
   }
-  .pillar-section--ai .pillar-acc-label {
-    color: #fff;
-  }
-  .pillar-section--ai .pillar-eyebrow {
+  .pillar-section--stock .pillar-eyebrow,
+  .pillar-section--stock .pillar-acc-icon {
     color: rgba(255,255,255,0.55);
   }
-  .pillar-section--ai .pillar-subtitle {
+  /* Automatiza eyebrow: SACS blue — único acento de marca en eyebrows */
+  .pillar-section--ai .pillar-eyebrow {
+    color: rgba(75, 123, 229, 0.9);
+  }
+  .pillar-section--stock .pillar-subtitle {
     color: rgba(255,255,255,0.6);
   }
-  .pillar-section--ai .pillar-acc-desc {
+  .pillar-section--stock .pillar-acc-desc {
     color: rgba(255,255,255,0.62);
   }
-  .pillar-section--ai .pillar-accordion,
-  .pillar-section--ai .pillar-acc {
+  .pillar-section--stock .pillar-accordion,
+  .pillar-section--stock .pillar-acc {
     border-color: rgba(255,255,255,0.12);
   }
-  .pillar-section--ai .pillar-acc-icon {
-    color: rgba(255,255,255,0.55);
-  }
-  .pillar-section--ai .pillar-acc:not(.is-open) .pillar-acc-btn:hover .pillar-acc-icon {
-    color: #fff;
-  }
-  .pillar-section--ai .pillar-acc-cta {
+  .pillar-section--stock .pillar-acc:not(.is-open) .pillar-acc-btn:hover .pillar-acc-icon {
     color: #fff;
   }
 
@@ -2861,6 +2902,143 @@ const useCases = [
   /* Hide pillar-sections on mobile (mobile-cards takes over) */
   @media (max-width: 1023px) {
     .pillar-section { display: none; }
+    /* Hide desktop continuation sections on mobile — they sit between desktop pillars */
+    .sq-features--unified,
+    .ops-admin-section { display: none; }
+  }
+
+  /* ── Controla continuation: Operación administrativa ── */
+  .ops-admin-section {
+    position: relative;
+    background: #1D1D1F;
+    color: #fff;
+    padding: clamp(40px, 6vw, 88px) 0 clamp(96px, 12vw, 160px);
+    overflow: hidden;
+    border: none;
+    margin-top: -1px;
+  }
+  .pillar-section--stock {
+    border: none;
+  }
+  /* Hard cut to crm (white) — no gradient seam */
+  /* Subtle dot pattern matching dark stock pillar */
+  .ops-admin-section::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.045) 1px, transparent 0);
+    background-size: 28px 28px;
+    opacity: 0.6;
+  }
+  .ops-admin-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 clamp(20px, 4vw, 48px);
+  }
+  .ops-admin-header {
+    text-align: center;
+    max-width: 760px;
+    margin: 0 auto clamp(48px, 6vw, 80px);
+  }
+  .ops-admin-eyebrow {
+    display: inline-block;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: clamp(14px, 1.6vw, 22px);
+  }
+  .ops-admin-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 4vw, 3rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: #fff;
+    margin: 0 0 clamp(16px, 2vw, 24px);
+  }
+  .ops-admin-desc {
+    font-family: var(--font-display);
+    font-size: clamp(1rem, 1.3vw, 1.15rem);
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.65);
+    margin: 0 auto;
+    max-width: 56ch;
+  }
+  /* Cards float on the dark bg — slightly lifted shade + soft white borders */
+  .ops-admin-grid {
+    border-top: none;
+  }
+  .pillar-section--stock .pillar-acc:last-child {
+    border-bottom: none;
+  }
+  .ops-admin-grid .inv-intel-card {
+    background: #26262A;
+    border: none;
+  }
+  .ops-admin-grid .inv-intel-card-title {
+    color: #fff;
+  }
+  .ops-admin-grid .inv-intel-card-desc {
+    color: rgba(255, 255, 255, 0.62);
+  }
+  /* Icons on dark bg: full opacity + light strokes, preserving accent colors */
+  .ops-admin-grid .inv-intel-card-icon {
+    opacity: 1;
+  }
+  .ops-admin-grid .inv-intel-card-icon svg * {
+    stroke: rgba(255, 255, 255, 0.78) !important;
+  }
+  .ops-admin-grid .inv-intel-card-icon svg [stroke="#2AB5A0"] {
+    stroke: #2AB5A0 !important;
+  }
+  .ops-admin-grid .inv-intel-card-icon svg [stroke="#E8A838"] {
+    stroke: #E8A838 !important;
+  }
+  .ops-admin-grid .inv-intel-card-icon svg text {
+    fill: rgba(255, 255, 255, 0.85) !important;
+  }
+
+  /* Reveal coreografiado del header */
+  @media (prefers-reduced-motion: no-preference) {
+    .ops-admin-eyebrow,
+    .ops-admin-title,
+    .ops-admin-desc {
+      opacity: 0;
+      transform: translateY(20px);
+      transition:
+        opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
+        transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .ops-admin-section.is-entering .ops-admin-eyebrow { opacity: 1; transform: none; transition-delay: 0ms; }
+    .ops-admin-section.is-entering .ops-admin-title   { opacity: 1; transform: none; transition-delay: 80ms; }
+    .ops-admin-section.is-entering .ops-admin-desc    { opacity: 1; transform: none; transition-delay: 180ms; }
+  }
+
+  /* ── Unified WhatsApp Commerce (continuation of pos pillar) ── */
+  /* Removes the hard border-top so it flows seamlessly from white pos pillar.
+     Adds a soft gradient seam at bottom that fades into stock pillar's gray. */
+  .sq-features--unified {
+    position: relative;
+    border-top: none !important;
+    background: #FBFBFD;
+    padding-top: 0;
+  }
+  .sq-features--unified .sq-features-header {
+    padding-top: clamp(8px, 2vw, 32px);
+    padding-bottom: clamp(40px, 6vw, 72px);
+  }
+  /* Hard cut into Controla's near-black — no gradient seam */
+  .sq-features--unified .sq-features-inner {
+    position: relative;
+    z-index: 1;
+    padding-bottom: clamp(60px, 8vw, 120px);
   }
 
   /* ════ Apple-level scroll choreography ════ */
@@ -4490,17 +4668,17 @@ const useCases = [
     transition: top 0.6s ease, background 0.5s ease;
   }
 
-  /* Subtle color shifts per step */
-  .sq-phone-bg[data-bg-step="1"] { background: #F5F5F3; }
-  .sq-phone-bg[data-bg-step="1"] .sq-phone-bg-glow { background: rgba(37,211,102,0.08); top: 10%; }
-  .sq-phone-bg[data-bg-step="2"] { background: #F3F4F8; }
-  .sq-phone-bg[data-bg-step="2"] .sq-phone-bg-glow { background: rgba(75,123,229,0.08); top: 20%; }
-  .sq-phone-bg[data-bg-step="3"] { background: #F6F5F2; }
-  .sq-phone-bg[data-bg-step="3"] .sq-phone-bg-glow { background: rgba(232,168,56,0.08); top: 35%; }
-  .sq-phone-bg[data-bg-step="4"] { background: #F2F6F5; }
-  .sq-phone-bg[data-bg-step="4"] .sq-phone-bg-glow { background: rgba(42,181,160,0.08); top: 50%; }
-  .sq-phone-bg[data-bg-step="5"] { background: #F3F4F8; }
-  .sq-phone-bg[data-bg-step="5"] .sq-phone-bg-glow { background: rgba(75,123,229,0.08); top: 65%; }
+  /* Fondo blanco unificado en todos los pasos — solo el glow cambia ligeramente */
+  .sq-phone-bg[data-bg-step="1"],
+  .sq-phone-bg[data-bg-step="2"],
+  .sq-phone-bg[data-bg-step="3"],
+  .sq-phone-bg[data-bg-step="4"],
+  .sq-phone-bg[data-bg-step="5"] { background: #ffffff; }
+  .sq-phone-bg[data-bg-step="1"] .sq-phone-bg-glow { background: rgba(37,211,102,0.04); top: 10%; }
+  .sq-phone-bg[data-bg-step="2"] .sq-phone-bg-glow { background: rgba(75,123,229,0.04); top: 20%; }
+  .sq-phone-bg[data-bg-step="3"] .sq-phone-bg-glow { background: rgba(232,168,56,0.04); top: 35%; }
+  .sq-phone-bg[data-bg-step="4"] .sq-phone-bg-glow { background: rgba(42,181,160,0.04); top: 50%; }
+  .sq-phone-bg[data-bg-step="5"] .sq-phone-bg-glow { background: rgba(75,123,229,0.04); top: 65%; }
 
   @media (max-width: 1023px) {
     .sq-phone-bg { display: none; }
@@ -8505,6 +8683,22 @@ const useCases = [
       tab.addEventListener('click', () => switchToTab(i));
     });
   })();
+
+  // ═══ Ops admin section — header reveal ═══
+  const opsAdminSection = document.querySelector<HTMLElement>('.ops-admin-section');
+  if (opsAdminSection && !reduceMotion) {
+    const opsObs = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.intersectionRatio >= 0.18) {
+          (e.target as HTMLElement).classList.add('is-entering');
+          opsObs.unobserve(e.target);
+        }
+      });
+    }, { threshold: [0, 0.18, 0.4] });
+    opsObs.observe(opsAdminSection);
+  } else if (opsAdminSection) {
+    opsAdminSection.classList.add('is-entering');
+  }
 
   // ═══ Inventory intel cards — staggered fade-up on scroll ═══
   const intelCards = document.querySelectorAll<HTMLElement>('.inv-intel-card');
