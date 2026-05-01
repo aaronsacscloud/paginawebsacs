@@ -24,7 +24,9 @@ const steps = [
     subtitle: 'Una plataforma, todos los canales.',
     bgKey: 'pos',
     subs: [
-      { id: 'pos-pdv', label: 'Punto de Venta', desc: 'Cobra con tarjeta, efectivo o transferencia desde cualquier dispositivo. Funciona en iPad, celular o computadora — con o sin internet.', href: '/producto/punto-de-venta', image: '/images/screen-pos.webp' },
+      { id: 'pos-pdv', label: 'Punto de Venta', desc: 'Cobra con tarjeta, efectivo, transferencia o monedero — y combínalos en una sola venta. iPad, celular o computadora, con o sin internet. El cajero nunca se queda parado.', href: '/producto/punto-de-venta', image: '/images/screen-pos.webp' },
+      { id: 'pos-cambios', label: 'Cambios y devoluciones', desc: 'Cambia talla, devuelve con ticket o sin él, abona a monedero o reembolsa al método original. Política configurable, autorización por gerente y trazabilidad completa.', href: '/producto/punto-de-venta', image: null },
+      { id: 'pos-movil', label: 'Cobro móvil — line-busting', desc: 'Acerca al cliente desde el piso de venta: escanea, cobra y envía ticket por WhatsApp desde el celular del vendedor. Sin filas en hora pico, sin perder ventas.', href: '/producto/punto-de-venta', image: null },
       { id: 'pos-apartados', label: 'Pedidos y Apartados', desc: 'Toma anticipo, bloquea el stock, cobra a plazos y convierte el apartado en venta cuando termina. Recordatorios automáticos por email y WhatsApp.', href: '/producto/apartados-y-pedidos', image: null },
       { id: 'pos-ecommerce', label: 'Tienda en línea', desc: 'Tu tienda en línea conectada al mismo inventario, clientes y precios. Cada venta online baja stock en la sucursal correcta al segundo.', href: '/producto/tienda-en-linea', image: null },
       { id: 'pos-social', label: 'Vende en META & TikTok Shop', desc: 'Conecta tu catálogo a Instagram, Facebook y TikTok Shop con stock y cobro sincronizados — sin re-publicar nada.', href: '/producto/social-commerce', image: null },
@@ -302,6 +304,153 @@ const useCases = [
             {/* ── Vende: Punto de Venta ── */}
             <div class="tablet-slide active" data-slide="pos-pdv">
               <img src="/images/screen-pos.webp" alt="Punto de Venta SACS" class="tablet-slide-img" loading="lazy" />
+            </div>
+
+            {/* ── Vende: Cambios y devoluciones ── */}
+            <div class="tablet-slide" data-slide="pos-cambios">
+              <div class="rtn-frame">
+                <div class="rtn-grid">
+                  <div class="rtn-search-col">
+                    <div class="rtn-mini-label">BUSCAR TICKET</div>
+                    <div class="rtn-search">
+                      <span class="rtn-search-ic">⌕</span>
+                      <span class="rtn-search-txt">A-78443</span>
+                    </div>
+                    <div class="rtn-result">
+                      <div class="rtn-result-meta">Andrea G. · Polanco · 28/abr 11:42</div>
+                      <div class="rtn-result-total">$3,420 MXN</div>
+                    </div>
+                    <div class="rtn-mini-label rtn-mini-label--mt">ITEMS DEL TICKET</div>
+                    <div class="rtn-items">
+                      <div class="rtn-item rtn-item--selected">
+                        <span class="rtn-check">✓</span>
+                        <span class="rtn-item-name">Blusa satinada · M</span>
+                        <span class="rtn-item-price">$1,290</span>
+                      </div>
+                      <div class="rtn-item">
+                        <span class="rtn-check rtn-check--off"></span>
+                        <span class="rtn-item-name">Falda midi plisada · 28</span>
+                        <span class="rtn-item-price">$1,250</span>
+                      </div>
+                      <div class="rtn-item rtn-item--selected">
+                        <span class="rtn-check">✓</span>
+                        <span class="rtn-item-name">Blazer oversize · S</span>
+                        <span class="rtn-item-price">$880</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="rtn-action-col">
+                    <div class="rtn-mini-label">TIPO DE OPERACIÓN</div>
+                    <div class="rtn-options">
+                      <div class="rtn-opt">
+                        <span class="rtn-opt-radio rtn-opt-radio--off"></span>
+                        <span class="rtn-opt-name">Reembolso al método original</span>
+                      </div>
+                      <div class="rtn-opt rtn-opt--active">
+                        <span class="rtn-opt-radio"></span>
+                        <span class="rtn-opt-name">Cambio · talla / artículo</span>
+                      </div>
+                      <div class="rtn-opt">
+                        <span class="rtn-opt-radio rtn-opt-radio--off"></span>
+                        <span class="rtn-opt-name">Abono al monedero</span>
+                      </div>
+                    </div>
+                    <div class="rtn-summary">
+                      <div class="rtn-summary-row">
+                        <span>Devuelto</span><span class="rtn-summary-strike">−$2,170</span>
+                      </div>
+                      <div class="rtn-summary-row">
+                        <span>Nuevo cobro</span><span>+$2,540</span>
+                      </div>
+                      <div class="rtn-summary-row rtn-summary-row--total">
+                        <span>Diferencia</span><span class="rtn-summary-pos">+$370</span>
+                      </div>
+                    </div>
+                    <div class="rtn-cta">Confirmar y enviar ticket</div>
+                    <div class="rtn-foot">
+                      <span class="rtn-foot-ic">🔒</span>
+                      <span>Autorizado por · Gerente · Cl. Romero</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Vende: Cobro móvil — line-busting ── */}
+            <div class="tablet-slide" data-slide="pos-movil">
+              <div class="mob-frame">
+                <div class="mob-grid">
+                  <div class="mob-phone-wrap">
+                    <div class="mob-phone">
+                      <div class="mob-phone-notch"></div>
+                      <div class="mob-phone-screen">
+                        <div class="mob-app">
+                          <div class="mob-app-top">
+                            <div class="mob-app-meta">
+                              <div class="mob-app-store">SACS · Polanco</div>
+                              <div class="mob-app-user">Vendedor: Lina M.</div>
+                            </div>
+                            <div class="mob-app-cart-badge">3</div>
+                          </div>
+                          <div class="mob-scan-card">
+                            <div class="mob-scan-ic">⊞</div>
+                            <div class="mob-scan-txt">
+                              <div class="mob-scan-title">Escanear código</div>
+                              <div class="mob-scan-sub">o buscar producto</div>
+                            </div>
+                          </div>
+                          <div class="mob-cart">
+                            <div class="mob-cart-item">
+                              <div class="mob-cart-thumb mob-cart-thumb--1"></div>
+                              <div class="mob-cart-body">
+                                <div class="mob-cart-name">Blusa satinada · M</div>
+                                <div class="mob-cart-meta">×1 · $1,290</div>
+                              </div>
+                            </div>
+                            <div class="mob-cart-item">
+                              <div class="mob-cart-thumb mob-cart-thumb--2"></div>
+                              <div class="mob-cart-body">
+                                <div class="mob-cart-name">Blazer oversize · S</div>
+                                <div class="mob-cart-meta">×1 · $1,680</div>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="mob-total">
+                            <span class="mob-total-label">Total</span>
+                            <span class="mob-total-value">$2,970</span>
+                          </div>
+                          <div class="mob-pay-btn">Cobrar con tarjeta · Tap</div>
+                          <div class="mob-pay-alts">
+                            <span>Transferencia</span><span class="mob-pay-sep">·</span><span>Efectivo</span><span class="mob-pay-sep">·</span><span>Monedero</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mob-context">
+                    <div class="mob-mini-label">EN PISO DE VENTA</div>
+                    <div class="mob-headline">Cobra al cliente<br />sin moverlo a la caja.</div>
+                    <ul class="mob-bullets">
+                      <li>
+                        <span class="mob-bullet-ic">⊕</span>
+                        <span class="mob-bullet-txt">El vendedor escanea desde su celular y cobra con lector Bluetooth o Tap-to-Pay.</span>
+                      </li>
+                      <li>
+                        <span class="mob-bullet-ic">⊕</span>
+                        <span class="mob-bullet-txt">Ticket digital se envía por WhatsApp al instante.</span>
+                      </li>
+                      <li>
+                        <span class="mob-bullet-ic">⊕</span>
+                        <span class="mob-bullet-txt">Stock baja en tiempo real, igual que en la caja principal.</span>
+                      </li>
+                    </ul>
+                    <div class="mob-stat-card">
+                      <div class="mob-stat-value">−42%</div>
+                      <div class="mob-stat-label">tiempo de espera en hora pico</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* ── Vende: Pedidos y Apartados ── */}
@@ -3830,6 +3979,473 @@ const useCases = [
     border-radius: 0;
     box-shadow: none;
     height: 100%;
+  }
+
+  /* ── Cambios y devoluciones slide ── */
+  .rtn-frame {
+    aspect-ratio: 16 / 10;
+    width: 100%;
+    background: #FAFAFA;
+    padding: 4% 4.5%;
+    font-family: var(--font-body);
+    color: #1A1A1A;
+  }
+  .rtn-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 14px;
+    height: 100%;
+  }
+  .rtn-mini-label {
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(0,0,0,0.45);
+    margin-bottom: 6px;
+  }
+  .rtn-mini-label--mt { margin-top: 10px; }
+  .rtn-search-col, .rtn-action-col {
+    display: flex;
+    flex-direction: column;
+  }
+  .rtn-search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 8px;
+    padding: 7px 10px;
+    margin-bottom: 6px;
+  }
+  .rtn-search-ic {
+    font-size: 11px;
+    color: rgba(0,0,0,0.45);
+  }
+  .rtn-search-txt {
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 700;
+    color: #1A1A1A;
+    letter-spacing: 0.04em;
+  }
+  .rtn-result {
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 8px;
+    padding: 8px 10px;
+  }
+  .rtn-result-meta {
+    font-size: 7px;
+    color: rgba(0,0,0,0.55);
+    margin-bottom: 2px;
+  }
+  .rtn-result-total {
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 800;
+    color: #1A1A1A;
+    letter-spacing: -0.01em;
+  }
+  .rtn-items {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .rtn-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 8px;
+  }
+  .rtn-item--selected {
+    border-color: rgba(42,181,160,0.4);
+    background: rgba(42,181,160,0.06);
+  }
+  .rtn-check {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    background: #2AB5A0;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .rtn-check--off {
+    background: transparent;
+    border: 1px solid rgba(0,0,0,0.18);
+  }
+  .rtn-item-name {
+    flex: 1;
+    color: #1A1A1A;
+    font-weight: 600;
+  }
+  .rtn-item-price {
+    color: rgba(0,0,0,0.5);
+    font-weight: 600;
+  }
+  .rtn-options {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+  .rtn-opt {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 6px;
+    padding: 7px 9px;
+    font-size: 8px;
+  }
+  .rtn-opt--active {
+    border-color: #1A1A1A;
+    background: #fff;
+  }
+  .rtn-opt-radio {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #1A1A1A;
+    border: 2px solid #1A1A1A;
+    box-shadow: inset 0 0 0 2px #fff;
+    flex-shrink: 0;
+  }
+  .rtn-opt-radio--off {
+    background: transparent;
+    border: 1px solid rgba(0,0,0,0.2);
+    box-shadow: none;
+  }
+  .rtn-opt-name {
+    color: #1A1A1A;
+    font-weight: 600;
+  }
+  .rtn-summary {
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 8px;
+    padding: 9px 10px;
+    margin-bottom: 8px;
+  }
+  .rtn-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 8px;
+    color: rgba(0,0,0,0.6);
+    padding: 2px 0;
+  }
+  .rtn-summary-strike {
+    text-decoration: line-through;
+    color: rgba(0,0,0,0.4);
+  }
+  .rtn-summary-row--total {
+    border-top: 1px solid rgba(0,0,0,0.08);
+    margin-top: 4px;
+    padding-top: 6px;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 11px;
+    color: #1A1A1A;
+  }
+  .rtn-summary-pos {
+    color: #2AB5A0;
+  }
+  .rtn-cta {
+    background: #1A1A1A;
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 9px;
+    font-weight: 700;
+    text-align: center;
+    padding: 9px;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    letter-spacing: 0.03em;
+  }
+  .rtn-foot {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 7px;
+    color: rgba(0,0,0,0.5);
+  }
+
+  /* ── Cobro móvil — line-busting slide ── */
+  .mob-frame {
+    aspect-ratio: 16 / 10;
+    width: 100%;
+    background: #FAFAFA;
+    padding: 4% 5%;
+  }
+  .mob-grid {
+    display: grid;
+    grid-template-columns: 0.85fr 1fr;
+    gap: 16px;
+    height: 100%;
+    align-items: center;
+  }
+  .mob-phone-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .mob-phone {
+    width: 90%;
+    aspect-ratio: 9 / 19;
+    background: #E8E8EC;
+    border-radius: 22px;
+    padding: 5px;
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,0.06),
+      0 8px 24px -8px rgba(20,20,30,0.18);
+    position: relative;
+  }
+  .mob-phone-notch {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 26%;
+    height: 8px;
+    background: #1A1A1A;
+    border-radius: 999px;
+    z-index: 2;
+  }
+  .mob-phone-screen {
+    width: 100%;
+    height: 100%;
+    background: #FAFAFA;
+    border-radius: 17px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .mob-app {
+    padding: 18px 8px 8px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-body);
+  }
+  .mob-app-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  .mob-app-store {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 8px;
+    color: #1A1A1A;
+    letter-spacing: 0.02em;
+  }
+  .mob-app-user {
+    font-size: 6px;
+    color: rgba(0,0,0,0.5);
+    margin-top: 1px;
+  }
+  .mob-app-cart-badge {
+    width: 16px;
+    height: 16px;
+    background: #2AB5A0;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 8px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .mob-scan-card {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 8px;
+    background: #fff;
+    border: 1px dashed rgba(0,0,0,0.18);
+    border-radius: 8px;
+    margin-bottom: 7px;
+  }
+  .mob-scan-ic {
+    width: 22px;
+    height: 22px;
+    background: #1A1A1A;
+    color: #fff;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .mob-scan-title {
+    font-family: var(--font-display);
+    font-size: 8px;
+    font-weight: 700;
+    color: #1A1A1A;
+  }
+  .mob-scan-sub {
+    font-size: 6px;
+    color: rgba(0,0,0,0.5);
+    margin-top: 1px;
+  }
+  .mob-cart {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+  .mob-cart-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 6px;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 6px;
+  }
+  .mob-cart-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .mob-cart-thumb--1 { background: linear-gradient(135deg, #E8DFD3 0%, #D4C7B0 100%); }
+  .mob-cart-thumb--2 { background: linear-gradient(135deg, #C9C0B4 0%, #6F665A 100%); }
+  .mob-cart-body { flex: 1; min-width: 0; }
+  .mob-cart-name {
+    font-size: 7px;
+    font-weight: 700;
+    color: #1A1A1A;
+  }
+  .mob-cart-meta {
+    font-size: 6px;
+    color: rgba(0,0,0,0.5);
+    margin-top: 1px;
+  }
+  .mob-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 8px 8px 4px;
+    border-top: 1px solid rgba(0,0,0,0.08);
+    margin-top: auto;
+  }
+  .mob-total-label {
+    font-size: 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(0,0,0,0.55);
+    font-weight: 700;
+  }
+  .mob-total-value {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 800;
+    color: #1A1A1A;
+    letter-spacing: -0.01em;
+  }
+  .mob-pay-btn {
+    background: #1A1A1A;
+    color: #fff;
+    text-align: center;
+    padding: 8px;
+    border-radius: 8px;
+    font-family: var(--font-display);
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    margin: 4px 0 4px;
+  }
+  .mob-pay-alts {
+    text-align: center;
+    font-size: 6px;
+    color: rgba(0,0,0,0.45);
+    font-weight: 600;
+  }
+  .mob-pay-sep { margin: 0 4px; }
+
+  .mob-context {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    font-family: var(--font-body);
+  }
+  .mob-mini-label {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #2AB5A0;
+    margin-bottom: 8px;
+  }
+  .mob-headline {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: #1A1A1A;
+    margin-bottom: 12px;
+  }
+  .mob-bullets {
+    list-style: none;
+    margin: 0 0 14px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .mob-bullets li {
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+    font-size: 9px;
+    line-height: 1.45;
+    color: rgba(0,0,0,0.7);
+  }
+  .mob-bullet-ic {
+    color: #2AB5A0;
+    font-weight: 700;
+    flex-shrink: 0;
+    line-height: 1.45;
+  }
+  .mob-stat-card {
+    background: #1A1A1A;
+    color: #fff;
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .mob-stat-value {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 800;
+    color: #2AB5A0;
+    letter-spacing: -0.02em;
+  }
+  .mob-stat-label {
+    font-size: 8px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.3;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
   }
 
   /* ── WhatsApp Carousel ── */
