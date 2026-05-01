@@ -3033,7 +3033,7 @@ const useCases = [
     display: grid;
     grid-template-columns: 1fr;
     gap: clamp(32px, 5vw, 56px);
-    align-items: stretch;
+    align-items: start;
     max-width: 1520px;
     margin: 0 auto;
     padding-inline: clamp(20px, 3vw, 40px);
@@ -3042,6 +3042,7 @@ const useCases = [
     .pillar-inner {
       grid-template-columns: minmax(360px, 0.82fr) minmax(0, 1.7fr);
       gap: clamp(40px, 5.5vw, 80px);
+      align-items: center;
     }
     /* Zigzag: pillar-section--left flips iPad to the left, text to right */
     .pillar-section--left .pillar-inner {
@@ -3228,7 +3229,7 @@ const useCases = [
     transform: scaleX(1.05);
   }
 
-  /* Visual column — dominant, full-height */
+  /* Visual column — dominant, fixed-position (no jump on accordion toggle) */
   .pillar-visual {
     position: relative;
     width: 100%;
@@ -3236,12 +3237,20 @@ const useCases = [
     justify-content: center;
     align-items: center;
     min-width: 0;
-    align-self: stretch;
+    align-self: center;
+  }
+  /* Make the iPad stick to the viewport while user toggles accordion items */
+  @media (min-width: 1024px) {
+    .pillar-visual {
+      position: sticky;
+      top: 80px;
+      align-self: start;
+    }
   }
 
   .pillar-frame {
     width: 100%;
-    max-width: 1180px !important;
+    max-width: 1280px !important;
     transform: none !important;
     box-shadow: none !important;
     /* Cool-tinted shadow that harmonizes with off-white frío bg of Vende */
