@@ -53,6 +53,9 @@ const steps = [
     subs: [
       { id: 'crm-lealtad', label: 'Monedero electrónico', desc: 'Saldo recargable con cashback automático en cada compra. El cliente lo acumula y canjea desde el POS o el portal — sin apps extra, sin tarjetas físicas, sin terceros.', href: '/producto/programa-de-lealtad', image: null },
       { id: 'crm-seguimiento', label: 'Recomendaciones de productos', desc: 'Sugiere prendas y artículos basados en las últimas compras de cada cliente — desde el POS y desde la tienda en línea.', href: '/producto/clientes-y-crm', image: null },
+      { id: 'crm-omnicanal', label: 'CRM Omnicanal', desc: 'Una sola ficha por cliente con su historial de tienda física, ecommerce, redes sociales y WhatsApp — segmentación automática por comportamiento real.', href: '/producto/clientes-y-crm', image: null },
+      { id: 'crm-email', label: 'Email marketing', desc: 'Editor visual, segmentación por comportamiento de compra, A/B testing y métricas en tiempo real. Sin Mailchimp, sin tarifas extra — todo conectado a tus ventas reales.', href: '/producto/marketing-por-correo', image: null },
+      { id: 'crm-whatsapp', label: 'WhatsApp marketing', desc: 'Broadcasts a segmentos con plantillas pre-aprobadas por Meta. 90% de apertura, conectado al CRM, métricas reales — sin pagar por mensaje fallido.', href: '/producto/marketing-por-whatsapp', image: null },
     ],
   },
   {
@@ -946,6 +949,202 @@ const useCases = [
                           <span>Recomendaciones IA basadas en estilo y talla</span>
                         </div>
                       </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Fideliza: CRM Omnicanal ── */}
+            <div class="tablet-slide" data-slide="crm-omnicanal">
+              <div class="omni-frame">
+                <div class="omni-header">
+                  <div class="omni-client">
+                    <div class="omni-avatar">AG</div>
+                    <div class="omni-client-info">
+                      <div class="omni-client-name">Andrea Gómez</div>
+                      <div class="omni-client-meta">GOLD · Cliente desde 2024 · 12 compras</div>
+                    </div>
+                  </div>
+                  <div class="omni-tags">
+                    <span class="omni-tag">VIP</span>
+                    <span class="omni-tag omni-tag--alt">Frecuente</span>
+                  </div>
+                </div>
+
+                <div class="omni-stats">
+                  <div class="omni-stat">
+                    <div class="omni-stat-label">Ticket promedio</div>
+                    <div class="omni-stat-value">$2,180</div>
+                  </div>
+                  <div class="omni-stat">
+                    <div class="omni-stat-label">Última visita</div>
+                    <div class="omni-stat-value">Hace 6 días</div>
+                  </div>
+                  <div class="omni-stat">
+                    <div class="omni-stat-label">LTV</div>
+                    <div class="omni-stat-value">$26,180</div>
+                  </div>
+                </div>
+
+                <div class="omni-section-label">HISTORIAL OMNICANAL</div>
+                <div class="omni-timeline">
+                  <div class="omni-event">
+                    <div class="omni-event-channel omni-channel--store">Tienda</div>
+                    <div class="omni-event-body">
+                      <div class="omni-event-title">Compra · Suc. Polanco</div>
+                      <div class="omni-event-detail">Blusa satinada + Falda plisada · $2,140</div>
+                    </div>
+                    <div class="omni-event-date">Hoy</div>
+                  </div>
+                  <div class="omni-event">
+                    <div class="omni-event-channel omni-channel--online">Online</div>
+                    <div class="omni-event-body">
+                      <div class="omni-event-title">Compra · sacscloud.com</div>
+                      <div class="omni-event-detail">Blazer oversize · $1,680</div>
+                    </div>
+                    <div class="omni-event-date">3d</div>
+                  </div>
+                  <div class="omni-event">
+                    <div class="omni-event-channel omni-channel--wa">WhatsApp</div>
+                    <div class="omni-event-body">
+                      <div class="omni-event-title">Click en promo "OTOÑO 2026"</div>
+                      <div class="omni-event-detail">Convertido en compra a las 2 horas</div>
+                    </div>
+                    <div class="omni-event-date">5d</div>
+                  </div>
+                  <div class="omni-event">
+                    <div class="omni-event-channel omni-channel--ig">Instagram</div>
+                    <div class="omni-event-body">
+                      <div class="omni-event-title">DM sobre disponibilidad</div>
+                      <div class="omni-event-detail">"¿Tienen el blazer en talla M?"</div>
+                    </div>
+                    <div class="omni-event-date">7d</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Fideliza: Email marketing ── */}
+            <div class="tablet-slide" data-slide="crm-email">
+              <div class="mk-email-frame">
+                <div class="mk-email-grid">
+                  <div class="mk-email-preview">
+                    <div class="mk-email-window">
+                      <div class="mk-email-toolbar">
+                        <span class="mk-dot"></span>
+                        <span class="mk-dot"></span>
+                        <span class="mk-dot"></span>
+                        <div class="mk-email-from">SACS · hola@sacscloud.com</div>
+                      </div>
+                      <div class="mk-email-content">
+                        <div class="mk-email-subject">Lo nuevo de la temporada · Solo para Andrea</div>
+                        <div class="mk-email-greeting">Hola Andrea,</div>
+                        <div class="mk-email-text">Acabamos de recibir piezas que combinan con tu estilo de las últimas compras. Estos tres looks son para ti:</div>
+                        <div class="mk-email-products">
+                          <div class="mk-email-prod"></div>
+                          <div class="mk-email-prod"></div>
+                          <div class="mk-email-prod"></div>
+                        </div>
+                        <div class="mk-email-cta">Ver mis recomendaciones →</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mk-email-stats">
+                    <div class="mk-stats-header">
+                      <div class="mk-stats-title">Campaña otoño · enviada</div>
+                      <div class="mk-stats-segment">Segmento: <strong>VIP + Frecuentes</strong> · 1,840 contactos</div>
+                    </div>
+                    <div class="mk-metric">
+                      <div class="mk-metric-row">
+                        <span class="mk-metric-label">Aperturas</span>
+                        <span class="mk-metric-value">62%</span>
+                      </div>
+                      <div class="mk-metric-bar"><div class="mk-metric-fill" style="width:62%"></div></div>
+                    </div>
+                    <div class="mk-metric">
+                      <div class="mk-metric-row">
+                        <span class="mk-metric-label">Clicks</span>
+                        <span class="mk-metric-value">28%</span>
+                      </div>
+                      <div class="mk-metric-bar"><div class="mk-metric-fill" style="width:28%"></div></div>
+                    </div>
+                    <div class="mk-metric">
+                      <div class="mk-metric-row">
+                        <span class="mk-metric-label">Conversiones</span>
+                        <span class="mk-metric-value">$84,200</span>
+                      </div>
+                      <div class="mk-metric-bar"><div class="mk-metric-fill mk-metric-fill--green" style="width:42%"></div></div>
+                    </div>
+                    <div class="mk-roi">
+                      <div class="mk-roi-label">ROI de la campaña</div>
+                      <div class="mk-roi-value">14.6×</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Fideliza: WhatsApp marketing ── */}
+            <div class="tablet-slide" data-slide="crm-whatsapp">
+              <div class="mk-wa-frame">
+                <div class="mk-wa-grid">
+                  <div class="mk-wa-phone-wrap">
+                    <div class="mk-wa-phone">
+                      <div class="mk-wa-phone-notch"></div>
+                      <div class="mk-wa-phone-screen">
+                        <div class="mk-wa-header">
+                          <span class="mk-wa-back">‹</span>
+                          <div class="mk-wa-contact">
+                            <div class="mk-wa-contact-name">SACS · Polanco</div>
+                            <div class="mk-wa-contact-status">Cuenta verificada · WABA</div>
+                          </div>
+                        </div>
+                        <div class="mk-wa-thread">
+                          <div class="mk-wa-bubble mk-wa-bubble--in">
+                            <div class="mk-wa-template-tag">Plantilla aprobada por Meta</div>
+                            <div class="mk-wa-msg">Hola Andrea 👋 Sabemos que te gustó el blazer oversize.</div>
+                            <div class="mk-wa-msg">Esta semana tenemos <strong>20% OFF</strong> en las prendas que combinan con tu última compra.</div>
+                            <div class="mk-wa-cta">Ver mi selección</div>
+                            <div class="mk-wa-time">10:24 AM</div>
+                          </div>
+                          <div class="mk-wa-bubble mk-wa-bubble--out">
+                            <div class="mk-wa-msg">Sí me interesa, mándame opciones</div>
+                            <div class="mk-wa-time">10:31 AM ✓✓</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mk-wa-stats">
+                    <div class="mk-stats-header">
+                      <div class="mk-stats-title">Broadcast · OTOÑO 2026</div>
+                      <div class="mk-stats-segment">Segmento: <strong>Compras últimos 60d</strong> · 2,420 contactos</div>
+                    </div>
+                    <div class="mk-metric">
+                      <div class="mk-metric-row">
+                        <span class="mk-metric-label">Entregados</span>
+                        <span class="mk-metric-value">98%</span>
+                      </div>
+                      <div class="mk-metric-bar"><div class="mk-metric-fill" style="width:98%"></div></div>
+                    </div>
+                    <div class="mk-metric">
+                      <div class="mk-metric-row">
+                        <span class="mk-metric-label">Lecturas</span>
+                        <span class="mk-metric-value">91%</span>
+                      </div>
+                      <div class="mk-metric-bar"><div class="mk-metric-fill" style="width:91%"></div></div>
+                    </div>
+                    <div class="mk-metric">
+                      <div class="mk-metric-row">
+                        <span class="mk-metric-label">Clicks</span>
+                        <span class="mk-metric-value">34%</span>
+                      </div>
+                      <div class="mk-metric-bar"><div class="mk-metric-fill" style="width:34%"></div></div>
+                    </div>
+                    <div class="mk-roi">
+                      <div class="mk-roi-label">Conversión a venta</div>
+                      <div class="mk-roi-value">12.8%</div>
                     </div>
                   </div>
                 </div>
@@ -6399,39 +6598,43 @@ const useCases = [
     width: 55%;
     max-width: 180px;
     aspect-ratio: 9 / 19;
-    background: #1A1A1A;
+    background: #E8E8EC;
     border-radius: 28px;
-    padding: 8px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    padding: 6px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.6) inset,
+      0 0 0 1px rgba(0,0,0,0.06),
+      0 12px 32px -8px rgba(20,20,30,0.18),
+      0 4px 12px -4px rgba(20,20,30,0.10);
     position: relative;
   }
   .loyalty-phone-notch {
     position: absolute;
-    top: 8px;
+    top: 10px;
     left: 50%;
     transform: translateX(-50%);
-    width: 35%;
-    height: 14px;
+    width: 28%;
+    height: 10px;
     background: #1A1A1A;
-    border-radius: 0 0 10px 10px;
+    border-radius: 999px;
     z-index: 2;
   }
   .loyalty-phone-screen {
     width: 100%;
     height: 100%;
-    background: #f8f7f5;
-    border-radius: 20px;
+    background: #FAFAFA;
+    border-radius: 22px;
     overflow: hidden;
   }
 
-  /* Loyalty app — Adidas-inspired dark premium style */
+  /* Loyalty app — light Squarespace/Apple aesthetic */
   .loyalty-app {
-    padding: 18px 10px 10px;
+    padding: 22px 10px 10px;
     height: 100%;
     display: flex;
     flex-direction: column;
-    background: #111;
-    color: #fff;
+    background: #FAFAFA;
+    color: #1A1A1A;
   }
   .loyalty-app-top {
     display: flex;
@@ -6444,21 +6647,22 @@ const useCases = [
     font-size: 11px;
     font-weight: 800;
     letter-spacing: 2px;
-    color: #fff;
+    color: #1A1A1A;
   }
   .loyalty-member-since {
     font-family: var(--font-body);
     font-size: 6px;
-    color: rgba(255,255,255,0.4);
+    color: rgba(0,0,0,0.45);
   }
 
-  /* Cashback card */
+  /* Cashback card — soft white tile with depth */
   .loyalty-card {
-    background: linear-gradient(145deg, #1a1a1a, #222);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: #FFFFFF;
+    border: 1px solid rgba(20,20,30,0.06);
     border-radius: 14px;
     padding: 0;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px -2px rgba(20,20,30,0.06);
   }
   .loyalty-card-inner {
     padding: 14px 12px;
@@ -6466,7 +6670,7 @@ const useCases = [
   .loyalty-card-label {
     font-family: var(--font-body);
     font-size: 6px;
-    color: rgba(255,255,255,0.4);
+    color: rgba(0,0,0,0.45);
     text-transform: uppercase;
     letter-spacing: 1.5px;
     margin-bottom: 4px;
@@ -6475,14 +6679,15 @@ const useCases = [
     font-family: var(--font-display);
     font-size: 28px;
     font-weight: 800;
-    color: #fff;
+    color: #1A1A1A;
     line-height: 1;
     margin-bottom: 6px;
+    letter-spacing: -0.02em;
   }
   .loyalty-amount-cents {
     font-size: 16px;
     font-weight: 600;
-    color: rgba(255,255,255,0.5);
+    color: rgba(0,0,0,0.4);
   }
   .loyalty-card-stars {
     display: flex;
@@ -6492,7 +6697,7 @@ const useCases = [
     margin-bottom: 10px;
   }
   .loyalty-star-empty {
-    color: rgba(255,255,255,0.15);
+    color: rgba(0,0,0,0.15);
   }
   .loyalty-card-progress {
     margin-top: 4px;
@@ -6500,7 +6705,7 @@ const useCases = [
   .loyalty-card-track {
     width: 100%;
     height: 3px;
-    background: rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.06);
     border-radius: 2px;
     overflow: hidden;
   }
@@ -6515,26 +6720,26 @@ const useCases = [
     justify-content: space-between;
     font-family: var(--font-body);
     font-size: 5px;
-    color: rgba(255,255,255,0.25);
+    color: rgba(0,0,0,0.4);
     margin-top: 3px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
   .loyalty-level-next {
-    color: rgba(255,255,255,0.12);
+    color: rgba(0,0,0,0.22);
   }
 
-  /* Redeem button */
+  /* Redeem button — dark on light (inverted, classic minimal) */
   .loyalty-redeem-btn {
-    background: #fff;
-    color: #111;
+    background: #1A1A1A;
+    color: #FFFFFF;
     font-family: var(--font-display);
     font-size: 8px;
     font-weight: 700;
     text-align: center;
-    padding: 8px;
+    padding: 9px;
     border-radius: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     letter-spacing: 0.2px;
   }
 
@@ -6546,7 +6751,7 @@ const useCases = [
     font-family: var(--font-body);
     font-size: 6px;
     font-weight: 600;
-    color: rgba(255,255,255,0.3);
+    color: rgba(0,0,0,0.4);
     text-transform: uppercase;
     letter-spacing: 1px;
     margin-bottom: 6px;
@@ -6557,7 +6762,7 @@ const useCases = [
     gap: 6px;
     font-family: var(--font-body);
     font-size: 8px;
-    color: rgba(255,255,255,0.7);
+    color: rgba(0,0,0,0.7);
     padding: 4px 0;
   }
   .loyalty-tx-icon {
@@ -6572,12 +6777,12 @@ const useCases = [
     flex-shrink: 0;
   }
   .loyalty-tx-icon-plus {
-    background: rgba(42,181,160,0.15);
+    background: rgba(42,181,160,0.14);
     color: #2AB5A0;
   }
   .loyalty-tx-icon-minus {
-    background: rgba(255,255,255,0.06);
-    color: rgba(255,255,255,0.4);
+    background: rgba(0,0,0,0.05);
+    color: rgba(0,0,0,0.45);
   }
   .loyalty-tx-info {
     flex: 1;
@@ -6587,14 +6792,14 @@ const useCases = [
   .loyalty-tx-name {
     font-size: 8px;
     font-weight: 600;
-    color: rgba(255,255,255,0.8);
+    color: #1A1A1A;
   }
   .loyalty-tx-date {
     font-size: 6px;
-    color: rgba(255,255,255,0.3);
+    color: rgba(0,0,0,0.4);
   }
   .loyalty-tx-plus { color: #2AB5A0; font-weight: 700; font-size: 9px; white-space: nowrap; }
-  .loyalty-tx-minus { color: rgba(255,255,255,0.35); font-weight: 600; font-size: 9px; white-space: nowrap; }
+  .loyalty-tx-minus { color: rgba(0,0,0,0.45); font-weight: 600; font-size: 9px; white-space: nowrap; }
 
   /* ── Recomendaciones de productos ── */
   .reco-split {
@@ -6776,12 +6981,478 @@ const useCases = [
     .reco-card { animation: none; opacity: 1; transform: none; }
   }
 
+  /* ── CRM Omnicanal slide ── */
+  .omni-frame {
+    aspect-ratio: 16 / 10;
+    width: 100%;
+    background: #FAFAFA;
+    padding: 4.5% 5%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    color: #1A1A1A;
+    font-family: var(--font-body);
+  }
+  .omni-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .omni-client {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .omni-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #1A1A1A;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+  }
+  .omni-client-name {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 13px;
+    color: #1A1A1A;
+    letter-spacing: -0.01em;
+  }
+  .omni-client-meta {
+    font-size: 8px;
+    color: rgba(0,0,0,0.5);
+    margin-top: 2px;
+  }
+  .omni-tags {
+    display: flex;
+    gap: 4px;
+  }
+  .omni-tag {
+    font-family: var(--font-display);
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #1A1A1A;
+    color: #fff;
+  }
+  .omni-tag--alt {
+    background: rgba(42,181,160,0.14);
+    color: #1A8F7A;
+  }
+  .omni-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  .omni-stat {
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 10px;
+    padding: 8px 10px;
+  }
+  .omni-stat-label {
+    font-size: 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(0,0,0,0.5);
+    margin-bottom: 3px;
+  }
+  .omni-stat-value {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 800;
+    color: #1A1A1A;
+    letter-spacing: -0.01em;
+  }
+  .omni-section-label {
+    font-size: 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(0,0,0,0.45);
+    font-weight: 700;
+    margin-top: 2px;
+  }
+  .omni-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .omni-event {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 8px;
+    padding: 7px 9px;
+  }
+  .omni-event-channel {
+    flex-shrink: 0;
+    font-family: var(--font-display);
+    font-size: 7px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 3px 7px;
+    border-radius: 4px;
+    color: #fff;
+    min-width: 48px;
+    text-align: center;
+  }
+  .omni-channel--store { background: #1A1A1A; }
+  .omni-channel--online { background: #4B7BE5; }
+  .omni-channel--wa { background: #25D366; }
+  .omni-channel--ig { background: #C13584; }
+  .omni-event-body {
+    flex: 1;
+    min-width: 0;
+  }
+  .omni-event-title {
+    font-size: 9px;
+    font-weight: 700;
+    color: #1A1A1A;
+    margin-bottom: 1px;
+  }
+  .omni-event-detail {
+    font-size: 7px;
+    color: rgba(0,0,0,0.55);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .omni-event-date {
+    font-size: 7px;
+    color: rgba(0,0,0,0.4);
+    flex-shrink: 0;
+  }
+
+  /* ── Email + WhatsApp marketing — shared right column ── */
+  .mk-stats-header { margin-bottom: 6px; }
+  .mk-stats-title {
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 800;
+    color: #1A1A1A;
+    letter-spacing: -0.01em;
+  }
+  .mk-stats-segment {
+    font-size: 7px;
+    color: rgba(0,0,0,0.5);
+    margin-top: 2px;
+  }
+  .mk-stats-segment strong { color: #1A1A1A; font-weight: 700; }
+  .mk-metric { margin-bottom: 8px; }
+  .mk-metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 3px;
+  }
+  .mk-metric-label {
+    font-size: 8px;
+    color: rgba(0,0,0,0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  .mk-metric-value {
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 800;
+    color: #1A1A1A;
+    letter-spacing: -0.01em;
+  }
+  .mk-metric-bar {
+    width: 100%;
+    height: 3px;
+    background: rgba(0,0,0,0.06);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .mk-metric-fill {
+    height: 100%;
+    background: #4B7BE5;
+    border-radius: 2px;
+  }
+  .mk-metric-fill--green { background: #2AB5A0; }
+  .mk-roi {
+    margin-top: 8px;
+    padding: 10px 12px;
+    background: #1A1A1A;
+    color: #fff;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .mk-roi-label {
+    font-size: 8px;
+    color: rgba(255,255,255,0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .mk-roi-value {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 800;
+    color: #2AB5A0;
+    letter-spacing: -0.02em;
+  }
+
+  /* ── Email marketing slide ── */
+  .mk-email-frame {
+    aspect-ratio: 16 / 10;
+    width: 100%;
+    background: #FAFAFA;
+    padding: 4% 5%;
+    display: flex;
+    flex-direction: column;
+  }
+  .mk-email-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 14px;
+    height: 100%;
+  }
+  .mk-email-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .mk-email-window {
+    width: 100%;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px -4px rgba(20,20,30,0.08);
+  }
+  .mk-email-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    background: #F5F5F7;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+  .mk-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.18);
+  }
+  .mk-dot:nth-child(1) { background: #FF5F57; }
+  .mk-dot:nth-child(2) { background: #FEBC2E; }
+  .mk-dot:nth-child(3) { background: #28C840; }
+  .mk-email-from {
+    margin-left: 8px;
+    font-size: 7px;
+    color: rgba(0,0,0,0.55);
+  }
+  .mk-email-content { padding: 10px 12px; }
+  .mk-email-subject {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 800;
+    color: #1A1A1A;
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+  }
+  .mk-email-greeting {
+    font-size: 8px;
+    color: #1A1A1A;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .mk-email-text {
+    font-size: 7px;
+    line-height: 1.5;
+    color: rgba(0,0,0,0.65);
+    margin-bottom: 8px;
+  }
+  .mk-email-products {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 4px;
+    margin-bottom: 8px;
+  }
+  .mk-email-prod {
+    aspect-ratio: 1;
+    background: linear-gradient(135deg, #E8E8EC 0%, #F5F5F7 100%);
+    border-radius: 4px;
+  }
+  .mk-email-cta {
+    display: inline-block;
+    padding: 5px 10px;
+    background: #1A1A1A;
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 7px;
+    font-weight: 700;
+    border-radius: 4px;
+  }
+  .mk-email-stats {
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── WhatsApp marketing slide ── */
+  .mk-wa-frame {
+    aspect-ratio: 16 / 10;
+    width: 100%;
+    background: #FAFAFA;
+    padding: 4% 5%;
+  }
+  .mk-wa-grid {
+    display: grid;
+    grid-template-columns: 0.85fr 1fr;
+    gap: 14px;
+    height: 100%;
+    align-items: center;
+  }
+  .mk-wa-phone-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .mk-wa-phone {
+    width: 92%;
+    aspect-ratio: 9 / 19;
+    background: #E8E8EC;
+    border-radius: 22px;
+    padding: 5px;
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,0.06),
+      0 8px 24px -8px rgba(20,20,30,0.18);
+    position: relative;
+  }
+  .mk-wa-phone-notch {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 26%;
+    height: 8px;
+    background: #1A1A1A;
+    border-radius: 999px;
+    z-index: 2;
+  }
+  .mk-wa-phone-screen {
+    width: 100%;
+    height: 100%;
+    background: #ECE5DD;
+    border-radius: 17px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .mk-wa-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 8px 8px;
+    background: #075E54;
+    color: #fff;
+  }
+  .mk-wa-back {
+    font-size: 14px;
+    line-height: 1;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .mk-wa-contact-name {
+    font-size: 8px;
+    font-weight: 700;
+  }
+  .mk-wa-contact-status {
+    font-size: 6px;
+    color: rgba(255,255,255,0.7);
+    margin-top: 1px;
+  }
+  .mk-wa-thread {
+    flex: 1;
+    padding: 8px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .mk-wa-bubble {
+    max-width: 88%;
+    padding: 6px 8px;
+    border-radius: 8px;
+    font-size: 7px;
+    line-height: 1.4;
+    color: #1A1A1A;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  }
+  .mk-wa-bubble--in {
+    background: #fff;
+    align-self: flex-start;
+    border-top-left-radius: 2px;
+  }
+  .mk-wa-bubble--out {
+    background: #DCF8C6;
+    align-self: flex-end;
+    border-top-right-radius: 2px;
+  }
+  .mk-wa-template-tag {
+    font-size: 5px;
+    font-weight: 700;
+    color: #25D366;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 3px;
+  }
+  .mk-wa-msg { margin-bottom: 3px; }
+  .mk-wa-msg:last-of-type { margin-bottom: 0; }
+  .mk-wa-msg strong { font-weight: 700; }
+  .mk-wa-cta {
+    margin-top: 4px;
+    padding: 4px 6px;
+    border: 1px solid rgba(37,211,102,0.4);
+    color: #25D366;
+    font-weight: 700;
+    text-align: center;
+    border-radius: 4px;
+    font-size: 6px;
+  }
+  .mk-wa-time {
+    font-size: 5px;
+    color: rgba(0,0,0,0.4);
+    margin-top: 3px;
+    text-align: right;
+  }
+  .mk-wa-stats {
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+  }
+  .mk-wa-stats .mk-metric-fill { background: #25D366; }
+  .mk-wa-stats .mk-roi-value { color: #25D366; }
+
   /* ── AXO IA Empresarial ── */
   .axo-split {
     display: flex;
     aspect-ratio: 16 / 10;
     width: 100%;
-    background: #111;
+    background: #FAFAFA;
   }
   .axo-video-wrap {
     flex: 1.2;
@@ -6804,28 +7475,32 @@ const useCases = [
     width: 65%;
     max-width: 220px;
     aspect-ratio: 9 / 19;
-    background: #222;
+    background: #E8E8EC;
     border-radius: 28px;
-    padding: 8px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    padding: 6px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.6) inset,
+      0 0 0 1px rgba(0,0,0,0.06),
+      0 12px 32px -8px rgba(20,20,30,0.18),
+      0 4px 12px -4px rgba(20,20,30,0.10);
     position: relative;
   }
   .axo-phone-notch {
     position: absolute;
-    top: 8px;
+    top: 10px;
     left: 50%;
     transform: translateX(-50%);
-    width: 35%;
-    height: 14px;
-    background: #222;
-    border-radius: 0 0 10px 10px;
+    width: 28%;
+    height: 10px;
+    background: #1A1A1A;
+    border-radius: 999px;
     z-index: 2;
   }
   .axo-phone-screen {
     width: 100%;
     height: 100%;
-    background: #111;
-    border-radius: 20px;
+    background: #FAFAFA;
+    border-radius: 22px;
     overflow: hidden;
   }
 
@@ -6834,7 +7509,7 @@ const useCases = [
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: 18px 8px 8px;
+    padding: 22px 8px 8px;
   }
   .axo-chat-header {
     text-align: center;
@@ -6850,7 +7525,7 @@ const useCases = [
   .axo-chat-subtitle {
     font-family: var(--font-body);
     font-size: 7px;
-    color: rgba(255,255,255,0.35);
+    color: rgba(0,0,0,0.45);
     margin-top: 1px;
   }
 
@@ -6883,10 +7558,12 @@ const useCases = [
     85%, 100%{ opacity: 0; transform: translateY(-4px); }
   }
   .axo-msg-ai {
-    background: rgba(255,255,255,0.06);
-    color: rgba(255,255,255,0.85);
+    background: #FFFFFF;
+    border: 1px solid rgba(0,0,0,0.06);
+    color: #1A1A1A;
     align-self: flex-start;
     border-bottom-left-radius: 3px;
+    box-shadow: 0 1px 2px rgba(20,20,30,0.04);
   }
   .axo-msg-user {
     background: #2AB5A0;
@@ -6908,8 +7585,8 @@ const useCases = [
     display: flex;
     align-items: center;
     gap: 6px;
-    background: rgba(42,181,160,0.1);
-    border: 1px solid rgba(42,181,160,0.2);
+    background: rgba(42,181,160,0.10);
+    border: 1px solid rgba(42,181,160,0.25);
     border-radius: 8px;
     padding: 5px 6px;
     margin-top: 3px;
@@ -6931,11 +7608,11 @@ const useCases = [
     font-family: var(--font-display);
     font-size: 9px;
     font-weight: 700;
-    color: #fff;
+    color: #1A1A1A;
   }
   .axo-action-detail {
     font-size: 7px;
-    color: rgba(255,255,255,0.4);
+    color: rgba(0,0,0,0.5);
   }
 
   /* Typing indicator */
@@ -6957,13 +7634,13 @@ const useCases = [
   /* Chat input */
   .axo-chat-input {
     margin-top: auto;
-    padding: 6px 10px;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.08);
+    padding: 7px 10px;
+    background: #FFFFFF;
+    border: 1px solid rgba(0,0,0,0.08);
     border-radius: 12px;
     font-family: var(--font-body);
     font-size: 8px;
-    color: rgba(255,255,255,0.25);
+    color: rgba(0,0,0,0.4);
   }
 
   @media (prefers-reduced-motion: reduce) {
