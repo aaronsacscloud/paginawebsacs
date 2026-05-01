@@ -86,6 +86,10 @@ const showPorqueSacs = quoteMeta.mostrar_porque_sacs !== undefined ? quoteMeta.m
 const timelineTipo = quoteMeta.timeline_tipo || '1suc';
 const showImplementacion = quoteMeta.mostrar_implementacion !== undefined ? quoteMeta.mostrar_implementacion : true;
 const implementacionNota = quoteMeta.implementacion_nota || '';
+const promoLabel = (quoteMeta.promo_label || '').trim();
+const extensions = Array.isArray(quoteMeta.extensions) ? quoteMeta.extensions : [];
+const totalExtensionDays = extensions.reduce((s: number, ext: any) => s + (Number(ext.days) || 0), 0);
+const wasExtended = extensions.length > 0;
 const isAnnualQuote = (Array.isArray(quote.items) ? quote.items : []).some((i: any) => i.tipo === 'plan' && i.periodo === 'anual');
 
 // Quote state flags (shared with sidebar + pills)
@@ -109,8 +113,18 @@ const fmtDate = (d: string | null) => {
   const year = date.getFullYear();
   return `${day}/${month}/${year}`;
 };
+const fmtDateLong = (d: string | null) => {
+  if (!d) return '';
+  const date = new Date(d.length === 10 ? d + 'T12:00:00' : d);
+  if (isNaN(date.getTime())) return '';
+  const wd = date.toLocaleDateString('es-MX', { weekday: 'long' });
+  const day = date.getDate();
+  const month = date.toLocaleDateString('es-MX', { month: 'long' });
+  return `${wd[0].toUpperCase() + wd.slice(1)} ${day} de ${month}`;
+};
 const fecha = fmtDate(quote.created_at);
 const vigenciaFecha = fmtDate(quote.vigencia);
+const vigenciaFechaLarga = fmtDateLong(quote.vigencia);
 
 // Classify items
 const planItems = items.filter((i: any) => i.tipo === 'plan');
@@ -246,8 +260,13 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
         )}
         <div class="quote-number">{quote.numero}</div>
         <div class="quote-date">Emitida {fecha}</div>
-        {!isExpired && !isClosed && daysLeft > 0 && <div class="quote-date">Válida hasta {vigenciaFecha} · {daysLeft}d restantes</div>}
-        {isExpired && !isClosed && <div class="quote-date">Venció el {vigenciaFecha}</div>}
+        {!isExpired && !isClosed && daysLeft > 0 && (
+          <div class="quote-date">
+            Válida hasta {vigenciaFecha} · {daysLeft}d restantes
+            {wasExtended && <span style="color:#1d4ed8;font-weight:600;"> · Extendida +{totalExtensionDays}d</span>}
+          </div>
+        )}
+        {isExpired && !isClosed && <div class="quote-date">Venció el {vigenciaFecha}{wasExtended ? ` · Extendida +${totalExtensionDays}d` : ''}</div>}
         {isAccepted && !isPaid && quote.aceptado_fecha && <div class="quote-date" style="color:#1e8471;font-weight:600">Aceptada el {fmtDate(quote.aceptado_fecha)}</div>}
         {isPaid && quote.aceptado_fecha && <div class="quote-date" style="color:#3764c4;font-weight:600">Pagada · Aceptada el {fmtDate(quote.aceptado_fecha)}</div>}
       </div>
@@ -345,6 +364,21 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
     <!-- Urgency timer -->
     {showTimer && !isExpired && !isClosed && daysLeft > 0 && daysLeft <= 15 && (
       <div class:list={['quote-timer', { 'quote-timer--urgent': daysLeft <= 5 }]}>
+        {wasExtended && (
+          <div class="quote-timer-extended">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/>
+            </svg>
+            <span>Vigencia extendida +{totalExtensionDays} {totalExtensionDays === 1 ? 'día' : 'días'}</span>
+          </div>
+        )}
+        {promoLabel && (
+          <div class="quote-timer-promo">
+            <span class="quote-timer-promo-dot"></span>
+            <span class="quote-timer-promo-label">Promoción aplicada</span>
+            <span class="quote-timer-promo-name">{promoLabel}</span>
+          </div>
+        )}
         <div class="quote-timer-label">{quote.urgencia === 'oferta' ? 'Oferta especial' : 'Esta cotización'} vence en</div>
         <div class="quote-timer-countdown" id="countdown" data-expires={quote.vigencia}>
           <span class="quote-timer-num" id="timer-days">{daysLeft}</span>
@@ -356,6 +390,10 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
           <span class="quote-timer-num" id="timer-secs">0</span>
           <span class="quote-timer-unit">seg</span>
         </div>
+        {vigenciaFechaLarga && (
+          <div class="quote-timer-deadline">{vigenciaFechaLarga} vence tu cotización</div>
+        )}
+        <div class="quote-timer-warning">Después de esa fecha los precios vuelven al valor normal sin promoción.</div>
         {(() => {
           const globalSaving = quote.descuento_global > 0 ? (quote.descuento_tipo === 'pct' ? (quote.subtotal || 0) * quote.descuento_global / 100 : quote.descuento_global) : 0;
           const promoSaving = promoItems.reduce((s: number, i: any) => s + (i.precio_original || 0), 0);
@@ -368,6 +406,14 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
             <div class="quote-timer-savings">Los descuentos de esta cotización representan un ahorro de {fmt(totalSaving)} {quote.moneda}</div>
           ) : null;
         })()}
+      </div>
+    )}
+
+    {isExpired && !isClosed && (
+      <div class="quote-expired-notice">
+        <strong>Esta cotización venció el {vigenciaFechaLarga || vigenciaFecha}{wasExtended ? ` (incluyendo extensión de +${totalExtensionDays} ${totalExtensionDays === 1 ? 'día' : 'días'})` : ''}.</strong>
+        {promoLabel ? <>La promoción <em>{promoLabel}</em> ya no aplica</> : <>La promoción ya no aplica</>}
+        {' '}— los precios tachados son los que tenías; los precios en verde son los actuales. Si quieres reactivarla, contáctanos.
       </div>
     )}
 
@@ -392,11 +438,16 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
           const hasDiscount = item.tipo === 'plan' && parseFloat(item.descuento_pct || 0) > 0;
           const beforeDiscount = (item.precio_unitario || 0) * suc * (isAnnual ? 10 : 1);
           const isPromo = item.es_promocion;
+          const promoUnit = item.precio_unitario || item.monto || 0;
+          const normalUnit = item.precio_original || 0;
+          const promoSubtotal = item.subtotal || item.monto || 0;
+          const normalSubtotalExtra = normalUnit; // extras: precio_original ya es el monto único
+          const showExpiredCompare = isExpired && isPromo && normalUnit > 0;
 
           return (
-            <tr class:list={[{ 'qt-promo-row': isPromo }]}>
+            <tr class:list={[{ 'qt-promo-row': isPromo, 'qt-expired-row': showExpiredCompare }]}>
               <td class="qt-concept">
-                {isPromo && <span class="qt-promo-badge">PROMOCION</span>}
+                {isPromo && <span class:list={['qt-promo-badge', { 'qt-promo-badge--expired': showExpiredCompare }]}>{showExpiredCompare ? 'PROMO VENCIDA' : 'PROMOCION'}</span>}
                 <strong>{item.tipo === 'plan' ? `Plan ${item.nombre}` : item.nombre}</strong>
                 {item.tipo === 'plan' && (
                   <div class="qt-desc">
@@ -412,15 +463,33 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
               </td>
               <td class="qt-qty">{item.tipo === 'plan' ? `${suc} suc.` : '1'}</td>
               <td class="qt-price">
-                {isPromo && item.precio_original ? <span class="qt-strikethrough">{fmt(item.precio_original)}</span> : ''}
-                {fmt(item.precio_unitario || item.monto || 0)}
+                {showExpiredCompare ? (
+                  <span class="qt-compare">
+                    <span class="qt-price-strike">{fmt(promoUnit)}</span>
+                    <span class="qt-price-normal">{fmt(normalUnit)}</span>
+                  </span>
+                ) : (
+                  <>
+                    {isPromo && item.precio_original ? <span class="qt-strikethrough">{fmt(item.precio_original)}</span> : ''}
+                    {fmt(promoUnit)}
+                  </>
+                )}
               </td>
               <td class="qt-subtotal">
-                {hasDiscount && <span class="qt-strikethrough">{fmt(beforeDiscount)}</span>}
-                {isPromo && item.precio_original ? (
-                  <span><span class="qt-strikethrough">{fmt(item.precio_original)}</span> <span class="qt-promo-price">{fmt(0)}</span></span>
+                {showExpiredCompare ? (
+                  <span class="qt-compare">
+                    <span class="qt-price-strike">{fmt(promoSubtotal)}</span>
+                    <span class="qt-price-normal">{fmt(normalSubtotalExtra)} {quote.moneda}</span>
+                  </span>
                 ) : (
-                  <span>{fmt(item.subtotal || item.monto || 0)} {quote.moneda}</span>
+                  <>
+                    {hasDiscount && <span class="qt-strikethrough">{fmt(beforeDiscount)}</span>}
+                    {isPromo && item.precio_original ? (
+                      <span><span class="qt-strikethrough">{fmt(item.precio_original)}</span> <span class="qt-promo-price">{fmt(0)}</span></span>
+                    ) : (
+                      <span>{fmt(promoSubtotal)} {quote.moneda}</span>
+                    )}
+                  </>
                 )}
               </td>
             </tr>
@@ -430,43 +499,79 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
     </table>
 
     <!-- Totals -->
-    <div class="quote-totals">
-      <div class="quote-total-row">
-        <span>Subtotal</span>
-        <span>{fmt(quote.subtotal || 0)} {quote.moneda}</span>
-      </div>
-      {quote.descuento_global > 0 && (
-        <div class="quote-total-row quote-discount">
-          <span>Descuento {quote.descuento_tipo === 'pct' ? `(${quote.descuento_global}%)` : ''}</span>
-          <span>-{fmt(quote.descuento_tipo === 'pct' ? (quote.subtotal || 0) * quote.descuento_global / 100 : quote.descuento_global)} {quote.moneda}</span>
-        </div>
-      )}
-      {promoItems.length > 0 && (() => {
-        const promoSavings = promoItems.reduce((s: number, i: any) => s + (i.precio_original || 0), 0);
-        return promoSavings > 0 ? (
-          <div class="quote-total-row quote-discount">
-            <span>Ahorro por promociones ({promoItems.length})</span>
-            <span>-{fmt(promoSavings)} {quote.moneda}</span>
+    {(() => {
+      const globalDiscAmt = quote.descuento_global > 0 ? (quote.descuento_tipo === 'pct' ? (quote.subtotal || 0) * quote.descuento_global / 100 : quote.descuento_global) : 0;
+      const promoSavingsAmt = promoItems.reduce((s: number, i: any) => s + (i.precio_original || 0), 0);
+      // Total sin promoción = subtotal de items SIN tomar promo (precio_original cuando aplica) y sin descuento_global
+      const totalSinPromo = items.reduce((s: number, i: any) => {
+        if (i.es_promocion && i.precio_original) return s + i.precio_original;
+        return s + (i.subtotal || i.monto || 0);
+      }, 0);
+      const totalSinPromoConIva = ivaMode === 'suma' ? totalSinPromo * 1.16 : totalSinPromo;
+      return (
+        <div class="quote-totals">
+          <div class="quote-total-row">
+            <span>Subtotal</span>
+            <span>{fmt(quote.subtotal || 0)} {quote.moneda}</span>
           </div>
-        ) : null;
-      })()}
-      {ivaMode === 'suma' && (
-        <div class="quote-total-row">
-          <span>IVA (16%)</span>
-          <span>+{fmt(quote.iva_monto || 0)} {quote.moneda}</span>
+          {quote.descuento_global > 0 && (
+            isExpired ? (
+              <div class="quote-total-row quote-total-row--strike">
+                <span>Descuento promoción <em>(ya no aplica)</em></span>
+                <span class="qt-price-strike">-{fmt(globalDiscAmt)} {quote.moneda}</span>
+              </div>
+            ) : (
+              <div class="quote-total-row quote-discount">
+                <span>Descuento {quote.descuento_tipo === 'pct' ? `(${quote.descuento_global}%)` : ''}</span>
+                <span>-{fmt(globalDiscAmt)} {quote.moneda}</span>
+              </div>
+            )
+          )}
+          {promoItems.length > 0 && promoSavingsAmt > 0 && (
+            isExpired ? (
+              <div class="quote-total-row quote-total-row--strike">
+                <span>Ahorro por promociones <em>(ya no aplica)</em></span>
+                <span class="qt-price-strike">-{fmt(promoSavingsAmt)} {quote.moneda}</span>
+              </div>
+            ) : (
+              <div class="quote-total-row quote-discount">
+                <span>Ahorro por promociones ({promoItems.length})</span>
+                <span>-{fmt(promoSavingsAmt)} {quote.moneda}</span>
+              </div>
+            )
+          )}
+          {ivaMode === 'suma' && (
+            <div class="quote-total-row">
+              <span>IVA (16%)</span>
+              <span>+{fmt(quote.iva_monto || 0)} {quote.moneda}</span>
+            </div>
+          )}
+          {ivaMode === 'incluido' && (
+            <div class="quote-total-row" style="font-size:0.75rem;color:#999">
+              <span>IVA incluido en precios</span>
+              <span>{fmt(quote.iva_monto || 0)} {quote.moneda}</span>
+            </div>
+          )}
+          {isExpired ? (
+            <>
+              <div class="quote-total-row quote-total-row--strike">
+                <span>Total con promoción <em>(ya no aplica)</em></span>
+                <span class="qt-price-strike">{fmt(quote.total || 0)} {quote.moneda}</span>
+              </div>
+              <div class="quote-total-row quote-total-final quote-total-final--normal">
+                <span>Total sin promoción</span>
+                <span>{fmt(totalSinPromoConIva)} {quote.moneda}</span>
+              </div>
+            </>
+          ) : (
+            <div class="quote-total-row quote-total-final">
+              <span>Total {ivaMode === 'incluido' ? '(IVA incluido)' : ''}</span>
+              <span class="count-up" data-count={quote.total || 0} data-suffix={` ${quote.moneda}`}>{fmt(quote.total || 0)} {quote.moneda}</span>
+            </div>
+          )}
         </div>
-      )}
-      {ivaMode === 'incluido' && (
-        <div class="quote-total-row" style="font-size:0.75rem;color:#999">
-          <span>IVA incluido en precios</span>
-          <span>{fmt(quote.iva_monto || 0)} {quote.moneda}</span>
-        </div>
-      )}
-      <div class="quote-total-row quote-total-final">
-        <span>Total {ivaMode === 'incluido' ? '(IVA incluido)' : ''}</span>
-        <span class="count-up" data-count={quote.total || 0} data-suffix={` ${quote.moneda}`}>{fmt(quote.total || 0)} {quote.moneda}</span>
-      </div>
-    </div>
+      );
+    })()}
 
     </section>
 
@@ -1403,7 +1508,10 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-tab-panel { display: none; animation: tabFade 220ms ease; }
 .quote-tab-panel.is-active { display: block; }
 @keyframes tabFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-@media (prefers-reduced-motion: reduce) { .quote-tab-panel { animation: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .quote-tab-panel { animation: none; }
+  .quote-timer-promo-dot { animation: none !important; }
+}
 /* Constrain tab-panel inner content width on desktop for Squarespace-style breathing room */
 @media (min-width: 1024px) {
   .quote-tab-panel > * { max-width: 680px; margin-left: auto; margin-right: auto; }
@@ -1502,8 +1610,90 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-timer-unit { font-size: 0.75rem; font-weight: 500; opacity: 0.7; margin-right: 12px; }
 .quote-timer-savings { font-size: 0.8125rem; font-weight: 600; margin-top: 12px; opacity: 0.9; }
 
+/* Extension chip — even more discreet than promo pill */
+.quote-timer-extended {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px;
+  margin: 0 auto 10px;
+  background: rgba(75,123,229,0.10);
+  border: 1px solid rgba(75,123,229,0.28);
+  border-radius: 999px;
+  font-size: 0.6875rem; font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgba(255,255,255,0.85);
+}
+.quote-timer-extended svg { opacity: 0.8; }
+
+/* Promo pill above timer */
+.quote-timer-promo {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 14px 6px 12px;
+  margin: 0 auto 16px;
+  background: rgba(42,181,160,0.12);
+  border: 1px solid rgba(42,181,160,0.35);
+  border-radius: 999px;
+  font-size: 0.6875rem; letter-spacing: 0.04em;
+}
+.quote-timer-promo-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #2AB5A0;
+  box-shadow: 0 0 0 0 rgba(42,181,160,0.6);
+  animation: quote-promo-pulse 2s infinite;
+}
+@keyframes quote-promo-pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(42,181,160,0.6); }
+  50%     { box-shadow: 0 0 0 6px rgba(42,181,160,0); }
+}
+.quote-timer-promo-label { font-weight: 500; opacity: 0.7; text-transform: uppercase; }
+.quote-timer-promo-name {
+  font-weight: 800; letter-spacing: 0.06em;
+  font-family: var(--font-display);
+  color: #2AB5A0;
+}
+.quote-timer-deadline {
+  margin-top: 14px;
+  font-size: 0.9375rem; font-weight: 600; opacity: 0.95;
+  font-family: var(--font-display);
+  letter-spacing: 0.005em;
+}
+.quote-timer-warning {
+  margin-top: 6px;
+  font-size: 0.75rem; opacity: 0.55; font-style: italic;
+}
+
 .quote-dark .quote-timer { background: rgba(255,255,255,0.05); }
 .quote-dark .quote-timer--urgent { background: rgba(255,255,255,0.05); }
+
+/* ─── Expired notice + price comparison ─── */
+.quote-expired-notice {
+  margin: 0 40px 16px; padding: 14px 18px;
+  background: #fff7ed; border: 1px solid #fdba74; color: #7c2d12;
+  border-radius: 10px; font-size: 0.8125rem; line-height: 1.55;
+}
+.quote-expired-notice strong { display: block; margin-bottom: 4px; color: #9a3412; font-weight: 700; }
+.quote-expired-notice em { font-style: normal; font-weight: 700; }
+.quote-dark .quote-expired-notice { background: rgba(253,186,116,0.08); border-color: rgba(253,186,116,0.3); color: #fed7aa; }
+.quote-dark .quote-expired-notice strong { color: #fdba74; }
+
+.qt-compare { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 1px; line-height: 1.25; }
+.qt-price-strike { text-decoration: line-through; color: #b91c1c; opacity: 0.7; font-weight: 500; }
+.qt-price-normal { color: #047857; font-weight: 700; }
+.quote-dark .qt-price-strike { color: #fca5a5; }
+.quote-dark .qt-price-normal { color: #6ee7b7; }
+
+.qt-promo-badge--expired { background: #b91c1c !important; }
+.quote-dark .qt-promo-badge--expired { background: #b91c1c !important; color: #fff !important; }
+
+.quote-total-row--strike { color: #b91c1c; opacity: 0.75; font-size: 0.75rem; }
+.quote-total-row--strike em { font-style: italic; opacity: 0.85; font-weight: 500; }
+.quote-dark .quote-total-row--strike { color: #fca5a5; }
+.quote-total-final--normal {
+  border-top: 1px dashed rgba(0,0,0,0.18);
+  color: #047857;
+}
+.quote-total-final--normal span:last-child { color: #047857; font-weight: 800; }
+.quote-dark .quote-total-final--normal { border-color: rgba(255,255,255,0.18); color: #6ee7b7; }
+.quote-dark .quote-total-final--normal span:last-child { color: #6ee7b7; }
 
 /* ─── Bank account ─── */
 .quote-bank { padding: 24px 40px; border-top: 1px solid #f0f0f0; }
@@ -2043,6 +2233,11 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
   .quote-timer { background: #1a1a1a !important; color: #fff !important; }
   .quote-timer--urgent { background: #1a1a1a !important; }
   .qt-promo-badge { background: #2AB5A0 !important; color: #fff !important; }
+  .qt-promo-badge--expired { background: #b91c1c !important; }
+  .quote-expired-notice { background: #fff7ed !important; border-color: #fdba74 !important; color: #7c2d12 !important; }
+  .qt-price-strike { color: #b91c1c !important; }
+  .qt-price-normal { color: #047857 !important; }
+  .quote-timer-promo-dot { animation: none !important; }
   .qt-promo-row { background: rgba(42,181,160,0.03) !important; }
   .qt-savings { color: #2AB5A0 !important; }
   .quote-total-row.quote-discount { color: #2AB5A0 !important; }
@@ -2125,6 +2320,16 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
   .quote-timer { padding: 20px 24px; }
   .quote-timer-num { font-size: 1.75rem; }
   .quote-timer-savings { font-size: 0.75rem; }
+  .quote-timer-extended { font-size: 0.625rem; padding: 3px 10px; margin-bottom: 8px; gap: 5px; }
+  .quote-timer-promo { font-size: 0.625rem; padding: 5px 12px 5px 10px; gap: 6px; margin-bottom: 12px; }
+  .quote-timer-promo-name { font-size: 0.6875rem; }
+  .quote-timer-deadline { font-size: 0.8125rem; margin-top: 12px; }
+  .quote-timer-warning { font-size: 0.6875rem; margin-top: 4px; }
+  /* Expired notice */
+  .quote-expired-notice { margin: 0 24px 12px; padding: 12px 14px; font-size: 0.75rem; }
+  /* Compare prices stack on mobile */
+  .qt-compare { align-items: flex-end; }
+  .qt-price-strike, .qt-price-normal { font-size: 0.75rem; }
   /* Payments */
   .quote-payments { padding: 24px; }
   .quote-payment-block { padding: 14px; }
@@ -2184,29 +2389,53 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 </style>
 
 <script>
-  // Countdown timer
+  // Countdown timer — DOM-cached, visibility-aware, self-stops at zero
   const countdown = document.getElementById('countdown');
   if (countdown) {
-    const expires = new Date(countdown.dataset.expires + 'T23:59:59').getTime();
-    function updateTimer() {
-      const now = Date.now();
-      const diff = expires - now;
-      if (diff <= 0) return;
+    const expiresRaw = countdown.dataset.expires || '';
+    const expires = new Date(expiresRaw + 'T23:59:59').getTime();
+    const dEl = document.getElementById('timer-days');
+    const hEl = document.getElementById('timer-hours');
+    const mEl = document.getElementById('timer-mins');
+    const sEl = document.getElementById('timer-secs');
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
+    function tick() {
+      const diff = expires - Date.now();
+      if (diff <= 0) {
+        if (dEl) dEl.textContent = '0';
+        if (hEl) hEl.textContent = '0';
+        if (mEl) mEl.textContent = '0';
+        if (sEl) sEl.textContent = '0';
+        if (intervalId !== null) { clearInterval(intervalId); intervalId = null; }
+        return;
+      }
       const days = Math.floor(diff / 86400000);
       const hours = Math.floor((diff % 86400000) / 3600000);
       const mins = Math.floor((diff % 3600000) / 60000);
       const secs = Math.floor((diff % 60000) / 1000);
-      const dEl = document.getElementById('timer-days');
-      const hEl = document.getElementById('timer-hours');
-      const mEl = document.getElementById('timer-mins');
-      const sEl = document.getElementById('timer-secs');
       if (dEl) dEl.textContent = String(days);
       if (hEl) hEl.textContent = String(hours);
       if (mEl) mEl.textContent = String(mins);
       if (sEl) sEl.textContent = String(secs);
     }
-    updateTimer();
-    setInterval(updateTimer, 1000);
+
+    function start() {
+      if (intervalId !== null) return;
+      tick();
+      intervalId = setInterval(tick, 1000);
+    }
+    function stop() {
+      if (intervalId !== null) { clearInterval(intervalId); intervalId = null; }
+    }
+
+    if (!isNaN(expires)) {
+      start();
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) stop();
+        else { tick(); start(); }
+      }, { passive: true });
+    }
   }
 
   // ─── Track view (skip if admin) ───

@@ -405,6 +405,12 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     // Reject modal
     const [rejectForm, setRejectForm] = useState<any>(null); // { quoteId, numero, motivo, detalle }
     const [rejectSaving, setRejectSaving] = useState(false);
+    // Minuta IA
+    const [formattingMinuta, setFormattingMinuta] = useState(false);
+    const [minutaError, setMinutaError] = useState<string | null>(null);
+    // Extender vigencia
+    const [extendForm, setExtendForm] = useState<any>(null); // { id, numero, vigencia, days }
+    const [extending, setExtending] = useState(false);
 
     useEffect(() => {
       fetch('/api/revenue/quotes').then(r => r.json()).then(d => setQuotes(Array.isArray(d) ? d : []));
@@ -494,6 +500,10 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       meta.mostrar_implementacion = qf.mostrar_implementacion !== undefined ? qf.mostrar_implementacion : true;
       if (qf.implementacion_nota) meta.implementacion_nota = qf.implementacion_nota;
       else delete meta.implementacion_nota;
+      if (qf.promo_label?.trim()) meta.promo_label = qf.promo_label.trim();
+      else delete meta.promo_label;
+      if (qf.minuta_raw?.trim()) meta.minuta_raw = qf.minuta_raw.trim();
+      else delete meta.minuta_raw;
       if (qf.key_points?.length) meta.key_points = qf.key_points;
       else delete meta.key_points;
       if (qf.roi) meta.roi = qf.roi;
@@ -527,7 +537,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
         notas = addTimelineEvent(notas, 'edited');
       }
       // Remove frontend-only fields
-      const { _custom_days, logo_url, iva_mode: _im, _pago_mode, mostrar_timer: _mt, mostrar_features: _mf, mostrar_desglose: _md, mostrar_condiciones: _mc, mostrar_key_points: _mkp, key_points: _kp, roi: _roi, antes_despues: _ad, mostrar_roi: _mr, mostrar_antes_despues: _mad, mostrar_firma: _msf, mostrar_qr: _mq, mostrar_animaciones: _ma, mostrar_timeline: _mtl, timeline_tipo: _tt, mostrar_implementacion: _mi, implementacion_nota: _in, mostrar_porque_sacs: _mps, ...rest } = qf;
+      const { _custom_days, logo_url, iva_mode: _im, _pago_mode, mostrar_timer: _mt, mostrar_features: _mf, mostrar_desglose: _md, mostrar_condiciones: _mc, mostrar_key_points: _mkp, key_points: _kp, roi: _roi, antes_despues: _ad, mostrar_roi: _mr, mostrar_antes_despues: _mad, mostrar_firma: _msf, mostrar_qr: _mq, mostrar_animaciones: _ma, mostrar_timeline: _mtl, timeline_tipo: _tt, mostrar_implementacion: _mi, implementacion_nota: _in, mostrar_porque_sacs: _mps, promo_label: _pl, minuta_raw: _mr2, ...rest } = qf;
       const folioOffset = typeof window !== 'undefined' ? parseInt(localStorage.getItem('sacs_folio_offset') || '0') || 0 : 0;
       const body = { ...rest, notas, subtotal: itemsSubtotal, iva_incluido: ivaMode !== 'sin', iva_monto: Math.round(ivaMonto), total: Math.round(grandTotal), estado: rest.estado || 'sent', _folio_offset: folioOffset };
 
@@ -590,6 +600,69 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
         if (goNow) window.open(data.acuse_url + '?admin', '_blank');
       } else {
         alert('Cotización marcada como pagada (no se generó acuse — verifica que el total > 0).');
+      }
+    };
+
+    const formatMinuta = async () => {
+      const raw = (qf.minuta_raw || '').trim();
+      setMinutaError(null);
+      if (raw.length < 30) {
+        setMinutaError('Escribe al menos 30 caracteres con los puntos de la llamada.');
+        return;
+      }
+      // Warn before overwriting existing manual edits
+      const existing = (qf.key_points || []).length;
+      if (existing > 0) {
+        const ok = confirm(`Ya tienes ${existing} ${existing === 1 ? 'punto' : 'puntos'} en la minuta. Procesar con IA reemplazará todos los puntos actuales. ¿Continuar?`);
+        if (!ok) return;
+      }
+      setFormattingMinuta(true);
+      try {
+        const res = await fetch('/api/revenue/format-minuta', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ raw }),
+        });
+        let data: any = {};
+        try { data = await res.json(); } catch { /* non-JSON response */ }
+        if (!res.ok) throw new Error(data?.error || `Error ${res.status}`);
+        const newPoints = Array.isArray(data.key_points) ? data.key_points : [];
+        if (newPoints.length === 0) {
+          setMinutaError('No se pudieron extraer puntos. Agrega más detalle a las notas y vuelve a intentar.');
+        } else {
+          setQf({ ...qf, key_points: newPoints });
+        }
+      } catch (e: any) {
+        setMinutaError(e?.message || 'Error de red al procesar la minuta');
+      } finally {
+        setFormattingMinuta(false);
+      }
+    };
+
+    const openExtendModal = (q: any) => {
+      setExtendForm({ id: q.id, numero: q.numero, vigencia: q.vigencia, days: 2 });
+    };
+
+    const submitExtend = async () => {
+      if (!extendForm) return;
+      const days = parseInt(extendForm.days);
+      if (!Number.isFinite(days) || days < 1) { alert('Días inválidos'); return; }
+      setExtending(true);
+      try {
+        const res = await fetch('/api/revenue/extend-quote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: extendForm.id, days }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al extender');
+        const d = await fetch('/api/revenue/quotes').then(r => r.json());
+        setQuotes(Array.isArray(d) ? d : []);
+        setExtendForm(null);
+      } catch (e: any) {
+        alert(e.message || 'Error al extender la cotización');
+      } finally {
+        setExtending(false);
       }
     };
 
@@ -1100,6 +1173,9 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   const ec = estadoColors[q.estado] || estadoColors.draft;
                   const isSel = qSelected.has(q.id);
                   const days = q.vigencia ? Math.ceil(daysUntil(q.vigencia)) : null;
+                  const qMeta = parseMeta(q.notas).meta;
+                  const extensions = Array.isArray(qMeta.extensions) ? qMeta.extensions : [];
+                  const totalExtDays = extensions.reduce((s: number, ext: any) => s + (Number(ext.days) || 0), 0);
                   return (
                     <tr key={q.id} style={{ background: isSel ? '#f0f7ff' : 'transparent', transition: 'background 0.12s' }} onMouseEnter={e => { if (!isSel) (e.currentTarget.style.background = '#f8f9fb'); }} onMouseLeave={e => { if (!isSel) (e.currentTarget.style.background = 'transparent'); }}>
                       <td style={{ padding: `${rowPad.split(' ')[0]} 0 ${rowPad.split(' ')[0]} 16px`, borderBottom: '1px solid #f0f0f0' }}>
@@ -1116,10 +1192,17 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                         {q.vigencia ? (days !== null && days < 0 ? `Vencida hace ${-days}d` : days === 0 ? 'Vence hoy' : `${days}d`) : '—'}
                       </td>}
                       {qVisibleCols.has('estado') && <td style={{ ...S.td, padding: rowPad }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.6875rem', fontWeight: 700, padding: '3px 10px', borderRadius: 12, background: ec.bg, color: ec.fg }}>
-                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: ec.dot }}></span>
-                          {estadoLabels[q.estado] || q.estado}
-                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 4, alignItems: 'flex-start' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.6875rem', fontWeight: 700, padding: '3px 10px', borderRadius: 12, background: ec.bg, color: ec.fg }}>
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: ec.dot }}></span>
+                            {estadoLabels[q.estado] || q.estado}
+                          </span>
+                          {extensions.length > 0 && (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '0.625rem', fontWeight: 700, color: '#1d4ed8', background: '#eff6ff', padding: '1px 7px', borderRadius: 10, letterSpacing: '0.02em', whiteSpace: 'nowrap' as const }} title={`Extendida ${extensions.length} ${extensions.length === 1 ? 'vez' : 'veces'}: +${totalExtDays}d en total`}>
+                              ⏱ +{totalExtDays}d
+                            </span>
+                          )}
+                        </div>
                       </td>}
                       {qVisibleCols.has('views') && <td style={{ ...S.td, padding: rowPad }}>
                         {views > 0 ? (
@@ -1131,11 +1214,12 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                       </td>}
                       {qVisibleCols.has('actions') && <td style={{ ...S.td, padding: rowPad, textAlign: 'right' as const, whiteSpace: 'nowrap' as const, position: 'relative' as const }}>
                         <a href={`/cotizacion/${q.id}?admin=1`} target="_blank" rel="noopener" style={{ ...S.btnSmall, textDecoration: 'none', display: 'inline-flex', marginRight: 4 }}>Ver</a>
-                        <button onClick={() => { const { meta: m } = parseMeta(q.notas); setQf({ ...q, items: Array.isArray(q.items) ? q.items : [], logo_url: m.logo_url || '', iva_mode: m.iva_mode || (q.iva_incluido ? 'suma' : 'sin'), mostrar_timer: m.mostrar_timer !== undefined ? m.mostrar_timer : true, mostrar_features: m.mostrar_features !== undefined ? m.mostrar_features : true, mostrar_desglose: m.mostrar_desglose !== undefined ? m.mostrar_desglose : true, mostrar_condiciones: m.mostrar_condiciones !== undefined ? m.mostrar_condiciones : true, mostrar_key_points: m.mostrar_key_points !== undefined ? m.mostrar_key_points : true, key_points: m.key_points || [], roi: m.roi || null, antes_despues: m.antes_despues || [], mostrar_roi: m.mostrar_roi || false, mostrar_antes_despues: m.mostrar_antes_despues || false, mostrar_firma: m.mostrar_firma !== undefined ? m.mostrar_firma : true, mostrar_qr: m.mostrar_qr !== undefined ? m.mostrar_qr : true, mostrar_animaciones: m.mostrar_animaciones !== undefined ? m.mostrar_animaciones : true, mostrar_timeline: m.mostrar_timeline !== undefined ? m.mostrar_timeline : true, timeline_tipo: m.timeline_tipo || '1suc', mostrar_implementacion: m.mostrar_implementacion !== undefined ? m.mostrar_implementacion : true, implementacion_nota: m.implementacion_nota || '', mostrar_porque_sacs: m.mostrar_porque_sacs !== undefined ? m.mostrar_porque_sacs : true }); setShowDrawer(true); }} style={S.btnSmall}>Editar</button>
+                        <button onClick={() => { const { meta: m } = parseMeta(q.notas); setQf({ ...q, items: Array.isArray(q.items) ? q.items : [], logo_url: m.logo_url || '', iva_mode: m.iva_mode || (q.iva_incluido ? 'suma' : 'sin'), mostrar_timer: m.mostrar_timer !== undefined ? m.mostrar_timer : true, mostrar_features: m.mostrar_features !== undefined ? m.mostrar_features : true, mostrar_desglose: m.mostrar_desglose !== undefined ? m.mostrar_desglose : true, mostrar_condiciones: m.mostrar_condiciones !== undefined ? m.mostrar_condiciones : true, mostrar_key_points: m.mostrar_key_points !== undefined ? m.mostrar_key_points : true, key_points: m.key_points || [], roi: m.roi || null, antes_despues: m.antes_despues || [], mostrar_roi: m.mostrar_roi || false, mostrar_antes_despues: m.mostrar_antes_despues || false, mostrar_firma: m.mostrar_firma !== undefined ? m.mostrar_firma : true, mostrar_qr: m.mostrar_qr !== undefined ? m.mostrar_qr : true, mostrar_animaciones: m.mostrar_animaciones !== undefined ? m.mostrar_animaciones : true, mostrar_timeline: m.mostrar_timeline !== undefined ? m.mostrar_timeline : true, timeline_tipo: m.timeline_tipo || '1suc', mostrar_implementacion: m.mostrar_implementacion !== undefined ? m.mostrar_implementacion : true, implementacion_nota: m.implementacion_nota || '', mostrar_porque_sacs: m.mostrar_porque_sacs !== undefined ? m.mostrar_porque_sacs : true, promo_label: m.promo_label || '', minuta_raw: m.minuta_raw || '' }); setShowDrawer(true); setMinutaError(null); }} style={S.btnSmall}>Editar</button>
                         <button onClick={(e) => { e.stopPropagation(); setQMenuRow(qMenuRow === q.id ? null : q.id); }} style={{ ...S.btnSmall, background: '#fff', padding: '4px 8px', marginRight: 0 }} title="Más acciones">⋮</button>
                         {qMenuRow === q.id && (
                           <div data-q-menu style={{ position: 'absolute' as const, right: 0, top: 34, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 8, padding: 6, minWidth: 200, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', zIndex: 50, textAlign: 'left' as const }}>
                             <button onClick={() => { duplicateQuote(q); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex' }}>📋 Duplicar</button>
+                            {(q.estado === 'sent' || q.estado === 'draft' || q.estado === 'expired') && <button onClick={() => { openExtendModal(q); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', color: '#1d4ed8' }}>⏱️ Extender vigencia</button>}
                             {(q.estado === 'sent' || q.estado === 'draft' || q.estado === 'expired') && <button onClick={() => { openAcceptModal(q); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', color: '#00695c' }}>✓ Aceptar manualmente</button>}
                             {q.estado !== 'paid' && <button onClick={() => { markQuotePaid(q); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', color: '#2e7d32' }}>💵 Marcar pagada</button>}
                             {(q.estado === 'sent' || q.estado === 'draft' || q.estado === 'expired') && <button onClick={() => { openRejectModal(q); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', color: '#c62828' }}>✕ Marcar rechazada</button>}
@@ -1304,6 +1388,69 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             </div>
           </div>
         )}
+
+        {/* ─── Extender vigencia Modal ─── */}
+        {extendForm && (() => {
+          const today = new Date(); today.setHours(12,0,0,0);
+          const baseDate = extendForm.vigencia ? new Date(extendForm.vigencia + 'T12:00:00') : today;
+          const fromDate = baseDate < today ? today : baseDate;
+          const days = parseInt(extendForm.days) || 0;
+          const newDate = days > 0 ? new Date(fromDate.getTime() + days * 86400000) : fromDate;
+          const fmtLong = (d: Date) => {
+            const wd = d.toLocaleDateString('es-MX', { weekday: 'long' });
+            return `${wd[0].toUpperCase() + wd.slice(1)} ${d.getDate()} de ${d.toLocaleDateString('es-MX', { month: 'long' })}`;
+          };
+          const isExpired = baseDate < today;
+          return (
+            <div style={S.overlay} onClick={e => { if (e.target === e.currentTarget && !extending) setExtendForm(null); }}>
+              <div style={{ ...S.modal, maxWidth: 460 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800 }}>⏱️ Extender vigencia — {extendForm.numero}</h3>
+                  <button onClick={() => setExtendForm(null)} disabled={extending} style={{ border: 'none', background: 'transparent', fontSize: '1.25rem', cursor: 'pointer', color: '#999' }}>✕</button>
+                </div>
+                <p style={{ fontSize: '0.8125rem', color: '#666', margin: '0 0 14px', lineHeight: 1.55 }}>
+                  {isExpired
+                    ? <>Esta cotización <strong>está vencida</strong>. Al extenderla volverá a estado <em>enviada</em> con la nueva fecha desde hoy.</>
+                    : <>Vigencia actual: <strong>{fmtLong(baseDate)}</strong>. Suma días sobre esa fecha.</>}
+                </p>
+
+                <label style={S.label}>Días de extensión</label>
+                <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+                  {[2, 3, 5, 7].map(opt => {
+                    const sel = parseInt(extendForm.days) === opt;
+                    return (
+                      <button key={opt} onClick={() => setExtendForm({ ...extendForm, days: opt })} style={{ flex: 1, padding: '10px 8px', border: `1.5px solid ${sel ? '#1d4ed8' : '#e0e0e0'}`, background: sel ? '#eff6ff' : '#fff', color: sel ? '#1d4ed8' : '#555', borderRadius: 6, fontWeight: 700, fontSize: '0.8125rem', cursor: 'pointer' }}>
+                        +{opt}d
+                      </button>
+                    );
+                  })}
+                </div>
+                <input
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={extendForm.days}
+                  onChange={e => setExtendForm({ ...extendForm, days: e.target.value })}
+                  placeholder="Personalizado (1–60)"
+                  style={{ ...S.input, marginBottom: 14 }}
+                />
+
+                <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+                  <div style={{ fontSize: '0.6875rem', color: '#0c4a6e', textTransform: 'uppercase' as const, letterSpacing: '0.06em', fontWeight: 700, marginBottom: 4 }}>Nueva vigencia</div>
+                  <div style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#0c4a6e' }}>{fmtLong(newDate)}</div>
+                  <div style={{ fontSize: '0.6875rem', color: '#0369a1', marginTop: 2 }}>El cliente verá el contador y los precios con promoción hasta esa fecha.</div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                  <button onClick={() => setExtendForm(null)} disabled={extending} style={{ ...S.btn, background: '#f5f5f5', color: '#555' }}>Cancelar</button>
+                  <button onClick={submitExtend} disabled={extending || !days || days < 1} style={{ ...S.btn, background: extending || !days ? '#bbb' : '#1d4ed8', color: '#fff', cursor: extending || !days ? 'not-allowed' : 'pointer' }}>
+                    {extending ? 'Extendiendo…' : `Extender +${days || 0} días`}
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ─── Transcript Modal ─── */}
         {showTranscriptModal && !showReview && (
@@ -1648,6 +1795,20 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 <div><label style={S.label}>Template</label><select value={qf.template} onChange={e => setQf({ ...qf, template: e.target.value })} style={S.input}><option value="modern">Modern</option><option value="dark">Dark</option><option value="classic">Classic</option></select></div>
               </div>
 
+              {/* Promo label */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={S.label}>Etiqueta de promoción <span style={{ color: '#999', fontWeight: 400 }}>(opcional)</span></label>
+                <input
+                  value={qf.promo_label || ''}
+                  onChange={e => setQf({ ...qf, promo_label: e.target.value.toUpperCase().slice(0, 40) })}
+                  placeholder="Ej. VERANO -20%, OFERTA MAYO, FUNDADORES SACS"
+                  style={S.input}
+                />
+                <div style={{ fontSize: '0.6875rem', color: '#999', marginTop: 4 }}>
+                  Aparece junto al contador en la cotización del cliente. Máx. 40 caracteres.
+                </div>
+              </div>
+
               {/* Bank account */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
                 <div>
@@ -1774,20 +1935,62 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
 
               <div><label style={S.label}>Condiciones</label><textarea value={qf.condiciones || ''} onChange={e => setQf({ ...qf, condiciones: e.target.value })} style={{ ...S.input, height: 60 }} /></div>
 
-              {/* Key points */}
-              {(qf.key_points || []).length > 0 && (
-                <div style={{ marginTop: 12 }}>
-                  <div style={S.label}>Puntos clave ({qf.key_points.length})</div>
-                  {qf.key_points.map((kp: any, i: number) => (
-                    <div key={i} style={{ background: '#f8f9fb', borderRadius: 8, padding: 10, marginBottom: 6, borderLeft: '3px solid #4B7BE5', display: 'flex', gap: 8 }}>
-                      <div style={{ flex: 1 }}>
-                        <input value={kp.title} onChange={e => { const kps = [...qf.key_points]; kps[i] = { ...kps[i], title: e.target.value }; setQf({ ...qf, key_points: kps }); }} placeholder="Título" style={{ ...S.input, fontWeight: 700, fontSize: '0.75rem', marginBottom: 4 }} />
-                        <input value={kp.detail} onChange={e => { const kps = [...qf.key_points]; kps[i] = { ...kps[i], detail: e.target.value }; setQf({ ...qf, key_points: kps }); }} placeholder="Detalle" style={{ ...S.input, fontSize: '0.6875rem' }} />
-                      </div>
-                      <button onClick={() => { const kps = [...qf.key_points]; kps.splice(i, 1); setQf({ ...qf, key_points: kps }); }} style={{ ...S.btnSmall, color: '#E54B4B', alignSelf: 'flex-start' }}>✕</button>
+              {/* Minuta editor — visible siempre que el toggle esté ON */}
+              {(qf.mostrar_key_points !== false) && (
+                <div style={{ marginTop: 12, background: '#fafbfd', border: '1px solid #e8eaf0', borderRadius: 10, padding: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+                    <div style={S.label}>Minuta de la reunión</div>
+                    <div style={{ fontSize: '0.625rem', color: '#999' }}>{(qf.key_points || []).length} {((qf.key_points || []).length === 1 ? 'punto' : 'puntos')}</div>
+                  </div>
+                  <div style={{ fontSize: '0.6875rem', color: '#777', marginBottom: 8, lineHeight: 1.5 }}>
+                    Pega aquí los puntos raw que platicaste con el cliente. Después da clic en <strong>Estructurar con IA</strong> y lo acomodamos en una minuta profesional.
+                  </div>
+                  <textarea
+                    value={qf.minuta_raw || ''}
+                    onChange={e => setQf({ ...qf, minuta_raw: e.target.value })}
+                    placeholder="Ej. cliente tiene 3 sucursales, le urge controlar inventario porque pierde 200 piezas al mes; quiere migrar de microsip; le gusta lealtad por whatsapp; presupuesto ~25k; cierra en mayo; pidió descuento si paga anual..."
+                    rows={5}
+                    style={{ ...S.input, fontSize: '0.75rem', resize: 'vertical' as const, minHeight: 100, fontFamily: 'inherit', lineHeight: 1.5 }}
+                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' as const }}>
+                    <button
+                      onClick={formatMinuta}
+                      disabled={formattingMinuta || !(qf.minuta_raw || '').trim()}
+                      style={{ ...S.btnSmall, background: '#1a1a1a', color: '#fff', padding: '6px 14px', opacity: formattingMinuta || !(qf.minuta_raw || '').trim() ? 0.5 : 1, cursor: formattingMinuta || !(qf.minuta_raw || '').trim() ? 'not-allowed' : 'pointer' }}
+                    >
+                      {formattingMinuta ? '⏳ Procesando…' : '✨ Estructurar con IA'}
+                    </button>
+                    {(qf.key_points || []).length > 0 && (
+                      <button
+                        onClick={() => { if (confirm('¿Borrar los puntos actuales y dejar el editor vacío?')) setQf({ ...qf, key_points: [] }); }}
+                        style={{ ...S.btnSmall, color: '#999' }}
+                      >
+                        Limpiar puntos
+                      </button>
+                    )}
+                    <span style={{ fontSize: '0.625rem', color: '#bbb' }}>Mín. 30 caracteres</span>
+                  </div>
+                  {minutaError && (
+                    <div style={{ marginTop: 8, padding: '6px 10px', background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 6, fontSize: '0.6875rem', color: '#c53030' }}>
+                      {minutaError}
                     </div>
-                  ))}
-                  <button onClick={() => setQf({ ...qf, key_points: [...(qf.key_points || []), { title: '', detail: '' }] })} style={S.btnSmall}>+ Agregar punto</button>
+                  )}
+
+                  {(qf.key_points || []).length > 0 && (
+                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px dashed #e0e3eb' }}>
+                      <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#555', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.04em' }}>Puntos estructurados</div>
+                      {qf.key_points.map((kp: any, i: number) => (
+                        <div key={i} style={{ background: '#fff', borderRadius: 8, padding: 10, marginBottom: 6, borderLeft: '3px solid #4B7BE5', display: 'flex', gap: 8 }}>
+                          <div style={{ flex: 1 }}>
+                            <input value={kp.title} onChange={e => { const kps = [...qf.key_points]; kps[i] = { ...kps[i], title: e.target.value }; setQf({ ...qf, key_points: kps }); }} placeholder="Título" style={{ ...S.input, fontWeight: 700, fontSize: '0.75rem', marginBottom: 4 }} />
+                            <input value={kp.detail} onChange={e => { const kps = [...qf.key_points]; kps[i] = { ...kps[i], detail: e.target.value }; setQf({ ...qf, key_points: kps }); }} placeholder="Detalle" style={{ ...S.input, fontSize: '0.6875rem' }} />
+                          </div>
+                          <button onClick={() => { const kps = [...qf.key_points]; kps.splice(i, 1); setQf({ ...qf, key_points: kps }); }} style={{ ...S.btnSmall, color: '#E54B4B', alignSelf: 'flex-start' }}>✕</button>
+                        </div>
+                      ))}
+                      <button onClick={() => setQf({ ...qf, key_points: [...(qf.key_points || []), { title: '', detail: '' }] })} style={S.btnSmall}>+ Agregar punto manual</button>
+                    </div>
+                  )}
                 </div>
               )}
 
