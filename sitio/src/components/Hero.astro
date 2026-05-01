@@ -3065,8 +3065,7 @@ const useCases = [
   }
 
   /* ── Fideliza continuation: CRM + marketing relacional ── */
-  /* Light Squarespace canvas (#FBFBFD) to flow seamlessly from the white
-     Fideliza pillar above. SACS-blue accent for the loyalty/CRM theme. */
+  /* Plain Squarespace canvas (#FBFBFD) — minimalist, no decorations. */
   .loyalty-pro-section {
     position: relative;
     background: #FBFBFD;
@@ -3075,34 +3074,6 @@ const useCases = [
     overflow: hidden;
     border: none;
     margin-top: -1px;
-  }
-  /* Soft dot grid in deep blue, very subtle — texture without weight */
-  .loyalty-pro-section::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    background-image:
-      radial-gradient(circle at 1px 1px, rgba(75, 123, 229, 0.10) 1px, transparent 0);
-    background-size: 28px 28px;
-    opacity: 0.55;
-  }
-  /* Subtle indigo halo behind the header for depth */
-  .loyalty-pro-section::after {
-    content: "";
-    position: absolute;
-    top: -180px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: min(820px, 92vw);
-    height: 420px;
-    pointer-events: none;
-    z-index: 0;
-    background: radial-gradient(ellipse at center, rgba(75, 123, 229, 0.10) 0%, transparent 65%);
-  }
-  @media (max-width: 767px) {
-    .loyalty-pro-section::after { display: none; }
   }
   .loyalty-pro-inner {
     position: relative;
