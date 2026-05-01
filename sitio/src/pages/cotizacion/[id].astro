@@ -162,6 +162,18 @@ const recurringTotal = recurringItems.reduce((s: number, i: any) => s + (i.monto
 const firstPayment = annualPlanTotal + monthlyPlanTotal + uniqueTotal + recurringTotal;
 const monthlyRecurring = monthlyPlanTotal + recurringTotal;
 
+// Total sin promoción — usado cuando isExpired para mostrar precio comparado
+const totalSinPromo = items.reduce((s: number, i: any) => {
+  if (i.es_promocion && i.precio_original) return s + i.precio_original;
+  return s + (i.subtotal || i.monto || 0);
+}, 0);
+const totalSinPromoConIva = ivaMode === 'suma' ? totalSinPromo * 1.16 : totalSinPromo;
+// Renewal discount ratio — el cliente paga discount cuando hay descuento; al expirar la promo, vuelve al precio sin descuento
+const _rawSubtotal = quote.subtotal || 1;
+const _totalBeforeIva = ivaMode === 'suma' ? (quote.total || 0) / 1.16 : (quote.total || 0);
+const renewalDiscountRatio = _rawSubtotal > 0 ? _totalBeforeIva / _rawSubtotal : 1;
+const hasRenewalDiscount = renewalDiscountRatio < 0.999;
+
 // Auto-generate summary
 const planNames = planItems.map((i: any) => `Plan ${i.nombre}`).join(' + ');
 const sucTotal = planItems.reduce((s: number, i: any) => s + (parseInt(i.sucursales) || 1), 0);
@@ -202,6 +214,10 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 <QuoteMobilePills
   template={template}
   total={quote.total || 0}
+  totalSinPromo={totalSinPromoConIva}
+  isExpired={isExpired && !isClosed}
+  vigenciaFecha={vigenciaFecha}
+  daysLeft={daysLeft}
   moneda={quote.moneda || 'MXN'}
   tabs={visibleTabs}
   initialTab={initialTab}
@@ -211,6 +227,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
   <aside class="quote-layout-sidebar no-print">
     <QuoteSidebar
       total={quote.total || 0}
+      totalSinPromo={totalSinPromoConIva}
       moneda={quote.moneda || 'MXN'}
       empresa={quote.empresa}
       numero={quote.numero}
@@ -319,7 +336,10 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
       }
       .quote-asesor-contact:hover { text-decoration: underline; }
       @media (max-width: 640px) {
-        .quote-asesor { padding: 14px 24px; }
+        .quote-asesor { padding: 10px 20px; }
+        .quote-asesor-label { font-size: 0.5625rem; margin-bottom: 4px; }
+        .quote-asesor-name { font-size: 0.9375rem; }
+        .quote-asesor-contact { font-size: 0.75rem; margin-top: 2px; }
       }
     </style>
 
@@ -586,10 +606,23 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
         <div class="quote-payments-title">Resumen de pagos</div>
 
         <div class="quote-payment-block">
-          <div class="quote-payment-total" style="border:none;margin:0;padding:0">
-            <span>Total primer pago {quote.iva_incluido ? '(con IVA)' : ''}</span>
-            <span class="count-up" data-count={quote.total || 0} data-suffix={` ${quote.moneda}`}>{fmt(quote.total || 0)} {quote.moneda}</span>
-          </div>
+          {isExpired && !isClosed && totalSinPromoConIva > (quote.total || 0) ? (
+            <div class="quote-payment-total quote-payment-total--compare" style="border:none;margin:0;padding:0">
+              <div class="quote-payment-total-row">
+                <span class="quote-payment-total-label">Total con promoción <em>(ya no aplica)</em></span>
+                <span class="qt-price-strike">{fmt(quote.total || 0)} {quote.moneda}</span>
+              </div>
+              <div class="quote-payment-total-row quote-payment-total-row--now">
+                <span class="quote-payment-total-label">Total primer pago {quote.iva_incluido ? '(con IVA)' : ''}</span>
+                <span class="qt-price-normal">{fmt(totalSinPromoConIva)} {quote.moneda}</span>
+              </div>
+            </div>
+          ) : (
+            <div class="quote-payment-total" style="border:none;margin:0;padding:0">
+              <span>Total primer pago {quote.iva_incluido ? '(con IVA)' : ''}</span>
+              <span class="count-up" data-count={quote.total || 0} data-suffix={` ${quote.moneda}`}>{fmt(quote.total || 0)} {quote.moneda}</span>
+            </div>
+          )}
         </div>
 
         {(monthlyPlanTotal > 0 || recurringMonthlyItems.length > 0) && (
@@ -609,29 +642,52 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
         )}
 
         {(annualPlanTotal > 0 || recurringAnnualItems.length > 0) && (() => {
-          // Calculate discount ratio: what the client actually pays vs raw subtotal
-          const rawSubtotal = quote.subtotal || 1;
-          const totalBeforeIva = ivaMode === 'suma' ? (quote.total || 0) / 1.16 : (quote.total || 0);
-          const discountRatio = rawSubtotal > 0 ? totalBeforeIva / rawSubtotal : 1;
-          const hasDiscount = discountRatio < 0.999;
+          const discountRatio = renewalDiscountRatio;
+          const hasDiscount = hasRenewalDiscount;
+          // Per-item discount info for renewal compare
+          const planRenewalLines = planItems.filter((i: any) => i.periodo === 'anual').map((i: any) => {
+            const suc = parseInt(i.sucursales) || 1;
+            const promoRenewal = Math.round((i.subtotal || 0) * discountRatio);
+            const planDiscPct = parseFloat(i.descuento_pct || 0);
+            // Full anual sin descuento_pct ni descuento_global
+            const fullAnnual = (i.precio_unitario || 0) * suc * 10;
+            const hasAnyDiscount = planDiscPct > 0 || hasDiscount;
+            const fullPrice = hasAnyDiscount ? fullAnnual : (i.subtotal || 0);
+            return { i, suc, promoRenewal, fullPrice, hasAnyDiscount };
+          });
+          const extraRenewalLines = recurringAnnualItems.map((i: any) => {
+            const promoRenewal = Math.round((i.subtotal || 0) * discountRatio);
+            const fullPrice = (i.precio_original && i.precio_original > 0) ? i.precio_original : (i.subtotal || 0);
+            const hasAnyDiscount = (i.precio_original && i.precio_original > i.subtotal) || hasDiscount;
+            return { i, promoRenewal, fullPrice, hasAnyDiscount };
+          });
+          const anyLineHasDiscount = planRenewalLines.some(l => l.hasAnyDiscount) || extraRenewalLines.some(l => l.hasAnyDiscount);
+          const showRenewalCompare = isExpired && !isClosed && anyLineHasDiscount;
           return (
             <div class="quote-payment-block">
               <div class="quote-payment-label">Próxima renovación anual: {nextAnnualStr}</div>
-              {planItems.filter((i: any) => i.periodo === 'anual').map((i: any) => {
-                const renewalPrice = Math.round((i.subtotal || 0) * discountRatio);
-                return (
-                  <div class="quote-payment-line"><span>Renovación Plan {i.nombre} · {i.sucursales} suc.</span><span>{fmt(renewalPrice)}</span></div>
-                );
-              })}
-              {recurringAnnualItems.map((i: any) => {
-                const renewalPrice = Math.round((i.subtotal || 0) * discountRatio);
-                return (
-                  <div class="quote-payment-line"><span>{i.nombre} (anual)</span><span>{fmt(renewalPrice)}</span></div>
-                );
-              })}
-              {hasDiscount && (
+              {planRenewalLines.map(({ i, suc, promoRenewal, fullPrice, hasAnyDiscount }) => (
+                showRenewalCompare && hasAnyDiscount ? (
+                  <div class="quote-payment-line"><span>Renovación Plan {i.nombre} · {suc} suc.</span><span class="qt-compare"><span class="qt-price-strike">{fmt(promoRenewal)}</span><span class="qt-price-normal">{fmt(fullPrice)}</span></span></div>
+                ) : (
+                  <div class="quote-payment-line"><span>Renovación Plan {i.nombre} · {suc} suc.</span><span>{fmt(promoRenewal)}</span></div>
+                )
+              ))}
+              {extraRenewalLines.map(({ i, promoRenewal, fullPrice, hasAnyDiscount }) => (
+                showRenewalCompare && hasAnyDiscount ? (
+                  <div class="quote-payment-line"><span>{i.nombre} (anual)</span><span class="qt-compare"><span class="qt-price-strike">{fmt(promoRenewal)}</span><span class="qt-price-normal">{fmt(fullPrice)}</span></span></div>
+                ) : (
+                  <div class="quote-payment-line"><span>{i.nombre} (anual)</span><span>{fmt(promoRenewal)}</span></div>
+                )
+              ))}
+              {anyLineHasDiscount && !showRenewalCompare && (
                 <div class="quote-payment-line" style="font-size:0.6875rem;color:#2AB5A0;font-style:italic">
                   <span>El precio con descuento se mantiene en renovaciones futuras</span>
+                </div>
+              )}
+              {showRenewalCompare && (
+                <div class="quote-payment-line" style="font-size:0.6875rem;color:#b91c1c;font-style:italic">
+                  <span>La promoción venció — la renovación vuelve al precio sin descuento</span>
                 </div>
               )}
             </div>
@@ -1461,11 +1517,12 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 @media (max-width: 1023px) {
   .quote-layout {
     grid-template-columns: 1fr;
-    padding: 8px 16px 40px;
+    padding: 0 12px 40px;
     gap: 0;
   }
   .quote-layout-sidebar { display: none; }
-  .tab-anchor { scroll-margin-top: 110px; }
+  .tab-anchor { scroll-margin-top: 130px; }
+  .quote-page { padding: 12px 0 60px; }
 }
 
 .quote-page { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
@@ -1736,6 +1793,16 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-payment-label { font-size: 0.6875rem; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
 .quote-payment-line { display: flex; justify-content: space-between; font-size: 0.8125rem; color: #666; padding: 4px 0; }
 .quote-payment-total { display: flex; justify-content: space-between; font-size: 0.9375rem; font-weight: 800; color: #1a1a1a; border-top: 1px solid #e0e0e0; padding-top: 8px; margin-top: 8px; }
+.quote-payment-total--compare { display: flex; flex-direction: column; gap: 4px; border: none; padding: 0; margin: 0; }
+.quote-payment-total-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.quote-payment-total-row .quote-payment-total-label { font-size: 0.75rem; font-weight: 500; color: #b91c1c; opacity: 0.8; }
+.quote-payment-total-row .quote-payment-total-label em { font-style: italic; opacity: 0.85; }
+.quote-payment-total-row--now .quote-payment-total-label { font-size: 0.9375rem; font-weight: 800; color: #1a1a1a; opacity: 1; }
+.quote-payment-total-row--now { padding-top: 6px; margin-top: 4px; border-top: 1px solid #e0e0e0; }
+.quote-payment-total-row--now .qt-price-normal { font-size: 1rem; }
+.quote-dark .quote-payment-total-row .quote-payment-total-label { color: #fca5a5; }
+.quote-dark .quote-payment-total-row--now .quote-payment-total-label { color: #fff; }
+.quote-dark .quote-payment-total-row--now { border-color: rgba(255,255,255,0.1); }
 
 .quote-dark .quote-summary { color: #2AB5A0; }
 .quote-dark .quote-payments { border-color: rgba(255,255,255,0.08); }
@@ -2291,14 +2358,15 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-reject-success-text { font-size: 0.875rem; color: #666; line-height: 1.55; }
 
 @media (max-width: 640px) {
-  .quote-header { flex-direction: column; gap: 14px; padding: 28px 24px 20px; }
+  .quote-header { flex-direction: column; gap: 8px; padding: 16px 20px 12px; }
   .quote-meta { text-align: left; }
-  .quote-client { padding: 20px 24px; }
-  .quote-status { margin-bottom: 8px; }
-  .quote-expired-note { padding: 12px 24px; flex-wrap: wrap; }
-  /* Tab intro */
-  .quote-tab-intro { padding: 36px 24px 32px; }
-  .quote-tab-intro-heading { font-size: 1.5rem; margin-bottom: 24px; }
+  .quote-client { padding: 14px 20px; }
+  .quote-status { margin-bottom: 6px; }
+  .quote-expired-note { padding: 10px 20px; flex-wrap: wrap; }
+  /* Tab intro — compact on mobile so timer/vigencia is visible above the fold */
+  .quote-tab-intro { padding: 18px 20px 16px; }
+  .quote-tab-intro-eyebrow { margin-bottom: 6px; }
+  .quote-tab-intro-heading { font-size: 1.125rem; line-height: 1.3; margin-bottom: 0; }
   .quote-tab-intro-total-value { font-size: 2rem; }
   /* Key points */
   .quote-key-points { padding: 32px 24px; }
@@ -2316,15 +2384,16 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
   .quote-total-row { font-size: 0.8125rem; }
   .quote-total-row.quote-total-final { font-size: 1.125rem; }
   .quote-totals { padding: 20px 24px; }
-  /* Timer */
-  .quote-timer { padding: 20px 24px; }
-  .quote-timer-num { font-size: 1.75rem; }
-  .quote-timer-savings { font-size: 0.75rem; }
-  .quote-timer-extended { font-size: 0.625rem; padding: 3px 10px; margin-bottom: 8px; gap: 5px; }
-  .quote-timer-promo { font-size: 0.625rem; padding: 5px 12px 5px 10px; gap: 6px; margin-bottom: 12px; }
+  /* Timer — compact en mobile y prominente para verse arriba del fold */
+  .quote-timer { padding: 14px 18px 16px; margin-top: 4px; }
+  .quote-timer-num { font-size: 1.5rem; }
+  .quote-timer-savings { font-size: 0.6875rem; margin-top: 6px; }
+  .quote-timer-extended { font-size: 0.625rem; padding: 3px 10px; margin-bottom: 6px; gap: 5px; }
+  .quote-timer-promo { font-size: 0.625rem; padding: 4px 10px 4px 8px; gap: 6px; margin-bottom: 8px; }
   .quote-timer-promo-name { font-size: 0.6875rem; }
-  .quote-timer-deadline { font-size: 0.8125rem; margin-top: 12px; }
-  .quote-timer-warning { font-size: 0.6875rem; margin-top: 4px; }
+  .quote-timer-label { font-size: 0.625rem; }
+  .quote-timer-deadline { font-size: 0.75rem; margin-top: 8px; }
+  .quote-timer-warning { font-size: 0.625rem; margin-top: 4px; }
   /* Expired notice */
   .quote-expired-notice { margin: 0 24px 12px; padding: 12px 14px; font-size: 0.75rem; }
   /* Compare prices stack on mobile */

@@ -3,20 +3,50 @@ interface Tab { id: string; label: string; }
 interface Props {
   template: 'modern' | 'dark' | 'classic';
   total: number;
+  totalSinPromo?: number;
+  isExpired?: boolean;
+  vigenciaFecha?: string;
+  daysLeft?: number;
   moneda: string;
   tabs: Tab[];
   initialTab: string;
 }
-const { template, total, moneda, tabs, initialTab } = Astro.props;
+const { template, total, totalSinPromo, isExpired, vigenciaFecha, daysLeft, moneda, tabs, initialTab } = Astro.props;
 const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
 const pad = (n: number) => (n < 10 ? '0' + n : String(n));
+const showCompare = !!isExpired && typeof totalSinPromo === 'number' && totalSinPromo > total;
+const displayTotal = showCompare ? (totalSinPromo as number) : total;
+const showVigencia = !!vigenciaFecha && (typeof daysLeft === 'number' && daysLeft > 0 || isExpired);
 ---
 
-<div class={`qmp qmp--${template}`} id="quoteMobilePills">
+<div class={`qmp qmp--${template} ${showCompare ? 'qmp--expired' : ''}`} id="quoteMobilePills">
   <div class="qmp-head">
-    <span class="qmp-head-label">Total</span>
-    <span class="qmp-head-value">{fmt(total)} <span class="qmp-head-moneda">{moneda}</span></span>
+    <div class="qmp-head-left">
+      <span class="qmp-head-label">{showCompare ? 'Total ahora' : 'Total'}</span>
+      {showCompare && (
+        <span class="qmp-head-strike">{fmt(total)} <em>ya no aplica</em></span>
+      )}
+    </div>
+    <span class={`qmp-head-value ${showCompare ? 'qmp-head-value--now' : ''}`}>{fmt(displayTotal)} <span class="qmp-head-moneda">{moneda}</span></span>
   </div>
+  {showVigencia && (
+    <div class={`qmp-vigencia ${isExpired ? 'qmp-vigencia--expired' : ''}`}>
+      {isExpired ? (
+        <span class="qmp-vigencia-label">Venció {vigenciaFecha}</span>
+      ) : (
+        <>
+          <span class="qmp-vigencia-label">Vence {vigenciaFecha}</span>
+          {typeof daysLeft === 'number' && daysLeft > 0 && (
+            <span class="qmp-vigencia-counter" data-days-left={daysLeft}>
+              <span class="qmp-vigencia-dot"></span>
+              <span class="qmp-vigencia-days">{daysLeft}</span>
+              <span class="qmp-vigencia-unit">{daysLeft === 1 ? 'día restante' : 'días restantes'}</span>
+            </span>
+          )}
+        </>
+      )}
+    </div>
+  )}
   <nav class="qmp-pills" aria-label="Secciones" role="tablist">
     {tabs.map((t, i) => (
       <a
@@ -40,7 +70,7 @@ const pad = (n: number) => (n < 10 ? '0' + n : String(n));
     position: sticky;
     top: 0;
     z-index: 50;
-    padding: 10px 16px 0;
+    padding: 8px 14px 0;
   }
   .qmp--modern { background: #fff; border-bottom: 1px solid #e5e5e5; }
   .qmp--dark { background: #1a1a1a; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.1); }
@@ -48,9 +78,16 @@ const pad = (n: number) => (n < 10 ? '0' + n : String(n));
 
   .qmp-head {
     display: flex;
+    justify-content: space-between;
     align-items: baseline;
-    gap: 8px;
-    padding: 0 2px 8px;
+    gap: 12px;
+    padding: 0 2px 6px;
+  }
+  .qmp-head-left {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
   }
   .qmp-head-label {
     font-size: 0.625rem;
@@ -60,14 +97,36 @@ const pad = (n: number) => (n < 10 ? '0' + n : String(n));
     color: #999;
   }
   .qmp--dark .qmp-head-label { color: rgba(255,255,255,0.5); }
+  .qmp-head-strike {
+    font-size: 0.6875rem;
+    color: #b91c1c;
+    text-decoration: line-through;
+    text-decoration-color: rgba(185,28,28,0.55);
+    opacity: 0.85;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+  .qmp-head-strike em {
+    font-style: italic;
+    font-size: 0.5625rem;
+    text-decoration: none;
+    margin-left: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .qmp--dark .qmp-head-strike { color: #fca5a5; text-decoration-color: rgba(252,165,165,0.55); }
   .qmp-head-value {
     font-family: var(--font-display, inherit);
-    font-size: 1rem;
-    font-weight: 500;
+    font-size: 1.0625rem;
+    font-weight: 600;
     color: #1a1a1a;
     letter-spacing: -0.01em;
+    text-align: right;
+    flex-shrink: 0;
   }
+  .qmp-head-value--now { color: #047857; }
   .qmp--dark .qmp-head-value { color: #fff; }
+  .qmp--dark .qmp-head-value--now { color: #6ee7b7; }
   .qmp-head-moneda {
     font-size: 0.6875rem;
     color: #999;
@@ -75,6 +134,72 @@ const pad = (n: number) => (n < 10 ? '0' + n : String(n));
     margin-left: 2px;
   }
   .qmp--dark .qmp-head-moneda { color: rgba(255,255,255,0.5); }
+
+  /* Vigencia + counter row — visible above the fold on mobile */
+  .qmp-vigencia {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 2px 8px;
+    border-top: 1px solid #f0f0f0;
+    margin-top: 2px;
+  }
+  .qmp--dark .qmp-vigencia { border-color: rgba(255,255,255,0.08); }
+  .qmp-vigencia-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: #666;
+    letter-spacing: 0.01em;
+  }
+  .qmp--dark .qmp-vigencia-label { color: rgba(255,255,255,0.65); }
+  .qmp-vigencia--expired .qmp-vigencia-label { color: #b91c1c; font-weight: 700; }
+  .qmp--dark .qmp-vigencia--expired .qmp-vigencia-label { color: #fca5a5; }
+  .qmp-vigencia-counter {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(42,181,160,0.08);
+    color: #1e8471;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .qmp-vigencia-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #2AB5A0;
+    box-shadow: 0 0 0 3px rgba(42,181,160,0.18);
+  }
+  .qmp-vigencia-days { font-weight: 800; color: #1a1a1a; }
+  .qmp--dark .qmp-vigencia-days { color: #fff; }
+  .qmp-vigencia-unit { font-weight: 500; opacity: 0.85; }
+  .qmp--dark .qmp-vigencia-counter { background: rgba(42,181,160,0.16); color: #6ee7b7; }
+  /* Urgent state: <= 5 days left */
+  .qmp-vigencia-counter[data-days-left="1"],
+  .qmp-vigencia-counter[data-days-left="2"],
+  .qmp-vigencia-counter[data-days-left="3"],
+  .qmp-vigencia-counter[data-days-left="4"],
+  .qmp-vigencia-counter[data-days-left="5"] {
+    background: rgba(229,75,75,0.1);
+    color: #b93333;
+  }
+  .qmp-vigencia-counter[data-days-left="1"] .qmp-vigencia-dot,
+  .qmp-vigencia-counter[data-days-left="2"] .qmp-vigencia-dot,
+  .qmp-vigencia-counter[data-days-left="3"] .qmp-vigencia-dot,
+  .qmp-vigencia-counter[data-days-left="4"] .qmp-vigencia-dot,
+  .qmp-vigencia-counter[data-days-left="5"] .qmp-vigencia-dot {
+    background: #E54B4B;
+    box-shadow: 0 0 0 3px rgba(229,75,75,0.18);
+  }
+  .qmp-vigencia-counter[data-days-left="1"] .qmp-vigencia-days,
+  .qmp-vigencia-counter[data-days-left="2"] .qmp-vigencia-days,
+  .qmp-vigencia-counter[data-days-left="3"] .qmp-vigencia-days,
+  .qmp-vigencia-counter[data-days-left="4"] .qmp-vigencia-days,
+  .qmp-vigencia-counter[data-days-left="5"] .qmp-vigencia-days { color: #b93333; }
 
   .qmp-pills {
     display: flex !important;

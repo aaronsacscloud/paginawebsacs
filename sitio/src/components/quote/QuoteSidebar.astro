@@ -4,6 +4,7 @@ interface Props {
   tabs: Tab[];
   initialTab: string;
   total: number;
+  totalSinPromo?: number;
   moneda: string;
   empresa: string;
   numero?: string;
@@ -20,6 +21,7 @@ const {
   tabs,
   initialTab,
   total,
+  totalSinPromo,
   moneda,
   empresa,
   numero,
@@ -33,6 +35,7 @@ const {
 
 const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
 const isClosed = isAccepted || isPaid;
+const showCompareTotal = isExpired && !isClosed && typeof totalSinPromo === 'number' && totalSinPromo > total;
 
 // CTA context (Squarespace-style: always black/white, minimal variants)
 let ctaLabel = 'Aceptar cotización';
@@ -69,10 +72,20 @@ const pad = (n: number) => (n < 10 ? '0' + n : String(n));
   </div>
 
   <!-- Total -->
-  <div class="qsb-total">
-    <div class="qsb-total-label">Total</div>
-    <div class="qsb-total-value">{fmt(total)}</div>
-    <div class="qsb-total-sub">{moneda}{vigenciaFecha && !isClosed ? ` · Vigencia ${vigenciaFecha}` : ''}</div>
+  <div class={`qsb-total ${showCompareTotal ? 'qsb-total--expired' : ''}`}>
+    <div class="qsb-total-label">{showCompareTotal ? 'Total ahora' : 'Total'}</div>
+    {showCompareTotal && (
+      <div class="qsb-total-strike">
+        <span class="qsb-total-strike-num">{fmt(total)}</span>
+        <span class="qsb-total-strike-tag">con promoción · ya no aplica</span>
+      </div>
+    )}
+    <div class="qsb-total-value">{fmt(showCompareTotal ? (totalSinPromo as number) : total)}</div>
+    <div class="qsb-total-sub">
+      {moneda}
+      {vigenciaFecha && !isClosed && !isExpired ? ` · Vigencia ${vigenciaFecha}` : ''}
+      {isExpired && !isClosed && vigenciaFecha ? ` · Venció ${vigenciaFecha}` : ''}
+    </div>
   </div>
 
   <!-- Nav -->
@@ -197,6 +210,37 @@ const pad = (n: number) => (n < 10 ? '0' + n : String(n));
     letter-spacing: 0.02em;
   }
   .qsb--dark .qsb-total-sub { color: rgba(255,255,255,0.5); }
+
+  /* Compare price when promo expired */
+  .qsb-total-strike {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin-bottom: 2px;
+  }
+  .qsb-total-strike-num {
+    font-family: var(--font-display, inherit);
+    font-size: 1rem;
+    font-weight: 400;
+    color: #b91c1c;
+    text-decoration: line-through;
+    text-decoration-color: rgba(185,28,28,0.55);
+    letter-spacing: -0.015em;
+    line-height: 1;
+  }
+  .qsb-total-strike-tag {
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: #b91c1c;
+    opacity: 0.75;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-style: italic;
+  }
+  .qsb-total--expired .qsb-total-value { color: #047857; }
+  .qsb--dark .qsb-total-strike-num { color: #fca5a5; text-decoration-color: rgba(252,165,165,0.55); }
+  .qsb--dark .qsb-total-strike-tag { color: #fca5a5; }
+  .qsb--dark .qsb-total--expired .qsb-total-value { color: #6ee7b7; }
 
   /* Nav: typographic list, no icons */
   .qsb-nav {
