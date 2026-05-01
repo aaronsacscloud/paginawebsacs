@@ -2991,7 +2991,7 @@ const useCases = [
   .pillar-section {
     position: relative;
     padding: clamp(72px, 10vw, 144px) 0;
-    overflow: hidden;
+    overflow: clip;
     --center-distance: 0;
     --reveal-progress: 0;
   }
@@ -3042,7 +3042,7 @@ const useCases = [
     .pillar-inner {
       grid-template-columns: minmax(360px, 0.82fr) minmax(0, 1.7fr);
       gap: clamp(40px, 5.5vw, 80px);
-      align-items: center;
+      align-items: start;
     }
     /* Zigzag: pillar-section--left flips iPad to the left, text to right */
     .pillar-section--left .pillar-inner {
@@ -3229,22 +3229,22 @@ const useCases = [
     transform: scaleX(1.05);
   }
 
-  /* Visual column — dominant, fixed-position (no jump on accordion toggle) */
+  /* Visual column — top-aligned so accordion toggles never move the iPad.
+     Sticky during scroll keeps the iPad in the viewport across all pillars
+     (works because pillar-section uses overflow: clip, which preserves sticky). */
   .pillar-visual {
     position: relative;
     width: 100%;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     min-width: 0;
-    align-self: center;
+    align-self: start;
   }
-  /* Make the iPad stick to the viewport while user toggles accordion items */
   @media (min-width: 1024px) {
     .pillar-visual {
       position: sticky;
       top: 80px;
-      align-self: start;
     }
   }
 
