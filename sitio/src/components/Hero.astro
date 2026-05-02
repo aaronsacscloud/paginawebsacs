@@ -10351,6 +10351,43 @@ const useCases = [
     .mob-ok-path { stroke-dashoffset: 0; }
   }
 
+  /* ════════════════════════════════════════════════════════════════
+     MOBILE OVERRIDES PARA ANIMACIONES PILLAR (≤ 1023px)
+     Convierten layouts 2-col en stack vertical para que el contenido
+     quepa en el container del accordion-body.
+     ════════════════════════════════════════════════════════════════ */
+  @media (max-width: 1023px) {
+    /* Universal: prevenir overflow horizontal de cualquier pillar-frame */
+    .pillar-section { overflow-x: clip; }
+    .pillar-frame, .pillar-visual, .hero-tablet-frame { max-width: 100%; }
+    .pillar-h2 { font-size: clamp(1.625rem, 6.5vw, 2.25rem); }
+    .pillar-acc-body { padding-inline: 0; }
+
+    /* ── #1 Cobro móvil (.mob-frame) ── single-col stack
+       Phone arriba, card 3D / ticket abajo según fase del cycle.
+       En desktop el grid es 0.78fr/1fr (phone-izq / right-stage-der).
+       En móvil ambos van uno debajo del otro. */
+    .mob-grid {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto;
+      gap: 12px;
+    }
+    .mob-phone-wrap { height: auto; }
+    .mob-phone {
+      height: auto;
+      width: 70%;
+      max-width: 220px;
+    }
+    .mob-right-stage {
+      position: relative;
+      height: 220px;     /* altura fija para que card 3D y ticket entren */
+      min-height: 0;
+    }
+    .mob-card-wrap { padding: 0 8%; }
+    .mob-card-stage { max-width: 280px; }
+    /* Ticket 80mm ya es 240px max — perfecto para móvil */
+  }
+
   /* ── WhatsApp Carousel ── */
   .wa-carousel {
     width: 100%;
