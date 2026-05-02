@@ -4703,6 +4703,21 @@ const useCases = [
     .ops-admin-section { display: none; }
     /* mobile-cards (mc-tabs + 4 mc-step) ya no se usa: pillar-section toma su lugar */
     .mobile-cards { display: none !important; }
+
+    /* En móvil, intercambiar el orden visual: primero el tablet con la animación
+       (la "foto" según se ve en Square), luego la lista de accordion abajo.
+       Cuando el usuario tapea un accordion item, el tablet de arriba cambia
+       de slide. */
+    .pillar-inner {
+      display: flex;
+      flex-direction: column;
+    }
+    .pillar-visual { order: 1; }
+    .pillar-text   { order: 2; }
+    /* Reducir el padding vertical del pillar para que se sienta menos espaciado */
+    .pillar-section { padding: clamp(40px, 8vw, 72px) 0; }
+    /* Reducir gap entre tablet y accordion */
+    .pillar-inner { gap: 24px; }
   }
 
   /* ── Controla continuation: Operación administrativa ── */
