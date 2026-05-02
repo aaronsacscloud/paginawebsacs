@@ -4704,20 +4704,29 @@ const useCases = [
     /* mobile-cards (mc-tabs + 4 mc-step) ya no se usa: pillar-section toma su lugar */
     .mobile-cards { display: none !important; }
 
-    /* En móvil, intercambiar el orden visual: primero el tablet con la animación
-       (la "foto" según se ve en Square), luego la lista de accordion abajo.
-       Cuando el usuario tapea un accordion item, el tablet de arriba cambia
-       de slide. */
-    .pillar-inner {
-      display: flex;
-      flex-direction: column;
-    }
-    .pillar-visual { order: 1; }
-    .pillar-text   { order: 2; }
-    /* Reducir el padding vertical del pillar para que se sienta menos espaciado */
+    /* Padding más denso en móvil */
     .pillar-section { padding: clamp(40px, 8vw, 72px) 0; }
-    /* Reducir gap entre tablet y accordion */
-    .pillar-inner { gap: 24px; }
+    .pillar-inner   { gap: 20px; }
+
+    /* Estilo Square: la imagen/visual va DENTRO del accordion abierto.
+       JS mueve .pillar-visual al .pillar-acc-body del item activo en móvil.
+       Por defecto pillar-visual queda escondido hasta que JS lo monta dentro. */
+    .pillar-visual { display: none; }
+    .pillar-acc-body .pillar-visual {
+      display: flex;
+      margin: 6px 0 14px;
+    }
+    /* El body del accordion ya no tiene cap de altura — debe expandirse para
+       contener el tablet completo */
+    .pillar-acc.is-open .pillar-acc-body {
+      max-height: none;
+    }
+    /* Tablet ocupa todo el ancho disponible del body */
+    .pillar-acc-body .hero-tablet-frame {
+      width: 100%;
+      max-width: 100%;
+      transform: none !important;
+    }
   }
 
   /* ── Controla continuation: Operación administrativa ── */
@@ -17116,6 +17125,25 @@ const useCases = [
   pillarSections.forEach((section) => {
     const accs = section.querySelectorAll<HTMLElement>('.pillar-acc');
     const slides = section.querySelectorAll<HTMLDivElement>('.tablet-slide');
+    const pillarVisual = section.querySelector<HTMLElement>('.pillar-visual');
+    const pillarVisualHome = pillarVisual?.parentElement || null;
+    const isMobileMQ = window.matchMedia('(max-width: 1023px)');
+
+    /** Mobile only: move pillar-visual INSIDE the open accordion's body so the
+     *  tablet/animation appears under the active item title (estilo Square). */
+    function moveVisualInto(idx: number) {
+      if (!pillarVisual || !isMobileMQ.matches) return;
+      const accBody = accs[idx]?.querySelector<HTMLElement>('.pillar-acc-body');
+      if (!accBody) return;
+      if (accBody.contains(pillarVisual)) return;
+      accBody.insertBefore(pillarVisual, accBody.firstChild);
+    }
+    function returnVisualHome() {
+      if (!pillarVisual || !pillarVisualHome) return;
+      if (pillarVisual.parentElement !== pillarVisualHome) {
+        pillarVisualHome.appendChild(pillarVisual);
+      }
+    }
 
     function activateIdx(idx: number) {
       accs.forEach((a, i) => {
@@ -17125,6 +17153,8 @@ const useCases = [
         if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
       });
       slides.forEach((s, i) => s.classList.toggle('active', i === idx));
+      // Mobile: mover el tablet visual dentro del accordion abierto
+      moveVisualInto(idx);
       // Trigger apartados loop if its slide just became active
       const activeSlide = slides[idx] as HTMLElement | undefined;
       if (activeSlide?.dataset.slide === 'pos-apartados') {
@@ -17141,6 +17171,8 @@ const useCases = [
         const btn = a.querySelector<HTMLButtonElement>('.pillar-acc-btn');
         if (btn) btn.setAttribute('aria-expanded', 'false');
       });
+      // Devolver el tablet a su contenedor original (queda hidden por CSS en móvil)
+      returnVisualHome();
       if (section.dataset.pillar === 'pos') stopApartadosLoop();
     }
 
@@ -17156,6 +17188,20 @@ const useCases = [
           activateIdx(idx);
         }
       });
+    });
+
+    // Bootstrap: en móvil, mover el tablet al accordion inicial activo
+    const initiallyActiveAcc = Array.from(accs).findIndex(a => a.classList.contains('is-open'));
+    if (initiallyActiveAcc >= 0) moveVisualInto(initiallyActiveAcc);
+
+    // Si cambia el viewport (rotación / resize), reubicar el tablet apropiadamente
+    isMobileMQ.addEventListener('change', () => {
+      if (isMobileMQ.matches) {
+        const openIdx = Array.from(accs).findIndex(a => a.classList.contains('is-open'));
+        if (openIdx >= 0) moveVisualInto(openIdx);
+      } else {
+        returnVisualHome();
+      }
     });
 
     // Bootstrap apartados loop if its slide is the initially active one
