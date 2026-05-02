@@ -7928,12 +7928,12 @@ const useCases = [
     }
     /* Ocultar reporte en móvil — el phone con sus 4 stages cuenta la historia */
     .cnt-report-wrap { display: none; }
-    /* Phone usa todo el ancho disponible y se centra */
-    .cnt-phone-wrap { width: 100%; }
+    /* Phone usa la altura del wrap y centra; aspect-ratio determina el ancho */
+    .cnt-phone-wrap { width: 100%; height: 100%; }
     .cnt-phone {
       width: auto;
-      max-width: 250px;
-      height: auto;
+      max-width: 100%;
+      height: 100%;
       aspect-ratio: 9 / 19;
     }
   }
