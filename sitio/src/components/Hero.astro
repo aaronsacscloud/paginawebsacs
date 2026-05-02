@@ -17284,6 +17284,53 @@ const useCases = [
     sqBlocks.forEach(b => sqObserver.observe(b));
   }
 
+  // ═══ Restart slide animations on scroll-into-view ═══
+  // Cuando una sección con animaciones entra al viewport, reinicia
+  // todas las animaciones CSS de sus hijos para que arranquen desde 0%.
+  {
+    const ANIM_CONTAINER_SELECTORS = [
+      '.pillar-frame',          // tablet slides de cada pillar (Vende/Controla/Fideliza/Automatiza)
+      '.recepcion-split',       // Recepción de mercancía
+      '.loyalty-split',         // Lealtad / fideliza
+      '.reco-split',            // Recomendaciones de productos
+      '.axo-split',             // AI Empresarial (Axo)
+      '.mc-card',               // Tarjetas del carousel mobile
+    ].join(',');
+
+    const restartContainerAnims = (container: Element) => {
+      // Recopila descendientes que tienen animación activa
+      const animated: Array<{ el: HTMLElement; orig: string }> = [];
+      const all = container.querySelectorAll<HTMLElement>('*');
+      all.forEach(el => {
+        const cs = window.getComputedStyle(el);
+        const name = cs.animationName;
+        if (name && name !== 'none' && cs.animationDuration !== '0s') {
+          animated.push({ el, orig: el.style.animation });
+          el.style.animation = 'none';
+        }
+      });
+      if (animated.length === 0) return;
+      // Reflow para forzar reset
+      void (container as HTMLElement).offsetHeight;
+      // Restaura la animación en el siguiente frame
+      requestAnimationFrame(() => {
+        animated.forEach(({ el, orig }) => {
+          el.style.animation = orig || '';
+        });
+      });
+    };
+
+    const restartObs = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          restartContainerAnims(entry.target);
+        }
+      });
+    }, { threshold: 0.35 });
+
+    document.querySelectorAll(ANIM_CONTAINER_SELECTORS).forEach(el => restartObs.observe(el));
+  }
+
   // ═══ Inventario tablet rotate-in ═══
   const invVisual = document.querySelector('.inv-intel-visual');
   if (invVisual) {
