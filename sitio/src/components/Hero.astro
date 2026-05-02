@@ -4701,6 +4701,16 @@ const useCases = [
     /* Hide desktop continuation sections on mobile — they sit between desktop pillars */
     .sq-features--unified,
     .ops-admin-section { display: none; }
+
+    /* hero-tablet-section vuelve flex en móvil para poder reordenar
+       loyalty-pro-section: en desktop va después de Fideliza, en móvil
+       debe ir DESPUÉS de las cards (mc-step), no antes. */
+    .hero-tablet-section {
+      display: flex;
+      flex-direction: column;
+    }
+    .mobile-cards { order: 1; }
+    .loyalty-pro-section { order: 2; }
   }
 
   /* ── Controla continuation: Operación administrativa ── */
