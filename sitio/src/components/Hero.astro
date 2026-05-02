@@ -4556,6 +4556,13 @@ const useCases = [
     overflow: hidden;
     position: relative;
     min-height: 0;
+    animation: ec-screen-radius 24s ease-in-out infinite;
+  }
+  @keyframes ec-screen-radius {
+    0%, 70%   { border-radius: 8px; }
+    74%       { border-radius: 16px; }
+    78%       { border-radius: 22px; }
+    82%, 100% { border-radius: 26px; }
   }
 
   /* All layers absolute-stacked, animated via opacity */
