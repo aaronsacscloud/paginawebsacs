@@ -309,36 +309,71 @@ const useCases = [
             {/* ── Vende: Cambios y devoluciones ── */}
             <div class="tablet-slide" data-slide="pos-cambios">
               <div class="rtn-frame">
+                <div class="rtn-topbar">
+                  <div class="rtn-topbar-left">
+                    <span class="rtn-topbar-back">‹</span>
+                    <span class="rtn-topbar-title">Cambio · Ticket A-78443</span>
+                  </div>
+                  <div class="rtn-topbar-meta">Andrea G. · Polanco · 28 abr 11:42</div>
+                </div>
                 <div class="rtn-grid">
                   <div class="rtn-search-col">
-                    <div class="rtn-mini-label">BUSCAR TICKET</div>
-                    <div class="rtn-search">
-                      <span class="rtn-search-ic">⌕</span>
-                      <span class="rtn-search-txt">A-78443</span>
-                    </div>
-                    <div class="rtn-result">
-                      <div class="rtn-result-meta">Andrea G. · Polanco · 28/abr 11:42</div>
-                      <div class="rtn-result-total">$3,420 MXN</div>
-                    </div>
-                    <div class="rtn-mini-label rtn-mini-label--mt">ITEMS DEL TICKET</div>
+                    <div class="rtn-mini-label">SELECCIONA LOS ITEMS A CAMBIAR</div>
                     <div class="rtn-items">
                       <div class="rtn-item rtn-item--selected">
-                        <span class="rtn-check">✓</span>
-                        <span class="rtn-item-name">Blusa satinada · M</span>
-                        <span class="rtn-item-price">$1,290</span>
+                        <div class="rtn-thumb"><img src="/images/reco-blusa.webp" alt="Blusa satinada" loading="lazy" width="80" height="80" /></div>
+                        <div class="rtn-item-body">
+                          <div class="rtn-item-name">Blusa satinada</div>
+                          <div class="rtn-item-meta">Talla M · SKU 78440</div>
+                        </div>
+                        <div class="rtn-item-right">
+                          <span class="rtn-check">✓</span>
+                          <span class="rtn-item-price">$1,290</span>
+                        </div>
                       </div>
                       <div class="rtn-item">
-                        <span class="rtn-check rtn-check--off"></span>
-                        <span class="rtn-item-name">Falda midi plisada · 28</span>
-                        <span class="rtn-item-price">$1,250</span>
+                        <div class="rtn-thumb"><img src="/images/reco-falda.webp" alt="Falda midi plisada" loading="lazy" width="80" height="80" /></div>
+                        <div class="rtn-item-body">
+                          <div class="rtn-item-name">Falda midi plisada</div>
+                          <div class="rtn-item-meta">Talla 28 · SKU 78441</div>
+                        </div>
+                        <div class="rtn-item-right">
+                          <span class="rtn-check rtn-check--off"></span>
+                          <span class="rtn-item-price rtn-item-price--off">$1,250</span>
+                        </div>
                       </div>
                       <div class="rtn-item rtn-item--selected">
-                        <span class="rtn-check">✓</span>
-                        <span class="rtn-item-name">Blazer oversize · S</span>
-                        <span class="rtn-item-price">$880</span>
+                        <div class="rtn-thumb"><img src="/images/reco-blazer.webp" alt="Blazer oversize" loading="lazy" width="80" height="80" /></div>
+                        <div class="rtn-item-body">
+                          <div class="rtn-item-name">Blazer oversize</div>
+                          <div class="rtn-item-meta">Talla S · SKU 78442</div>
+                        </div>
+                        <div class="rtn-item-right">
+                          <span class="rtn-check">✓</span>
+                          <span class="rtn-item-price">$880</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="rtn-mini-label rtn-mini-label--mt">CAMBIO POR</div>
+                    <div class="rtn-swap">
+                      <div class="rtn-swap-item">
+                        <div class="rtn-thumb rtn-thumb--sm"><img src="/images/reco-blusa.webp" alt="Blusa satinada talla L" loading="lazy" width="60" height="60" /></div>
+                        <div class="rtn-swap-body">
+                          <div class="rtn-swap-name">Blusa satinada · L</div>
+                          <div class="rtn-swap-meta">+$0 · misma referencia</div>
+                        </div>
+                      </div>
+                      <div class="rtn-swap-arrow">→</div>
+                      <div class="rtn-swap-item rtn-swap-item--new">
+                        <div class="rtn-thumb rtn-thumb--sm"><img src="/images/reco-blazer.webp" alt="Blazer oversize negro" loading="lazy" width="60" height="60" /></div>
+                        <div class="rtn-swap-body">
+                          <div class="rtn-swap-name">Blazer oversize · M</div>
+                          <div class="rtn-swap-meta">+$370 · color negro</div>
+                        </div>
                       </div>
                     </div>
                   </div>
+
                   <div class="rtn-action-col">
                     <div class="rtn-mini-label">TIPO DE OPERACIÓN</div>
                     <div class="rtn-options">
@@ -355,6 +390,7 @@ const useCases = [
                         <span class="rtn-opt-name">Abono al monedero</span>
                       </div>
                     </div>
+
                     <div class="rtn-summary">
                       <div class="rtn-summary-row">
                         <span>Devuelto</span><span class="rtn-summary-strike">−$2,170</span>
@@ -366,10 +402,42 @@ const useCases = [
                         <span>Diferencia</span><span class="rtn-summary-pos">+$370</span>
                       </div>
                     </div>
-                    <div class="rtn-cta">Confirmar y enviar ticket</div>
+
+                    <div class="rtn-method">
+                      <div class="rtn-mini-label">COBRO DIFERENCIA</div>
+                      <div class="rtn-method-row">
+                        <span class="rtn-method-pill rtn-method-pill--active">Tarjeta · Tap</span>
+                        <span class="rtn-method-pill">Efectivo</span>
+                        <span class="rtn-method-pill">Monedero</span>
+                      </div>
+                    </div>
+
+                    <button class="rtn-cta" type="button">
+                      <span class="rtn-cta-label">Confirmar y enviar ticket</span>
+                      <span class="rtn-cta-arrow">→</span>
+                    </button>
                     <div class="rtn-foot">
-                      <span class="rtn-foot-ic">🔒</span>
+                      <span class="rtn-foot-ic">⚿</span>
                       <span>Autorizado por · Gerente · Cl. Romero</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Success modal — animated overlay */}
+                <div class="rtn-modal" aria-hidden="true">
+                  <div class="rtn-modal-card">
+                    <div class="rtn-modal-check">
+                      <svg viewBox="0 0 48 48" width="48" height="48" fill="none">
+                        <circle cx="24" cy="24" r="22" stroke="#2AB5A0" stroke-width="2"/>
+                        <path class="rtn-modal-check-path" d="M14 24l7 7 14-14" stroke="#2AB5A0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </div>
+                    <div class="rtn-modal-title">Cambio realizado</div>
+                    <div class="rtn-modal-desc">Ticket A-78443-R enviado por WhatsApp a Andrea</div>
+                    <div class="rtn-modal-rows">
+                      <div class="rtn-modal-row"><span>Diferencia cobrada</span><span class="rtn-modal-pos">+$370</span></div>
+                      <div class="rtn-modal-row"><span>Stock actualizado</span><span class="rtn-modal-pos">3 SKUs</span></div>
+                      <div class="rtn-modal-row"><span>Acuse · ID</span><span>A78443-R-2026</span></div>
                     </div>
                   </div>
                 </div>
@@ -3990,20 +4058,58 @@ const useCases = [
     height: 100%;
   }
 
-  /* ── Cambios y devoluciones slide ── */
+  /* ── Cambios y devoluciones slide — fills tablet, animated flow ── */
   .rtn-frame {
     aspect-ratio: 16 / 10;
     width: 100%;
     background: #FAFAFA;
-    padding: 4% 4.5%;
+    padding: 2.4% 3% 2.4%;
     font-family: var(--font-body);
     color: #1A1A1A;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
   }
+
+  /* Top bar */
+  .rtn-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 6px 8px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    flex-shrink: 0;
+  }
+  .rtn-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .rtn-topbar-back {
+    font-size: 16px;
+    color: rgba(0,0,0,0.45);
+    line-height: 1;
+  }
+  .rtn-topbar-title {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 800;
+    color: #1A1A1A;
+    letter-spacing: -0.01em;
+  }
+  .rtn-topbar-meta {
+    font-size: 8px;
+    color: rgba(0,0,0,0.5);
+  }
+
   .rtn-grid {
     display: grid;
-    grid-template-columns: 1.05fr 1fr;
-    gap: 14px;
-    height: 100%;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 12px;
+    flex: 1;
+    min-height: 0;
   }
   .rtn-mini-label {
     font-size: 7px;
@@ -4017,64 +4123,68 @@ const useCases = [
   .rtn-search-col, .rtn-action-col {
     display: flex;
     flex-direction: column;
+    min-height: 0;
   }
-  .rtn-search {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: #fff;
-    border: 1px solid rgba(0,0,0,0.08);
-    border-radius: 8px;
-    padding: 7px 10px;
-    margin-bottom: 6px;
-  }
-  .rtn-search-ic {
-    font-size: 11px;
-    color: rgba(0,0,0,0.45);
-  }
-  .rtn-search-txt {
-    font-family: var(--font-display);
-    font-size: 10px;
-    font-weight: 700;
-    color: #1A1A1A;
-    letter-spacing: 0.04em;
-  }
-  .rtn-result {
-    background: #fff;
-    border: 1px solid rgba(0,0,0,0.06);
-    border-radius: 8px;
-    padding: 8px 10px;
-  }
-  .rtn-result-meta {
-    font-size: 7px;
-    color: rgba(0,0,0,0.55);
-    margin-bottom: 2px;
-  }
-  .rtn-result-total {
-    font-family: var(--font-display);
-    font-size: 12px;
-    font-weight: 800;
-    color: #1A1A1A;
-    letter-spacing: -0.01em;
-  }
+
+  /* Items list with thumbnails */
   .rtn-items {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
   }
   .rtn-item {
+    display: grid;
+    grid-template-columns: 38px 1fr auto;
+    align-items: center;
+    gap: 9px;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 8px;
+    padding: 6px 9px 6px 6px;
+  }
+  .rtn-item--selected {
+    border-color: rgba(42,181,160,0.45);
+    background: rgba(42,181,160,0.05);
+    box-shadow: 0 1px 4px -1px rgba(42,181,160,0.10);
+  }
+  .rtn-thumb {
+    width: 38px;
+    height: 38px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #F5F5F7;
+    flex-shrink: 0;
+  }
+  .rtn-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .rtn-thumb--sm {
+    width: 30px;
+    height: 30px;
+    border-radius: 5px;
+  }
+  .rtn-item-body {
+    min-width: 0;
+  }
+  .rtn-item-name {
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #1A1A1A;
+    line-height: 1.2;
+  }
+  .rtn-item-meta {
+    font-size: 7px;
+    color: rgba(0,0,0,0.5);
+    margin-top: 1.5px;
+    letter-spacing: 0.02em;
+  }
+  .rtn-item-right {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: #fff;
-    border: 1px solid rgba(0,0,0,0.06);
-    border-radius: 6px;
-    padding: 6px 8px;
-    font-size: 8px;
-  }
-  .rtn-item--selected {
-    border-color: rgba(42,181,160,0.4);
-    background: rgba(42,181,160,0.06);
   }
   .rtn-check {
     width: 14px;
@@ -4091,17 +4201,60 @@ const useCases = [
   }
   .rtn-check--off {
     background: transparent;
-    border: 1px solid rgba(0,0,0,0.18);
-  }
-  .rtn-item-name {
-    flex: 1;
-    color: #1A1A1A;
-    font-weight: 600;
+    border: 1px solid rgba(0,0,0,0.22);
   }
   .rtn-item-price {
-    color: rgba(0,0,0,0.5);
+    font-family: var(--font-display);
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #1A1A1A;
+    letter-spacing: -0.01em;
+  }
+  .rtn-item-price--off {
+    color: rgba(0,0,0,0.45);
     font-weight: 600;
   }
+
+  /* Swap (cambio por) row */
+  .rtn-swap {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 6px;
+    align-items: center;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 8px;
+    padding: 7px 8px;
+  }
+  .rtn-swap-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .rtn-swap-item--new .rtn-swap-name { color: #2AB5A0; }
+  .rtn-swap-body { min-width: 0; }
+  .rtn-swap-name {
+    font-size: 8px;
+    font-weight: 700;
+    color: #1A1A1A;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .rtn-swap-meta {
+    font-size: 6.5px;
+    color: rgba(0,0,0,0.5);
+    margin-top: 1px;
+  }
+  .rtn-swap-arrow {
+    color: rgba(0,0,0,0.4);
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  /* Action column */
   .rtn-options {
     display: flex;
     flex-direction: column;
@@ -4116,7 +4269,7 @@ const useCases = [
     border: 1px solid rgba(0,0,0,0.06);
     border-radius: 6px;
     padding: 7px 9px;
-    font-size: 8px;
+    font-size: 8.5px;
   }
   .rtn-opt--active {
     border-color: #1A1A1A;
@@ -4133,7 +4286,7 @@ const useCases = [
   }
   .rtn-opt-radio--off {
     background: transparent;
-    border: 1px solid rgba(0,0,0,0.2);
+    border: 1px solid rgba(0,0,0,0.22);
     box-shadow: none;
   }
   .rtn-opt-name {
@@ -4168,20 +4321,59 @@ const useCases = [
     font-size: 11px;
     color: #1A1A1A;
   }
-  .rtn-summary-pos {
-    color: #2AB5A0;
+  .rtn-summary-pos { color: #2AB5A0; }
+
+  .rtn-method { margin-bottom: 8px; }
+  .rtn-method-row {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
   }
+  .rtn-method-pill {
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 999px;
+    padding: 4px 9px;
+    font-size: 7.5px;
+    font-weight: 600;
+    color: rgba(0,0,0,0.55);
+    letter-spacing: 0.02em;
+  }
+  .rtn-method-pill--active {
+    background: #1A1A1A;
+    border-color: #1A1A1A;
+    color: #fff;
+  }
+
   .rtn-cta {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    width: 100%;
     background: #1A1A1A;
     color: #fff;
     font-family: var(--font-display);
-    font-size: 9px;
+    font-size: 9.5px;
     font-weight: 700;
     text-align: center;
     padding: 9px;
-    border-radius: 6px;
+    border-radius: 8px;
     margin-bottom: 6px;
     letter-spacing: 0.03em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    animation: rtn-cta-loop 8s ease-in-out infinite;
+  }
+  .rtn-cta-arrow {
+    transition: transform 0.4s ease;
+    display: inline-block;
+  }
+  @keyframes rtn-cta-loop {
+    0%, 35% { background: #1A1A1A; transform: scale(1); }
+    40% { background: #2AB5A0; transform: scale(0.97); }
+    45%, 100% { background: #1A1A1A; transform: scale(1); }
   }
   .rtn-foot {
     display: flex;
@@ -4189,6 +4381,110 @@ const useCases = [
     gap: 4px;
     font-size: 7px;
     color: rgba(0,0,0,0.5);
+  }
+  .rtn-foot-ic {
+    font-size: 9px;
+    color: rgba(0,0,0,0.45);
+  }
+
+  /* Success modal — fades in midway through the loop */
+  .rtn-modal {
+    position: absolute;
+    inset: 0;
+    background: rgba(20,20,30,0.40);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    animation: rtn-modal-loop 8s ease-in-out infinite;
+  }
+  .rtn-modal-card {
+    width: 56%;
+    max-width: 380px;
+    background: #FFFFFF;
+    border-radius: 14px;
+    padding: 18px 20px 16px;
+    box-shadow: 0 16px 48px -12px rgba(20,20,30,0.30);
+    text-align: center;
+    transform: scale(0.94);
+    animation: rtn-modal-card-loop 8s ease-in-out infinite;
+  }
+  .rtn-modal-check {
+    margin: 0 auto 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .rtn-modal-check svg { width: 36px; height: 36px; }
+  .rtn-modal-check-path {
+    stroke-dasharray: 30;
+    stroke-dashoffset: 30;
+    animation: rtn-modal-check-loop 8s ease-in-out infinite;
+  }
+  .rtn-modal-title {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 800;
+    color: #1A1A1A;
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+  }
+  .rtn-modal-desc {
+    font-size: 8px;
+    color: rgba(0,0,0,0.55);
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+  .rtn-modal-rows {
+    background: #FAFAFA;
+    border-radius: 8px;
+    padding: 8px 10px;
+    text-align: left;
+  }
+  .rtn-modal-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 7.5px;
+    color: rgba(0,0,0,0.6);
+    padding: 2px 0;
+  }
+  .rtn-modal-row span:last-child {
+    font-weight: 700;
+    color: #1A1A1A;
+  }
+  .rtn-modal-pos { color: #2AB5A0 !important; }
+
+  /* Animation timeline (shared across modal layers):
+     0–48%   → idle (form visible, modal hidden)
+     48–55%  → CTA pressed (rtn-cta-loop)
+     55–60%  → modal fade-in
+     60–92%  → modal visible, check stroke draws
+     92–100% → modal fade-out, return to idle */
+  @keyframes rtn-modal-loop {
+    0%, 55%   { opacity: 0; pointer-events: none; }
+    60%, 92%  { opacity: 1; pointer-events: auto; }
+    100%      { opacity: 0; pointer-events: none; }
+  }
+  @keyframes rtn-modal-card-loop {
+    0%, 55%   { transform: scale(0.94) translateY(8px); }
+    62%, 92%  { transform: scale(1) translateY(0); }
+    100%      { transform: scale(0.94) translateY(8px); }
+  }
+  @keyframes rtn-modal-check-loop {
+    0%, 60%   { stroke-dashoffset: 30; }
+    72%, 92%  { stroke-dashoffset: 0; }
+    100%      { stroke-dashoffset: 30; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rtn-cta, .rtn-modal, .rtn-modal-card, .rtn-modal-check-path {
+      animation: none !important;
+    }
+    .rtn-modal { display: none; }
   }
 
   /* ── Cobro móvil — line-busting slide ── */
