@@ -4717,7 +4717,7 @@ const useCases = [
       0 0 0 1px rgba(0,0,0,0.06),
       0 30px 60px -20px rgba(20,20,30,0.30),
       0 12px 28px -8px rgba(20,20,30,0.18);
-    animation: ec-device-morph 24s ease-in-out infinite;
+    animation: ec-device-morph 14s ease-in-out infinite;
     position: relative;
   }
   @keyframes ec-device-morph {
@@ -4733,7 +4733,7 @@ const useCases = [
     gap: 6px;
     padding: 6px 10px 4px;
     flex-shrink: 0;
-    animation: ec-bar-fade 24s ease-in-out infinite;
+    animation: ec-bar-fade 14s ease-in-out infinite;
   }
   @keyframes ec-bar-fade {
     0%, 76%   { opacity: 1; height: auto; padding-bottom: 4px; }
@@ -4766,7 +4766,7 @@ const useCases = [
     overflow: hidden;
     position: relative;
     min-height: 0;
-    animation: ec-screen-radius 24s ease-in-out infinite;
+    animation: ec-screen-radius 14s ease-in-out infinite;
   }
   @keyframes ec-screen-radius {
     0%, 70%   { border-radius: 8px; }
@@ -4785,11 +4785,11 @@ const useCases = [
     font-family: var(--font-body);
     color: #1A1A1A;
   }
-  .ec-layer--home     { animation: ec-layer-home 24s ease-in-out infinite; }
-  .ec-layer--catalog  { animation: ec-layer-catalog 24s ease-in-out infinite; }
-  .ec-layer--cart     { animation: ec-layer-cart 24s ease-in-out infinite; }
-  .ec-layer--checkout { animation: ec-layer-checkout 24s ease-in-out infinite; }
-  .ec-layer--ok       { animation: ec-layer-ok 24s ease-in-out infinite; }
+  .ec-layer--home     { animation: ec-layer-home 14s ease-in-out infinite; }
+  .ec-layer--catalog  { animation: ec-layer-catalog 14s ease-in-out infinite; }
+  .ec-layer--cart     { animation: ec-layer-cart 14s ease-in-out infinite; }
+  .ec-layer--checkout { animation: ec-layer-checkout 14s ease-in-out infinite; }
+  .ec-layer--ok       { animation: ec-layer-ok 14s ease-in-out infinite; }
 
   /* Timeline:
      0-15%   Home
@@ -4839,7 +4839,7 @@ const useCases = [
     display: flex;
     flex-direction: column;
     transform: translateY(0);
-    animation: ec-home-scroll-anim 24s ease-in-out infinite;
+    animation: ec-home-scroll-anim 14s ease-in-out infinite;
   }
   @keyframes ec-home-scroll-anim {
     0%, 22%   { transform: translateY(0); }
@@ -4901,7 +4901,7 @@ const useCases = [
     background-size: cover;
     background-position: center 25%;
     transform: scale(1.05);
-    animation: ec-hero-zoom 24s ease-out infinite;
+    animation: ec-hero-zoom 14s ease-out infinite;
   }
   @keyframes ec-hero-zoom {
     0%   { transform: scale(1.05); }
@@ -5184,7 +5184,7 @@ const useCases = [
     font-weight: 700;
     letter-spacing: 0.04em;
     transform: translateY(100%);
-    animation: ec-add-show 24s ease-in-out infinite;
+    animation: ec-add-show 14s ease-in-out infinite;
   }
   @keyframes ec-add-show {
     0%, 25%   { transform: translateY(100%); }
@@ -5192,7 +5192,7 @@ const useCases = [
     32%, 100% { transform: translateY(100%); }
   }
   .ec-prod--target {
-    animation: ec-prod-pulse 24s ease-in-out infinite;
+    animation: ec-prod-pulse 14s ease-in-out infinite;
   }
   @keyframes ec-prod-pulse {
     0%, 22%   { box-shadow: 0 0 0 0 rgba(42,181,160,0); transform: scale(1); }
@@ -5523,7 +5523,7 @@ const useCases = [
   .ec-ok-path {
     stroke-dasharray: 30;
     stroke-dashoffset: 30;
-    animation: ec-ok-draw 24s ease-in-out infinite;
+    animation: ec-ok-draw 14s ease-in-out infinite;
   }
   @keyframes ec-ok-draw {
     0%, 76%   { stroke-dashoffset: 30; }
@@ -5672,10 +5672,10 @@ const useCases = [
     font-family: var(--font-body);
     color: #1A1A1A;
   }
-  .cnt-layer--scan  { animation: cnt-layer-scan 16s ease-in-out infinite; }
-  .cnt-layer--flash { animation: cnt-layer-flash 16s ease-in-out infinite; }
-  .cnt-layer--prod  { animation: cnt-layer-prod 16s ease-in-out infinite; }
-  .cnt-layer--done  { animation: cnt-layer-done 16s ease-in-out infinite; }
+  .cnt-layer--scan  { animation: cnt-layer-scan 10s ease-in-out infinite; }
+  .cnt-layer--flash { animation: cnt-layer-flash 10s ease-in-out infinite; }
+  .cnt-layer--prod  { animation: cnt-layer-prod 10s ease-in-out infinite; }
+  .cnt-layer--done  { animation: cnt-layer-done 10s ease-in-out infinite; }
 
   /* Timeline:
      0-22%   Scan viewfinder
@@ -5810,7 +5810,7 @@ const useCases = [
     background: #2AB5A0;
     border-radius: 2px;
     width: 17%;
-    animation: cnt-scan-progress-fill 16s ease-in-out infinite;
+    animation: cnt-scan-progress-fill 10s ease-in-out infinite;
   }
   @keyframes cnt-scan-progress-fill {
     0%        { width: 17%; }
@@ -5829,7 +5829,7 @@ const useCases = [
     color: #2AB5A0;
     font-family: var(--font-display);
     font-weight: 800;
-    animation: cnt-counter-grow 16s steps(8) infinite;
+    animation: cnt-counter-grow 10s steps(8) infinite;
   }
   @keyframes cnt-counter-grow {
     0%     { content: '42'; }
@@ -5844,7 +5844,7 @@ const useCases = [
   }
   .cnt-flash-card {
     text-align: center;
-    animation: cnt-flash-pop 16s ease-in-out infinite;
+    animation: cnt-flash-pop 10s ease-in-out infinite;
   }
   @keyframes cnt-flash-pop {
     0%, 22% { transform: scale(0.85); opacity: 0; }
@@ -5957,7 +5957,7 @@ const useCases = [
   .cnt-prod-count-btn--plus {
     background: #1A1A1A;
     color: #fff;
-    animation: cnt-plus-pulse 16s ease-in-out infinite;
+    animation: cnt-plus-pulse 10s ease-in-out infinite;
   }
   @keyframes cnt-plus-pulse {
     0%, 44%   { box-shadow: 0 0 0 0 rgba(42,181,160,0); }
@@ -5974,7 +5974,7 @@ const useCases = [
     line-height: 1;
   }
   .cnt-prod-num-anim {
-    animation: cnt-num-tick 16s steps(2) infinite;
+    animation: cnt-num-tick 10s steps(2) infinite;
   }
   @keyframes cnt-num-tick {
     0%, 47%  { content: '23'; }
@@ -6002,8 +6002,8 @@ const useCases = [
     right: 0;
     transition: opacity 0.3s;
   }
-  .cnt-prod-status-pending { color: rgba(0,0,0,0.55); animation: cnt-status-pend 16s ease-in-out infinite; }
-  .cnt-prod-status-done    { color: #1A8F7A; opacity: 0; font-weight: 700; animation: cnt-status-done 16s ease-in-out infinite; }
+  .cnt-prod-status-pending { color: rgba(0,0,0,0.55); animation: cnt-status-pend 10s ease-in-out infinite; }
+  .cnt-prod-status-done    { color: #1A8F7A; opacity: 0; font-weight: 700; animation: cnt-status-done 10s ease-in-out infinite; }
   @keyframes cnt-status-pend { 0%,47%{opacity:1;} 50%,100%{opacity:0;} }
   @keyframes cnt-status-done { 0%,47%{opacity:0;} 50%,100%{opacity:1;} }
 
@@ -6032,7 +6032,7 @@ const useCases = [
   .cnt-done-path {
     stroke-dasharray: 30;
     stroke-dashoffset: 30;
-    animation: cnt-done-draw 16s ease-in-out infinite;
+    animation: cnt-done-draw 10s ease-in-out infinite;
   }
   @keyframes cnt-done-draw {
     0%, 60%  { stroke-dashoffset: 30; }
@@ -6107,7 +6107,7 @@ const useCases = [
     font-family: var(--font-body);
     transform: translateX(40px);
     opacity: 0;
-    animation: cnt-report-emerge 16s ease-in-out infinite;
+    animation: cnt-report-emerge 10s ease-in-out infinite;
   }
   @keyframes cnt-report-emerge {
     0%, 60%   { transform: translateX(40px); opacity: 0; }
@@ -6330,7 +6330,7 @@ const useCases = [
     height: 6px;
     border-radius: 50%;
     background: #4B7BE5;
-    animation: apt2-status-color 16s ease-in-out infinite;
+    animation: apt2-status-color 10s ease-in-out infinite;
   }
   @keyframes apt2-status-color {
     0%, 22%   { background: #4B7BE5; box-shadow: 0 0 0 3px rgba(75,123,229,0.18); }
@@ -6339,10 +6339,10 @@ const useCases = [
     75%, 100% { background: #2AB5A0; box-shadow: 0 0 0 3px rgba(42,181,160,0.22); }
   }
   .apt2-status-txt { display: none; }
-  .apt2-status-txt--1 { display: inline; animation: apt2-status-1 16s ease-in-out infinite; }
-  .apt2-status-txt--2 { display: inline; position: absolute; right: 10px; opacity: 0; animation: apt2-status-2 16s ease-in-out infinite; }
-  .apt2-status-txt--3 { display: inline; position: absolute; right: 10px; opacity: 0; animation: apt2-status-3 16s ease-in-out infinite; }
-  .apt2-status-txt--4 { display: inline; position: absolute; right: 10px; opacity: 0; animation: apt2-status-4 16s ease-in-out infinite; }
+  .apt2-status-txt--1 { display: inline; animation: apt2-status-1 10s ease-in-out infinite; }
+  .apt2-status-txt--2 { display: inline; position: absolute; right: 10px; opacity: 0; animation: apt2-status-2 10s ease-in-out infinite; }
+  .apt2-status-txt--3 { display: inline; position: absolute; right: 10px; opacity: 0; animation: apt2-status-3 10s ease-in-out infinite; }
+  .apt2-status-txt--4 { display: inline; position: absolute; right: 10px; opacity: 0; animation: apt2-status-4 10s ease-in-out infinite; }
   @keyframes apt2-status-1 { 0%,22%{opacity:1;} 25%,100%{opacity:0;} }
   @keyframes apt2-status-2 { 0%,22%{opacity:0;} 25%,47%{opacity:1;} 50%,100%{opacity:0;} }
   @keyframes apt2-status-3 { 0%,47%{opacity:0;} 50%,72%{opacity:1;} 75%,100%{opacity:0;} }
@@ -6403,29 +6403,29 @@ const useCases = [
   }
 
   /* Step active/done states animated via keyframes */
-  .apt2-step--1 .apt2-step-circle { animation: apt2-circle-1 16s ease-in-out infinite; }
-  .apt2-step--1 .apt2-step-num    { animation: apt2-num-1    16s ease-in-out infinite; }
-  .apt2-step--1 .apt2-step-check  { animation: apt2-check-1  16s ease-in-out infinite; }
-  .apt2-step--1 .apt2-step-label  { animation: apt2-label-1  16s ease-in-out infinite; }
+  .apt2-step--1 .apt2-step-circle { animation: apt2-circle-1 10s ease-in-out infinite; }
+  .apt2-step--1 .apt2-step-num    { animation: apt2-num-1    10s ease-in-out infinite; }
+  .apt2-step--1 .apt2-step-check  { animation: apt2-check-1  10s ease-in-out infinite; }
+  .apt2-step--1 .apt2-step-label  { animation: apt2-label-1  10s ease-in-out infinite; }
 
-  .apt2-step--2 .apt2-step-circle { animation: apt2-circle-2 16s ease-in-out infinite; }
-  .apt2-step--2 .apt2-step-num    { animation: apt2-num-2    16s ease-in-out infinite; }
-  .apt2-step--2 .apt2-step-check  { animation: apt2-check-2  16s ease-in-out infinite; }
-  .apt2-step--2 .apt2-step-label  { animation: apt2-label-2  16s ease-in-out infinite; }
+  .apt2-step--2 .apt2-step-circle { animation: apt2-circle-2 10s ease-in-out infinite; }
+  .apt2-step--2 .apt2-step-num    { animation: apt2-num-2    10s ease-in-out infinite; }
+  .apt2-step--2 .apt2-step-check  { animation: apt2-check-2  10s ease-in-out infinite; }
+  .apt2-step--2 .apt2-step-label  { animation: apt2-label-2  10s ease-in-out infinite; }
 
-  .apt2-step--3 .apt2-step-circle { animation: apt2-circle-3 16s ease-in-out infinite; }
-  .apt2-step--3 .apt2-step-num    { animation: apt2-num-3    16s ease-in-out infinite; }
-  .apt2-step--3 .apt2-step-check  { animation: apt2-check-3  16s ease-in-out infinite; }
-  .apt2-step--3 .apt2-step-label  { animation: apt2-label-3  16s ease-in-out infinite; }
+  .apt2-step--3 .apt2-step-circle { animation: apt2-circle-3 10s ease-in-out infinite; }
+  .apt2-step--3 .apt2-step-num    { animation: apt2-num-3    10s ease-in-out infinite; }
+  .apt2-step--3 .apt2-step-check  { animation: apt2-check-3  10s ease-in-out infinite; }
+  .apt2-step--3 .apt2-step-label  { animation: apt2-label-3  10s ease-in-out infinite; }
 
-  .apt2-step--4 .apt2-step-circle { animation: apt2-circle-4 16s ease-in-out infinite; }
-  .apt2-step--4 .apt2-step-num    { animation: apt2-num-4    16s ease-in-out infinite; }
-  .apt2-step--4 .apt2-step-check  { animation: apt2-check-4  16s ease-in-out infinite; }
-  .apt2-step--4 .apt2-step-label  { animation: apt2-label-4  16s ease-in-out infinite; }
+  .apt2-step--4 .apt2-step-circle { animation: apt2-circle-4 10s ease-in-out infinite; }
+  .apt2-step--4 .apt2-step-num    { animation: apt2-num-4    10s ease-in-out infinite; }
+  .apt2-step--4 .apt2-step-check  { animation: apt2-check-4  10s ease-in-out infinite; }
+  .apt2-step--4 .apt2-step-label  { animation: apt2-label-4  10s ease-in-out infinite; }
 
-  .apt2-step-line--1::after { animation: apt2-line-1 16s ease-in-out infinite; }
-  .apt2-step-line--2::after { animation: apt2-line-2 16s ease-in-out infinite; }
-  .apt2-step-line--3::after { animation: apt2-line-3 16s ease-in-out infinite; }
+  .apt2-step-line--1::after { animation: apt2-line-1 10s ease-in-out infinite; }
+  .apt2-step-line--2::after { animation: apt2-line-2 10s ease-in-out infinite; }
+  .apt2-step-line--3::after { animation: apt2-line-3 10s ease-in-out infinite; }
 
   /* Step 1: active 0-22%, done 22-100% */
   @keyframes apt2-circle-1 {
@@ -6583,15 +6583,15 @@ const useCases = [
   .apt2-pay-status-pending { color: rgba(0,0,0,0.45); }
   .apt2-pay-status-paid    { color: #1A8F7A; opacity: 0; }
 
-  .apt2-pay--1 .apt2-pay-dot           { animation: apt2-paydot-1 16s ease-in-out infinite; }
-  .apt2-pay--1 .apt2-pay-status-pending { animation: apt2-paypend-1 16s ease-in-out infinite; }
-  .apt2-pay--1 .apt2-pay-status-paid    { animation: apt2-paypaid-1 16s ease-in-out infinite; }
-  .apt2-pay--2 .apt2-pay-dot           { animation: apt2-paydot-2 16s ease-in-out infinite; }
-  .apt2-pay--2 .apt2-pay-status-pending { animation: apt2-paypend-2 16s ease-in-out infinite; }
-  .apt2-pay--2 .apt2-pay-status-paid    { animation: apt2-paypaid-2 16s ease-in-out infinite; }
-  .apt2-pay--3 .apt2-pay-dot           { animation: apt2-paydot-3 16s ease-in-out infinite; }
-  .apt2-pay--3 .apt2-pay-status-pending { animation: apt2-paypend-3 16s ease-in-out infinite; }
-  .apt2-pay--3 .apt2-pay-status-paid    { animation: apt2-paypaid-3 16s ease-in-out infinite; }
+  .apt2-pay--1 .apt2-pay-dot           { animation: apt2-paydot-1 10s ease-in-out infinite; }
+  .apt2-pay--1 .apt2-pay-status-pending { animation: apt2-paypend-1 10s ease-in-out infinite; }
+  .apt2-pay--1 .apt2-pay-status-paid    { animation: apt2-paypaid-1 10s ease-in-out infinite; }
+  .apt2-pay--2 .apt2-pay-dot           { animation: apt2-paydot-2 10s ease-in-out infinite; }
+  .apt2-pay--2 .apt2-pay-status-pending { animation: apt2-paypend-2 10s ease-in-out infinite; }
+  .apt2-pay--2 .apt2-pay-status-paid    { animation: apt2-paypaid-2 10s ease-in-out infinite; }
+  .apt2-pay--3 .apt2-pay-dot           { animation: apt2-paydot-3 10s ease-in-out infinite; }
+  .apt2-pay--3 .apt2-pay-status-pending { animation: apt2-paypend-3 10s ease-in-out infinite; }
+  .apt2-pay--3 .apt2-pay-status-paid    { animation: apt2-paypaid-3 10s ease-in-out infinite; }
 
   /* Pay 1 paid at 25% */
   @keyframes apt2-paydot-1   { 0%,22%{background:rgba(0,0,0,0.18);} 25%,100%{background:#2AB5A0;} }
@@ -6623,7 +6623,7 @@ const useCases = [
     background: linear-gradient(90deg, #2AB5A0, #4B7BE5);
     border-radius: 2px;
     width: 0;
-    animation: apt2-progress 16s ease-in-out infinite;
+    animation: apt2-progress 10s ease-in-out infinite;
   }
   @keyframes apt2-progress {
     0%, 22%   { width: 0; }
@@ -6654,10 +6654,10 @@ const useCases = [
     margin-left: 26px;
     color: rgba(0,0,0,0.4);
   }
-  .apt2-progress-paid--1 { animation: apt2-paid-1 16s ease-in-out infinite; }
-  .apt2-progress-paid--2 { animation: apt2-paid-2 16s ease-in-out infinite; }
-  .apt2-progress-paid--3 { animation: apt2-paid-3 16s ease-in-out infinite; }
-  .apt2-progress-paid--4 { animation: apt2-paid-4 16s ease-in-out infinite; }
+  .apt2-progress-paid--1 { animation: apt2-paid-1 10s ease-in-out infinite; }
+  .apt2-progress-paid--2 { animation: apt2-paid-2 10s ease-in-out infinite; }
+  .apt2-progress-paid--3 { animation: apt2-paid-3 10s ease-in-out infinite; }
+  .apt2-progress-paid--4 { animation: apt2-paid-4 10s ease-in-out infinite; }
   @keyframes apt2-paid-1 { 0%,22%{opacity:1;color:#1A1A1A;font-weight:700;} 25%,100%{opacity:0;} }
   @keyframes apt2-paid-2 { 0%,22%{opacity:0;} 25%,47%{opacity:1;color:#1A8F7A;font-weight:700;} 50%,100%{opacity:0;} }
   @keyframes apt2-paid-3 { 0%,47%{opacity:0;} 50%,72%{opacity:1;color:#1A8F7A;font-weight:700;} 75%,100%{opacity:0;} }
@@ -6669,10 +6669,10 @@ const useCases = [
     right: 0;
     opacity: 0;
   }
-  .apt2-progress-due--1 { animation: apt2-due-1 16s ease-in-out infinite; }
-  .apt2-progress-due--2 { animation: apt2-due-2 16s ease-in-out infinite; }
-  .apt2-progress-due--3 { animation: apt2-due-3 16s ease-in-out infinite; }
-  .apt2-progress-due--4 { animation: apt2-due-4 16s ease-in-out infinite; }
+  .apt2-progress-due--1 { animation: apt2-due-1 10s ease-in-out infinite; }
+  .apt2-progress-due--2 { animation: apt2-due-2 10s ease-in-out infinite; }
+  .apt2-progress-due--3 { animation: apt2-due-3 10s ease-in-out infinite; }
+  .apt2-progress-due--4 { animation: apt2-due-4 10s ease-in-out infinite; }
   @keyframes apt2-due-1 { 0%,22%{opacity:1;} 25%,100%{opacity:0;} }
   @keyframes apt2-due-2 { 0%,22%{opacity:0;} 25%,47%{opacity:1;} 50%,100%{opacity:0;} }
   @keyframes apt2-due-3 { 0%,47%{opacity:0;} 50%,72%{opacity:1;} 75%,100%{opacity:0;} }
@@ -6696,10 +6696,10 @@ const useCases = [
     transform: translateY(8px);
     transition: opacity 0.4s, transform 0.4s;
   }
-  .apt2-side-event--1 { animation: apt2-side-1 16s ease-in-out infinite; }
-  .apt2-side-event--2 { animation: apt2-side-2 16s ease-in-out infinite; }
-  .apt2-side-event--3 { animation: apt2-side-3 16s ease-in-out infinite; }
-  .apt2-side-event--4 { animation: apt2-side-4 16s ease-in-out infinite; }
+  .apt2-side-event--1 { animation: apt2-side-1 10s ease-in-out infinite; }
+  .apt2-side-event--2 { animation: apt2-side-2 10s ease-in-out infinite; }
+  .apt2-side-event--3 { animation: apt2-side-3 10s ease-in-out infinite; }
+  .apt2-side-event--4 { animation: apt2-side-4 10s ease-in-out infinite; }
   @keyframes apt2-side-1 {
     0%, 22%  { opacity: 1; transform: translateY(0); }
     25%, 100% { opacity: 0; transform: translateY(-8px); }
@@ -7263,9 +7263,9 @@ const useCases = [
     opacity: 0;
     transition: opacity 0.4s ease;
   }
-  .mob-layer--cart      { animation: mob-layer-cart 12s ease-in-out infinite; }
-  .mob-layer--tap       { animation: mob-layer-tap 12s ease-in-out infinite; }
-  .mob-layer--ok        { animation: mob-layer-ok 12s ease-in-out infinite; }
+  .mob-layer--cart      { animation: mob-layer-cart 8s ease-in-out infinite; }
+  .mob-layer--tap       { animation: mob-layer-tap 8s ease-in-out infinite; }
+  .mob-layer--ok        { animation: mob-layer-ok 8s ease-in-out infinite; }
 
   @keyframes mob-layer-cart {
     0%, 28%   { opacity: 1; }
@@ -7532,7 +7532,7 @@ const useCases = [
   .mob-ok-path {
     stroke-dasharray: 30;
     stroke-dashoffset: 30;
-    animation: mob-ok-path-draw 12s ease-in-out infinite;
+    animation: mob-ok-path-draw 8s ease-in-out infinite;
   }
   @keyframes mob-ok-path-draw {
     0%, 65%   { stroke-dashoffset: 30; }
@@ -7602,7 +7602,7 @@ const useCases = [
     background: transparent;
     transform: translateX(40px);
     opacity: 0;
-    animation: mob-ticket-emerge 12s ease-in-out infinite;
+    animation: mob-ticket-emerge 8s ease-in-out infinite;
     font-family: var(--font-body);
     color: #1A1A1A;
     display: flex;
