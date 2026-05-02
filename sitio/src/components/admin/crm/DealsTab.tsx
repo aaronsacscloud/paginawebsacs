@@ -37,7 +37,7 @@ const STAGES = [
   { id: 'cerrada_perdida', label: 'Cerrada perdida', prob: 0, color: '#999' },
 ];
 
-const PLAN_PRICES: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 2900 };
+const PLAN_PRICES: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 5900 };
 
 const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
 const fmtDate = (d: string | null) => {
@@ -440,7 +440,7 @@ function CreateDealModal({ onClose, onCreated }: { onClose: () => void; onCreate
               <option value="vende">Vende ($600)</option>
               <option value="controla">Controla ($900)</option>
               <option value="fideliza">Fideliza ($1,400)</option>
-              <option value="automatiza">Automatiza ($2,900)</option>
+              <option value="automatiza">Automatiza ($5,900)</option>
             </select>
           </div>
           <div>

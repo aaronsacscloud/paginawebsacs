@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { plans as plansData } from '../../data/plans';
 
 const PLANS = ['vende', 'controla', 'fideliza', 'automatiza'];
-const PLAN_PRICES: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 2900 };
+const PLAN_PRICES: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 5900 };
 const IMPL_PRICES: Record<string, number> = { vende: 2000, controla: 4000, fideliza: 6000, automatiza: 9000 };
 const METODOS = ['transferencia', 'tarjeta', 'oxxo', 'otro'];
 const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');

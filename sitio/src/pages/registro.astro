@@ -754,7 +754,7 @@ const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
     vende: { name: 'Vende', price: '$600 MXN/mes por sucursal' },
     controla: { name: 'Controla', price: '$900 MXN/mes por sucursal' },
     fideliza: { name: 'Fideliza', price: '$1,400 MXN/mes por sucursal' },
-    automatiza: { name: 'Automatiza', price: '$2,900 MXN/mes por sucursal' },
+    automatiza: { name: 'Automatiza', price: '$5,900 MXN/mes por sucursal' },
   };
   const plan = planInfo[planParam] || planInfo['controla'];
 
@@ -889,7 +889,7 @@ const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
         const cleanPhone = rawPhone.replace(/\D/g, '');
         const e164Phone = cleanPhone ? lada + cleanPhone : '';
         ttq.identify({ email, phone_number: e164Phone });
-        const planPrices: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 2900 };
+        const planPrices: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 5900 };
         ttq.track('InitiateCheckout', {
           content_id: selectedPlan || 'unknown',
           content_name: selectedPlan || 'unknown',
@@ -1013,7 +1013,7 @@ const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
         // TikTok: registration complete with value
         try {
           if (typeof ttq !== 'undefined') {
-            const planPrices: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 2900 };
+            const planPrices: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 5900 };
             ttq.track('CompleteRegistration', {
               content_id: selectedPlan || 'unknown',
               content_name: selectedPlan || 'unknown',

@@ -404,7 +404,7 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
             <button class="calc-plan-opt" data-plan="vende" data-price="600">Vende<span>$600/mes</span></button>
             <button class="calc-plan-opt active" data-plan="controla" data-price="900">Controla<span>$900/mes</span></button>
             <button class="calc-plan-opt" data-plan="fideliza" data-price="1400">Fideliza<span>$1,400/mes</span></button>
-            <button class="calc-plan-opt" data-plan="automatiza" data-price="2900">Automatiza<span>$2,900/mes</span></button>
+            <button class="calc-plan-opt" data-plan="automatiza" data-price="5900">Automatiza<span>$5,900/mes</span></button>
           </div>
         </div>
 
@@ -2923,7 +2923,7 @@ const chevronIcon = `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"
         btn.addEventListener('click', () => {
           const card = btn.closest('[data-plan]') as HTMLElement;
           const planId = card?.dataset.plan || 'unknown';
-          const prices: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 2900 };
+          const prices: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 5900 };
           ttq.track('AddToCart', {
             contents: [{ content_id: planId, content_name: planId }],
             content_type: 'product',

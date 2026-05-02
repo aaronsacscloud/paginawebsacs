@@ -146,7 +146,7 @@ export const POST: APIRoute = async ({ request }) => {
     });
 
     // TikTok server-side: CompletePayment
-    const planPrices: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 2900 };
+    const planPrices: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 5900 };
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || '';
     const ua = request.headers.get('user-agent') || '';
     sendTikTokEvent(email, whatsapp || '', planId, planPrices[planId] || 0, ip, ua).catch(() => {});
