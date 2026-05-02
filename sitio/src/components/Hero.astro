@@ -4695,22 +4695,14 @@ const useCases = [
     transition: opacity 0.24s ease;
   }
 
-  /* Hide pillar-sections on mobile (mobile-cards takes over) */
+  /* Mobile: hide the legacy mobile-cards (mc-tabs + mc-step×4),
+     mostramos los pillar-section completos en stack vertical.
+     Las "continuation sections" (sq-features, ops-admin) siguen ocultas en móvil. */
   @media (max-width: 1023px) {
-    .pillar-section { display: none; }
-    /* Hide desktop continuation sections on mobile — they sit between desktop pillars */
     .sq-features--unified,
     .ops-admin-section { display: none; }
-
-    /* hero-tablet-section vuelve flex en móvil para poder reordenar
-       loyalty-pro-section: en desktop va después de Fideliza, en móvil
-       debe ir DESPUÉS de las cards (mc-step), no antes. */
-    .hero-tablet-section {
-      display: flex;
-      flex-direction: column;
-    }
-    .mobile-cards { order: 1; }
-    .loyalty-pro-section { order: 2; }
+    /* mobile-cards (mc-tabs + 4 mc-step) ya no se usa: pillar-section toma su lugar */
+    .mobile-cards { display: none !important; }
   }
 
   /* ── Controla continuation: Operación administrativa ── */
