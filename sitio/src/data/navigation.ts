@@ -311,7 +311,7 @@ export const footerLinks = {
     { label: 'Planes y precios', href: '/planes' },
     { label: 'Centro de ayuda', href: '#' },
     { label: 'Estado del sistema', href: '#' },
-    { label: 'Política de privacidad', href: '#' },
-    { label: 'Términos de uso', href: '#' },
+    { label: 'Aviso de privacidad', href: '/privacidad' },
+    { label: 'Términos y condiciones', href: '/terminos' },
   ],
 };
