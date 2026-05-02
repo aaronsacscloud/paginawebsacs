@@ -1980,21 +1980,28 @@ const useCases = [
             {/* ── Fideliza: CRM Omnicanal ── */}
             <div class="tablet-slide" data-slide="crm-omnicanal">
               <div class="crm2-frame">
-                {/* Sidebar */}
+                {/* Collapsed light sidebar */}
                 <aside class="crm2-side">
-                  <div class="crm2-side-brand">SACS · CRM</div>
+                  <div class="crm2-side-logo">S</div>
                   <nav class="crm2-side-nav">
-                    <span class="crm2-side-nav-item">⌂ Inicio</span>
-                    <span class="crm2-side-nav-item crm2-side-nav-item--active">◉ Clientes</span>
-                    <span class="crm2-side-nav-item">⊟ Segmentos</span>
-                    <span class="crm2-side-nav-item">✉ Campañas</span>
-                    <span class="crm2-side-nav-item">▭ Reportes</span>
+                    <span class="crm2-side-icn" title="Inicio">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>
+                    </span>
+                    <span class="crm2-side-icn crm2-side-icn--active" title="Clientes">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+                    </span>
+                    <span class="crm2-side-icn" title="Segmentos">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="6"/><circle cx="16" cy="16" r="6"/></svg>
+                    </span>
+                    <span class="crm2-side-icn" title="Campañas">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l9 6 9-6M3 8v10a2 2 0 002 2h14a2 2 0 002-2V8M3 8l2-3h14l2 3"/></svg>
+                    </span>
+                    <span class="crm2-side-icn" title="Reportes">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V5h4v16M11 21V11h4v10M17 21V14h4v7"/></svg>
+                    </span>
                   </nav>
                   <div class="crm2-side-foot">
-                    <div class="crm2-side-user">
-                      <span class="crm2-side-user-avatar">LM</span>
-                      <span class="crm2-side-user-name">Lina M.</span>
-                    </div>
+                    <span class="crm2-side-user-avatar">LM</span>
                   </div>
                 </aside>
 
@@ -2042,7 +2049,8 @@ const useCases = [
 
                   {/* Animated tabs */}
                   <div class="crm2-tabs">
-                    <span class="crm2-tab crm2-tab--1">Resumen</span>
+                    <span class="crm2-tab crm2-tab--0">Información</span>
+                    <span class="crm2-tab crm2-tab--1">Conversaciones</span>
                     <span class="crm2-tab crm2-tab--2">Compras</span>
                     <span class="crm2-tab crm2-tab--3">Recomendaciones IA</span>
                     <span class="crm2-tab crm2-tab--4">Lealtad</span>
@@ -2052,70 +2060,176 @@ const useCases = [
                   {/* Tab panels */}
                   <div class="crm2-panels">
 
-                    {/* Panel 1: Resumen — donut + last interactions */}
-                    <div class="crm2-panel crm2-panel--1">
-                      <div class="crm2-panel-grid">
+                    {/* Panel 0: Información del cliente — datos + AI summary */}
+                    <div class="crm2-panel crm2-panel--0">
+                      <div class="crm2-info-grid">
                         <div class="crm2-card">
                           <div class="crm2-card-head">
-                            <span class="crm2-card-title">Ventas por canal · 12m</span>
+                            <span class="crm2-card-title">Datos del cliente</span>
+                            <span class="crm2-card-tag">Verificado</span>
                           </div>
-                          <div class="crm2-donut">
-                            <svg viewBox="0 0 80 80" width="100" height="100">
-                              <circle cx="40" cy="40" r="32" fill="none" stroke="#E8E8EC" stroke-width="10"/>
-                              <circle cx="40" cy="40" r="32" fill="none" stroke="#1A1A1A" stroke-width="10"
-                                stroke-dasharray="80 201" stroke-dashoffset="0" transform="rotate(-90 40 40)"/>
-                              <circle cx="40" cy="40" r="32" fill="none" stroke="#4B7BE5" stroke-width="10"
-                                stroke-dasharray="60 201" stroke-dashoffset="-80" transform="rotate(-90 40 40)"/>
-                              <circle cx="40" cy="40" r="32" fill="none" stroke="#25D366" stroke-width="10"
-                                stroke-dasharray="40 201" stroke-dashoffset="-140" transform="rotate(-90 40 40)"/>
-                              <circle cx="40" cy="40" r="32" fill="none" stroke="#C13584" stroke-width="10"
-                                stroke-dasharray="21 201" stroke-dashoffset="-180" transform="rotate(-90 40 40)"/>
-                            </svg>
-                            <div class="crm2-donut-legend">
-                              <div class="crm2-donut-item"><span class="crm2-donut-dot" style="background:#1A1A1A"></span>Tienda 40%</div>
-                              <div class="crm2-donut-item"><span class="crm2-donut-dot" style="background:#4B7BE5"></span>Online 30%</div>
-                              <div class="crm2-donut-item"><span class="crm2-donut-dot" style="background:#25D366"></span>WhatsApp 20%</div>
-                              <div class="crm2-donut-item"><span class="crm2-donut-dot" style="background:#C13584"></span>Instagram 10%</div>
+                          <div class="crm2-info-rows">
+                            <div class="crm2-info-row">
+                              <span class="crm2-info-ic">✉</span>
+                              <span class="crm2-info-label">Email</span>
+                              <span class="crm2-info-value">andrea@gomez.mx</span>
+                            </div>
+                            <div class="crm2-info-row">
+                              <span class="crm2-info-ic">☎</span>
+                              <span class="crm2-info-label">Teléfono</span>
+                              <span class="crm2-info-value">+52 55 1290 4521</span>
+                            </div>
+                            <div class="crm2-info-row">
+                              <span class="crm2-info-ic crm2-info-ic--wa">⌬</span>
+                              <span class="crm2-info-label">WhatsApp</span>
+                              <span class="crm2-info-value">+52 55 1290 4521 <span class="crm2-info-pill">activo</span></span>
+                            </div>
+                            <div class="crm2-info-row">
+                              <span class="crm2-info-ic">⌖</span>
+                              <span class="crm2-info-label">Dirección</span>
+                              <span class="crm2-info-value">Av. Masaryk 88 · Polanco · CDMX 11550</span>
+                            </div>
+                            <div class="crm2-info-row">
+                              <span class="crm2-info-ic">⊞</span>
+                              <span class="crm2-info-label">Facturación</span>
+                              <span class="crm2-info-value">Andrea Gómez · GOMA940512XYZ · CDMX</span>
+                            </div>
+                            <div class="crm2-info-row">
+                              <span class="crm2-info-ic">◷</span>
+                              <span class="crm2-info-label">Cliente desde</span>
+                              <span class="crm2-info-value">15 mar 2024 · 26 meses</span>
                             </div>
                           </div>
                         </div>
 
-                        <div class="crm2-card">
+                        <div class="crm2-card crm2-card--ai">
                           <div class="crm2-card-head">
-                            <span class="crm2-card-title">Última actividad</span>
+                            <span class="crm2-card-title">
+                              <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="#4B7BE5" stroke-width="1.6" style="vertical-align:-2px;margin-right:4px;"><path d="M8 1l1.8 4.4L14.5 6l-3.5 3 1 4.7L8 11l-4 2.7 1-4.7L1.5 6l4.7-.6z"/></svg>
+                              Resumen IA
+                            </span>
+                            <span class="crm2-card-link crm2-ai-typing-cue">escribiendo<span class="crm2-ai-dots">···</span></span>
                           </div>
-                          <div class="crm2-timeline">
-                            <div class="crm2-event">
-                              <div class="crm2-event-channel crm2-channel--store">TIENDA</div>
-                              <div class="crm2-event-body">
-                                <div class="crm2-event-title">Compra · Suc. Polanco</div>
-                                <div class="crm2-event-detail">Blusa satinada + Falda plisada</div>
+                          <div class="crm2-ai-body">
+                            <div class="crm2-ai-line crm2-ai-line--1">Andrea es una <strong>cliente de alto valor</strong> ($26K LTV) con 12 compras en 26 meses, frecuencia cada 28 días.</div>
+                            <div class="crm2-ai-line crm2-ai-line--2">Compra principalmente en tienda Polanco (40%) y online (30%); responde muy bien a WhatsApp marketing — 90% lectura, 35% conversión.</div>
+                            <div class="crm2-ai-line crm2-ai-line--3">Estilo: prendas de lino, paleta neutra, talla M. Le gustan las piezas de edición limitada.</div>
+                            <div class="crm2-ai-line crm2-ai-line--4"><strong>Próxima acción sugerida:</strong> enviarle el lookbook Resort 2026 por WhatsApp con la blusa de seda en color marfil — match 94%.</div>
+                          </div>
+                          <div class="crm2-ai-actions">
+                            <span class="crm2-ai-btn">Aplicar sugerencia</span>
+                            <span class="crm2-ai-btn-alt">Ver más insights →</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Panel 1: Conversaciones — WA / Email / Llamadas */}
+                    <div class="crm2-panel crm2-panel--1">
+                      <div class="crm2-card crm2-card--full">
+                        <div class="crm2-card-head">
+                          <span class="crm2-card-title">Conversaciones recientes</span>
+                          <span class="crm2-card-tag">12 últimos 30d</span>
+                        </div>
+                        <div class="crm2-conv-grid">
+                          <div class="crm2-conv-list">
+                            <div class="crm2-conv-row crm2-conv-row--active">
+                              <div class="crm2-conv-ch crm2-conv-ch--wa">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="#fff"><path d="M12 2a10 10 0 00-8.6 15l-1 4 4.1-1.1A10 10 0 1012 2z"/></svg>
                               </div>
-                              <div class="crm2-event-date">Hoy</div>
+                              <div class="crm2-conv-body">
+                                <div class="crm2-conv-top">
+                                  <span class="crm2-conv-name">WhatsApp · Lina M.</span>
+                                  <span class="crm2-conv-time">Hoy 14:42</span>
+                                </div>
+                                <div class="crm2-conv-msg">"Andrea, te aparté la blusa de seda en talla M, pasa cuando puedas 💛"</div>
+                                <div class="crm2-conv-meta"><span class="crm2-conv-tag crm2-conv-tag--ok">Leído · respondió</span></div>
+                              </div>
                             </div>
-                            <div class="crm2-event">
-                              <div class="crm2-event-channel crm2-channel--online">ONLINE</div>
-                              <div class="crm2-event-body">
-                                <div class="crm2-event-title">Compra · sacscloud.com</div>
-                                <div class="crm2-event-detail">Blazer oversize · $1,680</div>
+                            <div class="crm2-conv-row">
+                              <div class="crm2-conv-ch crm2-conv-ch--call">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#fff" stroke-width="2.4"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.37 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 16.92z"/></svg>
                               </div>
-                              <div class="crm2-event-date">3d</div>
+                              <div class="crm2-conv-body">
+                                <div class="crm2-conv-top">
+                                  <span class="crm2-conv-name">Llamada saliente</span>
+                                  <span class="crm2-conv-time">Ayer 11:18</span>
+                                </div>
+                                <div class="crm2-conv-msg">Confirmación de cita para entrega del Blazer · 4 min 22 s</div>
+                                <div class="crm2-conv-meta"><span class="crm2-conv-tag">Cita confirmada</span></div>
+                              </div>
                             </div>
-                            <div class="crm2-event">
-                              <div class="crm2-event-channel crm2-channel--wa">WHATSAPP</div>
-                              <div class="crm2-event-body">
-                                <div class="crm2-event-title">Click en promo "OTOÑO 2026"</div>
-                                <div class="crm2-event-detail">Convertido en compra a las 2h</div>
+                            <div class="crm2-conv-row">
+                              <div class="crm2-conv-ch crm2-conv-ch--email">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
                               </div>
-                              <div class="crm2-event-date">5d</div>
+                              <div class="crm2-conv-body">
+                                <div class="crm2-conv-top">
+                                  <span class="crm2-conv-name">Email · Campaña Otoño</span>
+                                  <span class="crm2-conv-time">3d</span>
+                                </div>
+                                <div class="crm2-conv-msg">"Lo nuevo de la temporada · Solo para Andrea"</div>
+                                <div class="crm2-conv-meta"><span class="crm2-conv-tag crm2-conv-tag--ok">Abrió · 4 clicks</span></div>
+                              </div>
                             </div>
-                            <div class="crm2-event">
-                              <div class="crm2-event-channel crm2-channel--ig">INSTAGRAM</div>
-                              <div class="crm2-event-body">
-                                <div class="crm2-event-title">DM "¿blazer en talla M?"</div>
-                                <div class="crm2-event-detail">Respondido en 4 min</div>
+                            <div class="crm2-conv-row">
+                              <div class="crm2-conv-ch crm2-conv-ch--wa">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="#fff"><path d="M12 2a10 10 0 00-8.6 15l-1 4 4.1-1.1A10 10 0 1012 2z"/></svg>
                               </div>
-                              <div class="crm2-event-date">7d</div>
+                              <div class="crm2-conv-body">
+                                <div class="crm2-conv-top">
+                                  <span class="crm2-conv-name">WhatsApp entrante</span>
+                                  <span class="crm2-conv-time">5d</span>
+                                </div>
+                                <div class="crm2-conv-msg">"¿Tienen el blazer en color marfil?" — respondida en 4 min</div>
+                                <div class="crm2-conv-meta"><span class="crm2-conv-tag crm2-conv-tag--ok">Convertida en venta</span></div>
+                              </div>
+                            </div>
+                            <div class="crm2-conv-row">
+                              <div class="crm2-conv-ch crm2-conv-ch--call">
+                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#fff" stroke-width="2.4"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.37 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 16.92z"/></svg>
+                              </div>
+                              <div class="crm2-conv-body">
+                                <div class="crm2-conv-top">
+                                  <span class="crm2-conv-name">Llamada entrante</span>
+                                  <span class="crm2-conv-time">9d</span>
+                                </div>
+                                <div class="crm2-conv-msg">Pregunta sobre disponibilidad de tallas · 2 min 44 s</div>
+                                <div class="crm2-conv-meta"><span class="crm2-conv-tag">Sin venta</span></div>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="crm2-conv-stats">
+                            <div class="crm2-conv-stats-title">Resumen 30d</div>
+                            <div class="crm2-conv-stat">
+                              <div class="crm2-conv-stat-icon crm2-conv-ch--wa">
+                                <svg viewBox="0 0 24 24" width="11" height="11" fill="#fff"><path d="M12 2a10 10 0 00-8.6 15l-1 4 4.1-1.1A10 10 0 1012 2z"/></svg>
+                              </div>
+                              <div class="crm2-conv-stat-body">
+                                <div class="crm2-conv-stat-name">WhatsApp</div>
+                                <div class="crm2-conv-stat-meta">8 mensajes · 90% respuesta</div>
+                              </div>
+                            </div>
+                            <div class="crm2-conv-stat">
+                              <div class="crm2-conv-stat-icon crm2-conv-ch--email">
+                                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+                              </div>
+                              <div class="crm2-conv-stat-body">
+                                <div class="crm2-conv-stat-name">Email</div>
+                                <div class="crm2-conv-stat-meta">2 campañas · 100% abiertas</div>
+                              </div>
+                            </div>
+                            <div class="crm2-conv-stat">
+                              <div class="crm2-conv-stat-icon crm2-conv-ch--call">
+                                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="2.4"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.37 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 16.92z"/></svg>
+                              </div>
+                              <div class="crm2-conv-stat-body">
+                                <div class="crm2-conv-stat-name">Llamadas</div>
+                                <div class="crm2-conv-stat-meta">2 (1 saliente · 1 entrante)</div>
+                              </div>
+                            </div>
+                            <div class="crm2-conv-foot">
+                              <span class="crm2-ai-btn">Iniciar conversación</span>
                             </div>
                           </div>
                         </div>
@@ -2313,48 +2427,110 @@ const useCases = [
                         <span class="mk-dot"></span>
                         <div class="mk-email-from">SACS · hola@sacscloud.com</div>
                       </div>
-                      <div class="mk-email-content">
-                        <div class="mk-email-subject">Lo nuevo de la temporada · Solo para Andrea</div>
-                        <div class="mk-email-greeting">Hola Andrea,</div>
-                        <div class="mk-email-text">Acabamos de recibir piezas que combinan con tu estilo de las últimas compras. Estos tres looks son para ti:</div>
-                        <div class="mk-email-products">
-                          <div class="mk-email-prod"></div>
-                          <div class="mk-email-prod"></div>
-                          <div class="mk-email-prod"></div>
+                      <div class="mk-email-headers">
+                        <div class="mk-email-headers-row">
+                          <span class="mk-email-h-label">De</span>
+                          <span class="mk-email-h-val">SACS &lt;hola@sacscloud.com&gt;</span>
                         </div>
-                        <div class="mk-email-cta">Ver mis recomendaciones →</div>
+                        <div class="mk-email-headers-row">
+                          <span class="mk-email-h-label">Para</span>
+                          <span class="mk-email-h-val">Andrea Gómez</span>
+                        </div>
+                        <div class="mk-email-headers-row">
+                          <span class="mk-email-h-label">Asunto</span>
+                          <span class="mk-email-h-val mk-email-h-subj">Lo nuevo combina con tu Blusa satinada ✨</span>
+                        </div>
+                      </div>
+                      <div class="mk-email-content">
+                        <div class="mk-email-tag">
+                          <span class="mk-email-tag-dot"></span>
+                          SEGUIMIENTO · 14 DÍAS DESPUÉS DE TU COMPRA
+                        </div>
+                        <div class="mk-email-brand">SACS</div>
+                        <div class="mk-email-subject">Tres piezas que combinan con tu última compra.</div>
+                        <div class="mk-email-greeting">Hola Andrea,</div>
+                        <div class="mk-email-text">Vimos que te llevaste la <strong>Blusa satinada · M</strong> hace dos semanas. Estas tres piezas combinan perfecto con ese look para tus próximas tardes de Resort.</div>
+
+                        <div class="mk-email-products">
+                          <div class="mk-email-prod">
+                            <div class="mk-email-prod-img"><img src="/images/reco-blusa.webp" alt="Blusa de seda" loading="lazy" width="80" height="100" /></div>
+                            <div class="mk-email-prod-name">Blusa de seda</div>
+                            <div class="mk-email-prod-row">
+                              <span class="mk-email-prod-price">$1,490</span>
+                              <span class="mk-email-prod-match">94% match</span>
+                            </div>
+                          </div>
+                          <div class="mk-email-prod">
+                            <div class="mk-email-prod-img"><img src="/images/reco-falda.webp" alt="Falda de lino" loading="lazy" width="80" height="100" /></div>
+                            <div class="mk-email-prod-name">Falda lino</div>
+                            <div class="mk-email-prod-row">
+                              <span class="mk-email-prod-price">$1,350</span>
+                              <span class="mk-email-prod-match">87% match</span>
+                            </div>
+                          </div>
+                          <div class="mk-email-prod">
+                            <div class="mk-email-prod-img"><img src="/images/reco-blazer.webp" alt="Blazer doble" loading="lazy" width="80" height="100" /></div>
+                            <div class="mk-email-prod-name">Blazer doble</div>
+                            <div class="mk-email-prod-row">
+                              <span class="mk-email-prod-price">$1,890</span>
+                              <span class="mk-email-prod-match">82% match</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="mk-email-cta">Ver mi selección completa →</div>
+                        <div class="mk-email-note">Apartamos tu talla por 48 horas · envío gratis &gt; $1,500</div>
+
+                        <div class="mk-email-footer">
+                          <div class="mk-email-foot-text">SACS · Polanco, CDMX · <span>Darme de baja</span></div>
+                        </div>
                       </div>
                     </div>
                   </div>
                   <div class="mk-email-stats">
                     <div class="mk-stats-header">
                       <div class="mk-stats-title">Campaña otoño · enviada</div>
-                      <div class="mk-stats-segment">Segmento: <strong>VIP + Frecuentes</strong> · 1,840 contactos</div>
+                      <div class="mk-stats-segment">Segmento: <strong>VIP + Frecuentes</strong> · 30 abr · 09:00</div>
+                    </div>
+                    <div class="mk-metric">
+                      <div class="mk-metric-row">
+                        <span class="mk-metric-label">Enviados</span>
+                        <span class="mk-metric-value">1,840</span>
+                      </div>
+                      <div class="mk-metric-bar"><div class="mk-metric-fill mk-bar--anim" style="--mk-bar-w:100%"></div></div>
                     </div>
                     <div class="mk-metric">
                       <div class="mk-metric-row">
                         <span class="mk-metric-label">Aperturas</span>
-                        <span class="mk-metric-value">62%</span>
+                        <span class="mk-metric-value">62% · 1,140</span>
                       </div>
-                      <div class="mk-metric-bar"><div class="mk-metric-fill" style="width:62%"></div></div>
+                      <div class="mk-metric-bar"><div class="mk-metric-fill mk-bar--anim" style="--mk-bar-w:62%"></div></div>
                     </div>
                     <div class="mk-metric">
                       <div class="mk-metric-row">
                         <span class="mk-metric-label">Clicks</span>
-                        <span class="mk-metric-value">28%</span>
+                        <span class="mk-metric-value">28% · 515</span>
                       </div>
-                      <div class="mk-metric-bar"><div class="mk-metric-fill" style="width:28%"></div></div>
+                      <div class="mk-metric-bar"><div class="mk-metric-fill mk-bar--anim" style="--mk-bar-w:28%"></div></div>
                     </div>
                     <div class="mk-metric">
                       <div class="mk-metric-row">
                         <span class="mk-metric-label">Conversiones</span>
+                        <span class="mk-metric-value">124 ventas</span>
+                      </div>
+                      <div class="mk-metric-bar"><div class="mk-metric-fill mk-metric-fill--green mk-bar--anim" style="--mk-bar-w:24%"></div></div>
+                    </div>
+                    <div class="mk-metric">
+                      <div class="mk-metric-row">
+                        <span class="mk-metric-label">Ingresos atribuidos</span>
                         <span class="mk-metric-value">$84,200</span>
                       </div>
-                      <div class="mk-metric-bar"><div class="mk-metric-fill mk-metric-fill--green" style="width:42%"></div></div>
+                      <div class="mk-metric-bar"><div class="mk-metric-fill mk-metric-fill--green mk-bar--anim" style="--mk-bar-w:100%"></div></div>
                     </div>
                     <div class="mk-roi">
-                      <div class="mk-roi-label">ROI de la campaña</div>
+                      <div class="mk-roi-label">ROI DE LA CAMPAÑA</div>
                       <div class="mk-roi-value">14.6×</div>
+                      <div class="mk-roi-note">Por cada $1 invertido · $14.60 en ventas atribuidas</div>
                     </div>
                   </div>
                 </div>
@@ -2364,7 +2540,117 @@ const useCases = [
             {/* ── Fideliza: WhatsApp marketing ── */}
             <div class="tablet-slide" data-slide="crm-whatsapp">
               <div class="mk-wa-frame">
-                <div class="mk-wa-grid">
+                <div class="mk-wa-grid mk-wa-grid--v2">
+                  <div class="mk-wa2-panel">
+                    {/* Stage 1 — Crear segmento */}
+                    <div class="mk-wa2-layer mk-wa2-layer--filters">
+                      <div class="mk-wa2-step">
+                        <span class="mk-wa2-step-num">1</span>
+                        <span>Crear segmento</span>
+                      </div>
+                      <div class="mk-wa2-title">Audiencia objetivo</div>
+                      <div class="mk-wa2-rules">
+                        <div class="mk-wa2-rule">
+                          <span class="mk-wa2-check"><svg width="9" height="9" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4.5" stroke="#25D366" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                          Última compra en los últimos <strong>30 días</strong>
+                        </div>
+                        <div class="mk-wa2-rule">
+                          <span class="mk-wa2-check"><svg width="9" height="9" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4.5" stroke="#25D366" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                          Ticket promedio <strong>&gt; $1,500 MXN</strong>
+                        </div>
+                        <div class="mk-wa2-rule">
+                          <span class="mk-wa2-check"><svg width="9" height="9" viewBox="0 0 16 16" fill="none"><path d="M3 8.5L6.5 12L13 4.5" stroke="#25D366" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                          Categoría: <strong>Moda femenina</strong>
+                        </div>
+                        <div class="mk-wa2-rule mk-wa2-rule--add">+ Agregar regla</div>
+                      </div>
+                      <button class="mk-wa2-btn mk-wa2-btn--primary" type="button" tabindex="-1" aria-hidden="true">
+                        Filtrar audiencia
+                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                      </button>
+                    </div>
+
+                    {/* Stage 2 — Plantilla + envío */}
+                    <div class="mk-wa2-layer mk-wa2-layer--template">
+                      <div class="mk-wa2-result">
+                        <div class="mk-wa2-result-num">2,420</div>
+                        <div class="mk-wa2-result-lbl">clientes en el segmento</div>
+                      </div>
+                      <div class="mk-wa2-step">
+                        <span class="mk-wa2-step-num">2</span>
+                        <span>Plantilla aprobada por Meta</span>
+                      </div>
+                      <div class="mk-wa2-tmpl">
+                        <div class="mk-wa2-tmpl-bar">
+                          <span class="mk-wa2-tmpl-tag">PROMO_OTONO_2026</span>
+                          <span class="mk-wa2-tmpl-status">● Aprobada</span>
+                        </div>
+                        <div class="mk-wa2-tmpl-body">
+                          <div>Hola <span class="mk-wa2-var">{`{{nombre}}`}</span> 👋</div>
+                          <div>Esta semana <strong>20% OFF</strong> en piezas que combinan con tu última compra.</div>
+                        </div>
+                      </div>
+                      <button class="mk-wa2-btn mk-wa2-btn--send" type="button" tabindex="-1" aria-hidden="true">
+                        Enviar broadcast
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                      </button>
+                    </div>
+
+                    {/* Stage 3 — Enviando */}
+                    <div class="mk-wa2-layer mk-wa2-layer--sending">
+                      <div class="mk-wa2-send">
+                        <div class="mk-wa2-send-icon">
+                          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                        </div>
+                        <div class="mk-wa2-send-title">Enviando broadcast…</div>
+                        <div class="mk-wa2-send-sub">Plantilla aprobada · entrega WABA oficial</div>
+                        <div class="mk-wa2-send-bar"><div class="mk-wa2-send-fill"></div></div>
+                        <div class="mk-wa2-send-count">2,420 / 2,420 mensajes</div>
+                      </div>
+                    </div>
+
+                    {/* Stage 4 — Resultados */}
+                    <div class="mk-wa2-layer mk-wa2-layer--stats">
+                      <div class="mk-stats-header">
+                        <div class="mk-stats-title">Resultados · Otoño 2026</div>
+                        <div class="mk-stats-segment">2,420 enviados · <strong>hace 18 min</strong></div>
+                      </div>
+                      <div class="mk-metric">
+                        <div class="mk-metric-row">
+                          <span class="mk-metric-label">Entregados</span>
+                          <span class="mk-metric-value">98% · 2,371</span>
+                        </div>
+                        <div class="mk-metric-bar"><div class="mk-metric-fill mk-bar--anim" style="--mk-bar-w:98%"></div></div>
+                      </div>
+                      <div class="mk-metric">
+                        <div class="mk-metric-row">
+                          <span class="mk-metric-label">Lecturas</span>
+                          <span class="mk-metric-value">91% · 2,158</span>
+                        </div>
+                        <div class="mk-metric-bar"><div class="mk-metric-fill mk-bar--anim" style="--mk-bar-w:91%"></div></div>
+                      </div>
+                      <div class="mk-metric">
+                        <div class="mk-metric-row">
+                          <span class="mk-metric-label">Clicks</span>
+                          <span class="mk-metric-value">34% · 734</span>
+                        </div>
+                        <div class="mk-metric-bar"><div class="mk-metric-fill mk-bar--anim" style="--mk-bar-w:34%"></div></div>
+                      </div>
+                      <div class="mk-metric">
+                        <div class="mk-metric-row">
+                          <span class="mk-metric-label">Conversiones</span>
+                          <span class="mk-metric-value">12.8% · 96 ventas</span>
+                        </div>
+                        <div class="mk-metric-bar"><div class="mk-metric-fill mk-metric-fill--green mk-bar--anim" style="--mk-bar-w:13%"></div></div>
+                      </div>
+                      <div class="mk-roi">
+                        <div class="mk-roi-label">INGRESOS ATRIBUIDOS</div>
+                        <div class="mk-roi-value">$72,480</div>
+                        <div class="mk-roi-note">90% de apertura · sin pagar mensajes fallidos</div>
+                      </div>
+                    </div>
+                  </div>
+
                   <div class="mk-wa-phone-wrap">
                     <div class="mk-wa-phone">
                       <div class="mk-wa-phone-notch"></div>
@@ -2372,55 +2658,29 @@ const useCases = [
                         <div class="mk-wa-header">
                           <span class="mk-wa-back">‹</span>
                           <div class="mk-wa-contact">
-                            <div class="mk-wa-contact-name">SACS · Polanco</div>
-                            <div class="mk-wa-contact-status">Cuenta verificada · WABA</div>
+                            <div class="mk-wa-contact-name">Andrea Gómez</div>
+                            <div class="mk-wa-contact-status">en línea</div>
                           </div>
                         </div>
                         <div class="mk-wa-thread">
-                          <div class="mk-wa-bubble mk-wa-bubble--in">
-                            <div class="mk-wa-template-tag">Plantilla aprobada por Meta</div>
-                            <div class="mk-wa-msg">Hola Andrea 👋 Sabemos que te gustó el blazer oversize.</div>
-                            <div class="mk-wa-msg">Esta semana tenemos <strong>20% OFF</strong> en las prendas que combinan con tu última compra.</div>
+                          <div class="mk-wa2-thread-empty">
+                            <div class="mk-wa2-empty-icon">
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.4)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+                            </div>
+                            <div class="mk-wa2-empty-text">Listo para enviar al segmento</div>
+                          </div>
+                          <div class="mk-wa-bubble mk-wa-bubble--in mk-wa2-bubble--anim mk-wa2-bubble--1">
+                            <div class="mk-wa-template-tag">Plantilla aprobada · Meta</div>
+                            <div class="mk-wa-msg">Hola Andrea 👋 Esta semana <strong>20% OFF</strong> en piezas que combinan con tu última compra.</div>
                             <div class="mk-wa-cta">Ver mi selección</div>
                             <div class="mk-wa-time">10:24 AM</div>
                           </div>
-                          <div class="mk-wa-bubble mk-wa-bubble--out">
-                            <div class="mk-wa-msg">Sí me interesa, mándame opciones</div>
+                          <div class="mk-wa-bubble mk-wa-bubble--out mk-wa2-bubble--anim mk-wa2-bubble--2">
+                            <div class="mk-wa-msg">¡Sí me interesa! Mándame opciones 😍</div>
                             <div class="mk-wa-time">10:31 AM ✓✓</div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                  <div class="mk-wa-stats">
-                    <div class="mk-stats-header">
-                      <div class="mk-stats-title">Broadcast · OTOÑO 2026</div>
-                      <div class="mk-stats-segment">Segmento: <strong>Compras últimos 60d</strong> · 2,420 contactos</div>
-                    </div>
-                    <div class="mk-metric">
-                      <div class="mk-metric-row">
-                        <span class="mk-metric-label">Entregados</span>
-                        <span class="mk-metric-value">98%</span>
-                      </div>
-                      <div class="mk-metric-bar"><div class="mk-metric-fill" style="width:98%"></div></div>
-                    </div>
-                    <div class="mk-metric">
-                      <div class="mk-metric-row">
-                        <span class="mk-metric-label">Lecturas</span>
-                        <span class="mk-metric-value">91%</span>
-                      </div>
-                      <div class="mk-metric-bar"><div class="mk-metric-fill" style="width:91%"></div></div>
-                    </div>
-                    <div class="mk-metric">
-                      <div class="mk-metric-row">
-                        <span class="mk-metric-label">Clicks</span>
-                        <span class="mk-metric-value">34%</span>
-                      </div>
-                      <div class="mk-metric-bar"><div class="mk-metric-fill" style="width:34%"></div></div>
-                    </div>
-                    <div class="mk-roi">
-                      <div class="mk-roi-label">Conversión a venta</div>
-                      <div class="mk-roi-value">12.8%</div>
                     </div>
                   </div>
                 </div>
@@ -12113,64 +12373,70 @@ const useCases = [
     .reco-card { animation: none; opacity: 1; transform: none; }
   }
 
-  /* ── CRM Omnicanal v2 — professional dashboard with tab navigation ── */
+  /* ── CRM Omnicanal v2 — pro dashboard, light Square-style theme ── */
   .crm2-frame {
     aspect-ratio: 16 / 10;
     width: 100%;
     background: #FAFAFA;
     display: grid;
-    grid-template-columns: 130px 1fr;
+    grid-template-columns: 48px 1fr;
     overflow: hidden;
     font-family: var(--font-body);
     color: #1A1A1A;
   }
 
-  /* Sidebar */
+  /* Collapsed light sidebar */
   .crm2-side {
-    background: #1A1A1A;
-    color: rgba(255,255,255,0.8);
-    padding: 14px 10px;
+    background: #FFFFFF;
+    color: rgba(0,0,0,0.6);
+    border-right: 1px solid rgba(0,0,0,0.06);
+    padding: 14px 0;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
+    align-items: center;
   }
-  .crm2-side-brand {
-    font-family: var(--font-display);
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.06em;
+  .crm2-side-logo {
+    width: 28px;
+    height: 28px;
+    background: #1A1A1A;
     color: #fff;
-    padding: 0 6px 8px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 13px;
+    letter-spacing: -0.04em;
+    margin-bottom: 4px;
   }
   .crm2-side-nav {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 4px;
+    align-items: center;
   }
-  .crm2-side-nav-item {
-    padding: 7px 8px;
-    font-size: 9px;
-    font-weight: 600;
-    color: rgba(255,255,255,0.65);
-    border-radius: 6px;
-  }
-  .crm2-side-nav-item--active {
-    background: rgba(255,255,255,0.10);
-    color: #fff;
-  }
-  .crm2-side-foot { margin-top: auto; }
-  .crm2-side-user {
+  .crm2-side-icn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 6px;
+    justify-content: center;
+    color: rgba(0,0,0,0.45);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
   }
+  .crm2-side-icn:hover { background: #F5F5F7; color: rgba(0,0,0,0.7); }
+  .crm2-side-icn--active {
+    background: rgba(42,181,160,0.10);
+    color: #1A8F7A;
+  }
+  .crm2-side-foot { margin-top: auto; }
   .crm2-side-user-avatar {
-    width: 22px;
-    height: 22px;
+    width: 28px;
+    height: 28px;
     background: #2AB5A0;
     color: #fff;
     border-radius: 50%;
@@ -12180,11 +12446,6 @@ const useCases = [
     font-family: var(--font-display);
     font-weight: 800;
     font-size: 9px;
-  }
-  .crm2-side-user-name {
-    font-size: 9px;
-    font-weight: 600;
-    color: rgba(255,255,255,0.8);
   }
 
   /* Main panel */
@@ -12326,30 +12587,37 @@ const useCases = [
     transition: color 0.3s;
     position: relative;
   }
-  /* Active state via animation */
-  .crm2-tab--1 { animation: crm2-tab-1 14s ease-in-out infinite; }
-  .crm2-tab--2 { animation: crm2-tab-2 14s ease-in-out infinite; }
-  .crm2-tab--3 { animation: crm2-tab-3 14s ease-in-out infinite; }
-  .crm2-tab--4 { animation: crm2-tab-4 14s ease-in-out infinite; }
-  @keyframes crm2-tab-1 { 0%,22%{color:#1A1A1A;} 25%,100%{color:rgba(0,0,0,0.5);} }
-  @keyframes crm2-tab-2 { 0%,22%{color:rgba(0,0,0,0.5);} 25%,47%{color:#1A1A1A;} 50%,100%{color:rgba(0,0,0,0.5);} }
-  @keyframes crm2-tab-3 { 0%,47%{color:rgba(0,0,0,0.5);} 50%,72%{color:#1A1A1A;} 75%,100%{color:rgba(0,0,0,0.5);} }
-  @keyframes crm2-tab-4 { 0%,72%{color:rgba(0,0,0,0.5);} 75%,100%{color:#1A1A1A;} }
+  /* Active state via animation — 5 tabs across 16s loop */
+  .crm2-tab--0 { animation: crm2-tab-0 16s ease-in-out infinite; }
+  .crm2-tab--1 { animation: crm2-tab-1 16s ease-in-out infinite; }
+  .crm2-tab--2 { animation: crm2-tab-2 16s ease-in-out infinite; }
+  .crm2-tab--3 { animation: crm2-tab-3 16s ease-in-out infinite; }
+  .crm2-tab--4 { animation: crm2-tab-4 16s ease-in-out infinite; }
+  @keyframes crm2-tab-0 { 0%,18%{color:#1A1A1A;} 22%,100%{color:rgba(0,0,0,0.5);} }
+  @keyframes crm2-tab-1 { 0%,18%{color:rgba(0,0,0,0.5);} 22%,38%{color:#1A1A1A;} 42%,100%{color:rgba(0,0,0,0.5);} }
+  @keyframes crm2-tab-2 { 0%,38%{color:rgba(0,0,0,0.5);} 42%,58%{color:#1A1A1A;} 62%,100%{color:rgba(0,0,0,0.5);} }
+  @keyframes crm2-tab-3 { 0%,58%{color:rgba(0,0,0,0.5);} 62%,78%{color:#1A1A1A;} 82%,100%{color:rgba(0,0,0,0.5);} }
+  @keyframes crm2-tab-4 { 0%,78%{color:rgba(0,0,0,0.5);} 82%,100%{color:#1A1A1A;} }
 
+  /* Indicator widths sized to match each tab label
+     Tabs: Información (≈75px) · Conversaciones (≈100px) · Compras (≈58px) · Recomendaciones IA (≈124px) · Lealtad (≈48px)
+     Tab gap is 18px, tabs start at left:2px */
   .crm2-tab-indicator {
     position: absolute;
     bottom: -1px;
-    left: 0;
+    left: 2px;
     height: 2px;
     background: #1A1A1A;
-    width: 56px;
-    animation: crm2-tab-ind 14s ease-in-out infinite;
+    border-radius: 1px;
+    width: 75px;
+    animation: crm2-tab-ind 16s ease-in-out infinite;
   }
   @keyframes crm2-tab-ind {
-    0%, 22%   { left: 0;     width: 56px; }
-    25%, 47%  { left: 75px;  width: 56px; }
-    50%, 72%  { left: 145px; width: 110px; }
-    75%, 100% { left: 270px; width: 50px; }
+    0%, 18%   { left: 2px;   width: 75px; }
+    22%, 38%  { left: 95px;  width: 100px; }
+    42%, 58%  { left: 213px; width: 58px; }
+    62%, 78%  { left: 289px; width: 124px; }
+    82%, 100% { left: 431px; width: 48px; }
   }
 
   /* Panels */
@@ -12365,27 +12633,33 @@ const useCases = [
     transform: translateY(8px);
     transition: opacity 0.4s, transform 0.4s;
   }
-  .crm2-panel--1 { animation: crm2-panel-1 14s ease-in-out infinite; }
-  .crm2-panel--2 { animation: crm2-panel-2 14s ease-in-out infinite; }
-  .crm2-panel--3 { animation: crm2-panel-3 14s ease-in-out infinite; }
-  .crm2-panel--4 { animation: crm2-panel-4 14s ease-in-out infinite; }
+  .crm2-panel--0 { animation: crm2-panel-0 16s ease-in-out infinite; }
+  .crm2-panel--1 { animation: crm2-panel-1 16s ease-in-out infinite; }
+  .crm2-panel--2 { animation: crm2-panel-2 16s ease-in-out infinite; }
+  .crm2-panel--3 { animation: crm2-panel-3 16s ease-in-out infinite; }
+  .crm2-panel--4 { animation: crm2-panel-4 16s ease-in-out infinite; }
+  @keyframes crm2-panel-0 {
+    0%, 18%   { opacity: 1; transform: translateY(0); }
+    22%, 100% { opacity: 0; transform: translateY(-6px); }
+  }
   @keyframes crm2-panel-1 {
-    0%, 22%   { opacity: 1; transform: translateY(0); }
-    25%, 100% { opacity: 0; transform: translateY(-6px); }
+    0%, 18%   { opacity: 0; transform: translateY(8px); }
+    22%, 38%  { opacity: 1; transform: translateY(0); }
+    42%, 100% { opacity: 0; transform: translateY(-6px); }
   }
   @keyframes crm2-panel-2 {
-    0%, 22%   { opacity: 0; transform: translateY(8px); }
-    25%, 47%  { opacity: 1; transform: translateY(0); }
-    50%, 100% { opacity: 0; transform: translateY(-6px); }
+    0%, 38%   { opacity: 0; transform: translateY(8px); }
+    42%, 58%  { opacity: 1; transform: translateY(0); }
+    62%, 100% { opacity: 0; transform: translateY(-6px); }
   }
   @keyframes crm2-panel-3 {
-    0%, 47%   { opacity: 0; transform: translateY(8px); }
-    50%, 72%  { opacity: 1; transform: translateY(0); }
-    75%, 100% { opacity: 0; transform: translateY(-6px); }
+    0%, 58%   { opacity: 0; transform: translateY(8px); }
+    62%, 78%  { opacity: 1; transform: translateY(0); }
+    82%, 100% { opacity: 0; transform: translateY(-6px); }
   }
   @keyframes crm2-panel-4 {
-    0%, 72%   { opacity: 0; transform: translateY(8px); }
-    75%, 100% { opacity: 1; transform: translateY(0); }
+    0%, 78%   { opacity: 0; transform: translateY(8px); }
+    82%, 100% { opacity: 1; transform: translateY(0); }
   }
 
   .crm2-panel-grid {
@@ -12600,40 +12874,43 @@ const useCases = [
     border-top: 1px solid rgba(0,0,0,0.06);
   }
 
-  /* Wallet */
+  /* Wallet — light Square style */
   .crm2-wallet {
-    background: #1A1A1A;
-    color: #fff;
+    background: #FFFFFF;
+    color: #1A1A1A;
+    border: 1px solid rgba(0,0,0,0.06);
     border-radius: 10px;
     padding: 14px 16px;
     flex: 1;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    box-shadow: 0 2px 8px -2px rgba(20,20,30,0.05);
   }
   .crm2-wallet-label {
     font-size: 7px;
-    color: rgba(255,255,255,0.55);
+    color: rgba(0,0,0,0.5);
     letter-spacing: 0.1em;
     font-weight: 700;
   }
   .crm2-wallet-value {
     font-family: var(--font-display);
-    font-size: 28px;
+    font-size: 30px;
     font-weight: 800;
     line-height: 1;
     letter-spacing: -0.02em;
+    color: #1A1A1A;
   }
   .crm2-wallet-cents {
     font-size: 16px;
-    color: rgba(255,255,255,0.5);
+    color: rgba(0,0,0,0.4);
     font-weight: 600;
   }
   .crm2-wallet-progress { margin-top: auto; }
   .crm2-wallet-bar {
     width: 100%;
-    height: 3px;
-    background: rgba(255,255,255,0.10);
+    height: 4px;
+    background: rgba(0,0,0,0.06);
     border-radius: 2px;
     overflow: hidden;
     margin-bottom: 4px;
@@ -12641,12 +12918,12 @@ const useCases = [
   .crm2-wallet-fill {
     height: 100%;
     width: 70%;
-    background: #2AB5A0;
+    background: linear-gradient(90deg, #2AB5A0, #4B7BE5);
     border-radius: 2px;
-    animation: crm2-wallet-grow 14s ease-in-out infinite;
+    animation: crm2-wallet-grow 16s ease-in-out infinite;
   }
   @keyframes crm2-wallet-grow {
-    0%, 75%   { width: 50%; }
+    0%, 78%   { width: 50%; }
     100%      { width: 72%; }
   }
   .crm2-wallet-levels {
@@ -12654,14 +12931,14 @@ const useCases = [
     justify-content: space-between;
     font-size: 6.5px;
     font-weight: 700;
-    color: rgba(255,255,255,0.4);
+    color: rgba(0,0,0,0.4);
     letter-spacing: 0.06em;
   }
-  .crm2-wallet-cur { color: #2AB5A0; }
-  .crm2-wallet-next { color: rgba(255,255,255,0.25); }
+  .crm2-wallet-cur { color: #1A8F7A; }
+  .crm2-wallet-next { color: rgba(0,0,0,0.25); }
   .crm2-wallet-hint {
     font-size: 7px;
-    color: rgba(255,255,255,0.5);
+    color: rgba(0,0,0,0.5);
     text-align: center;
     margin-top: 4px;
   }
@@ -12707,10 +12984,289 @@ const useCases = [
   .crm2-mov-amt--pos { color: #1A8F7A; }
   .crm2-mov-amt--neg { color: rgba(0,0,0,0.55); }
 
+  /* ── Panel 0: Información del cliente ── */
+  .crm2-info-grid {
+    display: grid;
+    grid-template-columns: 0.95fr 1fr;
+    gap: 10px;
+    height: 100%;
+  }
+  .crm2-info-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .crm2-info-row {
+    display: grid;
+    grid-template-columns: 18px 80px 1fr;
+    gap: 8px;
+    align-items: center;
+    padding: 7px 10px;
+    background: #FAFAFA;
+    border-radius: 6px;
+    font-size: 8.5px;
+  }
+  .crm2-info-ic {
+    width: 18px;
+    height: 18px;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(0,0,0,0.55);
+    font-size: 10px;
+  }
+  .crm2-info-ic--wa { background: rgba(37,211,102,0.12); color: #22a85a; border-color: rgba(37,211,102,0.25); }
+  .crm2-info-label {
+    font-size: 7px;
+    color: rgba(0,0,0,0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+  }
+  .crm2-info-value {
+    font-size: 8.5px;
+    color: #1A1A1A;
+    font-weight: 600;
+  }
+  .crm2-info-pill {
+    display: inline-block;
+    background: rgba(42,181,160,0.14);
+    color: #1A8F7A;
+    font-size: 6.5px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* ── Panel 1: Conversaciones ── */
+  .crm2-conv-grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 12px;
+    flex: 1;
+    min-height: 0;
+  }
+  .crm2-conv-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    overflow: hidden;
+  }
+  .crm2-conv-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 10px;
+    padding: 8px 10px;
+    background: #FAFAFA;
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 8px;
+  }
+  .crm2-conv-row--active {
+    background: #fff;
+    border-color: rgba(42,181,160,0.3);
+    box-shadow: 0 1px 4px -1px rgba(42,181,160,0.10);
+  }
+  .crm2-conv-ch {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .crm2-conv-ch--wa    { background: #25D366; }
+  .crm2-conv-ch--email { background: #4B7BE5; }
+  .crm2-conv-ch--call  { background: #2AB5A0; }
+  .crm2-conv-body { min-width: 0; }
+  .crm2-conv-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .crm2-conv-name {
+    font-size: 8.5px;
+    font-weight: 800;
+    color: #1A1A1A;
+  }
+  .crm2-conv-time {
+    font-size: 7px;
+    color: rgba(0,0,0,0.45);
+    flex-shrink: 0;
+  }
+  .crm2-conv-msg {
+    font-size: 8px;
+    color: rgba(0,0,0,0.65);
+    line-height: 1.4;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .crm2-conv-meta { margin-top: 4px; }
+  .crm2-conv-tag {
+    display: inline-block;
+    font-size: 6.5px;
+    font-weight: 700;
+    color: rgba(0,0,0,0.55);
+    background: #F5F5F7;
+    padding: 1px 6px;
+    border-radius: 999px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .crm2-conv-tag--ok {
+    color: #1A8F7A;
+    background: rgba(42,181,160,0.14);
+  }
+
+  .crm2-conv-stats {
+    background: #FAFAFA;
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .crm2-conv-stats-title {
+    font-size: 7px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(0,0,0,0.5);
+    margin-bottom: 2px;
+  }
+  .crm2-conv-stat {
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    gap: 8px;
+    align-items: center;
+  }
+  .crm2-conv-stat-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .crm2-conv-stat-name {
+    font-size: 9px;
+    font-weight: 700;
+    color: #1A1A1A;
+  }
+  .crm2-conv-stat-meta {
+    font-size: 7px;
+    color: rgba(0,0,0,0.55);
+    margin-top: 1px;
+  }
+  .crm2-conv-foot {
+    margin-top: auto;
+  }
+
+  /* AI summary card */
+  .crm2-card--ai {
+    background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFE 100%);
+    border-color: rgba(75,123,229,0.18);
+    position: relative;
+  }
+  .crm2-card--ai::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #4B7BE5, #2AB5A0);
+    border-radius: 10px 10px 0 0;
+  }
+  .crm2-ai-typing-cue {
+    color: #4B7BE5 !important;
+    text-decoration: none !important;
+    font-weight: 700;
+    font-size: 8px;
+    letter-spacing: 0.04em;
+    text-transform: lowercase;
+  }
+  .crm2-ai-dots {
+    display: inline-block;
+    margin-left: 2px;
+    animation: crm2-ai-dots-blink 1.2s steps(4) infinite;
+  }
+  @keyframes crm2-ai-dots-blink {
+    0%   { opacity: 0; }
+    25%  { opacity: 0.4; }
+    50%  { opacity: 0.7; }
+    75%  { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  .crm2-ai-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .crm2-ai-line {
+    font-size: 8.5px;
+    line-height: 1.55;
+    color: rgba(0,0,0,0.75);
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  .crm2-ai-line strong { color: #1A1A1A; font-weight: 700; }
+  .crm2-ai-line--1 { animation: crm2-ai-line-in 16s ease-in-out infinite; }
+  .crm2-ai-line--2 { animation: crm2-ai-line-in 16s ease-in-out infinite; animation-delay: 0.6s; }
+  .crm2-ai-line--3 { animation: crm2-ai-line-in 16s ease-in-out infinite; animation-delay: 1.2s; }
+  .crm2-ai-line--4 { animation: crm2-ai-line-in 16s ease-in-out infinite; animation-delay: 1.8s; }
+  @keyframes crm2-ai-line-in {
+    0%, 4%   { opacity: 0; transform: translateY(4px); }
+    10%, 18% { opacity: 1; transform: translateY(0); }
+    22%, 100% { opacity: 0; transform: translateY(-2px); }
+  }
+  .crm2-ai-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: auto;
+  }
+  .crm2-ai-btn {
+    flex: 1;
+    background: #1A1A1A;
+    color: #fff;
+    text-align: center;
+    padding: 7px;
+    border-radius: 6px;
+    font-family: var(--font-display);
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .crm2-ai-btn-alt {
+    flex: 1;
+    text-align: center;
+    padding: 7px;
+    border-radius: 6px;
+    font-size: 8px;
+    font-weight: 700;
+    color: rgba(0,0,0,0.7);
+    background: #FAFAFA;
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .crm2-frame *, .crm2-frame ::before, .crm2-frame ::after { animation: none !important; }
     .crm2-panel { opacity: 0; }
-    .crm2-panel--1 { opacity: 1; }
+    .crm2-panel--0 { opacity: 1; }
+    .crm2-ai-line { opacity: 1; transform: none; }
   }
 
   /* ── CRM Omnicanal slide (legacy, unused) ── */
@@ -12882,7 +13438,7 @@ const useCases = [
     margin-top: 2px;
   }
   .mk-stats-segment strong { color: #1A1A1A; font-weight: 700; }
-  .mk-metric { margin-bottom: 8px; }
+  .mk-metric { margin-bottom: 7px; }
   .mk-metric-row {
     display: flex;
     justify-content: space-between;
@@ -12890,15 +13446,15 @@ const useCases = [
     margin-bottom: 3px;
   }
   .mk-metric-label {
-    font-size: 8px;
-    color: rgba(0,0,0,0.6);
+    font-size: 7.5px;
+    color: rgba(0,0,0,0.55);
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-weight: 600;
+    letter-spacing: 0.08em;
+    font-weight: 700;
   }
   .mk-metric-value {
     font-family: var(--font-display);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 800;
     color: #1A1A1A;
     letter-spacing: -0.01em;
@@ -12914,31 +13470,57 @@ const useCases = [
     height: 100%;
     background: #4B7BE5;
     border-radius: 2px;
+    width: var(--mk-bar-w, 0%);
   }
   .mk-metric-fill--green { background: #2AB5A0; }
+  /* Animated bar fill — runs once per slide entry */
+  .mk-bar--anim {
+    width: 0;
+    animation: mk-bar-fill 1.4s cubic-bezier(0.25, 0.8, 0.3, 1) 0.2s forwards;
+  }
+  @keyframes mk-bar-fill {
+    from { width: 0; }
+    to   { width: var(--mk-bar-w, 100%); }
+  }
+
+  /* ROI card — light Square-style, anchored at bottom */
   .mk-roi {
-    margin-top: 8px;
-    padding: 10px 12px;
-    background: #1A1A1A;
-    color: #fff;
-    border-radius: 10px;
+    margin-top: auto;
+    padding: 12px 14px;
+    background: linear-gradient(135deg, rgba(42,181,160,0.10), rgba(75,123,229,0.06));
+    border: 1px solid rgba(42,181,160,0.30);
+    color: #1A1A1A;
+    border-radius: 12px;
     display: flex;
-    justify-content: space-between;
-    align-items: baseline;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: 0 2px 12px -4px rgba(42,181,160,0.18);
+    position: relative;
   }
   .mk-roi-label {
-    font-size: 8px;
-    color: rgba(255,255,255,0.7);
+    font-size: 7.5px;
+    color: rgba(0,0,0,0.55);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-weight: 600;
+    letter-spacing: 0.12em;
+    font-weight: 700;
   }
   .mk-roi-value {
     font-family: var(--font-display);
-    font-size: 18px;
+    font-size: 26px;
     font-weight: 800;
-    color: #2AB5A0;
-    letter-spacing: -0.02em;
+    color: #1A8F7A;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    animation: mk-roi-glow 4s ease-in-out infinite;
+  }
+  @keyframes mk-roi-glow {
+    0%, 100% { text-shadow: 0 0 0 rgba(42,181,160,0); }
+    50%      { text-shadow: 0 0 16px rgba(42,181,160,0.45); }
+  }
+  .mk-roi-note {
+    font-size: 7.5px;
+    color: rgba(0,0,0,0.55);
+    line-height: 1.4;
   }
 
   /* ── Email marketing slide ── */
@@ -12946,28 +13528,34 @@ const useCases = [
     aspect-ratio: 16 / 10;
     width: 100%;
     background: #FAFAFA;
-    padding: 4% 5%;
+    padding: 2% 2.5%;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
   .mk-email-grid {
     display: grid;
-    grid-template-columns: 1.15fr 1fr;
-    gap: 14px;
+    grid-template-columns: 1fr 0.78fr;
+    gap: 10px;
     height: 100%;
+    min-height: 0;
   }
   .mk-email-preview {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     justify-content: center;
   }
   .mk-email-window {
     width: 100%;
+    height: 100%;
     background: #fff;
     border: 1px solid rgba(0,0,0,0.08);
-    border-radius: 8px;
+    border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 4px 16px -4px rgba(20,20,30,0.08);
+    box-shadow: 0 8px 24px -8px rgba(20,20,30,0.12);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
   }
   .mk-email-toolbar {
     display: flex;
@@ -12976,6 +13564,7 @@ const useCases = [
     padding: 6px 10px;
     background: #F5F5F7;
     border-bottom: 1px solid rgba(0,0,0,0.06);
+    flex-shrink: 0;
   }
   .mk-dot {
     width: 6px;
@@ -12990,56 +13579,211 @@ const useCases = [
     margin-left: 8px;
     font-size: 7px;
     color: rgba(0,0,0,0.55);
+    font-family: 'SF Mono', 'Menlo', monospace;
+    letter-spacing: 0.02em;
   }
-  .mk-email-content { padding: 10px 12px; }
+  /* Real email-client headers */
+  .mk-email-headers {
+    background: #FBFBFD;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    padding: 7px 12px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .mk-email-headers-row {
+    display: grid;
+    grid-template-columns: 38px 1fr;
+    gap: 8px;
+    font-size: 7px;
+  }
+  .mk-email-h-label {
+    color: rgba(0,0,0,0.45);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  .mk-email-h-val {
+    color: #1A1A1A;
+    font-weight: 600;
+  }
+  .mk-email-h-subj { font-weight: 700; }
+
+  .mk-email-content {
+    padding: 10px 14px 10px;
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  /* Follow-up tag */
+  .mk-email-tag {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(42,181,160,0.10);
+    color: #1A8F7A;
+    border: 1px solid rgba(42,181,160,0.20);
+    border-radius: 999px;
+    padding: 3px 8px;
+    font-size: 6px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    margin-bottom: 6px;
+  }
+  .mk-email-tag-dot {
+    width: 5px;
+    height: 5px;
+    background: #2AB5A0;
+    border-radius: 50%;
+    animation: mk-email-tag-pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes mk-email-tag-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(42,181,160,0.5); }
+    50%      { box-shadow: 0 0 0 4px rgba(42,181,160,0); }
+  }
+  .mk-email-brand {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    color: #1A1A1A;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
   .mk-email-subject {
     font-family: var(--font-display);
     font-size: 11px;
     font-weight: 800;
     color: #1A1A1A;
-    margin-bottom: 8px;
-    letter-spacing: -0.01em;
+    margin-bottom: 5px;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
   }
   .mk-email-greeting {
-    font-size: 8px;
+    font-size: 7.5px;
     color: #1A1A1A;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
     font-weight: 600;
   }
   .mk-email-text {
     font-size: 7px;
     line-height: 1.5;
-    color: rgba(0,0,0,0.65);
+    color: rgba(0,0,0,0.7);
     margin-bottom: 8px;
   }
+  .mk-email-text strong { color: #1A1A1A; font-weight: 700; }
+
+  /* Product grid (real items) */
   .mk-email-products {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 4px;
+    gap: 5px;
     margin-bottom: 8px;
   }
   .mk-email-prod {
-    aspect-ratio: 1;
-    background: linear-gradient(135deg, #E8E8EC 0%, #F5F5F7 100%);
-    border-radius: 4px;
+    background: #FAFAFA;
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 6px;
+    padding: 4px;
+    opacity: 0;
+    transform: translateY(8px);
+    animation: mk-email-prod-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
+  .mk-email-prod:nth-child(1) { animation-delay: 0.1s; }
+  .mk-email-prod:nth-child(2) { animation-delay: 0.25s; }
+  .mk-email-prod:nth-child(3) { animation-delay: 0.40s; }
+  @keyframes mk-email-prod-in {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .mk-email-prod-img {
+    aspect-ratio: 4 / 5;
+    background: #F2F1EE;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+  .mk-email-prod-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .mk-email-prod-name {
+    font-size: 7px;
+    font-weight: 700;
+    color: #1A1A1A;
+    padding: 0 2px;
+    margin-bottom: 2px;
+  }
+  .mk-email-prod-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 2px 2px;
+  }
+  .mk-email-prod-price {
+    font-family: var(--font-display);
+    font-size: 8px;
+    font-weight: 800;
+    color: #1A1A1A;
+  }
+  .mk-email-prod-match {
+    font-size: 6px;
+    font-weight: 800;
+    color: #1A8F7A;
+    background: rgba(42,181,160,0.14);
+    padding: 1px 4px;
+    border-radius: 3px;
+    letter-spacing: 0.02em;
+  }
+
   .mk-email-cta {
     display: inline-block;
-    padding: 5px 10px;
+    padding: 6px 12px;
     background: #1A1A1A;
     color: #fff;
     font-family: var(--font-display);
-    font-size: 7px;
+    font-size: 7.5px;
     font-weight: 700;
-    border-radius: 4px;
+    border-radius: 5px;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+    align-self: flex-start;
   }
+  .mk-email-note {
+    font-size: 6px;
+    color: rgba(0,0,0,0.5);
+    margin-bottom: 6px;
+    font-style: italic;
+  }
+
+  /* Email footer (sells the realism) */
+  .mk-email-footer {
+    border-top: 1px solid rgba(0,0,0,0.06);
+    padding-top: 5px;
+    margin-top: auto;
+    text-align: center;
+  }
+  .mk-email-foot-text {
+    font-size: 5.5px;
+    color: rgba(0,0,0,0.45);
+    line-height: 1.4;
+  }
+  .mk-email-foot-text span {
+    color: rgba(0,0,0,0.6);
+    text-decoration: underline;
+  }
+
   .mk-email-stats {
     background: #fff;
     border: 1px solid rgba(0,0,0,0.06);
-    border-radius: 10px;
-    padding: 12px;
+    border-radius: 12px;
+    padding: 12px 12px 10px;
     display: flex;
     flex-direction: column;
+    box-shadow: 0 2px 8px -2px rgba(20,20,30,0.05);
+    overflow: hidden;
+    height: 100%;
+    min-height: 0;
   }
 
   /* ── WhatsApp marketing slide ── */
@@ -13176,8 +13920,380 @@ const useCases = [
     display: flex;
     flex-direction: column;
   }
-  .mk-wa-stats .mk-metric-fill { background: #25D366; }
-  .mk-wa-stats .mk-roi-value { color: #25D366; }
+  .mk-wa-stats .mk-metric-fill,
+  .mk-wa2-panel .mk-metric-fill { background: #25D366; }
+  .mk-wa-stats .mk-roi-value,
+  .mk-wa2-panel .mk-roi-value { color: #128C4A; }
+  /* Override of the gradient ROI for the WA palette */
+  .mk-wa-stats .mk-roi,
+  .mk-wa2-panel .mk-roi {
+    background: linear-gradient(135deg, rgba(37,211,102,0.12), rgba(75,123,229,0.05));
+    border-color: rgba(37,211,102,0.30);
+    box-shadow: 0 2px 12px -4px rgba(37,211,102,0.18);
+  }
+
+  /* ── WhatsApp marketing v2 — multi-stage flow (18s loop) ── */
+  .mk-wa-grid--v2 {
+    grid-template-columns: 1fr 0.85fr;
+    grid-template-rows: 100%;
+    align-items: stretch;
+  }
+  .mk-wa-grid--v2 .mk-wa-phone-wrap {
+    height: 100%;
+    min-height: 0;
+    align-self: center;
+  }
+  .mk-wa-grid--v2 .mk-wa-phone {
+    width: auto;
+    max-width: 100%;
+    height: 100%;
+    aspect-ratio: 9 / 19;
+  }
+  .mk-wa2-panel {
+    position: relative;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 10px;
+    padding: 14px 14px 12px;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .mk-wa2-layer {
+    position: absolute;
+    inset: 14px 14px 12px;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+  }
+  .mk-wa2-layer--filters  { animation: mk-wa2-filters 18s ease-in-out infinite; }
+  .mk-wa2-layer--template { animation: mk-wa2-template 18s ease-in-out infinite; }
+  .mk-wa2-layer--sending  { animation: mk-wa2-sending 18s ease-in-out infinite; }
+  .mk-wa2-layer--stats    { animation: mk-wa2-stats 18s ease-in-out infinite; }
+
+  @keyframes mk-wa2-filters {
+    0% { opacity: 0; transform: translateY(8px); }
+    3%, 21% { opacity: 1; transform: translateY(0); }
+    24%, 100% { opacity: 0; transform: translateY(-6px); }
+  }
+  @keyframes mk-wa2-template {
+    0%, 23% { opacity: 0; transform: translateY(8px); }
+    28%, 46% { opacity: 1; transform: translateY(0); }
+    49%, 100% { opacity: 0; transform: translateY(-6px); }
+  }
+  @keyframes mk-wa2-sending {
+    0%, 48% { opacity: 0; transform: translateY(8px); }
+    53%, 71% { opacity: 1; transform: translateY(0); }
+    74%, 100% { opacity: 0; transform: translateY(-6px); }
+  }
+  @keyframes mk-wa2-stats {
+    0%, 73% { opacity: 0; transform: translateY(8px); }
+    78%, 98% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-6px); }
+  }
+
+  .mk-wa2-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 7px;
+    font-weight: 700;
+    color: #128C4A;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .mk-wa2-step-num {
+    width: 13px; height: 13px;
+    border-radius: 50%;
+    background: #25D366;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 7px;
+    font-weight: 700;
+  }
+  .mk-wa2-title {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    color: #1A1A1A;
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+
+  /* Filters */
+  .mk-wa2-rules {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: auto;
+  }
+  .mk-wa2-rule {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 8px;
+    color: #2A2A2A;
+    padding: 6px 8px;
+    background: #F5FAF7;
+    border: 1px solid rgba(37,211,102,0.18);
+    border-radius: 5px;
+    line-height: 1.3;
+  }
+  .mk-wa2-rule strong { font-weight: 700; color: #1A1A1A; }
+  .mk-wa2-check {
+    flex-shrink: 0;
+    width: 13px; height: 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(37,211,102,0.14);
+    border-radius: 50%;
+  }
+  .mk-wa2-rule--add {
+    background: transparent;
+    border: 1px dashed rgba(0,0,0,0.18);
+    color: rgba(0,0,0,0.45);
+    justify-content: center;
+    font-weight: 600;
+  }
+
+  .mk-wa2-btn {
+    margin-top: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 7px 11px;
+    border-radius: 6px;
+    font-size: 8px;
+    font-weight: 700;
+    border: none;
+    cursor: default;
+    align-self: flex-start;
+    font-family: inherit;
+  }
+  .mk-wa2-btn--primary {
+    background: #1A1A1A;
+    color: #fff;
+  }
+  .mk-wa2-btn--send {
+    background: #25D366;
+    color: #fff;
+    align-self: stretch;
+    margin-top: auto;
+    padding: 8px 11px;
+    font-size: 9px;
+    box-shadow: 0 4px 12px -4px rgba(37,211,102,0.45);
+    animation: mk-wa2-btn-pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes mk-wa2-btn-pulse {
+    0%, 100% { box-shadow: 0 4px 12px -4px rgba(37,211,102,0.45); transform: scale(1); }
+    50% { box-shadow: 0 4px 18px -2px rgba(37,211,102,0.65); transform: scale(1.015); }
+  }
+
+  /* Template stage */
+  .mk-wa2-result {
+    background: linear-gradient(135deg, rgba(37,211,102,0.10), rgba(37,211,102,0.04));
+    border: 1px solid rgba(37,211,102,0.30);
+    border-radius: 7px;
+    padding: 7px 10px;
+    margin-bottom: 9px;
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+  }
+  .mk-wa2-result-num {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 700;
+    color: #128C4A;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .mk-wa2-result-lbl {
+    font-size: 8px;
+    color: #2A2A2A;
+  }
+  .mk-wa2-tmpl {
+    background: #FAFAFA;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 6px;
+    padding: 7px 8px;
+    margin-bottom: auto;
+  }
+  .mk-wa2-tmpl-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 6.5px;
+    margin-bottom: 5px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+  .mk-wa2-tmpl-tag {
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #1A1A1A;
+  }
+  .mk-wa2-tmpl-status {
+    color: #25D366;
+    font-weight: 700;
+  }
+  .mk-wa2-tmpl-body {
+    font-size: 8px;
+    line-height: 1.45;
+    color: #2A2A2A;
+  }
+  .mk-wa2-tmpl-body strong { color: #1A1A1A; font-weight: 700; }
+  .mk-wa2-tmpl-body > div { margin-bottom: 3px; }
+  .mk-wa2-tmpl-body > div:last-child { margin-bottom: 0; }
+  .mk-wa2-var {
+    background: rgba(75,123,229,0.12);
+    color: #4B7BE5;
+    padding: 0 3px;
+    border-radius: 3px;
+    font-weight: 700;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 7.5px;
+  }
+
+  /* Sending stage */
+  .mk-wa2-send {
+    margin: auto;
+    text-align: center;
+    width: 100%;
+  }
+  .mk-wa2-send-icon {
+    display: inline-flex;
+    width: 46px; height: 46px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(37,211,102,0.10);
+    margin-bottom: 7px;
+    animation: mk-wa2-send-bob 1.4s ease-in-out infinite;
+  }
+  @keyframes mk-wa2-send-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
+  .mk-wa2-send-title {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    color: #1A1A1A;
+    margin-bottom: 2px;
+  }
+  .mk-wa2-send-sub {
+    font-size: 7.5px;
+    color: rgba(0,0,0,0.55);
+    margin-bottom: 9px;
+  }
+  .mk-wa2-send-bar {
+    width: 76%;
+    margin: 0 auto;
+    height: 4px;
+    background: rgba(0,0,0,0.06);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .mk-wa2-send-fill {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #25D366, #128C4A);
+    border-radius: 999px;
+    animation: mk-wa2-send-fill 18s linear infinite;
+  }
+  @keyframes mk-wa2-send-fill {
+    0%, 49% { width: 0%; }
+    53% { width: 6%; }
+    71% { width: 100%; }
+    74%, 100% { width: 100%; }
+  }
+  .mk-wa2-send-count {
+    font-size: 7px;
+    color: rgba(0,0,0,0.55);
+    margin-top: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Phone thread overlays */
+  .mk-wa-thread { position: relative; }
+  .mk-wa2-thread-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 5px;
+    pointer-events: none;
+    z-index: 1;
+    animation: mk-wa2-empty 18s ease-in-out infinite;
+  }
+  .mk-wa2-empty-icon {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .mk-wa2-empty-text {
+    font-size: 7px;
+    color: rgba(0,0,0,0.5);
+  }
+  @keyframes mk-wa2-empty {
+    0%, 49% { opacity: 1; }
+    53%, 100% { opacity: 0; }
+  }
+
+  .mk-wa2-bubble--anim {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  .mk-wa2-bubble--1 { animation: mk-wa2-bubble1 18s ease-in-out infinite; }
+  .mk-wa2-bubble--2 { animation: mk-wa2-bubble2 18s ease-in-out infinite; }
+  @keyframes mk-wa2-bubble1 {
+    0%, 52% { opacity: 0; transform: translateY(6px) scale(0.96); }
+    56%, 96% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-4px) scale(0.97); }
+  }
+  @keyframes mk-wa2-bubble2 {
+    0%, 62% { opacity: 0; transform: translateY(6px) scale(0.96); }
+    66%, 96% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-4px) scale(0.97); }
+  }
+
+  /* Reduced motion — disable all marketing animations */
+  @media (prefers-reduced-motion: reduce) {
+    .mk-bar--anim,
+    .mk-email-prod,
+    .mk-roi-value,
+    .mk-email-tag-dot,
+    .mk-wa2-layer,
+    .mk-wa2-bubble--anim,
+    .mk-wa2-thread-empty,
+    .mk-wa2-send-fill,
+    .mk-wa2-send-icon,
+    .mk-wa2-btn--send {
+      animation: none !important;
+    }
+    .mk-bar--anim { width: var(--mk-bar-w, 100%); }
+    .mk-email-prod { opacity: 1; transform: none; }
+    .mk-wa2-layer { opacity: 0; transform: none; }
+    .mk-wa2-layer--stats { opacity: 1; }
+    .mk-wa2-bubble--anim { opacity: 1; transform: none; }
+    .mk-wa2-thread-empty { display: none; }
+    .mk-wa2-send-fill { width: 100%; }
+  }
 
   /* ── AXO IA Empresarial ── */
   .axo-split {
