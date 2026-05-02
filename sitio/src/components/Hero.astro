@@ -866,7 +866,182 @@ const useCases = [
 
             {/* ── Vende: eCommerce ── */}
             <div class="tablet-slide" data-slide="pos-ecommerce">
-              <img src="/images/screen-ecommerce.webp" alt="eCommerce SACS — Tienda en línea con catálogo y checkout" class="tablet-slide-img tablet-slide-img-dark" loading="lazy" />
+              <div class="ec-frame">
+                {/* Device frame morphs from laptop → mobile across the timeline */}
+                <div class="ec-device">
+                  <div class="ec-device-bar">
+                    <span class="ec-dot ec-dot--r"></span>
+                    <span class="ec-dot ec-dot--y"></span>
+                    <span class="ec-dot ec-dot--g"></span>
+                    <span class="ec-url">maison-sacs.com</span>
+                    <span class="ec-spacer"></span>
+                  </div>
+                  <div class="ec-screen">
+
+                    {/* Layer 1: HERO / Home */}
+                    <div class="ec-layer ec-layer--home">
+                      <div class="ec-nav">
+                        <span class="ec-brand">MAISON</span>
+                        <span class="ec-nav-links"><span>Hombres</span><span>Mujeres</span><span>Resort</span><span>La Bóveda</span></span>
+                        <span class="ec-nav-icons"><span>⌕</span><span>♡</span><span>👤</span><span class="ec-cart-ic">⊠</span></span>
+                      </div>
+                      <div class="ec-hero">
+                        <div class="ec-hero-bg"></div>
+                        <div class="ec-hero-overlay"></div>
+                        <div class="ec-hero-eyebrow">RESORT 2026</div>
+                        <div class="ec-hero-title">Lino, sal y tarde<br/>de domingo.</div>
+                        <div class="ec-hero-cta">
+                          <span class="ec-hero-btn ec-hero-btn--primary">Explorar colección</span>
+                          <span class="ec-hero-btn">Ver galería</span>
+                        </div>
+                        <div class="ec-hero-scroll">↓ Scroll</div>
+                      </div>
+                    </div>
+
+                    {/* Layer 2: CATÁLOGO */}
+                    <div class="ec-layer ec-layer--catalog">
+                      <div class="ec-nav">
+                        <span class="ec-brand">MAISON</span>
+                        <span class="ec-nav-links"><span>Hombres</span><span>Mujeres</span><span>Resort</span></span>
+                        <span class="ec-nav-icons"><span>⌕</span><span>♡</span><span class="ec-cart-ic">⊠</span></span>
+                      </div>
+                      <div class="ec-catalog-head">
+                        <div class="ec-catalog-title">Colección Resort</div>
+                        <div class="ec-catalog-meta">12 piezas · Edición limitada</div>
+                      </div>
+                      <div class="ec-grid">
+                        <div class="ec-prod ec-prod--1">
+                          <div class="ec-prod-img"><img src="/images/reco-blusa.webp" alt="" loading="lazy" width="120" height="140" /></div>
+                          <div class="ec-prod-name">Blusa satinada</div>
+                          <div class="ec-prod-price">$1,290</div>
+                        </div>
+                        <div class="ec-prod ec-prod--target">
+                          <div class="ec-prod-img"><img src="/images/reco-blazer.webp" alt="" loading="lazy" width="120" height="140" /></div>
+                          <div class="ec-prod-name">Blazer oversize</div>
+                          <div class="ec-prod-price">$1,680</div>
+                          <div class="ec-prod-add">+ Agregar</div>
+                        </div>
+                        <div class="ec-prod">
+                          <div class="ec-prod-img"><img src="/images/reco-falda.webp" alt="" loading="lazy" width="120" height="140" /></div>
+                          <div class="ec-prod-name">Falda midi</div>
+                          <div class="ec-prod-price">$1,250</div>
+                        </div>
+                        <div class="ec-prod">
+                          <div class="ec-prod-img"><img src="/images/reco-blusa.webp" alt="" loading="lazy" width="120" height="140" /></div>
+                          <div class="ec-prod-name">Camiseta crop</div>
+                          <div class="ec-prod-price">$590</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Layer 3: CART DRAWER */}
+                    <div class="ec-layer ec-layer--cart">
+                      <div class="ec-cart-overlay"></div>
+                      <div class="ec-cart-drawer">
+                        <div class="ec-cart-head">
+                          <span class="ec-cart-title">Tu carrito</span>
+                          <span class="ec-cart-count">1 artículo</span>
+                          <span class="ec-cart-close">×</span>
+                        </div>
+                        <div class="ec-cart-item">
+                          <img src="/images/reco-blazer.webp" alt="" loading="lazy" width="80" height="100" />
+                          <div class="ec-cart-info">
+                            <div class="ec-cart-name">Blazer oversize · Marfil</div>
+                            <div class="ec-cart-meta">Talla M · 1 unidad</div>
+                            <div class="ec-cart-price">$1,680.00</div>
+                          </div>
+                        </div>
+                        <div class="ec-cart-totals">
+                          <div class="ec-cart-row"><span>Subtotal</span><span>$1,680.00</span></div>
+                          <div class="ec-cart-row ec-cart-row--small"><span>Envío estimado</span><span>Gratis</span></div>
+                          <div class="ec-cart-row ec-cart-row--total"><span>Total</span><span>$1,680.00</span></div>
+                        </div>
+                        <div class="ec-cart-cta">Ir al pago →</div>
+                        <div class="ec-cart-secure">🔒 Pago seguro · Apple Pay · Visa · MC · PayPal</div>
+                      </div>
+                    </div>
+
+                    {/* Layer 4: CHECKOUT (Shopify-style) */}
+                    <div class="ec-layer ec-layer--checkout">
+                      <div class="ec-checkout-grid">
+                        <div class="ec-checkout-form">
+                          <div class="ec-checkout-step">1 · Contacto</div>
+                          <div class="ec-checkout-input">
+                            <span class="ec-checkout-label">Email</span>
+                            <span class="ec-checkout-val">andrea@gomez.mx</span>
+                          </div>
+                          <div class="ec-checkout-step">2 · Envío</div>
+                          <div class="ec-checkout-input">
+                            <span class="ec-checkout-label">Dirección</span>
+                            <span class="ec-checkout-val">Av. Masaryk 88 · CDMX 11550</span>
+                          </div>
+                          <div class="ec-checkout-shipping">
+                            <div class="ec-ship ec-ship--active">
+                              <span class="ec-ship-radio"></span>
+                              <span class="ec-ship-name">Express · 24h</span>
+                              <span class="ec-ship-price">$120</span>
+                            </div>
+                            <div class="ec-ship">
+                              <span class="ec-ship-radio ec-ship-radio--off"></span>
+                              <span class="ec-ship-name">Estándar · 3 días</span>
+                              <span class="ec-ship-price">Gratis</span>
+                            </div>
+                          </div>
+                          <div class="ec-checkout-step">3 · Pago</div>
+                          <div class="ec-pay-tabs">
+                            <span class="ec-pay-tab ec-pay-tab--active">Tarjeta</span>
+                            <span class="ec-pay-tab">PayPal</span>
+                            <span class="ec-pay-tab">Apple Pay</span>
+                          </div>
+                          <div class="ec-pay-card">
+                            <div class="ec-pay-card-num">4521 ···· ···· 8847</div>
+                            <div class="ec-pay-card-row">
+                              <span>05/29</span><span>CVC ···</span><span class="ec-pay-card-brand">VISA</span>
+                            </div>
+                          </div>
+                          <div class="ec-checkout-confirm">Confirmar pedido · $1,800</div>
+                        </div>
+
+                        <div class="ec-checkout-summary">
+                          <div class="ec-checkout-summary-title">Resumen</div>
+                          <div class="ec-summary-item">
+                            <img src="/images/reco-blazer.webp" alt="" loading="lazy" width="50" height="60" />
+                            <div>
+                              <div class="ec-summary-name">Blazer oversize</div>
+                              <div class="ec-summary-meta">Marfil · M · 1ud</div>
+                            </div>
+                            <div class="ec-summary-price">$1,680</div>
+                          </div>
+                          <div class="ec-summary-row"><span>Subtotal</span><span>$1,680</span></div>
+                          <div class="ec-summary-row"><span>Envío Express</span><span>$120</span></div>
+                          <div class="ec-summary-row ec-summary-row--total"><span>Total</span><span>$1,800</span></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Layer 5: SUCCESS */}
+                    <div class="ec-layer ec-layer--ok">
+                      <div class="ec-ok-card">
+                        <div class="ec-ok-check">
+                          <svg viewBox="0 0 64 64" width="56" height="56" fill="none">
+                            <circle cx="32" cy="32" r="28" stroke="#2AB5A0" stroke-width="2.5"/>
+                            <path class="ec-ok-path" d="M20 32l8 8 16-16" stroke="#2AB5A0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                          </svg>
+                        </div>
+                        <div class="ec-ok-title">Pedido confirmado</div>
+                        <div class="ec-ok-num">#MS-78461</div>
+                        <div class="ec-ok-desc">Tu Blazer oversize llega mañana antes de las 8 PM. Te enviamos los datos de seguimiento por correo y WhatsApp.</div>
+                        <div class="ec-ok-stats">
+                          <div class="ec-ok-stat"><span class="ec-ok-stat-label">Total</span><span class="ec-ok-stat-value">$1,800</span></div>
+                          <div class="ec-ok-stat"><span class="ec-ok-stat-label">Entrega</span><span class="ec-ok-stat-value">Mañana 6 PM</span></div>
+                        </div>
+                        <div class="ec-ok-cta">Seguir comprando</div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* ── Vende: Redes Sociales & IA ── */}
@@ -4302,6 +4477,742 @@ const useCases = [
     border-radius: 0;
     box-shadow: none;
     height: 100%;
+  }
+
+  /* ── Tienda en línea — full luxury e-commerce flow with responsive morph ── */
+  .ec-frame {
+    aspect-ratio: 16 / 10;
+    width: 100%;
+    background: #F2F1EE;
+    background-image:
+      radial-gradient(ellipse 70% 60% at 50% 40%, rgba(255,255,255,0.6), transparent 70%),
+      linear-gradient(180deg, #F2F1EE 0%, #E8E4DC 100%);
+    padding: 4% 5%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* Device frame morphs from desktop → tablet → mobile */
+  .ec-device {
+    width: 96%;
+    height: 92%;
+    background: #1A1A1A;
+    border-radius: 14px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,0.06),
+      0 30px 60px -20px rgba(20,20,30,0.30),
+      0 12px 28px -8px rgba(20,20,30,0.18);
+    animation: ec-device-morph 24s ease-in-out infinite;
+    position: relative;
+  }
+  @keyframes ec-device-morph {
+    0%, 70%   { width: 96%; height: 92%; border-radius: 14px; }
+    74%       { width: 60%; height: 86%; border-radius: 22px; }
+    78%       { width: 42%; height: 88%; border-radius: 30px; }
+    82%, 100% { width: 30%; height: 92%; border-radius: 32px; }
+  }
+
+  .ec-device-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px 4px;
+    flex-shrink: 0;
+    animation: ec-bar-fade 24s ease-in-out infinite;
+  }
+  @keyframes ec-bar-fade {
+    0%, 76%   { opacity: 1; height: auto; padding-bottom: 4px; }
+    82%, 100% { opacity: 0; height: 0; padding: 0; overflow: hidden; }
+  }
+  .ec-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+  .ec-dot--r { background: #FF5F57; }
+  .ec-dot--y { background: #FEBC2E; }
+  .ec-dot--g { background: #28C840; }
+  .ec-url {
+    flex: 1;
+    text-align: center;
+    background: rgba(255,255,255,0.10);
+    color: rgba(255,255,255,0.70);
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 8px;
+    padding: 3px 10px;
+    border-radius: 4px;
+  }
+  .ec-spacer { width: 21px; }
+
+  .ec-screen {
+    flex: 1;
+    background: #FAFAFA;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    min-height: 0;
+  }
+
+  /* All layers absolute-stacked, animated via opacity */
+  .ec-layer {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-body);
+    color: #1A1A1A;
+  }
+  .ec-layer--home     { animation: ec-layer-home 24s ease-in-out infinite; }
+  .ec-layer--catalog  { animation: ec-layer-catalog 24s ease-in-out infinite; }
+  .ec-layer--cart     { animation: ec-layer-cart 24s ease-in-out infinite; }
+  .ec-layer--checkout { animation: ec-layer-checkout 24s ease-in-out infinite; }
+  .ec-layer--ok       { animation: ec-layer-ok 24s ease-in-out infinite; }
+
+  /* Timeline:
+     0-15%   Home
+     18-30%  Catálogo
+     33-48%  Cart drawer
+     50-72%  Checkout (device starts shrinking at 70%)
+     76-100% Success in mobile */
+  @keyframes ec-layer-home {
+    0%, 14%   { opacity: 1; }
+    16%, 100% { opacity: 0; }
+  }
+  @keyframes ec-layer-catalog {
+    0%, 16%   { opacity: 0; }
+    18%, 48%  { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+  @keyframes ec-layer-cart {
+    0%, 32%   { opacity: 0; }
+    34%, 48%  { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+  @keyframes ec-layer-checkout {
+    0%, 50%   { opacity: 0; }
+    52%, 72%  { opacity: 1; }
+    74%, 100% { opacity: 0; }
+  }
+  @keyframes ec-layer-ok {
+    0%, 75%   { opacity: 0; }
+    77%, 100% { opacity: 1; }
+  }
+
+  /* ─── Layer: HOME (luxury hero) ─── */
+  .ec-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    flex-shrink: 0;
+    z-index: 2;
+    position: relative;
+  }
+  .ec-brand {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    color: #1A1A1A;
+  }
+  .ec-nav-links {
+    display: flex;
+    gap: 14px;
+    font-size: 8px;
+    font-weight: 600;
+    color: rgba(0,0,0,0.7);
+    letter-spacing: 0.04em;
+  }
+  .ec-nav-icons {
+    display: flex;
+    gap: 8px;
+    font-size: 11px;
+    color: rgba(0,0,0,0.7);
+  }
+  .ec-cart-ic { position: relative; }
+
+  .ec-hero {
+    flex: 1;
+    position: relative;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 22px 30px 24px;
+    overflow: hidden;
+  }
+  .ec-hero-bg {
+    position: absolute;
+    inset: 0;
+    background-image: url('/images/recomendaciones-productos.webp');
+    background-size: cover;
+    background-position: center 25%;
+    transform: scale(1.05);
+    animation: ec-hero-zoom 24s ease-out infinite;
+  }
+  @keyframes ec-hero-zoom {
+    0%   { transform: scale(1.05); }
+    16%  { transform: scale(1.18); }
+    100% { transform: scale(1.05); }
+  }
+  .ec-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(20,20,30,0.0) 0%, rgba(20,20,30,0.3) 60%, rgba(20,20,30,0.7) 100%);
+  }
+  .ec-hero-eyebrow {
+    position: relative;
+    font-family: var(--font-display);
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.32em;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 8px;
+  }
+  .ec-hero-title {
+    position: relative;
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: #fff;
+    margin-bottom: 14px;
+    max-width: 70%;
+  }
+  .ec-hero-cta {
+    position: relative;
+    display: flex;
+    gap: 8px;
+  }
+  .ec-hero-btn {
+    padding: 9px 18px;
+    font-family: var(--font-display);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 999px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  .ec-hero-btn--primary {
+    background: #fff;
+    color: #1A1A1A;
+    border-color: #fff;
+  }
+  .ec-hero-scroll {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 8px;
+    color: rgba(255,255,255,0.7);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    animation: ec-scroll-bounce 1.4s ease-in-out infinite;
+  }
+  @keyframes ec-scroll-bounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.7; }
+    50%      { transform: translateX(-50%) translateY(-3px); opacity: 1; }
+  }
+
+  /* ─── Layer: CATÁLOGO ─── */
+  .ec-catalog-head {
+    text-align: center;
+    padding: 14px 0 8px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+  .ec-catalog-title {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 800;
+    color: #1A1A1A;
+    letter-spacing: -0.01em;
+  }
+  .ec-catalog-meta {
+    font-size: 8px;
+    color: rgba(0,0,0,0.55);
+    margin-top: 2px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .ec-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 14px 18px;
+  }
+  .ec-prod {
+    background: #fff;
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: transform 0.3s ease;
+  }
+  .ec-prod-img {
+    aspect-ratio: 4/5;
+    background: #F2F1EE;
+    overflow: hidden;
+  }
+  .ec-prod-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ec-prod-name {
+    font-size: 8px;
+    font-weight: 700;
+    color: #1A1A1A;
+    padding: 5px 8px 1px;
+  }
+  .ec-prod-price {
+    font-family: var(--font-display);
+    font-size: 9px;
+    font-weight: 700;
+    color: #1A1A1A;
+    padding: 0 8px 6px;
+  }
+  .ec-prod-add {
+    position: absolute;
+    inset: auto 0 0 0;
+    background: #1A1A1A;
+    color: #fff;
+    text-align: center;
+    padding: 6px;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    transform: translateY(100%);
+    animation: ec-add-show 24s ease-in-out infinite;
+  }
+  @keyframes ec-add-show {
+    0%, 25%   { transform: translateY(100%); }
+    27%, 30%  { transform: translateY(0); }
+    32%, 100% { transform: translateY(100%); }
+  }
+  .ec-prod--target {
+    animation: ec-prod-pulse 24s ease-in-out infinite;
+  }
+  @keyframes ec-prod-pulse {
+    0%, 22%   { box-shadow: 0 0 0 0 rgba(42,181,160,0); transform: scale(1); }
+    24%, 28%  { box-shadow: 0 0 0 4px rgba(42,181,160,0.25); transform: scale(1.03); }
+    30%, 100% { box-shadow: 0 0 0 0 rgba(42,181,160,0); transform: scale(1); }
+  }
+
+  /* ─── Layer: CART DRAWER ─── */
+  .ec-cart-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(20,20,30,0.30);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+  .ec-cart-drawer {
+    position: absolute;
+    top: 0; bottom: 0; right: 0;
+    width: 38%;
+    background: #fff;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: -10px 0 30px -8px rgba(20,20,30,0.18);
+  }
+  .ec-cart-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+  .ec-cart-title {
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 800;
+    color: #1A1A1A;
+  }
+  .ec-cart-count {
+    font-size: 8px;
+    color: rgba(0,0,0,0.55);
+    flex: 1;
+  }
+  .ec-cart-close {
+    font-size: 14px;
+    color: rgba(0,0,0,0.55);
+    line-height: 1;
+  }
+  .ec-cart-item {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+  .ec-cart-item img {
+    width: 60px;
+    height: 76px;
+    object-fit: cover;
+    border-radius: 4px;
+    background: #F2F1EE;
+  }
+  .ec-cart-name {
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 800;
+    color: #1A1A1A;
+    letter-spacing: -0.01em;
+  }
+  .ec-cart-meta {
+    font-size: 7.5px;
+    color: rgba(0,0,0,0.55);
+    margin-top: 2px;
+  }
+  .ec-cart-price {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 800;
+    color: #1A1A1A;
+    margin-top: 4px;
+  }
+  .ec-cart-totals {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-top: auto;
+  }
+  .ec-cart-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: rgba(0,0,0,0.7);
+  }
+  .ec-cart-row span:last-child { font-weight: 700; color: #1A1A1A; }
+  .ec-cart-row--small { font-size: 8px; color: rgba(0,0,0,0.5); }
+  .ec-cart-row--total {
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 800;
+    border-top: 1px solid rgba(0,0,0,0.08);
+    padding-top: 6px;
+    margin-top: 4px;
+  }
+  .ec-cart-cta {
+    background: #1A1A1A;
+    color: #fff;
+    text-align: center;
+    padding: 10px;
+    font-family: var(--font-display);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    border-radius: 6px;
+  }
+  .ec-cart-secure {
+    text-align: center;
+    font-size: 7px;
+    color: rgba(0,0,0,0.5);
+  }
+
+  /* ─── Layer: CHECKOUT (Shopify-style) ─── */
+  .ec-checkout-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    height: 100%;
+    background: #fff;
+  }
+  .ec-checkout-form {
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow: hidden;
+  }
+  .ec-checkout-step {
+    font-family: var(--font-display);
+    font-size: 9px;
+    font-weight: 800;
+    color: #1A1A1A;
+    margin-top: 6px;
+    letter-spacing: 0.04em;
+  }
+  .ec-checkout-step:first-child { margin-top: 0; }
+  .ec-checkout-input {
+    background: #FAFAFA;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 5px;
+    padding: 6px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .ec-checkout-label {
+    font-size: 6.5px;
+    color: rgba(0,0,0,0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+  }
+  .ec-checkout-val {
+    font-size: 9px;
+    color: #1A1A1A;
+    font-weight: 600;
+  }
+  .ec-checkout-shipping { display: flex; flex-direction: column; gap: 4px; }
+  .ec-ship {
+    display: grid;
+    grid-template-columns: 14px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    background: #FAFAFA;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 5px;
+    padding: 6px 10px;
+    font-size: 8.5px;
+  }
+  .ec-ship--active {
+    border-color: #1A1A1A;
+    background: #fff;
+  }
+  .ec-ship-radio {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #1A1A1A;
+    box-shadow: inset 0 0 0 2px #fff;
+  }
+  .ec-ship-radio--off {
+    background: transparent;
+    border: 1px solid rgba(0,0,0,0.22);
+    box-shadow: none;
+  }
+  .ec-ship-name { color: #1A1A1A; font-weight: 600; }
+  .ec-ship-price { font-weight: 700; color: #1A1A1A; }
+
+  .ec-pay-tabs { display: flex; gap: 4px; }
+  .ec-pay-tab {
+    flex: 1;
+    text-align: center;
+    padding: 5px 6px;
+    font-size: 8px;
+    font-weight: 700;
+    color: rgba(0,0,0,0.55);
+    background: #FAFAFA;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 5px;
+  }
+  .ec-pay-tab--active {
+    background: #1A1A1A;
+    color: #fff;
+    border-color: #1A1A1A;
+  }
+  .ec-pay-card {
+    background: #FAFAFA;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 5px;
+    padding: 7px 10px;
+  }
+  .ec-pay-card-num {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: #1A1A1A;
+    letter-spacing: 0.08em;
+    margin-bottom: 3px;
+  }
+  .ec-pay-card-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 7.5px;
+    color: rgba(0,0,0,0.55);
+    font-weight: 600;
+  }
+  .ec-pay-card-brand {
+    margin-left: auto;
+    background: #1A1F71;
+    color: #fff;
+    padding: 1px 5px;
+    border-radius: 2px;
+    font-family: var(--font-display);
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+  .ec-checkout-confirm {
+    margin-top: auto;
+    background: #1A1A1A;
+    color: #fff;
+    text-align: center;
+    padding: 10px;
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    border-radius: 6px;
+  }
+
+  .ec-checkout-summary {
+    background: #FAFAFA;
+    border-left: 1px solid rgba(0,0,0,0.06);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .ec-checkout-summary-title {
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(0,0,0,0.55);
+  }
+  .ec-summary-item {
+    display: grid;
+    grid-template-columns: 50px 1fr auto;
+    gap: 8px;
+    align-items: center;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+  .ec-summary-item img {
+    width: 50px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+  .ec-summary-name { font-size: 9px; font-weight: 700; color: #1A1A1A; }
+  .ec-summary-meta { font-size: 7px; color: rgba(0,0,0,0.55); }
+  .ec-summary-price { font-family: var(--font-display); font-weight: 800; font-size: 10px; }
+  .ec-summary-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 8.5px;
+    color: rgba(0,0,0,0.65);
+  }
+  .ec-summary-row span:last-child { font-weight: 700; color: #1A1A1A; }
+  .ec-summary-row--total {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 800;
+    border-top: 1px solid rgba(0,0,0,0.08);
+    padding-top: 6px;
+    margin-top: 4px;
+  }
+
+  /* ─── Layer: SUCCESS (mostly seen on mobile) ─── */
+  .ec-layer--ok {
+    background: #FAFAFA;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+  }
+  .ec-ok-card {
+    width: 100%;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .ec-ok-check {
+    margin-bottom: 8px;
+  }
+  .ec-ok-check svg { width: 44px; height: 44px; }
+  .ec-ok-path {
+    stroke-dasharray: 30;
+    stroke-dashoffset: 30;
+    animation: ec-ok-draw 24s ease-in-out infinite;
+  }
+  @keyframes ec-ok-draw {
+    0%, 76%   { stroke-dashoffset: 30; }
+    82%, 100% { stroke-dashoffset: 0; }
+  }
+  .ec-ok-title {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 800;
+    color: #1A1A1A;
+    margin-bottom: 4px;
+    letter-spacing: -0.01em;
+  }
+  .ec-ok-num {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 9px;
+    color: rgba(0,0,0,0.55);
+    margin-bottom: 10px;
+    letter-spacing: 0.08em;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.08);
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+  .ec-ok-desc {
+    font-size: 8px;
+    line-height: 1.5;
+    color: rgba(0,0,0,0.65);
+    margin-bottom: 12px;
+    max-width: 80%;
+  }
+  .ec-ok-stats {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 14px;
+  }
+  .ec-ok-stat {
+    flex: 1;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 6px;
+    padding: 7px 8px;
+    text-align: left;
+  }
+  .ec-ok-stat-label {
+    display: block;
+    font-size: 6.5px;
+    color: rgba(0,0,0,0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .ec-ok-stat-value {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 800;
+    color: #1A1A1A;
+    letter-spacing: -0.01em;
+  }
+  .ec-ok-cta {
+    background: #1A1A1A;
+    color: #fff;
+    padding: 9px 24px;
+    border-radius: 999px;
+    font-family: var(--font-display);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ec-frame *, .ec-frame ::before, .ec-frame ::after { animation: none !important; }
+    .ec-device { width: 96%; height: 92%; }
+    .ec-layer--home { opacity: 1; }
+    .ec-layer--catalog, .ec-layer--cart, .ec-layer--checkout, .ec-layer--ok { display: none; }
   }
 
   /* ── Pedidos y Apartados — animated 4-stage flow (light, minimalist) ── */
