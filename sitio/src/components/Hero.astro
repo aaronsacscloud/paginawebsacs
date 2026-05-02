@@ -6092,7 +6092,7 @@ const useCases = [
     25%, 100% { opacity: 0; transform: scale(0.92) translateX(-40px); }
   }
 
-  /* Phone — starts small on right, grows + moves to center as photo fades */
+  /* Phone — starts small on right, then settles fixed at LEFT for the rest */
   .rec2-phone-wrap {
     position: absolute;
     top: 3%;
@@ -6106,13 +6106,12 @@ const useCases = [
     animation: rec2-phone-pos 14s ease-in-out infinite;
   }
   @keyframes rec2-phone-pos {
-    0%, 18%   { right: 3.5%; width: 36%; }
-    25%, 60%  { right: 50%; width: 30%; transform: translateX(50%); }
-    65%, 100% { right: 56%; width: 30%; transform: translateX(50%); }
+    0%, 18%   { left: auto; right: 3.5%; width: 36%; }
+    25%, 100% { left: 4%; right: auto; width: 26%; }
   }
   .rec2-phone {
     width: 100%;
-    max-width: 260px;
+    max-width: 280px;
     aspect-ratio: 9 / 19;
     background: #2A2A2E;
     border-radius: 32px;
@@ -6586,13 +6585,13 @@ const useCases = [
   .rec2-done-stat span:last-child { font-family: var(--font-display); font-weight: 800; color: #1A1A1A; }
   .rec2-pos { color: #1A8F7A !important; }
 
-  /* Side report — emerges on the right at the end */
+  /* Side report — emerges on the right, occupies the bigger half */
   .rec2-report-wrap {
     position: absolute;
     top: 3%;
-    right: 3.5%;
+    right: 4%;
     height: 94%;
-    width: 38%;
+    width: 56%;
     display: flex;
     align-items: center;
     z-index: 1;
