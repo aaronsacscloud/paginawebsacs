@@ -1,0 +1,1556 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { supabase } from '../../../lib/supabase';
+import PartnerSidebar from '../../../components/partner/PartnerSidebar.astro';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+const isAdminMode = Astro.url.searchParams.has('admin');
+
+const { data: invitation } = await supabase
+  .from('partner_invitations')
+  .select('*')
+  .eq('id', id)
+  .maybeSingle();
+
+if (!invitation) return Astro.redirect('/404');
+
+// Auto-expire if vigencia passed
+const isExpired = invitation.vigencia && new Date(invitation.vigencia) < new Date();
+if (isExpired && invitation.estado === 'sent') {
+  await supabase.from('partner_invitations').update({ estado: 'expired' }).eq('id', id);
+  invitation.estado = 'expired';
+}
+
+// Mark as viewed (first opening, not by admin)
+if (invitation.estado === 'draft' || invitation.estado === 'sent') {
+  if (!isAdminMode && invitation.estado === 'sent') {
+    // Track view via activity (non-blocking)
+    try {
+      await supabase.from('activities').insert({
+        tipo: 'sistema',
+        titulo: `Invitación de partner vista por prospecto`,
+        metadata: { partner_invitation_id: id, partner_invitation_numero: invitation.numero },
+        automatico: true,
+      });
+    } catch {}
+  }
+}
+
+// Parse meta from notas (firma_base64 etc.)
+const NOTAS_SEP = '\n---META---\n';
+const notasIdx = (invitation.notas || '').indexOf(NOTAS_SEP);
+const meta = notasIdx >= 0 ? (() => {
+  try { return JSON.parse(invitation.notas.slice(notasIdx + NOTAS_SEP.length)); } catch { return {}; }
+})() : {};
+
+const template = invitation.template || 'modern';
+const tipo = invitation.tipo || 'embajador';
+const moneda = invitation.moneda || 'MXN';
+const comisionPct = Number(invitation.comision_pct ?? 50);
+const costoUnico = Number(invitation.costo_unico ?? 0);
+const costoMensual = Number(invitation.costo_mensual ?? 0);
+
+const beneficios: any[] = Array.isArray(invitation.beneficios) ? invitation.beneficios : [];
+const compromisos: any[] = Array.isArray(invitation.compromisos) ? invitation.compromisos : [];
+const tabulador: any = invitation.tabulador && typeof invitation.tabulador === 'object' ? invitation.tabulador : {};
+
+const isAccepted = invitation.estado === 'accepted';
+const isDeclined = invitation.estado === 'declined';
+const isClosed = isAccepted || isDeclined;
+
+const fmt = (n: number) => n === 0 ? 'Gratis' : '$' + Math.round(n).toLocaleString('es-MX');
+const fmtMoney = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+const fmtDate = (d: string | null) => {
+  if (!d) return '';
+  const date = new Date(d.length === 10 ? d + 'T12:00:00' : d);
+  if (isNaN(date.getTime())) return '';
+  const day = date.getDate();
+  const month = date.toLocaleDateString('es-MX', { month: 'short' }).replace('.', '');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+const fmtDateLong = (d: string | null) => {
+  if (!d) return '';
+  const date = new Date(d.length === 10 ? d + 'T12:00:00' : d);
+  if (isNaN(date.getTime())) return '';
+  const day = date.getDate();
+  const month = date.toLocaleDateString('es-MX', { month: 'long' });
+  const year = date.getFullYear();
+  return `${day} de ${month} de ${year}`;
+};
+
+const fechaCreado = fmtDate(invitation.created_at);
+const vigenciaFecha = fmtDate(invitation.vigencia);
+const vigenciaLarga = fmtDateLong(invitation.vigencia);
+
+const tipoLabel: Record<string, string> = {
+  embajador: 'Embajador SACS',
+  distribuidor: 'Distribuidor Autorizado',
+  integrador: 'Integrador Certificado',
+  reseller: 'Reseller',
+  consultor: 'Consultor Partner',
+};
+const tipoTagline: Record<string, string> = {
+  embajador: 'Difunde, recomienda y crece con SACS. Tu voz mueve marcas.',
+  distribuidor: 'Vende SACS a tu red. Comisiones recurrentes mientras estén activos.',
+  integrador: 'Implementa SACS en clientes B2B. Soporte técnico y handoff cualificado.',
+  reseller: 'Modelo white-label para vender SACS bajo tu marca o canal.',
+  consultor: 'Asesora a clientes en su transformación digital con SACS.',
+};
+
+const heroEyebrow = `Invitación · Programa Partners`;
+const heroTitle = invitation.nombre;
+const heroSubtitle = tipoTagline[tipo] || '';
+
+const tabsDef = [
+  { id: 'bienvenida', label: 'Bienvenida', show: true },
+  { id: 'beneficios', label: 'Beneficios', show: beneficios.length > 0 },
+  { id: 'terminos', label: 'Términos', show: true },
+  { id: 'compromisos', label: 'Compromisos', show: compromisos.length > 0 },
+  { id: 'tabulador', label: 'Tabulador', show: Object.keys(tabulador).length > 0 },
+  { id: 'porque', label: '¿Por qué SACS?', show: true },
+  { id: 'firma', label: isAccepted ? 'Firmada' : (isDeclined ? 'Rechazada' : 'Aceptar y firmar'), show: true },
+];
+const visibleTabs = tabsDef.filter(t => t.show).map(({ id, label }) => ({ id, label }));
+const initialTab = isClosed ? 'firma' : 'bienvenida';
+
+const beneficioIcons: Record<string, string> = {
+  gift: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>',
+  percent: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>',
+  academy: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>',
+  community: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
+  reward: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>',
+  leads: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
+  default: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+};
+
+const partnerLandingUrl = invitation.slug_landing
+  ? `https://www.sacscloud.com/p/${invitation.slug_landing}`
+  : `https://www.sacscloud.com/p/${(invitation.numero || '').toLowerCase()}`;
+---
+
+<BaseLayout
+  title={`Invitación Partner ${invitation.numero || ''} — SACS`}
+  description={`Programa de partners SACS para ${invitation.nombre}`}
+  noindex={true}
+>
+
+<div class:list={['p-layout', `p-layout--${template}`]}>
+  <aside class="p-layout-sidebar no-print">
+    <PartnerSidebar
+      tabs={visibleTabs}
+      initialTab={initialTab}
+      numero={invitation.numero}
+      nombre={invitation.nombre}
+      tipo={tipo}
+      comisionPct={comisionPct}
+      template={template}
+      isAccepted={isAccepted}
+      isDeclined={isDeclined}
+      isExpired={!!isExpired}
+      vigenciaFecha={vigenciaFecha}
+    />
+  </aside>
+
+  <div class:list={['p-page', `p-${template}`]} id="partner-doc" data-initial-tab={initialTab}>
+    <div class="p-container">
+
+      <!-- Header -->
+      <div class="p-header">
+        <div class="p-header-brand">
+          <span class="p-logo-text">Sacs</span>
+          <span class="p-logo-tag">Partners</span>
+        </div>
+        <div class="p-header-meta">
+          {isAccepted && <span class="p-status p-status--accepted"><span class="p-status-dot"></span>Firmada</span>}
+          {isDeclined && <span class="p-status p-status--declined"><span class="p-status-dot"></span>Rechazada</span>}
+          {isExpired && !isClosed && <span class="p-status p-status--expired"><span class="p-status-dot"></span>Vencida</span>}
+          {!isExpired && !isClosed && <span class="p-status p-status--active"><span class="p-status-dot"></span>Activa</span>}
+          <div class="p-numero">{invitation.numero}</div>
+          <div class="p-fecha">Emitida {fechaCreado}</div>
+          {!isClosed && !isExpired && vigenciaFecha && (
+            <div class="p-fecha">Vigente hasta {vigenciaFecha}</div>
+          )}
+        </div>
+      </div>
+
+      <!-- TAB: BIENVENIDA -->
+      <section class="p-tab-panel" data-tab="bienvenida">
+        <div class="p-hero">
+          <div class="p-hero-eyebrow">{heroEyebrow}</div>
+          <h1 class="p-hero-title">
+            {invitation.nombre},<br/>
+            <span class="p-hero-title-soft">queremos que seas</span><br/>
+            <span class="p-hero-title-strong">{tipoLabel[tipo] || tipo}</span>.
+          </h1>
+          <p class="p-hero-sub">{heroSubtitle}</p>
+
+          <div class="p-hero-stats">
+            <div class="p-hero-stat">
+              <div class="p-hero-stat-num">{comisionPct}<span class="p-hero-stat-pct">%</span></div>
+              <div class="p-hero-stat-label">Comisión por venta</div>
+            </div>
+            <div class="p-hero-stat">
+              <div class="p-hero-stat-num">{costoMensual === 0 && costoUnico === 0 ? 'Gratis' : (costoMensual > 0 ? fmtMoney(costoMensual) : fmtMoney(costoUnico))}</div>
+              <div class="p-hero-stat-label">{costoMensual === 0 && costoUnico === 0 ? 'Acceso al sistema' : (costoMensual > 0 ? 'Cuota mensual' : 'Cuota única')}</div>
+            </div>
+            <div class="p-hero-stat">
+              <div class="p-hero-stat-num">3K+</div>
+              <div class="p-hero-stat-label">Marcas en la red SACS</div>
+            </div>
+          </div>
+
+          <div class="p-hero-quick">
+            <div class="p-hero-quick-row">
+              <span class="p-hero-quick-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+              <span>Lo que sigue: revisa beneficios, términos y firma cuando estés listo.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Index -->
+        <div class="p-tab-intro-nav">
+          {visibleTabs.filter(t => t.id !== 'bienvenida' && t.id !== 'firma').map(t => (
+            <a href={`#${t.id}`} class="p-tab-intro-link" data-tab-link={t.id}>
+              <span class="p-tab-intro-link-label">{t.label}</span>
+              <span class="p-tab-intro-link-arrow">→</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <!-- TAB: BENEFICIOS -->
+      {beneficios.length > 0 && (
+      <section class="p-tab-panel" data-tab="beneficios">
+        <div class="p-section-head">
+          <div class="p-section-eyebrow">Lo que recibes</div>
+          <h2 class="p-section-title">Beneficios de ser partner</h2>
+          <p class="p-section-lead">
+            Todo lo que necesitas para representar SACS, vender con confianza y crecer junto con nosotros.
+          </p>
+        </div>
+
+        <div class="p-benefits-grid">
+          {beneficios.map((b: any) => (
+            <div class="p-benefit-card">
+              <div class="p-benefit-icon" set:html={beneficioIcons[b.icon] || beneficioIcons.default}></div>
+              <div class="p-benefit-title">{b.title}</div>
+              <div class="p-benefit-detail">{b.detail}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+      )}
+
+      <!-- TAB: TÉRMINOS -->
+      <section class="p-tab-panel" data-tab="terminos">
+        <div class="p-section-head">
+          <div class="p-section-eyebrow">Las reglas claras</div>
+          <h2 class="p-section-title">Términos económicos</h2>
+          <p class="p-section-lead">
+            Sin letras chicas. Esto es lo que ganas y lo que cuesta participar.
+          </p>
+        </div>
+
+        <div class="p-terms">
+          <div class="p-term-row p-term-row--big">
+            <div class="p-term-info">
+              <div class="p-term-label">Comisión por venta directa</div>
+              <div class="p-term-detail">Sobre el monto cobrado al cliente cuando facturamos vía tu link único.</div>
+            </div>
+            <div class="p-term-value p-term-value--accent">{comisionPct}%</div>
+          </div>
+
+          <div class="p-term-row">
+            <div class="p-term-info">
+              <div class="p-term-label">Cuota única de inscripción</div>
+              <div class="p-term-detail">{costoUnico === 0 ? 'No aplica para este programa.' : 'Pago único al activar tu programa.'}</div>
+            </div>
+            <div class="p-term-value">{costoUnico === 0 ? 'Sin costo' : fmtMoney(costoUnico) + ' ' + moneda}</div>
+          </div>
+
+          <div class="p-term-row">
+            <div class="p-term-info">
+              <div class="p-term-label">Cuota mensual del sistema SACS</div>
+              <div class="p-term-detail">{costoMensual === 0 ? 'Acceso completo gratis mientras cumplas los compromisos del programa.' : 'Suscripción mensual al sistema SACS para uso interno y demos.'}</div>
+            </div>
+            <div class="p-term-value">{costoMensual === 0 ? 'Gratis' : fmtMoney(costoMensual) + ' / mes'}</div>
+          </div>
+
+          <div class="p-term-row">
+            <div class="p-term-info">
+              <div class="p-term-label">Vigencia de la invitación</div>
+              <div class="p-term-detail">Después de esta fecha la invitación se cierra y deberá renegociarse.</div>
+            </div>
+            <div class="p-term-value">{vigenciaLarga || 'Sin vencimiento'}</div>
+          </div>
+        </div>
+
+        {invitation.terminos && (
+          <div class="p-terms-extra">
+            <div class="p-terms-extra-title">Condiciones generales</div>
+            <p class="p-terms-extra-text">{invitation.terminos}</p>
+          </div>
+        )}
+      </section>
+
+      <!-- TAB: COMPROMISOS -->
+      {compromisos.length > 0 && (
+      <section class="p-tab-panel" data-tab="compromisos">
+        <div class="p-section-head">
+          <div class="p-section-eyebrow">Lo que esperamos de ti</div>
+          <h2 class="p-section-title">Tus compromisos como partner</h2>
+          <p class="p-section-lead">
+            Para mantener tus beneficios activos, esto es lo que necesitamos de tu lado.
+          </p>
+        </div>
+
+        <div class="p-commits">
+          {compromisos.map((c: any, i: number) => (
+            <div class="p-commit-row">
+              <div class="p-commit-num">{String(i + 1).padStart(2, '0')}</div>
+              <div class="p-commit-content">
+                <div class="p-commit-title">{c.title}</div>
+                <div class="p-commit-detail">{c.detail}</div>
+                {c.frequency && <div class="p-commit-frequency">{c.frequency}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div class="p-commit-note">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span>Si dejas de cumplir los compromisos, te avisaremos y tendrás 30 días para regularizar antes de pausar tus beneficios.</span>
+        </div>
+      </section>
+      )}
+
+      <!-- TAB: TABULADOR -->
+      {Object.keys(tabulador).length > 0 && (
+      <section class="p-tab-panel" data-tab="tabulador">
+        <div class="p-section-head">
+          <div class="p-section-eyebrow">Cómo cobras</div>
+          <h2 class="p-section-title">Tabulador de recompensas</h2>
+          <p class="p-section-lead">
+            Te pagamos por cada paso del proceso, no sólo por la venta final.
+          </p>
+        </div>
+
+        <div class="p-payout-grid">
+          {tabulador.demo_agendada !== undefined && (
+            <div class="p-payout-card">
+              <div class="p-payout-step">Paso 1</div>
+              <div class="p-payout-amount">{tabulador.demo_agendada > 0 ? fmtMoney(tabulador.demo_agendada) : '—'}</div>
+              <div class="p-payout-name">Demo agendada</div>
+              <div class="p-payout-detail">Por cada demo confirmada con un prospecto calificado que tú agendas.</div>
+            </div>
+          )}
+          {tabulador.demo_completada !== undefined && (
+            <div class="p-payout-card">
+              <div class="p-payout-step">Paso 2</div>
+              <div class="p-payout-amount">{tabulador.demo_completada > 0 ? fmtMoney(tabulador.demo_completada) : '—'}</div>
+              <div class="p-payout-name">Demo completada</div>
+              <div class="p-payout-detail">Cuando el prospecto asiste y completa el demo válido.</div>
+            </div>
+          )}
+          {tabulador.venta_directa_pct !== undefined && (
+            <div class="p-payout-card p-payout-card--featured">
+              <div class="p-payout-step">Paso 3</div>
+              <div class="p-payout-amount">{tabulador.venta_directa_pct}%</div>
+              <div class="p-payout-name">Venta directa</div>
+              <div class="p-payout-detail">Comisión sobre el cobro de la primera factura del cliente cerrado.</div>
+            </div>
+          )}
+        </div>
+
+        {tabulador.notas && (
+          <div class="p-payout-notes">
+            <div class="p-payout-notes-title">Cómo se calculan los pagos</div>
+            <p>{tabulador.notas}</p>
+          </div>
+        )}
+
+        <!-- Tu link / landing -->
+        <div class="p-landing">
+          <div class="p-landing-eyebrow">Tu landing personalizada</div>
+          <div class="p-landing-url">{partnerLandingUrl}</div>
+          <p class="p-landing-detail">
+            Al firmar tu invitación se activa un link y landing con tu nombre. Cualquier prospecto que llegue por este link se atribuye a ti automáticamente.
+          </p>
+        </div>
+      </section>
+      )}
+
+      <!-- TAB: ¿POR QUÉ SACS? -->
+      <section class="p-tab-panel" data-tab="porque">
+        <div class="p-section-head">
+          <div class="p-section-eyebrow">Por qué SACS</div>
+          <h2 class="p-section-title">El sistema operativo del retail mexicano</h2>
+          <p class="p-section-lead">
+            Más de 3,000 marcas en LATAM operan con SACS. Recomendar SACS no es vender software — es recomendar la mejor versión de su negocio.
+          </p>
+        </div>
+
+        <div class="p-why-stats">
+          <div class="p-why-stat">
+            <div class="p-why-stat-num">3,000+</div>
+            <div class="p-why-stat-label">Marcas activas</div>
+          </div>
+          <div class="p-why-stat">
+            <div class="p-why-stat-num">42M+</div>
+            <div class="p-why-stat-label">Transacciones procesadas</div>
+          </div>
+          <div class="p-why-stat">
+            <div class="p-why-stat-num">8</div>
+            <div class="p-why-stat-label">Países en LATAM</div>
+          </div>
+          <div class="p-why-stat">
+            <div class="p-why-stat-num">96%</div>
+            <div class="p-why-stat-label">Retención anual</div>
+          </div>
+        </div>
+
+        <div class="p-why-pillars">
+          <div class="p-why-pillar">
+            <div class="p-why-pillar-letter">S</div>
+            <div class="p-why-pillar-word">Ser</div>
+            <p>Ser auténticos. Tu marca tiene una identidad — nuestro trabajo es potenciarla, no reemplazarla.</p>
+          </div>
+          <div class="p-why-pillar">
+            <div class="p-why-pillar-letter">A</div>
+            <div class="p-why-pillar-word">Avanzar</div>
+            <p>Avanzar con tecnología que resuelve problemas reales, no los de alguien más.</p>
+          </div>
+          <div class="p-why-pillar">
+            <div class="p-why-pillar-letter">C</div>
+            <div class="p-why-pillar-word">Crear</div>
+            <p>Crear experiencias que inspiran — para tus clientes, tu equipo y tu comunidad.</p>
+          </div>
+          <div class="p-why-pillar">
+            <div class="p-why-pillar-letter">S</div>
+            <div class="p-why-pillar-word">Sembrar</div>
+            <p>Sembrar para el futuro. Tu éxito impulsa programas de impacto en comunidades mexicanas.</p>
+          </div>
+        </div>
+
+        <div class="p-why-closing">
+          <strong>El 10% de cada licencia genera cambio real.</strong>
+          <span>Capacitación digital, apoyo a emprendedores locales y conservación de ecosistemas en México. Comercio consciente significa que cada transacción tiene propósito — y como partner, tú eres parte del impacto.</span>
+        </div>
+      </section>
+
+      <!-- TAB: FIRMA -->
+      <section class="p-tab-panel" data-tab="firma">
+        {isAccepted ? (
+          <div class="p-signed">
+            <div class="p-signed-eyebrow">Firmada</div>
+            <div class="p-signed-title">Bienvenido al equipo, {invitation.aceptado_por || invitation.nombre}.</div>
+            <div class="p-signed-sub">
+              Tu programa <strong>{tipoLabel[tipo] || tipo}</strong> está activo. En breve recibirás un correo con las credenciales del sistema, acceso a la academia y tu link de partner.
+            </div>
+            {meta.firma_base64 && (
+              <img src={meta.firma_base64} alt="Firma" class="p-signed-img" />
+            )}
+            {invitation.aceptado_por && (
+              <div class="p-signed-label">Firmada por {invitation.aceptado_por}</div>
+            )}
+            {invitation.aceptado_fecha && (
+              <div class="p-signed-date">{fmtDate(invitation.aceptado_fecha)}</div>
+            )}
+            <div class="p-signed-cta-row">
+              <a href="https://www.sacscloud.com/admin/crm" class="p-signed-cta">Ir al panel SACS</a>
+            </div>
+          </div>
+        ) : isDeclined ? (
+          <div class="p-signed p-signed--declined">
+            <div class="p-signed-eyebrow">Rechazada</div>
+            <div class="p-signed-title">Gracias por tu respuesta.</div>
+            <div class="p-signed-sub">Tu feedback nos ayuda a mejorar el programa. Si cambias de opinión, escríbenos a partners@sacscloud.com y reactivamos tu invitación.</div>
+            {invitation.decline_motivo && (
+              <div class="p-signed-meta">Motivo: <strong>{invitation.decline_motivo}</strong>{invitation.decline_detalle ? ` · ${invitation.decline_detalle}` : ''}</div>
+            )}
+          </div>
+        ) : isExpired ? (
+          <div class="p-signed p-signed--expired">
+            <div class="p-signed-eyebrow">Vencida</div>
+            <div class="p-signed-title">Esta invitación venció el {vigenciaLarga}.</div>
+            <div class="p-signed-sub">Si todavía te interesa el programa, contáctanos y te enviamos una invitación renovada.</div>
+            <div class="p-signed-cta-row">
+              <a class="p-signed-cta" href={`https://wa.me/5215512345678?text=${encodeURIComponent(`Hola, mi invitación de partner ${invitation.numero || ''} venció. Me gustaría renovarla.`)}`} target="_blank" rel="noopener">Renovar invitación</a>
+            </div>
+          </div>
+        ) : (
+          <div class="p-sign-form">
+            <div class="p-section-head p-section-head--center">
+              <div class="p-section-eyebrow">Último paso</div>
+              <h2 class="p-section-title">Acepta y firma tu invitación</h2>
+              <p class="p-section-lead">
+                Al firmar, activamos tu programa <strong>{tipoLabel[tipo] || tipo}</strong>, te creamos tu cuenta SACS y enviamos las credenciales a tu correo.
+              </p>
+            </div>
+
+            <div class="p-sign-fields">
+              <label class="p-sign-field">
+                <span>Nombre completo</span>
+                <input type="text" id="sign-nombre" class="p-input" placeholder="Ej. Mariana López" value={invitation.nombre || ''} />
+              </label>
+              <label class="p-sign-field">
+                <span>Email</span>
+                <input type="email" id="sign-email" class="p-input" placeholder="tu@correo.com" value={invitation.email || ''} />
+              </label>
+              <label class="p-sign-field">
+                <span>WhatsApp</span>
+                <input type="tel" id="sign-whatsapp" class="p-input" placeholder="55 1234 5678" value={invitation.whatsapp || ''} />
+              </label>
+            </div>
+
+            <div class="p-sign-canvas-wrap">
+              <div class="p-sign-canvas-label">Firma con el dedo o el mouse</div>
+              <canvas id="signature-canvas" class="p-sign-canvas" width="600" height="180"></canvas>
+              <div class="p-sign-canvas-actions">
+                <button type="button" class="p-btn p-btn--ghost" id="btn-clear-sig">Limpiar firma</button>
+              </div>
+            </div>
+
+            <div class="p-sign-legal">
+              Al aceptar y firmar confirmas que has leído y aceptas los
+              <a href="/terminos" target="_blank" rel="noopener">Términos y condiciones</a> y el
+              <a href="/privacidad" target="_blank" rel="noopener">Aviso de privacidad</a>.
+            </div>
+
+            <div class="p-sign-actions">
+              <button type="button" class="p-btn p-btn--primary" id="btn-accept">Aceptar y activar mi programa</button>
+              <button type="button" class="p-btn p-btn--ghost" id="btn-decline">No me interesa por ahora</button>
+            </div>
+          </div>
+        )}
+      </section>
+
+      <!-- Footer -->
+      <div class="p-footer">
+        <div class="p-footer-brand">
+          <span class="p-footer-logo">Sacs</span>
+          <span class="p-footer-tagline">Sistema operativo para retailers</span>
+        </div>
+        <div class="p-footer-contact">www.sacscloud.com · partners@sacscloud.com</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Decline modal -->
+{!isClosed && !isExpired && (
+<div class="p-modal-overlay no-print" id="decline-modal" style="display:none">
+  <div class="p-modal">
+    <div class="p-modal-header">
+      <span class="p-modal-title">¿Por qué no es para ti?</span>
+      <button type="button" class="p-modal-close" id="btn-close-decline">✕</button>
+    </div>
+    <div class="p-modal-body">
+      <p class="p-modal-text">Tu respuesta nos ayuda a mejorar el programa. Selecciona el motivo principal:</p>
+      <div class="p-decline-reasons">
+        <label class="p-decline-reason"><input type="radio" name="decline-motivo" value="no_tengo_audiencia" /> <span>No tengo audiencia o red para recomendar SACS</span></label>
+        <label class="p-decline-reason"><input type="radio" name="decline-motivo" value="comision_baja" /> <span>La comisión no me parece atractiva</span></label>
+        <label class="p-decline-reason"><input type="radio" name="decline-motivo" value="compromiso_alto" /> <span>El compromiso de contenido es muy alto</span></label>
+        <label class="p-decline-reason"><input type="radio" name="decline-motivo" value="timing" /> <span>No es buen momento, lo veo más adelante</span></label>
+        <label class="p-decline-reason"><input type="radio" name="decline-motivo" value="otro" /> <span>Otro motivo</span></label>
+      </div>
+      <label class="p-sign-field" style="margin-top:14px">
+        <span>Detalle (opcional)</span>
+        <textarea id="decline-detalle" class="p-input" rows="3" placeholder="Cuéntanos más..."></textarea>
+      </label>
+    </div>
+    <div class="p-modal-footer">
+      <button class="p-btn p-btn--ghost" id="btn-cancel-decline" type="button">Cancelar</button>
+      <button class="p-btn p-btn--primary" id="btn-confirm-decline" type="button">Enviar respuesta</button>
+    </div>
+  </div>
+</div>
+)}
+
+</BaseLayout>
+
+<style is:global>
+  /* Hide site nav/footer on partner page for focused reading */
+  body:has(#partner-doc) > nav,
+  body:has(#partner-doc) > footer,
+  body:has(#partner-doc) .wa-bar,
+  body:has(#partner-doc) .final-cta { display: none !important; }
+  body:has(#partner-doc) main { padding: 0 !important; margin: 0 !important; }
+</style>
+
+<style>
+  /* ════════════════════════════════════════════════
+     Partner invitation public page — typographic,
+     Squarespace-style with editorial gradients.
+     Brand accent: #4B7BE5 (partner blue).
+     ════════════════════════════════════════════════ */
+
+  .p-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 0;
+    min-height: 100vh;
+    background: #fafaf8;
+  }
+  .p-layout-sidebar {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    overflow-y: auto;
+    background: #fff;
+    border-right: 1px solid #e5e5e5;
+    scrollbar-width: thin;
+  }
+  .p-layout-sidebar::-webkit-scrollbar { width: 6px; }
+  .p-layout-sidebar::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 3px; }
+
+  .p-page { padding: 0 0 80px; }
+  .p-container { max-width: 760px; margin: 0 auto; padding: 0 32px; }
+
+  @media (max-width: 1023px) {
+    .p-layout { grid-template-columns: 1fr; }
+    .p-layout-sidebar { display: none; }
+    .p-container { padding: 0 20px; }
+  }
+
+  /* Tab switcher */
+  .p-tab-panel { display: none; animation: tabFade 220ms ease; padding-bottom: 64px; }
+  .p-tab-panel.is-active { display: block; }
+  @keyframes tabFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  @media (prefers-reduced-motion: reduce) {
+    .p-tab-panel { animation: none; }
+  }
+
+  /* Header */
+  .p-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 32px 0 20px;
+    border-bottom: 1px solid #f0f0f0;
+    margin-bottom: 24px;
+  }
+  .p-header-brand { display: flex; align-items: center; gap: 10px; }
+  .p-logo-text { font-family: var(--font-logo, var(--font-display)); font-size: 1.75rem; font-weight: 700; color: #1a1a1a; }
+  .p-logo-tag {
+    font-size: 0.625rem; font-weight: 700; color: #4B7BE5;
+    background: rgba(75,123,229,0.10);
+    padding: 4px 10px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .p-header-meta { text-align: right; }
+  .p-numero { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 700; color: #1a1a1a; letter-spacing: -0.005em; }
+  .p-fecha { font-size: 0.75rem; color: #999; margin-top: 2px; }
+
+  /* Status pill */
+  .p-status {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 5px 11px 5px 10px; border-radius: 999px;
+    font-size: 0.625rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    margin-bottom: 8px; line-height: 1;
+  }
+  .p-status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .p-status--active { background: rgba(75,123,229,0.10); color: #3764c4; }
+  .p-status--active .p-status-dot { background: #4B7BE5; }
+  .p-status--accepted { background: rgba(42,181,160,0.12); color: #1e8471; }
+  .p-status--accepted .p-status-dot { background: #2AB5A0; }
+  .p-status--declined { background: rgba(229,75,75,0.10); color: #b93333; }
+  .p-status--declined .p-status-dot { background: #E54B4B; }
+  .p-status--expired { background: rgba(153,153,153,0.12); color: #666; }
+  .p-status--expired .p-status-dot { background: #999; }
+
+  /* Hero */
+  .p-hero { padding: 56px 0 64px; }
+  .p-hero-eyebrow {
+    font-size: 0.6875rem; font-weight: 700; color: #4B7BE5;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .p-hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 6.5vw, 4.5rem);
+    font-weight: 200;
+    color: #1a1a1a;
+    letter-spacing: -0.035em;
+    line-height: 1.02;
+    margin: 0 0 28px;
+  }
+  .p-hero-title-soft { color: rgba(26,26,46,0.5); font-weight: 200; }
+  .p-hero-title-strong {
+    font-weight: 600;
+    background: linear-gradient(120deg, #4B7BE5 0%, #6C5CE7 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .p-hero-sub {
+    font-size: 1.125rem;
+    color: rgba(26,26,46,0.65);
+    line-height: 1.55;
+    max-width: 560px;
+    margin: 0 0 40px;
+  }
+
+  .p-hero-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    padding: 24px 0;
+    border-top: 1px solid #e5e5e5;
+    border-bottom: 1px solid #e5e5e5;
+    margin-bottom: 28px;
+  }
+  .p-hero-stat { display: flex; flex-direction: column; gap: 4px; }
+  .p-hero-stat-num {
+    font-family: var(--font-display);
+    font-size: 2.25rem;
+    font-weight: 300;
+    color: #1a1a1a;
+    line-height: 1;
+    letter-spacing: -0.025em;
+  }
+  .p-hero-stat-pct { font-size: 1rem; color: #4B7BE5; margin-left: 2px; font-weight: 400; }
+  .p-hero-stat-label {
+    font-size: 0.6875rem; font-weight: 600;
+    color: #999;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  @media (max-width: 640px) {
+    .p-hero-stats { grid-template-columns: 1fr; gap: 14px; }
+    .p-hero-stat-num { font-size: 1.875rem; }
+  }
+
+  .p-hero-quick {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .p-hero-quick-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 0.875rem;
+    color: rgba(26,26,46,0.7);
+    line-height: 1.55;
+  }
+  .p-hero-quick-icon {
+    flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px;
+    background: rgba(75,123,229,0.10);
+    color: #4B7BE5;
+    border-radius: 50%;
+  }
+
+  /* Section heads (used across tabs) */
+  .p-section-head { padding: 56px 0 36px; max-width: 620px; }
+  .p-section-head--center { text-align: center; margin: 0 auto; }
+  .p-section-eyebrow {
+    font-size: 0.6875rem; font-weight: 700; color: #4B7BE5;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .p-section-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.875rem, 4.5vw, 2.75rem);
+    font-weight: 300;
+    color: #1a1a1a;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    margin: 0 0 16px;
+  }
+  .p-section-lead {
+    font-size: 1rem;
+    color: rgba(26,26,46,0.65);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  /* Index nav under hero */
+  .p-tab-intro-nav {
+    display: flex; flex-direction: column; gap: 0;
+    border-top: 1px solid #e5e5e5;
+    margin-top: 24px;
+  }
+  .p-tab-intro-link {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 22px 0;
+    color: #1a1a1a; text-decoration: none;
+    border-bottom: 1px solid #e5e5e5;
+    transition: color 0.2s ease;
+  }
+  .p-tab-intro-link:hover { color: #4B7BE5; }
+  .p-tab-intro-link-label {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 400;
+    letter-spacing: -0.005em;
+  }
+  .p-tab-intro-link-arrow {
+    font-size: 1rem; color: #aaa;
+    transition: transform 0.2s ease, color 0.2s ease;
+  }
+  .p-tab-intro-link:hover .p-tab-intro-link-arrow {
+    color: #4B7BE5; transform: translateX(6px);
+  }
+
+  /* Benefits */
+  .p-benefits-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 8px;
+  }
+  @media (max-width: 640px) { .p-benefits-grid { grid-template-columns: 1fr; } }
+
+  .p-benefit-card {
+    padding: 28px 24px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 16px;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+  }
+  .p-benefit-card:hover { border-color: #4B7BE5; transform: translateY(-2px); }
+  .p-benefit-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, rgba(75,123,229,0.12), rgba(108,92,231,0.10));
+    color: #4B7BE5;
+    border-radius: 12px;
+    margin-bottom: 16px;
+  }
+  .p-benefit-title {
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 6px;
+    letter-spacing: -0.005em;
+  }
+  .p-benefit-detail {
+    font-size: 0.8125rem;
+    color: rgba(26,26,46,0.65);
+    line-height: 1.55;
+  }
+
+  /* Terms */
+  .p-terms {
+    display: flex; flex-direction: column;
+    border-top: 1px solid #e5e5e5;
+    margin-top: 8px;
+  }
+  .p-term-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 24px;
+    padding: 22px 0;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  .p-term-row--big { padding: 32px 0; }
+  .p-term-info { flex: 1; min-width: 0; }
+  .p-term-label {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+    letter-spacing: -0.005em;
+  }
+  .p-term-detail {
+    font-size: 0.8125rem;
+    color: rgba(26,26,46,0.6);
+    line-height: 1.5;
+  }
+  .p-term-value {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    flex-shrink: 0;
+    text-align: right;
+    letter-spacing: -0.01em;
+  }
+  .p-term-value--accent {
+    font-size: 2rem;
+    font-weight: 300;
+    background: linear-gradient(120deg, #4B7BE5 0%, #6C5CE7 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .p-terms-extra {
+    margin-top: 36px;
+    padding: 24px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+  }
+  .p-terms-extra-title {
+    font-size: 0.625rem; font-weight: 700; color: #4B7BE5;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .p-terms-extra-text {
+    font-size: 0.875rem;
+    color: rgba(26,26,46,0.7);
+    line-height: 1.6;
+    margin: 0;
+    white-space: pre-line;
+  }
+
+  /* Compromisos */
+  .p-commits {
+    display: flex; flex-direction: column;
+    border-top: 1px solid #e5e5e5;
+    margin-top: 8px;
+  }
+  .p-commit-row {
+    display: flex; align-items: flex-start; gap: 24px;
+    padding: 28px 0;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  .p-commit-num {
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #4B7BE5;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+    width: 28px;
+    padding-top: 4px;
+  }
+  .p-commit-content { flex: 1; min-width: 0; }
+  .p-commit-title {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    margin-bottom: 6px;
+    letter-spacing: -0.005em;
+  }
+  .p-commit-detail {
+    font-size: 0.875rem;
+    color: rgba(26,26,46,0.65);
+    line-height: 1.55;
+  }
+  .p-commit-frequency {
+    display: inline-block; margin-top: 10px;
+    padding: 3px 9px;
+    font-size: 0.625rem; font-weight: 600;
+    color: #4B7BE5;
+    background: rgba(75,123,229,0.10);
+    border-radius: 999px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .p-commit-note {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin-top: 28px;
+    padding: 16px 18px;
+    background: rgba(75,123,229,0.05);
+    border: 1px solid rgba(75,123,229,0.18);
+    border-radius: 10px;
+    font-size: 0.8125rem;
+    color: rgba(26,26,46,0.75);
+    line-height: 1.55;
+  }
+  .p-commit-note svg { flex-shrink: 0; color: #4B7BE5; margin-top: 1px; }
+
+  /* Tabulador / Payouts */
+  .p-payout-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-top: 8px;
+  }
+  @media (max-width: 720px) { .p-payout-grid { grid-template-columns: 1fr; } }
+
+  .p-payout-card {
+    padding: 28px 22px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 16px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .p-payout-card--featured {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d3f 100%);
+    color: #fff;
+    border: none;
+  }
+  .p-payout-step {
+    font-size: 0.625rem; font-weight: 700;
+    color: #4B7BE5;
+    letter-spacing: 0.14em; text-transform: uppercase;
+  }
+  .p-payout-card--featured .p-payout-step { color: #93b4ff; }
+  .p-payout-amount {
+    font-family: var(--font-display);
+    font-size: 2.25rem;
+    font-weight: 300;
+    color: #1a1a1a;
+    letter-spacing: -0.025em;
+    line-height: 1.05;
+  }
+  .p-payout-card--featured .p-payout-amount { color: #fff; }
+  .p-payout-name {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    letter-spacing: -0.005em;
+  }
+  .p-payout-card--featured .p-payout-name { color: #fff; }
+  .p-payout-detail {
+    font-size: 0.8125rem;
+    color: rgba(26,26,46,0.6);
+    line-height: 1.5;
+    margin-top: 4px;
+  }
+  .p-payout-card--featured .p-payout-detail { color: rgba(255,255,255,0.65); }
+
+  .p-payout-notes {
+    margin-top: 28px;
+    padding: 22px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+  }
+  .p-payout-notes-title {
+    font-size: 0.625rem; font-weight: 700; color: #4B7BE5;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .p-payout-notes p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: rgba(26,26,46,0.7);
+    line-height: 1.6;
+  }
+
+  /* Landing card */
+  .p-landing {
+    margin-top: 32px;
+    padding: 28px;
+    background: linear-gradient(120deg, rgba(75,123,229,0.06), rgba(108,92,231,0.04));
+    border: 1px solid rgba(75,123,229,0.18);
+    border-radius: 16px;
+    text-align: center;
+  }
+  .p-landing-eyebrow {
+    font-size: 0.6875rem; font-weight: 700; color: #4B7BE5;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .p-landing-url {
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    word-break: break-all;
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+  .p-landing-detail {
+    font-size: 0.8125rem;
+    color: rgba(26,26,46,0.65);
+    line-height: 1.55;
+    margin: 0 auto;
+    max-width: 460px;
+  }
+
+  /* ¿Por qué SACS? */
+  .p-why-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    border-top: 1px solid #e5e5e5;
+    border-bottom: 1px solid #e5e5e5;
+    margin: 8px 0 36px;
+  }
+  @media (max-width: 720px) { .p-why-stats { grid-template-columns: repeat(2, 1fr); } }
+  .p-why-stat {
+    padding: 24px 16px;
+    border-right: 1px solid #e5e5e5;
+    text-align: left;
+  }
+  .p-why-stat:last-child { border-right: none; }
+  @media (max-width: 720px) {
+    .p-why-stat:nth-child(2) { border-right: none; }
+    .p-why-stat:nth-child(1), .p-why-stat:nth-child(2) { border-bottom: 1px solid #e5e5e5; }
+  }
+  .p-why-stat-num {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 300;
+    color: #1a1a1a;
+    line-height: 1;
+    letter-spacing: -0.025em;
+    margin-bottom: 6px;
+  }
+  .p-why-stat-label {
+    font-size: 0.6875rem; font-weight: 600;
+    color: #999;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .p-why-pillars {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px 24px;
+    margin-bottom: 40px;
+  }
+  @media (max-width: 720px) { .p-why-pillars { grid-template-columns: 1fr; } }
+
+  .p-why-pillar { display: flex; flex-direction: column; gap: 4px; }
+  .p-why-pillar-letter {
+    font-family: var(--font-display);
+    font-size: 3rem;
+    font-weight: 200;
+    color: #4B7BE5;
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+  .p-why-pillar-word {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-top: 4px;
+    letter-spacing: -0.005em;
+  }
+  .p-why-pillar p {
+    font-size: 0.875rem;
+    color: rgba(26,26,46,0.65);
+    line-height: 1.55;
+    margin: 6px 0 0;
+  }
+
+  .p-why-closing {
+    display: flex; flex-direction: column; gap: 10px;
+    padding: 28px;
+    background: #1a1a1a;
+    color: #fff;
+    border-radius: 16px;
+  }
+  .p-why-closing strong {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: #fff;
+    letter-spacing: -0.01em;
+  }
+  .p-why-closing span {
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.6;
+  }
+
+  /* Sign form */
+  .p-sign-form { padding: 56px 0 24px; max-width: 620px; margin: 0 auto; }
+  .p-sign-fields { display: flex; flex-direction: column; gap: 16px; margin-top: 36px; }
+  .p-sign-field { display: flex; flex-direction: column; gap: 6px; }
+  .p-sign-field > span {
+    font-size: 0.6875rem; font-weight: 600;
+    color: #999;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .p-input {
+    width: 100%; box-sizing: border-box;
+    padding: 14px 16px;
+    font-family: inherit;
+    font-size: 0.9375rem;
+    color: #1a1a1a;
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .p-input:focus { border-color: #4B7BE5; box-shadow: 0 0 0 3px rgba(75,123,229,0.10); }
+  textarea.p-input { resize: vertical; min-height: 80px; }
+
+  .p-sign-canvas-wrap {
+    margin-top: 32px;
+    padding: 22px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 14px;
+  }
+  .p-sign-canvas-label {
+    font-size: 0.6875rem; font-weight: 600;
+    color: #999;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .p-sign-canvas {
+    width: 100%; height: 180px;
+    background: #fafaf8;
+    border: 1px dashed #d0d0d0;
+    border-radius: 8px;
+    cursor: crosshair;
+    touch-action: none;
+    display: block;
+  }
+  .p-sign-canvas-actions {
+    display: flex; justify-content: flex-end;
+    margin-top: 10px;
+  }
+
+  .p-sign-legal {
+    margin-top: 18px;
+    font-size: 0.75rem;
+    color: rgba(26,26,46,0.55);
+    line-height: 1.55;
+  }
+  .p-sign-legal a { color: #4B7BE5; text-decoration: none; }
+  .p-sign-legal a:hover { text-decoration: underline; }
+
+  .p-sign-actions {
+    display: flex; flex-direction: column; gap: 10px;
+    margin-top: 24px;
+  }
+
+  /* Buttons */
+  .p-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 14px 22px;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  }
+  .p-btn--primary {
+    background: #1a1a1a;
+    color: #fff;
+    padding: 16px 24px;
+    font-size: 0.9375rem;
+  }
+  .p-btn--primary:hover { background: #4B7BE5; color: #fff; transform: translateY(-1px); }
+  .p-btn--ghost {
+    background: transparent;
+    color: rgba(26,26,46,0.65);
+    border-color: #e5e5e5;
+  }
+  .p-btn--ghost:hover { color: #1a1a1a; border-color: #1a1a1a; }
+
+  /* Signed state */
+  .p-signed {
+    padding: 56px 0;
+    text-align: center;
+    max-width: 540px;
+    margin: 0 auto;
+  }
+  .p-signed-eyebrow {
+    font-size: 0.6875rem; font-weight: 700; color: #2AB5A0;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  .p-signed--declined .p-signed-eyebrow { color: #b93333; }
+  .p-signed--expired .p-signed-eyebrow { color: #888; }
+  .p-signed-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 4vw, 2.25rem);
+    font-weight: 300;
+    color: #1a1a1a;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin-bottom: 16px;
+  }
+  .p-signed-sub {
+    font-size: 1rem;
+    color: rgba(26,26,46,0.65);
+    line-height: 1.55;
+    margin-bottom: 28px;
+  }
+  .p-signed-img {
+    max-width: 240px; height: auto;
+    margin: 0 auto 12px;
+    display: block;
+  }
+  .p-signed-label { font-size: 0.875rem; font-weight: 600; color: #1a1a1a; }
+  .p-signed-date { font-size: 0.75rem; color: #999; margin-top: 2px; }
+  .p-signed-meta {
+    margin-top: 16px;
+    font-size: 0.875rem;
+    color: rgba(26,26,46,0.65);
+  }
+  .p-signed-cta-row { margin-top: 24px; }
+  .p-signed-cta {
+    display: inline-block;
+    padding: 14px 28px;
+    background: #1a1a1a;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    transition: background 0.15s ease;
+  }
+  .p-signed-cta:hover { background: #4B7BE5; color: #fff; }
+
+  /* Footer */
+  .p-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 32px 0;
+    border-top: 1px solid #e5e5e5;
+    margin-top: 48px;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .p-footer-brand { display: flex; align-items: baseline; gap: 10px; }
+  .p-footer-logo { font-family: var(--font-logo, var(--font-display)); font-size: 1.125rem; font-weight: 700; color: #1a1a1a; }
+  .p-footer-tagline { font-size: 0.75rem; color: #999; }
+  .p-footer-contact { font-size: 0.75rem; color: #999; letter-spacing: 0.01em; }
+
+  /* Modal */
+  .p-modal-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .p-modal {
+    background: #fff;
+    width: 100%; max-width: 500px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.2);
+    display: flex; flex-direction: column;
+  }
+  .p-modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .p-modal-title { font-family: var(--font-display); font-size: 1rem; font-weight: 600; color: #1a1a1a; }
+  .p-modal-close {
+    background: transparent; border: none; cursor: pointer;
+    font-size: 1rem; color: #999;
+    padding: 4px 8px;
+  }
+  .p-modal-body { padding: 24px; }
+  .p-modal-text { margin: 0 0 16px; font-size: 0.875rem; color: rgba(26,26,46,0.65); line-height: 1.55; }
+  .p-decline-reasons { display: flex; flex-direction: column; gap: 8px; }
+  .p-decline-reason {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 14px;
+    background: #fafafa;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: rgba(26,26,46,0.75);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .p-decline-reason:hover { border-color: #4B7BE5; background: rgba(75,123,229,0.04); }
+  .p-decline-reason input { margin-top: 2px; }
+  .p-modal-footer {
+    display: flex; gap: 10px; justify-content: flex-end;
+    padding: 16px 24px;
+    border-top: 1px solid #f0f0f0;
+    background: #fafafa;
+  }
+
+  /* Dark template overrides */
+  .p-dark, .p-dark .p-container { background: #0f1115; color: #fff; }
+  .p-dark .p-header { border-color: rgba(255,255,255,0.08); }
+  .p-dark .p-logo-text, .p-dark .p-numero, .p-dark .p-section-title,
+  .p-dark .p-hero-title, .p-dark .p-benefit-title, .p-dark .p-term-label,
+  .p-dark .p-term-value, .p-dark .p-commit-title, .p-dark .p-payout-amount,
+  .p-dark .p-payout-name, .p-dark .p-why-stat-num, .p-dark .p-why-pillar-word,
+  .p-dark .p-signed-title, .p-dark .p-signed-label, .p-dark .p-landing-url,
+  .p-dark .p-footer-logo { color: #fff; }
+  .p-dark .p-section-lead, .p-dark .p-hero-sub, .p-dark .p-benefit-detail,
+  .p-dark .p-term-detail, .p-dark .p-commit-detail, .p-dark .p-payout-detail,
+  .p-dark .p-why-pillar p, .p-dark .p-signed-sub, .p-dark .p-landing-detail,
+  .p-dark .p-payout-notes p, .p-dark .p-terms-extra-text { color: rgba(255,255,255,0.65); }
+  .p-dark .p-fecha, .p-dark .p-hero-stat-label, .p-dark .p-why-stat-label,
+  .p-dark .p-tab-intro-link-arrow, .p-dark .p-footer-tagline, .p-dark .p-footer-contact,
+  .p-dark .p-sign-canvas-label, .p-dark .p-sign-field > span,
+  .p-dark .p-signed-date { color: rgba(255,255,255,0.45); }
+  .p-dark .p-terms, .p-dark .p-term-row, .p-dark .p-commits, .p-dark .p-commit-row,
+  .p-dark .p-tab-intro-nav, .p-dark .p-tab-intro-link, .p-dark .p-hero-stats,
+  .p-dark .p-why-stats, .p-dark .p-why-stat, .p-dark .p-footer { border-color: rgba(255,255,255,0.08); }
+  .p-dark .p-benefit-card, .p-dark .p-payout-card:not(.p-payout-card--featured),
+  .p-dark .p-payout-notes, .p-dark .p-terms-extra { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
+  .p-dark .p-tab-intro-link { color: #fff; }
+  .p-dark .p-tab-intro-link:hover { color: #93b4ff; }
+  .p-dark .p-input { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.1); color: #fff; }
+  .p-dark .p-input:focus { border-color: #93b4ff; box-shadow: 0 0 0 3px rgba(147,180,255,0.15); }
+  .p-dark .p-sign-canvas-wrap { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
+  .p-dark .p-sign-canvas { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15); }
+  .p-dark .p-btn--primary { background: #fff; color: #1a1a1a; }
+  .p-dark .p-btn--primary:hover { background: #4B7BE5; color: #fff; }
+  .p-dark .p-btn--ghost { color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.15); }
+  .p-dark .p-btn--ghost:hover { color: #fff; border-color: #fff; }
+</style>
+
+<script is:inline define:vars={{ invitationId: id, isClosed }}>
+(function() {
+  // ─── Tab switcher ───
+  const doc = document.getElementById('partner-doc');
+  if (!doc) return;
+  const initialTab = doc.dataset.initialTab || 'bienvenida';
+
+  function showTab(tabId) {
+    document.querySelectorAll('.p-tab-panel').forEach(p => {
+      p.classList.toggle('is-active', p.dataset.tab === tabId);
+    });
+    document.querySelectorAll('[data-tab-link]').forEach(link => {
+      const id = link.dataset.tabLink;
+      if (id === tabId) link.classList.add('psb-tab--active');
+      else if (link.classList.contains('psb-tab--active')) link.classList.remove('psb-tab--active');
+    });
+    if (history.replaceState) {
+      history.replaceState(null, '', '#' + tabId);
+    }
+  }
+
+  // Wire links
+  document.addEventListener('click', e => {
+    const link = e.target.closest('[data-tab-link]');
+    if (!link) return;
+    const tabId = link.dataset.tabLink;
+    if (!tabId) return;
+    e.preventDefault();
+    showTab(tabId);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // Initial tab from hash or initialTab
+  const hash = (location.hash || '').replace('#', '');
+  showTab(hash || initialTab);
+
+  if (isClosed) return;
+
+  // ─── Signature canvas ───
+  const canvas = document.getElementById('signature-canvas');
+  let hasDrawn = false;
+  if (canvas) {
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+      ctx.lineWidth = 2.2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#1a1a1a';
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    let drawing = false;
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const t = e.touches ? e.touches[0] : e;
+      return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+    }
+    function start(e) { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); }
+    function move(e) { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasDrawn = true; e.preventDefault(); }
+    function end() { drawing = false; }
+
+    canvas.addEventListener('mousedown', start);
+    canvas.addEventListener('mousemove', move);
+    canvas.addEventListener('mouseup', end);
+    canvas.addEventListener('mouseleave', end);
+    canvas.addEventListener('touchstart', start, { passive: false });
+    canvas.addEventListener('touchmove', move, { passive: false });
+    canvas.addEventListener('touchend', end);
+
+    const btnClear = document.getElementById('btn-clear-sig');
+    if (btnClear) btnClear.addEventListener('click', () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      hasDrawn = false;
+    });
+  }
+
+  // ─── Accept ───
+  const btnAccept = document.getElementById('btn-accept');
+  if (btnAccept) btnAccept.addEventListener('click', async () => {
+    const nombreInput = document.getElementById('sign-nombre');
+    const emailInput = document.getElementById('sign-email');
+    const whatsappInput = document.getElementById('sign-whatsapp');
+    const nombre = (nombreInput && nombreInput.value || '').trim();
+    if (!nombre) { alert('Ingresa tu nombre completo'); nombreInput && nombreInput.focus(); return; }
+    if (!hasDrawn) { alert('Firma con tu dedo o mouse antes de aceptar'); return; }
+
+    btnAccept.disabled = true;
+    btnAccept.textContent = 'Activando tu programa...';
+
+    const firma_base64 = canvas ? canvas.toDataURL('image/png') : '';
+    try {
+      const res = await fetch('/api/partners/accept-invitation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: invitationId,
+          nombre,
+          email: (emailInput && emailInput.value || '').trim(),
+          whatsapp: (whatsappInput && whatsappInput.value || '').trim(),
+          firma_base64,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'No se pudo aceptar');
+      window.location.reload();
+    } catch (err) {
+      alert('Hubo un error: ' + (err.message || err));
+      btnAccept.disabled = false;
+      btnAccept.textContent = 'Aceptar y activar mi programa';
+    }
+  });
+
+  // ─── Decline ───
+  const declineModal = document.getElementById('decline-modal');
+  const btnDecline = document.getElementById('btn-decline');
+  const btnCloseDecline = document.getElementById('btn-close-decline');
+  const btnCancelDecline = document.getElementById('btn-cancel-decline');
+  const btnConfirmDecline = document.getElementById('btn-confirm-decline');
+
+  function openDecline() { if (declineModal) declineModal.style.display = 'flex'; }
+  function closeDecline() { if (declineModal) declineModal.style.display = 'none'; }
+
+  btnDecline && btnDecline.addEventListener('click', openDecline);
+  btnCloseDecline && btnCloseDecline.addEventListener('click', closeDecline);
+  btnCancelDecline && btnCancelDecline.addEventListener('click', closeDecline);
+
+  btnConfirmDecline && btnConfirmDecline.addEventListener('click', async () => {
+    const motivoInput = document.querySelector('input[name="decline-motivo"]:checked');
+    const detalleInput = document.getElementById('decline-detalle');
+    const motivo = motivoInput ? motivoInput.value : '';
+    const detalle = detalleInput ? detalleInput.value.trim() : '';
+    if (!motivo) { alert('Selecciona un motivo'); return; }
+
+    btnConfirmDecline.disabled = true;
+    btnConfirmDecline.textContent = 'Enviando...';
+    try {
+      const res = await fetch('/api/partners/decline-invitation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: invitationId, motivo, detalle }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'No se pudo enviar');
+      window.location.reload();
+    } catch (err) {
+      alert('Error: ' + (err.message || err));
+      btnConfirmDecline.disabled = false;
+      btnConfirmDecline.textContent = 'Enviar respuesta';
+    }
+  });
+})();
+</script>

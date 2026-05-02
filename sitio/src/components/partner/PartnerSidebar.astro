@@ -1,0 +1,335 @@
+---
+interface Tab { id: string; label: string; }
+interface Props {
+  tabs: Tab[];
+  initialTab: string;
+  numero?: string;
+  nombre: string;
+  tipo: string;
+  comisionPct: number;
+  template: 'modern' | 'dark' | 'classic';
+  isAccepted: boolean;
+  isDeclined: boolean;
+  isExpired: boolean;
+  vigenciaFecha?: string;
+}
+
+const {
+  tabs,
+  initialTab,
+  numero,
+  nombre,
+  tipo,
+  comisionPct,
+  template,
+  isAccepted,
+  isDeclined,
+  isExpired,
+  vigenciaFecha,
+} = Astro.props;
+
+const isClosed = isAccepted || isDeclined;
+
+let ctaLabel = 'Aceptar y firmar';
+let ctaTarget = '#firma';
+let ctaDisabled = false;
+let ctaVariant: 'primary' | 'muted' | 'disabled' = 'primary';
+
+if (isExpired && !isClosed) {
+  ctaLabel = 'Invitación vencida';
+  ctaDisabled = true;
+  ctaVariant = 'disabled';
+} else if (isAccepted) {
+  ctaLabel = 'Firmada · Bienvenido';
+  ctaDisabled = true;
+  ctaVariant = 'muted';
+} else if (isDeclined) {
+  ctaLabel = 'Rechazada';
+  ctaDisabled = true;
+  ctaVariant = 'disabled';
+}
+
+const tipoLabel: Record<string, string> = {
+  embajador: 'Embajador',
+  distribuidor: 'Distribuidor',
+  integrador: 'Integrador',
+  reseller: 'Reseller',
+  consultor: 'Consultor',
+};
+
+const pad = (n: number) => (n < 10 ? '0' + n : String(n));
+---
+
+<aside class={`psb psb--${template}`} aria-label="Navegación de invitación">
+  <!-- Brand block -->
+  <div class="psb-head">
+    <div class="psb-eyebrow">Programa Partners SACS</div>
+    <div class="psb-tipo">{tipoLabel[tipo] || tipo}</div>
+    <div class="psb-nombre">{nombre}</div>
+    {numero && <div class="psb-numero">{numero}</div>}
+  </div>
+
+  <!-- Comisión hero -->
+  <div class="psb-comision">
+    <div class="psb-comision-label">Tu comisión</div>
+    <div class="psb-comision-value">
+      <span class="psb-comision-num">{comisionPct}</span>
+      <span class="psb-comision-pct">%</span>
+    </div>
+    <div class="psb-comision-sub">
+      sobre cada venta directa
+      {vigenciaFecha && !isClosed && !isExpired ? ` · Vigencia ${vigenciaFecha}` : ''}
+      {isExpired && !isClosed && vigenciaFecha ? ` · Venció ${vigenciaFecha}` : ''}
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <nav class="psb-nav" aria-label="Secciones" role="tablist">
+    {tabs.map((t, i) => (
+      <a
+        href={`#${t.id}`}
+        class={`psb-tab ${t.id === initialTab ? 'psb-tab--active' : ''}`}
+        data-tab-link={t.id}
+        role="tab"
+        aria-selected={t.id === initialTab ? 'true' : 'false'}
+      >
+        <span class="psb-tab-num">{pad(i + 1)}</span>
+        <span class="psb-tab-label">{t.label}</span>
+      </a>
+    ))}
+  </nav>
+
+  <!-- CTA -->
+  <div class="psb-cta-wrap">
+    {ctaDisabled ? (
+      <div class={`psb-cta psb-cta--${ctaVariant}`} aria-disabled="true">{ctaLabel}</div>
+    ) : (
+      <a
+        href={ctaTarget}
+        class={`psb-cta psb-cta--${ctaVariant}`}
+        data-tab-link={ctaTarget.startsWith('#') ? ctaTarget.slice(1) : undefined}
+      >
+        {ctaLabel}
+      </a>
+    )}
+  </div>
+</aside>
+
+<style>
+  .psb {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    padding: 32px 28px;
+    font-family: inherit;
+    font-size: 0.875rem;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 0;
+  }
+  .psb--dark {
+    background: #0f1115;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .psb--classic {
+    background: #fff;
+    border: 1px solid #1a1a1a;
+  }
+
+  .psb-head {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  .psb--dark .psb-head { border-color: rgba(255,255,255,0.1); }
+  .psb-eyebrow {
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: #4B7BE5;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .psb--dark .psb-eyebrow { color: #93b4ff; }
+  .psb-tipo {
+    font-family: var(--font-display, inherit);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+  .psb--dark .psb-tipo { color: #fff; }
+  .psb-nombre {
+    font-size: 0.8125rem;
+    color: #666;
+    margin-top: 2px;
+    line-height: 1.3;
+  }
+  .psb--dark .psb-nombre { color: rgba(255,255,255,0.65); }
+  .psb-numero {
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: #999;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+  .psb--dark .psb-numero { color: rgba(255,255,255,0.45); }
+
+  /* Comisión big number */
+  .psb-comision {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .psb-comision-label {
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: #999;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .psb--dark .psb-comision-label { color: rgba(255,255,255,0.5); }
+  .psb-comision-value {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    line-height: 1;
+  }
+  .psb-comision-num {
+    font-family: var(--font-display, inherit);
+    font-size: 3.5rem;
+    font-weight: 200;
+    color: #1a1a1a;
+    letter-spacing: -0.04em;
+    line-height: 0.9;
+  }
+  .psb-comision-pct {
+    font-family: var(--font-display, inherit);
+    font-size: 1.5rem;
+    font-weight: 300;
+    color: #4B7BE5;
+    margin-top: 8px;
+    letter-spacing: -0.01em;
+  }
+  .psb--dark .psb-comision-num { color: #fff; }
+  .psb--dark .psb-comision-pct { color: #93b4ff; }
+  .psb-comision-sub {
+    font-size: 0.6875rem;
+    color: #999;
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+  }
+  .psb--dark .psb-comision-sub { color: rgba(255,255,255,0.5); }
+
+  /* Nav */
+  .psb-nav {
+    display: flex !important;
+    flex-direction: column;
+    gap: 0;
+    border-top: 1px solid #e5e5e5;
+  }
+  .psb--dark .psb-nav { border-color: rgba(255,255,255,0.1); }
+  .psb-tab {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    padding: 14px 0 14px 12px;
+    text-decoration: none;
+    color: #666;
+    border-bottom: 1px solid #e5e5e5;
+    border-left: 1px solid transparent;
+    transition: color 0.18s ease, border-color 0.18s ease, padding-left 0.18s ease;
+    position: relative;
+  }
+  .psb--dark .psb-tab { color: rgba(255,255,255,0.55); border-bottom-color: rgba(255,255,255,0.1); }
+  .psb-tab:hover { color: #1a1a1a; padding-left: 16px; }
+  .psb--dark .psb-tab:hover { color: #fff; }
+  .psb-tab.psb-tab--active {
+    color: #1a1a1a;
+    border-left-color: #4B7BE5;
+    border-left-width: 2px;
+    padding-left: 16px;
+  }
+  .psb--dark .psb-tab.psb-tab--active { color: #fff; }
+  .psb-tab.psb-tab--visited { color: #999; }
+  .psb-tab.psb-tab--visited::before {
+    content: '·';
+    position: absolute;
+    left: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #4B7BE5;
+    font-size: 1.125rem;
+    line-height: 1;
+  }
+  .psb-tab-num {
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: #bbb;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+    min-width: 20px;
+  }
+  .psb--dark .psb-tab-num { color: rgba(255,255,255,0.35); }
+  .psb-tab.psb-tab--active .psb-tab-num { color: #4B7BE5; }
+  .psb-tab-label {
+    font-size: 0.9375rem;
+    font-weight: 400;
+    letter-spacing: 0.002em;
+    line-height: 1.3;
+  }
+  .psb-tab.psb-tab--active .psb-tab-label { font-weight: 500; }
+
+  /* CTA */
+  .psb-cta-wrap { padding-top: 4px; }
+  .psb-cta {
+    display: block;
+    padding: 16px 18px;
+    font-weight: 500;
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: center;
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .psb-cta--primary {
+    background: #1a1a1a;
+    color: #fff;
+    cursor: pointer;
+  }
+  .psb-cta--primary:hover {
+    background: #4B7BE5;
+  }
+  .psb-cta--muted {
+    background: transparent;
+    color: #4B7BE5;
+    border: 1px solid #4B7BE5;
+    cursor: default;
+  }
+  .psb-cta--disabled {
+    background: transparent;
+    color: #999;
+    border: 1px solid #e5e5e5;
+    cursor: not-allowed;
+  }
+  .psb--dark .psb-cta--primary {
+    background: #fff;
+    color: #1a1a1a;
+  }
+  .psb--dark .psb-cta--primary:hover {
+    background: #4B7BE5;
+    color: #fff;
+  }
+  .psb--dark .psb-cta--disabled { color: rgba(255,255,255,0.35); border-color: rgba(255,255,255,0.12); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .psb-tab, .psb-cta { transition: none !important; }
+  }
+
+  @media print { .psb { display: none !important; } }
+</style>
