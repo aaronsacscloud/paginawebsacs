@@ -1805,71 +1805,325 @@ const useCases = [
 
             {/* ── Fideliza: CRM Omnicanal ── */}
             <div class="tablet-slide" data-slide="crm-omnicanal">
-              <div class="omni-frame">
-                <div class="omni-header">
-                  <div class="omni-client">
-                    <div class="omni-avatar">AG</div>
-                    <div class="omni-client-info">
-                      <div class="omni-client-name">Andrea Gómez</div>
-                      <div class="omni-client-meta">GOLD · Cliente desde 2024 · 12 compras</div>
+              <div class="crm2-frame">
+                {/* Sidebar */}
+                <aside class="crm2-side">
+                  <div class="crm2-side-brand">SACS · CRM</div>
+                  <nav class="crm2-side-nav">
+                    <span class="crm2-side-nav-item">⌂ Inicio</span>
+                    <span class="crm2-side-nav-item crm2-side-nav-item--active">◉ Clientes</span>
+                    <span class="crm2-side-nav-item">⊟ Segmentos</span>
+                    <span class="crm2-side-nav-item">✉ Campañas</span>
+                    <span class="crm2-side-nav-item">▭ Reportes</span>
+                  </nav>
+                  <div class="crm2-side-foot">
+                    <div class="crm2-side-user">
+                      <span class="crm2-side-user-avatar">LM</span>
+                      <span class="crm2-side-user-name">Lina M.</span>
                     </div>
                   </div>
-                  <div class="omni-tags">
-                    <span class="omni-tag">VIP</span>
-                    <span class="omni-tag omni-tag--alt">Frecuente</span>
-                  </div>
-                </div>
+                </aside>
 
-                <div class="omni-stats">
-                  <div class="omni-stat">
-                    <div class="omni-stat-label">Ticket promedio</div>
-                    <div class="omni-stat-value">$2,180</div>
+                {/* Main panel */}
+                <main class="crm2-main">
+                  {/* Header — always visible */}
+                  <div class="crm2-head">
+                    <div class="crm2-head-left">
+                      <div class="crm2-head-avatar">AG</div>
+                      <div class="crm2-head-meta">
+                        <div class="crm2-head-name">Andrea Gómez <span class="crm2-tier">GOLD</span></div>
+                        <div class="crm2-head-sub">andrea@gomez.mx · +52 55 ··· 4521 · CDMX</div>
+                      </div>
+                    </div>
+                    <div class="crm2-head-tags">
+                      <span class="crm2-chip crm2-chip--dark">VIP</span>
+                      <span class="crm2-chip crm2-chip--teal">Frecuente</span>
+                      <span class="crm2-chip">Lino lover</span>
+                    </div>
                   </div>
-                  <div class="omni-stat">
-                    <div class="omni-stat-label">Última visita</div>
-                    <div class="omni-stat-value">Hace 6 días</div>
-                  </div>
-                  <div class="omni-stat">
-                    <div class="omni-stat-label">LTV</div>
-                    <div class="omni-stat-value">$26,180</div>
-                  </div>
-                </div>
 
-                <div class="omni-section-label">HISTORIAL OMNICANAL</div>
-                <div class="omni-timeline">
-                  <div class="omni-event">
-                    <div class="omni-event-channel omni-channel--store">Tienda</div>
-                    <div class="omni-event-body">
-                      <div class="omni-event-title">Compra · Suc. Polanco</div>
-                      <div class="omni-event-detail">Blusa satinada + Falda plisada · $2,140</div>
+                  {/* Top KPI row */}
+                  <div class="crm2-kpis">
+                    <div class="crm2-kpi">
+                      <span class="crm2-kpi-label">Ticket promedio</span>
+                      <span class="crm2-kpi-value">$2,180</span>
+                      <span class="crm2-kpi-trend crm2-kpi-trend--up">↑ 14%</span>
                     </div>
-                    <div class="omni-event-date">Hoy</div>
-                  </div>
-                  <div class="omni-event">
-                    <div class="omni-event-channel omni-channel--online">Online</div>
-                    <div class="omni-event-body">
-                      <div class="omni-event-title">Compra · sacscloud.com</div>
-                      <div class="omni-event-detail">Blazer oversize · $1,680</div>
+                    <div class="crm2-kpi">
+                      <span class="crm2-kpi-label">LTV</span>
+                      <span class="crm2-kpi-value">$26,180</span>
+                      <span class="crm2-kpi-trend crm2-kpi-trend--up">↑ 8%</span>
                     </div>
-                    <div class="omni-event-date">3d</div>
-                  </div>
-                  <div class="omni-event">
-                    <div class="omni-event-channel omni-channel--wa">WhatsApp</div>
-                    <div class="omni-event-body">
-                      <div class="omni-event-title">Click en promo "OTOÑO 2026"</div>
-                      <div class="omni-event-detail">Convertido en compra a las 2 horas</div>
+                    <div class="crm2-kpi">
+                      <span class="crm2-kpi-label">Compras 12m</span>
+                      <span class="crm2-kpi-value">12</span>
+                      <span class="crm2-kpi-trend">Cada 28d</span>
                     </div>
-                    <div class="omni-event-date">5d</div>
-                  </div>
-                  <div class="omni-event">
-                    <div class="omni-event-channel omni-channel--ig">Instagram</div>
-                    <div class="omni-event-body">
-                      <div class="omni-event-title">DM sobre disponibilidad</div>
-                      <div class="omni-event-detail">"¿Tienen el blazer en talla M?"</div>
+                    <div class="crm2-kpi">
+                      <span class="crm2-kpi-label">Cashback</span>
+                      <span class="crm2-kpi-value">$487</span>
+                      <span class="crm2-kpi-trend crm2-kpi-trend--teal">+62 pts</span>
                     </div>
-                    <div class="omni-event-date">7d</div>
                   </div>
-                </div>
+
+                  {/* Animated tabs */}
+                  <div class="crm2-tabs">
+                    <span class="crm2-tab crm2-tab--1">Resumen</span>
+                    <span class="crm2-tab crm2-tab--2">Compras</span>
+                    <span class="crm2-tab crm2-tab--3">Recomendaciones IA</span>
+                    <span class="crm2-tab crm2-tab--4">Lealtad</span>
+                    <span class="crm2-tab-indicator"></span>
+                  </div>
+
+                  {/* Tab panels */}
+                  <div class="crm2-panels">
+
+                    {/* Panel 1: Resumen — donut + last interactions */}
+                    <div class="crm2-panel crm2-panel--1">
+                      <div class="crm2-panel-grid">
+                        <div class="crm2-card">
+                          <div class="crm2-card-head">
+                            <span class="crm2-card-title">Ventas por canal · 12m</span>
+                          </div>
+                          <div class="crm2-donut">
+                            <svg viewBox="0 0 80 80" width="100" height="100">
+                              <circle cx="40" cy="40" r="32" fill="none" stroke="#E8E8EC" stroke-width="10"/>
+                              <circle cx="40" cy="40" r="32" fill="none" stroke="#1A1A1A" stroke-width="10"
+                                stroke-dasharray="80 201" stroke-dashoffset="0" transform="rotate(-90 40 40)"/>
+                              <circle cx="40" cy="40" r="32" fill="none" stroke="#4B7BE5" stroke-width="10"
+                                stroke-dasharray="60 201" stroke-dashoffset="-80" transform="rotate(-90 40 40)"/>
+                              <circle cx="40" cy="40" r="32" fill="none" stroke="#25D366" stroke-width="10"
+                                stroke-dasharray="40 201" stroke-dashoffset="-140" transform="rotate(-90 40 40)"/>
+                              <circle cx="40" cy="40" r="32" fill="none" stroke="#C13584" stroke-width="10"
+                                stroke-dasharray="21 201" stroke-dashoffset="-180" transform="rotate(-90 40 40)"/>
+                            </svg>
+                            <div class="crm2-donut-legend">
+                              <div class="crm2-donut-item"><span class="crm2-donut-dot" style="background:#1A1A1A"></span>Tienda 40%</div>
+                              <div class="crm2-donut-item"><span class="crm2-donut-dot" style="background:#4B7BE5"></span>Online 30%</div>
+                              <div class="crm2-donut-item"><span class="crm2-donut-dot" style="background:#25D366"></span>WhatsApp 20%</div>
+                              <div class="crm2-donut-item"><span class="crm2-donut-dot" style="background:#C13584"></span>Instagram 10%</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="crm2-card">
+                          <div class="crm2-card-head">
+                            <span class="crm2-card-title">Última actividad</span>
+                          </div>
+                          <div class="crm2-timeline">
+                            <div class="crm2-event">
+                              <div class="crm2-event-channel crm2-channel--store">TIENDA</div>
+                              <div class="crm2-event-body">
+                                <div class="crm2-event-title">Compra · Suc. Polanco</div>
+                                <div class="crm2-event-detail">Blusa satinada + Falda plisada</div>
+                              </div>
+                              <div class="crm2-event-date">Hoy</div>
+                            </div>
+                            <div class="crm2-event">
+                              <div class="crm2-event-channel crm2-channel--online">ONLINE</div>
+                              <div class="crm2-event-body">
+                                <div class="crm2-event-title">Compra · sacscloud.com</div>
+                                <div class="crm2-event-detail">Blazer oversize · $1,680</div>
+                              </div>
+                              <div class="crm2-event-date">3d</div>
+                            </div>
+                            <div class="crm2-event">
+                              <div class="crm2-event-channel crm2-channel--wa">WHATSAPP</div>
+                              <div class="crm2-event-body">
+                                <div class="crm2-event-title">Click en promo "OTOÑO 2026"</div>
+                                <div class="crm2-event-detail">Convertido en compra a las 2h</div>
+                              </div>
+                              <div class="crm2-event-date">5d</div>
+                            </div>
+                            <div class="crm2-event">
+                              <div class="crm2-event-channel crm2-channel--ig">INSTAGRAM</div>
+                              <div class="crm2-event-body">
+                                <div class="crm2-event-title">DM "¿blazer en talla M?"</div>
+                                <div class="crm2-event-detail">Respondido en 4 min</div>
+                              </div>
+                              <div class="crm2-event-date">7d</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Panel 2: Compras — table */}
+                    <div class="crm2-panel crm2-panel--2">
+                      <div class="crm2-card crm2-card--full">
+                        <div class="crm2-card-head">
+                          <span class="crm2-card-title">Últimas compras · 12 totales</span>
+                          <span class="crm2-card-link">Ver todas →</span>
+                        </div>
+                        <div class="crm2-table">
+                          <div class="crm2-trow crm2-trow--head">
+                            <span>Producto</span><span>Canal</span><span>Fecha</span><span>Monto</span>
+                          </div>
+                          <div class="crm2-trow">
+                            <div class="crm2-tprod">
+                              <img src="/images/reco-blusa.webp" alt="" loading="lazy" width="28" height="28" />
+                              <span>Blusa satinada · M</span>
+                            </div>
+                            <span class="crm2-tchan crm2-channel--store">TIENDA</span>
+                            <span class="crm2-tdate">30 abr</span>
+                            <span class="crm2-tprice">$1,290</span>
+                          </div>
+                          <div class="crm2-trow">
+                            <div class="crm2-tprod">
+                              <img src="/images/reco-falda.webp" alt="" loading="lazy" width="28" height="28" />
+                              <span>Falda midi plisada · 28</span>
+                            </div>
+                            <span class="crm2-tchan crm2-channel--store">TIENDA</span>
+                            <span class="crm2-tdate">30 abr</span>
+                            <span class="crm2-tprice">$1,250</span>
+                          </div>
+                          <div class="crm2-trow">
+                            <div class="crm2-tprod">
+                              <img src="/images/reco-blazer.webp" alt="" loading="lazy" width="28" height="28" />
+                              <span>Blazer oversize · S</span>
+                            </div>
+                            <span class="crm2-tchan crm2-channel--online">ONLINE</span>
+                            <span class="crm2-tdate">27 abr</span>
+                            <span class="crm2-tprice">$1,680</span>
+                          </div>
+                          <div class="crm2-trow">
+                            <div class="crm2-tprod">
+                              <img src="/images/reco-blusa.webp" alt="" loading="lazy" width="28" height="28" />
+                              <span>Camiseta crop algodón · S</span>
+                            </div>
+                            <span class="crm2-tchan crm2-channel--wa">WHATSAPP</span>
+                            <span class="crm2-tdate">25 abr</span>
+                            <span class="crm2-tprice">$590</span>
+                          </div>
+                          <div class="crm2-trow">
+                            <div class="crm2-tprod">
+                              <img src="/images/reco-falda.webp" alt="" loading="lazy" width="28" height="28" />
+                              <span>Pantalón palazzo · 30</span>
+                            </div>
+                            <span class="crm2-tchan crm2-channel--store">TIENDA</span>
+                            <span class="crm2-tdate">15 abr</span>
+                            <span class="crm2-tprice">$1,490</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Panel 3: Recomendaciones IA */}
+                    <div class="crm2-panel crm2-panel--3">
+                      <div class="crm2-card crm2-card--full">
+                        <div class="crm2-card-head">
+                          <span class="crm2-card-title">Recomendaciones IA · basadas en estilo y talla</span>
+                          <span class="crm2-card-tag">94% confianza</span>
+                        </div>
+                        <div class="crm2-recos">
+                          <div class="crm2-reco">
+                            <div class="crm2-reco-img"><img src="/images/reco-blusa.webp" alt="" loading="lazy" width="80" height="100" /></div>
+                            <div class="crm2-reco-name">Blusa de seda</div>
+                            <div class="crm2-reco-meta">Combina con su falda</div>
+                            <div class="crm2-reco-row">
+                              <span class="crm2-reco-price">$1,490</span>
+                              <span class="crm2-reco-match">94%</span>
+                            </div>
+                          </div>
+                          <div class="crm2-reco">
+                            <div class="crm2-reco-img"><img src="/images/reco-falda.webp" alt="" loading="lazy" width="80" height="100" /></div>
+                            <div class="crm2-reco-name">Falda lino</div>
+                            <div class="crm2-reco-meta">Resort 2026</div>
+                            <div class="crm2-reco-row">
+                              <span class="crm2-reco-price">$1,350</span>
+                              <span class="crm2-reco-match">87%</span>
+                            </div>
+                          </div>
+                          <div class="crm2-reco">
+                            <div class="crm2-reco-img"><img src="/images/reco-blazer.webp" alt="" loading="lazy" width="80" height="100" /></div>
+                            <div class="crm2-reco-name">Blazer doble</div>
+                            <div class="crm2-reco-meta">Color marfil</div>
+                            <div class="crm2-reco-row">
+                              <span class="crm2-reco-price">$1,890</span>
+                              <span class="crm2-reco-match">82%</span>
+                            </div>
+                          </div>
+                          <div class="crm2-reco">
+                            <div class="crm2-reco-img"><img src="/images/reco-blusa.webp" alt="" loading="lazy" width="80" height="100" /></div>
+                            <div class="crm2-reco-name">Top satinado</div>
+                            <div class="crm2-reco-meta">Estilo similar</div>
+                            <div class="crm2-reco-row">
+                              <span class="crm2-reco-price">$890</span>
+                              <span class="crm2-reco-match">79%</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="crm2-recos-foot">
+                          <span>SACS · IA detectó 4 piezas con &gt;75% match</span>
+                          <span class="crm2-card-link">Enviar por WhatsApp →</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Panel 4: Lealtad */}
+                    <div class="crm2-panel crm2-panel--4">
+                      <div class="crm2-panel-grid">
+                        <div class="crm2-card">
+                          <div class="crm2-card-head">
+                            <span class="crm2-card-title">Monedero electrónico</span>
+                            <span class="crm2-card-tag crm2-card-tag--gold">GOLD</span>
+                          </div>
+                          <div class="crm2-wallet">
+                            <div class="crm2-wallet-label">CASHBACK DISPONIBLE</div>
+                            <div class="crm2-wallet-value">$487<span class="crm2-wallet-cents">.50</span></div>
+                            <div class="crm2-wallet-progress">
+                              <div class="crm2-wallet-bar"><div class="crm2-wallet-fill"></div></div>
+                              <div class="crm2-wallet-levels">
+                                <span>SILVER</span><span class="crm2-wallet-cur">GOLD</span><span class="crm2-wallet-next">PLATINUM</span>
+                              </div>
+                            </div>
+                            <div class="crm2-wallet-hint">$1,820 más para subir a Platinum</div>
+                          </div>
+                        </div>
+                        <div class="crm2-card">
+                          <div class="crm2-card-head">
+                            <span class="crm2-card-title">Movimientos recientes</span>
+                          </div>
+                          <div class="crm2-mov">
+                            <div class="crm2-mov-row">
+                              <span class="crm2-mov-ic crm2-mov-ic--up">↑</span>
+                              <div class="crm2-mov-body">
+                                <div class="crm2-mov-name">Compra en tienda</div>
+                                <div class="crm2-mov-date">Hoy · Suc. Polanco</div>
+                              </div>
+                              <span class="crm2-mov-amt crm2-mov-amt--pos">+$24.50</span>
+                            </div>
+                            <div class="crm2-mov-row">
+                              <span class="crm2-mov-ic crm2-mov-ic--down">↓</span>
+                              <div class="crm2-mov-body">
+                                <div class="crm2-mov-name">Canje aplicado</div>
+                                <div class="crm2-mov-date">28 mar · Online</div>
+                              </div>
+                              <span class="crm2-mov-amt crm2-mov-amt--neg">−$150</span>
+                            </div>
+                            <div class="crm2-mov-row">
+                              <span class="crm2-mov-ic crm2-mov-ic--up">↑</span>
+                              <div class="crm2-mov-body">
+                                <div class="crm2-mov-name">Compra online</div>
+                                <div class="crm2-mov-date">25 mar</div>
+                              </div>
+                              <span class="crm2-mov-amt crm2-mov-amt--pos">+$18.00</span>
+                            </div>
+                            <div class="crm2-mov-row">
+                              <span class="crm2-mov-ic crm2-mov-ic--up">↑</span>
+                              <div class="crm2-mov-body">
+                                <div class="crm2-mov-name">Cumpleaños · bonus</div>
+                                <div class="crm2-mov-date">15 mar</div>
+                              </div>
+                              <span class="crm2-mov-amt crm2-mov-amt--pos">+$50.00</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </main>
               </div>
             </div>
 
@@ -11019,7 +11273,607 @@ const useCases = [
     .reco-card { animation: none; opacity: 1; transform: none; }
   }
 
-  /* ── CRM Omnicanal slide ── */
+  /* ── CRM Omnicanal v2 — professional dashboard with tab navigation ── */
+  .crm2-frame {
+    aspect-ratio: 16 / 10;
+    width: 100%;
+    background: #FAFAFA;
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    overflow: hidden;
+    font-family: var(--font-body);
+    color: #1A1A1A;
+  }
+
+  /* Sidebar */
+  .crm2-side {
+    background: #1A1A1A;
+    color: rgba(255,255,255,0.8);
+    padding: 14px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .crm2-side-brand {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #fff;
+    padding: 0 6px 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .crm2-side-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .crm2-side-nav-item {
+    padding: 7px 8px;
+    font-size: 9px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.65);
+    border-radius: 6px;
+  }
+  .crm2-side-nav-item--active {
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+  }
+  .crm2-side-foot { margin-top: auto; }
+  .crm2-side-user {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 6px;
+  }
+  .crm2-side-user-avatar {
+    width: 22px;
+    height: 22px;
+    background: #2AB5A0;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 9px;
+  }
+  .crm2-side-user-name {
+    font-size: 9px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.8);
+  }
+
+  /* Main panel */
+  .crm2-main {
+    padding: 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  .crm2-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+  .crm2-head-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .crm2-head-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #1A1A1A;
+    color: #fff;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 0.04em;
+  }
+  .crm2-head-name {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 800;
+    color: #1A1A1A;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .crm2-tier {
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    color: #B8956A;
+    background: rgba(184,149,106,0.14);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+  .crm2-head-sub {
+    font-size: 8px;
+    color: rgba(0,0,0,0.55);
+    margin-top: 2px;
+  }
+  .crm2-head-tags { display: flex; gap: 4px; }
+  .crm2-chip {
+    font-family: var(--font-display);
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #F5F5F7;
+    color: rgba(0,0,0,0.65);
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+  .crm2-chip--dark {
+    background: #1A1A1A;
+    color: #fff;
+    border-color: #1A1A1A;
+  }
+  .crm2-chip--teal {
+    background: rgba(42,181,160,0.14);
+    color: #1A8F7A;
+    border-color: rgba(42,181,160,0.2);
+  }
+
+  /* KPI row */
+  .crm2-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .crm2-kpi {
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 8px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .crm2-kpi-label {
+    font-size: 7px;
+    color: rgba(0,0,0,0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+  }
+  .crm2-kpi-value {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 800;
+    color: #1A1A1A;
+    letter-spacing: -0.01em;
+  }
+  .crm2-kpi-trend {
+    font-size: 7px;
+    color: rgba(0,0,0,0.5);
+    font-weight: 600;
+  }
+  .crm2-kpi-trend--up { color: #1A8F7A; }
+  .crm2-kpi-trend--teal { color: #1A8F7A; }
+
+  /* Tabs */
+  .crm2-tabs {
+    display: flex;
+    gap: 18px;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    padding: 0 2px;
+    position: relative;
+  }
+  .crm2-tab {
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(0,0,0,0.5);
+    padding: 8px 0 10px;
+    cursor: pointer;
+    transition: color 0.3s;
+    position: relative;
+  }
+  /* Active state via animation */
+  .crm2-tab--1 { animation: crm2-tab-1 14s ease-in-out infinite; }
+  .crm2-tab--2 { animation: crm2-tab-2 14s ease-in-out infinite; }
+  .crm2-tab--3 { animation: crm2-tab-3 14s ease-in-out infinite; }
+  .crm2-tab--4 { animation: crm2-tab-4 14s ease-in-out infinite; }
+  @keyframes crm2-tab-1 { 0%,22%{color:#1A1A1A;} 25%,100%{color:rgba(0,0,0,0.5);} }
+  @keyframes crm2-tab-2 { 0%,22%{color:rgba(0,0,0,0.5);} 25%,47%{color:#1A1A1A;} 50%,100%{color:rgba(0,0,0,0.5);} }
+  @keyframes crm2-tab-3 { 0%,47%{color:rgba(0,0,0,0.5);} 50%,72%{color:#1A1A1A;} 75%,100%{color:rgba(0,0,0,0.5);} }
+  @keyframes crm2-tab-4 { 0%,72%{color:rgba(0,0,0,0.5);} 75%,100%{color:#1A1A1A;} }
+
+  .crm2-tab-indicator {
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    height: 2px;
+    background: #1A1A1A;
+    width: 56px;
+    animation: crm2-tab-ind 14s ease-in-out infinite;
+  }
+  @keyframes crm2-tab-ind {
+    0%, 22%   { left: 0;     width: 56px; }
+    25%, 47%  { left: 75px;  width: 56px; }
+    50%, 72%  { left: 145px; width: 110px; }
+    75%, 100% { left: 270px; width: 50px; }
+  }
+
+  /* Panels */
+  .crm2-panels {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+  }
+  .crm2-panel {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.4s, transform 0.4s;
+  }
+  .crm2-panel--1 { animation: crm2-panel-1 14s ease-in-out infinite; }
+  .crm2-panel--2 { animation: crm2-panel-2 14s ease-in-out infinite; }
+  .crm2-panel--3 { animation: crm2-panel-3 14s ease-in-out infinite; }
+  .crm2-panel--4 { animation: crm2-panel-4 14s ease-in-out infinite; }
+  @keyframes crm2-panel-1 {
+    0%, 22%   { opacity: 1; transform: translateY(0); }
+    25%, 100% { opacity: 0; transform: translateY(-6px); }
+  }
+  @keyframes crm2-panel-2 {
+    0%, 22%   { opacity: 0; transform: translateY(8px); }
+    25%, 47%  { opacity: 1; transform: translateY(0); }
+    50%, 100% { opacity: 0; transform: translateY(-6px); }
+  }
+  @keyframes crm2-panel-3 {
+    0%, 47%   { opacity: 0; transform: translateY(8px); }
+    50%, 72%  { opacity: 1; transform: translateY(0); }
+    75%, 100% { opacity: 0; transform: translateY(-6px); }
+  }
+  @keyframes crm2-panel-4 {
+    0%, 72%   { opacity: 0; transform: translateY(8px); }
+    75%, 100% { opacity: 1; transform: translateY(0); }
+  }
+
+  .crm2-panel-grid {
+    display: grid;
+    grid-template-columns: 0.85fr 1fr;
+    gap: 10px;
+    height: 100%;
+  }
+  .crm2-card {
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .crm2-card--full { width: 100%; height: 100%; }
+  .crm2-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .crm2-card-title {
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 800;
+    color: #1A1A1A;
+    letter-spacing: -0.01em;
+  }
+  .crm2-card-link {
+    font-size: 8px;
+    color: #1A1A1A;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .crm2-card-tag {
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    background: #F5F5F7;
+    color: rgba(0,0,0,0.65);
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+  .crm2-card-tag--gold { color: #B8956A; background: rgba(184,149,106,0.14); }
+
+  /* Donut chart */
+  .crm2-donut {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 10px;
+    align-items: center;
+    flex: 1;
+  }
+  .crm2-donut-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 8px;
+    color: rgba(0,0,0,0.7);
+    font-weight: 600;
+  }
+  .crm2-donut-item { display: flex; align-items: center; gap: 5px; }
+  .crm2-donut-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  /* Timeline events */
+  .crm2-timeline { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+  .crm2-event {
+    display: grid;
+    grid-template-columns: 60px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    background: #FAFAFA;
+    border-radius: 6px;
+    padding: 6px 8px;
+  }
+  .crm2-event-channel,
+  .crm2-tchan {
+    font-family: var(--font-display);
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-align: center;
+    min-width: 56px;
+  }
+  .crm2-channel--store    { background: #1A1A1A; }
+  .crm2-channel--online   { background: #4B7BE5; }
+  .crm2-channel--wa       { background: #25D366; }
+  .crm2-channel--ig       { background: #C13584; }
+  .crm2-event-title {
+    font-size: 8.5px;
+    font-weight: 700;
+    color: #1A1A1A;
+  }
+  .crm2-event-detail {
+    font-size: 7px;
+    color: rgba(0,0,0,0.55);
+    margin-top: 1px;
+  }
+  .crm2-event-date {
+    font-size: 7px;
+    color: rgba(0,0,0,0.45);
+  }
+
+  /* Table */
+  .crm2-table { display: flex; flex-direction: column; gap: 0; }
+  .crm2-trow {
+    display: grid;
+    grid-template-columns: 2.5fr 1fr 1fr 0.7fr;
+    align-items: center;
+    gap: 12px;
+    padding: 7px 4px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    font-size: 9px;
+  }
+  .crm2-trow:last-child { border-bottom: none; }
+  .crm2-trow--head {
+    font-size: 7px;
+    color: rgba(0,0,0,0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    border-bottom: 1px solid rgba(0,0,0,0.10);
+  }
+  .crm2-tprod {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #1A1A1A;
+    font-weight: 600;
+  }
+  .crm2-tprod img {
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    object-fit: cover;
+    background: #F2F1EE;
+  }
+  .crm2-tdate { color: rgba(0,0,0,0.55); }
+  .crm2-tprice { font-family: var(--font-display); font-weight: 800; color: #1A1A1A; text-align: right; }
+
+  /* Recommendations */
+  .crm2-recos {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    flex: 1;
+    margin-bottom: 8px;
+  }
+  .crm2-reco {
+    background: #FAFAFA;
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 8px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .crm2-reco-img {
+    aspect-ratio: 4/5;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #F2F1EE;
+    margin-bottom: 4px;
+  }
+  .crm2-reco-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .crm2-reco-name {
+    font-size: 8.5px;
+    font-weight: 700;
+    color: #1A1A1A;
+  }
+  .crm2-reco-meta {
+    font-size: 7px;
+    color: rgba(0,0,0,0.5);
+  }
+  .crm2-reco-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px;
+  }
+  .crm2-reco-price {
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 800;
+    color: #1A1A1A;
+  }
+  .crm2-reco-match {
+    background: #2AB5A0;
+    color: #fff;
+    font-size: 8px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+  .crm2-recos-foot {
+    display: flex;
+    justify-content: space-between;
+    font-size: 7.5px;
+    color: rgba(0,0,0,0.55);
+    padding-top: 6px;
+    border-top: 1px solid rgba(0,0,0,0.06);
+  }
+
+  /* Wallet */
+  .crm2-wallet {
+    background: #1A1A1A;
+    color: #fff;
+    border-radius: 10px;
+    padding: 14px 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .crm2-wallet-label {
+    font-size: 7px;
+    color: rgba(255,255,255,0.55);
+    letter-spacing: 0.1em;
+    font-weight: 700;
+  }
+  .crm2-wallet-value {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .crm2-wallet-cents {
+    font-size: 16px;
+    color: rgba(255,255,255,0.5);
+    font-weight: 600;
+  }
+  .crm2-wallet-progress { margin-top: auto; }
+  .crm2-wallet-bar {
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.10);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+  .crm2-wallet-fill {
+    height: 100%;
+    width: 70%;
+    background: #2AB5A0;
+    border-radius: 2px;
+    animation: crm2-wallet-grow 14s ease-in-out infinite;
+  }
+  @keyframes crm2-wallet-grow {
+    0%, 75%   { width: 50%; }
+    100%      { width: 72%; }
+  }
+  .crm2-wallet-levels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 6.5px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 0.06em;
+  }
+  .crm2-wallet-cur { color: #2AB5A0; }
+  .crm2-wallet-next { color: rgba(255,255,255,0.25); }
+  .crm2-wallet-hint {
+    font-size: 7px;
+    color: rgba(255,255,255,0.5);
+    text-align: center;
+    margin-top: 4px;
+  }
+
+  /* Movements */
+  .crm2-mov { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .crm2-mov-row {
+    display: grid;
+    grid-template-columns: 22px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: #FAFAFA;
+    border-radius: 6px;
+  }
+  .crm2-mov-ic {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 800;
+  }
+  .crm2-mov-ic--up   { background: rgba(42,181,160,0.14); color: #1A8F7A; }
+  .crm2-mov-ic--down { background: #F5F5F7; color: rgba(0,0,0,0.5); }
+  .crm2-mov-name {
+    font-size: 8.5px;
+    font-weight: 700;
+    color: #1A1A1A;
+  }
+  .crm2-mov-date {
+    font-size: 6.5px;
+    color: rgba(0,0,0,0.5);
+    margin-top: 1px;
+  }
+  .crm2-mov-amt {
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .crm2-mov-amt--pos { color: #1A8F7A; }
+  .crm2-mov-amt--neg { color: rgba(0,0,0,0.55); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .crm2-frame *, .crm2-frame ::before, .crm2-frame ::after { animation: none !important; }
+    .crm2-panel { opacity: 0; }
+    .crm2-panel--1 { opacity: 1; }
+  }
+
+  /* ── CRM Omnicanal slide (legacy, unused) ── */
   .omni-frame {
     aspect-ratio: 16 / 10;
     width: 100%;
