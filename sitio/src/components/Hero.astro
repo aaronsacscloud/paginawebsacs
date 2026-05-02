@@ -8483,6 +8483,61 @@ const useCases = [
     .apt3-step-connector > span { width: 100%; }
   }
 
+  /* ── #2 Apartados (.apt3-frame) — mobile (≤1023px) ──
+     El layout single-column ya es bueno, pero el aspect-ratio 16/10 hace
+     que el frame sea muy chato (375 wide → 234 alto). Necesitamos más alto
+     para que el contenido (cliente + 4 items + total + botón + nota) entre.
+     Solución: aspect-ratio 4/5 portrait en móvil, padding reducido. */
+  @media (max-width: 1023px) {
+    .apt3-frame {
+      aspect-ratio: 4 / 5;
+      padding: 14px 12px 12px;
+    }
+    /* Topbar: ocultar el badge APT-3848 para liberar espacio horizontal */
+    .apt3-topbar { gap: 8px; padding: 2px 0 8px; margin-bottom: 8px; }
+    .apt3-topbar-badge { display: none; }
+    /* Steps indicator más compacto */
+    .apt3-steps { gap: 0; }
+    .apt3-step-connector { width: 22px; margin: 0 5px; }
+    .apt3-step-label { display: none; }   /* solo dots, no labels en móvil */
+    /* Items y customer: padding interno reducido */
+    .apt3-customer { padding: 6px 9px; gap: 7px; margin-bottom: 5px; }
+    .apt3-customer-avatar { width: 26px; height: 26px; font-size: 10px; }
+    .apt3-customer-name { font-size: 11px; }
+    .apt3-customer-meta { font-size: 7px; }
+    .apt3-customer-tag { font-size: 6.5px; padding: 3px 6px; }
+    .apt3-items { gap: 3px; }
+    .apt3-item { padding: 4px 8px; gap: 7px; }
+    .apt3-item img { width: 28px; height: 28px; }
+    .apt3-item-name { font-size: 9.5px; }
+    .apt3-item-meta { font-size: 7px; }
+    .apt3-item-price { font-size: 12px; }
+    /* Footer: total + botón */
+    .apt3-cart-total-row { padding: 6px 12px; }
+    .apt3-cart-total-label { font-size: 9px; }
+    .apt3-cart-total-value { font-size: 18px; }
+    .apt3-btn--cart { padding: 10px 14px; font-size: 12px; }
+    .apt3-cart-rule { font-size: 7px; }
+    /* Stage 2: deposit card más compacto */
+    .apt3-deposit-card { padding: 12px 10px; }
+    .apt3-deposit-value { font-size: 24px; }
+    .apt3-deposit-label { font-size: 7px; }
+    .apt3-deposit-sub { font-size: 7px; }
+    .apt3-methods { gap: 4px; }
+    .apt3-method { padding: 6px 4px; font-size: 8.5px; }
+    .apt3-btn--pay { padding: 11px; font-size: 12px; }
+    .apt3-deposit-note { font-size: 7.5px; }
+    /* Stage 3: success */
+    .apt3-ok-title { font-size: 15px; }
+    .apt3-ok-sub { font-size: 8.5px; }
+    .apt3-summary { padding: 4px 12px; }
+    .apt3-summary-row { padding: 6px 0; }
+    .apt3-summary-label { font-size: 8.5px; }
+    .apt3-summary-value { font-size: 9.5px; }
+    .apt3-bottom-status { padding: 8px 12px; gap: 7px; margin-top: 8px; }
+    .apt3-bottom-status-txt { font-size: 9px; }
+  }
+
   /* ── Pedidos y Apartados (legacy apt2 — no longer rendered) ── */
   .apt2-frame {
     aspect-ratio: 16 / 10;
