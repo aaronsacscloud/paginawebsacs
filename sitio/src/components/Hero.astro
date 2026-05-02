@@ -3539,11 +3539,13 @@ const useCases = [
   .hero-btn {
     font-size: 0.875rem;
     font-weight: 600;
-    padding: 14px 28px;
+    padding: 16px 28px;     /* +2px vertical → ~48px tap target */
+    min-height: 48px;
     border-radius: var(--radius-full);
     text-decoration: none;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: var(--space-2);
     transition: all 0.2s ease;
     line-height: 1;
@@ -10558,25 +10560,26 @@ const useCases = [
       top: 64px; /* clears the global fixed nav (~71px) */
       z-index: 5;
       display: flex;
-      gap: 6px;
-      padding: 12px 16px;
+      gap: 8px;
+      padding: 10px 16px;
       overflow-x: auto;
       scrollbar-width: none;
       -ms-overflow-style: none;
       -webkit-overflow-scrolling: touch;
       /* Solid bg (no backdrop-filter on mobile per perf rules) */
       background: #ffffff;
-      border-bottom: 1px solid rgba(0,0,0,0.06);
-      box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.03);
     }
     .mc-tabs::-webkit-scrollbar { display: none; }
 
     .mc-tab {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 7px;
       flex-shrink: 0;
-      padding: 8px 14px;
+      padding: 12px 16px;     /* touch target ≥ 44px */
+      min-height: 44px;
       border-radius: 999px;
       background: rgba(0,0,0,0.04);
       color: rgba(0,0,0,0.55);
@@ -10654,14 +10657,14 @@ const useCases = [
     .mc-carousel::-webkit-scrollbar { display: none; }
 
     .mc-card {
-      flex: 0 0 85%; scroll-snap-align: center;
+      flex: 0 0 78%; scroll-snap-align: center;     /* 78% leaves visible peek of next card */
       background: #fff; border-radius: 14px; overflow: hidden;
       box-shadow: 0 12px 32px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.04);
     }
     .mc-step--alt .mc-card { background: #fff; }
 
     .mc-card-visual {
-      width: 100%; aspect-ratio: 4/3; overflow: hidden;
+      width: 100%; aspect-ratio: 5/4; overflow: hidden;     /* 5/4 = más vertical, mejor lectura */
       background: #f0f0f0;
     }
     .mc-card-visual--dark { background: #111; }
@@ -10710,14 +10713,14 @@ const useCases = [
     .mc-cat-col-loc { display: flex; flex-wrap: wrap; gap: 3px; }
     .mc-cat-loc { font-size: 9px; padding: 2px 5px; border-radius: 4px; background: #f0f0f0; color: #666; white-space: nowrap; }
 
-    .mc-card-body { padding: 16px 18px 20px; }
+    .mc-card-body { padding: 18px 20px 22px; }
     .mc-card-title {
-      font-family: var(--font-display); font-size: 17px; font-weight: 700;
-      color: #0a0a0a; margin-bottom: 6px; letter-spacing: -0.01em;
+      font-family: var(--font-display); font-size: 18px; font-weight: 700;
+      color: #0a0a0a; margin-bottom: 8px; letter-spacing: -0.01em;
     }
     .mc-card-desc {
-      font-family: var(--font-body); font-size: 13.5px;
-      color: rgba(0,0,0,0.62); line-height: 1.55;
+      font-family: var(--font-body); font-size: 14px;
+      color: rgba(0,0,0,0.62); line-height: 1.6;
     }
 
     /* Single-card steps: make card full width */
@@ -17001,7 +17004,8 @@ const useCases = [
     .section-cta {
       width: 100%;
       font-size: 1rem;
-      padding: 16px 32px;
+      padding: 18px 32px;     /* +2px → ~50px tap target */
+      min-height: 50px;
     }
   }
 
