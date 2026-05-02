@@ -6051,19 +6051,15 @@ const useCases = [
     position: relative;
   }
 
-  /* Photo — starts dominant filling left half, fades + slides out */
+  /* Photo — fills the whole frame for ~1s, then fades out cleanly */
   .rec2-photo {
     position: absolute;
-    top: 3%;
-    left: 3.5%;
-    width: 60%;
-    height: 94%;
+    inset: 3% 3.5%;
     border-radius: 14px;
     overflow: hidden;
     box-shadow: 0 16px 40px -12px rgba(0,0,0,0.5);
-    transform-origin: left center;
     animation: rec2-photo-anim 14s ease-in-out infinite;
-    z-index: 1;
+    z-index: 3;
   }
   .rec2-photo img {
     width: 100%;
@@ -6077,37 +6073,38 @@ const useCases = [
     bottom: 14px;
     left: 16px;
     font-family: var(--font-display);
-    font-size: 8px;
+    font-size: 9px;
     font-weight: 800;
     letter-spacing: 0.18em;
     color: #fff;
     background: rgba(0,0,0,0.45);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
-    padding: 5px 10px;
+    padding: 6px 12px;
     border-radius: 999px;
   }
   @keyframes rec2-photo-anim {
-    0%, 18%   { opacity: 1; transform: scale(1) translateX(0); }
-    25%, 100% { opacity: 0; transform: scale(0.92) translateX(-40px); }
+    0%, 7%    { opacity: 1; transform: scale(1); }
+    11%, 100% { opacity: 0; transform: scale(1.04); pointer-events: none; }
   }
 
-  /* Phone — starts small on right, then settles fixed at LEFT for the rest */
+  /* Phone — fixed at LEFT, fades in after the photo dismisses */
   .rec2-phone-wrap {
     position: absolute;
     top: 3%;
+    left: 4%;
+    width: 26%;
     height: 94%;
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 2;
-    right: 3.5%;
-    width: 36%;
-    animation: rec2-phone-pos 14s ease-in-out infinite;
+    opacity: 0;
+    animation: rec2-phone-in 14s ease-in-out infinite;
   }
-  @keyframes rec2-phone-pos {
-    0%, 18%   { left: auto; right: 3.5%; width: 36%; }
-    25%, 100% { left: 4%; right: auto; width: 26%; }
+  @keyframes rec2-phone-in {
+    0%, 7%    { opacity: 0; }
+    11%, 100% { opacity: 1; }
   }
   .rec2-phone {
     width: 100%;
@@ -6158,29 +6155,29 @@ const useCases = [
   .rec2-layer--rcv  { animation: rec2-layer-rcv 14s ease-in-out infinite; }
   .rec2-layer--done { animation: rec2-layer-done 14s ease-in-out infinite; }
 
-  /* Timeline (after photo fade at 25%):
-     25-42%  XML upload
-     45-60%  OC generated
-     63-78%  Receiving (scan)
-     81-100% Done */
+  /* Timeline (after photo dismisses at 11%):
+     13-32%  XML upload
+     35-54%  OC generated
+     57-76%  Receiving (scan)
+     79-100% Done */
   @keyframes rec2-layer-xml {
-    0%, 24%   { opacity: 0; }
-    27%, 42%  { opacity: 1; }
-    45%, 100% { opacity: 0; }
+    0%, 11%   { opacity: 0; }
+    13%, 32%  { opacity: 1; }
+    35%, 100% { opacity: 0; }
   }
   @keyframes rec2-layer-oc {
-    0%, 42%   { opacity: 0; }
-    45%, 60%  { opacity: 1; }
-    63%, 100% { opacity: 0; }
+    0%, 32%   { opacity: 0; }
+    35%, 54%  { opacity: 1; }
+    57%, 100% { opacity: 0; }
   }
   @keyframes rec2-layer-rcv {
-    0%, 60%   { opacity: 0; }
-    63%, 78%  { opacity: 1; }
-    81%, 100% { opacity: 0; }
+    0%, 54%   { opacity: 0; }
+    57%, 76%  { opacity: 1; }
+    79%, 100% { opacity: 0; }
   }
   @keyframes rec2-layer-done {
-    0%, 78%   { opacity: 0; }
-    81%, 100% { opacity: 1; }
+    0%, 76%   { opacity: 0; }
+    79%, 100% { opacity: 1; }
   }
 
   /* Common phone elements */
@@ -6412,9 +6409,8 @@ const useCases = [
   .rec2-oc-item:nth-child(2) { animation-delay: 0.15s; }
   .rec2-oc-item:nth-child(3) { animation-delay: 0.30s; }
   @keyframes rec2-oc-item-in {
-    0%, 44%   { opacity: 0; transform: translateY(6px); }
-    47%, 60%  { opacity: 1; transform: translateY(0); }
-    63%, 100% { opacity: 1; transform: translateY(0); }
+    0%, 34%   { opacity: 0; transform: translateY(6px); }
+    37%, 100% { opacity: 1; transform: translateY(0); }
   }
   .rec2-oc-totals {
     background: #FAFAFA;
@@ -6543,8 +6539,8 @@ const useCases = [
     animation: rec2-done-draw 14s ease-in-out infinite;
   }
   @keyframes rec2-done-draw {
-    0%, 78%  { stroke-dashoffset: 30; }
-    84%, 100% { stroke-dashoffset: 0; }
+    0%, 76%  { stroke-dashoffset: 30; }
+    82%, 100% { stroke-dashoffset: 0; }
   }
   .rec2-done-title {
     font-family: var(--font-display);
@@ -6611,8 +6607,8 @@ const useCases = [
     animation: rec2-report-emerge 14s ease-in-out infinite;
   }
   @keyframes rec2-report-emerge {
-    0%, 78%  { transform: translateX(40px); opacity: 0; }
-    84%, 100% { transform: translateX(0); opacity: 1; }
+    0%, 76%  { transform: translateX(40px); opacity: 0; }
+    82%, 100% { transform: translateX(0); opacity: 1; }
   }
   .rec2-report-head {
     border-bottom: 1px solid rgba(0,0,0,0.08);
