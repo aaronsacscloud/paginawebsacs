@@ -9510,6 +9510,21 @@ const useCases = [
     .rtn-modal { display: none; }
   }
 
+  /* ── #12 Cambios y devoluciones (.rtn-frame) — mobile (≤1023px) ──
+     El grid 1.15fr/1fr no funciona en móvil: la izquierda (ticket original)
+     y la derecha (productos a cambiar) quedan ambas pequeñas. Stack vertical. */
+  @media (max-width: 1023px) {
+    .rtn-frame {
+      aspect-ratio: 4 / 5;
+      padding: 14px 14px;
+    }
+    .rtn-grid {
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 8px;
+    }
+  }
+
   /* ── Cobro móvil — line-busting slide (3 phone layers + emerging ticket) ── */
   .mob-frame {
     aspect-ratio: 16 / 10;
@@ -14872,6 +14887,24 @@ const useCases = [
     font-size: 7.5px;
     color: rgba(0,0,0,0.55);
     line-height: 1.4;
+  }
+
+  /* ── #10 CRM Omnicanal (.crm2-frame) — mobile (≤1023px) ──
+     El sidebar de 48px ya es estrecho — cabe bien.
+     El main dashboard tiene tabs animados y conversation list que necesitan
+     compactarse en móvil. */
+  @media (max-width: 1023px) {
+    .crm2-frame {
+      aspect-ratio: 4 / 5;
+      grid-template-columns: 40px 1fr;
+    }
+    .crm2-side { padding: 10px 0; gap: 8px; }
+    .crm2-side-logo, .crm2-side-icn {
+      width: 24px; height: 24px; font-size: 11px;
+    }
+    .crm2-side-icn svg { width: 14px; height: 14px; }
+    /* Main dashboard: paddings y font-sizes reducidos */
+    .crm2-main { padding: 14px 12px; }
   }
 
   /* ── Email marketing slide ── */
