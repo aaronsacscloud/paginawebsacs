@@ -15137,6 +15137,20 @@ const useCases = [
     min-height: 0;
   }
 
+  /* ── #8 Email Marketing (.mk-email-frame) — mobile (≤1023px) ──
+     Stack vertical: email mock arriba, stats panel abajo. */
+  @media (max-width: 1023px) {
+    .mk-email-frame {
+      aspect-ratio: 4 / 5;
+    }
+    .mk-email-grid {
+      grid-template-columns: 1fr;
+      grid-template-rows: 1.2fr 1fr;
+      gap: 8px;
+    }
+    .mk-email-stats { padding: 10px; }
+  }
+
   /* ── WhatsApp marketing slide ── */
   .mk-wa-frame {
     aspect-ratio: 16 / 10;
@@ -15727,6 +15741,29 @@ const useCases = [
     .mk-wa2-send-fill { width: 100%; }
   }
 
+  /* ── #9 WhatsApp Marketing (.mk-wa-frame) — mobile (≤1023px) ──
+     Stack vertical: panel multi-stage arriba, phone WhatsApp abajo.
+     Cursores se ajustan a las nuevas coordenadas. */
+  @media (max-width: 1023px) {
+    .mk-wa-frame {
+      aspect-ratio: 4 / 5;
+      padding: 12px 14px;
+    }
+    .mk-wa-grid--v2 {
+      grid-template-columns: 1fr;
+      grid-template-rows: 1.2fr 1fr;
+      gap: 10px;
+    }
+    .mk-wa-grid--v2 .mk-wa-phone-wrap { width: 100%; height: 100%; }
+    .mk-wa-grid--v2 .mk-wa-phone {
+      max-width: 180px;
+      height: 100%;
+    }
+    /* Cursores: ajustar coordenadas porque el panel ahora es más estrecho */
+    .mk-wa2-cursor--filter { bottom: 14px; left: 28px; }
+    .mk-wa2-cursor--send   { bottom: 18px; }
+  }
+
   /* ── AXO IA Empresarial ── */
   .axo-split {
     display: flex;
@@ -15925,6 +15962,18 @@ const useCases = [
 
   @media (prefers-reduced-motion: reduce) {
     .axo-msg { animation: none; opacity: 1; transform: none; }
+  }
+
+  /* ── #7 AI Empresarial (.axo-split) — mobile (≤1023px) ──
+     Stack vertical: video arriba (16:9), phone Axo abajo. */
+  @media (max-width: 1023px) {
+    .axo-split {
+      flex-direction: column;
+      aspect-ratio: 4 / 5;
+    }
+    .axo-video-wrap { flex: none; height: 50%; min-height: 180px; }
+    .axo-phone-wrap { flex: none; width: 100%; height: 50%; padding: 12px; }
+    .axo-phone { max-width: 200px; }
   }
 
   /* ── Catálogo enriquecido (inventario) ── */
