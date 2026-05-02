@@ -878,23 +878,90 @@ const useCases = [
                   </div>
                   <div class="ec-screen">
 
-                    {/* Layer 1: HERO / Home */}
+                    {/* Layer 1: HERO / Home + scroll-down sections */}
                     <div class="ec-layer ec-layer--home">
                       <div class="ec-nav">
                         <span class="ec-brand">MAISON</span>
                         <span class="ec-nav-links"><span>Hombres</span><span>Mujeres</span><span>Resort</span><span>La Bóveda</span></span>
                         <span class="ec-nav-icons"><span>⌕</span><span>♡</span><span>👤</span><span class="ec-cart-ic">⊠</span></span>
                       </div>
-                      <div class="ec-hero">
-                        <div class="ec-hero-bg"></div>
-                        <div class="ec-hero-overlay"></div>
-                        <div class="ec-hero-eyebrow">RESORT 2026</div>
-                        <div class="ec-hero-title">Lino, sal y tarde<br/>de domingo.</div>
-                        <div class="ec-hero-cta">
-                          <span class="ec-hero-btn ec-hero-btn--primary">Explorar colección</span>
-                          <span class="ec-hero-btn">Ver galería</span>
+                      <div class="ec-home-scroll">
+                       <div class="ec-home-track">
+                        <div class="ec-hero">
+                          <div class="ec-hero-bg"></div>
+                          <div class="ec-hero-overlay"></div>
+                          <div class="ec-hero-eyebrow">RESORT 2026</div>
+                          <div class="ec-hero-title">Lino, sal y tarde<br/>de domingo.</div>
+                          <div class="ec-hero-cta">
+                            <span class="ec-hero-btn ec-hero-btn--primary">Explorar colección</span>
+                            <span class="ec-hero-btn">Ver galería</span>
+                          </div>
+                          <div class="ec-hero-scroll-cue">↓ Scroll</div>
                         </div>
-                        <div class="ec-hero-scroll">↓ Scroll</div>
+
+                        {/* Bestsellers row */}
+                        <div class="ec-section">
+                          <div class="ec-section-head">
+                            <div>
+                              <div class="ec-section-eyebrow">DESTACADOS</div>
+                              <div class="ec-section-title">Lo que se está llevando esta semana</div>
+                            </div>
+                            <span class="ec-section-link">Ver todo →</span>
+                          </div>
+                          <div class="ec-best-grid">
+                            <div class="ec-best">
+                              <div class="ec-best-img"><img src="/images/reco-blusa.webp" alt="" loading="lazy" width="120" height="160" /></div>
+                              <div class="ec-best-name">Blusa satinada</div>
+                              <div class="ec-best-meta">3 colores</div>
+                              <div class="ec-best-price">$1,290</div>
+                            </div>
+                            <div class="ec-best">
+                              <div class="ec-best-img"><img src="/images/reco-blazer.webp" alt="" loading="lazy" width="120" height="160" /></div>
+                              <div class="ec-best-name">Blazer oversize</div>
+                              <div class="ec-best-meta">Edición limitada</div>
+                              <div class="ec-best-price">$1,680</div>
+                            </div>
+                            <div class="ec-best">
+                              <div class="ec-best-img"><img src="/images/reco-falda.webp" alt="" loading="lazy" width="120" height="160" /></div>
+                              <div class="ec-best-name">Falda midi</div>
+                              <div class="ec-best-meta">Plisada</div>
+                              <div class="ec-best-price">$1,250</div>
+                            </div>
+                            <div class="ec-best">
+                              <div class="ec-best-img"><img src="/images/reco-blusa.webp" alt="" loading="lazy" width="120" height="160" /></div>
+                              <div class="ec-best-name">Camiseta crop</div>
+                              <div class="ec-best-meta">Algodón orgánico</div>
+                              <div class="ec-best-price">$590</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Story / craftmanship strip */}
+                        <div class="ec-story">
+                          <div class="ec-story-img"><img src="/images/fideliza-loyalty.webp" alt="" loading="lazy" width="500" height="320" /></div>
+                          <div class="ec-story-body">
+                            <div class="ec-story-eyebrow">HECHO A MANO</div>
+                            <div class="ec-story-title">Cosido en Oaxaca,<br/>diseñado en CDMX.</div>
+                            <div class="ec-story-text">Telares pequeños, lino orgánico, costuras a mano. Cada pieza tarda 6 días en quedar lista.</div>
+                            <span class="ec-story-link">Conoce el proceso →</span>
+                          </div>
+                        </div>
+
+                        {/* Lookbook tile */}
+                        <div class="ec-look">
+                          <div class="ec-look-head">
+                            <div class="ec-section-eyebrow">LOOKBOOK</div>
+                            <div class="ec-section-title">Resort 2026 · Tulum</div>
+                          </div>
+                          <div class="ec-look-grid">
+                            <div class="ec-look-tile ec-look-tile--lg"><img src="/images/recomendaciones-productos.webp" alt="" loading="lazy" width="320" height="400" /></div>
+                            <div class="ec-look-col">
+                              <div class="ec-look-tile"><img src="/images/reco-blazer.webp" alt="" loading="lazy" width="200" height="180" /></div>
+                              <div class="ec-look-tile"><img src="/images/reco-falda.webp" alt="" loading="lazy" width="200" height="180" /></div>
+                            </div>
+                          </div>
+                        </div>
+                       </div>
                       </div>
                     </div>
 
@@ -4611,7 +4678,31 @@ const useCases = [
     77%, 100% { opacity: 1; }
   }
 
-  /* ─── Layer: HOME (luxury hero) ─── */
+  /* ─── Layer: HOME (luxury hero + scrollable sections) ─── */
+  .ec-layer--home {
+    overflow: hidden;
+  }
+  .ec-home-scroll {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+  }
+  .ec-home-track {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(0);
+    animation: ec-home-scroll-anim 24s ease-in-out infinite;
+  }
+  @keyframes ec-home-scroll-anim {
+    0%, 22%   { transform: translateY(0); }
+    52%       { transform: translateY(-360px); }
+    72%, 100% { transform: translateY(-720px); }
+  }
   .ec-nav {
     display: flex;
     align-items: center;
@@ -4649,7 +4740,9 @@ const useCases = [
   .ec-cart-ic { position: relative; }
 
   .ec-hero {
-    flex: 1;
+    flex-shrink: 0;
+    width: 100%;
+    height: 360px;
     position: relative;
     color: #fff;
     display: flex;
@@ -4720,7 +4813,7 @@ const useCases = [
     color: #1A1A1A;
     border-color: #fff;
   }
-  .ec-hero-scroll {
+  .ec-hero-scroll-cue {
     position: absolute;
     bottom: 8px;
     left: 50%;
@@ -4734,6 +4827,151 @@ const useCases = [
   @keyframes ec-scroll-bounce {
     0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.7; }
     50%      { transform: translateX(-50%) translateY(-3px); opacity: 1; }
+  }
+
+  /* Below-fold sections */
+  .ec-section {
+    flex-shrink: 0;
+    padding: 28px 30px 22px;
+    background: #fff;
+  }
+  .ec-section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 16px;
+  }
+  .ec-section-eyebrow {
+    font-family: var(--font-display);
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.32em;
+    color: rgba(0,0,0,0.55);
+    margin-bottom: 4px;
+  }
+  .ec-section-title {
+    font-family: var(--font-display);
+    font-size: 17px;
+    font-weight: 800;
+    color: #1A1A1A;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+  }
+  .ec-section-link {
+    font-size: 9px;
+    font-weight: 700;
+    color: #1A1A1A;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    letter-spacing: 0.04em;
+  }
+  .ec-best-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .ec-best { display: flex; flex-direction: column; gap: 4px; }
+  .ec-best-img {
+    aspect-ratio: 4/5;
+    background: #F2F1EE;
+    overflow: hidden;
+    border-radius: 4px;
+    margin-bottom: 6px;
+  }
+  .ec-best-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ec-best-name {
+    font-size: 9px;
+    font-weight: 700;
+    color: #1A1A1A;
+  }
+  .ec-best-meta {
+    font-size: 7px;
+    color: rgba(0,0,0,0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  .ec-best-price {
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 800;
+    color: #1A1A1A;
+    margin-top: 2px;
+  }
+
+  .ec-story {
+    flex-shrink: 0;
+    background: #1A1A1A;
+    color: #fff;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    min-height: 220px;
+  }
+  .ec-story-img { height: 100%; overflow: hidden; }
+  .ec-story-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ec-story-body {
+    padding: 30px 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .ec-story-eyebrow {
+    font-family: var(--font-display);
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.32em;
+    color: rgba(255,255,255,0.55);
+    margin-bottom: 4px;
+  }
+  .ec-story-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+  .ec-story-text {
+    font-size: 10px;
+    line-height: 1.5;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 8px;
+  }
+  .ec-story-link {
+    font-size: 9px;
+    font-weight: 700;
+    color: #fff;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    letter-spacing: 0.04em;
+    width: fit-content;
+  }
+
+  .ec-look {
+    flex-shrink: 0;
+    padding: 28px 30px 32px;
+    background: #FAFAFA;
+  }
+  .ec-look-head { margin-bottom: 14px; }
+  .ec-look-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 10px;
+    height: 220px;
+  }
+  .ec-look-tile {
+    overflow: hidden;
+    border-radius: 6px;
+    background: #F2F1EE;
+  }
+  .ec-look-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ec-look-tile--lg { grid-row: 1; }
+  .ec-look-col {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    gap: 10px;
   }
 
   /* ─── Layer: CATÁLOGO ─── */
