@@ -1349,58 +1349,201 @@ const useCases = [
 
             {/* ── Controla: Conteo Físico ── */}
             <div class="tablet-slide" data-slide="stock-conteo">
-              <div class="conteo-split">
-                {/* Left: scanner photo */}
-                <div class="conteo-photo">
-                  <img src="/images/conteo-fisico-real.webp" alt="Empleada haciendo conteo físico de inventario con scanner en tienda de ropa" loading="lazy" width="900" height="1117" />
-                </div>
-                {/* Right: iPhone with scan animation */}
-                <div class="conteo-phone-wrap">
-                  <div class="conteo-phone">
-                    <div class="conteo-phone-notch"></div>
-                    <div class="conteo-phone-screen">
-                      {/* Frame 1: Camera viewfinder */}
-                      <div class="conteo-frame conteo-frame--1">
-                        <div class="conteo-camera-bg"></div>
-                        <div class="conteo-viewfinder">
-                          <div class="conteo-vf-corner conteo-vf-tl"></div>
-                          <div class="conteo-vf-corner conteo-vf-tr"></div>
-                          <div class="conteo-vf-corner conteo-vf-bl"></div>
-                          <div class="conteo-vf-corner conteo-vf-br"></div>
-                          <div class="conteo-scan-line"></div>
-                        </div>
-                        <div class="conteo-camera-label">Apunta al código de barras</div>
-                      </div>
-                      {/* Frame 2: Barcode detected */}
-                      <div class="conteo-frame conteo-frame--2">
-                        <div class="conteo-camera-bg"></div>
-                        <div class="conteo-detected">
-                          <div class="conteo-barcode">
-                            <svg viewBox="0 0 120 50" fill="#1A1A1A"><rect x="2" width="3" height="45"/><rect x="7" width="1" height="45"/><rect x="10" width="2" height="45"/><rect x="15" width="3" height="45"/><rect x="20" width="1" height="45"/><rect x="23" width="4" height="45"/><rect x="29" width="2" height="45"/><rect x="33" width="1" height="45"/><rect x="36" width="3" height="45"/><rect x="41" width="2" height="45"/><rect x="45" width="1" height="45"/><rect x="48" width="4" height="45"/><rect x="54" width="2" height="45"/><rect x="58" width="1" height="45"/><rect x="61" width="3" height="45"/><rect x="66" width="2" height="45"/><rect x="70" width="4" height="45"/><rect x="76" width="1" height="45"/><rect x="79" width="3" height="45"/><rect x="84" width="2" height="45"/><rect x="88" width="1" height="45"/><rect x="91" width="4" height="45"/><rect x="97" width="2" height="45"/><rect x="101" width="3" height="45"/><rect x="106" width="1" height="45"/><rect x="109" width="2" height="45"/><rect x="113" width="4" height="45"/></svg>
+              <div class="cnt-frame">
+                <div class="cnt-grid">
+                  {/* Phone with 4 animated layers */}
+                  <div class="cnt-phone-wrap">
+                    <div class="cnt-phone">
+                      <div class="cnt-phone-notch"></div>
+                      <div class="cnt-phone-screen">
+
+                        {/* Layer 1: Scanner viewfinder */}
+                        <div class="cnt-layer cnt-layer--scan">
+                          <div class="cnt-scan-bg"></div>
+                          <div class="cnt-scan-top">
+                            <span class="cnt-scan-back">‹</span>
+                            <span class="cnt-scan-title">Conteo físico</span>
+                            <span class="cnt-scan-batch">L-247</span>
                           </div>
-                          <div class="conteo-flash">✓ Escaneado</div>
+                          <div class="cnt-scan-vf">
+                            <span class="cnt-vf-c cnt-vf-tl"></span>
+                            <span class="cnt-vf-c cnt-vf-tr"></span>
+                            <span class="cnt-vf-c cnt-vf-bl"></span>
+                            <span class="cnt-vf-c cnt-vf-br"></span>
+                            <span class="cnt-scan-line"></span>
+                          </div>
+                          <div class="cnt-scan-hint">Apunta al código de barras</div>
+                          <div class="cnt-scan-progress">
+                            <span class="cnt-scan-progress-label">Progreso del lote</span>
+                            <div class="cnt-scan-progress-bar"><div class="cnt-scan-progress-fill"></div></div>
+                            <span class="cnt-scan-progress-meta">
+                              <span class="cnt-counter">42</span> / 247 SKUs
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                      {/* Frame 3: Product result + count */}
-                      <div class="conteo-frame conteo-frame--3">
-                        <div class="conteo-result">
-                          <div class="conteo-result-product">
-                            <img src="/images/conteo-fisico-phone.webp" class="conteo-result-img" alt="Blazer Rosa" />
-                            <div>
-                              <div class="conteo-result-name">Blazer Rosa</div>
-                              <div class="conteo-result-sku">SKU-2847 · Talla M</div>
+
+                        {/* Layer 2: Barcode detected (flash) */}
+                        <div class="cnt-layer cnt-layer--flash">
+                          <div class="cnt-flash-card">
+                            <svg class="cnt-flash-bar" viewBox="0 0 120 50" fill="#1A1A1A" aria-hidden="true">
+                              <rect x="2" width="3" height="45"/><rect x="7" width="1" height="45"/><rect x="10" width="2" height="45"/><rect x="15" width="3" height="45"/><rect x="20" width="1" height="45"/><rect x="23" width="4" height="45"/><rect x="29" width="2" height="45"/><rect x="33" width="1" height="45"/><rect x="36" width="3" height="45"/><rect x="41" width="2" height="45"/><rect x="45" width="1" height="45"/><rect x="48" width="4" height="45"/><rect x="54" width="2" height="45"/><rect x="58" width="1" height="45"/><rect x="61" width="3" height="45"/><rect x="66" width="2" height="45"/><rect x="70" width="4" height="45"/><rect x="76" width="1" height="45"/><rect x="79" width="3" height="45"/><rect x="84" width="2" height="45"/><rect x="88" width="1" height="45"/><rect x="91" width="4" height="45"/><rect x="97" width="2" height="45"/><rect x="101" width="3" height="45"/><rect x="106" width="1" height="45"/><rect x="109" width="2" height="45"/><rect x="113" width="4" height="45"/>
+                            </svg>
+                            <div class="cnt-flash-sku">SKU-2847</div>
+                            <div class="cnt-flash-ok">✓ Escaneado</div>
+                          </div>
+                        </div>
+
+                        {/* Layer 3: Product card with count */}
+                        <div class="cnt-layer cnt-layer--prod">
+                          <div class="cnt-prod-top">
+                            <span class="cnt-prod-back">‹</span>
+                            <span class="cnt-prod-title">Producto detectado</span>
+                          </div>
+                          <div class="cnt-prod-card">
+                            <div class="cnt-prod-img"><img src="/images/reco-blazer.webp" alt="Blazer Rosa" loading="lazy" width="100" height="120" /></div>
+                            <div class="cnt-prod-name">Blazer Rosa</div>
+                            <div class="cnt-prod-meta">SKU 2847 · Talla M · Polanco</div>
+                          </div>
+                          <div class="cnt-prod-count">
+                            <span class="cnt-prod-count-label">CONTEO</span>
+                            <div class="cnt-prod-count-row">
+                              <span class="cnt-prod-count-btn">−</span>
+                              <span class="cnt-prod-count-num"><span class="cnt-prod-num-anim">23</span><span class="cnt-prod-num-of">/ 24</span></span>
+                              <span class="cnt-prod-count-btn cnt-prod-count-btn--plus">+</span>
                             </div>
                           </div>
-                          <div class="conteo-result-count">
-                            <span class="conteo-result-label">Conteo actual</span>
-                            <div class="conteo-result-num">
-                              <span class="conteo-count-number">23</span>
-                              <span class="conteo-count-of">/ 24</span>
+                          <div class="cnt-prod-status">
+                            <span class="cnt-prod-status-pending">Esperado: 24 unidades</span>
+                            <span class="cnt-prod-status-done">✓ Cuadrado · Esperado 24 / Contado 24</span>
+                          </div>
+                          <div class="cnt-prod-cta">Siguiente código →</div>
+                        </div>
+
+                        {/* Layer 4: Conteo terminado */}
+                        <div class="cnt-layer cnt-layer--done">
+                          <div class="cnt-done-check">
+                            <svg viewBox="0 0 56 56" width="50" height="50" fill="none">
+                              <circle cx="28" cy="28" r="24" stroke="#2AB5A0" stroke-width="2.5"/>
+                              <path class="cnt-done-path" d="M18 28l7 7 13-13" stroke="#2AB5A0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                          </div>
+                          <div class="cnt-done-title">Lote terminado</div>
+                          <div class="cnt-done-num">247 / 247 SKUs</div>
+                          <div class="cnt-done-stats">
+                            <div class="cnt-done-stat"><span>Cuadrados</span><span>231</span></div>
+                            <div class="cnt-done-stat"><span>Sobrantes</span><span class="cnt-pos">+9</span></div>
+                            <div class="cnt-done-stat"><span>Faltantes</span><span class="cnt-neg">−7</span></div>
+                          </div>
+                          <div class="cnt-done-cta">Ver reporte →</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right: Discrepancy report — emerges at the end */}
+                  <div class="cnt-report-wrap">
+                    <div class="cnt-report">
+                      <div class="cnt-report-head">
+                        <div class="cnt-report-title-row">
+                          <span class="cnt-report-title">Reporte de conteo físico</span>
+                          <span class="cnt-report-tag">Lote L-247 · CERRADO</span>
+                        </div>
+                        <div class="cnt-report-meta">
+                          <span>30 abr 2026 · 10:42–11:18</span>
+                          <span>Suc. Polanco · Lina M.</span>
+                        </div>
+                      </div>
+
+                      <div class="cnt-stats">
+                        <div class="cnt-stat">
+                          <span class="cnt-stat-label">Esperado</span>
+                          <span class="cnt-stat-value">3,148</span>
+                        </div>
+                        <div class="cnt-stat">
+                          <span class="cnt-stat-label">Contado</span>
+                          <span class="cnt-stat-value">3,150</span>
+                        </div>
+                        <div class="cnt-stat cnt-stat--diff">
+                          <span class="cnt-stat-label">Diferencia</span>
+                          <span class="cnt-stat-value cnt-stat-value--neg">+2</span>
+                        </div>
+                        <div class="cnt-stat">
+                          <span class="cnt-stat-label">Ajuste $</span>
+                          <span class="cnt-stat-value cnt-stat-value--money">−$3,420</span>
+                        </div>
+                      </div>
+
+                      <div class="cnt-disc-cols">
+                        <div class="cnt-disc-col">
+                          <div class="cnt-disc-head cnt-disc-head--pos">
+                            <span class="cnt-disc-dot"></span>
+                            <span>SOBRANTES · 9 SKUs</span>
+                          </div>
+                          <div class="cnt-disc-list">
+                            <div class="cnt-disc-row">
+                              <img src="/images/reco-blusa.webp" alt="" loading="lazy" width="24" height="24" />
+                              <div class="cnt-disc-info">
+                                <div class="cnt-disc-name">Blusa satinada · M</div>
+                                <div class="cnt-disc-sku">SKU 78440</div>
+                              </div>
+                              <div class="cnt-disc-delta cnt-disc-delta--pos">+3</div>
+                            </div>
+                            <div class="cnt-disc-row">
+                              <img src="/images/reco-falda.webp" alt="" loading="lazy" width="24" height="24" />
+                              <div class="cnt-disc-info">
+                                <div class="cnt-disc-name">Falda midi · 28</div>
+                                <div class="cnt-disc-sku">SKU 78441</div>
+                              </div>
+                              <div class="cnt-disc-delta cnt-disc-delta--pos">+2</div>
+                            </div>
+                            <div class="cnt-disc-row">
+                              <img src="/images/reco-blusa.webp" alt="" loading="lazy" width="24" height="24" />
+                              <div class="cnt-disc-info">
+                                <div class="cnt-disc-name">Camiseta crop · S</div>
+                                <div class="cnt-disc-sku">SKU 78444</div>
+                              </div>
+                              <div class="cnt-disc-delta cnt-disc-delta--pos">+4</div>
                             </div>
                           </div>
-                          <button class="conteo-result-btn">+1</button>
-                          <div class="conteo-result-done">24/24 · Conteo completo</div>
                         </div>
+
+                        <div class="cnt-disc-col">
+                          <div class="cnt-disc-head cnt-disc-head--neg">
+                            <span class="cnt-disc-dot"></span>
+                            <span>FALTANTES · 7 SKUs</span>
+                          </div>
+                          <div class="cnt-disc-list">
+                            <div class="cnt-disc-row">
+                              <img src="/images/reco-blazer.webp" alt="" loading="lazy" width="24" height="24" />
+                              <div class="cnt-disc-info">
+                                <div class="cnt-disc-name">Blazer oversize · S</div>
+                                <div class="cnt-disc-sku">SKU 78442</div>
+                              </div>
+                              <div class="cnt-disc-delta cnt-disc-delta--neg">−2</div>
+                            </div>
+                            <div class="cnt-disc-row">
+                              <img src="/images/reco-blazer.webp" alt="" loading="lazy" width="24" height="24" />
+                              <div class="cnt-disc-info">
+                                <div class="cnt-disc-name">Cárdigan trenzado · L</div>
+                                <div class="cnt-disc-sku">SKU 78446</div>
+                              </div>
+                              <div class="cnt-disc-delta cnt-disc-delta--neg">−3</div>
+                            </div>
+                            <div class="cnt-disc-row">
+                              <img src="/images/reco-falda.webp" alt="" loading="lazy" width="24" height="24" />
+                              <div class="cnt-disc-info">
+                                <div class="cnt-disc-name">Pantalón palazzo · 30</div>
+                                <div class="cnt-disc-sku">SKU 78443</div>
+                              </div>
+                              <div class="cnt-disc-delta cnt-disc-delta--neg">−2</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="cnt-report-foot">
+                        <span class="cnt-report-foot-ic">⚿</span>
+                        <span>Aprobado por · Gerente · Cl. Romero · Stock actualizado en SACS</span>
                       </div>
                     </div>
                   </div>
@@ -5458,6 +5601,675 @@ const useCases = [
     .ec-device { width: 96%; height: 92%; }
     .ec-layer--home { opacity: 1; }
     .ec-layer--catalog, .ec-layer--cart, .ec-layer--checkout, .ec-layer--ok { display: none; }
+  }
+
+  /* ── Auditoría y conteo físico — bigger phone + discrepancy report ── */
+  .cnt-frame {
+    aspect-ratio: 16 / 10;
+    width: 100%;
+    background: #1D1D1F;
+    background-image:
+      radial-gradient(ellipse 70% 50% at 30% 50%, rgba(75,123,229,0.10), transparent 65%),
+      radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1px, transparent 0);
+    background-size: auto, 24px 24px;
+    padding: 3% 3.5%;
+    overflow: hidden;
+  }
+  .cnt-grid {
+    display: grid;
+    grid-template-columns: 0.7fr 1fr;
+    gap: 18px;
+    height: 100%;
+    align-items: stretch;
+  }
+
+  /* Phone — bigger and centered */
+  .cnt-phone-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cnt-phone {
+    width: 92%;
+    max-width: 280px;
+    aspect-ratio: 9 / 19;
+    background: #2A2A2E;
+    border-radius: 32px;
+    padding: 7px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.08) inset,
+      0 0 0 1px rgba(255,255,255,0.10),
+      0 24px 60px -16px rgba(0,0,0,0.55),
+      0 8px 24px -8px rgba(0,0,0,0.30);
+    position: relative;
+  }
+  .cnt-phone-notch {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28%;
+    height: 11px;
+    background: #0A0A0C;
+    border-radius: 999px;
+    z-index: 2;
+  }
+  .cnt-phone-screen {
+    width: 100%;
+    height: 100%;
+    background: #FAFAFA;
+    border-radius: 26px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .cnt-layer {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-body);
+    color: #1A1A1A;
+  }
+  .cnt-layer--scan  { animation: cnt-layer-scan 16s ease-in-out infinite; }
+  .cnt-layer--flash { animation: cnt-layer-flash 16s ease-in-out infinite; }
+  .cnt-layer--prod  { animation: cnt-layer-prod 16s ease-in-out infinite; }
+  .cnt-layer--done  { animation: cnt-layer-done 16s ease-in-out infinite; }
+
+  /* Timeline:
+     0-22%   Scan viewfinder
+     25-30%  Flash (barcode detected)
+     33-58%  Product card with count animation
+     62-100% Done summary (& report emerges in right column) */
+  @keyframes cnt-layer-scan {
+    0%, 22%   { opacity: 1; }
+    25%, 100% { opacity: 0; }
+  }
+  @keyframes cnt-layer-flash {
+    0%, 22%   { opacity: 0; }
+    25%, 30%  { opacity: 1; }
+    33%, 100% { opacity: 0; }
+  }
+  @keyframes cnt-layer-prod {
+    0%, 32%   { opacity: 0; }
+    35%, 58%  { opacity: 1; }
+    61%, 100% { opacity: 0; }
+  }
+  @keyframes cnt-layer-done {
+    0%, 60%   { opacity: 0; }
+    63%, 100% { opacity: 1; }
+  }
+
+  /* Scanner layer */
+  .cnt-scan-bg {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, #1A1A1A 0%, #2A2A2E 100%);
+  }
+  .cnt-scan-top {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 22px 12px 8px;
+    z-index: 1;
+  }
+  .cnt-scan-back {
+    color: #fff;
+    font-size: 16px;
+    line-height: 1;
+  }
+  .cnt-scan-title {
+    color: #fff;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 11px;
+    flex: 1;
+    text-align: center;
+  }
+  .cnt-scan-batch {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 8px;
+    color: rgba(255,255,255,0.6);
+    background: rgba(255,255,255,0.10);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .cnt-scan-vf {
+    position: relative;
+    margin: 14px 24px 0;
+    aspect-ratio: 1;
+    align-self: center;
+    width: 70%;
+    max-width: 160px;
+    z-index: 1;
+  }
+  .cnt-vf-c {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border-color: #2AB5A0;
+    border-style: solid;
+    border-width: 0;
+  }
+  .cnt-vf-tl { top: 0; left: 0; border-top-width: 2.5px; border-left-width: 2.5px; border-top-left-radius: 4px; }
+  .cnt-vf-tr { top: 0; right: 0; border-top-width: 2.5px; border-right-width: 2.5px; border-top-right-radius: 4px; }
+  .cnt-vf-bl { bottom: 0; left: 0; border-bottom-width: 2.5px; border-left-width: 2.5px; border-bottom-left-radius: 4px; }
+  .cnt-vf-br { bottom: 0; right: 0; border-bottom-width: 2.5px; border-right-width: 2.5px; border-bottom-right-radius: 4px; }
+  .cnt-scan-line {
+    position: absolute;
+    top: 10%;
+    left: 8%;
+    right: 8%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #2AB5A0, transparent);
+    box-shadow: 0 0 10px #2AB5A0;
+    animation: cnt-scan-line-move 1.6s ease-in-out infinite;
+  }
+  @keyframes cnt-scan-line-move {
+    0%, 100% { top: 8%; }
+    50%      { top: 88%; }
+  }
+  .cnt-scan-hint {
+    position: relative;
+    text-align: center;
+    color: rgba(255,255,255,0.7);
+    font-size: 8px;
+    font-weight: 600;
+    margin-top: 10px;
+    z-index: 1;
+  }
+  .cnt-scan-progress {
+    position: relative;
+    margin-top: auto;
+    padding: 12px 14px 14px;
+    background: rgba(255,255,255,0.06);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    z-index: 1;
+  }
+  .cnt-scan-progress-label {
+    display: block;
+    font-size: 6.5px;
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .cnt-scan-progress-bar {
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+  .cnt-scan-progress-fill {
+    height: 100%;
+    background: #2AB5A0;
+    border-radius: 2px;
+    width: 17%;
+    animation: cnt-scan-progress-fill 16s ease-in-out infinite;
+  }
+  @keyframes cnt-scan-progress-fill {
+    0%        { width: 17%; }
+    22%       { width: 17%; }
+    60%       { width: 100%; }
+    100%      { width: 100%; }
+  }
+  .cnt-scan-progress-meta {
+    font-size: 8px;
+    color: rgba(255,255,255,0.7);
+    font-weight: 600;
+    display: flex;
+    justify-content: space-between;
+  }
+  .cnt-counter {
+    color: #2AB5A0;
+    font-family: var(--font-display);
+    font-weight: 800;
+    animation: cnt-counter-grow 16s steps(8) infinite;
+  }
+  @keyframes cnt-counter-grow {
+    0%     { content: '42'; }
+  }
+
+  /* Flash layer */
+  .cnt-layer--flash {
+    background: #fff;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 20px;
+  }
+  .cnt-flash-card {
+    text-align: center;
+    animation: cnt-flash-pop 16s ease-in-out infinite;
+  }
+  @keyframes cnt-flash-pop {
+    0%, 22% { transform: scale(0.85); opacity: 0; }
+    25%     { transform: scale(1.05); opacity: 1; }
+    27%, 30% { transform: scale(1); opacity: 1; }
+    32%, 100% { opacity: 0; }
+  }
+  .cnt-flash-bar {
+    width: 70%;
+    height: 50px;
+    margin: 0 auto 14px;
+  }
+  .cnt-flash-sku {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #1A1A1A;
+    margin-bottom: 8px;
+  }
+  .cnt-flash-ok {
+    display: inline-block;
+    padding: 5px 14px;
+    background: rgba(42,181,160,0.14);
+    color: #1A8F7A;
+    font-family: var(--font-display);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    border-radius: 999px;
+  }
+
+  /* Product layer */
+  .cnt-layer--prod { padding: 22px 12px 10px; }
+  .cnt-prod-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .cnt-prod-back { color: rgba(0,0,0,0.5); font-size: 14px; line-height: 1; }
+  .cnt-prod-title {
+    flex: 1;
+    text-align: center;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 9.5px;
+    color: #1A1A1A;
+  }
+  .cnt-prod-card {
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .cnt-prod-img {
+    width: 60px;
+    height: 70px;
+    margin: 0 auto 6px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #F2F1EE;
+  }
+  .cnt-prod-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .cnt-prod-name {
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 800;
+    color: #1A1A1A;
+    letter-spacing: -0.01em;
+  }
+  .cnt-prod-meta {
+    font-size: 7.5px;
+    color: rgba(0,0,0,0.55);
+    margin-top: 2px;
+  }
+  .cnt-prod-count {
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .cnt-prod-count-label {
+    display: block;
+    text-align: center;
+    font-size: 6.5px;
+    color: rgba(0,0,0,0.45);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .cnt-prod-count-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 28px;
+    align-items: center;
+    gap: 10px;
+  }
+  .cnt-prod-count-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #F2F1EE;
+    color: #1A1A1A;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .cnt-prod-count-btn--plus {
+    background: #1A1A1A;
+    color: #fff;
+    animation: cnt-plus-pulse 16s ease-in-out infinite;
+  }
+  @keyframes cnt-plus-pulse {
+    0%, 44%   { box-shadow: 0 0 0 0 rgba(42,181,160,0); }
+    47%       { box-shadow: 0 0 0 6px rgba(42,181,160,0.30); }
+    50%, 100% { box-shadow: 0 0 0 0 rgba(42,181,160,0); }
+  }
+  .cnt-prod-count-num {
+    text-align: center;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 22px;
+    color: #1A1A1A;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .cnt-prod-num-anim {
+    animation: cnt-num-tick 16s steps(2) infinite;
+  }
+  @keyframes cnt-num-tick {
+    0%, 47%  { content: '23'; }
+    50%, 100% { content: '24'; }
+  }
+  .cnt-prod-num-of {
+    display: block;
+    font-size: 8px;
+    color: rgba(0,0,0,0.45);
+    font-weight: 600;
+    margin-top: 2px;
+    letter-spacing: 0;
+  }
+  .cnt-prod-status {
+    text-align: center;
+    font-size: 7.5px;
+    margin-bottom: 10px;
+    position: relative;
+    height: 18px;
+  }
+  .cnt-prod-status-pending,
+  .cnt-prod-status-done {
+    position: absolute;
+    left: 0;
+    right: 0;
+    transition: opacity 0.3s;
+  }
+  .cnt-prod-status-pending { color: rgba(0,0,0,0.55); animation: cnt-status-pend 16s ease-in-out infinite; }
+  .cnt-prod-status-done    { color: #1A8F7A; opacity: 0; font-weight: 700; animation: cnt-status-done 16s ease-in-out infinite; }
+  @keyframes cnt-status-pend { 0%,47%{opacity:1;} 50%,100%{opacity:0;} }
+  @keyframes cnt-status-done { 0%,47%{opacity:0;} 50%,100%{opacity:1;} }
+
+  .cnt-prod-cta {
+    text-align: center;
+    background: #1A1A1A;
+    color: #fff;
+    padding: 9px;
+    border-radius: 8px;
+    font-family: var(--font-display);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    margin-top: auto;
+  }
+
+  /* Done layer */
+  .cnt-layer--done {
+    padding: 22px 14px 14px;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+  }
+  .cnt-done-check { margin-bottom: 8px; }
+  .cnt-done-check svg { width: 50px; height: 50px; }
+  .cnt-done-path {
+    stroke-dasharray: 30;
+    stroke-dashoffset: 30;
+    animation: cnt-done-draw 16s ease-in-out infinite;
+  }
+  @keyframes cnt-done-draw {
+    0%, 60%  { stroke-dashoffset: 30; }
+    66%, 100% { stroke-dashoffset: 0; }
+  }
+  .cnt-done-title {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 800;
+    color: #1A1A1A;
+    margin-bottom: 4px;
+  }
+  .cnt-done-num {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 10px;
+    color: rgba(0,0,0,0.55);
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.08);
+    padding: 3px 9px;
+    border-radius: 4px;
+    letter-spacing: 0.06em;
+    margin-bottom: 14px;
+  }
+  .cnt-done-stats {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 12px;
+  }
+  .cnt-done-stat {
+    display: flex;
+    justify-content: space-between;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 9px;
+    color: rgba(0,0,0,0.7);
+    font-weight: 600;
+  }
+  .cnt-done-stat span:last-child { font-family: var(--font-display); font-weight: 800; color: #1A1A1A; }
+  .cnt-pos { color: #1A8F7A !important; }
+  .cnt-neg { color: #c62828 !important; }
+  .cnt-done-cta {
+    background: #1A1A1A;
+    color: #fff;
+    padding: 9px 22px;
+    border-radius: 999px;
+    font-family: var(--font-display);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  /* ─── Right column: Discrepancy report ─── */
+  .cnt-report-wrap {
+    display: flex;
+    align-items: center;
+  }
+  .cnt-report {
+    width: 100%;
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px 16px 14px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.6) inset,
+      0 0 0 1px rgba(0,0,0,0.04),
+      0 20px 50px -16px rgba(0,0,0,0.45),
+      0 6px 16px -6px rgba(0,0,0,0.20);
+    color: #1A1A1A;
+    font-family: var(--font-body);
+    transform: translateX(40px);
+    opacity: 0;
+    animation: cnt-report-emerge 16s ease-in-out infinite;
+  }
+  @keyframes cnt-report-emerge {
+    0%, 60%   { transform: translateX(40px); opacity: 0; }
+    72%, 100% { transform: translateX(0); opacity: 1; }
+  }
+
+  .cnt-report-head {
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+  }
+  .cnt-report-title-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 3px;
+  }
+  .cnt-report-title {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 800;
+    color: #1A1A1A;
+    letter-spacing: -0.01em;
+  }
+  .cnt-report-tag {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 7.5px;
+    font-weight: 700;
+    color: #1A8F7A;
+    background: rgba(42,181,160,0.12);
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.06em;
+  }
+  .cnt-report-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 8px;
+    color: rgba(0,0,0,0.55);
+  }
+
+  .cnt-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .cnt-stat {
+    background: #FAFAFA;
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 8px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .cnt-stat--diff {
+    background: rgba(42,181,160,0.06);
+    border-color: rgba(42,181,160,0.20);
+  }
+  .cnt-stat-label {
+    font-size: 7px;
+    color: rgba(0,0,0,0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+  }
+  .cnt-stat-value {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 800;
+    color: #1A1A1A;
+    letter-spacing: -0.01em;
+  }
+  .cnt-stat-value--neg { color: #1A8F7A; }
+  .cnt-stat-value--money { color: #c62828; font-size: 13px; }
+
+  .cnt-disc-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .cnt-disc-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-display);
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .cnt-disc-head--pos { color: #1A8F7A; }
+  .cnt-disc-head--neg { color: #c62828; }
+  .cnt-disc-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .cnt-disc-head--pos .cnt-disc-dot { background: #2AB5A0; }
+  .cnt-disc-head--neg .cnt-disc-dot { background: #c62828; }
+  .cnt-disc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .cnt-disc-row {
+    display: grid;
+    grid-template-columns: 24px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    background: #FAFAFA;
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 6px;
+    padding: 5px 8px 5px 5px;
+  }
+  .cnt-disc-row img {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    object-fit: cover;
+    background: #F2F1EE;
+  }
+  .cnt-disc-name {
+    font-size: 8px;
+    font-weight: 700;
+    color: #1A1A1A;
+  }
+  .cnt-disc-sku {
+    font-family: 'SF Mono', 'Menlo', monospace;
+    font-size: 6.5px;
+    color: rgba(0,0,0,0.5);
+    margin-top: 1px;
+    letter-spacing: 0.04em;
+  }
+  .cnt-disc-delta {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+  .cnt-disc-delta--pos { color: #1A8F7A; }
+  .cnt-disc-delta--neg { color: #c62828; }
+
+  .cnt-report-foot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0,0,0,0.06);
+    font-size: 7.5px;
+    color: rgba(0,0,0,0.55);
+  }
+  .cnt-report-foot-ic { font-size: 9px; color: rgba(0,0,0,0.5); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cnt-frame *, .cnt-frame ::before, .cnt-frame ::after { animation: none !important; }
+    .cnt-layer--scan, .cnt-layer--flash, .cnt-layer--prod { opacity: 0; display: none; }
+    .cnt-layer--done { opacity: 1; }
+    .cnt-done-path { stroke-dashoffset: 0; }
+    .cnt-report { transform: none; opacity: 1; }
   }
 
   /* ── Pedidos y Apartados — animated 4-stage flow (light, minimalist) ── */
