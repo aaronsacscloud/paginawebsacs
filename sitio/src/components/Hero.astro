@@ -7909,6 +7909,35 @@ const useCases = [
     .cnt-report { transform: none; opacity: 1; }
   }
 
+  /* ── #3 Auditoría sucursal (.cnt-frame) — mobile (≤1023px) ──
+     En desktop el grid es 0.7fr/1fr (phone-izq / reporte-der).
+     En móvil, el reporte de discrepancias es muy denso (Esperado/Contado/
+     Diferencia + 2 columnas SOBRANTES/FALTANTES) y no cabe bien.
+     Decisión: ocultar el reporte en móvil, mostrar solo el phone con sus
+     4 stages (lista → scanner → producto → lote terminado). El usuario ve
+     todo el flujo en el phone, que es lo más importante. */
+  @media (max-width: 1023px) {
+    .cnt-frame {
+      aspect-ratio: 9 / 14;        /* portrait para que el phone se vea grande */
+      padding: 14px 14px;
+    }
+    .cnt-grid {
+      grid-template-columns: 1fr;  /* single col */
+      grid-template-rows: 100%;
+      gap: 0;
+    }
+    /* Ocultar reporte en móvil — el phone con sus 4 stages cuenta la historia */
+    .cnt-report-wrap { display: none; }
+    /* Phone usa todo el ancho disponible y se centra */
+    .cnt-phone-wrap { width: 100%; }
+    .cnt-phone {
+      width: auto;
+      max-width: 250px;
+      height: auto;
+      aspect-ratio: 9 / 19;
+    }
+  }
+
   /* ── Pedidos y Apartados — 3-screen flow (Carrito → Anticipo 30% → Apartado creado) ── */
   .apt3-frame {
     aspect-ratio: 16 / 10;
