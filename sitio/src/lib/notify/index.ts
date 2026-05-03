@@ -274,28 +274,32 @@ const templates: Record<string, Template> = {
     text: `Hola ${d.nombre}, recibimos tu solicitud (folio ${d.numero}). Te contactaremos en 3-5 días hábiles. Brand kit: https://www.sacscloud.com/partners/brand-kit`,
   }),
   partner_application_admin: (d) => ({
-    subject: `📝 Nueva aplicación de partner: ${d.nombre || ''} · ${d.tipo}`,
+    subject: `📝 Nueva solicitud firmada: ${d.nombre || ''} · ${d.tipo} · ${d.numero}`,
     html: `
-      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
-        <h2 style="font-size:1.25rem;margin:0 0 8px">Nueva postulación a Partners</h2>
+      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <h2 style="font-size:1.25rem;margin:0 0 8px">Solicitud firmada — por aprobar</h2>
         <p style="color:#555;line-height:1.55;margin:0 0 16px">
-          <strong>${d.nombre || ''}</strong> aplicó al programa como <strong>${d.tipo}</strong>.
+          <strong>${d.nombre || ''}</strong> firmó el contrato de <strong>${d.tipo}</strong> y está esperando tu revisión.
         </p>
         <div style="background:#fafafa;border:1px solid #ececec;padding:16px;border-radius:8px;margin:16px 0">
           <table style="width:100%;font-size:0.875rem;color:#444;border-collapse:collapse">
-            <tr><td style="padding:5px 0;width:120px;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Folio</td><td style="padding:5px 0;font-family:monospace">${d.numero || '—'}</td></tr>
+            <tr><td style="padding:5px 0;width:130px;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Folio</td><td style="padding:5px 0;font-family:monospace;font-weight:700">${d.numero || '—'}</td></tr>
             <tr><td style="padding:5px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Email</td><td style="padding:5px 0">${d.email || '—'}</td></tr>
             <tr><td style="padding:5px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">WhatsApp</td><td style="padding:5px 0">${d.whatsapp || '—'}</td></tr>
             <tr><td style="padding:5px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Empresa</td><td style="padding:5px 0">${d.empresa || '—'}</td></tr>
-            <tr><td style="padding:5px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Ciudad</td><td style="padding:5px 0">${d.ciudad || '—'}</td></tr>
+            <tr><td style="padding:5px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Ciudad / Estado</td><td style="padding:5px 0">${d.ciudad || '—'}</td></tr>
+            <tr><td style="padding:5px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Website</td><td style="padding:5px 0">${d.website && d.website !== '—' ? `<a href="${d.website}" style="color:#4B7BE5">${d.website}</a>` : '—'}</td></tr>
+            <tr><td style="padding:5px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Cómo nos conoció</td><td style="padding:5px 0">${d.como_supo || '—'}</td></tr>
+            <tr><td style="padding:5px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Exp. retail</td><td style="padding:5px 0">${d.experiencia_retail || '—'}</td></tr>
           </table>
         </div>
+        ${d.followers_total > 0 ? `<div style="background:rgba(75,123,229,0.06);border:1px solid rgba(75,123,229,0.18);padding:14px 16px;border-radius:8px;margin:14px 0"><div style="font-size:0.6875rem;color:#3764c4;text-transform:uppercase;letter-spacing:0.10em;font-weight:700;margin-bottom:8px">Audiencia total · ${(d.followers_total||0).toLocaleString('es-MX')} seguidores</div><div style="font-size:0.875rem;color:#444;line-height:1.55">${d.social_summary}</div></div>` : ''}
         ${d.motivo && d.motivo !== '—' ? `<div style="background:#fff;border-left:3px solid #4B7BE5;padding:14px 16px;margin:14px 0;font-size:0.875rem;color:#444;line-height:1.6"><strong>¿Por qué quiere ser partner?</strong><br/>${d.motivo}</div>` : ''}
-        <a href="${d.adminUrl || 'https://www.sacscloud.com/admin/crm?tab=partners'}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Revisar y enviar invitación</a>
-        <p style="color:#999;font-size:0.75rem;margin-top:24px">La invitación está en estado <strong>draft</strong>. Edita si quieres ajustar tabulador, vigencia o beneficios y luego marca como <em>Enviada</em>.</p>
+        <a href="${d.adminUrl || 'https://www.sacscloud.com/admin/crm?tab=partners'}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Revisar y aprobar / rechazar</a>
+        <p style="color:#999;font-size:0.75rem;margin-top:24px">La solicitud está firmada y en estado <strong>submitted_for_review</strong>. Click "Aprobar" en CRM para activar al partner.</p>
       </div>
     `,
-    text: `Nueva aplicación: ${d.nombre} (${d.email}) — ${d.tipo}. Revisar: ${d.adminUrl}`,
+    text: `Solicitud firmada: ${d.nombre} (${d.email}) — ${d.tipo}. ${d.followers_total||0} seguidores. Revisar: ${d.adminUrl}`,
   }),
   partner_commission_earned: (d) => {
     const fmt = (n: number) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');

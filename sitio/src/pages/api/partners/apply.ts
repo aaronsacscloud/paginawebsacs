@@ -1,11 +1,15 @@
 // POST /api/partners/apply
-// Endpoint público — se llama desde la landing /partners cuando alguien se postula.
-// Crea un partner_invitations en estado=draft con sus datos, listo para que
-// el admin lo revise y lo envíe (estado=sent) o lo descarte.
+// Endpoint público — flujo end-to-end de aplicación de partner.
+// El usuario llena form (3 pasos), firma contrato, y queda en
+// estado='submitted_for_review' listo para que admin apruebe.
+//
+// No hay paso intermedio "draft → sent" — la aplicación pública
+// ES la firma. Admin solo aprueba o rechaza.
 //
 // Side-effects:
-// - INSERT partner_invitations (estado=draft, tipo=embajador|distribuidor|...)
-// - Email a sales inbox: "Nueva aplicación de partner"
+// - INSERT partner_invitations (estado=submitted_for_review)
+// - Email confirmación al aplicante con folio + timeline
+// - Email a sales inbox: "Nueva solicitud por revisar"
 // - Activity log
 
 import type { APIRoute } from 'astro';
@@ -16,35 +20,37 @@ export const prerender = false;
 
 const ALLOWED_TIPOS = ['embajador', 'distribuidor', 'integrador', 'reseller', 'consultor'];
 
+// Folio sequence: empieza en 578 para que se vea como si ya hubiera 577 partners.
+// Se computa con max(numero existente) + 1, garantizado mín 578.
+const FOLIO_OFFSET = 578;
+
 const NOTAS_SEP = '\n---META---\n';
 function buildNotas(plain: string, meta: Record<string, any>): string {
   return `${plain || ''}${NOTAS_SEP}${JSON.stringify(meta)}`;
 }
 
-// Simple in-memory rate limiter (per-IP, per-hour).
-// Para serverless serverless functions el state se pierde entre invocations,
-// pero en Vercel hot-warm Lambda funciona dentro de un mismo container.
-// Para producción seria usar Redis/Upstash; v1 esto reduce abuso casual.
-const RATE_LIMIT = 5; // applications per hour per IP
+// Rate limit (in-memory, per IP, per hour)
+const RATE_LIMIT = 5;
 const RATE_WINDOW_MS = 60 * 60 * 1000;
 const ipBuckets = new Map<string, { count: number; resetAt: number }>();
-function checkRateLimit(ip: string): { allowed: boolean; remaining: number } {
+function checkRateLimit(ip: string): boolean {
   const now = Date.now();
   const bucket = ipBuckets.get(ip);
   if (!bucket || bucket.resetAt < now) {
     ipBuckets.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
-    return { allowed: true, remaining: RATE_LIMIT - 1 };
+    return true;
   }
-  if (bucket.count >= RATE_LIMIT) return { allowed: false, remaining: 0 };
+  if (bucket.count >= RATE_LIMIT) return false;
   bucket.count += 1;
-  return { allowed: true, remaining: RATE_LIMIT - bucket.count };
+  return true;
 }
 
-function isValidEmail(s: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+function isValidEmail(s: string) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s); }
+function isValidUrl(s: string) {
+  if (!s) return true;
+  try { const u = new URL(s.startsWith('http') ? s : `https://${s}`); return !!u.hostname; } catch { return false; }
 }
 function isLikelySpam(s: string) {
-  // very rough: more than 3 URLs, or all caps, or repeated chars
   const urlCount = (s.match(/https?:\/\//gi) || []).length;
   if (urlCount > 3) return true;
   if (s.length > 30 && s === s.toUpperCase()) return true;
@@ -52,19 +58,61 @@ function isLikelySpam(s: string) {
   return false;
 }
 
+async function nextFolio(): Promise<string> {
+  // Find max existing PA-NNN folio number, return next (with FOLIO_OFFSET min)
+  const { data } = await supabase
+    .from('partner_invitations')
+    .select('numero')
+    .like('numero', 'PA-%')
+    .order('numero', { ascending: false })
+    .limit(50);
+
+  let maxN = FOLIO_OFFSET - 1; // so first one becomes 578
+  for (const row of data || []) {
+    // Match plain "PA-NNN" (without date suffix). Ignore old "PA-YYMMDD-XXX" formats.
+    const m = (row.numero || '').match(/^PA-(\d+)$/);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (!isNaN(n) && n > maxN) maxN = n;
+    }
+  }
+  const next = maxN + 1;
+  return `PA-${next}`;
+}
+
+interface SocialHandle { platform: string; handle?: string; followers?: number; }
+
 export const POST: APIRoute = async ({ request, clientAddress }) => {
   try {
-    // Rate limit
     const ip = clientAddress || 'unknown';
-    const rl = checkRateLimit(ip);
-    if (!rl.allowed) {
+    if (!checkRateLimit(ip)) {
       return j({ error: 'Demasiadas solicitudes. Intenta de nuevo en 1 hora.' }, 429);
     }
 
     const body = await request.json() as {
+      // Step 1: Datos básicos
       nombre?: string; email?: string; whatsapp?: string;
-      empresa?: string; tipo?: string; ciudad?: string; motivo?: string;
+      empresa?: string; ciudad?: string; estado?: string;
+      // Step 2: Audiencia
+      website?: string;
+      social?: SocialHandle[];
+      audiencia_total?: number;
+      experiencia_retail?: string;
+      como_supo?: string;
+      tipo?: string;
+      // Step 3: Motivo + firma
+      motivo?: string;
+      firma_base64?: string;
+      acepta_terminos?: boolean;
+      // Anti-spam honeypot
+      _bot_field?: string;
     };
+
+    // Honeypot: invisible field — if filled, silently succeed (bot)
+    if (body._bot_field && body._bot_field.length > 0) {
+      console.warn('[apply] honeypot triggered from', ip);
+      return j({ ok: true, numero: 'PA-BOT' });
+    }
 
     const nombre = (body.nombre || '').trim().slice(0, 120);
     const email = (body.email || '').trim().toLowerCase().slice(0, 200);
@@ -72,41 +120,50 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     const tipo = ALLOWED_TIPOS.includes(body.tipo || '') ? body.tipo : 'embajador';
     const empresa = (body.empresa || '').trim().slice(0, 120) || null;
     const ciudad = (body.ciudad || '').trim().slice(0, 80) || null;
-    const motivo = (body.motivo || '').trim().slice(0, 1000) || null;
+    const estadoMx = (body.estado || '').trim().slice(0, 80) || null;
+    const website = (body.website || '').trim().slice(0, 200) || null;
+    const motivo = (body.motivo || '').trim().slice(0, 1500) || null;
+    const experiencia_retail = (body.experiencia_retail || '').trim().slice(0, 30) || null;
+    const como_supo = (body.como_supo || '').trim().slice(0, 50) || null;
+    const audiencia_total = Number(body.audiencia_total) || 0;
+    const acepta_terminos = !!body.acepta_terminos;
+    const firma_base64 = body.firma_base64 || null;
+    const social = Array.isArray(body.social) ? body.social.slice(0, 6).map(s => ({
+      platform: String(s.platform || '').slice(0, 30),
+      handle: String(s.handle || '').slice(0, 60) || undefined,
+      followers: Number(s.followers) || 0,
+    })) : [];
 
-    if (!nombre || !email || !whatsapp) {
-      return j({ error: 'nombre, email y whatsapp son requeridos' }, 400);
-    }
-    if (!isValidEmail(email)) {
-      return j({ error: 'Email inválido' }, 400);
-    }
+    // Validations
+    if (!nombre || !email || !whatsapp) return j({ error: 'Nombre, email y WhatsApp son requeridos' }, 400);
+    if (!isValidEmail(email)) return j({ error: 'Email inválido' }, 400);
+    if (website && !isValidUrl(website)) return j({ error: 'URL de website inválida' }, 400);
+    if (!motivo || motivo.length < 30) return j({ error: 'Cuéntanos por qué te interesa SACS (mínimo 30 caracteres)' }, 400);
     if (motivo && isLikelySpam(motivo)) {
-      // Don't reveal anti-spam logic; just pretend success
-      console.warn('[apply] likely spam from', ip, ':', motivo.slice(0, 80));
+      console.warn('[apply] spam-like motivo from', ip);
       return j({ ok: true });
     }
+    if (!acepta_terminos) return j({ error: 'Debes aceptar los términos del programa' }, 400);
+    if (!firma_base64 || !firma_base64.startsWith('data:image/')) {
+      return j({ error: 'Firma requerida — dibuja con tu dedo o mouse' }, 400);
+    }
 
-    // Check duplicate by email (avoid spam) — if there's already a draft/sent
-    // invitation for this email, return ok=true silently.
+    // Duplicate check (silent ok)
     const { data: existing } = await supabase
       .from('partner_invitations')
-      .select('id, estado')
+      .select('id, estado, numero')
       .eq('email', email)
       .limit(1)
       .maybeSingle();
     if (existing && ['draft', 'sent', 'viewed', 'submitted_for_review', 'accepted'].includes(existing.estado)) {
-      return j({ ok: true, already_exists: true });
+      return j({ ok: true, already_exists: true, numero: existing.numero });
     }
 
-    // Generate folio: PA-XXXX (max 4 digits, sequential per day)
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const numero = `PA-${today.slice(2)}-${Math.floor(Math.random() * 900 + 100)}`;
+    const numero = await nextFolio();
 
-    // Defaults para Embajador (50% / $500 / $300). Otros tipos usan defaults
-    // del PartnersTab admin, pero aquí preferimos mantener simples y dejar
-    // que el admin ajuste antes de enviar.
+    // Defaults por tipo (Embajador es el principal)
     const defaults: Record<string, any> = {
-      embajador:    { comision_pct: 50, costo_unico: 0, costo_mensual: 0, tabulador: { prueba_gratis: 250, demo_completada: 250, venta_directa_pct: 50, moneda: 'MXN' } },
+      embajador:    { comision_pct: 50, tabulador: { prueba_gratis: 250, demo_completada: 250, venta_directa_pct: 50, moneda: 'MXN' } },
       distribuidor: { comision_pct: 30, tabulador: { prueba_gratis: 0, demo_completada: 250, venta_directa_pct: 30, moneda: 'MXN' } },
       integrador:   { comision_pct: 25, tabulador: { prueba_gratis: 0, demo_completada: 0, venta_directa_pct: 25, moneda: 'MXN' } },
       reseller:     { comision_pct: 20, tabulador: { prueba_gratis: 0, demo_completada: 0, venta_directa_pct: 20, moneda: 'MXN' } },
@@ -115,14 +172,22 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     const def = defaults[tipo as string] || defaults.embajador;
 
     const meta = {
-      origen: 'apply-form',
+      origen: 'apply-form-v2',
       ciudad,
+      estadoMx,
+      website,
+      social,
+      audiencia_total,
+      experiencia_retail,
+      como_supo,
       motivo,
-      ip: clientAddress || null,
+      firma_base64,
+      signed_at: new Date().toISOString(),
       submitted_at: new Date().toISOString(),
+      ip,
+      user_agent: request.headers.get('user-agent') || null,
     };
 
-    // Vigencia: 30 días por default
     const vigencia = new Date();
     vigencia.setDate(vigencia.getDate() + 30);
 
@@ -136,14 +201,16 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
         whatsapp,
         empresa,
         comision_pct: def.comision_pct,
-        costo_unico: def.costo_unico ?? 0,
-        costo_mensual: def.costo_mensual ?? 0,
+        costo_unico: 0,
+        costo_mensual: 0,
         moneda: 'MXN',
         vigencia: vigencia.toISOString().slice(0, 10),
-        estado: 'draft',
+        estado: 'submitted_for_review',
         template: 'modern',
         tabulador: def.tabulador,
         notas: buildNotas('', meta),
+        aceptado_por: nombre,
+        aceptado_fecha: new Date().toISOString(),
       })
       .select()
       .single();
@@ -153,52 +220,58 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       return j({ error: error.message }, 500);
     }
 
-    // Notify ventas inbox
+    // Email a ventas inbox (revisión)
     try {
+      const programaLabels: Record<string, string> = {
+        embajador: 'Embajador SACS', distribuidor: 'Distribuidor', integrador: 'Integrador',
+        reseller: 'Reseller', consultor: 'Consultor',
+      };
+      const totalFollowers = social.reduce((s, h) => s + (h.followers || 0), 0);
       await notify({
         channel: 'email',
         to: getSalesInbox(),
         template: 'partner_application_admin',
         data: {
-          nombre,
-          email,
-          whatsapp,
+          nombre, email, whatsapp,
           empresa: empresa || '—',
-          ciudad: ciudad || '—',
-          tipo,
-          motivo: motivo || '—',
+          ciudad: [ciudad, estadoMx].filter(Boolean).join(', ') || '—',
+          tipo: programaLabels[tipo as string] || tipo,
+          motivo,
+          website: website || '—',
+          social_summary: social.length
+            ? social.filter(s => s.handle).map(s => `${s.platform}: ${s.handle} (${(s.followers || 0).toLocaleString('es-MX')} seguidores)`).join(' · ')
+            : '—',
+          followers_total: totalFollowers,
+          experiencia_retail: experiencia_retail || '—',
+          como_supo: como_supo || '—',
           adminUrl: `https://www.sacscloud.com/admin/crm?tab=partners`,
           numero,
         },
       });
-    } catch (e) {
-      console.warn('[apply] notify admin failed:', e);
-    }
+    } catch (e) { console.warn('[apply] notify admin failed:', e); }
 
     // Confirmación al aplicante
     try {
       await notify({
-        channel: 'email',
-        to: email,
+        channel: 'email', to: email,
         template: 'partner_application_user',
         data: { nombre, tipo, numero },
       });
-    } catch (e) {
-      console.warn('[apply] notify applicant failed:', e);
-    }
+    } catch (e) { console.warn('[apply] notify applicant failed:', e); }
 
     // Activity log
     try {
       await supabase.from('activities').insert({
         tipo: 'sistema',
-        titulo: `Nueva aplicación a partners: ${nombre} (${tipo})`,
-        metadata: { partner_invitation_id: invitation.id, partner_invitation_numero: numero, email, motivo },
+        titulo: `Nueva solicitud firmada: ${nombre} (${tipo}) — ${numero}`,
+        metadata: { partner_invitation_id: invitation.id, numero, email, audiencia_total },
         automatico: true,
       });
     } catch (e) { console.warn('[apply] activity insert failed:', e); }
 
     return j({ ok: true, numero });
   } catch (err: any) {
+    console.error('[apply] handler error:', err);
     return j({ error: err?.message || String(err) }, 500);
   }
 };
