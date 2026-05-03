@@ -787,12 +787,18 @@ const partnerLandingUrl = invitation.slug_landing
 </BaseLayout>
 
 <style is:global>
-  /* Hide site nav/footer on partner page for focused reading */
-  body:has(#partner-doc) > nav,
-  body:has(#partner-doc) > footer,
-  body:has(#partner-doc) .wa-bar,
-  body:has(#partner-doc) .final-cta { display: none !important; }
-  body:has(#partner-doc) main { padding: 0 !important; margin: 0 !important; }
+  /* Esta página es una experiencia enfocada para el prospecto:
+     ocultamos la navegación, footer y CTAs globales del sitio SACS.
+     Targeting directo (sin :has) para máximo soporte de browsers. */
+  header.nav,
+  header#nav,
+  body > header,
+  body > footer,
+  footer.footer,
+  .wa-bar,
+  .final-cta { display: none !important; }
+  main { padding: 0 !important; margin: 0 !important; }
+  body { padding: 0 !important; margin: 0 !important; }
 </style>
 
 <style>
