@@ -314,10 +314,12 @@ const useCases = [
                     <span class="rtn-topbar-back">‹</span>
                     <span class="rtn-topbar-title">Cambio · Ticket A-78443</span>
                   </div>
-                  <div class="rtn-topbar-meta">Andrea G. · Polanco · 28 abr 11:42</div>
+                  <div class="rtn-topbar-meta">Andrea G. · 28 abr</div>
                 </div>
-                <div class="rtn-grid">
-                  <div class="rtn-search-col">
+
+                <div class="rtn-stage">
+                  {/* Stage 1 — Lista de items */}
+                  <div class="rtn-screen rtn-screen--list">
                     <div class="rtn-mini-label">SELECCIONA EL ITEM A CAMBIAR</div>
                     <div class="rtn-items">
                       <div class="rtn-item rtn-item--selected">
@@ -364,124 +366,69 @@ const useCases = [
                           <span class="rtn-item-price rtn-item-price--off">$1,490</span>
                         </div>
                       </div>
-                      <div class="rtn-item">
-                        <div class="rtn-thumb"><img src="/images/reco-blusa.webp" alt="Camiseta crop" loading="lazy" width="80" height="80" /></div>
-                        <div class="rtn-item-body">
-                          <div class="rtn-item-name">Camiseta crop algodón</div>
-                          <div class="rtn-item-meta">Talla S · SKU 78444</div>
-                        </div>
-                        <div class="rtn-item-right">
-                          <span class="rtn-check rtn-check--off"></span>
-                          <span class="rtn-item-price rtn-item-price--off">$590</span>
-                        </div>
-                      </div>
-                      <div class="rtn-item">
-                        <div class="rtn-thumb"><img src="/images/reco-falda.webp" alt="Vestido envolvente" loading="lazy" width="80" height="80" /></div>
-                        <div class="rtn-item-body">
-                          <div class="rtn-item-name">Vestido envolvente</div>
-                          <div class="rtn-item-meta">Talla M · SKU 78445</div>
-                        </div>
-                        <div class="rtn-item-right">
-                          <span class="rtn-check rtn-check--off"></span>
-                          <span class="rtn-item-price rtn-item-price--off">$1,820</span>
-                        </div>
-                      </div>
-                      <div class="rtn-item">
-                        <div class="rtn-thumb"><img src="/images/reco-blazer.webp" alt="Cárdigan punto" loading="lazy" width="80" height="80" /></div>
-                        <div class="rtn-item-body">
-                          <div class="rtn-item-name">Cárdigan punto trenzado</div>
-                          <div class="rtn-item-meta">Talla L · SKU 78446</div>
-                        </div>
-                        <div class="rtn-item-right">
-                          <span class="rtn-check rtn-check--off"></span>
-                          <span class="rtn-item-price rtn-item-price--off">$1,180</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="rtn-mini-label rtn-mini-label--mt">CAMBIO POR</div>
-                    <div class="rtn-swap">
-                      <div class="rtn-swap-item">
-                        <div class="rtn-thumb rtn-thumb--sm"><img src="/images/reco-blusa.webp" alt="Blusa satinada talla L" loading="lazy" width="60" height="60" /></div>
-                        <div class="rtn-swap-body">
-                          <div class="rtn-swap-name">Blusa satinada · L</div>
-                          <div class="rtn-swap-meta">+$0 · misma referencia</div>
-                        </div>
-                      </div>
-                      <div class="rtn-swap-arrow">→</div>
-                      <div class="rtn-swap-item rtn-swap-item--new">
-                        <div class="rtn-thumb rtn-thumb--sm"><img src="/images/reco-blazer.webp" alt="Blazer oversize negro" loading="lazy" width="60" height="60" /></div>
-                        <div class="rtn-swap-body">
-                          <div class="rtn-swap-name">Blazer oversize · M</div>
-                          <div class="rtn-swap-meta">+$370 · color negro</div>
-                        </div>
-                      </div>
                     </div>
                   </div>
 
-                  <div class="rtn-action-col">
-                    <div class="rtn-mini-label">TIPO DE OPERACIÓN</div>
-                    <div class="rtn-options">
-                      <div class="rtn-opt">
-                        <span class="rtn-opt-radio rtn-opt-radio--off"></span>
-                        <span class="rtn-opt-name">Reembolso al método original</span>
+                  {/* Stage 2 — Swap detail (showing piece being changed) */}
+                  <div class="rtn-screen rtn-screen--swap">
+                    <div class="rtn-mini-label">CAMBIANDO POR</div>
+                    <div class="rtn-swap-vert">
+                      <div class="rtn-swap-card rtn-swap-card--old">
+                        <div class="rtn-swap-card-tag">DEVUELVE</div>
+                        <div class="rtn-swap-card-body">
+                          <div class="rtn-swap-card-thumb"><img src="/images/reco-blusa.webp" alt="Blusa satinada M" loading="lazy" width="80" height="80" /></div>
+                          <div class="rtn-swap-card-info">
+                            <div class="rtn-swap-card-name">Blusa satinada</div>
+                            <div class="rtn-swap-card-meta">Talla M · $1,290</div>
+                          </div>
+                        </div>
                       </div>
-                      <div class="rtn-opt rtn-opt--active">
-                        <span class="rtn-opt-radio"></span>
-                        <span class="rtn-opt-name">Cambio · talla / artículo</span>
-                      </div>
-                      <div class="rtn-opt">
-                        <span class="rtn-opt-radio rtn-opt-radio--off"></span>
-                        <span class="rtn-opt-name">Abono al monedero</span>
-                      </div>
-                    </div>
-
-                    <div class="rtn-summary">
-                      <div class="rtn-summary-row">
-                        <span>Devuelto</span><span class="rtn-summary-strike">−$1,290</span>
-                      </div>
-                      <div class="rtn-summary-row">
-                        <span>Nuevo cobro</span><span>+$1,660</span>
-                      </div>
-                      <div class="rtn-summary-row rtn-summary-row--total">
-                        <span>Diferencia</span><span class="rtn-summary-pos">+$370</span>
+                      <div class="rtn-swap-arrow-v" aria-hidden="true">↓</div>
+                      <div class="rtn-swap-card rtn-swap-card--new">
+                        <div class="rtn-swap-card-tag rtn-swap-card-tag--new">RECIBE</div>
+                        <div class="rtn-swap-card-body">
+                          <div class="rtn-swap-card-thumb"><img src="/images/reco-blazer.webp" alt="Blazer oversize" loading="lazy" width="80" height="80" /></div>
+                          <div class="rtn-swap-card-info">
+                            <div class="rtn-swap-card-name">Blazer oversize</div>
+                            <div class="rtn-swap-card-meta">Talla M · $1,660</div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-
-                    <div class="rtn-method">
-                      <div class="rtn-mini-label">COBRO DIFERENCIA</div>
-                      <div class="rtn-method-row">
-                        <span class="rtn-method-pill rtn-method-pill--active">Tarjeta · Tap</span>
-                        <span class="rtn-method-pill">Efectivo</span>
-                        <span class="rtn-method-pill">Monedero</span>
+                    <div class="rtn-swap-summary">
+                      <div class="rtn-swap-summary-row">
+                        <span>Diferencia a cobrar</span>
+                        <span class="rtn-swap-summary-pos">+$370</span>
+                      </div>
+                      <div class="rtn-swap-summary-method">
+                        Tarjeta · Tap-to-Pay
                       </div>
                     </div>
-
-                    <button class="rtn-cta" type="button">
-                      <span class="rtn-cta-label">Confirmar y enviar ticket</span>
-                      <span class="rtn-cta-arrow">→</span>
+                    <button class="rtn-confirm-btn" type="button" tabindex="-1" aria-hidden="true">
+                      Confirmar cambio
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
                     </button>
-                    <div class="rtn-foot">
-                      <span class="rtn-foot-ic">⚿</span>
-                      <span>Autorizado por · Gerente · Cl. Romero</span>
-                    </div>
                   </div>
-                </div>
 
-                {/* Success modal — animated overlay */}
-                <div class="rtn-modal" aria-hidden="true">
-                  <div class="rtn-modal-card">
-                    <div class="rtn-modal-check">
-                      <svg viewBox="0 0 48 48" width="48" height="48" fill="none">
-                        <circle cx="24" cy="24" r="22" stroke="#2AB5A0" stroke-width="2"/>
-                        <path class="rtn-modal-check-path" d="M14 24l7 7 14-14" stroke="#2AB5A0" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                  {/* Stage 3 — Success */}
+                  <div class="rtn-screen rtn-screen--ok">
+                    <div class="rtn-ok-check" aria-hidden="true">
+                      <svg viewBox="0 0 64 64" width="56" height="56" fill="none">
+                        <circle cx="32" cy="32" r="28" fill="rgba(42,181,160,0.10)"/>
+                        <circle cx="32" cy="32" r="28" stroke="#2AB5A0" stroke-width="2"/>
+                        <path d="M20 32l8 8 16-16" stroke="#2AB5A0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
                       </svg>
                     </div>
-                    <div class="rtn-modal-title">Cambio realizado</div>
-                    <div class="rtn-modal-desc">Ticket A-78443-R enviado por WhatsApp a Andrea</div>
-                    <div class="rtn-modal-rows">
-                      <div class="rtn-modal-row"><span>Diferencia cobrada</span><span class="rtn-modal-pos">+$370</span></div>
-                      <div class="rtn-modal-row"><span>Stock actualizado</span><span class="rtn-modal-pos">1 SKU</span></div>
-                      <div class="rtn-modal-row"><span>Acuse · ID</span><span>A78443-R-2026</span></div>
+                    <div class="rtn-ok-title">Cambio realizado</div>
+                    <div class="rtn-ok-sub">Ticket A-78443-R · Andrea G.</div>
+                    <div class="rtn-ok-rows">
+                      <div class="rtn-ok-row"><span>Diferencia cobrada</span><span class="rtn-ok-pos">+$370</span></div>
+                      <div class="rtn-ok-row"><span>Stock actualizado</span><span class="rtn-ok-pos">1 SKU</span></div>
+                      <div class="rtn-ok-row"><span>Acuse · ID</span><span class="rtn-ok-mono">A78443-R</span></div>
+                    </div>
+                    <div class="rtn-ok-banner">
+                      <span class="rtn-ok-banner-dot"></span>
+                      <strong>Ticket enviado</strong> por WhatsApp a Andrea
                     </div>
                   </div>
                 </div>
@@ -9124,6 +9071,220 @@ const useCases = [
     color: rgba(0,0,0,0.5);
   }
 
+  /* ── New 3-stage flow (.rtn-stage with .rtn-screen children) ── */
+  .rtn-stage {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+  }
+  .rtn-screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+  }
+  .rtn-screen--list { animation: rtn-screen-list 14s ease-in-out infinite; }
+  .rtn-screen--swap { animation: rtn-screen-swap 14s ease-in-out infinite; }
+  .rtn-screen--ok   { animation: rtn-screen-ok   14s ease-in-out infinite; }
+  @keyframes rtn-screen-list {
+    0%, 28%   { opacity: 1; transform: translateY(0); }
+    32%, 100% { opacity: 0; transform: translateY(-6px); }
+  }
+  @keyframes rtn-screen-swap {
+    0%, 32%   { opacity: 0; transform: translateY(8px); }
+    36%, 62%  { opacity: 1; transform: translateY(0); }
+    66%, 100% { opacity: 0; transform: translateY(-6px); }
+  }
+  @keyframes rtn-screen-ok {
+    0%, 66%   { opacity: 0; transform: translateY(8px); }
+    70%, 98%  { opacity: 1; transform: translateY(0); }
+    100%      { opacity: 0; transform: translateY(-6px); }
+  }
+
+  /* Stage 2 — Swap detail */
+  .rtn-swap-vert {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .rtn-swap-card {
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 9px;
+    padding: 8px 10px;
+    position: relative;
+  }
+  .rtn-swap-card--old {
+    border-color: rgba(198,40,40,0.18);
+    background: rgba(198,40,40,0.03);
+  }
+  .rtn-swap-card--new {
+    border-color: rgba(42,181,160,0.30);
+    background: rgba(42,181,160,0.05);
+    box-shadow: 0 4px 14px -4px rgba(42,181,160,0.18);
+  }
+  .rtn-swap-card-tag {
+    font-size: 6.5px;
+    font-weight: 800;
+    letter-spacing: 0.10em;
+    color: #c62828;
+    margin-bottom: 4px;
+  }
+  .rtn-swap-card-tag--new { color: #1A8F7A; }
+  .rtn-swap-card-body {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .rtn-swap-card-thumb {
+    width: 38px;
+    height: 38px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #F5F5F7;
+    flex-shrink: 0;
+  }
+  .rtn-swap-card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .rtn-swap-card-info { flex: 1; min-width: 0; }
+  .rtn-swap-card-name {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    color: #1A1A1A;
+    letter-spacing: -0.01em;
+  }
+  .rtn-swap-card-meta {
+    font-size: 8px;
+    color: rgba(0,0,0,0.55);
+    margin-top: 2px;
+  }
+  .rtn-swap-arrow-v {
+    font-size: 16px;
+    color: rgba(0,0,0,0.35);
+    text-align: center;
+    line-height: 1;
+    font-weight: 700;
+  }
+  .rtn-swap-summary {
+    margin-top: 10px;
+    padding: 8px 10px;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 8px;
+  }
+  .rtn-swap-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 9px;
+    color: rgba(0,0,0,0.65);
+    font-weight: 600;
+  }
+  .rtn-swap-summary-pos {
+    color: #1A8F7A;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 13px;
+  }
+  .rtn-swap-summary-method {
+    font-size: 7.5px;
+    color: rgba(0,0,0,0.5);
+    margin-top: 3px;
+    font-weight: 600;
+  }
+  .rtn-confirm-btn {
+    margin-top: auto;
+    padding: 11px;
+    background: #2AB5A0;
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 800;
+    cursor: default;
+    box-shadow: 0 6px 18px -6px rgba(42,181,160,0.5);
+    animation: rtn-confirm-pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes rtn-confirm-pulse {
+    0%, 100% { box-shadow: 0 6px 16px -6px rgba(42,181,160,0.45); transform: scale(1); }
+    50%      { box-shadow: 0 6px 22px -4px rgba(42,181,160,0.65); transform: scale(1.015); }
+  }
+
+  /* Stage 3 — Success */
+  .rtn-screen--ok {
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+    padding: 16px 12px;
+  }
+  .rtn-ok-check { margin-bottom: 8px; }
+  .rtn-ok-title {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 800;
+    color: #1A1A1A;
+    letter-spacing: -0.01em;
+    margin-bottom: 3px;
+  }
+  .rtn-ok-sub {
+    font-size: 9px;
+    color: rgba(0,0,0,0.55);
+    margin-bottom: 12px;
+  }
+  .rtn-ok-rows {
+    width: 100%;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 9px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+  }
+  .rtn-ok-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 9px;
+    color: rgba(0,0,0,0.55);
+    font-weight: 600;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+  }
+  .rtn-ok-row:last-child { border-bottom: none; }
+  .rtn-ok-pos { color: #1A8F7A; font-family: var(--font-display); font-weight: 800; font-size: 10px; }
+  .rtn-ok-mono { font-family: ui-monospace, "SF Mono", monospace; color: #1A1A1A; font-weight: 700; font-size: 8.5px; }
+  .rtn-ok-banner {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, rgba(42,181,160,0.10), rgba(75,123,229,0.05));
+    border: 1px solid rgba(42,181,160,0.28);
+    border-radius: 8px;
+    font-size: 9px;
+    color: #1A1A1A;
+  }
+  .rtn-ok-banner-dot {
+    width: 8px; height: 8px;
+    background: #2AB5A0;
+    border-radius: 50%;
+    flex-shrink: 0;
+    animation: rtn-pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes rtn-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(42,181,160,0.55); }
+    50%      { box-shadow: 0 0 0 5px rgba(42,181,160,0); }
+  }
+
+  /* Legacy classes (rtn-grid, rtn-search-col, rtn-action-col, rtn-modal) — ya no se renderizan */
   .rtn-grid {
     display: grid;
     grid-template-columns: 1.15fr 1fr;
@@ -9511,18 +9672,24 @@ const useCases = [
   }
 
   /* ── #12 Cambios y devoluciones (.rtn-frame) — mobile (≤1023px) ──
-     El grid 1.15fr/1fr no funciona en móvil: la izquierda (ticket original)
-     y la derecha (productos a cambiar) quedan ambas pequeñas. Stack vertical. */
+     Card más alta + 3-stage flow (Lista → Cambio → Éxito) que ya implementamos
+     a nivel HTML. Aspect 9/14 portrait para que cada stage entre completo. */
   @media (max-width: 1023px) {
     .rtn-frame {
-      aspect-ratio: 4 / 5;
+      aspect-ratio: 9 / 14;
       padding: 14px 14px;
-    }
-    .rtn-grid {
-      grid-template-columns: 1fr;
-      grid-template-rows: 1fr 1fr;
       gap: 8px;
     }
+    .rtn-topbar { padding: 0 0 6px; }
+    .rtn-topbar-title { font-size: 10.5px; }
+    .rtn-topbar-meta { font-size: 7.5px; }
+    /* Stage 1 — items list compacto */
+    .rtn-mini-label { font-size: 6.5px; }
+    .rtn-item { padding: 5px 8px 5px 5px; gap: 7px; }
+    .rtn-thumb { width: 32px; height: 32px; }
+    .rtn-item-name { font-size: 9px; }
+    .rtn-item-meta { font-size: 7px; }
+    .rtn-item-price { font-size: 9.5px; }
   }
 
   /* ── Cobro móvil — line-busting slide (3 phone layers + emerging ticket) ── */
