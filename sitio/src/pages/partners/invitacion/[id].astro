@@ -45,18 +45,36 @@ if (isExpired && invitation.estado === 'sent') {
   invitation.estado = 'expired';
 }
 
-// Mark as viewed (first opening, not by admin)
-if (invitation.estado === 'draft' || invitation.estado === 'sent') {
-  if (!isAdminMode && invitation.estado === 'sent') {
-    // Track view via activity (non-blocking)
+// View tracking: incrementa view_count en cada apertura (no admin), dedup por
+// cookie de sesión de 30 min para no inflar con refrescos. Captura primera
+// apertura, última apertura y total de aperturas para el data table del CRM.
+if (!isAdminMode) {
+  const VIEW_COOKIE_KEY = `sacs_inv_seen_${id}`;
+  const recentlySeen = Astro.cookies.get(VIEW_COOKIE_KEY)?.value === '1';
+  if (!recentlySeen) {
     try {
-      await supabase.from('activities').insert({
-        tipo: 'sistema',
-        titulo: `Invitación de partner vista por prospecto`,
-        metadata: { partner_invitation_id: id, partner_invitation_numero: invitation.numero },
-        automatico: true,
-      });
+      const now = new Date().toISOString();
+      const isFirst = !invitation.first_viewed_at;
+      await supabase
+        .from('partner_invitations')
+        .update({
+          view_count: (Number(invitation.view_count) || 0) + 1,
+          last_viewed_at: now,
+          ...(isFirst ? { first_viewed_at: now } : {}),
+        })
+        .eq('id', id);
+      // También insertamos activity solo en la PRIMERA apertura para no spammear
+      if (isFirst && invitation.estado === 'sent') {
+        await supabase.from('activities').insert({
+          tipo: 'sistema',
+          titulo: `Invitación de partner abierta por primera vez`,
+          metadata: { partner_invitation_id: id, partner_invitation_numero: invitation.numero },
+          automatico: true,
+        });
+      }
     } catch {}
+    // Cookie 30 min — dedup contra refrescos pero registra revisitas reales
+    Astro.cookies.set(VIEW_COOKIE_KEY, '1', { path: '/', maxAge: 60 * 30, sameSite: 'lax' });
   }
 }
 

@@ -26,6 +26,9 @@ interface Invitation {
   created_at?: string;
   team_member_id?: string;
   fideliza_account_at?: string;
+  view_count?: number;
+  first_viewed_at?: string;
+  last_viewed_at?: string;
 }
 
 const TIPO_LABELS: Record<string, { label: string; tagline: string; color: string }> = {
@@ -52,6 +55,25 @@ const fmtDate = (d?: string) => {
   const date = new Date(d.length === 10 ? d + 'T12:00:00' : d);
   if (isNaN(date.getTime())) return '';
   return date.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '');
+};
+const fmtRelative = (d?: string | null) => {
+  if (!d) return '';
+  const date = new Date(d);
+  if (isNaN(date.getTime())) return '';
+  const diff = Date.now() - date.getTime();
+  const sec = Math.round(diff / 1000);
+  if (sec < 60) return 'hace segundos';
+  const min = Math.round(sec / 60);
+  if (min < 60) return `hace ${min} min`;
+  const hr = Math.round(min / 60);
+  if (hr < 24) return `hace ${hr} h`;
+  const days = Math.round(hr / 24);
+  if (days === 1) return 'ayer';
+  if (days < 30) return `hace ${days} días`;
+  const months = Math.round(days / 30);
+  if (months < 12) return `hace ${months} ${months === 1 ? 'mes' : 'meses'}`;
+  const years = Math.round(months / 12);
+  return `hace ${years} ${years === 1 ? 'año' : 'años'}`;
 };
 
 export default function PartnersTab() {
@@ -246,6 +268,8 @@ export default function PartnersTab() {
                 <th style={thStyle}>Prospecto</th>
                 <th style={thStyle}>Tipo</th>
                 <th style={thStyle}>Comisión</th>
+                <th style={thStyle} title="Veces que el prospecto abrió su invitación">Vistas</th>
+                <th style={thStyle} title="Última vez que abrió la invitación">Última apertura</th>
                 <th style={thStyle}>Vigencia</th>
                 <th style={thStyle}>Estado</th>
                 <th style={{ ...thStyle, textAlign: 'right' as const }}>Acciones</th>
@@ -255,6 +279,13 @@ export default function PartnersTab() {
               {filtered.map(it => {
                 const tipoInfo = TIPO_LABELS[it.tipo] || { label: it.tipo, color: '#999', tagline: '' };
                 const estadoInfo = ESTADO_LABELS[it.estado] || ESTADO_LABELS.draft;
+                const views = Number(it.view_count || 0);
+                const lastViewed = it.last_viewed_at;
+                // Heat color based on engagement
+                const viewsColor = views === 0 ? '#bbb'
+                  : views <= 2 ? '#888'
+                  : views <= 5 ? '#1A8F7A'
+                  : '#4B7BE5';
                 return (
                   <tr key={it.id} style={{ borderBottom: '1px solid #f0f0f0', transition: 'background 0.15s' }}
                     onMouseEnter={e => (e.currentTarget.style.background = '#fafafa')}
@@ -280,6 +311,20 @@ export default function PartnersTab() {
                     </td>
                     <td style={tdStyle}>
                       <span style={{ fontWeight: 700, color: '#1a1a1a' }}>{Number(it.comision_pct ?? 0)}%</span>
+                    </td>
+                    <td style={tdStyle}>
+                      <span style={{ fontWeight: 700, color: viewsColor, fontSize: '0.9375rem' }}>{views}</span>
+                      {views >= 5 && <span style={{ marginLeft: 6, fontSize: '0.625rem', color: '#4B7BE5', fontWeight: 700, letterSpacing: '0.06em' }}>HOT</span>}
+                    </td>
+                    <td style={tdStyle}>
+                      {lastViewed ? (
+                        <>
+                          <div style={{ fontSize: '0.75rem', color: '#1a1a1a', fontWeight: 500 }}>{fmtRelative(lastViewed)}</div>
+                          <div style={{ fontSize: '0.625rem', color: '#999', marginTop: 1 }}>{fmtDate(lastViewed)}</div>
+                        </>
+                      ) : (
+                        <span style={{ fontSize: '0.75rem', color: '#bbb', fontStyle: 'italic' }}>nunca</span>
+                      )}
                     </td>
                     <td style={tdStyle}>{fmtDate(it.vigencia)}</td>
                     <td style={tdStyle}>
