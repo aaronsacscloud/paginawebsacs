@@ -16,8 +16,14 @@ const SECTOR_EMOJIS: Record<string, string> = {
   phonecase: '📲',
   minisuper: '🛒',
   wine: '🍷',
+  pharmacy: '💊',
+  pet: '🐶',
+  beauty: '💄',
+  hardware: '🔧',
+  toys: '🧸',
+  florist: '💐',
 };
-const PRIORITY_SECTORS = businessSectors.slice(0, 10);
+const PRIORITY_SECTORS = businessSectors.slice(0, 16);
 
 export const prerender = false;
 
@@ -400,7 +406,7 @@ const partnerLandingUrl = invitation.slug_landing
         <!-- ── 4. Verticales en orden de prioridad ── -->
         <div class="p-bw-section p-bw-section--alt">
           <div class="p-bw-eyebrow">Quién usa SACS</div>
-          <h2 class="p-bw-title">10 verticales con módulos hechos a la medida.</h2>
+          <h2 class="p-bw-title">16 verticales con módulos hechos a la medida.</h2>
           <p class="p-bw-lead">
             No es un POS genérico. Cada vertical tiene los módulos exactos que
             necesita — variantes, certificados, reabastos, permisos. Esto te da
