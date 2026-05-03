@@ -148,7 +148,12 @@ export const POST: APIRoute = async ({ request }) => {
     utm_medium,
     utm_campaign,
     recurrence,
+    ref_partner_id,
   } = body;
+
+  // Resolve partner attribution: prefer body field, fallback a cookie/?ref
+  const { getReferrerFromBody } = await import('../../../lib/attribution');
+  const referrerPartnerId = await getReferrerFromBody(request, ref_partner_id);
 
   if (!event_type_slug || !fecha || !hora_inicio || !nombre || !email) {
     return new Response(
@@ -372,6 +377,7 @@ export const POST: APIRoute = async ({ request }) => {
       utm_source: utm_source || null,
       utm_medium: utm_medium || null,
       utm_campaign: utm_campaign || null,
+      referrer_partner_id: referrerPartnerId,
     })
     .select()
     .single();
@@ -778,6 +784,7 @@ export const POST: APIRoute = async ({ request }) => {
           utm_source: utm_source || null,
           utm_medium: utm_medium || null,
           utm_campaign: utm_campaign || null,
+          referrer_partner_id: referrerPartnerId,
         })
         .select('id, fecha, hora_inicio')
         .single();

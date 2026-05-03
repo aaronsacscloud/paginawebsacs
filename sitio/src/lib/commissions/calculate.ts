@@ -1,22 +1,27 @@
-// Commission calculation — triggered when a deal closes as 'cerrada_ganada'.
-// Creates a pending partner_commissions row. Idempotent (1 commission per deal).
+// Commission calculation — 3 entry points:
+//   1. createCommissionForDeal       → venta_directa, cuando un deal se cierra ganado
+//   2. createPruebaGratisBonus       → $500 pending cuando un lead se registra por link de partner
+//   3. createDemoCompletadaBonus     → $300 earned cuando un demo se marca como realizada
+//
+// Todos idempotentes (UNIQUE indexes en deal_id, contact_id+tipo, booking_id).
 
 import { supabase } from '../supabase';
 
 export interface CreateCommissionArgs {
   deal_id: string;
-  partner_id: string;              // team_members.id — usually deal.owner_id
-  rate_pct?: number;               // override; else uses team_members.default_commission_pct
-  deal_value?: number;             // override; else uses deals.valor_total
+  partner_id: string;              // team_members.id
+  rate_pct?: number;
+  deal_value?: number;
   notes?: string;
 }
 
 export async function createCommissionForDeal(args: CreateCommissionArgs): Promise<{ ok: boolean; commission_id?: string; skipped?: boolean; reason?: string }> {
-  // Idempotency: check if commission already exists
+  // Idempotency: check if commission already exists for this deal
   const { data: existing } = await supabase
     .from('partner_commissions')
     .select('id, status')
     .eq('deal_id', args.deal_id)
+    .eq('tipo', 'venta_directa')
     .maybeSingle();
   if (existing) return { ok: true, commission_id: existing.id, skipped: true, reason: 'already_exists' };
 
@@ -49,11 +54,103 @@ export async function createCommissionForDeal(args: CreateCommissionArgs): Promi
     .insert({
       deal_id: args.deal_id,
       partner_id: args.partner_id,
+      tipo: 'venta_directa',
       rate_pct,
       deal_value,
       commission_amount,
       status: 'pending',
       notes: args.notes || null,
+    })
+    .select('id')
+    .single();
+
+  if (error) return { ok: false, reason: error.message };
+  return { ok: true, commission_id: data!.id };
+}
+
+// ─── Bono por prueba gratis activada ──────────────────────────────
+// $500 pending cuando un lead nuevo se registra a la prueba gratis vía
+// link de partner. Pasa a 'earned' cuando admin verifica que el lead es real.
+//
+// Idempotente: UNIQUE (contact_id, tipo='prueba_gratis').
+export interface PruebaGratisArgs {
+  partnerId: string;
+  contactId: string;
+  amount?: number;       // default 500
+}
+
+export async function createPruebaGratisBonus(args: PruebaGratisArgs): Promise<{ ok: boolean; commission_id?: string; skipped?: boolean; reason?: string }> {
+  const amount = args.amount ?? 500;
+
+  // Idempotency: check existing
+  const { data: existing } = await supabase
+    .from('partner_commissions')
+    .select('id, status')
+    .eq('contact_id', args.contactId)
+    .eq('tipo', 'prueba_gratis')
+    .maybeSingle();
+  if (existing) return { ok: true, commission_id: existing.id, skipped: true, reason: 'already_exists' };
+
+  const { data, error } = await supabase
+    .from('partner_commissions')
+    .insert({
+      partner_id: args.partnerId,
+      contact_id: args.contactId,
+      tipo: 'prueba_gratis',
+      rate_pct: 0,                            // no es porcentual, es bono fijo
+      deal_value: 0,
+      commission_amount: amount,
+      status: 'pending',
+      nota: 'Prueba gratis registrada — pendiente verificación admin',
+    })
+    .select('id')
+    .single();
+
+  if (error) return { ok: false, reason: error.message };
+  return { ok: true, commission_id: data!.id };
+}
+
+// ─── Bono por demo completada ─────────────────────────────────────
+// $300 earned cuando un booking se marca estado='realizada' Y el booking
+// vino atribuido a un partner. Status='earned' directo (no requiere
+// verificación adicional — el demo ya pasó).
+//
+// Idempotente: UNIQUE (booking_id) condicional.
+export interface DemoCompletadaArgs {
+  partnerId: string;
+  bookingId: string;
+  amount?: number;       // default 300
+  prospectName?: string;
+  fechaDemo?: string;
+}
+
+export async function createDemoCompletadaBonus(args: DemoCompletadaArgs): Promise<{ ok: boolean; commission_id?: string; skipped?: boolean; reason?: string }> {
+  const amount = args.amount ?? 300;
+
+  // Idempotency: check existing
+  const { data: existing } = await supabase
+    .from('partner_commissions')
+    .select('id, status')
+    .eq('booking_id', args.bookingId)
+    .maybeSingle();
+  if (existing) return { ok: true, commission_id: existing.id, skipped: true, reason: 'already_exists' };
+
+  const notaParts: string[] = ['Demo completada'];
+  if (args.fechaDemo) notaParts.push(`el ${args.fechaDemo}`);
+  if (args.prospectName) notaParts.push(`con ${args.prospectName}`);
+
+  const { data, error } = await supabase
+    .from('partner_commissions')
+    .insert({
+      partner_id: args.partnerId,
+      booking_id: args.bookingId,
+      tipo: 'demo_completada',
+      rate_pct: 0,
+      deal_value: 0,
+      commission_amount: amount,
+      status: 'earned',
+      earned_at: new Date().toISOString(),
+      nota: notaParts.join(' '),
     })
     .select('id')
     .single();

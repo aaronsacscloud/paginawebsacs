@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 import { google } from 'googleapis';
 import { supabase } from '../../lib/supabase';
+import { getReferrerFromRequest } from '../../lib/attribution';
+import { createPruebaGratisBonus } from '../../lib/commissions/calculate';
 
 export const prerender = false;
 
@@ -133,27 +135,36 @@ export const POST: APIRoute = async ({ request }) => {
       const score = parseInt(data.score) || 0;
       const lifecycle_stage = score >= 40 ? 'lead_calificado' : 'lead';
 
+      // Resolve partner attribution (cookie sacs_ref or ?ref query)
+      const referrerPartnerId = await getReferrerFromRequest(request);
+
       // Check if contact already exists (by email)
       const email = data.email || `lead-${Date.now()}@noemail.com`;
       const { data: existingContact } = await supabase
         .from('contacts')
-        .select('id')
+        .select('id, referrer_partner_id')
         .eq('email', email)
         .limit(1)
         .single();
 
       let contactId: string | null = null;
+      let isNewContact = false;
       if (existingContact) {
         // Update existing
         contactId = existingContact.id;
-        await supabase.from('contacts').update({
+        const updates: Record<string, any> = {
           lead_score: score,
           total_time_on_site: parseInt(data.totalTime) || 0,
           pages_visited: data.pagesVisited || null,
           page_count: parseInt(data.pageCount) || 0,
           lifecycle_stage,
           plan_interes: data.plan || null,
-        }).eq('id', contactId);
+        };
+        // Solo settear partner_id si no existe ya (no sobreescribir atribución previa)
+        if (referrerPartnerId && !existingContact.referrer_partner_id) {
+          updates.referrer_partner_id = referrerPartnerId;
+        }
+        await supabase.from('contacts').update(updates).eq('id', contactId);
       } else {
         // Create new
         const { data: newContact } = await supabase
@@ -164,7 +175,7 @@ export const POST: APIRoute = async ({ request }) => {
             whatsapp: data.whatsapp || null,
             tipo: 'lead',
             lifecycle_stage,
-            fuente: 'website-form',
+            fuente: referrerPartnerId ? 'partner-link' : 'website-form',
             lead_score: score,
             total_time_on_site: parseInt(data.totalTime) || 0,
             pages_visited: data.pagesVisited || null,
@@ -175,10 +186,28 @@ export const POST: APIRoute = async ({ request }) => {
             giro: data.giro || null,
             sucursales_interes: parseInt(data.sucursales) || null,
             stripe_customer_id: result.id || null,
+            referrer_partner_id: referrerPartnerId,
           })
           .select('id')
           .single();
-        if (newContact) contactId = newContact.id;
+        if (newContact) {
+          contactId = newContact.id;
+          isNewContact = true;
+        }
+      }
+
+      // Si vino por partner link y es lead nuevo → generar bono pendiente $500
+      // (status=pending, admin verifica y marca como earned)
+      if (isNewContact && referrerPartnerId && contactId) {
+        try {
+          await createPruebaGratisBonus({
+            partnerId: referrerPartnerId,
+            contactId,
+            amount: 500,
+          });
+        } catch (e) {
+          console.warn('[save-lead] createPruebaGratisBonus failed:', e);
+        }
       }
 
       // Log activity

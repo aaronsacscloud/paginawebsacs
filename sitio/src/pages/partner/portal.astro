@@ -1,0 +1,26 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getSessionFromRequest } from '../../lib/auth/session';
+import PortalShell from '../../components/partner-portal/PortalShell.tsx';
+
+export const prerender = false;
+
+const user = await getSessionFromRequest(Astro.request);
+if (!user) {
+  return Astro.redirect('/partner/login');
+}
+if (user.role !== 'partner' && user.role !== 'founder') {
+  return Astro.redirect('/');
+}
+---
+<BaseLayout
+  title={`Portal · ${user.nombre || 'Partner'} — SACS`}
+  description="Tu panel de partner SACS: comisiones, pagos, prospectos y métricas en tiempo real."
+  noindex={true}
+  bareLayout={true}
+>
+  <PortalShell
+    client:only="react"
+    initialUser={{ id: user.id, nombre: user.nombre || '', email: user.email || '' }}
+  />
+</BaseLayout>

@@ -13,6 +13,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { notify } from '../../../lib/notify';
+import { createPasswordResetToken } from '../../../lib/auth/session';
 
 export const prerender = false;
 
@@ -134,8 +135,8 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    // Email al partner — bienvenida + credenciales
-    if (partnerEmail) {
+    // Email al partner — bienvenida + link para crear contraseña
+    if (partnerEmail && team_member_id) {
       const tipoLabels: Record<string, string> = {
         embajador: 'Embajador SACS',
         distribuidor: 'Distribuidor Autorizado',
@@ -148,6 +149,15 @@ export const POST: APIRoute = async ({ request }) => {
         ? `https://www.sacscloud.com/p/${invitation.slug_landing}`
         : `https://www.sacscloud.com/p/${(invitation.numero || '').toLowerCase()}`;
 
+      // Token para que cree su contraseña inicial (válido 14 días)
+      let setPasswordUrl = 'https://www.sacscloud.com/partner/login';
+      try {
+        const { token } = await createPasswordResetToken(team_member_id, 'initial');
+        setPasswordUrl = `https://www.sacscloud.com/partner/reset-password?token=${encodeURIComponent(token)}&mode=initial`;
+      } catch (e) {
+        console.warn('[approve-invitation] reset token failed:', e);
+      }
+
       try {
         await notify({
           channel: 'email',
@@ -158,7 +168,8 @@ export const POST: APIRoute = async ({ request }) => {
             programa,
             comision_pct: invitation.comision_pct,
             partnerLandingUrl,
-            loginUrl: 'https://www.sacscloud.com/admin',
+            setPasswordUrl,
+            loginUrl: 'https://www.sacscloud.com/partner/login',
             nota,
           },
         });

@@ -194,18 +194,80 @@ const templates: Record<string, Template> = {
           Tu programa <strong>${d.programa || 'Partner SACS'}</strong> está activo con una comisión del <strong>${d.comision_pct || 0}%</strong>.
         </p>
         ${d.nota ? `<div style="background:#fff8e1;border-left:3px solid #E8A838;padding:12px 14px;margin:18px 0;font-size:0.875rem;color:#5a4a1f;line-height:1.55">${d.nota}</div>` : ''}
+        <div style="background:#1a1a1a;color:#fff;padding:20px;border-radius:10px;margin:18px 0;text-align:center">
+          <div style="font-size:0.6875rem;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.10em;margin-bottom:10px">Paso 1 — Crea tu contraseña</div>
+          <p style="color:rgba(255,255,255,0.85);font-size:0.875rem;line-height:1.5;margin:0 0 16px">
+            Para entrar a tu portal de partner necesitas una contraseña. Crea la tuya aquí:
+          </p>
+          <a href="${d.setPasswordUrl || ''}" style="display:inline-block;background:#fff;color:#1a1a1a;padding:13px 26px;border-radius:6px;text-decoration:none;font-weight:700;font-size:0.875rem">Crear mi contraseña</a>
+          <div style="font-size:0.6875rem;color:rgba(255,255,255,0.5);margin-top:12px">Este link expira en 14 días.</div>
+        </div>
         <div style="background:#fafafa;border:1px solid #ececec;padding:18px;border-radius:10px;margin:18px 0">
           <div style="font-size:0.6875rem;color:#999;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Tu link único de partner</div>
           <a href="${d.partnerLandingUrl || ''}" style="font-family:monospace;font-size:0.875rem;color:#4B7BE5;word-break:break-all">${d.partnerLandingUrl || ''}</a>
-          <div style="font-size:0.75rem;color:#777;margin-top:8px;line-height:1.5">Cualquier prospecto que llegue por este link se atribuye automáticamente a ti.</div>
+          <div style="font-size:0.75rem;color:#777;margin-top:8px;line-height:1.5">Cualquier prospecto que llegue por este link se atribuye automáticamente a ti — visible en tiempo real desde tu portal.</div>
         </div>
-        <div style="text-align:center;margin:24px 0">
-          <a href="${d.loginUrl || 'https://www.sacscloud.com/admin'}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Entrar a mi cuenta</a>
+        <div style="background:#fafafa;border:1px solid #ececec;padding:14px 16px;border-radius:8px;margin:14px 0;font-size:0.8125rem;color:#555;line-height:1.5">
+          📘 <strong>Brand kit:</strong> <a href="https://www.sacscloud.com/partners/brand-kit" style="color:#4B7BE5">descarga logos, captions y plantillas</a>.<br/>
+          🛍️ <strong>Tu cuenta SACS Plan Fideliza:</strong> la activamos en las próximas 48h hábiles, te llegará un correo aparte con tus credenciales.
         </div>
-        <p style="color:#999;font-size:0.75rem;margin-top:24px;line-height:1.5;text-align:center">Las credenciales se entregan vía contacto directo del equipo SACS para máxima seguridad.<br/>Cualquier duda: partners@sacscloud.com</p>
+        <p style="color:#999;font-size:0.75rem;margin-top:24px;line-height:1.5;text-align:center">Cualquier duda: partners@sacscloud.com</p>
       </div>
     `,
-    text: `¡Bienvenido ${d.nombre}! Tu programa ${d.programa} está activo (${d.comision_pct}% comisión). Tu link: ${d.partnerLandingUrl}. Login: ${d.loginUrl}`,
+    text: `¡Bienvenido ${d.nombre}! Tu programa ${d.programa} está activo (${d.comision_pct}% comisión). Crea tu contraseña: ${d.setPasswordUrl}. Tu link: ${d.partnerLandingUrl}.`,
+  }),
+  partner_fideliza_ready: (d) => ({
+    subject: `🛍️ Tu cuenta SACS Plan Fideliza está lista`,
+    html: `
+      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="display:inline-block;padding:6px 14px;background:#6C5CE7;color:#fff;font-size:0.6875rem;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;border-radius:4px">Cuenta SACS activa</div>
+        </div>
+        <h2 style="font-size:1.5rem;font-weight:700;margin:0 0 12px;letter-spacing:-0.01em;text-align:center">Tu Plan Fideliza está listo, ${d.nombre || ''}</h2>
+        <p style="color:#555;line-height:1.6;margin:0 0 16px;text-align:center">
+          Como parte del programa, te activamos una cuenta completa de SACS en el plan <strong>Fideliza</strong> (valor $14,000 MXN/año). Úsalo para tu propio negocio o para hacer demos en vivo a tus prospectos.
+        </p>
+        ${d.nota ? `<div style="background:#fff8e1;border-left:3px solid #E8A838;padding:12px 14px;margin:18px 0;font-size:0.875rem;color:#5a4a1f;line-height:1.55">${d.nota}</div>` : ''}
+        <div style="background:#1a1a1a;color:#fff;padding:24px;border-radius:10px;margin:18px 0;text-align:center">
+          <div style="font-size:0.6875rem;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.10em;margin-bottom:10px">Cómo entrar</div>
+          <p style="color:rgba(255,255,255,0.85);font-size:0.875rem;line-height:1.5;margin:0 0 16px">
+            Entra a <strong>app.sacscloud.com</strong> con tu email <strong>${d.email}</strong> y la contraseña temporal que te enviaremos por separado para máxima seguridad.
+          </p>
+          <a href="${d.loginUrl || 'https://app.sacscloud.com'}" style="display:inline-block;background:#fff;color:#1a1a1a;padding:13px 26px;border-radius:6px;text-decoration:none;font-weight:700;font-size:0.875rem">Ir a app.sacscloud.com</a>
+        </div>
+        <div style="background:#fafafa;border:1px solid #ececec;padding:14px 16px;border-radius:8px;margin:14px 0;font-size:0.8125rem;color:#555;line-height:1.6">
+          <strong>Plan Fideliza incluye:</strong><br/>
+          ✓ POS multi-terminal<br/>
+          ✓ Inventario multi-sucursal<br/>
+          ✓ E-commerce sincronizado<br/>
+          ✓ CRM omnicanal + lealtad<br/>
+          ✓ Email + WhatsApp marketing<br/>
+          ✓ 5 sucursales · 5 usuarios incluidos
+        </div>
+        <p style="color:#999;font-size:0.75rem;margin-top:24px;line-height:1.5;text-align:center">¿Necesitas ayuda? Responde este correo.<br/>Equipo SACS · partners@sacscloud.com</p>
+      </div>
+    `,
+    text: `Tu cuenta SACS Plan Fideliza está activa. Entra a ${d.loginUrl || 'app.sacscloud.com'} con ${d.email}.`,
+  }),
+  partner_password_reset: (d) => ({
+    subject: `Restablece tu contraseña — Partners SACS`,
+    html: `
+      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <h2 style="font-size:1.25rem;font-weight:700;margin:0 0 12px">Hola ${d.nombre || ''},</h2>
+        <p style="color:#555;line-height:1.6;margin:0 0 16px">
+          Recibimos una solicitud para restablecer la contraseña de tu cuenta de partner SACS.
+          Click el botón para crear una nueva:
+        </p>
+        <div style="text-align:center;margin:24px 0">
+          <a href="${d.resetUrl || ''}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:13px 26px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Restablecer contraseña</a>
+        </div>
+        <p style="color:#777;font-size:0.8125rem;line-height:1.5;margin:0 0 8px">
+          Este link expira en <strong>1 hora</strong>. Si tú no solicitaste el cambio, puedes ignorar este correo — tu contraseña actual sigue funcionando.
+        </p>
+        <p style="color:#999;font-size:0.75rem;margin-top:20px;line-height:1.5">Equipo SACS · partners@sacscloud.com</p>
+      </div>
+    `,
+    text: `Restablece tu contraseña: ${d.resetUrl} (expira en 1h)`,
   }),
   renewal_reminder: (d) => ({
     subject: `Tu renovación SACS se acerca — ${d.days} días`,

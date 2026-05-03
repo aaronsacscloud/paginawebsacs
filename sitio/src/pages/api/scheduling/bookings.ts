@@ -122,6 +122,22 @@ export const PUT: APIRoute = async ({ request }) => {
       }
     } catch {}
 
+    // Bono $300 al partner que refirió este lead
+    if (current.referrer_partner_id) {
+      try {
+        const { createDemoCompletadaBonus } = await import('../../../lib/commissions/calculate');
+        await createDemoCompletadaBonus({
+          partnerId: current.referrer_partner_id,
+          bookingId: id,
+          amount: 300,
+          prospectName: current.invitee_nombre || undefined,
+          fechaDemo: current.fecha,
+        });
+      } catch (e) {
+        console.warn('[bookings.PUT] createDemoCompletadaBonus failed:', e);
+      }
+    }
+
     // Fire webhook
     fireSchedulingWebhooks('booking.completed', { booking: data });
   }

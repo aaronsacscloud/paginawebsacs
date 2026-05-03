@@ -24,6 +24,8 @@ interface Invitation {
   aceptado_fecha?: string;
   decline_motivo?: string;
   created_at?: string;
+  team_member_id?: string;
+  fideliza_account_at?: string;
 }
 
 const TIPO_LABELS: Record<string, { label: string; tagline: string; color: string }> = {
@@ -104,6 +106,29 @@ export default function PartnersTab() {
     navigator.clipboard.writeText(url).then(() => {
       alert('Link copiado:\n' + url);
     });
+  }
+
+  async function provisionFideliza(it: Invitation) {
+    if (!(it as any).team_member_id) {
+      alert('Aprueba primero al partner antes de provisionarle Fideliza.');
+      return;
+    }
+    const ok = confirm(`Activar SACS Plan Fideliza para ${it.nombre}?\n\nAntes de hacer click:\n1. Crea su cuenta en app.sacscloud.com con plan Fideliza\n2. Ten lista la contraseña temporal para enviarla por separado\n\nEste botón:\n• Marca al partner como provisionado\n• Envía email de bienvenida con instrucciones de acceso`);
+    if (!ok) return;
+    const nota = prompt('Nota opcional para el partner (aparece en el email):', '') || undefined;
+    try {
+      const res = await fetch('/api/partners/provision-fideliza', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ partner_id: (it as any).team_member_id, nota }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error');
+      alert(data.already_provisioned ? 'Ya estaba provisionado.' : 'Fideliza activada. Email enviado al partner.');
+      load();
+    } catch (e: any) {
+      alert('Error: ' + (e.message || e));
+    }
   }
 
   async function approveInvitation(it: Invitation) {
@@ -276,6 +301,9 @@ export default function PartnersTab() {
                         )}
                         {it.estado === 'submitted_for_review' && (
                           <button style={btnSm('#2AB5A0', '#fff')} onClick={() => approveInvitation(it)}>Aprobar</button>
+                        )}
+                        {it.estado === 'accepted' && (
+                          <button style={btnSm('#6C5CE7', '#fff')} onClick={() => provisionFideliza(it)} title="Activar SACS Plan Fideliza para este partner">Fideliza</button>
                         )}
                       </div>
                     </td>

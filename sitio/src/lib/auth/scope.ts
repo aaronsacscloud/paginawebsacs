@@ -47,14 +47,27 @@ export class AccessDenied extends Error {
   }
 }
 
-/** Resolve current user from request — placeholder until auth middleware formalized. */
+/**
+ * Resolve current user from request.
+ *
+ * Resolution order:
+ *   1. cookie `sacs_session` → partner_sessions table (real auth, used by /partner/portal)
+ *   2. header `X-User-Id` → fallback for admin UI tools that set it directly
+ */
 export async function getCurrentUser(request: Request): Promise<CurrentUser | null> {
-  // v1: basic header-based auth (X-User-Id sent by admin UI after login).
-  // Migrar a cookies/Supabase Auth en iteración futura.
+  // 1. Cookie-based session (preferred)
+  try {
+    const { getSessionFromRequest } = await import('./session');
+    const sessionUser = await getSessionFromRequest(request);
+    if (sessionUser) return sessionUser as CurrentUser;
+  } catch {
+    // session module not available or error — fall through to header path
+  }
+
+  // 2. Header fallback (admin tools)
   const userId = request.headers.get('x-user-id');
   if (!userId) return null;
   const { supabase } = await import('../supabase');
-  // NOTE: la columna real es `rol` (español), no `role`. Mapeamos a role en la interface.
   const { data } = await supabase
     .from('team_members')
     .select('id, rol, email, nombre, default_commission_pct')
