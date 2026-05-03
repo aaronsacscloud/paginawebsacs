@@ -418,7 +418,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
     slug_landing: editing?.slug_landing || '',
     beneficios: editing?.beneficios || [],
     compromisos: editing?.compromisos || [],
-    tabulador: editing?.tabulador || { demo_agendada: 200, demo_completada: 500, venta_directa_pct: 50, moneda: 'MXN' },
+    tabulador: editing?.tabulador || { prueba_gratis: 500, demo_completada: 300, venta_directa_pct: 50, moneda: 'MXN' },
     terminos: editing?.terminos || '',
   }));
   const [saving, setSaving] = useState(false);
@@ -432,8 +432,8 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
         comision_pct: 50, costo_unico: 0, costo_mensual: 0,
         beneficios: [
           { icon: 'percent',   title: '50% de comisión por venta directa',       detail: 'Sobre cada cliente cerrado a través de tu link único de partner. Se calcula sobre el monto efectivamente cobrado al cliente.' },
-          { icon: 'reward',    title: 'Comisión por reunión agendada',           detail: 'Bono fijo cada vez que un prospecto referido por ti agenda una demo en nuestro calendario oficial.' },
-          { icon: 'reward',    title: 'Comisión por reunión completada',         detail: 'Bono adicional cuando el prospecto asiste y completa el demo válido con SACS.' },
+          { icon: 'reward',    title: 'Bono por prueba gratis activada',         detail: 'Bono fijo cada vez que un usuario llega por tu link único y se registra para una prueba gratuita en SACS. Pago al confirmar el alta.' },
+          { icon: 'reward',    title: 'Bono por demo completada',                detail: 'Bono adicional cuando el prospecto asiste y completa un demo válido con SACS (mínimo 25 min con tomador de decisión presente).' },
           { icon: 'link',      title: 'Landing page personalizada con tu link', detail: 'Tu propia página dentro de SACS con tu nombre, foto y link único (sacscloud.com/p/tu-slug). Cada visita y registro queda atribuido automáticamente a ti.' },
           { icon: 'dashboard', title: 'Portal de partner con métricas en tiempo real', detail: 'Dashboard personal con visitas a tu landing, registros generados, prospectos calificados, conversiones, comisiones acumuladas y pagos liquidados — todo actualizado al instante.' },
           { icon: 'academy',   title: 'Acceso a Academia SACS y capacitaciones', detail: 'Cursos en línea, playbooks por vertical, demos grabadas y certificación oficial de embajador.' },
@@ -455,11 +455,11 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
           { title: 'Asistir al kick-off de embajadores',          detail: 'Sesión inicial de 60 minutos para conocer el modelo, los materiales de marca y las mejores prácticas para representar SACS.', frequency: 'Una vez' },
         ],
         tabulador: {
-          demo_agendada: 200,
-          demo_completada: 500,
+          prueba_gratis: 500,
+          demo_completada: 300,
           venta_directa_pct: 50,
           moneda: 'MXN',
-          notas: 'Pagos cada 30 días por transferencia bancaria, con desglose detallado por concepto y cliente visible siempre en tu portal de partner. Reunión agendada se acredita al confirmarse en el calendario; reunión completada al cierre del demo válido (mínimo 25 min con tomador de decisión presente). Comisión por venta directa se acredita al cobrar la primera factura del cliente cerrado.',
+          notas: 'Pagos cada 30 días por transferencia bancaria, con desglose detallado por concepto y cliente visible siempre en tu portal de partner. Bono por prueba gratis se acredita cuando un usuario referido se registra y activa una prueba gratuita en SACS. Bono por demo completada se acredita al cierre del demo válido (mínimo 25 min con tomador de decisión presente). Comisión por venta directa se acredita al cobrar la primera factura del cliente cerrado.',
         },
         terminos: `Programa Embajador SACS — Términos y Condiciones
 
@@ -499,7 +499,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
           { title: 'Vender', detail: 'Mínimo 2 nuevos clientes por trimestre.', frequency: 'Trimestral' },
           { title: 'Implementar', detail: 'Acompañar al cliente las primeras 4 semanas.', frequency: 'Por cliente' },
         ],
-        tabulador: { demo_agendada: 0, demo_completada: 300, venta_directa_pct: 30, moneda: 'MXN' },
+        tabulador: { prueba_gratis: 0, demo_completada: 300, venta_directa_pct: 30, moneda: 'MXN' },
         terminos: 'Comisión recurrente sobre MRR cobrado mientras el cliente esté al corriente.',
       },
       integrador: {
@@ -511,7 +511,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
         compromisos: [
           { title: 'Certificarse técnicamente', detail: 'Pasar la certificación SACS Integrator.', frequency: 'Una vez' },
         ],
-        tabulador: { demo_agendada: 0, demo_completada: 0, venta_directa_pct: 25, moneda: 'MXN' },
+        tabulador: { prueba_gratis: 0, demo_completada: 0, venta_directa_pct: 25, moneda: 'MXN' },
         terminos: 'Programa para casas de software e integradores B2B.',
       },
       reseller: {
@@ -522,7 +522,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
         compromisos: [
           { title: 'Vender bajo tu marca', detail: 'Manejo de la relación comercial bajo tu canal.', frequency: 'Continuo' },
         ],
-        tabulador: { demo_agendada: 0, demo_completada: 0, venta_directa_pct: 20, moneda: 'MXN' },
+        tabulador: { prueba_gratis: 0, demo_completada: 0, venta_directa_pct: 20, moneda: 'MXN' },
         terminos: 'Programa de reventa con white-labeling sujeto a aprobación.',
       },
       consultor: {
@@ -533,7 +533,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
         compromisos: [
           { title: 'Recomendar SACS', detail: 'Cuando aplique al diagnóstico del cliente.', frequency: 'Por caso' },
         ],
-        tabulador: { demo_agendada: 0, demo_completada: 0, venta_directa_pct: 15, moneda: 'MXN' },
+        tabulador: { prueba_gratis: 0, demo_completada: 0, venta_directa_pct: 15, moneda: 'MXN' },
         terminos: 'Programa de consultoría con referidos pagados a 30 días post-cobro.',
       },
     };
@@ -708,7 +708,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
           {/* Tabulador */}
           <Section title="Tabulador de recompensas">
             <Grid3>
-              <Field label="Demo agendada ($)" type="number" value={form.tabulador?.demo_agendada ?? 0} onChange={v => setTab('demo_agendada', Number(v) || 0)} />
+              <Field label="Prueba gratis ($)" type="number" value={form.tabulador?.prueba_gratis ?? 0} onChange={v => setTab('prueba_gratis', Number(v) || 0)} />
               <Field label="Demo completada ($)" type="number" value={form.tabulador?.demo_completada ?? 0} onChange={v => setTab('demo_completada', Number(v) || 0)} />
               <Field label="Venta directa (%)" type="number" value={form.tabulador?.venta_directa_pct ?? 0} onChange={v => setTab('venta_directa_pct', Number(v) || 0)} />
             </Grid3>

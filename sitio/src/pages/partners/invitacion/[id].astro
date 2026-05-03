@@ -128,22 +128,27 @@ const SACS_PLANS = [
   { id: 'automatiza', name: 'Automatiza', monthly: 5900, annualTotal: 59000, accent: '#1a1a1a', tagline: 'Operación con IA' },
 ];
 const CLIENT_TIERS = [10, 20, 50, 100, 200, 500];
+
+// Escenarios de actividad mensual: usuarios que se registran a prueba gratis
+// (entran por tu link único) y demos completadas (asisten al demo válido).
 const DEMO_SCENARIOS = [
-  { label: 'Conservador', agendadas: 5,  completadas: 3,  hint: '~5 horas/mes' },
-  { label: 'Realista',    agendadas: 10, completadas: 7,  hint: '~10 horas/mes' },
-  { label: 'Ambicioso',   agendadas: 20, completadas: 15, hint: 'Tiempo completo' },
+  { label: 'Conservador', pruebas_gratis: 4,  completadas: 2,  hint: '~5 horas/mes de difusión' },
+  { label: 'Realista',    pruebas_gratis: 10, completadas: 6,  hint: '~10 horas/mes de difusión' },
+  { label: 'Ambicioso',   pruebas_gratis: 25, completadas: 15, hint: 'Tiempo completo' },
 ];
 
 const ratePartner = comisionPct / 100;
-const bonusAgendada = Number(tabulador.demo_agendada || 0);
-const bonusCompletada = Number(tabulador.demo_completada || 0);
+// Defaults: $500 por prueba gratis, $300 por demo completada — tomados del
+// tabulador si vienen, si no usamos los valores por defecto del programa.
+const bonusPruebaGratis = Number(tabulador.prueba_gratis ?? 500);
+const bonusCompletada   = Number(tabulador.demo_completada ?? 300);
 
 // Per-cell calculation: clientes × precio_plan × comision%
 function calcSale(planPrice: number, clients: number) {
   return Math.round(planPrice * clients * ratePartner);
 }
 function calcDemoMonthly(s: typeof DEMO_SCENARIOS[0]) {
-  return s.agendadas * bonusAgendada + s.completadas * bonusCompletada;
+  return s.pruebas_gratis * bonusPruebaGratis + s.completadas * bonusCompletada;
 }
 
 // Big closing number — best case fideliza × 100 (realista) y automatiza × 500 (techo)
@@ -238,10 +243,10 @@ const partnerLandingUrl = invitation.slug_landing
               <div class="p-hero-stat-num">{comisionPct}<span class="p-hero-stat-pct">%</span></div>
               <div class="p-hero-stat-label">Comisión por venta directa</div>
             </div>
-            {(Number(tabulador.demo_completada || 0) > 0 || Number(tabulador.demo_agendada || 0) > 0) ? (
+            {(bonusPruebaGratis > 0 || bonusCompletada > 0) ? (
               <div class="p-hero-stat">
-                <div class="p-hero-stat-num">{Number(tabulador.demo_completada || 0) > 0 ? fmtMoney(Number(tabulador.demo_completada)) : fmtMoney(Number(tabulador.demo_agendada))}</div>
-                <div class="p-hero-stat-label">{Number(tabulador.demo_completada || 0) > 0 ? 'Por demo completada' : 'Por demo agendada'}</div>
+                <div class="p-hero-stat-num">{bonusPruebaGratis > 0 ? fmtMoney(bonusPruebaGratis) : fmtMoney(bonusCompletada)}</div>
+                <div class="p-hero-stat-label">{bonusPruebaGratis > 0 ? 'Por prueba gratis activada' : 'Por demo completada'}</div>
               </div>
             ) : (costoMensual > 0 || costoUnico > 0) ? (
               <div class="p-hero-stat">
@@ -323,23 +328,23 @@ const partnerLandingUrl = invitation.slug_landing
             <div class="p-term-value p-term-value--accent">{comisionPct}%</div>
           </div>
 
-          {Number(tabulador.demo_agendada || 0) > 0 && (
+          {bonusPruebaGratis > 0 && (
             <div class="p-term-row">
               <div class="p-term-info">
-                <div class="p-term-label">Bono por reunión agendada</div>
-                <div class="p-term-detail">Cada vez que un prospecto referido por ti agenda una demo en nuestro calendario.</div>
+                <div class="p-term-label">Bono por prueba gratis activada</div>
+                <div class="p-term-detail">Cada vez que un usuario llega por tu link y se registra para una prueba gratuita en SACS.</div>
               </div>
-              <div class="p-term-value">{fmtMoney(Number(tabulador.demo_agendada))} {moneda}</div>
+              <div class="p-term-value">{fmtMoney(bonusPruebaGratis)} {moneda}</div>
             </div>
           )}
 
-          {Number(tabulador.demo_completada || 0) > 0 && (
+          {bonusCompletada > 0 && (
             <div class="p-term-row">
               <div class="p-term-info">
-                <div class="p-term-label">Bono por reunión completada</div>
-                <div class="p-term-detail">Cuando el prospecto asiste y completa el demo válido con SACS.</div>
+                <div class="p-term-label">Bono por demo completada</div>
+                <div class="p-term-detail">Cuando el prospecto asiste y completa el demo válido con SACS (mín. 25 min con tomador de decisión).</div>
               </div>
-              <div class="p-term-value">{fmtMoney(Number(tabulador.demo_completada))} {moneda}</div>
+              <div class="p-term-value">{fmtMoney(bonusCompletada)} {moneda}</div>
             </div>
           )}
 
@@ -461,20 +466,20 @@ const partnerLandingUrl = invitation.slug_landing
         </div>
 
         <div class="p-payout-grid">
-          {tabulador.demo_agendada !== undefined && (
+          {bonusPruebaGratis > 0 && (
             <div class="p-payout-card">
               <div class="p-payout-step">Paso 1</div>
-              <div class="p-payout-amount">{tabulador.demo_agendada > 0 ? fmtMoney(tabulador.demo_agendada) : '—'}</div>
-              <div class="p-payout-name">Demo agendada</div>
-              <div class="p-payout-detail">Por cada demo confirmada con un prospecto calificado que tú agendas.</div>
+              <div class="p-payout-amount">{fmtMoney(bonusPruebaGratis)}</div>
+              <div class="p-payout-name">Prueba gratis activada</div>
+              <div class="p-payout-detail">Cada usuario que llega por tu link y se registra para una prueba gratis. Pago al confirmar el alta.</div>
             </div>
           )}
-          {tabulador.demo_completada !== undefined && (
+          {bonusCompletada > 0 && (
             <div class="p-payout-card">
               <div class="p-payout-step">Paso 2</div>
-              <div class="p-payout-amount">{tabulador.demo_completada > 0 ? fmtMoney(tabulador.demo_completada) : '—'}</div>
+              <div class="p-payout-amount">{fmtMoney(bonusCompletada)}</div>
               <div class="p-payout-name">Demo completada</div>
-              <div class="p-payout-detail">Cuando el prospecto asiste y completa el demo válido.</div>
+              <div class="p-payout-detail">Cuando el prospecto asiste y completa un demo válido con SACS (mín. 25 min, decisor presente).</div>
             </div>
           )}
           {tabulador.venta_directa_pct !== undefined && (
@@ -482,7 +487,7 @@ const partnerLandingUrl = invitation.slug_landing
               <div class="p-payout-step">Paso 3</div>
               <div class="p-payout-amount">{tabulador.venta_directa_pct}%</div>
               <div class="p-payout-name">Venta directa</div>
-              <div class="p-payout-detail">Comisión sobre el cobro de la primera factura del cliente cerrado.</div>
+              <div class="p-payout-detail">Comisión sobre el cobro de la primera factura del cliente cerrado a través de tu link.</div>
             </div>
           )}
         </div>
@@ -499,8 +504,72 @@ const partnerLandingUrl = invitation.slug_landing
           <div class="p-landing-eyebrow">Tu landing personalizada</div>
           <div class="p-landing-url">{partnerLandingUrl}</div>
           <p class="p-landing-detail">
-            Al firmar tu invitación se activa un link y landing con tu nombre. Cualquier prospecto que llegue por este link se atribuye a ti automáticamente.
+            Al firmar tu invitación se activa un link y landing con tu nombre. Cualquier prospecto que llegue por este link se atribuye a ti automáticamente — sin códigos, sin formularios extra, sin perder atribución.
           </p>
+        </div>
+
+        <!-- ── Portal de partner — qué vas a ver y desde dónde ── -->
+        <div class="p-portal">
+          <div class="p-portal-eyebrow">Tu panel de partner</div>
+          <h3 class="p-portal-title">Todo lo que pasa con tu link, en un solo lugar.</h3>
+          <p class="p-portal-lead">
+            Desde el momento en que firmas, tienes un panel personal en SACS para ver tu actividad en tiempo real. Funciona igual desde tu <strong>laptop, tablet o teléfono</strong> — entras con tu correo y contraseña, ves todo y descargas tu desglose cuando quieras.
+          </p>
+
+          <div class="p-portal-grid">
+            <div class="p-portal-card">
+              <div class="p-portal-card-ic">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              </div>
+              <div class="p-portal-card-title">Visitas y registros a tu link</div>
+              <div class="p-portal-card-detail">Cuántas personas entraron a tu landing, cuántas se registraron a la prueba gratis y de qué fuente vienen (TikTok, Instagram, link directo, QR…).</div>
+            </div>
+
+            <div class="p-portal-card">
+              <div class="p-portal-card-ic">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              </div>
+              <div class="p-portal-card-title">Demos agendadas vs completadas</div>
+              <div class="p-portal-card-detail">Cuántas demos se reservaron, cuáles se realizaron, cuáles no se presentaron. Cada una con fecha, prospecto y estado (asistió / no asistió / reagendado).</div>
+            </div>
+
+            <div class="p-portal-card">
+              <div class="p-portal-card-ic">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12V7H5a2 2 0 010-4h14v4"/><path d="M3 5v14a2 2 0 002 2h16v-5"/><path d="M18 12a2 2 0 000 4h4v-4z"/></svg>
+              </div>
+              <div class="p-portal-card-title">Comisiones devengadas y pagadas</div>
+              <div class="p-portal-card-detail">Lo que ganaste este mes, el saldo pendiente y el historial completo de pagos. Cada concepto desglosado: prueba gratis, demo, venta. Descargable como PDF/CSV.</div>
+            </div>
+
+            <div class="p-portal-card">
+              <div class="p-portal-card-ic">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+              </div>
+              <div class="p-portal-card-title">Tus prospectos y clientes activos</div>
+              <div class="p-portal-card-detail">Lista de cada lead que generaste: nombre, contacto, etapa (registro / demo / cerrado) y comisión asociada. Sigue cada relación de principio a fin.</div>
+            </div>
+
+            <div class="p-portal-card">
+              <div class="p-portal-card-ic">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              </div>
+              <div class="p-portal-card-title">Métricas de conversión</div>
+              <div class="p-portal-card-detail">Visitas → registros, registros → demos, demos → ventas. Identifica dónde te conviertes mejor para enfocar tu contenido y ajustar tu estrategia.</div>
+            </div>
+
+            <div class="p-portal-card">
+              <div class="p-portal-card-ic">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2C20 17.5 12 22 12 22z"/><circle cx="12" cy="10" r="3"/></svg>
+              </div>
+              <div class="p-portal-card-title">Acceso desde cualquier lugar</div>
+              <div class="p-portal-card-detail">Funciona en cualquier dispositivo — laptop, tablet o teléfono. Login con tu correo y contraseña. Sin app que descargar, sin VPN, sin filas: si tienes internet, ves tu panel.</div>
+            </div>
+          </div>
+
+          <div class="p-portal-note">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span>Tu panel se actualiza al instante. Cuando alguien se registra por tu link, aparece de inmediato en tu portal — no hay que esperar a fin de mes.</span>
+          </div>
         </div>
       </section>
       )}
@@ -512,18 +581,18 @@ const partnerLandingUrl = invitation.slug_landing
           <div class="p-section-eyebrow">Cuánto puedes ganar</div>
           <h2 class="p-section-title">Tu potencial como {tipoLabel[tipo] || tipo}</h2>
           <p class="p-section-lead">
-            Cada demo agendada y cada cliente cerrado se traducen en ingresos. Estas son las matemáticas, basadas en tu {comisionPct}% de comisión y los precios públicos de SACS.
+            Cada prueba gratis activada, cada demo completada y cada cliente cerrado se traducen en ingresos. Estas son las matemáticas, basadas en tu {comisionPct}% de comisión y los precios públicos de SACS.
           </p>
         </div>
 
-        <!-- ── Bonos por reuniones ── -->
-        {(bonusAgendada > 0 || bonusCompletada > 0) && (
+        <!-- ── Bonos por activaciones y demos ── -->
+        {(bonusPruebaGratis > 0 || bonusCompletada > 0) && (
           <div class="p-projection-block">
-            <div class="p-projection-eyebrow">1 · Bonos por reuniones (mensual recurrente)</div>
-            <div class="p-projection-title">Por agendar y completar demos</div>
+            <div class="p-projection-eyebrow">1 · Bonos por activaciones (mensual recurrente)</div>
+            <div class="p-projection-title">Por traer pruebas gratis y completar demos</div>
             <p class="p-projection-lead">
-              {bonusAgendada > 0 && <>Cada reunión agendada te paga <strong>{fmtMoney(bonusAgendada)}</strong>{bonusCompletada > 0 && <> y cada reunión completada <strong>{fmtMoney(bonusCompletada)}</strong></>}.</>}
-              {bonusAgendada === 0 && bonusCompletada > 0 && <>Cada reunión completada te paga <strong>{fmtMoney(bonusCompletada)}</strong>.</>}
+              {bonusPruebaGratis > 0 && <>Cada usuario que llega por tu link y activa una <strong>prueba gratis</strong> te paga <strong>{fmtMoney(bonusPruebaGratis)}</strong>{bonusCompletada > 0 && <>, y cada <strong>demo completada</strong> te paga <strong>{fmtMoney(bonusCompletada)}</strong></>}.</>}
+              {bonusPruebaGratis === 0 && bonusCompletada > 0 && <>Cada demo completada te paga <strong>{fmtMoney(bonusCompletada)}</strong>.</>}
               {' '}Esto es lo que ganas según tu ritmo:
             </p>
 
@@ -534,7 +603,7 @@ const partnerLandingUrl = invitation.slug_landing
                 return (
                   <div class={`p-demo-card ${idx === 1 ? 'p-demo-card--featured' : ''}`}>
                     <div class="p-demo-card-label">{s.label}</div>
-                    <div class="p-demo-card-meta">{s.agendadas} agendadas · {s.completadas} completadas / mes</div>
+                    <div class="p-demo-card-meta">{s.pruebas_gratis} pruebas gratis · {s.completadas} demos / mes</div>
                     <div class="p-demo-card-amount">{fmtMoney(monthly)}</div>
                     <div class="p-demo-card-period">/ mes en bonos</div>
                     <div class="p-demo-card-annual">{fmtMoney(annual)} al año</div>
@@ -626,7 +695,7 @@ const partnerLandingUrl = invitation.slug_landing
             </div>
           </div>
           <p class="p-projection-closing-bottom">
-            Y todo esto es <strong>antes</strong> de sumar tus bonos mensuales por reuniones agendadas y completadas.
+            Y todo esto es <strong>antes</strong> de sumar tus bonos mensuales por pruebas gratis activadas y demos completadas.
           </p>
         </div>
       </section>
@@ -1539,6 +1608,96 @@ const partnerLandingUrl = invitation.slug_landing
     line-height: 1.55;
     margin: 0 auto;
     max-width: 460px;
+  }
+
+  /* ─── Portal de partner — qué ve el partner y desde dónde ─── */
+  .p-portal {
+    margin-top: 40px;
+    padding: 32px;
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 16px;
+  }
+  .p-portal-eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #4B7BE5;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .p-portal-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.375rem, 2.6vw, 1.75rem);
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0 0 14px;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+  }
+  .p-portal-lead {
+    font-size: 0.9375rem;
+    color: rgba(26,26,46,0.65);
+    line-height: 1.6;
+    margin: 0 0 28px;
+    max-width: 640px;
+  }
+  .p-portal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+  .p-portal-card {
+    background: #fafafa;
+    border: 1px solid #f0f0f0;
+    border-radius: 12px;
+    padding: 18px;
+  }
+  .p-portal-card-ic {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: rgba(75,123,229,0.10);
+    color: #4B7BE5;
+    border-radius: 9px;
+    margin-bottom: 12px;
+  }
+  .p-portal-card-title {
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 6px;
+    letter-spacing: -0.01em;
+  }
+  .p-portal-card-detail {
+    font-size: 0.8125rem;
+    color: rgba(26,26,46,0.6);
+    line-height: 1.55;
+  }
+  .p-portal-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 16px;
+    background: rgba(42,181,160,0.08);
+    border-left: 3px solid #2AB5A0;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    color: rgba(26,26,46,0.75);
+    line-height: 1.55;
+  }
+  .p-portal-note svg {
+    flex-shrink: 0;
+    color: #1A8F7A;
+    margin-top: 2px;
+  }
+  @media (max-width: 640px) {
+    .p-portal { padding: 22px; }
+    .p-portal-grid { grid-template-columns: 1fr; }
   }
 
   /* ─── Tu potencial — proyección de ganancias ─── */
