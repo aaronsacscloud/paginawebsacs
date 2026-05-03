@@ -36,11 +36,14 @@ export const GET: APIRoute = async ({ request }) => {
     .limit(1)
     .maybeSingle();
 
-  let payout = null, direccion = null;
+  let payout = null, direccion = null, firma_base64 = null, signed_at = null, approved_at = null;
   if (invitation?.notas) {
     const { meta } = parseNotas(invitation.notas);
     payout = meta.payout || null;
     direccion = meta.direccion || null;
+    firma_base64 = meta.firma_base64 || null;
+    signed_at = meta.signed_at || null;
+    approved_at = meta.approved_at || null;
   }
 
   const partnerLandingUrl = invitation?.slug_landing
@@ -63,6 +66,9 @@ export const GET: APIRoute = async ({ request }) => {
     partnerLandingUrl,
     payout,
     direccion,
+    firma_base64,
+    signed_at,
+    approved_at,
   });
 };
 

@@ -16,6 +16,42 @@ const fmtDate = (d?: string | null) => {
 
 export default function PortalShell({ initialUser }: Props) {
   const [tab, setTab] = useState<TabId>('summary');
+  const [toast, setToast] = useState<{ type: 'earned' | 'paid'; msg: string; sub?: string } | null>(null);
+  const [seenIds, setSeenIds] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem('sacs_seen_commissions');
+      return new Set(raw ? JSON.parse(raw) : []);
+    } catch { return new Set(); }
+  });
+
+  // Poll cada 60s for new earned/paid commissions and show toast
+  useEffect(() => {
+    let cancelled = false;
+    async function check() {
+      try {
+        const res = await fetch('/api/partner-portal/pending');
+        const data = await res.json();
+        if (cancelled || !data.commissions) return;
+        const newEarned = data.commissions.filter((c: any) => c.status === 'earned' && !seenIds.has(c.id));
+        if (newEarned.length > 0) {
+          const total = newEarned.reduce((s: number, c: any) => s + Number(c.commission_amount || 0), 0);
+          setToast({
+            type: 'earned',
+            msg: newEarned.length === 1 ? `Nuevo bono verificado: $${total.toLocaleString('es-MX')}` : `${newEarned.length} bonos nuevos: $${total.toLocaleString('es-MX')}`,
+            sub: 'Listo para tu próximo payout',
+          });
+          const next = new Set(seenIds);
+          for (const c of newEarned) next.add(c.id);
+          setSeenIds(next);
+          try { localStorage.setItem('sacs_seen_commissions', JSON.stringify([...next])); } catch {}
+        }
+      } catch {/* swallow */}
+    }
+    // First check after 4s, then every 60s
+    const t1 = setTimeout(check, 4000);
+    const t2 = setInterval(check, 60000);
+    return () => { cancelled = true; clearTimeout(t1); clearInterval(t2); };
+  }, [seenIds]);
 
   // Hash routing: deep-link a tabs (#commissions, etc.)
   useEffect(() => {
@@ -61,6 +97,39 @@ export default function PortalShell({ initialUser }: Props) {
         <span style={S.userName}>{initialUser.nombre || initialUser.email}</span>
         <button onClick={logout} style={S.logoutBtn}>Salir</button>
       </header>
+
+      {/* Toast: nueva commission earned (live polling) */}
+      {toast && (
+        <div role="status" style={{
+          position: 'fixed', top: 70, right: 20, zIndex: 100,
+          background: '#fff',
+          border: `1px solid ${toast.type === 'earned' ? '#2AB5A0' : '#4B7BE5'}`,
+          borderLeft: `4px solid ${toast.type === 'earned' ? '#2AB5A0' : '#4B7BE5'}`,
+          borderRadius: 10,
+          padding: '14px 18px',
+          boxShadow: '0 12px 32px -10px rgba(0,0,0,0.18)',
+          maxWidth: 360,
+          fontFamily: 'var(--font-body)',
+          animation: 'slideInRight 0.3s ease-out',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: toast.type === 'earned' ? '#1A8F7A' : '#3764c4', textTransform: 'uppercase', letterSpacing: '0.10em', marginBottom: 4 }}>
+                ✨ {toast.type === 'earned' ? 'Bono verificado' : 'Pago liquidado'}
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a' }}>{toast.msg}</div>
+              {toast.sub && <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{toast.sub}</div>}
+            </div>
+            <button onClick={() => setToast(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#999', fontSize: 18, padding: 0, lineHeight: 1 }}>×</button>
+          </div>
+          <button
+            onClick={() => { go('commissions'); setToast(null); }}
+            style={{ marginTop: 10, padding: '6px 12px', background: '#1a1a1a', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            Ver detalle →
+          </button>
+        </div>
+      )}
 
       {/* Sidebar (desktop) + Bottom nav (mobile) */}
       <div style={S.body}>
@@ -121,6 +190,10 @@ export default function PortalShell({ initialUser }: Props) {
         @media (min-width: 768px) {
           .pp-bottomnav { display: none !important; }
         }
+        @keyframes slideInRight {
+          from { transform: translateX(120%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
       ` }} />
     </div>
   );
@@ -130,16 +203,58 @@ export default function PortalShell({ initialUser }: Props) {
 function SummaryTab() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
+
   useEffect(() => {
     fetch('/api/partner-portal/summary').then(r => r.json()).then(d => { setData(d); setLoading(false); });
+    // Welcome banner first-visit (cookie-based dismissal)
+    const dismissed = document.cookie.includes('sacs_welcome_dismissed=1');
+    if (!dismissed) setShowWelcome(true);
   }, []);
+
+  function dismissWelcome() {
+    document.cookie = `sacs_welcome_dismissed=1; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+    setShowWelcome(false);
+  }
+
   if (loading) return <div style={S.loading}>Cargando…</div>;
   if (!data || data.error) return <div style={S.error}>No se pudo cargar el resumen</div>;
 
+  // Empty state: si todos los counters son 0, mostrar tour onboarding
+  const isEmpty = (data.leads?.total || 0) === 0 && (data.proximoPago || 0) === 0 && (data.pendiente || 0) === 0;
+
   return (
     <div>
+      {showWelcome && (
+        <div style={S.welcomeCard}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#4B7BE5', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>👋 Bienvenido a tu portal</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600, color: '#1a1a1a', marginBottom: 8 }}>
+              Hola {data.user?.nombre?.split(' ')[0] || 'partner'}, este es tu centro de control SACS.
+            </div>
+            <div style={{ fontSize: 14, color: '#555', lineHeight: 1.55, marginBottom: 14 }}>
+              Aquí ves todo en tiempo real: cuánto ganaste este mes, próximo pago, prospectos atribuidos a tu link, y desde "Mi link" puedes copiar tu URL única o descargar tu QR.
+              <br/><strong>Próximo paso:</strong> ve a la pestaña <em>Mi link</em>, copia tu URL y compártela en tus redes — cada activación = bono.
+            </div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <a href="#link" onClick={() => location.hash = 'link'} style={{ ...S.btnPrimary, textDecoration: 'none' }}>Ir a Mi link →</a>
+              <button onClick={dismissWelcome} style={S.btnGhost}>Entendido, no mostrar otra vez</button>
+            </div>
+          </div>
+          <button onClick={dismissWelcome} aria-label="Cerrar" style={{ background: 'transparent', border: 'none', fontSize: 20, color: '#999', cursor: 'pointer', padding: 4, alignSelf: 'flex-start' }}>×</button>
+        </div>
+      )}
+
       <h1 style={S.h1}>Hola, {data.user?.nombre?.split(' ')[0] || 'partner'} 👋</h1>
       <p style={S.lead}>Aquí está el resumen de tu actividad como partner SACS.</p>
+
+      {isEmpty && !showWelcome && (
+        <div style={S.emptyHint}>
+          <strong>Tu portal está listo, pero todavía no hay actividad.</strong>
+          <span> Comparte tu link único en redes — cada activación genera un bono que verás aquí en tiempo real.</span>
+          <a href="#link" onClick={() => location.hash = 'link'} style={{ ...S.btnPrimary, textDecoration: 'none', marginTop: 12, alignSelf: 'flex-start' }}>Obtener mi link →</a>
+        </div>
+      )}
 
       <div style={S.kpiGrid}>
         <KpiCard label="Próximo pago" value={fmt(data.proximoPago)} accent="#2AB5A0" hint="Comisiones earned, no pagadas todavía" />
@@ -200,7 +315,12 @@ function CommissionsTab() {
       </p>
 
       {data.commissions?.length === 0 ? (
-        <div style={S.empty}>Aún no tienes comisiones. Comparte tu link y empieza a generar bonos.</div>
+        <div style={S.empty}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>💰</div>
+          <strong style={{ display: 'block', color: '#1a1a1a', marginBottom: 6 }}>Aún no tienes comisiones</strong>
+          <div style={{ marginBottom: 14 }}>Comparte tu link y empieza a generar bonos automáticamente.</div>
+          <a href="#link" onClick={() => location.hash = 'link'} style={{ ...S.btnPrimary, textDecoration: 'none', display: 'inline-block' }}>Compartir mi link →</a>
+        </div>
       ) : (
         <div style={S.tableWrap}>
           <table style={S.table}>
@@ -260,7 +380,11 @@ function PaymentsTab() {
       </p>
 
       {(!data.payments || data.payments.length === 0) ? (
-        <div style={S.empty}>Aún no hay pagos liquidados. Cuando SACS te transfiera, aparecerá aquí con todos los detalles.</div>
+        <div style={S.empty}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>🏦</div>
+          <strong style={{ display: 'block', color: '#1a1a1a', marginBottom: 6 }}>Aún no hay pagos liquidados</strong>
+          <div>Cuando SACS te transfiera, aparecerá aquí con desglose completo, fecha y referencia bancaria.</div>
+        </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {data.payments.map((p: any, i: number) => (
@@ -307,7 +431,12 @@ function LeadsTab() {
 
       <h2 style={S.h2}>Contactos ({data.contacts?.length || 0})</h2>
       {!data.contacts?.length ? (
-        <div style={S.empty}>Sin contactos atribuidos todavía.</div>
+        <div style={S.empty}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>👥</div>
+          <strong style={{ display: 'block', color: '#1a1a1a', marginBottom: 6 }}>Sin contactos atribuidos todavía</strong>
+          <div style={{ marginBottom: 14 }}>Cuando alguien llegue a SACS por tu link, aparece aquí con su etapa y bono asociado.</div>
+          <a href="#link" onClick={() => location.hash = 'link'} style={{ ...S.btnPrimary, textDecoration: 'none', display: 'inline-block' }}>Compartir mi link →</a>
+        </div>
       ) : (
         <div style={S.tableWrap}>
           <table style={S.table}>
@@ -337,7 +466,11 @@ function LeadsTab() {
 
       <h2 style={S.h2}>Demos ({data.bookings?.length || 0})</h2>
       {!data.bookings?.length ? (
-        <div style={S.empty}>Sin demos agendados.</div>
+        <div style={S.empty}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>📅</div>
+          <strong style={{ display: 'block', color: '#1a1a1a', marginBottom: 6 }}>Sin demos agendados</strong>
+          <div>Cuando un prospecto reserve una demo por tu link, aparece aquí. Marca demo completada → bono $300 automático.</div>
+        </div>
       ) : (
         <div style={S.tableWrap}>
           <table style={S.table}>
@@ -545,6 +678,19 @@ function ProfileTab() {
         <div style={S.row}><span style={S.rowLabel}>Vigencia</span><span>{fmtDate(profile.invitation?.vigencia)}</span></div>
       </section>
 
+      {profile.firma_base64 && (
+        <section style={S.card}>
+          <h2 style={S.cardTitle}>Tu firma de aceptación</h2>
+          <div style={S.subtxt}>
+            Firmaste la invitación el <strong style={{ color: '#1a1a1a' }}>{fmtDate(profile.signed_at)}</strong>.
+            {profile.approved_at && <> Aprobada por SACS el <strong style={{ color: '#1a1a1a' }}>{fmtDate(profile.approved_at)}</strong>.</>}
+          </div>
+          <div style={{ marginTop: 14, padding: 16, background: '#fafafa', border: '1px solid #ececec', borderRadius: 8, textAlign: 'center' }}>
+            <img src={profile.firma_base64} alt="Tu firma" style={{ maxWidth: '100%', maxHeight: 140 }} />
+          </div>
+        </section>
+      )}
+
       <section style={S.card}>
         <h2 style={S.cardTitle}>Datos de cobro</h2>
         <div style={S.subtxt}>
@@ -655,6 +801,29 @@ const S: Record<string, React.CSSProperties> = {
   kpiSub: { fontSize: 12, color: '#666', marginTop: 4 },
 
   empty: { padding: 32, background: '#fff', border: '1px dashed #ddd', borderRadius: 12, color: '#888', textAlign: 'center', fontSize: 14 },
+  emptyHint: {
+    display: 'flex', flexDirection: 'column', gap: 4,
+    padding: 20,
+    background: 'linear-gradient(120deg, rgba(75,123,229,0.06), rgba(108,92,231,0.04))',
+    border: '1px solid rgba(75,123,229,0.18)',
+    borderRadius: 12,
+    fontSize: 14,
+    color: '#444',
+    lineHeight: 1.55,
+    marginBottom: 24,
+  },
+  welcomeCard: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 16,
+    padding: 24,
+    background: '#fff',
+    border: '1px solid #ececec',
+    borderLeft: '3px solid #4B7BE5',
+    borderRadius: 12,
+    marginBottom: 28,
+    boxShadow: '0 4px 12px -6px rgba(75,123,229,0.12)',
+  },
   loading: { padding: 32, color: '#888', textAlign: 'center' },
   error: { padding: 32, color: '#b93333', textAlign: 'center' },
 
