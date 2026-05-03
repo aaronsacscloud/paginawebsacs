@@ -92,13 +92,24 @@ El flow completo está cerrado:
 10. Portal: aparece en tab "Pagos" con desglose
 ```
 
-## ⏭️ Pendientes (no urgentes)
+## ⏭️ Pendientes (no urgentes — necesitan tu input)
 
-- **D**: Detail drawer per-partner en CRM (nice-to-have)
-- **E4**: Soft-delete partner con estado=paused (bajo valor)
-- **Testimoniales reales** en /partners (necesitas darme contenido)
-- **Provisión Fideliza automática** vía API de app.sacscloud.com (cross-repo)
-- **WhatsApp notifications** cuando Kapso esté listo
+- **Testimoniales reales** en /partners — dame quotes de partners actuales
+- **Foto del partner en /p/[slug]** — upload UI necesita decisión de hosting (Supabase Storage?)
+- **Provisión Fideliza automática** — requiere API en app.sacscloud.com
+- **WhatsApp notifications** — esperando integración Kapso
+- **Plan Detail Drawer admin** en PartnersTab — gold-plating, no urgente
+
+Los puntos del plan (TIERS A-F + extras H, I) están cerrados. El sistema
+end-to-end funciona: aplicar → revisar → aprobar → onboarding → atribución
+→ bonos automáticos → portal → pagos → emails.
+
+## 🤖 Otra sesión programada
+
+Hay un wake-up programado para las **02:47 hrs** que ejecuta `/loop` con
+instrucciones de continuar polish (detail drawer, /p/[slug] mejoras, structured
+data). Si despiertas antes y prefieres que pare, no le des continuar al loop
+cuando aparezca.
 
 ## 🛠️ Si algo no anda
 
