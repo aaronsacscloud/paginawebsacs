@@ -917,6 +917,18 @@ const useCases = [
             {/* ── Vende: eCommerce ── */}
             <div class="tablet-slide" data-slide="pos-ecommerce">
               <div class="ec-frame">
+                {/* Mobile-only hero image. Desktop uses the .ec-device animation
+                    (laptop morph → tablet → phone). En móvil esa animación se ve
+                    horrible apretada — preferimos UN hero limpio que comunique
+                    "ecommerce de moda" de un vistazo. */}
+                <img
+                  class="ec-mobile-hero"
+                  src="/images/screen-ecommerce.webp"
+                  alt="SACS Tienda en línea — laptop y phones mostrando colección Resort de moda"
+                  loading="lazy"
+                  width="596"
+                  height="320"
+                />
                 {/* Device frame morphs from laptop → mobile across the timeline */}
                 <div class="ec-device">
                   <div class="ec-device-bar">
@@ -5464,6 +5476,8 @@ const useCases = [
     justify-content: center;
     overflow: hidden;
   }
+  /* Desktop: el hero estático solo aparece en móvil (CSS swap) */
+  .ec-mobile-hero { display: none; }
 
   /* Device frame morphs from desktop → tablet → mobile */
   .ec-device {
@@ -10770,61 +10784,24 @@ const useCases = [
        contenido del active slide. */
     .tablet-screen { aspect-ratio: auto; }
 
-    /* ── #11 Tienda en línea (.ec-frame) ── lock a UN solo diseño en móvil.
-       El morph laptop→tablet→phone se ve horrible en un container chico
-       (texto colapsa a 1-2 palabras por línea cuando el device queda en 30%).
-       Decisión: matar el morph y dejar el laptop a tamaño completo todo
-       el ciclo. El cycle de pantallas (home→catalog→cart→checkout) sigue
-       corriendo dentro de ese mismo device — solo escondemos la layer "ok"
-       que estaba diseñada para verse en formato mobile shrunken. */
+    /* ── #11 Tienda en línea (.ec-frame) ── reemplazar animación por hero
+       En móvil la animación morph (laptop→tablet→phone) era ilegible y
+       el flujo cíclico se sentía caótico en un container chico.
+       Ocultamos toda la animación y mostramos UNA sola imagen hero que
+       comunica "ecommerce de moda" de un vistazo. */
     .ec-frame {
-      aspect-ratio: 4 / 5;
-      padding: 6% 5%;
+      aspect-ratio: 16 / 9;
+      padding: 0;
+      background: #0E0E12;
     }
-    .ec-device,
-    .ec-screen,
-    .ec-device-bar {
-      animation: none !important;
+    .ec-frame .ec-device { display: none; }
+    .ec-mobile-hero {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
     }
-    .ec-device {
-      width: 96%;
-      height: 92%;
-      border-radius: 14px;
-    }
-    .ec-screen { border-radius: 8px; }
-    .ec-device-bar {
-      opacity: 1;
-      height: auto;
-      padding-bottom: 4px;
-    }
-    .ec-layer--ok { display: none; }
-    /* Reescritura del timeline (14s) sin morph y sin la fase mobile:
-       0-28%   home
-       32-55%  catalog
-       45-55%  cart drawer (overlay sobre catalog)
-       60-100% checkout */
-    .ec-layer--home     { animation: ec-mob-home 14s ease-in-out infinite; }
-    .ec-layer--catalog  { animation: ec-mob-catalog 14s ease-in-out infinite; }
-    .ec-layer--cart     { animation: ec-mob-cart 14s ease-in-out infinite; }
-    .ec-layer--checkout { animation: ec-mob-checkout 14s ease-in-out infinite; }
-  }
-  @keyframes ec-mob-home {
-    0%, 28%   { opacity: 1; }
-    32%, 100% { opacity: 0; }
-  }
-  @keyframes ec-mob-catalog {
-    0%, 30%   { opacity: 0; }
-    32%, 55%  { opacity: 1; }
-    58%, 100% { opacity: 0; }
-  }
-  @keyframes ec-mob-cart {
-    0%, 43%   { opacity: 0; }
-    45%, 55%  { opacity: 1; }
-    58%, 100% { opacity: 0; }
-  }
-  @keyframes ec-mob-checkout {
-    0%, 57%   { opacity: 0; }
-    60%, 100% { opacity: 1; }
   }
   @media (max-width: 1023px) {
 
