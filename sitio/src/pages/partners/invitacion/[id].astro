@@ -821,12 +821,12 @@ const partnerLandingUrl = invitation.slug_landing
 
               <div class="pp-app-side-divider"></div>
 
-              <a href="/partners/brand-kit" target="_blank" rel="noopener" class="pp-app-nav pp-app-nav--external">
-                <span>📘</span><span>Brand kit</span><span class="pp-app-nav-ext">↗</span>
-              </a>
-              <a href="https://www.sacscloud.com" target="_blank" rel="noopener" class="pp-app-nav pp-app-nav--external">
-                <span>🏪</span><span>Tu cuenta SACS</span><span class="pp-app-nav-ext">↗</span>
-              </a>
+              <button type="button" class="pp-app-nav" data-pp-tab="brandkit">
+                <span>📘</span><span>Brand kit</span>
+              </button>
+              <button type="button" class="pp-app-nav" data-pp-tab="cuenta-sacs">
+                <span>🏪</span><span>Tu cuenta SACS</span>
+              </button>
 
               <div class="pp-app-sidebar-foot">
                 <div class="pp-app-foot-name">{invitation.nombre}</div>
@@ -952,23 +952,23 @@ const partnerLandingUrl = invitation.slug_landing
                 </div>
 
                 <div class="pp-table pp-table--5col">
-                  <div class="pp-trow pp-trow--head"><span>Fecha</span><span>Prospecto</span><span>Tipo</span><span>Estado</span><span>Monto</span></div>
+                  <div class="pp-trow pp-trow--head"><span>Fecha</span><span>Prospecto · Plan</span><span>Tipo</span><span>Estado</span><span>Tu bono</span></div>
 
-                  <div class="pp-trow"><span>03 nov</span><span>Sofía Ramírez</span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--amber">Pending</em></span><span><strong>$500</strong></span></div>
-                  <div class="pp-trow"><span>02 nov</span><span>Diego Hernández</span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--amber">Pending</em></span><span><strong>$500</strong></span></div>
-                  <div class="pp-trow"><span>30 oct</span><span>Adriana Soto</span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--amber">Pending</em></span><span><strong>$500</strong></span></div>
-                  <div class="pp-trow"><span>28 oct</span><span>José Luis Tirado</span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--amber">Pending</em></span><span><strong>$500</strong></span></div>
-                  <div class="pp-trow"><span>26 oct</span><span>Mónica Vega</span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--amber">Pending</em></span><span><strong>$500</strong></span></div>
+                  <div class="pp-trow"><span>03 nov</span><span><strong>Sofía Ramírez</strong><br/><em class="pp-cell-meta">Plan Fideliza · prueba 14 días</em></span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--amber">Pending</em></span><span><strong>$500</strong></span></div>
+                  <div class="pp-trow"><span>02 nov</span><span><strong>Diego Hernández</strong><br/><em class="pp-cell-meta">Plan Fideliza · prueba 14 días</em></span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--amber">Pending</em></span><span><strong>$500</strong></span></div>
+                  <div class="pp-trow"><span>30 oct</span><span><strong>Adriana Soto</strong><br/><em class="pp-cell-meta">Plan Fideliza · prueba 14 días</em></span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--amber">Pending</em></span><span><strong>$500</strong></span></div>
+                  <div class="pp-trow"><span>28 oct</span><span><strong>José Luis Tirado</strong><br/><em class="pp-cell-meta">Plan Plus · prueba 14 días</em></span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--amber">Pending</em></span><span><strong>$500</strong></span></div>
+                  <div class="pp-trow"><span>26 oct</span><span><strong>Mónica Vega</strong><br/><em class="pp-cell-meta">Plan Fideliza · prueba 14 días</em></span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--amber">Pending</em></span><span><strong>$500</strong></span></div>
 
-                  <div class="pp-trow"><span>24 oct</span><span>Roberto Vázquez</span><span>Demo completada</span><span><em class="pp-tag pp-tag--blue">Earned</em></span><span><strong>$300</strong></span></div>
-                  <div class="pp-trow"><span>22 oct</span><span>Patricia Núñez</span><span>Demo completada</span><span><em class="pp-tag pp-tag--blue">Earned</em></span><span><strong>$300</strong></span></div>
-                  <div class="pp-trow"><span>18 oct</span><span>Carlos Méndez</span><span>Demo completada</span><span><em class="pp-tag pp-tag--blue">Earned</em></span><span><strong>$300</strong></span></div>
-                  <div class="pp-trow"><span>15 oct</span><span>Mariana López</span><span>Venta directa · $7,000/año</span><span><em class="pp-tag pp-tag--blue">Earned</em></span><span><strong>$3,500</strong></span></div>
+                  <div class="pp-trow"><span>24 oct</span><span><strong>Roberto Vázquez</strong><br/><em class="pp-cell-meta">Demo · interés Plan Plus</em></span><span>Demo completada</span><span><em class="pp-tag pp-tag--blue">Earned</em></span><span><strong>$300</strong></span></div>
+                  <div class="pp-trow"><span>22 oct</span><span><strong>Patricia Núñez</strong><br/><em class="pp-cell-meta">Demo · interés Plan Fideliza</em></span><span>Demo completada</span><span><em class="pp-tag pp-tag--blue">Earned</em></span><span><strong>$300</strong></span></div>
+                  <div class="pp-trow"><span>18 oct</span><span><strong>Carlos Méndez</strong><br/><em class="pp-cell-meta">Demo · interés Plan Fideliza</em></span><span>Demo completada</span><span><em class="pp-tag pp-tag--blue">Earned</em></span><span><strong>$300</strong></span></div>
+                  <div class="pp-trow"><span>15 oct</span><span><strong>Mariana López</strong><br/><em class="pp-cell-meta">Plan Fideliza · $7,000 anual · contrato 12 meses</em></span><span>Venta directa</span><span><em class="pp-tag pp-tag--blue">Earned</em></span><span><strong>$3,500</strong></span></div>
 
-                  <div class="pp-trow"><span>10 oct</span><span>Andrea Vázquez</span><span>Venta directa · $9,800/año</span><span><em class="pp-tag pp-tag--ok">Paid</em></span><span><strong>$4,900</strong></span></div>
-                  <div class="pp-trow"><span>08 oct</span><span>Pedro González</span><span>Demo completada</span><span><em class="pp-tag pp-tag--ok">Paid</em></span><span><strong>$300</strong></span></div>
+                  <div class="pp-trow"><span>10 oct</span><span><strong>Andrea Vázquez</strong><br/><em class="pp-cell-meta">Plan Fideliza Plus · $9,800 anual · contrato 12 meses</em></span><span>Venta directa</span><span><em class="pp-tag pp-tag--ok">Paid</em></span><span><strong>$4,900</strong></span></div>
+                  <div class="pp-trow"><span>08 oct</span><span><strong>Pedro González</strong><br/><em class="pp-cell-meta">Demo · no cerró</em></span><span>Demo completada</span><span><em class="pp-tag pp-tag--ok">Paid</em></span><span><strong>$300</strong></span></div>
 
-                  <div class="pp-trow pp-trow--cancelled"><span>05 oct</span><span>"Lead Test"</span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--err">Cancelled</em></span><span><strong>$500</strong></span></div>
+                  <div class="pp-trow pp-trow--cancelled"><span>05 oct</span><span><strong>"Lead Test"</strong><br/><em class="pp-cell-meta">Lead duplicado / fake</em></span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--err">Cancelled</em></span><span><strong>$500</strong></span></div>
                 </div>
 
                 <div class="pp-note">
@@ -1007,8 +1007,34 @@ const partnerLandingUrl = invitation.slug_landing
                     </div>
                     <div class="pp-payout-amount">$4,800</div>
                   </div>
+                  <div class="pp-payout-meta-grid">
+                    <div><div class="pp-meta-lbl">Método</div><div class="pp-meta-val">Transferencia CLABE</div></div>
+                    <div><div class="pp-meta-lbl">Cuenta</div><div class="pp-meta-val">BBVA •••2847</div></div>
+                    <div><div class="pp-meta-lbl">Comisiones incluidas</div><div class="pp-meta-val">4 earned</div></div>
+                    <div><div class="pp-meta-lbl">CFDI</div><div class="pp-meta-val">Se emite el día 5</div></div>
+                  </div>
                   <div class="pp-payout-detail">
-                    <span>4 comisiones earned · CLABE termina en •••2847</span>
+                    <details>
+                      <summary>Ver desglose · 4 comisiones</summary>
+                      <ul class="pp-payout-list pp-payout-list--detail">
+                        <li>
+                          <div><strong>Mariana López</strong> · venta directa<br/><em class="pp-cell-meta">Plan Fideliza · $7,000/año · firmó contrato 15 oct · próxima renovación 15 oct 2027</em></div>
+                          <strong>$3,500</strong>
+                        </li>
+                        <li>
+                          <div><strong>Roberto Vázquez</strong> · demo completada<br/><em class="pp-cell-meta">Demo del 24 oct · 32 min · interés Plan Plus · seguimiento por SACS</em></div>
+                          <strong>$300</strong>
+                        </li>
+                        <li>
+                          <div><strong>Patricia Núñez</strong> · demo completada<br/><em class="pp-cell-meta">Demo del 22 oct · 45 min · interés Plan Fideliza · prueba activada</em></div>
+                          <strong>$300</strong>
+                        </li>
+                        <li>
+                          <div><strong>Carlos Méndez</strong> · demo completada<br/><em class="pp-cell-meta">Demo del 18 oct · 28 min · interés Plan Fideliza · agendó 2da reunión</em></div>
+                          <strong>$300</strong>
+                        </li>
+                      </ul>
+                    </details>
                   </div>
                 </div>
 
@@ -1021,12 +1047,24 @@ const partnerLandingUrl = invitation.slug_landing
                     </div>
                     <div class="pp-payout-amount">$5,200</div>
                   </div>
+                  <div class="pp-payout-meta-grid">
+                    <div><div class="pp-meta-lbl">Depositado</div><div class="pp-meta-val">5 oct 2026 · 09:14</div></div>
+                    <div><div class="pp-meta-lbl">Cuenta</div><div class="pp-meta-val">BBVA •••2847</div></div>
+                    <div><div class="pp-meta-lbl">Comisiones</div><div class="pp-meta-val">2 confirmadas</div></div>
+                    <div><div class="pp-meta-lbl">CFDI</div><div class="pp-meta-val"><a href="#" class="pp-link" style="margin:0">📄 Descargar</a></div></div>
+                  </div>
                   <div class="pp-payout-detail">
                     <details>
                       <summary>Ver desglose · 2 comisiones</summary>
-                      <ul class="pp-payout-list">
-                        <li><span>Andrea Vázquez · venta directa $9,800/año</span><strong>$4,900</strong></li>
-                        <li><span>Pedro González · demo completada</span><strong>$300</strong></li>
+                      <ul class="pp-payout-list pp-payout-list--detail">
+                        <li>
+                          <div><strong>Andrea Vázquez</strong> · venta directa<br/><em class="pp-cell-meta">Plan Fideliza Plus · $9,800/año · contrato 12 meses · firmó 28 sep · pago anual upfront · renueva 28 sep 2027</em></div>
+                          <strong>$4,900</strong>
+                        </li>
+                        <li>
+                          <div><strong>Pedro González</strong> · demo completada<br/><em class="pp-cell-meta">Demo del 8 sep · 35 min · interés Plan Fideliza · no convirtió en cliente</em></div>
+                          <strong>$300</strong>
+                        </li>
                       </ul>
                     </details>
                   </div>
@@ -1040,15 +1078,36 @@ const partnerLandingUrl = invitation.slug_landing
                     </div>
                     <div class="pp-payout-amount">$8,300</div>
                   </div>
+                  <div class="pp-payout-meta-grid">
+                    <div><div class="pp-meta-lbl">Depositado</div><div class="pp-meta-val">5 sep 2026 · 09:11</div></div>
+                    <div><div class="pp-meta-lbl">Cuenta</div><div class="pp-meta-val">BBVA •••2847</div></div>
+                    <div><div class="pp-meta-lbl">Comisiones</div><div class="pp-meta-val">5 (1 cancelada)</div></div>
+                    <div><div class="pp-meta-lbl">CFDI</div><div class="pp-meta-val"><a href="#" class="pp-link" style="margin:0">📄 Descargar</a></div></div>
+                  </div>
                   <div class="pp-payout-detail">
                     <details>
                       <summary>Ver desglose · 5 comisiones</summary>
-                      <ul class="pp-payout-list">
-                        <li><span>Luis Robles · venta directa $14,000/año</span><strong>$7,000</strong></li>
-                        <li><span>Karina Padilla · prueba gratis</span><strong>$500</strong></li>
-                        <li><span>Daniela Cruz · prueba gratis</span><strong>$500</strong></li>
-                        <li><span>Erick Olvera · demo completada</span><strong>$300</strong></li>
-                        <li><span>Verónica Sánchez · prueba gratis</span><strong>$0</strong> <em class="pp-tag pp-tag--err">cancelled</em></li>
+                      <ul class="pp-payout-list pp-payout-list--detail">
+                        <li>
+                          <div><strong>Luis Robles</strong> · venta directa<br/><em class="pp-cell-meta">Plan Fideliza · $14,000/año (3 sucursales add-on) · contrato 24 meses · pago anual · renueva 17 ago 2027</em></div>
+                          <strong>$7,000</strong>
+                        </li>
+                        <li>
+                          <div><strong>Karina Padilla</strong> · prueba gratis activada<br/><em class="pp-cell-meta">Plan Plus · prueba 14 días · validada 22 ago</em></div>
+                          <strong>$500</strong>
+                        </li>
+                        <li>
+                          <div><strong>Daniela Cruz</strong> · prueba gratis activada<br/><em class="pp-cell-meta">Plan Fideliza · prueba 14 días · validada 25 ago</em></div>
+                          <strong>$500</strong>
+                        </li>
+                        <li>
+                          <div><strong>Erick Olvera</strong> · demo completada<br/><em class="pp-cell-meta">Demo del 28 ago · 41 min · interés Plan Plus · agendó cierre</em></div>
+                          <strong>$300</strong>
+                        </li>
+                        <li>
+                          <div><strong>Verónica Sánchez</strong> · prueba gratis<br/><em class="pp-cell-meta">Cancelled — email duplicado, mismo lead que Diana Sánchez</em></div>
+                          <strong>$0</strong> <em class="pp-tag pp-tag--err">cancelled</em>
+                        </li>
                       </ul>
                     </details>
                   </div>
@@ -1062,13 +1121,28 @@ const partnerLandingUrl = invitation.slug_landing
                     </div>
                     <div class="pp-payout-amount">$6,000</div>
                   </div>
+                  <div class="pp-payout-meta-grid">
+                    <div><div class="pp-meta-lbl">Depositado</div><div class="pp-meta-val">5 ago 2026 · 09:08</div></div>
+                    <div><div class="pp-meta-lbl">Cuenta</div><div class="pp-meta-val">BBVA •••2847</div></div>
+                    <div><div class="pp-meta-lbl">Comisiones</div><div class="pp-meta-val">3 confirmadas</div></div>
+                    <div><div class="pp-meta-lbl">CFDI</div><div class="pp-meta-val"><a href="#" class="pp-link" style="margin:0">📄 Descargar</a></div></div>
+                  </div>
                   <div class="pp-payout-detail">
                     <details>
                       <summary>Ver desglose · 3 comisiones</summary>
-                      <ul class="pp-payout-list">
-                        <li><span>Fernando Aguilar · venta directa $11,200/año</span><strong>$5,600</strong></li>
-                        <li><span>Mariana Toledo · demo completada</span><strong>$300</strong></li>
-                        <li><span>Israel Mendoza · demo completada</span><strong>$100</strong> <em class="pp-cell-meta">(prorrateado)</em></li>
+                      <ul class="pp-payout-list pp-payout-list--detail">
+                        <li>
+                          <div><strong>Fernando Aguilar</strong> · venta directa<br/><em class="pp-cell-meta">Plan Fideliza Plus · $11,200/año · contrato 12 meses · pago mensual $933 · renueva 18 jul 2027</em></div>
+                          <strong>$5,600</strong>
+                        </li>
+                        <li>
+                          <div><strong>Mariana Toledo</strong> · demo completada<br/><em class="pp-cell-meta">Demo del 24 jul · 38 min · interés Plan Fideliza · pendiente decisión</em></div>
+                          <strong>$300</strong>
+                        </li>
+                        <li>
+                          <div><strong>Israel Mendoza</strong> · demo completada<br/><em class="pp-cell-meta">Demo del 26 jul · 12 min · prorrateado: demo no alcanzó 25 min mínimo</em></div>
+                          <strong>$100</strong>
+                        </li>
                       </ul>
                     </details>
                   </div>
@@ -1122,26 +1196,39 @@ const partnerLandingUrl = invitation.slug_landing
                 </div>
 
                 <div class="pp-table pp-table--5col">
-                  <div class="pp-trow pp-trow--head"><span>Prospecto</span><span>Empresa</span><span>Origen</span><span>Etapa</span><span>Llegó hace</span></div>
+                  <div class="pp-trow pp-trow--head"><span>Prospecto</span><span>Negocio</span><span>Plan / Interés</span><span>Etapa</span><span>Tu bono</span></div>
 
-                  <div class="pp-trow"><span><strong>Mariana López</strong><br/><em class="pp-cell-meta">marianalopez@boutiquema.mx</em></span><span>Boutique Mariana · CDMX</span><span>tu link</span><span><em class="pp-tag pp-tag--ok">Cliente $7K</em></span><span>21 días</span></div>
-                  <div class="pp-trow"><span><strong>Andrea Vázquez</strong><br/><em class="pp-cell-meta">andrea@vazquezjoyas.com</em></span><span>Vázquez Joyas · GDL</span><span>tu link</span><span><em class="pp-tag pp-tag--ok">Cliente $9.8K</em></span><span>28 días</span></div>
-                  <div class="pp-trow"><span><strong>Luis Robles</strong><br/><em class="pp-cell-meta">luis@robleshogar.mx</em></span><span>Robles Hogar · MTY</span><span>tu link</span><span><em class="pp-tag pp-tag--ok">Cliente $14K</em></span><span>52 días</span></div>
-                  <div class="pp-trow"><span><strong>Roberto Vázquez</strong><br/><em class="pp-cell-meta">roberto@farmaciasv.mx</em></span><span>Farmacia Vázquez · MTY</span><span>tu link</span><span><em class="pp-tag pp-tag--blue">Demo realizada</em></span><span>9 días</span></div>
-                  <div class="pp-trow"><span><strong>Patricia Núñez</strong><br/><em class="pp-cell-meta">paty@florerianunez.mx</em></span><span>Florería Núñez · CDMX</span><span>Instagram</span><span><em class="pp-tag pp-tag--blue">Demo realizada</em></span><span>11 días</span></div>
-                  <div class="pp-trow"><span><strong>Carlos Méndez</strong><br/><em class="pp-cell-meta">carlos@cafemendez.com</em></span><span>Café Méndez · GDL</span><span>tu link</span><span><em class="pp-tag pp-tag--blue">Demo agendada · jue 15:00</em></span><span>5 días</span></div>
-                  <div class="pp-trow"><span><strong>Estefanía Romo</strong><br/><em class="pp-cell-meta">estefa@romoaccesorios.mx</em></span><span>Romo Accesorios</span><span>tu link</span><span><em class="pp-tag pp-tag--blue">Demo agendada · vie 11:00</em></span><span>3 días</span></div>
-                  <div class="pp-trow"><span><strong>Laura Jiménez</strong><br/><em class="pp-cell-meta">laura@jimenezjoyeria.com</em></span><span>Jiménez Joyería online</span><span>Instagram</span><span><em class="pp-tag pp-tag--amber">Prueba activa · día 7</em></span><span>7 días</span></div>
-                  <div class="pp-trow"><span><strong>Mónica Vega</strong><br/><em class="pp-cell-meta">monica@petsandfun.mx</em></span><span>Pets &amp; Fun · Toluca</span><span>TikTok</span><span><em class="pp-tag pp-tag--amber">Prueba activa · día 4</em></span><span>4 días</span></div>
-                  <div class="pp-trow"><span><strong>José Luis Tirado</strong><br/><em class="pp-cell-meta">jl@tiradoshoes.com</em></span><span>Tirado Shoes</span><span>tu link</span><span><em class="pp-tag pp-tag--amber">Prueba activa · día 3</em></span><span>3 días</span></div>
-                  <div class="pp-trow"><span><strong>Adriana Soto</strong><br/><em class="pp-cell-meta">adriana@sotoboutique.mx</em></span><span>Soto Boutique</span><span>tu link</span><span><em class="pp-tag pp-tag--amber">Prueba activa · día 1</em></span><span>1 día</span></div>
-                  <div class="pp-trow"><span><strong>Sofía Ramírez</strong><br/><em class="pp-cell-meta">sofi@petlovers.mx</em></span><span>Pet Lovers · Cuernavaca</span><span>TikTok</span><span><em class="pp-tag">Lead nuevo</em></span><span>hoy</span></div>
-                  <div class="pp-trow"><span><strong>Diego Hernández</strong><br/><em class="pp-cell-meta">diego@dhfarmacias.mx</em></span><span>DH Farmacias</span><span>email</span><span><em class="pp-tag">Lead nuevo</em></span><span>hoy</span></div>
-                  <div class="pp-trow"><span><strong>Valeria Cruz</strong><br/><em class="pp-cell-meta">vale@panaderiacruz.mx</em></span><span>Panadería Cruz</span><span>tu link</span><span><em class="pp-tag">Lead nuevo</em></span><span>2 días</span></div>
+                  <div class="pp-trow"><span><strong>Mariana López</strong><br/><em class="pp-cell-meta">marianalopez@boutiquema.mx · WhatsApp 55•••8431</em></span><span>Boutique Mariana · CDMX<br/><em class="pp-cell-meta">3 sucursales · moda</em></span><span><strong>Plan Fideliza · $7K/año</strong><br/><em class="pp-cell-meta">Pago anual · firmó 15 oct · renueva 15 oct 2027</em></span><span><em class="pp-tag pp-tag--ok">Cliente</em></span><span><strong>$3,500</strong><br/><em class="pp-cell-meta">earned</em></span></div>
+
+                  <div class="pp-trow"><span><strong>Andrea Vázquez</strong><br/><em class="pp-cell-meta">andrea@vazquezjoyas.com · WhatsApp 33•••2218</em></span><span>Vázquez Joyas · GDL<br/><em class="pp-cell-meta">1 sucursal · joyería</em></span><span><strong>Plan Fideliza Plus · $9.8K/año</strong><br/><em class="pp-cell-meta">Pago anual upfront · firmó 28 sep · renueva 28 sep 2027</em></span><span><em class="pp-tag pp-tag--ok">Cliente</em></span><span><strong>$4,900</strong><br/><em class="pp-cell-meta">paid el 5 oct</em></span></div>
+
+                  <div class="pp-trow"><span><strong>Luis Robles</strong><br/><em class="pp-cell-meta">luis@robleshogar.mx · WhatsApp 81•••5067</em></span><span>Robles Hogar · MTY<br/><em class="pp-cell-meta">3 sucursales · ferretería</em></span><span><strong>Plan Fideliza · $14K/año</strong><br/><em class="pp-cell-meta">+ add-on multisucursal · contrato 24 meses · renueva 17 ago 2027</em></span><span><em class="pp-tag pp-tag--ok">Cliente</em></span><span><strong>$7,000</strong><br/><em class="pp-cell-meta">paid el 5 sep</em></span></div>
+
+                  <div class="pp-trow"><span><strong>Roberto Vázquez</strong><br/><em class="pp-cell-meta">roberto@farmaciasv.mx · 9 días en pipeline</em></span><span>Farmacia Vázquez · MTY<br/><em class="pp-cell-meta">2 sucursales · farmacia</em></span><span>Interés <strong>Plan Plus</strong><br/><em class="pp-cell-meta">$24K/año · cierre estimado nov</em></span><span><em class="pp-tag pp-tag--blue">Demo realizada</em></span><span><strong>$300</strong><br/><em class="pp-cell-meta">earned · venta pendiente</em></span></div>
+
+                  <div class="pp-trow"><span><strong>Patricia Núñez</strong><br/><em class="pp-cell-meta">paty@florerianunez.mx · 11 días en pipeline</em></span><span>Florería Núñez · CDMX<br/><em class="pp-cell-meta">1 local · florería + entrega</em></span><span>Interés <strong>Plan Fideliza</strong><br/><em class="pp-cell-meta">$7K/año · prueba activa día 6</em></span><span><em class="pp-tag pp-tag--blue">Demo realizada</em></span><span><strong>$300 + $3,500</strong> potencial</span></div>
+
+                  <div class="pp-trow"><span><strong>Carlos Méndez</strong><br/><em class="pp-cell-meta">carlos@cafemendez.com · 5 días en pipeline</em></span><span>Café Méndez · GDL<br/><em class="pp-cell-meta">1 local · cafetería</em></span><span>Interés <strong>Plan Fideliza</strong><br/><em class="pp-cell-meta">$7K/año · agenda jue 15:00</em></span><span><em class="pp-tag pp-tag--blue">Demo agendada</em></span><span>$300 al hacerse</span></div>
+
+                  <div class="pp-trow"><span><strong>Estefanía Romo</strong><br/><em class="pp-cell-meta">estefa@romoaccesorios.mx · 3 días</em></span><span>Romo Accesorios · CDMX<br/><em class="pp-cell-meta">2 sucursales · bisutería</em></span><span>Interés <strong>Plan Plus</strong><br/><em class="pp-cell-meta">$24K/año · agenda vie 11:00</em></span><span><em class="pp-tag pp-tag--blue">Demo agendada</em></span><span>$300 al hacerse</span></div>
+
+                  <div class="pp-trow"><span><strong>Laura Jiménez</strong><br/><em class="pp-cell-meta">laura@jimenezjoyeria.com · 7 días</em></span><span>Jiménez Joyería · online<br/><em class="pp-cell-meta">e-commerce únicamente</em></span><span><strong>Plan Fideliza · prueba</strong><br/><em class="pp-cell-meta">día 7 de 14 · activa</em></span><span><em class="pp-tag pp-tag--amber">Prueba activa</em></span><span><strong>$500</strong> pending</span></div>
+
+                  <div class="pp-trow"><span><strong>Mónica Vega</strong><br/><em class="pp-cell-meta">monica@petsandfun.mx · 4 días</em></span><span>Pets &amp; Fun · Toluca<br/><em class="pp-cell-meta">1 sucursal · pet shop</em></span><span><strong>Plan Fideliza · prueba</strong><br/><em class="pp-cell-meta">día 4 de 14 · activa</em></span><span><em class="pp-tag pp-tag--amber">Prueba activa</em></span><span><strong>$500</strong> pending</span></div>
+
+                  <div class="pp-trow"><span><strong>José Luis Tirado</strong><br/><em class="pp-cell-meta">jl@tiradoshoes.com · 3 días</em></span><span>Tirado Shoes · GDL<br/><em class="pp-cell-meta">2 sucursales · zapatería</em></span><span><strong>Plan Plus · prueba</strong><br/><em class="pp-cell-meta">día 3 de 14 · activa</em></span><span><em class="pp-tag pp-tag--amber">Prueba activa</em></span><span><strong>$500</strong> pending</span></div>
+
+                  <div class="pp-trow"><span><strong>Adriana Soto</strong><br/><em class="pp-cell-meta">adriana@sotoboutique.mx · 1 día</em></span><span>Soto Boutique · CDMX<br/><em class="pp-cell-meta">1 local · ropa femenina</em></span><span><strong>Plan Fideliza · prueba</strong><br/><em class="pp-cell-meta">día 1 de 14 · activa</em></span><span><em class="pp-tag pp-tag--amber">Prueba activa</em></span><span><strong>$500</strong> pending</span></div>
+
+                  <div class="pp-trow"><span><strong>Sofía Ramírez</strong><br/><em class="pp-cell-meta">sofi@petlovers.mx · llegó hoy</em></span><span>Pet Lovers · Cuernavaca<br/><em class="pp-cell-meta">1 local · pet shop</em></span><span>Aún no elige plan<br/><em class="pp-cell-meta">visitando catálogo</em></span><span><em class="pp-tag">Lead nuevo</em></span><span>—</span></div>
+
+                  <div class="pp-trow"><span><strong>Diego Hernández</strong><br/><em class="pp-cell-meta">diego@dhfarmacias.mx · llegó hoy</em></span><span>DH Farmacias · MTY<br/><em class="pp-cell-meta">5 sucursales · farmacia</em></span><span>Aún no elige plan<br/><em class="pp-cell-meta">considera Plan Plus</em></span><span><em class="pp-tag">Lead nuevo</em></span><span>—</span></div>
+
+                  <div class="pp-trow"><span><strong>Valeria Cruz</strong><br/><em class="pp-cell-meta">vale@panaderiacruz.mx · 2 días</em></span><span>Panadería Cruz · Toluca<br/><em class="pp-cell-meta">1 local · panadería</em></span><span>Aún no elige plan<br/><em class="pp-cell-meta">visitando precios</em></span><span><em class="pp-tag">Lead nuevo</em></span><span>—</span></div>
                 </div>
 
                 <div class="pp-note">
-                  <strong>💡 ¿Cómo te paga cada uno?</strong> Lead nuevo = $0 todavía · Prueba activa = $500 al confirmar · Demo realizada = $300 al instante · Cliente = 50% del primer año (típicamente $3,500-$7,000 por venta).
+                  <strong>💡 Planes que ofrece SACS y cuánto te pagan:</strong> <strong>Plan Fideliza</strong> $7K/año (50% = $3,500 a ti) · <strong>Plan Fideliza Plus</strong> $9.8K/año ($4,900) · <strong>Plan Plus</strong> $24K/año ($12,000) · <strong>Plan Enterprise</strong> negociado (10-30%). Los add-ons (sucursales extra, módulos) suman al pago. Prueba gratis = $500 al confirmar · Demo = $300 al hacerse.
                 </div>
               </section>
 
@@ -1363,8 +1450,244 @@ const partnerLandingUrl = invitation.slug_landing
                       <div class="pp-fideliza-status">✓ Activa hasta 15 julio 2027</div>
                       <div class="pp-fideliza-renew">Se renueva automáticamente mientras seas embajador.</div>
                     </div>
-                    <a href="https://app.sacscloud.com" target="_blank" rel="noopener" class="pp-btn pp-btn--primary">Abrir mi cuenta SACS →</a>
+                    <button type="button" class="pp-btn pp-btn--primary" data-pp-tab="cuenta-sacs">Abrir mi cuenta SACS →</button>
                   </div>
+                </div>
+              </section>
+
+              {/* ─────────── TAB: BRAND KIT ─────────── */}
+              <section class="pp-app-panel" data-pp-panel="brandkit">
+                <div class="pp-tut">
+                  <div class="pp-tut-icon">💡</div>
+                  <div class="pp-tut-body">
+                    <strong>Tu kit de marca SACS — todo listo para usar.</strong> Logos en alta
+                    resolución, paleta de colores, tipografía, plantillas de redes y captions
+                    aprobados por marketing. Descarga lo que necesites y arma contenido que se vea
+                    profesional sin partir de cero.
+                  </div>
+                </div>
+
+                <div class="pp-h1">Brand kit</div>
+                <div class="pp-lead">Assets oficiales para usar en tus posts, videos y materiales como partner.</div>
+
+                <h2 class="pp-h2">Logos · 4 versiones</h2>
+                <div class="pp-bk-logos">
+                  <div class="pp-bk-logo pp-bk-logo--dark">
+                    <div class="pp-bk-logo-preview" style="background:#fff; color:#1a1a1a; font-family: 'Clash Display'; font-size: 2rem; font-weight: 700;">Sacs</div>
+                    <div class="pp-bk-logo-meta">
+                      <strong>Logo principal · negro</strong>
+                      <span>PNG, SVG, AI · 4 tamaños</span>
+                    </div>
+                    <div class="pp-bk-logo-actions">
+                      <button type="button" class="pp-btn pp-btn--ghost">⬇️ PNG</button>
+                      <button type="button" class="pp-btn pp-btn--ghost">⬇️ SVG</button>
+                    </div>
+                  </div>
+                  <div class="pp-bk-logo pp-bk-logo--inverse">
+                    <div class="pp-bk-logo-preview" style="background:#1a1a1a; color:#fff; font-family: 'Clash Display'; font-size: 2rem; font-weight: 700;">Sacs</div>
+                    <div class="pp-bk-logo-meta">
+                      <strong>Logo blanco</strong>
+                      <span>Para fondos oscuros</span>
+                    </div>
+                    <div class="pp-bk-logo-actions">
+                      <button type="button" class="pp-btn pp-btn--ghost">⬇️ PNG</button>
+                      <button type="button" class="pp-btn pp-btn--ghost">⬇️ SVG</button>
+                    </div>
+                  </div>
+                  <div class="pp-bk-logo">
+                    <div class="pp-bk-logo-preview" style="background:#fff; color:#4B7BE5; font-family: 'Clash Display'; font-size: 2rem; font-weight: 700;">Sacs</div>
+                    <div class="pp-bk-logo-meta">
+                      <strong>Logo azul · monocromático</strong>
+                      <span>Color de marca</span>
+                    </div>
+                    <div class="pp-bk-logo-actions">
+                      <button type="button" class="pp-btn pp-btn--ghost">⬇️ PNG</button>
+                      <button type="button" class="pp-btn pp-btn--ghost">⬇️ SVG</button>
+                    </div>
+                  </div>
+                  <div class="pp-bk-logo">
+                    <div class="pp-bk-logo-preview" style="background:#FAFAF8; color:#1a1a1a; border: 1px solid #ececec; font-family: 'Clash Display'; font-size: 1.5rem; font-weight: 700; flex-direction:column; line-height:1.1; gap:4px"><span>Sacs</span><span style="font-size:0.625rem; font-weight:500; color:#888; letter-spacing:0.1em; text-transform:uppercase">Partner</span></div>
+                    <div class="pp-bk-logo-meta">
+                      <strong>Logo Partner</strong>
+                      <span>Solo embajadores autorizados</span>
+                    </div>
+                    <div class="pp-bk-logo-actions">
+                      <button type="button" class="pp-btn pp-btn--ghost">⬇️ PNG</button>
+                      <button type="button" class="pp-btn pp-btn--ghost">⬇️ SVG</button>
+                    </div>
+                  </div>
+                </div>
+
+                <h2 class="pp-h2">Paleta de colores</h2>
+                <div class="pp-bk-colors">
+                  <div class="pp-bk-color" style="background:#1a1a1a; color:#fff"><strong>#1A1A1A</strong><span>Negro principal</span></div>
+                  <div class="pp-bk-color" style="background:#4B7BE5; color:#fff"><strong>#4B7BE5</strong><span>Azul SACS</span></div>
+                  <div class="pp-bk-color" style="background:#6CD6C2; color:#1a1a1a"><strong>#6CD6C2</strong><span>Verde acento</span></div>
+                  <div class="pp-bk-color" style="background:#FAFAF8; color:#1a1a1a; border:1px solid #ececec"><strong>#FAFAF8</strong><span>Cream fondo</span></div>
+                  <div class="pp-bk-color" style="background:#6C5CE7; color:#fff"><strong>#6C5CE7</strong><span>Morado acento</span></div>
+                </div>
+
+                <h2 class="pp-h2">Tipografía</h2>
+                <div class="pp-bk-fonts">
+                  <div class="pp-bk-font">
+                    <div style="font-family: 'Clash Display'; font-size: 2.5rem; font-weight: 600; color:#1a1a1a; line-height:1; letter-spacing:-0.02em">Clash Display</div>
+                    <div class="pp-bk-font-meta"><strong>Display · headlines</strong><span>Weights: 400, 500, 600, 700</span></div>
+                  </div>
+                  <div class="pp-bk-font">
+                    <div style="font-family: 'Plus Jakarta Sans'; font-size: 1.5rem; font-weight: 500; color:#1a1a1a; line-height:1.3">Plus Jakarta Sans</div>
+                    <div class="pp-bk-font-meta"><strong>Body · texto largo</strong><span>Weights: 300, 400, 500, 600, 700, 800</span></div>
+                  </div>
+                </div>
+
+                <h2 class="pp-h2">Plantillas de redes</h2>
+                <div class="pp-bk-templates">
+                  <div class="pp-bk-template">
+                    <div class="pp-bk-template-preview" style="background:linear-gradient(135deg, #4B7BE5, #6C5CE7); color:#fff; aspect-ratio: 1">
+                      <div style="padding:24px; height:100%; display:flex; flex-direction:column; justify-content:space-between">
+                        <div style="font-family:'Clash Display'; font-size: 0.875rem; font-weight:600">Sacs</div>
+                        <div style="font-family:'Clash Display'; font-size:1.5rem; font-weight:600; line-height:1.1">El sistema operativo del retail moderno</div>
+                      </div>
+                    </div>
+                    <div class="pp-bk-template-meta"><strong>Cuadrado IG · 1080×1080</strong><span>3 variantes · PSD + Canva</span></div>
+                  </div>
+                  <div class="pp-bk-template">
+                    <div class="pp-bk-template-preview" style="background:#1a1a1a; color:#fff; aspect-ratio: 9/16">
+                      <div style="padding:20px; height:100%; display:flex; flex-direction:column; justify-content:space-between; align-items:center; text-align:center">
+                        <div style="font-family:'Clash Display'; font-size: 0.75rem; font-weight:600">Sacs</div>
+                        <div style="font-family:'Clash Display'; font-size:1.25rem; font-weight:600; line-height:1.2; color:#6CD6C2">¿Tu POS te limita?</div>
+                        <div style="font-size:0.75rem; opacity:0.7">desliza para más</div>
+                      </div>
+                    </div>
+                    <div class="pp-bk-template-meta"><strong>Story IG/TT · 1080×1920</strong><span>5 variantes · PSD + Canva</span></div>
+                  </div>
+                  <div class="pp-bk-template">
+                    <div class="pp-bk-template-preview" style="background:#FAFAF8; aspect-ratio: 16/9; padding: 18px">
+                      <div style="height:100%; display:flex; flex-direction:column; justify-content:center; gap:8px">
+                        <div style="font-family:'Clash Display'; font-size:0.625rem; font-weight:600; color:#4B7BE5; letter-spacing:0.1em; text-transform:uppercase">Caso de éxito</div>
+                        <div style="font-family:'Clash Display'; font-size:1rem; font-weight:600; color:#1a1a1a; line-height:1.2">Bella Pandita: 43 sucursales con un solo POS</div>
+                      </div>
+                    </div>
+                    <div class="pp-bk-template-meta"><strong>LinkedIn · 1200×675</strong><span>2 variantes · PSD</span></div>
+                  </div>
+                </div>
+
+                <h2 class="pp-h2">Captions sugeridos por giro</h2>
+                <div class="pp-templates">
+                  <div class="pp-template">
+                    <div class="pp-template-head">👗 Para audiencia de retail/moda</div>
+                    <div class="pp-template-body">"El sistema que uso para mi boutique se llama SACS. Maneja inventario por talla y color, mis ventas online + físicas en un solo lugar y reportes que sí se entienden. Si tienes una tienda, pruébalo gratis 14 días: link en bio o sacscloud.com/p/[tu-slug]"</div>
+                    <button type="button" class="pp-btn pp-btn--ghost">Copiar texto</button>
+                  </div>
+                  <div class="pp-template">
+                    <div class="pp-template-head">🍽️ Para restauranteros</div>
+                    <div class="pp-template-body">"Cambié mi POS por SACS y ahora veo mi cocina, mis mesas, mis ventas y mi inventario en una sola pantalla. Si tienes restaurante, te toca probarlo: sacscloud.com/p/[tu-slug] · 14 días gratis."</div>
+                    <button type="button" class="pp-btn pp-btn--ghost">Copiar texto</button>
+                  </div>
+                </div>
+
+                <div class="pp-note">
+                  <strong>💡 Reglas de uso:</strong> No modifiques los logos (colores, proporción).
+                  No los uses en fondos que generen poco contraste. Si quieres usar SACS en tu
+                  propio material visual, usa el "Logo Partner" (no el principal).
+                </div>
+              </section>
+
+              {/* ─────────── TAB: TU CUENTA SACS ─────────── */}
+              <section class="pp-app-panel" data-pp-panel="cuenta-sacs">
+                <div class="pp-tut">
+                  <div class="pp-tut-icon">💡</div>
+                  <div class="pp-tut-body">
+                    <strong>Tu propio negocio en SACS — gratis como embajador.</strong> Aquí tienes
+                    un resumen rápido de tu cuenta Plan Fideliza activa. Para gestionar productos,
+                    ventas y reportes en detalle, abre la app principal.
+                  </div>
+                </div>
+
+                <div class="pp-h1">Tu cuenta SACS</div>
+                <div class="pp-lead">Tu Plan Fideliza está activo y operando. Estos son tus números de hoy.</div>
+
+                {/* Plan card destacada */}
+                <div class="pp-cuenta-plan">
+                  <div class="pp-cuenta-plan-head">
+                    <div>
+                      <div class="pp-cuenta-plan-eyebrow">✓ Plan activo</div>
+                      <div class="pp-cuenta-plan-name">Plan Fideliza</div>
+                      <div class="pp-cuenta-plan-meta">$14,000 MXN/año · GRATIS por embajador · activo hasta 15 jul 2027</div>
+                    </div>
+                    <a href="https://app.sacscloud.com" target="_blank" rel="noopener" class="pp-btn pp-btn--primary" style="background:#1a1a1a; color:#fff">Abrir app SACS ↗</a>
+                  </div>
+                </div>
+
+                <h2 class="pp-h2">Tu negocio · este mes</h2>
+                <div class="pp-kpi-row">
+                  <div class="pp-kpi" style="--accent:#2AB5A0">
+                    <div class="pp-kpi-lbl">Ventas del mes</div>
+                    <div class="pp-kpi-val">$184,500</div>
+                    <div class="pp-kpi-hint">+22% vs mes pasado · 412 tickets</div>
+                  </div>
+                  <div class="pp-kpi" style="--accent:#4B7BE5">
+                    <div class="pp-kpi-lbl">Ticket promedio</div>
+                    <div class="pp-kpi-val">$447</div>
+                    <div class="pp-kpi-hint">Categoría más vendida: blusas</div>
+                  </div>
+                  <div class="pp-kpi" style="--accent:#6C5CE7">
+                    <div class="pp-kpi-lbl">Productos</div>
+                    <div class="pp-kpi-val">1,284</div>
+                    <div class="pp-kpi-hint">42 con stock bajo</div>
+                  </div>
+                  <div class="pp-kpi" style="--accent:#E8A838">
+                    <div class="pp-kpi-lbl">Clientes activos</div>
+                    <div class="pp-kpi-val">2,847</div>
+                    <div class="pp-kpi-hint">+186 nuevos este mes</div>
+                  </div>
+                </div>
+
+                <h2 class="pp-h2">Tus sucursales · 1 activa</h2>
+                <div class="pp-table">
+                  <div class="pp-trow pp-trow--head"><span>Sucursal</span><span>Dirección</span><span>Estado</span><span>Ventas mes</span></div>
+                  <div class="pp-trow"><span><strong>Sucursal Principal</strong><br/><em class="pp-cell-meta">{invitation.empresa || 'Tu negocio'}</em></span><span>Av. Reforma 222 · CDMX 06600</span><span><em class="pp-tag pp-tag--ok">Operando</em></span><span><strong>$184,500</strong></span></div>
+                </div>
+                <a href="https://app.sacscloud.com/sucursales" target="_blank" rel="noopener" class="pp-link">+ Agregar sucursal →</a>
+
+                <h2 class="pp-h2">Accesos rápidos</h2>
+                <div class="pp-quick-grid">
+                  <a href="https://app.sacscloud.com/pos" target="_blank" rel="noopener" class="pp-quick">
+                    <div class="pp-quick-icon">🛒</div>
+                    <div class="pp-quick-name">POS</div>
+                    <div class="pp-quick-desc">Cobrar venta nueva</div>
+                  </a>
+                  <a href="https://app.sacscloud.com/inventario" target="_blank" rel="noopener" class="pp-quick">
+                    <div class="pp-quick-icon">📦</div>
+                    <div class="pp-quick-name">Inventario</div>
+                    <div class="pp-quick-desc">Productos y stock</div>
+                  </a>
+                  <a href="https://app.sacscloud.com/ecommerce" target="_blank" rel="noopener" class="pp-quick">
+                    <div class="pp-quick-icon">🌐</div>
+                    <div class="pp-quick-name">Tienda online</div>
+                    <div class="pp-quick-desc">Tu e-commerce</div>
+                  </a>
+                  <a href="https://app.sacscloud.com/clientes" target="_blank" rel="noopener" class="pp-quick">
+                    <div class="pp-quick-icon">👥</div>
+                    <div class="pp-quick-name">CRM</div>
+                    <div class="pp-quick-desc">Clientes y lealtad</div>
+                  </a>
+                  <a href="https://app.sacscloud.com/reportes" target="_blank" rel="noopener" class="pp-quick">
+                    <div class="pp-quick-icon">📊</div>
+                    <div class="pp-quick-name">Reportes</div>
+                    <div class="pp-quick-desc">Análisis y BI</div>
+                  </a>
+                  <a href="https://app.sacscloud.com/marketing" target="_blank" rel="noopener" class="pp-quick">
+                    <div class="pp-quick-icon">📣</div>
+                    <div class="pp-quick-name">Marketing</div>
+                    <div class="pp-quick-desc">WhatsApp y email</div>
+                  </a>
+                </div>
+
+                <div class="pp-note">
+                  <strong>💡 Tu cuenta no es solo un beneficio.</strong> Usar SACS en tu propio
+                  negocio te da material real para tus videos y posts: capturas, testimonios
+                  propios, comparativas. Los partners que usan la plataforma cierran 3x más ventas
+                  que los que solo recomiendan sin usarla.
                 </div>
               </section>
 
@@ -5243,6 +5566,51 @@ const partnerLandingUrl = invitation.slug_landing
     gap: 12px;
   }
   .pp-payout-list li:last-child { border-bottom: none; }
+  .pp-payout-list--detail li {
+    align-items: flex-start;
+    padding: 12px 0;
+  }
+  .pp-payout-list--detail li > div:first-child {
+    flex: 1;
+    line-height: 1.5;
+  }
+  .pp-payout-list--detail li strong {
+    color: #1a1a1a;
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-align: right;
+    font-size: 0.9375rem;
+  }
+  .pp-payout-list--detail .pp-cell-meta {
+    display: block;
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+
+  .pp-payout-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 14px 0;
+    margin: 12px 0;
+    border-top: 1px solid #f0f0ee;
+    border-bottom: 1px solid #f0f0ee;
+  }
+  .pp-meta-lbl {
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: #999;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .pp-meta-val {
+    font-size: 0.875rem;
+    color: #1a1a1a;
+    font-weight: 500;
+  }
+  .pp-meta-val a { color: #4B7BE5; text-decoration: none; }
+  .pp-meta-val a:hover { text-decoration: underline; }
 
   /* Funnel — más generoso */
   .pp-funnel {
@@ -5551,6 +5919,195 @@ const partnerLandingUrl = invitation.slug_landing
   .pp-perfil-section .pp-btn--primary { background: #1a1a1a; color: #fff; }
   .pp-perfil-section .pp-btn--ghost { background: #fafafa; color: #1a1a1a; border: 1px solid #ececec; }
 
+  /* Brand kit panel */
+  .pp-bk-logos {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+  .pp-bk-logo {
+    background: #fff;
+    border: 1px solid #f0f0ee;
+    border-radius: 14px;
+    padding: 22px 24px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  }
+  .pp-bk-logo-preview {
+    aspect-ratio: 16/9;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+  }
+  .pp-bk-logo-meta { margin-bottom: 14px; }
+  .pp-bk-logo-meta strong {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+  }
+  .pp-bk-logo-meta span {
+    font-size: 0.8125rem;
+    color: #888;
+  }
+  .pp-bk-logo-actions { display: flex; gap: 8px; }
+  .pp-bk-logo-actions .pp-btn {
+    background: #fafafa;
+    color: #1a1a1a;
+    border: 1px solid #f0f0ee;
+    font-size: 0.8125rem;
+    padding: 8px 12px;
+  }
+
+  .pp-bk-colors {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+  }
+  .pp-bk-color {
+    aspect-ratio: 1;
+    border-radius: 14px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 4px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  }
+  .pp-bk-color strong {
+    font-family: 'SF Mono', 'Courier New', monospace;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+  .pp-bk-color span { font-size: 0.75rem; opacity: 0.85; }
+
+  .pp-bk-fonts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .pp-bk-font {
+    background: #fff;
+    border: 1px solid #f0f0ee;
+    border-radius: 14px;
+    padding: 32px 28px 24px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  }
+  .pp-bk-font-meta { margin-top: 18px; padding-top: 14px; border-top: 1px solid #f0f0ee; }
+  .pp-bk-font-meta strong {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+  }
+  .pp-bk-font-meta span { font-size: 0.75rem; color: #888; }
+
+  .pp-bk-templates {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+  .pp-bk-template {
+    background: #fff;
+    border: 1px solid #f0f0ee;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  }
+  .pp-bk-template-preview {
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+  }
+  .pp-bk-template-meta { padding: 16px 18px; }
+  .pp-bk-template-meta strong {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+  }
+  .pp-bk-template-meta span { font-size: 0.75rem; color: #888; }
+
+  /* Cuenta SACS panel */
+  .pp-cuenta-plan {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d44 100%);
+    color: #fff;
+    border-radius: 16px;
+    padding: 32px 36px;
+    margin-bottom: 32px;
+  }
+  .pp-cuenta-plan-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .pp-cuenta-plan-eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: #6CD6C2;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .pp-cuenta-plan-name {
+    font-family: var(--font-display);
+    font-size: 1.875rem;
+    font-weight: 500;
+    color: #fff;
+    margin-bottom: 6px;
+    letter-spacing: -0.025em;
+  }
+  .pp-cuenta-plan-meta {
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.7);
+  }
+  .pp-cuenta-plan .pp-btn { flex-shrink: 0; }
+
+  .pp-quick-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .pp-quick {
+    background: #fff;
+    border: 1px solid #f0f0ee;
+    border-radius: 14px;
+    padding: 24px 22px;
+    text-decoration: none;
+    color: #1a1a1a;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  }
+  .pp-quick:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+    border-color: #d4d4d2;
+  }
+  .pp-quick-icon {
+    font-size: 1.75rem;
+    line-height: 1;
+    margin-bottom: 14px;
+  }
+  .pp-quick-name {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+  }
+  .pp-quick-desc {
+    font-size: 0.8125rem;
+    color: #888;
+  }
+
   /* Mobile */
   @media (max-width: 1100px) {
     .pp-app-main { padding: 48px 40px 80px; }
@@ -5563,6 +6120,11 @@ const partnerLandingUrl = invitation.slug_landing
     .pp-h1 { font-size: 1.875rem; }
     .pp-h2 { font-size: 1.25rem; margin-top: 48px; }
     .pp-perfil-section { padding: 26px 28px; }
+    .pp-payout-meta-grid { grid-template-columns: repeat(2, 1fr); }
+    .pp-bk-logos, .pp-bk-fonts { grid-template-columns: 1fr; }
+    .pp-bk-templates { grid-template-columns: 1fr 1fr; }
+    .pp-bk-colors { grid-template-columns: repeat(3, 1fr); }
+    .pp-quick-grid { grid-template-columns: 1fr 1fr; }
   }
   @media (max-width: 720px) {
     .pp-app-topbar { padding: 12px 16px; flex-wrap: wrap; gap: 10px; }
@@ -5605,6 +6167,11 @@ const partnerLandingUrl = invitation.slug_landing
     .pp-link-card { padding: 24px 22px; }
     .pp-link-url { font-size: 0.9375rem; }
     .pp-link-block, .pp-template { padding: 22px 22px; }
+    .pp-payout-meta-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+    .pp-bk-templates, .pp-bk-colors { grid-template-columns: 1fr 1fr; }
+    .pp-quick-grid { grid-template-columns: 1fr 1fr; }
+    .pp-cuenta-plan { padding: 26px 22px; }
+    .pp-cuenta-plan-name { font-size: 1.5rem; }
   }
 
   /* Sign form */
