@@ -175,6 +175,7 @@ const partnerLandingUrl = invitation.slug_landing
   title={`Invitación Partner ${invitation.numero || ''} — SACS`}
   description={`Programa de partners SACS para ${invitation.nombre}`}
   noindex={true}
+  bareLayout={true}
 >
 
 <div class:list={['p-layout', `p-layout--${template}`]}>
@@ -787,18 +788,9 @@ const partnerLandingUrl = invitation.slug_landing
 </BaseLayout>
 
 <style is:global>
-  /* Esta página es una experiencia enfocada para el prospecto:
-     ocultamos la navegación, footer y CTAs globales del sitio SACS.
-     Targeting directo (sin :has) para máximo soporte de browsers. */
-  header.nav,
-  header#nav,
-  body > header,
-  body > footer,
-  footer.footer,
-  .wa-bar,
-  .final-cta { display: none !important; }
-  main { padding: 0 !important; margin: 0 !important; }
-  body { padding: 0 !important; margin: 0 !important; }
+  /* Página enfocada — bareLayout en BaseLayout ya omite Nav/Footer.
+     Reset por si algún global aplica margin/padding al body o main. */
+  body, main { padding: 0 !important; margin: 0 !important; }
 </style>
 
 <style>

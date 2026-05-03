@@ -18,9 +18,11 @@ interface Props {
   structuredData?: Record<string, unknown> | Record<string, unknown>[];
   locale?: Locale;
   preloadImage?: string;
+  /** Cuando true, omite Nav/Footer/WhatsApp/PageTracker — para experiencias enfocadas (cotizaciones, invitaciones, etc.) */
+  bareLayout?: boolean;
 }
 
-const { title, description, image, type, noindex, structuredData, preloadImage } = Astro.props;
+const { title, description, image, type, noindex, structuredData, preloadImage, bareLayout } = Astro.props;
 const locale = Astro.props.locale || getLangFromUrl(Astro.url);
 const hreflangLinks = getHreflangLinks(Astro.url.pathname);
 
@@ -194,15 +196,17 @@ const allSchemas = structuredData
       .wa-bar { opacity: 0; pointer-events: none; }
     </style>
   </head>
-  <body>
-    <a href="#main-content" class="skip-link">{t('common.skipToContent', locale)}</a>
-    <Nav locale={locale} />
+  <body class={bareLayout ? 'is-bare' : undefined}>
+    {!bareLayout && (
+      <a href="#main-content" class="skip-link">{t('common.skipToContent', locale)}</a>
+    )}
+    {!bareLayout && <Nav locale={locale} />}
     <main id="main-content">
       <slot />
     </main>
-    <Footer locale={locale} />
-    <WhatsAppButton locale={locale} />
-    <PageTracker />
+    {!bareLayout && <Footer locale={locale} />}
+    {!bareLayout && <WhatsAppButton locale={locale} />}
+    {!bareLayout && <PageTracker />}
 
     <!-- Coming soon modal -->
     <div class="cs-modal-overlay" id="cs-modal" aria-hidden="true">
