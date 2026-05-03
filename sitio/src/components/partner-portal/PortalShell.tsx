@@ -181,11 +181,29 @@ export default function PortalShell({ initialUser }: Props) {
         ))}
       </nav>
 
+      {/* Floating "Mi link" button: shortcut a la tab link desde cualquier
+          parte del portal. Se oculta cuando el partner ya está en esa tab. */}
+      {tab !== 'link' && (
+        <button
+          onClick={() => go('link')}
+          aria-label="Mi link de partner"
+          title="Ver y compartir tu link"
+          className="pp-fab"
+          style={S.fab}
+          onMouseEnter={(e) => (e.currentTarget.style.transform = 'translateY(-2px)')}
+          onMouseLeave={(e) => (e.currentTarget.style.transform = 'translateY(0)')}
+        >
+          <span style={{ fontSize: 16 }}>🔗</span>
+          <span>Mi link</span>
+        </button>
+      )}
+
       <style dangerouslySetInnerHTML={{ __html: `
         @media (max-width: 767px) {
           .pp-sidebar { display: none !important; }
           .pp-bottomnav { display: flex !important; }
           .pp-main { padding-bottom: 80px !important; }
+          .pp-fab { bottom: 78px !important; }
         }
         @media (min-width: 768px) {
           .pp-bottomnav { display: none !important; }
@@ -847,6 +865,27 @@ const S: Record<string, React.CSSProperties> = {
   input: { padding: '11px 14px', fontSize: 14, border: '1px solid #ddd', borderRadius: 8, outline: 'none', fontFamily: 'inherit' },
   btnPrimary: { padding: '11px 20px', background: '#1a1a1a', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
   btnGhost: { padding: '11px 18px', background: 'transparent', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
+
+  fab: {
+    position: 'fixed',
+    bottom: 24,
+    right: 24,
+    zIndex: 50,
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 8,
+    padding: '13px 20px',
+    background: '#1a1a1a',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 999,
+    fontSize: 13,
+    fontWeight: 600,
+    fontFamily: 'inherit',
+    cursor: 'pointer',
+    boxShadow: '0 8px 24px -8px rgba(26,26,46,0.45), 0 4px 12px -4px rgba(26,26,46,0.20)',
+    transition: 'transform 0.18s, box-shadow 0.18s, background 0.18s',
+  },
 };
 
 const shareBtn: React.CSSProperties = {
