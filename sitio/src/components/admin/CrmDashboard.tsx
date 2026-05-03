@@ -292,7 +292,7 @@ export default function CrmDashboard() {
               <div style={{ fontWeight: 600, marginBottom: 6 }}>Agentes disponibles:</div>
               <ul style={{ margin: 0, paddingLeft: 20 }}>
                 <li><strong>hello_agent</strong> — demo + smoke test infra</li>
-                <li><strong>meeting_prep</strong> — brief 30 min antes de demos (auto)</li>
+                <li><strong>meeting_prep</strong> — brief antes de demos (manual / event-triggered)</li>
                 <li><strong>quote_drafter</strong> — transcripción → cotización (HITL)</li>
                 <li><strong>service_recommender</strong> — sugerencias de add-ons (auto)</li>
                 <li><strong>churn_watchdog</strong> — análisis de riesgo cada 6h (auto, cron)</li>

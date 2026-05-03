@@ -601,18 +601,104 @@ const partnerLandingUrl = invitation.slug_landing
           <>
             <div class="p-terms-group-eyebrow">2 · Lo que SACS te entrega</div>
             <div class="p-terms">
-              {beneficios.map((b: any) => (
-                <div class="p-term-row">
-                  <div class="p-term-info">
-                    <div class="p-term-label">{b.title}</div>
-                    <div class="p-term-detail">{b.detail}</div>
+              {beneficios.map((b: any) => {
+                const label = (b.value_label || '').trim();
+                const isSoon = /pr[oó]ximamente|coming.soon/i.test(label);
+                const cls = isSoon
+                  ? 'p-term-value p-term-value--pill p-term-value--pill-soon'
+                  : label
+                    ? 'p-term-value p-term-value--pill p-term-value--pill-emph'
+                    : 'p-term-value p-term-value--pill';
+                return (
+                  <div class="p-term-row">
+                    <div class="p-term-info">
+                      <div class="p-term-label">{b.title}</div>
+                      <div class="p-term-detail">{b.detail}</div>
+                    </div>
+                    <div class={cls}>{label || 'Incluido'}</div>
                   </div>
-                  <div class="p-term-value p-term-value--pill">Incluido</div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}
+
+        <!-- ── Funnel: el embudo de conversión que SACS opera por ti ── -->
+        <div class="p-funnel">
+          <div class="p-funnel-eyebrow">⚡ El embudo está hecho · tú solo recomiendas</div>
+          <h3 class="p-funnel-title">No vendes — recomiendas. <br/><span class="p-funnel-title-accent">SACS hace el resto.</span></h3>
+          <p class="p-funnel-lead">
+            Tenemos un embudo completo de conversión optimizado en cada paso.
+            Cuando alguien llega por tu link, nuestro equipo y nuestra
+            automatización se encargan: emails de seguimiento, llamadas,
+            videos paso a paso, recordatorios. Tú solo compartes — nosotros
+            convertimos, te avisamos en tiempo real, y te pagamos.
+          </p>
+
+          <div class="p-funnel-stages">
+            <div class="p-funnel-stage">
+              <div class="p-funnel-stage-num">1</div>
+              <div class="p-funnel-stage-icon">📣</div>
+              <div class="p-funnel-stage-title">Atracción</div>
+              <div class="p-funnel-stage-detail">Tu link único en redes, WhatsApp, email, video, podcast — donde sea que te encuentren.</div>
+              <div class="p-funnel-stage-tag">Tu trabajo</div>
+            </div>
+
+            <div class="p-funnel-arrow">→</div>
+
+            <div class="p-funnel-stage">
+              <div class="p-funnel-stage-num">2</div>
+              <div class="p-funnel-stage-icon">🎯</div>
+              <div class="p-funnel-stage-title">Captura</div>
+              <div class="p-funnel-stage-detail">El prospecto llega a tu landing personalizada con tu nombre. Atribución automática vía cookie 90 días.</div>
+              <div class="p-funnel-stage-tag p-funnel-stage-tag--auto">Automático</div>
+            </div>
+
+            <div class="p-funnel-arrow">→</div>
+
+            <div class="p-funnel-stage">
+              <div class="p-funnel-stage-num">3</div>
+              <div class="p-funnel-stage-icon">✨</div>
+              <div class="p-funnel-stage-title">Activación</div>
+              <div class="p-funnel-stage-detail">Se registran a prueba gratis o agendan demo. <strong>Aquí ya empiezas a ganar bonos.</strong></div>
+              <div class="p-funnel-stage-tag p-funnel-stage-tag--auto">SACS lo cierra</div>
+            </div>
+
+            <div class="p-funnel-arrow">→</div>
+
+            <div class="p-funnel-stage">
+              <div class="p-funnel-stage-num">4</div>
+              <div class="p-funnel-stage-icon">🔁</div>
+              <div class="p-funnel-stage-title">Nurturing</div>
+              <div class="p-funnel-stage-detail">Email automatizado, WhatsApp del equipo, llamadas, recordatorios, videos paso a paso. Tour guiado del producto.</div>
+              <div class="p-funnel-stage-tag p-funnel-stage-tag--auto">SACS lo opera</div>
+            </div>
+
+            <div class="p-funnel-arrow">→</div>
+
+            <div class="p-funnel-stage p-funnel-stage--win">
+              <div class="p-funnel-stage-num">5</div>
+              <div class="p-funnel-stage-icon">💰</div>
+              <div class="p-funnel-stage-title">Conversión + Pago</div>
+              <div class="p-funnel-stage-detail">Cliente activa o cierra venta. Te avisamos en el portal en tiempo real, comisión liquidada cada 30 días.</div>
+              <div class="p-funnel-stage-tag p-funnel-stage-tag--win">Tú cobras</div>
+            </div>
+          </div>
+
+          <div class="p-funnel-tools">
+            <div class="p-funnel-tools-title">Lo que SACS opera por ti en cada activación:</div>
+            <div class="p-funnel-tools-grid">
+              <div class="p-funnel-tool">📧 Email de bienvenida + secuencia de nurturing (5 mensajes en 14 días)</div>
+              <div class="p-funnel-tool">💬 WhatsApp 1-on-1 con asesor humano</div>
+              <div class="p-funnel-tool">🎥 Tour guiado del producto + videos paso a paso por vertical</div>
+              <div class="p-funnel-tool">📞 Llamada de calificación en menos de 24h hábiles</div>
+              <div class="p-funnel-tool">📅 Demo en vivo agendada en su calendario</div>
+              <div class="p-funnel-tool">⚙️ Onboarding completo del cliente al cerrar</div>
+              <div class="p-funnel-tool">🔔 Notificaciones a tu portal en tiempo real</div>
+              <div class="p-funnel-tool">🏦 Pagos automáticos cada 30 días</div>
+            </div>
+          </div>
+        </div>
 
         <!-- ── 3. Costos y vigencia ── -->
         <div class="p-terms-group-eyebrow">3 · Costos y vigencia</div>
@@ -1612,6 +1698,24 @@ const partnerLandingUrl = invitation.slug_landing
     letter-spacing: 0.08em;
     -webkit-text-fill-color: initial;
   }
+  /* Variante con énfasis: para beneficios con valor monetario explícito
+     (ej. Plan Fideliza "Vale $14,000/año · Gratis") */
+  .p-term-value--pill-emph {
+    background: linear-gradient(120deg, rgba(75,123,229,0.14), rgba(108,92,231,0.10));
+    color: #3764c4;
+    padding: 7px 14px;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    border: 1px solid rgba(75,123,229,0.20);
+  }
+  /* Variante para "Próximamente" — feature anunciada pero aún no activa */
+  .p-term-value--pill-soon {
+    background: rgba(232,168,56,0.12);
+    color: #a06600;
+    border: 1px solid rgba(232,168,56,0.25);
+    -webkit-text-fill-color: initial;
+  }
   /* Eyebrow para subgrupos dentro de Términos (1·Lo que ganas, 2·SACS te entrega, 3·Costos) */
   .p-terms-group-eyebrow {
     font-size: 0.6875rem;
@@ -1623,6 +1727,190 @@ const partnerLandingUrl = invitation.slug_landing
   }
   .p-terms-group-eyebrow:first-of-type {
     margin-top: 12px;
+  }
+
+  /* ─── Funnel de conversión: showcase visual del embudo SACS ─── */
+  .p-funnel {
+    margin: 36px 0 8px;
+    padding: 36px;
+    background: linear-gradient(160deg, #1a1a1a 0%, #2a2750 100%);
+    color: #fff;
+    border-radius: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .p-funnel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 20% 0%, rgba(75,123,229,0.20), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 90% 100%, rgba(108,92,231,0.18), transparent 60%);
+    pointer-events: none;
+  }
+  .p-funnel > * { position: relative; z-index: 1; }
+
+  .p-funnel-eyebrow {
+    display: inline-block;
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.10);
+    color: rgba(255,255,255,0.92);
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  .p-funnel-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 3vw, 2.125rem);
+    font-weight: 700;
+    line-height: 1.15;
+    color: #fff;
+    margin: 0 0 14px;
+    letter-spacing: -0.02em;
+  }
+  .p-funnel-title-accent {
+    background: linear-gradient(120deg, #6CD6C2 0%, #4B7BE5 60%, #B49EFF 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .p-funnel-lead {
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: rgba(255,255,255,0.75);
+    margin: 0 0 32px;
+    max-width: 680px;
+  }
+
+  .p-funnel-stages {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 10px;
+    justify-content: center;
+  }
+  .p-funnel-stage {
+    flex: 1 1 160px;
+    min-width: 0;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 12px;
+    padding: 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    backdrop-filter: blur(6px);
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .p-funnel-stage:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255,255,255,0.20);
+  }
+  .p-funnel-stage--win {
+    background: linear-gradient(160deg, rgba(42,181,160,0.18), rgba(75,123,229,0.10));
+    border-color: rgba(42,181,160,0.30);
+  }
+  .p-funnel-stage-num {
+    position: absolute;
+    top: -10px; left: 12px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    color: #1a1a1a;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 0.75rem;
+  }
+  .p-funnel-stage-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+    margin-top: 4px;
+  }
+  .p-funnel-stage-title {
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.01em;
+  }
+  .p-funnel-stage-detail {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.70);
+    line-height: 1.5;
+    flex: 1;
+  }
+  .p-funnel-stage-detail strong {
+    color: #6CD6C2;
+    font-weight: 700;
+  }
+  .p-funnel-stage-tag {
+    align-self: flex-start;
+    padding: 3px 9px;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.10);
+    color: rgba(255,255,255,0.85);
+    margin-top: 2px;
+  }
+  .p-funnel-stage-tag--auto {
+    background: rgba(75,123,229,0.22);
+    color: #B5D0FF;
+  }
+  .p-funnel-stage-tag--win {
+    background: rgba(42,181,160,0.30);
+    color: #6CD6C2;
+  }
+  .p-funnel-arrow {
+    align-self: center;
+    font-size: 1.5rem;
+    color: rgba(255,255,255,0.35);
+    flex-shrink: 0;
+  }
+
+  .p-funnel-tools {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255,255,255,0.10);
+  }
+  .p-funnel-tools-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.65);
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    margin-bottom: 14px;
+  }
+  .p-funnel-tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 8px;
+  }
+  .p-funnel-tool {
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    color: rgba(255,255,255,0.85);
+    line-height: 1.5;
+  }
+
+  @media (max-width: 768px) {
+    .p-funnel { padding: 24px 18px; }
+    .p-funnel-arrow {
+      transform: rotate(90deg);
+      align-self: center;
+      font-size: 1.25rem;
+    }
+    .p-funnel-stage { flex: 1 1 100%; }
   }
 
   .p-terms-extra {

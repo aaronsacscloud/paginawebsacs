@@ -465,7 +465,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
           { icon: 'link',      title: 'Landing page personalizada con tu link', detail: 'Tu propia página dentro de SACS con tu nombre, foto y link único (sacscloud.com/p/tu-slug). Cada visita y registro queda atribuido automáticamente a ti.' },
           { icon: 'dashboard', title: 'Portal de partner con métricas en tiempo real', detail: 'Dashboard personal con visitas a tu landing, registros generados, prospectos calificados, conversiones, comisiones acumuladas y pagos liquidados — todo actualizado al instante.' },
           { icon: 'academy',   title: 'Acceso a Academia SACS y capacitaciones', detail: 'Cursos en línea, playbooks por vertical, demos grabadas y certificación oficial de embajador.' },
-          { icon: 'gift',      title: 'Plan Fideliza incluido',                  detail: 'Acceso completo al plan Fideliza para tu propio negocio durante toda tu participación. Valor de $18,000 MXN al año.' },
+          { icon: 'gift',      title: 'Plan Fideliza gratis',                    detail: 'Te activamos una cuenta SACS completa en plan Fideliza para usar en tu propio negocio (POS, inventario multi-sucursal, e-commerce, CRM, lealtad, marketing). Costo normal: $14,000 MXN/año. Para ti: gratis durante toda la vigencia del programa, mientras sigas siendo partner activo.', value_label: 'Vale $14,000 MXN/año · Gratis' },
           { icon: 'calendar',  title: 'Reunión trimestral con el equipo SACS',   detail: 'Sesión cada 3 meses para compartir mejoras, casos de éxito y feedback directo con el equipo de producto y dirección.' },
           { icon: 'broadcast', title: 'Difusión en el canal SACS',               detail: 'Republicamos tu contenido en nuestras redes sociales. El alcance es variable y orgánico — puede sumar miles de views adicionales según el contenido.' },
           { icon: 'wallet',    title: 'Pagos automáticos cada 30 días',          detail: 'Comisiones y bonos liquidados por transferencia cada 30 días, con desglose detallado de cada concepto, cliente y referido. Visible siempre desde tu portal.' },
@@ -711,6 +711,12 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
                     <button onClick={() => removeBenefit(i)} style={{ ...btnSm(), background: 'transparent', color: '#b93333', borderColor: 'rgba(229,75,75,0.3)' }}>✕</button>
                   </div>
                   <textarea value={b.detail || ''} onChange={e => updateBenefit(i, 'detail', e.target.value)} placeholder="Detalle del beneficio" rows={2} style={{ ...inputStyle, resize: 'vertical' as const }} />
+                  <input
+                    value={b.value_label || ''}
+                    onChange={e => updateBenefit(i, 'value_label', e.target.value)}
+                    placeholder='Valor (opcional, ej. "Vale $14,000/año · Gratis")'
+                    style={{ ...inputStyle, marginTop: 8, fontSize: '0.8125rem' }}
+                  />
                 </div>
               ))}
             </div>
