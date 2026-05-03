@@ -209,7 +209,7 @@ const visibleTabs = tabsDef.filter(t => t.show).map(({ id, label }) => ({ id, la
 const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 ---
 
-<BaseLayout title={`Cotización ${quote.numero} — Sacs`} description={`Cotización para ${quote.empresa}`}>
+<BaseLayout title={`Cotización ${quote.numero} — Sacs`} description={`Cotización para ${quote.empresa}`} noindex={true} bareLayout={true}>
 
 <QuoteMobilePills
   template={template}

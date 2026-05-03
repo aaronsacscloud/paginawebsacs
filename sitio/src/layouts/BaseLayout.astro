@@ -18,11 +18,12 @@ interface Props {
   structuredData?: Record<string, unknown> | Record<string, unknown>[];
   locale?: Locale;
   preloadImage?: string;
-  /** Cuando true, omite Nav/Footer/WhatsApp/PageTracker — para experiencias enfocadas (cotizaciones, invitaciones, etc.) */
+  /** Cuando true, omite Nav/Footer/WhatsApp/PageTracker — para experiencias enfocadas
+      (cotizaciones, invitaciones, acuses, etc.) sin chrome de marketing. */
   bareLayout?: boolean;
 }
 
-const { title, description, image, type, noindex, structuredData, preloadImage, bareLayout } = Astro.props;
+const { title, description, image, type, noindex, structuredData, preloadImage, bareLayout = false } = Astro.props;
 const locale = Astro.props.locale || getLangFromUrl(Astro.url);
 const hreflangLinks = getHreflangLinks(Astro.url.pathname);
 

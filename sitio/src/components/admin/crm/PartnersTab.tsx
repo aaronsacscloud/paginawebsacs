@@ -35,12 +35,13 @@ const TIPO_LABELS: Record<string, { label: string; tagline: string; color: strin
 };
 
 const ESTADO_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  draft:    { label: 'Borrador',  color: '#666',    bg: '#f5f5f5' },
-  sent:     { label: 'Enviada',   color: '#3764c4', bg: 'rgba(75,123,229,0.1)' },
-  viewed:   { label: 'Vista',     color: '#7a4ed3', bg: 'rgba(108,92,231,0.10)' },
-  accepted: { label: 'Aceptada',  color: '#1e8471', bg: 'rgba(42,181,160,0.12)' },
-  declined: { label: 'Rechazada', color: '#b93333', bg: 'rgba(229,75,75,0.10)' },
-  expired:  { label: 'Vencida',   color: '#999',    bg: 'rgba(153,153,153,0.10)' },
+  draft:                 { label: 'Borrador',     color: '#666',    bg: '#f5f5f5' },
+  sent:                  { label: 'Enviada',      color: '#3764c4', bg: 'rgba(75,123,229,0.1)' },
+  viewed:                { label: 'Vista',        color: '#7a4ed3', bg: 'rgba(108,92,231,0.10)' },
+  submitted_for_review:  { label: 'Por aprobar',  color: '#a06600', bg: 'rgba(232,168,56,0.16)' },
+  accepted:              { label: 'Aprobada',     color: '#1e8471', bg: 'rgba(42,181,160,0.12)' },
+  declined:              { label: 'Rechazada',    color: '#b93333', bg: 'rgba(229,75,75,0.10)' },
+  expired:               { label: 'Vencida',      color: '#999',    bg: 'rgba(153,153,153,0.10)' },
 };
 
 const fmt = (n?: number) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
@@ -92,6 +93,7 @@ export default function PartnersTab() {
   const stats = {
     total: list.length,
     sent: list.filter(i => i.estado === 'sent' || i.estado === 'viewed').length,
+    pending: list.filter(i => i.estado === 'submitted_for_review').length,
     accepted: list.filter(i => i.estado === 'accepted').length,
     declined: list.filter(i => i.estado === 'declined').length,
   };
@@ -102,6 +104,25 @@ export default function PartnersTab() {
     navigator.clipboard.writeText(url).then(() => {
       alert('Link copiado:\n' + url);
     });
+  }
+
+  async function approveInvitation(it: Invitation) {
+    const ok = confirm(`Aprobar a ${it.nombre} como partner?\n\nEsto:\n• Activa la cuenta\n• Crea el team_member con rol partner\n• Envía email de bienvenida con credenciales\n\nAsegúrate de validar primero los datos de cobro y dirección.`);
+    if (!ok) return;
+    let nota = prompt('Nota opcional para el partner (aparece en el email de bienvenida):', '') || undefined;
+    try {
+      const res = await fetch('/api/partners/approve-invitation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: it.id, nota }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al aprobar');
+      alert('Partner aprobado. Email de bienvenida enviado.');
+      load();
+    } catch (err: any) {
+      alert('Error: ' + (err.message || err));
+    }
   }
 
   async function markAsSent(it: Invitation) {
@@ -155,8 +176,9 @@ export default function PartnersTab() {
       {/* Stat cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
         <StatCard label="Invitaciones totales" value={stats.total.toString()} />
-        <StatCard label="Pendientes" value={stats.sent.toString()} accent="#4B7BE5" />
-        <StatCard label="Aceptadas" value={stats.accepted.toString()} accent="#2AB5A0" />
+        <StatCard label="Enviadas / vistas" value={stats.sent.toString()} accent="#4B7BE5" />
+        <StatCard label="Por aprobar" value={stats.pending.toString()} accent="#E8A838" />
+        <StatCard label="Aprobadas" value={stats.accepted.toString()} accent="#2AB5A0" />
         <StatCard label="Conversión" value={`${conversionPct}%`} accent="#6C5CE7" />
       </div>
 
@@ -251,6 +273,9 @@ export default function PartnersTab() {
                         <button style={btnSm()} onClick={() => { setEditing(it); setShowCreate(true); }}>Editar</button>
                         {it.estado === 'draft' && (
                           <button style={btnSm('#1a1a1a', '#fff')} onClick={() => markAsSent(it)}>Enviar</button>
+                        )}
+                        {it.estado === 'submitted_for_review' && (
+                          <button style={btnSm('#2AB5A0', '#fff')} onClick={() => approveInvitation(it)}>Aprobar</button>
                         )}
                       </div>
                     </td>

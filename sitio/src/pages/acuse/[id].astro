@@ -74,6 +74,7 @@ const cotizacionUrl = quote ? `/cotizacion/${quote.id}` : null;
   title={`Acuse de pago ${payment.numero_acuse} — SACS`}
   description={`Confirmación de pago por ${fmt(monto)} de ${quote?.empresa || 'cliente SACS'}`}
   noindex={true}
+  bareLayout={true}
 >
 
 <div class="acuse-page">

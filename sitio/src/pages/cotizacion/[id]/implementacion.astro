@@ -29,8 +29,10 @@ const quoteUrl = `/cotizacion/${id}`;
 <BaseLayout
   title={`Tu implementación con SACS — ${quote.empresa}`}
   description={`Proceso completo de implementación para ${quote.empresa}. Migración, capacitación y puesta en marcha en días.`}
+  noindex={true}
+  bareLayout={true}
 >
-  <main style="background:#fafafa;min-height:100vh;padding-top:88px;padding-bottom:96px">
+  <main style="background:#fafafa;min-height:100vh;padding-top:32px;padding-bottom:96px">
     <ImplementacionContent
       variant="full"
       empresa={quote.empresa}

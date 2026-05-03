@@ -1,13 +1,46 @@
 // POST /api/partners/accept-invitation
-// Public endpoint llamado desde la página /partners/invitacion/[id] cuando el
-// prospecto firma la invitación. Marca la invitación como 'accepted', guarda
-// la firma en notas (meta) y crea el team_member con rol 'partner' + comisión
-// configurada.
+// Endpoint público — el prospecto firma su invitación y la deja en estado
+// 'submitted_for_review' (no 'accepted'). El equipo SACS revisa y aprueba
+// manualmente desde el admin (POST /api/partners/approve-invitation).
+//
+// Side-effects:
+// - Marca la invitación como submitted_for_review
+// - Guarda firma + datos de cobro + dirección en notas (meta)
+// - Envía email al prospecto: "Recibimos tu solicitud"
+// - Envía email a ventas: "Nueva solicitud de partner"
+// - NO crea team_member todavía — eso ocurre en el approve
 
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { notify, getSalesInbox } from '../../../lib/notify';
 
 export const prerender = false;
+
+interface PayoutClabe {
+  method: 'clabe';
+  clabe: string;
+  banco: string;
+  titular: string;
+  rfc?: string;
+}
+interface PayoutPaypal {
+  method: 'paypal';
+  email: string;
+}
+interface PayoutMP {
+  method: 'mercadopago';
+  mp_id: string;
+  titular?: string;
+}
+type Payout = PayoutClabe | PayoutPaypal | PayoutMP;
+
+interface Direccion {
+  calle?: string;
+  colonia?: string;
+  cp?: string;
+  ciudad?: string;
+  estado?: string;
+}
 
 interface AcceptBody {
   id: string;
@@ -15,6 +48,9 @@ interface AcceptBody {
   firma_base64?: string;   // PNG dataURL del canvas
   email?: string;
   whatsapp?: string;
+  empresa?: string;
+  direccion?: Direccion;
+  payout?: Payout;
 }
 
 const NOTAS_SEP = '\n---META---\n';
@@ -38,7 +74,7 @@ function buildNotas(plain: string, meta: Record<string, any>): string {
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = (await request.json()) as AcceptBody;
-    const { id, nombre, firma_base64, email, whatsapp } = body;
+    const { id, nombre, firma_base64, email, whatsapp, empresa, direccion, payout } = body;
 
     if (!id || !nombre) {
       return new Response(JSON.stringify({ error: 'id and nombre required' }), {
@@ -64,6 +100,12 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
+    if (invitation.estado === 'submitted_for_review') {
+      return new Response(JSON.stringify({ ok: true, already_submitted: true, invitation }), {
+        status: 200, headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     if (invitation.estado === 'declined') {
       return new Response(JSON.stringify({ error: 'invitation was declined' }), {
         status: 400, headers: { 'Content-Type': 'application/json' },
@@ -76,66 +118,25 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    // Save firma into notas meta
+    // Save firma + onboarding data into notas meta
     const { plain, meta } = parseNotas(invitation.notas);
     if (firma_base64) meta.firma_base64 = firma_base64;
     meta.signed_at = new Date().toISOString();
     meta.signed_user_agent = request.headers.get('user-agent') || null;
+    if (direccion) meta.direccion = direccion;
+    if (payout) meta.payout = payout;
+    meta.submitted_at = new Date().toISOString();
 
     const updates: Record<string, any> = {
-      estado: 'accepted',
+      estado: 'submitted_for_review',
       aceptado_por: nombre,
-      aceptado_fecha: new Date().toISOString(),
+      aceptado_fecha: new Date().toISOString(), // momento de envío de la solicitud
       notas: buildNotas(plain, meta),
     };
 
-    // Update contact info if user filled it in
     if (email && !invitation.email) updates.email = email;
     if (whatsapp && !invitation.whatsapp) updates.whatsapp = whatsapp;
-
-    // Create team_member with partner role (idempotent on email)
-    let team_member_id = invitation.team_member_id as string | null;
-
-    const partnerEmail = email || invitation.email;
-    if (!team_member_id && partnerEmail) {
-      const { data: existing } = await supabase
-        .from('team_members')
-        .select('id, rol, default_commission_pct')
-        .eq('email', partnerEmail)
-        .maybeSingle();
-
-      if (existing) {
-        const newRol = existing.rol === 'founder' ? 'founder' : 'partner';
-        await supabase
-          .from('team_members')
-          .update({
-            rol: newRol,
-            default_commission_pct: invitation.comision_pct ?? existing.default_commission_pct ?? 50,
-            activo: true,
-          })
-          .eq('id', existing.id);
-        team_member_id = existing.id;
-      } else {
-        const { data: created, error: createErr } = await supabase
-          .from('team_members')
-          .insert({
-            nombre,
-            email: partnerEmail,
-            rol: 'partner',
-            default_commission_pct: invitation.comision_pct ?? 50,
-            activo: true,
-          })
-          .select('id')
-          .single();
-        if (createErr) {
-          console.error('[accept-invitation] team_member create failed:', createErr.message);
-        } else {
-          team_member_id = created.id;
-        }
-      }
-    }
-
-    if (team_member_id) updates.team_member_id = team_member_id;
+    if (empresa && !invitation.empresa) updates.empresa = empresa;
 
     const { data: updated, error: updateErr } = await supabase
       .from('partner_invitations')
@@ -150,17 +151,70 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
+    // ── Notifications (non-blocking, errors logged) ──
+    const partnerEmail = email || invitation.email;
+    const tipoLabels: Record<string, string> = {
+      embajador: 'Embajador SACS',
+      distribuidor: 'Distribuidor Autorizado',
+      integrador: 'Integrador Certificado',
+      reseller: 'Reseller',
+      consultor: 'Consultor Partner',
+    };
+    const programa = tipoLabels[invitation.tipo] || invitation.tipo || 'Partner SACS';
+    const adminUrl = `https://www.sacscloud.com/admin/crm?tab=partners`;
+    const partnerUrl = `https://www.sacscloud.com/partners/invitacion/${id}`;
+
+    // Email to partner — confirmación de recepción
+    if (partnerEmail) {
+      try {
+        await notify({
+          channel: 'email',
+          to: partnerEmail,
+          template: 'partner_submitted_user',
+          data: {
+            nombre,
+            programa,
+            partnerUrl,
+          },
+        });
+      } catch (e) {
+        console.warn('[accept-invitation] notify partner failed:', e);
+      }
+    }
+
+    // Email to sales inbox — nueva solicitud para revisar
+    try {
+      await notify({
+        channel: 'email',
+        to: getSalesInbox(),
+        template: 'partner_submitted_admin',
+        data: {
+          nombre,
+          email: partnerEmail,
+          whatsapp: whatsapp || invitation.whatsapp || '',
+          empresa: empresa || invitation.empresa || '',
+          programa,
+          numero: invitation.numero,
+          comision_pct: invitation.comision_pct,
+          payout,
+          direccion,
+          adminUrl,
+        },
+      });
+    } catch (e) {
+      console.warn('[accept-invitation] notify admin failed:', e);
+    }
+
     // Activity log (non-blocking)
     try {
       await supabase.from('activities').insert({
         tipo: 'sistema',
-        titulo: `Invitación de partner aceptada: ${nombre} (${invitation.tipo})`,
+        titulo: `Solicitud de partner enviada: ${nombre} (${invitation.tipo}) — pendiente de aprobación`,
         metadata: {
           partner_invitation_id: id,
           partner_invitation_numero: invitation.numero,
           tipo: invitation.tipo,
           comision_pct: invitation.comision_pct,
-          team_member_id,
         },
         automatico: true,
       });
@@ -168,7 +222,7 @@ export const POST: APIRoute = async ({ request }) => {
       console.warn('[accept-invitation] activity insert failed:', e);
     }
 
-    return new Response(JSON.stringify({ ok: true, invitation: updated, team_member_id }), {
+    return new Response(JSON.stringify({ ok: true, invitation: updated }), {
       status: 200, headers: { 'Content-Type': 'application/json' },
     });
   } catch (err: any) {

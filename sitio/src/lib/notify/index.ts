@@ -122,6 +122,91 @@ const templates: Record<string, Template> = {
       text: `Acuse ${d.numero_acuse}: pago de ${fmt(d.monto)} por ${metodo} recibido. Ver: ${d.acuseUrl}`,
     };
   },
+  partner_submitted_user: (d) => ({
+    subject: `Recibimos tu solicitud · Programa ${d.programa || 'Partners SACS'}`,
+    html: `
+      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <h2 style="font-size:1.375rem;font-weight:300;margin:0 0 12px;letter-spacing:-0.01em">Hola ${d.nombre || ''},</h2>
+        <p style="color:#555;line-height:1.6;margin:0 0 16px">
+          Recibimos tu solicitud para el programa <strong>${d.programa || 'Partners SACS'}</strong>. Nuestro equipo la revisará y te contactaremos en las próximas <strong>24-48 horas hábiles</strong> para activar tu cuenta.
+        </p>
+        <div style="background:#fafafa;border-left:3px solid #4B7BE5;padding:14px 16px;margin:18px 0;font-size:0.875rem;color:#444;line-height:1.55">
+          <strong>¿Qué sigue?</strong><br/>
+          1. Validamos tus datos de cobro y dirección<br/>
+          2. Aprobamos tu programa y creamos tu cuenta SACS<br/>
+          3. Te enviamos credenciales + tu link único de partner
+        </div>
+        <p style="color:#555;line-height:1.6;margin:0 0 16px">
+          Mientras tanto, puedes revisar de nuevo los términos de tu invitación cuando quieras:
+        </p>
+        <a href="${d.partnerUrl || ''}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Ver mi invitación</a>
+        <p style="color:#999;font-size:0.75rem;margin-top:24px;line-height:1.5">Cualquier duda, responde directo a este correo.<br/>Equipo SACS · partners@sacscloud.com</p>
+      </div>
+    `,
+    text: `Hola ${d.nombre || ''}, recibimos tu solicitud para ${d.programa}. La revisaremos en 24-48h. Ver invitación: ${d.partnerUrl || ''}`,
+  }),
+  partner_submitted_admin: (d) => {
+    const payoutLine = d.payout
+      ? d.payout.method === 'clabe'
+        ? `CLABE ${d.payout.clabe || '—'} (${d.payout.banco || ''}) · titular ${d.payout.titular || '—'}${d.payout.rfc ? ` · RFC ${d.payout.rfc}` : ''}`
+        : d.payout.method === 'paypal'
+          ? `PayPal: ${d.payout.email || '—'}`
+          : `Mercado Pago: ${d.payout.mp_id || '—'}${d.payout.titular ? ` · titular ${d.payout.titular}` : ''}`
+      : '—';
+    const dirLine = d.direccion
+      ? [d.direccion.calle, d.direccion.colonia, d.direccion.cp, d.direccion.ciudad, d.direccion.estado].filter(Boolean).join(', ')
+      : '—';
+    return {
+      subject: `🤝 Nueva solicitud de partner: ${d.nombre || ''} · ${d.programa || ''}`,
+      html: `
+        <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a1a">
+          <h2 style="font-size:1.25rem;margin:0 0 8px">Nueva solicitud de partner</h2>
+          <p style="color:#555;line-height:1.55;margin:0 0 16px">
+            <strong>${d.nombre || ''}</strong> firmó la invitación <strong>${d.numero || ''}</strong> y está pendiente de aprobación.
+          </p>
+          <div style="background:#fafafa;border:1px solid #ececec;padding:16px;border-radius:8px;margin:16px 0">
+            <table style="width:100%;font-size:0.875rem;color:#444;border-collapse:collapse">
+              <tr><td style="padding:5px 0;width:120px;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Programa</td><td style="padding:5px 0;font-weight:600">${d.programa || ''}</td></tr>
+              <tr><td style="padding:5px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Comisión</td><td style="padding:5px 0;font-weight:600">${d.comision_pct || 0}%</td></tr>
+              <tr><td style="padding:5px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Email</td><td style="padding:5px 0">${d.email || '—'}</td></tr>
+              <tr><td style="padding:5px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">WhatsApp</td><td style="padding:5px 0">${d.whatsapp || '—'}</td></tr>
+              <tr><td style="padding:5px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Empresa</td><td style="padding:5px 0">${d.empresa || '—'}</td></tr>
+              <tr><td style="padding:5px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Dirección</td><td style="padding:5px 0">${dirLine}</td></tr>
+              <tr><td style="padding:5px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Cobro</td><td style="padding:5px 0">${payoutLine}</td></tr>
+            </table>
+          </div>
+          <a href="${d.adminUrl || 'https://www.sacscloud.com/admin/crm?tab=partners'}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Revisar y aprobar en CRM</a>
+          <p style="color:#999;font-size:0.75rem;margin-top:24px">Aprobar dispara: creación de team_member + email de bienvenida al partner.</p>
+        </div>
+      `,
+      text: `Nueva solicitud de partner: ${d.nombre} (${d.email}) — ${d.programa}, ${d.comision_pct}%. Revisar: ${d.adminUrl}`,
+    };
+  },
+  partner_approved_user: (d) => ({
+    subject: `🎉 Bienvenido a ${d.programa || 'Partners SACS'}`,
+    html: `
+      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="display:inline-block;padding:6px 14px;background:#2AB5A0;color:#fff;font-size:0.6875rem;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;border-radius:4px">Programa activado</div>
+        </div>
+        <h2 style="font-size:1.5rem;font-weight:700;margin:0 0 12px;letter-spacing:-0.01em;text-align:center">¡Bienvenido, ${d.nombre || 'partner'}!</h2>
+        <p style="color:#555;line-height:1.6;margin:0 0 16px;text-align:center">
+          Tu programa <strong>${d.programa || 'Partner SACS'}</strong> está activo con una comisión del <strong>${d.comision_pct || 0}%</strong>.
+        </p>
+        ${d.nota ? `<div style="background:#fff8e1;border-left:3px solid #E8A838;padding:12px 14px;margin:18px 0;font-size:0.875rem;color:#5a4a1f;line-height:1.55">${d.nota}</div>` : ''}
+        <div style="background:#fafafa;border:1px solid #ececec;padding:18px;border-radius:10px;margin:18px 0">
+          <div style="font-size:0.6875rem;color:#999;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Tu link único de partner</div>
+          <a href="${d.partnerLandingUrl || ''}" style="font-family:monospace;font-size:0.875rem;color:#4B7BE5;word-break:break-all">${d.partnerLandingUrl || ''}</a>
+          <div style="font-size:0.75rem;color:#777;margin-top:8px;line-height:1.5">Cualquier prospecto que llegue por este link se atribuye automáticamente a ti.</div>
+        </div>
+        <div style="text-align:center;margin:24px 0">
+          <a href="${d.loginUrl || 'https://www.sacscloud.com/admin'}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Entrar a mi cuenta</a>
+        </div>
+        <p style="color:#999;font-size:0.75rem;margin-top:24px;line-height:1.5;text-align:center">Las credenciales se entregan vía contacto directo del equipo SACS para máxima seguridad.<br/>Cualquier duda: partners@sacscloud.com</p>
+      </div>
+    `,
+    text: `¡Bienvenido ${d.nombre}! Tu programa ${d.programa} está activo (${d.comision_pct}% comisión). Tu link: ${d.partnerLandingUrl}. Login: ${d.loginUrl}`,
+  }),
   renewal_reminder: (d) => ({
     subject: `Tu renovación SACS se acerca — ${d.days} días`,
     html: `

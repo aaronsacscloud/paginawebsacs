@@ -58,7 +58,8 @@ const tabulador: any = invitation.tabulador && typeof invitation.tabulador === '
 
 const isAccepted = invitation.estado === 'accepted';
 const isDeclined = invitation.estado === 'declined';
-const isClosed = isAccepted || isDeclined;
+const isSubmitted = invitation.estado === 'submitted_for_review';
+const isClosed = isAccepted || isDeclined || isSubmitted;
 
 const fmt = (n: number) => n === 0 ? 'Gratis' : '$' + Math.round(n).toLocaleString('es-MX');
 const fmtMoney = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
@@ -112,7 +113,7 @@ const tabsDef = [
   { id: 'tabulador', label: 'Tabulador', show: Object.keys(tabulador).length > 0 },
   { id: 'potencial', label: 'Tu potencial', show: comisionPct > 0 },
   { id: 'porque', label: '¿Por qué SACS?', show: true },
-  { id: 'firma', label: isAccepted ? 'Firmada' : (isDeclined ? 'Rechazada' : 'Aceptar y firmar'), show: true },
+  { id: 'firma', label: isAccepted ? 'Firmada' : (isDeclined ? 'Rechazada' : (isSubmitted ? 'En revisión' : 'Aceptar y firmar')), show: true },
 ];
 const visibleTabs = tabsDef.filter(t => t.show).map(({ id, label }) => ({ id, label }));
 const initialTab = isClosed ? 'firma' : 'bienvenida';
@@ -712,6 +713,26 @@ const partnerLandingUrl = invitation.slug_landing
               <a href="https://www.sacscloud.com/admin/crm" class="p-signed-cta-secondary">Panel SACS</a>
             </div>
           </div>
+        ) : isSubmitted ? (
+          <div class="p-signed p-signed--submitted">
+            <div class="p-signed-eyebrow">En revisión</div>
+            <div class="p-signed-title">Recibimos tu solicitud, {invitation.aceptado_por || invitation.nombre}.</div>
+            <div class="p-signed-sub">
+              Nuestro equipo está revisando tus datos. Te contactaremos en las próximas <strong>24-48 horas hábiles</strong> para activar tu programa <strong>{tipoLabel[tipo] || tipo}</strong> y enviarte tus credenciales por correo.
+            </div>
+            {meta.firma_base64 && (
+              <img src={meta.firma_base64} alt="Firma" class="p-signed-img" />
+            )}
+            {invitation.aceptado_por && (
+              <div class="p-signed-label">Solicitud firmada por {invitation.aceptado_por}</div>
+            )}
+            {invitation.aceptado_fecha && (
+              <div class="p-signed-date">{fmtDate(invitation.aceptado_fecha)}</div>
+            )}
+            <div class="p-signed-meta" style="margin-top:18px">
+              ¿Algún cambio? Responde el correo de confirmación o escribe a <a href="mailto:partners@sacscloud.com">partners@sacscloud.com</a>.
+            </div>
+          </div>
         ) : isDeclined ? (
           <div class="p-signed p-signed--declined">
             <div class="p-signed-eyebrow">Rechazada</div>
@@ -736,30 +757,143 @@ const partnerLandingUrl = invitation.slug_landing
               <div class="p-section-eyebrow">Último paso</div>
               <h2 class="p-section-title">Acepta y firma tu invitación</h2>
               <p class="p-section-lead">
-                Al firmar, activamos tu programa <strong>{tipoLabel[tipo] || tipo}</strong>, te creamos tu cuenta SACS y enviamos las credenciales a tu correo.
+                Al firmar enviamos tu solicitud al equipo SACS para revisión. En cuanto la aprobemos te llegará un correo con tus credenciales del programa <strong>{tipoLabel[tipo] || tipo}</strong>.
               </p>
             </div>
 
-            <div class="p-sign-fields">
-              <label class="p-sign-field">
-                <span>Nombre completo</span>
-                <input type="text" id="sign-nombre" class="p-input" placeholder="Ej. Mariana López" value={invitation.nombre || ''} />
-              </label>
-              <label class="p-sign-field">
-                <span>Email</span>
-                <input type="email" id="sign-email" class="p-input" placeholder="tu@correo.com" value={invitation.email || ''} />
-              </label>
-              <label class="p-sign-field">
-                <span>WhatsApp</span>
-                <input type="tel" id="sign-whatsapp" class="p-input" placeholder="55 1234 5678" value={invitation.whatsapp || ''} />
-              </label>
+            <div class="p-sign-section">
+              <div class="p-sign-section-head">
+                <span class="p-sign-section-num">1</span>
+                <span class="p-sign-section-title">Tus datos</span>
+              </div>
+              <div class="p-sign-fields">
+                <label class="p-sign-field">
+                  <span>Nombre completo</span>
+                  <input type="text" id="sign-nombre" class="p-input" placeholder="Ej. Mariana López" value={invitation.nombre || ''} />
+                </label>
+                <label class="p-sign-field">
+                  <span>Email</span>
+                  <input type="email" id="sign-email" class="p-input" placeholder="tu@correo.com" value={invitation.email || ''} />
+                </label>
+                <label class="p-sign-field">
+                  <span>WhatsApp</span>
+                  <input type="tel" id="sign-whatsapp" class="p-input" placeholder="55 1234 5678" value={invitation.whatsapp || ''} />
+                </label>
+                <label class="p-sign-field">
+                  <span>Empresa o razón social <span class="p-sign-optional">(opcional)</span></span>
+                  <input type="text" id="sign-empresa" class="p-input" placeholder="Ej. Mariana López Studio S.A. de C.V." value={invitation.empresa || ''} />
+                </label>
+              </div>
             </div>
 
-            <div class="p-sign-canvas-wrap">
-              <div class="p-sign-canvas-label">Firma con el dedo o el mouse</div>
-              <canvas id="signature-canvas" class="p-sign-canvas" width="600" height="180"></canvas>
-              <div class="p-sign-canvas-actions">
-                <button type="button" class="p-btn p-btn--ghost" id="btn-clear-sig">Limpiar firma</button>
+            <div class="p-sign-section">
+              <div class="p-sign-section-head">
+                <span class="p-sign-section-num">2</span>
+                <span class="p-sign-section-title">Dirección del negocio</span>
+              </div>
+              <div class="p-sign-fields">
+                <label class="p-sign-field p-sign-field--full">
+                  <span>Calle y número</span>
+                  <input type="text" id="addr-calle" class="p-input" placeholder="Av. Insurgentes Sur 1234, Int. 5B" />
+                </label>
+                <label class="p-sign-field">
+                  <span>Colonia</span>
+                  <input type="text" id="addr-colonia" class="p-input" placeholder="Del Valle" />
+                </label>
+                <label class="p-sign-field">
+                  <span>Código postal</span>
+                  <input type="text" id="addr-cp" class="p-input" placeholder="03100" inputmode="numeric" maxlength="5" />
+                </label>
+                <label class="p-sign-field">
+                  <span>Ciudad / Alcaldía</span>
+                  <input type="text" id="addr-ciudad" class="p-input" placeholder="Benito Juárez" />
+                </label>
+                <label class="p-sign-field">
+                  <span>Estado</span>
+                  <input type="text" id="addr-estado" class="p-input" placeholder="CDMX" />
+                </label>
+              </div>
+            </div>
+
+            <div class="p-sign-section">
+              <div class="p-sign-section-head">
+                <span class="p-sign-section-num">3</span>
+                <span class="p-sign-section-title">Cómo recibes tus comisiones</span>
+              </div>
+              <div class="p-payout-methods" role="radiogroup" aria-label="Método de cobro">
+                <label class="p-payout-opt">
+                  <input type="radio" name="payout-method" value="clabe" checked />
+                  <span class="p-payout-opt-body">
+                    <span class="p-payout-opt-title">CLABE / Transferencia</span>
+                    <span class="p-payout-opt-sub">Depósito directo a banco mexicano</span>
+                  </span>
+                </label>
+                <label class="p-payout-opt">
+                  <input type="radio" name="payout-method" value="paypal" />
+                  <span class="p-payout-opt-body">
+                    <span class="p-payout-opt-title">PayPal</span>
+                    <span class="p-payout-opt-sub">Recibe en cualquier moneda</span>
+                  </span>
+                </label>
+                <label class="p-payout-opt">
+                  <input type="radio" name="payout-method" value="mercadopago" />
+                  <span class="p-payout-opt-body">
+                    <span class="p-payout-opt-title">Mercado Pago</span>
+                    <span class="p-payout-opt-sub">Saldo MP / cuenta vinculada</span>
+                  </span>
+                </label>
+              </div>
+
+              {/* Detalle por método */}
+              <div class="p-sign-fields p-payout-detail" data-payout-section="clabe">
+                <label class="p-sign-field">
+                  <span>CLABE Interbancaria (18 dígitos)</span>
+                  <input type="text" id="payout-clabe" class="p-input" placeholder="012180012345678901" inputmode="numeric" maxlength="18" />
+                </label>
+                <label class="p-sign-field">
+                  <span>Banco</span>
+                  <input type="text" id="payout-banco" class="p-input" placeholder="Ej. BBVA, Santander, Banorte..." />
+                </label>
+                <label class="p-sign-field">
+                  <span>Titular de la cuenta</span>
+                  <input type="text" id="payout-titular" class="p-input" placeholder="Como aparece en el estado de cuenta" />
+                </label>
+                <label class="p-sign-field">
+                  <span>RFC <span class="p-sign-optional">(opcional)</span></span>
+                  <input type="text" id="payout-rfc" class="p-input" placeholder="XAXX010101000" maxlength="13" />
+                </label>
+              </div>
+
+              <div class="p-sign-fields p-payout-detail" data-payout-section="paypal" hidden>
+                <label class="p-sign-field p-sign-field--full">
+                  <span>Email de PayPal</span>
+                  <input type="email" id="payout-paypal" class="p-input" placeholder="tu@paypal.com" />
+                </label>
+              </div>
+
+              <div class="p-sign-fields p-payout-detail" data-payout-section="mercadopago" hidden>
+                <label class="p-sign-field">
+                  <span>Email o alias Mercado Pago</span>
+                  <input type="text" id="payout-mp-id" class="p-input" placeholder="tu@correo.com o alias.mp" />
+                </label>
+                <label class="p-sign-field">
+                  <span>Titular de la cuenta MP</span>
+                  <input type="text" id="payout-mp-titular" class="p-input" placeholder="Tu nombre completo en MP" />
+                </label>
+              </div>
+            </div>
+
+            <div class="p-sign-section">
+              <div class="p-sign-section-head">
+                <span class="p-sign-section-num">4</span>
+                <span class="p-sign-section-title">Firma de aceptación</span>
+              </div>
+              <div class="p-sign-canvas-wrap">
+                <div class="p-sign-canvas-label">Firma con el dedo o el mouse</div>
+                <canvas id="signature-canvas" class="p-sign-canvas"></canvas>
+                <div class="p-sign-canvas-actions">
+                  <button type="button" class="p-btn p-btn--ghost" id="btn-clear-sig">Limpiar firma</button>
+                </div>
               </div>
             </div>
 
@@ -767,10 +901,11 @@ const partnerLandingUrl = invitation.slug_landing
               Al aceptar y firmar confirmas que has leído y aceptas los
               <a href="/terminos" target="_blank" rel="noopener">Términos y condiciones</a> y el
               <a href="/privacidad" target="_blank" rel="noopener">Aviso de privacidad</a>.
+              Tu solicitud queda en revisión por el equipo SACS antes de la activación.
             </div>
 
             <div class="p-sign-actions">
-              <button type="button" class="p-btn p-btn--primary" id="btn-accept">Aceptar y activar mi programa</button>
+              <button type="button" class="p-btn p-btn--primary" id="btn-accept">Enviar solicitud al equipo SACS</button>
               <button type="button" class="p-btn p-btn--ghost" id="btn-decline">No me interesa por ahora</button>
             </div>
           </div>
@@ -1822,8 +1957,94 @@ const partnerLandingUrl = invitation.slug_landing
   }
 
   /* Sign form */
-  .p-sign-form { padding: 56px 0 24px; max-width: 620px; margin: 0 auto; }
-  .p-sign-fields { display: flex; flex-direction: column; gap: 16px; margin-top: 36px; }
+  .p-sign-form { padding: 56px 0 24px; max-width: 720px; margin: 0 auto; }
+
+  /* Sección numerada (Tus datos / Dirección / Cobro / Firma) */
+  .p-sign-section {
+    margin-top: 36px;
+    padding: 24px;
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 14px;
+  }
+  .p-sign-section-head {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #f1f1f1;
+  }
+  .p-sign-section-num {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: #1a1a1a; color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-size: 0.8125rem; font-weight: 800;
+  }
+  .p-sign-section-title {
+    font-family: var(--font-display);
+    font-size: 1.05rem; font-weight: 700;
+    color: #1a1a1a;
+    letter-spacing: -0.01em;
+  }
+  .p-sign-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 0;
+  }
+  .p-sign-section .p-sign-fields { margin-top: 0; }
+  .p-sign-field--full { grid-column: 1 / -1; }
+  .p-sign-optional {
+    font-size: 0.6875rem; color: #bbb;
+    text-transform: none; letter-spacing: 0; font-weight: 500;
+    margin-left: 4px;
+  }
+  @media (max-width: 640px) {
+    .p-sign-fields { grid-template-columns: 1fr; }
+    .p-sign-section { padding: 18px; }
+  }
+
+  /* Payout method radios */
+  .p-payout-methods {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  @media (max-width: 640px) {
+    .p-payout-methods { grid-template-columns: 1fr; }
+  }
+  .p-payout-opt {
+    position: relative;
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 14px;
+    background: #fafafa;
+    border: 1.5px solid #ececec;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .p-payout-opt:hover { border-color: #d0d0d0; }
+  .p-payout-opt input[type="radio"] {
+    margin: 2px 0 0;
+    accent-color: #1a1a1a;
+    flex-shrink: 0;
+  }
+  .p-payout-opt:has(input:checked) {
+    border-color: #1a1a1a;
+    background: #fff;
+  }
+  .p-payout-opt-body { display: flex; flex-direction: column; gap: 2px; }
+  .p-payout-opt-title {
+    font-size: 0.875rem; font-weight: 700;
+    color: #1a1a1a;
+  }
+  .p-payout-opt-sub {
+    font-size: 0.75rem; color: #888;
+  }
+  .p-payout-detail[hidden] { display: none !important; }
+
   .p-sign-field { display: flex; flex-direction: column; gap: 6px; }
   .p-sign-field > span {
     font-size: 0.6875rem; font-weight: 600;
@@ -1847,11 +2068,10 @@ const partnerLandingUrl = invitation.slug_landing
   textarea.p-input { resize: vertical; min-height: 80px; }
 
   .p-sign-canvas-wrap {
-    margin-top: 32px;
-    padding: 22px;
-    background: #fff;
-    border: 1px solid #e5e5e5;
-    border-radius: 14px;
+    padding: 18px;
+    background: #fafafa;
+    border: 1px solid #ececec;
+    border-radius: 12px;
   }
   .p-sign-canvas-label {
     font-size: 0.6875rem; font-weight: 600;
@@ -2104,6 +2324,12 @@ const partnerLandingUrl = invitation.slug_landing
     if (history.replaceState) {
       history.replaceState(null, '', '#' + tabId);
     }
+    // Init signature canvas la primera vez que el tab firma se hace visible
+    if (tabId === 'firma') {
+      requestAnimationFrame(() => {
+        if (typeof initSignature === 'function') initSignature();
+      });
+    }
   }
 
   // Wire links
@@ -2124,32 +2350,75 @@ const partnerLandingUrl = invitation.slug_landing
   if (isClosed) return;
 
   // ─── Signature canvas ───
+  // CRITICAL: el canvas vive dentro del tab 'firma' que está display:none
+  // al cargar. getBoundingClientRect() retorna 0×0 en ese estado, así que
+  // el resize inicial dejaba el canvas a 0×0 y los pointer events no
+  // dibujaban nada. Solución: inicializar lazy cuando el tab se activa,
+  // re-init en cada apertura del tab para manejar rotación / resize.
   const canvas = document.getElementById('signature-canvas');
   let hasDrawn = false;
+  let signatureInitialized = false;
+
+  function initSignature() {
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return; // todavía oculto
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const dpr = window.devicePixelRatio || 1;
+
+    // Si ya tiene contenido y mismo size, no rehacer
+    const targetW = Math.round(rect.width * dpr);
+    const targetH = Math.round(rect.height * dpr);
+    if (signatureInitialized && canvas.width === targetW && canvas.height === targetH) return;
+
+    // Si re-init con dibujo previo: preservar imagen redibujándola
+    let prevImage = null;
+    if (hasDrawn && canvas.width > 0 && canvas.height > 0) {
+      prevImage = canvas.toDataURL('image/png');
+    }
+    canvas.width = targetW;
+    canvas.height = targetH;
+    ctx.setTransform(1, 0, 0, 1, 0, 0); // reset matrix antes de scale
+    ctx.scale(dpr, dpr);
+    ctx.lineWidth = 2.2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#1a1a1a';
+    if (prevImage) {
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0, rect.width, rect.height);
+      img.src = prevImage;
+    }
+    signatureInitialized = true;
+  }
+
   if (canvas) {
     const ctx = canvas.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
-    function resizeCanvas() {
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      ctx.scale(dpr, dpr);
-      ctx.lineWidth = 2.2;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.strokeStyle = '#1a1a1a';
-    }
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-
     let drawing = false;
     function getPos(e) {
       const rect = canvas.getBoundingClientRect();
       const t = e.touches ? e.touches[0] : e;
       return { x: t.clientX - rect.left, y: t.clientY - rect.top };
     }
-    function start(e) { drawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); }
-    function move(e) { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasDrawn = true; e.preventDefault(); }
+    function start(e) {
+      // Lazy init si todavía no está listo
+      if (!signatureInitialized) initSignature();
+      if (!signatureInitialized) return;
+      drawing = true;
+      const p = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      if (e.cancelable) e.preventDefault();
+    }
+    function move(e) {
+      if (!drawing) return;
+      const p = getPos(e);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+      hasDrawn = true;
+      if (e.cancelable) e.preventDefault();
+    }
     function end() { drawing = false; }
 
     canvas.addEventListener('mousedown', start);
@@ -2160,6 +2429,13 @@ const partnerLandingUrl = invitation.slug_landing
     canvas.addEventListener('touchmove', move, { passive: false });
     canvas.addEventListener('touchend', end);
 
+    // Re-init cuando cambia el viewport (rotación, resize)
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(initSignature, 120);
+    });
+
     const btnClear = document.getElementById('btn-clear-sig');
     if (btnClear) btnClear.addEventListener('click', () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -2167,18 +2443,96 @@ const partnerLandingUrl = invitation.slug_landing
     });
   }
 
-  // ─── Accept ───
+  // ─── Payout method toggle ───
+  const payoutRadios = document.querySelectorAll('input[name="payout-method"]');
+  const payoutSections = document.querySelectorAll('.p-payout-detail[data-payout-section]');
+  function syncPayoutSections() {
+    let active = 'clabe';
+    payoutRadios.forEach(r => { if (r.checked) active = r.value; });
+    payoutSections.forEach(s => {
+      s.hidden = s.dataset.payoutSection !== active;
+    });
+  }
+  payoutRadios.forEach(r => r.addEventListener('change', syncPayoutSections));
+  syncPayoutSections();
+
+  function val(id) {
+    const el = document.getElementById(id);
+    return el ? (el.value || '').trim() : '';
+  }
+
+  // ─── Accept (submit for review) ───
   const btnAccept = document.getElementById('btn-accept');
   if (btnAccept) btnAccept.addEventListener('click', async () => {
-    const nombreInput = document.getElementById('sign-nombre');
-    const emailInput = document.getElementById('sign-email');
-    const whatsappInput = document.getElementById('sign-whatsapp');
-    const nombre = (nombreInput && nombreInput.value || '').trim();
-    if (!nombre) { alert('Ingresa tu nombre completo'); nombreInput && nombreInput.focus(); return; }
-    if (!hasDrawn) { alert('Firma con tu dedo o mouse antes de aceptar'); return; }
+    const nombre = val('sign-nombre');
+    const email = val('sign-email');
+    const whatsapp = val('sign-whatsapp');
+    const empresa = val('sign-empresa');
+
+    const direccion = {
+      calle: val('addr-calle'),
+      colonia: val('addr-colonia'),
+      cp: val('addr-cp'),
+      ciudad: val('addr-ciudad'),
+      estado: val('addr-estado'),
+    };
+
+    let payoutMethod = 'clabe';
+    payoutRadios.forEach(r => { if (r.checked) payoutMethod = r.value; });
+    let payout = { method: payoutMethod };
+    if (payoutMethod === 'clabe') {
+      payout = {
+        method: 'clabe',
+        clabe: val('payout-clabe'),
+        banco: val('payout-banco'),
+        titular: val('payout-titular'),
+        rfc: val('payout-rfc'),
+      };
+    } else if (payoutMethod === 'paypal') {
+      payout = { method: 'paypal', email: val('payout-paypal') };
+    } else if (payoutMethod === 'mercadopago') {
+      payout = {
+        method: 'mercadopago',
+        mp_id: val('payout-mp-id'),
+        titular: val('payout-mp-titular'),
+      };
+    }
+
+    // Validation
+    if (!nombre) { alert('Ingresa tu nombre completo'); document.getElementById('sign-nombre')?.focus(); return; }
+    if (!email) { alert('Ingresa tu email para enviarte la confirmación'); document.getElementById('sign-email')?.focus(); return; }
+    if (!direccion.calle || !direccion.cp || !direccion.ciudad || !direccion.estado) {
+      alert('Completa la dirección del negocio (calle, CP, ciudad y estado son requeridos)');
+      document.getElementById('addr-calle')?.focus();
+      return;
+    }
+    if (payoutMethod === 'clabe') {
+      if (!payout.clabe || payout.clabe.length !== 18 || !/^\d{18}$/.test(payout.clabe)) {
+        alert('La CLABE debe tener exactamente 18 dígitos');
+        document.getElementById('payout-clabe')?.focus();
+        return;
+      }
+      if (!payout.banco || !payout.titular) {
+        alert('Completa banco y titular de la cuenta');
+        return;
+      }
+    } else if (payoutMethod === 'paypal') {
+      if (!payout.email || !payout.email.includes('@')) {
+        alert('Ingresa un email PayPal válido');
+        document.getElementById('payout-paypal')?.focus();
+        return;
+      }
+    } else if (payoutMethod === 'mercadopago') {
+      if (!payout.mp_id) {
+        alert('Ingresa tu email o alias de Mercado Pago');
+        document.getElementById('payout-mp-id')?.focus();
+        return;
+      }
+    }
+    if (!hasDrawn) { alert('Firma con tu dedo o mouse antes de enviar'); return; }
 
     btnAccept.disabled = true;
-    btnAccept.textContent = 'Activando tu programa...';
+    btnAccept.textContent = 'Enviando solicitud...';
 
     const firma_base64 = canvas ? canvas.toDataURL('image/png') : '';
     try {
@@ -2188,18 +2542,21 @@ const partnerLandingUrl = invitation.slug_landing
         body: JSON.stringify({
           id: invitationId,
           nombre,
-          email: (emailInput && emailInput.value || '').trim(),
-          whatsapp: (whatsappInput && whatsappInput.value || '').trim(),
+          email,
+          whatsapp,
+          empresa,
+          direccion,
+          payout,
           firma_base64,
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudo aceptar');
+      if (!res.ok) throw new Error(data.error || 'No se pudo enviar');
       window.location.reload();
     } catch (err) {
       alert('Hubo un error: ' + (err.message || err));
       btnAccept.disabled = false;
-      btnAccept.textContent = 'Aceptar y activar mi programa';
+      btnAccept.textContent = 'Enviar solicitud al equipo SACS';
     }
   });
 
