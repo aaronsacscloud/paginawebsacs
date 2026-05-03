@@ -376,36 +376,106 @@ function LeadsTab() {
 // ─── Tab: Link ──────────────────────────────────────────────────
 function LinkTab() {
   const [profile, setProfile] = useState<any>(null);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
   useEffect(() => {
     fetch('/api/partner-portal/profile').then(r => r.json()).then(setProfile);
   }, []);
   const url = profile?.partnerLandingUrl || '';
+  const nombre = profile?.user?.nombre?.split(' ')[0] || 'tu asesor';
+
+  function copyText(text: string, key: string) {
+    navigator.clipboard.writeText(text);
+    setCopied(key);
+    setTimeout(() => setCopied(null), 2000);
+  }
+
+  // Plantillas listas para compartir
+  const templates = url ? [
+    {
+      key: 'whatsapp-friend',
+      label: 'WhatsApp · amigo',
+      text: `Hola! Te recomiendo SACS — el sistema operativo para retail moderno. POS, inventario multi-sucursal, e-commerce, todo en uno. Pruébalo gratis 14 días por mi link: ${url}`,
+    },
+    {
+      key: 'instagram-bio',
+      label: 'Instagram bio / story',
+      text: `Sistema de retail que sí funciona ↓\n${url}`,
+    },
+    {
+      key: 'email-signature',
+      label: 'Firma de email',
+      text: `\n—\n${nombre} · Embajador SACS\nProbar SACS gratis 14 días: ${url}`,
+    },
+    {
+      key: 'tiktok-caption',
+      label: 'TikTok caption',
+      text: `Si tienes una marca de retail en México, esto te va a interesar 👇 SACS = POS + inventario + e-commerce + CRM en un solo lugar. Probarlo gratis 14 días: link en bio (${url}) #SACS #retail #emprendedoresmx`,
+    },
+  ] : [];
+
+  const waShare = url ? `https://wa.me/?text=${encodeURIComponent(`Te recomiendo SACS — sistema de retail moderno. Pruébalo gratis 14 días: ${url}`)}` : '#';
+  const emailShare = url ? `mailto:?subject=${encodeURIComponent('Te recomiendo SACS')}&body=${encodeURIComponent(`Hola! Te recomiendo SACS — el sistema operativo para retail moderno. Pruébalo gratis 14 días por mi link: ${url}`)}` : '#';
+  const twitterShare = url ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(`SACS = el sistema operativo del retail moderno. Pruébalo gratis 14 días por mi link 👇`)}&url=${encodeURIComponent(url)}` : '#';
+  const linkedinShare = url ? `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}` : '#';
 
   return (
     <div>
       <h1 style={S.h1}>Tu link único</h1>
-      <p style={S.lead}>Compártelo en tus redes, WhatsApp, email firma. Cualquier prospecto que llegue por aquí queda atribuido a ti automáticamente.</p>
+      <p style={S.lead}>Compártelo en tus redes, WhatsApp, email firma. Cualquier prospecto que llegue por aquí queda atribuido a ti automáticamente — y en cuanto se registre, gana un bono.</p>
 
       {url ? (
-        <div style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 14, padding: 28, marginTop: 16 }}>
-          <div style={{ fontSize: 11, color: '#999', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10, fontWeight: 700 }}>Tu URL</div>
-          <div style={{ fontFamily: 'monospace', fontSize: 16, color: '#1a1a1a', wordBreak: 'break-all', marginBottom: 18 }}>{url}</div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button
-              onClick={() => { navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-              style={{ ...S.btnPrimary }}
-            >
-              {copied ? '✓ Copiado' : 'Copiar link'}
-            </button>
-            <a href={url} target="_blank" rel="noopener" style={{ ...S.btnGhost, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
-              Ver mi landing →
+        <>
+          <div style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 14, padding: 28, marginTop: 16 }}>
+            <div style={{ fontSize: 11, color: '#999', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10, fontWeight: 700 }}>Tu URL</div>
+            <div style={{ fontFamily: 'monospace', fontSize: 16, color: '#1a1a1a', wordBreak: 'break-all', marginBottom: 18 }}>{url}</div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button onClick={() => copyText(url, 'url')} style={{ ...S.btnPrimary }}>
+                {copied === 'url' ? '✓ Copiado' : 'Copiar link'}
+              </button>
+              <a href={url} target="_blank" rel="noopener" style={{ ...S.btnGhost, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
+                Ver mi landing →
+              </a>
+            </div>
+          </div>
+
+          {/* Compartir directo */}
+          <h2 style={S.h2}>Compartir directo</h2>
+          <p style={S.lead}>Un click y se abre la app correspondiente con el mensaje pre-llenado.</p>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <a href={waShare} target="_blank" rel="noopener" style={{ ...shareBtn, background: '#25D366', color: '#fff' }}>
+              <span style={{ fontSize: 18 }}>💬</span> WhatsApp
             </a>
-            <a href={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(url)}`} target="_blank" rel="noopener" style={{ ...S.btnGhost, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
-              Generar QR
+            <a href={emailShare} style={{ ...shareBtn, background: '#1a1a1a', color: '#fff' }}>
+              <span style={{ fontSize: 18 }}>✉️</span> Email
+            </a>
+            <a href={twitterShare} target="_blank" rel="noopener" style={{ ...shareBtn, background: '#000', color: '#fff' }}>
+              <span style={{ fontSize: 18 }}>𝕏</span> Twitter / X
+            </a>
+            <a href={linkedinShare} target="_blank" rel="noopener" style={{ ...shareBtn, background: '#0A66C2', color: '#fff' }}>
+              <span style={{ fontSize: 18 }}>in</span> LinkedIn
+            </a>
+            <a href={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(url)}`} target="_blank" rel="noopener" style={{ ...shareBtn, background: '#fff', color: '#1a1a1a', border: '1px solid #ddd' }}>
+              <span style={{ fontSize: 18 }}>▦</span> QR
             </a>
           </div>
-        </div>
+
+          {/* Plantillas copy-paste */}
+          <h2 style={S.h2}>Plantillas listas</h2>
+          <p style={S.lead}>Mensajes pre-redactados para distintos contextos. Click "copiar" y pega donde quieras.</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {templates.map(tpl => (
+              <div key={tpl.key} style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 10, padding: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700, color: '#1a1a1a' }}>{tpl.label}</div>
+                  <button onClick={() => copyText(tpl.text, tpl.key)} style={{ ...S.btnGhost, padding: '7px 14px', fontSize: 12 }}>
+                    {copied === tpl.key ? '✓ Copiado' : 'Copiar'}
+                  </button>
+                </div>
+                <div style={{ fontSize: 13, color: '#555', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{tpl.text}</div>
+              </div>
+            ))}
+          </div>
+        </>
       ) : (
         <div style={S.empty}>Cargando…</div>
       )}
@@ -608,4 +678,17 @@ const S: Record<string, React.CSSProperties> = {
   input: { padding: '11px 14px', fontSize: 14, border: '1px solid #ddd', borderRadius: 8, outline: 'none', fontFamily: 'inherit' },
   btnPrimary: { padding: '11px 20px', background: '#1a1a1a', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
   btnGhost: { padding: '11px 18px', background: 'transparent', color: '#1a1a1a', border: '1px solid #ddd', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
+};
+
+const shareBtn: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 8,
+  padding: '11px 18px',
+  borderRadius: 10,
+  fontSize: 13,
+  fontWeight: 600,
+  textDecoration: 'none',
+  fontFamily: 'inherit',
+  transition: 'transform 0.15s, opacity 0.15s',
 };

@@ -249,6 +249,70 @@ const templates: Record<string, Template> = {
     `,
     text: `Tu cuenta SACS Plan Fideliza está activa. Entra a ${d.loginUrl || 'app.sacscloud.com'} con ${d.email}.`,
   }),
+  partner_commission_earned: (d) => {
+    const fmt = (n: number) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
+    return {
+      subject: `✓ Tu bono fue verificado · ${fmt(d.monto)} disponibles`,
+      html: `
+        <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a1a">
+          <div style="text-align:center;margin-bottom:18px">
+            <div style="display:inline-block;padding:6px 14px;background:#2AB5A0;color:#fff;font-size:0.6875rem;font-weight:800;text-transform:uppercase;letter-spacing:0.10em;border-radius:4px">Bono verificado</div>
+          </div>
+          <h2 style="font-size:1.375rem;font-weight:600;margin:0 0 12px;letter-spacing:-0.01em;text-align:center">Bien hecho, ${d.nombre || 'partner'}.</h2>
+          <p style="color:#555;line-height:1.6;margin:0 0 16px;text-align:center">
+            Verificamos tu bono por <strong>${d.tipo}</strong>. Ya está acreditado a tu balance.
+          </p>
+          <div style="text-align:center;margin:22px 0">
+            <div style="display:inline-block;padding:18px 28px;background:#fafafa;border:1px solid #ececec;border-radius:12px">
+              <div style="font-size:0.6875rem;color:#999;text-transform:uppercase;letter-spacing:0.10em;margin-bottom:6px">Bono acreditado</div>
+              <div style="font-family:'Sora',sans-serif;font-size:2rem;font-weight:800;color:#2AB5A0;letter-spacing:-0.015em">${fmt(d.monto)}</div>
+            </div>
+          </div>
+          <p style="color:#555;line-height:1.6;margin:0 0 20px;text-align:center;font-size:0.875rem">
+            Se sumará a tu próximo payout (cada 30 días) — o si tienes preguntas, escríbenos.
+          </p>
+          <div style="text-align:center">
+            <a href="${d.portalUrl || ''}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:13px 26px;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.875rem">Ver mi portal</a>
+          </div>
+          <p style="color:#bbb;font-size:0.6875rem;margin-top:24px;text-align:center">SACS Partners · partners@sacscloud.com</p>
+        </div>
+      `,
+      text: `Tu bono por ${d.tipo} (${fmt(d.monto)}) fue verificado. Ver portal: ${d.portalUrl}`,
+    };
+  },
+  partner_commission_paid: (d) => {
+    const fmt = (n: number) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
+    return {
+      subject: d.bulk
+        ? `🏦 Recibiste tu pago · ${fmt(d.monto)} (${d.tipo})`
+        : `🏦 Recibiste tu pago · ${fmt(d.monto)}`,
+      html: `
+        <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a1a">
+          <div style="text-align:center;margin-bottom:18px">
+            <div style="display:inline-block;padding:6px 14px;background:#1A8F7A;color:#fff;font-size:0.6875rem;font-weight:800;text-transform:uppercase;letter-spacing:0.10em;border-radius:4px">Pago liquidado</div>
+          </div>
+          <h2 style="font-size:1.5rem;font-weight:600;margin:0 0 12px;letter-spacing:-0.01em;text-align:center">${fmt(d.monto)} en camino, ${d.nombre || 'partner'} 🎉</h2>
+          <p style="color:#555;line-height:1.6;margin:0 0 16px;text-align:center">
+            ${d.bulk
+              ? `SACS liquidó <strong>${d.tipo}</strong> en un solo payout.`
+              : `SACS liquidó tu comisión por <strong>${d.tipo}</strong>.`}
+          </p>
+          <div style="background:#fafafa;border:1px solid #ececec;padding:18px;border-radius:10px;margin:18px 0">
+            <table style="width:100%;font-size:0.875rem;color:#444;border-collapse:collapse">
+              <tr><td style="padding:6px 0;width:140px;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Concepto</td><td style="padding:6px 0;font-weight:600">${d.tipo}</td></tr>
+              <tr><td style="padding:6px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Monto</td><td style="padding:6px 0;font-weight:800;font-size:1rem">${fmt(d.monto)}</td></tr>
+              <tr><td style="padding:6px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Referencia</td><td style="padding:6px 0;font-family:monospace;font-size:0.8125rem">${d.payment_reference || '—'}</td></tr>
+            </table>
+          </div>
+          <div style="text-align:center;margin:22px 0">
+            <a href="${d.portalUrl || ''}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:13px 26px;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.875rem">Ver desglose en mi portal</a>
+          </div>
+          <p style="color:#bbb;font-size:0.6875rem;margin-top:20px;text-align:center;line-height:1.5">El depósito puede tardar 1–2 días hábiles en reflejarse en tu cuenta.<br/>SACS Partners · partners@sacscloud.com</p>
+        </div>
+      `,
+      text: `Recibiste un pago de ${fmt(d.monto)} por ${d.tipo}. Ref: ${d.payment_reference}. Ver: ${d.portalUrl}`,
+    };
+  },
   partner_password_reset: (d) => ({
     subject: `Restablece tu contraseña — Partners SACS`,
     html: `

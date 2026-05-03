@@ -7,6 +7,7 @@ import SchedulingTab from './crm/SchedulingTab';
 import ContactProfile from './crm/ContactProfile';
 import DashboardTab from './crm/DashboardTab';
 import PartnersTab from './crm/PartnersTab';
+import CommissionsTab from './crm/CommissionsTab';
 import RevenueHub from './RevenueHub';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
@@ -23,7 +24,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'dashboard' | 'pipeline' | 'deals' | 'agenda' | 'automations' | 'clientes' | 'cotizaciones' | 'pagos' | 'config' | 'agents' | 'desempeno' | 'partners';
+type Tab = 'dashboard' | 'pipeline' | 'deals' | 'agenda' | 'automations' | 'clientes' | 'cotizaciones' | 'pagos' | 'config' | 'agents' | 'desempeno' | 'partners' | 'commissions';
 
 // SVG icons (Squarespace-style, clean strokes)
 const ICONS: Record<string, string> = {
@@ -67,6 +68,7 @@ const NAV_SECTIONS = [
     label: 'Partners',
     items: [
       { id: 'partners' as Tab, label: 'Partners', icon: 'partners' },
+      { id: 'commissions' as Tab, label: 'Comisiones', icon: 'pagos' },
     ],
   },
   {
@@ -278,6 +280,8 @@ export default function CrmDashboard() {
           <ErrorBoundary><AutomationsTab /></ErrorBoundary>
         ) : tab === 'partners' ? (
           <ErrorBoundary><PartnersTab /></ErrorBoundary>
+        ) : tab === 'commissions' ? (
+          <ErrorBoundary><CommissionsTab /></ErrorBoundary>
         ) : tab === 'agents' ? (
           <div style={{ padding: 24 }}>
             <h2 style={{ margin: '0 0 16px', fontSize: '1.25rem', fontWeight: 700 }}>Agentes IA</h2>

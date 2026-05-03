@@ -513,6 +513,17 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
     setFormError(null);
 
     try {
+      // Atribución partner: query ?ref= primero, luego cookie sacs_ref
+      let refPartnerId: string | null = null;
+      try {
+        const url = new URL(window.location.href);
+        refPartnerId = url.searchParams.get('ref');
+        if (!refPartnerId) {
+          const m = document.cookie.match(/(?:^|;\s*)sacs_ref=([^;]+)/);
+          if (m) refPartnerId = decodeURIComponent(m[1]);
+        }
+      } catch {/* ignore */}
+
       const res = await fetch('/api/scheduling/book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -531,6 +542,7 @@ export default function BookingPage({ eventType, questions: initialQuestions }: 
           notas: formData.notas || extractAnswer('Notas') || null,
           answers: Object.entries(formData.answers).filter(([,v]) => v).map(([qid, valor]) => ({ question_id: qid, valor })),
           ...(recurrenceEnabled ? { recurrence: { frequency: recurrenceFrequency, count: recurrenceCount } } : {}),
+          ref_partner_id: refPartnerId,
         }),
       });
 
