@@ -206,6 +206,23 @@ const partnerLandingUrl = invitation.slug_landing
   </aside>
 
   <div class:list={['p-page', `p-${template}`]} id="partner-doc" data-initial-tab={initialTab}>
+
+    <!-- Mobile sticky nav (oculta en desktop) -->
+    <nav class="p-mobnav no-print" aria-label="Secciones (móvil)">
+      <div class="p-mobnav-inner" id="p-mobnav-inner">
+        {visibleTabs.map((t, i) => (
+          <a
+            href={`#${t.id}`}
+            class={`p-mobnav-tab ${t.id === initialTab ? 'p-mobnav-tab--active' : ''}`}
+            data-tab-link={t.id}
+          >
+            <span class="p-mobnav-tab-num">{(i + 1).toString().padStart(2, '0')}</span>
+            <span class="p-mobnav-tab-label">{t.label}</span>
+          </a>
+        ))}
+      </div>
+    </nav>
+
     <div class="p-container">
 
       <!-- Header -->
@@ -1429,6 +1446,70 @@ const partnerLandingUrl = invitation.slug_landing
     .p-container { padding: 0 20px; }
   }
 
+  /* ─── Mobile sticky tab nav (visible solo ≤1023px) ─────────────
+     Reemplaza la sidebar oculta en móvil. Pills con scroll horizontal
+     para que el partner pueda saltar entre Bienvenida → Cómo funciona
+     → Términos → ... → Aceptar y firmar desde cualquier punto. */
+  .p-mobnav {
+    display: none;
+  }
+  @media (max-width: 1023px) {
+    .p-mobnav {
+      display: block;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(250,250,248,0.96);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid #ececec;
+    }
+    .p-mobnav-inner {
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      padding: 10px 16px;
+      scroll-snap-type: x proximity;
+    }
+    .p-mobnav-inner::-webkit-scrollbar { display: none; }
+    .p-mobnav-tab {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 14px;
+      border-radius: 999px;
+      background: transparent;
+      color: #777;
+      text-decoration: none;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      letter-spacing: 0.005em;
+      white-space: nowrap;
+      scroll-snap-align: center;
+      transition: background 0.15s, color 0.15s;
+    }
+    .p-mobnav-tab:hover { color: #1a1a1a; }
+    .p-mobnav-tab--active {
+      background: #1a1a1a;
+      color: #fff;
+    }
+    .p-mobnav-tab--active .p-mobnav-tab-num {
+      color: rgba(255,255,255,0.55);
+    }
+    .p-mobnav-tab-num {
+      font-family: var(--font-display);
+      font-size: 0.6875rem;
+      font-weight: 500;
+      color: #bbb;
+      letter-spacing: 0.04em;
+    }
+  }
+  /* Hide mobnav on print */
+  @media print { .p-mobnav { display: none !important; } }
+
   /* Tab switcher */
   .p-tab-panel { display: none; animation: tabFade 220ms ease; padding-bottom: 64px; }
   .p-tab-panel.is-active { display: block; }
@@ -1445,6 +1526,17 @@ const partnerLandingUrl = invitation.slug_landing
     padding: 32px 0 20px;
     border-bottom: 1px solid #f0f0f0;
     margin-bottom: 24px;
+  }
+  @media (max-width: 640px) {
+    .p-header {
+      padding: 16px 0 14px;
+      margin-bottom: 18px;
+    }
+    .p-header-brand { gap: 8px; }
+    .p-logo-text { font-size: 1.375rem !important; }
+    .p-logo-tag { font-size: 0.5625rem; padding: 3px 8px; }
+    .p-numero { font-size: 0.875rem; }
+    .p-fecha { font-size: 0.6875rem; }
   }
   .p-header-brand { display: flex; align-items: center; gap: 10px; }
   .p-logo-text { font-family: var(--font-logo, var(--font-display)); font-size: 1.75rem; font-weight: 700; color: #1a1a1a; }
@@ -1477,6 +1569,15 @@ const partnerLandingUrl = invitation.slug_landing
 
   /* Hero */
   .p-hero { padding: 56px 0 64px; }
+  @media (max-width: 640px) {
+    .p-hero { padding: 28px 0 36px; }
+    .p-hero-eyebrow { margin-bottom: 14px; font-size: 0.625rem; letter-spacing: 0.14em; }
+    .p-hero-title { margin: 0 0 20px; line-height: 1.05; }
+    .p-hero-sub { font-size: 1rem; margin: 0 0 28px; }
+    .p-hero-stats { padding: 18px 0; gap: 12px; margin-bottom: 20px; }
+    .p-hero-quick { margin-top: 4px; }
+    .p-hero-quick-row { font-size: 0.8125rem; }
+  }
   .p-hero-eyebrow {
     font-size: 0.6875rem; font-weight: 700; color: #4B7BE5;
     letter-spacing: 0.16em; text-transform: uppercase;
@@ -1580,6 +1681,13 @@ const partnerLandingUrl = invitation.slug_landing
     line-height: 1.55;
     margin: 0;
   }
+  @media (max-width: 640px) {
+    .p-section-head { padding: 28px 0 24px; }
+    .p-section-eyebrow { margin-bottom: 10px; }
+    .p-section-title { margin-bottom: 12px; }
+    .p-section-lead { font-size: 0.9375rem; line-height: 1.55; }
+    .p-tab-panel { padding-bottom: 40px; }
+  }
 
   /* Index nav under hero */
   .p-tab-intro-nav {
@@ -1607,6 +1715,11 @@ const partnerLandingUrl = invitation.slug_landing
   }
   .p-tab-intro-link:hover .p-tab-intro-link-arrow {
     color: #4B7BE5; transform: translateX(6px);
+  }
+  @media (max-width: 640px) {
+    .p-tab-intro-nav { margin-top: 16px; }
+    .p-tab-intro-link { padding: 16px 0; }
+    .p-tab-intro-link-label { font-size: 1rem; }
   }
 
   /* Benefits */
@@ -3080,6 +3193,9 @@ const partnerLandingUrl = invitation.slug_landing
 
   /* Sign form */
   .p-sign-form { padding: 56px 0 24px; max-width: 720px; margin: 0 auto; }
+  @media (max-width: 640px) {
+    .p-sign-form { padding: 24px 0 24px; }
+  }
 
   /* Sección numerada (Tus datos / Dirección / Cobro / Firma) */
   .p-sign-section {
@@ -3343,6 +3459,10 @@ const partnerLandingUrl = invitation.slug_landing
   .p-footer-logo { font-family: var(--font-logo, var(--font-display)); font-size: 1.125rem; font-weight: 700; color: #1a1a1a; }
   .p-footer-tagline { font-size: 0.75rem; color: #999; }
   .p-footer-contact { font-size: 0.75rem; color: #999; letter-spacing: 0.01em; }
+  @media (max-width: 640px) {
+    .p-footer { padding: 24px 0; margin-top: 32px; flex-direction: column; align-items: flex-start; gap: 8px; }
+    .p-footer-contact { font-size: 0.6875rem; }
+  }
 
   /* Modal */
   .p-modal-overlay {
@@ -3438,10 +3558,24 @@ const partnerLandingUrl = invitation.slug_landing
     document.querySelectorAll('.p-tab-panel').forEach(p => {
       p.classList.toggle('is-active', p.dataset.tab === tabId);
     });
+    // Desktop sidebar tabs
     document.querySelectorAll('[data-tab-link]').forEach(link => {
       const id = link.dataset.tabLink;
       if (id === tabId) link.classList.add('psb-tab--active');
       else if (link.classList.contains('psb-tab--active')) link.classList.remove('psb-tab--active');
+    });
+    // Mobile pill nav: active state + scroll into view
+    document.querySelectorAll('.p-mobnav-tab').forEach(link => {
+      const id = link.dataset.tabLink;
+      if (id === tabId) {
+        link.classList.add('p-mobnav-tab--active');
+        // Centrar pill activo en el scroll horizontal
+        try {
+          link.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        } catch {}
+      } else {
+        link.classList.remove('p-mobnav-tab--active');
+      }
     });
     if (history.replaceState) {
       history.replaceState(null, '', '#' + tabId);
@@ -3452,6 +3586,16 @@ const partnerLandingUrl = invitation.slug_landing
         if (typeof initSignature === 'function') initSignature();
       });
     }
+    // Scroll al inicio del contenido al cambiar tab (aria-current page anchor)
+    requestAnimationFrame(() => {
+      const target = document.querySelector('.p-tab-panel.is-active');
+      if (target) {
+        const rect = target.getBoundingClientRect();
+        if (rect.top < 0 || rect.top > window.innerHeight * 0.5) {
+          window.scrollTo({ top: window.scrollY + rect.top - 90, behavior: 'smooth' });
+        }
+      }
+    });
   }
 
   // Wire links
