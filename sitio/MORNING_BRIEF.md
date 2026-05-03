@@ -4,7 +4,7 @@ Buenos días. Mientras dormías shipeé los TIERS A, B, C, E y F del plan de
 completación del sistema partner. Todo está en producción en
 `https://www.sacscloud.com`.
 
-## ⚡ TL;DR — 12 deploys consecutivos
+## ⚡ TL;DR — 13 deploys consecutivos
 
 | Tier | Commit | Qué se añadió |
 |---|---|---|
@@ -18,6 +18,7 @@ completación del sistema partner. Todo está en producción en
 | I | `4dee5ac` | dashboard.ts atribución + JSON-LD SEO en /partners |
 | J | `1d60e29` | Portal FAB "Mi link" + /p/[slug] trust signals + screenshot |
 | K | `97a48ec` | Admin Partner Detail Drawer (slide-out con todo el overview) |
+| L | `fb32cfe` | Top fuentes leads en portal + Fraud flag en commissions admin |
 
 Todos los `npm run build` pasaron limpio. Todos los `vercel --prod` desplegaron
 sin errores. **No se aplicó ninguna nueva migración SQL** — tu schema sigue
@@ -106,12 +107,19 @@ Los puntos del plan (TIERS A-F + extras H, I) están cerrados. El sistema
 end-to-end funciona: aplicar → revisar → aprobar → onboarding → atribución
 → bonos automáticos → portal → pagos → emails.
 
-## 🤖 Otra sesión programada
+## 🤖 Loop autónomo — terminado
 
-Hay un wake-up programado para las **02:47 hrs** que ejecuta `/loop` con
-instrucciones de continuar polish (detail drawer, /p/[slug] mejoras, structured
-data). Si despiertas antes y prefieres que pare, no le des continuar al loop
-cuando aparezca.
+El /loop nocturno corrió 2 ticks adicionales después de la sesión inicial
+y completó todo el polish planeado:
+
+- Tick 1 (02:47): FAB en portal, trust signals en /p/[slug], Detail Drawer admin
+- Tick 2 (03:27): Top fuentes en portal, Fraud flag en commissions, perf audit
+
+El loop terminó solo porque ya no hay items urgentes en el plan.
+Última deploy: `https://www.sacscloud.com` con commit `fb32cfe`.
+
+Si quieres reactivar el loop más tarde, escribe:
+`/loop continúa polish del sistema partner` (auto-detecta dónde quedó).
 
 ## 🛠️ Si algo no anda
 
