@@ -660,7 +660,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
     slug_landing: editing?.slug_landing || '',
     beneficios: editing?.beneficios || [],
     compromisos: editing?.compromisos || [],
-    tabulador: editing?.tabulador || { prueba_gratis: 500, demo_completada: 300, venta_directa_pct: 50, moneda: 'MXN' },
+    tabulador: editing?.tabulador || { prueba_gratis: 250, demo_completada: 250, venta_directa_pct: 50, moneda: 'MXN' },
     terminos: editing?.terminos || '',
   }));
   const [saving, setSaving] = useState(false);
@@ -698,8 +698,8 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
           { title: 'Sesión mensual de actualizaciones SACS',       detail: 'Asistir cada mes a una sesión de 30 a 60 minutos donde el equipo de producto presenta lo nuevo del sistema (features, integraciones, mejoras). Es lo que te mantiene un paso adelante para mostrarlo en tu contenido y diferenciarte como embajador con información de primera mano.', frequency: 'Mensual' },
         ],
         tabulador: {
-          prueba_gratis: 500,
-          demo_completada: 300,
+          prueba_gratis: 250,
+          demo_completada: 250,
           venta_directa_pct: 50,
           moneda: 'MXN',
           notas: 'Pagos cada 30 días por transferencia bancaria, con desglose detallado por concepto y cliente visible siempre en tu portal de partner. Bono por prueba gratis se acredita cuando un usuario referido se registra y activa una prueba gratuita en SACS. Bono por demo completada se acredita al cierre del demo válido (mínimo 25 min con tomador de decisión presente). Comisión por venta directa se acredita al cobrar la primera factura del cliente cerrado.',
@@ -742,7 +742,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
           { title: 'Vender', detail: 'Mínimo 2 nuevos clientes por trimestre.', frequency: 'Trimestral' },
           { title: 'Implementar', detail: 'Acompañar al cliente las primeras 4 semanas.', frequency: 'Por cliente' },
         ],
-        tabulador: { prueba_gratis: 0, demo_completada: 300, venta_directa_pct: 30, moneda: 'MXN' },
+        tabulador: { prueba_gratis: 0, demo_completada: 250, venta_directa_pct: 30, moneda: 'MXN' },
         terminos: 'Comisión recurrente sobre MRR cobrado mientras el cliente esté al corriente.',
       },
       integrador: {

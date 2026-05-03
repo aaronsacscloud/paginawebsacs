@@ -6,8 +6,8 @@ export const prerender = true;
 // Stats hero
 const STATS = [
   { num: '50%', label: 'Comisión por venta directa', sub: 'sobre el monto cobrado' },
-  { num: '$500', label: 'Por prueba gratis activada', sub: 'cada nuevo trial' },
-  { num: '$300', label: 'Por demo completada', sub: 'cuando el prospecto asiste' },
+  { num: '$250', label: 'Por prueba gratis activada', sub: 'cada nuevo trial' },
+  { num: '$250', label: 'Por demo completada', sub: 'cuando el prospecto asiste' },
   { num: '3K+', label: 'Marcas en la red SACS', sub: 'red activa LATAM' },
 ];
 
@@ -63,7 +63,7 @@ const programSchema = {
     url: 'https://www.sacscloud.com',
   },
   areaServed: { '@type': 'Country', name: 'Mexico' },
-  description: '50% de comisión por venta directa, $500 por prueba gratis activada, $300 por demo completada. Para creadores con audiencia retail, distribuidores, integradores y consultores.',
+  description: '50% de comisión por venta directa, $250 por prueba gratis activada, $250 por demo completada. Para creadores con audiencia retail, distribuidores, integradores y consultores.',
   offers: {
     '@type': 'Offer',
     price: '0',
@@ -112,7 +112,7 @@ const faqSchema = {
 
 <BaseLayout
   title="Programa Partners SACS — gana 50% recomendando el sistema operativo del retail"
-  description="Únete al programa de partners SACS. 50% de comisión por venta directa, $500 por prueba gratis activada, $300 por demo completada. Plan Fideliza gratis para tu negocio."
+  description="Únete al programa de partners SACS. 50% de comisión por venta directa, $250 por prueba gratis activada, $250 por demo completada. Plan Fideliza gratis para tu negocio."
   noindex={false}
   structuredData={[programSchema, faqSchema]}
 >
@@ -233,12 +233,12 @@ const faqSchema = {
 
         <div class="pt-rewards-grid">
           <div class="pt-reward">
-            <div class="pt-reward-num">$500</div>
+            <div class="pt-reward-num">$250</div>
             <div class="pt-reward-name">Prueba gratis activada</div>
             <p class="pt-reward-detail">Cada usuario que llega por tu link y se registra para la prueba gratis. Pago al confirmar el alta.</p>
           </div>
           <div class="pt-reward">
-            <div class="pt-reward-num">$300</div>
+            <div class="pt-reward-num">$250</div>
             <div class="pt-reward-name">Demo completada</div>
             <p class="pt-reward-detail">Cuando el prospecto asiste y completa el demo válido (mín. 25 min con tomador de decisión).</p>
           </div>

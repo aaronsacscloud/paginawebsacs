@@ -140,8 +140,8 @@ const DEMO_SCENARIOS = [
 const ratePartner = comisionPct / 100;
 // Defaults: $500 por prueba gratis, $300 por demo completada — tomados del
 // tabulador si vienen, si no usamos los valores por defecto del programa.
-const bonusPruebaGratis = Number(tabulador.prueba_gratis ?? 500);
-const bonusCompletada   = Number(tabulador.demo_completada ?? 300);
+const bonusPruebaGratis = Number(tabulador.prueba_gratis ?? 250);
+const bonusCompletada   = Number(tabulador.demo_completada ?? 250);
 
 // Per-cell calculation: clientes × precio_plan × comision%
 function calcSale(planPrice: number, clients: number) {

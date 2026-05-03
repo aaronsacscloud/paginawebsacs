@@ -203,7 +203,7 @@ export const POST: APIRoute = async ({ request }) => {
           await createPruebaGratisBonus({
             partnerId: referrerPartnerId,
             contactId,
-            amount: 500,
+            amount: 250,
           });
         } catch (e) {
           console.warn('[save-lead] createPruebaGratisBonus failed:', e);

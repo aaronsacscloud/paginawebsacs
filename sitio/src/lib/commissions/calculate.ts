@@ -80,7 +80,7 @@ export interface PruebaGratisArgs {
 }
 
 export async function createPruebaGratisBonus(args: PruebaGratisArgs): Promise<{ ok: boolean; commission_id?: string; skipped?: boolean; reason?: string }> {
-  const amount = args.amount ?? 500;
+  const amount = args.amount ?? 250;
 
   // Idempotency: check existing
   const { data: existing } = await supabase
@@ -125,7 +125,7 @@ export interface DemoCompletadaArgs {
 }
 
 export async function createDemoCompletadaBonus(args: DemoCompletadaArgs): Promise<{ ok: boolean; commission_id?: string; skipped?: boolean; reason?: string }> {
-  const amount = args.amount ?? 300;
+  const amount = args.amount ?? 250;
 
   // Idempotency: check existing
   const { data: existing } = await supabase
