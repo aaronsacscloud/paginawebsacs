@@ -108,7 +108,6 @@ const heroSubtitle = tipoTagline[tipo] || '';
 const tabsDef = [
   { id: 'bienvenida', label: 'Bienvenida', show: true },
   { id: 'proceso',    label: 'Cómo funciona', show: true },
-  { id: 'beneficios', label: 'Beneficios', show: beneficios.length > 0 },
   { id: 'terminos', label: 'Términos', show: true },
   { id: 'compromisos', label: 'Compromisos', show: compromisos.length > 0 },
   { id: 'tabulador', label: 'Tabulador', show: Object.keys(tabulador).length > 0 },
@@ -554,39 +553,19 @@ const partnerLandingUrl = invitation.slug_landing
         </div>
       </div>
 
-      <!-- TAB: BENEFICIOS -->
-      {beneficios.length > 0 && (
-      <section class="p-tab-panel" data-tab="beneficios">
-        <div class="p-section-head">
-          <div class="p-section-eyebrow">Lo que recibes</div>
-          <h2 class="p-section-title">Beneficios de ser partner</h2>
-          <p class="p-section-lead">
-            Todo lo que necesitas para representar SACS, vender con confianza y crecer junto con nosotros.
-          </p>
-        </div>
-
-        <div class="p-benefits-grid">
-          {beneficios.map((b: any) => (
-            <div class="p-benefit-card">
-              <div class="p-benefit-icon" set:html={beneficioIcons[b.icon] || beneficioIcons.default}></div>
-              <div class="p-benefit-title">{b.title}</div>
-              <div class="p-benefit-detail">{b.detail}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-      )}
-
-      <!-- TAB: TÉRMINOS -->
+      <!-- TAB: TÉRMINOS (incluye lo económico + lo que SACS te da + costos) -->
       <section class="p-tab-panel" data-tab="terminos">
         <div class="p-section-head">
           <div class="p-section-eyebrow">Las reglas claras</div>
-          <h2 class="p-section-title">Términos económicos</h2>
+          <h2 class="p-section-title">Términos del programa</h2>
           <p class="p-section-lead">
-            Sin letras chicas. Esto es lo que ganas y lo que cuesta participar.
+            Sin letras chicas. Esto es lo que ganas, lo que SACS te entrega
+            y lo que cuesta participar — todo en un solo lugar.
           </p>
         </div>
 
+        <!-- ── 1. Lo que ganas ── -->
+        <div class="p-terms-group-eyebrow">1 · Lo que ganas</div>
         <div class="p-terms">
           <div class="p-term-row p-term-row--big">
             <div class="p-term-info">
@@ -615,7 +594,29 @@ const partnerLandingUrl = invitation.slug_landing
               <div class="p-term-value">{fmtMoney(bonusCompletada)} {moneda}</div>
             </div>
           )}
+        </div>
 
+        <!-- ── 2. Lo que SACS te entrega ── -->
+        {beneficios.length > 0 && (
+          <>
+            <div class="p-terms-group-eyebrow">2 · Lo que SACS te entrega</div>
+            <div class="p-terms">
+              {beneficios.map((b: any) => (
+                <div class="p-term-row">
+                  <div class="p-term-info">
+                    <div class="p-term-label">{b.title}</div>
+                    <div class="p-term-detail">{b.detail}</div>
+                  </div>
+                  <div class="p-term-value p-term-value--pill">Incluido</div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        <!-- ── 3. Costos y vigencia ── -->
+        <div class="p-terms-group-eyebrow">3 · Costos y vigencia</div>
+        <div class="p-terms">
           {costoUnico > 0 && (
             <div class="p-term-row">
               <div class="p-term-info">
@@ -1597,6 +1598,31 @@ const partnerLandingUrl = invitation.slug_landing
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+  }
+  /* Pill compacto para "Incluido" en filas de beneficios */
+  .p-term-value--pill {
+    font-family: var(--font-body);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    background: rgba(42,181,160,0.12);
+    color: #1A8F7A;
+    padding: 5px 12px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    -webkit-text-fill-color: initial;
+  }
+  /* Eyebrow para subgrupos dentro de Términos (1·Lo que ganas, 2·SACS te entrega, 3·Costos) */
+  .p-terms-group-eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #4B7BE5;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin: 32px 0 4px;
+  }
+  .p-terms-group-eyebrow:first-of-type {
+    margin-top: 12px;
   }
 
   .p-terms-extra {
