@@ -133,8 +133,7 @@ const tabsDef = [
   { id: 'terminos', label: 'Términos', show: true },
   { id: 'compromisos', label: 'Compromisos', show: compromisos.length > 0 },
   { id: 'contenido',  label: 'Contenido y puntos', show: tipo === 'embajador' },
-  { id: 'tabulador', label: 'Tabulador', show: Object.keys(tabulador).length > 0 },
-  { id: 'potencial', label: 'Tu potencial', show: comisionPct > 0 },
+  { id: 'compensacion', label: 'Plan de compensación', show: comisionPct > 0 || Object.keys(tabulador).length > 0 },
   { id: 'porque', label: '¿Por qué SACS?', show: true },
   { id: 'firma', label: isAccepted ? 'Firmada' : (isDeclined ? 'Rechazada' : (isSubmitted ? 'En revisión' : 'Aceptar y firmar')), show: true },
 ];
@@ -2298,7 +2297,7 @@ const partnerLandingUrl = invitation.slug_landing
             </div>
           </div>
 
-          <a href="#potencial" class="p-commit-rationale-cta" data-tab-link="potencial">
+          <a href="#compensacion" class="p-commit-rationale-cta" data-tab-link="compensacion">
             Ver el tabulador completo de proyecciones
             <span class="p-commit-rationale-cta-arrow">→</span>
           </a>
@@ -2409,15 +2408,22 @@ const partnerLandingUrl = invitation.slug_landing
       )}
 
       <!-- TAB: TABULADOR -->
-      {Object.keys(tabulador).length > 0 && (
-      <section class="p-tab-panel" data-tab="tabulador">
+      {(comisionPct > 0 || Object.keys(tabulador).length > 0) && (
+      <section class="p-tab-panel" data-tab="compensacion">
         <div class="p-section-head">
-          <div class="p-section-eyebrow">Cómo cobras</div>
-          <h2 class="p-section-title">Tabulador de recompensas</h2>
+          <div class="p-section-eyebrow">Plan de compensación</div>
+          <h2 class="p-section-title">Cuánto cobras y cuánto puedes ganar</h2>
           <p class="p-section-lead">
-            Te pagamos por cada paso del proceso, no sólo por la venta final.
+            Dos vistas en un solo lugar: el <strong>tabulador</strong> con cuánto te paga
+            cada acción del proceso, y la <strong>proyección</strong> de cuánto puedes
+            ganar al año según el ritmo que mantengas.
           </p>
         </div>
+
+        {Object.keys(tabulador).length > 0 && (
+        <>
+        <div class="p-comp-section-eyebrow">1 · Tabulador de recompensas</div>
+        <p class="p-comp-section-lead">Te pagamos por cada paso del proceso, no sólo por la venta final.</p>
 
         <div class="p-payout-grid">
           {bonusPruebaGratis > 0 && (
@@ -2525,19 +2531,17 @@ const partnerLandingUrl = invitation.slug_landing
             <span>Tu panel se actualiza al instante. Cuando alguien se registra por tu link, aparece de inmediato en tu portal — no hay que esperar a fin de mes.</span>
           </div>
         </div>
-      </section>
-      )}
+        </>
+        )}
 
-      <!-- TAB: TU POTENCIAL — proyección de ganancias -->
-      {comisionPct > 0 && (
-      <section class="p-tab-panel" data-tab="potencial">
-        <div class="p-section-head">
-          <div class="p-section-eyebrow">Cuánto puedes ganar</div>
-          <h2 class="p-section-title">Tu potencial como {tipoLabel[tipo] || tipo}</h2>
-          <p class="p-section-lead">
-            Cada prueba gratis activada, cada demo completada y cada cliente cerrado se traducen en ingresos. Estas son las matemáticas, basadas en tu {comisionPct}% de comisión y los precios públicos de SACS.
-          </p>
-        </div>
+        {comisionPct > 0 && (
+        <>
+        <div class="p-comp-divider"></div>
+        <div class="p-comp-section-eyebrow">2 · Tu potencial como {tipoLabel[tipo] || tipo}</div>
+        <p class="p-comp-section-lead">
+          Cada prueba gratis activada, cada demo completada y cada cliente cerrado se traducen en ingresos.
+          Estas son las matemáticas, basadas en tu {comisionPct}% de comisión y los precios públicos de SACS.
+        </p>
 
         <!-- ── Bonos por activaciones y demos ── -->
         {(bonusPruebaGratis > 0 || bonusCompletada > 0) && (
@@ -2652,6 +2656,8 @@ const partnerLandingUrl = invitation.slug_landing
             Y todo esto es <strong>antes</strong> de sumar tus bonos mensuales por pruebas gratis activadas y demos completadas.
           </p>
         </div>
+        </>
+        )}
       </section>
       )}
 
@@ -3800,6 +3806,35 @@ const partnerLandingUrl = invitation.slug_landing
 
 
   /* Tabulador / Payouts */
+  /* Plan de compensación — section dividers/eyebrows */
+  .p-comp-section-eyebrow {
+    font-family: var(--font-display);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #4B7BE5;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin: 24px 0 12px;
+  }
+  .p-comp-section-lead {
+    font-size: 1.0625rem;
+    color: #555;
+    line-height: 1.6;
+    margin: 0 0 32px;
+    max-width: 760px;
+  }
+  .p-comp-section-lead strong { color: #1a1a1a; font-weight: 600; }
+  .p-comp-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, #ececec 20%, #ececec 80%, transparent 100%);
+    margin: 88px 0 56px;
+    max-width: 760px;
+  }
+  @media (max-width: 720px) {
+    .p-comp-divider { margin: 56px 0 36px; }
+    .p-comp-section-lead { font-size: 0.9375rem; margin-bottom: 24px; }
+  }
+
   .p-payout-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
