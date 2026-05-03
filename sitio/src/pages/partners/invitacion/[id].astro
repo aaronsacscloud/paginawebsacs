@@ -151,6 +151,10 @@ const realisticClosingAnnual  = calcSale(SACS_PLANS[2].annualTotal, 100); // Fid
 const ceilingClosingMonthly   = calcSale(SACS_PLANS[3].monthly,     500); // Automatiza × 500 mensual
 const ceilingClosingAnnual    = calcSale(SACS_PLANS[3].annualTotal, 500); // Automatiza × 500 anual
 
+// Cuota mínima anual: 10 sucursales — usado en la sección "¿Por qué te conviene cumplir?"
+const minQuotaFidelizaAnnual   = calcSale(SACS_PLANS[2].annualTotal, 10); // 10 × Fideliza anual
+const minQuotaAutomatizaAnnual = calcSale(SACS_PLANS[3].annualTotal, 10); // 10 × Automatiza anual
+
 const beneficioIcons: Record<string, string> = {
   gift: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>',
   percent: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>',
@@ -409,7 +413,37 @@ const partnerLandingUrl = invitation.slug_landing
 
         <div class="p-commit-note">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          <span>Si dejas de cumplir los compromisos, te avisaremos y tendrás 30 días para regularizar antes de pausar tus beneficios.</span>
+          <span>Si dejas de cumplir los compromisos, te avisaremos y tendrás 30 días para regularizar antes de pausar tus beneficios. La cuota anual entra en revisión a los 12 meses con un plan de recuperación de 90 días si no se alcanza.</span>
+        </div>
+
+        <!-- ── ¿Por qué te conviene cumplir? ── -->
+        <div class="p-commit-rationale">
+          <div class="p-commit-rationale-eyebrow">¿Por qué te conviene cumplir?</div>
+          <h3 class="p-commit-rationale-title">Cumplir es ganar.</h3>
+          <p class="p-commit-rationale-text">
+            Los compromisos no son trabas — son las palancas que hacen al programa <strong>sustentable para ambos lados</strong>. SACS invierte en ti (sistema gratis, plan Fideliza, capacitación, difusión, bonos por demos) y la cuota mínima de 10 sucursales al año es lo que mantiene esa inversión viva.
+          </p>
+          <p class="p-commit-rationale-text">
+            Pero las matemáticas están de tu lado. Solo cumpliendo el mínimo:
+          </p>
+
+          <div class="p-commit-rationale-stack">
+            <div class="p-commit-rationale-card">
+              <div class="p-commit-rationale-card-label">10 sucursales en Fideliza · pago anual</div>
+              <div class="p-commit-rationale-card-amount">{fmtMoney(minQuotaFidelizaAnnual)}</div>
+              <div class="p-commit-rationale-card-detail">en comisiones de cierre, sin contar bonos por demos.</div>
+            </div>
+            <div class="p-commit-rationale-card p-commit-rationale-card--ceiling">
+              <div class="p-commit-rationale-card-label">10 sucursales en Automatiza · pago anual</div>
+              <div class="p-commit-rationale-card-amount">{fmtMoney(minQuotaAutomatizaAnnual)}</div>
+              <div class="p-commit-rationale-card-detail">solo con la cuota mínima cubierta.</div>
+            </div>
+          </div>
+
+          <a href="#potencial" class="p-commit-rationale-cta" data-tab-link="potencial">
+            Ver el tabulador completo de proyecciones
+            <span class="p-commit-rationale-cta-arrow">→</span>
+          </a>
         </div>
       </section>
       )}
@@ -1170,6 +1204,105 @@ const partnerLandingUrl = invitation.slug_landing
     line-height: 1.55;
   }
   .p-commit-note svg { flex-shrink: 0; color: #4B7BE5; margin-top: 1px; }
+
+  /* ─── ¿Por qué te conviene cumplir? — rationale block ─── */
+  .p-commit-rationale {
+    margin-top: 32px;
+    padding: 36px 32px;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d3f 100%);
+    color: #fff;
+    border-radius: 20px;
+  }
+  .p-commit-rationale-eyebrow {
+    font-size: 0.6875rem; font-weight: 700;
+    color: #93b4ff;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .p-commit-rationale-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 4vw, 2.25rem);
+    font-weight: 300;
+    color: #fff;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    margin: 0 0 16px;
+  }
+  .p-commit-rationale-text {
+    font-size: 0.9375rem;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.6;
+    margin: 0 0 14px;
+    max-width: 620px;
+  }
+  .p-commit-rationale-text strong { color: #fff; font-weight: 600; }
+  .p-commit-rationale-stack {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 22px 0 24px;
+  }
+  @media (max-width: 720px) { .p-commit-rationale-stack { grid-template-columns: 1fr; } }
+
+  .p-commit-rationale-card {
+    padding: 20px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .p-commit-rationale-card--ceiling {
+    background: linear-gradient(135deg, rgba(75,123,229,0.18), rgba(108,92,231,0.12));
+    border-color: rgba(108,92,231,0.30);
+  }
+  .p-commit-rationale-card-label {
+    font-size: 0.625rem; font-weight: 700;
+    color: rgba(255,255,255,0.55);
+    letter-spacing: 0.12em; text-transform: uppercase;
+    line-height: 1.4;
+  }
+  .p-commit-rationale-card--ceiling .p-commit-rationale-card-label { color: #93b4ff; }
+  .p-commit-rationale-card-amount {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 4.5vw, 2.5rem);
+    font-weight: 200;
+    color: #fff;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin: 4px 0 4px;
+  }
+  .p-commit-rationale-card--ceiling .p-commit-rationale-card-amount {
+    background: linear-gradient(120deg, #93b4ff 0%, #c4b5fd 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .p-commit-rationale-card-detail {
+    font-size: 0.8125rem;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.5;
+  }
+  .p-commit-rationale-cta {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 6px;
+    padding: 12px 20px;
+    background: #fff;
+    color: #1a1a1a;
+    text-decoration: none;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: background 0.15s ease, transform 0.15s ease;
+  }
+  .p-commit-rationale-cta:hover {
+    background: #93b4ff;
+    color: #1a1a1a;
+    text-decoration: none;
+    transform: translateY(-1px);
+  }
+  .p-commit-rationale-cta-arrow { transition: transform 0.15s ease; }
+  .p-commit-rationale-cta:hover .p-commit-rationale-cta-arrow { transform: translateX(4px); }
+
 
   /* Tabulador / Payouts */
   .p-payout-grid {

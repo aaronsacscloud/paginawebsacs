@@ -48,9 +48,12 @@ const DEFAULT_TEMPLATES: Record<string, any> = {
       { icon: 'wallet',    title: 'Pagos automáticos cada 30 días',              detail: 'Comisiones y bonos liquidados por transferencia cada 30 días, con desglose detallado de cada concepto, cliente y referido. Visible siempre desde tu portal.' },
     ],
     compromisos: [
+      { title: 'Cuota mínima anual de 10 sucursales',          detail: 'Mínimo 10 sucursales activas vendidas en cualquier plan durante los primeros 12 meses. Pueden ser 10 clientes con 1 sucursal cada uno, 1 cliente con 10 sucursales, o cualquier combinación. Esto es lo que hace al programa sustentable para ambos lados.', frequency: 'Anual' },
       { title: 'Crear 4 videos al mes con la plataforma',    detail: 'Mínimo 4 videos mensuales usando SACS, alineados al plan de trabajo y palabras clave que enviamos al inicio de cada mes.', frequency: 'Mensual' },
       { title: 'Publicar en tus redes sociales',             detail: 'Publicar los videos en tus propias redes (Instagram, TikTok, YouTube o LinkedIn) y compartir con tu audiencia.', frequency: 'Mensual' },
       { title: 'Enviarnos los archivos originales',          detail: 'Compartir con SACS los archivos originales de cada video para que también los publiquemos en nuestros canales y multiplicar el alcance.', frequency: 'Mensual' },
+      { title: 'Responder a leads asignados en menos de 24 h', detail: 'Cuando SACS te asigne un lead calificado, contactarlo en menos de 24 horas hábiles. Si no puedes en ese plazo, marcarlo en el portal para reasignar y no enfriar la oportunidad.', frequency: 'Por lead' },
+      { title: 'Reporte mensual de actividad',               detail: 'Compartir un resumen mensual desde tu portal: contenido publicado, engagement, leads contactados y feedback. Es lo que nos permite mejorar el programa contigo.', frequency: 'Mensual' },
       { title: 'Representar bien la marca SACS',             detail: 'Hablar siempre de forma positiva y profesional sobre la plataforma. Mantener un tono respetuoso al referirte a competidores, clientes y comunidad.', frequency: 'Continuo' },
       { title: 'Uso correcto del logotipo',                  detail: 'Aplicar el logotipo SACS solo en su versión oficial, sin deformar, recolorear ni mezclar con elementos no aprobados. Respetar áreas de protección.', frequency: 'Continuo' },
       { title: 'Uso correcto de tipografías y guidelines',   detail: 'Respetar el manual de marca: tipografías oficiales, paleta de colores, espaciado, fotografía e iconografía aprobada.', frequency: 'Continuo' },
@@ -71,7 +74,10 @@ const DEFAULT_TEMPLATES: Record<string, any> = {
 
 3. Landing page y portal del partner. SACS habilitará al embajador (i) una landing page personalizada con su nombre y link único bajo el dominio sacscloud.com, y (ii) un portal de partner con métricas en tiempo real (visitas, registros, prospectos, conversiones, comisiones devengadas y pagos liquidados). El embajador es responsable de la información, fotografía y biografía que comparta para su landing.
 
-4. Cumplimiento de compromisos. Si el embajador deja de cumplir los compromisos de contenido por dos (2) meses consecutivos, SACS notificará por escrito y otorgará un periodo de regularización de 30 días naturales antes de pausar los beneficios.
+4. Cumplimiento de compromisos.
+   (i) Cuota anual mínima: el embajador se compromete a generar la venta de al menos 10 sucursales activas en SACS durante los primeros 12 meses del programa, en cualquier plan disponible y bajo cualquier combinación (clientes con una o varias sucursales). Esta meta hace al programa sustentable para ambas partes y desbloquea la renovación automática.
+   (ii) Si el embajador deja de cumplir los compromisos de contenido por dos (2) meses consecutivos, SACS notificará por escrito y otorgará un periodo de regularización de 30 días naturales antes de pausar los beneficios.
+   (iii) Si al cumplirse 12 meses el embajador no alcanza la cuota mínima, SACS y el embajador acordarán un plan de recuperación de 90 días o, en su defecto, terminarán el acuerdo conforme a la cláusula 8.
 
 5. Confidencialidad. El embajador se compromete a no divulgar información estratégica, comercial o financiera de SACS Cloud, sus clientes o aliados, que reciba durante su participación en el programa.
 
