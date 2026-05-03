@@ -9669,13 +9669,12 @@ const useCases = [
   }
 
   /* ── #12 Cambios y devoluciones (.rtn-frame) — mobile (≤1023px) ──
-     Card más alta + 3-stage flow (Lista → Cambio → Éxito).
-     Aspect 9/16 portrait — más alto aún para que entre todo el contenido
-     incluyendo Stage 2 (swap completo: 2 cards + summary + botón) y
-     Stage 3 (check + title + summary + banner). */
+     3-stage flow (Lista → Cambio → Éxito). Aspect 1/1 (cuadrado) — el
+     contenido más alto (Stage 2 swap con 2 cards + summary + botón) cabe
+     justo sin dejar espacio en blanco excesivo abajo. */
   @media (max-width: 1023px) {
     .rtn-frame {
-      aspect-ratio: 9 / 16;
+      aspect-ratio: 1 / 1;
       padding: 12px 12px 10px;
       gap: 6px;
     }
