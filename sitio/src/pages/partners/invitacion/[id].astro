@@ -2124,7 +2124,7 @@ const partnerLandingUrl = invitation.slug_landing
               </div>
             </li>
 
-            <li class="p-funnel-step p-funnel-step--last">
+            <li class="p-funnel-step">
               <div class="p-funnel-step-num">5</div>
               <div class="p-funnel-step-content">
                 <div class="p-funnel-step-head">
@@ -2134,20 +2134,66 @@ const partnerLandingUrl = invitation.slug_landing
                 <p class="p-funnel-step-detail">Cliente cierra. Te avisamos al instante. Liquidación cada 30 días.</p>
               </div>
             </li>
+
+            <li class="p-funnel-step">
+              <div class="p-funnel-step-num">6</div>
+              <div class="p-funnel-step-content">
+                <div class="p-funnel-step-head">
+                  <h4 class="p-funnel-step-title">Onboarding + Migración</h4>
+                  <span class="p-funnel-step-tag">SACS lo implementa</span>
+                </div>
+                <p class="p-funnel-step-detail">
+                  Sesión de implementación 1:1 con el cliente, migración de datos
+                  desde su sistema anterior (productos, inventario, clientes, ventas históricas)
+                  sin que pierdan información. Configuración del POS, tienda en línea,
+                  facturación y capacitación del equipo. <strong>Sin costo extra para el cliente.</strong>
+                </p>
+              </div>
+            </li>
+
+            <li class="p-funnel-step p-funnel-step--last">
+              <div class="p-funnel-step-num">7</div>
+              <div class="p-funnel-step-content">
+                <div class="p-funnel-step-head">
+                  <h4 class="p-funnel-step-title">Soporte continuo + Academia</h4>
+                  <span class="p-funnel-step-tag">SACS lo retiene</span>
+                </div>
+                <p class="p-funnel-step-detail">
+                  Soporte <strong>24/7</strong> con un equipo de datos real
+                  (no chatbot). Acceso a la <strong>Academia SACS</strong> con cursos
+                  por giro y por módulo. <strong>Workshops mensuales</strong> de actualizaciones
+                  y mejores prácticas. El cliente se queda y tiene una buena experiencia —
+                  tu comisión recurrente sigue año tras año.
+                </p>
+              </div>
+            </li>
           </ol>
 
           <div class="p-funnel-tools">
-            <div class="p-funnel-tools-title">Lo que SACS opera por ti</div>
+            <div class="p-funnel-tools-title">Lo que SACS opera por ti — antes y después de la venta</div>
             <ul class="p-funnel-tools-list">
-              <li>Email de bienvenida + secuencia de nurturing</li>
-              <li>WhatsApp 1-on-1 con asesor humano</li>
-              <li>Tour guiado del producto + videos por vertical</li>
-              <li>Llamada de calificación en menos de 24 h hábiles</li>
-              <li>Demo en vivo agendada en su calendario</li>
-              <li>Onboarding completo del cliente al cerrar</li>
-              <li>Notificaciones a tu portal en tiempo real</li>
-              <li>Pagos automáticos cada 30 días</li>
+              <li><strong>Pre-venta:</strong> email de bienvenida + secuencia de nurturing</li>
+              <li><strong>Pre-venta:</strong> WhatsApp 1-on-1 con asesor humano</li>
+              <li><strong>Pre-venta:</strong> tour guiado del producto + videos por vertical</li>
+              <li><strong>Pre-venta:</strong> llamada de calificación en menos de 24 h hábiles</li>
+              <li><strong>Pre-venta:</strong> demo en vivo agendada en su calendario</li>
+              <li><strong>Cierre:</strong> notificación a tu portal en tiempo real</li>
+              <li><strong>Cierre:</strong> liquidación de tu comisión cada 30 días</li>
+              <li><strong>Implementación:</strong> sesión 1:1 de onboarding personalizado</li>
+              <li><strong>Implementación:</strong> migración de datos sin costo (productos, inventario, clientes, históricos)</li>
+              <li><strong>Implementación:</strong> capacitación inicial al equipo del cliente</li>
+              <li><strong>Retención:</strong> soporte 24/7 con equipo de datos real</li>
+              <li><strong>Retención:</strong> Academia SACS con cursos por giro</li>
+              <li><strong>Retención:</strong> workshops mensuales de actualizaciones</li>
+              <li><strong>Retención:</strong> Customer Success dedicado para cuentas activas</li>
             </ul>
+          </div>
+
+          <div class="p-funnel-promise">
+            <strong>El cliente nunca queda solo.</strong> Tú recomiendas, SACS lo cierra,
+            lo implementa y lo cuida. Esto significa que tu reputación está protegida —
+            no vas a tener clientes molestos preguntándote por qué no funciona algo.
+            Y el cliente se queda años, lo que mantiene tu comisión recurrente.
           </div>
         </div>
 
@@ -3541,6 +3587,29 @@ const partnerLandingUrl = invitation.slug_landing
     width: 8px;
     height: 1px;
     background: #4B7BE5;
+  }
+  .p-funnel-tools-list li strong {
+    color: #1a1a1a;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-right: 4px;
+  }
+  .p-funnel-promise {
+    margin-top: 48px;
+    padding: 28px 32px;
+    background: linear-gradient(135deg, rgba(75,123,229,0.06), rgba(42,181,160,0.04));
+    border: 1px solid rgba(75,123,229,0.18);
+    border-radius: 14px;
+    font-size: 1rem;
+    color: #444;
+    line-height: 1.65;
+    max-width: 760px;
+  }
+  .p-funnel-promise strong { color: #1a1a1a; font-weight: 600; }
+  @media (max-width: 720px) {
+    .p-funnel-promise { padding: 22px 22px; font-size: 0.9375rem; }
   }
 
   @media (max-width: 768px) {
