@@ -803,6 +803,8 @@ const partnerLandingUrl = invitation.slug_landing
               <button type="button" class="pp-app-nav" data-pp-tab="pagos">Pagos</button>
               <button type="button" class="pp-app-nav" data-pp-tab="prospectos">Prospectos <em class="pp-app-nav-badge">14</em></button>
               <button type="button" class="pp-app-nav" data-pp-tab="link">Mi link</button>
+              <button type="button" class="pp-app-nav" data-pp-tab="participacion">Mi participación <em class="pp-app-nav-badge">87/100</em></button>
+              <button type="button" class="pp-app-nav" data-pp-tab="actualizaciones">Actualizaciones</button>
               <button type="button" class="pp-app-nav" data-pp-tab="perfil">Mi perfil</button>
 
               <div class="pp-app-side-divider"></div>
@@ -1589,97 +1591,404 @@ const partnerLandingUrl = invitation.slug_landing
                 <div class="pp-tut">
                   <div class="pp-tut-icon"><span class="pp-info-i">i</span></div>
                   <div class="pp-tut-body">
-                    <strong>Tu propio negocio en SACS — gratis como embajador.</strong> Aquí tienes
-                    un resumen rápido de tu cuenta Plan Fideliza activa. Para gestionar productos,
-                    ventas y reportes en detalle, abre la app principal.
+                    <strong>Tu Plan Fideliza está incluido en tu paquete de partner.</strong>
+                    Vale $14,000 MXN/año en condiciones normales. Mientras seas embajador activo,
+                    tu cuenta es completamente gratis y con vigencia ilimitada.
                   </div>
                 </div>
 
                 <div class="pp-h1">Tu cuenta SACS</div>
-                <div class="pp-lead">Tu Plan Fideliza está activo y operando. Estos son tus números de hoy.</div>
+                <div class="pp-lead">Plan Fideliza incluido como parte de tu acuerdo de embajador.</div>
 
                 {/* Plan card destacada */}
                 <div class="pp-cuenta-plan">
                   <div class="pp-cuenta-plan-head">
                     <div>
-                      <div class="pp-cuenta-plan-eyebrow">✓ Plan activo</div>
+                      <div class="pp-cuenta-plan-eyebrow">Plan activo · incluido</div>
                       <div class="pp-cuenta-plan-name">Plan Fideliza</div>
-                      <div class="pp-cuenta-plan-meta">$14,000 MXN/año · GRATIS por embajador · activo hasta 15 jul 2027</div>
+                      <div class="pp-cuenta-plan-meta">Valor $14,000 MXN/año · cortesía como embajador SACS</div>
                     </div>
-                    <a href="https://app.sacscloud.com" target="_blank" rel="noopener" class="pp-btn pp-btn--primary" style="background:#1a1a1a; color:#fff">Abrir app SACS ↗</a>
+                    <a href="https://app.sacscloud.com" target="_blank" rel="noopener" class="pp-btn pp-btn--primary" style="background:#fff; color:#1a1a1a">Abrir app SACS ↗</a>
                   </div>
                 </div>
 
-                <h2 class="pp-h2">Tu negocio · este mes</h2>
-                <div class="pp-kpi-row">
-                  <div class="pp-kpi" style="--accent:#2AB5A0">
-                    <div class="pp-kpi-lbl">Ventas del mes</div>
-                    <div class="pp-kpi-val">$184,500</div>
-                    <div class="pp-kpi-hint">+22% vs mes pasado · 412 tickets</div>
+                <h2 class="pp-h2">Acceso a tu cuenta</h2>
+                <div class="pp-access-card">
+                  <div class="pp-access-row">
+                    <div class="pp-access-lbl">URL de inicio de sesión</div>
+                    <div class="pp-access-val">
+                      <a href="https://app.sacscloud.com" target="_blank" rel="noopener">app.sacscloud.com</a>
+                    </div>
+                    <button type="button" class="pp-btn pp-btn--ghost" style="background:#fafafa; color:#1a1a1a; border:1px solid #f0f0ee">Copiar</button>
                   </div>
-                  <div class="pp-kpi" style="--accent:#4B7BE5">
-                    <div class="pp-kpi-lbl">Ticket promedio</div>
-                    <div class="pp-kpi-val">$447</div>
-                    <div class="pp-kpi-hint">Categoría más vendida: blusas</div>
+                  <div class="pp-access-row">
+                    <div class="pp-access-lbl">Email</div>
+                    <div class="pp-access-val pp-access-val--mono">{invitation.email || 'tu@correo.com'}</div>
+                    <button type="button" class="pp-btn pp-btn--ghost" style="background:#fafafa; color:#1a1a1a; border:1px solid #f0f0ee">Copiar</button>
                   </div>
-                  <div class="pp-kpi" style="--accent:#6C5CE7">
-                    <div class="pp-kpi-lbl">Productos</div>
-                    <div class="pp-kpi-val">1,284</div>
-                    <div class="pp-kpi-hint">42 con stock bajo</div>
+                  <div class="pp-access-row">
+                    <div class="pp-access-lbl">Contraseña</div>
+                    <div class="pp-access-val pp-access-val--mono">••••••••••••</div>
+                    <div style="display:flex; gap:6px">
+                      <button type="button" class="pp-btn pp-btn--ghost" style="background:#fafafa; color:#1a1a1a; border:1px solid #f0f0ee">Mostrar</button>
+                      <button type="button" class="pp-btn pp-btn--ghost" style="background:#fafafa; color:#1a1a1a; border:1px solid #f0f0ee">Cambiar</button>
+                    </div>
                   </div>
-                  <div class="pp-kpi" style="--accent:#E8A838">
-                    <div class="pp-kpi-lbl">Clientes activos</div>
-                    <div class="pp-kpi-val">2,847</div>
-                    <div class="pp-kpi-hint">+186 nuevos este mes</div>
+                  <a href="https://app.sacscloud.com" target="_blank" rel="noopener" class="pp-access-cta">Abrir app.sacscloud.com →</a>
+                </div>
+
+                <h2 class="pp-h2">Vigencia</h2>
+                <div class="pp-vig-grid">
+                  <div class="pp-vig-card">
+                    <div class="pp-vig-lbl">Cuenta creada</div>
+                    <div class="pp-vig-val">15 jul 2026</div>
+                    <div class="pp-vig-hint">Hace 4 meses como partner</div>
+                  </div>
+                  <div class="pp-vig-card">
+                    <div class="pp-vig-lbl">Vigencia</div>
+                    <div class="pp-vig-val">Ilimitada</div>
+                    <div class="pp-vig-hint">Mientras seas embajador activo</div>
+                  </div>
+                  <div class="pp-vig-card pp-vig-card--accent">
+                    <div class="pp-vig-lbl">Ahorro acumulado</div>
+                    <div class="pp-vig-val">$4,667</div>
+                    <div class="pp-vig-hint">4 meses × $14K/año = ahorro a la fecha</div>
                   </div>
                 </div>
 
-                <h2 class="pp-h2">Tus sucursales · 1 activa</h2>
-                <div class="pp-table">
-                  <div class="pp-trow pp-trow--head"><span>Sucursal</span><span>Dirección</span><span>Estado</span><span>Ventas mes</span></div>
-                  <div class="pp-trow"><span><strong>Sucursal Principal</strong><br/><em class="pp-cell-meta">{invitation.empresa || 'Tu negocio'}</em></span><span>Av. Reforma 222 · CDMX 06600</span><span><em class="pp-tag pp-tag--ok">Operando</em></span><span><strong>$184,500</strong></span></div>
+                <h2 class="pp-h2">Lo que incluye tu Plan Fideliza</h2>
+                <div class="pp-incl-grid">
+                  <div class="pp-incl">
+                    <div class="pp-incl-check">✓</div>
+                    <div class="pp-incl-body">
+                      <strong>Punto de venta multi-sucursal</strong>
+                      <span>POS móvil, tablet o PC con cobro online y offline. Hasta 3 sucursales en este plan.</span>
+                    </div>
+                  </div>
+                  <div class="pp-incl">
+                    <div class="pp-incl-check">✓</div>
+                    <div class="pp-incl-body">
+                      <strong>Inventario omnicanal</strong>
+                      <span>Stock consolidado entre piso, online y entregas. Variantes, lotes, caducidades.</span>
+                    </div>
+                  </div>
+                  <div class="pp-incl">
+                    <div class="pp-incl-check">✓</div>
+                    <div class="pp-incl-body">
+                      <strong>Tienda en línea con tema custom</strong>
+                      <span>E-commerce con dominio propio, plantillas profesionales y checkout integrado.</span>
+                    </div>
+                  </div>
+                  <div class="pp-incl">
+                    <div class="pp-incl-check">✓</div>
+                    <div class="pp-incl-body">
+                      <strong>CRM y programa de lealtad</strong>
+                      <span>Base de clientes, segmentación, puntos, niveles VIP y portal del cliente.</span>
+                    </div>
+                  </div>
+                  <div class="pp-incl">
+                    <div class="pp-incl-check">✓</div>
+                    <div class="pp-incl-body">
+                      <strong>Facturación electrónica CFDI 4.0</strong>
+                      <span>Factura ilimitada, complementos de pago, validación SAT en tiempo real.</span>
+                    </div>
+                  </div>
+                  <div class="pp-incl">
+                    <div class="pp-incl-check">✓</div>
+                    <div class="pp-incl-body">
+                      <strong>Reportes y BI</strong>
+                      <span>Dashboards en vivo, reportes predictivos, exportación a Excel y Google Sheets.</span>
+                    </div>
+                  </div>
+                  <div class="pp-incl">
+                    <div class="pp-incl-check">✓</div>
+                    <div class="pp-incl-body">
+                      <strong>Axo · IA Copiloto</strong>
+                      <span>Asistente con IA para inventario, marketing, agentic commerce y consultas en lenguaje natural.</span>
+                    </div>
+                  </div>
+                  <div class="pp-incl">
+                    <div class="pp-incl-check">✓</div>
+                    <div class="pp-incl-body">
+                      <strong>Marketing por email y WhatsApp</strong>
+                      <span>Campañas, automations, segmentación y reportes de conversión.</span>
+                    </div>
+                  </div>
+                  <div class="pp-incl">
+                    <div class="pp-incl-check">✓</div>
+                    <div class="pp-incl-body">
+                      <strong>Apartados, MSI y promociones</strong>
+                      <span>Vende a meses sin intereses, apartados largos, descuentos por volumen y combos.</span>
+                    </div>
+                  </div>
+                  <div class="pp-incl">
+                    <div class="pp-incl-check">✓</div>
+                    <div class="pp-incl-body">
+                      <strong>API e integraciones</strong>
+                      <span>Conecta con Stripe, Mercado Pago, Conekta, Shopify, Rappi y más.</span>
+                    </div>
+                  </div>
+                  <div class="pp-incl">
+                    <div class="pp-incl-check">✓</div>
+                    <div class="pp-incl-body">
+                      <strong>Soporte prioritario por embajador</strong>
+                      <span>Cola separada de atención, respuesta &lt;4 hrs, acceso directo a Customer Success.</span>
+                    </div>
+                  </div>
+                  <div class="pp-incl">
+                    <div class="pp-incl-check">✓</div>
+                    <div class="pp-incl-body">
+                      <strong>Onboarding personalizado</strong>
+                      <span>Setup inicial 1:1, capacitación de tu equipo y migración de datos sin costo extra.</span>
+                    </div>
+                  </div>
                 </div>
-                <a href="https://app.sacscloud.com/sucursales" target="_blank" rel="noopener" class="pp-link">+ Agregar sucursal →</a>
 
-                <h2 class="pp-h2">Accesos rápidos</h2>
+                <h2 class="pp-h2">Accesos rápidos al app</h2>
                 <div class="pp-quick-grid">
                   <a href="https://app.sacscloud.com/pos" target="_blank" rel="noopener" class="pp-quick">
-                    <div class="pp-quick-icon">🛒</div>
                     <div class="pp-quick-name">POS</div>
                     <div class="pp-quick-desc">Cobrar venta nueva</div>
                   </a>
                   <a href="https://app.sacscloud.com/inventario" target="_blank" rel="noopener" class="pp-quick">
-                    <div class="pp-quick-icon">📦</div>
                     <div class="pp-quick-name">Inventario</div>
                     <div class="pp-quick-desc">Productos y stock</div>
                   </a>
                   <a href="https://app.sacscloud.com/ecommerce" target="_blank" rel="noopener" class="pp-quick">
-                    <div class="pp-quick-icon">🌐</div>
                     <div class="pp-quick-name">Tienda online</div>
                     <div class="pp-quick-desc">Tu e-commerce</div>
                   </a>
                   <a href="https://app.sacscloud.com/clientes" target="_blank" rel="noopener" class="pp-quick">
-                    <div class="pp-quick-icon">👥</div>
                     <div class="pp-quick-name">CRM</div>
                     <div class="pp-quick-desc">Clientes y lealtad</div>
                   </a>
                   <a href="https://app.sacscloud.com/reportes" target="_blank" rel="noopener" class="pp-quick">
-                    <div class="pp-quick-icon">📊</div>
                     <div class="pp-quick-name">Reportes</div>
                     <div class="pp-quick-desc">Análisis y BI</div>
                   </a>
                   <a href="https://app.sacscloud.com/marketing" target="_blank" rel="noopener" class="pp-quick">
-                    <div class="pp-quick-icon">📣</div>
                     <div class="pp-quick-name">Marketing</div>
                     <div class="pp-quick-desc">WhatsApp y email</div>
                   </a>
                 </div>
+              </section>
 
-                <div class="pp-note">
-                  <strong><span class="pp-info-i">i</span> Tu cuenta no es solo un beneficio.</strong> Usar SACS en tu propio
-                  negocio te da material real para tus videos y posts: capturas, testimonios
-                  propios, comparativas. Los partners que usan la plataforma cierran 3x más ventas
-                  que los que solo recomiendan sin usarla.
+              {/* ─────────── TAB: MI PARTICIPACIÓN ─────────── */}
+              <section class="pp-app-panel" data-pp-panel="participacion">
+                <div class="pp-tut">
+                  <div class="pp-tut-icon"><span class="pp-info-i">i</span></div>
+                  <div class="pp-tut-body">
+                    <strong>Tu acuerdo de embajador establece 100 puntos mínimos al mes en contenido.</strong>
+                    Aquí registras los videos y posts que publicaste, ves cuántos puntos te dio cada uno
+                    y tu progreso del mes. Si no llegas a 100 pts dos meses seguidos, SACS te contacta
+                    para entender el caso.
+                  </div>
+                </div>
+
+                <div class="pp-h1">Mi participación</div>
+                <div class="pp-lead">Noviembre 2026 · evaluación cierra el 1 dic 2026.</div>
+
+                {/* Status grande */}
+                <div class="pp-part-status">
+                  <div class="pp-part-status-head">
+                    <div>
+                      <div class="pp-part-status-eyebrow">Tu progreso este mes</div>
+                      <div class="pp-part-status-num"><strong>87</strong> <span>/ 100 pts</span></div>
+                    </div>
+                    <div class="pp-part-status-meta">
+                      <div><strong>Te faltan 13 pts</strong></div>
+                      <div class="pp-cell-meta">= 1 IG Reel (20 pts) o 3 Stories (15 pts)</div>
+                    </div>
+                  </div>
+                  <div class="pp-part-bar">
+                    <div class="pp-part-bar-fill" style="width:87%"></div>
+                    <div class="pp-part-bar-mark" style="left:100%" title="Meta mensual"></div>
+                  </div>
+                  <div class="pp-part-status-foot">4 piezas publicadas · 22 días restantes en el mes · próxima evaluación 1 dic</div>
+                </div>
+
+                <h2 class="pp-h2">Cuánto vale cada tipo de contenido</h2>
+                <div class="pp-puntos-grid">
+                  <div class="pp-puntos-card"><div class="pp-puntos-pts">35</div><div class="pp-puntos-name">YouTube · video largo</div><div class="pp-puntos-desc">Mín. 5 min · explica caso, demo o tutorial</div></div>
+                  <div class="pp-puntos-card"><div class="pp-puntos-pts">30</div><div class="pp-puntos-name">Caso de éxito escrito</div><div class="pp-puntos-desc">Blog, LinkedIn artículo o newsletter (mín. 600 palabras)</div></div>
+                  <div class="pp-puntos-card"><div class="pp-puntos-pts">25</div><div class="pp-puntos-name">TikTok · video</div><div class="pp-puntos-desc">15-90 seg · contenido original</div></div>
+                  <div class="pp-puntos-card"><div class="pp-puntos-pts">20</div><div class="pp-puntos-name">Instagram Reel</div><div class="pp-puntos-desc">15-90 seg · audio original o trending</div></div>
+                  <div class="pp-puntos-card"><div class="pp-puntos-pts">15</div><div class="pp-puntos-name">YouTube Short</div><div class="pp-puntos-desc">Hasta 60 seg vertical</div></div>
+                  <div class="pp-puntos-card"><div class="pp-puntos-pts">15</div><div class="pp-puntos-name">LinkedIn post</div><div class="pp-puntos-desc">Texto + imagen o carrusel</div></div>
+                  <div class="pp-puntos-card"><div class="pp-puntos-pts">10</div><div class="pp-puntos-name">Twitter / X thread</div><div class="pp-puntos-desc">Mín. 4 tweets encadenados</div></div>
+                  <div class="pp-puntos-card"><div class="pp-puntos-pts">5</div><div class="pp-puntos-name">Story IG / TikTok</div><div class="pp-puntos-desc">Máximo 4 stories cuentan al mes (20 pts cap)</div></div>
+                </div>
+
+                <h2 class="pp-h2">Tus piezas de noviembre · 4 publicadas</h2>
+                <div class="pp-table pp-table--5col">
+                  <div class="pp-trow pp-trow--head"><span>Fecha</span><span>Plataforma</span><span>Contenido</span><span>Vistas</span><span>Puntos</span></div>
+                  <div class="pp-trow"><span>02 nov</span><span>TikTok · video</span><span><strong>"Mi negocio antes y después de SACS"</strong><br/><a href="#" class="pp-link" style="margin:0; font-size:0.75rem">Ver en TikTok ↗</a></span><span>14,200</span><span><em class="pp-tag pp-tag--ok">+25</em><br/><em class="pp-cell-meta">aprobado</em></span></div>
+                  <div class="pp-trow"><span>09 nov</span><span>Instagram · Reel</span><span><strong>"3 cosas que mi POS anterior no podía"</strong><br/><a href="#" class="pp-link" style="margin:0; font-size:0.75rem">Ver en Instagram ↗</a></span><span>8,930</span><span><em class="pp-tag pp-tag--ok">+20</em><br/><em class="pp-cell-meta">aprobado</em></span></div>
+                  <div class="pp-trow"><span>15 nov</span><span>LinkedIn · post</span><span><strong>"Por qué los retailers en LATAM están migrando a SACS"</strong><br/><a href="#" class="pp-link" style="margin:0; font-size:0.75rem">Ver en LinkedIn ↗</a></span><span>3,400</span><span><em class="pp-tag pp-tag--ok">+15</em><br/><em class="pp-cell-meta">aprobado</em></span></div>
+                  <div class="pp-trow"><span>21 nov</span><span>YouTube · short</span><span><strong>"Cobrar sin internet con SACS · 30 seg"</strong><br/><a href="#" class="pp-link" style="margin:0; font-size:0.75rem">Ver en YouTube ↗</a></span><span>5,210</span><span><em class="pp-tag pp-tag--blue">+15</em><br/><em class="pp-cell-meta">en revisión</em></span></div>
+
+                  <div class="pp-trow pp-trow--add"><span colspan="5" style="grid-column: 1 / -1; text-align:center; padding: 18px 0">
+                    <button type="button" class="pp-btn pp-btn--primary" style="background:#1a1a1a; color:#fff">+ Registrar nueva pieza</button>
+                  </span></div>
+                </div>
+
+                <h2 class="pp-h2">Histórico mensual · últimos 6 meses</h2>
+                <div class="pp-table">
+                  <div class="pp-trow pp-trow--head" style="grid-template-columns: 1fr 1fr 1fr 1fr"><span>Mes</span><span>Total puntos</span><span>Piezas</span><span>Estado</span></div>
+                  <div class="pp-trow" style="grid-template-columns: 1fr 1fr 1fr 1fr"><span>Noviembre 2026</span><span><strong>87 pts</strong> <em class="pp-cell-meta">(en curso)</em></span><span>4 piezas</span><span><em class="pp-tag pp-tag--amber">En curso</em></span></div>
+                  <div class="pp-trow" style="grid-template-columns: 1fr 1fr 1fr 1fr"><span>Octubre 2026</span><span><strong>110 pts</strong></span><span>5 piezas</span><span><em class="pp-tag pp-tag--ok">Cumplido</em></span></div>
+                  <div class="pp-trow" style="grid-template-columns: 1fr 1fr 1fr 1fr"><span>Septiembre 2026</span><span><strong>98 pts</strong></span><span>5 piezas</span><span><em class="pp-tag pp-tag--amber">98% · aceptado</em></span></div>
+                  <div class="pp-trow" style="grid-template-columns: 1fr 1fr 1fr 1fr"><span>Agosto 2026</span><span><strong>125 pts</strong></span><span>6 piezas</span><span><em class="pp-tag pp-tag--ok">Cumplido</em></span></div>
+                  <div class="pp-trow" style="grid-template-columns: 1fr 1fr 1fr 1fr"><span>Julio 2026</span><span><strong>85 pts</strong></span><span>4 piezas</span><span><em class="pp-tag pp-tag--err">Por debajo</em></span></div>
+                  <div class="pp-trow" style="grid-template-columns: 1fr 1fr 1fr 1fr"><span>Junio 2026</span><span><strong>104 pts</strong></span><span>5 piezas</span><span><em class="pp-tag pp-tag--ok">Cumplido</em></span></div>
+                  <div class="pp-trow" style="grid-template-columns: 1fr 1fr 1fr 1fr"><span>Mayo 2026</span><span><strong>92 pts</strong></span><span>4 piezas</span><span><em class="pp-tag pp-tag--amber">92% · aceptado</em></span></div>
+                </div>
+
+                <div class="pp-foot-stats">
+                  <strong>Promedio últimos 6 meses:</strong> 102 pts/mes · <strong>Cumpliendo el acuerdo</strong> ✓
+                </div>
+              </section>
+
+              {/* ─────────── TAB: ACTUALIZACIONES ─────────── */}
+              <section class="pp-app-panel" data-pp-panel="actualizaciones">
+                <div class="pp-tut">
+                  <div class="pp-tut-icon"><span class="pp-info-i">i</span></div>
+                  <div class="pp-tut-body">
+                    <strong>Una sesión en vivo al mes con el equipo SACS.</strong> Updates de
+                    producto, casos de éxito, Q&amp;A y networking entre embajadores. Si no puedes
+                    asistir, todas quedan grabadas y disponibles aquí mismo con sus slides.
+                  </div>
+                </div>
+
+                <div class="pp-h1">Actualizaciones mensuales</div>
+                <div class="pp-lead">Sesiones en vivo cada último jueves del mes. Próxima en 12 días.</div>
+
+                {/* Próxima sesión destacada */}
+                <div class="pp-actu-next">
+                  <div class="pp-actu-next-eyebrow">Próxima sesión</div>
+                  <div class="pp-actu-next-grid">
+                    <div>
+                      <div class="pp-actu-next-date">Jueves 28 nov 2026 · 5:00 PM CDMX</div>
+                      <div class="pp-actu-next-title">Producto Q4: nuevos módulos de IA y roadmap 2027</div>
+                      <div class="pp-actu-next-desc">
+                        Repasamos los lanzamientos de octubre y noviembre, demo del nuevo
+                        Orquestador de Agentes y Q&amp;A abierto. Daniela Cruz (Bella Pandita)
+                        presenta su caso de éxito multisucursal.
+                      </div>
+                      <div class="pp-actu-next-meta">
+                        <span><strong>Duración estimada:</strong> 60 min</span>
+                        <span><strong>Modalidad:</strong> Zoom · 50 plazas</span>
+                        <span><strong>Confirmados:</strong> 38 de 100</span>
+                      </div>
+                    </div>
+                    <div class="pp-actu-next-actions">
+                      <a href="#" class="pp-btn pp-btn--primary" style="background:#1a1a1a; color:#fff; padding: 14px 22px">Unirme a Zoom →</a>
+                      <button type="button" class="pp-btn pp-btn--ghost" style="background:#fafafa; color:#1a1a1a; border:1px solid #f0f0ee; padding: 12px 18px">Agregar al calendario (.ics)</button>
+                      <button type="button" class="pp-btn pp-btn--ghost" style="background:transparent; color:#666; border:1px solid transparent; padding: 8px 12px; font-size:0.8125rem">Recordarme 1h antes</button>
+                    </div>
+                  </div>
+                </div>
+
+                <h2 class="pp-h2">Próximas sesiones agendadas</h2>
+                <div class="pp-table">
+                  <div class="pp-trow pp-trow--head" style="grid-template-columns: 1fr 2fr 1fr"><span>Fecha</span><span>Tema previsto</span><span>Acción</span></div>
+                  <div class="pp-trow" style="grid-template-columns: 1fr 2fr 1fr"><span><strong>26 dic 2026</strong><br/><em class="pp-cell-meta">Jueves · 5:00 PM CDMX</em></span><span><strong>Cierre de año + planeación 2027</strong><br/><em class="pp-cell-meta">Resultados del programa partner, top embajadores y rumbo 2027</em></span><span><a href="#" class="pp-link" style="margin:0">Pre-registrarme →</a></span></div>
+                  <div class="pp-trow" style="grid-template-columns: 1fr 2fr 1fr"><span><strong>30 ene 2027</strong><br/><em class="pp-cell-meta">Jueves · 5:00 PM CDMX</em></span><span><strong>Lanzamiento SACS Plus 2.0</strong><br/><em class="pp-cell-meta">Demo del rediseño completo + nuevas integraciones bancarias</em></span><span><a href="#" class="pp-link" style="margin:0">Pre-registrarme →</a></span></div>
+                  <div class="pp-trow" style="grid-template-columns: 1fr 2fr 1fr"><span><strong>27 feb 2027</strong><br/><em class="pp-cell-meta">Jueves · 5:00 PM CDMX</em></span><span><strong>Casos de éxito: 5 partners, 5 historias</strong><br/><em class="pp-cell-meta">Embajadores top comparten qué les funcionó y por qué</em></span><span><a href="#" class="pp-link" style="margin:0">Pre-registrarme →</a></span></div>
+                </div>
+
+                <h2 class="pp-h2">Grabaciones de sesiones pasadas</h2>
+                <div class="pp-rec-grid">
+                  <div class="pp-rec">
+                    <div class="pp-rec-thumb" style="background:linear-gradient(135deg, #4B7BE5, #6C5CE7)">
+                      <span class="pp-rec-play">▶</span>
+                      <span class="pp-rec-duration">62 min</span>
+                    </div>
+                    <div class="pp-rec-body">
+                      <div class="pp-rec-month">Octubre 2026</div>
+                      <div class="pp-rec-title">Atribución end-to-end y casos de cierre de Q3</div>
+                      <div class="pp-rec-actions">
+                        <a href="#" class="pp-link" style="margin:0">Ver grabación</a>
+                        <a href="#" class="pp-link" style="margin:0; color:#666">Slides PDF</a>
+                        <a href="#" class="pp-link" style="margin:0; color:#666">Notas</a>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="pp-rec">
+                    <div class="pp-rec-thumb" style="background:linear-gradient(135deg, #2AB5A0, #4B7BE5)">
+                      <span class="pp-rec-play">▶</span>
+                      <span class="pp-rec-duration">58 min</span>
+                    </div>
+                    <div class="pp-rec-body">
+                      <div class="pp-rec-month">Septiembre 2026</div>
+                      <div class="pp-rec-title">Brand kit v2 y nueva guía de captions por giro</div>
+                      <div class="pp-rec-actions">
+                        <a href="#" class="pp-link" style="margin:0">Ver grabación</a>
+                        <a href="#" class="pp-link" style="margin:0; color:#666">Slides PDF</a>
+                        <a href="#" class="pp-link" style="margin:0; color:#666">Notas</a>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="pp-rec">
+                    <div class="pp-rec-thumb" style="background:linear-gradient(135deg, #E8A838, #EF4444)">
+                      <span class="pp-rec-play">▶</span>
+                      <span class="pp-rec-duration">71 min</span>
+                    </div>
+                    <div class="pp-rec-body">
+                      <div class="pp-rec-month">Agosto 2026</div>
+                      <div class="pp-rec-title">Lanzamiento del Plan Plus + nueva pricing 2026</div>
+                      <div class="pp-rec-actions">
+                        <a href="#" class="pp-link" style="margin:0">Ver grabación</a>
+                        <a href="#" class="pp-link" style="margin:0; color:#666">Slides PDF</a>
+                        <a href="#" class="pp-link" style="margin:0; color:#666">Notas</a>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="pp-rec">
+                    <div class="pp-rec-thumb" style="background:linear-gradient(135deg, #6C5CE7, #BE185D)">
+                      <span class="pp-rec-play">▶</span>
+                      <span class="pp-rec-duration">55 min</span>
+                    </div>
+                    <div class="pp-rec-body">
+                      <div class="pp-rec-month">Julio 2026</div>
+                      <div class="pp-rec-title">Onboarding de partners nuevos · ronda Q3</div>
+                      <div class="pp-rec-actions">
+                        <a href="#" class="pp-link" style="margin:0">Ver grabación</a>
+                        <a href="#" class="pp-link" style="margin:0; color:#666">Slides PDF</a>
+                        <a href="#" class="pp-link" style="margin:0; color:#666">Notas</a>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="pp-rec">
+                    <div class="pp-rec-thumb" style="background:linear-gradient(135deg, #1A8F7A, #4B7BE5)">
+                      <span class="pp-rec-play">▶</span>
+                      <span class="pp-rec-duration">49 min</span>
+                    </div>
+                    <div class="pp-rec-body">
+                      <div class="pp-rec-month">Junio 2026</div>
+                      <div class="pp-rec-title">Demo de Axo Copiloto IA para retail</div>
+                      <div class="pp-rec-actions">
+                        <a href="#" class="pp-link" style="margin:0">Ver grabación</a>
+                        <a href="#" class="pp-link" style="margin:0; color:#666">Slides PDF</a>
+                        <a href="#" class="pp-link" style="margin:0; color:#666">Notas</a>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="pp-rec">
+                    <div class="pp-rec-thumb" style="background:linear-gradient(135deg, #888, #1a1a1a)">
+                      <span class="pp-rec-play">▶</span>
+                      <span class="pp-rec-duration">66 min</span>
+                    </div>
+                    <div class="pp-rec-body">
+                      <div class="pp-rec-month">Mayo 2026</div>
+                      <div class="pp-rec-title">Lanzamiento del programa Embajadores SACS</div>
+                      <div class="pp-rec-actions">
+                        <a href="#" class="pp-link" style="margin:0">Ver grabación</a>
+                        <a href="#" class="pp-link" style="margin:0; color:#666">Slides PDF</a>
+                        <a href="#" class="pp-link" style="margin:0; color:#666">Notas</a>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </section>
 
@@ -6119,6 +6428,383 @@ const partnerLandingUrl = invitation.slug_landing
     color: #888;
   }
 
+  /* ─── Tu cuenta SACS · access card ─── */
+  .pp-access-card {
+    background: #fff;
+    border: 1px solid #f0f0ee;
+    border-radius: 14px;
+    padding: 28px 32px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  }
+  .pp-access-row {
+    display: grid;
+    grid-template-columns: 200px 1fr auto;
+    gap: 24px;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid #f5f5f3;
+  }
+  .pp-access-row:last-of-type { border-bottom: none; }
+  .pp-access-lbl {
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+  .pp-access-val {
+    font-size: 0.9375rem;
+    color: #1a1a1a;
+    font-weight: 500;
+  }
+  .pp-access-val--mono {
+    font-family: 'SF Mono', 'Courier New', monospace;
+    font-size: 0.875rem;
+    letter-spacing: -0.005em;
+  }
+  .pp-access-val a { color: #4B7BE5; text-decoration: none; }
+  .pp-access-val a:hover { text-decoration: underline; }
+  .pp-access-cta {
+    display: block;
+    margin-top: 18px;
+    padding: 14px 20px;
+    background: #1a1a1a;
+    color: #fff;
+    border-radius: 10px;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    transition: background 0.15s;
+  }
+  .pp-access-cta:hover { background: #000; }
+
+  /* ─── Vigencia grid ─── */
+  .pp-vig-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .pp-vig-card {
+    background: #fff;
+    border: 1px solid #f0f0ee;
+    border-radius: 14px;
+    padding: 24px 26px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  }
+  .pp-vig-card--accent {
+    background: linear-gradient(135deg, rgba(42,181,160,0.05), rgba(75,123,229,0.03));
+    border-color: rgba(42,181,160,0.20);
+  }
+  .pp-vig-lbl {
+    font-size: 0.6875rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .pp-vig-val {
+    font-family: var(--font-display);
+    font-size: 1.625rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    line-height: 1;
+    letter-spacing: -0.025em;
+    margin-bottom: 8px;
+  }
+  .pp-vig-card--accent .pp-vig-val { color: #1A8F7A; }
+  .pp-vig-hint { font-size: 0.8125rem; color: #888; line-height: 1.4; }
+
+  /* ─── Lo que incluye Plan Fideliza ─── */
+  .pp-incl-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .pp-incl {
+    display: flex;
+    gap: 14px;
+    padding: 18px 22px;
+    background: #fff;
+    border: 1px solid #f0f0ee;
+    border-radius: 12px;
+    align-items: flex-start;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  }
+  .pp-incl-check {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    background: rgba(42,181,160,0.12);
+    color: #1A8F7A;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.75rem;
+    margin-top: 2px;
+  }
+  .pp-incl-body { flex: 1; min-width: 0; }
+  .pp-incl-body strong {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+    letter-spacing: -0.005em;
+  }
+  .pp-incl-body span {
+    font-size: 0.8125rem;
+    color: #666;
+    line-height: 1.55;
+    display: block;
+  }
+
+  /* ─── Mi participación ─── */
+  .pp-part-status {
+    background: #fff;
+    border: 1px solid #f0f0ee;
+    border-radius: 16px;
+    padding: 32px 36px;
+    margin-bottom: 32px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  }
+  .pp-part-status-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+  }
+  .pp-part-status-eyebrow {
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .pp-part-status-num {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    color: #888;
+    font-weight: 400;
+  }
+  .pp-part-status-num strong {
+    font-size: 3rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    letter-spacing: -0.035em;
+    line-height: 1;
+    display: inline-block;
+    margin-right: 6px;
+  }
+  .pp-part-status-meta {
+    text-align: right;
+    color: #666;
+    font-size: 0.9375rem;
+  }
+  .pp-part-status-meta strong { color: #1a1a1a; }
+  .pp-part-bar {
+    position: relative;
+    height: 12px;
+    background: #f5f5f3;
+    border-radius: 999px;
+    overflow: visible;
+  }
+  .pp-part-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #6CD6C2 0%, #4B7BE5 100%);
+    border-radius: 999px;
+    transition: width 0.6s ease-out;
+  }
+  .pp-part-bar-mark {
+    position: absolute;
+    top: -4px;
+    width: 2px;
+    height: 20px;
+    background: #1a1a1a;
+    transform: translateX(-1px);
+  }
+  .pp-part-status-foot {
+    margin-top: 14px;
+    font-size: 0.8125rem;
+    color: #888;
+  }
+
+  .pp-puntos-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .pp-puntos-card {
+    background: #fff;
+    border: 1px solid #f0f0ee;
+    border-radius: 12px;
+    padding: 20px 22px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  }
+  .pp-puntos-pts {
+    font-family: var(--font-display);
+    font-size: 1.875rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    margin-bottom: 12px;
+  }
+  .pp-puntos-name {
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+  }
+  .pp-puntos-desc { font-size: 0.75rem; color: #888; line-height: 1.4; }
+
+  .pp-trow--add {
+    background: #fafafa;
+  }
+  .pp-trow--add > span {
+    grid-column: 1 / -1 !important;
+  }
+
+  /* ─── Actualizaciones ─── */
+  .pp-actu-next {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d44 100%);
+    color: #fff;
+    border-radius: 16px;
+    padding: 32px 36px;
+    margin-bottom: 32px;
+  }
+  .pp-actu-next-eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: #6CD6C2;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .pp-actu-next-grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+  .pp-actu-next-date {
+    font-size: 0.8125rem;
+    color: #6CD6C2;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .pp-actu-next-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: #fff;
+    margin-bottom: 14px;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+  }
+  .pp-actu-next-desc {
+    font-size: 0.9375rem;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.6;
+    margin-bottom: 18px;
+  }
+  .pp-actu-next-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.8125rem;
+    color: rgba(255,255,255,0.65);
+  }
+  .pp-actu-next-meta strong { color: #fff; font-weight: 500; }
+  .pp-actu-next-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+  .pp-actu-next-actions .pp-btn { width: 100%; justify-content: center; }
+
+  .pp-rec-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .pp-rec {
+    background: #fff;
+    border: 1px solid #f0f0ee;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .pp-rec:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+  }
+  .pp-rec-thumb {
+    aspect-ratio: 16/9;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .pp-rec-play {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.95);
+    color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    backdrop-filter: blur(4px);
+  }
+  .pp-rec-duration {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background: rgba(0,0,0,0.65);
+    color: #fff;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+  .pp-rec-body {
+    padding: 18px 20px 20px;
+  }
+  .pp-rec-month {
+    font-size: 0.6875rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .pp-rec-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 14px;
+    letter-spacing: -0.005em;
+    line-height: 1.35;
+  }
+  .pp-rec-actions {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
   /* Mobile */
   @media (max-width: 1100px) {
     .pp-app-main { padding: 48px 40px 80px; }
@@ -6136,6 +6822,13 @@ const partnerLandingUrl = invitation.slug_landing
     .pp-bk-templates { grid-template-columns: 1fr 1fr; }
     .pp-bk-colors { grid-template-columns: repeat(3, 1fr); }
     .pp-quick-grid { grid-template-columns: 1fr 1fr; }
+    .pp-vig-grid { grid-template-columns: 1fr; }
+    .pp-incl-grid { grid-template-columns: 1fr; }
+    .pp-puntos-grid { grid-template-columns: repeat(2, 1fr); }
+    .pp-actu-next-grid { grid-template-columns: 1fr; gap: 22px; }
+    .pp-rec-grid { grid-template-columns: 1fr 1fr; }
+    .pp-access-row { grid-template-columns: 1fr; gap: 8px; }
+    .pp-access-row > div:last-of-type { justify-self: start; }
   }
   @media (max-width: 720px) {
     .pp-app-topbar { padding: 12px 16px; flex-wrap: wrap; gap: 10px; }
@@ -6183,6 +6876,14 @@ const partnerLandingUrl = invitation.slug_landing
     .pp-quick-grid { grid-template-columns: 1fr 1fr; }
     .pp-cuenta-plan { padding: 26px 22px; }
     .pp-cuenta-plan-name { font-size: 1.5rem; }
+    .pp-rec-grid { grid-template-columns: 1fr; }
+    .pp-puntos-grid { grid-template-columns: 1fr 1fr; }
+    .pp-part-status { padding: 26px 22px; }
+    .pp-part-status-num strong { font-size: 2.5rem; }
+    .pp-part-status-meta { text-align: left; }
+    .pp-actu-next { padding: 26px 22px; }
+    .pp-actu-next-title { font-size: 1.25rem; }
+    .pp-access-card { padding: 22px 22px; }
   }
 
   /* Sign form */
