@@ -109,14 +109,34 @@ end-to-end funciona: aplicar → revisar → aprobar → onboarding → atribuci
 
 ## 🤖 Loop autónomo — terminado
 
-El /loop nocturno corrió 2 ticks adicionales después de la sesión inicial
-y completó todo el polish planeado:
+El /loop nocturno corrió varios ticks adicionales después de la sesión
+inicial. Resumen de lo último:
 
-- Tick 1 (02:47): FAB en portal, trust signals en /p/[slug], Detail Drawer admin
-- Tick 2 (03:27): Top fuentes en portal, Fraud flag en commissions, perf audit
+- Tick (10:34): **Bienvenida tab — 10 verticales reales con módulos**.
+  Reemplazó los 6 verticales hardcoded ("Moda", "Farmacias", etc.) por
+  los 10 reales del catálogo `/giros`: Tiendas de Ropa, Zapaterías,
+  Joyerías, Retail de Entretenimiento, Papelería y Arte, Parques,
+  Electrónica, Fundas para Celulares + dos nuevos: **Minisúpers** y
+  **Vinos y Licores**. Cada card muestra 4 módulos como chips (ej.
+  "Verificación de edad", "Marbetes CRT", "Báscula y a granel"). Más
+  callout "+70 giros más" enlazando al catálogo completo. Le da al
+  embajador argumentos verticales reales para cada prospecto. Commit
+  `8182437`.
+- Tick (10:38): **Botón "Marcar fraude"** en CRM > Partners > drawer
+  de detalle. Cada comisión pendiente o earned ahora tiene botón rojo
+  que abre prompt de motivo y la cancela con `reason: 'fraud: ...'`.
+  Las canceladas se ven en strikethrough. Audit trail preservado en
+  lugar de borrar. Commit `3792acf`.
+- **Performance audit**: /p/[slug] no carga JS de React (sin client:
+  directives, sin scripts inline). Solo la analítica global (Clarity,
+  TikTok pixel, UTM persistence) que está intencional para conversión.
+  /partners ships ~30KB inline solo para el form (necesario). Bundle
+  ya está limpio, no requiere refactor.
+- Confirmado: prueba_gratis sigue en $250, demo_completada en $300,
+  venta directa 50%.
 
 El loop terminó solo porque ya no hay items urgentes en el plan.
-Última deploy: `https://www.sacscloud.com` con commit `fb32cfe`.
+Última deploy: `https://www.sacscloud.com` con commit `3792acf`.
 
 Si quieres reactivar el loop más tarde, escribe:
 `/loop continúa polish del sistema partner` (auto-detecta dónde quedó).

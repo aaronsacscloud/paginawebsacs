@@ -76,7 +76,7 @@ export async function createCommissionForDeal(args: CreateCommissionArgs): Promi
 export interface PruebaGratisArgs {
   partnerId: string;
   contactId: string;
-  amount?: number;       // default 500
+  amount?: number;       // default 250
 }
 
 export async function createPruebaGratisBonus(args: PruebaGratisArgs): Promise<{ ok: boolean; commission_id?: string; skipped?: boolean; reason?: string }> {
