@@ -123,6 +123,8 @@ const beneficioIcons: Record<string, string> = {
   community: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
   reward: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>',
   leads: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
+  broadcast: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 11-5.8-1.6"/></svg>',
+  calendar: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
   default: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
 };
 
@@ -190,12 +192,24 @@ const partnerLandingUrl = invitation.slug_landing
           <div class="p-hero-stats">
             <div class="p-hero-stat">
               <div class="p-hero-stat-num">{comisionPct}<span class="p-hero-stat-pct">%</span></div>
-              <div class="p-hero-stat-label">Comisión por venta</div>
+              <div class="p-hero-stat-label">Comisión por venta directa</div>
             </div>
-            <div class="p-hero-stat">
-              <div class="p-hero-stat-num">{costoMensual === 0 && costoUnico === 0 ? 'Gratis' : (costoMensual > 0 ? fmtMoney(costoMensual) : fmtMoney(costoUnico))}</div>
-              <div class="p-hero-stat-label">{costoMensual === 0 && costoUnico === 0 ? 'Acceso al sistema' : (costoMensual > 0 ? 'Cuota mensual' : 'Cuota única')}</div>
-            </div>
+            {(Number(tabulador.demo_completada || 0) > 0 || Number(tabulador.demo_agendada || 0) > 0) ? (
+              <div class="p-hero-stat">
+                <div class="p-hero-stat-num">{Number(tabulador.demo_completada || 0) > 0 ? fmtMoney(Number(tabulador.demo_completada)) : fmtMoney(Number(tabulador.demo_agendada))}</div>
+                <div class="p-hero-stat-label">{Number(tabulador.demo_completada || 0) > 0 ? 'Por demo completada' : 'Por demo agendada'}</div>
+              </div>
+            ) : (costoMensual > 0 || costoUnico > 0) ? (
+              <div class="p-hero-stat">
+                <div class="p-hero-stat-num">{costoMensual > 0 ? fmtMoney(costoMensual) : fmtMoney(costoUnico)}</div>
+                <div class="p-hero-stat-label">{costoMensual > 0 ? 'Cuota mensual' : 'Cuota única'}</div>
+              </div>
+            ) : (
+              <div class="p-hero-stat">
+                <div class="p-hero-stat-num">Sin costo</div>
+                <div class="p-hero-stat-label">Acceso al programa</div>
+              </div>
+            )}
             <div class="p-hero-stat">
               <div class="p-hero-stat-num">3K+</div>
               <div class="p-hero-stat-label">Marcas en la red SACS</div>
@@ -260,25 +274,57 @@ const partnerLandingUrl = invitation.slug_landing
           <div class="p-term-row p-term-row--big">
             <div class="p-term-info">
               <div class="p-term-label">Comisión por venta directa</div>
-              <div class="p-term-detail">Sobre el monto cobrado al cliente cuando facturamos vía tu link único.</div>
+              <div class="p-term-detail">Sobre el monto efectivamente cobrado al cliente cuando facturamos vía tu link único de partner.</div>
             </div>
             <div class="p-term-value p-term-value--accent">{comisionPct}%</div>
           </div>
 
-          <div class="p-term-row">
-            <div class="p-term-info">
-              <div class="p-term-label">Cuota única de inscripción</div>
-              <div class="p-term-detail">{costoUnico === 0 ? 'No aplica para este programa.' : 'Pago único al activar tu programa.'}</div>
+          {Number(tabulador.demo_agendada || 0) > 0 && (
+            <div class="p-term-row">
+              <div class="p-term-info">
+                <div class="p-term-label">Bono por reunión agendada</div>
+                <div class="p-term-detail">Cada vez que un prospecto referido por ti agenda una demo en nuestro calendario.</div>
+              </div>
+              <div class="p-term-value">{fmtMoney(Number(tabulador.demo_agendada))} {moneda}</div>
             </div>
-            <div class="p-term-value">{costoUnico === 0 ? 'Sin costo' : fmtMoney(costoUnico) + ' ' + moneda}</div>
-          </div>
+          )}
+
+          {Number(tabulador.demo_completada || 0) > 0 && (
+            <div class="p-term-row">
+              <div class="p-term-info">
+                <div class="p-term-label">Bono por reunión completada</div>
+                <div class="p-term-detail">Cuando el prospecto asiste y completa el demo válido con SACS.</div>
+              </div>
+              <div class="p-term-value">{fmtMoney(Number(tabulador.demo_completada))} {moneda}</div>
+            </div>
+          )}
+
+          {costoUnico > 0 && (
+            <div class="p-term-row">
+              <div class="p-term-info">
+                <div class="p-term-label">Cuota única de inscripción</div>
+                <div class="p-term-detail">Pago único al activar tu programa.</div>
+              </div>
+              <div class="p-term-value">{fmtMoney(costoUnico)} {moneda}</div>
+            </div>
+          )}
+
+          {costoMensual > 0 && (
+            <div class="p-term-row">
+              <div class="p-term-info">
+                <div class="p-term-label">Cuota mensual del sistema SACS</div>
+                <div class="p-term-detail">Suscripción mensual al sistema SACS para uso interno y demos.</div>
+              </div>
+              <div class="p-term-value">{fmtMoney(costoMensual)} / mes</div>
+            </div>
+          )}
 
           <div class="p-term-row">
             <div class="p-term-info">
-              <div class="p-term-label">Cuota mensual del sistema SACS</div>
-              <div class="p-term-detail">{costoMensual === 0 ? 'Acceso completo gratis mientras cumplas los compromisos del programa.' : 'Suscripción mensual al sistema SACS para uso interno y demos.'}</div>
+              <div class="p-term-label">Acceso al sistema SACS</div>
+              <div class="p-term-detail">{(costoMensual === 0 && costoUnico === 0) ? 'Sin costo durante toda la participación, mientras cumplas los compromisos del programa.' : 'Sujeto a la cuota indicada arriba.'}</div>
             </div>
-            <div class="p-term-value">{costoMensual === 0 ? 'Gratis' : fmtMoney(costoMensual) + ' / mes'}</div>
+            <div class="p-term-value">{(costoMensual === 0 && costoUnico === 0) ? 'Sin costo' : 'Con cuota'}</div>
           </div>
 
           <div class="p-term-row">

@@ -36,29 +36,55 @@ const DEFAULT_TEMPLATES: Record<string, any> = {
     costo_unico: 0,
     costo_mensual: 0,
     beneficios: [
-      { icon: 'gift', title: 'Sistema SACS gratis', detail: 'Accede al SaaS completo sin costo durante tu programa de embajador.' },
-      { icon: 'percent', title: '50% de comisión', detail: 'Sobre cada venta directa que generes a través de tu link único.' },
-      { icon: 'academy', title: 'Capacitación premium', detail: 'Academia SACS, playbooks, demos grabadas y soporte directo del equipo.' },
-      { icon: 'community', title: 'Comunidad de embajadores', detail: 'Networking, sesiones mensuales, casos de éxito y mentoría.' },
-      { icon: 'reward', title: 'Recompensas por demo', detail: 'Bonos por cada demo agendada y completada según tabulador.' },
+      { icon: 'percent',   title: '50% de comisión por venta directa',       detail: 'Sobre cada cliente cerrado a través de tu link único de partner. Se calcula sobre el monto efectivamente cobrado al cliente.' },
+      { icon: 'reward',    title: 'Comisión por reunión agendada',           detail: 'Bono fijo cada vez que un prospecto referido por ti agenda una demo en nuestro calendario oficial.' },
+      { icon: 'reward',    title: 'Comisión por reunión completada',         detail: 'Bono adicional cuando el prospecto asiste y completa el demo válido con SACS.' },
+      { icon: 'academy',   title: 'Acceso a Academia SACS y capacitaciones', detail: 'Cursos en línea, playbooks por vertical, demos grabadas y certificación oficial de embajador.' },
+      { icon: 'gift',      title: 'Plan Fideliza incluido',                  detail: 'Acceso completo al plan Fideliza para tu propio negocio durante toda tu participación. Valor de $18,000 MXN al año.' },
+      { icon: 'calendar',  title: 'Reunión trimestral con el equipo SACS',   detail: 'Sesión cada 3 meses para compartir mejoras, casos de éxito y feedback directo con el equipo de producto y dirección.' },
+      { icon: 'broadcast', title: 'Difusión en el canal SACS',               detail: 'Republicamos tu contenido en nuestras redes sociales. El alcance es variable y orgánico — puede sumar miles de views adicionales según el contenido.' },
     ],
     compromisos: [
-      { title: 'Crear contenido', detail: 'Publica de 3 a 4 videos al mes sobre SACS en tus redes (Instagram, TikTok, YouTube o LinkedIn).', frequency: 'Mensual' },
-      { title: 'Mantener nivel', detail: 'Cumple con la cuota de contenido para conservar acceso gratis al sistema y al 50% de comisión.', frequency: 'Continuo' },
-      { title: 'Asistir a kick-off', detail: 'Sesión de onboarding de 60 min para aprender el modelo, materiales y cómo presentar SACS.', frequency: 'Una vez' },
+      { title: 'Crear 4 videos al mes con la plataforma',    detail: 'Mínimo 4 videos mensuales usando SACS, alineados al plan de trabajo y palabras clave que enviamos al inicio de cada mes.', frequency: 'Mensual' },
+      { title: 'Publicar en tus redes sociales',             detail: 'Publicar los videos en tus propias redes (Instagram, TikTok, YouTube o LinkedIn) y compartir con tu audiencia.', frequency: 'Mensual' },
+      { title: 'Enviarnos los archivos originales',          detail: 'Compartir con SACS los archivos originales de cada video para que también los publiquemos en nuestros canales y multiplicar el alcance.', frequency: 'Mensual' },
+      { title: 'Representar bien la marca SACS',             detail: 'Hablar siempre de forma positiva y profesional sobre la plataforma. Mantener un tono respetuoso al referirte a competidores, clientes y comunidad.', frequency: 'Continuo' },
+      { title: 'Uso correcto del logotipo',                  detail: 'Aplicar el logotipo SACS solo en su versión oficial, sin deformar, recolorear ni mezclar con elementos no aprobados. Respetar áreas de protección.', frequency: 'Continuo' },
+      { title: 'Uso correcto de tipografías y guidelines',   detail: 'Respetar el manual de marca: tipografías oficiales, paleta de colores, espaciado, fotografía e iconografía aprobada.', frequency: 'Continuo' },
+      { title: 'Asistir al kick-off de embajadores',         detail: 'Sesión inicial de 60 minutos para conocer el modelo, los materiales de marca y las mejores prácticas para representar SACS.', frequency: 'Una vez' },
     ],
     tabulador: {
       demo_agendada: 200,
       demo_completada: 500,
       venta_directa_pct: 50,
       moneda: 'MXN',
-      notas: 'Pagos mensuales. Demo agendada se paga al confirmarse; demo completada al cierre del demo válido. Comisión por venta directa al cobrar la primera factura.',
+      notas: 'Pagos mensuales el día 15 del mes siguiente al cierre del periodo. Reunión agendada se acredita al confirmarse en el calendario; reunión completada al cierre del demo válido (mínimo 25 min con tomador de decisión presente). Comisión por venta directa se acredita al cobrar la primera factura del cliente cerrado.',
     },
-    terminos: 'Programa de embajadores sujeto a cumplimiento de compromisos de contenido y representación de marca. Las recompensas se pagan mensualmente vía transferencia. SACS se reserva el derecho de revisar el desempeño cada 90 días.',
+    terminos: `Programa Embajador SACS — Términos y Condiciones
+
+1. Vigencia y evaluación. El programa tiene vigencia indefinida sujeta a evaluación trimestral del cumplimiento de compromisos por parte de SACS Cloud. SACS se reserva el derecho de revisar el desempeño cada 90 días.
+
+2. Comisiones y pagos. Las comisiones se calculan sobre el monto efectivamente cobrado a clientes referidos (vía link único o atribución manual). El pago se realiza por transferencia mensual el día 15 del mes siguiente al cierre, contra emisión de recibo o factura del embajador.
+
+3. Cumplimiento de compromisos. Si el embajador deja de cumplir los compromisos de contenido por dos (2) meses consecutivos, SACS notificará por escrito y otorgará un periodo de regularización de 30 días naturales antes de pausar los beneficios.
+
+4. Confidencialidad. El embajador se compromete a no divulgar información estratégica, comercial o financiera de SACS Cloud, sus clientes o aliados, que reciba durante su participación en el programa.
+
+5. Imagen y propiedad intelectual. SACS otorga al embajador una licencia limitada, no exclusiva y revocable para usar la marca SACS conforme al manual de marca durante la vigencia del programa. La propiedad intelectual de los videos creados por el embajador permanece del embajador, quien otorga a SACS una licencia perpetua, mundial y libre de regalías para republicar y promocionar dichos videos en cualquier canal de SACS.
+
+6. Exclusividad parcial. Durante la vigencia del programa, el embajador no representará simultáneamente plataformas competidoras directas (POS / SaaS retail mexicano) sin autorización previa por escrito de SACS.
+
+7. Terminación. Cualquiera de las partes podrá terminar el acuerdo con 30 días de aviso por escrito. Las comisiones devengadas hasta el momento de la terminación se pagarán conforme al ciclo regular.
+
+8. No relación laboral. Este acuerdo no constituye relación laboral, mercantil-asociativa ni de mandato entre las partes. El embajador actúa como colaborador independiente y es responsable de sus propias obligaciones fiscales.
+
+9. Datos personales. El tratamiento de datos personales se rige por el Aviso de Privacidad publicado en sacscloud.com/privacidad.
+
+10. Jurisdicción. Para la interpretación y cumplimiento de este acuerdo, las partes se someten a las leyes y tribunales de la Ciudad de México.`,
   },
   distribuidor: {
     comision_pct: 30,
-    costo_unico: 5000,
+    costo_unico: 0,
     costo_mensual: 0,
     beneficios: [
       { icon: 'percent', title: '30% de comisión recurrente', detail: 'Sobre el MRR de cada cliente que cierres mientras siga activo.' },
@@ -75,7 +101,7 @@ const DEFAULT_TEMPLATES: Record<string, any> = {
       venta_directa_pct: 30,
       moneda: 'MXN',
     },
-    terminos: 'Cuota única de certificación. Comisión recurrente sobre MRR cobrado mientras el cliente esté activo y al corriente.',
+    terminos: 'Comisión recurrente sobre MRR cobrado mientras el cliente esté activo y al corriente.',
   },
 };
 

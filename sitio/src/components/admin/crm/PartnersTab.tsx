@@ -232,12 +232,6 @@ export default function PartnersTab() {
                     </td>
                     <td style={tdStyle}>
                       <span style={{ fontWeight: 700, color: '#1a1a1a' }}>{Number(it.comision_pct ?? 0)}%</span>
-                      {Number(it.costo_unico ?? 0) > 0 && (
-                        <div style={{ fontSize: '0.6875rem', color: '#999' }}>+ {fmt(it.costo_unico)} cuota</div>
-                      )}
-                      {Number(it.costo_mensual ?? 0) > 0 && (
-                        <div style={{ fontSize: '0.6875rem', color: '#999' }}>+ {fmt(it.costo_mensual)}/mes</div>
-                      )}
                     </td>
                     <td style={tdStyle}>{fmtDate(it.vigencia)}</td>
                     <td style={tdStyle}>
@@ -412,22 +406,54 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
       embajador: {
         comision_pct: 50, costo_unico: 0, costo_mensual: 0,
         beneficios: [
-          { icon: 'gift', title: 'Sistema SACS gratis', detail: 'Acceso completo al SaaS sin costo durante el programa.' },
-          { icon: 'percent', title: '50% de comisión', detail: 'Sobre cada venta directa generada con tu link.' },
-          { icon: 'academy', title: 'Capacitación premium', detail: 'Academia SACS, demos grabadas y soporte directo.' },
-          { icon: 'community', title: 'Comunidad de embajadores', detail: 'Networking, sesiones mensuales y mentoría.' },
-          { icon: 'reward', title: 'Recompensas por demo', detail: 'Bonos por demos agendadas y completadas.' },
+          { icon: 'percent',   title: '50% de comisión por venta directa',   detail: 'Sobre cada cliente cerrado a través de tu link único de partner. Se calcula sobre el monto efectivamente cobrado al cliente.' },
+          { icon: 'reward',    title: 'Comisión por reunión agendada',       detail: 'Bono fijo cada vez que un prospecto referido por ti agenda una demo en nuestro calendario oficial.' },
+          { icon: 'reward',    title: 'Comisión por reunión completada',     detail: 'Bono adicional cuando el prospecto asiste y completa el demo válido con SACS.' },
+          { icon: 'academy',   title: 'Acceso a Academia SACS y capacitaciones', detail: 'Cursos en línea, playbooks por vertical, demos grabadas y certificación oficial de embajador.' },
+          { icon: 'gift',      title: 'Plan Fideliza incluido',              detail: 'Acceso completo al plan Fideliza para tu propio negocio durante toda tu participación. Valor de $18,000 MXN al año.' },
+          { icon: 'calendar',  title: 'Reunión trimestral con el equipo SACS', detail: 'Sesión cada 3 meses para compartir mejoras, casos de éxito y feedback directo con el equipo de producto y dirección.' },
+          { icon: 'broadcast', title: 'Difusión en el canal SACS',           detail: 'Republicamos tu contenido en nuestras redes sociales. El alcance es variable y orgánico — puede sumar miles de views adicionales según el contenido.' },
         ],
         compromisos: [
-          { title: 'Crear contenido', detail: 'Publica de 3 a 4 videos al mes sobre SACS en tus redes.', frequency: 'Mensual' },
-          { title: 'Mantener nivel', detail: 'Cumple con la cuota de contenido para conservar acceso gratis y la comisión del 50%.', frequency: 'Continuo' },
-          { title: 'Asistir a kick-off', detail: 'Sesión de onboarding de 60 min para aprender el modelo y materiales.', frequency: 'Una vez' },
+          { title: 'Crear 4 videos al mes con la plataforma',     detail: 'Mínimo 4 videos mensuales usando SACS, alineados al plan de trabajo y palabras clave que enviamos al inicio de cada mes.', frequency: 'Mensual' },
+          { title: 'Publicar en tus redes sociales',              detail: 'Publicar los videos en tus propias redes (Instagram, TikTok, YouTube o LinkedIn) y compartir con tu audiencia.', frequency: 'Mensual' },
+          { title: 'Enviarnos los archivos originales',           detail: 'Compartir con SACS los archivos originales de cada video para que también los publiquemos en nuestros canales y multiplicar el alcance.', frequency: 'Mensual' },
+          { title: 'Representar bien la marca SACS',              detail: 'Hablar siempre de forma positiva y profesional sobre la plataforma. Mantener un tono respetuoso al referirte a competidores, clientes y comunidad.', frequency: 'Continuo' },
+          { title: 'Uso correcto del logotipo',                   detail: 'Aplicar el logotipo SACS solo en su versión oficial, sin deformar, recolorear ni mezclar con elementos no aprobados. Respetar áreas de protección.', frequency: 'Continuo' },
+          { title: 'Uso correcto de tipografías y guidelines',    detail: 'Respetar el manual de marca: tipografías oficiales, paleta de colores, espaciado, fotografía e iconografía aprobada.', frequency: 'Continuo' },
+          { title: 'Asistir al kick-off de embajadores',          detail: 'Sesión inicial de 60 minutos para conocer el modelo, los materiales de marca y las mejores prácticas para representar SACS.', frequency: 'Una vez' },
         ],
-        tabulador: { demo_agendada: 200, demo_completada: 500, venta_directa_pct: 50, moneda: 'MXN', notas: 'Pagos mensuales. Demo agendada al confirmarse; demo completada al cierre del demo válido.' },
-        terminos: 'Programa de embajadores sujeto a cumplimiento de compromisos de contenido. Pagos mensuales vía transferencia.',
+        tabulador: {
+          demo_agendada: 200,
+          demo_completada: 500,
+          venta_directa_pct: 50,
+          moneda: 'MXN',
+          notas: 'Pagos mensuales el día 15 del mes siguiente al cierre del periodo. Reunión agendada se acredita al confirmarse en el calendario; reunión completada al cierre del demo válido (mínimo 25 min con tomador de decisión presente). Comisión por venta directa se acredita al cobrar la primera factura del cliente cerrado.',
+        },
+        terminos: `Programa Embajador SACS — Términos y Condiciones
+
+1. Vigencia y evaluación. El programa tiene vigencia indefinida sujeta a evaluación trimestral del cumplimiento de compromisos por parte de SACS Cloud. SACS se reserva el derecho de revisar el desempeño cada 90 días.
+
+2. Comisiones y pagos. Las comisiones se calculan sobre el monto efectivamente cobrado a clientes referidos (vía link único o atribución manual). El pago se realiza por transferencia mensual el día 15 del mes siguiente al cierre, contra emisión de recibo o factura del embajador.
+
+3. Cumplimiento de compromisos. Si el embajador deja de cumplir los compromisos de contenido por dos (2) meses consecutivos, SACS notificará por escrito y otorgará un periodo de regularización de 30 días naturales antes de pausar los beneficios.
+
+4. Confidencialidad. El embajador se compromete a no divulgar información estratégica, comercial o financiera de SACS Cloud, sus clientes o aliados, que reciba durante su participación en el programa.
+
+5. Imagen y propiedad intelectual. SACS otorga al embajador una licencia limitada, no exclusiva y revocable para usar la marca SACS conforme al manual de marca durante la vigencia del programa. La propiedad intelectual de los videos creados por el embajador permanece del embajador, quien otorga a SACS una licencia perpetua, mundial y libre de regalías para republicar y promocionar dichos videos en cualquier canal de SACS.
+
+6. Exclusividad parcial. Durante la vigencia del programa, el embajador no representará simultáneamente plataformas competidoras directas (POS / SaaS retail mexicano) sin autorización previa por escrito de SACS.
+
+7. Terminación. Cualquiera de las partes podrá terminar el acuerdo con 30 días de aviso por escrito. Las comisiones devengadas hasta el momento de la terminación se pagarán conforme al ciclo regular.
+
+8. No relación laboral. Este acuerdo no constituye relación laboral, mercantil-asociativa ni de mandato entre las partes. El embajador actúa como colaborador independiente y es responsable de sus propias obligaciones fiscales.
+
+9. Datos personales. El tratamiento de datos personales se rige por el Aviso de Privacidad publicado en sacscloud.com/privacidad.
+
+10. Jurisdicción. Para la interpretación y cumplimiento de este acuerdo, las partes se someten a las leyes y tribunales de la Ciudad de México.`,
       },
       distribuidor: {
-        comision_pct: 30, costo_unico: 5000, costo_mensual: 0,
+        comision_pct: 30, costo_unico: 0, costo_mensual: 0,
         beneficios: [
           { icon: 'percent', title: '30% comisión recurrente', detail: 'Sobre el MRR del cliente mientras esté activo.' },
           { icon: 'academy', title: 'Certificación oficial', detail: 'Academia + examen + directorio de partners.' },
@@ -438,7 +464,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
           { title: 'Implementar', detail: 'Acompañar al cliente las primeras 4 semanas.', frequency: 'Por cliente' },
         ],
         tabulador: { demo_agendada: 0, demo_completada: 300, venta_directa_pct: 30, moneda: 'MXN' },
-        terminos: 'Cuota única de certificación. Comisión recurrente sobre MRR cobrado mientras el cliente esté al corriente.',
+        terminos: 'Comisión recurrente sobre MRR cobrado mientras el cliente esté al corriente.',
       },
       integrador: {
         comision_pct: 25, costo_unico: 0, costo_mensual: 0,
@@ -453,7 +479,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
         terminos: 'Programa para casas de software e integradores B2B.',
       },
       reseller: {
-        comision_pct: 20, costo_unico: 10000, costo_mensual: 0,
+        comision_pct: 20, costo_unico: 0, costo_mensual: 0,
         beneficios: [
           { icon: 'percent', title: '20% comisión recurrente', detail: 'Sobre el MRR de cada cliente que cierres.' },
         ],
@@ -601,13 +627,9 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
           <Section title="Términos económicos">
             <Grid3>
               <Field label="Comisión %" type="number" value={form.comision_pct} onChange={v => set('comision_pct', Number(v) || 0)} />
-              <Field label="Cuota única" type="number" value={form.costo_unico} onChange={v => set('costo_unico', Number(v) || 0)} />
-              <Field label="Cuota mensual" type="number" value={form.costo_mensual} onChange={v => set('costo_mensual', Number(v) || 0)} />
-            </Grid3>
-            <Grid2>
               <Field label="Moneda" value={form.moneda} onChange={v => set('moneda', v)} />
               <Field label="Vigencia" type="date" value={form.vigencia} onChange={v => set('vigencia', v)} />
-            </Grid2>
+            </Grid3>
             <Field label="Slug de landing (opcional)" value={form.slug_landing} onChange={v => set('slug_landing', v)} placeholder="ej. juanperez (sacscloud.com/p/juanperez)" />
           </Section>
 
@@ -619,7 +641,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
                 <div key={i} style={{ padding: 14, border: '1px solid #e5e5e5', borderRadius: 10, background: '#fafafa' }}>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                     <select value={b.icon || 'default'} onChange={e => updateBenefit(i, 'icon', e.target.value)} style={selectStyle}>
-                      {['gift', 'percent', 'academy', 'community', 'reward', 'leads', 'default'].map(o => <option key={o} value={o}>{o}</option>)}
+                      {['gift', 'percent', 'academy', 'community', 'reward', 'leads', 'broadcast', 'calendar', 'default'].map(o => <option key={o} value={o}>{o}</option>)}
                     </select>
                     <input value={b.title || ''} onChange={e => updateBenefit(i, 'title', e.target.value)} placeholder="Título" style={inputStyle} />
                     <button onClick={() => removeBenefit(i)} style={{ ...btnSm(), background: 'transparent', color: '#b93333', borderColor: 'rgba(229,75,75,0.3)' }}>✕</button>
