@@ -798,35 +798,17 @@ const partnerLandingUrl = invitation.slug_landing
           <div class="pp-app-body">
             {/* Sidebar navigation */}
             <aside class="pp-app-sidebar">
-              <button type="button" class="pp-app-nav pp-app-nav--active" data-pp-tab="resumen">
-                <span>📊</span><span>Resumen</span>
-              </button>
-              <button type="button" class="pp-app-nav" data-pp-tab="comisiones">
-                <span>💰</span><span>Comisiones</span>
-                <em class="pp-app-nav-badge">12</em>
-              </button>
-              <button type="button" class="pp-app-nav" data-pp-tab="pagos">
-                <span>🏦</span><span>Pagos</span>
-              </button>
-              <button type="button" class="pp-app-nav" data-pp-tab="prospectos">
-                <span>👥</span><span>Prospectos</span>
-                <em class="pp-app-nav-badge">14</em>
-              </button>
-              <button type="button" class="pp-app-nav" data-pp-tab="link">
-                <span>🔗</span><span>Mi link</span>
-              </button>
-              <button type="button" class="pp-app-nav" data-pp-tab="perfil">
-                <span>⚙️</span><span>Mi perfil</span>
-              </button>
+              <button type="button" class="pp-app-nav pp-app-nav--active" data-pp-tab="resumen">Resumen</button>
+              <button type="button" class="pp-app-nav" data-pp-tab="comisiones">Comisiones <em class="pp-app-nav-badge">12</em></button>
+              <button type="button" class="pp-app-nav" data-pp-tab="pagos">Pagos</button>
+              <button type="button" class="pp-app-nav" data-pp-tab="prospectos">Prospectos <em class="pp-app-nav-badge">14</em></button>
+              <button type="button" class="pp-app-nav" data-pp-tab="link">Mi link</button>
+              <button type="button" class="pp-app-nav" data-pp-tab="perfil">Mi perfil</button>
 
               <div class="pp-app-side-divider"></div>
 
-              <button type="button" class="pp-app-nav" data-pp-tab="brandkit">
-                <span>📘</span><span>Brand kit</span>
-              </button>
-              <button type="button" class="pp-app-nav" data-pp-tab="cuenta-sacs">
-                <span>🏪</span><span>Tu cuenta SACS</span>
-              </button>
+              <button type="button" class="pp-app-nav" data-pp-tab="brandkit">Brand kit</button>
+              <button type="button" class="pp-app-nav" data-pp-tab="cuenta-sacs">Tu cuenta SACS</button>
 
               <div class="pp-app-sidebar-foot">
                 <div class="pp-app-foot-name">{invitation.nombre}</div>
@@ -840,7 +822,7 @@ const partnerLandingUrl = invitation.slug_landing
               {/* ─────────── TAB: RESUMEN ─────────── */}
               <section class="pp-app-panel pp-app-panel--active" data-pp-panel="resumen">
                 <div class="pp-tut">
-                  <div class="pp-tut-icon">💡</div>
+                  <div class="pp-tut-icon"><span class="pp-info-i">i</span></div>
                   <div class="pp-tut-body">
                     <strong>Tu pantalla de inicio.</strong> Cada que entres al portal verás aquí el resumen
                     de los últimos 30 días: cuánto vas a cobrar pronto, cuánto está pendiente de
@@ -848,7 +830,7 @@ const partnerLandingUrl = invitation.slug_landing
                   </div>
                 </div>
 
-                <div class="pp-h1">Hola, {(invitation.nombre || '').split(' ')[0]} 👋</div>
+                <div class="pp-h1">Hola, {(invitation.nombre || '').split(' ')[0]}</div>
                 <div class="pp-lead">Esto es lo que pasó en tu cuenta este mes (octubre 2026).</div>
 
                 <h2 class="pp-h2">Tus números este mes</h2>
@@ -856,7 +838,7 @@ const partnerLandingUrl = invitation.slug_landing
                   <div class="pp-kpi" style="--accent:#2AB5A0">
                     <div class="pp-kpi-lbl">Próximo pago</div>
                     <div class="pp-kpi-val">$4,800</div>
-                    <div class="pp-kpi-hint">Earned · se paga el 5 nov</div>
+                    <div class="pp-kpi-hint">Confirmadas · se pagan el 5 nov</div>
                   </div>
                   <div class="pp-kpi" style="--accent:#E8A838">
                     <div class="pp-kpi-lbl">Pendiente verificar</div>
@@ -875,8 +857,8 @@ const partnerLandingUrl = invitation.slug_landing
                   </div>
                 </div>
                 <div class="pp-note">
-                  <strong>💡 Diferencia entre "próximo pago" y "pendiente":</strong> El próximo pago
-                  es dinero que ya se confirmó como tuyo (earned) y se te deposita el día 5 del mes.
+                  <strong><span class="pp-info-i">i</span> Diferencia entre "próximo pago" y "pendiente":</strong> El próximo pago
+                  es dinero que ya se confirmó como tuyo (confirmada) y se te deposita el día 5 del mes.
                   El pendiente son bonos que SACS está validando (ej. revisar que el lead sea real)
                   y pasarán a próximo pago cuando se aprueben.
                 </div>
@@ -907,7 +889,7 @@ const partnerLandingUrl = invitation.slug_landing
                   <div class="pp-bar"><span class="pp-bar-lbl">TikTok</span><div class="pp-bar-fill" style="--w:14%"></div><span class="pp-bar-num">2 leads</span></div>
                 </div>
                 <div class="pp-note">
-                  <strong>💡 ¿Por qué importa?</strong> Si Instagram te trae 3 leads y TikTok 2, sabes
+                  <strong><span class="pp-info-i">i</span> ¿Por qué importa?</strong> Si Instagram te trae 3 leads y TikTok 2, sabes
                   dónde vale la pena invertir tu tiempo. Cuando hagas un video que jale, lo verás aquí.
                 </div>
 
@@ -916,8 +898,8 @@ const partnerLandingUrl = invitation.slug_landing
                   <div class="pp-trow pp-trow--head"><span>Prospecto</span><span>Origen</span><span>Etapa</span><span>Tu bono</span></div>
                   <div class="pp-trow"><span><strong>Mariana López</strong><br/><em class="pp-cell-meta">Boutique en CDMX · 3 sucursales</em></span><span>tu link</span><span><em class="pp-tag pp-tag--ok">Cliente</em></span><span><strong>$3,500</strong></span></div>
                   <div class="pp-trow"><span><strong>Carlos Méndez</strong><br/><em class="pp-cell-meta">Cafetería en GDL · 1 local</em></span><span>tu link</span><span><em class="pp-tag pp-tag--blue">Demo agendada</em></span><span>$300 al hacerse</span></div>
-                  <div class="pp-trow"><span><strong>Laura Jiménez</strong><br/><em class="pp-cell-meta">Joyería online</em></span><span>Instagram</span><span><em class="pp-tag pp-tag--amber">Prueba activa</em></span><span>$500 pending</span></div>
-                  <div class="pp-trow"><span><strong>Roberto Vázquez</strong><br/><em class="pp-cell-meta">Farmacia en MTY</em></span><span>tu link</span><span><em class="pp-tag pp-tag--blue">Demo realizada</em></span><span><strong>$300</strong> earned</span></div>
+                  <div class="pp-trow"><span><strong>Laura Jiménez</strong><br/><em class="pp-cell-meta">Joyería online</em></span><span>Instagram</span><span><em class="pp-tag pp-tag--amber">Prueba activa</em></span><span>$500 pendiente</span></div>
+                  <div class="pp-trow"><span><strong>Roberto Vázquez</strong><br/><em class="pp-cell-meta">Farmacia en MTY</em></span><span>tu link</span><span><em class="pp-tag pp-tag--blue">Demo realizada</em></span><span><strong>$300</strong> confirmada</span></div>
                   <div class="pp-trow"><span><strong>Sofía Ramírez</strong><br/><em class="pp-cell-meta">Tienda de mascotas</em></span><span>TikTok</span><span><em class="pp-tag">Lead nuevo</em></span><span>—</span></div>
                 </div>
                 <a href="#" class="pp-link" data-pp-tab="prospectos">Ver los 14 prospectos →</a>
@@ -926,71 +908,85 @@ const partnerLandingUrl = invitation.slug_landing
               {/* ─────────── TAB: COMISIONES ─────────── */}
               <section class="pp-app-panel" data-pp-panel="comisiones">
                 <div class="pp-tut">
-                  <div class="pp-tut-icon">💡</div>
+                  <div class="pp-tut-icon"><span class="pp-info-i">i</span></div>
                   <div class="pp-tut-body">
                     <strong>Cada bono y comisión que generas, una por una.</strong> Aparecen en 4
-                    estados: <em class="pp-tag pp-tag--amber">pending</em> en revisión por SACS,
-                    <em class="pp-tag pp-tag--blue">earned</em> ya confirmado tuyo,
-                    <em class="pp-tag pp-tag--ok">paid</em> ya cobrado y
-                    <em class="pp-tag pp-tag--err">cancelled</em> rechazado por fraude/duplicado.
+                    estados: <em class="pp-tag pp-tag--amber">Pendiente</em> en revisión por SACS,
+                    <em class="pp-tag pp-tag--blue">Confirmada</em> ya es tuya y entra al próximo pago,
+                    <em class="pp-tag pp-tag--ok">Pagada</em> ya depositada en tu cuenta y
+                    <em class="pp-tag pp-tag--err">Cancelada</em> rechazada por fraude o duplicado.
                   </div>
                 </div>
 
                 <div class="pp-h1">Comisiones</div>
                 <div class="pp-lead">12 comisiones registradas en los últimos 30 días.</div>
 
-                <div class="pp-filters">
-                  <div class="pp-filter pp-filter--active">Todas (12)</div>
-                  <div class="pp-filter">Pending (5)</div>
-                  <div class="pp-filter">Earned (4)</div>
-                  <div class="pp-filter">Paid (2)</div>
-                  <div class="pp-filter">Cancelled (1)</div>
-                  <div class="pp-filter-sep"></div>
-                  <div class="pp-filter">Prueba gratis</div>
-                  <div class="pp-filter">Demo</div>
-                  <div class="pp-filter">Venta directa</div>
+                {/* Filtro estado */}
+                <div class="pp-filters" data-pp-filter-group="estado">
+                  <button type="button" class="pp-filter pp-filter--active" data-pp-filter="estado" data-pp-value="todas">Todas (12)</button>
+                  <button type="button" class="pp-filter" data-pp-filter="estado" data-pp-value="pendiente">Pendientes (5)</button>
+                  <button type="button" class="pp-filter" data-pp-filter="estado" data-pp-value="confirmada">Confirmadas (4)</button>
+                  <button type="button" class="pp-filter" data-pp-filter="estado" data-pp-value="pagada">Pagadas (2)</button>
+                  <button type="button" class="pp-filter" data-pp-filter="estado" data-pp-value="cancelada">Canceladas (1)</button>
                 </div>
 
-                <div class="pp-table pp-table--5col">
+                {/* Filtro tipo */}
+                <div class="pp-filters" data-pp-filter-group="tipo">
+                  <span class="pp-filters-lbl">Tipo:</span>
+                  <button type="button" class="pp-filter pp-filter--active" data-pp-filter="tipo" data-pp-value="todos">Todos</button>
+                  <button type="button" class="pp-filter" data-pp-filter="tipo" data-pp-value="prueba">Prueba gratis (6)</button>
+                  <button type="button" class="pp-filter" data-pp-filter="tipo" data-pp-value="demo">Demo completada (4)</button>
+                  <button type="button" class="pp-filter" data-pp-filter="tipo" data-pp-value="suscripcion">Suscripción pagada (2)</button>
+                </div>
+
+                <div class="pp-table pp-table--5col" id="pp-comisiones-table">
                   <div class="pp-trow pp-trow--head"><span>Fecha</span><span>Prospecto · Plan</span><span>Tipo</span><span>Estado</span><span>Tu bono</span></div>
 
-                  <div class="pp-trow"><span>03 nov</span><span><strong>Sofía Ramírez</strong><br/><em class="pp-cell-meta">Plan Fideliza · prueba 14 días</em></span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--amber">Pending</em></span><span><strong>$500</strong></span></div>
-                  <div class="pp-trow"><span>02 nov</span><span><strong>Diego Hernández</strong><br/><em class="pp-cell-meta">Plan Fideliza · prueba 14 días</em></span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--amber">Pending</em></span><span><strong>$500</strong></span></div>
-                  <div class="pp-trow"><span>30 oct</span><span><strong>Adriana Soto</strong><br/><em class="pp-cell-meta">Plan Fideliza · prueba 14 días</em></span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--amber">Pending</em></span><span><strong>$500</strong></span></div>
-                  <div class="pp-trow"><span>28 oct</span><span><strong>José Luis Tirado</strong><br/><em class="pp-cell-meta">Plan Plus · prueba 14 días</em></span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--amber">Pending</em></span><span><strong>$500</strong></span></div>
-                  <div class="pp-trow"><span>26 oct</span><span><strong>Mónica Vega</strong><br/><em class="pp-cell-meta">Plan Fideliza · prueba 14 días</em></span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--amber">Pending</em></span><span><strong>$500</strong></span></div>
+                  <div class="pp-trow" data-pp-estado="pendiente" data-pp-tipo="prueba"><span>03 nov</span><span><strong>Sofía Ramírez</strong><br/><em class="pp-cell-meta">Pet Lovers · Cuernavaca · Plan Fideliza prueba 14 días</em></span><span>Prueba gratis<br/><em class="pp-cell-meta">activada hoy</em></span><span><em class="pp-tag pp-tag--amber">Pendiente</em></span><span><strong>$500</strong><br/><em class="pp-cell-meta">se valida en 24h</em></span></div>
 
-                  <div class="pp-trow"><span>24 oct</span><span><strong>Roberto Vázquez</strong><br/><em class="pp-cell-meta">Demo · interés Plan Plus</em></span><span>Demo completada</span><span><em class="pp-tag pp-tag--blue">Earned</em></span><span><strong>$300</strong></span></div>
-                  <div class="pp-trow"><span>22 oct</span><span><strong>Patricia Núñez</strong><br/><em class="pp-cell-meta">Demo · interés Plan Fideliza</em></span><span>Demo completada</span><span><em class="pp-tag pp-tag--blue">Earned</em></span><span><strong>$300</strong></span></div>
-                  <div class="pp-trow"><span>18 oct</span><span><strong>Carlos Méndez</strong><br/><em class="pp-cell-meta">Demo · interés Plan Fideliza</em></span><span>Demo completada</span><span><em class="pp-tag pp-tag--blue">Earned</em></span><span><strong>$300</strong></span></div>
-                  <div class="pp-trow"><span>15 oct</span><span><strong>Mariana López</strong><br/><em class="pp-cell-meta">Plan Fideliza · $7,000 anual · contrato 12 meses</em></span><span>Venta directa</span><span><em class="pp-tag pp-tag--blue">Earned</em></span><span><strong>$3,500</strong></span></div>
+                  <div class="pp-trow" data-pp-estado="pendiente" data-pp-tipo="prueba"><span>02 nov</span><span><strong>Diego Hernández</strong><br/><em class="pp-cell-meta">DH Farmacias · MTY · Plan Fideliza prueba 14 días</em></span><span>Prueba gratis<br/><em class="pp-cell-meta">activada hace 1 día</em></span><span><em class="pp-tag pp-tag--amber">Pendiente</em></span><span><strong>$500</strong><br/><em class="pp-cell-meta">se valida en 24h</em></span></div>
 
-                  <div class="pp-trow"><span>10 oct</span><span><strong>Andrea Vázquez</strong><br/><em class="pp-cell-meta">Plan Fideliza Plus · $9,800 anual · contrato 12 meses</em></span><span>Venta directa</span><span><em class="pp-tag pp-tag--ok">Paid</em></span><span><strong>$4,900</strong></span></div>
-                  <div class="pp-trow"><span>08 oct</span><span><strong>Pedro González</strong><br/><em class="pp-cell-meta">Demo · no cerró</em></span><span>Demo completada</span><span><em class="pp-tag pp-tag--ok">Paid</em></span><span><strong>$300</strong></span></div>
+                  <div class="pp-trow" data-pp-estado="pendiente" data-pp-tipo="prueba"><span>30 oct</span><span><strong>Adriana Soto</strong><br/><em class="pp-cell-meta">Soto Boutique · CDMX · Plan Fideliza prueba 14 días</em></span><span>Prueba gratis<br/><em class="pp-cell-meta">activada hace 4 días</em></span><span><em class="pp-tag pp-tag--amber">Pendiente</em></span><span><strong>$500</strong><br/><em class="pp-cell-meta">en revisión</em></span></div>
 
-                  <div class="pp-trow pp-trow--cancelled"><span>05 oct</span><span><strong>"Lead Test"</strong><br/><em class="pp-cell-meta">Lead duplicado / fake</em></span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--err">Cancelled</em></span><span><strong>$500</strong></span></div>
+                  <div class="pp-trow" data-pp-estado="pendiente" data-pp-tipo="prueba"><span>28 oct</span><span><strong>José Luis Tirado</strong><br/><em class="pp-cell-meta">Tirado Shoes · GDL · Plan Plus prueba 14 días</em></span><span>Prueba gratis<br/><em class="pp-cell-meta">activada hace 6 días</em></span><span><em class="pp-tag pp-tag--amber">Pendiente</em></span><span><strong>$500</strong><br/><em class="pp-cell-meta">en revisión</em></span></div>
+
+                  <div class="pp-trow" data-pp-estado="pendiente" data-pp-tipo="prueba"><span>26 oct</span><span><strong>Mónica Vega</strong><br/><em class="pp-cell-meta">Pets &amp; Fun · Toluca · Plan Fideliza prueba 14 días</em></span><span>Prueba gratis<br/><em class="pp-cell-meta">activada hace 8 días</em></span><span><em class="pp-tag pp-tag--amber">Pendiente</em></span><span><strong>$500</strong><br/><em class="pp-cell-meta">próx aprobación</em></span></div>
+
+                  <div class="pp-trow" data-pp-estado="confirmada" data-pp-tipo="demo"><span>24 oct</span><span><strong>Roberto Vázquez</strong><br/><em class="pp-cell-meta">Farmacia Vázquez · MTY · interés Plan Plus $24K/año</em></span><span>Demo completada<br/><em class="pp-cell-meta">32 min · decisor presente</em></span><span><em class="pp-tag pp-tag--blue">Confirmada</em></span><span><strong>$300</strong><br/><em class="pp-cell-meta">próximo pago 5 nov</em></span></div>
+
+                  <div class="pp-trow" data-pp-estado="confirmada" data-pp-tipo="demo"><span>22 oct</span><span><strong>Patricia Núñez</strong><br/><em class="pp-cell-meta">Florería Núñez · CDMX · interés Plan Fideliza $7K/año</em></span><span>Demo completada<br/><em class="pp-cell-meta">45 min · prueba activada</em></span><span><em class="pp-tag pp-tag--blue">Confirmada</em></span><span><strong>$300</strong><br/><em class="pp-cell-meta">próximo pago 5 nov</em></span></div>
+
+                  <div class="pp-trow" data-pp-estado="confirmada" data-pp-tipo="demo"><span>18 oct</span><span><strong>Carlos Méndez</strong><br/><em class="pp-cell-meta">Café Méndez · GDL · interés Plan Fideliza $7K/año</em></span><span>Demo completada<br/><em class="pp-cell-meta">28 min · agendó cierre</em></span><span><em class="pp-tag pp-tag--blue">Confirmada</em></span><span><strong>$300</strong><br/><em class="pp-cell-meta">próximo pago 5 nov</em></span></div>
+
+                  <div class="pp-trow" data-pp-estado="confirmada" data-pp-tipo="suscripcion"><span>15 oct</span><span><strong>Mariana López</strong><br/><em class="pp-cell-meta">Boutique Mariana · Plan Fideliza · $7,000 anual · pago anual upfront · renueva 15 oct 2027</em></span><span>Suscripción pagada<br/><em class="pp-cell-meta">contrato 12 meses · 50%</em></span><span><em class="pp-tag pp-tag--blue">Confirmada</em></span><span><strong>$3,500</strong><br/><em class="pp-cell-meta">próximo pago 5 nov</em></span></div>
+
+                  <div class="pp-trow" data-pp-estado="pagada" data-pp-tipo="suscripcion"><span>10 oct</span><span><strong>Andrea Vázquez</strong><br/><em class="pp-cell-meta">Vázquez Joyas · Plan Fideliza Plus · $9,800 anual · pago anual upfront · renueva 10 oct 2027</em></span><span>Suscripción pagada<br/><em class="pp-cell-meta">contrato 12 meses · 50%</em></span><span><em class="pp-tag pp-tag--ok">Pagada</em></span><span><strong>$4,900</strong><br/><em class="pp-cell-meta">depositada 5 oct · BBVA •••2847</em></span></div>
+
+                  <div class="pp-trow" data-pp-estado="pagada" data-pp-tipo="demo"><span>08 oct</span><span><strong>Pedro González</strong><br/><em class="pp-cell-meta">Demo del 8 sep · no convirtió en cliente</em></span><span>Demo completada<br/><em class="pp-cell-meta">35 min · interés Plan Fideliza</em></span><span><em class="pp-tag pp-tag--ok">Pagada</em></span><span><strong>$300</strong><br/><em class="pp-cell-meta">depositada 5 oct · BBVA •••2847</em></span></div>
+
+                  <div class="pp-trow pp-trow--cancelled" data-pp-estado="cancelada" data-pp-tipo="prueba"><span>05 oct</span><span><strong>"Lead Test"</strong><br/><em class="pp-cell-meta">Email duplicado · mismo lead que Diana Sánchez</em></span><span>Prueba gratis<br/><em class="pp-cell-meta">SACS detectó duplicado</em></span><span><em class="pp-tag pp-tag--err">Cancelada</em></span><span><strong>$500</strong><br/><em class="pp-cell-meta">motivo: duplicado</em></span></div>
                 </div>
 
                 <div class="pp-note">
-                  <strong>💡 ¿Por qué se canceló una?</strong> Cuando un lead resulta duplicado o
-                  fake (ej. te referenciaste a ti mismo), SACS lo marca como cancelled con el motivo.
-                  Queda registrado en el historial pero no entra a tu próximo pago. Esto pasa &lt;1%
-                  de las veces.
+                  <strong><span class="pp-info-i">i</span> ¿Por qué se canceló una?</strong> Cuando un lead resulta duplicado, fake
+                  o el partner se referencia a sí mismo, SACS lo marca como cancelada con el motivo.
+                  Queda en el historial para auditoría pero no entra a tu próximo pago. Esto pasa
+                  menos del 1% de las veces.
                 </div>
 
                 <div class="pp-foot-stats">
-                  <div><strong>Pending:</strong> $2,500 · <strong>Earned:</strong> $4,400 · <strong>Paid:</strong> $5,200 · <strong>Cancelled:</strong> $500</div>
+                  <div><strong>Pendientes:</strong> $2,500 · <strong>Confirmadas:</strong> $4,400 · <strong>Pagadas:</strong> $5,200 · <strong>Canceladas:</strong> $500</div>
                 </div>
               </section>
 
               {/* ─────────── TAB: PAGOS ─────────── */}
               <section class="pp-app-panel" data-pp-panel="pagos">
                 <div class="pp-tut">
-                  <div class="pp-tut-icon">💡</div>
+                  <div class="pp-tut-icon"><span class="pp-info-i">i</span></div>
                   <div class="pp-tut-body">
                     <strong>Cada vez que SACS te paga, queda aquí.</strong> Los pagos se hacen el día
                     5 de cada mes a la cuenta que registraste en "Mi perfil". Cada payout incluye
-                    todas las comisiones earned hasta el día 1 del mes — y puedes expandir cualquiera
+                    todas las comisiones confirmadas hasta el día 1 del mes — y puedes expandir cualquiera
                     para ver el desglose exacto.
                   </div>
                 </div>
@@ -1002,7 +998,7 @@ const partnerLandingUrl = invitation.slug_landing
                 <div class="pp-payout pp-payout--next">
                   <div class="pp-payout-head">
                     <div>
-                      <div class="pp-payout-eyebrow">⏳ Próximo pago</div>
+                      <div class="pp-payout-eyebrow">Próximo pago</div>
                       <div class="pp-payout-date">5 noviembre 2026 · en 2 días</div>
                     </div>
                     <div class="pp-payout-amount">$4,800</div>
@@ -1010,7 +1006,7 @@ const partnerLandingUrl = invitation.slug_landing
                   <div class="pp-payout-meta-grid">
                     <div><div class="pp-meta-lbl">Método</div><div class="pp-meta-val">Transferencia CLABE</div></div>
                     <div><div class="pp-meta-lbl">Cuenta</div><div class="pp-meta-val">BBVA •••2847</div></div>
-                    <div><div class="pp-meta-lbl">Comisiones incluidas</div><div class="pp-meta-val">4 earned</div></div>
+                    <div><div class="pp-meta-lbl">Comisiones incluidas</div><div class="pp-meta-val">4 confirmadas</div></div>
                     <div><div class="pp-meta-lbl">CFDI</div><div class="pp-meta-val">Se emite el día 5</div></div>
                   </div>
                   <div class="pp-payout-detail">
@@ -1051,7 +1047,7 @@ const partnerLandingUrl = invitation.slug_landing
                     <div><div class="pp-meta-lbl">Depositado</div><div class="pp-meta-val">5 oct 2026 · 09:14</div></div>
                     <div><div class="pp-meta-lbl">Cuenta</div><div class="pp-meta-val">BBVA •••2847</div></div>
                     <div><div class="pp-meta-lbl">Comisiones</div><div class="pp-meta-val">2 confirmadas</div></div>
-                    <div><div class="pp-meta-lbl">CFDI</div><div class="pp-meta-val"><a href="#" class="pp-link" style="margin:0">📄 Descargar</a></div></div>
+                    <div><div class="pp-meta-lbl">CFDI</div><div class="pp-meta-val"><a href="#" class="pp-link" style="margin:0">Descargar</a></div></div>
                   </div>
                   <div class="pp-payout-detail">
                     <details>
@@ -1082,7 +1078,7 @@ const partnerLandingUrl = invitation.slug_landing
                     <div><div class="pp-meta-lbl">Depositado</div><div class="pp-meta-val">5 sep 2026 · 09:11</div></div>
                     <div><div class="pp-meta-lbl">Cuenta</div><div class="pp-meta-val">BBVA •••2847</div></div>
                     <div><div class="pp-meta-lbl">Comisiones</div><div class="pp-meta-val">5 (1 cancelada)</div></div>
-                    <div><div class="pp-meta-lbl">CFDI</div><div class="pp-meta-val"><a href="#" class="pp-link" style="margin:0">📄 Descargar</a></div></div>
+                    <div><div class="pp-meta-lbl">CFDI</div><div class="pp-meta-val"><a href="#" class="pp-link" style="margin:0">Descargar</a></div></div>
                   </div>
                   <div class="pp-payout-detail">
                     <details>
@@ -1125,7 +1121,7 @@ const partnerLandingUrl = invitation.slug_landing
                     <div><div class="pp-meta-lbl">Depositado</div><div class="pp-meta-val">5 ago 2026 · 09:08</div></div>
                     <div><div class="pp-meta-lbl">Cuenta</div><div class="pp-meta-val">BBVA •••2847</div></div>
                     <div><div class="pp-meta-lbl">Comisiones</div><div class="pp-meta-val">3 confirmadas</div></div>
-                    <div><div class="pp-meta-lbl">CFDI</div><div class="pp-meta-val"><a href="#" class="pp-link" style="margin:0">📄 Descargar</a></div></div>
+                    <div><div class="pp-meta-lbl">CFDI</div><div class="pp-meta-val"><a href="#" class="pp-link" style="margin:0">Descargar</a></div></div>
                   </div>
                   <div class="pp-payout-detail">
                     <details>
@@ -1149,8 +1145,8 @@ const partnerLandingUrl = invitation.slug_landing
                 </div>
 
                 <div class="pp-note">
-                  <strong>💡 ¿Cómo se calcula cada pago?</strong> El día 1 del mes SACS suma todas
-                  las comisiones que pasaron a "earned" durante el mes anterior. El día 5 te llega
+                  <strong><span class="pp-info-i">i</span> ¿Cómo se calcula cada pago?</strong> El día 1 del mes SACS suma todas
+                  las comisiones que pasaron a "confirmada" durante el mes anterior. El día 5 te llega
                   el depósito a tu CLABE/PayPal/MP con la referencia única que ves arriba. Si una
                   comisión llega tarde, entra al pago del mes siguiente.
                 </div>
@@ -1163,7 +1159,7 @@ const partnerLandingUrl = invitation.slug_landing
               {/* ─────────── TAB: PROSPECTOS ─────────── */}
               <section class="pp-app-panel" data-pp-panel="prospectos">
                 <div class="pp-tut">
-                  <div class="pp-tut-icon">💡</div>
+                  <div class="pp-tut-icon"><span class="pp-info-i">i</span></div>
                   <div class="pp-tut-body">
                     <strong>Cada visitante que llega por tu link único, atribuido a ti.</strong>
                     Aparece desde que es <em>lead nuevo</em> hasta que cierra como <em>cliente</em> o
@@ -1198,13 +1194,13 @@ const partnerLandingUrl = invitation.slug_landing
                 <div class="pp-table pp-table--5col">
                   <div class="pp-trow pp-trow--head"><span>Prospecto</span><span>Negocio</span><span>Plan / Interés</span><span>Etapa</span><span>Tu bono</span></div>
 
-                  <div class="pp-trow"><span><strong>Mariana López</strong><br/><em class="pp-cell-meta">marianalopez@boutiquema.mx · WhatsApp 55•••8431</em></span><span>Boutique Mariana · CDMX<br/><em class="pp-cell-meta">3 sucursales · moda</em></span><span><strong>Plan Fideliza · $7K/año</strong><br/><em class="pp-cell-meta">Pago anual · firmó 15 oct · renueva 15 oct 2027</em></span><span><em class="pp-tag pp-tag--ok">Cliente</em></span><span><strong>$3,500</strong><br/><em class="pp-cell-meta">earned</em></span></div>
+                  <div class="pp-trow"><span><strong>Mariana López</strong><br/><em class="pp-cell-meta">marianalopez@boutiquema.mx · WhatsApp 55•••8431</em></span><span>Boutique Mariana · CDMX<br/><em class="pp-cell-meta">3 sucursales · moda</em></span><span><strong>Plan Fideliza · $7K/año</strong><br/><em class="pp-cell-meta">Pago anual · firmó 15 oct · renueva 15 oct 2027</em></span><span><em class="pp-tag pp-tag--ok">Cliente</em></span><span><strong>$3,500</strong><br/><em class="pp-cell-meta">confirmada</em></span></div>
 
-                  <div class="pp-trow"><span><strong>Andrea Vázquez</strong><br/><em class="pp-cell-meta">andrea@vazquezjoyas.com · WhatsApp 33•••2218</em></span><span>Vázquez Joyas · GDL<br/><em class="pp-cell-meta">1 sucursal · joyería</em></span><span><strong>Plan Fideliza Plus · $9.8K/año</strong><br/><em class="pp-cell-meta">Pago anual upfront · firmó 28 sep · renueva 28 sep 2027</em></span><span><em class="pp-tag pp-tag--ok">Cliente</em></span><span><strong>$4,900</strong><br/><em class="pp-cell-meta">paid el 5 oct</em></span></div>
+                  <div class="pp-trow"><span><strong>Andrea Vázquez</strong><br/><em class="pp-cell-meta">andrea@vazquezjoyas.com · WhatsApp 33•••2218</em></span><span>Vázquez Joyas · GDL<br/><em class="pp-cell-meta">1 sucursal · joyería</em></span><span><strong>Plan Fideliza Plus · $9.8K/año</strong><br/><em class="pp-cell-meta">Pago anual upfront · firmó 28 sep · renueva 28 sep 2027</em></span><span><em class="pp-tag pp-tag--ok">Cliente</em></span><span><strong>$4,900</strong><br/><em class="pp-cell-meta">pagada el 5 oct</em></span></div>
 
-                  <div class="pp-trow"><span><strong>Luis Robles</strong><br/><em class="pp-cell-meta">luis@robleshogar.mx · WhatsApp 81•••5067</em></span><span>Robles Hogar · MTY<br/><em class="pp-cell-meta">3 sucursales · ferretería</em></span><span><strong>Plan Fideliza · $14K/año</strong><br/><em class="pp-cell-meta">+ add-on multisucursal · contrato 24 meses · renueva 17 ago 2027</em></span><span><em class="pp-tag pp-tag--ok">Cliente</em></span><span><strong>$7,000</strong><br/><em class="pp-cell-meta">paid el 5 sep</em></span></div>
+                  <div class="pp-trow"><span><strong>Luis Robles</strong><br/><em class="pp-cell-meta">luis@robleshogar.mx · WhatsApp 81•••5067</em></span><span>Robles Hogar · MTY<br/><em class="pp-cell-meta">3 sucursales · ferretería</em></span><span><strong>Plan Fideliza · $14K/año</strong><br/><em class="pp-cell-meta">+ add-on multisucursal · contrato 24 meses · renueva 17 ago 2027</em></span><span><em class="pp-tag pp-tag--ok">Cliente</em></span><span><strong>$7,000</strong><br/><em class="pp-cell-meta">pagada el 5 sep</em></span></div>
 
-                  <div class="pp-trow"><span><strong>Roberto Vázquez</strong><br/><em class="pp-cell-meta">roberto@farmaciasv.mx · 9 días en pipeline</em></span><span>Farmacia Vázquez · MTY<br/><em class="pp-cell-meta">2 sucursales · farmacia</em></span><span>Interés <strong>Plan Plus</strong><br/><em class="pp-cell-meta">$24K/año · cierre estimado nov</em></span><span><em class="pp-tag pp-tag--blue">Demo realizada</em></span><span><strong>$300</strong><br/><em class="pp-cell-meta">earned · venta pendiente</em></span></div>
+                  <div class="pp-trow"><span><strong>Roberto Vázquez</strong><br/><em class="pp-cell-meta">roberto@farmaciasv.mx · 9 días en pipeline</em></span><span>Farmacia Vázquez · MTY<br/><em class="pp-cell-meta">2 sucursales · farmacia</em></span><span>Interés <strong>Plan Plus</strong><br/><em class="pp-cell-meta">$24K/año · cierre estimado nov</em></span><span><em class="pp-tag pp-tag--blue">Demo realizada</em></span><span><strong>$300</strong><br/><em class="pp-cell-meta">confirmada · venta pendiente</em></span></div>
 
                   <div class="pp-trow"><span><strong>Patricia Núñez</strong><br/><em class="pp-cell-meta">paty@florerianunez.mx · 11 días en pipeline</em></span><span>Florería Núñez · CDMX<br/><em class="pp-cell-meta">1 local · florería + entrega</em></span><span>Interés <strong>Plan Fideliza</strong><br/><em class="pp-cell-meta">$7K/año · prueba activa día 6</em></span><span><em class="pp-tag pp-tag--blue">Demo realizada</em></span><span><strong>$300 + $3,500</strong> potencial</span></div>
 
@@ -1226,16 +1222,12 @@ const partnerLandingUrl = invitation.slug_landing
 
                   <div class="pp-trow"><span><strong>Valeria Cruz</strong><br/><em class="pp-cell-meta">vale@panaderiacruz.mx · 2 días</em></span><span>Panadería Cruz · Toluca<br/><em class="pp-cell-meta">1 local · panadería</em></span><span>Aún no elige plan<br/><em class="pp-cell-meta">visitando precios</em></span><span><em class="pp-tag">Lead nuevo</em></span><span>—</span></div>
                 </div>
-
-                <div class="pp-note">
-                  <strong>💡 Planes que ofrece SACS y cuánto te pagan:</strong> <strong>Plan Fideliza</strong> $7K/año (50% = $3,500 a ti) · <strong>Plan Fideliza Plus</strong> $9.8K/año ($4,900) · <strong>Plan Plus</strong> $24K/año ($12,000) · <strong>Plan Enterprise</strong> negociado (10-30%). Los add-ons (sucursales extra, módulos) suman al pago. Prueba gratis = $500 al confirmar · Demo = $300 al hacerse.
-                </div>
               </section>
 
               {/* ─────────── TAB: MI LINK ─────────── */}
               <section class="pp-app-panel" data-pp-panel="link">
                 <div class="pp-tut">
-                  <div class="pp-tut-icon">💡</div>
+                  <div class="pp-tut-icon"><span class="pp-info-i">i</span></div>
                   <div class="pp-tut-body">
                     <strong>Tu link único es tu herramienta principal.</strong> Cada vez que alguien
                     entra por aquí, queda automáticamente atribuido a ti durante 90 días. Compártelo en
@@ -1251,8 +1243,8 @@ const partnerLandingUrl = invitation.slug_landing
                     <span class="pp-link-url-protocol">https://</span><span class="pp-link-url-path">www.sacscloud.com/p/<strong>{invitation.slug_landing || 'tu-slug'}</strong></span>
                   </div>
                   <div class="pp-link-actions">
-                    <button type="button" class="pp-btn pp-btn--primary">📋 Copiar link</button>
-                    <button type="button" class="pp-btn pp-btn--ghost">🔄 Cambiar slug</button>
+                    <button type="button" class="pp-btn pp-btn--primary">Copiar link</button>
+                    <button type="button" class="pp-btn pp-btn--ghost">Cambiar slug</button>
                   </div>
                 </div>
 
@@ -1283,7 +1275,7 @@ const partnerLandingUrl = invitation.slug_landing
                         <div class="pp-qr-eye pp-qr-eye--bl"></div>
                       </div>
                     </div>
-                    <button type="button" class="pp-btn pp-btn--ghost" style="margin-top:12px">⬇️ Descargar PNG · 1200×1200</button>
+                    <button type="button" class="pp-btn pp-btn--ghost" style="margin-top:12px">Descargar PNG · 1200×1200</button>
                     <p class="pp-note pp-note--inline">
                       Útil para flyers físicos, vinilos en tu local, tarjetas de presentación
                       o detrás del mostrador para que clientes escaneen.
@@ -1294,29 +1286,29 @@ const partnerLandingUrl = invitation.slug_landing
                 <h2 class="pp-h2">Plantillas copy-paste por contexto</h2>
                 <div class="pp-templates">
                   <div class="pp-template">
-                    <div class="pp-template-head">📲 Para WhatsApp · "Te recomiendo SACS"</div>
+                    <div class="pp-template-head">Para WhatsApp · "Te recomiendo SACS"</div>
                     <div class="pp-template-body">¡Hola! Te recomiendo SACS, el sistema que uso para mi negocio. Es un POS + inventario + e-commerce + IA todo en uno. Mira aquí 👉 https://www.sacscloud.com/p/{invitation.slug_landing || 'tu-slug'} · Empiezas con prueba gratis 14 días.</div>
                     <button type="button" class="pp-btn pp-btn--ghost">Copiar texto</button>
                   </div>
                   <div class="pp-template">
-                    <div class="pp-template-head">📷 Para descripción de Instagram Story</div>
+                    <div class="pp-template-head">Para descripción de Instagram Story</div>
                     <div class="pp-template-body">Cambié mi POS por SACS y ahora veo todo mi negocio en tiempo real. Inventario, ventas, clientes — todo en una app 📲 Si tienes una tienda, link en mi bio o aquí: sacscloud.com/p/{invitation.slug_landing || 'tu-slug'}</div>
                     <button type="button" class="pp-btn pp-btn--ghost">Copiar texto</button>
                   </div>
                   <div class="pp-template">
-                    <div class="pp-template-head">📧 Para email frío B2B</div>
+                    <div class="pp-template-head">Para email frío B2B</div>
                     <div class="pp-template-body">Hola [nombre], vi que tienes [tipo de retail] en [ciudad]. Quería compartirte SACS — un sistema operativo de retail que reemplaza POS + inventario + e-commerce. Con [marca conocida] subieron 23% en margen. Te paso el link: sacscloud.com/p/{invitation.slug_landing || 'tu-slug'}. Si te late, agendamos demo de 30 min.</div>
                     <button type="button" class="pp-btn pp-btn--ghost">Copiar texto</button>
                   </div>
                   <div class="pp-template">
-                    <div class="pp-template-head">🎥 Para descripción de YouTube/TikTok</div>
+                    <div class="pp-template-head">Para descripción de YouTube/TikTok</div>
                     <div class="pp-template-body">Sistema que uso (afiliado): https://www.sacscloud.com/p/{invitation.slug_landing || 'tu-slug'} · 14 días gratis · POS + inventario + IA en una sola plataforma para retail.</div>
                     <button type="button" class="pp-btn pp-btn--ghost">Copiar texto</button>
                   </div>
                 </div>
 
                 <div class="pp-note">
-                  <strong>💡 ¿Cómo funciona la atribución?</strong> Cuando alguien entra por tu link,
+                  <strong><span class="pp-info-i">i</span> ¿Cómo funciona la atribución?</strong> Cuando alguien entra por tu link,
                   se le pone una cookie de 90 días. Si en esos 90 días llena prueba gratis, agenda
                   demo o compra, queda atribuido a ti automáticamente. No tienes que hacer nada más.
                 </div>
@@ -1325,7 +1317,7 @@ const partnerLandingUrl = invitation.slug_landing
               {/* ─────────── TAB: MI PERFIL ─────────── */}
               <section class="pp-app-panel" data-pp-panel="perfil">
                 <div class="pp-tut">
-                  <div class="pp-tut-icon">💡</div>
+                  <div class="pp-tut-icon"><span class="pp-info-i">i</span></div>
                   <div class="pp-tut-body">
                     <strong>Tus datos personales y de cobro.</strong> Aquí actualizas a dónde te pagamos
                     cada mes, tu dirección fiscal para facturas y tu contraseña. Cualquier cambio en
@@ -1356,7 +1348,7 @@ const partnerLandingUrl = invitation.slug_landing
                     <label class="pp-method pp-method--active">
                       <input type="radio" name="method" checked readOnly />
                       <div class="pp-method-body">
-                        <div class="pp-method-head">🏦 Transferencia CLABE <em class="pp-tag pp-tag--ok">activo</em></div>
+                        <div class="pp-method-head">Transferencia CLABE <em class="pp-tag pp-tag--ok">activo</em></div>
                         <div class="pp-method-fields">
                           <label class="pp-field"><span>Banco</span><input type="text" value="BBVA México" readOnly /></label>
                           <label class="pp-field"><span>Titular</span><input type="text" value={invitation.nombre} readOnly /></label>
@@ -1368,7 +1360,7 @@ const partnerLandingUrl = invitation.slug_landing
                     <label class="pp-method">
                       <input type="radio" name="method" readOnly />
                       <div class="pp-method-body">
-                        <div class="pp-method-head">💸 PayPal</div>
+                        <div class="pp-method-head">PayPal</div>
                         <div class="pp-method-fields">
                           <label class="pp-field"><span>Email PayPal</span><input type="email" placeholder="tu@paypal.com" readOnly /></label>
                           <p class="pp-method-note">Comisión 5% retenida por PayPal · llega instantáneo.</p>
@@ -1379,7 +1371,7 @@ const partnerLandingUrl = invitation.slug_landing
                     <label class="pp-method">
                       <input type="radio" name="method" readOnly />
                       <div class="pp-method-body">
-                        <div class="pp-method-head">💳 Mercado Pago</div>
+                        <div class="pp-method-head">Mercado Pago</div>
                         <div class="pp-method-fields">
                           <label class="pp-field"><span>CVU / Email Mercado Pago</span><input type="text" placeholder="tu@mercadopago.com" readOnly /></label>
                           <p class="pp-method-note">Sin comisión · llega en 24-48h hábiles.</p>
@@ -1426,7 +1418,7 @@ const partnerLandingUrl = invitation.slug_landing
                       <div><strong>Firmado el</strong> 15 julio 2026 a las 14:32 hrs</div>
                       <div><strong>IP</strong> 187.234.21.45 · CDMX, México</div>
                       <div><strong>Folio</strong> {invitation.numero || 'PA-578'}</div>
-                      <a href="#" class="pp-link">📄 Descargar contrato firmado (PDF)</a>
+                      <a href="#" class="pp-link">Descargar contrato firmado (PDF)</a>
                     </div>
                   </div>
                 </div>
@@ -1443,7 +1435,7 @@ const partnerLandingUrl = invitation.slug_landing
 
                 {/* Plan Fideliza */}
                 <div class="pp-perfil-section pp-perfil-section--highlight">
-                  <h3 class="pp-h3">🛍️ Tu cuenta SACS Fideliza</h3>
+                  <h3 class="pp-h3">Tu cuenta SACS Fideliza</h3>
                   <p class="pp-section-sub">Como embajador activo tienes acceso GRATIS a SACS Plan Fideliza ($14,000 MXN/año) para usar la plataforma en tu propio negocio.</p>
                   <div class="pp-fideliza-card">
                     <div>
@@ -1458,7 +1450,7 @@ const partnerLandingUrl = invitation.slug_landing
               {/* ─────────── TAB: BRAND KIT ─────────── */}
               <section class="pp-app-panel" data-pp-panel="brandkit">
                 <div class="pp-tut">
-                  <div class="pp-tut-icon">💡</div>
+                  <div class="pp-tut-icon"><span class="pp-info-i">i</span></div>
                   <div class="pp-tut-body">
                     <strong>Tu kit de marca SACS — todo listo para usar.</strong> Logos en alta
                     resolución, paleta de colores, tipografía, plantillas de redes y captions
@@ -1479,8 +1471,8 @@ const partnerLandingUrl = invitation.slug_landing
                       <span>PNG, SVG, AI · 4 tamaños</span>
                     </div>
                     <div class="pp-bk-logo-actions">
-                      <button type="button" class="pp-btn pp-btn--ghost">⬇️ PNG</button>
-                      <button type="button" class="pp-btn pp-btn--ghost">⬇️ SVG</button>
+                      <button type="button" class="pp-btn pp-btn--ghost">PNG</button>
+                      <button type="button" class="pp-btn pp-btn--ghost">SVG</button>
                     </div>
                   </div>
                   <div class="pp-bk-logo pp-bk-logo--inverse">
@@ -1490,8 +1482,8 @@ const partnerLandingUrl = invitation.slug_landing
                       <span>Para fondos oscuros</span>
                     </div>
                     <div class="pp-bk-logo-actions">
-                      <button type="button" class="pp-btn pp-btn--ghost">⬇️ PNG</button>
-                      <button type="button" class="pp-btn pp-btn--ghost">⬇️ SVG</button>
+                      <button type="button" class="pp-btn pp-btn--ghost">PNG</button>
+                      <button type="button" class="pp-btn pp-btn--ghost">SVG</button>
                     </div>
                   </div>
                   <div class="pp-bk-logo">
@@ -1501,8 +1493,8 @@ const partnerLandingUrl = invitation.slug_landing
                       <span>Color de marca</span>
                     </div>
                     <div class="pp-bk-logo-actions">
-                      <button type="button" class="pp-btn pp-btn--ghost">⬇️ PNG</button>
-                      <button type="button" class="pp-btn pp-btn--ghost">⬇️ SVG</button>
+                      <button type="button" class="pp-btn pp-btn--ghost">PNG</button>
+                      <button type="button" class="pp-btn pp-btn--ghost">SVG</button>
                     </div>
                   </div>
                   <div class="pp-bk-logo">
@@ -1512,8 +1504,8 @@ const partnerLandingUrl = invitation.slug_landing
                       <span>Solo embajadores autorizados</span>
                     </div>
                     <div class="pp-bk-logo-actions">
-                      <button type="button" class="pp-btn pp-btn--ghost">⬇️ PNG</button>
-                      <button type="button" class="pp-btn pp-btn--ghost">⬇️ SVG</button>
+                      <button type="button" class="pp-btn pp-btn--ghost">PNG</button>
+                      <button type="button" class="pp-btn pp-btn--ghost">SVG</button>
                     </div>
                   </div>
                 </div>
@@ -1574,19 +1566,19 @@ const partnerLandingUrl = invitation.slug_landing
                 <h2 class="pp-h2">Captions sugeridos por giro</h2>
                 <div class="pp-templates">
                   <div class="pp-template">
-                    <div class="pp-template-head">👗 Para audiencia de retail/moda</div>
+                    <div class="pp-template-head">Para audiencia de retail/moda</div>
                     <div class="pp-template-body">"El sistema que uso para mi boutique se llama SACS. Maneja inventario por talla y color, mis ventas online + físicas en un solo lugar y reportes que sí se entienden. Si tienes una tienda, pruébalo gratis 14 días: link en bio o sacscloud.com/p/[tu-slug]"</div>
                     <button type="button" class="pp-btn pp-btn--ghost">Copiar texto</button>
                   </div>
                   <div class="pp-template">
-                    <div class="pp-template-head">🍽️ Para restauranteros</div>
+                    <div class="pp-template-head">Para restauranteros</div>
                     <div class="pp-template-body">"Cambié mi POS por SACS y ahora veo mi cocina, mis mesas, mis ventas y mi inventario en una sola pantalla. Si tienes restaurante, te toca probarlo: sacscloud.com/p/[tu-slug] · 14 días gratis."</div>
                     <button type="button" class="pp-btn pp-btn--ghost">Copiar texto</button>
                   </div>
                 </div>
 
                 <div class="pp-note">
-                  <strong>💡 Reglas de uso:</strong> No modifiques los logos (colores, proporción).
+                  <strong><span class="pp-info-i">i</span> Reglas de uso:</strong> No modifiques los logos (colores, proporción).
                   No los uses en fondos que generen poco contraste. Si quieres usar SACS en tu
                   propio material visual, usa el "Logo Partner" (no el principal).
                 </div>
@@ -1595,7 +1587,7 @@ const partnerLandingUrl = invitation.slug_landing
               {/* ─────────── TAB: TU CUENTA SACS ─────────── */}
               <section class="pp-app-panel" data-pp-panel="cuenta-sacs">
                 <div class="pp-tut">
-                  <div class="pp-tut-icon">💡</div>
+                  <div class="pp-tut-icon"><span class="pp-info-i">i</span></div>
                   <div class="pp-tut-body">
                     <strong>Tu propio negocio en SACS — gratis como embajador.</strong> Aquí tienes
                     un resumen rápido de tu cuenta Plan Fideliza activa. Para gestionar productos,
@@ -1684,7 +1676,7 @@ const partnerLandingUrl = invitation.slug_landing
                 </div>
 
                 <div class="pp-note">
-                  <strong>💡 Tu cuenta no es solo un beneficio.</strong> Usar SACS en tu propio
+                  <strong><span class="pp-info-i">i</span> Tu cuenta no es solo un beneficio.</strong> Usar SACS en tu propio
                   negocio te da material real para tus videos y posts: capturas, testimonios
                   propios, comparativas. Los partners que usan la plataforma cierran 3x más ventas
                   que los que solo recomiendan sin usarla.
@@ -5164,7 +5156,7 @@ const partnerLandingUrl = invitation.slug_landing
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 14px;
+    padding: 11px 16px;
     border-radius: 8px;
     font-size: 0.875rem;
     color: #555;
@@ -5177,6 +5169,7 @@ const partnerLandingUrl = invitation.slug_landing
     text-decoration: none;
     font-family: inherit;
     width: 100%;
+    letter-spacing: -0.005em;
   }
   .pp-app-nav:hover { background: #f5f5f7; color: #1a1a1a; }
   .pp-app-nav--active { background: #1a1a1a; color: #fff; }
@@ -5233,15 +5226,23 @@ const partnerLandingUrl = invitation.slug_landing
   }
   .pp-tut-icon {
     flex-shrink: 0;
-    font-size: 1.125rem;
-    line-height: 1.5;
-    width: 32px;
-    height: 32px;
-    background: rgba(75,123,229,0.10);
+    width: 24px;
+    height: 24px;
+    background: #1a1a1a;
+    color: #fff;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-style: italic;
+    margin-top: 2px;
+  }
+  .pp-info-i {
+    font-style: italic;
+    font-weight: 700;
   }
   .pp-tut-body {
     font-size: 0.875rem;
@@ -5461,8 +5462,17 @@ const partnerLandingUrl = invitation.slug_landing
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-bottom: 28px;
+    margin-bottom: 16px;
     align-items: center;
+  }
+  .pp-filters:last-of-type { margin-bottom: 28px; }
+  .pp-filters-lbl {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: #999;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-right: 6px;
   }
   .pp-filter {
     padding: 8px 14px;
@@ -5474,6 +5484,7 @@ const partnerLandingUrl = invitation.slug_landing
     font-weight: 500;
     cursor: pointer;
     transition: background 0.15s, color 0.15s, border-color 0.15s;
+    font-family: inherit;
   }
   .pp-filter:hover { background: #fafafa; color: #1a1a1a; }
   .pp-filter--active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
@@ -6639,6 +6650,51 @@ const partnerLandingUrl = invitation.slug_landing
   // Close on Escape
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && previewOverlay && previewOverlay.style.display !== 'none') closePreview();
+  });
+
+  // ─── Preview portal: filtros de comisiones ───
+  const ppFiltersState = { estado: 'todas', tipo: 'todos' };
+  function applyPpFilters() {
+    const table = document.getElementById('pp-comisiones-table');
+    if (!table) return;
+    const rows = table.querySelectorAll('.pp-trow:not(.pp-trow--head)');
+    let visibleCount = 0;
+    rows.forEach((row) => {
+      const estado = (row as HTMLElement).getAttribute('data-pp-estado');
+      const tipo = (row as HTMLElement).getAttribute('data-pp-tipo');
+      const matchEstado = ppFiltersState.estado === 'todas' || estado === ppFiltersState.estado;
+      const matchTipo = ppFiltersState.tipo === 'todos' || tipo === ppFiltersState.tipo;
+      const visible = matchEstado && matchTipo;
+      (row as HTMLElement).style.display = visible ? '' : 'none';
+      if (visible) visibleCount++;
+    });
+    // Show empty state if no rows visible
+    let empty = table.querySelector('.pp-trow--empty');
+    if (visibleCount === 0) {
+      if (!empty) {
+        empty = document.createElement('div');
+        empty.className = 'pp-trow pp-trow--empty';
+        empty.innerHTML = '<span style="grid-column: 1 / -1; text-align: center; color: #888; padding: 24px 0; font-size: 0.875rem">No hay comisiones que coincidan con este filtro.</span>';
+        table.appendChild(empty);
+      }
+    } else if (empty) {
+      empty.remove();
+    }
+  }
+  document.querySelectorAll('[data-pp-filter]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const filterType = btn.getAttribute('data-pp-filter') as 'estado' | 'tipo';
+      const value = btn.getAttribute('data-pp-value') || '';
+      if (!filterType || !value) return;
+      ppFiltersState[filterType] = value;
+      // Update active state within same group
+      const group = btn.closest('[data-pp-filter-group]');
+      if (group) {
+        group.querySelectorAll('.pp-filter').forEach((f) => f.classList.remove('pp-filter--active'));
+        btn.classList.add('pp-filter--active');
+      }
+      applyPpFilters();
+    });
   });
   // Close on overlay backdrop click
   previewOverlay && previewOverlay.addEventListener('click', (e) => {
