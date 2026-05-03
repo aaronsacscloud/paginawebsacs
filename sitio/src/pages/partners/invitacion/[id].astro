@@ -779,147 +779,596 @@ const partnerLandingUrl = invitation.slug_landing
 
       <!-- Modal: Preview del panel de partner -->
       <div class="p-preview-overlay" id="preview-overlay" style="display:none">
-        <div class="p-preview-modal">
-          <div class="p-preview-header">
-            <div>
-              <div class="p-preview-eyebrow">Preview · Portal de partner</div>
-              <div class="p-preview-title">Esto es lo que vas a ver al entrar</div>
+        <div class="pp-app">
+          {/* Topbar */}
+          <header class="pp-app-topbar">
+            <div class="pp-app-topbar-left">
+              <span class="pp-app-brand">Sacs</span>
+              <span class="pp-app-sep">·</span>
+              <span class="pp-app-subtitle">Portal de partner</span>
+              <span class="pp-app-preview-pill">PREVIEW · datos demo</span>
             </div>
-            <button type="button" class="p-preview-close" id="btn-close-preview" aria-label="Cerrar">✕</button>
-          </div>
-
-          <div class="p-preview-body">
-            {/* Mockup visual del panel */}
-            <div class="pp-mock">
-              {/* Topbar */}
-              <div class="pp-mock-topbar">
-                <span class="pp-mock-brand">Sacs</span>
-                <span class="pp-mock-sep">·</span>
-                <span class="pp-mock-subtitle">Portal de partner</span>
-                <div style="flex:1"></div>
-                <span class="pp-mock-username">{invitation.nombre}</span>
-              </div>
-
-              <div class="pp-mock-body">
-                {/* Sidebar */}
-                <aside class="pp-mock-sidebar">
-                  <div class="pp-mock-side-item pp-mock-side-item--active">
-                    <span>📊</span><span>Resumen</span>
-                  </div>
-                  <div class="pp-mock-side-item"><span>💰</span><span>Comisiones</span></div>
-                  <div class="pp-mock-side-item"><span>🏦</span><span>Pagos</span></div>
-                  <div class="pp-mock-side-item"><span>👥</span><span>Prospectos</span></div>
-                  <div class="pp-mock-side-item"><span>🔗</span><span>Mi link</span></div>
-                  <div class="pp-mock-side-item"><span>⚙️</span><span>Mi perfil</span></div>
-                  <div class="pp-mock-side-item pp-mock-side-item--accent" style="margin-top:auto">
-                    <span>📘</span><span>Brand kit ↗</span>
-                  </div>
-                </aside>
-
-                {/* Main */}
-                <main class="pp-mock-main">
-                  <div class="pp-mock-h1">Hola, {invitation.nombre.split(' ')[0]} 👋</div>
-                  <div class="pp-mock-lead">Aquí está el resumen de tu actividad como partner SACS.</div>
-
-                  <div class="pp-mock-kpi-row">
-                    <div class="pp-mock-kpi" style="border-left:3px solid #2AB5A0">
-                      <div class="pp-mock-kpi-lbl">Próximo pago</div>
-                      <div class="pp-mock-kpi-val">$1,800</div>
-                      <div class="pp-mock-kpi-hint">Earned, no pagadas todavía</div>
-                    </div>
-                    <div class="pp-mock-kpi" style="border-left:3px solid #E8A838">
-                      <div class="pp-mock-kpi-lbl">Pendiente verificar</div>
-                      <div class="pp-mock-kpi-val">$2,500</div>
-                      <div class="pp-mock-kpi-hint">En revisión por SACS</div>
-                    </div>
-                    <div class="pp-mock-kpi" style="border-left:3px solid #4B7BE5">
-                      <div class="pp-mock-kpi-lbl">Total año</div>
-                      <div class="pp-mock-kpi-val">$24,300</div>
-                    </div>
-                    <div class="pp-mock-kpi" style="border-left:3px solid #6C5CE7">
-                      <div class="pp-mock-kpi-lbl">Tu comisión</div>
-                      <div class="pp-mock-kpi-val">{comisionPct}%</div>
-                    </div>
-                  </div>
-
-                  <div class="pp-mock-h2">Bonos del mes</div>
-                  <div class="pp-mock-kpi-row">
-                    <div class="pp-mock-kpi">
-                      <div class="pp-mock-kpi-lbl">Pruebas gratis</div>
-                      <div class="pp-mock-kpi-val">5</div>
-                      <div class="pp-mock-kpi-hint">$2,500 en bonos</div>
-                    </div>
-                    <div class="pp-mock-kpi">
-                      <div class="pp-mock-kpi-lbl">Demos completadas</div>
-                      <div class="pp-mock-kpi-val">3</div>
-                      <div class="pp-mock-kpi-hint">$900 en bonos</div>
-                    </div>
-                    <div class="pp-mock-kpi">
-                      <div class="pp-mock-kpi-lbl">Ventas directas</div>
-                      <div class="pp-mock-kpi-val">2</div>
-                      <div class="pp-mock-kpi-hint">$8,400 en comisiones</div>
-                    </div>
-                  </div>
-
-                  <div class="pp-mock-h2">Tus prospectos</div>
-                  <div class="pp-mock-table">
-                    <div class="pp-mock-trow pp-mock-trow--head">
-                      <span>Nombre</span><span>Etapa</span><span>Bono</span>
-                    </div>
-                    <div class="pp-mock-trow">
-                      <span>Mariana López</span>
-                      <span><em class="pp-mock-tag pp-mock-tag--ok">Cliente</em></span>
-                      <span>$3,500</span>
-                    </div>
-                    <div class="pp-mock-trow">
-                      <span>Carlos Méndez</span>
-                      <span><em class="pp-mock-tag pp-mock-tag--blue">Demo agendada</em></span>
-                      <span>—</span>
-                    </div>
-                    <div class="pp-mock-trow">
-                      <span>Laura Jiménez</span>
-                      <span><em class="pp-mock-tag">Lead nuevo</em></span>
-                      <span>$500 pending</span>
-                    </div>
-                  </div>
-                </main>
-              </div>
+            <div class="pp-app-topbar-right">
+              <span class="pp-app-username">{invitation.nombre}</span>
+              <span class="pp-app-avatar">{(invitation.nombre || '?').charAt(0).toUpperCase()}</span>
+              <button type="button" class="pp-app-close" id="btn-close-preview" aria-label="Cerrar preview">✕ Cerrar preview</button>
             </div>
+          </header>
 
-            <div class="p-preview-features">
-              <div class="p-preview-feat">
-                <strong>📊 Resumen</strong>
-                <span>KPIs en vivo: próximo pago, pendiente, bonos del mes, total año.</span>
+          <div class="pp-app-body">
+            {/* Sidebar navigation */}
+            <aside class="pp-app-sidebar">
+              <button type="button" class="pp-app-nav pp-app-nav--active" data-pp-tab="resumen">
+                <span>📊</span><span>Resumen</span>
+              </button>
+              <button type="button" class="pp-app-nav" data-pp-tab="comisiones">
+                <span>💰</span><span>Comisiones</span>
+                <em class="pp-app-nav-badge">12</em>
+              </button>
+              <button type="button" class="pp-app-nav" data-pp-tab="pagos">
+                <span>🏦</span><span>Pagos</span>
+              </button>
+              <button type="button" class="pp-app-nav" data-pp-tab="prospectos">
+                <span>👥</span><span>Prospectos</span>
+                <em class="pp-app-nav-badge">14</em>
+              </button>
+              <button type="button" class="pp-app-nav" data-pp-tab="link">
+                <span>🔗</span><span>Mi link</span>
+              </button>
+              <button type="button" class="pp-app-nav" data-pp-tab="perfil">
+                <span>⚙️</span><span>Mi perfil</span>
+              </button>
+
+              <div class="pp-app-side-divider"></div>
+
+              <a href="/partners/brand-kit" target="_blank" rel="noopener" class="pp-app-nav pp-app-nav--external">
+                <span>📘</span><span>Brand kit</span><span class="pp-app-nav-ext">↗</span>
+              </a>
+              <a href="https://www.sacscloud.com" target="_blank" rel="noopener" class="pp-app-nav pp-app-nav--external">
+                <span>🏪</span><span>Tu cuenta SACS</span><span class="pp-app-nav-ext">↗</span>
+              </a>
+
+              <div class="pp-app-sidebar-foot">
+                <div class="pp-app-foot-name">{invitation.nombre}</div>
+                <div class="pp-app-foot-meta">{invitation.numero || 'PA-578'} · Embajador</div>
               </div>
-              <div class="p-preview-feat">
-                <strong>💰 Comisiones</strong>
-                <span>Cada bono y venta detallada — pending, earned o paid — con su prospecto.</span>
-              </div>
-              <div class="p-preview-feat">
-                <strong>🏦 Pagos</strong>
-                <span>Historial completo de payouts agrupados por fecha con desglose y referencia.</span>
-              </div>
-              <div class="p-preview-feat">
-                <strong>👥 Prospectos</strong>
-                <span>Lista de leads, demos y deals atribuidos a tu link, con estado y fecha.</span>
-              </div>
-              <div class="p-preview-feat">
-                <strong>🔗 Mi link</strong>
-                <span>Tu URL única + QR generado + acceso directo al brand kit.</span>
-              </div>
-              <div class="p-preview-feat">
-                <strong>⚙️ Mi perfil</strong>
-                <span>Edita datos de cobro, dirección y contraseña cuando quieras.</span>
-              </div>
-              <div class="p-preview-feat">
-                <strong>📘 Brand kit</strong>
-                <span>Logos, captions, hashtags, plantillas de redes — todo listo para usar.</span>
-              </div>
-              <div class="p-preview-feat">
-                <strong>🛍️ Plan Fideliza incluido</strong>
-                <span>Tu propia cuenta SACS para usar la plataforma en tu negocio.</span>
-              </div>
-            </div>
+            </aside>
+
+            {/* Main content area */}
+            <main class="pp-app-main">
+
+              {/* ─────────── TAB: RESUMEN ─────────── */}
+              <section class="pp-app-panel pp-app-panel--active" data-pp-panel="resumen">
+                <div class="pp-tut">
+                  <div class="pp-tut-icon">💡</div>
+                  <div class="pp-tut-body">
+                    <strong>Tu pantalla de inicio.</strong> Cada que entres al portal verás aquí el resumen
+                    de los últimos 30 días: cuánto vas a cobrar pronto, cuánto está pendiente de
+                    verificar, qué bonos se generaron este mes y de dónde vienen tus mejores leads.
+                  </div>
+                </div>
+
+                <div class="pp-h1">Hola, {(invitation.nombre || '').split(' ')[0]} 👋</div>
+                <div class="pp-lead">Esto es lo que pasó en tu cuenta este mes (octubre 2026).</div>
+
+                <h2 class="pp-h2">Tus números este mes</h2>
+                <div class="pp-kpi-row">
+                  <div class="pp-kpi" style="--accent:#2AB5A0">
+                    <div class="pp-kpi-lbl">Próximo pago</div>
+                    <div class="pp-kpi-val">$4,800</div>
+                    <div class="pp-kpi-hint">Earned · se paga el 5 nov</div>
+                  </div>
+                  <div class="pp-kpi" style="--accent:#E8A838">
+                    <div class="pp-kpi-lbl">Pendiente verificar</div>
+                    <div class="pp-kpi-val">$2,500</div>
+                    <div class="pp-kpi-hint">10 bonos en revisión</div>
+                  </div>
+                  <div class="pp-kpi" style="--accent:#4B7BE5">
+                    <div class="pp-kpi-lbl">Total año 2026</div>
+                    <div class="pp-kpi-val">$24,300</div>
+                    <div class="pp-kpi-hint">+18% vs sept</div>
+                  </div>
+                  <div class="pp-kpi" style="--accent:#6C5CE7">
+                    <div class="pp-kpi-lbl">Tu comisión</div>
+                    <div class="pp-kpi-val">{comisionPct}%</div>
+                    <div class="pp-kpi-hint">Plan Embajador</div>
+                  </div>
+                </div>
+                <div class="pp-note">
+                  <strong>💡 Diferencia entre "próximo pago" y "pendiente":</strong> El próximo pago
+                  es dinero que ya se confirmó como tuyo (earned) y se te deposita el día 5 del mes.
+                  El pendiente son bonos que SACS está validando (ej. revisar que el lead sea real)
+                  y pasarán a próximo pago cuando se aprueben.
+                </div>
+
+                <h2 class="pp-h2">Bonos del mes · breakdown</h2>
+                <div class="pp-kpi-row pp-kpi-row--3">
+                  <div class="pp-kpi">
+                    <div class="pp-kpi-lbl">Pruebas gratis activadas</div>
+                    <div class="pp-kpi-val">5</div>
+                    <div class="pp-kpi-hint">$2,500 en bonos · $500 c/u</div>
+                  </div>
+                  <div class="pp-kpi">
+                    <div class="pp-kpi-lbl">Demos completadas</div>
+                    <div class="pp-kpi-val">3</div>
+                    <div class="pp-kpi-hint">$900 en bonos · $300 c/u</div>
+                  </div>
+                  <div class="pp-kpi">
+                    <div class="pp-kpi-lbl">Ventas directas</div>
+                    <div class="pp-kpi-val">2</div>
+                    <div class="pp-kpi-hint">$8,400 · 50% del cierre</div>
+                  </div>
+                </div>
+
+                <h2 class="pp-h2">Top fuentes · de dónde vienen tus leads</h2>
+                <div class="pp-bars">
+                  <div class="pp-bar"><span class="pp-bar-lbl">Tu link directo (sacscloud.com/p/{invitation.slug_landing || 'tu-slug'})</span><div class="pp-bar-fill" style="--w:65%"></div><span class="pp-bar-num">9 leads</span></div>
+                  <div class="pp-bar"><span class="pp-bar-lbl">Instagram</span><div class="pp-bar-fill" style="--w:22%"></div><span class="pp-bar-num">3 leads</span></div>
+                  <div class="pp-bar"><span class="pp-bar-lbl">TikTok</span><div class="pp-bar-fill" style="--w:14%"></div><span class="pp-bar-num">2 leads</span></div>
+                </div>
+                <div class="pp-note">
+                  <strong>💡 ¿Por qué importa?</strong> Si Instagram te trae 3 leads y TikTok 2, sabes
+                  dónde vale la pena invertir tu tiempo. Cuando hagas un video que jale, lo verás aquí.
+                </div>
+
+                <h2 class="pp-h2">Tus últimos 5 prospectos</h2>
+                <div class="pp-table">
+                  <div class="pp-trow pp-trow--head"><span>Prospecto</span><span>Origen</span><span>Etapa</span><span>Tu bono</span></div>
+                  <div class="pp-trow"><span><strong>Mariana López</strong><br/><em class="pp-cell-meta">Boutique en CDMX · 3 sucursales</em></span><span>tu link</span><span><em class="pp-tag pp-tag--ok">Cliente</em></span><span><strong>$3,500</strong></span></div>
+                  <div class="pp-trow"><span><strong>Carlos Méndez</strong><br/><em class="pp-cell-meta">Cafetería en GDL · 1 local</em></span><span>tu link</span><span><em class="pp-tag pp-tag--blue">Demo agendada</em></span><span>$300 al hacerse</span></div>
+                  <div class="pp-trow"><span><strong>Laura Jiménez</strong><br/><em class="pp-cell-meta">Joyería online</em></span><span>Instagram</span><span><em class="pp-tag pp-tag--amber">Prueba activa</em></span><span>$500 pending</span></div>
+                  <div class="pp-trow"><span><strong>Roberto Vázquez</strong><br/><em class="pp-cell-meta">Farmacia en MTY</em></span><span>tu link</span><span><em class="pp-tag pp-tag--blue">Demo realizada</em></span><span><strong>$300</strong> earned</span></div>
+                  <div class="pp-trow"><span><strong>Sofía Ramírez</strong><br/><em class="pp-cell-meta">Tienda de mascotas</em></span><span>TikTok</span><span><em class="pp-tag">Lead nuevo</em></span><span>—</span></div>
+                </div>
+                <a href="#" class="pp-link" data-pp-tab="prospectos">Ver los 14 prospectos →</a>
+              </section>
+
+              {/* ─────────── TAB: COMISIONES ─────────── */}
+              <section class="pp-app-panel" data-pp-panel="comisiones">
+                <div class="pp-tut">
+                  <div class="pp-tut-icon">💡</div>
+                  <div class="pp-tut-body">
+                    <strong>Cada bono y comisión que generas, una por una.</strong> Aparecen en 4
+                    estados: <em class="pp-tag pp-tag--amber">pending</em> en revisión por SACS,
+                    <em class="pp-tag pp-tag--blue">earned</em> ya confirmado tuyo,
+                    <em class="pp-tag pp-tag--ok">paid</em> ya cobrado y
+                    <em class="pp-tag pp-tag--err">cancelled</em> rechazado por fraude/duplicado.
+                  </div>
+                </div>
+
+                <div class="pp-h1">Comisiones</div>
+                <div class="pp-lead">12 comisiones registradas en los últimos 30 días.</div>
+
+                <div class="pp-filters">
+                  <div class="pp-filter pp-filter--active">Todas (12)</div>
+                  <div class="pp-filter">Pending (5)</div>
+                  <div class="pp-filter">Earned (4)</div>
+                  <div class="pp-filter">Paid (2)</div>
+                  <div class="pp-filter">Cancelled (1)</div>
+                  <div class="pp-filter-sep"></div>
+                  <div class="pp-filter">Prueba gratis</div>
+                  <div class="pp-filter">Demo</div>
+                  <div class="pp-filter">Venta directa</div>
+                </div>
+
+                <div class="pp-table pp-table--5col">
+                  <div class="pp-trow pp-trow--head"><span>Fecha</span><span>Prospecto</span><span>Tipo</span><span>Estado</span><span>Monto</span></div>
+
+                  <div class="pp-trow"><span>03 nov</span><span>Sofía Ramírez</span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--amber">Pending</em></span><span><strong>$500</strong></span></div>
+                  <div class="pp-trow"><span>02 nov</span><span>Diego Hernández</span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--amber">Pending</em></span><span><strong>$500</strong></span></div>
+                  <div class="pp-trow"><span>30 oct</span><span>Adriana Soto</span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--amber">Pending</em></span><span><strong>$500</strong></span></div>
+                  <div class="pp-trow"><span>28 oct</span><span>José Luis Tirado</span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--amber">Pending</em></span><span><strong>$500</strong></span></div>
+                  <div class="pp-trow"><span>26 oct</span><span>Mónica Vega</span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--amber">Pending</em></span><span><strong>$500</strong></span></div>
+
+                  <div class="pp-trow"><span>24 oct</span><span>Roberto Vázquez</span><span>Demo completada</span><span><em class="pp-tag pp-tag--blue">Earned</em></span><span><strong>$300</strong></span></div>
+                  <div class="pp-trow"><span>22 oct</span><span>Patricia Núñez</span><span>Demo completada</span><span><em class="pp-tag pp-tag--blue">Earned</em></span><span><strong>$300</strong></span></div>
+                  <div class="pp-trow"><span>18 oct</span><span>Carlos Méndez</span><span>Demo completada</span><span><em class="pp-tag pp-tag--blue">Earned</em></span><span><strong>$300</strong></span></div>
+                  <div class="pp-trow"><span>15 oct</span><span>Mariana López</span><span>Venta directa · $7,000/año</span><span><em class="pp-tag pp-tag--blue">Earned</em></span><span><strong>$3,500</strong></span></div>
+
+                  <div class="pp-trow"><span>10 oct</span><span>Andrea Vázquez</span><span>Venta directa · $9,800/año</span><span><em class="pp-tag pp-tag--ok">Paid</em></span><span><strong>$4,900</strong></span></div>
+                  <div class="pp-trow"><span>08 oct</span><span>Pedro González</span><span>Demo completada</span><span><em class="pp-tag pp-tag--ok">Paid</em></span><span><strong>$300</strong></span></div>
+
+                  <div class="pp-trow pp-trow--cancelled"><span>05 oct</span><span>"Lead Test"</span><span>Prueba gratis</span><span><em class="pp-tag pp-tag--err">Cancelled</em></span><span><strong>$500</strong></span></div>
+                </div>
+
+                <div class="pp-note">
+                  <strong>💡 ¿Por qué se canceló una?</strong> Cuando un lead resulta duplicado o
+                  fake (ej. te referenciaste a ti mismo), SACS lo marca como cancelled con el motivo.
+                  Queda registrado en el historial pero no entra a tu próximo pago. Esto pasa &lt;1%
+                  de las veces.
+                </div>
+
+                <div class="pp-foot-stats">
+                  <div><strong>Pending:</strong> $2,500 · <strong>Earned:</strong> $4,400 · <strong>Paid:</strong> $5,200 · <strong>Cancelled:</strong> $500</div>
+                </div>
+              </section>
+
+              {/* ─────────── TAB: PAGOS ─────────── */}
+              <section class="pp-app-panel" data-pp-panel="pagos">
+                <div class="pp-tut">
+                  <div class="pp-tut-icon">💡</div>
+                  <div class="pp-tut-body">
+                    <strong>Cada vez que SACS te paga, queda aquí.</strong> Los pagos se hacen el día
+                    5 de cada mes a la cuenta que registraste en "Mi perfil". Cada payout incluye
+                    todas las comisiones earned hasta el día 1 del mes — y puedes expandir cualquiera
+                    para ver el desglose exacto.
+                  </div>
+                </div>
+
+                <div class="pp-h1">Historial de pagos</div>
+                <div class="pp-lead">3 pagos recibidos · próximo el 5 nov 2026.</div>
+
+                {/* Próximo pago destacado */}
+                <div class="pp-payout pp-payout--next">
+                  <div class="pp-payout-head">
+                    <div>
+                      <div class="pp-payout-eyebrow">⏳ Próximo pago</div>
+                      <div class="pp-payout-date">5 noviembre 2026 · en 2 días</div>
+                    </div>
+                    <div class="pp-payout-amount">$4,800</div>
+                  </div>
+                  <div class="pp-payout-detail">
+                    <span>4 comisiones earned · CLABE termina en •••2847</span>
+                  </div>
+                </div>
+
+                {/* Pagos pasados */}
+                <div class="pp-payout">
+                  <div class="pp-payout-head">
+                    <div>
+                      <div class="pp-payout-date">5 octubre 2026</div>
+                      <div class="pp-payout-ref">Ref: SACS-PAYOUT-20261005-0578</div>
+                    </div>
+                    <div class="pp-payout-amount">$5,200</div>
+                  </div>
+                  <div class="pp-payout-detail">
+                    <details>
+                      <summary>Ver desglose · 2 comisiones</summary>
+                      <ul class="pp-payout-list">
+                        <li><span>Andrea Vázquez · venta directa $9,800/año</span><strong>$4,900</strong></li>
+                        <li><span>Pedro González · demo completada</span><strong>$300</strong></li>
+                      </ul>
+                    </details>
+                  </div>
+                </div>
+
+                <div class="pp-payout">
+                  <div class="pp-payout-head">
+                    <div>
+                      <div class="pp-payout-date">5 septiembre 2026</div>
+                      <div class="pp-payout-ref">Ref: SACS-PAYOUT-20260905-0578</div>
+                    </div>
+                    <div class="pp-payout-amount">$8,300</div>
+                  </div>
+                  <div class="pp-payout-detail">
+                    <details>
+                      <summary>Ver desglose · 5 comisiones</summary>
+                      <ul class="pp-payout-list">
+                        <li><span>Luis Robles · venta directa $14,000/año</span><strong>$7,000</strong></li>
+                        <li><span>Karina Padilla · prueba gratis</span><strong>$500</strong></li>
+                        <li><span>Daniela Cruz · prueba gratis</span><strong>$500</strong></li>
+                        <li><span>Erick Olvera · demo completada</span><strong>$300</strong></li>
+                        <li><span>Verónica Sánchez · prueba gratis</span><strong>$0</strong> <em class="pp-tag pp-tag--err">cancelled</em></li>
+                      </ul>
+                    </details>
+                  </div>
+                </div>
+
+                <div class="pp-payout">
+                  <div class="pp-payout-head">
+                    <div>
+                      <div class="pp-payout-date">5 agosto 2026</div>
+                      <div class="pp-payout-ref">Ref: SACS-PAYOUT-20260805-0578</div>
+                    </div>
+                    <div class="pp-payout-amount">$6,000</div>
+                  </div>
+                  <div class="pp-payout-detail">
+                    <details>
+                      <summary>Ver desglose · 3 comisiones</summary>
+                      <ul class="pp-payout-list">
+                        <li><span>Fernando Aguilar · venta directa $11,200/año</span><strong>$5,600</strong></li>
+                        <li><span>Mariana Toledo · demo completada</span><strong>$300</strong></li>
+                        <li><span>Israel Mendoza · demo completada</span><strong>$100</strong> <em class="pp-cell-meta">(prorrateado)</em></li>
+                      </ul>
+                    </details>
+                  </div>
+                </div>
+
+                <div class="pp-note">
+                  <strong>💡 ¿Cómo se calcula cada pago?</strong> El día 1 del mes SACS suma todas
+                  las comisiones que pasaron a "earned" durante el mes anterior. El día 5 te llega
+                  el depósito a tu CLABE/PayPal/MP con la referencia única que ves arriba. Si una
+                  comisión llega tarde, entra al pago del mes siguiente.
+                </div>
+
+                <div class="pp-foot-stats">
+                  <strong>Total recibido en 2026:</strong> $19,500 · <strong>Próximo pago:</strong> $4,800
+                </div>
+              </section>
+
+              {/* ─────────── TAB: PROSPECTOS ─────────── */}
+              <section class="pp-app-panel" data-pp-panel="prospectos">
+                <div class="pp-tut">
+                  <div class="pp-tut-icon">💡</div>
+                  <div class="pp-tut-body">
+                    <strong>Cada visitante que llega por tu link único, atribuido a ti.</strong>
+                    Aparece desde que es <em>lead nuevo</em> hasta que cierra como <em>cliente</em> o
+                    se da de baja como <em>perdido</em>. Verás aquí el funnel completo en tiempo real.
+                  </div>
+                </div>
+
+                <div class="pp-h1">Prospectos atribuidos a ti</div>
+                <div class="pp-lead">14 prospectos en total · 3 cerraron como cliente · funnel del mes.</div>
+
+                {/* Funnel mini */}
+                <div class="pp-funnel">
+                  <div class="pp-funnel-step"><div class="pp-funnel-num">14</div><div class="pp-funnel-lbl">Leads totales</div></div>
+                  <div class="pp-funnel-arrow">→</div>
+                  <div class="pp-funnel-step"><div class="pp-funnel-num">9</div><div class="pp-funnel-lbl">Prueba activa</div></div>
+                  <div class="pp-funnel-arrow">→</div>
+                  <div class="pp-funnel-step"><div class="pp-funnel-num">5</div><div class="pp-funnel-lbl">Demo agendada</div></div>
+                  <div class="pp-funnel-arrow">→</div>
+                  <div class="pp-funnel-step"><div class="pp-funnel-num">3</div><div class="pp-funnel-lbl">Demo realizada</div></div>
+                  <div class="pp-funnel-arrow">→</div>
+                  <div class="pp-funnel-step pp-funnel-step--win"><div class="pp-funnel-num">3</div><div class="pp-funnel-lbl">Cliente</div></div>
+                </div>
+
+                <div class="pp-filters">
+                  <div class="pp-filter pp-filter--active">Todos (14)</div>
+                  <div class="pp-filter">Lead nuevo (3)</div>
+                  <div class="pp-filter">Prueba activa (4)</div>
+                  <div class="pp-filter">Demo (5)</div>
+                  <div class="pp-filter">Cliente (3)</div>
+                </div>
+
+                <div class="pp-table pp-table--5col">
+                  <div class="pp-trow pp-trow--head"><span>Prospecto</span><span>Empresa</span><span>Origen</span><span>Etapa</span><span>Llegó hace</span></div>
+
+                  <div class="pp-trow"><span><strong>Mariana López</strong><br/><em class="pp-cell-meta">marianalopez@boutiquema.mx</em></span><span>Boutique Mariana · CDMX</span><span>tu link</span><span><em class="pp-tag pp-tag--ok">Cliente $7K</em></span><span>21 días</span></div>
+                  <div class="pp-trow"><span><strong>Andrea Vázquez</strong><br/><em class="pp-cell-meta">andrea@vazquezjoyas.com</em></span><span>Vázquez Joyas · GDL</span><span>tu link</span><span><em class="pp-tag pp-tag--ok">Cliente $9.8K</em></span><span>28 días</span></div>
+                  <div class="pp-trow"><span><strong>Luis Robles</strong><br/><em class="pp-cell-meta">luis@robleshogar.mx</em></span><span>Robles Hogar · MTY</span><span>tu link</span><span><em class="pp-tag pp-tag--ok">Cliente $14K</em></span><span>52 días</span></div>
+                  <div class="pp-trow"><span><strong>Roberto Vázquez</strong><br/><em class="pp-cell-meta">roberto@farmaciasv.mx</em></span><span>Farmacia Vázquez · MTY</span><span>tu link</span><span><em class="pp-tag pp-tag--blue">Demo realizada</em></span><span>9 días</span></div>
+                  <div class="pp-trow"><span><strong>Patricia Núñez</strong><br/><em class="pp-cell-meta">paty@florerianunez.mx</em></span><span>Florería Núñez · CDMX</span><span>Instagram</span><span><em class="pp-tag pp-tag--blue">Demo realizada</em></span><span>11 días</span></div>
+                  <div class="pp-trow"><span><strong>Carlos Méndez</strong><br/><em class="pp-cell-meta">carlos@cafemendez.com</em></span><span>Café Méndez · GDL</span><span>tu link</span><span><em class="pp-tag pp-tag--blue">Demo agendada · jue 15:00</em></span><span>5 días</span></div>
+                  <div class="pp-trow"><span><strong>Estefanía Romo</strong><br/><em class="pp-cell-meta">estefa@romoaccesorios.mx</em></span><span>Romo Accesorios</span><span>tu link</span><span><em class="pp-tag pp-tag--blue">Demo agendada · vie 11:00</em></span><span>3 días</span></div>
+                  <div class="pp-trow"><span><strong>Laura Jiménez</strong><br/><em class="pp-cell-meta">laura@jimenezjoyeria.com</em></span><span>Jiménez Joyería online</span><span>Instagram</span><span><em class="pp-tag pp-tag--amber">Prueba activa · día 7</em></span><span>7 días</span></div>
+                  <div class="pp-trow"><span><strong>Mónica Vega</strong><br/><em class="pp-cell-meta">monica@petsandfun.mx</em></span><span>Pets &amp; Fun · Toluca</span><span>TikTok</span><span><em class="pp-tag pp-tag--amber">Prueba activa · día 4</em></span><span>4 días</span></div>
+                  <div class="pp-trow"><span><strong>José Luis Tirado</strong><br/><em class="pp-cell-meta">jl@tiradoshoes.com</em></span><span>Tirado Shoes</span><span>tu link</span><span><em class="pp-tag pp-tag--amber">Prueba activa · día 3</em></span><span>3 días</span></div>
+                  <div class="pp-trow"><span><strong>Adriana Soto</strong><br/><em class="pp-cell-meta">adriana@sotoboutique.mx</em></span><span>Soto Boutique</span><span>tu link</span><span><em class="pp-tag pp-tag--amber">Prueba activa · día 1</em></span><span>1 día</span></div>
+                  <div class="pp-trow"><span><strong>Sofía Ramírez</strong><br/><em class="pp-cell-meta">sofi@petlovers.mx</em></span><span>Pet Lovers · Cuernavaca</span><span>TikTok</span><span><em class="pp-tag">Lead nuevo</em></span><span>hoy</span></div>
+                  <div class="pp-trow"><span><strong>Diego Hernández</strong><br/><em class="pp-cell-meta">diego@dhfarmacias.mx</em></span><span>DH Farmacias</span><span>email</span><span><em class="pp-tag">Lead nuevo</em></span><span>hoy</span></div>
+                  <div class="pp-trow"><span><strong>Valeria Cruz</strong><br/><em class="pp-cell-meta">vale@panaderiacruz.mx</em></span><span>Panadería Cruz</span><span>tu link</span><span><em class="pp-tag">Lead nuevo</em></span><span>2 días</span></div>
+                </div>
+
+                <div class="pp-note">
+                  <strong>💡 ¿Cómo te paga cada uno?</strong> Lead nuevo = $0 todavía · Prueba activa = $500 al confirmar · Demo realizada = $300 al instante · Cliente = 50% del primer año (típicamente $3,500-$7,000 por venta).
+                </div>
+              </section>
+
+              {/* ─────────── TAB: MI LINK ─────────── */}
+              <section class="pp-app-panel" data-pp-panel="link">
+                <div class="pp-tut">
+                  <div class="pp-tut-icon">💡</div>
+                  <div class="pp-tut-body">
+                    <strong>Tu link único es tu herramienta principal.</strong> Cada vez que alguien
+                    entra por aquí, queda automáticamente atribuido a ti durante 90 días. Compártelo en
+                    redes, WhatsApp, email, descripción de YouTube — donde sea.
+                  </div>
+                </div>
+
+                <div class="pp-h1">Mi link único</div>
+                <div class="pp-lead">Compártelo y empieza a generar bonos automáticos.</div>
+
+                <div class="pp-link-card">
+                  <div class="pp-link-url">
+                    <span class="pp-link-url-protocol">https://</span><span class="pp-link-url-path">www.sacscloud.com/p/<strong>{invitation.slug_landing || 'tu-slug'}</strong></span>
+                  </div>
+                  <div class="pp-link-actions">
+                    <button type="button" class="pp-btn pp-btn--primary">📋 Copiar link</button>
+                    <button type="button" class="pp-btn pp-btn--ghost">🔄 Cambiar slug</button>
+                  </div>
+                </div>
+
+                <div class="pp-link-grid">
+                  <div class="pp-link-block">
+                    <h3 class="pp-h3">Compartir directo</h3>
+                    <div class="pp-share-row">
+                      <button type="button" class="pp-share pp-share--wa"><span>💬</span> WhatsApp</button>
+                      <button type="button" class="pp-share pp-share--ig"><span>📷</span> Instagram</button>
+                      <button type="button" class="pp-share pp-share--email"><span>✉️</span> Email</button>
+                      <button type="button" class="pp-share pp-share--tw"><span>🐦</span> X / Twitter</button>
+                      <button type="button" class="pp-share pp-share--li"><span>💼</span> LinkedIn</button>
+                    </div>
+                    <p class="pp-note pp-note--inline">
+                      Cada botón abre el cliente con un mensaje pre-armado que puedes editar
+                      antes de mandar. Si pones link en una bio (IG/TikTok), úsalo desde
+                      "Copiar link" arriba.
+                    </p>
+                  </div>
+
+                  <div class="pp-link-block">
+                    <h3 class="pp-h3">QR code para imprimir</h3>
+                    <div class="pp-qr">
+                      <div class="pp-qr-pattern" aria-hidden="true">
+                        <div class="pp-qr-grid"></div>
+                        <div class="pp-qr-eye pp-qr-eye--tl"></div>
+                        <div class="pp-qr-eye pp-qr-eye--tr"></div>
+                        <div class="pp-qr-eye pp-qr-eye--bl"></div>
+                      </div>
+                    </div>
+                    <button type="button" class="pp-btn pp-btn--ghost" style="margin-top:12px">⬇️ Descargar PNG · 1200×1200</button>
+                    <p class="pp-note pp-note--inline">
+                      Útil para flyers físicos, vinilos en tu local, tarjetas de presentación
+                      o detrás del mostrador para que clientes escaneen.
+                    </p>
+                  </div>
+                </div>
+
+                <h2 class="pp-h2">Plantillas copy-paste por contexto</h2>
+                <div class="pp-templates">
+                  <div class="pp-template">
+                    <div class="pp-template-head">📲 Para WhatsApp · "Te recomiendo SACS"</div>
+                    <div class="pp-template-body">¡Hola! Te recomiendo SACS, el sistema que uso para mi negocio. Es un POS + inventario + e-commerce + IA todo en uno. Mira aquí 👉 https://www.sacscloud.com/p/{invitation.slug_landing || 'tu-slug'} · Empiezas con prueba gratis 14 días.</div>
+                    <button type="button" class="pp-btn pp-btn--ghost">Copiar texto</button>
+                  </div>
+                  <div class="pp-template">
+                    <div class="pp-template-head">📷 Para descripción de Instagram Story</div>
+                    <div class="pp-template-body">Cambié mi POS por SACS y ahora veo todo mi negocio en tiempo real. Inventario, ventas, clientes — todo en una app 📲 Si tienes una tienda, link en mi bio o aquí: sacscloud.com/p/{invitation.slug_landing || 'tu-slug'}</div>
+                    <button type="button" class="pp-btn pp-btn--ghost">Copiar texto</button>
+                  </div>
+                  <div class="pp-template">
+                    <div class="pp-template-head">📧 Para email frío B2B</div>
+                    <div class="pp-template-body">Hola [nombre], vi que tienes [tipo de retail] en [ciudad]. Quería compartirte SACS — un sistema operativo de retail que reemplaza POS + inventario + e-commerce. Con [marca conocida] subieron 23% en margen. Te paso el link: sacscloud.com/p/{invitation.slug_landing || 'tu-slug'}. Si te late, agendamos demo de 30 min.</div>
+                    <button type="button" class="pp-btn pp-btn--ghost">Copiar texto</button>
+                  </div>
+                  <div class="pp-template">
+                    <div class="pp-template-head">🎥 Para descripción de YouTube/TikTok</div>
+                    <div class="pp-template-body">Sistema que uso (afiliado): https://www.sacscloud.com/p/{invitation.slug_landing || 'tu-slug'} · 14 días gratis · POS + inventario + IA en una sola plataforma para retail.</div>
+                    <button type="button" class="pp-btn pp-btn--ghost">Copiar texto</button>
+                  </div>
+                </div>
+
+                <div class="pp-note">
+                  <strong>💡 ¿Cómo funciona la atribución?</strong> Cuando alguien entra por tu link,
+                  se le pone una cookie de 90 días. Si en esos 90 días llena prueba gratis, agenda
+                  demo o compra, queda atribuido a ti automáticamente. No tienes que hacer nada más.
+                </div>
+              </section>
+
+              {/* ─────────── TAB: MI PERFIL ─────────── */}
+              <section class="pp-app-panel" data-pp-panel="perfil">
+                <div class="pp-tut">
+                  <div class="pp-tut-icon">💡</div>
+                  <div class="pp-tut-body">
+                    <strong>Tus datos personales y de cobro.</strong> Aquí actualizas a dónde te pagamos
+                    cada mes, tu dirección fiscal para facturas y tu contraseña. Cualquier cambio en
+                    tus datos de pago aplica a partir del siguiente payout.
+                  </div>
+                </div>
+
+                <div class="pp-h1">Mi perfil</div>
+                <div class="pp-lead">Edita tus datos, contraseña y método de cobro.</div>
+
+                {/* Datos personales */}
+                <div class="pp-perfil-section">
+                  <h3 class="pp-h3">Datos personales</h3>
+                  <div class="pp-form-grid">
+                    <label class="pp-field"><span>Nombre completo</span><input type="text" value={invitation.nombre} readOnly /></label>
+                    <label class="pp-field"><span>Email</span><input type="email" value={invitation.email} readOnly /></label>
+                    <label class="pp-field"><span>WhatsApp</span><input type="tel" value={invitation.whatsapp || '55 1234 5678'} readOnly /></label>
+                    <label class="pp-field"><span>Empresa o marca</span><input type="text" value={invitation.empresa || 'Tu marca personal'} readOnly /></label>
+                  </div>
+                </div>
+
+                {/* Método de cobro */}
+                <div class="pp-perfil-section">
+                  <h3 class="pp-h3">Método de cobro</h3>
+                  <p class="pp-section-sub">Elige cómo prefieres recibir tus pagos mensuales.</p>
+
+                  <div class="pp-payout-methods">
+                    <label class="pp-method pp-method--active">
+                      <input type="radio" name="method" checked readOnly />
+                      <div class="pp-method-body">
+                        <div class="pp-method-head">🏦 Transferencia CLABE <em class="pp-tag pp-tag--ok">activo</em></div>
+                        <div class="pp-method-fields">
+                          <label class="pp-field"><span>Banco</span><input type="text" value="BBVA México" readOnly /></label>
+                          <label class="pp-field"><span>Titular</span><input type="text" value={invitation.nombre} readOnly /></label>
+                          <label class="pp-field"><span>CLABE (18 dígitos)</span><input type="text" value="012 180 01234567 2847" readOnly /></label>
+                        </div>
+                      </div>
+                    </label>
+
+                    <label class="pp-method">
+                      <input type="radio" name="method" readOnly />
+                      <div class="pp-method-body">
+                        <div class="pp-method-head">💸 PayPal</div>
+                        <div class="pp-method-fields">
+                          <label class="pp-field"><span>Email PayPal</span><input type="email" placeholder="tu@paypal.com" readOnly /></label>
+                          <p class="pp-method-note">Comisión 5% retenida por PayPal · llega instantáneo.</p>
+                        </div>
+                      </div>
+                    </label>
+
+                    <label class="pp-method">
+                      <input type="radio" name="method" readOnly />
+                      <div class="pp-method-body">
+                        <div class="pp-method-head">💳 Mercado Pago</div>
+                        <div class="pp-method-fields">
+                          <label class="pp-field"><span>CVU / Email Mercado Pago</span><input type="text" placeholder="tu@mercadopago.com" readOnly /></label>
+                          <p class="pp-method-note">Sin comisión · llega en 24-48h hábiles.</p>
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Datos fiscales */}
+                <div class="pp-perfil-section">
+                  <h3 class="pp-h3">Datos fiscales (para CFDI)</h3>
+                  <p class="pp-section-sub">Si necesitas factura por cada pago, registra tu RFC y régimen.</p>
+                  <div class="pp-form-grid">
+                    <label class="pp-field"><span>RFC</span><input type="text" value="LOPM850315H22" readOnly /></label>
+                    <label class="pp-field"><span>Régimen fiscal</span>
+                      <select disabled>
+                        <option>RIF · Régimen de Incorporación Fiscal</option>
+                      </select>
+                    </label>
+                    <label class="pp-field pp-field--full"><span>Domicilio fiscal</span><input type="text" value="Av. Reforma 222, Cuauhtémoc, CDMX, 06600" readOnly /></label>
+                    <label class="pp-field"><span>Uso de CFDI</span>
+                      <select disabled>
+                        <option>P01 · Por definir</option>
+                      </select>
+                    </label>
+                    <label class="pp-field"><span>Necesito factura</span>
+                      <select disabled>
+                        <option>Sí, cada pago</option>
+                      </select>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Firma + contrato */}
+                <div class="pp-perfil-section">
+                  <h3 class="pp-h3">Tu firma del contrato</h3>
+                  <p class="pp-section-sub">Firmaste tu acuerdo de partner el día que aplicaste. Esta firma queda vinculada a tu folio para auditoría.</p>
+                  <div class="pp-firma-display">
+                    <div class="pp-firma-box">
+                      <svg viewBox="0 0 240 80" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:80px"><path d="M20 55 Q 40 20, 60 50 T 100 45 Q 120 30, 140 55 T 180 50 L 200 60" stroke="#1A1A1A" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>
+                    </div>
+                    <div class="pp-firma-meta">
+                      <div><strong>Firmado el</strong> 15 julio 2026 a las 14:32 hrs</div>
+                      <div><strong>IP</strong> 187.234.21.45 · CDMX, México</div>
+                      <div><strong>Folio</strong> {invitation.numero || 'PA-578'}</div>
+                      <a href="#" class="pp-link">📄 Descargar contrato firmado (PDF)</a>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Cambiar contraseña */}
+                <div class="pp-perfil-section">
+                  <h3 class="pp-h3">Seguridad de la cuenta</h3>
+                  <div class="pp-form-grid">
+                    <label class="pp-field"><span>Contraseña actual</span><input type="password" value="••••••••••" readOnly /></label>
+                    <label class="pp-field"><span>Nueva contraseña</span><input type="password" placeholder="Mín. 8 caracteres" readOnly /></label>
+                  </div>
+                  <button type="button" class="pp-btn pp-btn--primary" style="margin-top:12px">Actualizar contraseña</button>
+                </div>
+
+                {/* Plan Fideliza */}
+                <div class="pp-perfil-section pp-perfil-section--highlight">
+                  <h3 class="pp-h3">🛍️ Tu cuenta SACS Fideliza</h3>
+                  <p class="pp-section-sub">Como embajador activo tienes acceso GRATIS a SACS Plan Fideliza ($14,000 MXN/año) para usar la plataforma en tu propio negocio.</p>
+                  <div class="pp-fideliza-card">
+                    <div>
+                      <div class="pp-fideliza-status">✓ Activa hasta 15 julio 2027</div>
+                      <div class="pp-fideliza-renew">Se renueva automáticamente mientras seas embajador.</div>
+                    </div>
+                    <a href="https://app.sacscloud.com" target="_blank" rel="noopener" class="pp-btn pp-btn--primary">Abrir mi cuenta SACS →</a>
+                  </div>
+                </div>
+              </section>
+
+            </main>
           </div>
         </div>
       </div>
@@ -4296,260 +4745,778 @@ const partnerLandingUrl = invitation.slug_landing
     .p-proc-step-detail { font-size: 0.875rem; }
   }
 
-  /* ─── Preview modal del panel de partner ─────────────── */
+  /* ═══════════════════════════════════════════════════
+     PREVIEW PORTAL · full-screen + 6 tabs navegables
+     ═══════════════════════════════════════════════════ */
   .p-preview-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(20,20,30,0.65);
+    background: rgba(15,15,20,0.85);
     z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
     overflow-y: auto;
-  }
-  .p-preview-modal {
-    width: 100%;
-    max-width: 980px;
-    max-height: 92vh;
-    overflow-y: auto;
-    background: #fff;
-    border-radius: 18px;
-    box-shadow: 0 30px 80px -20px rgba(0,0,0,0.30);
-    display: flex;
-    flex-direction: column;
-  }
-  .p-preview-header {
-    position: sticky;
-    top: 0;
-    background: #fff;
-    padding: 20px 24px;
-    border-bottom: 1px solid #ececec;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 16px;
-    border-radius: 18px 18px 0 0;
-    z-index: 1;
-  }
-  .p-preview-eyebrow {
-    font-size: 0.6875rem;
-    font-weight: 700;
-    color: #4B7BE5;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    margin-bottom: 6px;
-  }
-  .p-preview-title {
-    font-family: var(--font-display);
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #1a1a1a;
-    letter-spacing: -0.01em;
-  }
-  .p-preview-close {
-    background: transparent;
-    border: 1px solid #ddd;
-    border-radius: 50%;
-    width: 36px; height: 36px;
-    cursor: pointer;
-    font-size: 1.125rem;
-    color: #666;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
-  .p-preview-close:hover { border-color: #1a1a1a; color: #1a1a1a; }
-
-  .p-preview-body {
-    padding: 22px;
-  }
-  .p-preview-features {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 12px;
-    margin-top: 22px;
-  }
-  .p-preview-feat {
-    padding: 14px 16px;
-    background: #fafafa;
-    border: 1px solid #ececec;
-    border-radius: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .p-preview-feat strong {
-    font-family: var(--font-display);
-    font-size: 0.875rem;
-    color: #1a1a1a;
-  }
-  .p-preview-feat span {
-    font-size: 0.8125rem;
-    color: #666;
-    line-height: 1.5;
+    -webkit-overflow-scrolling: touch;
   }
 
-  /* ── Portal mockup (visual) ── */
-  .pp-mock {
+  .pp-app {
+    min-height: 100vh;
     background: #f5f6f8;
-    border-radius: 14px;
-    overflow: hidden;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 12px 32px -12px rgba(0,0,0,0.12);
     font-family: var(--font-body);
     color: #1a1a1a;
+    display: flex;
+    flex-direction: column;
   }
-  .pp-mock-topbar {
+
+  /* Topbar */
+  .pp-app-topbar {
     background: #fff;
-    padding: 10px 18px;
     border-bottom: 1px solid #ececec;
+    padding: 12px 24px;
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 0.8125rem;
+    justify-content: space-between;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
-  .pp-mock-brand {
+  .pp-app-topbar-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .pp-app-brand {
     font-family: 'Clash Display', sans-serif;
-    font-size: 1.125rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: #1a1a1a;
     letter-spacing: -0.02em;
   }
-  .pp-mock-sep { color: #ccc; }
-  .pp-mock-subtitle { color: #888; font-size: 0.75rem; font-weight: 500; }
-  .pp-mock-username { color: #444; font-size: 0.75rem; font-weight: 600; }
+  .pp-app-sep { color: #ccc; }
+  .pp-app-subtitle { color: #888; font-size: 0.875rem; font-weight: 500; }
+  .pp-app-preview-pill {
+    margin-left: 6px;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #4B7BE5;
+    background: rgba(75,123,229,0.10);
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+  .pp-app-topbar-right { display: flex; align-items: center; gap: 12px; }
+  .pp-app-username { font-size: 0.875rem; color: #444; font-weight: 500; }
+  .pp-app-avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4B7BE5, #6C5CE7);
+    color: #fff;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pp-app-close {
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .pp-app-close:hover { background: #000; }
 
-  .pp-mock-body { display: flex; }
-  .pp-mock-sidebar {
-    width: 180px;
+  /* Body: sidebar + main */
+  .pp-app-body { display: flex; flex: 1; min-height: 0; }
+
+  /* Sidebar */
+  .pp-app-sidebar {
+    width: 240px;
     background: #fff;
     border-right: 1px solid #ececec;
-    padding: 14px 10px;
+    padding: 18px 14px;
     display: flex;
     flex-direction: column;
     gap: 4px;
-    min-height: 360px;
+    flex-shrink: 0;
   }
-  .pp-mock-side-item {
+  .pp-app-nav {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
-    border-radius: 7px;
-    font-size: 0.8125rem;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.875rem;
     color: #555;
     font-weight: 500;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s, color 0.15s;
+    text-decoration: none;
+    font-family: inherit;
+    width: 100%;
   }
-  .pp-mock-side-item--active {
-    background: #1a1a1a;
-    color: #fff;
+  .pp-app-nav:hover { background: #f5f5f7; color: #1a1a1a; }
+  .pp-app-nav--active { background: #1a1a1a; color: #fff; }
+  .pp-app-nav--active:hover { background: #1a1a1a; color: #fff; }
+  .pp-app-nav-badge {
+    margin-left: auto;
+    background: #f0f0ee;
+    color: #888;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-style: normal;
   }
-  .pp-mock-side-item--accent { color: #4B7BE5; }
+  .pp-app-nav--active .pp-app-nav-badge { background: rgba(255,255,255,0.18); color: #fff; }
+  .pp-app-nav-ext { margin-left: auto; color: #4B7BE5; font-size: 0.75rem; }
+  .pp-app-nav--external { color: #4B7BE5; }
+  .pp-app-side-divider {
+    height: 1px; background: #ececec; margin: 12px 4px;
+  }
+  .pp-app-sidebar-foot {
+    margin-top: auto;
+    padding: 14px;
+    border-top: 1px solid #f0f0ee;
+    background: #fafafa;
+    border-radius: 8px;
+  }
+  .pp-app-foot-name { font-size: 0.875rem; font-weight: 600; color: #1a1a1a; }
+  .pp-app-foot-meta { font-size: 0.75rem; color: #888; margin-top: 2px; }
 
-  .pp-mock-main {
+  /* Main */
+  .pp-app-main {
     flex: 1;
-    padding: 22px 24px;
-    background: #f5f6f8;
-    overflow: hidden;
+    padding: 32px 40px;
+    overflow-y: auto;
+    min-width: 0;
   }
-  .pp-mock-h1 {
-    font-family: var(--font-display);
+  .pp-app-panel { display: none; }
+  .pp-app-panel--active { display: block; }
+
+  /* Tutorial banner */
+  .pp-tut {
+    display: flex;
+    gap: 14px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, rgba(75,123,229,0.06), rgba(108,92,231,0.04));
+    border: 1px solid rgba(75,123,229,0.18);
+    border-radius: 12px;
+    margin-bottom: 24px;
+    align-items: flex-start;
+  }
+  .pp-tut-icon {
+    flex-shrink: 0;
     font-size: 1.25rem;
-    font-weight: 700;
-    color: #1a1a1a;
-    margin-bottom: 4px;
-    letter-spacing: -0.015em;
+    line-height: 1.4;
   }
-  .pp-mock-lead { font-size: 0.8125rem; color: #666; margin-bottom: 18px; }
-  .pp-mock-h2 {
+  .pp-tut-body {
+    font-size: 0.875rem;
+    color: #444;
+    line-height: 1.6;
+  }
+  .pp-tut-body strong { color: #1a1a1a; font-weight: 600; }
+  .pp-tut-body em.pp-tag { font-size: 0.625rem; padding: 2px 8px; }
+
+  /* Headings inside portal */
+  .pp-h1 {
     font-family: var(--font-display);
-    font-size: 0.9375rem;
-    font-weight: 700;
+    font-size: 1.75rem;
+    font-weight: 600;
     color: #1a1a1a;
-    margin: 22px 0 10px;
+    margin: 0 0 4px;
+    letter-spacing: -0.02em;
+  }
+  .pp-lead { font-size: 0.9375rem; color: #666; margin-bottom: 28px; }
+  .pp-h2 {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 32px 0 14px;
+    letter-spacing: -0.01em;
+  }
+  .pp-h3 {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 12px;
+    letter-spacing: -0.005em;
   }
 
-  .pp-mock-kpi-row {
+  /* KPI row + cards */
+  .pp-kpi-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 16px;
   }
-  .pp-mock-kpi {
+  .pp-kpi-row--3 { grid-template-columns: repeat(3, 1fr); }
+  .pp-kpi {
     background: #fff;
     border: 1px solid #ececec;
-    border-radius: 10px;
-    padding: 14px;
+    border-radius: 12px;
+    padding: 18px 18px 16px;
+    border-left: 3px solid var(--accent, #ececec);
   }
-  .pp-mock-kpi-lbl {
+  .pp-kpi-lbl {
     font-size: 0.625rem;
     color: #888;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     font-weight: 700;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
   }
-  .pp-mock-kpi-val {
+  .pp-kpi-val {
     font-family: var(--font-display);
-    font-size: 1.25rem;
-    font-weight: 800;
+    font-size: 1.625rem;
+    font-weight: 600;
     color: #1a1a1a;
-    line-height: 1.1;
-    letter-spacing: -0.015em;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
   }
-  .pp-mock-kpi-hint {
-    font-size: 0.6875rem;
-    color: #999;
-    margin-top: 4px;
+  .pp-kpi-hint {
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 6px;
   }
 
-  .pp-mock-table {
+  /* Annotation note */
+  .pp-note {
+    margin: 14px 0 24px;
+    padding: 14px 18px;
+    background: #fafaf8;
+    border-left: 3px solid #4B7BE5;
+    border-radius: 0 8px 8px 0;
+    font-size: 0.8125rem;
+    color: #555;
+    line-height: 1.6;
+  }
+  .pp-note strong { color: #1a1a1a; }
+  .pp-note--inline {
+    margin: 12px 0 0;
+    font-size: 0.75rem;
+    padding: 10px 12px;
+  }
+
+  /* Tables */
+  .pp-table {
     background: #fff;
     border: 1px solid #ececec;
-    border-radius: 10px;
+    border-radius: 12px;
     overflow: hidden;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
   }
-  .pp-mock-trow {
+  .pp-trow {
     display: grid;
-    grid-template-columns: 1.4fr 1fr 0.8fr;
-    gap: 10px;
-    padding: 10px 14px;
+    grid-template-columns: 2fr 1fr 1.2fr 1fr;
+    gap: 14px;
+    padding: 14px 18px;
     border-bottom: 1px solid #f5f5f5;
     align-items: center;
   }
-  .pp-mock-trow:last-child { border-bottom: none; }
-  .pp-mock-trow--head {
+  .pp-table--5col .pp-trow {
+    grid-template-columns: 1.2fr 1.5fr 1.4fr 1fr 0.8fr;
+  }
+  .pp-trow:last-child { border-bottom: none; }
+  .pp-trow--head {
     font-size: 0.625rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    background: #fafafa;
+  }
+  .pp-trow--cancelled { opacity: 0.5; text-decoration: line-through; }
+  .pp-trow--cancelled em.pp-tag { text-decoration: none; opacity: 1; }
+  .pp-cell-meta {
+    font-size: 0.75rem;
+    color: #888;
+    font-style: normal;
+  }
+  .pp-tag {
+    display: inline-block;
+    padding: 3px 9px;
+    background: #f5f5f7;
+    color: #666;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-style: normal;
+    line-height: 1.4;
+  }
+  .pp-tag--ok    { background: rgba(42,181,160,0.14); color: #1A8F7A; }
+  .pp-tag--blue  { background: rgba(75,123,229,0.14); color: #3764c4; }
+  .pp-tag--amber { background: rgba(232,168,56,0.16); color: #b07b15; }
+  .pp-tag--err   { background: rgba(220,38,38,0.12); color: #c62828; }
+  .pp-link { color: #4B7BE5; font-size: 0.875rem; font-weight: 500; text-decoration: none; display: inline-block; margin-top: 14px; }
+  .pp-link:hover { text-decoration: underline; }
+
+  /* Bars (top fuentes) */
+  .pp-bars { display: flex; flex-direction: column; gap: 10px; }
+  .pp-bar {
+    display: grid;
+    grid-template-columns: 2fr 3fr 80px;
+    gap: 14px;
+    align-items: center;
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 10px;
+    padding: 12px 16px;
+  }
+  .pp-bar-lbl { font-size: 0.875rem; color: #1a1a1a; font-weight: 500; }
+  .pp-bar-fill {
+    height: 8px;
+    background: #f0f0ee;
+    border-radius: 999px;
+    position: relative;
+    overflow: hidden;
+  }
+  .pp-bar-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    width: var(--w, 0);
+    background: linear-gradient(90deg, #6CD6C2 0%, #4B7BE5 100%);
+    border-radius: 999px;
+  }
+  .pp-bar-num { font-size: 0.875rem; color: #555; text-align: right; font-weight: 600; }
+
+  /* Filters */
+  .pp-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+    align-items: center;
+  }
+  .pp-filter {
+    padding: 6px 12px;
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    color: #666;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .pp-filter--active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+  .pp-filter-sep { width: 1px; height: 20px; background: #ececec; margin: 0 4px; }
+  .pp-foot-stats {
+    margin-top: 18px;
+    padding: 12px 16px;
+    background: #fafafa;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    color: #555;
+  }
+  .pp-foot-stats strong { color: #1a1a1a; }
+
+  /* Payouts */
+  .pp-payout {
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-bottom: 12px;
+  }
+  .pp-payout--next {
+    background: linear-gradient(135deg, rgba(75,123,229,0.06), rgba(42,181,160,0.04));
+    border-color: rgba(75,123,229,0.25);
+  }
+  .pp-payout-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 10px;
+  }
+  .pp-payout-eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #4B7BE5;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .pp-payout-date {
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    letter-spacing: -0.005em;
+  }
+  .pp-payout-ref { font-size: 0.75rem; color: #999; margin-top: 2px; font-family: 'Courier New', monospace; }
+  .pp-payout-amount {
+    font-family: var(--font-display);
+    font-size: 1.625rem;
+    font-weight: 600;
+    color: #1A8F7A;
+    letter-spacing: -0.02em;
+  }
+  .pp-payout--next .pp-payout-amount { color: #4B7BE5; }
+  .pp-payout-detail { font-size: 0.875rem; color: #666; }
+  .pp-payout-detail summary { cursor: pointer; color: #4B7BE5; font-weight: 500; }
+  .pp-payout-list {
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 12px 14px;
+    background: #fafafa;
+    border-radius: 8px;
+  }
+  .pp-payout-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px dashed #ececec;
+    font-size: 0.8125rem;
+    color: #444;
+    gap: 12px;
+  }
+  .pp-payout-list li:last-child { border-bottom: none; }
+
+  /* Funnel */
+  .pp-funnel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .pp-funnel-step {
+    flex: 1;
+    min-width: 120px;
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 12px;
+    padding: 14px 12px;
+    text-align: center;
+  }
+  .pp-funnel-step--win {
+    background: linear-gradient(135deg, rgba(42,181,160,0.10), rgba(75,123,229,0.06));
+    border-color: rgba(42,181,160,0.30);
+  }
+  .pp-funnel-num {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    line-height: 1;
+    letter-spacing: -0.025em;
+  }
+  .pp-funnel-step--win .pp-funnel-num { color: #1A8F7A; }
+  .pp-funnel-lbl {
+    font-size: 0.6875rem;
     color: #888;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     font-weight: 700;
-    background: #fafafa;
+    margin-top: 6px;
   }
-  .pp-mock-tag {
-    display: inline-block;
-    padding: 3px 8px;
-    background: #f5f5f7;
-    color: #666;
-    border-radius: 999px;
-    font-size: 0.625rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    font-style: normal;
-  }
-  .pp-mock-tag--ok    { background: rgba(42,181,160,0.12); color: #1A8F7A; }
-  .pp-mock-tag--blue  { background: rgba(75,123,229,0.12); color: #3764c4; }
+  .pp-funnel-arrow { color: #ccc; font-size: 1.25rem; }
 
-  /* Mobile mockup: ocultar sidebar para que entre todo */
-  @media (max-width: 640px) {
-    .pp-mock-sidebar { display: none; }
-    .pp-mock-main { padding: 16px; }
-    .pp-mock-kpi-row { grid-template-columns: 1fr 1fr; }
-    .pp-mock-trow { grid-template-columns: 1fr 1fr; }
-    .pp-mock-trow > span:nth-child(3) { display: none; }
-    .p-preview-modal { max-height: 96vh; border-radius: 14px; }
-    .p-preview-body { padding: 14px; }
+  /* Mi link tab */
+  .pp-link-card {
+    background: #1a1a1a;
+    color: #fff;
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 28px;
+  }
+  .pp-link-url {
+    font-family: 'Courier New', monospace;
+    font-size: 1rem;
+    margin-bottom: 14px;
+    word-break: break-all;
+  }
+  .pp-link-url-protocol { color: rgba(255,255,255,0.5); }
+  .pp-link-url-path { color: #fff; }
+  .pp-link-url-path strong { color: #6CD6C2; font-weight: 700; }
+  .pp-link-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .pp-link-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+  .pp-link-block {
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .pp-share-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pp-share {
+    background: #fafafa;
+    border: 1px solid #ececec;
+    color: #1a1a1a;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .pp-share:hover { background: #f0f0ee; }
+  .pp-qr {
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 8px;
+    padding: 16px;
+    aspect-ratio: 1;
+    max-width: 220px;
+    margin: 0 auto;
+  }
+  .pp-qr-pattern {
+    width: 100%; height: 100%;
+    position: relative;
+    background:
+      linear-gradient(90deg, #1a1a1a 50%, transparent 50%),
+      linear-gradient(0deg, #1a1a1a 50%, transparent 50%),
+      #fff;
+    background-size: 12px 12px;
+    background-blend-mode: multiply;
+  }
+  .pp-qr-eye {
+    position: absolute;
+    width: 38px; height: 38px;
+    background: #1a1a1a;
+    border: 6px solid #fff;
+    box-shadow: inset 0 0 0 4px #1a1a1a, inset 0 0 0 8px #fff, inset 0 0 0 13px #1a1a1a;
+  }
+  .pp-qr-eye--tl { top: 0; left: 0; }
+  .pp-qr-eye--tr { top: 0; right: 0; }
+  .pp-qr-eye--bl { bottom: 0; left: 0; }
+
+  .pp-templates {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  .pp-template {
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .pp-template-head {
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 10px;
+  }
+  .pp-template-body {
+    background: #fafaf8;
+    border: 1px solid #f0f0ee;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 0.8125rem;
+    color: #555;
+    line-height: 1.55;
+    margin-bottom: 12px;
+  }
+
+  /* Mi perfil tab */
+  .pp-perfil-section {
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 12px;
+    padding: 24px 26px;
+    margin-bottom: 18px;
+  }
+  .pp-perfil-section--highlight {
+    background: linear-gradient(135deg, rgba(42,181,160,0.06), rgba(75,123,229,0.04));
+    border-color: rgba(42,181,160,0.25);
+  }
+  .pp-section-sub {
+    font-size: 0.8125rem;
+    color: #888;
+    margin: -8px 0 16px;
+  }
+  .pp-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .pp-field { display: flex; flex-direction: column; gap: 5px; }
+  .pp-field--full { grid-column: 1 / -1; }
+  .pp-field > span {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: #888;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .pp-field input,
+  .pp-field select {
+    padding: 11px 14px;
+    font-family: inherit;
+    font-size: 0.875rem;
+    color: #1a1a1a;
+    border: 1px solid #ececec;
+    border-radius: 8px;
+    background: #fafaf8;
+    outline: none;
+  }
+  .pp-field input:focus,
+  .pp-field select:focus { border-color: #4B7BE5; background: #fff; }
+  .pp-field input[readOnly] { color: #555; }
+
+  /* Payout method radios (in perfil) */
+  .pp-payout-methods {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .pp-method {
+    display: flex;
+    gap: 14px;
+    padding: 16px 18px;
+    border: 1.5px solid #ececec;
+    border-radius: 10px;
+    background: #fafafa;
+    cursor: pointer;
+    align-items: flex-start;
+  }
+  .pp-method--active { border-color: #1a1a1a; background: #fff; }
+  .pp-method input[type="radio"] {
+    margin-top: 2px;
+    accent-color: #1a1a1a;
+    flex-shrink: 0;
+  }
+  .pp-method-body { flex: 1; }
+  .pp-method-head {
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .pp-method-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .pp-method-note {
+    grid-column: 1 / -1;
+    font-size: 0.75rem;
+    color: #888;
+    margin: 4px 0 0;
+  }
+
+  .pp-firma-display {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 18px;
+    align-items: center;
+  }
+  .pp-firma-box {
+    border: 1px solid #ececec;
+    border-radius: 8px;
+    padding: 14px;
+    background: #fafaf8;
+  }
+  .pp-firma-meta {
+    font-size: 0.8125rem;
+    color: #555;
+    line-height: 1.7;
+  }
+  .pp-firma-meta strong { color: #1a1a1a; font-weight: 600; }
+  .pp-firma-meta a { display: inline-block; margin-top: 8px; }
+
+  .pp-fideliza-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 20px;
+    background: rgba(255,255,255,0.7);
+    border-radius: 10px;
+    margin-top: 4px;
+  }
+  .pp-fideliza-status {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: #1A8F7A;
+    margin-bottom: 4px;
+  }
+  .pp-fideliza-renew { font-size: 0.8125rem; color: #666; }
+
+  /* Buttons inside portal */
+  .pp-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .pp-btn--primary { background: #fff; color: #1a1a1a; }
+  .pp-link-card .pp-btn--primary { background: #6CD6C2; color: #1a1a1a; }
+  .pp-link-card .pp-btn--primary:hover { background: #5fc4b1; }
+  .pp-btn--ghost { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.25); }
+  .pp-perfil-section .pp-btn--primary { background: #1a1a1a; color: #fff; }
+  .pp-perfil-section .pp-btn--ghost { background: #fafafa; color: #1a1a1a; border: 1px solid #ececec; }
+
+  /* Mobile */
+  @media (max-width: 980px) {
+    .pp-app-sidebar { width: 200px; padding: 14px 8px; }
+    .pp-app-main { padding: 24px 24px; }
+    .pp-app-nav { font-size: 0.8125rem; padding: 8px 10px; }
+    .pp-kpi-row { grid-template-columns: 1fr 1fr; }
+    .pp-kpi-row--3 { grid-template-columns: 1fr 1fr; }
+    .pp-link-grid { grid-template-columns: 1fr; }
+    .pp-templates { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 720px) {
+    .pp-app-topbar { padding: 10px 14px; flex-wrap: wrap; gap: 10px; }
+    .pp-app-preview-pill { display: none; }
+    .pp-app-username { display: none; }
+    .pp-app-body { flex-direction: column; }
+    .pp-app-sidebar {
+      width: 100%;
+      flex-direction: row;
+      overflow-x: auto;
+      gap: 6px;
+      border-right: none;
+      border-bottom: 1px solid #ececec;
+      padding: 10px 14px;
+    }
+    .pp-app-nav { white-space: nowrap; flex-shrink: 0; padding: 8px 14px; }
+    .pp-app-nav-badge { display: none; }
+    .pp-app-side-divider { display: none; }
+    .pp-app-sidebar-foot { display: none; }
+    .pp-app-main { padding: 20px 16px; }
+    .pp-h1 { font-size: 1.375rem; }
+    .pp-kpi-row, .pp-kpi-row--3 { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .pp-kpi { padding: 14px; }
+    .pp-kpi-val { font-size: 1.25rem; }
+    .pp-trow { grid-template-columns: 1fr !important; gap: 4px; padding: 12px 14px; font-size: 0.8125rem; }
+    .pp-trow--head { display: none; }
+    .pp-bar { grid-template-columns: 1fr; gap: 8px; }
+    .pp-bar-num { text-align: left; }
+    .pp-funnel-arrow { display: none; }
+    .pp-funnel { gap: 8px; }
+    .pp-funnel-step { flex: 1 1 calc(50% - 4px); min-width: 0; }
+    .pp-form-grid, .pp-method-fields { grid-template-columns: 1fr; }
+    .pp-firma-display { grid-template-columns: 1fr; }
+    .pp-fideliza-card { flex-direction: column; align-items: flex-start; }
   }
 
   /* Sign form */
@@ -4980,8 +5947,10 @@ const partnerLandingUrl = invitation.slug_landing
   const btnClosePreview = document.getElementById('btn-close-preview');
   function openPreview() {
     if (previewOverlay) {
-      previewOverlay.style.display = 'flex';
+      previewOverlay.style.display = 'block';
       document.body.style.overflow = 'hidden';
+      // Reset to first tab
+      switchPpTab('resumen');
     }
   }
   function closePreview() {
@@ -4992,6 +5961,30 @@ const partnerLandingUrl = invitation.slug_landing
   }
   btnOpenPreview && btnOpenPreview.addEventListener('click', openPreview);
   btnClosePreview && btnClosePreview.addEventListener('click', closePreview);
+
+  // ─── Preview portal: navegación entre tabs internos ───
+  function switchPpTab(tabName) {
+    if (!tabName) return;
+    document.querySelectorAll('.pp-app-nav[data-pp-tab]').forEach(btn => {
+      btn.classList.toggle('pp-app-nav--active', btn.getAttribute('data-pp-tab') === tabName);
+    });
+    document.querySelectorAll('.pp-app-panel[data-pp-panel]').forEach(panel => {
+      panel.classList.toggle('pp-app-panel--active', panel.getAttribute('data-pp-panel') === tabName);
+    });
+    const main = document.querySelector('.pp-app-main');
+    if (main) main.scrollTop = 0;
+  }
+  document.querySelectorAll('[data-pp-tab]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      const tab = el.getAttribute('data-pp-tab');
+      if (tab) switchPpTab(tab);
+    });
+  });
+  // Close on Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && previewOverlay && previewOverlay.style.display !== 'none') closePreview();
+  });
   // Close on overlay backdrop click
   previewOverlay && previewOverlay.addEventListener('click', (e) => {
     if (e.target === previewOverlay) closePreview();
