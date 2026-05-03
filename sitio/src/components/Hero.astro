@@ -9672,24 +9672,51 @@ const useCases = [
   }
 
   /* ── #12 Cambios y devoluciones (.rtn-frame) — mobile (≤1023px) ──
-     Card más alta + 3-stage flow (Lista → Cambio → Éxito) que ya implementamos
-     a nivel HTML. Aspect 9/14 portrait para que cada stage entre completo. */
+     Card más alta + 3-stage flow (Lista → Cambio → Éxito).
+     Aspect 9/16 portrait — más alto aún para que entre todo el contenido
+     incluyendo Stage 2 (swap completo: 2 cards + summary + botón) y
+     Stage 3 (check + title + summary + banner). */
   @media (max-width: 1023px) {
     .rtn-frame {
-      aspect-ratio: 9 / 14;
-      padding: 14px 14px;
-      gap: 8px;
+      aspect-ratio: 9 / 16;
+      padding: 12px 12px 10px;
+      gap: 6px;
     }
-    .rtn-topbar { padding: 0 0 6px; }
-    .rtn-topbar-title { font-size: 10.5px; }
-    .rtn-topbar-meta { font-size: 7.5px; }
+    .rtn-topbar { padding: 0 0 6px; gap: 6px; }
+    .rtn-topbar-title { font-size: 10px; }
+    .rtn-topbar-meta { font-size: 7px; }
     /* Stage 1 — items list compacto */
-    .rtn-mini-label { font-size: 6.5px; }
-    .rtn-item { padding: 5px 8px 5px 5px; gap: 7px; }
-    .rtn-thumb { width: 32px; height: 32px; }
-    .rtn-item-name { font-size: 9px; }
-    .rtn-item-meta { font-size: 7px; }
-    .rtn-item-price { font-size: 9.5px; }
+    .rtn-mini-label { font-size: 6.5px; margin-bottom: 4px; }
+    .rtn-item { padding: 4px 7px 4px 4px; gap: 6px; }
+    .rtn-thumb { width: 30px; height: 30px; }
+    .rtn-item-name { font-size: 8.5px; }
+    .rtn-item-meta { font-size: 6.5px; }
+    .rtn-item-price { font-size: 9px; }
+    /* Stage 2 — swap detail compacto */
+    .rtn-swap-vert { gap: 5px; margin-top: 5px; }
+    .rtn-swap-card { padding: 6px 9px; }
+    .rtn-swap-card-tag { font-size: 6px; margin-bottom: 2px; }
+    .rtn-swap-card-thumb { width: 32px; height: 32px; }
+    .rtn-swap-card-name { font-size: 10px; }
+    .rtn-swap-card-meta { font-size: 7px; }
+    .rtn-swap-arrow-v { font-size: 14px; }
+    .rtn-swap-summary { margin-top: 7px; padding: 7px 9px; }
+    .rtn-swap-summary-row { font-size: 8.5px; }
+    .rtn-swap-summary-pos { font-size: 12px; }
+    .rtn-swap-summary-method { font-size: 7px; }
+    .rtn-confirm-btn { padding: 9px; font-size: 10px; margin-top: 8px; }
+    /* Stage 3 — Éxito: padding superior reducido para empujar contenido arriba */
+    .rtn-screen--ok {
+      padding: 14px 12px 10px;
+      justify-content: flex-start;       /* contenido desde arriba, no centrado */
+    }
+    .rtn-ok-check svg { width: 44px; height: 44px; }
+    .rtn-ok-title { font-size: 14px; margin-bottom: 2px; }
+    .rtn-ok-sub { font-size: 8px; margin-bottom: 8px; }
+    .rtn-ok-rows { padding: 6px 10px; margin-bottom: 7px; }
+    .rtn-ok-row { padding: 4px 0; font-size: 8.5px; }
+    .rtn-ok-pos { font-size: 9.5px; }
+    .rtn-ok-banner { padding: 7px 10px; gap: 6px; font-size: 8.5px; }
   }
 
   /* ── Cobro móvil — line-busting slide (3 phone layers + emerging ticket) ── */
