@@ -248,6 +248,7 @@ const partnerLandingUrl = invitation.slug_landing
 
       <!-- TAB: BIENVENIDA -->
       <section class="p-tab-panel" data-tab="bienvenida">
+        <!-- Hero -->
         <div class="p-hero">
           <div class="p-hero-eyebrow">{heroEyebrow}</div>
           <h1 class="p-hero-title">
@@ -283,25 +284,233 @@ const partnerLandingUrl = invitation.slug_landing
               <div class="p-hero-stat-label">Marcas en la red SACS</div>
             </div>
           </div>
+        </div>
 
-          <div class="p-hero-quick">
-            <div class="p-hero-quick-row">
-              <span class="p-hero-quick-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              </span>
-              <span>Lo que sigue: revisa beneficios, términos y firma cuando estés listo.</span>
+        <!-- ── 1. El propósito de este programa ── -->
+        <div class="p-bw-section">
+          <div class="p-bw-eyebrow">¿Por qué este programa existe?</div>
+          <h2 class="p-bw-title">Generar ingresos justos por el trabajo que ya haces.</h2>
+          <p class="p-bw-lead">
+            Llevas años creando contenido sobre retail, moda, comercio o emprendimiento.
+            Has construido una audiencia que confía en tus recomendaciones. Mereces que
+            ese trabajo pague — bien y de forma transparente.
+          </p>
+          <p class="p-bw-lead">
+            El programa de Embajadores SACS no es un programa de afiliados de a centavos.
+            Es una <strong>asociación real</strong>: nosotros te damos la plataforma,
+            el sistema, las herramientas y el respaldo para que tu comunidad se sienta
+            atendida — tú nos das tu voz, tu credibilidad y tu visión. Ambas partes
+            ganan, ambas crecen.
+          </p>
+          <div class="p-bw-bullets">
+            <div class="p-bw-bullet"><span class="p-bw-bullet-mark">·</span><span><strong>Comisiones que sí valen el esfuerzo.</strong> 50% sobre venta directa, $250 por cada activación, bonos por demo.</span></div>
+            <div class="p-bw-bullet"><span class="p-bw-bullet-mark">·</span><span><strong>Sistema de puntos por contenido.</strong> Cada video vale puntos según esfuerzo. Si haces más, se acumulan al mes siguiente.</span></div>
+            <div class="p-bw-bullet"><span class="p-bw-bullet-mark">·</span><span><strong>Plan Fideliza gratis ($14k/año).</strong> Para que uses SACS en tu propio negocio o como demo en vivo.</span></div>
+            <div class="p-bw-bullet"><span class="p-bw-bullet-mark">·</span><span><strong>Pagos puntuales cada 30 días.</strong> Transparente. Sin letras chicas. Sin "depende de…".</span></div>
+          </div>
+        </div>
+
+        <!-- ── 2. Por qué SACS · El SER ── -->
+        <div class="p-bw-section p-bw-section--alt">
+          <div class="p-bw-grid">
+            <div>
+              <div class="p-bw-eyebrow">Por qué SACS · el origen</div>
+              <h2 class="p-bw-title">No vendemos software — construimos un sistema operativo para retailers conscientes.</h2>
+            </div>
+            <div>
+              <p class="p-bw-lead">
+                SACS no nació para venderle POS a quien lo pidiera. Nació para construir el
+                <strong>sistema operativo del retail mexicano moderno</strong>: una plataforma
+                única donde POS, inventario multi-sucursal, e-commerce, CRM, lealtad y
+                marketing operen como un solo organismo.
+              </p>
+              <p class="p-bw-lead">
+                Nuestro "ser" es el <strong>triple impacto</strong>: que el retailer venda
+                más con menos esfuerzo, que el cliente final tenga una mejor experiencia,
+                y que la comunidad alrededor — proveedores, equipos, partners como tú —
+                crezca con nosotros.
+              </p>
+            </div>
+          </div>
+
+          <div class="p-bw-pillars">
+            <div class="p-bw-pillar">
+              <div class="p-bw-pillar-num">01</div>
+              <div class="p-bw-pillar-title">Para el retailer</div>
+              <div class="p-bw-pillar-detail">Una plataforma. Cero islas de información. Decisiones más rápidas. Menos errores. Más tiempo para crecer.</div>
+            </div>
+            <div class="p-bw-pillar">
+              <div class="p-bw-pillar-num">02</div>
+              <div class="p-bw-pillar-title">Para el cliente final</div>
+              <div class="p-bw-pillar-detail">Experiencia consistente entre tienda física, online y WhatsApp. Recomendaciones relevantes. Lealtad que se siente.</div>
+            </div>
+            <div class="p-bw-pillar">
+              <div class="p-bw-pillar-num">03</div>
+              <div class="p-bw-pillar-title">Para la comunidad</div>
+              <div class="p-bw-pillar-detail">Embajadores que cobran justo. Proveedores que cobran a tiempo. Equipos que aprenden con la herramienta. Crecimiento compartido.</div>
             </div>
           </div>
         </div>
 
-        <!-- Index -->
-        <div class="p-tab-intro-nav">
-          {visibleTabs.filter(t => t.id !== 'bienvenida' && t.id !== 'firma').map(t => (
-            <a href={`#${t.id}`} class="p-tab-intro-link" data-tab-link={t.id}>
-              <span class="p-tab-intro-link-label">{t.label}</span>
-              <span class="p-tab-intro-link-arrow">→</span>
-            </a>
-          ))}
+        <!-- ── 3. Qué nos hace diferentes ── -->
+        <div class="p-bw-section">
+          <div class="p-bw-eyebrow">En qué nos diferenciamos</div>
+          <h2 class="p-bw-title">Cualquiera vende un POS. Pocos resuelven la operación completa.</h2>
+          <p class="p-bw-lead">
+            El mercado de retail tech mexicano está saturado de plataformas que prometen
+            todo y entregan piezas sueltas. Conocemos a los competidores — los respetamos.
+            Pero nuestra fundación es distinta:
+          </p>
+
+          <div class="p-bw-diff-grid">
+            <div class="p-bw-diff">
+              <div class="p-bw-diff-head">No somos un parche</div>
+              <p>Nacimos integrados de origen. POS, inventario, e-commerce, CRM, marketing — todo desde la misma base de datos, no APIs pegadas con goma.</p>
+            </div>
+            <div class="p-bw-diff">
+              <div class="p-bw-diff-head">Multi-sucursal de verdad</div>
+              <p>Funcionamos igual con 1 tienda que con 1,500 (Liveshow lo prueba). El sistema escala sin que tengas que migrar a una versión "enterprise".</p>
+            </div>
+            <div class="p-bw-diff">
+              <div class="p-bw-diff-head">Pensado en LATAM</div>
+              <p>CFDI 4.0, IEPS, SAT, RFC, métodos de pago locales, WhatsApp, MercadoPago. No es una traducción de un producto gringo.</p>
+            </div>
+            <div class="p-bw-diff">
+              <div class="p-bw-diff-head">Casos de uso completos</div>
+              <p>Resolvemos el caso completo — desde que el producto llega al almacén hasta que el cliente vuelve por segunda vez. No solo "cobrar".</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── 4. Verticales en orden de prioridad ── -->
+        <div class="p-bw-section p-bw-section--alt">
+          <div class="p-bw-eyebrow">Quién usa SACS</div>
+          <h2 class="p-bw-title">Verticales que dominamos en orden de prioridad.</h2>
+          <p class="p-bw-lead">
+            Cada vertical tiene retos específicos. SACS los aborda con módulos pensados
+            para cada uno — no soluciones genéricas.
+          </p>
+
+          <div class="p-bw-verticals">
+            <div class="p-bw-vertical">
+              <div class="p-bw-vertical-rank">01</div>
+              <div class="p-bw-vertical-icon">👗</div>
+              <div class="p-bw-vertical-name">Moda y boutiques</div>
+              <div class="p-bw-vertical-detail">Variantes (talla×color), colecciones por temporada, devoluciones, e-commerce sincronizado, social commerce.</div>
+            </div>
+            <div class="p-bw-vertical">
+              <div class="p-bw-vertical-rank">02</div>
+              <div class="p-bw-vertical-icon">💊</div>
+              <div class="p-bw-vertical-name">Farmacias</div>
+              <div class="p-bw-vertical-detail">Caducidades, medicamento controlado, recetas, IEPS, reabasto predictivo.</div>
+            </div>
+            <div class="p-bw-vertical">
+              <div class="p-bw-vertical-rank">03</div>
+              <div class="p-bw-vertical-icon">🍽️</div>
+              <div class="p-bw-vertical-name">Restaurantes</div>
+              <div class="p-bw-vertical-detail">Comandas a cocina, mesas, mermas, integración con apps de delivery, reportes por turno.</div>
+            </div>
+            <div class="p-bw-vertical">
+              <div class="p-bw-vertical-rank">04</div>
+              <div class="p-bw-vertical-icon">🔧</div>
+              <div class="p-bw-vertical-name">Ferreterías</div>
+              <div class="p-bw-vertical-detail">Catálogos enormes (50K+ SKUs), crédito a contratistas, multimarca, mostrador + e-commerce.</div>
+            </div>
+            <div class="p-bw-vertical">
+              <div class="p-bw-vertical-rank">05</div>
+              <div class="p-bw-vertical-icon">💇</div>
+              <div class="p-bw-vertical-name">Salones y barberías</div>
+              <div class="p-bw-vertical-detail">Agenda + venta retail + comisiones a estilistas + lealtad. Recordatorios por WhatsApp.</div>
+            </div>
+            <div class="p-bw-vertical">
+              <div class="p-bw-vertical-rank">06</div>
+              <div class="p-bw-vertical-icon">🛒</div>
+              <div class="p-bw-vertical-name">Abarrotes y minisúper</div>
+              <div class="p-bw-vertical-detail">Margen apretado, mermas, conteo nocturno, CFDI sin complejidad fiscal, crédito a vecinos.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── 5. Clientes desde 1 hasta 1,500 sucursales ── -->
+        <div class="p-bw-section">
+          <div class="p-bw-eyebrow">Clientes que confían en SACS</div>
+          <h2 class="p-bw-title">Desde 1 boutique hasta 1,500 sucursales.</h2>
+          <p class="p-bw-lead">
+            Operamos con marcas independientes que abren su primera tienda y con
+            cadenas enterprise que coordinan operaciones a nivel nacional.
+            Nuestro caso emblemático: <strong>Liveshow — 1,500+ sucursales</strong>
+            usando SACS como su sistema operativo central.
+          </p>
+
+          <div class="p-bw-cases">
+            <div class="p-bw-case">
+              <img src="/images/case-liveshow.webp" alt="Liveshow — 1,500+ sucursales" loading="lazy" class="p-bw-case-img" />
+              <div class="p-bw-case-name">Liveshow</div>
+              <div class="p-bw-case-meta">1,500+ sucursales · enterprise</div>
+            </div>
+            <div class="p-bw-case">
+              <img src="/images/case-bella-pandita.webp" alt="Bella Pandita" loading="lazy" class="p-bw-case-img" />
+              <div class="p-bw-case-name">Bella Pandita</div>
+              <div class="p-bw-case-meta">Boutique de moda · CDMX</div>
+            </div>
+            <div class="p-bw-case">
+              <img src="/images/case-casa-maca.webp" alt="Casa Maca" loading="lazy" class="p-bw-case-img" />
+              <div class="p-bw-case-name">Casa Maca</div>
+              <div class="p-bw-case-meta">Concept store · multi-sucursal</div>
+            </div>
+            <div class="p-bw-case">
+              <img src="/images/case-sandmade.webp" alt="Sandmade" loading="lazy" class="p-bw-case-img" />
+              <div class="p-bw-case-name">Sandmade</div>
+              <div class="p-bw-case-meta">Joyería + e-commerce</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── 6. Historia: 13+ años ── -->
+        <div class="p-bw-section p-bw-section--dark">
+          <div class="p-bw-grid p-bw-grid--reverse">
+            <div>
+              <img src="/images/hero-sacs-store.webp" alt="SACS en operación" loading="lazy" class="p-bw-history-img" />
+            </div>
+            <div>
+              <div class="p-bw-eyebrow p-bw-eyebrow--light">Nuestra historia</div>
+              <h2 class="p-bw-title p-bw-title--light">13+ años construyendo categoría.</h2>
+              <p class="p-bw-lead p-bw-lead--light">
+                Empezamos hace más de 13 años cuando "POS en la nube" todavía era una idea
+                radical en México. Nos consolidamos como líderes del segmento mientras el
+                mercado se llenaba de competidores que prometían lo mismo.
+              </p>
+              <p class="p-bw-lead p-bw-lead--light">
+                La diferencia: pocos logran resolver los <strong>casos de uso completos</strong>
+                — desde la primera venta hasta la operación enterprise. La mayoría cubre
+                bien una pieza y deja huecos en el resto. Nosotros llevamos más de una
+                década cerrando esos huecos uno por uno.
+              </p>
+              <div class="p-bw-history-stats">
+                <div class="p-bw-history-stat">
+                  <div class="p-bw-history-stat-num">13+</div>
+                  <div class="p-bw-history-stat-label">años en mercado</div>
+                </div>
+                <div class="p-bw-history-stat">
+                  <div class="p-bw-history-stat-num">3,000+</div>
+                  <div class="p-bw-history-stat-label">marcas activas</div>
+                </div>
+                <div class="p-bw-history-stat">
+                  <div class="p-bw-history-stat-num">42M+</div>
+                  <div class="p-bw-history-stat-label">tx procesadas</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CTA final → ir al proceso -->
+        <div class="p-bw-cta">
+          <div class="p-bw-cta-inner">
+            <h3 class="p-bw-cta-title">¿Listo para conocer cómo funciona el programa?</h3>
+            <p class="p-bw-cta-lead">Sigue al siguiente paso para ver el proceso, los términos económicos, los compromisos y firmar cuando estés listo.</p>
+            <a href="#proceso" class="p-bw-cta-btn" data-tab-link="proceso">Ver cómo funciona →</a>
+          </div>
         </div>
       </section>
 
@@ -885,6 +1094,11 @@ const partnerLandingUrl = invitation.slug_landing
         <div class="p-content-types-grid">
           {CONTENT_TYPES.map((c) => (
             <div class={`p-content-type-card ${c.id === 'serie_completa' ? 'p-content-type-card--bonus' : ''}`}>
+              {c.ejemploImage && (
+                <div class="p-content-type-img-wrap">
+                  <img src={c.ejemploImage} alt={`Ejemplo: ${c.nombre}`} loading="lazy" class="p-content-type-img" />
+                </div>
+              )}
               <div class="p-content-type-head">
                 <div>
                   <div class="p-content-type-name">{c.nombre}</div>
@@ -2907,6 +3121,297 @@ const partnerLandingUrl = invitation.slug_landing
     line-height: 1.6;
   }
 
+  /* ─── Bienvenida storytelling (p-bw-*) ─────────────────────── */
+  .p-bw-section {
+    padding: 64px 0;
+    border-top: 1px solid #ececec;
+  }
+  .p-bw-section--alt {
+    background: #FAFAF8;
+    margin: 0 -32px;
+    padding: 64px 32px;
+  }
+  .p-bw-section--dark {
+    background: #1A1A1A;
+    color: #fff;
+    margin: 0 -32px;
+    padding: 72px 32px;
+  }
+  @media (max-width: 640px) {
+    .p-bw-section { padding: 40px 0; }
+    .p-bw-section--alt, .p-bw-section--dark { margin: 0 -20px; padding: 48px 20px; }
+  }
+
+  .p-bw-eyebrow {
+    display: inline-block;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #4B7BE5;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .p-bw-eyebrow--light { color: #93b4ff; }
+
+  .p-bw-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.625rem, 3.4vw, 2.375rem);
+    font-weight: 300;
+    color: #1A1A1A;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+    margin: 0 0 20px;
+  }
+  .p-bw-title--light { color: #fff; }
+
+  .p-bw-lead {
+    font-size: 1.0625rem;
+    color: #555;
+    line-height: 1.7;
+    margin: 0 0 16px;
+    max-width: 640px;
+  }
+  .p-bw-lead strong { color: #1a1a1a; }
+  .p-bw-lead--light { color: rgba(255,255,255,0.78); }
+  .p-bw-lead--light strong { color: #fff; }
+
+  .p-bw-bullets {
+    display: flex; flex-direction: column; gap: 12px;
+    margin-top: 24px;
+  }
+  .p-bw-bullet {
+    display: flex; gap: 12px;
+    font-size: 0.9375rem;
+    color: #555;
+    line-height: 1.55;
+  }
+  .p-bw-bullet-mark {
+    color: #4B7BE5;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .p-bw-bullet strong { color: #1a1a1a; }
+
+  /* Grid 2 col responsive */
+  .p-bw-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 48px;
+    align-items: start;
+    margin-bottom: 32px;
+  }
+  .p-bw-grid--reverse { grid-template-columns: 1.4fr 1fr; }
+  @media (max-width: 768px) {
+    .p-bw-grid, .p-bw-grid--reverse { grid-template-columns: 1fr; gap: 24px; }
+  }
+
+  /* Pillars (triple impacto) */
+  .p-bw-pillars {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 32px;
+  }
+  .p-bw-pillar {
+    padding: 24px;
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 10px;
+  }
+  .p-bw-pillar-num {
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #4B7BE5;
+    letter-spacing: 0.04em;
+    margin-bottom: 14px;
+  }
+  .p-bw-pillar-title {
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: #1A1A1A;
+    margin-bottom: 8px;
+    letter-spacing: -0.005em;
+  }
+  .p-bw-pillar-detail {
+    font-size: 0.875rem;
+    color: #666;
+    line-height: 1.55;
+  }
+
+  /* Diff grid */
+  .p-bw-diff-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+    margin-top: 32px;
+  }
+  .p-bw-diff {
+    padding: 0 0 0 16px;
+    border-left: 2px solid #4B7BE5;
+  }
+  .p-bw-diff-head {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1A1A1A;
+    margin-bottom: 8px;
+  }
+  .p-bw-diff p {
+    font-size: 0.875rem;
+    color: #666;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* Verticals */
+  .p-bw-verticals {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin-top: 32px;
+  }
+  .p-bw-vertical {
+    position: relative;
+    padding: 24px 20px;
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 10px;
+    transition: transform 0.18s, border-color 0.18s;
+  }
+  .p-bw-vertical:hover {
+    transform: translateY(-2px);
+    border-color: #4B7BE5;
+  }
+  .p-bw-vertical-rank {
+    position: absolute;
+    top: 16px; right: 16px;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #ccc;
+    letter-spacing: 0.04em;
+  }
+  .p-bw-vertical-icon { font-size: 1.75rem; line-height: 1; margin-bottom: 12px; }
+  .p-bw-vertical-name {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1A1A1A;
+    margin-bottom: 6px;
+    letter-spacing: -0.005em;
+  }
+  .p-bw-vertical-detail {
+    font-size: 0.8125rem;
+    color: #666;
+    line-height: 1.5;
+  }
+
+  /* Cases (clientes) */
+  .p-bw-cases {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-top: 28px;
+  }
+  .p-bw-case {
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .p-bw-case-img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    display: block;
+    background: #f5f5f5;
+  }
+  .p-bw-case-name {
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1A1A1A;
+    padding: 14px 16px 4px;
+  }
+  .p-bw-case-meta {
+    font-size: 0.75rem;
+    color: #888;
+    padding: 0 16px 16px;
+  }
+
+  /* History (dark section) */
+  .p-bw-history-img {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    display: block;
+  }
+  .p-bw-history-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255,255,255,0.12);
+  }
+  .p-bw-history-stat-num {
+    font-family: var(--font-display);
+    font-size: clamp(1.625rem, 3vw, 2.125rem);
+    font-weight: 300;
+    color: #fff;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .p-bw-history-stat-label {
+    font-size: 0.6875rem;
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+
+  /* CTA final */
+  .p-bw-cta {
+    margin-top: 48px;
+    padding: 48px 32px;
+    background: linear-gradient(120deg, rgba(75,123,229,0.06), rgba(108,92,231,0.04));
+    border: 1px solid rgba(75,123,229,0.18);
+    border-radius: 14px;
+    text-align: center;
+  }
+  .p-bw-cta-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 2.4vw, 1.625rem);
+    font-weight: 500;
+    color: #1A1A1A;
+    margin: 0 0 12px;
+    letter-spacing: -0.015em;
+  }
+  .p-bw-cta-lead {
+    font-size: 0.9375rem;
+    color: #555;
+    line-height: 1.55;
+    max-width: 460px;
+    margin: 0 auto 22px;
+  }
+  .p-bw-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 26px;
+    background: #1a1a1a;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    transition: background 0.15s;
+  }
+  .p-bw-cta-btn:hover { background: #4B7BE5; }
+
   /* ─── Contenido y puntos (tab "Contenido") ─────────────────── */
   .p-content-howto {
     display: grid;
@@ -2977,6 +3482,18 @@ const partnerLandingUrl = invitation.slug_landing
   .p-content-type-card--bonus {
     background: linear-gradient(180deg, rgba(75,123,229,0.04), #fff);
     border-color: #4B7BE5;
+  }
+  .p-content-type-img-wrap {
+    margin: -20px -20px 16px;
+    height: 160px;
+    overflow: hidden;
+    border-radius: 12px 12px 0 0;
+    background: #f5f5f5;
+  }
+  .p-content-type-img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
   }
   .p-content-type-head {
     display: flex; justify-content: space-between; align-items: flex-start;

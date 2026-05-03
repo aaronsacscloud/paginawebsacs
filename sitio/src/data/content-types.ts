@@ -204,9 +204,28 @@ export const CONTENT_TYPES: ContentType[] = [
       'Cómo abrir una boutique exitosa (10 eps)',
       'El sistema operativo del retail (10 eps)',
     ],
+    ejemploImage: '/images/content-examples/serie-completa.webp',
     plataformasSugeridas: ['YouTube playlist', 'Spotify'],
   },
 ];
+
+// Mapeo id → ruta de imagen mockup (generadas con gpt-image-1)
+const IMG_BY_ID: Record<string, string> = {
+  story_reel: '/images/content-examples/story-reel.webp',
+  tutorial: '/images/content-examples/tutorial.webp',
+  caso_uso: '/images/content-examples/caso-uso.webp',
+  tour: '/images/content-examples/tour.webp',
+  dia_en_la_vida: '/images/content-examples/dia-vida.webp',
+  testimonial: '/images/content-examples/testimonial.webp',
+  serie_episodio: '/images/content-examples/serie-episodio.webp',
+  webinar: '/images/content-examples/webinar.webp',
+  mini_documental: '/images/content-examples/mini-documental.webp',
+  serie_completa: '/images/content-examples/serie-completa.webp',
+};
+// Asignar ejemploImage automáticamente si no está seteado
+for (const c of CONTENT_TYPES) {
+  if (!c.ejemploImage && IMG_BY_ID[c.id]) c.ejemploImage = IMG_BY_ID[c.id];
+}
 
 export const META_PUNTOS_MES = 100;
 
