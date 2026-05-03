@@ -4,7 +4,7 @@ Buenos días. Mientras dormías shipeé los TIERS A, B, C, E y F del plan de
 completación del sistema partner. Todo está en producción en
 `https://www.sacscloud.com`.
 
-## ⚡ TL;DR — 7 deploys consecutivos
+## ⚡ TL;DR — 9 deploys consecutivos
 
 | Tier | Commit | Qué se añadió |
 |---|---|---|
@@ -14,6 +14,8 @@ completación del sistema partner. Todo está en producción en
 | E | `a5d9f0a` | Atribución correcta + Stripe fallback + auto slug |
 | F | `7c4e0ec` | /partners landing pública + form de aplicación |
 | F+ | `de8b733` | Email confirmación al aplicante |
+| H | `ed62cef` | Hardening: rate limit + spam + size limits en /apply |
+| I | `4dee5ac` | dashboard.ts atribución + JSON-LD SEO en /partners |
 
 Todos los `npm run build` pasaron limpio. Todos los `vercel --prod` desplegaron
 sin errores. **No se aplicó ninguna nueva migración SQL** — tu schema sigue
