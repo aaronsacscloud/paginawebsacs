@@ -406,13 +406,16 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
       embajador: {
         comision_pct: 50, costo_unico: 0, costo_mensual: 0,
         beneficios: [
-          { icon: 'percent',   title: '50% de comisión por venta directa',   detail: 'Sobre cada cliente cerrado a través de tu link único de partner. Se calcula sobre el monto efectivamente cobrado al cliente.' },
-          { icon: 'reward',    title: 'Comisión por reunión agendada',       detail: 'Bono fijo cada vez que un prospecto referido por ti agenda una demo en nuestro calendario oficial.' },
-          { icon: 'reward',    title: 'Comisión por reunión completada',     detail: 'Bono adicional cuando el prospecto asiste y completa el demo válido con SACS.' },
+          { icon: 'percent',   title: '50% de comisión por venta directa',       detail: 'Sobre cada cliente cerrado a través de tu link único de partner. Se calcula sobre el monto efectivamente cobrado al cliente.' },
+          { icon: 'reward',    title: 'Comisión por reunión agendada',           detail: 'Bono fijo cada vez que un prospecto referido por ti agenda una demo en nuestro calendario oficial.' },
+          { icon: 'reward',    title: 'Comisión por reunión completada',         detail: 'Bono adicional cuando el prospecto asiste y completa el demo válido con SACS.' },
+          { icon: 'link',      title: 'Landing page personalizada con tu link', detail: 'Tu propia página dentro de SACS con tu nombre, foto y link único (sacscloud.com/p/tu-slug). Cada visita y registro queda atribuido automáticamente a ti.' },
+          { icon: 'dashboard', title: 'Portal de partner con métricas en tiempo real', detail: 'Dashboard personal con visitas a tu landing, registros generados, prospectos calificados, conversiones, comisiones acumuladas y pagos liquidados — todo actualizado al instante.' },
           { icon: 'academy',   title: 'Acceso a Academia SACS y capacitaciones', detail: 'Cursos en línea, playbooks por vertical, demos grabadas y certificación oficial de embajador.' },
-          { icon: 'gift',      title: 'Plan Fideliza incluido',              detail: 'Acceso completo al plan Fideliza para tu propio negocio durante toda tu participación. Valor de $18,000 MXN al año.' },
-          { icon: 'calendar',  title: 'Reunión trimestral con el equipo SACS', detail: 'Sesión cada 3 meses para compartir mejoras, casos de éxito y feedback directo con el equipo de producto y dirección.' },
-          { icon: 'broadcast', title: 'Difusión en el canal SACS',           detail: 'Republicamos tu contenido en nuestras redes sociales. El alcance es variable y orgánico — puede sumar miles de views adicionales según el contenido.' },
+          { icon: 'gift',      title: 'Plan Fideliza incluido',                  detail: 'Acceso completo al plan Fideliza para tu propio negocio durante toda tu participación. Valor de $18,000 MXN al año.' },
+          { icon: 'calendar',  title: 'Reunión trimestral con el equipo SACS',   detail: 'Sesión cada 3 meses para compartir mejoras, casos de éxito y feedback directo con el equipo de producto y dirección.' },
+          { icon: 'broadcast', title: 'Difusión en el canal SACS',               detail: 'Republicamos tu contenido en nuestras redes sociales. El alcance es variable y orgánico — puede sumar miles de views adicionales según el contenido.' },
+          { icon: 'wallet',    title: 'Pagos automáticos cada 30 días',          detail: 'Comisiones y bonos liquidados por transferencia cada 30 días, con desglose detallado de cada concepto, cliente y referido. Visible siempre desde tu portal.' },
         ],
         compromisos: [
           { title: 'Crear 4 videos al mes con la plataforma',     detail: 'Mínimo 4 videos mensuales usando SACS, alineados al plan de trabajo y palabras clave que enviamos al inicio de cada mes.', frequency: 'Mensual' },
@@ -428,29 +431,31 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
           demo_completada: 500,
           venta_directa_pct: 50,
           moneda: 'MXN',
-          notas: 'Pagos mensuales el día 15 del mes siguiente al cierre del periodo. Reunión agendada se acredita al confirmarse en el calendario; reunión completada al cierre del demo válido (mínimo 25 min con tomador de decisión presente). Comisión por venta directa se acredita al cobrar la primera factura del cliente cerrado.',
+          notas: 'Pagos cada 30 días por transferencia bancaria, con desglose detallado por concepto y cliente visible siempre en tu portal de partner. Reunión agendada se acredita al confirmarse en el calendario; reunión completada al cierre del demo válido (mínimo 25 min con tomador de decisión presente). Comisión por venta directa se acredita al cobrar la primera factura del cliente cerrado.',
         },
         terminos: `Programa Embajador SACS — Términos y Condiciones
 
 1. Vigencia y evaluación. El programa tiene vigencia indefinida sujeta a evaluación trimestral del cumplimiento de compromisos por parte de SACS Cloud. SACS se reserva el derecho de revisar el desempeño cada 90 días.
 
-2. Comisiones y pagos. Las comisiones se calculan sobre el monto efectivamente cobrado a clientes referidos (vía link único o atribución manual). El pago se realiza por transferencia mensual el día 15 del mes siguiente al cierre, contra emisión de recibo o factura del embajador.
+2. Comisiones y pagos. Las comisiones se calculan sobre el monto efectivamente cobrado a clientes referidos (vía link único o atribución manual). El pago se realiza por transferencia bancaria cada 30 días naturales contados desde el inicio del programa, con desglose detallado por concepto, cliente y referido visible siempre desde el portal del partner. Cada liquidación va contra emisión de recibo o factura del embajador.
 
-3. Cumplimiento de compromisos. Si el embajador deja de cumplir los compromisos de contenido por dos (2) meses consecutivos, SACS notificará por escrito y otorgará un periodo de regularización de 30 días naturales antes de pausar los beneficios.
+3. Landing page y portal del partner. SACS habilitará al embajador (i) una landing page personalizada con su nombre y link único bajo el dominio sacscloud.com, y (ii) un portal de partner con métricas en tiempo real (visitas, registros, prospectos, conversiones, comisiones devengadas y pagos liquidados). El embajador es responsable de la información, fotografía y biografía que comparta para su landing.
 
-4. Confidencialidad. El embajador se compromete a no divulgar información estratégica, comercial o financiera de SACS Cloud, sus clientes o aliados, que reciba durante su participación en el programa.
+4. Cumplimiento de compromisos. Si el embajador deja de cumplir los compromisos de contenido por dos (2) meses consecutivos, SACS notificará por escrito y otorgará un periodo de regularización de 30 días naturales antes de pausar los beneficios.
 
-5. Imagen y propiedad intelectual. SACS otorga al embajador una licencia limitada, no exclusiva y revocable para usar la marca SACS conforme al manual de marca durante la vigencia del programa. La propiedad intelectual de los videos creados por el embajador permanece del embajador, quien otorga a SACS una licencia perpetua, mundial y libre de regalías para republicar y promocionar dichos videos en cualquier canal de SACS.
+5. Confidencialidad. El embajador se compromete a no divulgar información estratégica, comercial o financiera de SACS Cloud, sus clientes o aliados, que reciba durante su participación en el programa.
 
-6. Exclusividad parcial. Durante la vigencia del programa, el embajador no representará simultáneamente plataformas competidoras directas (POS / SaaS retail mexicano) sin autorización previa por escrito de SACS.
+6. Imagen y propiedad intelectual. SACS otorga al embajador una licencia limitada, no exclusiva y revocable para usar la marca SACS conforme al manual de marca durante la vigencia del programa. La propiedad intelectual de los videos creados por el embajador permanece del embajador, quien otorga a SACS una licencia perpetua, mundial y libre de regalías para republicar y promocionar dichos videos en cualquier canal de SACS.
 
-7. Terminación. Cualquiera de las partes podrá terminar el acuerdo con 30 días de aviso por escrito. Las comisiones devengadas hasta el momento de la terminación se pagarán conforme al ciclo regular.
+7. Exclusividad parcial. Durante la vigencia del programa, el embajador no representará simultáneamente plataformas competidoras directas (POS / SaaS retail mexicano) sin autorización previa por escrito de SACS.
 
-8. No relación laboral. Este acuerdo no constituye relación laboral, mercantil-asociativa ni de mandato entre las partes. El embajador actúa como colaborador independiente y es responsable de sus propias obligaciones fiscales.
+8. Terminación. Cualquiera de las partes podrá terminar el acuerdo con 30 días de aviso por escrito. Las comisiones devengadas hasta el momento de la terminación se pagarán conforme al ciclo regular y serán visibles en el portal hasta su liquidación.
 
-9. Datos personales. El tratamiento de datos personales se rige por el Aviso de Privacidad publicado en sacscloud.com/privacidad.
+9. No relación laboral. Este acuerdo no constituye relación laboral, mercantil-asociativa ni de mandato entre las partes. El embajador actúa como colaborador independiente y es responsable de sus propias obligaciones fiscales.
 
-10. Jurisdicción. Para la interpretación y cumplimiento de este acuerdo, las partes se someten a las leyes y tribunales de la Ciudad de México.`,
+10. Datos personales. El tratamiento de datos personales se rige por el Aviso de Privacidad publicado en sacscloud.com/privacidad.
+
+11. Jurisdicción. Para la interpretación y cumplimiento de este acuerdo, las partes se someten a las leyes y tribunales de la Ciudad de México.`,
       },
       distribuidor: {
         comision_pct: 30, costo_unico: 0, costo_mensual: 0,
@@ -641,7 +646,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
                 <div key={i} style={{ padding: 14, border: '1px solid #e5e5e5', borderRadius: 10, background: '#fafafa' }}>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                     <select value={b.icon || 'default'} onChange={e => updateBenefit(i, 'icon', e.target.value)} style={selectStyle}>
-                      {['gift', 'percent', 'academy', 'community', 'reward', 'leads', 'broadcast', 'calendar', 'default'].map(o => <option key={o} value={o}>{o}</option>)}
+                      {['gift', 'percent', 'academy', 'community', 'reward', 'leads', 'broadcast', 'calendar', 'link', 'dashboard', 'wallet', 'default'].map(o => <option key={o} value={o}>{o}</option>)}
                     </select>
                     <input value={b.title || ''} onChange={e => updateBenefit(i, 'title', e.target.value)} placeholder="Título" style={inputStyle} />
                     <button onClick={() => removeBenefit(i)} style={{ ...btnSm(), background: 'transparent', color: '#b93333', borderColor: 'rgba(229,75,75,0.3)' }}>✕</button>
