@@ -110,11 +110,42 @@ const tabsDef = [
   { id: 'terminos', label: 'Términos', show: true },
   { id: 'compromisos', label: 'Compromisos', show: compromisos.length > 0 },
   { id: 'tabulador', label: 'Tabulador', show: Object.keys(tabulador).length > 0 },
+  { id: 'potencial', label: 'Tu potencial', show: comisionPct > 0 },
   { id: 'porque', label: '¿Por qué SACS?', show: true },
   { id: 'firma', label: isAccepted ? 'Firmada' : (isDeclined ? 'Rechazada' : 'Aceptar y firmar'), show: true },
 ];
 const visibleTabs = tabsDef.filter(t => t.show).map(({ id, label }) => ({ id, label }));
 const initialTab = isClosed ? 'firma' : 'bienvenida';
+
+// ─── Projection data: SACS plan pricing (MXN/mes) y escenarios ───
+const SACS_PLANS = [
+  { id: 'vende',      name: 'Vende',      monthly: 600,  accent: '#94A3B8', tagline: 'Para marcas que arrancan' },
+  { id: 'controla',   name: 'Controla',   monthly: 900,  accent: '#4B7BE5', tagline: 'Multi-sucursal con orden' },
+  { id: 'fideliza',   name: 'Fideliza',   monthly: 1400, accent: '#6C5CE7', tagline: 'Más popular',   highlighted: true },
+  { id: 'automatiza', name: 'Automatiza', monthly: 5900, accent: '#1a1a1a', tagline: 'Operación con IA' },
+];
+const CLIENT_TIERS = [10, 20, 50, 100, 200, 500];
+const DEMO_SCENARIOS = [
+  { label: 'Conservador', agendadas: 5,  completadas: 3,  hint: '~5 horas/mes' },
+  { label: 'Realista',    agendadas: 10, completadas: 7,  hint: '~10 horas/mes' },
+  { label: 'Ambicioso',   agendadas: 20, completadas: 15, hint: 'Tiempo completo' },
+];
+
+const ratePartner = comisionPct / 100;
+const bonusAgendada = Number(tabulador.demo_agendada || 0);
+const bonusCompletada = Number(tabulador.demo_completada || 0);
+
+// Per-cell calculation: clientes × precio_plan × comision%
+function calcSale(planMonthly: number, clients: number) {
+  return Math.round(planMonthly * clients * ratePartner);
+}
+function calcDemoMonthly(s: typeof DEMO_SCENARIOS[0]) {
+  return s.agendadas * bonusAgendada + s.completadas * bonusCompletada;
+}
+
+// Big closing number — best case fideliza × 100 (realista) y automatiza × 500 (techo)
+const realisticClosing = calcSale(SACS_PLANS[2].monthly, 100); // Fideliza × 100
+const ceilingClosing = calcSale(SACS_PLANS[3].monthly, 500);   // Automatiza × 500
 
 const beneficioIcons: Record<string, string> = {
   gift: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>',
@@ -429,6 +460,115 @@ const partnerLandingUrl = invitation.slug_landing
           <div class="p-landing-url">{partnerLandingUrl}</div>
           <p class="p-landing-detail">
             Al firmar tu invitación se activa un link y landing con tu nombre. Cualquier prospecto que llegue por este link se atribuye a ti automáticamente.
+          </p>
+        </div>
+      </section>
+      )}
+
+      <!-- TAB: TU POTENCIAL — proyección de ganancias -->
+      {comisionPct > 0 && (
+      <section class="p-tab-panel" data-tab="potencial">
+        <div class="p-section-head">
+          <div class="p-section-eyebrow">Cuánto puedes ganar</div>
+          <h2 class="p-section-title">Tu potencial como {tipoLabel[tipo] || tipo}</h2>
+          <p class="p-section-lead">
+            Cada demo agendada y cada cliente cerrado se traducen en ingresos. Estas son las matemáticas, basadas en tu {comisionPct}% de comisión y los precios públicos de SACS.
+          </p>
+        </div>
+
+        <!-- ── Bonos por reuniones ── -->
+        {(bonusAgendada > 0 || bonusCompletada > 0) && (
+          <div class="p-projection-block">
+            <div class="p-projection-eyebrow">1 · Bonos por reuniones (mensual recurrente)</div>
+            <div class="p-projection-title">Por agendar y completar demos</div>
+            <p class="p-projection-lead">
+              {bonusAgendada > 0 && <>Cada reunión agendada te paga <strong>{fmtMoney(bonusAgendada)}</strong>{bonusCompletada > 0 && <> y cada reunión completada <strong>{fmtMoney(bonusCompletada)}</strong></>}.</>}
+              {bonusAgendada === 0 && bonusCompletada > 0 && <>Cada reunión completada te paga <strong>{fmtMoney(bonusCompletada)}</strong>.</>}
+              {' '}Esto es lo que ganas según tu ritmo:
+            </p>
+
+            <div class="p-demo-cards">
+              {DEMO_SCENARIOS.map((s, idx) => {
+                const monthly = calcDemoMonthly(s);
+                const annual = monthly * 12;
+                return (
+                  <div class={`p-demo-card ${idx === 1 ? 'p-demo-card--featured' : ''}`}>
+                    <div class="p-demo-card-label">{s.label}</div>
+                    <div class="p-demo-card-meta">{s.agendadas} agendadas · {s.completadas} completadas / mes</div>
+                    <div class="p-demo-card-amount">{fmtMoney(monthly)}</div>
+                    <div class="p-demo-card-period">/ mes en bonos</div>
+                    <div class="p-demo-card-annual">{fmtMoney(annual)} al año</div>
+                    <div class="p-demo-card-hint">{s.hint}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <!-- ── Comisiones por ventas ── -->
+        <div class="p-projection-block">
+          <div class="p-projection-eyebrow">2 · Comisiones por ventas (acumulado)</div>
+          <div class="p-projection-title">Por cerrar clientes con tu link</div>
+          <p class="p-projection-lead">
+            Cada cliente cerrado por tu link único genera <strong>{comisionPct}%</strong> de comisión sobre su mensualidad. Esto es lo que se acumula según el plan que contraten y cuántos cierres a lo largo de tu carrera como partner.
+          </p>
+
+          <div class="p-matrix-wrap">
+            <table class="p-matrix">
+              <thead>
+                <tr>
+                  <th class="p-matrix-th p-matrix-th--clients">Clientes cerrados</th>
+                  {SACS_PLANS.map(p => (
+                    <th class={`p-matrix-th ${p.highlighted ? 'p-matrix-th--featured' : ''}`} style={`--col-accent:${p.accent}`}>
+                      <div class="p-matrix-plan-name">Plan {p.name}</div>
+                      <div class="p-matrix-plan-price">{fmtMoney(p.monthly)} / mes</div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {CLIENT_TIERS.map(clients => (
+                  <tr class={clients >= 100 ? 'p-matrix-row--big' : ''}>
+                    <td class="p-matrix-td p-matrix-td--clients"><strong>{clients}</strong> clientes</td>
+                    {SACS_PLANS.map(p => {
+                      const value = calcSale(p.monthly, clients);
+                      return (
+                        <td class={`p-matrix-td ${p.highlighted ? 'p-matrix-td--featured' : ''}`} style={`--col-accent:${p.accent}`}>
+                          <div class="p-matrix-amount">{fmtMoney(value)}</div>
+                          <div class="p-matrix-sub">MXN</div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="p-matrix-note">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <span>Comisión calculada sobre el precio público mensual del plan. Si el cliente toma plan anual, la comisión se calcula sobre el equivalente mensual cobrado. Los pagos se liquidan cada 30 días desde tu portal.</span>
+          </div>
+        </div>
+
+        <!-- ── Big closing number ── -->
+        <div class="p-projection-closing">
+          <div class="p-projection-closing-eyebrow">El número que importa</div>
+          <div class="p-projection-closing-stack">
+            <div class="p-projection-closing-card p-projection-closing-card--realistic">
+              <div class="p-projection-closing-label">Escenario realista</div>
+              <div class="p-projection-closing-amount">{fmtMoney(realisticClosing)}</div>
+              <div class="p-projection-closing-detail">100 clientes en plan Fideliza con tu {comisionPct}% de comisión.</div>
+            </div>
+            <div class="p-projection-closing-card p-projection-closing-card--ceiling">
+              <div class="p-projection-closing-label">Tu techo</div>
+              <div class="p-projection-closing-amount">{fmtMoney(ceilingClosing)}</div>
+              <div class="p-projection-closing-detail">500 clientes en plan Automatiza. Una red enterprise de retailers usándote como su embajador SACS.</div>
+            </div>
+          </div>
+          <p class="p-projection-closing-bottom">
+            Y todo esto es <strong>antes</strong> de sumar tus bonos mensuales por reuniones agendadas y completadas.
           </p>
         </div>
       </section>
@@ -1111,6 +1251,287 @@ const partnerLandingUrl = invitation.slug_landing
     margin: 0 auto;
     max-width: 460px;
   }
+
+  /* ─── Tu potencial — proyección de ganancias ─── */
+  .p-projection-block { margin: 8px 0 56px; }
+  .p-projection-eyebrow {
+    font-size: 0.625rem; font-weight: 700;
+    color: #4B7BE5;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .p-projection-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 3.5vw, 2rem);
+    font-weight: 300;
+    color: #1a1a1a;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin-bottom: 12px;
+  }
+  .p-projection-lead {
+    font-size: 0.9375rem;
+    color: rgba(26,26,46,0.65);
+    line-height: 1.55;
+    margin: 0 0 28px;
+    max-width: 600px;
+  }
+  .p-projection-lead strong { color: #1a1a1a; font-weight: 600; }
+
+  /* Demo cards row */
+  .p-demo-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 720px) { .p-demo-cards { grid-template-columns: 1fr; } }
+  .p-demo-card {
+    padding: 24px 22px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 16px;
+    display: flex; flex-direction: column; gap: 4px;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+  }
+  .p-demo-card:hover { border-color: #4B7BE5; transform: translateY(-2px); }
+  .p-demo-card--featured {
+    background: linear-gradient(135deg, rgba(75,123,229,0.10), rgba(108,92,231,0.06));
+    border-color: rgba(75,123,229,0.35);
+  }
+  .p-demo-card-label {
+    font-size: 0.6875rem; font-weight: 700;
+    color: #4B7BE5;
+    letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .p-demo-card-meta {
+    font-size: 0.75rem;
+    color: rgba(26,26,46,0.6);
+    margin-bottom: 14px;
+  }
+  .p-demo-card-amount {
+    font-family: var(--font-display);
+    font-size: 2.25rem;
+    font-weight: 300;
+    color: #1a1a1a;
+    line-height: 1;
+    letter-spacing: -0.025em;
+  }
+  .p-demo-card-period {
+    font-size: 0.75rem;
+    color: rgba(26,26,46,0.55);
+    margin-top: 2px;
+  }
+  .p-demo-card-annual {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e5e5e5;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+  .p-demo-card-hint {
+    font-size: 0.6875rem;
+    color: rgba(26,26,46,0.5);
+    font-style: italic;
+    margin-top: 4px;
+  }
+  .p-demo-card--featured .p-demo-card-annual { border-color: rgba(75,123,229,0.25); }
+
+  /* Sales matrix */
+  .p-matrix-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -8px;
+    padding: 0 8px;
+    scrollbar-width: thin;
+  }
+  .p-matrix-wrap::-webkit-scrollbar { height: 6px; }
+  .p-matrix-wrap::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 3px; }
+  .p-matrix {
+    width: 100%; min-width: 560px;
+    border-collapse: collapse;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .p-matrix-th, .p-matrix-td {
+    padding: 14px 12px;
+    text-align: center;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #f0f0f0;
+    border-right: 1px solid #f0f0f0;
+  }
+  .p-matrix-th:last-child, .p-matrix-td:last-child { border-right: none; }
+  .p-matrix-th {
+    background: #fafafa;
+    font-weight: 500;
+    color: rgba(26,26,46,0.7);
+    border-bottom: 1px solid #e5e5e5;
+    padding: 18px 12px;
+  }
+  .p-matrix-th--clients {
+    text-align: left;
+    padding-left: 22px;
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: #999;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .p-matrix-plan-name {
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 2px;
+    letter-spacing: -0.005em;
+  }
+  .p-matrix-plan-price {
+    font-size: 0.6875rem;
+    color: #999;
+    font-weight: 500;
+  }
+  .p-matrix-th--featured {
+    background: linear-gradient(180deg, rgba(108,92,231,0.10), rgba(108,92,231,0.04));
+  }
+  .p-matrix-th--featured .p-matrix-plan-name { color: #6C5CE7; }
+  .p-matrix-td--clients {
+    text-align: left;
+    padding-left: 22px;
+    font-size: 0.875rem;
+    color: rgba(26,26,46,0.7);
+    background: #fafafa;
+  }
+  .p-matrix-td--clients strong {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    margin-right: 6px;
+    letter-spacing: -0.01em;
+  }
+  .p-matrix-amount {
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    line-height: 1.1;
+    letter-spacing: -0.005em;
+  }
+  .p-matrix-sub {
+    font-size: 0.625rem;
+    color: rgba(26,26,46,0.45);
+    margin-top: 1px;
+    letter-spacing: 0.05em;
+  }
+  .p-matrix-row--big .p-matrix-amount { font-size: 1.25rem; font-weight: 500; }
+  .p-matrix-row--big .p-matrix-td--clients strong { font-size: 1.5rem; color: #4B7BE5; }
+  .p-matrix-td--featured {
+    background: rgba(108,92,231,0.04);
+  }
+  .p-matrix-td--featured .p-matrix-amount {
+    color: #6C5CE7;
+    font-weight: 600;
+  }
+  .p-matrix tbody tr:last-child .p-matrix-th, .p-matrix tbody tr:last-child .p-matrix-td { border-bottom: none; }
+  .p-matrix tbody tr:hover { background: rgba(75,123,229,0.02); }
+
+  .p-matrix-note {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin-top: 18px;
+    padding: 14px 16px;
+    background: #fafafa;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    color: rgba(26,26,46,0.65);
+    line-height: 1.55;
+  }
+  .p-matrix-note svg { flex-shrink: 0; color: #4B7BE5; margin-top: 2px; }
+
+  /* Closing big number */
+  .p-projection-closing {
+    margin-top: 24px;
+    padding: 36px 32px;
+    background: #1a1a1a;
+    color: #fff;
+    border-radius: 20px;
+  }
+  .p-projection-closing-eyebrow {
+    font-size: 0.6875rem; font-weight: 700;
+    color: #93b4ff;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  .p-projection-closing-stack {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 720px) { .p-projection-closing-stack { grid-template-columns: 1fr; gap: 24px; } }
+
+  .p-projection-closing-card {
+    display: flex; flex-direction: column; gap: 6px;
+    padding: 22px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+  }
+  .p-projection-closing-card--ceiling {
+    background: linear-gradient(135deg, rgba(75,123,229,0.18), rgba(108,92,231,0.12));
+    border-color: rgba(108,92,231,0.30);
+  }
+  .p-projection-closing-label {
+    font-size: 0.625rem; font-weight: 700;
+    color: rgba(255,255,255,0.55);
+    letter-spacing: 0.14em; text-transform: uppercase;
+  }
+  .p-projection-closing-card--ceiling .p-projection-closing-label { color: #93b4ff; }
+  .p-projection-closing-amount {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 6vw, 3.25rem);
+    font-weight: 200;
+    color: #fff;
+    letter-spacing: -0.035em;
+    line-height: 1;
+    margin: 6px 0 4px;
+  }
+  .p-projection-closing-card--ceiling .p-projection-closing-amount {
+    background: linear-gradient(120deg, #93b4ff 0%, #c4b5fd 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .p-projection-closing-detail {
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.5;
+    margin-top: 6px;
+  }
+  .p-projection-closing-bottom {
+    margin: 0;
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.55;
+    text-align: center;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 20px;
+  }
+  .p-projection-closing-bottom strong { color: #fff; font-weight: 600; }
+
+  /* Dark template overrides for projection */
+  .p-dark .p-demo-card { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.08); }
+  .p-dark .p-demo-card-amount, .p-dark .p-demo-card-annual { color: #fff; }
+  .p-dark .p-demo-card-meta, .p-dark .p-demo-card-period, .p-dark .p-demo-card-hint { color: rgba(255,255,255,0.55); }
+  .p-dark .p-demo-card-annual { border-color: rgba(255,255,255,0.1); }
+  .p-dark .p-matrix { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
+  .p-dark .p-matrix-th, .p-dark .p-matrix-td { border-color: rgba(255,255,255,0.06); }
+  .p-dark .p-matrix-th { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.7); }
+  .p-dark .p-matrix-td--clients { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.7); }
+  .p-dark .p-matrix-td--clients strong, .p-dark .p-matrix-amount, .p-dark .p-matrix-plan-name { color: #fff; }
+  .p-dark .p-matrix-sub, .p-dark .p-matrix-plan-price { color: rgba(255,255,255,0.45); }
+  .p-dark .p-matrix-note { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.65); }
 
   /* ¿Por qué SACS? */
   .p-why-stats {
