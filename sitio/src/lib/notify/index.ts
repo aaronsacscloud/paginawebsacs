@@ -249,6 +249,30 @@ const templates: Record<string, Template> = {
     `,
     text: `Tu cuenta SACS Plan Fideliza está activa. Entra a ${d.loginUrl || 'app.sacscloud.com'} con ${d.email}.`,
   }),
+  partner_application_admin: (d) => ({
+    subject: `📝 Nueva aplicación de partner: ${d.nombre || ''} · ${d.tipo}`,
+    html: `
+      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <h2 style="font-size:1.25rem;margin:0 0 8px">Nueva postulación a Partners</h2>
+        <p style="color:#555;line-height:1.55;margin:0 0 16px">
+          <strong>${d.nombre || ''}</strong> aplicó al programa como <strong>${d.tipo}</strong>.
+        </p>
+        <div style="background:#fafafa;border:1px solid #ececec;padding:16px;border-radius:8px;margin:16px 0">
+          <table style="width:100%;font-size:0.875rem;color:#444;border-collapse:collapse">
+            <tr><td style="padding:5px 0;width:120px;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Folio</td><td style="padding:5px 0;font-family:monospace">${d.numero || '—'}</td></tr>
+            <tr><td style="padding:5px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Email</td><td style="padding:5px 0">${d.email || '—'}</td></tr>
+            <tr><td style="padding:5px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">WhatsApp</td><td style="padding:5px 0">${d.whatsapp || '—'}</td></tr>
+            <tr><td style="padding:5px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Empresa</td><td style="padding:5px 0">${d.empresa || '—'}</td></tr>
+            <tr><td style="padding:5px 0;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Ciudad</td><td style="padding:5px 0">${d.ciudad || '—'}</td></tr>
+          </table>
+        </div>
+        ${d.motivo && d.motivo !== '—' ? `<div style="background:#fff;border-left:3px solid #4B7BE5;padding:14px 16px;margin:14px 0;font-size:0.875rem;color:#444;line-height:1.6"><strong>¿Por qué quiere ser partner?</strong><br/>${d.motivo}</div>` : ''}
+        <a href="${d.adminUrl || 'https://www.sacscloud.com/admin/crm?tab=partners'}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Revisar y enviar invitación</a>
+        <p style="color:#999;font-size:0.75rem;margin-top:24px">La invitación está en estado <strong>draft</strong>. Edita si quieres ajustar tabulador, vigencia o beneficios y luego marca como <em>Enviada</em>.</p>
+      </div>
+    `,
+    text: `Nueva aplicación: ${d.nombre} (${d.email}) — ${d.tipo}. Revisar: ${d.adminUrl}`,
+  }),
   partner_commission_earned: (d) => {
     const fmt = (n: number) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
     return {

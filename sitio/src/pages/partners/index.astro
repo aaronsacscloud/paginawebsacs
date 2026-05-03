@@ -1,0 +1,592 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export const prerender = true;
+
+// Stats hero
+const STATS = [
+  { num: '50%', label: 'Comisión por venta directa', sub: 'sobre el monto cobrado' },
+  { num: '$500', label: 'Por prueba gratis activada', sub: 'cada nuevo trial' },
+  { num: '$300', label: 'Por demo completada', sub: 'cuando el prospecto asiste' },
+  { num: '3K+', label: 'Marcas en la red SACS', sub: 'red activa LATAM' },
+];
+
+const TIPOS = [
+  {
+    icon: '📣',
+    nombre: 'Embajador',
+    tagline: 'Para creadores con audiencia retail',
+    bullets: [
+      'Free + 50% comisión + bonos',
+      '4 videos al mes con la plataforma',
+      'Reuniones trimestrales con producto',
+      'Plan Fideliza gratis ($14k/año valor)',
+    ],
+    cta: 'Postularse',
+    featured: true,
+  },
+  {
+    icon: '🏢',
+    nombre: 'Distribuidor',
+    tagline: 'Vende SACS a tu propia red',
+    bullets: [
+      'Comisión recurrente sobre MRR',
+      'Leads asignados por zona',
+      'Certificación oficial',
+      'Manejo de relación comercial',
+    ],
+    cta: 'Postularse',
+  },
+  {
+    icon: '⚙️',
+    nombre: 'Integrador',
+    tagline: 'B2B · implementación técnica',
+    bullets: [
+      '25% sobre fees de implementación',
+      'Sandbox + soporte L2',
+      'Documentación API completa',
+      'Certificación SACS Integrator',
+    ],
+    cta: 'Postularse',
+  },
+];
+
+const FAQ = [
+  {
+    q: '¿Cuánto cuesta entrar al programa?',
+    a: '$0. El programa es gratis para embajadores aprobados. No hay cuota mensual ni de inscripción. SACS gana cuando tú generas ventas — el incentivo está alineado.',
+  },
+  {
+    q: '¿Cuándo y cómo me pagan?',
+    a: 'Cada 30 días por transferencia bancaria, PayPal o Mercado Pago. Tu portal de partner muestra desglose por concepto, cliente y referido — completamente transparente.',
+  },
+  {
+    q: '¿Qué cuento como "venta atribuida"?',
+    a: 'Cualquier prospecto que llegue por tu link único (sacscloud.com/p/tu-nombre), se registre, agende demo o cierre venta queda atribuido a ti automáticamente vía cookie de 90 días.',
+  },
+  {
+    q: '¿Qué pasa si no llego al mínimo de cuota?',
+    a: 'Para embajadores la cuota mínima es 10 sucursales activas en 12 meses. Si no la alcanzas, SACS y tú acordamos un plan de recuperación de 90 días — no es despido automático.',
+  },
+  {
+    q: '¿Necesito tener una marca personal grande?',
+    a: 'No necesariamente. Lo que vale es la calidad de tu red y tu seriedad para representar la marca. Tenemos embajadores con 5K seguidores que cierran más que algunos con 100K.',
+  },
+  {
+    q: '¿En cuánto tiempo me aprueban?',
+    a: '3 a 5 días hábiles. Validamos tu información, tu fit con la marca y tus datos de cobro. Te avisamos por correo y WhatsApp.',
+  },
+];
+---
+
+<BaseLayout
+  title="Programa Partners SACS — gana 50% recomendando el sistema operativo del retail"
+  description="Únete al programa de partners SACS. 50% de comisión por venta directa, $500 por prueba gratis activada, $300 por demo completada. Plan Fideliza gratis para tu negocio."
+  noindex={false}
+>
+  <main class="pt-page">
+
+    <!-- HERO -->
+    <section class="pt-hero">
+      <div class="pt-container">
+        <div class="pt-hero-eyebrow">Programa Partners SACS</div>
+        <h1 class="pt-hero-title">
+          Recomienda SACS.<br/>
+          <span class="pt-hero-title-accent">Cobra cada activación.</span>
+        </h1>
+        <p class="pt-hero-lead">
+          Únete a la red de partners de la plataforma de retail más usada en
+          México. SACS opera todo el embudo — tú solo compartes tu link único.
+        </p>
+        <div class="pt-hero-cta-row">
+          <a href="#aplicar" class="pt-btn pt-btn--primary">Postularme ahora</a>
+          <a href="#como-funciona" class="pt-btn pt-btn--ghost">Cómo funciona →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <section class="pt-section pt-section--stats">
+      <div class="pt-container">
+        <div class="pt-stats-grid">
+          {STATS.map(s => (
+            <div class="pt-stat">
+              <div class="pt-stat-num">{s.num}</div>
+              <div class="pt-stat-label">{s.label}</div>
+              <div class="pt-stat-sub">{s.sub}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- CÓMO FUNCIONA -->
+    <section class="pt-section" id="como-funciona">
+      <div class="pt-container">
+        <div class="pt-head">
+          <div class="pt-eyebrow">El proceso</div>
+          <h2 class="pt-title">Cómo funciona</h2>
+          <p class="pt-lead">
+            Sin sorpresas. Desde que aplicas hasta tu primera comisión, te explicamos cada paso.
+          </p>
+        </div>
+
+        <ol class="pt-steps">
+          <li class="pt-step">
+            <div class="pt-step-num">1</div>
+            <div>
+              <h3 class="pt-step-title">Aplicas en este sitio</h3>
+              <p class="pt-step-detail">Llenas un formulario de 3 minutos. Datos básicos, tu audiencia, tipo de partnership.</p>
+            </div>
+          </li>
+          <li class="pt-step">
+            <div class="pt-step-num">2</div>
+            <div>
+              <h3 class="pt-step-title">SACS revisa tu solicitud</h3>
+              <p class="pt-step-detail">Validamos fit con la marca, audiencia y datos de cobro. <strong>Respuesta en 3-5 días hábiles.</strong></p>
+            </div>
+          </li>
+          <li class="pt-step">
+            <div class="pt-step-num">3</div>
+            <div>
+              <h3 class="pt-step-title">Te activamos</h3>
+              <p class="pt-step-detail">Recibes tu link único, acceso al portal, brand kit y tu cuenta SACS Plan Fideliza gratis para usar en tu negocio.</p>
+            </div>
+          </li>
+          <li class="pt-step">
+            <div class="pt-step-num">4</div>
+            <div>
+              <h3 class="pt-step-title">Compartes y cobras</h3>
+              <p class="pt-step-detail">Cada activación que llega por tu link genera bonos automáticos. SACS opera el cierre. Tú ves todo en tu portal en tiempo real.</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- TIPOS DE PARTNER -->
+    <section class="pt-section pt-section--alt" id="tipos">
+      <div class="pt-container">
+        <div class="pt-head">
+          <div class="pt-eyebrow">Tipos de partnership</div>
+          <h2 class="pt-title">Hay un programa para cada perfil</h2>
+          <p class="pt-lead">Elige el que mejor se ajusta a tu modelo. Los tres son compatibles — algunos partners son embajador + integrador a la vez.</p>
+        </div>
+
+        <div class="pt-tipos-grid">
+          {TIPOS.map(t => (
+            <div class={`pt-tipo-card ${t.featured ? 'pt-tipo-card--featured' : ''}`}>
+              {t.featured && <div class="pt-tipo-pop">Más popular</div>}
+              <div class="pt-tipo-icon">{t.icon}</div>
+              <h3 class="pt-tipo-nombre">{t.nombre}</h3>
+              <p class="pt-tipo-tagline">{t.tagline}</p>
+              <ul class="pt-tipo-bullets">
+                {t.bullets.map(b => <li>{b}</li>)}
+              </ul>
+              <a href={`#aplicar?tipo=${t.nombre.toLowerCase()}`} class="pt-tipo-cta">{t.cta} →</a>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- LO QUE GANAS -->
+    <section class="pt-section" id="ganas">
+      <div class="pt-container">
+        <div class="pt-head">
+          <div class="pt-eyebrow">Lo que ganas</div>
+          <h2 class="pt-title">Te pagamos por cada paso del proceso</h2>
+          <p class="pt-lead">No solo por la venta final. Cada activación cuenta.</p>
+        </div>
+
+        <div class="pt-rewards-grid">
+          <div class="pt-reward">
+            <div class="pt-reward-num">$500</div>
+            <div class="pt-reward-name">Prueba gratis activada</div>
+            <p class="pt-reward-detail">Cada usuario que llega por tu link y se registra para la prueba gratis. Pago al confirmar el alta.</p>
+          </div>
+          <div class="pt-reward">
+            <div class="pt-reward-num">$300</div>
+            <div class="pt-reward-name">Demo completada</div>
+            <p class="pt-reward-detail">Cuando el prospecto asiste y completa el demo válido (mín. 25 min con tomador de decisión).</p>
+          </div>
+          <div class="pt-reward pt-reward--featured">
+            <div class="pt-reward-num">50%</div>
+            <div class="pt-reward-name">Venta directa</div>
+            <p class="pt-reward-detail">Comisión sobre el cobro de la primera factura del cliente cerrado a través de tu link.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LO QUE SACS TE DA -->
+    <section class="pt-section pt-section--alt">
+      <div class="pt-container">
+        <div class="pt-head">
+          <div class="pt-eyebrow">Lo que SACS te entrega</div>
+          <h2 class="pt-title">Todo lo que necesitas, listo el día 1</h2>
+        </div>
+
+        <div class="pt-deliverables-grid">
+          <div class="pt-deliverable">
+            <div class="pt-deliverable-icon">🔗</div>
+            <h3 class="pt-deliverable-title">Tu link único</h3>
+            <p class="pt-deliverable-detail">URL personalizada (sacscloud.com/p/tu-nombre) que atribuye automáticamente cualquier prospecto que llegue por ahí.</p>
+          </div>
+          <div class="pt-deliverable">
+            <div class="pt-deliverable-icon">📊</div>
+            <h3 class="pt-deliverable-title">Portal con métricas en vivo</h3>
+            <p class="pt-deliverable-detail">Visitas, registros, demos, comisiones, pagos — todo en tiempo real desde laptop, tablet o teléfono.</p>
+          </div>
+          <div class="pt-deliverable">
+            <div class="pt-deliverable-icon">🛍️</div>
+            <h3 class="pt-deliverable-title">Plan Fideliza gratis</h3>
+            <p class="pt-deliverable-detail">Cuenta SACS completa para tu propio negocio. Valor real $14,000 MXN/año — gratis durante el programa.</p>
+          </div>
+          <div class="pt-deliverable">
+            <div class="pt-deliverable-icon">📘</div>
+            <h3 class="pt-deliverable-title">Brand kit completo</h3>
+            <p class="pt-deliverable-detail">Logos, colores, tipografías, captions listos, hashtags y plan mensual de contenido.</p>
+          </div>
+          <div class="pt-deliverable">
+            <div class="pt-deliverable-icon">🎓</div>
+            <h3 class="pt-deliverable-title">Onboarding 1-on-1</h3>
+            <p class="pt-deliverable-detail">Sesión privada de 45 min para conocer la plataforma, resolver dudas y empezar a vender con confianza.</p>
+          </div>
+          <div class="pt-deliverable">
+            <div class="pt-deliverable-icon">🤝</div>
+            <h3 class="pt-deliverable-title">Reuniones trimestrales</h3>
+            <p class="pt-deliverable-detail">Cada 3 meses revisamos juntos cómo va, mejores prácticas, nuevos materiales, feedback al producto.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- APPLY FORM -->
+    <section class="pt-section pt-section--apply" id="aplicar">
+      <div class="pt-container pt-container--narrow">
+        <div class="pt-head pt-head--center">
+          <div class="pt-eyebrow">Postularte</div>
+          <h2 class="pt-title">Empieza tu aplicación</h2>
+          <p class="pt-lead">3 minutos. Te respondemos en 3-5 días hábiles.</p>
+        </div>
+
+        <form id="apply-form" class="pt-form" novalidate>
+          <div class="pt-form-row">
+            <label class="pt-field">
+              <span>Nombre completo *</span>
+              <input type="text" id="apply-nombre" required placeholder="Mariana López" />
+            </label>
+            <label class="pt-field">
+              <span>Email *</span>
+              <input type="email" id="apply-email" required placeholder="tu@correo.com" />
+            </label>
+          </div>
+          <div class="pt-form-row">
+            <label class="pt-field">
+              <span>WhatsApp *</span>
+              <input type="tel" id="apply-whatsapp" required placeholder="55 1234 5678" />
+            </label>
+            <label class="pt-field">
+              <span>Empresa o marca personal</span>
+              <input type="text" id="apply-empresa" placeholder="Tu marca / proyecto" />
+            </label>
+          </div>
+          <div class="pt-form-row">
+            <label class="pt-field">
+              <span>Tipo de partnership *</span>
+              <select id="apply-tipo" required>
+                <option value="embajador">Embajador (creador con audiencia)</option>
+                <option value="distribuidor">Distribuidor (red comercial propia)</option>
+                <option value="integrador">Integrador (B2B / técnico)</option>
+                <option value="reseller">Reseller (white-label)</option>
+                <option value="consultor">Consultor</option>
+              </select>
+            </label>
+            <label class="pt-field">
+              <span>Ciudad</span>
+              <input type="text" id="apply-ciudad" placeholder="CDMX, Guadalajara, MTY..." />
+            </label>
+          </div>
+          <label class="pt-field pt-field--full">
+            <span>¿Por qué te interesa ser partner SACS?</span>
+            <textarea id="apply-motivo" rows="3" placeholder="Cuéntanos sobre tu audiencia, red, o experiencia con retail..."></textarea>
+          </label>
+
+          <button type="submit" class="pt-btn pt-btn--primary pt-btn--full" id="apply-submit">Enviar mi aplicación</button>
+          <div class="pt-form-msg" id="apply-msg" hidden></div>
+          <div class="pt-form-legal">
+            Al enviar aceptas que SACS guarde tus datos para evaluar tu solicitud.
+            Lee el <a href="/privacidad" target="_blank">aviso de privacidad</a>.
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="pt-section pt-section--alt" id="faq">
+      <div class="pt-container pt-container--narrow">
+        <div class="pt-head">
+          <div class="pt-eyebrow">Preguntas frecuentes</div>
+          <h2 class="pt-title">Lo que partners actuales suelen preguntar</h2>
+        </div>
+
+        <div class="pt-faq">
+          {FAQ.map(item => (
+            <details class="pt-faq-item">
+              <summary class="pt-faq-q">
+                <span>{item.q}</span>
+                <span class="pt-faq-icon" aria-hidden="true">+</span>
+              </summary>
+              <p class="pt-faq-a">{item.a}</p>
+            </details>
+          ))}
+        </div>
+
+        <div class="pt-faq-cta">
+          <p>¿Otra pregunta?</p>
+          <a href="mailto:partners@sacscloud.com" class="pt-btn pt-btn--ghost">partners@sacscloud.com</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</BaseLayout>
+
+<style>
+  .pt-page { font-family: var(--font-body); color: #1a1a1a; }
+  .pt-container { max-width: 1100px; margin: 0 auto; padding: 0 32px; }
+  .pt-container--narrow { max-width: 720px; }
+  @media (max-width: 640px) { .pt-container { padding: 0 20px; } }
+
+  /* Hero */
+  .pt-hero {
+    padding: 96px 0 64px;
+    background: linear-gradient(180deg, #fff 0%, #FAFAF8 100%);
+  }
+  .pt-hero-eyebrow {
+    color: #4B7BE5;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  .pt-hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 6vw, 4.25rem);
+    font-weight: 300;
+    line-height: 1.05;
+    color: #1A1A1A;
+    margin: 0 0 24px;
+    letter-spacing: -0.03em;
+  }
+  .pt-hero-title-accent { color: #4B7BE5; font-weight: 400; }
+  .pt-hero-lead {
+    font-size: clamp(1.0625rem, 1.6vw, 1.25rem);
+    line-height: 1.55;
+    color: #555;
+    max-width: 620px;
+    margin: 0 0 36px;
+    font-weight: 300;
+  }
+  .pt-hero-cta-row { display: flex; gap: 14px; flex-wrap: wrap; }
+
+  /* Buttons */
+  .pt-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 16px 32px;
+    border-radius: 4px;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s, transform 0.15s;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .pt-btn--primary { background: #1A1A1A; color: #fff; }
+  .pt-btn--primary:hover { background: #4B7BE5; }
+  .pt-btn--ghost { background: transparent; color: #1A1A1A; border-color: #1A1A1A; }
+  .pt-btn--ghost:hover { background: #1A1A1A; color: #fff; }
+  .pt-btn--full { width: 100%; }
+
+  /* Sections */
+  .pt-section { padding: 96px 0; }
+  .pt-section--alt { background: #FAFAF8; }
+  .pt-section--stats { padding: 56px 0; background: #FAFAF8; }
+  .pt-section--apply { background: linear-gradient(180deg, #FAFAF8 0%, #fff 100%); }
+  @media (max-width: 720px) { .pt-section { padding: 64px 0; } }
+
+  .pt-head { margin-bottom: 56px; max-width: 680px; }
+  .pt-head--center { text-align: center; margin: 0 auto 56px; }
+  .pt-eyebrow { color: #4B7BE5; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 18px; }
+  .pt-title { font-family: var(--font-display); font-size: clamp(1.875rem, 3.4vw, 2.625rem); font-weight: 300; color: #1A1A1A; margin: 0 0 18px; letter-spacing: -0.025em; line-height: 1.15; }
+  .pt-lead { font-size: 1rem; color: #6A6A6A; line-height: 1.6; margin: 0; max-width: 580px; font-weight: 400; }
+  .pt-head--center .pt-lead { margin: 0 auto; }
+
+  /* Stats */
+  .pt-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 32px; }
+  .pt-stat { text-align: center; }
+  .pt-stat-num { font-family: var(--font-display); font-size: clamp(2rem, 3.6vw, 2.75rem); font-weight: 300; color: #1A1A1A; letter-spacing: -0.03em; line-height: 1; margin-bottom: 8px; }
+  .pt-stat-label { font-size: 0.875rem; color: #1A1A1A; font-weight: 500; margin-bottom: 4px; }
+  .pt-stat-sub { font-size: 0.75rem; color: #888; }
+
+  /* Steps */
+  .pt-steps { list-style: none; margin: 0; padding: 0; max-width: 720px; }
+  .pt-step { display: flex; gap: 24px; padding: 20px 0; border-bottom: 1px solid #ececec; }
+  .pt-step:last-child { border-bottom: none; }
+  .pt-step-num {
+    flex-shrink: 0;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: #fff;
+    color: #4B7BE5;
+    border: 1px solid #4B7BE5;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 0.9375rem;
+  }
+  .pt-step-title { font-family: var(--font-display); font-size: 1.125rem; font-weight: 500; color: #1A1A1A; margin: 4px 0 6px; letter-spacing: -0.01em; }
+  .pt-step-detail { font-size: 0.9375rem; color: #6A6A6A; line-height: 1.6; margin: 0; }
+  .pt-step-detail strong { color: #1A1A1A; font-weight: 600; }
+
+  /* Tipos */
+  .pt-tipos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+  .pt-tipo-card { position: relative; background: #fff; border: 1px solid #ececec; border-radius: 4px; padding: 36px 28px; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.18s, transform 0.18s; }
+  .pt-tipo-card:hover { border-color: #4B7BE5; transform: translateY(-2px); }
+  .pt-tipo-card--featured { border-color: #4B7BE5; box-shadow: 0 12px 28px -12px rgba(75,123,229,0.18); }
+  .pt-tipo-pop { position: absolute; top: -12px; left: 28px; padding: 4px 12px; background: #4B7BE5; color: #fff; font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.10em; border-radius: 999px; }
+  .pt-tipo-icon { font-size: 2rem; line-height: 1; margin-bottom: 8px; }
+  .pt-tipo-nombre { font-family: var(--font-display); font-size: 1.375rem; font-weight: 500; color: #1A1A1A; margin: 0; letter-spacing: -0.015em; }
+  .pt-tipo-tagline { font-size: 0.875rem; color: #888; margin: 0 0 14px; }
+  .pt-tipo-bullets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .pt-tipo-bullets li { font-size: 0.9375rem; color: #555; padding-left: 20px; position: relative; line-height: 1.5; }
+  .pt-tipo-bullets li::before { content: '✓'; position: absolute; left: 0; color: #4B7BE5; font-weight: 700; }
+  .pt-tipo-cta { display: inline-block; margin-top: 16px; padding: 12px 0; color: #4B7BE5; font-size: 0.875rem; font-weight: 600; text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.15s; }
+  .pt-tipo-cta:hover { border-bottom-color: #4B7BE5; }
+
+  /* Rewards */
+  .pt-rewards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; }
+  .pt-reward { padding: 32px 28px; background: #fff; border: 1px solid #ececec; border-radius: 4px; text-align: left; }
+  .pt-reward--featured { border-color: #4B7BE5; background: linear-gradient(180deg, rgba(75,123,229,0.04), #fff); }
+  .pt-reward-num { font-family: var(--font-display); font-size: clamp(2.5rem, 4.5vw, 3.5rem); font-weight: 300; color: #4B7BE5; line-height: 1; letter-spacing: -0.03em; margin-bottom: 12px; }
+  .pt-reward-name { font-family: var(--font-display); font-size: 1.0625rem; font-weight: 500; color: #1A1A1A; margin-bottom: 8px; letter-spacing: -0.01em; }
+  .pt-reward-detail { font-size: 0.875rem; color: #6A6A6A; line-height: 1.55; margin: 0; }
+
+  /* Deliverables */
+  .pt-deliverables-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 28px; }
+  .pt-deliverable { display: flex; flex-direction: column; gap: 8px; }
+  .pt-deliverable-icon { font-size: 1.75rem; line-height: 1; margin-bottom: 4px; }
+  .pt-deliverable-title { font-family: var(--font-display); font-size: 1.125rem; font-weight: 500; color: #1A1A1A; margin: 0; letter-spacing: -0.01em; }
+  .pt-deliverable-detail { font-size: 0.9375rem; color: #6A6A6A; line-height: 1.6; margin: 0; }
+
+  /* Apply form */
+  .pt-form { display: flex; flex-direction: column; gap: 18px; margin-top: 32px; }
+  .pt-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 640px) { .pt-form-row { grid-template-columns: 1fr; } }
+  .pt-field { display: flex; flex-direction: column; gap: 6px; }
+  .pt-field--full { width: 100%; }
+  .pt-field > span { font-size: 0.6875rem; font-weight: 600; color: #999; letter-spacing: 0.08em; text-transform: uppercase; }
+  .pt-field input, .pt-field select, .pt-field textarea {
+    width: 100%; box-sizing: border-box;
+    padding: 13px 14px; font-family: inherit; font-size: 0.9375rem;
+    color: #1a1a1a; border: 1px solid #ececec; border-radius: 4px;
+    background: #fff; outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .pt-field input:focus, .pt-field select:focus, .pt-field textarea:focus {
+    border-color: #4B7BE5; box-shadow: 0 0 0 3px rgba(75,123,229,0.08);
+  }
+  .pt-field textarea { resize: vertical; min-height: 90px; }
+  .pt-form-msg {
+    padding: 12px 14px; border-radius: 4px; font-size: 0.875rem;
+    background: rgba(42,181,160,0.10); color: #1A8F7A;
+    border-left: 3px solid #2AB5A0;
+  }
+  .pt-form-msg.is-error { background: rgba(229,75,75,0.08); color: #b93333; border-left-color: #E54B4B; }
+  .pt-form-legal { font-size: 0.75rem; color: #999; text-align: center; line-height: 1.5; }
+  .pt-form-legal a { color: #4B7BE5; }
+
+  /* FAQ */
+  .pt-faq { display: flex; flex-direction: column; gap: 0; margin-top: 32px; }
+  .pt-faq-item { border-bottom: 1px solid #ececec; }
+  .pt-faq-q {
+    list-style: none; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 22px 0;
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 500;
+    color: #1A1A1A;
+    letter-spacing: -0.005em;
+  }
+  .pt-faq-q::-webkit-details-marker { display: none; }
+  .pt-faq-icon { font-size: 1.5rem; color: #4B7BE5; transition: transform 0.2s; line-height: 1; flex-shrink: 0; margin-left: 16px; }
+  details[open] .pt-faq-icon { transform: rotate(45deg); }
+  .pt-faq-a { font-size: 0.9375rem; color: #555; line-height: 1.65; margin: 0 0 22px; padding-right: 32px; }
+  .pt-faq-cta { text-align: center; margin-top: 48px; padding-top: 32px; border-top: 1px solid #ececec; }
+  .pt-faq-cta p { font-size: 0.9375rem; color: #888; margin: 0 0 16px; }
+</style>
+
+<script>
+  // Pre-fill tipo from URL hash query (#aplicar?tipo=embajador format)
+  (function() {
+    const hash = window.location.hash;
+    const m = hash.match(/tipo=([a-z]+)/i);
+    if (m) {
+      const select = document.getElementById('apply-tipo') as HTMLSelectElement | null;
+      if (select) select.value = m[1].toLowerCase();
+    }
+  })();
+
+  const form = document.getElementById('apply-form') as HTMLFormElement | null;
+  const btn = document.getElementById('apply-submit') as HTMLButtonElement | null;
+  const msg = document.getElementById('apply-msg') as HTMLDivElement | null;
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!btn || !msg) return;
+
+    const nombre = (document.getElementById('apply-nombre') as HTMLInputElement).value.trim();
+    const email = (document.getElementById('apply-email') as HTMLInputElement).value.trim();
+    const whatsapp = (document.getElementById('apply-whatsapp') as HTMLInputElement).value.trim();
+    const empresa = (document.getElementById('apply-empresa') as HTMLInputElement).value.trim();
+    const tipo = (document.getElementById('apply-tipo') as HTMLSelectElement).value;
+    const ciudad = (document.getElementById('apply-ciudad') as HTMLInputElement).value.trim();
+    const motivo = (document.getElementById('apply-motivo') as HTMLTextAreaElement).value.trim();
+
+    if (!nombre || !email || !whatsapp) {
+      msg.textContent = 'Nombre, email y WhatsApp son requeridos';
+      msg.className = 'pt-form-msg is-error';
+      msg.hidden = false;
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Enviando…';
+    msg.hidden = true;
+
+    try {
+      const res = await fetch('/api/partners/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, email, whatsapp, empresa, tipo, ciudad, motivo }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error');
+
+      msg.innerHTML = '<strong>✓ Recibimos tu aplicación.</strong> Te contactaremos por correo y WhatsApp en 3-5 días hábiles.';
+      msg.className = 'pt-form-msg';
+      msg.hidden = false;
+      form.reset();
+      btn.textContent = 'Solicitud enviada';
+    } catch (err: any) {
+      msg.textContent = 'No se pudo enviar. Intenta de nuevo o escríbenos a partners@sacscloud.com.';
+      msg.className = 'pt-form-msg is-error';
+      msg.hidden = false;
+      btn.disabled = false;
+      btn.textContent = 'Reintentar';
+    }
+  });
+</script>
