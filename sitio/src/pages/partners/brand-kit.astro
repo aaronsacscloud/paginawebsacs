@@ -140,12 +140,94 @@ const CONTENT_PLAN = {
   ],
 };
 
+const VERTICALS = [
+  {
+    id: 'moda',
+    nombre: 'Moda y boutiques',
+    icon: '👗',
+    pains: ['Stock entre talla / color', 'Devoluciones', 'Temporada que cambia', 'Influencer marketing'],
+    angulos: [
+      'Tour de cómo SACS maneja variantes (talla×color×material) sin caos',
+      '"Devolución sin drama": muestra el flujo de cambio en 30 segundos',
+      'Comparativa: tu sistema viejo vs SACS para cierre de mes',
+      'Cómo mides ROI de campaña con influencer (link unique → ventas)',
+    ],
+    hashtags: ['#ModaMexicana', '#BoutiqueMx', '#RetailFashion'],
+  },
+  {
+    id: 'farmacia',
+    nombre: 'Farmacias',
+    icon: '💊',
+    pains: ['Caducidades', 'Recetas', 'Medicamento controlado', 'Precios IEPS'],
+    angulos: [
+      'Alerta de caducidad antes que CONAMED te alcance',
+      'Cómo SACS automatiza el reporte de medicamento controlado',
+      'Receta digital + historial del paciente en 1 pantalla',
+      'Reabasto predictivo: SACS te dice qué pedir',
+    ],
+    hashtags: ['#FarmaciasMx', '#PymeFarmaceutica'],
+  },
+  {
+    id: 'restaurantes',
+    nombre: 'Restaurantes',
+    icon: '🍽️',
+    pains: ['Mesa abierta', 'Cocina vs caja', 'Mermas', 'Comandas confusas'],
+    angulos: [
+      'Comanda de cocina sin papel: muestra el flujo end-to-end',
+      'Cierre de turno en 5 min vs 1 hora con caja a mano',
+      'Receta + costo + merma: el cálculo que te ahorra el mes',
+      'POS + delivery (Rappi/Uber) en una sola pantalla',
+    ],
+    hashtags: ['#RestaurantesMx', '#FoodservMx', '#GastronomiaMx'],
+  },
+  {
+    id: 'ferreteria',
+    nombre: 'Ferreterías',
+    icon: '🔧',
+    pains: ['Catálogo enorme', 'Ventas a contratistas', 'Crédito', 'Multimarca'],
+    angulos: [
+      'Buscar tornillos por código en 2 segundos, no 5 minutos',
+      'Línea de crédito por cliente: cómo lo manejas sin perderte',
+      'Proveedor te subió 8% — cómo actualizas 2,000 SKUs sin volverte loco',
+      'Mostrador físico + e-commerce mostrando el mismo stock',
+    ],
+    hashtags: ['#FerreteriasMx', '#PymeMexicana'],
+  },
+  {
+    id: 'belleza',
+    nombre: 'Salones y barberías',
+    icon: '💇',
+    pains: ['Citas', 'Servicios + retail', 'Comisiones a estilistas', 'Programa de lealtad'],
+    angulos: [
+      'Agenda + venta de productos + comisiones en una app',
+      'Cliente que recomienda → puntos automáticos. Programa que vende',
+      'Reporte por estilista: quién factura más, qué servicios',
+      'Recordatorio de cita por WhatsApp = -40% no-shows',
+    ],
+    hashtags: ['#SalonesMx', '#BarberiaMx'],
+  },
+  {
+    id: 'abarrotes',
+    nombre: 'Abarrotes y minisúper',
+    icon: '🛒',
+    pains: ['Margen apretado', 'Robos / mermas', 'Proveedores múltiples', 'Báscula + caja'],
+    angulos: [
+      'Margen real por producto: cuál te da $ y cuál no',
+      'Conteo físico nocturno: detecta merma antes que tú',
+      'Recibo CFDI 4.0 sin tener que aprender de fiscal',
+      'Crédito a vecinos sin libreta: SACS lleva la cuenta',
+    ],
+    hashtags: ['#AbarrotesMx', '#MinisúperMx'],
+  },
+];
+
 const SECTIONS = [
   { id: 'logos', label: 'Logos' },
   { id: 'tipografia', label: 'Tipografía' },
   { id: 'colores', label: 'Colores' },
   { id: 'voz', label: 'Voz y tono' },
   { id: 'captions', label: 'Captions' },
+  { id: 'verticales', label: 'Ideas por vertical' },
   { id: 'plan', label: 'Plan del mes' },
   { id: 'reglas', label: 'Reglas' },
 ];
@@ -441,9 +523,50 @@ const SECTIONS = [
   </section>
 
   <!-- ════════════════════════════════════════
+       IDEAS POR VERTICAL
+       ════════════════════════════════════════ -->
+  <section class="bk-section bk-section--alt" id="verticales">
+    <div class="bk-container">
+      <div class="bk-section-head">
+        <div class="bk-section-eyebrow">06 · Ideas por vertical</div>
+        <h2 class="bk-section-title">Contenido específico por giro</h2>
+        <p class="bk-section-lead">
+          Cada vertical tiene sus propios pains. Habla de lo que le duele a tu audiencia.
+          Estos son ángulos probados que conectan rápido por giro.
+        </p>
+      </div>
+
+      <div class="bk-vert-grid">
+        {VERTICALS.map(v => (
+          <div class="bk-vert-card">
+            <div class="bk-vert-head">
+              <span class="bk-vert-icon" aria-hidden="true">{v.icon}</span>
+              <h3 class="bk-vert-name">{v.nombre}</h3>
+            </div>
+
+            <div class="bk-vert-pains">
+              <span class="bk-vert-pains-label">Pains típicos:</span>
+              {v.pains.map(p => <span class="bk-vert-pain-pill">{p}</span>)}
+            </div>
+
+            <div class="bk-vert-section-label">Ángulos de contenido</div>
+            <ol class="bk-vert-angulos">
+              {v.angulos.map(a => <li>{a}</li>)}
+            </ol>
+
+            <div class="bk-vert-tags">
+              {v.hashtags.map(h => <span class="bk-vert-tag">{h}</span>)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
        PLAN DEL MES
        ════════════════════════════════════════ -->
-  <section class="bk-section bk-section--alt" id="plan">
+  <section class="bk-section" id="plan">
     <div class="bk-container">
       <div class="bk-section-head">
         <div class="bk-section-eyebrow">06 · Plan de contenido</div>
@@ -1164,6 +1287,98 @@ const SECTIONS = [
   /* Smooth anchor scroll w/ offset for sticky nav */
   html { scroll-behavior: smooth; }
   [id] { scroll-margin-top: 80px; }
+
+  /* ─── Ideas por vertical ─────────────────────── */
+  .bk-vert-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 18px;
+    margin-top: 32px;
+  }
+  .bk-vert-card {
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 14px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    transition: border-color 0.18s, transform 0.18s;
+  }
+  .bk-vert-card:hover {
+    border-color: #cfd6e2;
+    transform: translateY(-2px);
+  }
+  .bk-vert-head {
+    display: flex; align-items: center; gap: 10px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .bk-vert-icon { font-size: 1.5rem; }
+  .bk-vert-name {
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: #1A1A1A;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .bk-vert-pains {
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  }
+  .bk-vert-pains-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-right: 4px;
+  }
+  .bk-vert-pain-pill {
+    padding: 3px 9px;
+    background: rgba(229,75,75,0.08);
+    color: #b93333;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+  }
+  .bk-vert-section-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #4B7BE5;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    margin-top: 4px;
+  }
+  .bk-vert-angulos {
+    list-style: decimal;
+    padding-left: 20px;
+    margin: 0;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .bk-vert-angulos li {
+    font-size: 0.875rem;
+    color: #555;
+    line-height: 1.55;
+  }
+  .bk-vert-tags {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    padding-top: 12px;
+    border-top: 1px solid #f0f0f0;
+  }
+  .bk-vert-tag {
+    padding: 4px 10px;
+    background: #f5f5f7;
+    color: #666;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: 'SF Mono', Menlo, monospace;
+  }
+  @media (max-width: 720px) {
+    .bk-vert-grid { gap: 14px; }
+    .bk-vert-card { padding: 20px; }
+  }
 
   /* Print: hide nav, expand */
   @media print {
