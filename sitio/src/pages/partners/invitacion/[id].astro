@@ -409,22 +409,36 @@ const partnerLandingUrl = invitation.slug_landing
 
           <div class="p-bw-verticals">
             {PRIORITY_SECTORS.map((sector, i) => (
-              <div class="p-bw-vertical" style={`--accent: ${sector.color}; --accent-bg: ${sector.bgColor};`}>
-                <div class="p-bw-vertical-head">
-                  <div class="p-bw-vertical-rank">{String(i + 1).padStart(2, '0')}</div>
-                  <div class="p-bw-vertical-icon">{SECTOR_EMOJIS[sector.iconId] || '🏪'}</div>
+              <article class="p-bw-vertical" style={`--accent: ${sector.color}; --accent-bg: ${sector.bgColor};`}>
+                {sector.image && (
+                  <div class="p-bw-vertical-media">
+                    <img
+                      src={sector.image}
+                      alt={sector.label}
+                      width="800"
+                      height="533"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <div class="p-bw-vertical-rank">{String(i + 1).padStart(2, '0')}</div>
+                  </div>
+                )}
+                <div class="p-bw-vertical-body">
+                  <div class="p-bw-vertical-eyebrow">
+                    <span class="p-bw-vertical-dot" aria-hidden="true"></span>
+                    {sector.description}
+                  </div>
+                  <h3 class="p-bw-vertical-name">{sector.label}</h3>
+                  <div class="p-bw-vertical-chips">
+                    {sector.personalizations.slice(0, 4).map((p) => (
+                      <span class="p-bw-vertical-chip">{p.label}</span>
+                    ))}
+                  </div>
+                  <div class="p-bw-vertical-foot">
+                    +{sector.personalizations.length - 4} módulos especializados
+                  </div>
                 </div>
-                <div class="p-bw-vertical-name">{sector.label}</div>
-                <div class="p-bw-vertical-desc">{sector.description}</div>
-                <div class="p-bw-vertical-chips">
-                  {sector.personalizations.slice(0, 4).map((p) => (
-                    <span class="p-bw-vertical-chip">{p.label}</span>
-                  ))}
-                </div>
-                <div class="p-bw-vertical-foot">
-                  +{sector.personalizations.length - 4} módulos más
-                </div>
-              </div>
+              </article>
             ))}
           </div>
 
@@ -3361,88 +3375,137 @@ const partnerLandingUrl = invitation.slug_landing
     margin: 0;
   }
 
-  /* Verticals */
+  /* Verticals — Squareup-style: image-first, generous spacing */
   .p-bw-verticals {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 16px;
-    margin-top: 32px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px;
+    margin-top: 48px;
+  }
+  @media (max-width: 720px) {
+    .p-bw-verticals {
+      grid-template-columns: 1fr;
+      gap: 24px;
+      margin-top: 36px;
+    }
   }
   .p-bw-vertical {
     position: relative;
-    padding: 24px 20px 20px;
     background: #fff;
-    border: 1px solid #ececec;
-    border-radius: 12px;
-    transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+    border-radius: 16px;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-  }
-  .p-bw-vertical::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    background: var(--accent, #4B7BE5);
-    border-radius: 12px 12px 0 0;
-    opacity: 0.85;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
   }
   .p-bw-vertical:hover {
-    transform: translateY(-3px);
-    border-color: var(--accent, #4B7BE5);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.08);
   }
-  .p-bw-vertical-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
+  .p-bw-vertical-media {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    background: #f4f2ee;
+  }
+  .p-bw-vertical-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.6s ease;
+  }
+  .p-bw-vertical:hover .p-bw-vertical-media img {
+    transform: scale(1.04);
   }
   .p-bw-vertical-rank {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #1A1A1A;
     font-family: var(--font-display);
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 600;
-    color: #bbb;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.08em;
+    padding: 6px 10px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   }
-  .p-bw-vertical-icon { font-size: 1.75rem; line-height: 1; }
+  .p-bw-vertical-body {
+    padding: 28px 28px 32px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  @media (max-width: 720px) {
+    .p-bw-vertical-body { padding: 22px 22px 26px; }
+  }
+  .p-bw-vertical-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.7rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+  .p-bw-vertical-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent, #4B7BE5);
+    flex-shrink: 0;
+  }
   .p-bw-vertical-name {
     font-family: var(--font-display);
-    font-size: 1.0625rem;
+    font-size: 1.5rem;
     font-weight: 600;
     color: #1A1A1A;
-    margin-bottom: 4px;
-    letter-spacing: -0.01em;
+    margin: 0 0 20px;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
   }
-  .p-bw-vertical-desc {
-    font-size: 0.8125rem;
-    color: #888;
-    line-height: 1.5;
-    margin-bottom: 14px;
+  @media (max-width: 720px) {
+    .p-bw-vertical-name { font-size: 1.3125rem; margin-bottom: 16px; }
   }
   .p-bw-vertical-chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 12px;
+    gap: 8px;
+    margin-bottom: 20px;
   }
   .p-bw-vertical-chip {
-    font-size: 0.7rem;
-    padding: 4px 10px;
-    background: var(--accent-bg, rgba(75, 123, 229, 0.08));
-    color: var(--accent, #4B7BE5);
-    border-radius: 999px;
+    font-size: 0.75rem;
+    padding: 7px 12px;
+    background: #FAFAF8;
+    color: #1A1A1A;
+    border: 1px solid #ececea;
+    border-radius: 8px;
     font-weight: 500;
     letter-spacing: -0.005em;
     line-height: 1.2;
+    transition: background 0.18s, border-color 0.18s, color 0.18s;
+  }
+  .p-bw-vertical:hover .p-bw-vertical-chip {
+    background: var(--accent-bg, rgba(75, 123, 229, 0.06));
+    border-color: transparent;
+    color: var(--accent, #4B7BE5);
   }
   .p-bw-vertical-foot {
     margin-top: auto;
-    padding-top: 8px;
-    font-size: 0.7rem;
-    color: #aaa;
+    padding-top: 12px;
+    font-size: 0.75rem;
+    color: #999;
     font-weight: 500;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.005em;
+    border-top: 1px solid #f0f0ee;
   }
   .p-bw-vertical-detail {
     font-size: 0.8125rem;

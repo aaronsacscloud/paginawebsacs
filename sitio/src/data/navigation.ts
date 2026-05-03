@@ -24,6 +24,7 @@ export interface BusinessSector {
   iconId: string;
   color: string;
   bgColor: string;
+  image?: string;
   personalizations: SectorPersonalization[];
 }
 
@@ -54,6 +55,7 @@ export const businessSectors: BusinessSector[] = [
     iconId: 'clothing',
     color: '#EC4899',
     bgColor: 'rgba(236, 72, 153, 0.1)',
+    image: '/images/verticales/tiendas-de-ropa.webp',
   },
   {
     label: 'Zapaterías',
@@ -73,6 +75,7 @@ export const businessSectors: BusinessSector[] = [
     iconId: 'shoes',
     color: '#F97316',
     bgColor: 'rgba(249, 115, 22, 0.1)',
+    image: '/images/verticales/zapaterias.webp',
   },
   {
     label: 'Joyerías',
@@ -92,6 +95,7 @@ export const businessSectors: BusinessSector[] = [
     iconId: 'jewelry',
     color: '#3B82F6',
     bgColor: 'rgba(59, 130, 246, 0.1)',
+    image: '/images/verticales/joyerias.webp',
   },
   {
     label: 'Retail de Entretenimiento',
@@ -111,6 +115,7 @@ export const businessSectors: BusinessSector[] = [
     iconId: 'entertainment',
     color: '#A855F7',
     bgColor: 'rgba(168, 85, 247, 0.1)',
+    image: '/images/verticales/retail-entretenimiento.webp',
   },
   {
     label: 'Papelería y Arte',
@@ -130,6 +135,7 @@ export const businessSectors: BusinessSector[] = [
     iconId: 'stationery',
     color: '#22C55E',
     bgColor: 'rgba(34, 197, 94, 0.1)',
+    image: '/images/verticales/papeleria-arte.webp',
   },
   {
     label: 'Parques y Atracciones',
@@ -149,6 +155,7 @@ export const businessSectors: BusinessSector[] = [
     iconId: 'themepark',
     color: '#E11D48',
     bgColor: 'rgba(225, 29, 72, 0.1)',
+    image: '/images/verticales/parques-atracciones.webp',
   },
   {
     label: 'Electrónica',
@@ -168,6 +175,7 @@ export const businessSectors: BusinessSector[] = [
     iconId: 'electronics',
     color: '#6366F1',
     bgColor: 'rgba(99, 102, 241, 0.1)',
+    image: '/images/verticales/electronica.webp',
   },
   {
     label: 'Fundas para Celulares',
@@ -187,6 +195,7 @@ export const businessSectors: BusinessSector[] = [
     iconId: 'phonecase',
     color: '#14B8A6',
     bgColor: 'rgba(20, 184, 166, 0.1)',
+    image: '/images/verticales/fundas-celulares.webp',
   },
   {
     label: 'Minisúpers',
@@ -206,6 +215,7 @@ export const businessSectors: BusinessSector[] = [
     iconId: 'minisuper',
     color: '#F97316',
     bgColor: 'rgba(249, 115, 22, 0.1)',
+    image: '/images/verticales/minisupers.webp',
   },
   {
     label: 'Vinos y Licores',
@@ -225,6 +235,7 @@ export const businessSectors: BusinessSector[] = [
     iconId: 'wine',
     color: '#7C2D12',
     bgColor: 'rgba(124, 45, 18, 0.1)',
+    image: '/images/verticales/vinos-licores.webp',
   },
 ];
 
