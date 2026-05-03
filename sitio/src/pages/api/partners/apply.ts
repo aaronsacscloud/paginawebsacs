@@ -21,23 +21,69 @@ function buildNotas(plain: string, meta: Record<string, any>): string {
   return `${plain || ''}${NOTAS_SEP}${JSON.stringify(meta)}`;
 }
 
+// Simple in-memory rate limiter (per-IP, per-hour).
+// Para serverless serverless functions el state se pierde entre invocations,
+// pero en Vercel hot-warm Lambda funciona dentro de un mismo container.
+// Para producción seria usar Redis/Upstash; v1 esto reduce abuso casual.
+const RATE_LIMIT = 5; // applications per hour per IP
+const RATE_WINDOW_MS = 60 * 60 * 1000;
+const ipBuckets = new Map<string, { count: number; resetAt: number }>();
+function checkRateLimit(ip: string): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  const bucket = ipBuckets.get(ip);
+  if (!bucket || bucket.resetAt < now) {
+    ipBuckets.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return { allowed: true, remaining: RATE_LIMIT - 1 };
+  }
+  if (bucket.count >= RATE_LIMIT) return { allowed: false, remaining: 0 };
+  bucket.count += 1;
+  return { allowed: true, remaining: RATE_LIMIT - bucket.count };
+}
+
+function isValidEmail(s: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+}
+function isLikelySpam(s: string) {
+  // very rough: more than 3 URLs, or all caps, or repeated chars
+  const urlCount = (s.match(/https?:\/\//gi) || []).length;
+  if (urlCount > 3) return true;
+  if (s.length > 30 && s === s.toUpperCase()) return true;
+  if (/(.)\1{8,}/.test(s)) return true;
+  return false;
+}
+
 export const POST: APIRoute = async ({ request, clientAddress }) => {
   try {
+    // Rate limit
+    const ip = clientAddress || 'unknown';
+    const rl = checkRateLimit(ip);
+    if (!rl.allowed) {
+      return j({ error: 'Demasiadas solicitudes. Intenta de nuevo en 1 hora.' }, 429);
+    }
+
     const body = await request.json() as {
       nombre?: string; email?: string; whatsapp?: string;
       empresa?: string; tipo?: string; ciudad?: string; motivo?: string;
     };
 
-    const nombre = (body.nombre || '').trim();
-    const email = (body.email || '').trim().toLowerCase();
-    const whatsapp = (body.whatsapp || '').trim();
+    const nombre = (body.nombre || '').trim().slice(0, 120);
+    const email = (body.email || '').trim().toLowerCase().slice(0, 200);
+    const whatsapp = (body.whatsapp || '').trim().slice(0, 30);
     const tipo = ALLOWED_TIPOS.includes(body.tipo || '') ? body.tipo : 'embajador';
-    const empresa = (body.empresa || '').trim() || null;
-    const ciudad = (body.ciudad || '').trim() || null;
-    const motivo = (body.motivo || '').trim() || null;
+    const empresa = (body.empresa || '').trim().slice(0, 120) || null;
+    const ciudad = (body.ciudad || '').trim().slice(0, 80) || null;
+    const motivo = (body.motivo || '').trim().slice(0, 1000) || null;
 
     if (!nombre || !email || !whatsapp) {
       return j({ error: 'nombre, email y whatsapp son requeridos' }, 400);
+    }
+    if (!isValidEmail(email)) {
+      return j({ error: 'Email inválido' }, 400);
+    }
+    if (motivo && isLikelySpam(motivo)) {
+      // Don't reveal anti-spam logic; just pretend success
+      console.warn('[apply] likely spam from', ip, ':', motivo.slice(0, 80));
+      return j({ ok: true });
     }
 
     // Check duplicate by email (avoid spam) — if there's already a draft/sent
