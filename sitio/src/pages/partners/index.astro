@@ -51,7 +51,28 @@ const TIPOS = [
   },
 ];
 
-const FAQ = [
+// JSON-LD structured data for SEO
+const programSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  name: 'Programa Partners SACS',
+  serviceType: 'Programa de afiliados',
+  provider: {
+    '@type': 'Organization',
+    name: 'SACS Cloud',
+    url: 'https://www.sacscloud.com',
+  },
+  areaServed: { '@type': 'Country', name: 'Mexico' },
+  description: '50% de comisión por venta directa, $500 por prueba gratis activada, $300 por demo completada. Para creadores con audiencia retail, distribuidores, integradores y consultores.',
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'MXN',
+    description: 'Programa gratuito para partners aprobados',
+  },
+};
+
+const FAQ_DATA = [
   {
     q: '¿Cuánto cuesta entrar al programa?',
     a: '$0. El programa es gratis para embajadores aprobados. No hay cuota mensual ni de inscripción. SACS gana cuando tú generas ventas — el incentivo está alineado.',
@@ -77,12 +98,23 @@ const FAQ = [
     a: '3 a 5 días hábiles. Validamos tu información, tu fit con la marca y tus datos de cobro. Te avisamos por correo y WhatsApp.',
   },
 ];
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: FAQ_DATA.map(item => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: { '@type': 'Answer', text: item.a },
+  })),
+};
 ---
 
 <BaseLayout
   title="Programa Partners SACS — gana 50% recomendando el sistema operativo del retail"
   description="Únete al programa de partners SACS. 50% de comisión por venta directa, $500 por prueba gratis activada, $300 por demo completada. Plan Fideliza gratis para tu negocio."
   noindex={false}
+  structuredData={[programSchema, faqSchema]}
 >
   <main class="pt-page">
 
@@ -332,7 +364,7 @@ const FAQ = [
         </div>
 
         <div class="pt-faq">
-          {FAQ.map(item => (
+          {FAQ_DATA.map(item => (
             <details class="pt-faq-item">
               <summary class="pt-faq-q">
                 <span>{item.q}</span>

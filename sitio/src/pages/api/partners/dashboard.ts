@@ -33,9 +33,14 @@ export const GET: APIRoute = async ({ request, url }) => {
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
   let dealsQuery = supabase
     .from('deals')
-    .select('id, valor_total, valor_mensual, stage, closed_at, owner_id, nombre, probabilidad')
+    .select('id, valor_total, valor_mensual, stage, closed_at, owner_id, referrer_partner_id, nombre, probabilidad')
     .is('archived_at', null);
-  if (scopePartnerId) dealsQuery = dealsQuery.eq('owner_id', scopePartnerId);
+  // Para vista de partner: filtrar por referrer_partner_id (modelo nuevo)
+  // o owner_id (compat con deals viejos sin referrer). OR-condition en
+  // Supabase: usamos .or() para incluir ambos casos.
+  if (scopePartnerId) {
+    dealsQuery = dealsQuery.or(`referrer_partner_id.eq.${scopePartnerId},owner_id.eq.${scopePartnerId}`);
+  }
   const { data: deals } = await dealsQuery;
 
   const allDeals = deals || [];
@@ -67,14 +72,18 @@ export const GET: APIRoute = async ({ request, url }) => {
     const { data: allPartners } = await supabase.from('team_members').select('id').eq('rol', 'partner');
     const { data: allDealsAll } = await supabase
       .from('deals')
-      .select('owner_id, valor_mensual, stage')
+      .select('owner_id, referrer_partner_id, valor_mensual, stage')
       .eq('stage', 'cerrada_ganada')
       .gte('closed_at', monthStart);
 
     const partnerMrr: Record<string, number> = {};
     for (const p of allPartners || []) partnerMrr[p.id] = 0;
     for (const d of allDealsAll || []) {
-      if (d.owner_id) partnerMrr[d.owner_id] = (partnerMrr[d.owner_id] || 0) + (Number(d.valor_mensual) || 0);
+      // Atribución prefer referrer (modelo nuevo) sobre owner (legacy)
+      const attribTo = (d as any).referrer_partner_id || d.owner_id;
+      if (attribTo && partnerMrr[attribTo] !== undefined) {
+        partnerMrr[attribTo] = (partnerMrr[attribTo] || 0) + (Number(d.valor_mensual) || 0);
+      }
     }
 
     const ranked = Object.entries(partnerMrr)
@@ -99,9 +108,8 @@ export const GET: APIRoute = async ({ request, url }) => {
       .select('id, nombre, email, rol, default_commission_pct')
       .eq('rol', 'partner');
     for (const p of partners || []) {
-      const myDeals = allDeals.filter(d => d.owner_id === p.id);
+      const myDeals = allDeals.filter(d => (d as any).referrer_partner_id === p.id || d.owner_id === p.id);
       const myWon = myDeals.filter(d => d.stage === 'cerrada_ganada');
-      const myPending = (commissions || []).filter((c: any) => c.status === 'pending');
       partnersBreakdown.push({
         id: p.id, nombre: p.nombre, email: p.email,
         deals_abiertos: myDeals.filter(d => !['cerrada_ganada','cerrada_perdida'].includes(d.stage)).length,
