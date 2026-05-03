@@ -249,6 +249,30 @@ const templates: Record<string, Template> = {
     `,
     text: `Tu cuenta SACS Plan Fideliza está activa. Entra a ${d.loginUrl || 'app.sacscloud.com'} con ${d.email}.`,
   }),
+  partner_application_user: (d) => ({
+    subject: `Recibimos tu solicitud · Programa Partners SACS`,
+    html: `
+      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <h2 style="font-size:1.5rem;font-weight:600;margin:0 0 12px;letter-spacing:-0.01em">Hola ${d.nombre || ''},</h2>
+        <p style="color:#555;line-height:1.65;margin:0 0 16px">
+          Recibimos tu postulación al programa <strong>${d.tipo || 'Partners SACS'}</strong>
+          (folio <strong>${d.numero || '—'}</strong>). Nuestro equipo la revisará y te contactaremos en las próximas <strong>3-5 días hábiles</strong>.
+        </p>
+        <div style="background:#fafafa;border-left:3px solid #4B7BE5;padding:14px 16px;margin:18px 0;font-size:0.875rem;color:#444;line-height:1.6">
+          <strong>¿Qué sigue?</strong><br/>
+          1. Validamos tus datos y fit con la marca<br/>
+          2. Si aprobamos, te enviamos una invitación oficial por correo<br/>
+          3. Firmas la invitación, completamos onboarding y te activamos
+        </div>
+        <p style="color:#555;line-height:1.6;margin:0 0 18px">
+          Mientras tanto, échale un vistazo al manual de marca para que vayas viendo cómo opera el programa:
+        </p>
+        <a href="https://www.sacscloud.com/partners/brand-kit" style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Ver brand kit</a>
+        <p style="color:#999;font-size:0.75rem;margin-top:24px">Cualquier duda responde directo a este correo.<br/>Equipo SACS · partners@sacscloud.com</p>
+      </div>
+    `,
+    text: `Hola ${d.nombre}, recibimos tu solicitud (folio ${d.numero}). Te contactaremos en 3-5 días hábiles. Brand kit: https://www.sacscloud.com/partners/brand-kit`,
+  }),
   partner_application_admin: (d) => ({
     subject: `📝 Nueva aplicación de partner: ${d.nombre || ''} · ${d.tipo}`,
     html: `

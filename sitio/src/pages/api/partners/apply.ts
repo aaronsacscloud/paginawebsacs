@@ -129,6 +129,18 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       console.warn('[apply] notify admin failed:', e);
     }
 
+    // Confirmación al aplicante
+    try {
+      await notify({
+        channel: 'email',
+        to: email,
+        template: 'partner_application_user',
+        data: { nombre, tipo, numero },
+      });
+    } catch (e) {
+      console.warn('[apply] notify applicant failed:', e);
+    }
+
     // Activity log
     try {
       await supabase.from('activities').insert({
