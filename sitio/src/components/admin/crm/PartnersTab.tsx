@@ -435,13 +435,44 @@ function PartnerDetailDrawer({ partnerId, onClose }: { partnerId: string; onClos
                   Bonos: {data.summary.countByTipo.prueba_gratis} prueba gratis · {data.summary.countByTipo.demo_completada} demos · {data.summary.countByTipo.venta_directa} ventas
                 </div>
                 {data.commissions.length > 0 && (
-                  <div style={{ background: '#fafafa', borderRadius: 6, padding: 12, fontSize: 12, color: '#555', maxHeight: 220, overflowY: 'auto' }}>
-                    {data.commissions.slice(0, 10).map((c: any) => (
-                      <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px dashed #ececec' }}>
-                        <span>{c.tipo} · {c.status} · {_fmtDate(c.created_at)}</span>
-                        <strong>{_fmt(c.commission_amount)}</strong>
-                      </div>
-                    ))}
+                  <div style={{ background: '#fafafa', borderRadius: 6, padding: 12, fontSize: 12, color: '#555', maxHeight: 260, overflowY: 'auto' }}>
+                    {data.commissions.slice(0, 10).map((c: any) => {
+                      const canFraud = c.status !== 'paid' && c.status !== 'cancelled';
+                      return (
+                        <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px dashed #ececec', gap: 8 }}>
+                          <span style={{ flex: 1, minWidth: 0 }}>
+                            <span>{c.tipo} · </span>
+                            <span style={{ color: c.status === 'cancelled' ? '#DC2626' : c.status === 'paid' ? '#2AB5A0' : c.status === 'earned' ? '#4B7BE5' : '#E8A838' }}>{c.status}</span>
+                            <span style={{ color: '#999' }}> · {_fmtDate(c.created_at)}</span>
+                          </span>
+                          <strong style={{ minWidth: 70, textAlign: 'right', textDecoration: c.status === 'cancelled' ? 'line-through' : 'none', color: c.status === 'cancelled' ? '#999' : 'inherit' }}>{_fmt(c.commission_amount)}</strong>
+                          {canFraud && (
+                            <button
+                              onClick={async () => {
+                                const reason = window.prompt(`Marcar como fraude esta comisión de ${_fmt(c.commission_amount)} (${c.tipo})?\n\nMotivo (queda en audit trail):`, 'Lead duplicado / fake / no califica');
+                                if (!reason || !reason.trim()) return;
+                                try {
+                                  const res = await fetch('/api/partners/commissions', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json', 'x-user-id': 'founder' },
+                                    body: JSON.stringify({ action: 'cancel', commission_id: c.id, reason: `fraud: ${reason.trim()}` }),
+                                  });
+                                  const json = await res.json();
+                                  if (!res.ok || !json.ok) { alert(`Error: ${json.error || json.reason || 'no se pudo cancelar'}`); return; }
+                                  // refresh
+                                  fetch(`/api/partners/detail?partner_id=${encodeURIComponent(partnerId!)}`)
+                                    .then(r => r.json()).then(d => setData(d));
+                                } catch (e: any) { alert(`Error: ${e.message || e}`); }
+                              }}
+                              style={{ padding: '3px 8px', fontSize: 10, background: '#fff', color: '#DC2626', border: '1px solid #fecaca', borderRadius: 4, cursor: 'pointer', flexShrink: 0, fontWeight: 500 }}
+                              title="Cancela esta comisión por fraude o duplicado. Queda registrado en el historial."
+                            >
+                              Marcar fraude
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </section>
