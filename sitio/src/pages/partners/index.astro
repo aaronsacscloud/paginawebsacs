@@ -309,11 +309,11 @@ const faqSchema = {
 
         <!-- Stepper -->
         <div class="pt-stepper" id="apply-stepper">
-          <div class="pt-stepper-item is-active" data-step="1"><span>1</span> Datos</div>
+          <div class="pt-stepper-item is-active" data-step="1"><span>1</span> Tus datos</div>
           <div class="pt-stepper-line"></div>
-          <div class="pt-stepper-item" data-step="2"><span>2</span> Audiencia</div>
+          <div class="pt-stepper-item" data-step="2"><span>2</span> Contrato y firma</div>
           <div class="pt-stepper-line"></div>
-          <div class="pt-stepper-item" data-step="3"><span>3</span> Contrato y firma</div>
+          <div class="pt-stepper-item" data-step="3"><span>3</span> En aprobación</div>
         </div>
 
         <div id="apply-draft-prompt" class="pt-draft-prompt" hidden>
@@ -326,49 +326,116 @@ const faqSchema = {
 
         <form id="apply-form" class="pt-form" novalidate>
 
-          <!-- ── STEP 1: Datos básicos ── -->
+          <!-- ── STEP 1: Tus datos (datos personales + audiencia + motivo) ── -->
           <fieldset class="pt-step is-active" data-step="1">
             <div class="pt-step-head">
               <div class="pt-step-num">01</div>
               <div>
                 <h3 class="pt-step-title">Tus datos</h3>
-                <p class="pt-step-sub">Cómo te contactamos cuando tengamos respuesta.</p>
+                <p class="pt-step-sub">Cómo te contactamos y un poco sobre ti. ~3 minutos.</p>
               </div>
             </div>
-            <div class="pt-form-row">
-              <label class="pt-field">
-                <span>Nombre completo *</span>
-                <input type="text" id="apply-nombre" required placeholder="Mariana López" autocomplete="name" />
-              </label>
-              <label class="pt-field">
-                <span>Email *</span>
-                <input type="email" id="apply-email" required placeholder="tu@correo.com" autocomplete="email" />
-              </label>
+
+            <div class="pt-substep">
+              <div class="pt-substep-label">Datos personales</div>
+              <div class="pt-form-row">
+                <label class="pt-field">
+                  <span>Nombre completo *</span>
+                  <input type="text" id="apply-nombre" required placeholder="Mariana López" autocomplete="name" />
+                </label>
+                <label class="pt-field">
+                  <span>Email *</span>
+                  <input type="email" id="apply-email" required placeholder="tu@correo.com" autocomplete="email" />
+                </label>
+              </div>
+              <div class="pt-form-row">
+                <label class="pt-field">
+                  <span>WhatsApp *</span>
+                  <input type="tel" id="apply-whatsapp" required placeholder="55 1234 5678" autocomplete="tel" inputmode="numeric" />
+                </label>
+                <label class="pt-field">
+                  <span>Empresa o marca personal</span>
+                  <input type="text" id="apply-empresa" placeholder="Tu marca / proyecto" />
+                </label>
+              </div>
+              <div class="pt-form-row">
+                <label class="pt-field">
+                  <span>Tipo de partnership *</span>
+                  <select id="apply-tipo" required>
+                    <option value="embajador">Embajador (creador con audiencia)</option>
+                    <option value="distribuidor">Distribuidor (red comercial propia)</option>
+                    <option value="integrador">Integrador (B2B / técnico)</option>
+                    <option value="reseller">Reseller (white-label)</option>
+                    <option value="consultor">Consultor</option>
+                  </select>
+                </label>
+                <label class="pt-field">
+                  <span>Ciudad / Estado</span>
+                  <input type="text" id="apply-ciudad" placeholder="CDMX, Guadalajara, MTY..." />
+                </label>
+              </div>
             </div>
-            <div class="pt-form-row">
-              <label class="pt-field">
-                <span>WhatsApp *</span>
-                <input type="tel" id="apply-whatsapp" required placeholder="55 1234 5678" autocomplete="tel" inputmode="numeric" />
+
+            <div class="pt-substep">
+              <div class="pt-substep-label">Tu audiencia y experiencia</div>
+
+              <label class="pt-field pt-field--full">
+                <span>Sitio web o portafolio</span>
+                <input type="text" id="apply-website" placeholder="https://tumarca.com (opcional)" />
               </label>
-              <label class="pt-field">
-                <span>Empresa o marca personal</span>
-                <input type="text" id="apply-empresa" placeholder="Tu marca / proyecto" />
-              </label>
+
+              <div class="pt-field pt-field--full">
+                <span>Tus redes sociales y seguidores</span>
+                <p class="pt-field-hint">Solo las que uses. Pon @handle y aproximado de seguidores.</p>
+                <div class="pt-socials">
+                  {['Instagram', 'TikTok', 'YouTube', 'LinkedIn', 'X / Twitter'].map(p => (
+                    <div class="pt-social-row" data-platform={p}>
+                      <span class="pt-social-platform">{p}</span>
+                      <input type="text" class="pt-social-handle" placeholder="@usuario" data-field="handle" />
+                      <input type="number" class="pt-social-followers" placeholder="seguidores" min="0" inputmode="numeric" data-field="followers" />
+                    </div>
+                  ))}
+                </div>
+                <div class="pt-followers-summary" id="apply-followers-summary">
+                  <span>Alcance total: <strong id="apply-followers-total">0</strong> seguidores</span>
+                  <span class="pt-earnings-est" id="apply-earnings-est"></span>
+                </div>
+              </div>
+
+              <div class="pt-form-row">
+                <label class="pt-field">
+                  <span>Experiencia con retail</span>
+                  <select id="apply-experiencia">
+                    <option value="">Elige una opción…</option>
+                    <option value="ninguna">Ninguna formal</option>
+                    <option value="1-3">1–3 años</option>
+                    <option value="3-5">3–5 años</option>
+                    <option value="5+">5+ años</option>
+                    <option value="dueño">Soy dueño/a de un retail</option>
+                  </select>
+                </label>
+                <label class="pt-field">
+                  <span>¿Cómo nos conociste?</span>
+                  <select id="apply-como">
+                    <option value="">Elige una opción…</option>
+                    <option value="redes">Redes sociales</option>
+                    <option value="google">Google / búsqueda</option>
+                    <option value="recomendacion">Me recomendaron</option>
+                    <option value="evento">Evento o conferencia</option>
+                    <option value="cliente">Soy cliente SACS</option>
+                    <option value="otro">Otro</option>
+                  </select>
+                </label>
+              </div>
             </div>
-            <div class="pt-form-row">
-              <label class="pt-field">
-                <span>Tipo de partnership *</span>
-                <select id="apply-tipo" required>
-                  <option value="embajador">Embajador (creador con audiencia)</option>
-                  <option value="distribuidor">Distribuidor (red comercial propia)</option>
-                  <option value="integrador">Integrador (B2B / técnico)</option>
-                  <option value="reseller">Reseller (white-label)</option>
-                  <option value="consultor">Consultor</option>
-                </select>
-              </label>
-              <label class="pt-field">
-                <span>Ciudad / Estado</span>
-                <input type="text" id="apply-ciudad" placeholder="CDMX, Guadalajara, MTY..." />
+
+            <div class="pt-substep">
+              <div class="pt-substep-label">Motivo</div>
+              <label class="pt-field pt-field--full">
+                <span>¿Por qué te interesa ser partner SACS? *</span>
+                <p class="pt-field-hint">Mínimo 30 caracteres. Sé específico — esto nos ayuda a evaluar fit.</p>
+                <textarea id="apply-motivo" required minlength="30" rows="5" placeholder="Cuéntanos sobre tu audiencia, qué tipo de contenido haces, tu visión del retail mexicano, qué te entusiasma de SACS, etc."></textarea>
+                <div class="pt-char-count" id="apply-motivo-count">0 / 1500</div>
               </label>
             </div>
 
@@ -377,91 +444,19 @@ const faqSchema = {
 
             <div class="pt-step-nav">
               <div></div>
-              <button type="button" class="pt-btn pt-btn--primary" data-go-step="2">Siguiente · Audiencia →</button>
+              <button type="button" class="pt-btn pt-btn--primary" data-go-step="2">Siguiente · Leer contrato →</button>
             </div>
           </fieldset>
 
-          <!-- ── STEP 2: Audiencia ── -->
+          <!-- ── STEP 2: Contrato + firma ── -->
           <fieldset class="pt-step" data-step="2">
             <div class="pt-step-head">
               <div class="pt-step-num">02</div>
               <div>
-                <h3 class="pt-step-title">Tu audiencia y experiencia</h3>
-                <p class="pt-step-sub">Para entender tu alcance y cómo podemos amplificarte.</p>
+                <h3 class="pt-step-title">Lee el contrato y firma</h3>
+                <p class="pt-step-sub">Estas son las condiciones reales del programa. Léelas con calma — luego firmas con tu dedo o el mouse.</p>
               </div>
             </div>
-
-            <label class="pt-field pt-field--full">
-              <span>Sitio web o portafolio</span>
-              <input type="text" id="apply-website" placeholder="https://tumarca.com (opcional)" />
-            </label>
-
-            <div class="pt-field pt-field--full">
-              <span>Tus redes sociales y seguidores</span>
-              <p class="pt-field-hint">Solo las que uses. Pon @handle y aproximado de seguidores.</p>
-              <div class="pt-socials">
-                {['Instagram', 'TikTok', 'YouTube', 'LinkedIn', 'X / Twitter'].map(p => (
-                  <div class="pt-social-row" data-platform={p}>
-                    <span class="pt-social-platform">{p}</span>
-                    <input type="text" class="pt-social-handle" placeholder="@usuario" data-field="handle" />
-                    <input type="number" class="pt-social-followers" placeholder="seguidores" min="0" inputmode="numeric" data-field="followers" />
-                  </div>
-                ))}
-              </div>
-              <div class="pt-followers-summary" id="apply-followers-summary">
-                <span>Alcance total: <strong id="apply-followers-total">0</strong> seguidores</span>
-                <span class="pt-earnings-est" id="apply-earnings-est"></span>
-              </div>
-            </div>
-
-            <div class="pt-form-row">
-              <label class="pt-field">
-                <span>Experiencia con retail</span>
-                <select id="apply-experiencia">
-                  <option value="">Elige una opción…</option>
-                  <option value="ninguna">Ninguna formal</option>
-                  <option value="1-3">1–3 años</option>
-                  <option value="3-5">3–5 años</option>
-                  <option value="5+">5+ años</option>
-                  <option value="dueño">Soy dueño/a de un retail</option>
-                </select>
-              </label>
-              <label class="pt-field">
-                <span>¿Cómo nos conociste?</span>
-                <select id="apply-como">
-                  <option value="">Elige una opción…</option>
-                  <option value="redes">Redes sociales</option>
-                  <option value="google">Google / búsqueda</option>
-                  <option value="recomendacion">Me recomendaron</option>
-                  <option value="evento">Evento o conferencia</option>
-                  <option value="cliente">Soy cliente SACS</option>
-                  <option value="otro">Otro</option>
-                </select>
-              </label>
-            </div>
-
-            <div class="pt-step-nav">
-              <button type="button" class="pt-btn pt-btn--ghost" data-go-step="1">← Atrás</button>
-              <button type="button" class="pt-btn pt-btn--primary" data-go-step="3">Siguiente · Contrato y firma →</button>
-            </div>
-          </fieldset>
-
-          <!-- ── STEP 3: Contrato + firma ── -->
-          <fieldset class="pt-step" data-step="3">
-            <div class="pt-step-head">
-              <div class="pt-step-num">03</div>
-              <div>
-                <h3 class="pt-step-title">Contrato y firma</h3>
-                <p class="pt-step-sub">Cuéntanos por qué quieres unirte, lee el contrato y firma.</p>
-              </div>
-            </div>
-
-            <label class="pt-field pt-field--full">
-              <span>¿Por qué te interesa ser partner SACS? *</span>
-              <p class="pt-field-hint">Mínimo 30 caracteres. Sé específico — esto nos ayuda a evaluar fit.</p>
-              <textarea id="apply-motivo" required minlength="30" rows="5" placeholder="Cuéntanos sobre tu audiencia, qué tipo de contenido haces, tu visión del retail mexicano, qué te entusiasma de SACS, etc."></textarea>
-              <div class="pt-char-count" id="apply-motivo-count">0 / 1500</div>
-            </label>
 
             <!-- Contrato -->
             <div class="pt-contract">
@@ -511,7 +506,7 @@ const faqSchema = {
             </div>
 
             <div class="pt-step-nav">
-              <button type="button" class="pt-btn pt-btn--ghost" data-go-step="2">← Atrás</button>
+              <button type="button" class="pt-btn pt-btn--ghost" data-go-step="1">← Atrás</button>
               <button type="submit" class="pt-btn pt-btn--primary" id="apply-submit">Firmar y enviar solicitud</button>
             </div>
 
@@ -520,32 +515,58 @@ const faqSchema = {
               Al firmar aceptas el contrato y autorizas a SACS a procesar tus datos para evaluar tu solicitud.
             </div>
           </fieldset>
-        </form>
 
-        <!-- Estado: esperando aprobación (post-submit) -->
-        <div id="apply-success" class="pt-success" hidden>
-          <div class="pt-success-icon">⏳</div>
-          <div class="pt-success-eyebrow">Solicitud recibida</div>
-          <h3 class="pt-success-title">¡Listo, <span id="apply-success-name"></span>! Tu solicitud está en revisión.</h3>
-          <p class="pt-success-lead">
-            Folio asignado: <strong id="apply-success-folio">PA-XXX</strong>
-          </p>
-          <div class="pt-success-card">
-            <div class="pt-success-card-eyebrow">Tiempo estimado de respuesta</div>
-            <div class="pt-success-card-time">3 a 5 días hábiles</div>
-            <div class="pt-success-card-detail">
-              Nuestro equipo validará tu información, evaluará el fit y te contactará por correo y WhatsApp con la decisión.
-              Si aprobamos, recibirás un link para crear tu contraseña y entrar a tu portal de partner.
+          <!-- ── STEP 3: En aprobación (post-submit) ── -->
+          <fieldset class="pt-step" data-step="3">
+            <div id="apply-success" class="pt-success">
+              <div class="pt-success-icon" aria-hidden="true">
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="24" cy="24" r="22" stroke="#4B7BE5" stroke-width="2" stroke-dasharray="3 4" />
+                  <path d="M24 14V24L31 27" stroke="#4B7BE5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="pt-success-eyebrow">Solicitud firmada · En aprobación</div>
+              <h3 class="pt-success-title">¡Listo, <span id="apply-success-name"></span>! Tu solicitud está en revisión.</h3>
+              <p class="pt-success-lead">
+                Folio asignado: <strong id="apply-success-folio">PA-XXX</strong>
+              </p>
+
+              <ol class="pt-approval-timeline">
+                <li class="pt-approval-step is-done">
+                  <div class="pt-approval-num">✓</div>
+                  <div class="pt-approval-body">
+                    <strong>Datos completos</strong>
+                    <span>Tu información personal, audiencia y motivo quedaron registrados.</span>
+                  </div>
+                </li>
+                <li class="pt-approval-step is-done">
+                  <div class="pt-approval-num">✓</div>
+                  <div class="pt-approval-body">
+                    <strong>Contrato firmado</strong>
+                    <span>Tu firma digital quedó vinculada al folio con fecha y hora.</span>
+                  </div>
+                </li>
+                <li class="pt-approval-step is-current">
+                  <div class="pt-approval-num">3</div>
+                  <div class="pt-approval-body">
+                    <strong>SACS revisa y aprueba</strong>
+                    <span>El equipo valida fit, audiencia y datos de cobro. <strong>3 a 5 días hábiles</strong>. Te contactamos por correo y WhatsApp con la decisión.</span>
+                  </div>
+                </li>
+              </ol>
+
+              <div class="pt-approval-note">
+                <span aria-hidden="true">📬</span>
+                <span>Te enviamos confirmación al correo que registraste. Cuando seas aprobado, recibirás un link para crear tu contraseña y acceder a tu portal de partner.</span>
+              </div>
+
+              <div class="pt-success-actions">
+                <a href="/partners/brand-kit" class="pt-btn pt-btn--primary" target="_blank">Mientras tanto, mira el brand kit →</a>
+                <a href="/" class="pt-btn pt-btn--ghost">Volver al inicio</a>
+              </div>
             </div>
-          </div>
-          <div class="pt-success-actions">
-            <a href="/partners/brand-kit" class="pt-btn pt-btn--primary" target="_blank">Mientras tanto, mira el brand kit →</a>
-            <a href="/" class="pt-btn pt-btn--ghost">Volver al inicio</a>
-          </div>
-          <p class="pt-success-mail">
-            Te envíamos confirmación al correo que registraste. Revisa también tu carpeta de spam.
-          </p>
-        </div>
+          </fieldset>
+        </form>
 
       </div>
     </section>
@@ -950,7 +971,128 @@ const faqSchema = {
     border-radius: 8px;
     text-align: center;
   }
-  .pt-success-icon { font-size: 3rem; line-height: 1; margin-bottom: 14px; }
+  .pt-success-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    background: rgba(75,123,229,0.10);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .pt-success-icon svg { width: 36px; height: 36px; }
+  @keyframes pt-clock-pulse {
+    0%,100% { transform: scale(1); opacity: 0.95; }
+    50% { transform: scale(1.04); opacity: 1; }
+  }
+  .pt-success-icon { animation: pt-clock-pulse 2.4s ease-in-out infinite; }
+
+  /* Approval timeline (post-submit) */
+  .pt-approval-timeline {
+    list-style: none;
+    margin: 28px auto 24px;
+    padding: 0;
+    max-width: 540px;
+    text-align: left;
+  }
+  .pt-approval-step {
+    display: flex;
+    gap: 16px;
+    padding: 14px 0;
+    align-items: flex-start;
+    border-bottom: 1px solid #f0f0ee;
+  }
+  .pt-approval-step:last-child { border-bottom: none; }
+  .pt-approval-num {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    font-weight: 600;
+    background: #f0f0ee;
+    color: #999;
+  }
+  .pt-approval-step.is-done .pt-approval-num {
+    background: #2AB5A0;
+    color: #fff;
+    font-size: 0.875rem;
+  }
+  .pt-approval-step.is-current .pt-approval-num {
+    background: #4B7BE5;
+    color: #fff;
+    box-shadow: 0 0 0 4px rgba(75,123,229,0.15);
+  }
+  .pt-approval-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+  }
+  .pt-approval-body strong {
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1A1A1A;
+    letter-spacing: -0.005em;
+  }
+  .pt-approval-body span {
+    font-size: 0.8125rem;
+    color: #666;
+    line-height: 1.55;
+  }
+  .pt-approval-body span strong {
+    font-family: var(--font-body);
+    font-size: inherit;
+    color: #1A1A1A;
+  }
+  .pt-approval-step.is-current .pt-approval-body strong:first-of-type {
+    color: #4B7BE5;
+  }
+  .pt-approval-note {
+    margin: 24px auto 28px;
+    max-width: 540px;
+    padding: 14px 18px;
+    background: rgba(75,123,229,0.06);
+    border: 1px solid rgba(75,123,229,0.16);
+    border-radius: 10px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 0.875rem;
+    color: #444;
+    line-height: 1.6;
+    text-align: left;
+  }
+  .pt-approval-note > span:first-child { font-size: 1.125rem; flex-shrink: 0; line-height: 1.4; }
+
+  /* Substeps inside Step 1 */
+  .pt-substep {
+    margin-bottom: 32px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid #f4f3f0;
+  }
+  .pt-substep:last-of-type {
+    border-bottom: none;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+  }
+  .pt-substep-label {
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #4B7BE5;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
   .pt-success-eyebrow {
     font-size: 0.6875rem; font-weight: 700; color: #4B7BE5;
     letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 12px;
@@ -1031,7 +1173,8 @@ const faqSchema = {
         it.classList.toggle('is-active', sn === n);
         it.classList.toggle('is-done', sn < n);
       });
-      if (n === 3) initSignature();
+      // Initialize signature canvas when entering Step 2 (contract+firma)
+      if (n === 2) initSignature();
       const sec = document.getElementById('aplicar');
       if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -1066,27 +1209,23 @@ const faqSchema = {
 
     function validateStep1(): boolean {
       const nombre = val('apply-nombre'); const email = val('apply-email'); const wa = val('apply-whatsapp');
+      const motivo = val('apply-motivo');
+      const w = val('apply-website');
       let ok = true;
       setError('apply-nombre', !nombre); if (!nombre) ok = false;
       setError('apply-email', !isValidEmail(email)); if (!isValidEmail(email)) ok = false;
       setError('apply-whatsapp', !isValidWhats(wa)); if (!isValidWhats(wa)) ok = false;
-      if (!ok) showMsg('Llena los campos requeridos correctamente. WhatsApp debe tener 10 dígitos.', true);
+      setError('apply-motivo', motivo.length < 30); if (motivo.length < 30) ok = false;
+      if (w && !/^(https?:\/\/)?[\w.-]+\.[a-z]{2,}(\S*)?$/i.test(w)) {
+        setError('apply-website', true); ok = false;
+      } else { setError('apply-website', false); }
+      if (!ok) showMsg('Llena los campos requeridos. Nombre, email, WhatsApp (10 dígitos) y un motivo de mín. 30 caracteres son obligatorios.', true);
       else { msg.hidden = true; }
       return ok;
     }
 
-    function validateStep2(): boolean {
-      // No fields are required in step 2 — but URL must be valid if present
-      const w = val('apply-website');
-      if (w && !/^(https?:\/\/)?[\w.-]+\.[a-z]{2,}(\S*)?$/i.test(w)) {
-        setError('apply-website', true);
-        showMsg('La URL del sitio web no parece válida.', true);
-        return false;
-      }
-      setError('apply-website', false);
-      msg.hidden = true;
-      return true;
-    }
+    // Backwards compat for any caller still using validateStep2 — now alias of step1
+    function validateStep2(): boolean { return true; }
 
     // ─── Social handles + live earnings calc ───
     function getSocials() {
@@ -1223,8 +1362,8 @@ const faqSchema = {
         });
       }
       updateFollowersUI();
-      // Don't auto-jump to step beyond 1 (privacy: motivo + signature need active intent)
-      showStep(Math.min(d.step || 1, 2));
+      // Restore where they were, but never past step 1 (signature requires active intent)
+      showStep(1);
     }
 
     // Inputs save on change (debounced)
@@ -1322,15 +1461,10 @@ const faqSchema = {
         if (!res.ok) throw new Error(data.error || 'Error');
 
         clearDraft();
-        // Show success state, hide form
-        if (success) {
-          (document.getElementById('apply-success-name')!).textContent = (val('apply-nombre').split(' ')[0]) || '';
-          (document.getElementById('apply-success-folio')!).textContent = data.numero || 'PA-XXX';
-          form.style.display = 'none';
-          stepper && (stepper.style.display = 'none');
-          success.hidden = false;
-          success.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        // Move to Step 3 (approval state) — keep stepper visible so user sees all 3 marked done/current
+        (document.getElementById('apply-success-name')!).textContent = (val('apply-nombre').split(' ')[0]) || '';
+        (document.getElementById('apply-success-folio')!).textContent = data.numero || 'PA-XXX';
+        showStep(3);
       } catch (err: any) {
         showMsg(`No se pudo enviar: ${err.message || err}. Intenta de nuevo o escríbenos a partners@sacscloud.com.`, true);
         submit.disabled = false;
@@ -1348,9 +1482,9 @@ const faqSchema = {
       if (waEl.value !== formatted) waEl.value = formatted;
     });
 
-    // Re-init signature on resize
+    // Re-init signature on resize (signature canvas now lives in step 2)
     window.addEventListener('resize', () => {
-      if (currentStep === 3) requestAnimationFrame(initSignature);
+      if (currentStep === 2) requestAnimationFrame(initSignature);
     });
   })();
 </script>
