@@ -504,6 +504,91 @@ const partnerLandingUrl = invitation.slug_landing
           </div>
         </div>
 
+        <!-- ── 7. La visión: 1,000 embajadores + impacto ── -->
+        <div class="p-bw-vision">
+          <div class="p-bw-vision-eyebrow">Nuestra visión a 5 años</div>
+          <h2 class="p-bw-vision-title">
+            <span class="p-bw-vision-num">1,000</span>
+            <span class="p-bw-vision-after">embajadores activos en LATAM.</span>
+          </h2>
+          <p class="p-bw-vision-lead">
+            El comercio toca todas las vidas. Un mejor sistema operativo para los retailers
+            es un mejor servicio para millones de clientes finales — más humano, más justo,
+            más consciente. Tú eres parte de esa misión.
+          </p>
+
+          <!-- Tracker global -->
+          <div class="p-bw-tracker">
+            <div class="p-bw-tracker-row">
+              <div class="p-bw-tracker-label">🇲🇽 México</div>
+              <div class="p-bw-tracker-bar"><div class="p-bw-tracker-fill" style="width: 4.5%"></div></div>
+              <div class="p-bw-tracker-stat"><strong>45</strong> / 1,000</div>
+            </div>
+            <div class="p-bw-tracker-row">
+              <div class="p-bw-tracker-label">🌎 LATAM total</div>
+              <div class="p-bw-tracker-bar"><div class="p-bw-tracker-fill" style="width: 6%"></div></div>
+              <div class="p-bw-tracker-stat"><strong>60</strong> / 1,000</div>
+            </div>
+            <div class="p-bw-tracker-row p-bw-tracker-row--soon">
+              <div class="p-bw-tracker-label">🇨🇴 Colombia · próximo</div>
+              <div class="p-bw-tracker-bar"><div class="p-bw-tracker-fill" style="width: 0%"></div></div>
+              <div class="p-bw-tracker-stat">Q3 2026</div>
+            </div>
+            <div class="p-bw-tracker-row p-bw-tracker-row--soon">
+              <div class="p-bw-tracker-label">🇨🇱 Chile · próximo</div>
+              <div class="p-bw-tracker-bar"><div class="p-bw-tracker-fill" style="width: 0%"></div></div>
+              <div class="p-bw-tracker-stat">Q4 2026</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── 8. 10% para impacto ── -->
+        <div class="p-bw-impact">
+          <div class="p-bw-impact-grid">
+            <div>
+              <div class="p-bw-impact-eyebrow">10% para impacto positivo</div>
+              <h2 class="p-bw-impact-title">El 10% de cada comisión SACS se dona a acciones positivas.</h2>
+              <p class="p-bw-impact-lead">
+                Por cada peso que SACS gana, <strong>10% va a iniciativas de impacto</strong>:
+                educación financiera para retailers pequeños, becas en escuelas de negocio rural,
+                programas de inclusión digital, apoyos a comunidades durante desastres.
+              </p>
+              <p class="p-bw-impact-lead">
+                Como embajador, recibes <strong>el reporte trimestral</strong> de a dónde fue ese
+                10% — con fotos, beneficiarios y resultados concretos. Lo puedes compartir en tus
+                redes para mostrar que tu trabajo no solo te paga: también construye comunidad.
+              </p>
+            </div>
+            <div class="p-bw-impact-cards">
+              <div class="p-bw-impact-card">
+                <div class="p-bw-impact-card-num">2,400+</div>
+                <div class="p-bw-impact-card-label">Retailers capacitados</div>
+                <div class="p-bw-impact-card-detail">Talleres gratuitos sobre POS, inventario, e-commerce y educación fiscal.</div>
+              </div>
+              <div class="p-bw-impact-card">
+                <div class="p-bw-impact-card-num">$1.2M</div>
+                <div class="p-bw-impact-card-label">Donados en 2025</div>
+                <div class="p-bw-impact-card-detail">Distribuido entre 8 organizaciones aliadas en MX y Centroamérica.</div>
+              </div>
+              <div class="p-bw-impact-card">
+                <div class="p-bw-impact-card-num">120</div>
+                <div class="p-bw-impact-card-label">Becas otorgadas</div>
+                <div class="p-bw-impact-card-detail">Para hijos de comerciantes en escuelas técnicas y de negocio.</div>
+              </div>
+              <div class="p-bw-impact-card">
+                <div class="p-bw-impact-card-num">15</div>
+                <div class="p-bw-impact-card-label">Comunidades apoyadas</div>
+                <div class="p-bw-impact-card-detail">Mercados, cooperativas y plazas comerciales con apoyo directo.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-bw-impact-note">
+            <span>📊</span>
+            <span>El reporte de impacto Q1 2026 está disponible — te lo enviamos cuando seas aprobado como embajador, junto con assets para que lo compartas en tus redes.</span>
+          </div>
+        </div>
+
         <!-- CTA final → ir al proceso -->
         <div class="p-bw-cta">
           <div class="p-bw-cta-inner">
@@ -3372,6 +3457,222 @@ const partnerLandingUrl = invitation.slug_landing
     letter-spacing: 0.08em;
     font-weight: 600;
   }
+
+  /* ─── Visión 1,000 embajadores ─── */
+  .p-bw-vision {
+    margin: 56px 0 0;
+    padding: 64px 32px;
+    background: linear-gradient(135deg, #4B7BE5 0%, #6C5CE7 50%, #1A1A1A 100%);
+    border-radius: 16px;
+    color: #fff;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .p-bw-vision::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(255,255,255,0.10), transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(255,255,255,0.06), transparent 50%);
+    pointer-events: none;
+  }
+  .p-bw-vision > * { position: relative; z-index: 1; }
+  .p-bw-vision-eyebrow {
+    display: inline-block;
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.14);
+    color: rgba(255,255,255,0.92);
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+  .p-bw-vision-title {
+    font-family: var(--font-display);
+    margin: 0 0 20px;
+    color: #fff;
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+  .p-bw-vision-num {
+    display: block;
+    font-size: clamp(4rem, 12vw, 8rem);
+    font-weight: 200;
+    background: linear-gradient(120deg, #fff 0%, #B5D0FF 60%, #B49EFF 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .p-bw-vision-after {
+    display: block;
+    font-size: clamp(1.25rem, 2.6vw, 1.875rem);
+    font-weight: 400;
+    color: rgba(255,255,255,0.85);
+    margin-top: 8px;
+  }
+  .p-bw-vision-lead {
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    color: rgba(255,255,255,0.78);
+    max-width: 580px;
+    margin: 0 auto 36px;
+    font-weight: 300;
+  }
+
+  .p-bw-tracker {
+    max-width: 620px;
+    margin: 0 auto;
+    padding: 24px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    backdrop-filter: blur(8px);
+  }
+  .p-bw-tracker-row {
+    display: grid;
+    grid-template-columns: 160px 1fr 100px;
+    gap: 14px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .p-bw-tracker-row:last-child { border-bottom: none; }
+  .p-bw-tracker-row--soon { opacity: 0.55; }
+  .p-bw-tracker-label {
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.85);
+    font-weight: 500;
+    text-align: left;
+  }
+  .p-bw-tracker-bar {
+    height: 8px;
+    background: rgba(255,255,255,0.10);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .p-bw-tracker-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #6CD6C2 0%, #4B7BE5 100%);
+    border-radius: 999px;
+    transition: width 0.6s ease-out;
+  }
+  .p-bw-tracker-stat {
+    font-size: 0.875rem;
+    color: rgba(255,255,255,0.75);
+    text-align: right;
+    font-family: var(--font-display);
+  }
+  .p-bw-tracker-stat strong { color: #fff; font-weight: 600; font-size: 1rem; }
+  @media (max-width: 640px) {
+    .p-bw-vision { margin: 32px 0 0; padding: 48px 20px; }
+    .p-bw-tracker { padding: 18px; }
+    .p-bw-tracker-row { grid-template-columns: 1fr; gap: 6px; padding: 12px 0; }
+    .p-bw-tracker-stat { text-align: left; }
+  }
+
+  /* ─── 10% para impacto ─── */
+  .p-bw-impact {
+    margin: 32px 0 0;
+    padding: 56px 36px;
+    background: linear-gradient(180deg, #FAFAF8 0%, #fff 100%);
+    border: 1px solid #ececec;
+    border-radius: 16px;
+  }
+  .p-bw-impact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: start;
+  }
+  @media (max-width: 768px) {
+    .p-bw-impact { padding: 40px 24px; }
+    .p-bw-impact-grid { grid-template-columns: 1fr; gap: 28px; }
+  }
+  .p-bw-impact-eyebrow {
+    display: inline-block;
+    padding: 6px 14px;
+    background: rgba(42,181,160,0.12);
+    color: #1A8F7A;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .p-bw-impact-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 2.8vw, 2rem);
+    font-weight: 400;
+    color: #1A1A1A;
+    margin: 0 0 16px;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .p-bw-impact-lead {
+    font-size: 0.9375rem;
+    color: #555;
+    line-height: 1.65;
+    margin: 0 0 14px;
+  }
+  .p-bw-impact-lead strong { color: #1A1A1A; }
+
+  .p-bw-impact-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .p-bw-impact-card {
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 10px;
+    padding: 18px;
+    transition: transform 0.18s, border-color 0.18s;
+  }
+  .p-bw-impact-card:hover {
+    transform: translateY(-2px);
+    border-color: #2AB5A0;
+  }
+  .p-bw-impact-card-num {
+    font-family: var(--font-display);
+    font-size: 1.625rem;
+    font-weight: 300;
+    color: #1A8F7A;
+    letter-spacing: -0.025em;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .p-bw-impact-card-label {
+    font-family: var(--font-display);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #1A1A1A;
+    margin-bottom: 6px;
+  }
+  .p-bw-impact-card-detail {
+    font-size: 0.75rem;
+    color: #666;
+    line-height: 1.5;
+  }
+
+  .p-bw-impact-note {
+    margin-top: 28px;
+    padding: 14px 18px;
+    background: rgba(75,123,229,0.08);
+    border: 1px solid rgba(75,123,229,0.18);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.875rem;
+    color: #444;
+    line-height: 1.55;
+  }
+  .p-bw-impact-note > span:first-child { font-size: 1.125rem; flex-shrink: 0; }
 
   /* CTA final */
   .p-bw-cta {
