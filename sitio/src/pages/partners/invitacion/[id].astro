@@ -429,13 +429,22 @@ const partnerLandingUrl = invitation.slug_landing
                     {sector.description}
                   </div>
                   <h3 class="p-bw-vertical-name">{sector.label}</h3>
-                  <div class="p-bw-vertical-chips">
+                  <ul class="p-bw-vertical-modules" role="list">
                     {sector.personalizations.slice(0, 4).map((p) => (
-                      <span class="p-bw-vertical-chip">{p.label}</span>
+                      <li class="p-bw-vertical-module">
+                        <span class="p-bw-vertical-module-bullet" aria-hidden="true"></span>
+                        <div class="p-bw-vertical-module-text">
+                          <strong>{p.label}</strong>
+                          <span>{p.description}</span>
+                        </div>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                   <div class="p-bw-vertical-foot">
-                    +{sector.personalizations.length - 4} módulos especializados
+                    <span>+{sector.personalizations.length - 4} módulos especializados</span>
+                    <a href={sector.href ? `https://www.sacscloud.com${sector.href}` : 'https://www.sacscloud.com/giros'} target="_blank" rel="noopener" class="p-bw-vertical-link">
+                      Ver detalle →
+                    </a>
                   </div>
                 </div>
               </article>
@@ -3447,38 +3456,70 @@ const partnerLandingUrl = invitation.slug_landing
   @media (max-width: 720px) {
     .p-bw-vertical-name { font-size: 1.3125rem; margin-bottom: 16px; }
   }
-  .p-bw-vertical-chips {
+  /* Módulos: lista elegante, no chips */
+  .p-bw-vertical-modules {
+    list-style: none;
+    margin: 0 0 24px;
+    padding: 0;
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 20px;
+    flex-direction: column;
+    gap: 14px;
   }
-  .p-bw-vertical-chip {
-    font-size: 0.75rem;
-    padding: 7px 12px;
-    background: #FAFAF8;
+  .p-bw-vertical-module {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .p-bw-vertical-module-bullet {
+    flex-shrink: 0;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent, #4B7BE5);
+    margin-top: 9px;
+    box-shadow: 0 0 0 3px var(--accent-bg, rgba(75, 123, 229, 0.12));
+  }
+  .p-bw-vertical-module-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+  }
+  .p-bw-vertical-module-text strong {
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 600;
     color: #1A1A1A;
-    border: 1px solid #ececea;
-    border-radius: 8px;
-    font-weight: 500;
     letter-spacing: -0.005em;
-    line-height: 1.2;
-    transition: background 0.18s, border-color 0.18s, color 0.18s;
+    line-height: 1.35;
   }
-  .p-bw-vertical:hover .p-bw-vertical-chip {
-    background: var(--accent-bg, rgba(75, 123, 229, 0.06));
-    border-color: transparent;
-    color: var(--accent, #4B7BE5);
+  .p-bw-vertical-module-text span {
+    font-size: 0.8125rem;
+    color: #666;
+    line-height: 1.55;
   }
   .p-bw-vertical-foot {
     margin-top: auto;
-    padding-top: 12px;
+    padding-top: 18px;
     font-size: 0.75rem;
     color: #999;
     font-weight: 500;
     letter-spacing: 0.005em;
     border-top: 1px solid #f0f0ee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
   }
+  .p-bw-vertical-link {
+    color: var(--accent, #4B7BE5);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.75rem;
+    transition: opacity 0.18s;
+  }
+  .p-bw-vertical-link:hover { opacity: 0.7; }
   .p-bw-vertical-detail {
     font-size: 0.8125rem;
     color: #666;
