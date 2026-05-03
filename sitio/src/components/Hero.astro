@@ -10672,6 +10672,11 @@ const useCases = [
     .pillar-frame, .pillar-visual, .hero-tablet-frame { max-width: 100%; }
     .pillar-h2 { font-size: clamp(1.625rem, 6.5vw, 2.25rem); }
     .pillar-acc-body { padding-inline: 0; }
+    /* tablet-screen pierde su aspect-ratio fijo (16/10) en móvil para permitir
+       que cada slide interno defina su propio aspect-ratio (algunas son
+       portrait 9/14, 9/16, 4/5 según el flujo). El height se ajusta al
+       contenido del active slide. */
+    .tablet-screen { aspect-ratio: auto; }
 
     /* ── #1 Cobro móvil (.mob-frame) ── single-col stack
        Phone arriba, card 3D / ticket abajo según fase del cycle.
