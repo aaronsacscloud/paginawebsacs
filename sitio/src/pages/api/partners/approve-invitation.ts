@@ -122,6 +122,28 @@ export const POST: APIRoute = async ({ request }) => {
     };
     if (team_member_id) updates.team_member_id = team_member_id;
 
+    // Auto-assign slug_landing si está vacío (basado en nombre + numero suffix)
+    if (!invitation.slug_landing) {
+      const baseSlug = (invitation.nombre || invitation.numero || 'partner')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 30);
+      // Ensure uniqueness: try plain, else add numero suffix
+      const { data: existing } = await supabase
+        .from('partner_invitations')
+        .select('id')
+        .eq('slug_landing', baseSlug)
+        .neq('id', id)
+        .maybeSingle();
+      const finalSlug = existing
+        ? `${baseSlug}-${(invitation.numero || '').toLowerCase().replace(/[^a-z0-9]/g, '')}`.slice(0, 40)
+        : baseSlug;
+      updates.slug_landing = finalSlug;
+    }
+
     const { data: updated, error: updateErr } = await supabase
       .from('partner_invitations')
       .update(updates)
@@ -145,9 +167,8 @@ export const POST: APIRoute = async ({ request }) => {
         consultor: 'Consultor Partner',
       };
       const programa = tipoLabels[invitation.tipo] || invitation.tipo || 'Partner SACS';
-      const partnerLandingUrl = invitation.slug_landing
-        ? `https://www.sacscloud.com/p/${invitation.slug_landing}`
-        : `https://www.sacscloud.com/p/${(invitation.numero || '').toLowerCase()}`;
+      const finalSlug = (updates as any).slug_landing || invitation.slug_landing || (invitation.numero || '').toLowerCase();
+      const partnerLandingUrl = `https://www.sacscloud.com/p/${finalSlug}`;
 
       // Token para que cree su contraseña inicial (válido 14 días)
       let setPasswordUrl = 'https://www.sacscloud.com/partner/login';

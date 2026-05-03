@@ -277,11 +277,32 @@ export const POST: APIRoute = async ({ request }) => {
           automatico: true,
         });
 
-        // Commission: mark earned when payment received for a deal
+        // Commission: mark earned when payment received for a deal.
+        // Si no existe commission pending todavía (deal cerrado sin pasar por
+        // sync-quote-deal), créala primero usando atribución del deal.
         if (quote?.deal_id) {
           try {
             const { markCommissionEarned } = await import('../../../lib/commissions/settle');
-            await markCommissionEarned(quote.deal_id);
+            const result = await markCommissionEarned(quote.deal_id);
+            if (!result.ok && result.reason === 'no pending commission for deal') {
+              // Fallback: create commission then mark earned
+              const { data: dealRow } = await supabase
+                .from('deals')
+                .select('referrer_partner_id, owner_id, valor_total')
+                .eq('id', quote.deal_id)
+                .maybeSingle();
+              const partnerId = (dealRow as any)?.referrer_partner_id || dealRow?.owner_id;
+              if (partnerId) {
+                const { createCommissionForDeal } = await import('../../../lib/commissions/calculate');
+                const c = await createCommissionForDeal({
+                  deal_id: quote.deal_id,
+                  partner_id: partnerId,
+                  deal_value: dealRow?.valor_total ?? amount,
+                  notes: 'Auto-created from Stripe webhook',
+                });
+                if (c.ok) await markCommissionEarned(quote.deal_id);
+              }
+            }
           } catch (err) {
             console.error('[stripe-webhook] commission settle error:', err);
           }

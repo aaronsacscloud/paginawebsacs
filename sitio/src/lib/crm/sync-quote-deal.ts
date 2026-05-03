@@ -139,17 +139,24 @@ export async function advanceDealStage(dealId: string, targetStage: DealStage, c
     .select()
     .single();
 
-  // Commission: create pending commission when deal closes as won with an owner
-  if (targetStage === 'cerrada_ganada' && deal.owner_id) {
-    try {
-      const { createCommissionForDeal } = await import('../commissions/calculate');
-      await createCommissionForDeal({
-        deal_id: dealId,
-        partner_id: deal.owner_id,
-        deal_value: ctx.valor_total ?? deal.valor_total ?? 0,
-      });
-    } catch (err) {
-      console.error('[sync-quote-deal] commission create error:', err);
+  // Commission: create pending commission when deal closes as won.
+  // Atribución: si hay referrer_partner_id (partner que trajo el lead),
+  // gana ese partner — no el owner (sales rep).
+  // Fallback: si no hay referrer pero hay owner, gana owner.
+  if (targetStage === 'cerrada_ganada') {
+    const partnerId = (deal as any).referrer_partner_id || deal.owner_id;
+    if (partnerId) {
+      try {
+        const { createCommissionForDeal } = await import('../commissions/calculate');
+        await createCommissionForDeal({
+          deal_id: dealId,
+          partner_id: partnerId,
+          deal_value: ctx.valor_total ?? deal.valor_total ?? 0,
+          notes: (deal as any).referrer_partner_id ? 'Atribuido a partner referidor' : 'Atribuido a sales owner',
+        });
+      } catch (err) {
+        console.error('[sync-quote-deal] commission create error:', err);
+      }
     }
   }
   if (targetStage === 'cerrada_perdida') {
@@ -198,8 +205,12 @@ export async function createDealFromQuote(quote: any, targetStage: DealStage, ct
   const valorMensual = monthlyItems.reduce((s: number, i: any) => s + (i.subtotal || 0), 0) +
     recurMonthly.reduce((s: number, i: any) => s + (i.monto || 0), 0);
 
-  // Try to find contact owner
-  const { data: contact } = await supabase.from('contacts').select('owner_id, company_id').eq('id', contactId).single();
+  // Try to find contact owner + atribución de partner
+  const { data: contact } = await supabase
+    .from('contacts')
+    .select('owner_id, company_id, referrer_partner_id')
+    .eq('id', contactId)
+    .single();
 
   const insertPayload: any = {
     nombre: `Deal — ${quote.empresa || quote.contacto || 'Cliente'}`,
@@ -213,6 +224,9 @@ export async function createDealFromQuote(quote: any, targetStage: DealStage, ct
     stage: targetStage,
     quote_id: quote.id,
     owner_id: contact?.owner_id || null,
+    // Hereda atribución del contact: si el lead vino por partner link,
+    // el deal lo refleja para que la commission vaya al partner correcto.
+    referrer_partner_id: (contact as any)?.referrer_partner_id || null,
   };
   if (targetStage === 'cerrada_ganada') {
     insertPayload.probabilidad = 100;
@@ -230,17 +244,21 @@ export async function createDealFromQuote(quote: any, targetStage: DealStage, ct
   // Back-reference on quote
   await supabase.from('quotes').update({ deal_id: deal.id }).eq('id', quote.id);
 
-  // Commission when deal is born as won
-  if (targetStage === 'cerrada_ganada' && insertPayload.owner_id) {
-    try {
-      const { createCommissionForDeal } = await import('../commissions/calculate');
-      await createCommissionForDeal({
-        deal_id: deal.id,
-        partner_id: insertPayload.owner_id,
-        deal_value: insertPayload.valor_total,
-      });
-    } catch (err) {
-      console.error('[createDealFromQuote] commission create error:', err);
+  // Commission when deal is born as won — atribución al referrer si existe
+  if (targetStage === 'cerrada_ganada') {
+    const partnerId = insertPayload.referrer_partner_id || insertPayload.owner_id;
+    if (partnerId) {
+      try {
+        const { createCommissionForDeal } = await import('../commissions/calculate');
+        await createCommissionForDeal({
+          deal_id: deal.id,
+          partner_id: partnerId,
+          deal_value: insertPayload.valor_total,
+          notes: insertPayload.referrer_partner_id ? 'Atribuido a partner referidor' : 'Atribuido a sales owner',
+        });
+      } catch (err) {
+        console.error('[createDealFromQuote] commission create error:', err);
+      }
     }
   }
 
