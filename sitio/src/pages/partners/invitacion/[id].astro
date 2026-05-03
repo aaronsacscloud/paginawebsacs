@@ -2,6 +2,7 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { supabase } from '../../../lib/supabase';
 import PartnerSidebar from '../../../components/partner/PartnerSidebar.astro';
+import { CONTENT_TYPES, META_PUNTOS_MES } from '../../../data/content-types';
 
 export const prerender = false;
 
@@ -110,6 +111,7 @@ const tabsDef = [
   { id: 'proceso',    label: 'Cómo funciona', show: true },
   { id: 'terminos', label: 'Términos', show: true },
   { id: 'compromisos', label: 'Compromisos', show: compromisos.length > 0 },
+  { id: 'contenido',  label: 'Contenido y puntos', show: tipo === 'embajador' },
   { id: 'tabulador', label: 'Tabulador', show: Object.keys(tabulador).length > 0 },
   { id: 'potencial', label: 'Tu potencial', show: comisionPct > 0 },
   { id: 'porque', label: '¿Por qué SACS?', show: true },
@@ -829,6 +831,103 @@ const partnerLandingUrl = invitation.slug_landing
             Ver el tabulador completo de proyecciones
             <span class="p-commit-rationale-cta-arrow">→</span>
           </a>
+        </div>
+      </section>
+      )}
+
+      <!-- TAB: CONTENIDO Y PUNTOS (solo embajador) -->
+      {tipo === 'embajador' && (
+      <section class="p-tab-panel" data-tab="contenido">
+        <div class="p-section-head">
+          <div class="p-section-eyebrow">Cómo medimos tu contenido</div>
+          <h2 class="p-section-title">Sistema de puntos: {META_PUNTOS_MES}/mes</h2>
+          <p class="p-section-lead">
+            En lugar de contar piezas, contamos <strong>puntos</strong>. Cada tipo de contenido vale distinto según
+            su esfuerzo y alcance. Tu meta mensual son <strong>{META_PUNTOS_MES} puntos</strong> — los puedes
+            cumplir con la combinación que prefieras.
+          </p>
+        </div>
+
+        <!-- Cómo funciona el sistema -->
+        <div class="p-content-howto">
+          <div class="p-content-howto-item">
+            <div class="p-content-howto-num">1</div>
+            <div>
+              <div class="p-content-howto-title">Cada mes te enviamos 3-5 palabras clave</div>
+              <p class="p-content-howto-detail">Temas, productos o estrategias que queremos posicionar. Tu contenido se enfoca alrededor de eso.</p>
+            </div>
+          </div>
+          <div class="p-content-howto-item">
+            <div class="p-content-howto-num">2</div>
+            <div>
+              <div class="p-content-howto-title">Tú creas el contenido en formato libre</div>
+              <p class="p-content-howto-detail">Stories, tutoriales, casos de uso, webinars, mini-documentales — tú eliges la mezcla que mejor funcione con tu audiencia.</p>
+            </div>
+          </div>
+          <div class="p-content-howto-item">
+            <div class="p-content-howto-num">3</div>
+            <div>
+              <div class="p-content-howto-title">Subes los links a tu portal</div>
+              <p class="p-content-howto-detail">Tab "Reportar contenido" en tu panel — pegas el URL y eliges el tipo. Toma 30 segundos por pieza.</p>
+            </div>
+          </div>
+          <div class="p-content-howto-item">
+            <div class="p-content-howto-num">4</div>
+            <div>
+              <div class="p-content-howto-title">SACS valida y otorga los puntos</div>
+              <p class="p-content-howto-detail">En 24-48h hábiles. Si haces más de 100 puntos en el mes, el excedente se acumula al siguiente mes.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla de tipos × puntos -->
+        <h3 class="p-content-h3">Tipos de contenido y sus puntos</h3>
+        <div class="p-content-types-grid">
+          {CONTENT_TYPES.map((c) => (
+            <div class={`p-content-type-card ${c.id === 'serie_completa' ? 'p-content-type-card--bonus' : ''}`}>
+              <div class="p-content-type-head">
+                <div>
+                  <div class="p-content-type-name">{c.nombre}</div>
+                  <div class="p-content-type-meta">{c.duracion} · esfuerzo {c.esfuerzo}</div>
+                </div>
+                <div class="p-content-type-pts">{c.puntos}<span> pts</span></div>
+              </div>
+              <p class="p-content-type-desc">{c.descripcion}</p>
+              {c.ideasContenido && c.ideasContenido.length > 0 && (
+                <div class="p-content-type-ideas">
+                  <div class="p-content-type-ideas-label">Ideas:</div>
+                  <ul>
+                    {c.ideasContenido.slice(0, 3).map((idea) => <li>{idea}</li>)}
+                  </ul>
+                </div>
+              )}
+              {c.plataformasSugeridas && (
+                <div class="p-content-type-platforms">
+                  {c.plataformasSugeridas.map((p) => <span class="p-content-type-platform">{p}</span>)}
+                </div>
+              )}
+              {c.ejemploRefs && c.ejemploRefs.length > 0 && (
+                <div class="p-content-type-refs">
+                  <span class="p-content-type-refs-label">Ver ejemplos:</span>
+                  {c.ejemploRefs.map((r) => (
+                    <a href={r.url} target="_blank" rel="noopener" class="p-content-type-ref">{r.label} ↗</a>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <!-- Notas finales -->
+        <div class="p-content-notes">
+          <div class="p-content-notes-title">Detalles importantes</div>
+          <ul>
+            <li><strong>Acumulación:</strong> si en abril haces 130 puntos, llegas a mayo con 30 puntos ya hechos.</li>
+            <li><strong>Bonus serie:</strong> entregar 10 episodios de tu serie te da 300 puntos (vs 30×10 = 300, +0 bonus pero te ahorra rounds de aprobación).</li>
+            <li><strong>Calidad sobre cantidad:</strong> si rechazamos contenido, te explicamos por qué para que el próximo sí cuente.</li>
+            <li><strong>Palabras clave:</strong> SACS te las envía cada mes 1 — no son obligatorias, pero te dan ventaja para SEO conjunto.</li>
+            <li><strong>Sin penalización:</strong> si un mes no llegas a 100, no pasa nada. Si tres meses seguidos &lt; 50, agendamos una llamada para ajustar.</li>
+          </ul>
         </div>
       </section>
       )}
@@ -2807,6 +2906,209 @@ const partnerLandingUrl = invitation.slug_landing
     color: rgba(255,255,255,0.7);
     line-height: 1.6;
   }
+
+  /* ─── Contenido y puntos (tab "Contenido") ─────────────────── */
+  .p-content-howto {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 18px;
+    margin: 32px 0;
+  }
+  .p-content-howto-item {
+    display: flex; gap: 14px;
+    padding: 18px;
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 10px;
+  }
+  .p-content-howto-num {
+    flex-shrink: 0;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: #fff;
+    color: #4B7BE5;
+    border: 1px solid #4B7BE5;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+  .p-content-howto-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+    letter-spacing: -0.005em;
+  }
+  .p-content-howto-detail {
+    font-size: 0.875rem;
+    color: #666;
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  .p-content-h3 {
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 2.4vw, 1.625rem);
+    font-weight: 500;
+    color: #1A1A1A;
+    margin: 48px 0 18px;
+    letter-spacing: -0.015em;
+  }
+
+  .p-content-types-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 36px;
+  }
+  .p-content-type-card {
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: border-color 0.18s;
+  }
+  .p-content-type-card:hover { border-color: #cfd6e2; }
+  .p-content-type-card--bonus {
+    background: linear-gradient(180deg, rgba(75,123,229,0.04), #fff);
+    border-color: #4B7BE5;
+  }
+  .p-content-type-head {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .p-content-type-name {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1A1A1A;
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+  }
+  .p-content-type-meta {
+    font-size: 0.6875rem;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .p-content-type-pts {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 300;
+    color: #4B7BE5;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .p-content-type-pts span {
+    font-size: 0.75rem;
+    color: #999;
+    margin-left: 2px;
+    font-weight: 400;
+  }
+  .p-content-type-desc {
+    font-size: 0.875rem;
+    color: #555;
+    line-height: 1.55;
+    margin: 0;
+  }
+  .p-content-type-ideas-label {
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    margin-bottom: 4px;
+  }
+  .p-content-type-ideas ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .p-content-type-ideas li {
+    position: relative;
+    padding-left: 14px;
+    font-size: 0.8125rem;
+    color: #666;
+    line-height: 1.45;
+  }
+  .p-content-type-ideas li::before {
+    content: '·';
+    position: absolute;
+    left: 4px;
+    color: #4B7BE5;
+    font-weight: 700;
+  }
+  .p-content-type-platforms {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-top: 8px;
+    border-top: 1px solid #f5f5f5;
+  }
+  .p-content-type-platform {
+    font-size: 0.6875rem;
+    padding: 3px 9px;
+    background: #f5f5f7;
+    color: #666;
+    border-radius: 999px;
+    font-weight: 500;
+  }
+  .p-content-type-refs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    font-size: 0.75rem;
+    color: #888;
+  }
+  .p-content-type-refs-label {
+    font-weight: 600;
+  }
+  .p-content-type-ref {
+    color: #4B7BE5;
+    text-decoration: none;
+  }
+  .p-content-type-ref:hover { text-decoration: underline; }
+
+  .p-content-notes {
+    margin-top: 20px;
+    padding: 24px;
+    background: #FAFAF8;
+    border: 1px solid #ececec;
+    border-radius: 12px;
+  }
+  .p-content-notes-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 12px;
+    letter-spacing: -0.005em;
+  }
+  .p-content-notes ul {
+    margin: 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .p-content-notes li {
+    font-size: 0.875rem;
+    color: #555;
+    line-height: 1.55;
+  }
+  .p-content-notes li strong { color: #1a1a1a; }
 
   /* ─── Proceso (Cómo funciona) ─────────────────────── */
   .p-proc-steps {

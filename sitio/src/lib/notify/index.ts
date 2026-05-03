@@ -249,6 +249,49 @@ const templates: Record<string, Template> = {
     `,
     text: `Tu cuenta SACS Plan Fideliza está activa. Entra a ${d.loginUrl || 'app.sacscloud.com'} con ${d.email}.`,
   }),
+  partner_content_approved: (d) => ({
+    subject: `✅ Contenido aprobado · +${d.puntos} puntos · ${d.tipo_label}`,
+    html: `
+      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <div style="text-align:center;margin-bottom:18px">
+          <div style="display:inline-block;padding:6px 14px;background:#2AB5A0;color:#fff;font-size:0.6875rem;font-weight:800;text-transform:uppercase;letter-spacing:0.10em;border-radius:4px">Contenido aprobado</div>
+        </div>
+        <h2 style="font-size:1.375rem;font-weight:600;margin:0 0 12px;letter-spacing:-0.01em;text-align:center">+${d.puntos} puntos para ${d.nombre} 🎯</h2>
+        <p style="color:#555;line-height:1.6;margin:0 0 16px;text-align:center">
+          Tu <strong>${d.tipo_label}</strong> fue aprobado y suma a tu meta del mes <strong>${d.mes || ''}</strong>.
+        </p>
+        <div style="background:#fafafa;border:1px solid #ececec;padding:14px 16px;border-radius:8px;margin:14px 0;font-size:0.875rem;color:#555">
+          <strong>Link aprobado:</strong><br/>
+          <a href="${d.url}" style="color:#4B7BE5;word-break:break-all">${d.url}</a>
+        </div>
+        <div style="text-align:center;margin:22px 0">
+          <a href="${d.portalUrl || ''}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:13px 26px;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.875rem">Ver mi avance del mes</a>
+        </div>
+        <p style="color:#bbb;font-size:0.6875rem;margin-top:24px;text-align:center">SACS Partners · partners@sacscloud.com</p>
+      </div>
+    `,
+    text: `Tu ${d.tipo_label} fue aprobado: +${d.puntos} puntos. Ver: ${d.portalUrl}`,
+  }),
+  partner_content_rejected: (d) => ({
+    subject: `Contenido no aprobado · ${d.tipo_label}`,
+    html: `
+      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <h2 style="font-size:1.25rem;font-weight:600;margin:0 0 12px">Hola ${d.nombre || ''},</h2>
+        <p style="color:#555;line-height:1.6;margin:0 0 14px">
+          Revisamos tu <strong>${d.tipo_label}</strong> y no pudimos aprobarlo esta vez.
+        </p>
+        <div style="background:rgba(229,75,75,0.06);border-left:3px solid #E54B4B;padding:14px 16px;margin:14px 0;font-size:0.875rem;color:#444;line-height:1.55">
+          <strong>Motivo:</strong> ${d.motivo}
+        </div>
+        <p style="color:#555;line-height:1.6;margin:0 0 14px;font-size:0.875rem">
+          Si tienes dudas o quieres ajustar, escríbenos a partners@sacscloud.com — con gusto te ayudamos a calibrar para la próxima.
+        </p>
+        <a href="${d.portalUrl}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.875rem">Ver mi portal</a>
+        <p style="color:#bbb;font-size:0.6875rem;margin-top:24px">SACS Partners · partners@sacscloud.com</p>
+      </div>
+    `,
+    text: `Tu ${d.tipo_label} no fue aprobado: ${d.motivo}. Portal: ${d.portalUrl}`,
+  }),
   partner_application_user: (d) => ({
     subject: `Recibimos tu solicitud · Programa Partners SACS`,
     html: `

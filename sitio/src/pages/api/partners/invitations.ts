@@ -49,7 +49,8 @@ const DEFAULT_TEMPLATES: Record<string, any> = {
     ],
     compromisos: [
       { title: 'Cuota mínima anual de 10 sucursales',          detail: 'Mínimo 10 sucursales activas vendidas en cualquier plan durante los primeros 12 meses. Pueden ser 10 clientes con 1 sucursal cada uno, 1 cliente con 10 sucursales, o cualquier combinación. Esto es lo que hace al programa sustentable para ambos lados.', frequency: 'Anual' },
-      { title: 'Crear 4 videos al mes con la plataforma',    detail: 'Mínimo 4 videos mensuales usando SACS, alineados al plan de trabajo y palabras clave que enviamos al inicio de cada mes.', frequency: 'Mensual' },
+      { title: 'Generar 100 puntos al mes en contenido',     detail: 'Cada tipo de contenido vale puntos distintos (story 10 · tutorial 15 · caso de uso 20 · webinar 40 · mini-documental 50). Meta mensual: 100 puntos. Si haces más, los puntos se acumulan al siguiente mes. SACS te envía cada mes 3-5 palabras clave a posicionar para enfocar el contenido.', frequency: 'Mensual · 100 pts' },
+      { title: 'Reportar tus links en el portal',            detail: 'Subir el link de cada pieza al portal (tab "Reportar contenido") para que admin SACS valide y otorgue los puntos.', frequency: 'Por contenido' },
       { title: 'Publicar en tus redes sociales',             detail: 'Publicar los videos en tus propias redes (Instagram, TikTok, YouTube o LinkedIn) y compartir con tu audiencia.', frequency: 'Mensual' },
       { title: 'Enviarnos los archivos originales',          detail: 'Compartir con SACS los archivos originales de cada video para que también los publiquemos en nuestros canales y multiplicar el alcance.', frequency: 'Mensual' },
       { title: 'Responder a leads asignados en menos de 24 h', detail: 'Cuando SACS te asigne un lead calificado, contactarlo en menos de 24 horas hábiles. Si no puedes en ese plazo, marcarlo en el portal para reasignar y no enfriar la oportunidad.', frequency: 'Por lead' },

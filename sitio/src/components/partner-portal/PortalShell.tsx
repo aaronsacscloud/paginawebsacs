@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-type TabId = 'summary' | 'commissions' | 'payments' | 'leads' | 'link' | 'profile';
+type TabId = 'summary' | 'commissions' | 'payments' | 'leads' | 'content' | 'link' | 'profile';
 
 interface Props {
   initialUser: { id: string; nombre: string; email: string };
@@ -82,6 +82,7 @@ export default function PortalShell({ initialUser }: Props) {
     { id: 'commissions', label: 'Comisiones',   icon: '💰' },
     { id: 'payments',    label: 'Pagos',        icon: '🏦' },
     { id: 'leads',       label: 'Prospectos',   icon: '👥' },
+    { id: 'content',     label: 'Reportar contenido', icon: '🎬' },
     { id: 'link',        label: 'Mi link',      icon: '🔗' },
     { id: 'profile',     label: 'Mi perfil',    icon: '⚙️' },
   ];
@@ -159,6 +160,7 @@ export default function PortalShell({ initialUser }: Props) {
           {tab === 'commissions' && <CommissionsTab />}
           {tab === 'payments'    && <PaymentsTab />}
           {tab === 'leads'       && <LeadsTab />}
+          {tab === 'content'     && <ContentTab />}
           {tab === 'link'        && <LinkTab />}
           {tab === 'profile'     && <ProfileTab />}
         </main>
@@ -553,6 +555,210 @@ function LeadsTab() {
     </div>
   );
 }
+
+// ─── Tab: Content (reportar contenido) ────────────────────────
+function ContentTab() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
+
+  const [formUrl, setFormUrl] = useState('');
+  const [formTipo, setFormTipo] = useState('');
+  const [formPlat, setFormPlat] = useState('');
+  const [formDesc, setFormDesc] = useState('');
+
+  async function load() {
+    setLoading(true);
+    const res = await fetch('/api/partner-portal/content');
+    const d = await res.json();
+    setData(d);
+    setLoading(false);
+  }
+  useEffect(() => { load(); }, []);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setMsg(null);
+    if (!formUrl || !formTipo) {
+      setMsg({ text: 'URL y tipo son requeridos.', ok: false });
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/partner-portal/content', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: formUrl, tipo: formTipo, plataforma: formPlat || null, descripcion: formDesc || null }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Error');
+      setMsg({ text: '✓ Enviado para revisión. Recibirás email con la decisión.', ok: true });
+      setFormUrl(''); setFormDesc(''); setFormPlat('');
+      load();
+    } catch (e: any) {
+      setMsg({ text: e.message || 'Error al enviar', ok: false });
+    } finally { setSubmitting(false); }
+  }
+
+  if (loading) return <div style={S.loading}>Cargando…</div>;
+  if (!data) return <div style={S.error}>No se pudo cargar.</div>;
+
+  const sum = data.summary;
+  const tipos: any[] = data.tipos || [];
+
+  return (
+    <div>
+      <h1 style={S.h1}>Reportar mi contenido</h1>
+      <p style={S.lead}>
+        Sube los links de tus videos y posts. Admin SACS los revisa y otorga puntos según el tipo.
+        <strong> Meta del mes: {sum.meta} puntos.</strong> Si haces más, los puntos se acumulan al siguiente mes.
+      </p>
+
+      {/* Progress card */}
+      <div style={contentStyles.progress}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
+          <div>
+            <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>Mes en curso · {sum.mes_actual}</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, color: '#1a1a1a' }}>
+              {sum.puntos_mes} <span style={{ color: '#bbb', fontWeight: 400 }}>/ {sum.meta} pts</span>
+            </div>
+          </div>
+          {sum.puntos_acumulados > 0 && (
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>Acumulado de meses anteriores</div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: '#2AB5A0' }}>+{sum.puntos_acumulados} pts</div>
+            </div>
+          )}
+        </div>
+        <div style={{ background: '#f0f0f0', borderRadius: 999, height: 8, overflow: 'hidden' }}>
+          <div style={{ background: sum.progreso_pct >= 100 ? '#2AB5A0' : '#4B7BE5', height: '100%', width: `${sum.progreso_pct}%`, transition: 'width 0.3s' }} />
+        </div>
+        <div style={{ marginTop: 10, fontSize: 12, color: '#666', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <span>{sum.pending_count} pending</span>
+          <span>{sum.approved_count} aprobados</span>
+          {sum.rejected_count > 0 && <span style={{ color: '#b93333' }}>{sum.rejected_count} rechazados</span>}
+        </div>
+      </div>
+
+      {/* Form */}
+      <h2 style={S.h2}>Subir un nuevo link</h2>
+      <form onSubmit={submit} style={contentStyles.form}>
+        <label style={contentStyles.field}>
+          <span style={contentStyles.fieldLabel}>URL del contenido *</span>
+          <input type="url" required placeholder="https://www.tiktok.com/@usuario/video/..." value={formUrl} onChange={e => setFormUrl(e.target.value)} style={S.input} />
+        </label>
+        <label style={contentStyles.field}>
+          <span style={contentStyles.fieldLabel}>Tipo de contenido *</span>
+          <select required value={formTipo} onChange={e => setFormTipo(e.target.value)} style={{ ...S.input, padding: '11px 14px' }}>
+            <option value="">Elige uno…</option>
+            {tipos.map(t => <option key={t.id} value={t.id}>{t.nombre} ({t.puntos} pts)</option>)}
+          </select>
+        </label>
+        <label style={contentStyles.field}>
+          <span style={contentStyles.fieldLabel}>Plataforma</span>
+          <select value={formPlat} onChange={e => setFormPlat(e.target.value)} style={{ ...S.input, padding: '11px 14px' }}>
+            <option value="">Elige una…</option>
+            <option value="instagram">Instagram</option>
+            <option value="tiktok">TikTok</option>
+            <option value="youtube">YouTube</option>
+            <option value="linkedin">LinkedIn</option>
+            <option value="twitter">X / Twitter</option>
+            <option value="otro">Otro</option>
+          </select>
+        </label>
+        <label style={contentStyles.fieldFull}>
+          <span style={contentStyles.fieldLabel}>Descripción corta (opcional)</span>
+          <textarea rows={2} value={formDesc} onChange={e => setFormDesc(e.target.value)} placeholder="Tema, palabras clave, contexto…" style={{ ...S.input, resize: 'vertical' }} />
+        </label>
+        <div>
+          <button type="submit" disabled={submitting} style={S.btnPrimary}>
+            {submitting ? 'Enviando…' : 'Enviar para revisión'}
+          </button>
+          {msg && (
+            <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 6, fontSize: 13, background: msg.ok ? 'rgba(42,181,160,0.10)' : 'rgba(229,75,75,0.08)', color: msg.ok ? '#1A8F7A' : '#b93333' }}>
+              {msg.text}
+            </div>
+          )}
+        </div>
+      </form>
+
+      {/* List */}
+      <h2 style={S.h2}>Mis envíos</h2>
+      {data.items.length === 0 ? (
+        <div style={S.empty}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>🎬</div>
+          <strong style={{ display: 'block', color: '#1a1a1a', marginBottom: 6 }}>Sin contenido enviado todavía</strong>
+          <div>Empieza con un story de 10 puntos — toma 5 minutos.</div>
+        </div>
+      ) : (
+        <div style={contentStyles.tableWrap}>
+          <table style={S.table}>
+            <thead>
+              <tr>
+                <th style={S.th}>Tipo</th>
+                <th style={S.th}>Link</th>
+                <th style={S.th}>Estado</th>
+                <th style={{ ...S.th, textAlign: 'right' as const }}>Puntos</th>
+                <th style={S.th}>Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.items.map((it: any) => {
+                const tipoMeta = tipos.find(t => t.id === it.tipo);
+                const estadoColor = it.estado === 'approved' ? { bg: 'rgba(42,181,160,0.12)', color: '#1A8F7A' }
+                  : it.estado === 'rejected' ? { bg: 'rgba(229,75,75,0.10)', color: '#b93333' }
+                  : { bg: 'rgba(232,168,56,0.16)', color: '#a06600' };
+                return (
+                  <tr key={it.id} style={S.tr}>
+                    <td style={S.td}>{tipoMeta?.nombre || it.tipo}</td>
+                    <td style={S.td}>
+                      <a href={it.url} target="_blank" rel="noopener" style={{ color: '#4B7BE5', fontSize: 12, wordBreak: 'break-all' }}>{it.url.length > 60 ? it.url.slice(0, 60) + '…' : it.url}</a>
+                      {it.descripcion && <div style={S.subtxt}>{it.descripcion}</div>}
+                      {it.estado === 'rejected' && it.nota_admin && <div style={{ ...S.subtxt, color: '#b93333' }}>Motivo: {it.nota_admin}</div>}
+                    </td>
+                    <td style={S.td}>
+                      <span style={{ ...S.badge, background: estadoColor.bg, color: estadoColor.color }}>
+                        {it.estado === 'approved' ? 'Aprobado' : it.estado === 'rejected' ? 'Rechazado' : 'Pending'}
+                      </span>
+                    </td>
+                    <td style={{ ...S.td, textAlign: 'right' as const, fontWeight: 700 }}>
+                      {it.estado === 'approved' ? `${it.puntos} pts` : '—'}
+                    </td>
+                    <td style={{ ...S.td, fontSize: 12, color: '#888' }}>{fmtDate(it.created_at)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Tipos disponibles */}
+      <h2 style={S.h2}>Tipos de contenido y puntos</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
+        {tipos.map(t => (
+          <div key={t.id} style={{ padding: 14, background: '#fff', border: '1px solid #ececec', borderRadius: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 14, color: '#1a1a1a' }}>{t.nombre}</div>
+              <div style={{ color: '#4B7BE5', fontWeight: 700, fontSize: 13 }}>{t.puntos} pts</div>
+            </div>
+            <div style={{ fontSize: 12, color: '#666', lineHeight: 1.45 }}>{t.descripcion}</div>
+            <div style={{ fontSize: 11, color: '#999', marginTop: 6 }}>Duración: {t.duracion}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const contentStyles: Record<string, React.CSSProperties> = {
+  progress: { background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: 22, marginBottom: 32 },
+  form: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: 20, marginBottom: 32 },
+  field: { display: 'flex', flexDirection: 'column', gap: 6 },
+  fieldFull: { display: 'flex', flexDirection: 'column', gap: 6, gridColumn: '1 / -1' },
+  fieldLabel: { fontSize: 11, fontWeight: 700, color: '#999', letterSpacing: '0.06em', textTransform: 'uppercase' },
+  tableWrap: { overflowX: 'auto', background: '#fff', borderRadius: 12, border: '1px solid #ececec', marginBottom: 32 },
+};
 
 // ─── Tab: Link ──────────────────────────────────────────────────
 function LinkTab() {
