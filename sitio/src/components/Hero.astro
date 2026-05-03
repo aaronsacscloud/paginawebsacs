@@ -10770,12 +10770,63 @@ const useCases = [
        contenido del active slide. */
     .tablet-screen { aspect-ratio: auto; }
 
-    /* ── #11 Tienda en línea (.ec-frame) ── frame más alto en móvil
-       Para que el laptop morph → tablet → phone se vea con espacio. */
+    /* ── #11 Tienda en línea (.ec-frame) ── lock a UN solo diseño en móvil.
+       El morph laptop→tablet→phone se ve horrible en un container chico
+       (texto colapsa a 1-2 palabras por línea cuando el device queda en 30%).
+       Decisión: matar el morph y dejar el laptop a tamaño completo todo
+       el ciclo. El cycle de pantallas (home→catalog→cart→checkout) sigue
+       corriendo dentro de ese mismo device — solo escondemos la layer "ok"
+       que estaba diseñada para verse en formato mobile shrunken. */
     .ec-frame {
       aspect-ratio: 4 / 5;
       padding: 6% 5%;
     }
+    .ec-device,
+    .ec-screen,
+    .ec-device-bar {
+      animation: none !important;
+    }
+    .ec-device {
+      width: 96%;
+      height: 92%;
+      border-radius: 14px;
+    }
+    .ec-screen { border-radius: 8px; }
+    .ec-device-bar {
+      opacity: 1;
+      height: auto;
+      padding-bottom: 4px;
+    }
+    .ec-layer--ok { display: none; }
+    /* Reescritura del timeline (14s) sin morph y sin la fase mobile:
+       0-28%   home
+       32-55%  catalog
+       45-55%  cart drawer (overlay sobre catalog)
+       60-100% checkout */
+    .ec-layer--home     { animation: ec-mob-home 14s ease-in-out infinite; }
+    .ec-layer--catalog  { animation: ec-mob-catalog 14s ease-in-out infinite; }
+    .ec-layer--cart     { animation: ec-mob-cart 14s ease-in-out infinite; }
+    .ec-layer--checkout { animation: ec-mob-checkout 14s ease-in-out infinite; }
+  }
+  @keyframes ec-mob-home {
+    0%, 28%   { opacity: 1; }
+    32%, 100% { opacity: 0; }
+  }
+  @keyframes ec-mob-catalog {
+    0%, 30%   { opacity: 0; }
+    32%, 55%  { opacity: 1; }
+    58%, 100% { opacity: 0; }
+  }
+  @keyframes ec-mob-cart {
+    0%, 43%   { opacity: 0; }
+    45%, 55%  { opacity: 1; }
+    58%, 100% { opacity: 0; }
+  }
+  @keyframes ec-mob-checkout {
+    0%, 57%   { opacity: 0; }
+    60%, 100% { opacity: 1; }
+  }
+  @media (max-width: 1023px) {
 
     /* ── #15 Vende en META & TikTok Shop ── iconos floating más chicos
        en móvil para no saturar el frame visualmente. */
