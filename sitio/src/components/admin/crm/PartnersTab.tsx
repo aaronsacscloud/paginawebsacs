@@ -63,6 +63,7 @@ export default function PartnersTab() {
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<Invitation | null>(null);
   const [search, setSearch] = useState('');
+  const [detailPartnerId, setDetailPartnerId] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -305,6 +306,9 @@ export default function PartnersTab() {
                         {it.estado === 'accepted' && (
                           <button style={btnSm('#6C5CE7', '#fff')} onClick={() => provisionFideliza(it)} title="Activar SACS Plan Fideliza para este partner">Fideliza</button>
                         )}
+                        {(it as any).team_member_id && (
+                          <button style={btnSm()} onClick={() => setDetailPartnerId((it as any).team_member_id)} title="Ver detalle completo del partner">Detalle</button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -322,9 +326,219 @@ export default function PartnersTab() {
           onSaved={() => { setShowCreate(false); setEditing(null); load(); }}
         />
       )}
+
+      {detailPartnerId && (
+        <PartnerDetailDrawer
+          partnerId={detailPartnerId}
+          onClose={() => setDetailPartnerId(null)}
+        />
+      )}
     </div>
   );
 }
+
+// ─── Partner Detail Drawer ──────────────────────────────────────
+function PartnerDetailDrawer({ partnerId, onClose }: { partnerId: string; onClose: () => void }) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true); setError(null);
+    fetch(`/api/partners/detail?partner_id=${encodeURIComponent(partnerId)}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) setError(d.error); else setData(d);
+        setLoading(false);
+      })
+      .catch(e => { setError(String(e)); setLoading(false); });
+  }, [partnerId]);
+
+  // Esc to close + body scroll lock
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev; };
+  }, [onClose]);
+
+  const _fmt = (n?: number) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
+  const _fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '—';
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 999, display: 'flex', justifyContent: 'flex-end' }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width: '100%', maxWidth: 720,
+        height: '100vh', overflowY: 'auto',
+        background: '#f5f6f8',
+        boxShadow: '-12px 0 40px -12px rgba(0,0,0,0.18)',
+        animation: 'slideInRight 0.25s ease-out',
+      }}>
+        <div style={{ position: 'sticky', top: 0, background: '#fff', borderBottom: '1px solid #ececec', padding: '18px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 2 }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#4B7BE5', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Detalle del partner</div>
+            <div style={{ fontFamily: 'Clash Display, Sora, sans-serif', fontSize: 18, fontWeight: 600, color: '#1a1a1a', marginTop: 4 }}>
+              {data?.member?.nombre || 'Cargando…'}
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: 'transparent', border: '1px solid #ddd', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', color: '#666', fontSize: 16 }}>✕</button>
+        </div>
+
+        <div style={{ padding: 24 }}>
+          {loading && <div style={{ padding: 32, textAlign: 'center', color: '#888' }}>Cargando detalle…</div>}
+          {error && <div style={{ padding: 16, background: 'rgba(229,75,75,0.10)', color: '#b93333', borderRadius: 8 }}>{error}</div>}
+          {data && (
+            <>
+              {/* Member overview */}
+              <section style={dCard}>
+                <h3 style={dCardTitle}>Datos básicos</h3>
+                <div style={dRow}><span style={dLabel}>Email</span><span>{data.member.email}</span></div>
+                <div style={dRow}><span style={dLabel}>Rol</span><span>{data.member.rol}</span></div>
+                <div style={dRow}><span style={dLabel}>Comisión</span><span>{data.member.default_commission_pct ?? 0}%</span></div>
+                <div style={dRow}><span style={dLabel}>Activo</span><span>{data.member.activo ? '✓ Sí' : '✗ No'}</span></div>
+                <div style={dRow}><span style={dLabel}>Último login</span><span>{_fmtDate(data.member.last_login_at)}</span></div>
+                <div style={dRow}><span style={dLabel}>Fideliza activado</span><span>{data.member.fideliza_account_at ? `✓ ${_fmtDate(data.member.fideliza_account_at)}` : '— Pendiente'}</span></div>
+                <div style={dRow}><span style={dLabel}>Cuenta creada</span><span>{_fmtDate(data.member.created_at)}</span></div>
+              </section>
+
+              {/* Invitation */}
+              {data.invitation && (
+                <section style={dCard}>
+                  <h3 style={dCardTitle}>Invitación</h3>
+                  <div style={dRow}><span style={dLabel}>Folio</span><span>{data.invitation.numero}</span></div>
+                  <div style={dRow}><span style={dLabel}>Tipo</span><span>{data.invitation.tipo}</span></div>
+                  <div style={dRow}><span style={dLabel}>Estado</span><span>{data.invitation.estado}</span></div>
+                  <div style={dRow}><span style={dLabel}>Slug landing</span><span style={{ fontFamily: 'monospace' }}>{data.invitation.slug_landing || '—'}</span></div>
+                  <div style={dRow}><span style={dLabel}>Vigencia</span><span>{_fmtDate(data.invitation.vigencia)}</span></div>
+                  <div style={dRow}><span style={dLabel}>Aceptada</span><span>{_fmtDate(data.invitation.aceptado_fecha)}</span></div>
+                  {data.invitation.slug_landing && (
+                    <div style={{ marginTop: 12 }}>
+                      <a href={`https://www.sacscloud.com/p/${data.invitation.slug_landing}`} target="_blank" rel="noopener" style={{ fontSize: 12, color: '#4B7BE5' }}>
+                        sacscloud.com/p/{data.invitation.slug_landing} ↗
+                      </a>
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {/* Commissions summary */}
+              <section style={dCard}>
+                <h3 style={dCardTitle}>Comisiones</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 14 }}>
+                  <DetailKpi label="Pending" value={_fmt(data.summary.pending)} accent="#E8A838" />
+                  <DetailKpi label="Earned" value={_fmt(data.summary.earned)} accent="#4B7BE5" />
+                  <DetailKpi label="Paid" value={_fmt(data.summary.paid)} accent="#2AB5A0" />
+                  <DetailKpi label="Total" value={_fmt(data.summary.total)} />
+                </div>
+                <div style={{ fontSize: 12, color: '#666', marginBottom: 10 }}>
+                  Bonos: {data.summary.countByTipo.prueba_gratis} prueba gratis · {data.summary.countByTipo.demo_completada} demos · {data.summary.countByTipo.venta_directa} ventas
+                </div>
+                {data.commissions.length > 0 && (
+                  <div style={{ background: '#fafafa', borderRadius: 6, padding: 12, fontSize: 12, color: '#555', maxHeight: 220, overflowY: 'auto' }}>
+                    {data.commissions.slice(0, 10).map((c: any) => (
+                      <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px dashed #ececec' }}>
+                        <span>{c.tipo} · {c.status} · {_fmtDate(c.created_at)}</span>
+                        <strong>{_fmt(c.commission_amount)}</strong>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              {/* Leads */}
+              <section style={dCard}>
+                <h3 style={dCardTitle}>Leads atribuidos · {data.contacts.length}</h3>
+                {data.contacts.length === 0 ? (
+                  <div style={{ fontSize: 13, color: '#888' }}>Sin leads atribuidos.</div>
+                ) : (
+                  <div style={{ background: '#fafafa', borderRadius: 6, padding: 12, fontSize: 12, color: '#555', maxHeight: 200, overflowY: 'auto' }}>
+                    {data.contacts.slice(0, 10).map((c: any) => (
+                      <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px dashed #ececec' }}>
+                        <span><strong>{c.nombre}</strong> · {c.email}</span>
+                        <span>{c.lifecycle_stage || '—'}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              {/* Bookings */}
+              <section style={dCard}>
+                <h3 style={dCardTitle}>Demos · {data.bookings.length}</h3>
+                {data.bookings.length === 0 ? (
+                  <div style={{ fontSize: 13, color: '#888' }}>Sin demos agendados.</div>
+                ) : (
+                  <div style={{ background: '#fafafa', borderRadius: 6, padding: 12, fontSize: 12, color: '#555', maxHeight: 200, overflowY: 'auto' }}>
+                    {data.bookings.slice(0, 10).map((b: any) => (
+                      <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px dashed #ececec' }}>
+                        <span><strong>{b.invitee_nombre}</strong> · {_fmtDate(b.fecha)}</span>
+                        <span>{b.estado}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              {/* Deals */}
+              <section style={dCard}>
+                <h3 style={dCardTitle}>Deals · {data.deals.length}</h3>
+                {data.deals.length === 0 ? (
+                  <div style={{ fontSize: 13, color: '#888' }}>Sin deals atribuidos.</div>
+                ) : (
+                  <div style={{ background: '#fafafa', borderRadius: 6, padding: 12, fontSize: 12, color: '#555', maxHeight: 200, overflowY: 'auto' }}>
+                    {data.deals.slice(0, 10).map((d: any) => (
+                      <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px dashed #ececec' }}>
+                        <span><strong>{d.nombre}</strong> · {d.stage}</span>
+                        <span>{_fmt(d.valor_total)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              {/* Activities */}
+              {data.activities.length > 0 && (
+                <section style={dCard}>
+                  <h3 style={dCardTitle}>Actividad reciente</h3>
+                  <div style={{ background: '#fafafa', borderRadius: 6, padding: 12, fontSize: 12, color: '#555', maxHeight: 200, overflowY: 'auto' }}>
+                    {data.activities.slice(0, 12).map((a: any) => (
+                      <div key={a.id} style={{ padding: '5px 0', borderBottom: '1px dashed #ececec' }}>
+                        <div style={{ fontSize: 11, color: '#999' }}>{_fmtDate(a.created_at)} · {a.tipo}</div>
+                        <div>{a.titulo}</div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes slideInRight {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+      ` }} />
+    </div>
+  );
+}
+
+function DetailKpi({ label, value, accent }: { label: string; value: string; accent?: string }) {
+  return (
+    <div style={{ background: '#fff', borderRadius: 6, padding: 10, border: '1px solid #ececec', borderLeft: accent ? `3px solid ${accent}` : '1px solid #ececec' }}>
+      <div style={{ fontSize: 9, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontFamily: 'Clash Display, Sora, sans-serif', fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{value}</div>
+    </div>
+  );
+}
+
+const dCard: React.CSSProperties = { background: '#fff', border: '1px solid #ececec', borderRadius: 8, padding: 18, marginBottom: 14 };
+const dCardTitle: React.CSSProperties = { fontFamily: 'Clash Display, Sora, sans-serif', fontSize: 14, fontWeight: 600, margin: '0 0 12px', color: '#1a1a1a' };
+const dRow: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: 13, borderBottom: '1px solid #f5f5f5' };
+const dLabel: React.CSSProperties = { color: '#888', fontWeight: 500 };
 
 // ─────────────────────────────────────────────────────────────────
 
