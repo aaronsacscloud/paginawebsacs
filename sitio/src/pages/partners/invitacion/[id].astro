@@ -1729,188 +1729,176 @@ const partnerLandingUrl = invitation.slug_landing
     margin-top: 12px;
   }
 
-  /* ─── Funnel de conversión: showcase visual del embudo SACS ─── */
+  /* ─── Funnel de conversión — Squarespace style: limpio, espaciado, monocromático ─── */
   .p-funnel {
-    margin: 36px 0 8px;
-    padding: 36px;
-    background: linear-gradient(160deg, #1a1a1a 0%, #2a2750 100%);
-    color: #fff;
-    border-radius: 18px;
-    position: relative;
-    overflow: hidden;
+    margin: 64px 0 24px;
+    padding: 72px 56px;
+    background: #FAFAF8;
+    border-radius: 4px;
+    border: none;
   }
-  .p-funnel::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background:
-      radial-gradient(ellipse 60% 50% at 20% 0%, rgba(75,123,229,0.20), transparent 60%),
-      radial-gradient(ellipse 50% 40% at 90% 100%, rgba(108,92,231,0.18), transparent 60%);
-    pointer-events: none;
-  }
-  .p-funnel > * { position: relative; z-index: 1; }
 
   .p-funnel-eyebrow {
     display: inline-block;
-    padding: 6px 14px;
-    background: rgba(255,255,255,0.10);
-    color: rgba(255,255,255,0.92);
-    border-radius: 999px;
+    color: #4B7BE5;
+    font-family: var(--font-body);
     font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.10em;
+    font-weight: 600;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
-    margin-bottom: 18px;
+    margin-bottom: 28px;
   }
   .p-funnel-title {
     font-family: var(--font-display);
-    font-size: clamp(1.5rem, 3vw, 2.125rem);
-    font-weight: 700;
+    font-size: clamp(1.875rem, 3.4vw, 2.625rem);
+    font-weight: 400;
     line-height: 1.15;
-    color: #fff;
-    margin: 0 0 14px;
-    letter-spacing: -0.02em;
+    color: #1A1A1A;
+    margin: 0 0 28px;
+    letter-spacing: -0.025em;
+    max-width: 720px;
   }
   .p-funnel-title-accent {
-    background: linear-gradient(120deg, #6CD6C2 0%, #4B7BE5 60%, #B49EFF 100%);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: #4B7BE5;
+    font-weight: 500;
+    background: none;
+    -webkit-text-fill-color: initial;
   }
   .p-funnel-lead {
-    font-size: 0.9375rem;
-    line-height: 1.6;
-    color: rgba(255,255,255,0.75);
-    margin: 0 0 32px;
-    max-width: 680px;
+    font-size: 1rem;
+    line-height: 1.7;
+    color: #555;
+    margin: 0 0 64px;
+    max-width: 640px;
+    font-weight: 400;
   }
 
   .p-funnel-stages {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 32px;
     align-items: stretch;
-    gap: 10px;
-    justify-content: center;
   }
   .p-funnel-stage {
-    flex: 1 1 160px;
-    min-width: 0;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.10);
-    border-radius: 12px;
-    padding: 18px 16px;
+    background: transparent;
+    border: none;
+    padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 16px;
     position: relative;
-    backdrop-filter: blur(6px);
-    transition: transform 0.2s, border-color 0.2s;
-  }
-  .p-funnel-stage:hover {
-    transform: translateY(-2px);
-    border-color: rgba(255,255,255,0.20);
   }
   .p-funnel-stage--win {
-    background: linear-gradient(160deg, rgba(42,181,160,0.18), rgba(75,123,229,0.10));
-    border-color: rgba(42,181,160,0.30);
+    background: transparent;
+    border: none;
   }
   .p-funnel-stage-num {
-    position: absolute;
-    top: -10px; left: 12px;
-    width: 22px; height: 22px;
+    position: static;
+    width: 32px; height: 32px;
     border-radius: 50%;
     background: #fff;
-    color: #1a1a1a;
+    color: #4B7BE5;
+    border: 1px solid #4B7BE5;
     display: flex; align-items: center; justify-content: center;
     font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 0.75rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    margin-bottom: 8px;
   }
   .p-funnel-stage-icon {
-    font-size: 1.5rem;
-    line-height: 1;
-    margin-top: 4px;
+    /* Removido visualmente — mantenido en HTML por accesibilidad */
+    display: none;
   }
   .p-funnel-stage-title {
     font-family: var(--font-display);
-    font-size: 0.9375rem;
-    font-weight: 700;
-    color: #fff;
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: #1A1A1A;
     letter-spacing: -0.01em;
+    margin: 0;
   }
   .p-funnel-stage-detail {
-    font-size: 0.75rem;
-    color: rgba(255,255,255,0.70);
-    line-height: 1.5;
+    font-size: 0.875rem;
+    color: #666;
+    line-height: 1.65;
     flex: 1;
+    margin: 0;
   }
   .p-funnel-stage-detail strong {
-    color: #6CD6C2;
-    font-weight: 700;
+    color: #1A1A1A;
+    font-weight: 600;
   }
   .p-funnel-stage-tag {
     align-self: flex-start;
-    padding: 3px 9px;
-    font-size: 0.625rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
+    padding: 0;
+    background: transparent;
+    color: #4B7BE5;
+    font-family: var(--font-body);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.10);
-    color: rgba(255,255,255,0.85);
-    margin-top: 2px;
+    border-radius: 0;
+    border: none;
+    border-top: 1px solid #4B7BE5;
+    padding-top: 12px;
+    margin-top: 4px;
+    width: 100%;
   }
-  .p-funnel-stage-tag--auto {
-    background: rgba(75,123,229,0.22);
-    color: #B5D0FF;
-  }
+  .p-funnel-stage-tag--auto,
   .p-funnel-stage-tag--win {
-    background: rgba(42,181,160,0.30);
-    color: #6CD6C2;
+    background: transparent;
+    color: #4B7BE5;
+    border-top-color: #4B7BE5;
   }
-  .p-funnel-arrow {
-    align-self: center;
-    font-size: 1.5rem;
-    color: rgba(255,255,255,0.35);
-    flex-shrink: 0;
-  }
+  /* Flechas removidas en versión limpia — el grid 5-col ya marca el flujo */
+  .p-funnel-arrow { display: none; }
 
   .p-funnel-tools {
-    margin-top: 28px;
-    padding-top: 24px;
-    border-top: 1px solid rgba(255,255,255,0.10);
+    margin-top: 64px;
+    padding-top: 48px;
+    border-top: 1px solid #E5E5E0;
   }
   .p-funnel-tools-title {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: rgba(255,255,255,0.65);
-    text-transform: uppercase;
-    letter-spacing: 0.10em;
-    margin-bottom: 14px;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 500;
+    color: #1A1A1A;
+    text-transform: none;
+    letter-spacing: -0.005em;
+    margin-bottom: 28px;
   }
   .p-funnel-tools-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 18px 32px;
   }
   .p-funnel-tool {
-    padding: 10px 14px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 8px;
-    font-size: 0.8125rem;
-    color: rgba(255,255,255,0.85);
-    line-height: 1.5;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-left: 2px solid #4B7BE5;
+    border-radius: 0;
+    padding-left: 18px;
+    font-size: 0.9375rem;
+    color: #555;
+    line-height: 1.55;
+    font-weight: 400;
   }
 
-  @media (max-width: 768px) {
-    .p-funnel { padding: 24px 18px; }
-    .p-funnel-arrow {
-      transform: rotate(90deg);
-      align-self: center;
-      font-size: 1.25rem;
+  @media (max-width: 1023px) {
+    .p-funnel-stages {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 36px;
     }
-    .p-funnel-stage { flex: 1 1 100%; }
+  }
+  @media (max-width: 640px) {
+    .p-funnel { padding: 48px 24px; margin: 40px 0 16px; }
+    .p-funnel-title { margin-bottom: 20px; }
+    .p-funnel-lead { margin-bottom: 40px; }
+    .p-funnel-stages { grid-template-columns: 1fr; gap: 32px; }
+    .p-funnel-tools { margin-top: 48px; padding-top: 36px; }
+    .p-funnel-tools-grid { grid-template-columns: 1fr; gap: 16px; }
   }
 
   .p-terms-extra {
