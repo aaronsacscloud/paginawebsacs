@@ -6599,6 +6599,9 @@ const useCases = [
     font-size: 14px;
     font-weight: 800;
   }
+  .rec2-drop-file-body {
+    min-width: 0;       /* permite text-overflow ellipsis dentro de grid 1fr */
+  }
   .rec2-drop-file-name {
     font-size: 8px;
     font-weight: 700;
@@ -7053,8 +7056,8 @@ const useCases = [
      de 4 stages del phone solo). */
   @media (max-width: 1023px) {
     .rec2-frame {
-      aspect-ratio: 4 / 5;          /* menos alto: el phone no domina todo */
-      padding: 22px 16px;
+      aspect-ratio: 5 / 6;          /* casi cuadrado: el phone llena más */
+      padding: 14px 14px;
     }
     .rec2-phone-wrap {
       position: relative;
@@ -7064,9 +7067,10 @@ const useCases = [
       justify-content: center;
     }
     .rec2-phone {
-      height: 92%;                  /* breathing room arriba/abajo */
+      height: 100%;
       width: auto;
-      max-width: 220px;             /* limita ancho para que no domine */
+      max-width: 260px;
+      margin: 0 auto;               /* centrado horizontal explícito */
     }
     .rec2-report-wrap { display: none; }
   }
@@ -7994,8 +7998,8 @@ const useCases = [
      todo el flujo en el phone, que es lo más importante. */
   @media (max-width: 1023px) {
     .cnt-frame {
-      aspect-ratio: 4 / 5;          /* menos alto: el phone respira */
-      padding: 22px 16px;
+      aspect-ratio: 5 / 6;
+      padding: 14px 14px;
     }
     .cnt-grid {
       grid-template-columns: 1fr;
@@ -8006,9 +8010,10 @@ const useCases = [
     .cnt-phone-wrap { width: 100%; height: 100%; }
     .cnt-phone {
       width: auto;
-      max-width: 220px;             /* limita ancho */
-      height: 92%;                  /* breathing room arriba/abajo */
+      max-width: 260px;
+      height: 100%;
       aspect-ratio: 9 / 19;
+      margin: 0 auto;
     }
   }
 
