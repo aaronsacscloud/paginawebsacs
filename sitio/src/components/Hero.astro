@@ -2532,6 +2532,97 @@ const useCases = [
 
                   </div>
                 </main>
+
+                {/* Mobile-only CRM view: simplified single-column profile.
+                    Hidden on desktop; shown <1024px (display swap in CSS). */}
+                <div class="crm2-mobile" aria-hidden="true">
+                  <div class="crm2m-head">
+                    <div class="crm2m-avatar">AG</div>
+                    <div class="crm2m-meta">
+                      <div class="crm2m-name">Andrea Gómez <span class="crm2m-tier">GOLD</span></div>
+                      <div class="crm2m-sub">+52 55 ··· 4521 · CDMX</div>
+                    </div>
+                  </div>
+
+                  <div class="crm2m-chips">
+                    <span class="crm2m-chip crm2m-chip--dark">VIP</span>
+                    <span class="crm2m-chip crm2m-chip--teal">Frecuente</span>
+                    <span class="crm2m-chip">Lino lover</span>
+                  </div>
+
+                  <div class="crm2m-kpis">
+                    <div class="crm2m-kpi">
+                      <span class="crm2m-kpi-label">LTV</span>
+                      <span class="crm2m-kpi-value">$26,180</span>
+                      <span class="crm2m-kpi-trend">↑ 8%</span>
+                    </div>
+                    <div class="crm2m-kpi">
+                      <span class="crm2m-kpi-label">Ticket prom.</span>
+                      <span class="crm2m-kpi-value">$2,180</span>
+                      <span class="crm2m-kpi-trend">↑ 14%</span>
+                    </div>
+                    <div class="crm2m-kpi">
+                      <span class="crm2m-kpi-label">Compras 12m</span>
+                      <span class="crm2m-kpi-value">12</span>
+                      <span class="crm2m-kpi-trend crm2m-kpi-trend--mute">cada 28d</span>
+                    </div>
+                    <div class="crm2m-kpi">
+                      <span class="crm2m-kpi-label">Cashback</span>
+                      <span class="crm2m-kpi-value">$487</span>
+                      <span class="crm2m-kpi-trend crm2m-kpi-trend--teal">+62 pts</span>
+                    </div>
+                  </div>
+
+                  <div class="crm2m-section-label">RESUMEN IA</div>
+                  <div class="crm2m-ai">
+                    <div class="crm2m-ai-line">
+                      Andrea es <strong>cliente alto valor</strong>. Compra cada 28 días, responde 90% en WhatsApp.
+                    </div>
+                    <div class="crm2m-ai-action">
+                      <strong>Próxima acción:</strong> enviar lookbook Resort 2026 con blusa marfil — match 94%.
+                    </div>
+                  </div>
+
+                  <div class="crm2m-section-label">CONVERSACIONES RECIENTES</div>
+                  <div class="crm2m-conv">
+                    <div class="crm2m-conv-row">
+                      <div class="crm2m-conv-ch crm2m-conv-ch--wa">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="#fff" aria-hidden="true"><path d="M12 2a10 10 0 00-8.6 15l-1 4 4.1-1.1A10 10 0 1012 2z"/></svg>
+                      </div>
+                      <div class="crm2m-conv-body">
+                        <div class="crm2m-conv-top">
+                          <span class="crm2m-conv-name">WhatsApp · Lina M.</span>
+                          <span class="crm2m-conv-time">14:42</span>
+                        </div>
+                        <div class="crm2m-conv-msg">"Te aparté la blusa de seda en M, pasa cuando puedas 💛"</div>
+                      </div>
+                    </div>
+                    <div class="crm2m-conv-row">
+                      <div class="crm2m-conv-ch crm2m-conv-ch--call">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#fff" stroke-width="2.4" aria-hidden="true"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.37 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 16.92z"/></svg>
+                      </div>
+                      <div class="crm2m-conv-body">
+                        <div class="crm2m-conv-top">
+                          <span class="crm2m-conv-name">Llamada saliente</span>
+                          <span class="crm2m-conv-time">Ayer</span>
+                        </div>
+                        <div class="crm2m-conv-msg">Confirmación de cita · Blazer · 4 min</div>
+                      </div>
+                    </div>
+                    <div class="crm2m-conv-row">
+                      <div class="crm2m-conv-ch crm2m-conv-ch--email">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="#fff" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+                      </div>
+                      <div class="crm2m-conv-body">
+                        <div class="crm2m-conv-top">
+                          <span class="crm2m-conv-name">Email · Otoño</span>
+                          <span class="crm2m-conv-time">3d</span>
+                        </div>
+                        <div class="crm2m-conv-msg">Abrió + 4 clicks en "Lo nuevo · Solo para Andrea"</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -6948,13 +7039,20 @@ const useCases = [
      de 4 stages del phone solo). */
   @media (max-width: 1023px) {
     .rec2-frame {
-      aspect-ratio: 9 / 14;
-      padding: 14px 14px;
+      aspect-ratio: 4 / 5;          /* menos alto: el phone no domina todo */
+      padding: 22px 16px;
     }
     .rec2-phone-wrap {
       position: relative;
       top: auto; left: auto;
       width: 100%; height: 100%;
+      align-items: center;
+      justify-content: center;
+    }
+    .rec2-phone {
+      height: 92%;                  /* breathing room arriba/abajo */
+      width: auto;
+      max-width: 220px;             /* limita ancho para que no domine */
     }
     .rec2-report-wrap { display: none; }
   }
@@ -7882,22 +7980,20 @@ const useCases = [
      todo el flujo en el phone, que es lo más importante. */
   @media (max-width: 1023px) {
     .cnt-frame {
-      aspect-ratio: 9 / 14;        /* portrait para que el phone se vea grande */
-      padding: 14px 14px;
+      aspect-ratio: 4 / 5;          /* menos alto: el phone respira */
+      padding: 22px 16px;
     }
     .cnt-grid {
-      grid-template-columns: 1fr;  /* single col */
+      grid-template-columns: 1fr;
       grid-template-rows: 100%;
       gap: 0;
     }
-    /* Ocultar reporte en móvil — el phone con sus 4 stages cuenta la historia */
     .cnt-report-wrap { display: none; }
-    /* Phone usa la altura del wrap y centra; aspect-ratio determina el ancho */
     .cnt-phone-wrap { width: 100%; height: 100%; }
     .cnt-phone {
       width: auto;
-      max-width: 100%;
-      height: 100%;
+      max-width: 220px;             /* limita ancho */
+      height: 92%;                  /* breathing room arriba/abajo */
       aspect-ratio: 9 / 19;
     }
   }
@@ -10673,6 +10769,31 @@ const useCases = [
        portrait 9/14, 9/16, 4/5 según el flujo). El height se ajusta al
        contenido del active slide. */
     .tablet-screen { aspect-ratio: auto; }
+
+    /* ── #11 Tienda en línea (.ec-frame) ── frame más alto en móvil
+       Para que el laptop morph → tablet → phone se vea con espacio. */
+    .ec-frame {
+      aspect-ratio: 4 / 5;
+      padding: 6% 5%;
+    }
+
+    /* ── #15 Vende en META & TikTok Shop ── iconos floating más chicos
+       en móvil para no saturar el frame visualmente. */
+    .social-floating-logos {
+      gap: 6px;
+      top: 6px;
+      left: 25%;
+    }
+    .floating-logo {
+      width: 26px;
+      height: 26px;
+      border-radius: 7px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    }
+    .floating-logo svg {
+      width: 14px;
+      height: 14px;
+    }
 
     /* ── #1 Cobro móvil (.mob-frame) ── single-col stack
        Phone arriba, card 3D / ticket abajo según fase del cycle. */
@@ -13938,12 +14059,56 @@ const useCases = [
       height: 100%;
       aspect-ratio: 9 / 19;
     }
-    /* Tipografía dentro del phone reducida para que entren las 3 cards */
-    .reco-app { padding: 18px 9px 9px; }
-    .reco-card-name { font-size: 9px; }
-    .reco-card-price { font-size: 8px; }
-    .reco-card-match { font-size: 9.5px; padding: 3px 6px; }
-    .reco-card-img { width: 36px; height: 36px; }
+    /* En móvil mostramos UN solo producto recomendado en grande para
+       que se entienda inmediatamente la idea. Ocultamos las cards 2 y 3,
+       y reformulamos la card 1 como "destacado" con imagen grande arriba. */
+    .reco-app { padding: 18px 11px 11px; }
+    .reco-card--2, .reco-card--3 { display: none; }
+    .reco-section-label { font-size: 7.5px; margin-bottom: 8px; }
+    .reco-cards { gap: 0; flex: 1; }
+    .reco-card--1 {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+      padding: 10px;
+      background: #fff;
+      border: 1px solid #ececec;
+      box-shadow: 0 4px 16px -4px rgba(0,0,0,0.08);
+      flex: 1;
+      min-height: 0;
+    }
+    .reco-card--1 .reco-card-img {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1 / 1;
+      flex: 1;
+      min-height: 0;
+      object-fit: cover;
+      border-radius: 9px;
+    }
+    .reco-card--1 .reco-card-info {
+      flex: 0 0 auto;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      width: 100%;
+    }
+    .reco-card--1 .reco-card-name {
+      font-size: 12px;
+      white-space: normal;
+      overflow: visible;
+    }
+    .reco-card--1 .reco-card-price {
+      font-size: 11px;
+      color: #1A1A1A;
+      font-weight: 700;
+    }
+    .reco-card--1 .reco-card-match {
+      font-size: 12px;
+      padding: 5px 9px;
+      align-self: center;
+    }
   }
 
   /* ── CRM Omnicanal v2 — pro dashboard, light Square-style theme ── */
@@ -15096,22 +15261,211 @@ const useCases = [
     line-height: 1.4;
   }
 
-  /* ── #10 CRM Omnicanal (.crm2-frame) — mobile (≤1023px) ──
-     El sidebar de 48px ya es estrecho — cabe bien.
-     El main dashboard tiene tabs animados y conversation list que necesitan
-     compactarse en móvil. */
+  /* ── #10 CRM Omnicanal — mobile rebuild ──
+     El dashboard pro de desktop es demasiado denso para móvil.
+     En vez de comprimirlo (ilegible), mostramos una vista nueva
+     mobile-first (.crm2-mobile) y ocultamos el dashboard original. */
+
+  /* Default: mobile view oculto en desktop */
+  .crm2-mobile { display: none; }
+
   @media (max-width: 1023px) {
     .crm2-frame {
       aspect-ratio: 9 / 14;
-      grid-template-columns: 40px 1fr;
+      grid-template-columns: 1fr;   /* sin sidebar en móvil */
+      background: #FAFAFA;
+      overflow-y: auto;
     }
-    .crm2-side { padding: 10px 0; gap: 8px; }
-    .crm2-side-logo, .crm2-side-icn {
-      width: 24px; height: 24px; font-size: 11px;
+    /* Ocultar todo el desktop dashboard */
+    .crm2-frame .crm2-side,
+    .crm2-frame .crm2-main {
+      display: none;
     }
-    .crm2-side-icn svg { width: 14px; height: 14px; }
-    /* Main dashboard: paddings y font-sizes reducidos */
-    .crm2-main { padding: 14px 12px; }
+    /* Mostrar mobile view */
+    .crm2-mobile {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 16px 14px 18px;
+      width: 100%;
+      font-family: var(--font-body);
+      color: #1A1A1A;
+    }
+    .crm2m-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .crm2m-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4B7BE5, #2AB5A0);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: -0.02em;
+      flex-shrink: 0;
+    }
+    .crm2m-meta { min-width: 0; flex: 1; }
+    .crm2m-name {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: -0.01em;
+      color: #1A1A1A;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .crm2m-tier {
+      font-size: 9px;
+      background: linear-gradient(135deg, #C9A961, #B8941F);
+      color: #fff;
+      padding: 2px 6px;
+      border-radius: 4px;
+      letter-spacing: 0.08em;
+      font-weight: 800;
+    }
+    .crm2m-sub {
+      font-size: 11px;
+      color: rgba(0,0,0,0.55);
+      margin-top: 2px;
+    }
+    .crm2m-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .crm2m-chip {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.05);
+      color: rgba(0,0,0,0.7);
+    }
+    .crm2m-chip--dark {
+      background: #1A1A1A;
+      color: #fff;
+    }
+    .crm2m-chip--teal {
+      background: rgba(42,181,160,0.12);
+      color: #1A8F7A;
+    }
+    .crm2m-kpis {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .crm2m-kpi {
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 10px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .crm2m-kpi-label {
+      font-size: 9.5px;
+      color: rgba(0,0,0,0.5);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .crm2m-kpi-value {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 800;
+      color: #1A1A1A;
+      letter-spacing: -0.02em;
+    }
+    .crm2m-kpi-trend {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #2AB5A0;
+    }
+    .crm2m-kpi-trend--mute { color: rgba(0,0,0,0.45); }
+    .crm2m-kpi-trend--teal { color: #2AB5A0; }
+    .crm2m-section-label {
+      font-size: 9px;
+      font-weight: 800;
+      color: rgba(0,0,0,0.45);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+    .crm2m-ai {
+      background: linear-gradient(135deg, rgba(75,123,229,0.06), rgba(42,181,160,0.06));
+      border: 1px solid rgba(75,123,229,0.18);
+      border-radius: 10px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .crm2m-ai-line, .crm2m-ai-action {
+      font-size: 11px;
+      line-height: 1.4;
+      color: #2A2A2E;
+    }
+    .crm2m-ai-action strong { color: #1A1A1A; }
+    .crm2m-conv {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .crm2m-conv-row {
+      display: flex;
+      gap: 9px;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 10px;
+      padding: 9px 10px;
+      align-items: flex-start;
+    }
+    .crm2m-conv-ch {
+      width: 26px;
+      height: 26px;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .crm2m-conv-ch--wa { background: #25D366; }
+    .crm2m-conv-ch--call { background: #4B7BE5; }
+    .crm2m-conv-ch--email { background: #1A1A1A; }
+    .crm2m-conv-body { min-width: 0; flex: 1; }
+    .crm2m-conv-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .crm2m-conv-name {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 800;
+      color: #1A1A1A;
+      letter-spacing: -0.01em;
+    }
+    .crm2m-conv-time {
+      font-size: 9.5px;
+      color: rgba(0,0,0,0.45);
+      flex-shrink: 0;
+    }
+    .crm2m-conv-msg {
+      font-size: 10.5px;
+      line-height: 1.4;
+      color: rgba(0,0,0,0.65);
+      margin-top: 2px;
+    }
   }
 
   /* ── Email marketing slide ── */
