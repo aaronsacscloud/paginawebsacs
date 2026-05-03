@@ -569,49 +569,21 @@ const partnerLandingUrl = invitation.slug_landing
 
         <!-- ── 8. 10% para impacto ── -->
         <div class="p-bw-impact">
-          <div class="p-bw-impact-grid">
-            <div>
-              <div class="p-bw-impact-eyebrow">10% para impacto positivo</div>
-              <h2 class="p-bw-impact-title">El 10% de cada comisión SACS se dona a acciones positivas.</h2>
-              <p class="p-bw-impact-lead">
-                Por cada peso que SACS gana, <strong>10% va a iniciativas de impacto</strong>:
-                educación financiera para retailers pequeños, becas en escuelas de negocio rural,
-                programas de inclusión digital, apoyos a comunidades durante desastres.
-              </p>
-              <p class="p-bw-impact-lead">
-                Como embajador, recibes <strong>el reporte trimestral</strong> de a dónde fue ese
-                10% — con fotos, beneficiarios y resultados concretos. Lo puedes compartir en tus
-                redes para mostrar que tu trabajo no solo te paga: también construye comunidad.
-              </p>
-            </div>
-            <div class="p-bw-impact-cards">
-              <div class="p-bw-impact-card">
-                <div class="p-bw-impact-card-num">2,400+</div>
-                <div class="p-bw-impact-card-label">Retailers capacitados</div>
-                <div class="p-bw-impact-card-detail">Talleres gratuitos sobre POS, inventario, e-commerce y educación fiscal.</div>
-              </div>
-              <div class="p-bw-impact-card">
-                <div class="p-bw-impact-card-num">$1.2M</div>
-                <div class="p-bw-impact-card-label">Donados en 2025</div>
-                <div class="p-bw-impact-card-detail">Distribuido entre 8 organizaciones aliadas en MX y Centroamérica.</div>
-              </div>
-              <div class="p-bw-impact-card">
-                <div class="p-bw-impact-card-num">120</div>
-                <div class="p-bw-impact-card-label">Becas otorgadas</div>
-                <div class="p-bw-impact-card-detail">Para hijos de comerciantes en escuelas técnicas y de negocio.</div>
-              </div>
-              <div class="p-bw-impact-card">
-                <div class="p-bw-impact-card-num">15</div>
-                <div class="p-bw-impact-card-label">Comunidades apoyadas</div>
-                <div class="p-bw-impact-card-detail">Mercados, cooperativas y plazas comerciales con apoyo directo.</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="p-bw-impact-note">
-            <span>📊</span>
-            <span>El reporte de impacto Q1 2026 está disponible — te lo enviamos cuando seas aprobado como embajador, junto con assets para que lo compartas en tus redes.</span>
-          </div>
+          <div class="p-bw-impact-eyebrow">10% para impacto positivo</div>
+          <h2 class="p-bw-impact-title">El 10% de cada comisión SACS se dona<br/>a personas que lo necesitan.</h2>
+          <p class="p-bw-impact-lead">
+            Buscamos formas en las que ese dinero <strong>genere más empleos
+            ayudando a emprendedores</strong> que están empezando — semillas
+            que crecen y crean trabajo para más personas. Una cadena completa
+            de impacto positivo: tu venta paga a un partner, paga a un
+            emprendedor, paga a su equipo, paga a sus familias.
+          </p>
+          <p class="p-bw-impact-lead">
+            Como embajador no solo cobras una comisión: <strong>eres parte
+            del eslabón</strong> que mueve esa cadena. Cuando seas aprobado
+            te enviamos el reporte trimestral de cómo se distribuyó ese 10%
+            y los assets para compartir en tus redes.
+          </p>
         </div>
 
         <!-- CTA final → ir al proceso -->
@@ -3754,20 +3726,14 @@ const partnerLandingUrl = invitation.slug_landing
   /* ─── 10% para impacto ─── */
   .p-bw-impact {
     margin: 32px 0 0;
-    padding: 56px 36px;
+    padding: 72px 56px;
     background: linear-gradient(180deg, #FAFAF8 0%, #fff 100%);
     border: 1px solid #ececec;
     border-radius: 16px;
-  }
-  .p-bw-impact-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 40px;
-    align-items: start;
+    text-align: center;
   }
   @media (max-width: 768px) {
-    .p-bw-impact { padding: 40px 24px; }
-    .p-bw-impact-grid { grid-template-columns: 1fr; gap: 28px; }
+    .p-bw-impact { padding: 48px 24px; }
   }
   .p-bw-impact-eyebrow {
     display: inline-block;
@@ -3779,77 +3745,29 @@ const partnerLandingUrl = invitation.slug_landing
     font-weight: 700;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
   }
   .p-bw-impact-title {
     font-family: var(--font-display);
-    font-size: clamp(1.5rem, 2.8vw, 2rem);
+    font-size: clamp(1.625rem, 3.2vw, 2.375rem);
     font-weight: 400;
     color: #1A1A1A;
-    margin: 0 0 16px;
+    margin: 0 auto 24px;
     letter-spacing: -0.02em;
     line-height: 1.2;
+    max-width: 720px;
   }
   .p-bw-impact-lead {
-    font-size: 0.9375rem;
+    font-size: 1rem;
     color: #555;
-    line-height: 1.65;
-    margin: 0 0 14px;
+    line-height: 1.7;
+    margin: 0 auto 18px;
+    max-width: 640px;
   }
-  .p-bw-impact-lead strong { color: #1A1A1A; }
-
-  .p-bw-impact-cards {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
+  .p-bw-impact-lead strong { color: #1A1A1A; font-weight: 600; }
+  @media (max-width: 768px) {
+    .p-bw-impact-lead { font-size: 0.9375rem; }
   }
-  .p-bw-impact-card {
-    background: #fff;
-    border: 1px solid #ececec;
-    border-radius: 10px;
-    padding: 18px;
-    transition: transform 0.18s, border-color 0.18s;
-  }
-  .p-bw-impact-card:hover {
-    transform: translateY(-2px);
-    border-color: #2AB5A0;
-  }
-  .p-bw-impact-card-num {
-    font-family: var(--font-display);
-    font-size: 1.625rem;
-    font-weight: 300;
-    color: #1A8F7A;
-    letter-spacing: -0.025em;
-    line-height: 1;
-    margin-bottom: 8px;
-  }
-  .p-bw-impact-card-label {
-    font-family: var(--font-display);
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: #1A1A1A;
-    margin-bottom: 6px;
-  }
-  .p-bw-impact-card-detail {
-    font-size: 0.75rem;
-    color: #666;
-    line-height: 1.5;
-  }
-
-  .p-bw-impact-note {
-    margin-top: 28px;
-    padding: 14px 18px;
-    background: rgba(75,123,229,0.08);
-    border: 1px solid rgba(75,123,229,0.18);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 0.875rem;
-    color: #444;
-    line-height: 1.55;
-  }
-  .p-bw-impact-note > span:first-child { font-size: 1.125rem; flex-shrink: 0; }
 
   /* CTA final */
   .p-bw-cta {
