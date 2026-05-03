@@ -673,7 +673,8 @@ const partnerLandingUrl = invitation.slug_landing
               <div class="p-signed-date">{fmtDate(invitation.aceptado_fecha)}</div>
             )}
             <div class="p-signed-cta-row">
-              <a href="https://www.sacscloud.com/admin/crm" class="p-signed-cta">Ir al panel SACS</a>
+              <a href="/partners/brand-kit" class="p-signed-cta">Acceder al brand kit</a>
+              <a href="https://www.sacscloud.com/admin/crm" class="p-signed-cta-secondary">Panel SACS</a>
             </div>
           </div>
         ) : isDeclined ? (
@@ -1824,7 +1825,13 @@ const partnerLandingUrl = invitation.slug_landing
     font-size: 0.875rem;
     color: rgba(26,26,46,0.65);
   }
-  .p-signed-cta-row { margin-top: 24px; }
+  .p-signed-cta-row {
+    margin-top: 24px;
+    display: inline-flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
   .p-signed-cta {
     display: inline-block;
     padding: 14px 28px;
@@ -1837,6 +1844,19 @@ const partnerLandingUrl = invitation.slug_landing
     transition: background 0.15s ease;
   }
   .p-signed-cta:hover { background: #4B7BE5; color: #fff; }
+  .p-signed-cta-secondary {
+    display: inline-block;
+    padding: 14px 28px;
+    background: transparent;
+    color: #1a1a1a;
+    text-decoration: none;
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .p-signed-cta-secondary:hover { border-color: #1a1a1a; color: #1a1a1a; text-decoration: none; }
 
   /* Footer */
   .p-footer {

@@ -1,0 +1,7 @@
+<svg width="240" height="80" viewBox="0 0 240 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" y="8" rx="14" fill="#1a1a1a"/>
+  <circle cx="24" cy="44" r="9" fill="#4B7BE5" opacity="0.9"/>
+  <circle cx="36" cy="38" r="9" fill="#E8A838" opacity="0.85"/>
+  <circle cx="38" cy="46" r="9" fill="#2AB5A0" opacity="0.85"/>
+  <text x="80" y="58" font-family="'Clash Display','Plus Jakarta Sans','Inter',system-ui,sans-serif" font-weight="700" font-size="48" letter-spacing="-1.5" fill="#1a1a1a">Sacs</text>
+</svg>

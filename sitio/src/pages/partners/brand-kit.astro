@@ -1,0 +1,1225 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export const prerender = true;
+
+// ─── Brand kit data ───
+const COLORS = [
+  { name: 'Azul SACS',      hex: '#4B7BE5', usage: 'Primario · CTAs, links, acento principal' },
+  { name: 'Verde Consciente', hex: '#2AB5A0', usage: 'Acento · checks, éxito, comercio consciente' },
+  { name: 'Tinta',          hex: '#1A1A1A', usage: 'Tipografía y backgrounds dark' },
+  { name: 'Papel',          hex: '#FAFAF8', usage: 'Fondo principal claro' },
+  { name: 'Morado AXO',     hex: '#6C5CE7', usage: 'AXO copiloto IA · features de inteligencia' },
+  { name: 'Mostaza',        hex: '#E8A838', usage: 'Acento secundario · realce, badges' },
+  { name: 'Rojo Alerta',    hex: '#E54B4B', usage: 'Solo errores, alertas, problemas' },
+  { name: 'Gris UI',        hex: '#999999', usage: 'Textos secundarios, labels, hints' },
+];
+
+const FONTS = [
+  {
+    name: 'Clash Display',
+    use: 'Display · headlines · números grandes',
+    weights: '300 · 400 · 500 · 600 · 700',
+    download: 'https://www.fontshare.com/fonts/clash-display',
+    sample: 'Vende bien, hace el bien.',
+    family: "'Clash Display', 'Plus Jakarta Sans', system-ui, sans-serif",
+    isDisplay: true,
+  },
+  {
+    name: 'Plus Jakarta Sans',
+    use: 'Body · párrafos · UI · captions',
+    weights: '300 · 400 · 500 · 600 · 700 · 800',
+    download: 'https://fonts.google.com/specimen/Plus+Jakarta+Sans',
+    sample: 'Sistema operativo para retailers que creen que vender bien y hacer el bien pueden ir de la mano.',
+    family: "'Plus Jakarta Sans', system-ui, sans-serif",
+    isDisplay: false,
+  },
+];
+
+const VOICE_DOS = [
+  { title: 'Directos y cálidos', detail: 'Habla como hablarías con un amigo dueño de tienda. Sin jerga corporativa.' },
+  { title: 'Optimistas pero realistas', detail: 'Mostramos resultados con contexto. Si algo cuesta, lo decimos.' },
+  { title: 'Específicos', detail: 'Menciona números, marcas, casos. "+45% en lifetime value" mejor que "más ventas".' },
+  { title: 'Comercio consciente', detail: 'Vender bien y hacer el bien sí pueden ir de la mano. Es nuestro norte.' },
+];
+
+const VOICE_DONTS = [
+  { title: 'Pegarle a competidores', detail: 'Nunca menciones marcas competidoras de forma despectiva.' },
+  { title: 'Promesas exageradas', detail: 'Nada de "el mejor", "100% garantizado", "el único". Resultados con números reales.' },
+  { title: 'Tono corporativo', detail: 'Evita "soluciones de clase mundial", "líderes de la industria", "ecosistema integral".' },
+  { title: 'Lenguaje agresivo', detail: 'Vendemos por valor, no por miedo. Cero "no te quedes atrás" o similar.' },
+];
+
+const CAPTIONS = [
+  {
+    platform: 'Instagram / Reels',
+    text: `Llevo X meses operando mi tienda con SACS y esto cambió 👇
+
+Antes: ventas en cuadernos, inventario por WhatsApp, reportes que no cuadraban.
+
+Ahora: punto de venta + inventario + facturación + tienda en línea, todo en un solo sistema.
+
+¿Lo mejor? Lo construyeron en México pensando en negocios como el mío.
+
+Link en mi bio para que lo pruebes 🇲🇽
+
+#SACScloud #ComercioConsciente #RetailMexicano`,
+  },
+  {
+    platform: 'TikTok',
+    text: `POV: por fin encontraste el sistema para tu tienda 🛍️
+
+✅ Punto de venta
+✅ Inventario en tiempo real
+✅ Facturación
+✅ Tienda en línea sincronizada
+
+Todo en uno · hecho en México · sin complicaciones.
+
+Link en mi bio · soy embajador @sacscloud
+
+#RetailTok #SACScloud #PymeMexicana`,
+  },
+  {
+    platform: 'LinkedIn',
+    text: `Si manejas un retail en México y todavía operas con Excel + un POS genérico, esto te interesa.
+
+Llevo X tiempo trabajando con SACS — el sistema operativo para retailers mexicanos. Lo que más me ha convencido:
+
+→ Construido para México (no es traducción)
+→ Multi-sucursal de verdad (no parches)
+→ El 10% de cada licencia financia programas de comercio consciente
+
+Si te interesa platicar cómo lo estoy implementando, escríbeme. Soy embajador SACS.
+
+#SACScloud #ComercioConsciente`,
+  },
+];
+
+const HASHTAGS = [
+  '#SACScloud',
+  '#ComercioConsciente',
+  '#RetailMexicano',
+  '#PymeMexicana',
+  '#SistemaOperativoRetail',
+];
+
+const DISCLOSURE = `Soy embajador SACS · sacscloud.com/p/<tu-slug>`;
+
+const CONTENT_PLAN = {
+  mes: 'Mayo 2026',
+  tema: 'Inventario en tiempo real entre sucursales',
+  palabrasClave: [
+    'inventario multi-sucursal',
+    'traspasos entre tiendas',
+    'kardex digital',
+    'mermas y trazabilidad',
+    'reabasto inteligente',
+  ],
+  videos: [
+    {
+      titulo: 'El traspaso que se perdió',
+      angulo: 'Storytelling: cuenta una vez que perdiste mercancía por un traspaso por WhatsApp y cómo ahora lo evitas con SACS.',
+      duracion: '60-90 seg',
+    },
+    {
+      titulo: 'Tour del inventario en SACS',
+      angulo: 'Pantalla compartida: muestra el panel de inventario multi-sucursal en vivo. Enseña cómo ves stock por tienda.',
+      duracion: '90-120 seg',
+    },
+    {
+      titulo: 'Antes vs Ahora · conteo físico',
+      angulo: 'Comparativa: antes contabas con papel y tomaba 3 días. Ahora con el celular y SACS termina en horas.',
+      duracion: '45-60 seg',
+    },
+    {
+      titulo: 'Una pregunta que te van a hacer',
+      angulo: '“¿Por qué SACS y no otro?” — responde en 60 segundos con tu razón personal + 1 dato concreto.',
+      duracion: '60 seg',
+    },
+  ],
+};
+
+const SECTIONS = [
+  { id: 'logos', label: 'Logos' },
+  { id: 'tipografia', label: 'Tipografía' },
+  { id: 'colores', label: 'Colores' },
+  { id: 'voz', label: 'Voz y tono' },
+  { id: 'captions', label: 'Captions' },
+  { id: 'plan', label: 'Plan del mes' },
+  { id: 'reglas', label: 'Reglas' },
+];
+---
+
+<BaseLayout
+  title="Brand Kit Embajadores · SACS"
+  description="Manual de marca, logos, tipografías, voz, captions y plan de contenido para embajadores SACS."
+  noindex={true}
+>
+
+<div class="bk-page" id="brand-kit">
+
+  <!-- Hero -->
+  <section class="bk-hero">
+    <div class="bk-container">
+      <div class="bk-hero-eyebrow">Programa Embajador SACS</div>
+      <h1 class="bk-hero-title">Brand kit para representar SACS<br/><span class="bk-hero-title-soft">con coherencia</span>.</h1>
+      <p class="bk-hero-sub">
+        Todo lo que necesitas: logos, tipografías, paleta, voz, captions listos para usar y el plan de contenido del mes. Cumplir el manual no es burocracia — es lo que hace que tu contenido se vea profesional y la marca crezca contigo.
+      </p>
+      <div class="bk-hero-cta-row">
+        <a href="/brand/sacs-logo-full-dark.svg" download class="bk-btn bk-btn--primary">Descargar logo principal</a>
+        <a href="#logos" class="bk-btn bk-btn--ghost">Ver brand kit completo ↓</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sticky anchor nav -->
+  <nav class="bk-sticky-nav" aria-label="Secciones">
+    <div class="bk-container bk-sticky-inner">
+      <div class="bk-sticky-brand">Brand kit · Embajadores</div>
+      <div class="bk-sticky-links">
+        {SECTIONS.map(s => (
+          <a href={`#${s.id}`} class="bk-sticky-link">{s.label}</a>
+        ))}
+      </div>
+    </div>
+  </nav>
+
+  <!-- ════════════════════════════════════════
+       LOGOS
+       ════════════════════════════════════════ -->
+  <section class="bk-section" id="logos">
+    <div class="bk-container">
+      <div class="bk-section-head">
+        <div class="bk-section-eyebrow">01 · Logos</div>
+        <h2 class="bk-section-title">El logo de SACS</h2>
+        <p class="bk-section-lead">
+          Tres versiones para cubrir cualquier soporte. Descarga la que mejor contraste tenga con tu fondo. Nunca lo deformes, recolorees ni le agregues efectos.
+        </p>
+      </div>
+
+      <div class="bk-logo-grid">
+        <div class="bk-logo-card bk-logo-card--light">
+          <div class="bk-logo-preview">
+            <svg width="120" height="120" viewBox="0 0 56 56" fill="none">
+              <rect width="56" height="56" rx="12" fill="#1a1a1a"/>
+              <circle cx="21" cy="28" r="8" fill="#4B7BE5" opacity="0.9"/>
+              <circle cx="32" cy="23" r="8" fill="#E8A838" opacity="0.85"/>
+              <circle cx="34" cy="30" r="8" fill="#2AB5A0" opacity="0.85"/>
+            </svg>
+          </div>
+          <div class="bk-logo-meta">
+            <div class="bk-logo-name">Isotipo · oscuro</div>
+            <div class="bk-logo-detail">Para fondos claros. Tres círculos representando producto + datos + comunidad.</div>
+            <a href="/brand/sacs-icon-dark.svg" download class="bk-logo-dl">Descargar SVG</a>
+          </div>
+        </div>
+
+        <div class="bk-logo-card bk-logo-card--dark">
+          <div class="bk-logo-preview">
+            <svg width="120" height="120" viewBox="0 0 56 56" fill="none">
+              <rect width="56" height="56" rx="12" fill="#FAFAF8" stroke="#e5e5e5" stroke-width="1"/>
+              <circle cx="21" cy="28" r="8" fill="#4B7BE5" opacity="0.9"/>
+              <circle cx="32" cy="23" r="8" fill="#E8A838" opacity="0.85"/>
+              <circle cx="34" cy="30" r="8" fill="#2AB5A0" opacity="0.85"/>
+            </svg>
+          </div>
+          <div class="bk-logo-meta">
+            <div class="bk-logo-name">Isotipo · claro</div>
+            <div class="bk-logo-detail">Para fondos oscuros. Misma composición con base papel.</div>
+            <a href="/brand/sacs-icon-light.svg" download class="bk-logo-dl">Descargar SVG</a>
+          </div>
+        </div>
+
+        <div class="bk-logo-card bk-logo-card--light">
+          <div class="bk-logo-preview">
+            <span class="bk-wordmark bk-wordmark--dark">Sacs</span>
+          </div>
+          <div class="bk-logo-meta">
+            <div class="bk-logo-name">Wordmark · oscuro</div>
+            <div class="bk-logo-detail">El nombre completo. Úsalo cuando el isotipo no se entienda solo.</div>
+            <a href="/brand/sacs-wordmark-dark.svg" download class="bk-logo-dl">Descargar SVG</a>
+          </div>
+        </div>
+
+        <div class="bk-logo-card bk-logo-card--dark">
+          <div class="bk-logo-preview">
+            <span class="bk-wordmark bk-wordmark--light">Sacs</span>
+          </div>
+          <div class="bk-logo-meta">
+            <div class="bk-logo-name">Wordmark · claro</div>
+            <div class="bk-logo-detail">Para fondos oscuros, video y press kit en negro.</div>
+            <a href="/brand/sacs-wordmark-light.svg" download class="bk-logo-dl">Descargar SVG</a>
+          </div>
+        </div>
+
+        <div class="bk-logo-card bk-logo-card--light bk-logo-card--full">
+          <div class="bk-logo-preview">
+            <div class="bk-logo-full-row">
+              <svg width="64" height="64" viewBox="0 0 56 56" fill="none">
+                <rect width="56" height="56" rx="14" fill="#1a1a1a"/>
+                <circle cx="21" cy="28" r="8" fill="#4B7BE5" opacity="0.9"/>
+                <circle cx="32" cy="23" r="8" fill="#E8A838" opacity="0.85"/>
+                <circle cx="34" cy="30" r="8" fill="#2AB5A0" opacity="0.85"/>
+              </svg>
+              <span class="bk-wordmark bk-wordmark--dark" style="font-size:3rem">Sacs</span>
+            </div>
+          </div>
+          <div class="bk-logo-meta">
+            <div class="bk-logo-name">Logo completo · isotipo + wordmark</div>
+            <div class="bk-logo-detail">Cuando tienes espacio y necesitas la versión más reconocible.</div>
+            <a href="/brand/sacs-logo-full-dark.svg" download class="bk-logo-dl">Descargar SVG</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="bk-rules-grid">
+        <div class="bk-rule">
+          <div class="bk-rule-eyebrow">Tamaño mínimo</div>
+          <div class="bk-rule-detail">Isotipo nunca menor a <strong>32px</strong> de altura. Wordmark nunca menor a <strong>24px</strong>.</div>
+        </div>
+        <div class="bk-rule">
+          <div class="bk-rule-eyebrow">Área de protección</div>
+          <div class="bk-rule-detail">Deja al menos la altura de la "S" como margen libre alrededor del logo.</div>
+        </div>
+        <div class="bk-rule">
+          <div class="bk-rule-eyebrow">Color y contraste</div>
+          <div class="bk-rule-detail">Usa la versión oscura sobre claros y la clara sobre oscuros. Nunca apliques sombras o gradientes al logo.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       TIPOGRAFÍA
+       ════════════════════════════════════════ -->
+  <section class="bk-section bk-section--alt" id="tipografia">
+    <div class="bk-container">
+      <div class="bk-section-head">
+        <div class="bk-section-eyebrow">02 · Tipografía</div>
+        <h2 class="bk-section-title">Dos familias, jerarquía clara</h2>
+        <p class="bk-section-lead">
+          Clash Display da la voz a los headlines y números. Plus Jakarta Sans hace el trabajo silencioso del cuerpo y la UI. Combinarlas correctamente es 80% del look.
+        </p>
+      </div>
+
+      <div class="bk-fonts-grid">
+        {FONTS.map(f => (
+          <div class="bk-font-card">
+            <div class="bk-font-meta">
+              <div class="bk-font-name">{f.name}</div>
+              <div class="bk-font-use">{f.use}</div>
+              <div class="bk-font-weights"><span>Pesos</span> {f.weights}</div>
+              <a href={f.download} target="_blank" rel="noopener" class="bk-font-dl">Descargar →</a>
+            </div>
+            <div class={`bk-font-sample ${f.isDisplay ? 'bk-font-sample--display' : ''}`} style={`font-family:${f.family}`}>
+              {f.sample}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       COLORES
+       ════════════════════════════════════════ -->
+  <section class="bk-section" id="colores">
+    <div class="bk-container">
+      <div class="bk-section-head">
+        <div class="bk-section-eyebrow">03 · Colores</div>
+        <h2 class="bk-section-title">Paleta oficial</h2>
+        <p class="bk-section-lead">
+          Click en cualquier color para copiar el HEX. Usa azul SACS y verde consciente como acentos principales; el resto solo cuando aplique.
+        </p>
+      </div>
+
+      <div class="bk-colors-grid">
+        {COLORS.map(c => (
+          <button type="button" class="bk-color-tile" data-hex={c.hex} aria-label={`Copiar ${c.hex}`}>
+            <div class="bk-color-swatch" style={`background:${c.hex}`}></div>
+            <div class="bk-color-meta">
+              <div class="bk-color-name">{c.name}</div>
+              <div class="bk-color-hex">{c.hex}</div>
+              <div class="bk-color-usage">{c.usage}</div>
+            </div>
+            <span class="bk-color-copy">Copiar</span>
+            <span class="bk-color-copied">¡Copiado!</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       VOZ Y TONO
+       ════════════════════════════════════════ -->
+  <section class="bk-section bk-section--alt" id="voz">
+    <div class="bk-container">
+      <div class="bk-section-head">
+        <div class="bk-section-eyebrow">04 · Voz y tono</div>
+        <h2 class="bk-section-title">Cómo hablamos de SACS</h2>
+        <p class="bk-section-lead">
+          La forma en que escribes importa tanto como qué escribes. Esta es la voz de SACS: directa, cálida, mexicana, optimista pero realista.
+        </p>
+      </div>
+
+      <div class="bk-voice-grid">
+        <div class="bk-voice-col">
+          <div class="bk-voice-col-head bk-voice-col-head--do">
+            <span class="bk-voice-col-icon">✓</span>
+            <span class="bk-voice-col-title">Hazlo así</span>
+          </div>
+          {VOICE_DOS.map(item => (
+            <div class="bk-voice-item">
+              <div class="bk-voice-item-title">{item.title}</div>
+              <div class="bk-voice-item-detail">{item.detail}</div>
+            </div>
+          ))}
+        </div>
+        <div class="bk-voice-col">
+          <div class="bk-voice-col-head bk-voice-col-head--dont">
+            <span class="bk-voice-col-icon">✕</span>
+            <span class="bk-voice-col-title">Evita esto</span>
+          </div>
+          {VOICE_DONTS.map(item => (
+            <div class="bk-voice-item">
+              <div class="bk-voice-item-title">{item.title}</div>
+              <div class="bk-voice-item-detail">{item.detail}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       CAPTIONS
+       ════════════════════════════════════════ -->
+  <section class="bk-section" id="captions">
+    <div class="bk-container">
+      <div class="bk-section-head">
+        <div class="bk-section-eyebrow">05 · Captions y hashtags</div>
+        <h2 class="bk-section-title">Plantillas listas para usar</h2>
+        <p class="bk-section-lead">
+          Adapta estas captions con tu experiencia personal. Reemplaza los placeholders y publica. Usa los hashtags oficiales y siempre incluye el disclosure.
+        </p>
+      </div>
+
+      <div class="bk-captions">
+        {CAPTIONS.map(c => (
+          <div class="bk-caption-card">
+            <div class="bk-caption-head">
+              <div class="bk-caption-platform">{c.platform}</div>
+              <button type="button" class="bk-copy-btn" data-target="caption">Copiar</button>
+            </div>
+            <pre class="bk-caption-text bk-copy-text">{c.text}</pre>
+          </div>
+        ))}
+      </div>
+
+      <div class="bk-tags-row">
+        <div class="bk-tags-block">
+          <div class="bk-tags-label">Hashtags oficiales</div>
+          <div class="bk-tags-list">
+            {HASHTAGS.map(h => (
+              <button type="button" class="bk-tag" data-hex={h}>{h}</button>
+            ))}
+          </div>
+        </div>
+        <div class="bk-tags-block">
+          <div class="bk-tags-label">Disclosure obligatorio</div>
+          <div class="bk-disclosure">
+            <code>{DISCLOSURE}</code>
+            <button type="button" class="bk-tag" data-hex={DISCLOSURE}>Copiar</button>
+          </div>
+          <div class="bk-tags-hint">Reemplaza <code>&lt;tu-slug&gt;</code> con el slug de tu landing personalizada.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       PLAN DEL MES
+       ════════════════════════════════════════ -->
+  <section class="bk-section bk-section--alt" id="plan">
+    <div class="bk-container">
+      <div class="bk-section-head">
+        <div class="bk-section-eyebrow">06 · Plan de contenido</div>
+        <h2 class="bk-section-title">Plan del mes · {CONTENT_PLAN.mes}</h2>
+        <p class="bk-section-lead">
+          Cada mes te enviamos el tema, palabras clave e ideas de video para que tu contenido sume al mismo mensaje colectivo del programa.
+        </p>
+      </div>
+
+      <div class="bk-plan-card">
+        <div class="bk-plan-row">
+          <div class="bk-plan-row-label">Tema central</div>
+          <div class="bk-plan-row-value">{CONTENT_PLAN.tema}</div>
+        </div>
+        <div class="bk-plan-row">
+          <div class="bk-plan-row-label">Palabras clave</div>
+          <div class="bk-plan-row-value">
+            <div class="bk-keywords">
+              {CONTENT_PLAN.palabrasClave.map(k => <span class="bk-keyword">{k}</span>)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bk-videos-grid">
+        {CONTENT_PLAN.videos.map((v, i) => (
+          <div class="bk-video-card">
+            <div class="bk-video-num">{String(i + 1).padStart(2, '0')}</div>
+            <div class="bk-video-title">{v.titulo}</div>
+            <div class="bk-video-angulo">{v.angulo}</div>
+            <div class="bk-video-meta">{v.duracion}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════
+       REGLAS DE USO
+       ════════════════════════════════════════ -->
+  <section class="bk-section" id="reglas">
+    <div class="bk-container">
+      <div class="bk-section-head">
+        <div class="bk-section-eyebrow">07 · Reglas de uso</div>
+        <h2 class="bk-section-title">Lo que sí y lo que no</h2>
+      </div>
+
+      <div class="bk-voice-grid">
+        <div class="bk-voice-col">
+          <div class="bk-voice-col-head bk-voice-col-head--do">
+            <span class="bk-voice-col-icon">✓</span>
+            <span class="bk-voice-col-title">Lo que SÍ puedes hacer</span>
+          </div>
+          <div class="bk-voice-item">
+            <div class="bk-voice-item-title">Usar el logo en tus redes</div>
+            <div class="bk-voice-item-detail">En tu bio, posts, stories y video — siempre en su versión oficial.</div>
+          </div>
+          <div class="bk-voice-item">
+            <div class="bk-voice-item-title">Mostrar la plataforma en pantalla</div>
+            <div class="bk-voice-item-detail">Capturas, screenshots, screen recording — todo bienvenido para enseñar el producto.</div>
+          </div>
+          <div class="bk-voice-item">
+            <div class="bk-voice-item-title">Compartir tu opinión honesta</div>
+            <div class="bk-voice-item-detail">Aún si es crítica constructiva. Mientras sea respetuosa y con propuesta, suma.</div>
+          </div>
+          <div class="bk-voice-item">
+            <div class="bk-voice-item-title">Asistir a eventos como embajador</div>
+            <div class="bk-voice-item-detail">Avisa al equipo para coordinar materiales y, en su caso, presupuesto de viático.</div>
+          </div>
+        </div>
+        <div class="bk-voice-col">
+          <div class="bk-voice-col-head bk-voice-col-head--dont">
+            <span class="bk-voice-col-icon">✕</span>
+            <span class="bk-voice-col-title">Lo que NO puedes hacer</span>
+          </div>
+          <div class="bk-voice-item">
+            <div class="bk-voice-item-title">Modificar el logo</div>
+            <div class="bk-voice-item-detail">Sin recolorear, deformar, agregar bordes, sombras o efectos.</div>
+          </div>
+          <div class="bk-voice-item">
+            <div class="bk-voice-item-title">Hablar mal de competidores</div>
+            <div class="bk-voice-item-detail">Comparar producto está bien; pegarle a personas o marcas es ruptura inmediata del programa.</div>
+          </div>
+          <div class="bk-voice-item">
+            <div class="bk-voice-item-title">Prometer en nombre de SACS</div>
+            <div class="bk-voice-item-detail">No comprometas roadmap, descuentos o features que no estén publicados oficialmente.</div>
+          </div>
+          <div class="bk-voice-item">
+            <div class="bk-voice-item-title">Compartir credenciales</div>
+            <div class="bk-voice-item-detail">Tu cuenta de embajador es personal. No la prestes ni publiques credenciales en redes.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bk-contact">
+        <div class="bk-contact-eyebrow">¿Dudas o algo no encontraste?</div>
+        <div class="bk-contact-detail">
+          Escribe a <a href="mailto:partners@sacscloud.com">partners@sacscloud.com</a> o reporta usos indebidos a <a href="mailto:legal@sacscloud.com">legal@sacscloud.com</a>.
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<style>
+  /* ════════════════════════════════════════
+     Brand kit · Squarespace-style typographic
+     ════════════════════════════════════════ */
+  .bk-page { background: #FAFAF8; color: #1a1a1a; }
+  .bk-container { max-width: 1080px; margin: 0 auto; padding: 0 32px; }
+  @media (max-width: 720px) { .bk-container { padding: 0 20px; } }
+
+  /* Hero */
+  .bk-hero { padding: 96px 0 64px; }
+  .bk-hero-eyebrow {
+    font-size: 0.6875rem; font-weight: 700; color: #4B7BE5;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  .bk-hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.25rem, 6vw, 4rem);
+    font-weight: 200;
+    color: #1a1a1a;
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+    margin: 0 0 24px;
+    max-width: 880px;
+  }
+  .bk-hero-title-soft { color: rgba(26,26,46,0.5); font-weight: 200; }
+  .bk-hero-sub {
+    font-size: 1.0625rem;
+    color: rgba(26,26,46,0.65);
+    line-height: 1.6;
+    max-width: 620px;
+    margin: 0 0 32px;
+  }
+  .bk-hero-cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  .bk-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 14px 22px;
+    font-family: inherit;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  }
+  .bk-btn--primary { background: #1a1a1a; color: #fff; }
+  .bk-btn--primary:hover { background: #4B7BE5; color: #fff; transform: translateY(-1px); }
+  .bk-btn--ghost { background: transparent; color: #1a1a1a; border-color: #e5e5e5; }
+  .bk-btn--ghost:hover { border-color: #1a1a1a; color: #1a1a1a; text-decoration: none; }
+
+  /* Sticky nav */
+  .bk-sticky-nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(250, 250, 248, 0.92);
+    backdrop-filter: saturate(180%) blur(14px);
+    border-top: 1px solid #e5e5e5;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  .bk-sticky-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .bk-sticky-brand {
+    font-size: 0.6875rem; font-weight: 700;
+    color: #4B7BE5;
+    letter-spacing: 0.14em; text-transform: uppercase;
+  }
+  .bk-sticky-links {
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .bk-sticky-link {
+    padding: 6px 12px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: rgba(26,26,46,0.65);
+    text-decoration: none;
+    border-radius: 8px;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .bk-sticky-link:hover { color: #1a1a1a; background: rgba(0,0,0,0.04); text-decoration: none; }
+
+  /* Sections */
+  .bk-section { padding: 96px 0; }
+  .bk-section--alt { background: #fff; border-top: 1px solid #e5e5e5; border-bottom: 1px solid #e5e5e5; }
+  @media (max-width: 720px) { .bk-section { padding: 64px 0; } }
+
+  .bk-section-head { max-width: 620px; margin: 0 0 48px; }
+  .bk-section-eyebrow {
+    font-size: 0.6875rem; font-weight: 700; color: #4B7BE5;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .bk-section-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.875rem, 4.5vw, 2.5rem);
+    font-weight: 300;
+    color: #1a1a1a;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+    margin: 0 0 14px;
+  }
+  .bk-section-lead {
+    font-size: 1rem;
+    color: rgba(26,26,46,0.65);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* ─── Logos grid ─── */
+  .bk-logo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  @media (max-width: 720px) { .bk-logo-grid { grid-template-columns: 1fr; } }
+
+  .bk-logo-card {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 24px;
+    padding: 24px;
+    border: 1px solid #e5e5e5;
+    border-radius: 16px;
+    align-items: center;
+  }
+  @media (max-width: 720px) { .bk-logo-card { grid-template-columns: 1fr; padding: 20px; } }
+
+  .bk-logo-card--full { grid-column: 1 / -1; }
+  .bk-logo-card--light { background: #fff; }
+  .bk-logo-card--dark { background: #1a1a1a; border-color: #1a1a1a; }
+  .bk-logo-card--dark .bk-logo-name { color: #fff; }
+  .bk-logo-card--dark .bk-logo-detail { color: rgba(255,255,255,0.6); }
+  .bk-logo-card--dark .bk-logo-dl { color: #93b4ff; }
+
+  .bk-logo-preview {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 140px;
+    background: rgba(0,0,0,0.02);
+    border-radius: 12px;
+  }
+  .bk-logo-card--dark .bk-logo-preview { background: rgba(255,255,255,0.05); }
+  .bk-logo-full-row { display: flex; align-items: center; gap: 16px; }
+
+  .bk-wordmark {
+    font-family: var(--font-display, 'Clash Display', sans-serif);
+    font-weight: 700;
+    font-size: 4rem;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+  .bk-wordmark--dark { color: #1a1a1a; }
+  .bk-wordmark--light { color: #fff; }
+
+  .bk-logo-name {
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 6px;
+    letter-spacing: -0.005em;
+  }
+  .bk-logo-detail {
+    font-size: 0.8125rem;
+    color: rgba(26,26,46,0.65);
+    line-height: 1.55;
+    margin-bottom: 14px;
+  }
+  .bk-logo-dl {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #4B7BE5;
+    text-decoration: none;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .bk-logo-dl:hover { text-decoration: underline; }
+
+  .bk-rules-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 720px) { .bk-rules-grid { grid-template-columns: 1fr; } }
+  .bk-rule {
+    padding: 18px;
+    background: rgba(75,123,229,0.06);
+    border: 1px solid rgba(75,123,229,0.18);
+    border-radius: 12px;
+  }
+  .bk-rule-eyebrow {
+    font-size: 0.625rem; font-weight: 700; color: #4B7BE5;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .bk-rule-detail {
+    font-size: 0.8125rem;
+    color: rgba(26,26,46,0.75);
+    line-height: 1.55;
+  }
+  .bk-rule-detail strong { color: #1a1a1a; font-weight: 700; }
+
+  /* ─── Tipografía ─── */
+  .bk-fonts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  @media (max-width: 900px) { .bk-fonts-grid { grid-template-columns: 1fr; } }
+
+  .bk-font-card {
+    padding: 28px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .bk-font-name {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    letter-spacing: -0.01em;
+    margin-bottom: 6px;
+  }
+  .bk-font-use {
+    font-size: 0.8125rem;
+    color: rgba(26,26,46,0.65);
+    line-height: 1.5;
+  }
+  .bk-font-weights {
+    margin-top: 10px;
+    font-size: 0.75rem;
+    color: rgba(26,26,46,0.6);
+  }
+  .bk-font-weights span {
+    display: inline-block;
+    font-size: 0.5625rem; font-weight: 700;
+    color: #999;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    margin-right: 8px;
+  }
+  .bk-font-dl {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #4B7BE5;
+    text-decoration: none;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .bk-font-dl:hover { text-decoration: underline; }
+  .bk-font-sample {
+    padding-top: 18px;
+    border-top: 1px solid #f0f0f0;
+    font-size: 1.5rem;
+    line-height: 1.35;
+    color: #1a1a1a;
+    letter-spacing: -0.005em;
+  }
+  .bk-font-sample--display {
+    font-size: 2.25rem;
+    font-weight: 300;
+    letter-spacing: -0.025em;
+  }
+
+  /* ─── Colores ─── */
+  .bk-colors-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 900px) { .bk-colors-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .bk-colors-grid { grid-template-columns: 1fr; } }
+
+  .bk-color-tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 14px;
+    cursor: pointer;
+    overflow: hidden;
+    text-align: left;
+    font-family: inherit;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  .bk-color-tile:hover { border-color: #1a1a1a; transform: translateY(-2px); }
+  .bk-color-swatch { width: 100%; height: 96px; }
+  .bk-color-meta { padding: 14px 16px 16px; }
+  .bk-color-name {
+    font-size: 0.875rem; font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 2px;
+  }
+  .bk-color-hex {
+    font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+    font-size: 0.75rem;
+    color: rgba(26,26,46,0.65);
+    margin-bottom: 8px;
+  }
+  .bk-color-usage {
+    font-size: 0.6875rem;
+    color: rgba(26,26,46,0.55);
+    line-height: 1.4;
+  }
+  .bk-color-copy, .bk-color-copied {
+    position: absolute;
+    top: 8px; right: 10px;
+    padding: 3px 9px;
+    font-size: 0.5625rem; font-weight: 700;
+    background: rgba(255,255,255,0.92);
+    color: #1a1a1a;
+    border-radius: 999px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transition: opacity 0.15s ease;
+  }
+  .bk-color-tile:not(:hover) .bk-color-copy { opacity: 0; }
+  .bk-color-copied { opacity: 0; }
+  .bk-color-tile.is-copied .bk-color-copy { opacity: 0; }
+  .bk-color-tile.is-copied .bk-color-copied { opacity: 1; background: #2AB5A0; color: #fff; }
+
+  /* ─── Voz / reglas grid ─── */
+  .bk-voice-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+  @media (max-width: 720px) { .bk-voice-grid { grid-template-columns: 1fr; } }
+
+  .bk-voice-col {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .bk-voice-col-head {
+    display: flex; align-items: center; gap: 8px;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .bk-voice-col-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: 999px;
+    font-size: 0.75rem; font-weight: 800;
+  }
+  .bk-voice-col-head--do .bk-voice-col-icon { background: rgba(42,181,160,0.15); color: #1e8471; }
+  .bk-voice-col-head--dont .bk-voice-col-icon { background: rgba(229,75,75,0.12); color: #b93333; }
+  .bk-voice-col-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    letter-spacing: -0.005em;
+  }
+  .bk-voice-item {
+    padding: 14px 0;
+    border-bottom: 1px solid #f5f5f5;
+  }
+  .bk-voice-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .bk-voice-item-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+  }
+  .bk-voice-item-detail {
+    font-size: 0.8125rem;
+    color: rgba(26,26,46,0.65);
+    line-height: 1.55;
+  }
+
+  /* ─── Captions ─── */
+  .bk-captions {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+  @media (max-width: 900px) { .bk-captions { grid-template-columns: 1fr; } }
+
+  .bk-caption-card {
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .bk-caption-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 16px;
+    background: #fafafa;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  .bk-caption-platform {
+    font-size: 0.625rem; font-weight: 700;
+    color: #4B7BE5;
+    letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .bk-copy-btn {
+    padding: 5px 12px;
+    font-size: 0.6875rem; font-weight: 700;
+    background: #1a1a1a; color: #fff;
+    border: none; border-radius: 999px;
+    cursor: pointer; font-family: inherit;
+    letter-spacing: 0.04em;
+    transition: background 0.15s ease;
+  }
+  .bk-copy-btn:hover { background: #4B7BE5; }
+  .bk-copy-btn.is-copied { background: #2AB5A0; }
+  .bk-caption-text {
+    flex: 1;
+    padding: 16px 18px;
+    margin: 0;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-size: 0.8125rem;
+    color: rgba(26,26,46,0.85);
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .bk-tags-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 720px) { .bk-tags-row { grid-template-columns: 1fr; } }
+  .bk-tags-block {
+    padding: 22px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 14px;
+  }
+  .bk-tags-label {
+    font-size: 0.625rem; font-weight: 700;
+    color: #4B7BE5;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .bk-tags-list { display: flex; gap: 6px; flex-wrap: wrap; }
+  .bk-tag {
+    padding: 7px 14px;
+    background: rgba(75,123,229,0.08);
+    color: #4B7BE5;
+    border: 1px solid rgba(75,123,229,0.18);
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .bk-tag:hover { background: #4B7BE5; color: #fff; }
+  .bk-tag.is-copied { background: #2AB5A0; color: #fff; border-color: #2AB5A0; }
+
+  .bk-disclosure {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .bk-disclosure code {
+    padding: 8px 12px;
+    background: #fafafa;
+    border: 1px dashed #e5e5e5;
+    border-radius: 8px;
+    font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+    font-size: 0.8125rem;
+    color: #1a1a1a;
+  }
+  .bk-tags-hint {
+    font-size: 0.75rem;
+    color: rgba(26,26,46,0.55);
+  }
+  .bk-tags-hint code {
+    font-family: 'SF Mono', monospace;
+    font-size: 0.6875rem;
+    background: rgba(0,0,0,0.05);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+
+  /* ─── Plan del mes ─── */
+  .bk-plan-card {
+    background: #1a1a1a;
+    color: #fff;
+    border-radius: 18px;
+    padding: 32px;
+    margin-bottom: 24px;
+  }
+  .bk-plan-row {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 24px;
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .bk-plan-row:first-child { padding-top: 0; }
+  .bk-plan-row:last-child { border-bottom: none; padding-bottom: 0; }
+  @media (max-width: 720px) { .bk-plan-row { grid-template-columns: 1fr; gap: 8px; } }
+
+  .bk-plan-row-label {
+    font-size: 0.625rem; font-weight: 700;
+    color: #93b4ff;
+    letter-spacing: 0.14em; text-transform: uppercase;
+  }
+  .bk-plan-row-value {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: #fff;
+    letter-spacing: -0.01em;
+    line-height: 1.4;
+  }
+  .bk-keywords { display: flex; flex-wrap: wrap; gap: 6px; }
+  .bk-keyword {
+    padding: 6px 12px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #fff;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: 0.005em;
+  }
+
+  .bk-videos-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 720px) { .bk-videos-grid { grid-template-columns: 1fr; } }
+
+  .bk-video-card {
+    padding: 22px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    border-radius: 14px;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+  }
+  .bk-video-card:hover { border-color: #4B7BE5; transform: translateY(-2px); }
+  .bk-video-num {
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #4B7BE5;
+    margin-bottom: 10px;
+  }
+  .bk-video-title {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+    letter-spacing: -0.005em;
+  }
+  .bk-video-angulo {
+    font-size: 0.8125rem;
+    color: rgba(26,26,46,0.7);
+    line-height: 1.55;
+    margin-bottom: 10px;
+  }
+  .bk-video-meta {
+    display: inline-block;
+    padding: 3px 9px;
+    font-size: 0.625rem; font-weight: 700;
+    color: #4B7BE5;
+    background: rgba(75,123,229,0.10);
+    border-radius: 999px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* ─── Contact ─── */
+  .bk-contact {
+    margin-top: 32px;
+    padding: 28px;
+    background: rgba(75,123,229,0.04);
+    border: 1px solid rgba(75,123,229,0.16);
+    border-radius: 14px;
+    text-align: center;
+  }
+  .bk-contact-eyebrow {
+    font-size: 0.6875rem; font-weight: 700;
+    color: #4B7BE5;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .bk-contact-detail {
+    font-size: 0.9375rem;
+    color: rgba(26,26,46,0.75);
+    line-height: 1.55;
+  }
+  .bk-contact-detail a { color: #4B7BE5; text-decoration: none; font-weight: 600; }
+  .bk-contact-detail a:hover { text-decoration: underline; }
+
+  /* Smooth anchor scroll w/ offset for sticky nav */
+  html { scroll-behavior: smooth; }
+  [id] { scroll-margin-top: 80px; }
+
+  /* Print: hide nav, expand */
+  @media print {
+    .bk-sticky-nav, .bk-hero-cta-row, .bk-copy-btn, .bk-tag, .bk-color-copy, .bk-color-copied { display: none !important; }
+    .bk-page { background: #fff; }
+    .bk-section { padding: 32px 0; }
+  }
+</style>
+
+<script is:inline>
+(function() {
+  // ─── Click-to-copy: color tiles ───
+  document.querySelectorAll('.bk-color-tile').forEach(tile => {
+    tile.addEventListener('click', () => {
+      const hex = tile.dataset.hex || '';
+      navigator.clipboard.writeText(hex).then(() => {
+        tile.classList.add('is-copied');
+        setTimeout(() => tile.classList.remove('is-copied'), 1400);
+      });
+    });
+  });
+
+  // ─── Click-to-copy: tags / disclosure ───
+  document.querySelectorAll('.bk-tag').forEach(tag => {
+    tag.addEventListener('click', () => {
+      const text = tag.dataset.hex || tag.textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = tag.textContent;
+        tag.classList.add('is-copied');
+        tag.textContent = '¡Copiado!';
+        setTimeout(() => {
+          tag.classList.remove('is-copied');
+          tag.textContent = orig;
+        }, 1200);
+      });
+    });
+  });
+
+  // ─── Click-to-copy: caption text ───
+  document.querySelectorAll('.bk-copy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest('.bk-caption-card');
+      if (!card) return;
+      const text = card.querySelector('.bk-copy-text')?.textContent || '';
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.textContent;
+        btn.classList.add('is-copied');
+        btn.textContent = '¡Copiado!';
+        setTimeout(() => {
+          btn.classList.remove('is-copied');
+          btn.textContent = orig;
+        }, 1200);
+      });
+    });
+  });
+})();
+</script>
+
+</BaseLayout>
