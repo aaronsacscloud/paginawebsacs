@@ -297,6 +297,36 @@ function SummaryTab() {
         <KpiCard label="Demos agendados" value={String(data.leads?.bookings || 0)} />
         <KpiCard label="Demos completados" value={String(data.leads?.bookings_realizadas || 0)} accent="#2AB5A0" />
       </div>
+
+      {/* Top fuentes — de dónde vienen tus leads */}
+      {data.topFuentes?.length > 0 && (
+        <>
+          <h2 style={S.h2}>De dónde vienen tus leads</h2>
+          <div style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: 20 }}>
+            {(() => {
+              const totalLeads = (data.topFuentes || []).reduce((s: number, f: any) => s + f.count, 0);
+              return (data.topFuentes as any[]).map((f, idx) => {
+                const pct = totalLeads > 0 ? Math.round((f.count / totalLeads) * 100) : 0;
+                const label = f.fuente === 'partner-link' ? 'Tu link directo'
+                  : f.fuente === 'website-form' ? 'Form del sitio'
+                  : f.fuente === 'sin-fuente' ? 'Sin clasificar'
+                  : f.fuente;
+                return (
+                  <div key={idx} style={{ marginBottom: idx === data.topFuentes.length - 1 ? 0 : 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <span style={{ fontSize: 14, fontWeight: 500, color: '#1a1a1a', textTransform: 'capitalize' }}>{label}</span>
+                      <span style={{ fontSize: 13, color: '#666' }}>{f.count} <span style={{ color: '#999', marginLeft: 4 }}>· {pct}%</span></span>
+                    </div>
+                    <div style={{ background: '#f0f0f0', borderRadius: 999, height: 6, overflow: 'hidden' }}>
+                      <div style={{ background: '#4B7BE5', height: '100%', width: `${pct}%`, transition: 'width 0.3s' }} />
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        </>
+      )}
     </div>
   );
 }

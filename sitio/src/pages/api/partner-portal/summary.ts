@@ -60,6 +60,25 @@ export const GET: APIRoute = async ({ request }) => {
     .eq('referrer_partner_id', partnerId)
     .eq('estado', 'realizada');
 
+  // Top fuentes: agrupar leads por contacts.fuente (TikTok/IG/Email/etc)
+  // Limit 200 leads para no devolver demasiado al portal
+  const { data: leadsRows } = await supabase
+    .from('contacts')
+    .select('fuente')
+    .eq('referrer_partner_id', partnerId)
+    .order('created_at', { ascending: false })
+    .limit(500);
+
+  const fuenteCounts = new Map<string, number>();
+  for (const r of leadsRows || []) {
+    const key = (r.fuente || 'sin-fuente').trim() || 'sin-fuente';
+    fuenteCounts.set(key, (fuenteCounts.get(key) || 0) + 1);
+  }
+  const topFuentes = Array.from(fuenteCounts.entries())
+    .map(([fuente, count]) => ({ fuente, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6);
+
   return j({
     user: { id: user.id, nombre: user.nombre, email: user.email, default_commission_pct: user.default_commission_pct },
     proximoPago,
@@ -71,6 +90,7 @@ export const GET: APIRoute = async ({ request }) => {
       bookings: bookingsCount || 0,
       bookings_realizadas: bookingsRealizadasCount || 0,
     },
+    topFuentes,
   });
 };
 

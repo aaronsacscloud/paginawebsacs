@@ -133,6 +133,17 @@ export default function CommissionsTab() {
     } catch (e: any) { alert('Error: ' + e.message); }
   }
 
+  async function flagFraud(c: Commission) {
+    const ok = confirm(`Marcar como FRAUDE el bono de ${c.team_members?.nombre} (${fmt(c.commission_amount)})?\n\nLa commission se cancela con motivo='fraud:...' para audit trail.\nEl partner NO recibirá email (silente).\n\nUsa esto para leads inválidos, registros de prueba que el partner generó él mismo, etc.`);
+    if (!ok) return;
+    const detail = prompt('Detalle del fraude (queda en notas, solo admin lo ve):', 'Lead inválido / registro auto-generado por el partner');
+    if (detail === null) return;
+    try {
+      await postAction('cancel', { commission_id: c.id, reason: `fraud: ${detail}` });
+      load();
+    } catch (e: any) { alert('Error: ' + e.message); }
+  }
+
   async function payOne(c: Commission) {
     const ref = prompt(`Referencia de pago (transferencia/folio):`, `MX-${new Date().toISOString().slice(0, 10)}`);
     if (!ref) return;
@@ -273,6 +284,7 @@ export default function CommissionsTab() {
                         {c.status === 'pending' && <button style={btn('#2AB5A0', '#fff')} onClick={() => approveEarned(c)}>Aprobar</button>}
                         {c.status === 'earned' && <button style={btn('#1a1a1a', '#fff')} onClick={() => payOne(c)}>Pagar</button>}
                         {(c.status === 'pending' || c.status === 'earned') && <button style={btn()} onClick={() => cancelOne(c)}>Cancelar</button>}
+                        {(c.status === 'pending' || c.status === 'earned') && <button style={btn('#FFE5E5', '#b93333')} onClick={() => flagFraud(c)} title="Marcar como fraude (cancela silente con audit trail)">⚠ Fraude</button>}
                       </div>
                     </td>
                   </tr>
