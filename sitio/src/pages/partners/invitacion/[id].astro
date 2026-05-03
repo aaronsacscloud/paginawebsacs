@@ -107,6 +107,7 @@ const heroSubtitle = tipoTagline[tipo] || '';
 
 const tabsDef = [
   { id: 'bienvenida', label: 'Bienvenida', show: true },
+  { id: 'proceso',    label: 'Cómo funciona', show: true },
   { id: 'beneficios', label: 'Beneficios', show: beneficios.length > 0 },
   { id: 'terminos', label: 'Términos', show: true },
   { id: 'compromisos', label: 'Compromisos', show: compromisos.length > 0 },
@@ -285,6 +286,273 @@ const partnerLandingUrl = invitation.slug_landing
           ))}
         </div>
       </section>
+
+      <!-- TAB: PROCESO / Cómo funciona -->
+      <section class="p-tab-panel" data-tab="proceso">
+        <div class="p-section-head">
+          <div class="p-section-eyebrow">El proceso, paso a paso</div>
+          <h2 class="p-section-title">Cómo funciona ser partner SACS</h2>
+          <p class="p-section-lead">
+            Desde que firmas tu invitación hasta que cobras tu primera comisión.
+            Sin sorpresas, sin letras chicas.
+          </p>
+        </div>
+
+        <div class="p-proc-steps">
+          <!-- Step 1 -->
+          <div class="p-proc-step">
+            <div class="p-proc-step-num">1</div>
+            <div class="p-proc-step-body">
+              <div class="p-proc-step-title">Llena el formulario y firma</div>
+              <p class="p-proc-step-detail">
+                Datos personales, dirección del negocio, datos de cobro
+                (CLABE, PayPal o Mercado Pago) y firma digital. Te toma
+                <strong>~5 minutos</strong>. Una vez enviado, queda en revisión.
+              </p>
+              <div class="p-proc-step-meta">
+                <span class="p-proc-meta-pill">~5 min</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="p-proc-step">
+            <div class="p-proc-step-num">2</div>
+            <div class="p-proc-step-body">
+              <div class="p-proc-step-title">Revisión por el equipo SACS</div>
+              <p class="p-proc-step-detail">
+                Validamos tus datos, confirmamos vigencia y comisión, y revisamos
+                tu información de cobro. Si falta algo, te escribimos por correo.
+                Tiempo de respuesta: <strong>3 a 5 días hábiles</strong>.
+              </p>
+              <div class="p-proc-step-meta">
+                <span class="p-proc-meta-pill">3–5 días hábiles</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="p-proc-step">
+            <div class="p-proc-step-num">3</div>
+            <div class="p-proc-step-body">
+              <div class="p-proc-step-title">Aprobación + tu link único</div>
+              <p class="p-proc-step-detail">
+                Te enviamos por <strong>correo y WhatsApp</strong> tu código
+                de partner, tu link único (ej. <code>sacscloud.com/p/tu-nombre</code>)
+                y un link para crear tu contraseña del portal. Cualquier prospecto
+                que llegue por tu link queda atribuido a ti automáticamente.
+              </p>
+              <div class="p-proc-step-meta">
+                <span class="p-proc-meta-pill p-proc-meta-pill--alt">Email + WhatsApp</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4 — Panel preview -->
+          <div class="p-proc-step">
+            <div class="p-proc-step-num">4</div>
+            <div class="p-proc-step-body">
+              <div class="p-proc-step-title">Tu panel personal de partner</div>
+              <p class="p-proc-step-detail">
+                Entras a tu portal con tu correo y contraseña — desde laptop,
+                tablet o teléfono. Ves todo lo que está pasando con tu link en
+                tiempo real: comisiones, pagos, prospectos, brand kit.
+              </p>
+              <button type="button" class="p-proc-preview-btn" id="btn-open-preview">
+                Ver preview del panel →
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 5 -->
+          <div class="p-proc-step">
+            <div class="p-proc-step-num">5</div>
+            <div class="p-proc-step-body">
+              <div class="p-proc-step-title">Reunión de onboarding 1-on-1</div>
+              <p class="p-proc-step-detail">
+                Sesión privada de <strong>45 minutos</strong> donde te enseñamos
+                la plataforma SACS, dónde encontrar cada cosa, cómo aprenderla,
+                y resolvemos cualquier duda. Activamos tu cuenta SACS en plan
+                Fideliza para tu propio negocio (valor $14,000 MXN/año).
+              </p>
+              <div class="p-proc-step-meta">
+                <span class="p-proc-meta-pill">45 min · 1-on-1</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 6 -->
+          <div class="p-proc-step">
+            <div class="p-proc-step-num">6</div>
+            <div class="p-proc-step-body">
+              <div class="p-proc-step-title">Reuniones trimestrales</div>
+              <p class="p-proc-step-detail">
+                Cada 3 meses revisamos juntos cómo va tu programa: mejores
+                prácticas, contenido que funcionó, nuevos materiales, feedback
+                directo al equipo de producto. Es donde el modelo se mejora —
+                con tu voz incluida.
+              </p>
+              <div class="p-proc-step-meta">
+                <span class="p-proc-meta-pill p-proc-meta-pill--alt">Cada 3 meses</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-proc-cta">
+          <a href="#firma" class="p-proc-cta-btn" data-tab-link="firma">
+            Estoy listo · ir a firmar
+            <span class="p-proc-cta-arrow">→</span>
+          </a>
+        </div>
+      </section>
+
+      <!-- Modal: Preview del panel de partner -->
+      <div class="p-preview-overlay" id="preview-overlay" style="display:none">
+        <div class="p-preview-modal">
+          <div class="p-preview-header">
+            <div>
+              <div class="p-preview-eyebrow">Preview · Portal de partner</div>
+              <div class="p-preview-title">Esto es lo que vas a ver al entrar</div>
+            </div>
+            <button type="button" class="p-preview-close" id="btn-close-preview" aria-label="Cerrar">✕</button>
+          </div>
+
+          <div class="p-preview-body">
+            {/* Mockup visual del panel */}
+            <div class="pp-mock">
+              {/* Topbar */}
+              <div class="pp-mock-topbar">
+                <span class="pp-mock-brand">Sacs</span>
+                <span class="pp-mock-sep">·</span>
+                <span class="pp-mock-subtitle">Portal de partner</span>
+                <div style="flex:1"></div>
+                <span class="pp-mock-username">{invitation.nombre}</span>
+              </div>
+
+              <div class="pp-mock-body">
+                {/* Sidebar */}
+                <aside class="pp-mock-sidebar">
+                  <div class="pp-mock-side-item pp-mock-side-item--active">
+                    <span>📊</span><span>Resumen</span>
+                  </div>
+                  <div class="pp-mock-side-item"><span>💰</span><span>Comisiones</span></div>
+                  <div class="pp-mock-side-item"><span>🏦</span><span>Pagos</span></div>
+                  <div class="pp-mock-side-item"><span>👥</span><span>Prospectos</span></div>
+                  <div class="pp-mock-side-item"><span>🔗</span><span>Mi link</span></div>
+                  <div class="pp-mock-side-item"><span>⚙️</span><span>Mi perfil</span></div>
+                  <div class="pp-mock-side-item pp-mock-side-item--accent" style="margin-top:auto">
+                    <span>📘</span><span>Brand kit ↗</span>
+                  </div>
+                </aside>
+
+                {/* Main */}
+                <main class="pp-mock-main">
+                  <div class="pp-mock-h1">Hola, {invitation.nombre.split(' ')[0]} 👋</div>
+                  <div class="pp-mock-lead">Aquí está el resumen de tu actividad como partner SACS.</div>
+
+                  <div class="pp-mock-kpi-row">
+                    <div class="pp-mock-kpi" style="border-left:3px solid #2AB5A0">
+                      <div class="pp-mock-kpi-lbl">Próximo pago</div>
+                      <div class="pp-mock-kpi-val">$1,800</div>
+                      <div class="pp-mock-kpi-hint">Earned, no pagadas todavía</div>
+                    </div>
+                    <div class="pp-mock-kpi" style="border-left:3px solid #E8A838">
+                      <div class="pp-mock-kpi-lbl">Pendiente verificar</div>
+                      <div class="pp-mock-kpi-val">$2,500</div>
+                      <div class="pp-mock-kpi-hint">En revisión por SACS</div>
+                    </div>
+                    <div class="pp-mock-kpi" style="border-left:3px solid #4B7BE5">
+                      <div class="pp-mock-kpi-lbl">Total año</div>
+                      <div class="pp-mock-kpi-val">$24,300</div>
+                    </div>
+                    <div class="pp-mock-kpi" style="border-left:3px solid #6C5CE7">
+                      <div class="pp-mock-kpi-lbl">Tu comisión</div>
+                      <div class="pp-mock-kpi-val">{comisionPct}%</div>
+                    </div>
+                  </div>
+
+                  <div class="pp-mock-h2">Bonos del mes</div>
+                  <div class="pp-mock-kpi-row">
+                    <div class="pp-mock-kpi">
+                      <div class="pp-mock-kpi-lbl">Pruebas gratis</div>
+                      <div class="pp-mock-kpi-val">5</div>
+                      <div class="pp-mock-kpi-hint">$2,500 en bonos</div>
+                    </div>
+                    <div class="pp-mock-kpi">
+                      <div class="pp-mock-kpi-lbl">Demos completadas</div>
+                      <div class="pp-mock-kpi-val">3</div>
+                      <div class="pp-mock-kpi-hint">$900 en bonos</div>
+                    </div>
+                    <div class="pp-mock-kpi">
+                      <div class="pp-mock-kpi-lbl">Ventas directas</div>
+                      <div class="pp-mock-kpi-val">2</div>
+                      <div class="pp-mock-kpi-hint">$8,400 en comisiones</div>
+                    </div>
+                  </div>
+
+                  <div class="pp-mock-h2">Tus prospectos</div>
+                  <div class="pp-mock-table">
+                    <div class="pp-mock-trow pp-mock-trow--head">
+                      <span>Nombre</span><span>Etapa</span><span>Bono</span>
+                    </div>
+                    <div class="pp-mock-trow">
+                      <span>Mariana López</span>
+                      <span><em class="pp-mock-tag pp-mock-tag--ok">Cliente</em></span>
+                      <span>$3,500</span>
+                    </div>
+                    <div class="pp-mock-trow">
+                      <span>Carlos Méndez</span>
+                      <span><em class="pp-mock-tag pp-mock-tag--blue">Demo agendada</em></span>
+                      <span>—</span>
+                    </div>
+                    <div class="pp-mock-trow">
+                      <span>Laura Jiménez</span>
+                      <span><em class="pp-mock-tag">Lead nuevo</em></span>
+                      <span>$500 pending</span>
+                    </div>
+                  </div>
+                </main>
+              </div>
+            </div>
+
+            <div class="p-preview-features">
+              <div class="p-preview-feat">
+                <strong>📊 Resumen</strong>
+                <span>KPIs en vivo: próximo pago, pendiente, bonos del mes, total año.</span>
+              </div>
+              <div class="p-preview-feat">
+                <strong>💰 Comisiones</strong>
+                <span>Cada bono y venta detallada — pending, earned o paid — con su prospecto.</span>
+              </div>
+              <div class="p-preview-feat">
+                <strong>🏦 Pagos</strong>
+                <span>Historial completo de payouts agrupados por fecha con desglose y referencia.</span>
+              </div>
+              <div class="p-preview-feat">
+                <strong>👥 Prospectos</strong>
+                <span>Lista de leads, demos y deals atribuidos a tu link, con estado y fecha.</span>
+              </div>
+              <div class="p-preview-feat">
+                <strong>🔗 Mi link</strong>
+                <span>Tu URL única + QR generado + acceso directo al brand kit.</span>
+              </div>
+              <div class="p-preview-feat">
+                <strong>⚙️ Mi perfil</strong>
+                <span>Edita datos de cobro, dirección y contraseña cuando quieras.</span>
+              </div>
+              <div class="p-preview-feat">
+                <strong>📘 Brand kit</strong>
+                <span>Logos, captions, hashtags, plantillas de redes — todo listo para usar.</span>
+              </div>
+              <div class="p-preview-feat">
+                <strong>🛍️ Plan Fideliza incluido</strong>
+                <span>Tu propia cuenta SACS para usar la plataforma en tu negocio.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- TAB: BENEFICIOS -->
       {beneficios.length > 0 && (
@@ -2115,6 +2383,389 @@ const partnerLandingUrl = invitation.slug_landing
     line-height: 1.6;
   }
 
+  /* ─── Proceso (Cómo funciona) ─────────────────────── */
+  .p-proc-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 32px;
+  }
+  .p-proc-step {
+    display: flex;
+    gap: 18px;
+    padding: 22px 24px;
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 14px;
+    transition: border-color 0.18s, transform 0.18s;
+  }
+  .p-proc-step:hover {
+    border-color: #cfd6e2;
+    transform: translateY(-1px);
+  }
+  .p-proc-step-num {
+    flex-shrink: 0;
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: #1a1a1a;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1rem;
+  }
+  .p-proc-step-body {
+    flex: 1;
+    min-width: 0;
+  }
+  .p-proc-step-title {
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 6px;
+    letter-spacing: -0.01em;
+  }
+  .p-proc-step-detail {
+    font-size: 0.9375rem;
+    color: #555;
+    line-height: 1.6;
+    margin: 0 0 10px;
+  }
+  .p-proc-step-detail strong { color: #1a1a1a; font-weight: 700; }
+  .p-proc-step-detail code {
+    background: #f5f5f7;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 0.8125rem;
+    color: #4B7BE5;
+  }
+  .p-proc-step-meta {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .p-proc-meta-pill {
+    display: inline-block;
+    padding: 4px 10px;
+    background: rgba(75,123,229,0.10);
+    color: #3764c4;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-radius: 999px;
+  }
+  .p-proc-meta-pill--alt {
+    background: rgba(42,181,160,0.10);
+    color: #1A8F7A;
+  }
+  .p-proc-preview-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    padding: 10px 16px;
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .p-proc-preview-btn:hover { background: #4B7BE5; }
+
+  .p-proc-cta {
+    margin-top: 36px;
+    text-align: center;
+    padding: 28px;
+    background: linear-gradient(120deg, rgba(75,123,229,0.06), rgba(108,92,231,0.04));
+    border: 1px solid rgba(75,123,229,0.18);
+    border-radius: 16px;
+  }
+  .p-proc-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 26px;
+    background: #1a1a1a;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    transition: background 0.15s;
+  }
+  .p-proc-cta-btn:hover { background: #4B7BE5; }
+  .p-proc-cta-arrow { font-size: 1.125rem; }
+
+  @media (max-width: 640px) {
+    .p-proc-step { padding: 18px 16px; gap: 14px; }
+    .p-proc-step-num { width: 32px; height: 32px; font-size: 0.875rem; }
+    .p-proc-step-title { font-size: 1rem; }
+    .p-proc-step-detail { font-size: 0.875rem; }
+  }
+
+  /* ─── Preview modal del panel de partner ─────────────── */
+  .p-preview-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20,20,30,0.65);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    overflow-y: auto;
+  }
+  .p-preview-modal {
+    width: 100%;
+    max-width: 980px;
+    max-height: 92vh;
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 30px 80px -20px rgba(0,0,0,0.30);
+    display: flex;
+    flex-direction: column;
+  }
+  .p-preview-header {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    padding: 20px 24px;
+    border-bottom: 1px solid #ececec;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    border-radius: 18px 18px 0 0;
+    z-index: 1;
+  }
+  .p-preview-eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #4B7BE5;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 6px;
+  }
+  .p-preview-title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    letter-spacing: -0.01em;
+  }
+  .p-preview-close {
+    background: transparent;
+    border: 1px solid #ddd;
+    border-radius: 50%;
+    width: 36px; height: 36px;
+    cursor: pointer;
+    font-size: 1.125rem;
+    color: #666;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .p-preview-close:hover { border-color: #1a1a1a; color: #1a1a1a; }
+
+  .p-preview-body {
+    padding: 22px;
+  }
+  .p-preview-features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin-top: 22px;
+  }
+  .p-preview-feat {
+    padding: 14px 16px;
+    background: #fafafa;
+    border: 1px solid #ececec;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .p-preview-feat strong {
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    color: #1a1a1a;
+  }
+  .p-preview-feat span {
+    font-size: 0.8125rem;
+    color: #666;
+    line-height: 1.5;
+  }
+
+  /* ── Portal mockup (visual) ── */
+  .pp-mock {
+    background: #f5f6f8;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 12px 32px -12px rgba(0,0,0,0.12);
+    font-family: var(--font-body);
+    color: #1a1a1a;
+  }
+  .pp-mock-topbar {
+    background: #fff;
+    padding: 10px 18px;
+    border-bottom: 1px solid #ececec;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.8125rem;
+  }
+  .pp-mock-brand {
+    font-family: 'Clash Display', sans-serif;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    letter-spacing: -0.02em;
+  }
+  .pp-mock-sep { color: #ccc; }
+  .pp-mock-subtitle { color: #888; font-size: 0.75rem; font-weight: 500; }
+  .pp-mock-username { color: #444; font-size: 0.75rem; font-weight: 600; }
+
+  .pp-mock-body { display: flex; }
+  .pp-mock-sidebar {
+    width: 180px;
+    background: #fff;
+    border-right: 1px solid #ececec;
+    padding: 14px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 360px;
+  }
+  .pp-mock-side-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 7px;
+    font-size: 0.8125rem;
+    color: #555;
+    font-weight: 500;
+  }
+  .pp-mock-side-item--active {
+    background: #1a1a1a;
+    color: #fff;
+  }
+  .pp-mock-side-item--accent { color: #4B7BE5; }
+
+  .pp-mock-main {
+    flex: 1;
+    padding: 22px 24px;
+    background: #f5f6f8;
+    overflow: hidden;
+  }
+  .pp-mock-h1 {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+    letter-spacing: -0.015em;
+  }
+  .pp-mock-lead { font-size: 0.8125rem; color: #666; margin-bottom: 18px; }
+  .pp-mock-h2 {
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 22px 0 10px;
+  }
+
+  .pp-mock-kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+  }
+  .pp-mock-kpi {
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .pp-mock-kpi-lbl {
+    font-size: 0.625rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .pp-mock-kpi-val {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #1a1a1a;
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+  }
+  .pp-mock-kpi-hint {
+    font-size: 0.6875rem;
+    color: #999;
+    margin-top: 4px;
+  }
+
+  .pp-mock-table {
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 0.8125rem;
+  }
+  .pp-mock-trow {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 0.8fr;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #f5f5f5;
+    align-items: center;
+  }
+  .pp-mock-trow:last-child { border-bottom: none; }
+  .pp-mock-trow--head {
+    font-size: 0.625rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    background: #fafafa;
+  }
+  .pp-mock-tag {
+    display: inline-block;
+    padding: 3px 8px;
+    background: #f5f5f7;
+    color: #666;
+    border-radius: 999px;
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-style: normal;
+  }
+  .pp-mock-tag--ok    { background: rgba(42,181,160,0.12); color: #1A8F7A; }
+  .pp-mock-tag--blue  { background: rgba(75,123,229,0.12); color: #3764c4; }
+
+  /* Mobile mockup: ocultar sidebar para que entre todo */
+  @media (max-width: 640px) {
+    .pp-mock-sidebar { display: none; }
+    .pp-mock-main { padding: 16px; }
+    .pp-mock-kpi-row { grid-template-columns: 1fr 1fr; }
+    .pp-mock-trow { grid-template-columns: 1fr 1fr; }
+    .pp-mock-trow > span:nth-child(3) { display: none; }
+    .p-preview-modal { max-height: 96vh; border-radius: 14px; }
+    .p-preview-body { padding: 14px; }
+  }
+
   /* Sign form */
   .p-sign-form { padding: 56px 0 24px; max-width: 720px; margin: 0 auto; }
 
@@ -2505,6 +3156,35 @@ const partnerLandingUrl = invitation.slug_landing
   // Initial tab from hash or initialTab
   const hash = (location.hash || '').replace('#', '');
   showTab(hash || initialTab);
+
+  // ─── Preview del panel modal (siempre disponible) ───
+  const previewOverlay = document.getElementById('preview-overlay');
+  const btnOpenPreview = document.getElementById('btn-open-preview');
+  const btnClosePreview = document.getElementById('btn-close-preview');
+  function openPreview() {
+    if (previewOverlay) {
+      previewOverlay.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+  }
+  function closePreview() {
+    if (previewOverlay) {
+      previewOverlay.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+  }
+  btnOpenPreview && btnOpenPreview.addEventListener('click', openPreview);
+  btnClosePreview && btnClosePreview.addEventListener('click', closePreview);
+  // Close on overlay backdrop click
+  previewOverlay && previewOverlay.addEventListener('click', (e) => {
+    if (e.target === previewOverlay) closePreview();
+  });
+  // Close on Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && previewOverlay && previewOverlay.style.display === 'flex') {
+      closePreview();
+    }
+  });
 
   if (isClosed) return;
 
