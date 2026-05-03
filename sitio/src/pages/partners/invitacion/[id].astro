@@ -3,6 +3,21 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { supabase } from '../../../lib/supabase';
 import PartnerSidebar from '../../../components/partner/PartnerSidebar.astro';
 import { CONTENT_TYPES, META_PUNTOS_MES } from '../../../data/content-types';
+import { businessSectors } from '../../../data/navigation';
+
+const SECTOR_EMOJIS: Record<string, string> = {
+  clothing: '👗',
+  shoes: '👟',
+  jewelry: '💎',
+  entertainment: '🎮',
+  stationery: '✏️',
+  themepark: '🎢',
+  electronics: '📱',
+  phonecase: '📲',
+  minisuper: '🛒',
+  wine: '🍷',
+};
+const PRIORITY_SECTORS = businessSectors.slice(0, 10);
 
 export const prerender = false;
 
@@ -385,48 +400,44 @@ const partnerLandingUrl = invitation.slug_landing
         <!-- ── 4. Verticales en orden de prioridad ── -->
         <div class="p-bw-section p-bw-section--alt">
           <div class="p-bw-eyebrow">Quién usa SACS</div>
-          <h2 class="p-bw-title">Verticales que dominamos en orden de prioridad.</h2>
+          <h2 class="p-bw-title">10 verticales con módulos hechos a la medida.</h2>
           <p class="p-bw-lead">
-            Cada vertical tiene retos específicos. SACS los aborda con módulos pensados
-            para cada uno — no soluciones genéricas.
+            No es un POS genérico. Cada vertical tiene los módulos exactos que
+            necesita — variantes, certificados, reabastos, permisos. Esto te da
+            argumentos reales con cada prospecto.
           </p>
 
           <div class="p-bw-verticals">
-            <div class="p-bw-vertical">
-              <div class="p-bw-vertical-rank">01</div>
-              <div class="p-bw-vertical-icon">👗</div>
-              <div class="p-bw-vertical-name">Moda y boutiques</div>
-              <div class="p-bw-vertical-detail">Variantes (talla×color), colecciones por temporada, devoluciones, e-commerce sincronizado, social commerce.</div>
-            </div>
-            <div class="p-bw-vertical">
-              <div class="p-bw-vertical-rank">02</div>
-              <div class="p-bw-vertical-icon">💊</div>
-              <div class="p-bw-vertical-name">Farmacias</div>
-              <div class="p-bw-vertical-detail">Caducidades, medicamento controlado, recetas, IEPS, reabasto predictivo.</div>
-            </div>
-            <div class="p-bw-vertical">
-              <div class="p-bw-vertical-rank">03</div>
-              <div class="p-bw-vertical-icon">🍽️</div>
-              <div class="p-bw-vertical-name">Restaurantes</div>
-              <div class="p-bw-vertical-detail">Comandas a cocina, mesas, mermas, integración con apps de delivery, reportes por turno.</div>
-            </div>
-            <div class="p-bw-vertical">
-              <div class="p-bw-vertical-rank">04</div>
-              <div class="p-bw-vertical-icon">🔧</div>
-              <div class="p-bw-vertical-name">Ferreterías</div>
-              <div class="p-bw-vertical-detail">Catálogos enormes (50K+ SKUs), crédito a contratistas, multimarca, mostrador + e-commerce.</div>
-            </div>
-            <div class="p-bw-vertical">
-              <div class="p-bw-vertical-rank">05</div>
-              <div class="p-bw-vertical-icon">💇</div>
-              <div class="p-bw-vertical-name">Salones y barberías</div>
-              <div class="p-bw-vertical-detail">Agenda + venta retail + comisiones a estilistas + lealtad. Recordatorios por WhatsApp.</div>
-            </div>
-            <div class="p-bw-vertical">
-              <div class="p-bw-vertical-rank">06</div>
-              <div class="p-bw-vertical-icon">🛒</div>
-              <div class="p-bw-vertical-name">Abarrotes y minisúper</div>
-              <div class="p-bw-vertical-detail">Margen apretado, mermas, conteo nocturno, CFDI sin complejidad fiscal, crédito a vecinos.</div>
+            {PRIORITY_SECTORS.map((sector, i) => (
+              <div class="p-bw-vertical" style={`--accent: ${sector.color}; --accent-bg: ${sector.bgColor};`}>
+                <div class="p-bw-vertical-head">
+                  <div class="p-bw-vertical-rank">{String(i + 1).padStart(2, '0')}</div>
+                  <div class="p-bw-vertical-icon">{SECTOR_EMOJIS[sector.iconId] || '🏪'}</div>
+                </div>
+                <div class="p-bw-vertical-name">{sector.label}</div>
+                <div class="p-bw-vertical-desc">{sector.description}</div>
+                <div class="p-bw-vertical-chips">
+                  {sector.personalizations.slice(0, 4).map((p) => (
+                    <span class="p-bw-vertical-chip">{p.label}</span>
+                  ))}
+                </div>
+                <div class="p-bw-vertical-foot">
+                  +{sector.personalizations.length - 4} módulos más
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div class="p-bw-verticals-more">
+            <div class="p-bw-verticals-more-icon">+</div>
+            <div class="p-bw-verticals-more-body">
+              <div class="p-bw-verticals-more-title">Y más de 70 giros más</div>
+              <div class="p-bw-verticals-more-text">
+                Farmacias, restaurantes, ferreterías, salones, ópticas, mascotas,
+                cafeterías, gimnasios, autopartes, librerías, jugueterías, deportes
+                y muchos más. Si vende algo en una tienda, lo opera SACS.
+                <a href="https://www.sacscloud.com/giros" target="_blank" rel="noopener" class="p-bw-verticals-more-link">Ver catálogo completo →</a>
+              </div>
             </div>
           </div>
         </div>
@@ -3353,44 +3364,147 @@ const partnerLandingUrl = invitation.slug_landing
   /* Verticals */
   .p-bw-verticals {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 16px;
     margin-top: 32px;
   }
   .p-bw-vertical {
     position: relative;
-    padding: 24px 20px;
+    padding: 24px 20px 20px;
     background: #fff;
     border: 1px solid #ececec;
-    border-radius: 10px;
-    transition: transform 0.18s, border-color 0.18s;
+    border-radius: 12px;
+    transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+    display: flex;
+    flex-direction: column;
+  }
+  .p-bw-vertical::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent, #4B7BE5);
+    border-radius: 12px 12px 0 0;
+    opacity: 0.85;
   }
   .p-bw-vertical:hover {
-    transform: translateY(-2px);
-    border-color: #4B7BE5;
+    transform: translateY(-3px);
+    border-color: var(--accent, #4B7BE5);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+  }
+  .p-bw-vertical-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
   }
   .p-bw-vertical-rank {
-    position: absolute;
-    top: 16px; right: 16px;
     font-family: var(--font-display);
     font-size: 0.75rem;
     font-weight: 600;
-    color: #ccc;
+    color: #bbb;
     letter-spacing: 0.04em;
   }
-  .p-bw-vertical-icon { font-size: 1.75rem; line-height: 1; margin-bottom: 12px; }
+  .p-bw-vertical-icon { font-size: 1.75rem; line-height: 1; }
   .p-bw-vertical-name {
     font-family: var(--font-display);
-    font-size: 1rem;
+    font-size: 1.0625rem;
     font-weight: 600;
     color: #1A1A1A;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
+    letter-spacing: -0.01em;
+  }
+  .p-bw-vertical-desc {
+    font-size: 0.8125rem;
+    color: #888;
+    line-height: 1.5;
+    margin-bottom: 14px;
+  }
+  .p-bw-vertical-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .p-bw-vertical-chip {
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    background: var(--accent-bg, rgba(75, 123, 229, 0.08));
+    color: var(--accent, #4B7BE5);
+    border-radius: 999px;
+    font-weight: 500;
     letter-spacing: -0.005em;
+    line-height: 1.2;
+  }
+  .p-bw-vertical-foot {
+    margin-top: auto;
+    padding-top: 8px;
+    font-size: 0.7rem;
+    color: #aaa;
+    font-weight: 500;
+    letter-spacing: 0.01em;
   }
   .p-bw-vertical-detail {
     font-size: 0.8125rem;
     color: #666;
     line-height: 1.5;
+  }
+
+  /* +70 más callout */
+  .p-bw-verticals-more {
+    margin-top: 28px;
+    padding: 24px;
+    background: linear-gradient(135deg, #FAFAF8 0%, #F4F4F2 100%);
+    border: 1px dashed #d4d4d2;
+    border-radius: 12px;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+  .p-bw-verticals-more-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #4B7BE5;
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .p-bw-verticals-more-body { flex: 1; }
+  .p-bw-verticals-more-title {
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: #1A1A1A;
+    margin-bottom: 6px;
+    letter-spacing: -0.01em;
+  }
+  .p-bw-verticals-more-text {
+    font-size: 0.875rem;
+    color: #555;
+    line-height: 1.6;
+  }
+  .p-bw-verticals-more-link {
+    display: inline-block;
+    margin-left: 6px;
+    color: #4B7BE5;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .p-bw-verticals-more-link:hover { text-decoration: underline; }
+  @media (max-width: 640px) {
+    .p-bw-verticals-more {
+      flex-direction: column;
+      gap: 14px;
+      padding: 20px;
+    }
+    .p-bw-verticals-more-icon { width: 40px; height: 40px; font-size: 1.5rem; }
   }
 
   /* Cases (clientes) */
