@@ -117,12 +117,14 @@ const tabsDef = [
 const visibleTabs = tabsDef.filter(t => t.show).map(({ id, label }) => ({ id, label }));
 const initialTab = isClosed ? 'firma' : 'bienvenida';
 
-// ─── Projection data: SACS plan pricing (MXN/mes) y escenarios ───
+// ─── Projection data: SACS plan pricing (MXN) y escenarios ───
+// monthly = precio público mensual del plan
+// annualTotal = precio público anual del plan (con descuento de 2 meses)
 const SACS_PLANS = [
-  { id: 'vende',      name: 'Vende',      monthly: 600,  accent: '#94A3B8', tagline: 'Para marcas que arrancan' },
-  { id: 'controla',   name: 'Controla',   monthly: 900,  accent: '#4B7BE5', tagline: 'Multi-sucursal con orden' },
-  { id: 'fideliza',   name: 'Fideliza',   monthly: 1400, accent: '#6C5CE7', tagline: 'Más popular',   highlighted: true },
-  { id: 'automatiza', name: 'Automatiza', monthly: 5900, accent: '#1a1a1a', tagline: 'Operación con IA' },
+  { id: 'vende',      name: 'Vende',      monthly: 600,  annualTotal: 6000,  accent: '#94A3B8', tagline: 'Para marcas que arrancan' },
+  { id: 'controla',   name: 'Controla',   monthly: 900,  annualTotal: 9000,  accent: '#4B7BE5', tagline: 'Multi-sucursal con orden' },
+  { id: 'fideliza',   name: 'Fideliza',   monthly: 1400, annualTotal: 14000, accent: '#6C5CE7', tagline: 'Más popular',   highlighted: true },
+  { id: 'automatiza', name: 'Automatiza', monthly: 5900, annualTotal: 59000, accent: '#1a1a1a', tagline: 'Operación con IA' },
 ];
 const CLIENT_TIERS = [10, 20, 50, 100, 200, 500];
 const DEMO_SCENARIOS = [
@@ -136,16 +138,18 @@ const bonusAgendada = Number(tabulador.demo_agendada || 0);
 const bonusCompletada = Number(tabulador.demo_completada || 0);
 
 // Per-cell calculation: clientes × precio_plan × comision%
-function calcSale(planMonthly: number, clients: number) {
-  return Math.round(planMonthly * clients * ratePartner);
+function calcSale(planPrice: number, clients: number) {
+  return Math.round(planPrice * clients * ratePartner);
 }
 function calcDemoMonthly(s: typeof DEMO_SCENARIOS[0]) {
   return s.agendadas * bonusAgendada + s.completadas * bonusCompletada;
 }
 
 // Big closing number — best case fideliza × 100 (realista) y automatiza × 500 (techo)
-const realisticClosing = calcSale(SACS_PLANS[2].monthly, 100); // Fideliza × 100
-const ceilingClosing = calcSale(SACS_PLANS[3].monthly, 500);   // Automatiza × 500
+const realisticClosingMonthly = calcSale(SACS_PLANS[2].monthly,     100); // Fideliza × 100 mensual
+const realisticClosingAnnual  = calcSale(SACS_PLANS[2].annualTotal, 100); // Fideliza × 100 anual
+const ceilingClosingMonthly   = calcSale(SACS_PLANS[3].monthly,     500); // Automatiza × 500 mensual
+const ceilingClosingAnnual    = calcSale(SACS_PLANS[3].annualTotal, 500); // Automatiza × 500 anual
 
 const beneficioIcons: Record<string, string> = {
   gift: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>',
@@ -507,12 +511,24 @@ const partnerLandingUrl = invitation.slug_landing
         )}
 
         <!-- ── Comisiones por ventas ── -->
-        <div class="p-projection-block">
+        <div class="p-projection-block" data-projection-scope>
           <div class="p-projection-eyebrow">2 · Comisiones por ventas (acumulado)</div>
           <div class="p-projection-title">Por cerrar clientes con tu link</div>
           <p class="p-projection-lead">
-            Cada cliente cerrado por tu link único genera <strong>{comisionPct}%</strong> de comisión sobre su mensualidad. Esto es lo que se acumula según el plan que contraten y cuántos cierres a lo largo de tu carrera como partner.
+            Cada cliente cerrado por tu link único genera <strong>{comisionPct}%</strong> de comisión sobre su pago. Cambia entre <strong>mensual</strong> (cliente paga mes a mes) y <strong>anual</strong> (cliente paga año completo upfront) para ver lo que se acumula a lo largo de tu carrera como partner.
           </p>
+
+          <!-- Toggle: Mensual / Anual -->
+          <div class="p-projection-toggle" role="tablist" aria-label="Vista de comisión">
+            <button type="button" class="p-toggle-btn is-active" data-projection-view="mensual" role="tab" aria-selected="true">
+              <span class="p-toggle-btn-label">Pago mensual</span>
+              <span class="p-toggle-btn-hint">Cliente paga mes a mes</span>
+            </button>
+            <button type="button" class="p-toggle-btn" data-projection-view="anual" role="tab" aria-selected="false">
+              <span class="p-toggle-btn-label">Pago anual</span>
+              <span class="p-toggle-btn-hint">Cliente paga año completo</span>
+            </button>
+          </div>
 
           <div class="p-matrix-wrap">
             <table class="p-matrix">
@@ -522,7 +538,8 @@ const partnerLandingUrl = invitation.slug_landing
                   {SACS_PLANS.map(p => (
                     <th class={`p-matrix-th ${p.highlighted ? 'p-matrix-th--featured' : ''}`} style={`--col-accent:${p.accent}`}>
                       <div class="p-matrix-plan-name">Plan {p.name}</div>
-                      <div class="p-matrix-plan-price">{fmtMoney(p.monthly)} / mes</div>
+                      <div class="p-matrix-plan-price p-view-mensual">{fmtMoney(p.monthly)} / mes</div>
+                      <div class="p-matrix-plan-price p-view-anual">{fmtMoney(p.annualTotal)} / año</div>
                     </th>
                   ))}
                 </tr>
@@ -532,10 +549,12 @@ const partnerLandingUrl = invitation.slug_landing
                   <tr class={clients >= 100 ? 'p-matrix-row--big' : ''}>
                     <td class="p-matrix-td p-matrix-td--clients"><strong>{clients}</strong> clientes</td>
                     {SACS_PLANS.map(p => {
-                      const value = calcSale(p.monthly, clients);
+                      const valueMonthly = calcSale(p.monthly,     clients);
+                      const valueAnnual  = calcSale(p.annualTotal, clients);
                       return (
                         <td class={`p-matrix-td ${p.highlighted ? 'p-matrix-td--featured' : ''}`} style={`--col-accent:${p.accent}`}>
-                          <div class="p-matrix-amount">{fmtMoney(value)}</div>
+                          <div class="p-matrix-amount p-view-mensual">{fmtMoney(valueMonthly)}</div>
+                          <div class="p-matrix-amount p-view-anual">{fmtMoney(valueAnnual)}</div>
                           <div class="p-matrix-sub">MXN</div>
                         </td>
                       );
@@ -548,22 +567,25 @@ const partnerLandingUrl = invitation.slug_landing
 
           <div class="p-matrix-note">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            <span>Comisión calculada sobre el precio público mensual del plan. Si el cliente toma plan anual, la comisión se calcula sobre el equivalente mensual cobrado. Los pagos se liquidan cada 30 días desde tu portal.</span>
+            <span class="p-view-mensual">Vista mensual: comisión calculada sobre el precio público mensual del plan. Cada cliente que cierres equivale a {comisionPct}% de su mensualidad. Pagos liquidados cada 30 días desde tu portal.</span>
+            <span class="p-view-anual">Vista anual: el cliente paga 12 meses upfront (con 2 meses de descuento) y tú recibes {comisionPct}% del total en una sola comisión grande. Mayor volumen, pago más rápido, mismo cierre.</span>
           </div>
         </div>
 
         <!-- ── Big closing number ── -->
-        <div class="p-projection-closing">
+        <div class="p-projection-closing" data-projection-scope>
           <div class="p-projection-closing-eyebrow">El número que importa</div>
           <div class="p-projection-closing-stack">
             <div class="p-projection-closing-card p-projection-closing-card--realistic">
               <div class="p-projection-closing-label">Escenario realista</div>
-              <div class="p-projection-closing-amount">{fmtMoney(realisticClosing)}</div>
+              <div class="p-projection-closing-amount p-view-mensual">{fmtMoney(realisticClosingMonthly)}</div>
+              <div class="p-projection-closing-amount p-view-anual">{fmtMoney(realisticClosingAnnual)}</div>
               <div class="p-projection-closing-detail">100 clientes en plan Fideliza con tu {comisionPct}% de comisión.</div>
             </div>
             <div class="p-projection-closing-card p-projection-closing-card--ceiling">
               <div class="p-projection-closing-label">Tu techo</div>
-              <div class="p-projection-closing-amount">{fmtMoney(ceilingClosing)}</div>
+              <div class="p-projection-closing-amount p-view-mensual">{fmtMoney(ceilingClosingMonthly)}</div>
+              <div class="p-projection-closing-amount p-view-anual">{fmtMoney(ceilingClosingAnnual)}</div>
               <div class="p-projection-closing-detail">500 clientes en plan Automatiza. Una red enterprise de retailers usándote como su embajador SACS.</div>
             </div>
           </div>
@@ -1254,6 +1276,52 @@ const partnerLandingUrl = invitation.slug_landing
 
   /* ─── Tu potencial — proyección de ganancias ─── */
   .p-projection-block { margin: 8px 0 56px; }
+
+  /* Toggle Mensual / Anual */
+  .p-projection-toggle {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    background: #fafafa;
+    border: 1px solid #e5e5e5;
+    border-radius: 14px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .p-toggle-btn {
+    display: flex; flex-direction: column; gap: 1px;
+    padding: 10px 18px;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    color: rgba(26,26,46,0.6);
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .p-toggle-btn:hover { color: #1a1a1a; }
+  .p-toggle-btn.is-active {
+    background: #1a1a1a;
+    color: #fff;
+  }
+  .p-toggle-btn-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+  }
+  .p-toggle-btn-hint {
+    font-size: 0.625rem;
+    font-weight: 500;
+    opacity: 0.75;
+    letter-spacing: 0.02em;
+  }
+
+  /* Show/hide based on data-projection-scope view state */
+  [data-projection-scope] .p-view-anual { display: none; }
+  [data-projection-scope][data-projection-view="anual"] .p-view-mensual { display: none; }
+  [data-projection-scope][data-projection-view="anual"] .p-view-anual { display: block; }
+
   .p-projection-eyebrow {
     font-size: 0.625rem; font-weight: 700;
     color: #4B7BE5;
@@ -2021,6 +2089,24 @@ const partnerLandingUrl = invitation.slug_landing
       btnConfirmDecline.disabled = false;
       btnConfirmDecline.textContent = 'Enviar respuesta';
     }
+  });
+
+  // ─── Mensual / Anual toggle (proyección de ganancias) ───
+  document.querySelectorAll('.p-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const view = btn.dataset.projectionView;
+      if (!view) return;
+      // Update all scopes (matrix + closing cards)
+      document.querySelectorAll('[data-projection-scope]').forEach(scope => {
+        scope.dataset.projectionView = view;
+      });
+      // Sync the active state on all toggle buttons
+      document.querySelectorAll('.p-toggle-btn').forEach(b => {
+        const isActive = b.dataset.projectionView === view;
+        b.classList.toggle('is-active', isActive);
+        b.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
+    });
   });
 })();
 </script>
