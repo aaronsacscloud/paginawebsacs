@@ -129,7 +129,7 @@ export const PUT: APIRoute = async ({ request }) => {
         await createDemoCompletadaBonus({
           partnerId: current.referrer_partner_id,
           bookingId: id,
-          amount: 250,
+          amount: 300,
           prospectName: current.invitee_nombre || undefined,
           fechaDemo: current.fecha,
         });

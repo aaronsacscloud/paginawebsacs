@@ -62,7 +62,7 @@ const DEFAULT_TEMPLATES: Record<string, any> = {
     ],
     tabulador: {
       prueba_gratis: 250,
-      demo_completada: 250,
+      demo_completada: 300,
       venta_directa_pct: 50,
       moneda: 'MXN',
       notas: 'Pagos cada 30 días por transferencia bancaria, con desglose detallado por concepto y cliente visible siempre en tu portal de partner. Bono por prueba gratis se acredita cuando un usuario referido se registra y activa una prueba gratuita en SACS. Bono por demo completada se acredita al cierre del demo válido (mínimo 25 min con tomador de decisión presente). Comisión por venta directa se acredita al cobrar la primera factura del cliente cerrado.',
@@ -109,7 +109,7 @@ const DEFAULT_TEMPLATES: Record<string, any> = {
     ],
     tabulador: {
       prueba_gratis: 0,
-      demo_completada: 250,
+      demo_completada: 300,
       venta_directa_pct: 30,
       moneda: 'MXN',
     },

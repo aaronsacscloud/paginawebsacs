@@ -163,8 +163,8 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
 
     // Defaults por tipo (Embajador es el principal)
     const defaults: Record<string, any> = {
-      embajador:    { comision_pct: 50, tabulador: { prueba_gratis: 250, demo_completada: 250, venta_directa_pct: 50, moneda: 'MXN' } },
-      distribuidor: { comision_pct: 30, tabulador: { prueba_gratis: 0, demo_completada: 250, venta_directa_pct: 30, moneda: 'MXN' } },
+      embajador:    { comision_pct: 50, tabulador: { prueba_gratis: 250, demo_completada: 300, venta_directa_pct: 50, moneda: 'MXN' } },
+      distribuidor: { comision_pct: 30, tabulador: { prueba_gratis: 0, demo_completada: 300, venta_directa_pct: 30, moneda: 'MXN' } },
       integrador:   { comision_pct: 25, tabulador: { prueba_gratis: 0, demo_completada: 0, venta_directa_pct: 25, moneda: 'MXN' } },
       reseller:     { comision_pct: 20, tabulador: { prueba_gratis: 0, demo_completada: 0, venta_directa_pct: 20, moneda: 'MXN' } },
       consultor:    { comision_pct: 15, tabulador: { prueba_gratis: 0, demo_completada: 0, venta_directa_pct: 15, moneda: 'MXN' } },

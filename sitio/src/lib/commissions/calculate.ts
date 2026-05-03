@@ -125,7 +125,7 @@ export interface DemoCompletadaArgs {
 }
 
 export async function createDemoCompletadaBonus(args: DemoCompletadaArgs): Promise<{ ok: boolean; commission_id?: string; skipped?: boolean; reason?: string }> {
-  const amount = args.amount ?? 250;
+  const amount = args.amount ?? 300;
 
   // Idempotency: check existing
   const { data: existing } = await supabase
