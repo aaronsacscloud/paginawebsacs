@@ -40,6 +40,15 @@ if (user) {
         <span class="auth-foot-sep">·</span>
         <span>¿No tienes cuenta? <a href="/partners">Conoce el programa</a></span>
       </div>
+
+      <details class="auth-help">
+        <summary>¿Problemas para entrar?</summary>
+        <div class="auth-help-body">
+          <p><strong>Si no recuerdas tu contraseña</strong> → click <a href="/partner/forgot-password">¿Olvidaste tu contraseña?</a> arriba. Te enviamos un email con link para crear una nueva.</p>
+          <p><strong>Si registraste tu email mal</strong> al firmar la invitación, escríbele a <a href="mailto:partners@sacscloud.com?subject=Necesito%20corregir%20mi%20email%20de%20partner">partners@sacscloud.com</a> con tu nombre completo y el email correcto. Lo actualizamos manualmente y te reenviamos el link de acceso.</p>
+          <p><strong>Si no recibes el email de reset</strong> después de 5 minutos, revisa carpeta de spam. Si no llega, escríbenos al mismo correo y te mandamos el link directo.</p>
+        </div>
+      </details>
     </div>
   </main>
 </BaseLayout>
@@ -158,6 +167,36 @@ if (user) {
   }
   .auth-foot a:hover { text-decoration: underline; }
   .auth-foot-sep { margin: 0 8px; color: #ddd; }
+
+  .auth-help {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid #f0f0ee;
+  }
+  .auth-help summary {
+    font-size: 0.8125rem;
+    color: #4B7BE5;
+    cursor: pointer;
+    text-align: center;
+    list-style: none;
+    font-weight: 500;
+  }
+  .auth-help summary::-webkit-details-marker { display: none; }
+  .auth-help summary:hover { text-decoration: underline; }
+  .auth-help[open] summary { color: #1a1a1a; margin-bottom: 14px; }
+  .auth-help-body {
+    padding: 14px 16px;
+    background: #fafaf8;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    color: #555;
+    line-height: 1.6;
+  }
+  .auth-help-body p { margin: 0 0 10px; }
+  .auth-help-body p:last-child { margin-bottom: 0; }
+  .auth-help-body a { color: #4B7BE5; text-decoration: none; font-weight: 500; }
+  .auth-help-body a:hover { text-decoration: underline; }
+  .auth-help-body strong { color: #1a1a1a; font-weight: 600; }
 </style>
 
 <script>

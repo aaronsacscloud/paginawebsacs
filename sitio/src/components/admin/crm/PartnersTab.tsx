@@ -447,6 +447,9 @@ function PartnerDetailDrawer({ partnerId, onClose }: { partnerId: string; onClos
                 <div style={dRow}><span style={dLabel}>Cuenta creada</span><span>{_fmtDate(data.member.created_at)}</span></div>
               </section>
 
+              {/* Recover access — útil cuando partner registró email mal o perdió contraseña */}
+              <RecoverAccessSection memberId={data.member.id} memberEmail={data.member.email} memberName={data.member.nombre} />
+
               {/* Invitation */}
               {data.invitation && (
                 <section style={dCard}>
@@ -1217,5 +1220,157 @@ function EmptyHint({ children }: { children: React.ReactNode }) {
     <div style={{ padding: 14, background: '#fafafa', border: '1px dashed #e5e5e5', borderRadius: 10, fontSize: '0.75rem', color: '#999', textAlign: 'center' as const }}>
       {children}
     </div>
+  );
+}
+
+// ─── Recover Access Section ───────────────────────────────────
+function RecoverAccessSection({ memberId, memberEmail, memberName }: { memberId: string; memberEmail: string; memberName: string }) {
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [newEmail, setNewEmail] = useState(memberEmail || '');
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ ok: boolean; msg: string; resetUrl?: string } | null>(null);
+
+  async function recover(opts: { changeEmail: boolean }) {
+    setBusy(true); setResult(null);
+    try {
+      const body: any = { team_member_id: memberId, send_welcome: true };
+      if (opts.changeEmail) {
+        if (!newEmail.trim() || newEmail.trim() === memberEmail) {
+          setResult({ ok: false, msg: 'Pon un email nuevo diferente al actual.' });
+          setBusy(false);
+          return;
+        }
+        body.new_email = newEmail.trim();
+      }
+      const res = await fetch('/api/partners/recover-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': 'founder' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error');
+      setResult({
+        ok: true,
+        msg: opts.changeEmail
+          ? `✓ Email actualizado a ${data.email}. Email de bienvenida + link reset enviado.`
+          : `✓ Email de bienvenida + link reset reenviado a ${data.email}.`,
+        resetUrl: data.reset_url,
+      });
+      setEditingEmail(false);
+    } catch (e: any) {
+      setResult({ ok: false, msg: e.message || String(e) });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function copyResetUrl() {
+    if (result?.resetUrl) {
+      navigator.clipboard.writeText(result.resetUrl);
+      setResult(r => r ? { ...r, msg: r.msg + ' (link copiado al portapapeles)' } : r);
+    }
+  }
+
+  return (
+    <section style={{ ...dCard, background: '#fffaf0', border: '1px solid rgba(232,168,56,0.30)' }}>
+      <h3 style={dCardTitle}>Recuperar acceso del partner</h3>
+      <p style={{ fontSize: 12, color: '#666', margin: '0 0 14px', lineHeight: 1.5 }}>
+        Si <strong>{memberName}</strong> registró el email mal, perdió su contraseña o no recibió
+        el correo de bienvenida — usa estas herramientas. El link de reset del password queda visible
+        aquí para que puedas compartirlo manual si el email no llega.
+      </p>
+
+      {!editingEmail ? (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button
+            onClick={() => recover({ changeEmail: false })}
+            disabled={busy}
+            style={{
+              padding: '10px 16px', fontSize: 13, fontWeight: 600,
+              background: '#1a1a1a', color: '#fff',
+              border: 'none', borderRadius: 8, cursor: busy ? 'wait' : 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            {busy ? 'Enviando…' : 'Reenviar email de bienvenida'}
+          </button>
+          <button
+            onClick={() => setEditingEmail(true)}
+            disabled={busy}
+            style={{
+              padding: '10px 16px', fontSize: 13, fontWeight: 600,
+              background: 'transparent', color: '#1a1a1a',
+              border: '1px solid #ddd', borderRadius: 8, cursor: busy ? 'wait' : 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            Cambiar email del partner
+          </button>
+        </div>
+      ) : (
+        <div>
+          <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>
+            Email actual: <strong style={{ color: '#1a1a1a' }}>{memberEmail}</strong>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <input
+              type="email"
+              value={newEmail}
+              onChange={e => setNewEmail(e.target.value)}
+              placeholder="nuevo@correo.com"
+              style={{
+                flex: 1, minWidth: 220,
+                padding: '10px 14px', fontSize: 14,
+                border: '1px solid #ddd', borderRadius: 8,
+                fontFamily: 'inherit', outline: 'none',
+              }}
+            />
+            <button
+              onClick={() => recover({ changeEmail: true })}
+              disabled={busy}
+              style={{
+                padding: '10px 16px', fontSize: 13, fontWeight: 600,
+                background: '#1a1a1a', color: '#fff',
+                border: 'none', borderRadius: 8, cursor: busy ? 'wait' : 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              {busy ? 'Guardando…' : 'Actualizar y enviar'}
+            </button>
+            <button
+              onClick={() => { setEditingEmail(false); setNewEmail(memberEmail); }}
+              disabled={busy}
+              style={{
+                padding: '10px 16px', fontSize: 13, fontWeight: 600,
+                background: 'transparent', color: '#999',
+                border: '1px solid #eee', borderRadius: 8, cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >Cancelar</button>
+          </div>
+        </div>
+      )}
+
+      {result && (
+        <div style={{
+          marginTop: 14, padding: '12px 14px', borderRadius: 8, fontSize: 12, lineHeight: 1.5,
+          background: result.ok ? 'rgba(42,181,160,0.10)' : 'rgba(229,75,75,0.10)',
+          color: result.ok ? '#1A8F7A' : '#b93333',
+          border: `1px solid ${result.ok ? 'rgba(42,181,160,0.25)' : 'rgba(229,75,75,0.25)'}`,
+        }}>
+          <div>{result.msg}</div>
+          {result.resetUrl && (
+            <div style={{ marginTop: 8, padding: 8, background: '#fff', borderRadius: 6, fontSize: 11, fontFamily: 'monospace', wordBreak: 'break-all' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#666', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Link directo (válido 14 días):</div>
+              {result.resetUrl}
+              <button
+                onClick={copyResetUrl}
+                style={{ marginTop: 8, padding: '4px 10px', fontSize: 11, fontWeight: 600, background: '#1a1a1a', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontFamily: 'inherit' }}
+              >📋 Copiar link</button>
+            </div>
+          )}
+        </div>
+      )}
+    </section>
   );
 }
