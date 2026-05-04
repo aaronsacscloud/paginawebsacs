@@ -45,6 +45,43 @@ const programaLabel = tipoLabels[resolved.tipo] || 'Partner SACS';
 // Setea cookie de atribución (90 días)
 Astro.response.headers.append('Set-Cookie', buildReferrerCookie(partnerId));
 
+// ── Tracking de visita ──────────────────────────────────────────
+// Visitor ID estable de 1 año en cookie sacs_pv (partner visitor).
+// Distingue visitantes únicos vs recurrentes sin loggear IP cruda.
+const cookieHeader = Astro.request.headers.get('cookie') || '';
+const pvMatch = cookieHeader.match(/(?:^|;\s*)sacs_pv=([a-f0-9-]{36})/);
+let visitorId = pvMatch?.[1] || '';
+if (!visitorId) {
+  visitorId = crypto.randomUUID();
+  Astro.response.headers.append(
+    'Set-Cookie',
+    `sacs_pv=${visitorId}; Path=/; Max-Age=31536000; SameSite=Lax; HttpOnly`
+  );
+}
+
+// Skip tracking si ?notrack=1 (para que el partner no infle sus stats al previsualizar).
+const noTrack = Astro.url.searchParams.get('notrack') === '1';
+if (!noTrack) {
+  const ua = Astro.request.headers.get('user-agent') || null;
+  const ref = Astro.request.headers.get('referer') || null;
+  const fwd = Astro.request.headers.get('x-forwarded-for') || '';
+  const ip = fwd.split(',')[0]?.trim() || '';
+  let ipHash: string | null = null;
+  if (ip) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ip + ':sacs'));
+    ipHash = Array.from(new Uint8Array(buf)).slice(0, 12).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  // Fire-and-forget — no bloquea render
+  supabase.from('partner_link_visits').insert({
+    partner_id: partnerId,
+    slug,
+    visitor_id: visitorId,
+    ip_hash: ipHash,
+    user_agent: ua,
+    referrer: ref,
+  }).then(() => {}, () => {});
+}
+
 const trialUrl = `/prueba-gratis?ref=${encodeURIComponent(partnerId)}`;
 const demoUrl  = `/agendar?ref=${encodeURIComponent(partnerId)}`;
 ---

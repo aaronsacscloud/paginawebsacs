@@ -974,9 +974,11 @@ function ContentTab() {
 // ─── Tab: Link ──────────────────────────────────────────────────
 function LinkTab({ go }: { go: (t: TabId) => void }) {
   const [profile, setProfile] = useState<any>(null);
+  const [stats, setStats] = useState<any>(null);
   const [copied, setCopied] = useState<string | null>(null);
   useEffect(() => {
     fetch('/api/partner-portal/profile').then(r => r.json()).then(setProfile);
+    fetch('/api/partner-portal/link-stats').then(r => r.json()).then(setStats).catch(() => {});
   }, []);
   const url = profile?.partnerLandingUrl || '';
   const slug = url.replace(/^https?:\/\/[^/]+\/p\//, '');
@@ -1039,11 +1041,13 @@ function LinkTab({ go }: { go: (t: TabId) => void }) {
               <button onClick={() => copyText(url, 'url')} style={{ ...S.btnPrimary, background: '#6CD6C2', color: '#1a1a1a' }}>
                 {copied === 'url' ? '✓ Copiado' : 'Copiar link'}
               </button>
-              <a href={url} target="_blank" rel="noopener" style={{ ...S.btnGhostDark, textDecoration: 'none' }}>
+              <a href={`${url}?notrack=1`} target="_blank" rel="noopener" style={{ ...S.btnGhostDark, textDecoration: 'none' }}>
                 Ver mi landing →
               </a>
             </div>
           </div>
+
+          <LinkStats stats={stats} />
 
           <div style={S.linkGrid}>
             <div style={S.linkBlock}>
@@ -1114,6 +1118,160 @@ function LinkTab({ go }: { go: (t: TabId) => void }) {
       )}
     </div>
   );
+}
+
+// ─── LinkStats — visitas únicas / recurrentes / hoy / 7d / 30d ──
+function LinkStats({ stats }: { stats: any }) {
+  if (!stats) {
+    return (
+      <div style={{ marginTop: 24, padding: 24, background: '#fff', border: '1px solid #f0f0ee', borderRadius: 14, color: '#888', fontSize: 14 }}>
+        Cargando estadísticas de visitas…
+      </div>
+    );
+  }
+
+  const total = Number(stats.total || 0);
+  const unique = Number(stats.unique || 0);
+  const recurring = Number(stats.recurring || 0);
+  const repeatPct = unique > 0 ? Math.round((recurring / unique) * 100) : 0;
+  const last = stats.last_visit_at ? fmtRelative(stats.last_visit_at) : '—';
+
+  // Mini sparkline: últimos 30 días, alto fijo
+  const daily: { day: string; visits: number }[] = stats.daily || [];
+  const maxV = Math.max(1, ...daily.map(d => d.visits));
+
+  return (
+    <div style={{ marginTop: 28 }}>
+      <h2 style={{ ...S.h2, marginTop: 0 }}>Visitas a tu link</h2>
+      <p style={{ ...S.lead, margin: '-8px 0 24px' }}>
+        Quién entra por <code style={{ background: '#f5f5f3', padding: '2px 6px', borderRadius: 4, fontSize: 13 }}>/{stats?.recent?.[0]?.referrer ? '' : ''}</code>tu link, cuántos vuelven y desde dónde llegan.
+      </p>
+
+      {/* Stat cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginBottom: 22 }}>
+        <div style={S.vigCard}>
+          <div style={S.vigLbl}>Visitas totales</div>
+          <div style={S.vigVal}>{total.toLocaleString('es-MX')}</div>
+          <div style={S.vigHint}>Última: {last}</div>
+        </div>
+        <div style={S.vigCard}>
+          <div style={S.vigLbl}>Visitantes únicos</div>
+          <div style={{ ...S.vigVal, color: '#4B7BE5' }}>{unique.toLocaleString('es-MX')}</div>
+          <div style={S.vigHint}>Personas distintas (cookie de 1 año)</div>
+        </div>
+        <div style={S.vigCard}>
+          <div style={S.vigLbl}>Recurrentes</div>
+          <div style={{ ...S.vigVal, color: '#1A8F7A' }}>{recurring.toLocaleString('es-MX')}</div>
+          <div style={S.vigHint}>Volvieron ≥2 veces · {repeatPct}% del total único</div>
+        </div>
+        <div style={S.vigCard}>
+          <div style={S.vigLbl}>Hoy / 7 días / 30 días</div>
+          <div style={{ ...S.vigVal, fontSize: 22 }}>
+            <span>{stats.today || 0}</span>
+            <span style={{ color: '#ddd', margin: '0 8px', fontWeight: 300 }}>·</span>
+            <span style={{ color: '#666' }}>{stats.week || 0}</span>
+            <span style={{ color: '#ddd', margin: '0 8px', fontWeight: 300 }}>·</span>
+            <span style={{ color: '#999' }}>{stats.month || 0}</span>
+          </div>
+          <div style={S.vigHint}>Ventana móvil de visitas</div>
+        </div>
+      </div>
+
+      {/* Sparkline */}
+      {daily.length > 0 && (
+        <div style={{ background: '#fff', border: '1px solid #f0f0ee', borderRadius: 14, padding: '20px 22px', marginBottom: 22, boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#888', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Últimos 30 días</div>
+            <div style={{ fontSize: 12, color: '#666' }}>Pico: <strong style={{ color: '#1a1a1a' }}>{maxV}</strong> visitas / día</div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 80 }}>
+            {daily.map(d => {
+              const h = d.visits === 0 ? 4 : Math.max(6, Math.round((d.visits / maxV) * 76));
+              return (
+                <div
+                  key={d.day}
+                  title={`${d.day}: ${d.visits} visita${d.visits !== 1 ? 's' : ''}`}
+                  style={{
+                    flex: 1,
+                    height: h,
+                    background: d.visits === 0 ? '#f0f0ee' : 'linear-gradient(180deg, #4B7BE5, #6CD6C2)',
+                    borderRadius: 3,
+                    minWidth: 0,
+                  }}
+                />
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#aaa', marginTop: 8 }}>
+            <span>{fmtShortDate(daily[0]?.day)}</span>
+            <span>{fmtShortDate(daily[daily.length - 1]?.day)}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Top referrers + recent */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+        <div style={{ background: '#fff', border: '1px solid #f0f0ee', borderRadius: 14, padding: '20px 22px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#888', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 14 }}>De dónde llegan</div>
+          {(stats.top_referrers || []).length === 0 ? (
+            <div style={{ fontSize: 13, color: '#aaa' }}>Aún no tenemos referrers identificables. Comparte tu link en WhatsApp, Instagram o donde sea para empezar a verlos.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {stats.top_referrers.map((r: any) => (
+                <div key={r.host} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f5f5f3' }}>
+                  <span style={{ fontSize: 14, color: '#1a1a1a', fontWeight: 500 }}>{r.host}</span>
+                  <span style={{ fontSize: 13, color: '#666', fontWeight: 600 }}>{r.count}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div style={{ background: '#fff', border: '1px solid #f0f0ee', borderRadius: 14, padding: '20px 22px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#888', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 14 }}>Últimas visitas</div>
+          {(stats.recent || []).length === 0 ? (
+            <div style={{ fontSize: 13, color: '#aaa' }}>Aún no hay visitas. Empieza a compartir tu link.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {stats.recent.map((v: any, i: number) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, padding: '6px 0', borderBottom: '1px solid #f8f8f5' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ color: '#1a1a1a', fontWeight: 500 }}>{fmtRelative(v.when)}</span>
+                    <span style={{ color: '#888', fontSize: 11, marginTop: 2 }}>
+                      {v.referrer || 'tráfico directo'} · #{v.visitor_short}
+                      {v.is_recurring && <span style={{ marginLeft: 6, color: '#1A8F7A', fontWeight: 600 }}>· recurrente</span>}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function fmtRelative(iso?: string | null): string {
+  if (!iso) return '—';
+  const t = new Date(iso).getTime();
+  const diff = Date.now() - t;
+  const min = Math.round(diff / 60000);
+  if (min < 1) return 'hace unos segundos';
+  if (min < 60) return `hace ${min} min`;
+  const hr = Math.round(min / 60);
+  if (hr < 24) return `hace ${hr} h`;
+  const d = Math.round(hr / 24);
+  if (d < 30) return `hace ${d} ${d === 1 ? 'día' : 'días'}`;
+  const mo = Math.round(d / 30);
+  return `hace ${mo} ${mo === 1 ? 'mes' : 'meses'}`;
+}
+
+function fmtShortDate(iso?: string): string {
+  if (!iso) return '';
+  try {
+    return new Date(iso).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }).replace(/\./g, '');
+  } catch { return iso; }
 }
 
 // ─── Tab: Profile ───────────────────────────────────────────────
