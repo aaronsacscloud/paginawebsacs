@@ -16,6 +16,7 @@ export interface ContentType {
   ejemploImage?: string;  // path en /public/images/content-examples/
   ejemploRefs?: { label: string; url: string }[];
   plataformasSugeridas: string[];
+  categoria?: 'contenido' | 'filantropia'; // default 'contenido'
 }
 
 export const CONTENT_TYPES: ContentType[] = [
@@ -208,6 +209,134 @@ export const CONTENT_TYPES: ContentType[] = [
     plataformasSugeridas: ['YouTube playlist', 'Spotify'],
   },
 ];
+
+// ─────────────────────────────────────────────────────────────
+// CATEGORÍA: FILANTROPÍA
+// Puntos alternativos para partners que no puedan generar contenido en
+// un mes dado. Estos requieren prueba (foto/video/post) en vez de URL
+// de contenido publicado, pero usan el mismo sistema de aprobación.
+// El partner sube link a un post/foto que documente la acción.
+// ─────────────────────────────────────────────────────────────
+const FILANTROPIA_TYPES: ContentType[] = [
+  {
+    id: 'mentoria_emprendedor', nombre: 'Mentoría 1:1 a un emprendedor',
+    puntos: 15, duracion: '1 hora', esfuerzo: 'bajo', categoria: 'filantropia',
+    descripcion: 'Sesión 1:1 de asesoría gratuita a un emprendedor mexicano que está empezando. Documentar con foto + descripción del caso.',
+    ideasContenido: [
+      'Asesorar a un dueño de boutique sobre POS',
+      'Resolver dudas de inventario a un retailer nuevo',
+      'Coaching de marketing a una startup local',
+    ],
+    plataformasSugeridas: ['LinkedIn', 'Instagram', 'WhatsApp'],
+  },
+  {
+    id: 'taller_comunitario', nombre: 'Taller comunitario gratuito',
+    puntos: 25, duracion: '2-3 horas', esfuerzo: 'medio', categoria: 'filantropia',
+    descripcion: 'Impartir un taller gratuito a un grupo (mín. 8 personas) sobre retail, ecommerce, finanzas, marketing o el tema en el que dominas.',
+    ideasContenido: [
+      'Taller de POS para vendedores de mercado',
+      'Workshop de marketing digital para artesanos',
+      'Capacitación a una cooperativa local',
+    ],
+    plataformasSugeridas: ['Comunidades locales', 'Cámaras de comercio'],
+  },
+  {
+    id: 'donacion_tiempo_ong', nombre: 'Voluntariado en ONG / cooperativa',
+    puntos: 20, duracion: '4 horas', esfuerzo: 'medio', categoria: 'filantropia',
+    descripcion: 'Donar mínimo 4 horas a una ONG, refugio, fundación o cooperativa. Puede ser administrativo, técnico o presencial.',
+    ideasContenido: [
+      'Apoyo administrativo a refugio de animales',
+      'Setup de POS gratis para cooperativa de mujeres',
+      'Voluntariado en banco de alimentos',
+    ],
+    plataformasSugeridas: ['ONGs registradas', 'Iniciativas locales'],
+  },
+  {
+    id: 'qa_publica', nombre: 'Sesión Q&A pública en redes',
+    puntos: 12, duracion: '30-60 min', esfuerzo: 'bajo', categoria: 'filantropia',
+    descripcion: 'Live abierto en Instagram/TikTok/X respondiendo preguntas sobre retail/negocio/SACS. Documentar con grabación o screenshots.',
+    ideasContenido: [
+      'IG Live: "Pregúntame todo sobre POS"',
+      'TikTok Live: dudas de inventario',
+      'X Spaces sobre retail mexicano',
+    ],
+    plataformasSugeridas: ['Instagram Live', 'TikTok Live', 'X Spaces'],
+  },
+  {
+    id: 'apoyo_iniciativa_social', nombre: 'Apoyo a iniciativa social local',
+    puntos: 18, duracion: 'variable', esfuerzo: 'medio', categoria: 'filantropia',
+    descripcion: 'Participar/promover/donar a una iniciativa social en tu comunidad: campaña de salud, recolección, evento cultural, becas.',
+    ideasContenido: [
+      'Campaña de salud comunitaria',
+      'Apoyo a evento cultural barrial',
+      'Recolección de víveres / ropa',
+    ],
+    plataformasSugeridas: ['Comunidad local', 'Redes sociales'],
+  },
+  {
+    id: 'conferencia_escuela', nombre: 'Conferencia gratuita en escuela/universidad',
+    puntos: 25, duracion: '1-2 horas', esfuerzo: 'medio-alto', categoria: 'filantropia',
+    descripcion: 'Dar charla gratuita en preparatoria, universidad o instituto técnico sobre emprendimiento, retail o tecnología.',
+    ideasContenido: [
+      'Charla de emprendimiento en preparatoria',
+      'Conferencia de retail moderno en universidad',
+      'Plática a estudiantes de marketing',
+    ],
+    plataformasSugeridas: ['Escuelas públicas', 'Universidades', 'Tecnológicos'],
+  },
+  {
+    id: 'voluntariado_documentado', nombre: 'Voluntariado documentado',
+    puntos: 15, duracion: '4-8 horas', esfuerzo: 'medio', categoria: 'filantropia',
+    descripcion: 'Cualquier tipo de voluntariado físico documentado con foto/video: limpieza, construcción, distribución, atención a personas en situación vulnerable.',
+    ideasContenido: [
+      'Jornada de limpieza en parque',
+      'Apoyo en comedor comunitario',
+      'Distribución de despensas',
+    ],
+    plataformasSugeridas: ['Cualquier ONG / iniciativa'],
+  },
+  {
+    id: 'bootcamp_gratuito', nombre: 'Bootcamp / curso gratuito (medio día)',
+    puntos: 35, duracion: '4 horas', esfuerzo: 'alto', categoria: 'filantropia',
+    descripcion: 'Organizar e impartir un bootcamp intensivo gratuito de medio día sobre retail, marketing o tecnología. Mín. 15 asistentes.',
+    ideasContenido: [
+      'Bootcamp "De idea a tienda online en 4 hrs"',
+      'Curso intensivo de inventario para vendedores',
+      'Workshop de marketing para artesanos',
+    ],
+    plataformasSugeridas: ['Espacios comunitarios', 'Online (Zoom/Meet)'],
+  },
+  {
+    id: 'asesoria_microempresa', nombre: 'Asesoría a microempresa familiar',
+    puntos: 20, duracion: '2-3 horas', esfuerzo: 'medio', categoria: 'filantropia',
+    descripcion: 'Sesión de asesoría profunda (mín. 2 horas) a una microempresa familiar: revisión de operación, sugerencias prácticas, plan de mejora.',
+    ideasContenido: [
+      'Diagnóstico operativo a tienda de barrio',
+      'Sugerencias de digitalización a panadería familiar',
+      'Plan de marketing a salón de belleza',
+    ],
+    plataformasSugeridas: ['Cualquier microempresa'],
+  },
+  {
+    id: 'becas_sponsoring', nombre: 'Programa de becas o sponsoring',
+    puntos: 30, duracion: 'mensual', esfuerzo: 'alto', categoria: 'filantropia',
+    descripcion: 'Patrocinar un curso, herramienta o servicio para alguien que no podría costearlo. Puede ser una beca SACS, una cuota mensual, una herramienta digital.',
+    ideasContenido: [
+      'Pagar curso técnico a un joven emprendedor',
+      'Sponsoring de herramienta SaaS por 3 meses',
+      'Beca para acceso a comunidad pagada',
+    ],
+    plataformasSugeridas: ['Cualquier programa formal'],
+  },
+];
+
+// Asignar categoria a content types existentes (default 'contenido')
+for (const c of CONTENT_TYPES) {
+  if (!c.categoria) c.categoria = 'contenido';
+}
+
+// Agregar filantropía al catálogo principal
+CONTENT_TYPES.push(...FILANTROPIA_TYPES);
 
 // Mapeo id → ruta de imagen mockup (generadas con gpt-image-1)
 const IMG_BY_ID: Record<string, string> = {

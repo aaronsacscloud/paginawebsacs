@@ -678,6 +678,7 @@ function ContentTab() {
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [catFilter, setCatFilter] = useState<'todos' | 'contenido' | 'filantropia'>('todos');
 
   const [formUrl, setFormUrl] = useState('');
   const [formTipo, setFormTipo] = useState('');
@@ -725,32 +726,82 @@ function ContentTab() {
   const items: any[] = data.items || [];
   const faltan = Math.max(0, sum.meta - sum.puntos_mes);
 
+  // Filtros de catálogo
+  const tiposContenido = tipos.filter(t => (t.categoria || 'contenido') === 'contenido');
+  const tiposFilantropia = tipos.filter(t => t.categoria === 'filantropia');
+  const tiposFiltrados = catFilter === 'todos' ? tipos
+    : catFilter === 'contenido' ? tiposContenido
+    : tiposFilantropia;
+
+  // Required total this month (with carryover if any)
+  const requiredThis = sum.required_this_month || sum.meta;
+  const faltanReal = Math.max(0, requiredThis - sum.puntos_mes);
+
   return (
     <div>
       <Tut>
-        <strong>Tu acuerdo de embajador establece {sum.meta} puntos mínimos al mes en contenido.</strong>
-        Aquí registras los videos y posts que publicaste, ves cuántos puntos te dio cada uno
-        y tu progreso. Si no llegas a la meta dos meses seguidos, SACS te contacta para entender el caso.
+        <strong>Tu acuerdo de embajador establece {sum.meta} puntos mínimos al mes.</strong>
+        Aquí registras videos, posts y acciones filantrópicas para acumular puntos.
+        Si no llegas a la meta, el déficit se carga al siguiente mes. <strong>3 meses
+        consecutivos sin meta = baja automática del programa.</strong>
       </Tut>
 
       <h1 style={S.h1}>Mi participación</h1>
-      <p style={S.lead}>{sum.mes_actual} · evaluación cierra el día 1 del próximo mes.</p>
+      <p style={S.lead}>
+        Mes en curso · cierre el día 1 de cada mes · suma puntos publicando contenido
+        o realizando acciones filantrópicas.
+      </p>
 
-      {/* Status grande */}
+      {/* Suspended banner */}
+      {sum.suspended && (
+        <div style={S.statusBannerSuspended}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#c62828', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>Cuenta suspendida</div>
+          <div style={{ fontSize: 16, fontWeight: 600, color: '#1a1a1a', marginBottom: 6 }}>Tu programa de partner fue suspendido automáticamente</div>
+          <div style={{ fontSize: 13, color: '#666', lineHeight: 1.6 }}>
+            {sum.suspension_reason || `3 meses consecutivos sin alcanzar ${sum.meta} pts/mes.`}
+            {' '}Si quieres reactivar tu cuenta, escribe a <a href="mailto:partners@sacscloud.com" style={{ color: '#4B7BE5' }}>partners@sacscloud.com</a> con tu plan de acción.
+          </div>
+        </div>
+      )}
+
+      {/* Final warning banner */}
+      {sum.status_level === 'final_warning' && !sum.suspended && (
+        <div style={S.statusBannerFinal}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#c62828', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>⚠ Último mes</div>
+          <div style={{ fontSize: 16, fontWeight: 600, color: '#1a1a1a', marginBottom: 6 }}>2 meses sin meta — este es tu último mes para evitar suspensión</div>
+          <div style={{ fontSize: 13, color: '#666', lineHeight: 1.6 }}>
+            Necesitas <strong>{requiredThis} pts</strong> este mes ({sum.meta} normales + {sum.carry_deficit} de carry-over). Si no llegas, tu cuenta se suspende automáticamente el día 1 del próximo mes. ¿Necesitas ayuda? Escríbenos.
+          </div>
+        </div>
+      )}
+
+      {/* Warning banner */}
+      {sum.status_level === 'warning' && (
+        <div style={S.statusBannerWarning}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#b07b15', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>⚠ Mes anterior por debajo</div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a', marginBottom: 6 }}>El mes pasado quedaste corto por {sum.carry_deficit} pts</div>
+          <div style={{ fontSize: 13, color: '#666', lineHeight: 1.6 }}>
+            Este mes necesitas <strong>{requiredThis} pts</strong> ({sum.meta} normales + {sum.carry_deficit} de carry-over) para no acumular un segundo strike.
+          </div>
+        </div>
+      )}
+
+      {/* Status + Countdown grande */}
       <div style={S.partStatus}>
         <div style={S.partStatusHead}>
           <div>
             <div style={{ fontSize: 12, color: '#888', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600, marginBottom: 8 }}>Tu progreso este mes</div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: '#888', fontWeight: 400 }}>
               <strong style={{ fontSize: 48, fontWeight: 500, color: '#1a1a1a', letterSpacing: '-0.035em', marginRight: 6, display: 'inline-block', lineHeight: 1 }}>{sum.puntos_mes}</strong>
-              / {sum.meta} pts
+              / {requiredThis} pts
+              {requiredThis > sum.meta && <span style={{ fontSize: 13, color: '#b07b15', marginLeft: 8 }}>(incluye {sum.carry_deficit} de carry-over)</span>}
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            {faltan > 0 ? (
+            {faltanReal > 0 ? (
               <>
-                <div style={{ fontWeight: 700, color: '#1a1a1a' }}>Te faltan {faltan} pts</div>
-                <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>1 IG Reel (20 pts) o 3 stories (15 pts)</div>
+                <div style={{ fontWeight: 700, color: '#1a1a1a' }}>Te faltan {faltanReal} pts</div>
+                <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>Sugerencia: 1 IG Reel (20 pts) + 1 acción filantrópica (15-25 pts)</div>
               </>
             ) : (
               <>
@@ -761,7 +812,7 @@ function ContentTab() {
           </div>
         </div>
         <div style={S.partBar}>
-          <div style={{ ...S.partBarFill, width: `${Math.min(100, sum.progreso_pct)}%` }} />
+          <div style={{ ...S.partBarFill, width: `${Math.min(100, sum.progreso_pct)}%`, background: faltanReal === 0 ? 'linear-gradient(90deg, #2AB5A0, #1A8F7A)' : undefined }} />
         </div>
         <div style={{ marginTop: 14, fontSize: 13, color: '#888' }}>
           {sum.pending_count} pendientes · {sum.approved_count} aprobados
@@ -769,11 +820,42 @@ function ContentTab() {
         </div>
       </div>
 
-      {/* Catálogo de tipos */}
-      <h2 style={S.h2}>Cuánto vale cada tipo de contenido</h2>
+      {/* Countdown */}
+      <div style={S.countdownGrid}>
+        <div style={S.countdownCard}>
+          <div style={S.countdownNum}>{sum.days_remaining}</div>
+          <div style={S.countdownLbl}>días para cerrar el mes</div>
+          <div style={S.countdownHint}>Reset: {new Date(sum.reset_date).toLocaleDateString('es-MX', { day: 'numeric', month: 'long' })}</div>
+        </div>
+        <div style={S.countdownCard}>
+          <div style={S.countdownNum}>{Math.round(((requiredThis - sum.puntos_mes) / Math.max(1, sum.days_remaining)) * 10) / 10}</div>
+          <div style={S.countdownLbl}>pts/día requeridos</div>
+          <div style={S.countdownHint}>Para llegar a {requiredThis} a tiempo</div>
+        </div>
+        <div style={S.countdownCard}>
+          <div style={S.countdownNum}>{sum.consecutive_failed_months}</div>
+          <div style={S.countdownLbl}>strikes activos</div>
+          <div style={S.countdownHint}>0 = limpio · 3 = baja automática</div>
+        </div>
+      </div>
+
+      {/* Filtro de categoría */}
+      <h2 style={S.h2}>Cómo sumar puntos</h2>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
+        <FilterPill active={catFilter === 'todos'} onClick={() => setCatFilter('todos')}>Todos ({tipos.length})</FilterPill>
+        <FilterPill active={catFilter === 'contenido'} onClick={() => setCatFilter('contenido')}>Contenido ({tiposContenido.length})</FilterPill>
+        <FilterPill active={catFilter === 'filantropia'} onClick={() => setCatFilter('filantropia')}>Filantropía ({tiposFilantropia.length})</FilterPill>
+      </div>
+      {catFilter === 'filantropia' && (
+        <div style={S.note}>
+          <strong>¿Por qué filantropía cuenta?</strong> Si un mes no puedes generar contenido,
+          puedes cubrir tus puntos con acciones que ayudan a otras personas. SACS valida con
+          una foto/post como evidencia. Suma exactamente igual a tus 100 pts mensuales.
+        </div>
+      )}
       <div style={S.puntosGrid}>
-        {tipos.map(t => (
-          <div key={t.id} style={S.puntosCard}>
+        {tiposFiltrados.map(t => (
+          <div key={t.id} style={{ ...S.puntosCard, ...(t.categoria === 'filantropia' ? { borderLeft: '3px solid #2AB5A0' } : {}) }}>
             <div style={S.puntosPts}>{t.puntos}</div>
             <div style={S.puntosName}>{t.nombre}</div>
             <div style={S.puntosDesc}>{t.descripcion}</div>
@@ -1914,6 +1996,18 @@ const S: Record<string, React.CSSProperties> = {
   bkLogo: { background: '#fff', border: '1px solid #f0f0ee', borderRadius: 14, padding: '22px 24px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' },
   bkColors: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14 },
   bkFont: { background: '#fff', border: '1px solid #f0f0ee', borderRadius: 14, padding: '32px 28px 24px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' },
+
+  // Status banners (warning / final_warning / suspended)
+  statusBannerWarning: { padding: '20px 24px', background: 'rgba(232,168,56,0.10)', border: '1px solid rgba(232,168,56,0.30)', borderLeft: '4px solid #E8A838', borderRadius: 12, marginBottom: 24 },
+  statusBannerFinal: { padding: '20px 24px', background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.25)', borderLeft: '4px solid #c62828', borderRadius: 12, marginBottom: 24 },
+  statusBannerSuspended: { padding: '24px 28px', background: 'rgba(220,38,38,0.10)', border: '1px solid rgba(220,38,38,0.40)', borderRadius: 14, marginBottom: 28 },
+
+  // Countdown grid
+  countdownGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 32, marginTop: 16 },
+  countdownCard: { background: '#fff', border: '1px solid #f0f0ee', borderRadius: 14, padding: '22px 24px', textAlign: 'center' as const, boxShadow: '0 1px 2px rgba(0,0,0,0.02)' },
+  countdownNum: { fontFamily: 'var(--font-display)', fontSize: 40, fontWeight: 500, color: '#1a1a1a', letterSpacing: '-0.035em', lineHeight: 1, marginBottom: 8 },
+  countdownLbl: { fontSize: 12, color: '#666', fontWeight: 500, textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 6 },
+  countdownHint: { fontSize: 11, color: '#999' },
 
   // Certificaciones
   certGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 },
