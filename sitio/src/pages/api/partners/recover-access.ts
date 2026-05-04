@@ -103,10 +103,10 @@ export const POST: APIRoute = async ({ request }) => {
     const { token } = await createPasswordResetToken(team_member_id, tokenMode);
     const setPasswordUrl = `https://www.sacscloud.com/partner/reset-password?token=${encodeURIComponent(token)}&mode=${tokenMode}`;
 
-    // Send welcome/recovery email
+    // Send welcome/recovery email — capture result so admin sees if Resend failed
+    let emailResult: { ok: boolean; reason?: string; id?: string } | null = null;
     if (send_welcome && finalEmail) {
       try {
-        // Look up invitation for context (programa label)
         const { data: invitation } = await supabase
           .from('partner_invitations')
           .select('tipo, comision_pct, slug_landing, numero')
@@ -124,7 +124,7 @@ export const POST: APIRoute = async ({ request }) => {
           ? `https://www.sacscloud.com/p/${invitation.slug_landing}`
           : 'https://www.sacscloud.com';
 
-        await notify({
+        emailResult = await notify({
           channel: 'email',
           to: finalEmail,
           template: 'partner_approved_user',
@@ -140,8 +140,8 @@ export const POST: APIRoute = async ({ request }) => {
               : 'Aquí está tu nuevo link para acceder a tu portal de partner.',
           },
         });
-      } catch (e) {
-        console.warn('[recover-access] notify failed:', e);
+      } catch (e: any) {
+        emailResult = { ok: false, reason: e?.message || String(e) };
       }
     }
 
@@ -170,6 +170,8 @@ export const POST: APIRoute = async ({ request }) => {
       email_changed: emailChanged,
       reset_url: setPasswordUrl, // útil para que admin pueda compartir directo si email no llega
       token_mode: tokenMode,
+      email_sent: emailResult?.ok === true,
+      email_error: emailResult && !emailResult.ok ? emailResult.reason : null,
     });
   } catch (err: any) {
     console.error('[recover-access]', err);

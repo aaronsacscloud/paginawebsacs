@@ -1249,11 +1249,17 @@ function RecoverAccessSection({ memberId, memberEmail, memberName }: { memberId:
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error');
+      const emailOk = data.email_sent;
+      const emailWarn = data.email_error;
+      const baseMsg = opts.changeEmail
+        ? `✓ Email actualizado a ${data.email}.`
+        : `✓ Token nuevo generado para ${data.email}.`;
+      const sendMsg = emailOk
+        ? ' Email de bienvenida enviado por Resend.'
+        : ` ⚠️ Email NO se envió (${emailWarn || 'razón desconocida'}). Comparte el link manual abajo.`;
       setResult({
         ok: true,
-        msg: opts.changeEmail
-          ? `✓ Email actualizado a ${data.email}. Email de bienvenida + link reset enviado.`
-          : `✓ Email de bienvenida + link reset reenviado a ${data.email}.`,
+        msg: baseMsg + sendMsg,
         resetUrl: data.reset_url,
       });
       setEditingEmail(false);
