@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-type TabId = 'summary' | 'commissions' | 'payments' | 'leads' | 'content' | 'link' | 'profile' | 'actualizaciones' | 'brandkit' | 'cuenta-sacs';
+type TabId = 'summary' | 'commissions' | 'payments' | 'leads' | 'content' | 'link' | 'profile' | 'actualizaciones' | 'brandkit' | 'cuenta-sacs' | 'certificaciones';
 
 interface Props {
   initialUser: { id: string; nombre: string; email: string };
@@ -82,7 +82,7 @@ export default function PortalShell({ initialUser }: Props) {
 
   // Hash routing
   useEffect(() => {
-    const valid: TabId[] = ['summary','commissions','payments','leads','content','link','profile','actualizaciones','brandkit','cuenta-sacs'];
+    const valid: TabId[] = ['summary','commissions','payments','leads','content','link','profile','actualizaciones','brandkit','cuenta-sacs','certificaciones'];
     const hash = (window.location.hash || '').replace('#', '') as TabId;
     if (valid.includes(hash)) setTab(hash);
     const onHash = () => {
@@ -120,6 +120,7 @@ export default function PortalShell({ initialUser }: Props) {
     { id: 'profile',         label: 'Mi perfil' },
   ];
   const tabsExtra: { id: TabId; label: string }[] = [
+    { id: 'certificaciones', label: 'Certificaciones' },
     { id: 'brandkit',        label: 'Brand kit' },
     { id: 'cuenta-sacs',     label: 'Tu cuenta SACS' },
   ];
@@ -201,6 +202,7 @@ export default function PortalShell({ initialUser }: Props) {
             {tab === 'actualizaciones' && <ActualizacionesTab />}
             {tab === 'brandkit'        && <BrandkitTab />}
             {tab === 'cuenta-sacs'     && <CuentaSacsTab user={initialUser} />}
+            {tab === 'certificaciones' && <CertificacionesTab />}
           </div>
         </main>
       </div>
@@ -1441,6 +1443,189 @@ function CuentaSacsTab({ user }: { user: { email: string; nombre: string } }) {
   );
 }
 
+// ─── Tab: Certificaciones ───────────────────────────────────────
+function CertificacionesTab() {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [paidJustNow, setPaidJustNow] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/partner-portal/certifications').then(r => r.json()).then(d => { setData(d); setLoading(false); });
+    // Detect ?paid=cert_id in hash to celebrate after Stripe redirect
+    const m = (window.location.hash || '').match(/[?&]paid=([a-z]+)/);
+    if (m) {
+      setPaidJustNow(m[1]);
+      // Clean URL after a delay
+      setTimeout(() => {
+        history.replaceState(null, '', '#certificaciones');
+        // Re-fetch to get updated status
+        fetch('/api/partner-portal/certifications').then(r => r.json()).then(d => setData(d));
+      }, 500);
+    }
+  }, []);
+
+  async function buy(certId: string) {
+    setBusyId(certId);
+    try {
+      const res = await fetch('/api/partner-portal/certifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cert_id: certId }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'No se pudo crear el checkout');
+      window.location.href = json.url;
+    } catch (e: any) {
+      alert('Error: ' + (e.message || e));
+      setBusyId(null);
+    }
+  }
+
+  if (loading) return <div style={S.loading}>Cargando…</div>;
+  if (!data) return <div style={S.error}>No se pudieron cargar las certificaciones</div>;
+
+  const certs = data.certifications || [];
+  const ownedCount = certs.filter((c: any) => c.unlocked).length;
+
+  return (
+    <div>
+      <Tut>
+        <strong>Sube tu nivel como partner SACS.</strong> Cada certificación te da
+        herramientas para cerrar cuentas más complejas y, en el caso de
+        Multisucursal, hasta el <strong>60% de comisión</strong> en deals enterprise.
+        Pagas una vez y el badge queda permanente en tu portal.
+      </Tut>
+
+      <h1 style={S.h1}>Certificaciones</h1>
+      <p style={S.lead}>
+        {ownedCount === 0
+          ? '3 niveles disponibles. Cada uno te abre nuevas capacidades técnicas y comerciales.'
+          : `Tienes ${ownedCount} de 3 certificaciones activas. Sigue subiendo de nivel.`}
+      </p>
+
+      {paidJustNow && (
+        <div style={S.certPaid}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#1A8F7A', textTransform: 'uppercase', letterSpacing: '0.1em' }}>✓ Pago confirmado</div>
+          <div style={{ fontSize: 16, fontWeight: 600, marginTop: 6 }}>
+            Tu certificación está activa. Recibirás un correo con el link a la sesión y el material.
+          </div>
+        </div>
+      )}
+
+      <div style={S.certGrid}>
+        {certs.map((c: any) => (
+          <CertCard key={c.id} cert={c} busy={busyId === c.id} onBuy={() => buy(c.id)} />
+        ))}
+      </div>
+
+      <div style={{ ...S.note, marginTop: 36 }}>
+        <strong>¿Cómo funciona el pago?</strong> Procesamos tu pago via Stripe (tarjeta).
+        Al confirmarse, tu certificación se desbloquea al instante en este portal y
+        recibes un correo con el link a la sesión, materiales y la fecha del próximo
+        examen. Si tienes un cupón corporativo o inscripción grupal,
+        escribe a <a href="mailto:partners@sacscloud.com" style={{ color: '#4B7BE5' }}>partners@sacscloud.com</a>.
+      </div>
+    </div>
+  );
+}
+
+function CertCard({ cert, busy, onBuy }: { cert: any; busy: boolean; onBuy: () => void }) {
+  const [showAll, setShowAll] = useState(false);
+  const visibleTopics = showAll ? cert.temario : cert.temario.slice(0, 4);
+  const hiddenCount = cert.temario.length - 4;
+
+  return (
+    <article style={S.certCard}>
+      <div style={S.certCover}>
+        <img src={cert.cover} alt={cert.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        <div style={S.certCoverFade} />
+        {!cert.unlocked && (
+          <div style={S.certLock}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+        )}
+        {cert.unlocked && (
+          <div style={S.certBadge}>✓ Activa</div>
+        )}
+        <div style={S.certCoverBody}>
+          <div style={S.certLevel}>{cert.nivel}</div>
+          <div style={S.certName}>{cert.shortName}</div>
+        </div>
+      </div>
+
+      <div style={S.certBody}>
+        <div style={S.certPriceRow}>
+          <div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 500, color: '#1a1a1a', letterSpacing: '-0.025em', lineHeight: 1 }}>
+              {cert.precioMostrar}
+            </div>
+            <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>MXN · pago único · {cert.duracion}</div>
+          </div>
+          {cert.unlocked ? (
+            <span style={{ ...S.certBtn, background: 'rgba(42,181,160,0.12)', color: '#1A8F7A', cursor: 'default' }}>Desbloqueada ✓</span>
+          ) : (
+            <button onClick={onBuy} disabled={busy} style={{ ...S.certBtn, background: '#1a1a1a', color: '#fff', cursor: busy ? 'wait' : 'pointer' }}>
+              {busy ? 'Abriendo Stripe…' : 'Desbloquear'}
+            </button>
+          )}
+        </div>
+
+        <p style={S.certDesc}>{cert.descripcion}</p>
+
+        <div style={S.certSection}>
+          <div style={S.certSectionLbl}>Para quién es</div>
+          <div style={S.certSectionVal}>{cert.paraQuien}</div>
+        </div>
+
+        <div style={S.certSection}>
+          <div style={S.certSectionLbl}>Lo que vas a aprender</div>
+          <ul style={S.certTopics}>
+            {visibleTopics.map((t: string, i: number) => (
+              <li key={i} style={S.certTopic}>
+                <span style={S.certTopicBullet} />
+                <span>{t}</span>
+              </li>
+            ))}
+          </ul>
+          {hiddenCount > 0 && !showAll && (
+            <button onClick={() => setShowAll(true)} style={S.certMore}>
+              + Ver los {hiddenCount} temas restantes
+            </button>
+          )}
+        </div>
+
+        {cert.unlocked && (
+          <div style={S.certSection}>
+            <div style={S.certSectionLbl}>Beneficios incluidos</div>
+            <ul style={S.certTopics}>
+              {cert.beneficios.map((b: string, i: number) => (
+                <li key={i} style={S.certTopic}>
+                  <span style={{ ...S.certTopicBullet, background: '#1A8F7A' }} />
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {!cert.unlocked && (
+          <div style={S.certBlocked}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <span>Beneficios completos visibles al desbloquear</span>
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
 // ─── Helper components ──────────────────────────────────────────
 function Kpi({ label, value, hint, accent }: { label: string; value: string; hint?: string; accent?: string }) {
   return (
@@ -1729,4 +1914,29 @@ const S: Record<string, React.CSSProperties> = {
   bkLogo: { background: '#fff', border: '1px solid #f0f0ee', borderRadius: 14, padding: '22px 24px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' },
   bkColors: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14 },
   bkFont: { background: '#fff', border: '1px solid #f0f0ee', borderRadius: 14, padding: '32px 28px 24px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' },
+
+  // Certificaciones
+  certGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 },
+  certCard: { background: '#fff', border: '1px solid #f0f0ee', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column' as const, boxShadow: '0 1px 3px rgba(0,0,0,0.04)', transition: 'transform 0.18s, box-shadow 0.18s' },
+  certCover: { position: 'relative' as const, aspectRatio: '16 / 11', background: '#1a1a1a', overflow: 'hidden' },
+  certCoverFade: { position: 'absolute' as const, inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.55) 100%)', pointerEvents: 'none' as const },
+  certCoverBody: { position: 'absolute' as const, left: 20, right: 20, bottom: 18, color: '#fff', zIndex: 2 },
+  certLevel: { fontSize: 10, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase' as const, opacity: 0.85, marginBottom: 6 },
+  certName: { fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 600, lineHeight: 1.15, letterSpacing: '-0.02em' },
+  certLock: { position: 'absolute' as const, top: 16, right: 16, zIndex: 2, width: 38, height: 38, borderRadius: '50%', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.18)' },
+  certBadge: { position: 'absolute' as const, top: 16, right: 16, zIndex: 2, padding: '6px 12px', borderRadius: 999, background: 'rgba(42,181,160,0.95)', color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' as const },
+
+  certBody: { padding: '24px 26px 26px', flex: 1, display: 'flex', flexDirection: 'column' as const },
+  certPriceRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 14, marginBottom: 18, paddingBottom: 18, borderBottom: '1px solid #f0f0ee' },
+  certBtn: { padding: '12px 20px', borderRadius: 10, border: 'none', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, display: 'inline-block', textAlign: 'center' as const },
+  certDesc: { fontSize: 14, color: '#555', lineHeight: 1.6, margin: '0 0 18px' },
+  certSection: { marginTop: 14 },
+  certSectionLbl: { fontSize: 10, fontWeight: 700, color: '#888', letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 10 },
+  certSectionVal: { fontSize: 13, color: '#555', lineHeight: 1.55 },
+  certTopics: { listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column' as const, gap: 8 },
+  certTopic: { display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 13, color: '#444', lineHeight: 1.5 },
+  certTopicBullet: { flexShrink: 0, width: 5, height: 5, borderRadius: '50%', background: '#4B7BE5', marginTop: 8 },
+  certMore: { marginTop: 12, padding: 0, background: 'transparent', border: 'none', color: '#4B7BE5', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' },
+  certBlocked: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 18, padding: '10px 12px', background: '#fafafa', borderRadius: 8, fontSize: 12, color: '#888', fontWeight: 500 },
+  certPaid: { padding: '20px 24px', background: 'linear-gradient(135deg, rgba(42,181,160,0.10), rgba(75,123,229,0.06))', border: '1px solid rgba(42,181,160,0.25)', borderRadius: 12, marginBottom: 28 },
 };

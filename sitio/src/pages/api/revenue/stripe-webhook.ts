@@ -212,6 +212,37 @@ export const POST: APIRoute = async ({ request }) => {
     // ─── checkout.session.completed (quote first charge) ───
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
+
+      // Partner Certification fast path: distinct from quote/subscription flow
+      if (session.metadata?.type === 'partner_certification') {
+        const certId = session.metadata?.cert_id;
+        const partnerId = session.metadata?.partner_id;
+        const stripePaymentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
+        if (certId && partnerId) {
+          // Upsert by (partner_id, cert_id) — UNIQUE constraint
+          await supabase
+            .from('partner_certifications')
+            .update({
+              status: 'paid',
+              paid_at: new Date().toISOString(),
+              stripe_session_id: session.id,
+              stripe_payment_id: stripePaymentId,
+            })
+            .eq('partner_id', partnerId)
+            .eq('cert_id', certId);
+          // Log activity
+          try {
+            await supabase.from('activities').insert({
+              tipo: 'sistema',
+              titulo: `Partner pagó certificación ${certId} ($${(session.amount_total || 0) / 100} MXN)`,
+              metadata: { partner_id: partnerId, cert_id: certId, amount: session.amount_total, stripe_session_id: session.id },
+              automatico: true,
+            });
+          } catch {}
+        }
+        return new Response(JSON.stringify({ received: true, partner_certification: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+
       const quoteId = session.metadata?.quote_id;
 
       if (quoteId) {
