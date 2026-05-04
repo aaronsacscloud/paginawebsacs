@@ -153,6 +153,8 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Auto-approve fast path: if invitation has auto_approve=true, skip review
     // and approve immediately (creates team_member, sends welcome email).
+    // (Defensive: solo aplica si la columna existe; si no, el campo viene
+    // como undefined y el flujo normal de revisión continúa.)
     if (invitation.auto_approve === true) {
       try {
         const { approveInvitationInternal } = await import('./approve-invitation');

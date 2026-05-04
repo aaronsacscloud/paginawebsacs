@@ -862,7 +862,15 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
   }
 
   async function save() {
-    if (!form.nombre.trim()) { setErrMsg('El nombre del prospecto es obligatorio'); return; }
+    if (!form.nombre.trim()) {
+      setErrMsg('El nombre del prospecto es obligatorio');
+      // Scroll the form panel to top to show the error
+      requestAnimationFrame(() => {
+        const panel = document.querySelector('[data-create-panel]') as HTMLElement | null;
+        if (panel) panel.scrollTop = 0;
+      });
+      return;
+    }
     setSaving(true); setErrMsg(null);
     try {
       const method = editing ? 'PUT' : 'POST';
@@ -876,6 +884,10 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
       onSaved();
     } catch (err: any) {
       setErrMsg(err.message || String(err));
+      requestAnimationFrame(() => {
+        const panel = document.querySelector('[data-create-panel]') as HTMLElement | null;
+        if (panel) panel.scrollTop = 0;
+      });
     } finally {
       setSaving(false);
     }
@@ -936,10 +948,10 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', fontSize: '1.25rem', color: '#999', cursor: 'pointer' }}>✕</button>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: 28 }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: 28 }} data-create-panel>
           {errMsg && (
-            <div style={{ marginBottom: 16, padding: 12, background: 'rgba(229,75,75,0.08)', color: '#b93333', borderRadius: 8, fontSize: '0.8125rem' }}>
-              {errMsg}
+            <div style={{ marginBottom: 16, padding: '14px 16px', background: 'rgba(229,75,75,0.08)', color: '#b93333', borderRadius: 8, fontSize: '0.8125rem', border: '1px solid rgba(229,75,75,0.2)' }}>
+              <strong>Error al guardar:</strong> {errMsg}
             </div>
           )}
 
@@ -1101,21 +1113,28 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
           </Section>
         </div>
 
-        <div style={{ padding: '16px 28px', borderTop: '1px solid #e5e5e5', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fafafa' }}>
-          <button onClick={onClose} style={{ ...btnSm(), padding: '10px 18px', fontSize: '0.8125rem' }}>Cancelar</button>
-          <button
-            onClick={save}
-            disabled={saving}
-            style={{
-              padding: '12px 22px',
-              background: saving ? '#999' : '#1a1a1a', color: '#fff',
-              border: 'none', borderRadius: 10,
-              fontFamily: 'inherit', fontSize: '0.875rem', fontWeight: 600,
-              cursor: saving ? 'wait' : 'pointer',
-            }}
-          >
-            {saving ? 'Guardando...' : (editing ? 'Guardar cambios' : 'Crear invitación')}
-          </button>
+        <div style={{ padding: '16px 28px', borderTop: '1px solid #e5e5e5', background: '#fafafa' }}>
+          {errMsg && (
+            <div style={{ marginBottom: 12, padding: '10px 14px', background: 'rgba(229,75,75,0.10)', color: '#b93333', borderRadius: 8, fontSize: '0.8125rem', border: '1px solid rgba(229,75,75,0.25)' }}>
+              <strong>No se pudo guardar:</strong> {errMsg}
+            </div>
+          )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <button onClick={onClose} style={{ ...btnSm(), padding: '10px 18px', fontSize: '0.8125rem' }}>Cancelar</button>
+            <button
+              onClick={save}
+              disabled={saving}
+              style={{
+                padding: '12px 22px',
+                background: saving ? '#999' : '#1a1a1a', color: '#fff',
+                border: 'none', borderRadius: 10,
+                fontFamily: 'inherit', fontSize: '0.875rem', fontWeight: 600,
+                cursor: saving ? 'wait' : 'pointer',
+              }}
+            >
+              {saving ? 'Guardando...' : (editing ? 'Guardar cambios' : 'Crear invitación')}
+            </button>
+          </div>
         </div>
       </div>
     </div>

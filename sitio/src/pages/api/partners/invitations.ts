@@ -206,23 +206,35 @@ export const POST: APIRoute = async ({ request }) => {
       clean.vigencia = d.toISOString().slice(0, 10);
     }
 
+    // Strip auto_approve if false (defensive: column may not exist yet in some DBs)
+    if (clean.auto_approve === false || clean.auto_approve === undefined) {
+      delete clean.auto_approve;
+    }
+
     const user = await getCurrentUser(request);
     const insertPayload: Record<string, any> = { ...clean };
     if (user?.id) insertPayload.invited_by = user.id;
 
-    // Retry loop por colisión de folio
+    // Retry loop por colisión de folio + fallback si falla por columna desconocida
     let lastErr: any = null;
+    let stripAutoApprove = false;
     for (let i = 0; i < 6; i++) {
       const numero = await nextNumero();
+      const payload = stripAutoApprove ? (() => { const p = { ...insertPayload, numero }; delete p.auto_approve; return p; })() : { ...insertPayload, numero };
       const { data, error } = await supabase
         .from('partner_invitations')
-        .insert({ ...insertPayload, numero })
+        .insert(payload)
         .select()
         .single();
       if (!error) {
         return new Response(JSON.stringify(data), { status: 201, headers: { 'Content-Type': 'application/json' } });
       }
       lastErr = error;
+      // If column auto_approve doesn't exist yet, retry without it
+      if (error.message && /auto_approve/i.test(error.message) && !stripAutoApprove) {
+        stripAutoApprove = true;
+        continue;
+      }
       if (error.code !== '23505') break;
     }
     return new Response(JSON.stringify({ error: lastErr?.message || 'failed_to_create' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
@@ -242,12 +254,24 @@ export const PUT: APIRoute = async ({ request }) => {
     const fields = (user && (user.role === 'founder' || user.role === 'cs')) ? INVITATION_FIELDS : PUBLIC_FIELDS;
     const clean = pick(body, fields);
 
-    const { data, error } = await supabase
+    // Strip auto_approve if false (defensive: column may not exist yet in some DBs)
+    if (clean.auto_approve === false || clean.auto_approve === undefined) {
+      delete clean.auto_approve;
+    }
+
+    let { data, error } = await supabase
       .from('partner_invitations')
       .update(clean)
       .eq('id', id)
       .select()
       .single();
+
+    // Retry without auto_approve if the column doesn't exist yet
+    if (error && error.message && /auto_approve/i.test(error.message)) {
+      const retry = { ...clean }; delete retry.auto_approve;
+      const r = await supabase.from('partner_invitations').update(retry).eq('id', id).select().single();
+      data = r.data; error = r.error;
+    }
 
     if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } });
