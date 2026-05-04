@@ -68,11 +68,27 @@ export async function getCurrentUser(request: Request): Promise<CurrentUser | nu
   const userId = request.headers.get('x-user-id');
   if (!userId) return null;
   const { supabase } = await import('../supabase');
-  const { data } = await supabase
-    .from('team_members')
-    .select('id, rol, email, nombre, default_commission_pct')
-    .eq('id', userId)
-    .maybeSingle();
+
+  // Special case: admin UI manda 'x-user-id: founder' (rol literal, no UUID).
+  // Resolvemos al primer team_member activo con ese rol.
+  let data: any = null;
+  if (userId === 'founder' || userId === 'cs') {
+    const res = await supabase
+      .from('team_members')
+      .select('id, rol, email, nombre, default_commission_pct')
+      .eq('rol', userId)
+      .eq('activo', true)
+      .limit(1)
+      .maybeSingle();
+    data = res.data;
+  } else {
+    const res = await supabase
+      .from('team_members')
+      .select('id, rol, email, nombre, default_commission_pct')
+      .eq('id', userId)
+      .maybeSingle();
+    data = res.data;
+  }
   if (!data) return null;
   return {
     id: data.id,
