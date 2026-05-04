@@ -151,6 +151,21 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
+    // Auto-approve fast path: if invitation has auto_approve=true, skip review
+    // and approve immediately (creates team_member, sends welcome email).
+    if (invitation.auto_approve === true) {
+      try {
+        const { approveInvitationInternal } = await import('./approve-invitation');
+        const result = await approveInvitationInternal(updated, { autoApproved: true });
+        return new Response(JSON.stringify({ ok: true, invitation: result.invitation, team_member_id: result.team_member_id, auto_approved: true }), {
+          status: 200, headers: { 'Content-Type': 'application/json' },
+        });
+      } catch (e: any) {
+        console.error('[accept-invitation] auto-approve failed:', e);
+        // Si falla auto-approve, queda en submitted_for_review y admin la aprueba manual
+      }
+    }
+
     // ── Notifications (non-blocking, errors logged) ──
     const partnerEmail = email || invitation.email;
     const tipoLabels: Record<string, string> = {

@@ -738,6 +738,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
     compromisos: editing?.compromisos || [],
     tabulador: editing?.tabulador || { prueba_gratis: 250, demo_completada: 300, venta_directa_pct: 50, moneda: 'MXN' },
     terminos: editing?.terminos || '',
+    auto_approve: editing ? !!(editing as any).auto_approve : false,
   }));
   const [saving, setSaving] = useState(false);
   const [errMsg, setErrMsg] = useState<string | null>(null);
@@ -987,6 +988,33 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
               <Field label="Vigencia" type="date" value={form.vigencia} onChange={v => set('vigencia', v)} />
             </Grid3>
             <Field label="Slug de landing (opcional)" value={form.slug_landing} onChange={v => set('slug_landing', v)} placeholder="ej. juanperez (sacscloud.com/p/juanperez)" />
+
+            <label style={{
+              display: 'flex', alignItems: 'flex-start', gap: 12,
+              padding: '14px 16px', marginTop: 16,
+              border: form.auto_approve ? '1.5px solid #2AB5A0' : '1px solid #ececec',
+              background: form.auto_approve ? 'rgba(42,181,160,0.06)' : '#fafafa',
+              borderRadius: 10, cursor: 'pointer',
+              transition: 'border-color 0.15s, background 0.15s',
+            }}>
+              <input
+                type="checkbox"
+                checked={!!form.auto_approve}
+                onChange={e => set('auto_approve', e.target.checked)}
+                style={{ marginTop: 3, accentColor: '#2AB5A0', width: 16, height: 16, flexShrink: 0 }}
+              />
+              <span style={{ flex: 1 }}>
+                <span style={{ display: 'block', fontWeight: 600, fontSize: '0.875rem', color: '#1a1a1a', marginBottom: 4 }}>
+                  Aprobación automática al firmar
+                </span>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: '#666', lineHeight: 1.5 }}>
+                  Si está activo, el partner queda <strong>aprobado al instante</strong> al firmar — no requiere
+                  revisión admin. Útil para invitaciones que ya validaste offline o ya conoces a la persona.
+                  <br/><strong>Si no está activo:</strong> al firmar pasa a "submitted_for_review" y un admin debe
+                  hacer click en "Aprobar" desde este CRM.
+                </span>
+              </span>
+            </label>
           </Section>
 
           {/* Beneficios */}

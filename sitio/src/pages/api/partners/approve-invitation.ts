@@ -33,6 +33,161 @@ function buildNotas(plain: string, meta: Record<string, any>): string {
   return `${plain || ''}${NOTAS_SEP}${JSON.stringify(meta)}`;
 }
 
+/**
+ * Approves an invitation: creates team_member, sends welcome email, marks as accepted.
+ * Reusable from both POST handler (admin click) and accept-invitation (auto_approve=true).
+ * Returns updated invitation + team_member_id.
+ */
+export async function approveInvitationInternal(invitation: any, opts: { nota?: string; autoApproved?: boolean } = {}) {
+  const { nota, autoApproved } = opts;
+  const partnerEmail = invitation.email;
+  const partnerName = invitation.aceptado_por || invitation.nombre;
+  const id = invitation.id;
+
+  // Crear team_member (idempotente por email)
+  let team_member_id = invitation.team_member_id as string | null;
+  if (!team_member_id && partnerEmail) {
+    const { data: existing } = await supabase
+      .from('team_members')
+      .select('id, rol, default_commission_pct')
+      .eq('email', partnerEmail)
+      .maybeSingle();
+
+    if (existing) {
+      const newRol = existing.rol === 'founder' ? 'founder' : 'partner';
+      await supabase
+        .from('team_members')
+        .update({
+          rol: newRol,
+          default_commission_pct: invitation.comision_pct ?? existing.default_commission_pct ?? 50,
+          activo: true,
+        })
+        .eq('id', existing.id);
+      team_member_id = existing.id;
+    } else {
+      const { data: created, error: createErr } = await supabase
+        .from('team_members')
+        .insert({
+          nombre: partnerName,
+          email: partnerEmail,
+          rol: 'partner',
+          default_commission_pct: invitation.comision_pct ?? 50,
+          activo: true,
+        })
+        .select('id')
+        .single();
+      if (createErr) {
+        console.error('[approve-invitation] team_member create failed:', createErr.message);
+      } else {
+        team_member_id = created.id;
+      }
+    }
+  }
+
+  const { plain, meta } = parseNotas(invitation.notas);
+  meta.approved_at = new Date().toISOString();
+  if (autoApproved) meta.auto_approved = true;
+  if (nota) meta.approval_note = nota;
+
+  const updates: Record<string, any> = {
+    estado: 'accepted',
+    notas: buildNotas(plain, meta),
+  };
+  if (team_member_id) updates.team_member_id = team_member_id;
+
+  if (!invitation.slug_landing) {
+    const baseSlug = (invitation.nombre || invitation.numero || 'partner')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 30);
+    const { data: existing } = await supabase
+      .from('partner_invitations')
+      .select('id')
+      .eq('slug_landing', baseSlug)
+      .neq('id', id)
+      .maybeSingle();
+    const finalSlug = existing
+      ? `${baseSlug}-${(invitation.numero || '').toLowerCase().replace(/[^a-z0-9]/g, '')}`.slice(0, 40)
+      : baseSlug;
+    updates.slug_landing = finalSlug;
+  }
+
+  const { data: updated, error: updateErr } = await supabase
+    .from('partner_invitations')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (updateErr) throw new Error(updateErr.message);
+
+  // Email al partner — bienvenida + link para crear contraseña
+  if (partnerEmail && team_member_id) {
+    const tipoLabels: Record<string, string> = {
+      embajador: 'Embajador SACS',
+      distribuidor: 'Distribuidor Autorizado',
+      integrador: 'Integrador Certificado',
+      reseller: 'Reseller',
+      consultor: 'Consultor Partner',
+    };
+    const programa = tipoLabels[invitation.tipo] || invitation.tipo || 'Partner SACS';
+    const finalSlug = (updates as any).slug_landing || invitation.slug_landing || (invitation.numero || '').toLowerCase();
+    const partnerLandingUrl = `https://www.sacscloud.com/p/${finalSlug}`;
+
+    let setPasswordUrl = 'https://www.sacscloud.com/partner/login';
+    try {
+      const { token } = await createPasswordResetToken(team_member_id, 'initial');
+      setPasswordUrl = `https://www.sacscloud.com/partner/reset-password?token=${encodeURIComponent(token)}&mode=initial`;
+    } catch (e) {
+      console.warn('[approve-invitation] reset token failed:', e);
+    }
+
+    try {
+      await notify({
+        channel: 'email',
+        to: partnerEmail,
+        template: 'partner_approved_user',
+        data: {
+          nombre: partnerName,
+          programa,
+          comision_pct: invitation.comision_pct,
+          partnerLandingUrl,
+          setPasswordUrl,
+          loginUrl: 'https://www.sacscloud.com/partner/login',
+          nota,
+        },
+      });
+    } catch (e) {
+      console.warn('[approve-invitation] notify failed:', e);
+    }
+  }
+
+  // Activity log
+  try {
+    await supabase.from('activities').insert({
+      tipo: 'sistema',
+      titulo: autoApproved
+        ? `Partner auto-aprobado: ${partnerName} (${invitation.tipo})`
+        : `Partner aprobado: ${partnerName} (${invitation.tipo})`,
+      metadata: {
+        partner_invitation_id: id,
+        partner_invitation_numero: invitation.numero,
+        tipo: invitation.tipo,
+        team_member_id,
+        auto_approved: !!autoApproved,
+      },
+      automatico: true,
+    });
+  } catch (e) {
+    console.warn('[approve-invitation] activity insert failed:', e);
+  }
+
+  return { invitation: updated, team_member_id };
+}
+
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json() as { id?: string; nota?: string };
@@ -68,155 +223,8 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    const partnerEmail = invitation.email;
-    const partnerName = invitation.aceptado_por || invitation.nombre;
-
-    // Crear team_member (idempotente por email)
-    let team_member_id = invitation.team_member_id as string | null;
-    if (!team_member_id && partnerEmail) {
-      const { data: existing } = await supabase
-        .from('team_members')
-        .select('id, rol, default_commission_pct')
-        .eq('email', partnerEmail)
-        .maybeSingle();
-
-      if (existing) {
-        const newRol = existing.rol === 'founder' ? 'founder' : 'partner';
-        await supabase
-          .from('team_members')
-          .update({
-            rol: newRol,
-            default_commission_pct: invitation.comision_pct ?? existing.default_commission_pct ?? 50,
-            activo: true,
-          })
-          .eq('id', existing.id);
-        team_member_id = existing.id;
-      } else {
-        const { data: created, error: createErr } = await supabase
-          .from('team_members')
-          .insert({
-            nombre: partnerName,
-            email: partnerEmail,
-            rol: 'partner',
-            default_commission_pct: invitation.comision_pct ?? 50,
-            activo: true,
-          })
-          .select('id')
-          .single();
-        if (createErr) {
-          console.error('[approve-invitation] team_member create failed:', createErr.message);
-        } else {
-          team_member_id = created.id;
-        }
-      }
-    }
-
-    // Update meta with approval audit
-    const { plain, meta } = parseNotas(invitation.notas);
-    meta.approved_at = new Date().toISOString();
-    if (nota) meta.approval_note = nota;
-
-    const updates: Record<string, any> = {
-      estado: 'accepted',
-      notas: buildNotas(plain, meta),
-    };
-    if (team_member_id) updates.team_member_id = team_member_id;
-
-    // Auto-assign slug_landing si está vacío (basado en nombre + numero suffix)
-    if (!invitation.slug_landing) {
-      const baseSlug = (invitation.nombre || invitation.numero || 'partner')
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[̀-ͯ]/g, '')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .slice(0, 30);
-      // Ensure uniqueness: try plain, else add numero suffix
-      const { data: existing } = await supabase
-        .from('partner_invitations')
-        .select('id')
-        .eq('slug_landing', baseSlug)
-        .neq('id', id)
-        .maybeSingle();
-      const finalSlug = existing
-        ? `${baseSlug}-${(invitation.numero || '').toLowerCase().replace(/[^a-z0-9]/g, '')}`.slice(0, 40)
-        : baseSlug;
-      updates.slug_landing = finalSlug;
-    }
-
-    const { data: updated, error: updateErr } = await supabase
-      .from('partner_invitations')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (updateErr) {
-      return new Response(JSON.stringify({ error: updateErr.message }), {
-        status: 500, headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Email al partner — bienvenida + link para crear contraseña
-    if (partnerEmail && team_member_id) {
-      const tipoLabels: Record<string, string> = {
-        embajador: 'Embajador SACS',
-        distribuidor: 'Distribuidor Autorizado',
-        integrador: 'Integrador Certificado',
-        reseller: 'Reseller',
-        consultor: 'Consultor Partner',
-      };
-      const programa = tipoLabels[invitation.tipo] || invitation.tipo || 'Partner SACS';
-      const finalSlug = (updates as any).slug_landing || invitation.slug_landing || (invitation.numero || '').toLowerCase();
-      const partnerLandingUrl = `https://www.sacscloud.com/p/${finalSlug}`;
-
-      // Token para que cree su contraseña inicial (válido 14 días)
-      let setPasswordUrl = 'https://www.sacscloud.com/partner/login';
-      try {
-        const { token } = await createPasswordResetToken(team_member_id, 'initial');
-        setPasswordUrl = `https://www.sacscloud.com/partner/reset-password?token=${encodeURIComponent(token)}&mode=initial`;
-      } catch (e) {
-        console.warn('[approve-invitation] reset token failed:', e);
-      }
-
-      try {
-        await notify({
-          channel: 'email',
-          to: partnerEmail,
-          template: 'partner_approved_user',
-          data: {
-            nombre: partnerName,
-            programa,
-            comision_pct: invitation.comision_pct,
-            partnerLandingUrl,
-            setPasswordUrl,
-            loginUrl: 'https://www.sacscloud.com/partner/login',
-            nota,
-          },
-        });
-      } catch (e) {
-        console.warn('[approve-invitation] notify failed:', e);
-      }
-    }
-
-    // Activity log
-    try {
-      await supabase.from('activities').insert({
-        tipo: 'sistema',
-        titulo: `Partner aprobado: ${partnerName} (${invitation.tipo})`,
-        metadata: {
-          partner_invitation_id: id,
-          partner_invitation_numero: invitation.numero,
-          tipo: invitation.tipo,
-          team_member_id,
-        },
-        automatico: true,
-      });
-    } catch (e) {
-      console.warn('[approve-invitation] activity insert failed:', e);
-    }
-
-    return new Response(JSON.stringify({ ok: true, invitation: updated, team_member_id }), {
+    const result = await approveInvitationInternal(invitation, { nota });
+    return new Response(JSON.stringify({ ok: true, invitation: result.invitation, team_member_id: result.team_member_id }), {
       status: 200, headers: { 'Content-Type': 'application/json' },
     });
   } catch (err: any) {

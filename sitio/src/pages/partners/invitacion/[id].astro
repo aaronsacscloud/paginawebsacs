@@ -2740,24 +2740,80 @@ const partnerLandingUrl = invitation.slug_landing
       <!-- TAB: FIRMA -->
       <section class="p-tab-panel" data-tab="firma">
         {isAccepted ? (
-          <div class="p-signed">
-            <div class="p-signed-eyebrow">Firmada</div>
-            <div class="p-signed-title">Bienvenido al equipo, {invitation.aceptado_por || invitation.nombre}.</div>
-            <div class="p-signed-sub">
-              Tu programa <strong>{tipoLabel[tipo] || tipo}</strong> está activo. En breve recibirás un correo con las credenciales del sistema, acceso a la academia y tu link de partner.
+          <div class="p-cert-wrap">
+            <div class="p-cert-actions">
+              <button type="button" class="p-cert-btn p-cert-btn--primary" id="btn-cert-print" title="Descargar como PDF (Cmd+P → Guardar como PDF)">Descargar certificado</button>
+              <a href="/partner/portal" class="p-cert-btn p-cert-btn--secondary">Entrar al portal de partners →</a>
             </div>
-            {meta.firma_base64 && (
-              <img src={meta.firma_base64} alt="Firma" class="p-signed-img" />
-            )}
-            {invitation.aceptado_por && (
-              <div class="p-signed-label">Firmada por {invitation.aceptado_por}</div>
-            )}
-            {invitation.aceptado_fecha && (
-              <div class="p-signed-date">{fmtDate(invitation.aceptado_fecha)}</div>
-            )}
-            <div class="p-signed-cta-row">
-              <a href="/partners/brand-kit" class="p-signed-cta">Acceder al brand kit</a>
-              <a href="https://www.sacscloud.com/admin/crm" class="p-signed-cta-secondary">Panel SACS</a>
+
+            <div class="p-cert" id="partner-certificate">
+              <div class="p-cert-border">
+                <div class="p-cert-header">
+                  <div class="p-cert-brand">Sacs</div>
+                  <div class="p-cert-program">Programa Partners</div>
+                </div>
+
+                <div class="p-cert-body">
+                  <div class="p-cert-eyebrow">Certificado de</div>
+                  <div class="p-cert-title">{tipoLabel[tipo] || 'Embajador'} SACS</div>
+                  <div class="p-cert-divider"></div>
+                  <div class="p-cert-otorgado">Se otorga a</div>
+                  <div class="p-cert-name">{invitation.aceptado_por || invitation.nombre}</div>
+                  <div class="p-cert-statement">
+                    Por su compromiso con la transformación del comercio y por
+                    haber sido formalmente aceptado en el programa
+                    <strong> {tipoLabel[tipo] || 'Embajador'} SACS</strong>,
+                    contando con todos los beneficios, derechos y responsabilidades
+                    establecidos en el acuerdo firmado.
+                  </div>
+                </div>
+
+                <div class="p-cert-footer">
+                  <div class="p-cert-meta">
+                    <div class="p-cert-meta-block">
+                      <div class="p-cert-meta-lbl">Folio</div>
+                      <div class="p-cert-meta-val">{invitation.numero || 'PA-XXX'}</div>
+                    </div>
+                    <div class="p-cert-meta-block">
+                      <div class="p-cert-meta-lbl">Fecha de aprobación</div>
+                      <div class="p-cert-meta-val">{fmtDate(invitation.aceptado_fecha) || '—'}</div>
+                    </div>
+                    <div class="p-cert-meta-block">
+                      <div class="p-cert-meta-lbl">Comisión</div>
+                      <div class="p-cert-meta-val">{comisionPct}%</div>
+                    </div>
+                  </div>
+                  <div class="p-cert-signatures">
+                    {meta.firma_base64 && (
+                      <div class="p-cert-sig">
+                        <img src={meta.firma_base64} alt="Firma del partner" class="p-cert-sig-img" />
+                        <div class="p-cert-sig-line"></div>
+                        <div class="p-cert-sig-name">{invitation.aceptado_por || invitation.nombre}</div>
+                        <div class="p-cert-sig-role">Partner</div>
+                      </div>
+                    )}
+                    <div class="p-cert-sig">
+                      <div class="p-cert-sig-mark">SACS</div>
+                      <div class="p-cert-sig-line"></div>
+                      <div class="p-cert-sig-name">Aaron Rodríguez</div>
+                      <div class="p-cert-sig-role">Founder · SACS</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-cert-next">
+              <h3 class="p-cert-next-title">Siguiente paso</h3>
+              <p class="p-cert-next-lead">
+                Ya tienes acceso a tu portal de partner. Ahí ves comisiones, prospectos,
+                pagos, tu link único, brand kit y tu cuenta SACS Plan Fideliza incluida.
+              </p>
+              <p class="p-cert-next-creds">
+                Te enviamos al correo <strong>{invitation.email}</strong> tus credenciales
+                de acceso y un link para crear tu contraseña.
+              </p>
+              <a href="/partner/portal" class="p-cert-cta">Ir a mi portal de partner →</a>
             </div>
           </div>
         ) : isSubmitted ? (
@@ -2799,15 +2855,38 @@ const partnerLandingUrl = invitation.slug_landing
             </div>
           </div>
         ) : (
-          <div class="p-sign-form">
+          <div class="p-sign-form" id="sign-wizard">
             <div class="p-section-head p-section-head--center">
-              <div class="p-section-eyebrow">Último paso</div>
+              <div class="p-section-eyebrow">Aceptación formal</div>
               <h2 class="p-section-title">Acepta y firma tu invitación</h2>
               <p class="p-section-lead">
-                Al firmar enviamos tu solicitud al equipo SACS para revisión. En cuanto la aprobemos te llegará un correo con tus credenciales del programa <strong>{tipoLabel[tipo] || tipo}</strong>.
+                {invitation.auto_approve
+                  ? <>Al firmar tu cuenta queda <strong>aprobada al instante</strong> y recibirás tus credenciales por correo.</>
+                  : <>Tres pasos: tus datos, contrato, firma. Al firmar enviamos tu solicitud al equipo SACS para revisión y te avisamos por correo cuando esté lista tu cuenta del programa <strong>{tipoLabel[tipo] || tipo}</strong>.</>
+                }
               </p>
             </div>
 
+            {/* Stepper */}
+            <div class="p-sw-stepper" role="tablist" aria-label="Pasos de aceptación">
+              <button type="button" class="p-sw-step is-active" data-sw-step="1" role="tab" aria-selected="true">
+                <span class="p-sw-step-num">1</span>
+                <span class="p-sw-step-label">Tus datos</span>
+              </button>
+              <span class="p-sw-step-line"></span>
+              <button type="button" class="p-sw-step" data-sw-step="2" role="tab" aria-selected="false">
+                <span class="p-sw-step-num">2</span>
+                <span class="p-sw-step-label">Contrato y firma</span>
+              </button>
+              <span class="p-sw-step-line"></span>
+              <button type="button" class="p-sw-step" data-sw-step="3" role="tab" aria-selected="false" disabled>
+                <span class="p-sw-step-num">3</span>
+                <span class="p-sw-step-label">{invitation.auto_approve ? 'Bienvenido' : 'En aprobación'}</span>
+              </button>
+            </div>
+
+            {/* ─────── PASO 1 — Tus datos ─────── */}
+            <div class="p-sw-panel is-active" data-sw-panel="1">
             <div class="p-sign-section">
               <div class="p-sign-section-head">
                 <span class="p-sign-section-num">1</span>
@@ -2930,31 +3009,126 @@ const partnerLandingUrl = invitation.slug_landing
               </div>
             </div>
 
-            <div class="p-sign-section">
-              <div class="p-sign-section-head">
-                <span class="p-sign-section-num">4</span>
-                <span class="p-sign-section-title">Firma de aceptación</span>
+            <div class="p-sw-nav">
+              <button type="button" class="p-btn p-btn--ghost" id="btn-decline">No me interesa por ahora</button>
+              <button type="button" class="p-btn p-btn--primary" data-sw-go="2">Siguiente · Leer contrato →</button>
+            </div>
+            </div>
+            {/* ─────── /PASO 1 ─────── */}
+
+            {/* ─────── PASO 2 — Contrato + firma ─────── */}
+            <div class="p-sw-panel" data-sw-panel="2">
+              <div class="p-contract">
+                <div class="p-contract-head">
+                  <div class="p-contract-eyebrow">Acuerdo formal de partner</div>
+                  <h3 class="p-contract-title">Contrato del Programa {tipoLabel[tipo] || tipo} SACS</h3>
+                  <div class="p-contract-meta">Folio <strong>{invitation.numero || '—'}</strong> · Vigencia hasta <strong>{vigenciaLarga}</strong></div>
+                </div>
+
+                <div class="p-contract-doc">
+                  <p>Entre <strong>SACS Cloud, S.A.P.I. de C.V.</strong> ("SACS"), por una parte, y <strong>{invitation.nombre}</strong> ("el Partner"), por la otra parte, se celebra el presente <strong>Acuerdo del Programa Partners SACS</strong> bajo las siguientes condiciones:</p>
+
+                  <h4>1. Programa</h4>
+                  <p>El Partner queda inscrito en el programa <strong>{tipoLabel[tipo] || tipo}</strong> de SACS con folio <strong>{invitation.numero || '—'}</strong>, vigente hasta <strong>{vigenciaLarga}</strong> y renovable automáticamente al cumplir las condiciones de continuidad.</p>
+
+                  <h4>2. Compensación</h4>
+                  <ul>
+                    <li><strong>Comisión sobre venta directa:</strong> {comisionPct}% sobre el cobro de la primera factura de cada cliente cerrado mediante el link único del Partner.</li>
+                    <li><strong>Bono por prueba gratis:</strong> $250 MXN por cada usuario que llega por el link del Partner y activa una prueba gratis válida (verificada por SACS).</li>
+                    <li><strong>Bono por demo completada:</strong> $300 MXN por cada demo válida realizada (mínimo 25 minutos, decisor presente, registrada en el sistema).</li>
+                    <li><strong>Comisiones recurrentes:</strong> Mientras el cliente referido permanezca activo en SACS y al corriente en sus pagos, el Partner mantiene el {comisionPct}% sobre las renovaciones según el plan vigente.</li>
+                  </ul>
+
+                  <h4>3. Liquidación de pagos</h4>
+                  <p>Las comisiones earned (confirmadas) se liquidan el día <strong>5 de cada mes</strong> al método de cobro que el Partner registró (CLABE, PayPal o Mercado Pago). El Partner es responsable del cumplimiento fiscal de los ingresos recibidos en su jurisdicción.</p>
+
+                  <h4>4. Beneficios incluidos</h4>
+                  <ul>
+                    <li>Cuenta SACS Plan Fideliza ($14,000 MXN/año) <strong>gratis</strong> mientras el Partner esté activo.</li>
+                    <li>Acceso al portal de partner con métricas en tiempo real, pagos y prospectos.</li>
+                    <li>Brand kit con logos, plantillas y captions oficiales.</li>
+                    <li>Soporte prioritario, Academia SACS y workshops mensuales en vivo.</li>
+                    <li>Sesión de onboarding 1:1 y migración de datos sin costo extra para clientes referidos.</li>
+                  </ul>
+
+                  <h4>5. Compromisos del Partner</h4>
+                  <ul>
+                    <li>Representar la marca SACS de forma profesional y honesta.</li>
+                    <li>Atender los leads asignados en menos de 24 horas hábiles.</li>
+                    <li>Asistir a la sesión mensual de actualizaciones (60 min) — quedan grabadas para ver después si no puede asistir.</li>
+                    <li>Cumplir con los compromisos de contenido del programa según el tipo de partnership (mínimo de puntos mensuales según el tabulador interno).</li>
+                    <li>No realizar afirmaciones falsas, garantías de resultados o promociones engañosas sobre SACS.</li>
+                  </ul>
+
+                  <h4>6. Auditoría y resolución de comisiones</h4>
+                  <p>SACS se reserva el derecho de auditar cualquier comisión y rechazar aquellas asociadas a leads duplicados, fraudulentos o autoreferenciados. Las comisiones rechazadas se marcan como <em>cancelled</em> con el motivo correspondiente y quedan visibles en el portal para auditoría.</p>
+
+                  <h4>7. Confidencialidad</h4>
+                  <p>El Partner se compromete a no divulgar información confidencial de SACS — incluyendo precios negociados, roadmap interno, métricas internas o cualquier dato no público — sin autorización escrita.</p>
+
+                  <h4>8. Vigencia y rescisión</h4>
+                  <p>Este acuerdo tiene una vigencia inicial de <strong>12 meses</strong> a partir de la fecha de firma, renovable automáticamente. Cualquiera de las partes puede dar por terminado el acuerdo con <strong>30 días de aviso por escrito</strong>, sin necesidad de causa. SACS puede dar por terminado el acuerdo de inmediato en caso de incumplimiento grave de los compromisos del Partner.</p>
+
+                  <h4>9. Datos y privacidad</h4>
+                  <p>El Partner autoriza a SACS a procesar sus datos personales para los fines del programa, conforme al <a href="/privacidad" target="_blank" rel="noopener">Aviso de Privacidad</a>. Esto incluye: enviar comunicaciones del programa, mostrar el nombre/foto del Partner en su landing pública, y compartir métricas internas con su equipo.</p>
+
+                  <h4>10. Aceptación</h4>
+                  <p>Al firmar al final de este documento, el Partner declara que ha leído íntegramente este acuerdo, que entiende las condiciones de compensación y compromisos, y que acepta vincularse legalmente a las mismas. La firma electrónica tiene la misma validez que una firma autógrafa conforme a la NOM-151-SCFI-2016.</p>
+                </div>
+
+                <label class="p-contract-accept">
+                  <input type="checkbox" id="contract-accept" />
+                  <span>He leído íntegramente este contrato y acepto sus términos.</span>
+                </label>
               </div>
-              <div class="p-sign-canvas-wrap">
-                <div class="p-sign-canvas-label">Firma con el dedo o el mouse</div>
-                <canvas id="signature-canvas" class="p-sign-canvas"></canvas>
-                <div class="p-sign-canvas-actions">
-                  <button type="button" class="p-btn p-btn--ghost" id="btn-clear-sig">Limpiar firma</button>
+
+              <div class="p-sign-section">
+                <div class="p-sign-section-head">
+                  <span class="p-sign-section-num">✎</span>
+                  <span class="p-sign-section-title">Firma de aceptación</span>
+                </div>
+                <div class="p-sign-canvas-wrap">
+                  <div class="p-sign-canvas-label">Firma con el dedo o el mouse</div>
+                  <canvas id="signature-canvas" class="p-sign-canvas"></canvas>
+                  <div class="p-sign-canvas-actions">
+                    <button type="button" class="p-btn p-btn--ghost" id="btn-clear-sig">Limpiar firma</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="p-sign-legal">
+                Al firmar confirmas que has leído el contrato completo arriba y aceptas los
+                <a href="/terminos" target="_blank" rel="noopener">Términos y condiciones</a> y el
+                <a href="/privacidad" target="_blank" rel="noopener">Aviso de privacidad</a>.
+                {!invitation.auto_approve && <> Tu solicitud queda en revisión por el equipo SACS antes de la activación.</>}
+              </div>
+
+              <div class="p-sw-nav">
+                <button type="button" class="p-btn p-btn--ghost" data-sw-go="1">← Atrás</button>
+                <button type="button" class="p-btn p-btn--primary" id="btn-accept">
+                  {invitation.auto_approve ? 'Firmar y activar mi cuenta' : 'Firmar y enviar al equipo SACS'}
+                </button>
+              </div>
+            </div>
+            {/* ─────── /PASO 2 ─────── */}
+
+            {/* ─────── PASO 3 — En espera (post-submit) ─────── */}
+            <div class="p-sw-panel" data-sw-panel="3">
+              <div class="p-signed p-signed--submitted" id="signed-confirmation">
+                <div class="p-signed-eyebrow">Solicitud firmada</div>
+                <div class="p-signed-title">¡Listo! Tu solicitud está en aprobación.</div>
+                <div class="p-signed-sub">
+                  Nuestro equipo revisará tus datos y te contactaremos en las próximas
+                  <strong> 24-48 horas hábiles</strong> para activar tu programa
+                  <strong> {tipoLabel[tipo] || tipo}</strong> y enviarte tus credenciales por correo.
+                </div>
+                <div class="p-signed-meta" style="margin-top:18px">
+                  Mientras tanto puedes revisar el <a href="/partners/brand-kit" target="_blank">brand kit</a> o
+                  responder a partners@sacscloud.com si necesitas algún cambio.
                 </div>
               </div>
             </div>
-
-            <div class="p-sign-legal">
-              Al aceptar y firmar confirmas que has leído y aceptas los
-              <a href="/terminos" target="_blank" rel="noopener">Términos y condiciones</a> y el
-              <a href="/privacidad" target="_blank" rel="noopener">Aviso de privacidad</a>.
-              Tu solicitud queda en revisión por el equipo SACS antes de la activación.
-            </div>
-
-            <div class="p-sign-actions">
-              <button type="button" class="p-btn p-btn--primary" id="btn-accept">Enviar solicitud al equipo SACS</button>
-              <button type="button" class="p-btn p-btn--ghost" id="btn-decline">No me interesa por ahora</button>
-            </div>
+            {/* ─────── /PASO 3 ─────── */}
           </div>
         )}
       </section>
@@ -7009,9 +7183,394 @@ const partnerLandingUrl = invitation.slug_landing
   }
 
   /* Sign form */
-  .p-sign-form { padding: 56px 0 24px; max-width: 720px; margin: 0 auto; }
+  .p-sign-form { padding: 56px 0 24px; max-width: 760px; margin: 0 auto; }
   @media (max-width: 640px) {
     .p-sign-form { padding: 24px 0 24px; }
+  }
+
+  /* ─── Sign wizard stepper ─── */
+  .p-sw-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 24px 0 40px;
+  }
+  .p-sw-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    font-family: inherit;
+    color: #999;
+    transition: color 0.15s;
+  }
+  .p-sw-step:disabled { cursor: default; opacity: 0.6; }
+  .p-sw-step:not(:disabled):hover { color: #666; }
+  .p-sw-step-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: #ececec;
+    color: #999;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    font-weight: 700;
+    transition: background 0.15s, color 0.15s;
+  }
+  .p-sw-step-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+  }
+  .p-sw-step.is-active { color: #1a1a1a; }
+  .p-sw-step.is-active .p-sw-step-num { background: #1a1a1a; color: #fff; }
+  .p-sw-step.is-done { color: #1A8F7A; }
+  .p-sw-step.is-done .p-sw-step-num { background: #2AB5A0; color: #fff; }
+  .p-sw-step-line { flex: 0 1 60px; height: 1px; background: #ececec; }
+  @media (max-width: 640px) {
+    .p-sw-step-label { display: none; }
+    .p-sw-step-line { flex: 0 1 30px; }
+  }
+
+  .p-sw-panel { display: none; }
+  .p-sw-panel.is-active { display: block; }
+  .p-sw-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 32px;
+    flex-wrap: wrap;
+  }
+
+  /* ─── Contract document ─── */
+  .p-contract {
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 14px;
+    padding: 36px 40px;
+    margin-bottom: 28px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  }
+  .p-contract-head {
+    border-bottom: 1px solid #f0f0ee;
+    padding-bottom: 20px;
+    margin-bottom: 24px;
+  }
+  .p-contract-eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #4B7BE5;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin-bottom: 10px;
+  }
+  .p-contract-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .p-contract-meta {
+    font-size: 0.8125rem;
+    color: #888;
+  }
+  .p-contract-meta strong { color: #1a1a1a; font-weight: 600; }
+  .p-contract-doc {
+    max-height: 480px;
+    overflow-y: auto;
+    padding-right: 14px;
+    font-size: 0.875rem;
+    line-height: 1.7;
+    color: #333;
+  }
+  .p-contract-doc p { margin: 0 0 14px; }
+  .p-contract-doc h4 {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 22px 0 10px;
+    letter-spacing: -0.005em;
+  }
+  .p-contract-doc ul { margin: 0 0 14px; padding-left: 22px; }
+  .p-contract-doc li { margin-bottom: 6px; }
+  .p-contract-doc strong { color: #1a1a1a; font-weight: 600; }
+  .p-contract-doc a { color: #4B7BE5; }
+  .p-contract-accept {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-top: 24px;
+    padding: 16px 18px;
+    background: rgba(75,123,229,0.05);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.9375rem;
+    color: #1a1a1a;
+    line-height: 1.5;
+  }
+  .p-contract-accept input[type="checkbox"] {
+    margin-top: 3px;
+    accent-color: #1a1a1a;
+    width: 18px; height: 18px;
+    flex-shrink: 0;
+  }
+  @media (max-width: 640px) {
+    .p-contract { padding: 24px 22px; }
+    .p-contract-doc { max-height: 360px; }
+  }
+
+  /* ─── Certificate (post-approval) ─── */
+  .p-cert-wrap { padding: 40px 0 60px; max-width: 920px; margin: 0 auto; }
+  .p-cert-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .p-cert-btn {
+    padding: 12px 22px;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .p-cert-btn--primary { background: #1a1a1a; color: #fff; }
+  .p-cert-btn--primary:hover { background: #000; }
+  .p-cert-btn--secondary { background: #fff; color: #1a1a1a; border: 1px solid #ececec; }
+  .p-cert-btn--secondary:hover { border-color: #1a1a1a; }
+
+  .p-cert {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 24px 48px -16px rgba(0,0,0,0.18), 0 8px 16px -8px rgba(0,0,0,0.08);
+    overflow: hidden;
+  }
+  .p-cert-border {
+    margin: 14px;
+    border: 2px solid #1a1a1a;
+    border-radius: 6px;
+    padding: 50px 60px 40px;
+    background:
+      radial-gradient(circle at top right, rgba(75,123,229,0.04), transparent 60%),
+      radial-gradient(circle at bottom left, rgba(108,92,231,0.04), transparent 60%),
+      #fff;
+    position: relative;
+  }
+  .p-cert-border::before, .p-cert-border::after {
+    content: '';
+    position: absolute;
+    width: 36px; height: 36px;
+    border: 2px solid #4B7BE5;
+  }
+  .p-cert-border::before {
+    top: 8px; left: 8px;
+    border-right: none;
+    border-bottom: none;
+  }
+  .p-cert-border::after {
+    bottom: 8px; right: 8px;
+    border-left: none;
+    border-top: none;
+  }
+
+  .p-cert-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 36px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #ececec;
+  }
+  .p-cert-brand {
+    font-family: 'Clash Display', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    letter-spacing: -0.025em;
+  }
+  .p-cert-program {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #4B7BE5;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .p-cert-body { text-align: center; padding: 32px 0; }
+  .p-cert-eyebrow {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #888;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .p-cert-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.25rem, 5vw, 3.5rem);
+    font-weight: 500;
+    color: #1a1a1a;
+    margin: 0 0 28px;
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+  }
+  .p-cert-divider {
+    width: 60px;
+    height: 2px;
+    background: #4B7BE5;
+    margin: 0 auto 32px;
+  }
+  .p-cert-otorgado {
+    font-size: 0.875rem;
+    color: #888;
+    font-style: italic;
+    margin-bottom: 16px;
+  }
+  .p-cert-name {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4.5vw, 3rem);
+    font-weight: 500;
+    color: #1a1a1a;
+    margin-bottom: 28px;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+  }
+  .p-cert-statement {
+    font-size: 1rem;
+    color: #555;
+    line-height: 1.7;
+    max-width: 580px;
+    margin: 0 auto;
+  }
+  .p-cert-statement strong { color: #1a1a1a; font-weight: 600; }
+
+  .p-cert-footer { padding-top: 32px; border-top: 1px solid #ececec; margin-top: 32px; }
+  .p-cert-meta {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 1px dashed #ececec;
+  }
+  .p-cert-meta-block { text-align: center; }
+  .p-cert-meta-lbl {
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: #999;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .p-cert-meta-val {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    letter-spacing: -0.005em;
+  }
+  .p-cert-signatures {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+  }
+  .p-cert-sig { text-align: center; }
+  .p-cert-sig-img {
+    height: 56px;
+    object-fit: contain;
+    margin: 0 auto 6px;
+    display: block;
+  }
+  .p-cert-sig-mark {
+    font-family: 'Clash Display', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #4B7BE5;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .p-cert-sig-line {
+    width: 80%;
+    height: 1px;
+    background: #1a1a1a;
+    margin: 6px auto 8px;
+  }
+  .p-cert-sig-name {
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+  .p-cert-sig-role { font-size: 0.75rem; color: #888; margin-top: 2px; }
+
+  @media (max-width: 720px) {
+    .p-cert-border { padding: 32px 24px 28px; }
+    .p-cert-meta { grid-template-columns: 1fr; gap: 14px; }
+    .p-cert-signatures { grid-template-columns: 1fr; gap: 32px; }
+  }
+
+  .p-cert-next {
+    margin-top: 40px;
+    padding: 32px 36px;
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    text-align: center;
+  }
+  .p-cert-next-title {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    margin: 0 0 12px;
+    letter-spacing: -0.015em;
+  }
+  .p-cert-next-lead { font-size: 0.9375rem; color: #555; line-height: 1.6; margin: 0 0 12px; }
+  .p-cert-next-creds { font-size: 0.875rem; color: #666; margin: 0 0 24px; }
+  .p-cert-next-creds strong { color: #1a1a1a; }
+  .p-cert-cta {
+    display: inline-block;
+    padding: 14px 26px;
+    background: #4B7BE5;
+    color: #fff;
+    border-radius: 10px;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 0.9375rem;
+  }
+  .p-cert-cta:hover { background: #3764c4; }
+
+  /* Print: hide everything except cert */
+  @media print {
+    body * { visibility: hidden; }
+    #partner-certificate, #partner-certificate * { visibility: visible; }
+    #partner-certificate {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      box-shadow: none !important;
+    }
   }
 
   /* Sección numerada (Tus datos / Dirección / Cobro / Firma) */
@@ -7735,13 +8294,69 @@ const partnerLandingUrl = invitation.slug_landing
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudo enviar');
-      window.location.reload();
+      // If auto-approved, reload to render certificate. Otherwise advance to step 3.
+      if (data.auto_approved) {
+        window.location.reload();
+      } else {
+        if (typeof goSwStep === 'function') goSwStep(3);
+        else window.location.reload();
+      }
     } catch (err) {
       alert('Hubo un error: ' + (err.message || err));
       btnAccept.disabled = false;
-      btnAccept.textContent = 'Enviar solicitud al equipo SACS';
+      btnAccept.textContent = 'Firmar y enviar al equipo SACS';
     }
   });
+
+  // ─── Sign wizard navigation ───
+  function goSwStep(n) {
+    const max = 3;
+    const target = Math.max(1, Math.min(max, Number(n) || 1));
+    document.querySelectorAll('[data-sw-step]').forEach((el) => {
+      const num = Number(el.getAttribute('data-sw-step'));
+      el.classList.toggle('is-active', num === target);
+      el.classList.toggle('is-done', num < target);
+    });
+    document.querySelectorAll('[data-sw-panel]').forEach((el) => {
+      const num = Number(el.getAttribute('data-sw-panel'));
+      el.classList.toggle('is-active', num === target);
+    });
+    // Scroll to top of the wizard
+    const wizard = document.getElementById('sign-wizard');
+    if (wizard) {
+      const rect = wizard.getBoundingClientRect();
+      window.scrollTo({ top: window.scrollY + rect.top - 90, behavior: 'smooth' });
+    }
+  }
+  document.querySelectorAll('[data-sw-go]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = Number(btn.getAttribute('data-sw-go'));
+      // Validate when going forward to step 2
+      if (target === 2) {
+        const nombre = (document.getElementById('sign-nombre')||{}).value || '';
+        const email = (document.getElementById('sign-email')||{}).value || '';
+        if (!nombre.trim() || !email.trim()) {
+          alert('Por favor completa nombre y email antes de continuar.');
+          return;
+        }
+      }
+      goSwStep(target);
+    });
+  });
+
+  // Allow clicking active stepper steps to navigate
+  document.querySelectorAll('[data-sw-step]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const target = Number(btn.getAttribute('data-sw-step'));
+      // Only allow going to steps already visited (active or done)
+      if (btn.classList.contains('is-done')) goSwStep(target);
+    });
+  });
+
+  // Print certificate
+  const btnPrint = document.getElementById('btn-cert-print');
+  if (btnPrint) btnPrint.addEventListener('click', () => window.print());
 
   // ─── Decline ───
   const declineModal = document.getElementById('decline-modal');

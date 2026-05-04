@@ -17,6 +17,7 @@ const INVITATION_FIELDS = [
   'notas', 'template', 'estado',
   'aceptado_por', 'aceptado_fecha', 'decline_motivo', 'decline_detalle',
   'team_member_id', 'contact_id',
+  'auto_approve',
 ];
 
 const PUBLIC_FIELDS = [
