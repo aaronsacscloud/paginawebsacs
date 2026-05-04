@@ -86,6 +86,7 @@ export default function PartnersTab() {
   const [editing, setEditing] = useState<Invitation | null>(null);
   const [search, setSearch] = useState('');
   const [detailPartnerId, setDetailPartnerId] = useState<string | null>(null);
+  const [recoverInvitation, setRecoverInvitation] = useState<Invitation | null>(null);
 
   async function load() {
     setLoading(true);
@@ -351,6 +352,9 @@ export default function PartnersTab() {
                         {it.estado === 'accepted' && (
                           <button style={btnSm('#6C5CE7', '#fff')} onClick={() => provisionFideliza(it)} title="Activar SACS Plan Fideliza para este partner">Fideliza</button>
                         )}
+                        {(it.estado === 'accepted' || it.estado === 'submitted_for_review') && (
+                          <button style={btnSm('#E8A838', '#fff')} onClick={() => setRecoverInvitation(it)} title="Cambiar email o reenviar link de acceso del partner">Acceso</button>
+                        )}
                         {(it as any).team_member_id && (
                           <button style={btnSm()} onClick={() => setDetailPartnerId((it as any).team_member_id)} title="Ver detalle completo del partner">Detalle</button>
                         )}
@@ -376,6 +380,13 @@ export default function PartnersTab() {
         <PartnerDetailDrawer
           partnerId={detailPartnerId}
           onClose={() => setDetailPartnerId(null)}
+        />
+      )}
+
+      {recoverInvitation && (
+        <RecoverAccessModal
+          invitation={recoverInvitation}
+          onClose={() => setRecoverInvitation(null)}
         />
       )}
     </div>
@@ -1223,7 +1234,170 @@ function EmptyHint({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ─── Recover Access Section ───────────────────────────────────
+// ─── Recover Access Modal — accessible from any approved row ──
+function RecoverAccessModal({ invitation, onClose }: { invitation: Invitation; onClose: () => void }) {
+  const [editingEmail, setEditingEmail] = useState(false);
+  const [newEmail, setNewEmail] = useState(invitation.email || '');
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ ok: boolean; msg: string; resetUrl?: string } | null>(null);
+
+  async function recover(opts: { changeEmail: boolean }) {
+    setBusy(true); setResult(null);
+    try {
+      const body: any = {
+        invitation_id: invitation.id,
+        team_member_id: (invitation as any).team_member_id || undefined,
+        send_welcome: true,
+      };
+      if (opts.changeEmail) {
+        if (!newEmail.trim() || newEmail.trim() === invitation.email) {
+          setResult({ ok: false, msg: 'Pon un email nuevo diferente al actual.' });
+          setBusy(false);
+          return;
+        }
+        body.new_email = newEmail.trim();
+      }
+      const res = await fetch('/api/partners/recover-access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': 'founder' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error');
+      const emailOk = data.email_sent;
+      const emailWarn = data.email_error;
+      const baseMsg = opts.changeEmail
+        ? `✓ Email actualizado a ${data.email}.`
+        : `✓ Token nuevo generado para ${data.email}.`;
+      const sendMsg = emailOk
+        ? ' Email de bienvenida enviado por Resend.'
+        : ` ⚠️ Email NO se envió (${emailWarn || 'razón desconocida'}). Comparte el link manual abajo.`;
+      setResult({ ok: true, msg: baseMsg + sendMsg, resetUrl: data.reset_url });
+      setEditingEmail(false);
+    } catch (e: any) {
+      setResult({ ok: false, msg: e.message || String(e) });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function copyResetUrl() {
+    if (result?.resetUrl) {
+      navigator.clipboard.writeText(result.resetUrl);
+      setResult(r => r ? { ...r, msg: r.msg + ' (link copiado)' } : r);
+    }
+  }
+
+  return (
+    <div onClick={onClose} style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 1000, padding: 20,
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: '#fff', borderRadius: 14, maxWidth: 580, width: '100%',
+        padding: 28, maxHeight: '90vh', overflowY: 'auto',
+        boxShadow: '0 24px 60px -16px rgba(0,0,0,0.30)',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#E8A838', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>Recuperar acceso</div>
+            <h3 style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, color: '#1a1a1a' }}>{invitation.nombre}</h3>
+            <div style={{ fontSize: 13, color: '#666', marginTop: 2 }}>Folio {invitation.numero}</div>
+          </div>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', fontSize: 22, color: '#999', cursor: 'pointer', lineHeight: 1, padding: 0 }}>×</button>
+        </div>
+
+        <div style={{ background: '#fffaf0', border: '1px solid rgba(232,168,56,0.30)', borderRadius: 10, padding: 14, marginBottom: 18 }}>
+          <p style={{ fontSize: 13, color: '#666', margin: 0, lineHeight: 1.55 }}>
+            Si el partner registró el email mal, perdió su contraseña o no recibió el email
+            de bienvenida — usa esto. El link de reset queda visible para que puedas
+            compartirlo manual via WhatsApp si el email no llega.
+          </p>
+        </div>
+
+        {!editingEmail ? (
+          <>
+            <div style={{ marginBottom: 14, fontSize: 13, color: '#555' }}>
+              <div style={{ marginBottom: 4 }}><strong style={{ color: '#1a1a1a' }}>Email actual:</strong> {invitation.email || '—'}</div>
+              {(invitation as any).team_member_id ? (
+                <div style={{ fontSize: 11, color: '#1A8F7A' }}>✓ Cuenta de partner ya creada</div>
+              ) : (
+                <div style={{ fontSize: 11, color: '#E8A838' }}>⚠ Cuenta no encontrada — se creará al ejecutar la recuperación</div>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button onClick={() => recover({ changeEmail: false })} disabled={busy} style={{
+                padding: '11px 18px', fontSize: 13, fontWeight: 600,
+                background: '#1a1a1a', color: '#fff',
+                border: 'none', borderRadius: 8, cursor: busy ? 'wait' : 'pointer', fontFamily: 'inherit',
+              }}>{busy ? 'Enviando…' : 'Reenviar email de bienvenida'}</button>
+              <button onClick={() => setEditingEmail(true)} disabled={busy} style={{
+                padding: '11px 18px', fontSize: 13, fontWeight: 600,
+                background: 'transparent', color: '#1a1a1a',
+                border: '1px solid #ddd', borderRadius: 8, cursor: busy ? 'wait' : 'pointer', fontFamily: 'inherit',
+              }}>Cambiar email</button>
+            </div>
+          </>
+        ) : (
+          <div>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#666', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Nuevo email</label>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+              <input
+                type="email"
+                value={newEmail}
+                onChange={e => setNewEmail(e.target.value)}
+                placeholder="nuevo@correo.com"
+                style={{
+                  flex: 1, minWidth: 220, padding: '11px 14px', fontSize: 14,
+                  border: '1px solid #ddd', borderRadius: 8, fontFamily: 'inherit', outline: 'none',
+                }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => recover({ changeEmail: true })} disabled={busy} style={{
+                padding: '11px 18px', fontSize: 13, fontWeight: 600,
+                background: '#1a1a1a', color: '#fff',
+                border: 'none', borderRadius: 8, cursor: busy ? 'wait' : 'pointer', fontFamily: 'inherit',
+              }}>{busy ? 'Guardando…' : 'Actualizar y enviar'}</button>
+              <button onClick={() => { setEditingEmail(false); setNewEmail(invitation.email || ''); }} disabled={busy} style={{
+                padding: '11px 18px', fontSize: 13, fontWeight: 600,
+                background: 'transparent', color: '#999',
+                border: '1px solid #eee', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
+              }}>Cancelar</button>
+            </div>
+          </div>
+        )}
+
+        {result && (
+          <div style={{
+            marginTop: 16, padding: '12px 14px', borderRadius: 8, fontSize: 12, lineHeight: 1.5,
+            background: result.ok ? 'rgba(42,181,160,0.10)' : 'rgba(229,75,75,0.10)',
+            color: result.ok ? '#1A8F7A' : '#b93333',
+            border: `1px solid ${result.ok ? 'rgba(42,181,160,0.25)' : 'rgba(229,75,75,0.25)'}`,
+          }}>
+            <div>{result.msg}</div>
+            {result.resetUrl && (
+              <div style={{ marginTop: 10, padding: 10, background: '#fff', borderRadius: 6, fontSize: 11, fontFamily: 'monospace', wordBreak: 'break-all', color: '#333' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#666', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Link directo (válido 14 días):</div>
+                {result.resetUrl}
+                <div style={{ marginTop: 8 }}>
+                  <button onClick={copyResetUrl} style={{
+                    padding: '5px 12px', fontSize: 11, fontWeight: 600,
+                    background: '#1a1a1a', color: '#fff',
+                    border: 'none', borderRadius: 4, cursor: 'pointer', fontFamily: 'inherit',
+                  }}>📋 Copiar link</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Recover Access Section (used in PartnerDetailDrawer) ─────
 function RecoverAccessSection({ memberId, memberEmail, memberName }: { memberId: string; memberEmail: string; memberName: string }) {
   const [editingEmail, setEditingEmail] = useState(false);
   const [newEmail, setNewEmail] = useState(memberEmail || '');

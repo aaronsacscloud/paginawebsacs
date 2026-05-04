@@ -39,22 +39,74 @@ export const POST: APIRoute = async ({ request }) => {
 
     const body = await request.json() as {
       team_member_id?: string;
+      invitation_id?: string;          // fallback: resolver team_member desde invitación
       new_email?: string;
       send_welcome?: boolean;
     };
-    const team_member_id = body.team_member_id;
+    let team_member_id = body.team_member_id;
+    const invitation_id = body.invitation_id;
     const new_email = (body.new_email || '').trim().toLowerCase();
-    const send_welcome = body.send_welcome !== false; // default true
+    const send_welcome = body.send_welcome !== false;
 
-    if (!team_member_id) {
-      return json({ error: 'team_member_id requerido' }, 400);
+    if (!team_member_id && !invitation_id) {
+      return json({ error: 'team_member_id o invitation_id requerido' }, 400);
+    }
+
+    // Resolve team_member_id from invitation if missing
+    let invitationForBackfill: any = null;
+    if (!team_member_id && invitation_id) {
+      const { data: inv } = await supabase
+        .from('partner_invitations')
+        .select('id, email, nombre, comision_pct, tipo, team_member_id')
+        .eq('id', invitation_id)
+        .maybeSingle();
+      if (!inv) return json({ error: 'invitación no encontrada' }, 404);
+      invitationForBackfill = inv;
+
+      if (inv.team_member_id) {
+        team_member_id = inv.team_member_id;
+      } else if (inv.email) {
+        // Buscar team_member por email
+        const { data: existing } = await supabase
+          .from('team_members')
+          .select('id')
+          .eq('email', inv.email)
+          .maybeSingle();
+        if (existing) {
+          team_member_id = existing.id;
+        } else {
+          // Crear team_member ahora — la aprobación falló en algún momento al hacerlo
+          const { data: created, error: createErr } = await supabase
+            .from('team_members')
+            .insert({
+              nombre: inv.nombre,
+              email: inv.email,
+              rol: 'partner',
+              default_commission_pct: inv.comision_pct ?? 50,
+              activo: true,
+            })
+            .select('id')
+            .single();
+          if (createErr) return json({ error: 'no se pudo crear cuenta de partner: ' + createErr.message }, 500);
+          team_member_id = created.id;
+        }
+        // Backfill team_member_id en la invitación
+        try {
+          await supabase
+            .from('partner_invitations')
+            .update({ team_member_id })
+            .eq('id', invitation_id);
+        } catch {/* non-blocking */}
+      } else {
+        return json({ error: 'invitación sin email — no se puede recuperar acceso' }, 400);
+      }
     }
 
     // Fetch member
     const { data: member, error: fetchErr } = await supabase
       .from('team_members')
       .select('id, nombre, email, activo, password_hash')
-      .eq('id', team_member_id)
+      .eq('id', team_member_id!)
       .maybeSingle();
 
     if (fetchErr || !member) {
