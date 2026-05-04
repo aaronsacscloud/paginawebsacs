@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-type TabId = 'summary' | 'commissions' | 'payments' | 'leads' | 'content' | 'link' | 'profile' | 'actualizaciones' | 'brandkit' | 'cuenta-sacs' | 'certificaciones';
+type TabId = 'summary' | 'commissions' | 'payments' | 'leads' | 'content' | 'link' | 'profile' | 'actualizaciones' | 'brandkit' | 'cuenta-sacs' | 'certificaciones' | 'agreement';
 
 interface Props {
   initialUser: { id: string; nombre: string; email: string };
@@ -82,7 +82,7 @@ export default function PortalShell({ initialUser }: Props) {
 
   // Hash routing
   useEffect(() => {
-    const valid: TabId[] = ['summary','commissions','payments','leads','content','link','profile','actualizaciones','brandkit','cuenta-sacs','certificaciones'];
+    const valid: TabId[] = ['summary','commissions','payments','leads','content','link','profile','actualizaciones','brandkit','cuenta-sacs','certificaciones','agreement'];
     const hash = (window.location.hash || '').replace('#', '') as TabId;
     if (valid.includes(hash)) setTab(hash);
     const onHash = () => {
@@ -120,9 +120,10 @@ export default function PortalShell({ initialUser }: Props) {
     { id: 'profile',         label: 'Mi perfil' },
   ];
   const tabsExtra: { id: TabId; label: string }[] = [
+    { id: 'agreement',       label: 'Mi acuerdo' },
     { id: 'certificaciones', label: 'Certificaciones' },
     { id: 'brandkit',        label: 'Brand kit' },
-    { id: 'cuenta-sacs',     label: 'Tu cuenta SACS' },
+    { id: 'cuenta-sacs',     label: 'Tu acceso a SACS' },
   ];
 
   const initials = (initialUser.nombre || initialUser.email || '?').charAt(0).toUpperCase();
@@ -203,6 +204,7 @@ export default function PortalShell({ initialUser }: Props) {
             {tab === 'brandkit'        && <BrandkitTab />}
             {tab === 'cuenta-sacs'     && <CuentaSacsTab user={initialUser} />}
             {tab === 'certificaciones' && <CertificacionesTab />}
+            {tab === 'agreement'       && <AgreementTab user={initialUser} />}
           </div>
         </main>
       </div>
@@ -1427,13 +1429,13 @@ function CuentaSacsTab({ user }: { user: { email: string; nombre: string } }) {
   return (
     <div>
       <Tut>
-        <strong>Tu Plan Fideliza está incluido en tu paquete de partner.</strong>
-        Vale $14,000 MXN/año en condiciones normales. Mientras seas embajador activo,
-        tu cuenta es completamente gratis y con vigencia ilimitada.
+        <strong>Tu Plan Fideliza está incluido en tu acuerdo de partner.</strong>
+        Vale $14,000 MXN/año. Mientras seas embajador activo, tu cuenta es
+        gratis y con vigencia ilimitada. Aquí ves tu acceso y todo lo que incluye.
       </Tut>
 
-      <h1 style={S.h1}>Tu cuenta SACS</h1>
-      <p style={S.lead}>Plan Fideliza incluido como parte de tu acuerdo de embajador.</p>
+      <h1 style={S.h1}>Tu acceso a SACS</h1>
+      <p style={S.lead}>Email, contraseña y todo lo que viene con tu Plan Fideliza, en un solo lugar.</p>
 
       <div style={S.cuentaPlan}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 18, flexWrap: 'wrap' }}>
@@ -1814,6 +1816,249 @@ function Quick({ href, name, desc }: { href: string; name: string; desc: string 
   );
 }
 
+// ─── Tab: Mi acuerdo ────────────────────────────────────────────
+const TIPO_LABEL: Record<string, string> = {
+  embajador: 'Embajador',
+  consultor: 'Consultor certificado',
+  reseller: 'Reseller',
+  influencer: 'Influencer',
+  experto: 'Experto / Asesor',
+};
+
+function AgreementTab({ user }: { user: { email: string; nombre: string } }) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [showFull, setShowFull] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/partner-portal/profile').then(r => r.json()).then(d => { setData(d); setLoading(false); });
+  }, []);
+
+  if (loading) return <div style={{ padding: 40, color: '#888' }}>Cargando tu acuerdo...</div>;
+  if (!data?.invitation) {
+    return (
+      <div>
+        <h1 style={S.h1}>Mi acuerdo</h1>
+        <div style={{ padding: 24, background: '#fff', border: '1px solid #f0f0ee', borderRadius: 14, color: '#666' }}>
+          No encontramos un acuerdo activo asociado a tu cuenta. Si crees que es un error, escríbenos a partners@sacscloud.com.
+        </div>
+      </div>
+    );
+  }
+
+  const inv = data.invitation;
+  const tipo = inv.tipo || 'embajador';
+  const tipoLabel = TIPO_LABEL[tipo] || tipo;
+  const comisionPct = Number(inv.comision_pct ?? 50);
+  const tab = inv.tabulador || {};
+  const bonusPrueba = Number(tab.prueba_gratis ?? 250);
+  const bonusDemo = Number(tab.demo_completada ?? 300);
+  const ventaPct = tab.venta_directa_pct !== undefined ? Number(tab.venta_directa_pct) : comisionPct;
+
+  const signedAt = data.signed_at;
+  const approvedAt = data.approved_at || inv.aceptado_fecha;
+  const estado = inv.estado;
+
+  // Derivar nombre real del firmante (preferir el que escribió en la invitación)
+  const firmanteNombre = inv.nombre || user.nombre || user.email;
+
+  // Status badge
+  let badgeBg = '#f5f5f3', badgeText = '#666', badgeLbl = estado;
+  if (estado === 'accepted') { badgeBg = 'rgba(42,181,160,0.12)'; badgeText = '#1A8F7A'; badgeLbl = 'Activo · firmado y aprobado'; }
+  else if (estado === 'submitted_for_review') { badgeBg = 'rgba(232,168,56,0.12)'; badgeText = '#9C6F1A'; badgeLbl = 'Firmado · en revisión por SACS'; }
+  else if (estado === 'expired') { badgeBg = 'rgba(220,38,38,0.10)'; badgeText = '#c62828'; badgeLbl = 'Vencido'; }
+
+  return (
+    <div>
+      <h1 style={S.h1}>Mi acuerdo</h1>
+      <p style={S.lead}>
+        Tu contrato firmado con SACS, los beneficios que recibes y los compromisos que aceptaste.
+      </p>
+
+      {/* Status banner */}
+      <div style={{ padding: '20px 24px', background: '#fff', border: '1px solid #f0f0ee', borderRadius: 14, marginBottom: 28, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 12px', background: badgeBg, color: badgeText, borderRadius: 999, fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' as const, marginBottom: 10 }}>
+            {badgeLbl}
+          </div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: '#1a1a1a', letterSpacing: '-0.02em' }}>
+            Programa {tipoLabel} · Folio {inv.numero || '—'}
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' as const, fontSize: 13, color: '#666' }}>
+          {signedAt && <div><strong>Firmado:</strong> {fmtDate(signedAt)}</div>}
+          {approvedAt && <div style={{ marginTop: 2 }}><strong>Aprobado:</strong> {fmtDate(approvedAt)}</div>}
+          {inv.vigencia && <div style={{ marginTop: 2 }}><strong>Vigente hasta:</strong> {fmtDate(inv.vigencia)}</div>}
+        </div>
+      </div>
+
+      {/* Quick highlights */}
+      <h2 style={{ ...S.h2, marginTop: 0 }}>Tu compensación de un vistazo</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 8 }}>
+        <div style={S.vigCard}>
+          <div style={S.vigLbl}>Comisión venta</div>
+          <div style={{ ...S.vigVal, color: '#1A8F7A' }}>{ventaPct}%</div>
+          <div style={S.vigHint}>De cada cliente que cierras con tu link</div>
+        </div>
+        <div style={S.vigCard}>
+          <div style={S.vigLbl}>Bono prueba gratis</div>
+          <div style={S.vigVal}>${bonusPrueba.toLocaleString('es-MX')}</div>
+          <div style={S.vigHint}>Por cada prueba activada vía tu link</div>
+        </div>
+        <div style={S.vigCard}>
+          <div style={S.vigLbl}>Bono demo completada</div>
+          <div style={S.vigVal}>${bonusDemo.toLocaleString('es-MX')}</div>
+          <div style={S.vigHint}>Por cada demo válida (25min, decisor)</div>
+        </div>
+        <div style={S.vigCard}>
+          <div style={S.vigLbl}>Renovación recurrente</div>
+          <div style={{ ...S.vigVal, color: '#4B7BE5' }}>{ventaPct}%</div>
+          <div style={S.vigHint}>Mientras el cliente siga activo</div>
+        </div>
+      </div>
+
+      {/* Beneficios */}
+      <h2 style={S.h2}>Beneficios incluidos en tu acuerdo</h2>
+      <div style={S.inclGrid}>
+        <Incl t="Plan Fideliza SACS gratis" d="Tu cuenta SACS Plan Fideliza ($14,000 MXN/año) gratis mientras estés activo como partner." />
+        <Incl t="Portal de partner en vivo" d="Comisiones, pagos y prospectos en tiempo real con métricas y notificaciones." />
+        <Incl t="Brand kit oficial" d="Logos, plantillas, captions y assets aprobados para tus publicaciones." />
+        <Incl t="Soporte prioritario" d="Cola separada para partners, respuesta &lt;4 horas, contacto directo con Customer Success." />
+        <Incl t="Academia y workshops" d="Sesiones mensuales en vivo más biblioteca grabada en la pestaña Actualizaciones." />
+        <Incl t="Onboarding de tu cliente" d="Sesión 1:1 y migración de datos sin costo extra para cada cliente referido." />
+        <Incl t="Pagos puntuales" d="Comisiones confirmadas se liquidan el día 5 de cada mes a tu método registrado." />
+        <Incl t="Tu landing pública" d="Página personalizada con tu nombre y link único de tracking." />
+      </div>
+
+      {/* Compromisos */}
+      <h2 style={S.h2}>Tus compromisos</h2>
+      <div style={S.inclGrid}>
+        <Incl t="Representar SACS con honestidad" d="Sin afirmaciones falsas, garantías de resultado o promociones engañosas." />
+        <Incl t="Atender leads en &lt;24 horas hábiles" d="Los prospectos que llegan a tu link merecen respuesta rápida." />
+        <Incl t="Sesión mensual de actualizaciones" d="60 min al mes (o ver la grabación). Te mantiene al día con producto y campañas." />
+        <Incl t="Cumplir mínimo de puntos al mes" d="Según tu programa: contenido o filantropía, 100 puntos mensuales." />
+        <Incl t="Mantener confidencialidad" d="Sin divulgar precios negociados, roadmap, métricas internas o datos no públicos." />
+      </div>
+
+      {/* Contrato firmado */}
+      <h2 style={S.h2}>Contrato firmado</h2>
+      <div style={{ background: '#fff', border: '1px solid #f0f0ee', borderRadius: 14, overflow: 'hidden', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+        <div style={{ padding: '20px 26px', borderBottom: '1px solid #f5f5f3', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#888', letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 4 }}>Acuerdo formal de partner</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600, color: '#1a1a1a', letterSpacing: '-0.01em' }}>
+              Programa {tipoLabel} SACS · {inv.numero || ''}
+            </div>
+          </div>
+          <button
+            onClick={() => setShowFull(s => !s)}
+            style={{ padding: '8px 14px', fontSize: 13, fontWeight: 600, background: showFull ? '#fff' : '#1a1a1a', color: showFull ? '#1a1a1a' : '#fff', border: showFull ? '1px solid #ddd' : 'none', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            {showFull ? 'Ocultar contrato completo' : 'Ver contrato completo'}
+          </button>
+        </div>
+
+        {showFull && (
+          <div style={{ padding: '24px 32px', fontSize: 14, lineHeight: 1.7, color: '#333' }}>
+            <p>Entre <strong>SACS Cloud, S.A.P.I. de C.V.</strong> ("SACS"), por una parte, y <strong>{firmanteNombre}</strong> ("el Partner"), por la otra parte, se celebra el presente <strong>Acuerdo del Programa Partners SACS</strong> bajo las siguientes condiciones:</p>
+
+            <h4 style={S.contractH4}>1. Programa</h4>
+            <p>El Partner queda inscrito en el programa <strong>{tipoLabel}</strong> de SACS con folio <strong>{inv.numero || '—'}</strong>, vigente hasta <strong>{fmtDate(inv.vigencia)}</strong> y renovable automáticamente al cumplir las condiciones de continuidad.</p>
+
+            <h4 style={S.contractH4}>2. Compensación</h4>
+            <ul style={S.contractUl}>
+              <li><strong>Comisión sobre venta directa:</strong> {ventaPct}% sobre la primera factura de cada cliente cerrado mediante tu link único.</li>
+              <li><strong>Bono por prueba gratis:</strong> ${bonusPrueba.toLocaleString('es-MX')} MXN por cada usuario que llega por tu link y activa una prueba gratis válida.</li>
+              <li><strong>Bono por demo completada:</strong> ${bonusDemo.toLocaleString('es-MX')} MXN por cada demo válida (25 min mínimo, decisor presente).</li>
+              <li><strong>Comisiones recurrentes:</strong> Mientras el cliente referido permanezca activo, mantienes el {ventaPct}% sobre las renovaciones.</li>
+            </ul>
+
+            <h4 style={S.contractH4}>3. Liquidación de pagos</h4>
+            <p>Las comisiones <em>earned</em> (confirmadas) se liquidan el <strong>día 5 de cada mes</strong> al método de cobro que registraste (CLABE, PayPal o Mercado Pago). Eres responsable del cumplimiento fiscal en tu jurisdicción.</p>
+
+            <h4 style={S.contractH4}>4. Beneficios incluidos</h4>
+            <ul style={S.contractUl}>
+              <li>Cuenta SACS Plan Fideliza ($14,000 MXN/año) <strong>gratis</strong> mientras estés activo.</li>
+              <li>Acceso al portal de partner con métricas en tiempo real, pagos y prospectos.</li>
+              <li>Brand kit con logos, plantillas y captions oficiales.</li>
+              <li>Soporte prioritario, Academia SACS y workshops mensuales en vivo.</li>
+              <li>Sesión de onboarding 1:1 y migración de datos sin costo extra para clientes referidos.</li>
+            </ul>
+
+            <h4 style={S.contractH4}>5. Compromisos del Partner</h4>
+            <ul style={S.contractUl}>
+              <li>Representar la marca SACS de forma profesional y honesta.</li>
+              <li>Atender los leads asignados en menos de 24 horas hábiles.</li>
+              <li>Asistir a la sesión mensual de actualizaciones (quedan grabadas).</li>
+              <li>Cumplir con los compromisos de contenido del programa (mínimo de puntos mensuales).</li>
+              <li>No realizar afirmaciones falsas o garantías de resultados sobre SACS.</li>
+            </ul>
+
+            <h4 style={S.contractH4}>6. Auditoría y resolución de comisiones</h4>
+            <p>SACS se reserva el derecho de auditar cualquier comisión y rechazar las asociadas a leads duplicados, fraudulentos o autoreferenciados. Las rechazadas se marcan como <em>cancelled</em> con motivo y quedan visibles en tu portal.</p>
+
+            <h4 style={S.contractH4}>7. Confidencialidad</h4>
+            <p>Te comprometes a no divulgar información confidencial de SACS — precios negociados, roadmap interno, métricas internas o cualquier dato no público — sin autorización escrita.</p>
+
+            <h4 style={S.contractH4}>8. Vigencia y rescisión</h4>
+            <p>Este acuerdo tiene una vigencia inicial de <strong>12 meses</strong> a partir de la firma, renovable automáticamente. Cualquiera de las partes puede dar por terminado el acuerdo con <strong>30 días de aviso por escrito</strong>, sin necesidad de causa.</p>
+
+            <h4 style={S.contractH4}>9. Datos y privacidad</h4>
+            <p>Autorizas a SACS a procesar tus datos personales para los fines del programa, conforme al <a href="/privacidad" target="_blank" rel="noopener" style={{ color: '#4B7BE5' }}>Aviso de Privacidad</a>.</p>
+
+            <h4 style={S.contractH4}>10. Aceptación</h4>
+            <p>Al firmar, declaraste que habías leído íntegramente este acuerdo y que entendías las condiciones de compensación y compromisos. La firma electrónica tiene la misma validez que una firma autógrafa conforme a la NOM-151-SCFI-2016.</p>
+          </div>
+        )}
+
+        {/* Firma */}
+        <div style={{ padding: '24px 32px', background: '#fafafa', borderTop: '1px solid #f0f0ee' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#888', letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 16 }}>Firma de aceptación</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.4fr)', gap: 28, alignItems: 'center' }}>
+            <div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600, color: '#1a1a1a', marginBottom: 4 }}>
+                {firmanteNombre}
+              </div>
+              <div style={{ fontSize: 13, color: '#666', marginBottom: 14 }}>
+                {signedAt ? `Firmado el ${fmtDate(signedAt)}` : 'Pendiente de firma'}
+              </div>
+              {approvedAt && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: 'rgba(42,181,160,0.12)', color: '#1A8F7A', borderRadius: 999, fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>
+                  ✓ Aprobado por SACS
+                </div>
+              )}
+            </div>
+            <div style={{ background: '#fff', border: '1px solid #e8e8e6', borderRadius: 10, padding: 18, minHeight: 110, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {data.firma_base64 ? (
+                <img src={data.firma_base64} alt={`Firma de ${firmanteNombre}`} style={{ maxWidth: '100%', maxHeight: 100, display: 'block' }} />
+              ) : (
+                <span style={{ fontSize: 13, color: '#aaa' }}>Firma no disponible</span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Acciones */}
+      <h2 style={S.h2}>Acciones rápidas</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+        <a href="#profile" style={S.quick}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, color: '#1a1a1a', marginBottom: 4 }}>Actualizar payout</div>
+          <div style={{ fontSize: 13, color: '#888' }}>CLABE, PayPal o Mercado Pago</div>
+        </a>
+        <a href="#cuenta-sacs" style={S.quick}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, color: '#1a1a1a', marginBottom: 4 }}>Tu acceso a SACS</div>
+          <div style={{ fontSize: 13, color: '#888' }}>Email, contraseña, app</div>
+        </a>
+        <a href="mailto:partners@sacscloud.com?subject=Consulta%20sobre%20mi%20acuerdo" style={S.quick}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, color: '#1a1a1a', marginBottom: 4 }}>Hablar con SACS</div>
+          <div style={{ fontSize: 13, color: '#888' }}>partners@sacscloud.com</div>
+        </a>
+      </div>
+    </div>
+  );
+}
+
 // ─── Styles ─────────────────────────────────────────────────────
 const S: Record<string, React.CSSProperties> = {
   root: { minHeight: '100vh', background: '#fafafa', fontFamily: 'var(--font-body)', color: '#1a1a1a' },
@@ -2033,4 +2278,8 @@ const S: Record<string, React.CSSProperties> = {
   certMore: { marginTop: 12, padding: 0, background: 'transparent', border: 'none', color: '#4B7BE5', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' },
   certBlocked: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 18, padding: '10px 12px', background: '#fafafa', borderRadius: 8, fontSize: 12, color: '#888', fontWeight: 500 },
   certPaid: { padding: '20px 24px', background: 'linear-gradient(135deg, rgba(42,181,160,0.10), rgba(75,123,229,0.06))', border: '1px solid rgba(42,181,160,0.25)', borderRadius: 12, marginBottom: 28 },
+
+  // Mi acuerdo · contrato
+  contractH4: { fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, color: '#1a1a1a', margin: '24px 0 8px', letterSpacing: '-0.01em' },
+  contractUl: { paddingLeft: 22, margin: '8px 0 12px', display: 'flex', flexDirection: 'column' as const, gap: 6 },
 };

@@ -30,7 +30,7 @@ export const GET: APIRoute = async ({ request }) => {
 
   const { data: invitation } = await supabase
     .from('partner_invitations')
-    .select('id, numero, tipo, slug_landing, comision_pct, vigencia, estado, notas, empresa, whatsapp')
+    .select('id, numero, nombre, tipo, slug_landing, comision_pct, vigencia, estado, notas, empresa, whatsapp, tabulador, created_at, aceptado_fecha')
     .eq('team_member_id', user.id)
     .order('created_at', { ascending: false })
     .limit(1)
@@ -55,6 +55,7 @@ export const GET: APIRoute = async ({ request }) => {
     invitation: invitation ? {
       id: invitation.id,
       numero: invitation.numero,
+      nombre: (invitation as any).nombre || null,
       tipo: invitation.tipo,
       slug_landing: invitation.slug_landing,
       comision_pct: invitation.comision_pct,
@@ -62,6 +63,9 @@ export const GET: APIRoute = async ({ request }) => {
       estado: invitation.estado,
       empresa: invitation.empresa,
       whatsapp: invitation.whatsapp,
+      tabulador: (invitation as any).tabulador || null,
+      created_at: (invitation as any).created_at || null,
+      aceptado_fecha: (invitation as any).aceptado_fecha || null,
     } : null,
     partnerLandingUrl,
     payout,
