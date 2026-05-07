@@ -782,7 +782,6 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
           { title: 'Difusión: en tus redes o las del canal SACS', detail: 'Hay dos formas de hacer difusión y ambas suman. Publicas el contenido en tus propias redes (Instagram, TikTok, YouTube o LinkedIn) o nos envías los archivos originales para que lo publiquemos desde el canal SACS y multipliquemos el alcance. Lo importante es que se difunda — y la difusión te genera más visitas a tu link, más demos agendadas y más comisión.', frequency: 'Continuo' },
           { title: 'Cuidar la marca SACS',                        detail: 'Lo que publicas como embajador suma o resta a la marca. Producción cuidada, mensajes alineados al manual, sin polémicas innecesarias, respeto a competidores, clientes y comunidad. Si dudas, lo revisamos juntos antes de publicar.', frequency: 'Continuo' },
           { title: 'Uso correcto del logotipo y tipografías',     detail: 'Aplicar el logotipo SACS solo en su versión oficial. Respetar tipografías, paleta y guidelines del manual de marca.', frequency: 'Continuo' },
-          { title: 'Sesión mensual de actualizaciones SACS',      detail: 'Asistir cada mes a una sesión de 30-60 minutos donde el equipo de producto presenta lo nuevo del sistema. Es lo que te mantiene con información de primera mano.', frequency: 'Mensual' },
         ],
         tabulador: {
           prueba_gratis: 250,
