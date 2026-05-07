@@ -324,6 +324,15 @@ const partnerLandingUrl = invitation.slug_landing
           </div>
         </div>
 
+        <!-- Hero photo anchor -->
+        <div class="p-tab-hero" style="margin-top: 32px;">
+          <img src="/images/partner-tabs/bienvenida.webp" alt="Una emprendedora frente a su tienda" loading="eager" fetchpriority="high" width="1600" height="900" class="p-tab-hero-img" />
+          <div class="p-tab-hero-overlay">
+            <div class="p-tab-hero-eyebrow">Bienvenida</div>
+            <h2 class="p-tab-hero-title">Construimos para la gente que vende.</h2>
+          </div>
+        </div>
+
         <!-- ── 1. El propósito de este programa ── -->
         <div class="p-bw-section">
           <div class="p-bw-eyebrow">¿Por qué este programa existe?</div>
@@ -724,6 +733,15 @@ const partnerLandingUrl = invitation.slug_landing
             Desde que firmas tu invitación hasta que cobras tu primera comisión.
             Sin sorpresas, sin letras chicas.
           </p>
+        </div>
+
+        <!-- Hero photo anchor -->
+        <div class="p-tab-hero">
+          <img src="/images/partner-tabs/proceso.webp" alt="Dos profesionales revisando un acuerdo" loading="lazy" width="1600" height="900" class="p-tab-hero-img" />
+          <div class="p-tab-hero-overlay">
+            <div class="p-tab-hero-eyebrow">Cómo funciona</div>
+            <h2 class="p-tab-hero-title">Una conversación, no un trámite.</h2>
+          </div>
         </div>
 
         <div class="p-proc-steps">
@@ -2066,6 +2084,15 @@ const partnerLandingUrl = invitation.slug_landing
           </p>
         </div>
 
+        <!-- Hero photo anchor -->
+        <div class="p-tab-hero">
+          <img src="/images/partner-tabs/terminos.webp" alt="Acuerdo sobre la mesa" loading="lazy" width="1600" height="900" class="p-tab-hero-img" />
+          <div class="p-tab-hero-overlay">
+            <div class="p-tab-hero-eyebrow">Términos</div>
+            <h2 class="p-tab-hero-title">Todo sobre la mesa, nada escondido.</h2>
+          </div>
+        </div>
+
         <!-- ── 1. Lo que ganas ── -->
         <div class="p-terms-group-eyebrow">1 · Lo que ganas</div>
         <div class="p-terms">
@@ -2314,6 +2341,15 @@ const partnerLandingUrl = invitation.slug_landing
           </p>
         </div>
 
+        <!-- Hero photo anchor -->
+        <div class="p-tab-hero">
+          <img src="/images/partner-tabs/compromisos.webp" alt="Embajadora grabando contenido en su tienda" loading="lazy" width="1600" height="900" class="p-tab-hero-img" />
+          <div class="p-tab-hero-overlay">
+            <div class="p-tab-hero-eyebrow">Compromisos</div>
+            <h2 class="p-tab-hero-title">Representas a SACS con orgullo.</h2>
+          </div>
+        </div>
+
         <div class="p-commits">
           {compromisos.map((c: any, i: number) => (
             <div class="p-commit-row">
@@ -2375,6 +2411,15 @@ const partnerLandingUrl = invitation.slug_landing
             Hay <strong>tres formas</strong> de sumarlos: contenido publicado, acciones de apoyo
             de marketing o actividades filantrópicas. Mezcla la combinación que mejor te quede.
           </p>
+        </div>
+
+        <!-- Hero photo anchor -->
+        <div class="p-tab-hero">
+          <img src="/images/partner-tabs/contenido.webp" alt="Creadora editando contenido" loading="lazy" width="1600" height="900" class="p-tab-hero-img" />
+          <div class="p-tab-hero-overlay">
+            <div class="p-tab-hero-eyebrow">Contenido y puntos</div>
+            <h2 class="p-tab-hero-title">Tu voz cuenta — literalmente.</h2>
+          </div>
         </div>
 
         <!-- Cómo funciona el sistema -->
@@ -2885,6 +2930,15 @@ const partnerLandingUrl = invitation.slug_landing
                   : <>Tres pasos: tus datos, contrato, firma. Al firmar enviamos tu solicitud al equipo SACS para revisión y te avisamos por correo cuando esté lista tu cuenta del programa <strong>{tipoLabel[tipo] || tipo}</strong>.</>
                 }
               </p>
+            </div>
+
+            <!-- Hero photo anchor -->
+            <div class="p-tab-hero">
+              <img src="/images/partner-tabs/firma.webp" alt="Apretón de manos cerrando un acuerdo" loading="lazy" width="1600" height="900" class="p-tab-hero-img" />
+              <div class="p-tab-hero-overlay">
+                <div class="p-tab-hero-eyebrow">Bienvenido al equipo</div>
+                <h2 class="p-tab-hero-title">El siguiente paso es contigo.</h2>
+              </div>
             </div>
 
             {/* Stepper */}
@@ -4047,22 +4101,26 @@ const partnerLandingUrl = invitation.slug_landing
     .p-comp-section-lead { font-size: 0.9375rem; margin-bottom: 24px; }
   }
 
-  /* ─── Certificaciones · teaser ─────────────────────── */
+  /* ─── Hero foto-anchor reutilizable (tab y certificaciones) ── */
+  .p-tab-hero,
   .p-cert-hero {
     position: relative;
     border-radius: 16px;
     overflow: hidden;
-    margin-bottom: 36px;
     aspect-ratio: 16 / 9;
     max-height: 460px;
     background: #1a1a1a;
   }
+  .p-tab-hero { margin: 0 0 36px; }
+  .p-cert-hero { margin-bottom: 36px; }
+  .p-tab-hero-img,
   .p-cert-hero-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
   }
+  .p-tab-hero-overlay,
   .p-cert-hero-overlay {
     position: absolute;
     inset: 0;
@@ -4073,6 +4131,7 @@ const partnerLandingUrl = invitation.slug_landing
     padding: 32px 36px;
     color: #fff;
   }
+  .p-tab-hero-eyebrow,
   .p-cert-hero-eyebrow {
     font-size: 0.6875rem;
     font-weight: 600;
@@ -4081,6 +4140,7 @@ const partnerLandingUrl = invitation.slug_landing
     color: rgba(255,255,255,0.85);
     margin-bottom: 8px;
   }
+  .p-tab-hero-title,
   .p-cert-hero-title {
     font-family: var(--font-display);
     font-size: clamp(1.625rem, 3.4vw, 2.25rem);
@@ -4092,6 +4152,7 @@ const partnerLandingUrl = invitation.slug_landing
     max-width: 600px;
   }
   @media (max-width: 600px) {
+    .p-tab-hero-overlay,
     .p-cert-hero-overlay { padding: 22px 22px; }
   }
 
