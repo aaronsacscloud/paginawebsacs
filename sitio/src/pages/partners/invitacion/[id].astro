@@ -2380,6 +2380,9 @@ const partnerLandingUrl = invitation.slug_landing
               <div class="p-commit-content">
                 <div class="p-commit-title">{c.title}</div>
                 <div class="p-commit-detail">{c.detail}</div>
+                {c.ctaTab && c.ctaLabel && (
+                  <a href={`#${c.ctaTab}`} data-tab-link={c.ctaTab} class="p-commit-cta">{c.ctaLabel}</a>
+                )}
                 {c.frequency && <div class="p-commit-frequency">{c.frequency}</div>}
               </div>
             </div>
@@ -3981,6 +3984,24 @@ const partnerLandingUrl = invitation.slug_landing
     border-radius: 999px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
+  }
+  .p-commit-cta {
+    display: inline-block;
+    margin-top: 12px;
+    margin-right: 10px;
+    padding: 8px 14px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #4B7BE5;
+    background: rgba(75,123,229,0.08);
+    border: 1px solid rgba(75,123,229,0.20);
+    border-radius: 999px;
+    text-decoration: none;
+    transition: background 0.18s, border-color 0.18s;
+  }
+  .p-commit-cta:hover {
+    background: rgba(75,123,229,0.14);
+    border-color: rgba(75,123,229,0.35);
   }
   .p-commit-note {
     display: flex; align-items: flex-start; gap: 10px;
