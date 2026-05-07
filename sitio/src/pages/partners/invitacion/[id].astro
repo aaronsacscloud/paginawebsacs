@@ -150,6 +150,7 @@ const tabsDef = [
   { id: 'bienvenida', label: 'Bienvenida', show: true },
   { id: 'proceso',    label: 'Cómo funciona', show: true },
   { id: 'terminos', label: 'Términos', show: true },
+  { id: 'embudo', label: 'Embudo y seguimiento de ventas', show: true },
   { id: 'compromisos', label: 'Compromisos del Partner', show: compromisos.length > 0 },
   { id: 'contenido',  label: 'Contenido y puntos', show: tipo === 'embajador' },
   { id: 'compensacion', label: 'Lo que puedes ganar', show: comisionPct > 0 || Object.keys(tabulador).length > 0 },
@@ -2152,6 +2153,75 @@ const partnerLandingUrl = invitation.slug_landing
           </>
         )}
 
+        <!-- ── 3. Costos y vigencia ── -->
+        <div class="p-terms-group-eyebrow">3 · Costos y vigencia</div>
+        <div class="p-terms">
+          {costoUnico > 0 && (
+            <div class="p-term-row">
+              <div class="p-term-info">
+                <div class="p-term-label">Cuota única de inscripción</div>
+                <div class="p-term-detail">Pago único al activar tu programa.</div>
+              </div>
+              <div class="p-term-value">{fmtMoney(costoUnico)} {moneda}</div>
+            </div>
+          )}
+
+          {costoMensual > 0 && (
+            <div class="p-term-row">
+              <div class="p-term-info">
+                <div class="p-term-label">Cuota mensual del sistema SACS</div>
+                <div class="p-term-detail">Suscripción mensual al sistema SACS para uso interno y demos.</div>
+              </div>
+              <div class="p-term-value">{fmtMoney(costoMensual)} / mes</div>
+            </div>
+          )}
+
+          <div class="p-term-row">
+            <div class="p-term-info">
+              <div class="p-term-label">Acceso al sistema SACS</div>
+              <div class="p-term-detail">{(costoMensual === 0 && costoUnico === 0) ? 'Sin costo durante toda la participación, mientras cumplas los compromisos del programa.' : 'Sujeto a la cuota indicada arriba.'}</div>
+            </div>
+            <div class="p-term-value">{(costoMensual === 0 && costoUnico === 0) ? 'Sin costo' : 'Con cuota'}</div>
+          </div>
+
+          <div class="p-term-row">
+            <div class="p-term-info">
+              <div class="p-term-label">Vigencia de la invitación</div>
+              <div class="p-term-detail">Después de esta fecha la invitación se cierra y deberá renegociarse.</div>
+            </div>
+            <div class="p-term-value">{vigenciaLarga || 'Sin vencimiento'}</div>
+          </div>
+        </div>
+
+        {invitation.terminos && (
+          <div class="p-terms-extra">
+            <div class="p-terms-extra-title">Condiciones generales</div>
+            <p class="p-terms-extra-text">{invitation.terminos}</p>
+          </div>
+        )}
+      </section>
+
+      <!-- TAB: EMBUDO Y SEGUIMIENTO DE VENTAS -->
+      <section class="p-tab-panel" data-tab="embudo">
+        <div class="p-section-head">
+          <div class="p-section-eyebrow">Cómo se cierra cada venta</div>
+          <h2 class="p-section-title">Embudo y seguimiento de ventas</h2>
+          <p class="p-section-lead">
+            Tú recomiendas — SACS opera el embudo de conversión completo: nurturing,
+            llamadas, demos, onboarding y soporte. Aquí ves los 7 pasos que pasan
+            entre que alguien entra por tu link y se vuelve cliente recurrente.
+          </p>
+        </div>
+
+        <!-- Hero photo anchor -->
+        <div class="p-tab-hero">
+          <img src="/images/partner-tabs/embudo.webp" alt="Equipo SACS dando seguimiento a una conversación con un prospecto" loading="lazy" width="1600" height="900" class="p-tab-hero-img" />
+          <div class="p-tab-hero-overlay">
+            <div class="p-tab-hero-eyebrow">Embudo y seguimiento</div>
+            <h2 class="p-tab-hero-title">Tú recomiendas — nosotros cerramos.</h2>
+          </div>
+        </div>
+
         <!-- ── Funnel: el embudo de conversión que SACS opera por ti ── -->
         <div class="p-funnel">
           <div class="p-funnel-eyebrow">⚡ El embudo está hecho · tú solo recomiendas</div>
@@ -2281,53 +2351,6 @@ const partnerLandingUrl = invitation.slug_landing
             Y el cliente se queda años, lo que mantiene tu comisión recurrente.
           </div>
         </div>
-
-        <!-- ── 3. Costos y vigencia ── -->
-        <div class="p-terms-group-eyebrow">3 · Costos y vigencia</div>
-        <div class="p-terms">
-          {costoUnico > 0 && (
-            <div class="p-term-row">
-              <div class="p-term-info">
-                <div class="p-term-label">Cuota única de inscripción</div>
-                <div class="p-term-detail">Pago único al activar tu programa.</div>
-              </div>
-              <div class="p-term-value">{fmtMoney(costoUnico)} {moneda}</div>
-            </div>
-          )}
-
-          {costoMensual > 0 && (
-            <div class="p-term-row">
-              <div class="p-term-info">
-                <div class="p-term-label">Cuota mensual del sistema SACS</div>
-                <div class="p-term-detail">Suscripción mensual al sistema SACS para uso interno y demos.</div>
-              </div>
-              <div class="p-term-value">{fmtMoney(costoMensual)} / mes</div>
-            </div>
-          )}
-
-          <div class="p-term-row">
-            <div class="p-term-info">
-              <div class="p-term-label">Acceso al sistema SACS</div>
-              <div class="p-term-detail">{(costoMensual === 0 && costoUnico === 0) ? 'Sin costo durante toda la participación, mientras cumplas los compromisos del programa.' : 'Sujeto a la cuota indicada arriba.'}</div>
-            </div>
-            <div class="p-term-value">{(costoMensual === 0 && costoUnico === 0) ? 'Sin costo' : 'Con cuota'}</div>
-          </div>
-
-          <div class="p-term-row">
-            <div class="p-term-info">
-              <div class="p-term-label">Vigencia de la invitación</div>
-              <div class="p-term-detail">Después de esta fecha la invitación se cierra y deberá renegociarse.</div>
-            </div>
-            <div class="p-term-value">{vigenciaLarga || 'Sin vencimiento'}</div>
-          </div>
-        </div>
-
-        {invitation.terminos && (
-          <div class="p-terms-extra">
-            <div class="p-terms-extra-title">Condiciones generales</div>
-            <p class="p-terms-extra-text">{invitation.terminos}</p>
-          </div>
-        )}
       </section>
 
       <!-- TAB: COMPROMISOS -->
