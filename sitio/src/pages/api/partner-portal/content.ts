@@ -156,12 +156,14 @@ export const GET: APIRoute = async ({ request }) => {
     .reduce((s, r) => s + Number(r.puntos || 0), 0);
 
   // Per-month breakdown
-  const byMes: Record<string, { puntos: number; categoria: { contenido: number; filantropia: number } }> = {};
+  const byMes: Record<string, { puntos: number; categoria: { contenido: number; apoyo: number; filantropia: number } }> = {};
   for (const r of approved) {
     const m = r.mes_acreditado || 'unknown';
-    if (!byMes[m]) byMes[m] = { puntos: 0, categoria: { contenido: 0, filantropia: 0 } };
+    if (!byMes[m]) byMes[m] = { puntos: 0, categoria: { contenido: 0, apoyo: 0, filantropia: 0 } };
     byMes[m].puntos += Number(r.puntos || 0);
-    const cat = r.categoria === 'filantropia' ? 'filantropia' : 'contenido';
+    const cat: 'contenido' | 'apoyo' | 'filantropia' =
+      r.categoria === 'filantropia' ? 'filantropia' :
+      r.categoria === 'apoyo' ? 'apoyo' : 'contenido';
     byMes[m].categoria[cat] += Number(r.puntos || 0);
   }
 
@@ -199,12 +201,13 @@ export const GET: APIRoute = async ({ request }) => {
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const k = ymOf(d);
-    const data = byMes[k] || { puntos: 0, categoria: { contenido: 0, filantropia: 0 } };
+    const data = byMes[k] || { puntos: 0, categoria: { contenido: 0, apoyo: 0, filantropia: 0 } };
     historico.push({
       mes: k,
       label: d.toLocaleString('es-MX', { month: 'long', year: 'numeric' }),
       puntos: data.puntos,
       contenido: data.categoria.contenido,
+      apoyo: data.categoria.apoyo,
       filantropia: data.categoria.filantropia,
       cumplido: data.puntos >= META_PUNTOS_MES,
       es_actual: k === ym,
@@ -263,9 +266,11 @@ export const POST: APIRoute = async ({ request }) => {
       return j({ error: 'Plataforma inválida' }, 400);
     }
 
-    // Detectar categoría desde el catálogo
+    // Detectar categoría desde el catálogo (contenido | apoyo | filantropia)
     const tipoMeta = getContentType(tipo);
-    const categoria = tipoMeta?.categoria === 'filantropia' ? 'filantropia' : 'contenido';
+    const categoria: 'contenido' | 'apoyo' | 'filantropia' =
+      tipoMeta?.categoria === 'filantropia' ? 'filantropia' :
+      tipoMeta?.categoria === 'apoyo' ? 'apoyo' : 'contenido';
 
     // Insert (UNIQUE constraint en (partner_id, url) evita duplicados)
     const { data, error } = await supabase

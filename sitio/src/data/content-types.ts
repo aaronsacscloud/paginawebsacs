@@ -16,8 +16,14 @@ export interface ContentType {
   ejemploImage?: string;  // path en /public/images/content-examples/
   ejemploRefs?: { label: string; url: string }[];
   plataformasSugeridas: string[];
-  categoria?: 'contenido' | 'filantropia'; // default 'contenido'
+  categoria?: 'contenido' | 'apoyo' | 'filantropia'; // default 'contenido'
 }
+
+export const CATEGORIAS = [
+  { id: 'contenido',  label: 'Contenido',           descripcion: 'Piezas que produces y publicas en tus redes para posicionar SACS y tu marca personal.' },
+  { id: 'apoyo',      label: 'Acciones de apoyo',   descripcion: 'Acciones de marketing y crecimiento que extienden a SACS sin ser contenido publicado: demos en eventos, reseñas, intros, activaciones in situ.' },
+  { id: 'filantropia', label: 'Filantropía',         descripcion: 'Acciones para ayudar a personas o animales — voluntariado, refugios, comedores, jornadas, mentorías. Documentadas con foto/video.' },
+] as const;
 
 export const CONTENT_TYPES: ContentType[] = [
   {
@@ -211,122 +217,239 @@ export const CONTENT_TYPES: ContentType[] = [
 ];
 
 // ─────────────────────────────────────────────────────────────
+// CATEGORÍA: ACCIONES DE APOYO
+// Acciones de marketing y crecimiento que apoyan a SACS sin ser
+// contenido publicado en redes. Documentadas con foto/video o link
+// (reseñas, eventos, intros). Aprueba admin como cualquier otra acción.
+// ─────────────────────────────────────────────────────────────
+const APOYO_TYPES: ContentType[] = [
+  {
+    id: 'demo_evento_sector', nombre: 'Demo de SACS en evento del sector',
+    puntos: 25, duracion: '1-3 horas', esfuerzo: 'medio-alto', categoria: 'apoyo',
+    descripcion: 'Mostrar SACS funcionando en un evento, feria o expo del sector retail/restaurantes. Subes foto del stand o sesión + lista de asistentes/contactos generados.',
+    ideasContenido: [
+      'Stand SACS en expo de retail',
+      'Demo en mesa redonda de la cámara de comercio',
+      'Live demo en meetup de emprendedores',
+    ],
+    plataformasSugeridas: ['Ferias del sector', 'Expos retail', 'Cámaras de comercio'],
+  },
+  {
+    id: 'resena_publica', nombre: 'Reseña pública en plataforma de software',
+    puntos: 10, duracion: '20-30 min', esfuerzo: 'bajo', categoria: 'apoyo',
+    descripcion: 'Reseña honesta y detallada de SACS en G2, Capterra, GetApp o Google Maps. Mín. 200 palabras + screenshot real de tu cuenta.',
+    ideasContenido: [
+      'Reseña en G2 con caso de uso real',
+      'Review en Capterra con pros y contras',
+      'Reseña en Google Maps de tu sucursal con SACS',
+    ],
+    plataformasSugeridas: ['G2', 'Capterra', 'GetApp', 'Google Maps'],
+  },
+  {
+    id: 'activacion_sucursal', nombre: 'Activación abierta en tu sucursal',
+    puntos: 30, duracion: '4-6 horas', esfuerzo: 'alto', categoria: 'apoyo',
+    descripcion: 'Día abierto donde otros dueños de negocio vienen a tu sucursal a ver SACS funcionando en vivo. Mín. 5 asistentes externos. Documentar con foto + lista.',
+    ideasContenido: [
+      'Open day "POS en acción" en tu boutique',
+      'Demo abierta para colegas de tu mercado',
+      'Tour de operación con dueños de la zona',
+    ],
+    plataformasSugeridas: ['Tu sucursal', 'Coworkings locales'],
+  },
+  {
+    id: 'speaking_panel', nombre: 'Speaking en panel o foro del sector',
+    puntos: 35, duracion: '1-2 horas', esfuerzo: 'alto', categoria: 'apoyo',
+    descripcion: 'Hablar como embajador SACS en un panel, foro o conferencia donde se mencione la marca. Documentar con foto del evento + grabación o programa.',
+    ideasContenido: [
+      'Panel de retail moderno en feria nacional',
+      'Foro de mujeres emprendedoras',
+      'Conferencia de tecnología en LATAM',
+    ],
+    plataformasSugeridas: ['Conferencias', 'Foros del sector', 'Webinars de aliados'],
+  },
+  {
+    id: 'intro_calificada', nombre: 'Intro calificada (lead vivo)',
+    puntos: 15, duracion: '15-30 min', esfuerzo: 'bajo', categoria: 'apoyo',
+    descripcion: 'Conectar al equipo SACS con un prospecto cualificado (decisor real de un negocio con 1+ sucursal). Cuenta cuando el lead acepta una llamada.',
+    ideasContenido: [
+      'Presentar al dueño de una cadena de restaurantes',
+      'Intro a una boutique multi-tienda',
+      'Conexión con un retailer de tu cámara',
+    ],
+    plataformasSugeridas: ['Email', 'WhatsApp', 'LinkedIn'],
+  },
+  {
+    id: 'meetup_local', nombre: 'Meetup o mesa redonda en tu local',
+    puntos: 30, duracion: '2-3 horas', esfuerzo: 'medio-alto', categoria: 'apoyo',
+    descripcion: 'Hostear un meetup presencial en tu sucursal sobre retail, ecommerce o gestión de negocio, con SACS visible. Mín. 10 asistentes.',
+    ideasContenido: [
+      '"Café con dueños": cómo opero mi multi-sucursal',
+      'Mesa redonda de retail moderno',
+      'Networking de boutiques de la zona',
+    ],
+    plataformasSugeridas: ['Tu sucursal', 'Espacios aliados'],
+  },
+  {
+    id: 'co_marketing', nombre: 'Co-marketing con marca aliada',
+    puntos: 25, duracion: 'variable', esfuerzo: 'medio', categoria: 'apoyo',
+    descripcion: 'Colaboración con una marca complementaria (no competidora) que mencione a SACS en su canal. Reels conjuntos, blog cruzado, evento doble.',
+    ideasContenido: [
+      'Reel conjunto con marca de mobiliario retail',
+      'Blog cruzado con consultora de ecommerce',
+      'Evento doble con academia de emprendimiento',
+    ],
+    plataformasSugeridas: ['Instagram', 'LinkedIn', 'Eventos físicos'],
+  },
+  {
+    id: 'beta_feedback', nombre: 'Beta tester con feedback estructurado',
+    puntos: 15, duracion: '2-4 horas', esfuerzo: 'medio', categoria: 'apoyo',
+    descripcion: 'Probar a fondo una feature nueva de SACS y mandar reporte estructurado (qué funcionó, qué no, sugerencias). Mín. 1 página de notas + screenshots.',
+    ideasContenido: [
+      'Beta del nuevo CRM Omnicanal',
+      'Pruebas del cobro WhatsApp',
+      'Feedback de la app móvil de inventario',
+    ],
+    plataformasSugeridas: ['Notion', 'Google Docs', 'Loom'],
+  },
+  {
+    id: 'material_local', nombre: 'Material físico de SACS en tu local',
+    puntos: 10, duracion: 'continuo', esfuerzo: 'bajo', categoria: 'apoyo',
+    descripcion: 'Mantener material visible en tu sucursal: QR, folleto, tarjeta, sticker o display SACS. Sumas puntos cada mes que se mantenga visible. Foto mensual.',
+    ideasContenido: [
+      'QR a tu landing visible en caja',
+      'Folleto SACS en mostrador',
+      'Display "operado con SACS" en vitrina',
+    ],
+    plataformasSugeridas: ['Tu sucursal'],
+  },
+  {
+    id: 'stand_feria', nombre: 'Compartir stand en feria del sector',
+    puntos: 50, duracion: '1-2 días', esfuerzo: 'muy-alto', categoria: 'apoyo',
+    descripcion: 'Representar la marca SACS desde un stand propio o compartido en una feria/expo regional o nacional. Documentar con foto + reporte de leads.',
+    ideasContenido: [
+      'Stand en ANTAD',
+      'Compartir espacio en feria de moda',
+      'Stand SACS en expo de restauranteros',
+    ],
+    plataformasSugeridas: ['Ferias regionales', 'Expos nacionales'],
+  },
+];
+
+// ─────────────────────────────────────────────────────────────
 // CATEGORÍA: FILANTROPÍA
-// Puntos alternativos para partners que no puedan generar contenido en
-// un mes dado. Estos requieren prueba (foto/video/post) en vez de URL
-// de contenido publicado, pero usan el mismo sistema de aprobación.
-// El partner sube link a un post/foto que documente la acción.
+// Acciones para ayudar a personas o animales. Documentadas con
+// foto/video o link a publicación. Aprueba admin SACS.
 // ─────────────────────────────────────────────────────────────
 const FILANTROPIA_TYPES: ContentType[] = [
   {
-    id: 'mentoria_emprendedor', nombre: 'Mentoría 1:1 a un emprendedor',
-    puntos: 15, duracion: '1 hora', esfuerzo: 'bajo', categoria: 'filantropia',
-    descripcion: 'Sesión 1:1 de asesoría gratuita a un emprendedor mexicano que está empezando. Documentar con foto + descripción del caso.',
-    ideasContenido: [
-      'Asesorar a un dueño de boutique sobre POS',
-      'Resolver dudas de inventario a un retailer nuevo',
-      'Coaching de marketing a una startup local',
-    ],
-    plataformasSugeridas: ['LinkedIn', 'Instagram', 'WhatsApp'],
-  },
-  {
-    id: 'taller_comunitario', nombre: 'Taller comunitario gratuito',
-    puntos: 25, duracion: '2-3 horas', esfuerzo: 'medio', categoria: 'filantropia',
-    descripcion: 'Impartir un taller gratuito a un grupo (mín. 8 personas) sobre retail, ecommerce, finanzas, marketing o el tema en el que dominas.',
-    ideasContenido: [
-      'Taller de POS para vendedores de mercado',
-      'Workshop de marketing digital para artesanos',
-      'Capacitación a una cooperativa local',
-    ],
-    plataformasSugeridas: ['Comunidades locales', 'Cámaras de comercio'],
-  },
-  {
-    id: 'donacion_tiempo_ong', nombre: 'Voluntariado en ONG / cooperativa',
+    id: 'voluntariado_animales', nombre: 'Voluntariado en refugio de animales',
     puntos: 20, duracion: '4 horas', esfuerzo: 'medio', categoria: 'filantropia',
-    descripcion: 'Donar mínimo 4 horas a una ONG, refugio, fundación o cooperativa. Puede ser administrativo, técnico o presencial.',
+    descripcion: 'Donar mínimo 4 horas en un refugio canino, felino, equino o de fauna en riesgo. Limpiar, alimentar, pasear, ayudar en consultas. Documentar con foto.',
     ideasContenido: [
-      'Apoyo administrativo a refugio de animales',
-      'Setup de POS gratis para cooperativa de mujeres',
-      'Voluntariado en banco de alimentos',
+      'Jornada en refugio canino',
+      'Pasear perros del albergue municipal',
+      'Apoyo en santuario de fauna rescatada',
     ],
-    plataformasSugeridas: ['ONGs registradas', 'Iniciativas locales'],
+    plataformasSugeridas: ['Refugios locales', 'Albergues municipales'],
   },
   {
-    id: 'qa_publica', nombre: 'Sesión Q&A pública en redes',
-    puntos: 12, duracion: '30-60 min', esfuerzo: 'bajo', categoria: 'filantropia',
-    descripcion: 'Live abierto en Instagram/TikTok/X respondiendo preguntas sobre retail/negocio/SACS. Documentar con grabación o screenshots.',
+    id: 'jornada_adopcion', nombre: 'Jornada de adopción o esterilización',
+    puntos: 30, duracion: '6-8 horas', esfuerzo: 'alto', categoria: 'filantropia',
+    descripcion: 'Organizar o apoyar logísticamente una jornada de adopción o esterilización gratuita de animales. Documentar con foto + cantidad de adopciones/esterilizaciones.',
     ideasContenido: [
-      'IG Live: "Pregúntame todo sobre POS"',
-      'TikTok Live: dudas de inventario',
-      'X Spaces sobre retail mexicano',
+      'Jornada de adopción en parque público',
+      'Brigada de esterilización gratuita',
+      'Campaña de vacunación de mascotas',
     ],
-    plataformasSugeridas: ['Instagram Live', 'TikTok Live', 'X Spaces'],
+    plataformasSugeridas: ['Veterinarias aliadas', 'Asociaciones civiles', 'Plazas públicas'],
   },
   {
-    id: 'apoyo_iniciativa_social', nombre: 'Apoyo a iniciativa social local',
-    puntos: 18, duracion: 'variable', esfuerzo: 'medio', categoria: 'filantropia',
-    descripcion: 'Participar/promover/donar a una iniciativa social en tu comunidad: campaña de salud, recolección, evento cultural, becas.',
+    id: 'banco_alimentos', nombre: 'Voluntariado en banco de alimentos',
+    puntos: 20, duracion: '4 horas', esfuerzo: 'medio', categoria: 'filantropia',
+    descripcion: 'Donar mínimo 4 horas a un banco de alimentos: selección, empaque, distribución, logística. Documentar con foto + nombre del banco.',
     ideasContenido: [
-      'Campaña de salud comunitaria',
-      'Apoyo a evento cultural barrial',
-      'Recolección de víveres / ropa',
+      'Empaque de despensas en banco local',
+      'Distribución a familias en colonias vulnerables',
+      'Recolección y selección de alimentos',
     ],
-    plataformasSugeridas: ['Comunidad local', 'Redes sociales'],
+    plataformasSugeridas: ['BAMX', 'Bancos de alimentos locales'],
   },
   {
-    id: 'conferencia_escuela', nombre: 'Conferencia gratuita en escuela/universidad',
+    id: 'comedor_comunitario', nombre: 'Apoyo en comedor comunitario',
+    puntos: 25, duracion: '4-6 horas', esfuerzo: 'medio', categoria: 'filantropia',
+    descripcion: 'Cocinar, servir o donar insumos en un comedor comunitario para personas en situación vulnerable. Mín. medio día de jornada.',
+    ideasContenido: [
+      'Servir comida en comedor del DIF',
+      'Cocinar y donar para 50+ personas',
+      'Donación semanal de insumos a un comedor',
+    ],
+    plataformasSugeridas: ['DIF', 'Parroquias', 'ONGs locales'],
+  },
+  {
+    id: 'distribucion_despensas', nombre: 'Distribución de despensas a personas vulnerables',
+    puntos: 25, duracion: '4-8 horas', esfuerzo: 'medio-alto', categoria: 'filantropia',
+    descripcion: 'Organizar o participar en una jornada de entrega de despensas, agua, ropa o medicamentos a familias en situación vulnerable. Documentar con foto + zona.',
+    ideasContenido: [
+      'Entrega de despensas en comunidad rural',
+      'Brigada de agua y ropa en colonia afectada',
+      'Reparto de kits invierno a familias',
+    ],
+    plataformasSugeridas: ['Comunidades rurales', 'Colonias vulnerables', 'Zonas afectadas'],
+  },
+  {
+    id: 'albergue_personas', nombre: 'Voluntariado en albergue de personas',
+    puntos: 30, duracion: '4-6 horas', esfuerzo: 'medio-alto', categoria: 'filantropia',
+    descripcion: 'Apoyar en albergue de personas en situación de calle, casa hogar de niñas/os, asilo de adultos mayores o albergue de migrantes. Mín. medio día.',
+    ideasContenido: [
+      'Tarde con adultos mayores en asilo',
+      'Apoyo en casa hogar de niñas y niños',
+      'Voluntariado en albergue de migrantes',
+    ],
+    plataformasSugeridas: ['Casas hogar', 'Asilos', 'Albergues de migrantes'],
+  },
+  {
+    id: 'limpieza_publica', nombre: 'Limpieza de espacio público / playa / parque',
+    puntos: 15, duracion: '3-4 horas', esfuerzo: 'medio', categoria: 'filantropia',
+    descripcion: 'Jornada de limpieza grupal en parque, playa, río o reserva natural. Mín. 3 horas y grupo de 5+ personas. Documentar con foto antes/después.',
+    ideasContenido: [
+      'Limpieza de playa en grupo',
+      'Jornada de parque con vecinos',
+      'Limpieza de río o cañada local',
+    ],
+    plataformasSugeridas: ['Parques municipales', 'Playas', 'Reservas naturales'],
+  },
+  {
+    id: 'mentoria_emprendedor', nombre: 'Mentoría 1:1 a emprendedor de bajos recursos',
+    puntos: 15, duracion: '1 hora', esfuerzo: 'bajo', categoria: 'filantropia',
+    descripcion: 'Sesión 1:1 gratuita a un emprendedor de microempresa familiar o de comunidad vulnerable. Documentar con foto + descripción del caso.',
+    ideasContenido: [
+      'Asesorar a vendedora de mercado popular',
+      'Mentorear a artesano que quiere vender online',
+      'Coaching a emprendedora rural',
+    ],
+    plataformasSugeridas: ['Comunidades rurales', 'Mercados populares', 'Cooperativas'],
+  },
+  {
+    id: 'conferencia_escuela', nombre: 'Conferencia gratuita en escuela pública',
     puntos: 25, duracion: '1-2 horas', esfuerzo: 'medio-alto', categoria: 'filantropia',
-    descripcion: 'Dar charla gratuita en preparatoria, universidad o instituto técnico sobre emprendimiento, retail o tecnología.',
+    descripcion: 'Charla gratuita en preparatoria pública, CECyT, CONALEP o universidad de zona vulnerable sobre emprendimiento o tecnología.',
     ideasContenido: [
-      'Charla de emprendimiento en preparatoria',
-      'Conferencia de retail moderno en universidad',
-      'Plática a estudiantes de marketing',
+      'Charla de emprendimiento en CONALEP',
+      'Plática a estudiantes de prepa pública',
+      'Conferencia en universidad rural',
     ],
-    plataformasSugeridas: ['Escuelas públicas', 'Universidades', 'Tecnológicos'],
+    plataformasSugeridas: ['Escuelas públicas', 'CECyT', 'CONALEP', 'Universidades'],
   },
   {
-    id: 'voluntariado_documentado', nombre: 'Voluntariado documentado',
-    puntos: 15, duracion: '4-8 horas', esfuerzo: 'medio', categoria: 'filantropia',
-    descripcion: 'Cualquier tipo de voluntariado físico documentado con foto/video: limpieza, construcción, distribución, atención a personas en situación vulnerable.',
-    ideasContenido: [
-      'Jornada de limpieza en parque',
-      'Apoyo en comedor comunitario',
-      'Distribución de despensas',
-    ],
-    plataformasSugeridas: ['Cualquier ONG / iniciativa'],
-  },
-  {
-    id: 'bootcamp_gratuito', nombre: 'Bootcamp / curso gratuito (medio día)',
-    puntos: 35, duracion: '4 horas', esfuerzo: 'alto', categoria: 'filantropia',
-    descripcion: 'Organizar e impartir un bootcamp intensivo gratuito de medio día sobre retail, marketing o tecnología. Mín. 15 asistentes.',
-    ideasContenido: [
-      'Bootcamp "De idea a tienda online en 4 hrs"',
-      'Curso intensivo de inventario para vendedores',
-      'Workshop de marketing para artesanos',
-    ],
-    plataformasSugeridas: ['Espacios comunitarios', 'Online (Zoom/Meet)'],
-  },
-  {
-    id: 'asesoria_microempresa', nombre: 'Asesoría a microempresa familiar',
-    puntos: 20, duracion: '2-3 horas', esfuerzo: 'medio', categoria: 'filantropia',
-    descripcion: 'Sesión de asesoría profunda (mín. 2 horas) a una microempresa familiar: revisión de operación, sugerencias prácticas, plan de mejora.',
-    ideasContenido: [
-      'Diagnóstico operativo a tienda de barrio',
-      'Sugerencias de digitalización a panadería familiar',
-      'Plan de marketing a salón de belleza',
-    ],
-    plataformasSugeridas: ['Cualquier microempresa'],
-  },
-  {
-    id: 'becas_sponsoring', nombre: 'Programa de becas o sponsoring',
+    id: 'beca_patrocinio', nombre: 'Beca o patrocinio a una persona',
     puntos: 30, duracion: 'mensual', esfuerzo: 'alto', categoria: 'filantropia',
-    descripcion: 'Patrocinar un curso, herramienta o servicio para alguien que no podría costearlo. Puede ser una beca SACS, una cuota mensual, una herramienta digital.',
+    descripcion: 'Patrocinar un curso, kit, herramienta o servicio para alguien que no podría costearlo. Cuenta una vez al mes mientras se mantenga el patrocinio.',
     ideasContenido: [
-      'Pagar curso técnico a un joven emprendedor',
+      'Beca de curso técnico a joven sin acceso',
+      'Pagar kit escolar a una niña o niño',
       'Sponsoring de herramienta SaaS por 3 meses',
-      'Beca para acceso a comunidad pagada',
     ],
-    plataformasSugeridas: ['Cualquier programa formal'],
+    plataformasSugeridas: ['Programas formales', 'Iniciativas verificadas'],
   },
 ];
 
@@ -335,11 +458,13 @@ for (const c of CONTENT_TYPES) {
   if (!c.categoria) c.categoria = 'contenido';
 }
 
-// Agregar filantropía al catálogo principal
+// Agregar apoyo y filantropía al catálogo principal
+CONTENT_TYPES.push(...APOYO_TYPES);
 CONTENT_TYPES.push(...FILANTROPIA_TYPES);
 
-// Mapeo id → ruta de imagen mockup (generadas con gpt-image-1)
+// Mapeo id → ruta de imagen mockup (generadas con gpt-image-2)
 const IMG_BY_ID: Record<string, string> = {
+  // contenido
   story_reel: '/images/content-examples/story-reel.webp',
   tutorial: '/images/content-examples/tutorial.webp',
   caso_uso: '/images/content-examples/caso-uso.webp',
@@ -350,10 +475,36 @@ const IMG_BY_ID: Record<string, string> = {
   webinar: '/images/content-examples/webinar.webp',
   mini_documental: '/images/content-examples/mini-documental.webp',
   serie_completa: '/images/content-examples/serie-completa.webp',
+  // apoyo
+  demo_evento_sector: '/images/content-examples/demo-evento-sector.webp',
+  resena_publica: '/images/content-examples/resena-publica.webp',
+  activacion_sucursal: '/images/content-examples/activacion-sucursal.webp',
+  speaking_panel: '/images/content-examples/speaking-panel.webp',
+  intro_calificada: '/images/content-examples/intro-calificada.webp',
+  meetup_local: '/images/content-examples/meetup-local.webp',
+  co_marketing: '/images/content-examples/co-marketing.webp',
+  beta_feedback: '/images/content-examples/beta-feedback.webp',
+  material_local: '/images/content-examples/material-local.webp',
+  stand_feria: '/images/content-examples/stand-feria.webp',
+  // filantropía
+  voluntariado_animales: '/images/content-examples/voluntariado-animales.webp',
+  jornada_adopcion: '/images/content-examples/jornada-adopcion.webp',
+  banco_alimentos: '/images/content-examples/banco-alimentos.webp',
+  comedor_comunitario: '/images/content-examples/comedor-comunitario.webp',
+  distribucion_despensas: '/images/content-examples/distribucion-despensas.webp',
+  albergue_personas: '/images/content-examples/albergue-personas.webp',
+  limpieza_publica: '/images/content-examples/limpieza-publica.webp',
+  mentoria_emprendedor: '/images/content-examples/mentoria-emprendedor.webp',
+  conferencia_escuela: '/images/content-examples/conferencia-escuela.webp',
+  beca_patrocinio: '/images/content-examples/beca-patrocinio.webp',
 };
 // Asignar ejemploImage automáticamente si no está seteado
 for (const c of CONTENT_TYPES) {
   if (!c.ejemploImage && IMG_BY_ID[c.id]) c.ejemploImage = IMG_BY_ID[c.id];
+}
+
+export function getContentTypesByCategoria(categoria: 'contenido' | 'apoyo' | 'filantropia'): ContentType[] {
+  return CONTENT_TYPES.filter(c => (c.categoria || 'contenido') === categoria);
 }
 
 export const META_PUNTOS_MES = 100;

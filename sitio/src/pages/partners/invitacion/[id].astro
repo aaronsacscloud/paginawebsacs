@@ -2,7 +2,8 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { supabase } from '../../../lib/supabase';
 import PartnerSidebar from '../../../components/partner/PartnerSidebar.astro';
-import { CONTENT_TYPES, META_PUNTOS_MES } from '../../../data/content-types';
+import { CONTENT_TYPES, META_PUNTOS_MES, CATEGORIAS, getContentTypesByCategoria } from '../../../data/content-types';
+import { CERTIFICATIONS } from '../../../data/certifications';
 import { businessSectors } from '../../../data/navigation';
 
 const SECTOR_EMOJIS: Record<string, string> = {
@@ -149,10 +150,9 @@ const tabsDef = [
   { id: 'bienvenida', label: 'Bienvenida', show: true },
   { id: 'proceso',    label: 'Cómo funciona', show: true },
   { id: 'terminos', label: 'Términos', show: true },
-  { id: 'compromisos', label: 'Compromisos', show: compromisos.length > 0 },
+  { id: 'compromisos', label: 'Compromisos del Partner', show: compromisos.length > 0 },
   { id: 'contenido',  label: 'Contenido y puntos', show: tipo === 'embajador' },
-  { id: 'compensacion', label: 'Plan de compensación', show: comisionPct > 0 || Object.keys(tabulador).length > 0 },
-  { id: 'porque', label: '¿Por qué SACS?', show: true },
+  { id: 'compensacion', label: 'Recompensas', show: comisionPct > 0 || Object.keys(tabulador).length > 0 },
   { id: 'firma', label: isAccepted ? 'Firmada' : (isDeclined ? 'Rechazada' : (isSubmitted ? 'En revisión' : 'Aceptar y firmar')), show: true },
 ];
 const visibleTabs = tabsDef.filter(t => t.show).map(({ id, label }) => ({ id, label }));
@@ -642,6 +642,47 @@ const partnerLandingUrl = invitation.slug_landing
               <div class="p-bw-tracker-total-label">Total hoy</div>
               <div class="p-bw-tracker-total-num"><strong>100</strong> <span>/ 1,000 al cierre 2026</span></div>
             </div>
+          </div>
+        </div>
+
+        <!-- ── 7.5 SACS · qué significa cada letra ── -->
+        <div class="p-bw-section p-bw-section--alt">
+          <div class="p-bw-eyebrow">SACS, lo que representamos</div>
+          <h2 class="p-bw-title">Las 4 palabras que definen lo que hacemos.</h2>
+          <p class="p-bw-lead">
+            Nuestro nombre no es un acrónimo elegido al azar — describe el por qué del producto,
+            de la empresa y del programa que estás considerando entrar.
+          </p>
+
+          <div class="p-bw-sacs-grid">
+            <div class="p-bw-sacs-pillar">
+              <div class="p-bw-sacs-letter">S</div>
+              <div class="p-bw-sacs-word">Ser</div>
+              <p>Ser auténticos. Tu marca tiene una identidad — el sistema la potencia, no la reemplaza.</p>
+            </div>
+            <div class="p-bw-sacs-pillar">
+              <div class="p-bw-sacs-letter">A</div>
+              <div class="p-bw-sacs-word">Avanzar</div>
+              <p>Avanzar con tecnología que resuelve problemas reales del retail mexicano, no los de Silicon Valley.</p>
+            </div>
+            <div class="p-bw-sacs-pillar">
+              <div class="p-bw-sacs-letter">C</div>
+              <div class="p-bw-sacs-word">Crear</div>
+              <p>Crear experiencias que inspiran — para tus clientes, tu equipo y tu comunidad.</p>
+            </div>
+            <div class="p-bw-sacs-pillar">
+              <div class="p-bw-sacs-letter">S</div>
+              <div class="p-bw-sacs-word">Sembrar</div>
+              <p>Sembrar para el futuro. Tu éxito impulsa los programas de impacto a comunidades en México y LATAM.</p>
+            </div>
+          </div>
+
+          <div class="p-bw-sacs-proof">
+            <div class="p-bw-sacs-proof-stat"><strong>96%</strong> de retención anual</div>
+            <span>·</span>
+            <div class="p-bw-sacs-proof-stat"><strong>13+</strong> años en el mercado</div>
+            <span>·</span>
+            <div class="p-bw-sacs-proof-stat"><strong>3,000+</strong> marcas activas</div>
           </div>
         </div>
 
@@ -2327,12 +2368,12 @@ const partnerLandingUrl = invitation.slug_landing
       {tipo === 'embajador' && (
       <section class="p-tab-panel" data-tab="contenido">
         <div class="p-section-head">
-          <div class="p-section-eyebrow">Cómo medimos tu contenido</div>
+          <div class="p-section-eyebrow">Cómo te mantienes activo</div>
           <h2 class="p-section-title">Sistema de puntos: {META_PUNTOS_MES}/mes</h2>
           <p class="p-section-lead">
-            En lugar de contar piezas, contamos <strong>puntos</strong>. Cada tipo de contenido vale distinto según
-            su esfuerzo y alcance. Tu meta mensual son <strong>{META_PUNTOS_MES} puntos</strong> — los puedes
-            cumplir con la combinación que prefieras.
+            Para mantener tu plan activo cada mes acumulas <strong>{META_PUNTOS_MES} puntos</strong>.
+            Hay <strong>tres formas</strong> de sumarlos: contenido publicado, acciones de apoyo
+            de marketing o actividades filantrópicas. Mezcla la combinación que mejor te quede.
           </p>
         </div>
 
@@ -2341,75 +2382,107 @@ const partnerLandingUrl = invitation.slug_landing
           <div class="p-content-howto-item">
             <div class="p-content-howto-num">1</div>
             <div>
-              <div class="p-content-howto-title">Cada mes te enviamos 3-5 palabras clave</div>
-              <p class="p-content-howto-detail">Temas, productos o estrategias que queremos posicionar. Tu contenido se enfoca alrededor de eso.</p>
+              <div class="p-content-howto-title">Eliges la mezcla</div>
+              <p class="p-content-howto-detail">Contenido en redes, acciones de apoyo (demos, eventos, intros) o filantropía (refugios, comedores, mentorías). Combinas como prefieras.</p>
             </div>
           </div>
           <div class="p-content-howto-item">
             <div class="p-content-howto-num">2</div>
             <div>
-              <div class="p-content-howto-title">Tú creas el contenido en formato libre</div>
-              <p class="p-content-howto-detail">Stories, tutoriales, casos de uso, webinars, mini-documentales — tú eliges la mezcla que mejor funcione con tu audiencia.</p>
+              <div class="p-content-howto-title">Subes la prueba a tu panel</div>
+              <p class="p-content-howto-detail">Tab "Reportar actividad" en tu portal — link, foto o video según el tipo. Toma menos de 1 minuto por acción.</p>
             </div>
           </div>
           <div class="p-content-howto-item">
             <div class="p-content-howto-num">3</div>
             <div>
-              <div class="p-content-howto-title">Subes los links a tu portal</div>
-              <p class="p-content-howto-detail">Tab "Reportar contenido" en tu panel — pegas el URL y eliges el tipo. Toma 30 segundos por pieza.</p>
+              <div class="p-content-howto-title">SACS valida y otorga puntos</div>
+              <p class="p-content-howto-detail">En 24-48h hábiles. Si pasas de 100 puntos en el mes, el excedente se acumula al siguiente mes.</p>
             </div>
           </div>
           <div class="p-content-howto-item">
             <div class="p-content-howto-num">4</div>
             <div>
-              <div class="p-content-howto-title">SACS valida y otorga los puntos</div>
-              <p class="p-content-howto-detail">En 24-48h hábiles. Si haces más de 100 puntos en el mes, el excedente se acumula al siguiente mes.</p>
+              <div class="p-content-howto-title">Te mantienes activo en el programa</div>
+              <p class="p-content-howto-detail">Cumplir 100 pts/mes es la señal de que sigues participando. Sin reporte en el panel, no se acreditan puntos ni se mantienen los beneficios.</p>
             </div>
           </div>
         </div>
 
-        <!-- Tabla de tipos × puntos -->
-        <h3 class="p-content-h3">Tipos de contenido y sus puntos</h3>
-        <div class="p-content-types-grid">
-          {CONTENT_TYPES.map((c) => (
-            <div class={`p-content-type-card ${c.id === 'serie_completa' ? 'p-content-type-card--bonus' : ''}`}>
-              {c.ejemploImage && (
-                <div class="p-content-type-img-wrap">
-                  <img src={c.ejemploImage} alt={`Ejemplo: ${c.nombre}`} loading="lazy" class="p-content-type-img" />
-                </div>
-              )}
-              <div class="p-content-type-head">
-                <div>
-                  <div class="p-content-type-name">{c.nombre}</div>
-                  <div class="p-content-type-meta">{c.duracion} · esfuerzo {c.esfuerzo}</div>
-                </div>
-                <div class="p-content-type-pts">{c.puntos}<span> pts</span></div>
-              </div>
-              <p class="p-content-type-desc">{c.descripcion}</p>
-              {c.ideasContenido && c.ideasContenido.length > 0 && (
-                <div class="p-content-type-ideas">
-                  <div class="p-content-type-ideas-label">Ideas:</div>
-                  <ul>
-                    {c.ideasContenido.slice(0, 3).map((idea) => <li>{idea}</li>)}
-                  </ul>
-                </div>
-              )}
-              {c.plataformasSugeridas && (
-                <div class="p-content-type-platforms">
-                  {c.plataformasSugeridas.map((p) => <span class="p-content-type-platform">{p}</span>)}
-                </div>
-              )}
-              {c.ejemploRefs && c.ejemploRefs.length > 0 && (
-                <div class="p-content-type-refs">
-                  <span class="p-content-type-refs-label">Ver ejemplos:</span>
-                  {c.ejemploRefs.map((r) => (
-                    <a href={r.url} target="_blank" rel="noopener" class="p-content-type-ref">{r.label} ↗</a>
-                  ))}
-                </div>
-              )}
-            </div>
+        <!-- Sub-tabs por categoría -->
+        <h3 class="p-content-h3">Las 3 formas de sumar puntos</h3>
+        <p class="p-section-lead p-section-lead--sub">
+          Cada tab agrupa un tipo de actividad. Mezcla las que mejor te queden para llegar a los {META_PUNTOS_MES} puntos al mes.
+        </p>
+
+        <div class="p-cat-tabs" role="tablist">
+          {CATEGORIAS.map((cat, idx) => (
+            <button
+              type="button"
+              class={`p-cat-tab${idx === 0 ? ' is-active' : ''}`}
+              role="tab"
+              aria-selected={idx === 0 ? 'true' : 'false'}
+              data-cat-tab={cat.id}
+            >
+              <span class="p-cat-tab-label">{cat.label}</span>
+              <span class="p-cat-tab-count">{getContentTypesByCategoria(cat.id).length}</span>
+            </button>
           ))}
         </div>
+
+        {CATEGORIAS.map((cat, idx) => {
+          const items = getContentTypesByCategoria(cat.id);
+          return (
+            <div
+              class={`p-cat-panel${idx === 0 ? ' is-active' : ''}`}
+              role="tabpanel"
+              data-cat-panel={cat.id}
+              hidden={idx !== 0}
+            >
+              <p class="p-cat-panel-desc">{cat.descripcion}</p>
+              <div class="p-content-types-grid">
+                {items.map((c) => (
+                  <div class={`p-content-type-card ${c.id === 'serie_completa' ? 'p-content-type-card--bonus' : ''}`}>
+                    {c.ejemploImage && (
+                      <div class="p-content-type-img-wrap">
+                        <img src={c.ejemploImage} alt={`Ejemplo: ${c.nombre}`} loading="lazy" class="p-content-type-img" />
+                      </div>
+                    )}
+                    <div class="p-content-type-head">
+                      <div>
+                        <div class="p-content-type-name">{c.nombre}</div>
+                        <div class="p-content-type-meta">{c.duracion} · esfuerzo {c.esfuerzo}</div>
+                      </div>
+                      <div class="p-content-type-pts">{c.puntos}<span> pts</span></div>
+                    </div>
+                    <p class="p-content-type-desc">{c.descripcion}</p>
+                    {c.ideasContenido && c.ideasContenido.length > 0 && (
+                      <div class="p-content-type-ideas">
+                        <div class="p-content-type-ideas-label">Ejemplos:</div>
+                        <ul>
+                          {c.ideasContenido.slice(0, 3).map((idea) => <li>{idea}</li>)}
+                        </ul>
+                      </div>
+                    )}
+                    {c.plataformasSugeridas && (
+                      <div class="p-content-type-platforms">
+                        {c.plataformasSugeridas.map((p) => <span class="p-content-type-platform">{p}</span>)}
+                      </div>
+                    )}
+                    {c.ejemploRefs && c.ejemploRefs.length > 0 && (
+                      <div class="p-content-type-refs">
+                        <span class="p-content-type-refs-label">Ver ejemplos:</span>
+                        {c.ejemploRefs.map((r) => (
+                          <a href={r.url} target="_blank" rel="noopener" class="p-content-type-ref">{r.label} ↗</a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
 
         <!-- Notas finales -->
         <div class="p-content-notes">
@@ -2425,16 +2498,17 @@ const partnerLandingUrl = invitation.slug_landing
       </section>
       )}
 
-      <!-- TAB: TABULADOR -->
+      <!-- TAB: RECOMPENSAS -->
       {(comisionPct > 0 || Object.keys(tabulador).length > 0) && (
       <section class="p-tab-panel" data-tab="compensacion">
         <div class="p-section-head">
-          <div class="p-section-eyebrow">Plan de compensación</div>
-          <h2 class="p-section-title">Cuánto cobras y cuánto puedes ganar</h2>
+          <div class="p-section-eyebrow">Recompensas</div>
+          <h2 class="p-section-title">El tabulador y lo que puedes proyectar.</h2>
           <p class="p-section-lead">
-            Dos vistas en un solo lugar: el <strong>tabulador</strong> con cuánto te paga
-            cada acción del proceso, y la <strong>proyección</strong> de cuánto puedes
-            ganar al año según el ritmo que mantengas.
+            Dos vistas en una: el <strong>tabulador</strong> con cuánto te paga cada acción del
+            proceso y la <strong>proyección</strong> de lo que se acumula según el ritmo que
+            mantengas. Números reales — basados en precios públicos de SACS, no en escenarios
+            inflados.
           </p>
         </div>
 
@@ -2486,69 +2560,6 @@ const partnerLandingUrl = invitation.slug_landing
           </p>
         </div>
 
-        <!-- ── Portal de partner — qué vas a ver y desde dónde ── -->
-        <div class="p-portal">
-          <div class="p-portal-eyebrow">Tu panel de partner</div>
-          <h3 class="p-portal-title">Todo lo que pasa con tu link, en un solo lugar.</h3>
-          <p class="p-portal-lead">
-            Desde el momento en que firmas, tienes un panel personal en SACS para ver tu actividad en tiempo real. Funciona igual desde tu <strong>laptop, tablet o teléfono</strong> — entras con tu correo y contraseña, ves todo y descargas tu desglose cuando quieras.
-          </p>
-
-          <div class="p-portal-grid">
-            <div class="p-portal-card">
-              <div class="p-portal-card-ic">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-              </div>
-              <div class="p-portal-card-title">Visitas y registros a tu link</div>
-              <div class="p-portal-card-detail">Cuántas personas entraron a tu landing, cuántas se registraron a la prueba gratis y de qué fuente vienen (TikTok, Instagram, link directo, QR…).</div>
-            </div>
-
-            <div class="p-portal-card">
-              <div class="p-portal-card-ic">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-              </div>
-              <div class="p-portal-card-title">Demos agendadas vs completadas</div>
-              <div class="p-portal-card-detail">Cuántas demos se reservaron, cuáles se realizaron, cuáles no se presentaron. Cada una con fecha, prospecto y estado (asistió / no asistió / reagendado).</div>
-            </div>
-
-            <div class="p-portal-card">
-              <div class="p-portal-card-ic">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12V7H5a2 2 0 010-4h14v4"/><path d="M3 5v14a2 2 0 002 2h16v-5"/><path d="M18 12a2 2 0 000 4h4v-4z"/></svg>
-              </div>
-              <div class="p-portal-card-title">Comisiones devengadas y pagadas</div>
-              <div class="p-portal-card-detail">Lo que ganaste este mes, el saldo pendiente y el historial completo de pagos. Cada concepto desglosado: prueba gratis, demo, venta. Descargable como PDF/CSV.</div>
-            </div>
-
-            <div class="p-portal-card">
-              <div class="p-portal-card-ic">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-              </div>
-              <div class="p-portal-card-title">Tus prospectos y clientes activos</div>
-              <div class="p-portal-card-detail">Lista de cada lead que generaste: nombre, contacto, etapa (registro / demo / cerrado) y comisión asociada. Sigue cada relación de principio a fin.</div>
-            </div>
-
-            <div class="p-portal-card">
-              <div class="p-portal-card-ic">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-              </div>
-              <div class="p-portal-card-title">Métricas de conversión</div>
-              <div class="p-portal-card-detail">Visitas → registros, registros → demos, demos → ventas. Identifica dónde te conviertes mejor para enfocar tu contenido y ajustar tu estrategia.</div>
-            </div>
-
-            <div class="p-portal-card">
-              <div class="p-portal-card-ic">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2C20 17.5 12 22 12 22z"/><circle cx="12" cy="10" r="3"/></svg>
-              </div>
-              <div class="p-portal-card-title">Acceso desde cualquier lugar</div>
-              <div class="p-portal-card-detail">Funciona en cualquier dispositivo — laptop, tablet o teléfono. Login con tu correo y contraseña. Sin app que descargar, sin VPN, sin filas: si tienes internet, ves tu panel.</div>
-            </div>
-          </div>
-
-          <div class="p-portal-note">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            <span>Tu panel se actualiza al instante. Cuando alguien se registra por tu link, aparece de inmediato en tu portal — no hay que esperar a fin de mes.</span>
-          </div>
-        </div>
         </>
         )}
 
@@ -2676,66 +2687,75 @@ const partnerLandingUrl = invitation.slug_landing
         </div>
         </>
         )}
+
+        <!-- ── 3 · Sube de nivel: certificaciones ── -->
+        <div class="p-comp-divider"></div>
+        <div class="p-cert-hero">
+          <img src="/images/partner-cert-hero.webp" alt="Partner certificado en sesión con un cliente" loading="lazy" width="1600" height="900" class="p-cert-hero-img" />
+          <div class="p-cert-hero-overlay">
+            <div class="p-cert-hero-eyebrow">Capítulo siguiente</div>
+            <h3 class="p-cert-hero-title">De partner a consultor certificado.</h3>
+          </div>
+        </div>
+
+        <div class="p-comp-section-eyebrow">3 · Sube de nivel con certificaciones</div>
+        <p class="p-comp-section-lead">
+          La comisión por venta es el piso. Si quieres ganar más, certifícate. Una
+          certificación SACS es opcional y de pago — la haces cuando estés listo
+          para cobrar implementaciones, abrir cuentas más grandes y desbloquear
+          trabajos de consultoría que SACS te asigna directamente.
+        </p>
+
+        <div class="p-cert-teaser-grid">
+          {CERTIFICATIONS.map((c, i) => (
+            <div class={`p-cert-teaser ${i === 1 ? 'p-cert-teaser--featured' : ''}`}>
+              <div class="p-cert-teaser-level">{c.nivel}</div>
+              <div class="p-cert-teaser-name">{c.shortName}</div>
+              <div class="p-cert-teaser-meta">{c.duracion}</div>
+              <div class="p-cert-teaser-desc">{c.descripcion}</div>
+              <div class="p-cert-teaser-foot">
+                <div class="p-cert-teaser-price">{c.precioMostrar}<span>MXN</span></div>
+                <div class="p-cert-teaser-price-hint">único pago</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div class="p-cert-unlock">
+          <div class="p-cert-unlock-eyebrow">Lo que se desbloquea al certificarte</div>
+          <div class="p-cert-unlock-grid">
+            <div class="p-cert-unlock-item">
+              <div class="p-cert-unlock-num">01</div>
+              <div class="p-cert-unlock-title">Cobrar implementación al cliente</div>
+              <div class="p-cert-unlock-detail">Una vez certificado puedes ofrecer setup pagado a tus clientes. Setups típicos van de $5,000 a $40,000 MXN según complejidad — ese ingreso es 100% tuyo, además de tu comisión SACS.</div>
+            </div>
+            <div class="p-cert-unlock-item">
+              <div class="p-cert-unlock-num">02</div>
+              <div class="p-cert-unlock-title">Trabajos de consultoría asignados por SACS</div>
+              <div class="p-cert-unlock-detail">Cuando un cliente nos pide implementación o asesoría especializada, asignamos a un partner certificado de la región. Tarifas referencia: $800-$1,500 MXN/hora.</div>
+            </div>
+            <div class="p-cert-unlock-item">
+              <div class="p-cert-unlock-num">03</div>
+              <div class="p-cert-unlock-title">Comisión enterprise hasta 60%</div>
+              <div class="p-cert-unlock-detail">Con la certificación Multisucursal subes de {comisionPct}% a hasta 60% en cuentas enterprise. Co-selling con el equipo SACS y acceso a leads pre-calificados.</div>
+            </div>
+            <div class="p-cert-unlock-item">
+              <div class="p-cert-unlock-num">04</div>
+              <div class="p-cert-unlock-title">Badge oficial en tu portal y materiales</div>
+              <div class="p-cert-unlock-detail">Certificado digital descargable y badge visible en tu landing y firma de email. Argumento de venta inmediato cuando un prospecto compara opciones.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-cert-cta">
+          <span class="p-cert-cta-eyebrow">Cuando estés listo</span>
+          <p>Las certificaciones se ofrecen desde el panel de partners. No hay prisa — empiezas cuando ya cerraste un par de clientes y quieres llevar tu rol al siguiente nivel.</p>
+        </div>
       </section>
       )}
 
-      <!-- TAB: ¿POR QUÉ SACS? -->
-      <section class="p-tab-panel" data-tab="porque">
-        <div class="p-section-head">
-          <div class="p-section-eyebrow">Por qué SACS</div>
-          <h2 class="p-section-title">El sistema operativo del retail mexicano</h2>
-          <p class="p-section-lead">
-            Más de 3,000 marcas en LATAM operan con SACS. Recomendar SACS no es vender software — es recomendar la mejor versión de su negocio.
-          </p>
-        </div>
+      <!-- TAB '¿POR QUÉ SACS?' eliminado · sus puntos clave se movieron a Bienvenida -->
 
-        <div class="p-why-stats">
-          <div class="p-why-stat">
-            <div class="p-why-stat-num">3,000+</div>
-            <div class="p-why-stat-label">Marcas activas</div>
-          </div>
-          <div class="p-why-stat">
-            <div class="p-why-stat-num">42M+</div>
-            <div class="p-why-stat-label">Transacciones procesadas</div>
-          </div>
-          <div class="p-why-stat">
-            <div class="p-why-stat-num">8</div>
-            <div class="p-why-stat-label">Países en LATAM</div>
-          </div>
-          <div class="p-why-stat">
-            <div class="p-why-stat-num">96%</div>
-            <div class="p-why-stat-label">Retención anual</div>
-          </div>
-        </div>
-
-        <div class="p-why-pillars">
-          <div class="p-why-pillar">
-            <div class="p-why-pillar-letter">S</div>
-            <div class="p-why-pillar-word">Ser</div>
-            <p>Ser auténticos. Tu marca tiene una identidad — nuestro trabajo es potenciarla, no reemplazarla.</p>
-          </div>
-          <div class="p-why-pillar">
-            <div class="p-why-pillar-letter">A</div>
-            <div class="p-why-pillar-word">Avanzar</div>
-            <p>Avanzar con tecnología que resuelve problemas reales, no los de alguien más.</p>
-          </div>
-          <div class="p-why-pillar">
-            <div class="p-why-pillar-letter">C</div>
-            <div class="p-why-pillar-word">Crear</div>
-            <p>Crear experiencias que inspiran — para tus clientes, tu equipo y tu comunidad.</p>
-          </div>
-          <div class="p-why-pillar">
-            <div class="p-why-pillar-letter">S</div>
-            <div class="p-why-pillar-word">Sembrar</div>
-            <p>Sembrar para el futuro. Tu éxito impulsa programas de impacto en comunidades mexicanas.</p>
-          </div>
-        </div>
-
-        <div class="p-why-closing">
-          <strong>El 10% de cada licencia genera cambio real.</strong>
-          <span>Capacitación digital, apoyo a emprendedores locales y conservación de ecosistemas en México. Comercio consciente significa que cada transacción tiene propósito — y como partner, tú eres parte del impacto.</span>
-        </div>
-      </section>
 
       <!-- TAB: FIRMA -->
       <section class="p-tab-panel" data-tab="firma">
@@ -4027,6 +4047,208 @@ const partnerLandingUrl = invitation.slug_landing
     .p-comp-section-lead { font-size: 0.9375rem; margin-bottom: 24px; }
   }
 
+  /* ─── Certificaciones · teaser ─────────────────────── */
+  .p-cert-hero {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 36px;
+    aspect-ratio: 16 / 9;
+    max-height: 460px;
+    background: #1a1a1a;
+  }
+  .p-cert-hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .p-cert-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 35%, rgba(0,0,0,0.55) 75%, rgba(0,0,0,0.78) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 32px 36px;
+    color: #fff;
+  }
+  .p-cert-hero-eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 8px;
+  }
+  .p-cert-hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.625rem, 3.4vw, 2.25rem);
+    font-weight: 300;
+    color: #fff;
+    margin: 0;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    max-width: 600px;
+  }
+  @media (max-width: 600px) {
+    .p-cert-hero-overlay { padding: 22px 22px; }
+  }
+
+  .p-cert-teaser-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  @media (max-width: 800px) { .p-cert-teaser-grid { grid-template-columns: 1fr; } }
+  .p-cert-teaser {
+    position: relative;
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 14px;
+    padding: 24px 22px;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.18s, transform 0.18s;
+  }
+  .p-cert-teaser:hover { border-color: #cfd6e2; transform: translateY(-1px); }
+  .p-cert-teaser--featured {
+    background: linear-gradient(180deg, rgba(75,123,229,0.04), #fff);
+    border-color: #4B7BE5;
+  }
+  .p-cert-teaser-level {
+    display: inline-block;
+    align-self: flex-start;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #4B7BE5;
+    background: rgba(75,123,229,0.10);
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+  }
+  .p-cert-teaser-name {
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+    letter-spacing: -0.01em;
+  }
+  .p-cert-teaser-meta {
+    font-size: 0.75rem;
+    color: #888;
+    margin-bottom: 12px;
+  }
+  .p-cert-teaser-desc {
+    font-size: 0.875rem;
+    color: #555;
+    line-height: 1.55;
+    margin-bottom: 18px;
+    flex: 1;
+  }
+  .p-cert-teaser-foot {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 14px;
+  }
+  .p-cert-teaser-price {
+    font-family: var(--font-display);
+    font-size: 1.625rem;
+    font-weight: 300;
+    color: #1a1a1a;
+    letter-spacing: -0.02em;
+  }
+  .p-cert-teaser-price span {
+    font-size: 0.6875rem;
+    color: #888;
+    font-weight: 500;
+    margin-left: 4px;
+    letter-spacing: 0.04em;
+  }
+  .p-cert-teaser-price-hint {
+    font-size: 0.6875rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .p-cert-unlock {
+    margin: 36px 0 28px;
+    padding: 32px;
+    background: #fafaf8;
+    border: 1px solid #ececec;
+    border-radius: 14px;
+  }
+  .p-cert-unlock-eyebrow {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    color: #4B7BE5;
+    margin-bottom: 18px;
+  }
+  .p-cert-unlock-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 22px;
+  }
+  @media (max-width: 720px) { .p-cert-unlock-grid { grid-template-columns: 1fr; } }
+  .p-cert-unlock-item { display: flex; flex-direction: column; gap: 4px; }
+  .p-cert-unlock-num {
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #4B7BE5;
+    letter-spacing: 0.06em;
+  }
+  .p-cert-unlock-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    letter-spacing: -0.005em;
+    margin-top: 2px;
+  }
+  .p-cert-unlock-detail {
+    font-size: 0.875rem;
+    color: #555;
+    line-height: 1.55;
+    margin-top: 6px;
+  }
+  @media (max-width: 720px) {
+    .p-cert-unlock { padding: 24px 20px; }
+  }
+
+  .p-cert-cta {
+    padding: 22px 28px;
+    background: #fff;
+    border: 1px solid #ececec;
+    border-left: 3px solid #4B7BE5;
+    border-radius: 12px;
+    margin-bottom: 16px;
+  }
+  .p-cert-cta-eyebrow {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #4B7BE5;
+    margin-bottom: 6px;
+  }
+  .p-cert-cta p {
+    font-size: 0.9375rem;
+    color: #555;
+    line-height: 1.6;
+    margin: 0;
+  }
+
   .p-payout-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -5238,6 +5460,67 @@ const partnerLandingUrl = invitation.slug_landing
     .p-bw-tracker-total-num strong { font-size: 1.5rem; }
   }
 
+  /* ─── SACS · acrónimo ─── */
+  .p-bw-sacs-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin: 28px 0 0;
+  }
+  @media (max-width: 800px) {
+    .p-bw-sacs-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  .p-bw-sacs-pillar {
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 12px;
+    padding: 22px 20px;
+  }
+  .p-bw-sacs-letter {
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    font-weight: 300;
+    color: #4B7BE5;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    margin-bottom: 4px;
+  }
+  .p-bw-sacs-word {
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+    letter-spacing: -0.005em;
+  }
+  .p-bw-sacs-pillar p {
+    font-size: 0.875rem;
+    color: #555;
+    line-height: 1.55;
+    margin: 0;
+  }
+  .p-bw-sacs-proof {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 28px;
+    padding: 16px 20px;
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    color: #555;
+  }
+  .p-bw-sacs-proof-stat strong {
+    color: #1a1a1a;
+    font-family: var(--font-display);
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .p-bw-sacs-proof span { color: #cfcfcf; }
+
   /* ─── 10% para impacto ─── */
   .p-bw-impact {
     margin: 32px 0 0;
@@ -5369,8 +5652,85 @@ const partnerLandingUrl = invitation.slug_landing
     font-size: clamp(1.25rem, 2.4vw, 1.625rem);
     font-weight: 500;
     color: #1A1A1A;
-    margin: 48px 0 18px;
+    margin: 48px 0 8px;
     letter-spacing: -0.015em;
+  }
+
+  .p-section-lead--sub {
+    margin-top: 0;
+    margin-bottom: 24px;
+  }
+
+  /* ── Sub-tabs por categoría ────────────────────────── */
+  .p-cat-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: #f4f4f2;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .p-cat-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: transparent;
+    border: 0;
+    border-radius: 9px;
+    cursor: pointer;
+    color: #555;
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+    white-space: nowrap;
+  }
+  .p-cat-tab:hover { color: #1A1A1A; }
+  .p-cat-tab.is-active {
+    background: #fff;
+    color: #1A1A1A;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px #ececec;
+  }
+  .p-cat-tab-count {
+    display: inline-flex;
+    min-width: 22px;
+    padding: 2px 7px;
+    align-items: center;
+    justify-content: center;
+    background: #ECECEC;
+    color: #666;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .p-cat-tab.is-active .p-cat-tab-count {
+    background: rgba(75,123,229,0.12);
+    color: #4B7BE5;
+  }
+  .p-cat-panel { display: none; }
+  .p-cat-panel.is-active { display: block; }
+  .p-cat-panel-desc {
+    margin: 0 0 20px;
+    padding: 14px 18px;
+    background: #fafaf8;
+    border: 1px solid #ececec;
+    border-radius: 10px;
+    font-size: 0.9375rem;
+    color: #555;
+    line-height: 1.55;
+  }
+
+  @media (max-width: 600px) {
+    .p-cat-tab { padding: 9px 12px; font-size: 0.875rem; }
+    .p-cat-tab-label { white-space: nowrap; }
   }
 
   .p-content-types-grid {
@@ -7983,6 +8343,23 @@ const partnerLandingUrl = invitation.slug_landing
     e.preventDefault();
     showTab(tabId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // ─── Sub-tabs por categoría (Contenido / Apoyo / Filantropía) ───
+  document.addEventListener('click', e => {
+    const tab = e.target.closest('[data-cat-tab]');
+    if (!tab) return;
+    const id = tab.dataset.catTab;
+    document.querySelectorAll('[data-cat-tab]').forEach(t => {
+      const active = t.dataset.catTab === id;
+      t.classList.toggle('is-active', active);
+      t.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    document.querySelectorAll('[data-cat-panel]').forEach(p => {
+      const active = p.dataset.catPanel === id;
+      p.classList.toggle('is-active', active);
+      if (active) p.removeAttribute('hidden'); else p.setAttribute('hidden', '');
+    });
   });
 
   // Initial tab from hash or initialTab

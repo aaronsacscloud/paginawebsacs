@@ -680,7 +680,7 @@ function ContentTab() {
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState<{ text: string; ok: boolean } | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [catFilter, setCatFilter] = useState<'todos' | 'contenido' | 'filantropia'>('todos');
+  const [catFilter, setCatFilter] = useState<'todos' | 'contenido' | 'apoyo' | 'filantropia'>('todos');
 
   const [formUrl, setFormUrl] = useState('');
   const [formTipo, setFormTipo] = useState('');
@@ -730,9 +730,11 @@ function ContentTab() {
 
   // Filtros de catálogo
   const tiposContenido = tipos.filter(t => (t.categoria || 'contenido') === 'contenido');
+  const tiposApoyo = tipos.filter(t => t.categoria === 'apoyo');
   const tiposFilantropia = tipos.filter(t => t.categoria === 'filantropia');
   const tiposFiltrados = catFilter === 'todos' ? tipos
     : catFilter === 'contenido' ? tiposContenido
+    : catFilter === 'apoyo' ? tiposApoyo
     : tiposFilantropia;
 
   // Required total this month (with carryover if any)
@@ -846,18 +848,30 @@ function ContentTab() {
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
         <FilterPill active={catFilter === 'todos'} onClick={() => setCatFilter('todos')}>Todos ({tipos.length})</FilterPill>
         <FilterPill active={catFilter === 'contenido'} onClick={() => setCatFilter('contenido')}>Contenido ({tiposContenido.length})</FilterPill>
+        <FilterPill active={catFilter === 'apoyo'} onClick={() => setCatFilter('apoyo')}>Apoyo ({tiposApoyo.length})</FilterPill>
         <FilterPill active={catFilter === 'filantropia'} onClick={() => setCatFilter('filantropia')}>Filantropía ({tiposFilantropia.length})</FilterPill>
       </div>
+      {catFilter === 'apoyo' && (
+        <div style={S.note}>
+          <strong>Acciones de apoyo:</strong> demos en eventos, reseñas, intros, activaciones in situ,
+          beta testing y co-marketing. Suben evidencia (foto, link o reporte) y suman exactamente
+          igual que el contenido o la filantropía a tus 100 pts mensuales.
+        </div>
+      )}
       {catFilter === 'filantropia' && (
         <div style={S.note}>
           <strong>¿Por qué filantropía cuenta?</strong> Si un mes no puedes generar contenido,
-          puedes cubrir tus puntos con acciones que ayudan a otras personas. SACS valida con
+          puedes cubrir tus puntos con acciones que ayudan a personas o animales. SACS valida con
           una foto/post como evidencia. Suma exactamente igual a tus 100 pts mensuales.
         </div>
       )}
       <div style={S.puntosGrid}>
         {tiposFiltrados.map(t => (
-          <div key={t.id} style={{ ...S.puntosCard, ...(t.categoria === 'filantropia' ? { borderLeft: '3px solid #2AB5A0' } : {}) }}>
+          <div key={t.id} style={{
+            ...S.puntosCard,
+            ...(t.categoria === 'filantropia' ? { borderLeft: '3px solid #2AB5A0' } :
+                t.categoria === 'apoyo' ? { borderLeft: '3px solid #4B7BE5' } : {}),
+          }}>
             <div style={S.puntosPts}>{t.puntos}</div>
             <div style={S.puntosName}>{t.nombre}</div>
             <div style={S.puntosDesc}>{t.descripcion}</div>
