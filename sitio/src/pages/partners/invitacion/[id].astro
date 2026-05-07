@@ -2806,56 +2806,73 @@ const partnerLandingUrl = invitation.slug_landing
 
         <div class="p-comp-section-eyebrow">3 · Sube de nivel con certificaciones</div>
         <p class="p-comp-section-lead">
-          La comisión por venta es el piso. Si quieres ganar más, certifícate. Una
-          certificación SACS es opcional y de pago — la haces cuando estés listo
-          para cobrar implementaciones, abrir cuentas más grandes y desbloquear
-          trabajos de consultoría que SACS te asigna directamente.
+          La comisión por venta es el piso. Si quieres ganar más, certifícate y empieza a
+          cobrar servicios profesionales a tus clientes. <strong>Te quedas con el 100% de lo
+          que cobras al cliente</strong> — SACS solo cobra una vez la cuota de la
+          certificación. Te certificamos, te entregamos tu diploma y badge oficial, y desde
+          ese momento puedes ofrecer el servicio.
         </p>
 
-        <div class="p-cert-teaser-grid">
-          {CERTIFICATIONS.map((c, i) => (
-            <div class={`p-cert-teaser ${i === 1 ? 'p-cert-teaser--featured' : ''}`}>
-              <div class="p-cert-teaser-level">{c.nivel}</div>
-              <div class="p-cert-teaser-name">{c.shortName}</div>
-              <div class="p-cert-teaser-meta">{c.duracion}</div>
-              <div class="p-cert-teaser-desc">{c.descripcion}</div>
-              <div class="p-cert-teaser-foot">
-                <div class="p-cert-teaser-price">{c.precioMostrar}<span>MXN</span></div>
-                <div class="p-cert-teaser-price-hint">único pago</div>
+        <div class="p-cert-row">
+          {CERTIFICATIONS.map((c) => (
+            <div class="p-cert-card">
+              <div class="p-cert-card-img-wrap">
+                <img src={c.cover} alt={c.shortName} loading="lazy" width="1200" height="900" class="p-cert-card-img" />
+                <span class="p-cert-card-level">{c.nivel}</span>
+              </div>
+              <div class="p-cert-card-body">
+                <h4 class="p-cert-card-name">{c.shortName}</h4>
+                <p class="p-cert-card-desc">{c.descripcion}</p>
+
+                <div class="p-cert-card-rows">
+                  <div class="p-cert-card-row">
+                    <div class="p-cert-card-row-label">Cuota de certificación</div>
+                    <div class="p-cert-card-row-value">{c.precioMostrar} <span>MXN · pago único</span></div>
+                  </div>
+                  <div class="p-cert-card-row p-cert-card-row--earn">
+                    <div class="p-cert-card-row-label">Lo que cobras al cliente</div>
+                    <div class="p-cert-card-row-value">{c.serviceChargeMostrar} <span>MXN {c.serviceUnit}</span></div>
+                  </div>
+                </div>
+
+                <div class="p-cert-card-keep">
+                  <span class="p-cert-card-keep-pct">100%</span>
+                  <span class="p-cert-card-keep-text">para ti — SACS no cobra comisión sobre lo que tú cobres</span>
+                </div>
               </div>
             </div>
           ))}
         </div>
 
         <div class="p-cert-unlock">
-          <div class="p-cert-unlock-eyebrow">Lo que se desbloquea al certificarte</div>
+          <div class="p-cert-unlock-eyebrow">Cómo funciona</div>
           <div class="p-cert-unlock-grid">
             <div class="p-cert-unlock-item">
               <div class="p-cert-unlock-num">01</div>
-              <div class="p-cert-unlock-title">Cobrar implementación al cliente</div>
-              <div class="p-cert-unlock-detail">Una vez certificado puedes ofrecer setup pagado a tus clientes. Setups típicos van de $5,000 a $40,000 MXN según complejidad — ese ingreso es 100% tuyo, además de tu comisión SACS.</div>
+              <div class="p-cert-unlock-title">Pagas una vez la certificación</div>
+              <div class="p-cert-unlock-detail">Cuota única que va de $1,500 a $6,000 MXN según el curso. Es la única vez que SACS te cobra por este programa de capacitación.</div>
             </div>
             <div class="p-cert-unlock-item">
               <div class="p-cert-unlock-num">02</div>
-              <div class="p-cert-unlock-title">Trabajos de consultoría asignados por SACS</div>
-              <div class="p-cert-unlock-detail">Cuando un cliente nos pide implementación o asesoría especializada, asignamos a un partner certificado de la región. Tarifas referencia: $800-$1,500 MXN/hora.</div>
+              <div class="p-cert-unlock-title">Te certificamos y entregamos diploma</div>
+              <div class="p-cert-unlock-detail">Sesiones en vivo, materiales y casos prácticos. Al aprobar el examen recibes tu diploma digital + badge oficial visible en tu portal y comunicación con clientes.</div>
             </div>
             <div class="p-cert-unlock-item">
               <div class="p-cert-unlock-num">03</div>
-              <div class="p-cert-unlock-title">Comisión enterprise hasta 60%</div>
-              <div class="p-cert-unlock-detail">Con la certificación Multisucursal subes de {comisionPct}% a hasta 60% en cuentas enterprise. Co-selling con el equipo SACS y acceso a leads pre-calificados.</div>
+              <div class="p-cert-unlock-title">Empiezas a ofrecer el servicio</div>
+              <div class="p-cert-unlock-detail">Con el badge de partner certificado puedes vender el servicio a tus propios clientes y a leads que SACS te asigna. Cobras por proyecto o retainer mensual según el caso.</div>
             </div>
             <div class="p-cert-unlock-item">
               <div class="p-cert-unlock-num">04</div>
-              <div class="p-cert-unlock-title">Badge oficial en tu portal y materiales</div>
-              <div class="p-cert-unlock-detail">Certificado digital descargable y badge visible en tu landing y firma de email. Argumento de venta inmediato cuando un prospecto compara opciones.</div>
+              <div class="p-cert-unlock-title">Te quedas con el 100% de lo cobrado</div>
+              <div class="p-cert-unlock-detail">Lo que el cliente te paga por implementación, migración, automatización o consultoría es 100% para ti. Esto se suma a tus comisiones SACS por venta de licencias.</div>
             </div>
           </div>
         </div>
 
         <div class="p-cert-cta">
           <span class="p-cert-cta-eyebrow">Cuando estés listo</span>
-          <p>Las certificaciones se ofrecen desde el panel de partners. No hay prisa — empiezas cuando ya cerraste un par de clientes y quieres llevar tu rol al siguiente nivel.</p>
+          <p>Las certificaciones se ofrecen desde el panel de partners. No hay prisa — empieza cuando ya cerraste un par de clientes y quieras llevar tu rol al siguiente nivel.</p>
         </div>
       </section>
       )}
@@ -4335,87 +4352,150 @@ const partnerLandingUrl = invitation.slug_landing
     .p-cert-hero-overlay { padding: 22px 22px; }
   }
 
-  .p-cert-teaser-grid {
+  /* ─── Cards de certificaciones (5 en fila, scroll-snap en mobile) ── */
+  .p-cert-row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 14px;
     margin-bottom: 32px;
   }
-  @media (max-width: 800px) { .p-cert-teaser-grid { grid-template-columns: 1fr; } }
-  .p-cert-teaser {
-    position: relative;
+  @media (max-width: 1200px) {
+    .p-cert-row { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 800px) {
+    .p-cert-row {
+      grid-template-columns: none;
+      grid-auto-flow: column;
+      grid-auto-columns: 78%;
+      overflow-x: auto;
+      scroll-snap-type: x proximity;
+      scroll-padding: 12px;
+      padding-bottom: 6px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .p-cert-row > .p-cert-card { scroll-snap-align: start; }
+  }
+  .p-cert-card {
     background: #fff;
     border: 1px solid #ececec;
     border-radius: 14px;
-    padding: 24px 22px;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     transition: border-color 0.18s, transform 0.18s;
   }
-  .p-cert-teaser:hover { border-color: #cfd6e2; transform: translateY(-1px); }
-  .p-cert-teaser--featured {
-    background: linear-gradient(180deg, rgba(75,123,229,0.04), #fff);
-    border-color: #4B7BE5;
+  .p-cert-card:hover { border-color: #cfd6e2; transform: translateY(-1px); }
+
+  .p-cert-card-img-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: #f5f5f5;
   }
-  .p-cert-teaser-level {
-    display: inline-block;
-    align-self: flex-start;
-    font-size: 0.6875rem;
+  .p-cert-card-img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .p-cert-card-level {
+    position: absolute;
+    top: 12px; left: 12px;
+    font-size: 0.625rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: #4B7BE5;
-    background: rgba(75,123,229,0.10);
-    padding: 4px 10px;
+    color: #fff;
+    background: rgba(26,26,26,0.78);
+    padding: 5px 10px;
     border-radius: 999px;
-    margin-bottom: 14px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
-  .p-cert-teaser-name {
-    font-family: var(--font-display);
-    font-size: 1.0625rem;
-    font-weight: 600;
-    color: #1a1a1a;
-    margin-bottom: 4px;
-    letter-spacing: -0.01em;
-  }
-  .p-cert-teaser-meta {
-    font-size: 0.75rem;
-    color: #888;
-    margin-bottom: 12px;
-  }
-  .p-cert-teaser-desc {
-    font-size: 0.875rem;
-    color: #555;
-    line-height: 1.55;
-    margin-bottom: 18px;
+
+  .p-cert-card-body {
+    padding: 18px 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
     flex: 1;
   }
-  .p-cert-teaser-foot {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    border-top: 1px solid #f0f0f0;
-    padding-top: 14px;
-  }
-  .p-cert-teaser-price {
+  .p-cert-card-name {
     font-family: var(--font-display);
-    font-size: 1.625rem;
-    font-weight: 300;
+    font-size: 1rem;
+    font-weight: 600;
     color: #1a1a1a;
-    letter-spacing: -0.02em;
+    margin: 0;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
   }
-  .p-cert-teaser-price span {
+  .p-cert-card-desc {
+    font-size: 0.8125rem;
+    color: #555;
+    line-height: 1.55;
+    margin: 0;
+    flex: 1;
+  }
+
+  .p-cert-card-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 12px;
+  }
+  .p-cert-card-row {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .p-cert-card-row-label {
+    font-size: 0.625rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    font-weight: 600;
+  }
+  .p-cert-card-row-value {
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    letter-spacing: -0.005em;
+  }
+  .p-cert-card-row-value span {
+    font-family: var(--font-body, inherit);
     font-size: 0.6875rem;
     color: #888;
     font-weight: 500;
     margin-left: 4px;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.02em;
   }
-  .p-cert-teaser-price-hint {
+  .p-cert-card-row--earn .p-cert-card-row-value { color: #2A8C5F; }
+
+  .p-cert-card-keep {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: linear-gradient(180deg, rgba(42,140,95,0.06), rgba(42,140,95,0.02));
+    border: 1px solid rgba(42,140,95,0.18);
+    border-radius: 10px;
+  }
+  .p-cert-card-keep-pct {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 300;
+    color: #2A8C5F;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .p-cert-card-keep-text {
     font-size: 0.6875rem;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    color: #2A8C5F;
+    line-height: 1.35;
+    font-weight: 500;
   }
 
   .p-cert-unlock {
