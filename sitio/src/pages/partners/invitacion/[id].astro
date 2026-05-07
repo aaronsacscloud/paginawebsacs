@@ -2389,9 +2389,44 @@ const partnerLandingUrl = invitation.slug_landing
           ))}
         </div>
 
-        <div class="p-commit-note">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          <span>Si dejas de cumplir los compromisos, te avisaremos y tendrás 30 días para regularizar antes de pausar tus beneficios. La cuota anual entra en revisión a los 12 meses con un plan de recuperación de 90 días si no se alcanza.</span>
+        <!-- ── Reglas de incumplimiento: 3 strikes ── -->
+        <div class="p-commit-strikes">
+          <div class="p-commit-strikes-eyebrow">⚠ Qué pasa si no cumples</div>
+          <h3 class="p-commit-strikes-title">3 meses sin cumplir tus 100 puntos = baja del programa.</h3>
+          <p class="p-commit-strikes-lead">
+            La meta de 100 puntos al mes es la señal de que sigues activo. Si la
+            incumples <strong>tres meses consecutivos</strong>, se da de baja al
+            partner del programa de manera automática.
+          </p>
+
+          <div class="p-commit-strikes-flow">
+            <div class="p-commit-strikes-step">
+              <div class="p-commit-strikes-num">1</div>
+              <div class="p-commit-strikes-step-title">Primer mes sin cumplir</div>
+              <div class="p-commit-strikes-step-detail">Aviso por correo + recordatorio en tu portal. Sin penalización. El déficit se carga al mes siguiente.</div>
+            </div>
+            <div class="p-commit-strikes-step p-commit-strikes-step--mid">
+              <div class="p-commit-strikes-num">2</div>
+              <div class="p-commit-strikes-step-title">Segundo mes consecutivo</div>
+              <div class="p-commit-strikes-step-detail">Aviso urgente + llamada del equipo SACS para entender qué pasa y ajustar el plan contigo.</div>
+            </div>
+            <div class="p-commit-strikes-step p-commit-strikes-step--out">
+              <div class="p-commit-strikes-num">3</div>
+              <div class="p-commit-strikes-step-title">Tercer mes consecutivo</div>
+              <div class="p-commit-strikes-step-detail">Baja automática del programa. Se desactiva tu link, se cierran los beneficios y se cancelan los pagos de comisiones futuras.</div>
+            </div>
+          </div>
+
+          <div class="p-commit-strikes-payment">
+            <div class="p-commit-strikes-payment-title">Sobre los pagos de comisión</div>
+            <p>
+              Las comisiones <strong>solo se pagan mientras el partner está activo en el
+              programa</strong>. Si te dan de baja por incumplimiento (3 meses sin meta) o
+              por cualquier otra causa, los pagos pendientes y las comisiones recurrentes
+              que vinieran de tus clientes ya cerrados se <strong>cancelan al momento
+              de la baja</strong>. Por eso cumplir es directamente cuidar tu propio ingreso.
+            </p>
+          </div>
         </div>
 
         <!-- ── ¿Por qué te conviene cumplir? ── -->
@@ -4015,6 +4050,106 @@ const partnerLandingUrl = invitation.slug_landing
     line-height: 1.55;
   }
   .p-commit-note svg { flex-shrink: 0; color: #4B7BE5; margin-top: 1px; }
+
+  /* ─── 3 strikes / baja del programa ─────────────────── */
+  .p-commit-strikes {
+    margin-top: 36px;
+    padding: 32px;
+    background: #fffaf3;
+    border: 1px solid #f1d8b3;
+    border-radius: 14px;
+  }
+  .p-commit-strikes-eyebrow {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    color: #b86b1a;
+    margin-bottom: 10px;
+  }
+  .p-commit-strikes-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.125rem, 2vw, 1.375rem);
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 10px;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+  }
+  .p-commit-strikes-lead {
+    font-size: 0.9375rem;
+    color: #555;
+    line-height: 1.6;
+    margin: 0 0 24px;
+  }
+  .p-commit-strikes-lead strong { color: #1a1a1a; font-weight: 600; }
+  .p-commit-strikes-flow {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  @media (max-width: 720px) { .p-commit-strikes-flow { grid-template-columns: 1fr; } }
+  .p-commit-strikes-step {
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 12px;
+    padding: 18px 18px 16px;
+  }
+  .p-commit-strikes-step--mid {
+    border-color: #f1c98a;
+    background: linear-gradient(180deg, #fff8ec 0%, #fff 60%);
+  }
+  .p-commit-strikes-step--out {
+    border-color: #e3a07e;
+    background: linear-gradient(180deg, #fdefe6 0%, #fff 60%);
+  }
+  .p-commit-strikes-num {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 300;
+    color: #b86b1a;
+    line-height: 1;
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .p-commit-strikes-step--mid .p-commit-strikes-num { color: #d68632; }
+  .p-commit-strikes-step--out .p-commit-strikes-num { color: #c14a1f; }
+  .p-commit-strikes-step-title {
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 6px;
+    letter-spacing: -0.005em;
+  }
+  .p-commit-strikes-step-detail {
+    font-size: 0.8125rem;
+    color: #555;
+    line-height: 1.5;
+  }
+  .p-commit-strikes-payment {
+    padding: 18px 20px;
+    background: #fff;
+    border: 1px solid #ececec;
+    border-left: 3px solid #c14a1f;
+    border-radius: 10px;
+  }
+  .p-commit-strikes-payment-title {
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 6px;
+    letter-spacing: -0.005em;
+  }
+  .p-commit-strikes-payment p {
+    font-size: 0.8125rem;
+    color: #555;
+    line-height: 1.6;
+    margin: 0;
+  }
+  .p-commit-strikes-payment p strong { color: #1a1a1a; font-weight: 600; }
 
   /* ─── ¿Por qué te conviene cumplir? — rationale block ─── */
   .p-commit-rationale {
