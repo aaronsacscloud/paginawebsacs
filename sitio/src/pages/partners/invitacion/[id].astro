@@ -152,7 +152,7 @@ const tabsDef = [
   { id: 'terminos', label: 'Términos', show: true },
   { id: 'compromisos', label: 'Compromisos del Partner', show: compromisos.length > 0 },
   { id: 'contenido',  label: 'Contenido y puntos', show: tipo === 'embajador' },
-  { id: 'compensacion', label: 'Recompensas', show: comisionPct > 0 || Object.keys(tabulador).length > 0 },
+  { id: 'compensacion', label: 'Lo que puedes ganar', show: comisionPct > 0 || Object.keys(tabulador).length > 0 },
   { id: 'firma', label: isAccepted ? 'Firmada' : (isDeclined ? 'Rechazada' : (isSubmitted ? 'En revisión' : 'Aceptar y firmar')), show: true },
 ];
 const visibleTabs = tabsDef.filter(t => t.show).map(({ id, label }) => ({ id, label }));
@@ -2547,8 +2547,8 @@ const partnerLandingUrl = invitation.slug_landing
       {(comisionPct > 0 || Object.keys(tabulador).length > 0) && (
       <section class="p-tab-panel" data-tab="compensacion">
         <div class="p-section-head">
-          <div class="p-section-eyebrow">Recompensas</div>
-          <h2 class="p-section-title">El tabulador y lo que puedes proyectar.</h2>
+          <div class="p-section-eyebrow">Lo que puedes ganar</div>
+          <h2 class="p-section-title">El tabulador y la proyección de tus ingresos.</h2>
           <p class="p-section-lead">
             Dos vistas en una: el <strong>tabulador</strong> con cuánto te paga cada acción del
             proceso y la <strong>proyección</strong> de lo que se acumula según el ritmo que
