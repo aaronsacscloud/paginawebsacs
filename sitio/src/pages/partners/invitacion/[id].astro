@@ -148,12 +148,12 @@ const heroSubtitle = tipoTagline[tipo] || '';
 
 const tabsDef = [
   { id: 'bienvenida', label: 'Bienvenida', show: true },
-  { id: 'proceso',    label: 'Cómo funciona', show: true },
   { id: 'terminos', label: 'Términos', show: true },
   { id: 'embudo', label: 'Embudo y seguimiento de ventas', show: true },
   { id: 'compromisos', label: 'Compromisos del Partner', show: compromisos.length > 0 },
   { id: 'contenido',  label: 'Contenido y puntos', show: tipo === 'embajador' },
   { id: 'compensacion', label: 'Lo que puedes ganar', show: comisionPct > 0 || Object.keys(tabulador).length > 0 },
+  { id: 'proceso',    label: 'Proceso de inscripción', show: true },
   { id: 'firma', label: isAccepted ? 'Firmada' : (isDeclined ? 'Rechazada' : (isSubmitted ? 'En revisión' : 'Aceptar y firmar')), show: true },
 ];
 const visibleTabs = tabsDef.filter(t => t.show).map(({ id, label }) => ({ id, label }));
@@ -715,21 +715,21 @@ const partnerLandingUrl = invitation.slug_landing
           </p>
         </div>
 
-        <!-- CTA final → ir al proceso -->
+        <!-- CTA final → ir al siguiente tab -->
         <div class="p-bw-cta">
           <div class="p-bw-cta-inner">
-            <h3 class="p-bw-cta-title">¿Listo para conocer cómo funciona el programa?</h3>
-            <p class="p-bw-cta-lead">Sigue al siguiente paso para ver el proceso, los términos económicos, los compromisos y firmar cuando estés listo.</p>
-            <a href="#proceso" class="p-bw-cta-btn" data-tab-link="proceso">Ver cómo funciona →</a>
+            <h3 class="p-bw-cta-title">¿Listo para revisar las reglas claras?</h3>
+            <p class="p-bw-cta-lead">Sigue al siguiente paso para ver los términos del programa, los compromisos, lo que puedes ganar y firmar cuando estés listo.</p>
+            <a href="#terminos" class="p-bw-cta-btn" data-tab-link="terminos">Ver términos →</a>
           </div>
         </div>
       </section>
 
-      <!-- TAB: PROCESO / Cómo funciona -->
+      <!-- TAB: PROCESO DE INSCRIPCIÓN -->
       <section class="p-tab-panel" data-tab="proceso">
         <div class="p-section-head">
           <div class="p-section-eyebrow">El proceso, paso a paso</div>
-          <h2 class="p-section-title">Cómo funciona ser partner SACS</h2>
+          <h2 class="p-section-title">Proceso de inscripción</h2>
           <p class="p-section-lead">
             Desde que firmas tu invitación hasta que cobras tu primera comisión.
             Sin sorpresas, sin letras chicas.
@@ -740,7 +740,7 @@ const partnerLandingUrl = invitation.slug_landing
         <div class="p-tab-hero">
           <img src="/images/partner-tabs/proceso.webp" alt="Dos profesionales revisando un acuerdo" loading="lazy" width="1600" height="900" class="p-tab-hero-img" />
           <div class="p-tab-hero-overlay">
-            <div class="p-tab-hero-eyebrow">Cómo funciona</div>
+            <div class="p-tab-hero-eyebrow">Proceso de inscripción</div>
             <h2 class="p-tab-hero-title">Una conversación, no un trámite.</h2>
           </div>
         </div>
