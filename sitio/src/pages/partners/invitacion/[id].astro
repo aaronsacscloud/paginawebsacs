@@ -522,6 +522,31 @@ const I18N: Record<string, Record<Lang, string>> = {
   'sign.declined.sub':   { es: 'Tu feedback nos ayuda a mejorar el programa. Si cambias de opinión, escríbenos a partners@sacscloud.com y reactivamos tu invitación.', en: 'Your feedback helps us improve the program. If you change your mind, email partners@sacscloud.com and we\'ll reactivate your invitation.', fr: 'Vos retours nous aident à améliorer le programme. Si vous changez d\'avis, écrivez à partners@sacscloud.com et nous réactivons votre invitation.', it: 'Il tuo feedback ci aiuta a migliorare il programma. Se cambi idea, scrivi a partners@sacscloud.com e riattiviamo il tuo invito.', pt: 'Seu feedback nos ajuda a melhorar o programa. Se mudar de ideia, escreva para partners@sacscloud.com e reativamos seu convite.' },
   'sign.expired.eyebrow':{ es: 'Vencida', en: 'Expired', fr: 'Expirée', it: 'Scaduta', pt: 'Vencida' },
   'sign.expired.sub':    { es: 'Si todavía te interesa el programa, contáctanos y te enviamos una invitación renovada.', en: 'If you\'re still interested, contact us and we\'ll send you a renewed invitation.', fr: 'Si le programme vous intéresse toujours, contactez-nous et nous vous envoyons une invitation renouvelée.', it: 'Se il programma ti interessa ancora, contattaci e ti inviamo un invito rinnovato.', pt: 'Se ainda tiver interesse, entre em contato e te enviamos um convite renovado.' },
+
+  // Sign form field labels
+  'f.name':       { es: 'Nombre completo', en: 'Full name', fr: 'Nom complet', it: 'Nome completo', pt: 'Nome completo' },
+  'f.email':      { es: 'Email', en: 'Email', fr: 'Email', it: 'Email', pt: 'E-mail' },
+  'f.whatsapp':   { es: 'WhatsApp', en: 'WhatsApp', fr: 'WhatsApp', it: 'WhatsApp', pt: 'WhatsApp' },
+  'f.company':    { es: 'Empresa o razón social', en: 'Company or legal name', fr: 'Entreprise ou raison sociale', it: 'Azienda o ragione sociale', pt: 'Empresa ou razão social' },
+  'f.optional':   { es: '(opcional)', en: '(optional)', fr: '(facultatif)', it: '(opzionale)', pt: '(opcional)' },
+  'f.street':     { es: 'Calle y número', en: 'Street and number', fr: 'Rue et numéro', it: 'Via e numero', pt: 'Rua e número' },
+  'f.colonia':    { es: 'Colonia', en: 'Neighborhood', fr: 'Quartier', it: 'Quartiere', pt: 'Bairro' },
+  'f.cp':         { es: 'Código postal', en: 'ZIP code', fr: 'Code postal', it: 'CAP', pt: 'CEP' },
+  'f.city':       { es: 'Ciudad / Alcaldía', en: 'City', fr: 'Ville', it: 'Città', pt: 'Cidade' },
+  'f.state':      { es: 'Estado', en: 'State', fr: 'État', it: 'Regione', pt: 'Estado' },
+  'f.payout.method':  { es: 'Método de cobro', en: 'Payout method', fr: 'Méthode de paiement', it: 'Metodo di pagamento', pt: 'Método de cobrança' },
+  'f.clabe':      { es: 'CLABE / Transferencia', en: 'CLABE / Bank transfer', fr: 'CLABE / Virement', it: 'CLABE / Bonifico', pt: 'CLABE / Transferência' },
+  'f.clabe.sub':  { es: 'Depósito directo a banco mexicano', en: 'Direct deposit to a Mexican bank', fr: 'Dépôt direct sur banque mexicaine', it: 'Deposito diretto su banca messicana', pt: 'Depósito direto em banco mexicano' },
+  'f.paypal.sub': { es: 'Recibe en cualquier moneda', en: 'Receive in any currency', fr: 'Recevez dans n\'importe quelle devise', it: 'Ricevi in qualsiasi valuta', pt: 'Receba em qualquer moeda' },
+  'f.mp.sub':     { es: 'Saldo MP / cuenta vinculada', en: 'MP balance / linked account', fr: 'Solde MP / compte lié', it: 'Saldo MP / account collegato', pt: 'Saldo MP / conta vinculada' },
+  'f.clabe.full': { es: 'CLABE Interbancaria (18 dígitos)', en: 'CLABE (18 digits)', fr: 'CLABE (18 chiffres)', it: 'CLABE (18 cifre)', pt: 'CLABE (18 dígitos)' },
+  'f.bank':       { es: 'Banco', en: 'Bank', fr: 'Banque', it: 'Banca', pt: 'Banco' },
+  'f.holder':     { es: 'Titular de la cuenta', en: 'Account holder', fr: 'Titulaire du compte', it: 'Intestatario del conto', pt: 'Titular da conta' },
+  'f.rfc':        { es: 'RFC', en: 'RFC (Mexican Tax ID)', fr: 'RFC (ID fiscal mexicain)', it: 'RFC (codice fiscale messicano)', pt: 'RFC (ID fiscal mexicano)' },
+  'f.paypal.email': { es: 'Email de PayPal', en: 'PayPal email', fr: 'Email PayPal', it: 'Email PayPal', pt: 'E-mail do PayPal' },
+  'f.mp.email':   { es: 'Email o alias Mercado Pago', en: 'Mercado Pago email or alias', fr: 'Email ou alias Mercado Pago', it: 'Email o alias Mercado Pago', pt: 'E-mail ou apelido Mercado Pago' },
+  'f.mp.holder':  { es: 'Titular de la cuenta MP', en: 'MP account holder', fr: 'Titulaire du compte MP', it: 'Intestatario account MP', pt: 'Titular da conta MP' },
+  'f.next':       { es: 'Siguiente · Leer contrato →', en: 'Next · Read contract →', fr: 'Suivant · Lire le contrat →', it: 'Avanti · Leggi il contratto →', pt: 'Próximo · Ler contrato →' },
 };
 
 function tt(key: string): string {
@@ -2906,11 +2931,11 @@ const partnerLandingUrl = invitation.slug_landing
                       <div class="p-content-type-pts">{c.puntos}<span> pts</span></div>
                     </div>
                     <p class="p-content-type-desc">{CT_I18N[lang]?.[c.id]?.descripcion || c.descripcion}</p>
-                    {c.ideasContenido && c.ideasContenido.length > 0 && (
+                    {(() => { const _ideas = CT_I18N[lang]?.[c.id]?.ideas || c.ideasContenido; return _ideas && _ideas.length > 0; })() && (
                       <div class="p-content-type-ideas">
                         <div class="p-content-type-ideas-label">{tt('card.examples')}</div>
                         <ul>
-                          {c.ideasContenido.slice(0, 3).map((idea) => <li>{idea}</li>)}
+                          {(CT_I18N[lang]?.[c.id]?.ideas || c.ideasContenido).slice(0, 3).map((idea) => <li>{idea}</li>)}
                         </ul>
                       </div>
                     )}
@@ -3456,19 +3481,19 @@ const partnerLandingUrl = invitation.slug_landing
               </div>
               <div class="p-sign-fields">
                 <label class="p-sign-field">
-                  <span>Nombre completo</span>
+                  <span>{tt('f.name')}</span>
                   <input type="text" id="sign-nombre" class="p-input" placeholder="Ej. Mariana López" value={invitation.nombre || ''} />
                 </label>
                 <label class="p-sign-field">
-                  <span>Email</span>
+                  <span>{tt('f.email')}</span>
                   <input type="email" id="sign-email" class="p-input" placeholder="tu@correo.com" value={invitation.email || ''} />
                 </label>
                 <label class="p-sign-field">
-                  <span>WhatsApp</span>
+                  <span>{tt('f.whatsapp')}</span>
                   <input type="tel" id="sign-whatsapp" class="p-input" placeholder="55 1234 5678" value={invitation.whatsapp || ''} />
                 </label>
                 <label class="p-sign-field">
-                  <span>Empresa o razón social <span class="p-sign-optional">(opcional)</span></span>
+                  <span>{tt('f.company')} <span class="p-sign-optional">{tt('f.optional')}</span></span>
                   <input type="text" id="sign-empresa" class="p-input" placeholder="Ej. Mariana López Studio S.A. de C.V." value={invitation.empresa || ''} />
                 </label>
               </div>
@@ -3481,23 +3506,23 @@ const partnerLandingUrl = invitation.slug_landing
               </div>
               <div class="p-sign-fields">
                 <label class="p-sign-field p-sign-field--full">
-                  <span>Calle y número</span>
+                  <span>{tt('f.street')}</span>
                   <input type="text" id="addr-calle" class="p-input" placeholder="Av. Insurgentes Sur 1234, Int. 5B" />
                 </label>
                 <label class="p-sign-field">
-                  <span>Colonia</span>
+                  <span>{tt('f.colonia')}</span>
                   <input type="text" id="addr-colonia" class="p-input" placeholder="Del Valle" />
                 </label>
                 <label class="p-sign-field">
-                  <span>Código postal</span>
+                  <span>{tt('f.cp')}</span>
                   <input type="text" id="addr-cp" class="p-input" placeholder="03100" inputmode="numeric" maxlength="5" />
                 </label>
                 <label class="p-sign-field">
-                  <span>Ciudad / Alcaldía</span>
+                  <span>{tt('f.city')}</span>
                   <input type="text" id="addr-ciudad" class="p-input" placeholder="Benito Juárez" />
                 </label>
                 <label class="p-sign-field">
-                  <span>Estado</span>
+                  <span>{tt('f.state')}</span>
                   <input type="text" id="addr-estado" class="p-input" placeholder="CDMX" />
                 </label>
               </div>
@@ -3508,26 +3533,26 @@ const partnerLandingUrl = invitation.slug_landing
                 <span class="p-sign-section-num">3</span>
                 <span class="p-sign-section-title">{tt('sign.s.payment')}</span>
               </div>
-              <div class="p-payout-methods" role="radiogroup" aria-label="Método de cobro">
+              <div class="p-payout-methods" role="radiogroup" aria-label={tt('f.payout.method')}>
                 <label class="p-payout-opt">
                   <input type="radio" name="payout-method" value="clabe" checked />
                   <span class="p-payout-opt-body">
-                    <span class="p-payout-opt-title">CLABE / Transferencia</span>
-                    <span class="p-payout-opt-sub">Depósito directo a banco mexicano</span>
+                    <span class="p-payout-opt-title">{tt('f.clabe')}</span>
+                    <span class="p-payout-opt-sub">{tt('f.clabe.sub')}</span>
                   </span>
                 </label>
                 <label class="p-payout-opt">
                   <input type="radio" name="payout-method" value="paypal" />
                   <span class="p-payout-opt-body">
                     <span class="p-payout-opt-title">PayPal</span>
-                    <span class="p-payout-opt-sub">Recibe en cualquier moneda</span>
+                    <span class="p-payout-opt-sub">{tt('f.paypal.sub')}</span>
                   </span>
                 </label>
                 <label class="p-payout-opt">
                   <input type="radio" name="payout-method" value="mercadopago" />
                   <span class="p-payout-opt-body">
                     <span class="p-payout-opt-title">Mercado Pago</span>
-                    <span class="p-payout-opt-sub">Saldo MP / cuenta vinculada</span>
+                    <span class="p-payout-opt-sub">{tt('f.mp.sub')}</span>
                   </span>
                 </label>
               </div>
@@ -3535,37 +3560,37 @@ const partnerLandingUrl = invitation.slug_landing
               {/* Detalle por método */}
               <div class="p-sign-fields p-payout-detail" data-payout-section="clabe">
                 <label class="p-sign-field">
-                  <span>CLABE Interbancaria (18 dígitos)</span>
+                  <span>{tt('f.clabe.full')}</span>
                   <input type="text" id="payout-clabe" class="p-input" placeholder="012180012345678901" inputmode="numeric" maxlength="18" />
                 </label>
                 <label class="p-sign-field">
-                  <span>Banco</span>
+                  <span>{tt('f.bank')}</span>
                   <input type="text" id="payout-banco" class="p-input" placeholder="Ej. BBVA, Santander, Banorte..." />
                 </label>
                 <label class="p-sign-field">
-                  <span>Titular de la cuenta</span>
+                  <span>{tt('f.holder')}</span>
                   <input type="text" id="payout-titular" class="p-input" placeholder="Como aparece en el estado de cuenta" />
                 </label>
                 <label class="p-sign-field">
-                  <span>RFC <span class="p-sign-optional">(opcional)</span></span>
+                  <span>{tt('f.rfc')} <span class="p-sign-optional">{tt('f.optional')}</span></span>
                   <input type="text" id="payout-rfc" class="p-input" placeholder="XAXX010101000" maxlength="13" />
                 </label>
               </div>
 
               <div class="p-sign-fields p-payout-detail" data-payout-section="paypal" hidden>
                 <label class="p-sign-field p-sign-field--full">
-                  <span>Email de PayPal</span>
+                  <span>{tt('f.paypal.email')}</span>
                   <input type="email" id="payout-paypal" class="p-input" placeholder="tu@paypal.com" />
                 </label>
               </div>
 
               <div class="p-sign-fields p-payout-detail" data-payout-section="mercadopago" hidden>
                 <label class="p-sign-field">
-                  <span>Email o alias Mercado Pago</span>
+                  <span>{tt('f.mp.email')}</span>
                   <input type="text" id="payout-mp-id" class="p-input" placeholder="tu@correo.com o alias.mp" />
                 </label>
                 <label class="p-sign-field">
-                  <span>Titular de la cuenta MP</span>
+                  <span>{tt('f.mp.holder')}</span>
                   <input type="text" id="payout-mp-titular" class="p-input" placeholder="Tu nombre completo en MP" />
                 </label>
               </div>
@@ -3573,7 +3598,7 @@ const partnerLandingUrl = invitation.slug_landing
 
             <div class="p-sw-nav">
               <button type="button" class="p-btn p-btn--ghost" id="btn-decline">{tt('sign.btn.decline')}</button>
-              <button type="button" class="p-btn p-btn--primary" data-sw-go="2">Siguiente · Leer contrato →</button>
+              <button type="button" class="p-btn p-btn--primary" data-sw-go="2">{tt('f.next')}</button>
             </div>
             </div>
             {/* ─────── /PASO 1 ─────── */}
