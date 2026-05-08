@@ -2813,34 +2813,36 @@ const partnerLandingUrl = invitation.slug_landing
           ese momento puedes ofrecer el servicio.
         </p>
 
-        <div class="p-cert-row">
-          {CERTIFICATIONS.map((c) => (
-            <div class="p-cert-card">
-              <div class="p-cert-card-img-wrap">
-                <img src={c.cover} alt={c.shortName} loading="lazy" width="1200" height="900" class="p-cert-card-img" />
-                <span class="p-cert-card-level">{c.nivel}</span>
+        <div class="p-cert-rows">
+          {CERTIFICATIONS.map((c, i) => (
+            <article class={`p-cert-rowcard ${i % 2 === 1 ? 'p-cert-rowcard--reverse' : ''}`}>
+              <div class="p-cert-rowcard-media">
+                <img src={c.cover} alt={c.shortName} loading="lazy" width="1200" height="900" class="p-cert-rowcard-img" />
+                <span class="p-cert-rowcard-level">{c.nivel}</span>
               </div>
-              <div class="p-cert-card-body">
-                <h4 class="p-cert-card-name">{c.shortName}</h4>
-                <p class="p-cert-card-desc">{c.descripcion}</p>
+              <div class="p-cert-rowcard-body">
+                <div class="p-cert-rowcard-num">{String(i + 1).padStart(2, '0')}</div>
+                <h4 class="p-cert-rowcard-name">{c.shortName}</h4>
+                <div class="p-cert-rowcard-meta">{c.duracion}</div>
+                <p class="p-cert-rowcard-desc">{c.descripcion}</p>
 
-                <div class="p-cert-card-rows">
-                  <div class="p-cert-card-row">
-                    <div class="p-cert-card-row-label">Cuota de certificación</div>
-                    <div class="p-cert-card-row-value">{c.precioMostrar} <span>MXN · pago único</span></div>
+                <div class="p-cert-rowcard-prices">
+                  <div class="p-cert-rowcard-price">
+                    <span class="p-cert-rowcard-price-lbl">Cuota de certificación · pago único</span>
+                    <span class="p-cert-rowcard-price-val">{c.precioMostrar} <em>MXN</em></span>
                   </div>
-                  <div class="p-cert-card-row p-cert-card-row--earn">
-                    <div class="p-cert-card-row-label">Lo que cobras al cliente</div>
-                    <div class="p-cert-card-row-value">{c.serviceChargeMostrar} <span>MXN {c.serviceUnit}</span></div>
+                  <div class="p-cert-rowcard-price p-cert-rowcard-price--earn">
+                    <span class="p-cert-rowcard-price-lbl">Lo que cobras al cliente</span>
+                    <span class="p-cert-rowcard-price-val">{c.serviceChargeMostrar} <em>MXN {c.serviceUnit}</em></span>
                   </div>
                 </div>
 
-                <div class="p-cert-card-keep">
-                  <span class="p-cert-card-keep-pct">100%</span>
-                  <span class="p-cert-card-keep-text">para ti — SACS no cobra comisión sobre lo que tú cobres</span>
+                <div class="p-cert-rowcard-keep">
+                  <span class="p-cert-rowcard-keep-pct">100%</span>
+                  <span class="p-cert-rowcard-keep-text">para ti — SACS no cobra comisión sobre lo que tú cobres al cliente.</span>
                 </div>
               </div>
-            </div>
+            </article>
           ))}
         </div>
 
@@ -4352,118 +4354,132 @@ const partnerLandingUrl = invitation.slug_landing
     .p-cert-hero-overlay { padding: 22px 22px; }
   }
 
-  /* ─── Cards de certificaciones (5 en fila, scroll-snap en mobile) ── */
-  .p-cert-row {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 14px;
-    margin-bottom: 32px;
-  }
-  @media (max-width: 1200px) {
-    .p-cert-row { grid-template-columns: repeat(3, 1fr); }
-  }
-  @media (max-width: 800px) {
-    .p-cert-row {
-      grid-template-columns: none;
-      grid-auto-flow: column;
-      grid-auto-columns: 78%;
-      overflow-x: auto;
-      scroll-snap-type: x proximity;
-      scroll-padding: 12px;
-      padding-bottom: 6px;
-      -webkit-overflow-scrolling: touch;
-    }
-    .p-cert-row > .p-cert-card { scroll-snap-align: start; }
-  }
-  .p-cert-card {
-    background: #fff;
-    border: 1px solid #ececec;
-    border-radius: 14px;
-    overflow: hidden;
+  /* ─── Filas de certificaciones (foto + explicación, alternadas) ─── */
+  .p-cert-rows {
     display: flex;
     flex-direction: column;
-    transition: border-color 0.18s, transform 0.18s;
+    gap: 24px;
+    margin-bottom: 32px;
   }
-  .p-cert-card:hover { border-color: #cfd6e2; transform: translateY(-1px); }
+  .p-cert-rowcard {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: 0;
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 16px;
+    overflow: hidden;
+    transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
+  }
+  .p-cert-rowcard:hover {
+    border-color: #cfd6e2;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px -16px rgba(26,26,46,0.18);
+  }
+  .p-cert-rowcard--reverse { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); }
+  .p-cert-rowcard--reverse .p-cert-rowcard-media { order: 2; }
+  .p-cert-rowcard--reverse .p-cert-rowcard-body  { order: 1; }
 
-  .p-cert-card-img-wrap {
+  .p-cert-rowcard-media {
     position: relative;
-    width: 100%;
-    aspect-ratio: 4 / 3;
     overflow: hidden;
     background: #f5f5f5;
+    min-height: 100%;
   }
-  .p-cert-card-img {
-    width: 100%; height: 100%;
+  .p-cert-rowcard-img {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
     display: block;
   }
-  .p-cert-card-level {
+  .p-cert-rowcard-level {
     position: absolute;
-    top: 12px; left: 12px;
-    font-size: 0.625rem;
+    top: 16px; left: 16px;
+    font-size: 0.6875rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: #fff;
-    background: rgba(26,26,26,0.78);
-    padding: 5px 10px;
+    background: rgba(26,26,26,0.82);
+    padding: 6px 12px;
     border-radius: 999px;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
 
-  .p-cert-card-body {
-    padding: 18px 18px 20px;
+  .p-cert-rowcard-body {
+    padding: 32px 32px 30px;
     display: flex;
     flex-direction: column;
     gap: 14px;
-    flex: 1;
   }
-  .p-cert-card-name {
+  .p-cert-rowcard-num {
     font-family: var(--font-display);
-    font-size: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #4B7BE5;
+    letter-spacing: 0.10em;
+    margin-bottom: -4px;
+  }
+  .p-cert-rowcard-name {
+    font-family: var(--font-display);
+    font-size: clamp(1.125rem, 2vw, 1.375rem);
     font-weight: 600;
     color: #1a1a1a;
     margin: 0;
-    letter-spacing: -0.01em;
-    line-height: 1.25;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
   }
-  .p-cert-card-desc {
-    font-size: 0.8125rem;
+  .p-cert-rowcard-meta {
+    font-size: 0.6875rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  .p-cert-rowcard-desc {
+    font-size: 0.9375rem;
     color: #555;
-    line-height: 1.55;
+    line-height: 1.6;
     margin: 0;
-    flex: 1;
   }
 
-  .p-cert-card-rows {
+  .p-cert-rowcard-prices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  @media (max-width: 480px) { .p-cert-rowcard-prices { grid-template-columns: 1fr; } }
+  .p-cert-rowcard-price {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    border-top: 1px solid #f0f0f0;
-    padding-top: 12px;
+    gap: 4px;
+    padding: 12px 14px;
+    background: #fafaf8;
+    border: 1px solid #ececec;
+    border-radius: 10px;
   }
-  .p-cert-card-row {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
+  .p-cert-rowcard-price--earn {
+    background: linear-gradient(180deg, rgba(42,140,95,0.06), rgba(42,140,95,0.02));
+    border-color: rgba(42,140,95,0.20);
   }
-  .p-cert-card-row-label {
+  .p-cert-rowcard-price-lbl {
     font-size: 0.625rem;
     color: #888;
     text-transform: uppercase;
     letter-spacing: 0.07em;
     font-weight: 600;
   }
-  .p-cert-card-row-value {
+  .p-cert-rowcard-price-val {
     font-family: var(--font-display);
-    font-size: 0.9375rem;
+    font-size: 1.125rem;
     font-weight: 600;
     color: #1a1a1a;
-    letter-spacing: -0.005em;
+    letter-spacing: -0.01em;
   }
-  .p-cert-card-row-value span {
+  .p-cert-rowcard-price-val em {
+    font-style: normal;
     font-family: var(--font-body, inherit);
     font-size: 0.6875rem;
     color: #888;
@@ -4471,31 +4487,42 @@ const partnerLandingUrl = invitation.slug_landing
     margin-left: 4px;
     letter-spacing: 0.02em;
   }
-  .p-cert-card-row--earn .p-cert-card-row-value { color: #2A8C5F; }
+  .p-cert-rowcard-price--earn .p-cert-rowcard-price-val { color: #2A8C5F; }
 
-  .p-cert-card-keep {
+  .p-cert-rowcard-keep {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    background: linear-gradient(180deg, rgba(42,140,95,0.06), rgba(42,140,95,0.02));
-    border: 1px solid rgba(42,140,95,0.18);
-    border-radius: 10px;
+    gap: 12px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, rgba(42,140,95,0.10), rgba(42,140,95,0.03));
+    border: 1px solid rgba(42,140,95,0.22);
+    border-radius: 12px;
   }
-  .p-cert-card-keep-pct {
+  .p-cert-rowcard-keep-pct {
     font-family: var(--font-display);
-    font-size: 1.25rem;
+    font-size: 1.875rem;
     font-weight: 300;
     color: #2A8C5F;
     letter-spacing: -0.02em;
     line-height: 1;
     flex-shrink: 0;
   }
-  .p-cert-card-keep-text {
-    font-size: 0.6875rem;
-    color: #2A8C5F;
-    line-height: 1.35;
+  .p-cert-rowcard-keep-text {
+    font-size: 0.8125rem;
+    color: #1a4a35;
+    line-height: 1.4;
     font-weight: 500;
+  }
+
+  @media (max-width: 720px) {
+    .p-cert-rowcard,
+    .p-cert-rowcard--reverse {
+      grid-template-columns: 1fr;
+    }
+    .p-cert-rowcard--reverse .p-cert-rowcard-media { order: 0; }
+    .p-cert-rowcard--reverse .p-cert-rowcard-body  { order: 0; }
+    .p-cert-rowcard-media { aspect-ratio: 16 / 10; min-height: 0; }
+    .p-cert-rowcard-body { padding: 24px 22px 24px; }
   }
 
   .p-cert-unlock {
