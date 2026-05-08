@@ -2,7 +2,7 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { supabase } from '../../../lib/supabase';
 import PartnerSidebar from '../../../components/partner/PartnerSidebar.astro';
-import { CONTENT_TYPES, META_PUNTOS_MES, CATEGORIAS, getContentTypesByCategoria } from '../../../data/content-types';
+import { CONTENT_TYPES, META_PUNTOS_MES, CATEGORIAS, PERFILES, appliesToPerfil, getContentTypesByCategoria } from '../../../data/content-types';
 import { CERTIFICATIONS } from '../../../data/certifications';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -2166,8 +2166,9 @@ const partnerLandingUrl = invitation.slug_landing
           </div>
         </div>
 
-        <!-- ── 1. Lo que ganas ── -->
-        <div class="p-terms-group-eyebrow">1 · Lo que ganas</div>
+        <!-- ── 1. Compensación: lo que ganas en dinero ── -->
+        <div class="p-terms-group-eyebrow">1 · Compensación · cuánto ganas</div>
+        <p class="p-terms-group-lead">El dinero que entra a tu cuenta. Comisiones y bonos sobre cada cliente y cada acción del proceso. Pagos cada 30 días, sin "depende de…".</p>
         <div class="p-terms">
           <div class="p-term-row p-term-row--big">
             <div class="p-term-info">
@@ -2198,10 +2199,11 @@ const partnerLandingUrl = invitation.slug_landing
           )}
         </div>
 
-        <!-- ── 2. Lo que SACS te entrega ── -->
+        <!-- ── 2. Activos y herramientas que recibes ── -->
         {beneficios.length > 0 && (
           <>
-            <div class="p-terms-group-eyebrow">2 · Lo que SACS te entrega</div>
+            <div class="p-terms-group-eyebrow">2 · Activos y herramientas que recibes</div>
+            <p class="p-terms-group-lead">Lo que SACS te da para trabajar. Software, recursos, materiales y soporte — todo sin costo mientras seas partner activo.</p>
             <div class="p-terms">
               {beneficios.map((b: any) => {
                 const label = (b.value_label || '').trim();
@@ -2227,6 +2229,7 @@ const partnerLandingUrl = invitation.slug_landing
 
         <!-- ── 3. Costos y vigencia ── -->
         <div class="p-terms-group-eyebrow">3 · Costos y vigencia</div>
+        <p class="p-terms-group-lead">Lo que cuesta participar. Si dice "sin costo", es sin costo — la transparencia es parte del trato.</p>
         <div class="p-terms">
           {costoUnico > 0 && (
             <div class="p-term-row">
@@ -2538,11 +2541,27 @@ const partnerLandingUrl = invitation.slug_landing
           </div>
         </div>
 
-        <!-- Sub-tabs por categoría -->
+        <!-- Filtro por perfil + sub-tabs por categoría -->
         <h3 class="p-content-h3">Las 3 formas de sumar puntos</h3>
         <p class="p-section-lead p-section-lead--sub">
-          Cada tab agrupa un tipo de actividad. Mezcla las que mejor te queden para llegar a los {META_PUNTOS_MES} puntos al mes.
+          Primero elige tu perfil — cada uno tiene acciones diferentes. Después combina contenido,
+          apoyo y filantropía para llegar a los {META_PUNTOS_MES} puntos al mes.
         </p>
+
+        <div class="p-perfil-filter" role="tablist" aria-label="Filtrar por perfil de partner">
+          {PERFILES.map((p, idx) => (
+            <button
+              type="button"
+              class={`p-perfil-pill${idx === 0 ? ' is-active' : ''}`}
+              role="tab"
+              aria-selected={idx === 0 ? 'true' : 'false'}
+              data-perfil-filter={p.id}
+              title={p.descripcion}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
 
         <div class="p-cat-tabs" role="tablist">
           {CATEGORIAS.map((cat, idx) => (
@@ -2554,7 +2573,7 @@ const partnerLandingUrl = invitation.slug_landing
               data-cat-tab={cat.id}
             >
               <span class="p-cat-tab-label">{cat.label}</span>
-              <span class="p-cat-tab-count">{getContentTypesByCategoria(cat.id).length}</span>
+              <span class="p-cat-tab-count" data-cat-count={cat.id}>{getContentTypesByCategoria(cat.id).length}</span>
             </button>
           ))}
         </div>
@@ -2571,7 +2590,10 @@ const partnerLandingUrl = invitation.slug_landing
               <p class="p-cat-panel-desc">{cat.descripcion}</p>
               <div class="p-content-types-grid">
                 {items.map((c) => (
-                  <div class={`p-content-type-card ${c.id === 'serie_completa' ? 'p-content-type-card--bonus' : ''}`}>
+                  <div
+                    class={`p-content-type-card ${c.id === 'serie_completa' ? 'p-content-type-card--bonus' : ''}`}
+                    data-perfiles={(c.perfiles && c.perfiles.length > 0) ? c.perfiles.join(',') : 'todos'}
+                  >
                     {c.ejemploImage && (
                       <div class="p-content-type-img-wrap">
                         <img src={c.ejemploImage} alt={`Ejemplo: ${c.nombre}`} loading="lazy" class="p-content-type-img" />
@@ -3924,6 +3946,13 @@ const partnerLandingUrl = invitation.slug_landing
   }
   .p-terms-group-eyebrow:first-of-type {
     margin-top: 12px;
+  }
+  .p-terms-group-lead {
+    font-size: 0.9375rem;
+    color: #555;
+    line-height: 1.55;
+    margin: 0 0 16px;
+    max-width: 620px;
   }
 
   /* ─── Funnel de conversión — Squarespace style: timeline vertical limpio ─── */
@@ -6057,6 +6086,49 @@ const partnerLandingUrl = invitation.slug_landing
   .p-section-lead--sub {
     margin-top: 0;
     margin-bottom: 24px;
+  }
+
+  /* ── Filtro de perfil (Influencer / Nómada / Dueño / Todos) ── */
+  .p-perfil-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .p-perfil-pill {
+    padding: 8px 16px;
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 999px;
+    cursor: pointer;
+    color: #555;
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    transition: background 0.18s, border-color 0.18s, color 0.18s, box-shadow 0.18s;
+    white-space: nowrap;
+  }
+  .p-perfil-pill:hover {
+    color: #1a1a1a;
+    border-color: #cfd6e2;
+  }
+  .p-perfil-pill.is-active {
+    background: #1a1a1a;
+    color: #fff;
+    border-color: #1a1a1a;
+    box-shadow: 0 4px 12px -4px rgba(26,26,46,0.30);
+  }
+  .p-content-type-card.is-hidden { display: none; }
+  .p-cat-panel-empty {
+    grid-column: 1 / -1;
+    padding: 40px 24px;
+    text-align: center;
+    color: #888;
+    font-size: 0.9375rem;
+    background: #fafaf8;
+    border: 1px dashed #d9d9d9;
+    border-radius: 12px;
   }
 
   /* ── Sub-tabs por categoría ────────────────────────── */
@@ -9260,6 +9332,49 @@ const partnerLandingUrl = invitation.slug_landing
       p.classList.toggle('is-active', active);
       if (active) p.removeAttribute('hidden'); else p.setAttribute('hidden', '');
     });
+  });
+
+  // ─── Filtro de perfil (Influencer / Nómada / Dueño / Todos) ───
+  function applyPerfilFilter(perfilId) {
+    document.querySelectorAll('[data-perfil-filter]').forEach(p => {
+      const active = p.dataset.perfilFilter === perfilId;
+      p.classList.toggle('is-active', active);
+      p.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    // Filtra cards y actualiza contadores por categoría
+    const counts = { contenido: 0, apoyo: 0, filantropia: 0 };
+    document.querySelectorAll('[data-cat-panel]').forEach(panel => {
+      const cat = panel.dataset.catPanel;
+      let visible = 0;
+      panel.querySelectorAll('.p-content-type-card').forEach(card => {
+        const tags = (card.dataset.perfiles || 'todos').split(',');
+        const show = perfilId === 'todos' || tags.includes('todos') || tags.includes(perfilId);
+        card.classList.toggle('is-hidden', !show);
+        if (show) visible++;
+      });
+      if (cat) counts[cat] = visible;
+      // Mensaje vacío
+      let emptyMsg = panel.querySelector('.p-cat-panel-empty');
+      if (visible === 0) {
+        if (!emptyMsg) {
+          emptyMsg = document.createElement('div');
+          emptyMsg.className = 'p-cat-panel-empty';
+          emptyMsg.textContent = 'Sin acciones específicas para este perfil en esta categoría — cambia el perfil o explora otro tab.';
+          panel.querySelector('.p-content-types-grid')?.appendChild(emptyMsg);
+        }
+      } else if (emptyMsg) {
+        emptyMsg.remove();
+      }
+    });
+    document.querySelectorAll('[data-cat-count]').forEach(c => {
+      const cat = c.dataset.catCount;
+      if (counts[cat] !== undefined) c.textContent = String(counts[cat]);
+    });
+  }
+  document.addEventListener('click', e => {
+    const pill = e.target.closest('[data-perfil-filter]');
+    if (!pill) return;
+    applyPerfilFilter(pill.dataset.perfilFilter);
   });
 
   // Initial tab from hash or initialTab

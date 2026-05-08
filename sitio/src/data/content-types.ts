@@ -5,6 +5,8 @@
 // La meta mensual es 100 puntos. Los puntos se acumulan al siguiente mes
 // si el partner genera más de la cuota.
 
+export type Perfil = 'influencer' | 'nomada' | 'dueño';
+
 export interface ContentType {
   id: string;
   nombre: string;
@@ -17,6 +19,7 @@ export interface ContentType {
   ejemploRefs?: { label: string; url: string }[];
   plataformasSugeridas: string[];
   categoria?: 'contenido' | 'apoyo' | 'filantropia'; // default 'contenido'
+  perfiles?: Perfil[];    // si está definido, solo se muestra a esos perfiles. Si no, aplica a todos.
 }
 
 export const CATEGORIAS = [
@@ -24,6 +27,22 @@ export const CATEGORIAS = [
   { id: 'apoyo',      label: 'Acciones de apoyo',   descripcion: 'Acciones de marketing y crecimiento que extienden a SACS sin ser contenido publicado: demos en eventos, reseñas, intros, activaciones in situ.' },
   { id: 'filantropia', label: 'Filantropía',         descripcion: 'Acciones para ayudar a personas o animales — voluntariado, refugios, comedores, jornadas, mentorías. Documentadas con foto/video.' },
 ] as const;
+
+export const PERFILES = [
+  { id: 'todos',      label: 'Todos los perfiles', descripcion: 'Sin filtro — todas las acciones disponibles.' },
+  { id: 'influencer', label: 'Influencer',         descripcion: 'Para creadores con audiencia construida que monetizan su alcance.' },
+  { id: 'nomada',     label: 'Nómada digital',     descripcion: 'Para quienes trabajan remoto desde donde sea — la mayor parte aplica.' },
+  { id: 'dueño',      label: 'Dueño de negocio',   descripcion: 'Para dueños de tienda, distribuidores, comerciantes y consultores con cartera B2B.' },
+] as const;
+
+export type PerfilFilter = typeof PERFILES[number]['id'];
+
+// Helper: ¿este content type aplica al perfil dado? Si no tiene perfiles definidos, aplica a todos.
+export function appliesToPerfil(c: ContentType, perfil: PerfilFilter): boolean {
+  if (perfil === 'todos') return true;
+  if (!c.perfiles || c.perfiles.length === 0) return true;
+  return c.perfiles.includes(perfil);
+}
 
 export const CONTENT_TYPES: ContentType[] = [
   {
@@ -72,6 +91,7 @@ export const CONTENT_TYPES: ContentType[] = [
     puntos: 20,
     duracion: '90-120 seg',
     esfuerzo: 'medio',
+    perfiles: ['dueño', 'nomada'],
     descripcion: 'Cuenta cómo aplicas SACS específicamente en tu negocio. Storytelling de tu propio caso.',
     ideasContenido: [
       'Cómo evito que se me pierda mercancía entre sucursales',
@@ -129,6 +149,7 @@ export const CONTENT_TYPES: ContentType[] = [
     puntos: 30,
     duracion: '60-180 seg',
     esfuerzo: 'alto',
+    perfiles: ['dueño'],
     descripcion: 'Cuenta el impacto real de SACS en tu negocio: antes vs ahora con números.',
     ideasContenido: [
       'Mi cierre era un caos. Hoy lo hago en 15 min.',
@@ -148,6 +169,7 @@ export const CONTENT_TYPES: ContentType[] = [
     puntos: 30,
     duracion: '5-10 min',
     esfuerzo: 'alto',
+    perfiles: ['influencer', 'nomada'],
     descripcion: 'Un episodio de tu serie temática. La serie completa (10 episodios) suma puntos extra.',
     ideasContenido: [
       'Estrategias para retail moderno · Ep 3: Inventario inteligente',
@@ -185,6 +207,7 @@ export const CONTENT_TYPES: ContentType[] = [
     puntos: 50,
     duracion: '3-7 min',
     esfuerzo: 'muy-alto',
+    perfiles: ['influencer'],
     descripcion: 'Pieza narrativa con producción cuidada — historia de tu marca o de alguien que usa SACS.',
     ideasContenido: [
       'La historia de mi boutique (transformación digital)',
@@ -205,6 +228,7 @@ export const CONTENT_TYPES: ContentType[] = [
     puntos: 300,
     duracion: 'trimestral',
     esfuerzo: 'muy-alto',
+    perfiles: ['influencer'],
     descripcion: 'Bonus por entregar una serie completa de 10 episodios sobre un tema. Equivale a 30 puntos por episodio + 60 de bonus.',
     ideasContenido: [
       'Estrategias para Retail 2026 (10 eps)',
@@ -226,6 +250,7 @@ const APOYO_TYPES: ContentType[] = [
   {
     id: 'demo_evento_sector', nombre: 'Demo de SACS en evento del sector',
     puntos: 25, duracion: '1-3 horas', esfuerzo: 'medio-alto', categoria: 'apoyo',
+    perfiles: ['dueño', 'nomada'],
     descripcion: 'Mostrar SACS funcionando en un evento, feria o expo del sector retail/restaurantes. Subes foto del stand o sesión + lista de asistentes/contactos generados.',
     ideasContenido: [
       'Stand SACS en expo de retail',
@@ -248,6 +273,7 @@ const APOYO_TYPES: ContentType[] = [
   {
     id: 'activacion_sucursal', nombre: 'Activación abierta en tu sucursal',
     puntos: 30, duracion: '4-6 horas', esfuerzo: 'alto', categoria: 'apoyo',
+    perfiles: ['dueño'],
     descripcion: 'Día abierto donde otros dueños de negocio vienen a tu sucursal a ver SACS funcionando en vivo. Mín. 5 asistentes externos. Documentar con foto + lista.',
     ideasContenido: [
       'Open day "POS en acción" en tu boutique',
@@ -281,6 +307,7 @@ const APOYO_TYPES: ContentType[] = [
   {
     id: 'meetup_local', nombre: 'Meetup o mesa redonda en tu local',
     puntos: 30, duracion: '2-3 horas', esfuerzo: 'medio-alto', categoria: 'apoyo',
+    perfiles: ['dueño'],
     descripcion: 'Hostear un meetup presencial en tu sucursal sobre retail, ecommerce o gestión de negocio, con SACS visible. Mín. 10 asistentes.',
     ideasContenido: [
       '"Café con dueños": cómo opero mi multi-sucursal',
@@ -292,6 +319,7 @@ const APOYO_TYPES: ContentType[] = [
   {
     id: 'co_marketing', nombre: 'Co-marketing con marca aliada',
     puntos: 25, duracion: 'variable', esfuerzo: 'medio', categoria: 'apoyo',
+    perfiles: ['influencer'],
     descripcion: 'Colaboración con una marca complementaria (no competidora) que mencione a SACS en su canal. Reels conjuntos, blog cruzado, evento doble.',
     ideasContenido: [
       'Reel conjunto con marca de mobiliario retail',
@@ -314,6 +342,7 @@ const APOYO_TYPES: ContentType[] = [
   {
     id: 'material_local', nombre: 'Material físico de SACS en tu local',
     puntos: 10, duracion: 'continuo', esfuerzo: 'bajo', categoria: 'apoyo',
+    perfiles: ['dueño'],
     descripcion: 'Mantener material visible en tu sucursal: QR, folleto, tarjeta, sticker o display SACS. Sumas puntos cada mes que se mantenga visible. Foto mensual.',
     ideasContenido: [
       'QR a tu landing visible en caja',
@@ -325,6 +354,7 @@ const APOYO_TYPES: ContentType[] = [
   {
     id: 'stand_feria', nombre: 'Compartir stand en feria del sector',
     puntos: 50, duracion: '1-2 días', esfuerzo: 'muy-alto', categoria: 'apoyo',
+    perfiles: ['dueño'],
     descripcion: 'Representar la marca SACS desde un stand propio o compartido en una feria/expo regional o nacional. Documentar con foto + reporte de leads.',
     ideasContenido: [
       'Stand en ANTAD',
