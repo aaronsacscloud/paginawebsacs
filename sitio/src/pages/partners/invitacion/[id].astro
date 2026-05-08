@@ -7,6 +7,79 @@ import { CERTIFICATIONS } from '../../../data/certifications';
 import fs from 'node:fs';
 import path from 'node:path';
 
+// ── i18n + Currency conversion para la invitación ──────────────
+// Detectamos lang vía ?lang=en (default es). Las cifras se convierten
+// de MXN a la moneda del idioma. El acuerdo legal sigue siendo MXN.
+type Lang = 'es' | 'en' | 'fr' | 'it' | 'pt';
+const SUPPORTED_LANGS: Lang[] = ['es', 'en', 'fr', 'it', 'pt'];
+const langParam = (Astro.url.searchParams.get('lang') || 'es').toLowerCase();
+const lang: Lang = (SUPPORTED_LANGS.includes(langParam as Lang) ? langParam : 'es') as Lang;
+const isLocalized = lang !== 'es';
+
+// Tasas de cambio aprox (MXN base). Refresh manual cada cierto tiempo.
+const FX: Record<Lang, { code: string; symbol: string; rate: number; locale: string }> = {
+  es: { code: 'MXN', symbol: '$',  rate: 1,       locale: 'es-MX' },
+  en: { code: 'USD', symbol: '$',  rate: 1 / 18,  locale: 'en-US' },
+  fr: { code: 'EUR', symbol: '€',  rate: 1 / 19.5, locale: 'fr-FR' },
+  it: { code: 'EUR', symbol: '€',  rate: 1 / 19.5, locale: 'it-IT' },
+  pt: { code: 'BRL', symbol: 'R$', rate: 1 / 3.6,  locale: 'pt-BR' },
+};
+function fmtLocalMoney(mxn: number): string {
+  if (!Number.isFinite(mxn)) return '';
+  const fx = FX[lang];
+  const converted = mxn * fx.rate;
+  // Redondeamos sensatamente: <100 → enteros, >=100 → enteros sin decimales
+  const rounded = converted < 1 ? Math.round(converted * 100) / 100 : Math.round(converted);
+  try {
+    return new Intl.NumberFormat(fx.locale, {
+      style: 'currency',
+      currency: fx.code,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: converted < 1 ? 2 : 0,
+    }).format(rounded);
+  } catch {
+    return `${fx.symbol}${rounded.toLocaleString('es-MX')} ${fx.code}`;
+  }
+}
+
+// Diccionario de strings i18n (shell visible: tabs, hero, TL;DR, glosario, labels de currency)
+const I18N: Record<string, Record<Lang, string>> = {
+  // Tab labels
+  'tab.bienvenida':   { es: 'Bienvenida', en: 'Welcome', fr: 'Bienvenue', it: 'Benvenuto', pt: 'Boas-vindas' },
+  'tab.terminos':     { es: 'Términos', en: 'Terms', fr: 'Conditions', it: 'Termini', pt: 'Termos' },
+  'tab.embudo':       { es: 'Embudo y seguimiento de ventas', en: 'Sales funnel & follow-up', fr: 'Entonnoir et suivi', it: 'Funnel e follow-up', pt: 'Funil e acompanhamento' },
+  'tab.compromisos':  { es: 'Compromisos del Partner', en: 'Partner commitments', fr: 'Engagements du partenaire', it: 'Impegni del partner', pt: 'Compromissos do parceiro' },
+  'tab.contenido':    { es: 'Contenido y puntos', en: 'Content & points', fr: 'Contenu & points', it: 'Contenuti & punti', pt: 'Conteúdo & pontos' },
+  'tab.compensacion': { es: 'Lo que puedes ganar', en: 'What you can earn', fr: "Ce que vous pouvez gagner", it: 'Quanto puoi guadagnare', pt: 'O que você pode ganhar' },
+  'tab.proceso':      { es: 'Proceso de inscripción', en: 'Enrollment process', fr: 'Processus d\'inscription', it: 'Processo di iscrizione', pt: 'Processo de inscrição' },
+
+  // TL;DR
+  'tldr.eyebrow':     { es: 'Resumen · 12 min de lectura', en: 'Summary · 12 min read', fr: 'Résumé · lecture de 12 min', it: 'Riepilogo · 12 min di lettura', pt: 'Resumo · 12 min de leitura' },
+  'tldr.title':       { es: 'Lo esencial en 5 líneas', en: 'The essentials in 5 lines', fr: "L'essentiel en 5 lignes", it: "L'essenziale in 5 righe", pt: 'O essencial em 5 linhas' },
+
+  // Hero stats labels
+  'hero.commission':  { es: 'Comisión por venta directa', en: 'Direct sale commission', fr: 'Commission sur vente directe', it: 'Commissione su vendita diretta', pt: 'Comissão por venta direta' },
+  'hero.brands':      { es: 'Marcas en la red SACS', en: 'Brands in the SACS network', fr: 'Marques dans le réseau SACS', it: 'Marchi nella rete SACS', pt: 'Marcas na rede SACS' },
+  'hero.bonus.test':  { es: 'Por prueba gratis activada', en: 'Per free trial activation', fr: "Par essai gratuit activé", it: 'Per prova gratuita attivata', pt: 'Por avaliação grátis ativada' },
+  'hero.bonus.demo':  { es: 'Por demo completada', en: 'Per completed demo', fr: 'Par démo complétée', it: 'Per demo completata', pt: 'Por demo concluída' },
+
+  // Localized banner
+  'banner.localized': {
+    es: '',
+    en: 'Localized view · figures shown in USD are referential; payments and the legal agreement remain in MXN.',
+    fr: 'Vue localisée · les montants en EUR sont à titre indicatif ; les paiements et l\'accord légal restent en MXN.',
+    it: 'Vista localizzata · gli importi in EUR sono di riferimento; i pagamenti e l\'accordo legale restano in MXN.',
+    pt: 'Visualização localizada · valores em BRL são referenciais; os pagamentos e o acordo legal permanecem em MXN.',
+  },
+
+  // Lang selector
+  'lang.label': { es: 'Idioma', en: 'Language', fr: 'Langue', it: 'Lingua', pt: 'Idioma' },
+};
+
+function tt(key: string): string {
+  return I18N[key]?.[lang] || I18N[key]?.es || key;
+}
+
 // Lista de fotos reales de partners (de /public/images/partner-wall/).
 // Distribución: 50% nómadas/casa/café · 30% influencers · 10% comerciantes · 10% empresarios.
 // Usamos fs.readdirSync una vez al request — es < 1ms y evita hardcoding.
@@ -116,7 +189,7 @@ const isSubmitted = invitation.estado === 'submitted_for_review';
 const isClosed = isAccepted || isDeclined || isSubmitted;
 
 const fmt = (n: number) => n === 0 ? 'Gratis' : '$' + Math.round(n).toLocaleString('es-MX');
-const fmtMoney = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+const fmtMoney = (n: number) => fmtLocalMoney(n);
 const fmtDate = (d: string | null) => {
   if (!d) return '';
   const date = new Date(d.length === 10 ? d + 'T12:00:00' : d);
@@ -159,15 +232,23 @@ const heroEyebrow = `Invitación · Programa Partners`;
 const heroTitle = invitation.nombre;
 const heroSubtitle = tipoTagline[tipo] || '';
 
+const SIGN_LABELS: Record<Lang, { firmada: string; rechazada: string; revision: string; firmar: string }> = {
+  es: { firmada: 'Firmada', rechazada: 'Rechazada', revision: 'En revisión', firmar: 'Aceptar y firmar' },
+  en: { firmada: 'Signed', rechazada: 'Declined', revision: 'In review', firmar: 'Accept & sign' },
+  fr: { firmada: 'Signée', rechazada: 'Refusée', revision: 'En examen', firmar: 'Accepter & signer' },
+  it: { firmada: 'Firmata', rechazada: 'Rifiutata', revision: 'In revisione', firmar: 'Accetta e firma' },
+  pt: { firmada: 'Assinada', rechazada: 'Recusada', revision: 'Em revisão', firmar: 'Aceitar e assinar' },
+};
+const sl = SIGN_LABELS[lang];
 const tabsDef = [
-  { id: 'bienvenida', label: 'Bienvenida', show: true },
-  { id: 'terminos', label: 'Términos', show: true },
-  { id: 'embudo', label: 'Embudo y seguimiento de ventas', show: true },
-  { id: 'compromisos', label: 'Compromisos del Partner', show: compromisos.length > 0 },
-  { id: 'contenido',  label: 'Contenido y puntos', show: tipo === 'embajador' },
-  { id: 'compensacion', label: 'Lo que puedes ganar', show: comisionPct > 0 || Object.keys(tabulador).length > 0 },
-  { id: 'proceso',    label: 'Proceso de inscripción', show: true },
-  { id: 'firma', label: isAccepted ? 'Firmada' : (isDeclined ? 'Rechazada' : (isSubmitted ? 'En revisión' : 'Aceptar y firmar')), show: true },
+  { id: 'bienvenida',  label: tt('tab.bienvenida'),   show: true },
+  { id: 'terminos',    label: tt('tab.terminos'),     show: true },
+  { id: 'embudo',      label: tt('tab.embudo'),       show: true },
+  { id: 'compromisos', label: tt('tab.compromisos'),  show: compromisos.length > 0 },
+  { id: 'contenido',   label: tt('tab.contenido'),    show: tipo === 'embajador' },
+  { id: 'compensacion', label: tt('tab.compensacion'), show: comisionPct > 0 || Object.keys(tabulador).length > 0 },
+  { id: 'proceso',     label: tt('tab.proceso'),      show: true },
+  { id: 'firma',       label: isAccepted ? sl.firmada : (isDeclined ? sl.rechazada : (isSubmitted ? sl.revision : sl.firmar)), show: true },
 ];
 const visibleTabs = tabsDef.filter(t => t.show).map(({ id, label }) => ({ id, label }));
 const initialTab = isClosed ? 'firma' : 'bienvenida';
@@ -261,6 +342,18 @@ const partnerLandingUrl = invitation.slug_landing
 
   <div class:list={['p-page', `p-${template}`]} id="partner-doc" data-initial-tab={initialTab}>
 
+    <!-- Language switcher (sticky top-right, hidden on print) -->
+    <div class="p-langswitch no-print" role="group" aria-label={tt('lang.label')}>
+      {SUPPORTED_LANGS.map((l) => {
+        const url = new URL(Astro.url);
+        if (l === 'es') url.searchParams.delete('lang'); else url.searchParams.set('lang', l);
+        const href = url.pathname + (url.search || '') + url.hash;
+        return (
+          <a href={href} class={`p-langswitch-btn${l === lang ? ' is-active' : ''}`} hreflang={l} title={l.toUpperCase()}>{l.toUpperCase()}</a>
+        );
+      })}
+    </div>
+
     <!-- Mobile sticky nav (oculta en desktop) -->
     <nav class="p-mobnav no-print" aria-label="Secciones (móvil)">
       <div class="p-mobnav-inner" id="p-mobnav-inner">
@@ -300,6 +393,13 @@ const partnerLandingUrl = invitation.slug_landing
 
       <!-- TAB: BIENVENIDA -->
       <section class="p-tab-panel" data-tab="bienvenida">
+        {isLocalized && (
+          <div class="p-localized-banner no-print">
+            <span class="p-localized-icon" aria-hidden="true">🌐</span>
+            <span class="p-localized-text">{tt('banner.localized')}</span>
+          </div>
+        )}
+
         <!-- Hero -->
         <div class="p-hero">
           <div class="p-hero-eyebrow">{heroEyebrow}</div>
@@ -2202,7 +2302,7 @@ const partnerLandingUrl = invitation.slug_landing
                 <div class="p-term-label">Bono por prueba gratis activada</div>
                 <div class="p-term-detail">Cada vez que un usuario llega por tu link y se registra para una prueba gratuita en SACS.</div>
               </div>
-              <div class="p-term-value">{fmtMoney(bonusPruebaGratis)} {moneda}</div>
+              <div class="p-term-value">{fmtMoney(bonusPruebaGratis)}</div>
             </div>
           )}
 
@@ -2212,7 +2312,7 @@ const partnerLandingUrl = invitation.slug_landing
                 <div class="p-term-label">Bono por demo completada</div>
                 <div class="p-term-detail">Cuando el prospecto asiste y completa el demo válido con SACS (mín. 25 min con tomador de decisión).</div>
               </div>
-              <div class="p-term-value">{fmtMoney(bonusCompletada)} {moneda}</div>
+              <div class="p-term-value">{fmtMoney(bonusCompletada)}</div>
             </div>
           )}
         </div>
@@ -2255,7 +2355,7 @@ const partnerLandingUrl = invitation.slug_landing
                 <div class="p-term-label">Cuota única de inscripción</div>
                 <div class="p-term-detail">Pago único al activar tu programa.</div>
               </div>
-              <div class="p-term-value">{fmtMoney(costoUnico)} {moneda}</div>
+              <div class="p-term-value">{fmtMoney(costoUnico)}</div>
             </div>
           )}
 
@@ -2772,7 +2872,7 @@ const partnerLandingUrl = invitation.slug_landing
         )}
 
         <!-- ── Calculadora interactiva ── -->
-        <div class="p-calc" data-calc data-rate={ratePartner} data-bp={bonusPruebaGratis} data-bd={bonusCompletada}>
+        <div class="p-calc" data-calc data-rate={ratePartner} data-bp={bonusPruebaGratis} data-bd={bonusCompletada} data-fx={FX[lang].rate} data-cur={FX[lang].code} data-loc={FX[lang].locale}>
           <div class="p-calc-eyebrow">Calcula tu potencial</div>
           <h3 class="p-calc-title">Tus números a 12 meses.</h3>
           <p class="p-calc-lead">
@@ -2886,7 +2986,7 @@ const partnerLandingUrl = invitation.slug_landing
                         <td class={`p-matrix-td ${p.highlighted ? 'p-matrix-td--featured' : ''}`} style={`--col-accent:${p.accent}`}>
                           <div class="p-matrix-amount p-view-mensual">{fmtMoney(valueMonthly)}</div>
                           <div class="p-matrix-amount p-view-anual">{fmtMoney(valueAnnual)}</div>
-                          <div class="p-matrix-sub">MXN</div>
+                          <div class="p-matrix-sub">{FX[lang].code}</div>
                         </td>
                       );
                     })}
@@ -2962,11 +3062,11 @@ const partnerLandingUrl = invitation.slug_landing
                 <div class="p-cert-rowcard-prices">
                   <div class="p-cert-rowcard-price">
                     <span class="p-cert-rowcard-price-lbl">Cuota de certificación · pago único</span>
-                    <span class="p-cert-rowcard-price-val">{c.precioMostrar} <em>MXN</em></span>
+                    <span class="p-cert-rowcard-price-val">{fmtMoney(c.precio / 100)}</span>
                   </div>
                   <div class="p-cert-rowcard-price p-cert-rowcard-price--earn">
                     <span class="p-cert-rowcard-price-lbl">Lo que cobras al cliente</span>
-                    <span class="p-cert-rowcard-price-val">{c.serviceChargeMostrar} <em>MXN {c.serviceUnit}</em></span>
+                    <span class="p-cert-rowcard-price-val">{fmtMoney(c.serviceChargeMin)} – {fmtMoney(c.serviceChargeMax)} <em>{c.serviceUnit}</em></span>
                   </div>
                 </div>
 
@@ -8942,6 +9042,60 @@ const partnerLandingUrl = invitation.slug_landing
   }
   .p-paths-note strong { color: #1a1a1a; font-weight: 600; }
 
+  /* ─── Language switcher (top-right sticky) ─────────── */
+  .p-langswitch {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    gap: 4px;
+    justify-content: flex-end;
+    padding: 10px 32px 0;
+    pointer-events: none;
+  }
+  @media (max-width: 1023px) { .p-langswitch { padding: 10px 20px 0; } }
+  .p-langswitch-btn {
+    pointer-events: auto;
+    padding: 5px 10px;
+    background: rgba(255,255,255,0.92);
+    border: 1px solid #ececec;
+    border-radius: 999px;
+    color: #555;
+    font-family: var(--font-display);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  .p-langswitch-btn:hover {
+    color: #1a1a1a;
+    border-color: #cfd6e2;
+  }
+  .p-langswitch-btn.is-active {
+    background: #1a1a1a;
+    color: #fff;
+    border-color: #1a1a1a;
+  }
+
+  /* ─── Banner localizado (cuando lang ≠ es) ─────────── */
+  .p-localized-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding: 10px 16px;
+    background: rgba(75,123,229,0.07);
+    border: 1px solid rgba(75,123,229,0.20);
+    border-radius: 10px;
+    font-size: 0.8125rem;
+    color: #1a4a85;
+    line-height: 1.45;
+  }
+  .p-localized-icon { font-size: 1rem; flex-shrink: 0; }
+
   /* ─── TL;DR · resumen rápido ─────────────────────── */
   .p-tldr {
     margin: 28px 0 0;
@@ -9532,8 +9686,18 @@ const partnerLandingUrl = invitation.slug_landing
     const RATE = parseFloat(calc.getAttribute('data-rate') || '0.5');
     const BONUS_PRUEBA = parseFloat(calc.getAttribute('data-bp') || '250');
     const BONUS_DEMO   = parseFloat(calc.getAttribute('data-bd') || '300');
+    const FX_RATE = parseFloat(calc.getAttribute('data-fx') || '1');
+    const FX_CUR  = calc.getAttribute('data-cur') || 'MXN';
+    const FX_LOC  = calc.getAttribute('data-loc') || 'es-MX';
 
-    const fmt = n => '$' + Math.round(n).toLocaleString('es-MX');
+    function fmt(mxnAmount) {
+      const local = mxnAmount * FX_RATE;
+      try {
+        return new Intl.NumberFormat(FX_LOC, { style: 'currency', currency: FX_CUR, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(local));
+      } catch {
+        return '$' + Math.round(local).toLocaleString(FX_LOC);
+      }
+    }
     function read(name) {
       const el = calc.querySelector(`[data-calc-input="${name}"]`);
       return el ? Number(el.value) : 0;
