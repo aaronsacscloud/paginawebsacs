@@ -547,6 +547,57 @@ const I18N: Record<string, Record<Lang, string>> = {
   'f.mp.email':   { es: 'Email o alias Mercado Pago', en: 'Mercado Pago email or alias', fr: 'Email ou alias Mercado Pago', it: 'Email o alias Mercado Pago', pt: 'E-mail ou apelido Mercado Pago' },
   'f.mp.holder':  { es: 'Titular de la cuenta MP', en: 'MP account holder', fr: 'Titulaire du compte MP', it: 'Intestatario account MP', pt: 'Titular da conta MP' },
   'f.next':       { es: 'Siguiente · Leer contrato →', en: 'Next · Read contract →', fr: 'Suivant · Lire le contrat →', it: 'Avanti · Leggi il contratto →', pt: 'Próximo · Ler contrato →' },
+
+  // ── Contrato (Phase M) ──
+  // Aviso: el contrato legal vinculante es la versión en español; las
+  // traducciones son de referencia para entender el contenido.
+  'ct.legal_notice': { es: '', en: 'Reference translation. The binding legal contract is the Spanish version below — Mexican jurisdiction.', fr: 'Traduction de référence. Le contrat légal contraignant est la version espagnole ci-dessous — juridiction mexicaine.', it: 'Traduzione di riferimento. Il contratto legale vincolante è la versione in spagnolo qui sotto — giurisdizione messicana.', pt: 'Tradução de referência. O contrato legal vinculante é a versão em espanhol abaixo — jurisdição mexicana.' },
+  'ct.eyebrow':  { es: 'Acuerdo formal de partner', en: 'Formal partner agreement', fr: 'Accord formel de partenariat', it: 'Accordo formale di partnership', pt: 'Acordo formal de parceria' },
+  'ct.title':    { es: 'Contrato del Programa {tipo} SACS', en: 'SACS {tipo} Program Agreement', fr: 'Contrat du Programme {tipo} SACS', it: 'Contratto del Programma {tipo} SACS', pt: 'Contrato do Programa {tipo} SACS' },
+  'ct.meta':     { es: 'Folio · Vigencia hasta', en: 'Folio · Valid until', fr: 'Folio · Valable jusqu\'au', it: 'Folio · Valido fino al', pt: 'Folio · Vigência até' },
+  'ct.intro':    { es: 'Entre <strong>SACS Cloud, S.A.P.I. de C.V.</strong> ("SACS"), por una parte, y <strong>{nombre}</strong> ("el Partner"), por la otra parte, se celebra el presente <strong>Acuerdo del Programa Partners SACS</strong> bajo las siguientes condiciones:', en: 'Between <strong>SACS Cloud, S.A.P.I. de C.V.</strong> ("SACS"), on one side, and <strong>{nombre}</strong> ("the Partner"), on the other side, the following <strong>SACS Partner Program Agreement</strong> is entered into under these conditions:', fr: 'Entre <strong>SACS Cloud, S.A.P.I. de C.V.</strong> (« SACS »), d\'une part, et <strong>{nombre}</strong> (« le Partenaire »), d\'autre part, est conclu le présent <strong>Accord du Programme Partenaires SACS</strong> aux conditions suivantes :', it: 'Tra <strong>SACS Cloud, S.A.P.I. de C.V.</strong> ("SACS"), da una parte, e <strong>{nombre}</strong> ("il Partner"), dall\'altra parte, viene stipulato il presente <strong>Accordo del Programma Partner SACS</strong> alle seguenti condizioni:', pt: 'Entre <strong>SACS Cloud, S.A.P.I. de C.V.</strong> ("SACS"), de uma parte, e <strong>{nombre}</strong> ("o Parceiro"), de outra parte, celebra-se o presente <strong>Acordo do Programa de Parceiros SACS</strong> nas seguintes condições:' },
+
+  'ct.h1': { es: '1. Programa', en: '1. Program', fr: '1. Programme', it: '1. Programma', pt: '1. Programa' },
+  'ct.p1': { es: 'El Partner queda inscrito en el programa <strong>{tipo}</strong> de SACS con folio <strong>{numero}</strong>, vigente hasta <strong>{vigencia}</strong> y renovable automáticamente al cumplir las condiciones de continuidad.', en: 'The Partner is enrolled in the SACS <strong>{tipo}</strong> program with folio <strong>{numero}</strong>, valid until <strong>{vigencia}</strong> and automatically renewable upon meeting the continuity conditions.', fr: 'Le Partenaire est inscrit au programme <strong>{tipo}</strong> de SACS avec folio <strong>{numero}</strong>, valable jusqu\'au <strong>{vigencia}</strong> et renouvelable automatiquement au respect des conditions de continuité.', it: 'Il Partner è iscritto al programma <strong>{tipo}</strong> di SACS con folio <strong>{numero}</strong>, valido fino al <strong>{vigencia}</strong> e rinnovabile automaticamente al rispetto delle condizioni di continuità.', pt: 'O Parceiro fica inscrito no programa <strong>{tipo}</strong> da SACS com folio <strong>{numero}</strong>, vigente até <strong>{vigencia}</strong> e renovável automaticamente ao cumprir as condições de continuidade.' },
+
+  'ct.h2': { es: '2. Compensación', en: '2. Compensation', fr: '2. Rémunération', it: '2. Compenso', pt: '2. Remuneração' },
+  'ct.p2.1': { es: '<strong>Comisión sobre venta directa:</strong> {pct}% sobre el cobro de la primera factura de cada cliente cerrado mediante el link único del Partner.', en: '<strong>Direct sale commission:</strong> {pct}% on the first invoice charged to each client closed through the Partner\'s unique link.', fr: '<strong>Commission sur vente directe :</strong> {pct}% sur la première facture de chaque client conclu via le lien unique du Partenaire.', it: '<strong>Commissione su vendita diretta:</strong> {pct}% sull\'addebito della prima fattura di ogni cliente chiuso tramite il link unico del Partner.', pt: '<strong>Comissão sobre venda direta:</strong> {pct}% sobre a cobrança da primeira nota fiscal de cada cliente fechado pelo link único do Parceiro.' },
+  'ct.p2.2': { es: '<strong>Bono por prueba gratis:</strong> $250 MXN por cada usuario que llega por el link del Partner y activa una prueba gratis válida (verificada por SACS).', en: '<strong>Free trial bonus:</strong> $250 MXN per user who arrives via the Partner\'s link and activates a valid free trial (verified by SACS).', fr: '<strong>Bonus essai gratuit :</strong> 250 MXN par utilisateur arrivant via le lien du Partenaire et activant un essai gratuit valide (vérifié par SACS).', it: '<strong>Bonus prova gratuita:</strong> $250 MXN per ogni utente che arriva dal link del Partner e attiva una prova gratuita valida (verificata da SACS).', pt: '<strong>Bônus por teste grátis:</strong> $250 MXN por cada usuário que chega pelo link do Parceiro e ativa um teste grátis válido (verificado pela SACS).' },
+  'ct.p2.3': { es: '<strong>Bono por demo completada:</strong> $300 MXN por cada demo válida realizada (mínimo 25 minutos, decisor presente, registrada en el sistema).', en: '<strong>Completed demo bonus:</strong> $300 MXN per valid demo completed (minimum 25 minutes, decision-maker present, recorded in the system).', fr: '<strong>Bonus démo complétée :</strong> 300 MXN par démo valide réalisée (minimum 25 minutes, décideur présent, enregistrée dans le système).', it: '<strong>Bonus demo completata:</strong> $300 MXN per ogni demo valida realizzata (minimo 25 minuti, decisore presente, registrata nel sistema).', pt: '<strong>Bônus por demo concluída:</strong> $300 MXN por cada demo válida realizada (mínimo 25 minutos, tomador de decisão presente, registrada no sistema).' },
+  'ct.p2.4': { es: '<strong>Comisiones recurrentes:</strong> Mientras el cliente referido permanezca activo en SACS y al corriente en sus pagos, el Partner mantiene el {pct}% sobre las renovaciones según el plan vigente.', en: '<strong>Recurring commissions:</strong> While the referred client remains active on SACS and current on payments, the Partner maintains {pct}% on renewals according to the active plan.', fr: '<strong>Commissions récurrentes :</strong> Tant que le client référé reste actif sur SACS et à jour de ses paiements, le Partenaire conserve {pct}% sur les renouvellements selon le plan en vigueur.', it: '<strong>Commissioni ricorrenti:</strong> Finché il cliente riferito rimane attivo su SACS e in regola con i pagamenti, il Partner mantiene il {pct}% sui rinnovi secondo il piano in vigore.', pt: '<strong>Comissões recorrentes:</strong> Enquanto o cliente referenciado permanecer ativo na SACS e em dia com os pagamentos, o Parceiro mantém o {pct}% sobre as renovações conforme o plano vigente.' },
+
+  'ct.h3': { es: '3. Liquidación de pagos', en: '3. Payment settlement', fr: '3. Règlement des paiements', it: '3. Liquidazione dei pagamenti', pt: '3. Liquidação de pagamentos' },
+  'ct.p3': { es: 'Las comisiones <em>earned</em> (confirmadas) se liquidan el día <strong>5 de cada mes</strong> al método de cobro que el Partner registró (CLABE, PayPal o Mercado Pago). El Partner es responsable del cumplimiento fiscal de los ingresos recibidos en su jurisdicción.', en: '<em>Earned</em> (confirmed) commissions are settled on the <strong>5th of each month</strong> to the payment method registered by the Partner (CLABE, PayPal or Mercado Pago). The Partner is responsible for tax compliance on income received in their jurisdiction.', fr: 'Les commissions <em>earned</em> (confirmées) sont réglées le <strong>5 de chaque mois</strong> selon le mode de paiement enregistré par le Partenaire (CLABE, PayPal ou Mercado Pago). Le Partenaire est responsable de la conformité fiscale des revenus reçus dans sa juridiction.', it: 'Le commissioni <em>earned</em> (confermate) vengono liquidate il <strong>5 di ogni mese</strong> al metodo di pagamento registrato dal Partner (CLABE, PayPal o Mercado Pago). Il Partner è responsabile della conformità fiscale dei ricavi ricevuti nella sua giurisdizione.', pt: 'As comissões <em>earned</em> (confirmadas) são liquidadas no dia <strong>5 de cada mês</strong> ao método de cobrança que o Parceiro registrou (CLABE, PayPal ou Mercado Pago). O Parceiro é responsável pela conformidade fiscal das receitas recebidas em sua jurisdição.' },
+
+  'ct.h4': { es: '4. Beneficios incluidos', en: '4. Included benefits', fr: '4. Avantages inclus', it: '4. Benefici inclusi', pt: '4. Benefícios incluídos' },
+  'ct.p4.1': { es: 'Cuenta SACS Plan Fideliza ($14,000 MXN/año) <strong>gratis</strong> mientras el Partner esté activo.', en: 'SACS Fideliza Plan account ($14,000 MXN/year) <strong>free</strong> while the Partner is active.', fr: 'Compte SACS Plan Fideliza (14 000 MXN/an) <strong>gratuit</strong> tant que le Partenaire est actif.', it: 'Account SACS Piano Fideliza ($14.000 MXN/anno) <strong>gratis</strong> finché il Partner è attivo.', pt: 'Conta SACS Plano Fideliza ($14.000 MXN/ano) <strong>grátis</strong> enquanto o Parceiro estiver ativo.' },
+  'ct.p4.2': { es: 'Acceso al portal de partner con métricas en tiempo real, pagos y prospectos.', en: 'Access to the partner portal with real-time metrics, payments and prospects.', fr: 'Accès au portail partenaire avec métriques en temps réel, paiements et prospects.', it: 'Accesso al portale partner con metriche in tempo reale, pagamenti e prospect.', pt: 'Acesso ao portal de parceiro com métricas em tempo real, pagamentos e prospectos.' },
+  'ct.p4.3': { es: 'Brand kit con logos, plantillas y captions oficiales.', en: 'Brand kit with official logos, templates and captions.', fr: 'Kit de marque avec logos, modèles et légendes officiels.', it: 'Brand kit con loghi, template e caption ufficiali.', pt: 'Brand kit com logos, templates e legendas oficiais.' },
+  'ct.p4.4': { es: 'Soporte prioritario, Academia SACS y workshops mensuales en vivo.', en: 'Priority support, SACS Academy and monthly live workshops.', fr: 'Support prioritaire, Académie SACS et workshops mensuels en direct.', it: 'Supporto prioritario, Academy SACS e workshop mensili dal vivo.', pt: 'Suporte prioritário, Academia SACS e workshops mensais ao vivo.' },
+  'ct.p4.5': { es: 'Sesión de onboarding 1:1 y migración de datos sin costo extra para clientes referidos.', en: '1:1 onboarding session and data migration at no extra cost for referred clients.', fr: 'Session d\'onboarding 1:1 et migration de données sans frais supplémentaires pour les clients référés.', it: 'Sessione di onboarding 1:1 e migrazione dati senza costi extra per clienti riferiti.', pt: 'Sessão de onboarding 1:1 e migração de dados sem custo extra para clientes referenciados.' },
+
+  'ct.h5': { es: '5. Compromisos del Partner', en: '5. Partner commitments', fr: '5. Engagements du Partenaire', it: '5. Impegni del Partner', pt: '5. Compromissos do Parceiro' },
+  'ct.p5.1': { es: 'Representar la marca SACS de forma profesional y honesta.', en: 'Represent the SACS brand in a professional and honest manner.', fr: 'Représenter la marque SACS de manière professionnelle et honnête.', it: 'Rappresentare il marchio SACS in modo professionale e onesto.', pt: 'Representar a marca SACS de forma profissional e honesta.' },
+  'ct.p5.2': { es: 'Atender los leads asignados en menos de 24 horas hábiles.', en: 'Attend assigned leads within 24 business hours.', fr: 'Répondre aux leads assignés dans les 24 heures ouvrées.', it: 'Rispondere ai lead assegnati entro 24 ore lavorative.', pt: 'Atender os leads atribuídos em menos de 24 horas úteis.' },
+  'ct.p5.3': { es: 'Asistir a la sesión mensual de actualizaciones (60 min) — quedan grabadas para ver después si no puede asistir.', en: 'Attend the monthly updates session (60 min) — recordings are available to watch later if unable to attend.', fr: 'Participer à la session mensuelle de mises à jour (60 min) — enregistrées pour visionner ultérieurement en cas d\'absence.', it: 'Partecipare alla sessione mensile di aggiornamenti (60 min) — registrate per la visione successiva in caso di assenza.', pt: 'Participar da sessão mensal de atualizações (60 min) — ficam gravadas para ver depois caso não possa comparecer.' },
+  'ct.p5.4': { es: 'Cumplir con los compromisos de contenido del programa según el tipo de partnership (mínimo de puntos mensuales según el tabulador interno).', en: 'Meet the program\'s content commitments according to the partnership type (minimum monthly points per the internal schedule).', fr: 'Respecter les engagements de contenu du programme selon le type de partenariat (minimum de points mensuels selon la grille interne).', it: 'Rispettare gli impegni di contenuto del programma secondo il tipo di partnership (minimo di punti mensili secondo il tariffario interno).', pt: 'Cumprir os compromissos de conteúdo do programa conforme o tipo de parceria (mínimo de pontos mensais conforme a tabela interna).' },
+  'ct.p5.5': { es: 'No realizar afirmaciones falsas, garantías de resultados o promociones engañosas sobre SACS.', en: 'Refrain from making false statements, results guarantees or misleading promotions about SACS.', fr: 'Ne pas faire de déclarations fausses, de garanties de résultats ou de promotions trompeuses sur SACS.', it: 'Non fare affermazioni false, garanzie di risultati o promozioni ingannevoli su SACS.', pt: 'Não fazer afirmações falsas, garantias de resultados ou promoções enganosas sobre a SACS.' },
+
+  'ct.h6': { es: '6. Auditoría y resolución de comisiones', en: '6. Commission audit and resolution', fr: '6. Audit et résolution des commissions', it: '6. Audit e risoluzione delle commissioni', pt: '6. Auditoria e resolução de comissões' },
+  'ct.p6': { es: 'SACS se reserva el derecho de auditar cualquier comisión y rechazar aquellas asociadas a leads duplicados, fraudulentos o autoreferenciados. Las comisiones rechazadas se marcan como <em>cancelled</em> con el motivo correspondiente y quedan visibles en el portal para auditoría.', en: 'SACS reserves the right to audit any commission and reject those associated with duplicate, fraudulent or self-referred leads. Rejected commissions are marked as <em>cancelled</em> with the corresponding reason and remain visible in the portal for audit.', fr: 'SACS se réserve le droit d\'auditer toute commission et de rejeter celles associées à des leads en double, frauduleux ou auto-référés. Les commissions rejetées sont marquées <em>cancelled</em> avec le motif correspondant et restent visibles dans le portail pour audit.', it: 'SACS si riserva il diritto di auditare qualsiasi commissione e rifiutare quelle associate a lead duplicati, fraudolenti o auto-riferiti. Le commissioni rifiutate vengono marcate come <em>cancelled</em> con il motivo corrispondente e restano visibili nel portale per audit.', pt: 'A SACS se reserva o direito de auditar qualquer comissão e rejeitar aquelas associadas a leads duplicados, fraudulentos ou autorreferenciados. As comissões rejeitadas são marcadas como <em>cancelled</em> com o motivo correspondente e ficam visíveis no portal para auditoria.' },
+
+  'ct.h7': { es: '7. Confidencialidad', en: '7. Confidentiality', fr: '7. Confidentialité', it: '7. Riservatezza', pt: '7. Confidencialidade' },
+  'ct.p7': { es: 'El Partner se compromete a no divulgar información confidencial de SACS — incluyendo precios negociados, roadmap interno, métricas internas o cualquier dato no público — sin autorización escrita.', en: 'The Partner undertakes not to disclose confidential SACS information — including negotiated prices, internal roadmap, internal metrics or any non-public data — without written authorization.', fr: 'Le Partenaire s\'engage à ne pas divulguer d\'informations confidentielles de SACS — y compris les prix négociés, la roadmap interne, les métriques internes ou toute donnée non publique — sans autorisation écrite.', it: 'Il Partner si impegna a non divulgare informazioni riservate di SACS — inclusi prezzi negoziati, roadmap interna, metriche interne o qualsiasi dato non pubblico — senza autorizzazione scritta.', pt: 'O Parceiro se compromete a não divulgar informações confidenciais da SACS — incluindo preços negociados, roadmap interno, métricas internas ou qualquer dado não público — sem autorização por escrito.' },
+
+  'ct.h8': { es: '8. Vigencia y rescisión', en: '8. Term and termination', fr: '8. Durée et résiliation', it: '8. Durata e risoluzione', pt: '8. Vigência e rescisão' },
+  'ct.p8': { es: 'Este acuerdo tiene una vigencia inicial de <strong>12 meses</strong> a partir de la fecha de firma, renovable automáticamente. Cualquiera de las partes puede dar por terminado el acuerdo con <strong>30 días de aviso por escrito</strong>, sin necesidad de causa. SACS puede dar por terminado el acuerdo de inmediato en caso de incumplimiento grave de los compromisos del Partner.', en: 'This agreement has an initial term of <strong>12 months</strong> from the signature date, automatically renewable. Either party may terminate the agreement with <strong>30 days written notice</strong>, without cause. SACS may terminate the agreement immediately in case of serious breach of the Partner\'s commitments.', fr: 'Cet accord a une durée initiale de <strong>12 mois</strong> à compter de la date de signature, renouvelable automatiquement. Chaque partie peut mettre fin à l\'accord avec <strong>30 jours de préavis écrit</strong>, sans cause. SACS peut résilier immédiatement en cas de manquement grave aux engagements du Partenaire.', it: 'Questo accordo ha una durata iniziale di <strong>12 mesi</strong> dalla data di firma, rinnovabile automaticamente. Ciascuna parte può risolvere l\'accordo con <strong>30 giorni di preavviso scritto</strong>, senza causa. SACS può risolvere immediatamente in caso di grave inadempimento degli impegni del Partner.', pt: 'Este acordo tem vigência inicial de <strong>12 meses</strong> a partir da data de assinatura, renovável automaticamente. Qualquer parte pode dar por encerrado o acordo com <strong>30 dias de aviso por escrito</strong>, sem necessidade de causa. A SACS pode encerrar o acordo imediatamente em caso de descumprimento grave dos compromissos do Parceiro.' },
+
+  'ct.h9': { es: '9. Datos y privacidad', en: '9. Data and privacy', fr: '9. Données et confidentialité', it: '9. Dati e privacy', pt: '9. Dados e privacidade' },
+  'ct.p9': { es: 'El Partner autoriza a SACS a procesar sus datos personales para los fines del programa, conforme al <a href="/privacidad" target="_blank" rel="noopener">Aviso de Privacidad</a>. Esto incluye: enviar comunicaciones del programa, mostrar el nombre/foto del Partner en su landing pública, y compartir métricas internas con su equipo.', en: 'The Partner authorizes SACS to process their personal data for the program\'s purposes, in accordance with the <a href="/privacidad" target="_blank" rel="noopener">Privacy Notice</a>. This includes: sending program communications, displaying the Partner\'s name/photo on their public landing, and sharing internal metrics with their team.', fr: 'Le Partenaire autorise SACS à traiter ses données personnelles aux fins du programme, conformément à l\'<a href="/privacidad" target="_blank" rel="noopener">Avis de Confidentialité</a>. Cela inclut : envoyer les communications du programme, afficher le nom/photo du Partenaire sur sa landing publique, et partager les métriques internes avec leur équipe.', it: 'Il Partner autorizza SACS a trattare i suoi dati personali per le finalità del programma, in conformità all\'<a href="/privacidad" target="_blank" rel="noopener">Informativa Privacy</a>. Include: invio delle comunicazioni del programma, mostrare nome/foto del Partner sulla landing pubblica, e condividere metriche interne con il team.', pt: 'O Parceiro autoriza a SACS a processar seus dados pessoais para os fins do programa, conforme o <a href="/privacidad" target="_blank" rel="noopener">Aviso de Privacidade</a>. Inclui: envio de comunicações do programa, exibição do nome/foto do Parceiro em sua landing pública, e compartilhamento de métricas internas com a equipe.' },
+
+  'ct.h10': { es: '10. Aceptación', en: '10. Acceptance', fr: '10. Acceptation', it: '10. Accettazione', pt: '10. Aceitação' },
+  'ct.p10': { es: 'Al firmar al final de este documento, el Partner declara que ha leído íntegramente este acuerdo, que entiende las condiciones de compensación y compromisos, y que acepta vincularse legalmente a las mismas. La firma electrónica tiene la misma validez que una firma autógrafa conforme a la NOM-151-SCFI-2016.', en: 'By signing at the end of this document, the Partner declares having fully read this agreement, understanding the compensation and commitment conditions, and accepting to be legally bound by them. The electronic signature has the same validity as a handwritten signature pursuant to NOM-151-SCFI-2016.', fr: 'En signant à la fin de ce document, le Partenaire déclare avoir lu intégralement cet accord, comprendre les conditions de rémunération et d\'engagement, et accepter d\'y être légalement lié. La signature électronique a la même validité qu\'une signature manuscrite conformément à NOM-151-SCFI-2016.', it: 'Firmando alla fine di questo documento, il Partner dichiara di aver letto integralmente questo accordo, di comprendere le condizioni di compenso e impegno, e di accettare di esserne legalmente vincolato. La firma elettronica ha la stessa validità di una firma autografa ai sensi della NOM-151-SCFI-2016.', pt: 'Ao assinar ao final deste documento, o Parceiro declara ter lido integralmente este acordo, entender as condições de remuneração e compromisso, e aceitar vincular-se legalmente a elas. A assinatura eletrônica tem a mesma validade de uma assinatura autógrafa conforme a NOM-151-SCFI-2016.' },
+  'ct.accept': { es: 'He leído íntegramente este contrato y acepto sus términos.', en: 'I have fully read this contract and accept its terms.', fr: 'J\'ai lu intégralement ce contrat et j\'accepte ses conditions.', it: 'Ho letto integralmente questo contratto e accetto i suoi termini.', pt: 'Li integralmente este contrato e aceito seus termos.' },
 };
 
 function tt(key: string): string {
@@ -769,6 +820,17 @@ const ceilingClosingAnnual    = calcSale(SACS_PLANS[3].annualTotal, 500); // Aut
 const minQuotaFidelizaAnnual   = calcSale(SACS_PLANS[2].annualTotal, 10); // 10 × Fideliza anual
 const minQuotaAutomatizaAnnual = calcSale(SACS_PLANS[3].annualTotal, 10); // 10 × Automatiza anual
 
+// Pre-compute contract template strings (avoid IIFE inside JSX)
+const tipoStr   = tipoLabel[tipo] || tipo;
+const numeroStr = invitation.numero || '—';
+const nombreStr = invitation.nombre || '—';
+const pctStr    = String(comisionPct);
+const ctTitleHtml = tt('ct.title').split('{tipo}').join(tipoStr);
+const ctIntroHtml = tt('ct.intro').split('{nombre}').join(nombreStr);
+const ctP1Html    = tt('ct.p1').split('{tipo}').join(tipoStr).split('{numero}').join(numeroStr).split('{vigencia}').join(vigenciaLarga);
+const ctP21Html   = tt('ct.p2.1').split('{pct}').join(pctStr);
+const ctP24Html   = tt('ct.p2.4').split('{pct}').join(pctStr);
+
 const beneficioIcons: Record<string, string> = {
   gift: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>',
   percent: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>',
@@ -821,8 +883,12 @@ const partnerLandingUrl = invitation.slug_landing
         const url = new URL(Astro.url);
         if (l === 'es') url.searchParams.delete('lang'); else url.searchParams.set('lang', l);
         const href = url.pathname + (url.search || '') + url.hash;
+        const flags = { es: '🇲🇽', en: '🇺🇸', fr: '🇫🇷', it: '🇮🇹', pt: '🇧🇷' } as const;
         return (
-          <a href={href} class={`p-langswitch-btn${l === lang ? ' is-active' : ''}`} hreflang={l} title={l.toUpperCase()}>{l.toUpperCase()}</a>
+          <a href={href} class={`p-langswitch-btn${l === lang ? ' is-active' : ''}`} hreflang={l} title={l.toUpperCase()}>
+            <span class="p-langswitch-flag" aria-hidden="true">{flags[l]}</span>
+            <span class="p-langswitch-code">{l.toUpperCase()}</span>
+          </a>
         );
       })}
     </div>
@@ -2931,7 +2997,7 @@ const partnerLandingUrl = invitation.slug_landing
                       <div class="p-content-type-pts">{c.puntos}<span> pts</span></div>
                     </div>
                     <p class="p-content-type-desc">{CT_I18N[lang]?.[c.id]?.descripcion || c.descripcion}</p>
-                    {(() => { const _ideas = CT_I18N[lang]?.[c.id]?.ideas || c.ideasContenido; return _ideas && _ideas.length > 0; })() && (
+                    {((CT_I18N[lang]?.[c.id]?.ideas || c.ideasContenido) || []).length > 0 && (
                       <div class="p-content-type-ideas">
                         <div class="p-content-type-ideas-label">{tt('card.examples')}</div>
                         <ul>
@@ -3607,65 +3673,68 @@ const partnerLandingUrl = invitation.slug_landing
             <div class="p-sw-panel" data-sw-panel="2">
               <div class="p-contract">
                 <div class="p-contract-head">
-                  <div class="p-contract-eyebrow">Acuerdo formal de partner</div>
-                  <h3 class="p-contract-title">Contrato del Programa {tipoLabel[tipo] || tipo} SACS</h3>
-                  <div class="p-contract-meta">Folio <strong>{invitation.numero || '—'}</strong> · Vigencia hasta <strong>{vigenciaLarga}</strong></div>
+                  <div class="p-contract-eyebrow">{tt('ct.eyebrow')}</div>
+                  <h3 class="p-contract-title">{ctTitleHtml}</h3>
+                  <div class="p-contract-meta">{tt('ct.meta')} · <strong>{numeroStr}</strong> · <strong>{vigenciaLarga}</strong></div>
+                  {isLocalized && (
+                    <div class="p-contract-legal-notice">{tt('ct.legal_notice')}</div>
+                  )}
                 </div>
 
                 <div class="p-contract-doc">
-                  <p>Entre <strong>SACS Cloud, S.A.P.I. de C.V.</strong> ("SACS"), por una parte, y <strong>{invitation.nombre}</strong> ("el Partner"), por la otra parte, se celebra el presente <strong>Acuerdo del Programa Partners SACS</strong> bajo las siguientes condiciones:</p>
+                  <p set:html={ctIntroHtml}></p>
 
-                  <h4>1. Programa</h4>
-                  <p>El Partner queda inscrito en el programa <strong>{tipoLabel[tipo] || tipo}</strong> de SACS con folio <strong>{invitation.numero || '—'}</strong>, vigente hasta <strong>{vigenciaLarga}</strong> y renovable automáticamente al cumplir las condiciones de continuidad.</p>
+                  <h4>{tt('ct.h1')}</h4>
+                  <p set:html={ctP1Html}></p>
 
-                  <h4>2. Compensación</h4>
+                  <h4>{tt('ct.h2')}</h4>
                   <ul>
-                    <li><strong>Comisión sobre venta directa:</strong> {comisionPct}% sobre el cobro de la primera factura de cada cliente cerrado mediante el link único del Partner.</li>
-                    <li><strong>Bono por prueba gratis:</strong> $250 MXN por cada usuario que llega por el link del Partner y activa una prueba gratis válida (verificada por SACS).</li>
-                    <li><strong>Bono por demo completada:</strong> $300 MXN por cada demo válida realizada (mínimo 25 minutos, decisor presente, registrada en el sistema).</li>
-                    <li><strong>Comisiones recurrentes:</strong> Mientras el cliente referido permanezca activo en SACS y al corriente en sus pagos, el Partner mantiene el {comisionPct}% sobre las renovaciones según el plan vigente.</li>
+                    <li set:html={ctP21Html}></li>
+                    <li set:html={tt('ct.p2.2')}></li>
+                    <li set:html={tt('ct.p2.3')}></li>
+                    <li set:html={ctP24Html}></li>
                   </ul>
 
-                  <h4>3. Liquidación de pagos</h4>
-                  <p>Las comisiones earned (confirmadas) se liquidan el día <strong>5 de cada mes</strong> al método de cobro que el Partner registró (CLABE, PayPal o Mercado Pago). El Partner es responsable del cumplimiento fiscal de los ingresos recibidos en su jurisdicción.</p>
+                  <h4>{tt('ct.h3')}</h4>
+                  <p set:html={tt('ct.p3')}></p>
 
-                  <h4>4. Beneficios incluidos</h4>
+                  <h4>{tt('ct.h4')}</h4>
                   <ul>
-                    <li>Cuenta SACS Plan Fideliza ($14,000 MXN/año) <strong>gratis</strong> mientras el Partner esté activo.</li>
-                    <li>Acceso al portal de partner con métricas en tiempo real, pagos y prospectos.</li>
-                    <li>Brand kit con logos, plantillas y captions oficiales.</li>
-                    <li>Soporte prioritario, Academia SACS y workshops mensuales en vivo.</li>
-                    <li>Sesión de onboarding 1:1 y migración de datos sin costo extra para clientes referidos.</li>
+                    <li set:html={tt('ct.p4.1')}></li>
+                    <li set:html={tt('ct.p4.2')}></li>
+                    <li set:html={tt('ct.p4.3')}></li>
+                    <li set:html={tt('ct.p4.4')}></li>
+                    <li set:html={tt('ct.p4.5')}></li>
                   </ul>
 
-                  <h4>5. Compromisos del Partner</h4>
+                  <h4>{tt('ct.h5')}</h4>
                   <ul>
-                    <li>Representar la marca SACS de forma profesional y honesta.</li>
-                    <li>Atender los leads asignados en menos de 24 horas hábiles.</li>
-                    <li>Asistir a la sesión mensual de actualizaciones (60 min) — quedan grabadas para ver después si no puede asistir.</li>
-                    <li>Cumplir con los compromisos de contenido del programa según el tipo de partnership (mínimo de puntos mensuales según el tabulador interno).</li>
-                    <li>No realizar afirmaciones falsas, garantías de resultados o promociones engañosas sobre SACS.</li>
+                    <li>{tt('ct.p5.1')}</li>
+                    <li>{tt('ct.p5.2')}</li>
+                    <li>{tt('ct.p5.3')}</li>
+                    <li>{tt('ct.p5.4')}</li>
+                    <li>{tt('ct.p5.5')}</li>
                   </ul>
 
-                  <h4>6. Auditoría y resolución de comisiones</h4>
-                  <p>SACS se reserva el derecho de auditar cualquier comisión y rechazar aquellas asociadas a leads duplicados, fraudulentos o autoreferenciados. Las comisiones rechazadas se marcan como <em>cancelled</em> con el motivo correspondiente y quedan visibles en el portal para auditoría.</p>
+                  <h4>{tt('ct.h6')}</h4>
+                  <p set:html={tt('ct.p6')}></p>
 
-                  <h4>7. Confidencialidad</h4>
-                  <p>El Partner se compromete a no divulgar información confidencial de SACS — incluyendo precios negociados, roadmap interno, métricas internas o cualquier dato no público — sin autorización escrita.</p>
+                  <h4>{tt('ct.h7')}</h4>
+                  <p>{tt('ct.p7')}</p>
 
-                  <h4>8. Vigencia y rescisión</h4>
-                  <p>Este acuerdo tiene una vigencia inicial de <strong>12 meses</strong> a partir de la fecha de firma, renovable automáticamente. Cualquiera de las partes puede dar por terminado el acuerdo con <strong>30 días de aviso por escrito</strong>, sin necesidad de causa. SACS puede dar por terminado el acuerdo de inmediato en caso de incumplimiento grave de los compromisos del Partner.</p>
+                  <h4>{tt('ct.h8')}</h4>
+                  <p set:html={tt('ct.p8')}></p>
 
-                  <h4>9. Datos y privacidad</h4>
-                  <p>El Partner autoriza a SACS a procesar sus datos personales para los fines del programa, conforme al <a href="/privacidad" target="_blank" rel="noopener">Aviso de Privacidad</a>. Esto incluye: enviar comunicaciones del programa, mostrar el nombre/foto del Partner en su landing pública, y compartir métricas internas con su equipo.</p>
+                  <h4>{tt('ct.h9')}</h4>
+                  <p set:html={tt('ct.p9')}></p>
 
-                  <h4>10. Aceptación</h4>
-                  <p>Al firmar al final de este documento, el Partner declara que ha leído íntegramente este acuerdo, que entiende las condiciones de compensación y compromisos, y que acepta vincularse legalmente a las mismas. La firma electrónica tiene la misma validez que una firma autógrafa conforme a la NOM-151-SCFI-2016.</p>
+                  <h4>{tt('ct.h10')}</h4>
+                  <p>{tt('ct.p10')}</p>
                 </div>
 
                 <label class="p-contract-accept">
                   <input type="checkbox" id="contract-accept" />
-                  <span>He leído íntegramente este contrato y acepto sus términos.</span>
+                  <span>{tt('ct.accept')}</span>
                 </label>
               </div>
 
@@ -9195,7 +9264,7 @@ const partnerLandingUrl = invitation.slug_landing
   @media (max-width: 1023px) { .p-langswitch { padding: 10px 20px 0; } }
   .p-langswitch-btn {
     pointer-events: auto;
-    padding: 5px 10px;
+    padding: 5px 10px 5px 8px;
     background: rgba(255,255,255,0.92);
     border: 1px solid #ececec;
     border-radius: 999px;
@@ -9208,7 +9277,12 @@ const partnerLandingUrl = invitation.slug_landing
     transition: background 0.15s, color 0.15s, border-color 0.15s;
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
   }
+  .p-langswitch-flag { font-size: 0.875rem; line-height: 1; }
+  .p-langswitch-code { line-height: 1; }
   .p-langswitch-btn:hover {
     color: #1a1a1a;
     border-color: #cfd6e2;
@@ -9217,6 +9291,18 @@ const partnerLandingUrl = invitation.slug_landing
     background: #1a1a1a;
     color: #fff;
     border-color: #1a1a1a;
+  }
+
+  /* ─── Aviso legal del contrato (vista localizada) ─── */
+  .p-contract-legal-notice {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: rgba(180, 130, 40, 0.08);
+    border: 1px solid rgba(180, 130, 40, 0.22);
+    border-radius: 8px;
+    font-size: 0.75rem;
+    color: #6b4d18;
+    line-height: 1.45;
   }
 
   /* ─── Banner localizado (cuando lang ≠ es) ─────────── */
