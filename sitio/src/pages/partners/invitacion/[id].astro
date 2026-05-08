@@ -3,6 +3,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { supabase } from '../../../lib/supabase';
 import PartnerSidebar from '../../../components/partner/PartnerSidebar.astro';
 import { CONTENT_TYPES, META_PUNTOS_MES, CATEGORIAS, PERFILES, appliesToPerfil, getContentTypesByCategoria } from '../../../data/content-types';
+import { CT_I18N } from '../../../data/content-types.i18n';
 import { CERTIFICATIONS } from '../../../data/certifications';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -391,6 +392,30 @@ const I18N: Record<string, Record<Lang, string>> = {
   'faq.q7.a': { es: 'Sí, con 30 días de aviso por escrito. Las comisiones recurrentes que vinieran de tus clientes activos se cancelan al momento de la baja — por eso la cláusula es real, no decorativa. Mientras estás activo, los pagos siguen.', en: 'Yes, with 30 days written notice. Recurring commissions from your active clients are canceled at the moment of departure — that\'s why the clause is real, not decorative. While you\'re active, payments continue.', fr: 'Oui, avec un préavis écrit de 30 jours. Les commissions récurrentes provenant de vos clients actifs sont annulées au moment du départ — c\'est pourquoi la clause est réelle, pas décorative. Tant que vous êtes actif, les paiements continuent.', it: 'Sì, con 30 giorni di preavviso scritto. Le commissioni ricorrenti dai tuoi clienti attivi vengono annullate al momento dell\'uscita — per questo la clausola è reale, non decorativa. Finché sei attivo, i pagamenti continuano.', pt: 'Sim, com 30 dias de aviso por escrito. As comissões recorrentes dos seus clientes ativos são canceladas no momento da baixa — por isso a cláusula é real, não decorativa. Enquanto você estiver ativo, os pagamentos continuam.' },
   'faq.q8.q': { es: '¿Y si me cambio de país o de giro?', en: 'And if I move to another country or change sectors?', fr: 'Et si je change de pays ou de secteur ?', it: 'E se cambio paese o settore?', pt: 'E se eu mudar de país ou de setor?' },
   'faq.q8.a': { es: 'No es problema. SACS opera en 12 países y los partners tienen flexibilidad — puedes pivotar tu enfoque mientras sigas cumpliendo los compromisos. Avísanos para actualizar tu perfil y recalibrar las palabras clave que te enviamos cada mes.', en: 'No problem. SACS operates in 12 countries and partners have flexibility — you can pivot your focus while still meeting commitments. Let us know to update your profile and recalibrate the keywords we send each month.', fr: 'Pas de problème. SACS opère dans 12 pays et les partenaires ont de la flexibilité — vous pouvez pivoter tant que vous respectez les engagements. Prévenez-nous pour mettre à jour votre profil et recalibrer les mots-clés mensuels.', it: 'Nessun problema. SACS opera in 12 paesi e i partner hanno flessibilità — puoi cambiare focus finché rispetti gli impegni. Avvisaci per aggiornare il tuo profilo e ricalibrare le parole chiave mensili.', pt: 'Sem problema. A SACS opera em 12 países e os parceiros têm flexibilidade — você pode pivotar seu foco enquanto continuar cumprindo os compromissos. Nos avise para atualizar seu perfil e recalibrar as palavras-chave mensais.' },
+
+  // Category labels + descriptions (Contenido / Apoyo / Filantropía)
+  'cat.contenido.l':  { es: 'Contenido',         en: 'Content',          fr: 'Contenu',         it: 'Contenuti',       pt: 'Conteúdo' },
+  'cat.contenido.d':  { es: 'Piezas que produces y publicas en tus redes para posicionar SACS y tu marca personal.', en: 'Pieces you produce and publish on your channels to position SACS and your personal brand.', fr: 'Pièces que vous produisez et publiez sur vos canaux pour positionner SACS et votre marque personnelle.', it: 'Pezzi che produci e pubblichi sui tuoi canali per posizionare SACS e il tuo brand personale.', pt: 'Peças que você produz e publica nas suas redes para posicionar a SACS e sua marca pessoal.' },
+  'cat.apoyo.l':      { es: 'Acciones de apoyo', en: 'Support actions',  fr: 'Actions de soutien', it: 'Azioni di supporto', pt: 'Ações de apoio' },
+  'cat.apoyo.d':      { es: 'Acciones de marketing y crecimiento que extienden a SACS sin ser contenido publicado: demos en eventos, reseñas, intros, activaciones in situ.', en: 'Marketing and growth actions that extend SACS without being published content: event demos, reviews, intros, on-site activations.', fr: 'Actions de marketing et de croissance qui étendent SACS sans être du contenu publié : démos lors d\'événements, avis, introductions, activations sur site.', it: 'Azioni di marketing e crescita che estendono SACS senza essere contenuti pubblicati: demo in eventi, recensioni, introduzioni, attivazioni in loco.', pt: 'Ações de marketing e crescimento que estendem a SACS sem serem conteúdo publicado: demos em eventos, avaliações, intros, ativações no local.' },
+  'cat.filantropia.l':{ es: 'Filantropía',       en: 'Philanthropy',     fr: 'Philanthropie',   it: 'Filantropia',     pt: 'Filantropia' },
+  'cat.filantropia.d':{ es: 'Acciones para ayudar a personas o animales — voluntariado, refugios, comedores, jornadas, mentorías. Documentadas con foto/video.', en: 'Actions to help people or animals — volunteering, shelters, kitchens, drives, mentoring. Documented with photo/video.', fr: 'Actions pour aider les personnes ou animaux — bénévolat, refuges, cantines, journées, mentorat. Documentées avec photo/vidéo.', it: 'Azioni per aiutare persone o animali — volontariato, rifugi, mense, giornate, mentoring. Documentate con foto/video.', pt: 'Ações para ajudar pessoas ou animais — voluntariado, abrigos, refeitórios, jornadas, mentorias. Documentadas com foto/vídeo.' },
+
+  // 4 howto steps in Contenido
+  'cnt.h1.t': { es: 'Eliges la mezcla', en: 'You pick the mix', fr: 'Vous choisissez le mix', it: 'Scegli il mix', pt: 'Você escolhe a mistura' },
+  'cnt.h1.d': { es: 'Contenido en redes, acciones de apoyo (demos, eventos, intros) o filantropía (refugios, comedores, mentorías). Combinas como prefieras.', en: 'Content on social, support actions (demos, events, intros) or philanthropy (shelters, kitchens, mentoring). Mix as you prefer.', fr: 'Contenu sur les réseaux, actions de soutien (démos, événements, intros) ou philanthropie (refuges, cantines, mentorat). Combinez comme vous voulez.', it: 'Contenuti sui social, azioni di supporto (demo, eventi, intro) o filantropia (rifugi, mense, mentoring). Mescola come preferisci.', pt: 'Conteúdo nas redes, ações de apoio (demos, eventos, intros) ou filantropia (abrigos, refeitórios, mentorias). Combina como preferir.' },
+  'cnt.h2.t': { es: 'Subes la prueba a tu panel', en: 'Upload the proof to your panel', fr: 'Envoyez la preuve sur votre portail', it: 'Carichi la prova sul tuo pannello', pt: 'Envia a evidência no seu painel' },
+  'cnt.h2.d': { es: 'Tab "Reportar actividad" en tu portal — link, foto o video según el tipo. Toma menos de 1 minuto por acción.', en: '"Report activity" tab in your portal — link, photo or video depending on the type. Takes less than 1 minute per action.', fr: 'Onglet « Reporter une activité » sur votre portail — lien, photo ou vidéo selon le type. Moins d\'une minute par action.', it: 'Tab "Segnala attività" nel tuo portale — link, foto o video secondo il tipo. Meno di 1 minuto per azione.', pt: 'Aba "Reportar atividade" no seu portal — link, foto ou vídeo conforme o tipo. Leva menos de 1 minuto por ação.' },
+  'cnt.h3.t': { es: 'SACS valida y otorga puntos', en: 'SACS validates and awards points', fr: 'SACS valide et attribue des points', it: 'SACS valida e assegna punti', pt: 'A SACS valida e dá pontos' },
+  'cnt.h3.d': { es: 'En 24-48h hábiles. Si pasas de 100 puntos en el mes, el excedente se acumula al siguiente mes.', en: 'Within 24-48 business hours. If you exceed 100 points in the month, the surplus carries over to the next month.', fr: 'Sous 24-48h ouvrées. Si vous dépassez 100 points dans le mois, le surplus est reporté au mois suivant.', it: 'In 24-48h lavorative. Se superi 100 punti nel mese, l\'eccedenza si riporta al mese successivo.', pt: 'Em 24-48h úteis. Se passar de 100 pontos no mês, o excedente acumula no mês seguinte.' },
+  'cnt.h4.t': { es: 'Te mantienes activo en el programa', en: 'You stay active in the program', fr: 'Vous restez actif dans le programme', it: 'Resti attivo nel programma', pt: 'Você se mantém ativo no programa' },
+  'cnt.h4.d': { es: 'Cumplir 100 pts/mes es la señal de que sigues participando. Sin reporte en el panel, no se acreditan puntos ni se mantienen los beneficios.', en: 'Meeting 100 pts/month is the signal that you\'re still participating. No report in the panel, no points credited and benefits won\'t hold.', fr: 'Atteindre 100 pts/mois est le signal que vous participez toujours. Pas de rapport sur le portail, pas de points crédités et les avantages ne tiennent pas.', it: 'Raggiungere 100 punti/mese è il segnale che continui a partecipare. Senza report sul pannello, nessun punto viene accreditato e i benefici non si mantengono.', pt: 'Cumprir 100 pts/mês é o sinal de que você segue participando. Sem reporte no painel, não há pontos creditados nem benefícios mantidos.' },
+
+  // Card meta labels + ideas/platforms label
+  'card.effort':       { es: 'esfuerzo', en: 'effort', fr: 'effort', it: 'sforzo', pt: 'esforço' },
+  'card.examples':     { es: 'Ejemplos:', en: 'Examples:', fr: 'Exemples :', it: 'Esempi:', pt: 'Exemplos:' },
+  'card.see_examples': { es: 'Ver ejemplos:', en: 'See examples:', fr: 'Voir les exemples :', it: 'Vedi esempi:', pt: 'Ver exemplos:' },
+  'card.empty':        { es: 'Sin acciones específicas para este perfil en esta categoría — cambia el perfil o explora otro tab.', en: 'No actions specific to this profile in this category — change profile or explore another tab.', fr: 'Aucune action spécifique à ce profil dans cette catégorie — changez de profil ou explorez un autre onglet.', it: 'Nessuna azione specifica per questo profilo in questa categoria — cambia profilo o esplora un\'altra tab.', pt: 'Sem ações específicas para este perfil nesta categoria — mude o perfil ou explore outra aba.' },
 };
 
 function tt(key: string): string {
@@ -2777,41 +2802,22 @@ const partnerLandingUrl = invitation.slug_landing
 
         <!-- Cómo funciona el sistema -->
         <div class="p-content-howto">
-          <div class="p-content-howto-item">
-            <div class="p-content-howto-num">1</div>
-            <div>
-              <div class="p-content-howto-title">Eliges la mezcla</div>
-              <p class="p-content-howto-detail">Contenido en redes, acciones de apoyo (demos, eventos, intros) o filantropía (refugios, comedores, mentorías). Combinas como prefieras.</p>
+          {[1,2,3,4].map(n => (
+            <div class="p-content-howto-item">
+              <div class="p-content-howto-num">{n}</div>
+              <div>
+                <div class="p-content-howto-title">{tt(`cnt.h${n}.t`)}</div>
+                <p class="p-content-howto-detail">{tt(`cnt.h${n}.d`)}</p>
+              </div>
             </div>
-          </div>
-          <div class="p-content-howto-item">
-            <div class="p-content-howto-num">2</div>
-            <div>
-              <div class="p-content-howto-title">Subes la prueba a tu panel</div>
-              <p class="p-content-howto-detail">Tab "Reportar actividad" en tu portal — link, foto o video según el tipo. Toma menos de 1 minuto por acción.</p>
-            </div>
-          </div>
-          <div class="p-content-howto-item">
-            <div class="p-content-howto-num">3</div>
-            <div>
-              <div class="p-content-howto-title">SACS valida y otorga puntos</div>
-              <p class="p-content-howto-detail">En 24-48h hábiles. Si pasas de 100 puntos en el mes, el excedente se acumula al siguiente mes.</p>
-            </div>
-          </div>
-          <div class="p-content-howto-item">
-            <div class="p-content-howto-num">4</div>
-            <div>
-              <div class="p-content-howto-title">Te mantienes activo en el programa</div>
-              <p class="p-content-howto-detail">Cumplir 100 pts/mes es la señal de que sigues participando. Sin reporte en el panel, no se acreditan puntos ni se mantienen los beneficios.</p>
-            </div>
-          </div>
+          ))}
         </div>
 
         <!-- Filtro por perfil + sub-tabs por categoría -->
         <h3 class="p-content-h3">{tt('cnt.h3')}</h3>
         <p class="p-section-lead p-section-lead--sub">{tt('cnt.sublead')}</p>
 
-        <div class="p-perfil-filter" role="tablist" aria-label={tt('lang.label')}>
+        <div class="p-perfil-filter" role="tablist" aria-label={tt('lang.label')} data-empty-msg={tt('card.empty')}>
           {PERFILES.map((p, idx) => (
             <button
               type="button"
@@ -2835,7 +2841,7 @@ const partnerLandingUrl = invitation.slug_landing
               aria-selected={idx === 0 ? 'true' : 'false'}
               data-cat-tab={cat.id}
             >
-              <span class="p-cat-tab-label">{cat.label}</span>
+              <span class="p-cat-tab-label">{tt(`cat.${cat.id}.l`)}</span>
               <span class="p-cat-tab-count" data-cat-count={cat.id}>{getContentTypesByCategoria(cat.id).length}</span>
             </button>
           ))}
@@ -2850,7 +2856,7 @@ const partnerLandingUrl = invitation.slug_landing
               data-cat-panel={cat.id}
               hidden={idx !== 0}
             >
-              <p class="p-cat-panel-desc">{cat.descripcion}</p>
+              <p class="p-cat-panel-desc">{tt(`cat.${cat.id}.d`)}</p>
               <div class="p-content-types-grid">
                 {items.map((c) => (
                   <div
@@ -2859,20 +2865,20 @@ const partnerLandingUrl = invitation.slug_landing
                   >
                     {c.ejemploImage && (
                       <div class="p-content-type-img-wrap">
-                        <img src={c.ejemploImage} alt={`Ejemplo: ${c.nombre}`} loading="lazy" class="p-content-type-img" />
+                        <img src={c.ejemploImage} alt={`Ejemplo: ${(CT_I18N[lang]?.[c.id]?.nombre || c.nombre)}`} loading="lazy" class="p-content-type-img" />
                       </div>
                     )}
                     <div class="p-content-type-head">
                       <div>
-                        <div class="p-content-type-name">{c.nombre}</div>
-                        <div class="p-content-type-meta">{c.duracion} · esfuerzo {c.esfuerzo}</div>
+                        <div class="p-content-type-name">{CT_I18N[lang]?.[c.id]?.nombre || c.nombre}</div>
+                        <div class="p-content-type-meta">{c.duracion} · {tt('card.effort')} {c.esfuerzo}</div>
                       </div>
                       <div class="p-content-type-pts">{c.puntos}<span> pts</span></div>
                     </div>
-                    <p class="p-content-type-desc">{c.descripcion}</p>
+                    <p class="p-content-type-desc">{CT_I18N[lang]?.[c.id]?.descripcion || c.descripcion}</p>
                     {c.ideasContenido && c.ideasContenido.length > 0 && (
                       <div class="p-content-type-ideas">
-                        <div class="p-content-type-ideas-label">Ejemplos:</div>
+                        <div class="p-content-type-ideas-label">{tt('card.examples')}</div>
                         <ul>
                           {c.ideasContenido.slice(0, 3).map((idea) => <li>{idea}</li>)}
                         </ul>
@@ -2885,7 +2891,7 @@ const partnerLandingUrl = invitation.slug_landing
                     )}
                     {c.ejemploRefs && c.ejemploRefs.length > 0 && (
                       <div class="p-content-type-refs">
-                        <span class="p-content-type-refs-label">Ver ejemplos:</span>
+                        <span class="p-content-type-refs-label">{tt('card.see_examples')}</span>
                         {c.ejemploRefs.map((r) => (
                           <a href={r.url} target="_blank" rel="noopener" class="p-content-type-ref">{r.label} ↗</a>
                         ))}
@@ -9875,7 +9881,8 @@ const partnerLandingUrl = invitation.slug_landing
         if (!emptyMsg) {
           emptyMsg = document.createElement('div');
           emptyMsg.className = 'p-cat-panel-empty';
-          emptyMsg.textContent = 'Sin acciones específicas para este perfil en esta categoría — cambia el perfil o explora otro tab.';
+          const emptyMsgText = document.querySelector('.p-perfil-filter')?.getAttribute('data-empty-msg') || 'Sin acciones específicas para este perfil.';
+          emptyMsg.textContent = emptyMsgText;
           panel.querySelector('.p-content-types-grid')?.appendChild(emptyMsg);
         }
       } else if (emptyMsg) {

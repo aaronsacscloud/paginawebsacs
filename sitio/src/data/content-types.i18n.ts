@@ -1,0 +1,155 @@
+// Traducciones de los nombres y descripciones de los 30 content types.
+// Las ideas y plataformas siguen en español (texto profundo se localiza después).
+// Si un id falta para un idioma, el render hace fallback al original ES del data file.
+
+import type { Lang } from './content-types-i18n-types';
+
+export const CT_I18N: Record<Lang, Record<string, { nombre: string; descripcion: string }>> = {
+  es: {},
+
+  en: {
+    // ── Contenido (10) ──
+    story_reel:       { nombre: 'Story / short Reel',                 descripcion: 'Quick vertical piece — a feature, a tip, a before/after. Ideal for Instagram Stories, Reels and TikTok.' },
+    tutorial:         { nombre: 'Tutorial / step-by-step guide',      descripcion: 'How to set up or use a specific feature. Direct practical value.' },
+    caso_uso:         { nombre: 'Use case in your business',          descripcion: 'Tell how you use SACS specifically in your business. Storytelling of your own case or one of a client you advise.' },
+    tour:             { nombre: 'System tour in action',              descripcion: 'Screen-share walkthrough showing one full section or flow of the system.' },
+    dia_en_la_vida:   { nombre: 'A day in the life',                  descripcion: 'Follow your daily routine showing how SACS plugs into every moment.' },
+    testimonial:      { nombre: 'Testimonial / story',                descripcion: 'Tell the real impact of SACS on a business: before vs after with numbers (yours or a client you advise).' },
+    serie_episodio:   { nombre: 'Ambassador series episode',          descripcion: 'One episode of your themed series (consulting, retail, cases). The full series (10 episodes) earns extra points.' },
+    webinar:          { nombre: 'Webinar / live session',             descripcion: 'Live session on a relevant topic. Q&A with audience. Recorded and reused.' },
+    mini_documental:  { nombre: 'Mini-documentary / story',           descripcion: 'Narrative piece with careful production — story of your brand or someone using SACS.' },
+    serie_completa:   { nombre: '🎁 Bonus: full series (10 episodes)', descripcion: 'Bonus for delivering a complete 10-episode series on one theme. Equals 30 points per episode + 60 bonus.' },
+
+    // ── Apoyo (10) ──
+    demo_evento_sector:  { nombre: 'SACS demo at a sector event',           descripcion: 'Show SACS running at a retail/restaurants industry event, fair or expo. Upload booth photo or session + attendee/contact list.' },
+    resena_publica:      { nombre: 'Public review on a software platform', descripcion: 'Honest, detailed review of SACS on G2, Capterra, GetApp or Google Maps. Min. 200 words + real screenshot of your account.' },
+    activacion_sucursal: { nombre: 'Open activation at your store',         descripcion: 'Open day where other business owners come to your store to see SACS running live. Min. 5 external attendees. Document with photo + list.' },
+    speaking_panel:      { nombre: 'Speaking on a sector panel or forum',  descripcion: 'Speak as a SACS ambassador on a panel, forum or conference where the brand is mentioned. Document with event photo + recording or program.' },
+    intro_calificada:    { nombre: 'Qualified intro (live lead)',          descripcion: 'Connect the SACS team with a qualified prospect (real decision maker of a business with 1+ store). Counts when the lead accepts a call.' },
+    meetup_local:        { nombre: 'Meetup or roundtable at your venue',   descripcion: 'Host an in-person meetup on retail, e-commerce or business management with SACS visible. Min. 10 attendees — at your store or an ally space.' },
+    co_marketing:        { nombre: 'Co-marketing with an allied brand',    descripcion: 'Collaboration with a complementary brand or consultancy (non-competing) that mentions SACS on their channel. Joint reels, cross blog, double event.' },
+    beta_feedback:       { nombre: 'Beta tester with structured feedback', descripcion: 'Test a new SACS feature thoroughly and send a structured report (what worked, what didn\'t, suggestions). Min. 1 page of notes + screenshots.' },
+    material_local:      { nombre: 'Physical SACS material in your venue', descripcion: 'Keep material visible at your store: QR, flyer, card, sticker or SACS display. Earn points each month it stays visible. Monthly photo.' },
+    stand_feria:         { nombre: 'Share a booth at a sector fair',       descripcion: 'Represent SACS from your own or shared booth at a regional or national fair/expo. Document with photo + lead report.' },
+
+    // ── Filantropía (10) ──
+    voluntariado_animales: { nombre: 'Volunteer at an animal shelter',         descripcion: 'Donate at least 4 hours at a dog, cat, equine or rescue wildlife shelter. Clean, feed, walk, help in consultations. Document with photo.' },
+    jornada_adopcion:      { nombre: 'Adoption or sterilization day',          descripcion: 'Organize or logistically support a free animal adoption or sterilization day. Document with photo + count of adoptions/sterilizations.' },
+    banco_alimentos:       { nombre: 'Food bank volunteering',                 descripcion: 'Donate at least 4 hours at a food bank: sorting, packaging, distribution, logistics. Document with photo + bank name.' },
+    comedor_comunitario:   { nombre: 'Support at a community kitchen',         descripcion: 'Cook, serve or donate supplies at a community kitchen for vulnerable people. Min. half a day of work.' },
+    distribucion_despensas:{ nombre: 'Pantry distribution to vulnerable families', descripcion: 'Organize or join a day delivering pantries, water, clothes or medicine to families in vulnerable situations. Document with photo + zone.' },
+    albergue_personas:     { nombre: 'Volunteer at a people\'s shelter',       descripcion: 'Support at a homeless shelter, children\'s home, senior home or migrant shelter. Min. half a day.' },
+    limpieza_publica:      { nombre: 'Public space / beach / park cleanup',    descripcion: 'Group cleanup at a park, beach, river or nature reserve. Min. 3 hours and a group of 5+ people. Document with before/after photo.' },
+    mentoria_emprendedor:  { nombre: '1:1 mentoring to a low-income entrepreneur', descripcion: '1:1 free session with an entrepreneur from a family micro-business or vulnerable community. Document with photo + case description.' },
+    conferencia_escuela:   { nombre: 'Free talk at a public school',           descripcion: 'Free talk at a public high school, CECyT, CONALEP or university in a vulnerable area on entrepreneurship or technology.' },
+    beca_patrocinio:       { nombre: 'Scholarship or sponsorship for a person', descripcion: 'Sponsor a course, kit, tool or service for someone who couldn\'t afford it. Counts once a month while sponsorship continues.' },
+  },
+
+  fr: {
+    // Contenido
+    story_reel:       { nombre: 'Story / Reel court',                  descripcion: 'Pièce verticale rapide — un feature, une astuce, un avant/après. Idéal pour Instagram Stories, Reels et TikTok.' },
+    tutorial:         { nombre: 'Tutoriel / guide pas à pas',          descripcion: 'Comment configurer ou utiliser une fonctionnalité spécifique du système. Utilité pratique directe.' },
+    caso_uso:         { nombre: 'Cas d\'usage dans votre activité',    descripcion: 'Racontez comment vous utilisez SACS dans votre activité. Storytelling de votre propre cas ou d\'un client que vous conseillez.' },
+    tour:             { nombre: 'Tour du système en action',           descripcion: 'Walkthrough en partage d\'écran montrant une section ou un flux complet du système.' },
+    dia_en_la_vida:   { nombre: 'Une journée dans la vie',             descripcion: 'Suivez votre routine quotidienne en montrant comment SACS s\'intègre à chaque moment.' },
+    testimonial:      { nombre: 'Témoignage / histoire',               descripcion: 'Racontez l\'impact réel de SACS sur une activité : avant vs après avec des chiffres (le vôtre ou celui d\'un client que vous conseillez).' },
+    serie_episodio:   { nombre: 'Épisode de série ambassadeur',        descripcion: 'Un épisode de votre série thématique (conseil, retail, cas). La série complète (10 épisodes) rapporte des points en plus.' },
+    webinar:          { nombre: 'Webinaire / session en direct',       descripcion: 'Session en direct sur un sujet pertinent. Q&A avec audience. Enregistrée et réutilisée.' },
+    mini_documental:  { nombre: 'Mini-documentaire / histoire',        descripcion: 'Pièce narrative avec production soignée — histoire de votre marque ou de quelqu\'un qui utilise SACS.' },
+    serie_completa:   { nombre: '🎁 Bonus : série complète (10 épisodes)', descripcion: 'Bonus pour livrer une série complète de 10 épisodes sur un thème. Équivaut à 30 points par épisode + 60 de bonus.' },
+
+    // Apoyo
+    demo_evento_sector:  { nombre: 'Démo SACS à un événement du secteur',          descripcion: 'Montrer SACS en fonctionnement lors d\'un événement, salon ou expo retail/restauration. Photo du stand ou session + liste de contacts.' },
+    resena_publica:      { nombre: 'Avis public sur une plateforme logicielle',  descripcion: 'Avis honnête et détaillé de SACS sur G2, Capterra, GetApp ou Google Maps. Min. 200 mots + capture d\'écran réelle de votre compte.' },
+    activacion_sucursal: { nombre: 'Activation ouverte dans votre boutique',      descripcion: 'Journée portes ouvertes où d\'autres chefs d\'entreprise viennent voir SACS en direct. Min. 5 visiteurs externes. Photo + liste.' },
+    speaking_panel:      { nombre: 'Intervention dans un panel du secteur',       descripcion: 'Parler en tant qu\'ambassadeur SACS lors d\'un panel, forum ou conférence où la marque est mentionnée. Photo + enregistrement ou programme.' },
+    intro_calificada:    { nombre: 'Introduction qualifiée (lead vivant)',        descripcion: 'Mettre en relation l\'équipe SACS avec un prospect qualifié (vrai décideur d\'une activité avec 1+ boutique). Compte quand le lead accepte un appel.' },
+    meetup_local:        { nombre: 'Meetup ou table ronde dans votre local',      descripcion: 'Organiser un meetup présentiel sur retail, e-commerce ou gestion d\'activité avec SACS visible. Min. 10 participants — chez vous ou dans un espace allié.' },
+    co_marketing:        { nombre: 'Co-marketing avec une marque alliée',         descripcion: 'Collaboration avec une marque ou un cabinet complémentaire (non concurrent) qui mentionne SACS sur son canal. Reels conjoints, blog croisé, événement double.' },
+    beta_feedback:       { nombre: 'Bêta-testeur avec retour structuré',          descripcion: 'Tester en profondeur une nouveauté SACS et envoyer un rapport structuré (ce qui marche, ce qui ne marche pas, suggestions). Min. 1 page de notes + captures.' },
+    material_local:      { nombre: 'Matériel physique SACS dans votre local',     descripcion: 'Garder du matériel visible chez vous : QR, flyer, carte, sticker ou display SACS. Points chaque mois où il reste visible. Photo mensuelle.' },
+    stand_feria:         { nombre: 'Partager un stand dans un salon du secteur', descripcion: 'Représenter SACS depuis votre stand ou un stand partagé dans un salon/expo régional ou national. Photo + rapport de leads.' },
+
+    // Filantropía
+    voluntariado_animales: { nombre: 'Bénévolat dans un refuge animal',                 descripcion: 'Donner au moins 4 heures dans un refuge canin, félin, équin ou de faune sauvage. Nettoyer, nourrir, promener. Documenter avec photo.' },
+    jornada_adopcion:      { nombre: 'Journée d\'adoption ou de stérilisation',         descripcion: 'Organiser ou soutenir logistiquement une journée gratuite d\'adoption ou de stérilisation animale. Photo + nombre d\'adoptions/stérilisations.' },
+    banco_alimentos:       { nombre: 'Bénévolat dans une banque alimentaire',           descripcion: 'Donner au moins 4 heures dans une banque alimentaire : tri, emballage, distribution, logistique. Photo + nom de la banque.' },
+    comedor_comunitario:   { nombre: 'Soutien dans une cantine communautaire',          descripcion: 'Cuisiner, servir ou donner des fournitures dans une cantine communautaire pour personnes vulnérables. Min. une demi-journée.' },
+    distribucion_despensas:{ nombre: 'Distribution de paniers à familles vulnérables',  descripcion: 'Organiser ou rejoindre une journée de distribution de paniers, eau, vêtements ou médicaments à des familles en situation vulnérable. Photo + zone.' },
+    albergue_personas:     { nombre: 'Bénévolat dans un foyer d\'accueil',              descripcion: 'Soutenir dans un foyer pour personnes sans-abri, foyer pour enfants, maison de retraite ou foyer pour migrants. Min. une demi-journée.' },
+    limpieza_publica:      { nombre: 'Nettoyage d\'espace public / plage / parc',       descripcion: 'Nettoyage en groupe d\'un parc, plage, rivière ou réserve naturelle. Min. 3 heures et un groupe de 5+ personnes. Photo avant/après.' },
+    mentoria_emprendedor:  { nombre: 'Mentorat 1:1 d\'un entrepreneur à faibles revenus', descripcion: 'Session 1:1 gratuite avec un entrepreneur d\'une micro-entreprise familiale ou d\'une communauté vulnérable. Photo + description du cas.' },
+    conferencia_escuela:   { nombre: 'Conférence gratuite dans une école publique',     descripcion: 'Conférence gratuite dans un lycée public, CECyT, CONALEP ou université d\'une zone vulnérable sur l\'entrepreneuriat ou la technologie.' },
+    beca_patrocinio:       { nombre: 'Bourse ou parrainage d\'une personne',            descripcion: 'Sponsoriser un cours, kit, outil ou service pour quelqu\'un qui ne pourrait pas se le permettre. Compte une fois par mois tant que le parrainage dure.' },
+  },
+
+  it: {
+    story_reel:       { nombre: 'Story / Reel breve',                  descripcion: 'Pezzo verticale rapido — un feature, un consiglio, un prima/dopo. Ideale per Instagram Stories, Reels e TikTok.' },
+    tutorial:         { nombre: 'Tutorial / guida passo passo',       descripcion: 'Come configurare o usare una funzionalità specifica del sistema. Utilità pratica diretta.' },
+    caso_uso:         { nombre: 'Caso d\'uso nella tua attività',     descripcion: 'Racconta come applichi SACS nella tua attività. Storytelling del tuo caso o di un cliente che consigli.' },
+    tour:             { nombre: 'Tour del sistema in azione',         descripcion: 'Walkthrough in screen-share che mostra una sezione o flusso completo del sistema.' },
+    dia_en_la_vida:   { nombre: 'Un giorno nella vita',               descripcion: 'Segui la tua routine quotidiana mostrando come SACS si integra in ogni momento.' },
+    testimonial:      { nombre: 'Testimonianza / storia',             descripcion: 'Racconta l\'impatto reale di SACS in un\'attività: prima vs dopo con numeri (tuo o di un cliente che consigli).' },
+    serie_episodio:   { nombre: 'Episodio di serie ambasciatore',     descripcion: 'Un episodio della tua serie tematica (consulenza, retail, casi). La serie completa (10 episodi) dà punti extra.' },
+    webinar:          { nombre: 'Webinar / sessione live',            descripcion: 'Sessione live su un tema rilevante. Q&A con il pubblico. Si registra e riusa.' },
+    mini_documental:  { nombre: 'Mini-documentario / storia',         descripcion: 'Pezzo narrativo con produzione curata — storia del tuo brand o di chi usa SACS.' },
+    serie_completa:   { nombre: '🎁 Bonus: serie completa (10 episodi)', descripcion: 'Bonus per consegnare una serie completa di 10 episodi su un tema. Equivale a 30 punti per episodio + 60 di bonus.' },
+
+    demo_evento_sector:  { nombre: 'Demo SACS a un evento del settore',           descripcion: 'Mostrare SACS funzionante a un evento, fiera o expo del settore retail/ristoranti. Foto dello stand o sessione + lista contatti.' },
+    resena_publica:      { nombre: 'Recensione pubblica su piattaforma software', descripcion: 'Recensione onesta e dettagliata di SACS su G2, Capterra, GetApp o Google Maps. Min. 200 parole + screenshot reale del tuo account.' },
+    activacion_sucursal: { nombre: 'Attivazione aperta nel tuo negozio',          descripcion: 'Open day in cui altri titolari vengono nel tuo negozio a vedere SACS dal vivo. Min. 5 partecipanti esterni. Foto + lista.' },
+    speaking_panel:      { nombre: 'Speaking in un panel o forum del settore',   descripcion: 'Parlare come ambasciatore SACS in un panel, forum o conferenza dove il brand è menzionato. Foto + registrazione o programma.' },
+    intro_calificada:    { nombre: 'Intro qualificata (lead vivo)',              descripcion: 'Connettere il team SACS con un prospect qualificato (vero decisore di un\'attività con 1+ negozio). Conta quando il lead accetta una call.' },
+    meetup_local:        { nombre: 'Meetup o tavola rotonda nel tuo locale',     descripcion: 'Ospitare un meetup di persona su retail, e-commerce o gestione con SACS visibile. Min. 10 partecipanti — nel tuo negozio o spazio alleato.' },
+    co_marketing:        { nombre: 'Co-marketing con un brand alleato',          descripcion: 'Collaborazione con un brand o consulenza complementare (non concorrente) che menziona SACS sul suo canale. Reel congiunti, blog incrociato, evento doppio.' },
+    beta_feedback:       { nombre: 'Beta tester con feedback strutturato',       descripcion: 'Testare a fondo una nuova feature SACS e inviare un report strutturato (cosa ha funzionato, cosa no, suggerimenti). Min. 1 pagina + screenshot.' },
+    material_local:      { nombre: 'Materiale fisico SACS nel tuo locale',       descripcion: 'Mantenere materiale visibile nel tuo negozio: QR, volantino, biglietto, sticker o display SACS. Punti ogni mese che resta visibile. Foto mensile.' },
+    stand_feria:         { nombre: 'Condividere stand a una fiera del settore', descripcion: 'Rappresentare SACS da uno stand proprio o condiviso a una fiera/expo regionale o nazionale. Foto + report lead.' },
+
+    voluntariado_animales: { nombre: 'Volontariato in un rifugio per animali',          descripcion: 'Dare almeno 4 ore in un rifugio canino, felino, equino o di fauna a rischio. Pulire, nutrire, portare a passeggio. Documentare con foto.' },
+    jornada_adopcion:      { nombre: 'Giornata di adozione o sterilizzazione',          descripcion: 'Organizzare o supportare logisticamente una giornata gratuita di adozione o sterilizzazione animali. Foto + numero di adozioni/sterilizzazioni.' },
+    banco_alimentos:       { nombre: 'Volontariato in banco alimentare',                descripcion: 'Dare almeno 4 ore in un banco alimentare: smistamento, confezionamento, distribuzione, logistica. Foto + nome del banco.' },
+    comedor_comunitario:   { nombre: 'Supporto in mensa comunitaria',                   descripcion: 'Cucinare, servire o donare ingredienti in una mensa comunitaria per persone vulnerabili. Min. mezza giornata.' },
+    distribucion_despensas:{ nombre: 'Distribuzione di pacchi a famiglie vulnerabili',  descripcion: 'Organizzare o partecipare a una giornata di consegna di pacchi, acqua, vestiti o medicine a famiglie in situazione vulnerabile. Foto + zona.' },
+    albergue_personas:     { nombre: 'Volontariato in casa di accoglienza',             descripcion: 'Supportare in un dormitorio per senzatetto, casa famiglia, casa di riposo o centro per migranti. Min. mezza giornata.' },
+    limpieza_publica:      { nombre: 'Pulizia di spazio pubblico / spiaggia / parco',   descripcion: 'Pulizia di gruppo in parco, spiaggia, fiume o riserva naturale. Min. 3 ore e gruppo di 5+ persone. Foto prima/dopo.' },
+    mentoria_emprendedor:  { nombre: 'Mentoring 1:1 a imprenditore con basso reddito',  descripcion: 'Sessione 1:1 gratuita con un imprenditore di micro-attività familiare o comunità vulnerabile. Foto + descrizione del caso.' },
+    conferencia_escuela:   { nombre: 'Conferenza gratuita in scuola pubblica',          descripcion: 'Conferenza gratuita in liceo pubblico, CECyT, CONALEP o università di area vulnerabile su imprenditorialità o tecnologia.' },
+    beca_patrocinio:       { nombre: 'Borsa o sponsorizzazione di una persona',         descripcion: 'Sponsorizzare un corso, kit, strumento o servizio per chi non potrebbe permetterselo. Conta una volta al mese finché continua la sponsorizzazione.' },
+  },
+
+  pt: {
+    story_reel:       { nombre: 'Story / Reel curto',                 descripcion: 'Peça vertical rápida — uma feature, uma dica, um antes/depois. Ideal para Instagram Stories, Reels e TikTok.' },
+    tutorial:         { nombre: 'Tutorial / guia passo a passo',     descripcion: 'Como configurar ou usar uma funcionalidade específica do sistema. Utilidade prática direta.' },
+    caso_uso:         { nombre: 'Caso de uso no seu negócio',        descripcion: 'Conte como aplica a SACS no seu negócio. Storytelling do seu caso ou de um cliente que você assessora.' },
+    tour:             { nombre: 'Tour do sistema em ação',           descripcion: 'Walkthrough em compartilhamento de tela mostrando uma seção ou fluxo completo do sistema.' },
+    dia_en_la_vida:   { nombre: 'Um dia na vida',                    descripcion: 'Acompanhe sua rotina diária mostrando como a SACS se integra em cada momento.' },
+    testimonial:      { nombre: 'Depoimento / história',             descripcion: 'Conte o impacto real da SACS em um negócio: antes vs depois com números (seu ou de um cliente que assessora).' },
+    serie_episodio:   { nombre: 'Episódio de série embaixador',      descripcion: 'Um episódio da sua série temática (consultoria, retail, casos). A série completa (10 episódios) soma pontos extras.' },
+    webinar:          { nombre: 'Webinar / sessão ao vivo',          descripcion: 'Sessão ao vivo sobre um tema relevante. Q&A com a audiência. Gravada e reusada.' },
+    mini_documental:  { nombre: 'Mini-documentário / história',      descripcion: 'Peça narrativa com produção cuidada — história da sua marca ou de quem usa SACS.' },
+    serie_completa:   { nombre: '🎁 Bônus: série completa (10 episódios)', descripcion: 'Bônus por entregar uma série completa de 10 episódios sobre um tema. Equivale a 30 pontos por episódio + 60 de bônus.' },
+
+    demo_evento_sector:  { nombre: 'Demo da SACS em evento do setor',           descripcion: 'Mostrar a SACS funcionando em um evento, feira ou expo do setor varejo/restaurantes. Foto do estande ou sessão + lista de contatos.' },
+    resena_publica:      { nombre: 'Avaliação pública em plataforma de software', descripcion: 'Avaliação honesta e detalhada da SACS no G2, Capterra, GetApp ou Google Maps. Mín. 200 palavras + print real da sua conta.' },
+    activacion_sucursal: { nombre: 'Ativação aberta na sua loja',               descripcion: 'Open day onde outros donos de negócio vêm ver a SACS funcionando ao vivo. Mín. 5 visitantes externos. Documentar com foto + lista.' },
+    speaking_panel:      { nombre: 'Speaking em painel ou fórum do setor',     descripcion: 'Falar como embaixador SACS em painel, fórum ou conferência onde a marca seja mencionada. Foto + gravação ou programa.' },
+    intro_calificada:    { nombre: 'Intro qualificada (lead vivo)',            descripcion: 'Conectar o time SACS com um prospecto qualificado (decisor real de um negócio com 1+ loja). Conta quando o lead aceita uma call.' },
+    meetup_local:        { nombre: 'Meetup ou mesa-redonda no seu local',      descripcion: 'Hospedar um meetup presencial sobre varejo, e-commerce ou gestão com SACS visível. Mín. 10 participantes — na sua loja ou espaço aliado.' },
+    co_marketing:        { nombre: 'Co-marketing com marca aliada',            descripcion: 'Colaboração com uma marca ou consultoria complementar (não concorrente) que mencione SACS no seu canal. Reels conjuntos, blog cruzado, evento duplo.' },
+    beta_feedback:       { nombre: 'Beta tester com feedback estruturado',     descripcion: 'Testar a fundo uma nova feature da SACS e enviar relatório estruturado (o que funcionou, o que não, sugestões). Mín. 1 página + prints.' },
+    material_local:      { nombre: 'Material físico da SACS na sua loja',     descripcion: 'Manter material visível na sua loja: QR, panfleto, cartão, adesivo ou display SACS. Pontos cada mês que ficar visível. Foto mensal.' },
+    stand_feria:         { nombre: 'Compartilhar estande em feira do setor',  descripcion: 'Representar a SACS em estande próprio ou compartilhado em uma feira/expo regional ou nacional. Foto + relatório de leads.' },
+
+    voluntariado_animales: { nombre: 'Voluntariado em abrigo de animais',                descripcion: 'Doar pelo menos 4 horas em um abrigo canino, felino, equino ou de fauna em risco. Limpar, alimentar, passear. Documentar com foto.' },
+    jornada_adopcion:      { nombre: 'Jornada de adoção ou esterilização',               descripcion: 'Organizar ou apoiar logisticamente uma jornada gratuita de adoção ou esterilização de animais. Foto + número de adoções/esterilizações.' },
+    banco_alimentos:       { nombre: 'Voluntariado em banco de alimentos',               descripcion: 'Doar pelo menos 4 horas em um banco de alimentos: triagem, embalagem, distribuição, logística. Foto + nome do banco.' },
+    comedor_comunitario:   { nombre: 'Apoio em refeitório comunitário',                  descripcion: 'Cozinhar, servir ou doar insumos em um refeitório comunitário para pessoas vulneráveis. Mín. meio dia de trabalho.' },
+    distribucion_despensas:{ nombre: 'Distribuição de cestas para famílias vulneráveis', descripcion: 'Organizar ou participar de jornada de entrega de cestas, água, roupas ou medicamentos a famílias em situação vulnerável. Foto + zona.' },
+    albergue_personas:     { nombre: 'Voluntariado em abrigo de pessoas',                descripcion: 'Apoiar em abrigo de pessoas em situação de rua, casa lar, asilo de idosos ou abrigo de migrantes. Mín. meio dia.' },
+    limpieza_publica:      { nombre: 'Limpeza de espaço público / praia / parque',      descripcion: 'Limpeza em grupo de parque, praia, rio ou reserva natural. Mín. 3 horas e grupo de 5+ pessoas. Foto antes/depois.' },
+    mentoria_emprendedor:  { nombre: 'Mentoria 1:1 a empreendedor de baixa renda',       descripcion: 'Sessão 1:1 gratuita com um empreendedor de microempresa familiar ou comunidade vulnerável. Foto + descrição do caso.' },
+    conferencia_escuela:   { nombre: 'Palestra gratuita em escola pública',              descripcion: 'Palestra gratuita em escola pública, CECyT, CONALEP ou universidade de área vulnerável sobre empreendedorismo ou tecnologia.' },
+    beca_patrocinio:       { nombre: 'Bolsa ou patrocínio para uma pessoa',              descripcion: 'Patrocinar um curso, kit, ferramenta ou serviço para alguém que não poderia pagar. Conta uma vez ao mês enquanto continuar o patrocínio.' },
+  },
+};
