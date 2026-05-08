@@ -4,6 +4,18 @@ import { supabase } from '../../../lib/supabase';
 import PartnerSidebar from '../../../components/partner/PartnerSidebar.astro';
 import { CONTENT_TYPES, META_PUNTOS_MES, CATEGORIAS, getContentTypesByCategoria } from '../../../data/content-types';
 import { CERTIFICATIONS } from '../../../data/certifications';
+import fs from 'node:fs';
+import path from 'node:path';
+
+// Lista de fotos reales de partners (de /public/images/testimonials/)
+// Usamos fs.readdirSync una vez al request — es < 1ms y evita hardcoding.
+let PARTNER_PHOTOS: string[] = [];
+try {
+  const dir = path.join(process.cwd(), 'public/images/testimonials');
+  PARTNER_PHOTOS = fs.readdirSync(dir)
+    .filter(f => f.endsWith('.webp'))
+    .sort();
+} catch { /* en build sin acceso al fs, queda vacío */ }
 import { businessSectors } from '../../../data/navigation';
 
 const SECTOR_EMOJIS: Record<string, string> = {
@@ -321,6 +333,39 @@ const partnerLandingUrl = invitation.slug_landing
             <div class="p-hero-stat">
               <div class="p-hero-stat-num">3K+</div>
               <div class="p-hero-stat-label">Marcas en la red SACS</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Carta del founder ── -->
+        <div class="p-letter">
+          <div class="p-letter-eyebrow">Carta del founder</div>
+          <div class="p-letter-body">
+            <p class="p-letter-greeting">{invitation.nombre},</p>
+            <p>
+              Llevo más de 13 años construyendo SACS y, en todo ese tiempo,
+              la decisión más difícil ha sido <strong>quién entra al programa
+              de partners</strong>. No es un programa de afiliados — es una
+              extensión de la empresa. Tú representas a SACS frente a tu
+              comunidad y nosotros, a cambio, te damos la plataforma, el
+              equipo y el respaldo para que cada cliente que tú traes tenga
+              una experiencia que <strong>te haga ver bien</strong>.
+            </p>
+            <p>
+              Hoy somos 100 partners en LATAM. Mi meta es que para el cierre
+              de 2026 seamos 1,000 — pero solo personas en las que confíe
+              que van a representar la marca con cuidado. Si estás leyendo
+              esto es porque ya estás en esa lista corta. Espero que firmes,
+              y si tienes cualquier duda, escríbeme directo: ya tienes mi
+              correo en este documento.
+            </p>
+            <p class="p-letter-cierre">Gracias por considerar ser parte de esto.</p>
+          </div>
+          <div class="p-letter-sig">
+            <div class="p-letter-sig-mark">A</div>
+            <div class="p-letter-sig-info">
+              <div class="p-letter-sig-name">Aaron Rodríguez</div>
+              <div class="p-letter-sig-role">Founder & CEO · SACS</div>
             </div>
           </div>
         </div>
@@ -654,6 +699,32 @@ const partnerLandingUrl = invitation.slug_landing
             </div>
           </div>
         </div>
+
+        <!-- ── 7.4 Muro de partners reales (caras de la red) ── -->
+        {PARTNER_PHOTOS.length >= 24 && (
+        <div class="p-bw-section">
+          <div class="p-bw-eyebrow">La red real, hoy</div>
+          <h2 class="p-bw-title">100 personas en LATAM ya forman parte.</h2>
+          <p class="p-bw-lead">
+            No es un número en una landing — son personas reales con sus marcas, sus
+            tiendas y sus comunidades. Si firmas, te unes a este grupo.
+          </p>
+
+          <div class="p-wall">
+            {PARTNER_PHOTOS.slice(0, 60).map((file) => {
+              const name = file.replace(/\.webp$/, '').replace(/-/g, ' ');
+              return (
+                <div class="p-wall-cell" title={name}>
+                  <img src={`/images/testimonials/${file}`} alt={name} loading="lazy" decoding="async" width="160" height="160" class="p-wall-img" />
+                </div>
+              );
+            })}
+          </div>
+          <div class="p-wall-foot">
+            +{Math.max(0, PARTNER_PHOTOS.length - 60)} partners más en {/* fallback simple */} 12 países de LATAM y Europa.
+          </div>
+        </div>
+        )}
 
         <!-- ── 7.5 SACS · qué significa cada letra ── -->
         <div class="p-bw-section p-bw-section--alt">
@@ -2708,6 +2779,76 @@ const partnerLandingUrl = invitation.slug_landing
           </div>
         )}
 
+        <!-- ── Calculadora interactiva ── -->
+        <div class="p-calc" data-calc data-rate={ratePartner} data-bp={bonusPruebaGratis} data-bd={bonusCompletada}>
+          <div class="p-calc-eyebrow">Calcula tu potencial</div>
+          <h3 class="p-calc-title">Tus números a 12 meses.</h3>
+          <p class="p-calc-lead">
+            Mueve los sliders. La proyección se actualiza en vivo con tu {comisionPct}% de comisión y los precios públicos de SACS — sin números inflados.
+          </p>
+
+          <div class="p-calc-grid">
+            <label class="p-calc-input">
+              <div class="p-calc-input-head">
+                <span class="p-calc-input-label">Pruebas gratis activadas / mes</span>
+                <span class="p-calc-input-value" data-calc-out="pruebas">10</span>
+              </div>
+              <input type="range" min="0" max="50" value="10" step="1" data-calc-input="pruebas" class="p-calc-range" />
+              <div class="p-calc-input-hint">~10 hrs/mes de difusión</div>
+            </label>
+            <label class="p-calc-input">
+              <div class="p-calc-input-head">
+                <span class="p-calc-input-label">Demos completados / mes</span>
+                <span class="p-calc-input-value" data-calc-out="demos">6</span>
+              </div>
+              <input type="range" min="0" max="30" value="6" step="1" data-calc-input="demos" class="p-calc-range" />
+              <div class="p-calc-input-hint">~50% de conversión prueba → demo</div>
+            </label>
+            <label class="p-calc-input">
+              <div class="p-calc-input-head">
+                <span class="p-calc-input-label">Clientes cerrados / año</span>
+                <span class="p-calc-input-value" data-calc-out="clientes">12</span>
+              </div>
+              <input type="range" min="0" max="60" value="12" step="1" data-calc-input="clientes" class="p-calc-range" />
+              <div class="p-calc-input-hint">~1 cierre por mes</div>
+            </label>
+            <label class="p-calc-input">
+              <div class="p-calc-input-head">
+                <span class="p-calc-input-label">Plan promedio que cierras</span>
+                <span class="p-calc-input-value" data-calc-out="plan-name">Fideliza</span>
+              </div>
+              <select class="p-calc-select" data-calc-input="plan">
+                {SACS_PLANS.map((p, i) => (
+                  <option value={i} selected={i === 2}>{p.name} · ${p.monthly}/mes</option>
+                ))}
+              </select>
+              <div class="p-calc-input-hint">El plan más vendido es Fideliza</div>
+            </label>
+          </div>
+
+          <div class="p-calc-out">
+            <div class="p-calc-out-card">
+              <div class="p-calc-out-label">Bonos por demos</div>
+              <div class="p-calc-out-amount" data-calc-out="bonos-anual">—</div>
+              <div class="p-calc-out-period">/ año en bonos</div>
+            </div>
+            <div class="p-calc-out-card p-calc-out-card--featured">
+              <div class="p-calc-out-label">Comisión por ventas</div>
+              <div class="p-calc-out-amount" data-calc-out="ventas-anual">—</div>
+              <div class="p-calc-out-period">/ año recurrente</div>
+            </div>
+            <div class="p-calc-out-card p-calc-out-card--total">
+              <div class="p-calc-out-label">Total proyectado</div>
+              <div class="p-calc-out-amount" data-calc-out="total-anual">—</div>
+              <div class="p-calc-out-period">/ año</div>
+            </div>
+          </div>
+
+          <div class="p-calc-disclaimer">
+            Proyección basada en tu {comisionPct}% de comisión, ${bonusPruebaGratis} MXN por prueba activada, ${bonusCompletada} MXN por demo completada, y precios públicos de los planes SACS. Ningún número está inflado — son las matemáticas reales del programa.
+          </div>
+        </div>
+
         <!-- ── Comisiones por ventas ── -->
         <div class="p-projection-block" data-projection-scope>
           <div class="p-projection-eyebrow">2 · Comisiones por ventas (acumulado)</div>
@@ -2875,6 +3016,63 @@ const partnerLandingUrl = invitation.slug_landing
         <div class="p-cert-cta">
           <span class="p-cert-cta-eyebrow">Cuando estés listo</span>
           <p>Las certificaciones se ofrecen desde el panel de partners. No hay prisa — empieza cuando ya cerraste un par de clientes y quieras llevar tu rol al siguiente nivel.</p>
+        </div>
+
+        <!-- ── FAQ · objeciones honestas ── -->
+        <div class="p-comp-divider"></div>
+        <div class="p-comp-section-eyebrow">4 · Las preguntas que todos tienen</div>
+        <p class="p-comp-section-lead">
+          Lo que la gente piensa antes de firmar pero no siempre pregunta. Respuestas honestas, no marketing.
+        </p>
+
+        <div class="p-faq" data-faq>
+          {[
+            {
+              q: '¿Y si no tengo audiencia o apenas estoy empezando?',
+              a: 'No necesitas ser un creador con miles de seguidores. La mayoría de nuestros mejores partners son dueños de negocio que recomiendan SACS a otros dueños de su mismo giro. Tu credibilidad operacional vale más que el tamaño de tu audiencia. Y si no logras hacer puntos por contenido, las acciones de apoyo (demos, eventos, intros) y las filantrópicas suman igual.',
+            },
+            {
+              q: '¿Qué pasa si en 3 meses todavía no he cerrado ninguna venta?',
+              a: 'No pasa nada con tu permanencia mientras sigas cumpliendo tus 100 puntos al mes (contenido, apoyo o filantropía). La cuota anual de 10 sucursales es a 12 meses con un plan de recuperación de 90 días extra si no se alcanza. Cerrar una venta puede tomar 60-90 días — es normal en B2B.',
+            },
+            {
+              q: '¿Mi cliente sabrá que viene por mí?',
+              a: 'Sí — la atribución es transparente y va en ambas direcciones. El cliente entra por tu link único y sabe que tú lo trajiste. Tú ves cada paso de su proceso desde tu portal. SACS nunca le oculta tu rol al cliente ni te oculta el cliente a ti.',
+            },
+            {
+              q: '¿Qué tengo que invertir además de mi tiempo?',
+              a: 'Cero. Plan Fideliza activo en tu cuenta SACS sin costo, materiales de marca, capacitaciones y soporte sin cargo. Solo si decides certificarte (opcional) hay una cuota única que va de $1,500 a $6,000 MXN. Esa cert te permite cobrar servicios profesionales con el 100% del cobro para ti.',
+            },
+            {
+              q: '¿Cuándo cobro mi primera comisión?',
+              a: 'Los bonos por prueba gratis activada y demo completada se acreditan en tu portal en cuanto SACS confirma el evento. La comisión por venta se acredita cuando el cliente cierra y paga su primera factura. Las liquidaciones a tu CLABE se hacen cada 30 días con desglose detallado.',
+            },
+            {
+              q: '¿Si SACS sube de precio, baja mi comisión?',
+              a: 'No. Tu comisión es porcentaje, no monto fijo — si SACS sube, tu comisión sube proporcionalmente. Tu porcentaje queda fijo en el contrato; los precios de la lista pública pueden variar pero tu trato es el que firmaste.',
+            },
+            {
+              q: '¿Me puedo dar de baja cuando quiera?',
+              a: 'Sí, con 30 días de aviso por escrito. Las comisiones recurrentes que vinieran de tus clientes activos se cancelan al momento de la baja — por eso la cláusula es real, no decorativa. Mientras estás activo, los pagos siguen.',
+            },
+            {
+              q: '¿Y si me cambio de país o de giro?',
+              a: 'No es problema. SACS opera en 12 países y los partners tienen flexibilidad — puedes pivotar tu enfoque mientras sigas cumpliendo los compromisos. Avísanos para actualizar tu perfil y recalibrar las palabras clave que te enviamos cada mes.',
+            },
+          ].map((item, i) => (
+            <div class="p-faq-item" data-faq-item>
+              <button type="button" class="p-faq-q" data-faq-toggle aria-expanded="false">
+                <span class="p-faq-q-num">{String(i + 1).padStart(2, '0')}</span>
+                <span class="p-faq-q-text">{item.q}</span>
+                <svg class="p-faq-q-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <div class="p-faq-a">
+                <p>{item.a}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
       )}
@@ -8628,6 +8826,331 @@ const partnerLandingUrl = invitation.slug_landing
   .p-dark .p-btn--primary:hover { background: #4B7BE5; color: #fff; }
   .p-dark .p-btn--ghost { color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.15); }
   .p-dark .p-btn--ghost:hover { color: #fff; border-color: #fff; }
+
+  /* ─── Carta del founder ─────────────────────────────── */
+  .p-letter {
+    margin: 28px 0 0;
+    padding: 32px 36px 30px;
+    background: linear-gradient(180deg, #fafaf8 0%, #fff 100%);
+    border: 1px solid #ececec;
+    border-radius: 16px;
+    position: relative;
+  }
+  .p-letter-eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #4B7BE5;
+    margin-bottom: 16px;
+  }
+  .p-letter-body {
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    color: #1a1a1a;
+    line-height: 1.65;
+    font-weight: 400;
+  }
+  .p-letter-body p { margin: 0 0 14px; }
+  .p-letter-body p strong { font-weight: 600; }
+  .p-letter-greeting { font-weight: 500; font-style: italic; }
+  .p-letter-cierre { color: #555; }
+  .p-letter-sig {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 22px;
+    padding-top: 22px;
+    border-top: 1px solid #ececec;
+  }
+  .p-letter-sig-mark {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: #1a1a1a;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    flex-shrink: 0;
+  }
+  .p-letter-sig-name {
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    letter-spacing: -0.005em;
+  }
+  .p-letter-sig-role {
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 2px;
+  }
+  @media (max-width: 600px) {
+    .p-letter { padding: 24px 22px 22px; }
+    .p-letter-body { font-size: 0.9375rem; }
+  }
+
+  /* ─── Muro de partners ─────────────────────────────── */
+  .p-wall {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 6px;
+    margin: 24px 0 14px;
+  }
+  @media (max-width: 1024px) { .p-wall { grid-template-columns: repeat(8, 1fr); } }
+  @media (max-width: 720px)  { .p-wall { grid-template-columns: repeat(6, 1fr); gap: 4px; } }
+  @media (max-width: 480px)  { .p-wall { grid-template-columns: repeat(5, 1fr); } }
+  .p-wall-cell {
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: 8px;
+    background: #f5f5f5;
+    transition: transform 0.18s, box-shadow 0.18s;
+  }
+  .p-wall-cell:hover {
+    transform: scale(1.04);
+    box-shadow: 0 8px 18px -8px rgba(26,26,46,0.30);
+    z-index: 1;
+  }
+  .p-wall-img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    filter: saturate(0.95);
+  }
+  .p-wall-foot {
+    font-size: 0.875rem;
+    color: #666;
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  /* ─── Calculadora interactiva ───────────────────────── */
+  .p-calc {
+    margin: 28px 0;
+    padding: 36px;
+    background: linear-gradient(135deg, #1a1a1a 0%, #232337 100%);
+    border-radius: 18px;
+    color: #fff;
+  }
+  .p-calc-eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(147,180,255,0.85);
+    margin-bottom: 8px;
+  }
+  .p-calc-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.375rem, 2.6vw, 1.75rem);
+    font-weight: 300;
+    color: #fff;
+    letter-spacing: -0.02em;
+    margin: 0 0 8px;
+  }
+  .p-calc-lead {
+    font-size: 0.9375rem;
+    color: rgba(255,255,255,0.72);
+    line-height: 1.6;
+    margin: 0 0 28px;
+  }
+  .p-calc-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 720px) { .p-calc-grid { grid-template-columns: 1fr; } }
+  .p-calc-input {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px 18px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+  }
+  .p-calc-input-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .p-calc-input-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: rgba(255,255,255,0.85);
+  }
+  .p-calc-input-value {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: -0.01em;
+  }
+  .p-calc-input-hint {
+    font-size: 0.6875rem;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 0.02em;
+  }
+  .p-calc-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 999px;
+    outline: none;
+    margin: 4px 0;
+  }
+  .p-calc-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #4B7BE5;
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 4px rgba(75,123,229,0.18);
+    transition: transform 0.15s;
+  }
+  .p-calc-range::-webkit-slider-thumb:hover { transform: scale(1.1); }
+  .p-calc-range::-moz-range-thumb {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #4B7BE5;
+    cursor: pointer;
+    border: 2px solid #fff;
+  }
+  .p-calc-select {
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+  .p-calc-select option { background: #1a1a1a; color: #fff; }
+  .p-calc-out {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  @media (max-width: 720px) { .p-calc-out { grid-template-columns: 1fr; } }
+  .p-calc-out-card {
+    padding: 18px 20px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+  }
+  .p-calc-out-card--featured {
+    background: linear-gradient(180deg, rgba(75,123,229,0.18), rgba(75,123,229,0.04));
+    border-color: rgba(75,123,229,0.35);
+  }
+  .p-calc-out-card--total {
+    background: linear-gradient(180deg, rgba(42,140,95,0.20), rgba(42,140,95,0.04));
+    border-color: rgba(42,140,95,0.40);
+  }
+  .p-calc-out-label {
+    font-size: 0.6875rem;
+    color: rgba(255,255,255,0.62);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .p-calc-out-amount {
+    font-family: var(--font-display);
+    font-size: clamp(1.375rem, 2.6vw, 1.75rem);
+    font-weight: 300;
+    color: #fff;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .p-calc-out-period {
+    font-size: 0.6875rem;
+    color: rgba(255,255,255,0.55);
+    margin-top: 4px;
+    letter-spacing: 0.02em;
+  }
+  .p-calc-disclaimer {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.55;
+  }
+
+  /* ─── FAQ inline ───────────────────────────────────── */
+  .p-faq {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .p-faq-item {
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.18s;
+  }
+  .p-faq-item:hover { border-color: #cfd6e2; }
+  .p-faq-item.is-open { border-color: #4B7BE5; }
+  .p-faq-q {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 20px;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    text-align: left;
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    letter-spacing: -0.005em;
+    line-height: 1.4;
+  }
+  .p-faq-q-num {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #4B7BE5;
+    letter-spacing: 0.06em;
+    flex-shrink: 0;
+  }
+  .p-faq-q-text { flex: 1; }
+  .p-faq-q-icon {
+    flex-shrink: 0;
+    color: #888;
+    transition: transform 0.22s;
+  }
+  .p-faq-item.is-open .p-faq-q-icon {
+    transform: rotate(180deg);
+    color: #4B7BE5;
+  }
+  .p-faq-a {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.32s ease;
+  }
+  .p-faq-item.is-open .p-faq-a { max-height: 500px; }
+  .p-faq-a p {
+    margin: 0;
+    padding: 0 20px 20px 50px;
+    font-size: 0.875rem;
+    color: #555;
+    line-height: 1.65;
+  }
+  @media (max-width: 600px) {
+    .p-faq-a p { padding-left: 20px; }
+  }
 </style>
 
 <script is:inline define:vars={{ invitationId: id, isClosed }}>
@@ -8691,6 +9214,65 @@ const partnerLandingUrl = invitation.slug_landing
     showTab(tabId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
+
+  // ─── FAQ accordion (objeciones) ───
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('[data-faq-toggle]');
+    if (!btn) return;
+    const item = btn.closest('[data-faq-item]');
+    if (!item) return;
+    const open = item.classList.toggle('is-open');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
+  // ─── Calculadora interactiva de ingresos ───
+  (function initCalc() {
+    const calc = document.querySelector('[data-calc]');
+    if (!calc) return;
+    const PLANS = [
+      { name: 'Vende',      monthly: 600,  annualTotal: 6000  },
+      { name: 'Controla',   monthly: 900,  annualTotal: 9000  },
+      { name: 'Fideliza',   monthly: 1400, annualTotal: 14000 },
+      { name: 'Automatiza', monthly: 5900, annualTotal: 59000 },
+    ];
+    const RATE = parseFloat(calc.getAttribute('data-rate') || '0.5');
+    const BONUS_PRUEBA = parseFloat(calc.getAttribute('data-bp') || '250');
+    const BONUS_DEMO   = parseFloat(calc.getAttribute('data-bd') || '300');
+
+    const fmt = n => '$' + Math.round(n).toLocaleString('es-MX');
+    function read(name) {
+      const el = calc.querySelector(`[data-calc-input="${name}"]`);
+      return el ? Number(el.value) : 0;
+    }
+    function setOut(name, value) {
+      const el = calc.querySelector(`[data-calc-out="${name}"]`);
+      if (el) el.textContent = value;
+    }
+    function recompute() {
+      const pruebas  = read('pruebas');
+      const demos    = read('demos');
+      const clientes = read('clientes');
+      const planIdx  = read('plan');
+      const plan     = PLANS[planIdx] || PLANS[2];
+
+      const bonosAnual   = (pruebas * BONUS_PRUEBA + demos * BONUS_DEMO) * 12;
+      const ventasAnual  = clientes * plan.annualTotal * RATE;
+      const total        = bonosAnual + ventasAnual;
+
+      setOut('pruebas', pruebas);
+      setOut('demos', demos);
+      setOut('clientes', clientes);
+      setOut('plan-name', plan.name);
+      setOut('bonos-anual', fmt(bonosAnual));
+      setOut('ventas-anual', fmt(ventasAnual));
+      setOut('total-anual', fmt(total));
+    }
+    calc.querySelectorAll('[data-calc-input]').forEach(el => {
+      el.addEventListener('input', recompute);
+      el.addEventListener('change', recompute);
+    });
+    recompute();
+  })();
 
   // ─── Sub-tabs por categoría (Contenido / Apoyo / Filantropía) ───
   document.addEventListener('click', e => {
