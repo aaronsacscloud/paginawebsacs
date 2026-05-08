@@ -6,6 +6,7 @@ import { CONTENT_TYPES, META_PUNTOS_MES, CATEGORIAS, PERFILES, appliesToPerfil, 
 import { CT_I18N } from '../../../data/content-types.i18n';
 import { CERTIFICATIONS } from '../../../data/certifications';
 import { CERT_I18N } from '../../../data/certifications.i18n';
+import { COMPROMISO_I18N } from '../../../data/compromisos.i18n';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -2772,19 +2773,25 @@ const partnerLandingUrl = invitation.slug_landing
         </div>
 
         <div class="p-commits">
-          {compromisos.map((c: any, i: number) => (
+          {compromisos.map((c: any, i: number) => {
+            const tr = COMPROMISO_I18N[lang]?.[c.title];
+            const cTitle = tr?.title || c.title;
+            const cDetail = tr?.detail || c.detail;
+            const cFreq = tr?.frequency || c.frequency;
+            const cCta = tr?.ctaLabel || c.ctaLabel;
+            return (
             <div class="p-commit-row">
               <div class="p-commit-num">{String(i + 1).padStart(2, '0')}</div>
               <div class="p-commit-content">
-                <div class="p-commit-title">{c.title}</div>
-                <div class="p-commit-detail">{c.detail}</div>
-                {c.ctaTab && c.ctaLabel && (
-                  <a href={`#${c.ctaTab}`} data-tab-link={c.ctaTab} class="p-commit-cta">{c.ctaLabel}</a>
+                <div class="p-commit-title">{cTitle}</div>
+                <div class="p-commit-detail">{cDetail}</div>
+                {c.ctaTab && cCta && (
+                  <a href={`#${c.ctaTab}`} data-tab-link={c.ctaTab} class="p-commit-cta">{cCta}</a>
                 )}
-                {c.frequency && <div class="p-commit-frequency">{c.frequency}</div>}
+                {cFreq && <div class="p-commit-frequency">{cFreq}</div>}
               </div>
             </div>
-          ))}
+          )})}
         </div>
 
         <!-- ── Reglas de incumplimiento: 3 strikes ── -->
