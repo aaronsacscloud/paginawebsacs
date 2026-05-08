@@ -338,6 +338,21 @@ const partnerLandingUrl = invitation.slug_landing
           </div>
         </div>
 
+        <!-- ── TL;DR · resumen rápido ── -->
+        <div class="p-tldr">
+          <div class="p-tldr-head">
+            <span class="p-tldr-eyebrow">Resumen · 12 min de lectura</span>
+            <h2 class="p-tldr-title">Lo esencial en 5 líneas</h2>
+          </div>
+          <ol class="p-tldr-list">
+            <li><strong>Para todos los perfiles</strong> — influencers, consultores, distribuidores, dueños de tienda, nómadas digitales o emprendedores que arrancan desde cero.</li>
+            <li><strong>{comisionPct}% de comisión</strong> sobre cada venta cerrada con tu link único. Bonos por prueba gratis y demo.</li>
+            <li><strong>100 puntos al mes</strong> con contenido, acciones de promoción o filantropía — la combinación que te quede.</li>
+            <li><strong>Sin costo</strong> mientras cumplas el programa. Plan Fideliza ($14k/año) gratis para que uses SACS en tu negocio.</li>
+            <li><strong>Pagos cada 30 días</strong> a tu CLABE, PayPal o Mercado Pago — con desglose detallado en tu portal.</li>
+          </ol>
+        </div>
+
         <!-- ── Carta del founder ── -->
         <div class="p-letter">
           <div class="p-letter-eyebrow">Carta del founder</div>
@@ -3462,6 +3477,33 @@ const partnerLandingUrl = invitation.slug_landing
         )}
       </section>
 
+      <!-- ── Glosario · términos del documento ── -->
+      <section class="p-glos no-print">
+        <details>
+          <summary class="p-glos-summary">
+            <span class="p-glos-eyebrow">Glosario</span>
+            <span class="p-glos-title">¿Qué significa esto?</span>
+            <span class="p-glos-toggle" aria-hidden="true">+</span>
+          </summary>
+          <div class="p-glos-body">
+            <dl class="p-glos-list">
+              <div class="p-glos-item"><dt>CFDI 4.0</dt><dd>Comprobante Fiscal Digital por Internet — la factura electrónica obligatoria en México (regulada por el SAT). SACS la genera automáticamente.</dd></div>
+              <div class="p-glos-item"><dt>MXN · Pesos mexicanos</dt><dd>Moneda de pago oficial del programa. Si tu país usa otra moneda, los pagos se hacen vía transferencia internacional con la conversión del día.</dd></div>
+              <div class="p-glos-item"><dt>Sucursal activa</dt><dd>Una sucursal vendida en cualquier plan de SACS y con su primera factura cobrada. La cuota mínima anual son 10 sucursales activas.</dd></div>
+              <div class="p-glos-item"><dt>Demo válido</dt><dd>Sesión de demostración de mínimo 25 minutos con el tomador de decisión presente. Solo cuentan demos válidos para el bono.</dd></div>
+              <div class="p-glos-item"><dt>Atribución</dt><dd>El sistema que conecta un prospecto con tu link único. Cuando alguien entra por sacscloud.com/p/tu-slug y se registra, queda permanentemente atribuido a ti.</dd></div>
+              <div class="p-glos-item"><dt>Comisión recurrente</dt><dd>Tu porcentaje sobre cada cobro que SACS le hace al cliente — mes a mes o año a año mientras el cliente siga pagando, no solo en la primera factura.</dd></div>
+              <div class="p-glos-item"><dt>Retainer</dt><dd>Cobro mensual recurrente por un servicio de consultoría continua (ej. consultor en IA que revisa los datos del cliente cada 30 días).</dd></div>
+              <div class="p-glos-item"><dt>B2B</dt><dd>Business-to-business: ventas de empresa a empresa. Distinto a B2C, que sería empresa a consumidor final.</dd></div>
+              <div class="p-glos-item"><dt>Plan Fideliza</dt><dd>Uno de los 4 planes de SACS — incluye POS, inventario multi-sucursal, e-commerce, CRM, lealtad y marketing. Costo público: $14,000 MXN/año. Para partners: gratis.</dd></div>
+              <div class="p-glos-item"><dt>Punto del programa</dt><dd>Unidad de medida de tu actividad mensual. Cada acción (contenido, apoyo, filantropía) vale puntos según esfuerzo. Meta: 100 al mes para mantenerte activo.</dd></div>
+              <div class="p-glos-item"><dt>3-strike rule</dt><dd>Si fallas 3 meses consecutivos en alcanzar los 100 puntos, se da de baja al partner del programa y se cancelan los pagos de comisiones futuras.</dd></div>
+              <div class="p-glos-item"><dt>Cuota de certificación</dt><dd>Pago único que SACS te cobra una sola vez para certificarte en una especialidad. Una vez certificado, el 100% de lo que cobres al cliente por servicios profesionales es tuyo.</dd></div>
+            </dl>
+          </div>
+        </details>
+      </section>
+
       <!-- Footer -->
       <div class="p-footer">
         <div class="p-footer-brand">
@@ -3503,6 +3545,20 @@ const partnerLandingUrl = invitation.slug_landing
   </div>
 </div>
 )}
+
+<!-- ── Floating utility buttons: WhatsApp + Print/PDF ─── -->
+<div class="p-fab no-print" id="p-fab" aria-hidden="true">
+  <button type="button" class="p-fab-btn p-fab-btn--print" id="p-fab-print" title="Descargar invitación en PDF" aria-label="Descargar invitación en PDF">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/>
+    </svg>
+  </button>
+  <a href="https://wa.me/5215512345678?text=Hola%2C+tengo+una+pregunta+sobre+el+programa+de+partners+SACS." target="_blank" rel="noopener" class="p-fab-btn p-fab-btn--wa" title="Pregunta por WhatsApp" aria-label="Pregunta por WhatsApp">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.1-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-1.6-.8-2.7-1.4-3.7-3.2-.3-.5.3-.5.8-1.5.1-.2 0-.4 0-.5 0-.1-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.5c-.2 0-.5.1-.7.4-.3.3-1 1-1 2.4 0 1.4 1 2.8 1.2 3 .1.2 2.1 3.2 5 4.4 1.9.7 2.6.8 3.5.7.6-.1 1.7-.7 1.9-1.4.2-.7.2-1.3.2-1.4 0-.1-.2-.2-.5-.4zM12 2C6.5 2 2 6.5 2 12c0 1.7.5 3.4 1.3 4.9L2 22l5.3-1.4c1.4.8 3 1.2 4.7 1.2 5.5 0 10-4.5 10-10S17.5 2 12 2zm0 18c-1.5 0-3-.4-4.3-1.2l-.3-.2-3.2.8.9-3.1-.2-.3C4 14.7 3.5 13.4 3.5 12c0-4.7 3.8-8.5 8.5-8.5s8.5 3.8 8.5 8.5-3.8 8.5-8.5 8.5z"/>
+    </svg>
+  </a>
+</div>
 
 </BaseLayout>
 
@@ -8394,16 +8450,29 @@ const partnerLandingUrl = invitation.slug_landing
   }
   .p-cert-cta:hover { background: #3764c4; }
 
-  /* Print: hide everything except cert */
+  /* Print modo certificado (solo el cert): activado al hacer click en "Descargar certificado" */
   @media print {
-    body * { visibility: hidden; }
-    #partner-certificate, #partner-certificate * { visibility: visible; }
-    #partner-certificate {
+    body.print-mode-cert * { visibility: hidden; }
+    body.print-mode-cert #partner-certificate, body.print-mode-cert #partner-certificate * { visibility: visible; }
+    body.print-mode-cert #partner-certificate {
       position: absolute;
       top: 0; left: 0;
       width: 100%;
       box-shadow: none !important;
     }
+  }
+  /* Print modo documento (descarga completa): oculta UI fluff y deja todo el contenido */
+  @media print {
+    body.print-mode-doc .no-print,
+    body.print-mode-doc .p-fab,
+    body.print-mode-doc .p-mobnav,
+    body.print-mode-doc .p-layout-sidebar { display: none !important; }
+    body.print-mode-doc .p-layout { grid-template-columns: 1fr !important; }
+    body.print-mode-doc .p-tab-panel { display: block !important; page-break-after: always; }
+    body.print-mode-doc .p-page { padding: 0 !important; }
+    body.print-mode-doc .p-tab-hero,
+    body.print-mode-doc .p-cert-hero { max-height: 280px; }
+    body.print-mode-doc { background: #fff !important; }
   }
 
   /* Sección numerada (Tus datos / Dirección / Cobro / Firma) */
@@ -8872,6 +8941,185 @@ const partnerLandingUrl = invitation.slug_landing
     line-height: 1.6;
   }
   .p-paths-note strong { color: #1a1a1a; font-weight: 600; }
+
+  /* ─── TL;DR · resumen rápido ─────────────────────── */
+  .p-tldr {
+    margin: 28px 0 0;
+    padding: 24px 28px;
+    background: linear-gradient(135deg, rgba(75,123,229,0.06), rgba(75,123,229,0.02));
+    border: 1px solid rgba(75,123,229,0.20);
+    border-left: 3px solid #4B7BE5;
+    border-radius: 14px;
+  }
+  .p-tldr-eyebrow {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    color: #4B7BE5;
+    margin-bottom: 4px;
+  }
+  .p-tldr-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.0625rem, 2vw, 1.25rem);
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 14px;
+    letter-spacing: -0.01em;
+  }
+  .p-tldr-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    counter-reset: tldr;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .p-tldr-list li {
+    counter-increment: tldr;
+    position: relative;
+    padding-left: 32px;
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    color: #1a1a1a;
+  }
+  .p-tldr-list li::before {
+    content: counter(tldr);
+    position: absolute;
+    left: 0; top: 0;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #4B7BE5;
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .p-tldr-list li strong { font-weight: 600; color: #1a1a1a; }
+  @media (max-width: 600px) { .p-tldr { padding: 20px 22px; } }
+
+  /* ─── Glosario · términos al pie ───────────────────── */
+  .p-glos {
+    max-width: 760px;
+    margin: 48px auto 24px;
+    padding: 0 32px;
+  }
+  @media (max-width: 1023px) { .p-glos { padding: 0 20px; } }
+  .p-glos details {
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .p-glos-summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 18px 22px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: background 0.18s;
+  }
+  .p-glos-summary::-webkit-details-marker { display: none; }
+  .p-glos-summary:hover { background: #fafaf8; }
+  .p-glos-eyebrow {
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.10em;
+    color: #4B7BE5;
+  }
+  .p-glos-title {
+    flex: 1;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    letter-spacing: -0.005em;
+  }
+  .p-glos-toggle {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 300;
+    color: #888;
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.22s;
+  }
+  details[open] .p-glos-toggle { transform: rotate(45deg); color: #4B7BE5; }
+  .p-glos-body {
+    padding: 4px 22px 22px;
+    border-top: 1px solid #f0f0f0;
+  }
+  .p-glos-list {
+    margin: 0; padding: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px 28px;
+  }
+  @media (max-width: 720px) { .p-glos-list { grid-template-columns: 1fr; } }
+  .p-glos-item dt {
+    font-family: var(--font-display);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+    letter-spacing: -0.005em;
+  }
+  .p-glos-item dd {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: #555;
+    line-height: 1.55;
+  }
+
+  /* ─── FAB: botones flotantes (WhatsApp + Print) ───── */
+  .p-fab {
+    position: fixed;
+    bottom: 22px;
+    right: 22px;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    opacity: 0;
+    transform: translateY(12px);
+    pointer-events: none;
+    transition: opacity 0.22s, transform 0.22s;
+  }
+  .p-fab.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .p-fab-btn {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    border: 0;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 20px -4px rgba(26,26,46,0.30);
+    transition: transform 0.18s, box-shadow 0.18s;
+    color: #fff;
+    text-decoration: none;
+  }
+  .p-fab-btn:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 12px 28px -4px rgba(26,26,46,0.40);
+  }
+  .p-fab-btn--wa {
+    background: #25D366;
+  }
+  .p-fab-btn--print {
+    background: #1a1a1a;
+  }
+  @media (max-width: 600px) {
+    .p-fab { bottom: 16px; right: 16px; }
+    .p-fab-btn { width: 48px; height: 48px; }
+  }
 
   /* ─── Carta del founder ─────────────────────────────── */
   .p-letter {
@@ -9749,9 +9997,34 @@ const partnerLandingUrl = invitation.slug_landing
     });
   });
 
-  // Print certificate
+  // Print certificate (cert-only print mode)
   const btnPrint = document.getElementById('btn-cert-print');
-  if (btnPrint) btnPrint.addEventListener('click', () => window.print());
+  if (btnPrint) btnPrint.addEventListener('click', () => {
+    document.body.classList.add('print-mode-cert');
+    window.print();
+    setTimeout(() => document.body.classList.remove('print-mode-cert'), 1000);
+  });
+
+  // ─── FAB: print whole document as PDF ───
+  const btnFabPrint = document.getElementById('p-fab-print');
+  if (btnFabPrint) btnFabPrint.addEventListener('click', () => {
+    document.body.classList.add('print-mode-doc');
+    window.print();
+    setTimeout(() => document.body.classList.remove('print-mode-doc'), 1000);
+  });
+
+  // FAB visible solo después del 25% de scroll
+  const fab = document.getElementById('p-fab');
+  if (fab) {
+    function onScroll() {
+      const pct = (window.scrollY + window.innerHeight) / document.documentElement.scrollHeight;
+      const show = window.scrollY > 240 && pct < 0.98;
+      fab.classList.toggle('is-visible', show);
+      fab.setAttribute('aria-hidden', show ? 'false' : 'true');
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
 
   // ─── Decline ───
   const declineModal = document.getElementById('decline-modal');
