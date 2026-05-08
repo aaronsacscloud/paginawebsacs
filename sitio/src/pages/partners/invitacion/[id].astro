@@ -729,7 +729,10 @@ const partnerLandingUrl = invitation.slug_landing
             })}
           </div>
           <div class="p-wall-foot">
-            +{Math.max(0, PARTNER_PHOTOS.length - 60)} partners más en {/* fallback simple */} 12 países de LATAM y Europa.
+            {PARTNER_PHOTOS.length > 60
+              ? <>+{PARTNER_PHOTOS.length - 60} partners más en 12 países de LATAM y Europa.</>
+              : <>Y muchos más en 12 países de LATAM y Europa.</>
+            }
           </div>
         </div>
         )}

@@ -20,32 +20,39 @@ process.env.OPENAI_API_KEY = process.env.OPENAI_API_KEY || env.OPENAI_API_KEY;
 
 const STYLE = 'Photographic quality: shot on a 35mm full-frame camera with shallow depth of field, natural light only, slight film grain, accurate Latin American skin tones, no AI smoothing or gloss. Real Mexican / Latin American person, square 1:1 framing for a wall mosaic. Subject mostly centered. No legible text, no logos, no brand names anywhere.';
 
+// Mezcla realista: 7 con laptop · 12 con teléfono · 6 con tablet
+// Varied locations LATAM y mundo. NO todos en la misma postura.
 const NOMAD = [
-  'A 28-year-old Latin man working on his laptop at a small wooden kitchen table in his Mexican apartment, plant on table, morning light from window.',
-  'A 34-year-old Latin woman on her laptop at a small specialty café in CDMX Roma neighborhood, ceramic latte cup beside her, soft afternoon light.',
-  'A 30-year-old Latin man in a casual home office in his Guadalajara apartment, exposed brick wall, plant, MacBook open angled away from camera.',
-  'A 42-year-old Latin woman working remotely at a sunlit coworking space, large window behind her with greenery, headphones around her neck.',
-  'A 26-year-old Latin man typing on his laptop at a colorful Tulum-style Airbnb dining table, wooden walls, palm leaf shadows on the wall.',
-  'A 38-year-old Latin woman sipping coffee at her bedroom desk turned home office in Mexico City, neat shelves with books behind, soft warm light.',
-  'A 31-year-old Latin man on a video call (laptop screen angled away) at a CDMX café terrace, plants around, golden hour.',
-  'A 29-year-old Latin woman editing on her tablet on a couch in her sunny Mérida apartment, small dog beside her, plants.',
-  'A 45-year-old Latin man at a community library / public reading room in Mexico, working on a laptop with notebook open, quiet midday light.',
-  'A 33-year-old Latin woman in a cozy Mexican apartment with eclectic decor, working on her laptop on a vintage rug on the floor.',
-  'A 27-year-old Latin man at a beach café in Quintana Roo with his laptop open on a wooden table, salt-air light, palm leaves.',
-  'A 36-year-old Latin woman at a hotel lobby in CDMX with her laptop on a coffee table, modern minimalist interior, natural light.',
-  'A 40-year-old Latin man working from a small balcony of his apartment, laptop on a metal café table, plants, late afternoon golden light.',
-  'A 25-year-old Latin woman at a university campus café in Monterrey, laptop and books, casual student style, daylight through tall windows.',
-  'A 32-year-old Latin man in a converted garage home studio in Mexico, sitting at a wooden desk with two pendant lights, casual hoodie.',
-  'A 37-year-old Latin woman working on her laptop at a kitchen island in her modern Mexican home, granite counter, morning sunlight, coffee.',
-  'A 29-year-old Latin man at a farm-to-table café in San Miguel de Allende, leather notebook beside laptop, warm interior with stone walls.',
-  'A 31-year-old Latin woman in a CDMX co-living space dining area, laptop open angled away, casual roommates blurred in background.',
-  'A 44-year-old Latin man at a wood meeting nook in his suburban Mexican home, plants, bookshelf, warm pendant light, focused expression.',
-  'A 26-year-old Latin woman working from a couch in her studio apartment in Mexico, laptop on lap, blanket, cup of tea on side table.',
-  'A 35-year-old Latin man at a cafetería in Oaxaca with traditional Mexican tile floors, working on his MacBook, mezcal glass beside him.',
-  'A 28-year-old Latin woman writing in a notebook beside her laptop at a sunny Mexican café terrace, bicycles parked outside softly visible.',
-  'A 39-year-old Latin man in a converted attic home office in Mexico, window with city view behind him, modern desk setup, focused.',
-  'A 30-year-old Latin woman on a porch swing of a Mexican country house with her laptop and a hot drink, lush plants surrounding.',
-  'A 33-year-old Latin man at a CDMX rooftop café with city skyline behind him, laptop open, sunset light.',
+  // ── 7 LAPTOP (variedad de locaciones) ──
+  'A 28-year-old Latin man working on his laptop at a sunlit suburban Mexican kitchen counter in the morning, ceramic mug beside him, plant on counter, casual home clothes.',
+  'A 34-year-old Latin woman at a coworking space lounge in Guadalajara, headphones around neck, laptop on a low coffee table, sunken couch, focused expression.',
+  'A 26-year-old Latin man at a beach café in Quintana Roo with laptop, palm-leaf shadows on his table, ceramic cup of cold brew, ocean blurred.',
+  'A 38-year-old Latin woman at her bedroom desk-turned-home-office in Mexico City, books on shelf behind, late-afternoon warm light, leaning slightly into the screen.',
+  'A 33-year-old Latin man at a CDMX rooftop café with city skyline behind him at sunset, laptop on a metal café table.',
+  'A 41-year-old Latin woman at a country house porch swing in Mexico, laptop beside her, lush plants, two dogs at her feet, late-day light.',
+  'A 30-year-old Latin man at a converted attic home office, window with city view, modern desk setup, soft morning light.',
+
+  // ── 12 PHONE (en distintos lugares trabajando) ──
+  'A 27-year-old Latin woman walking through a colorful cobblestone street in San Miguel de Allende, holding her phone close to her face mid-message, casual stylish clothes, plants spilling from balconies.',
+  'A 32-year-old Latin man checking his phone at a busy Mexico City mercado público, fresh produce stalls blurred behind, holding a paper coffee cup.',
+  'A 30-year-old Latin woman on a park bench in Parque México (CDMX) with her phone in hand mid-thought, jacaranda trees, soft afternoon light.',
+  'A 38-year-old Latin man at an airport gate seated on a modern bench, phone in hand, small carry-on at his feet, gate window with planes blurred behind.',
+  'A 25-year-old Latin man at a Tulum beach with phone in hand at golden hour, palm leaves, barefoot in sand near a hammock café.',
+  'A 35-year-old Latin woman on a hotel balcony in CDMX overlooking the city, phone in hand mid-call, casual robe over pajamas, morning light.',
+  'A 29-year-old Latin man in the back of a Mexican Uber/taxi looking at his phone, city street blurred outside the window.',
+  'A 42-year-old Latin woman at an outdoor café terrace in CDMX Roma, phone in one hand and pen in the other, notebook on the table, plants around.',
+  'A 26-year-old Latin man on a public transit platform (CDMX metrobús) with phone in hand mid-message, soft natural light from the open station.',
+  'A 36-year-old Latin woman at a small specialty cafe counter in Oaxaca, phone in hand resting on the wooden counter, ceramic mug of mezcal-coffee beside her.',
+  'A 31-year-old Latin man at the airport boarding hall, leaning against a column with phone in hand, casual blazer and small backpack.',
+  'A 44-year-old Latin man on a hotel rooftop pool deck in Cartagena Colombia, phone in hand reading, palms and ocean blurred behind.',
+
+  // ── 6 TABLET ──
+  'A 30-year-old Latin man on a hotel lobby couch in Mexico City, iPad on his lap with Apple Pencil in hand, sketching, modern minimalist interior.',
+  'A 39-year-old Latin woman at a sunny café terrace in Buenos Aires-style neighborhood, tablet propped against a coffee cup, leaning forward to read, plants around.',
+  'A 34-year-old Latin man on a Mexican beach lounge chair (Quintana Roo) with a tablet in his lap, palm leaves overhead, ocean visible.',
+  'A 47-year-old Latin woman in a plaza pública seated on a stone bench with tablet on her knees, fountain blurred behind.',
+  'A 28-year-old Latin man on the roof terrace of a CDMX coworking space holding a tablet upright while standing, golden hour, casual shirt.',
+  'A 36-year-old Latin woman at a small home dining table with iPad propped on a stand, surrounded by plants and a coffee carafe, soft window light.',
 ];
 
 const INFLUENCER = [
