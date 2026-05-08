@@ -9250,16 +9250,12 @@ const partnerLandingUrl = invitation.slug_landing
   }
   .p-paths-note strong { color: #1a1a1a; font-weight: 600; }
 
-  /* ─── Language switcher (top-right sticky) ─────────── */
+  /* ─── Language switcher (top-right, scrolls with page) ─── */
   .p-langswitch {
-    position: sticky;
-    top: 0;
-    z-index: 30;
     display: flex;
     gap: 4px;
     justify-content: flex-end;
     padding: 10px 32px 0;
-    pointer-events: none;
   }
   @media (max-width: 1023px) { .p-langswitch { padding: 10px 20px 0; } }
   .p-langswitch-btn {
