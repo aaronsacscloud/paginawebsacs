@@ -5,6 +5,7 @@ import PartnerSidebar from '../../../components/partner/PartnerSidebar.astro';
 import { CONTENT_TYPES, META_PUNTOS_MES, CATEGORIAS, PERFILES, appliesToPerfil, getContentTypesByCategoria } from '../../../data/content-types';
 import { CT_I18N } from '../../../data/content-types.i18n';
 import { CERTIFICATIONS } from '../../../data/certifications';
+import { CERT_I18N } from '../../../data/certifications.i18n';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -416,6 +417,43 @@ const I18N: Record<string, Record<Lang, string>> = {
   'card.examples':     { es: 'Ejemplos:', en: 'Examples:', fr: 'Exemples :', it: 'Esempi:', pt: 'Exemplos:' },
   'card.see_examples': { es: 'Ver ejemplos:', en: 'See examples:', fr: 'Voir les exemples :', it: 'Vedi esempi:', pt: 'Ver exemplos:' },
   'card.empty':        { es: 'Sin acciones específicas para este perfil en esta categoría — cambia el perfil o explora otro tab.', en: 'No actions specific to this profile in this category — change profile or explore another tab.', fr: 'Aucune action spécifique à ce profil dans cette catégorie — changez de profil ou explorez un autre onglet.', it: 'Nessuna azione specifica per questo profilo in questa categoria — cambia profilo o esplora un\'altra tab.', pt: 'Sem ações específicas para este perfil nesta categoria — mude o perfil ou explore outra aba.' },
+
+  // Certificaciones · cert hero, sección, unlock, CTA, card labels
+  'cert.hero.eyebrow':   { es: 'Capítulo siguiente', en: 'Next chapter', fr: 'Chapitre suivant', it: 'Prossimo capitolo', pt: 'Próximo capítulo' },
+  'cert.hero.title':     { es: 'De partner a consultor certificado.', en: 'From partner to certified consultant.', fr: 'De partenaire à consultant certifié.', it: 'Da partner a consulente certificato.', pt: 'De parceiro a consultor certificado.' },
+  'cert.section.eyebrow':{ es: '3 · Sube de nivel con certificaciones', en: '3 · Level up with certifications', fr: '3 · Montez en niveau avec les certifications', it: '3 · Sali di livello con le certificazioni', pt: '3 · Suba de nível com certificações' },
+  'cert.section.lead':   { es: 'La comisión por venta es el piso. Si quieres ganar más, certifícate y empieza a cobrar servicios profesionales a tus clientes. <strong>Te quedas con el 100% de lo que cobras al cliente</strong> — SACS solo cobra una vez la cuota de la certificación. Te certificamos, te entregamos tu diploma y badge oficial, y desde ese momento puedes ofrecer el servicio.', en: 'The sales commission is your floor. If you want to earn more, get certified and start charging professional services to your clients. <strong>You keep 100% of what you charge the client</strong> — SACS only charges the certification fee once. We certify you, hand you your diploma and official badge, and from that moment you can offer the service.', fr: 'La commission sur ventes est votre plancher. Pour gagner plus, certifiez-vous et facturez des services professionnels à vos clients. <strong>Vous gardez 100% de ce que vous facturez au client</strong> — SACS ne facture qu\'une seule fois les frais de certification. Nous vous certifions, vous remettons votre diplôme et badge officiel, et dès ce moment vous pouvez proposer le service.', it: 'La commissione sulle vendite è la base. Per guadagnare di più, certificati e inizia a fatturare servizi professionali ai tuoi clienti. <strong>Tieni il 100% di quello che fatturi al cliente</strong> — SACS addebita solo una volta la quota della certificazione. Ti certifichiamo, ti consegniamo il diploma e badge ufficiale, e da quel momento puoi offrire il servizio.', pt: 'A comissão sobre vendas é o piso. Se quiser ganhar mais, certifique-se e comece a cobrar serviços profissionais dos seus clientes. <strong>Você fica com 100% do que cobra do cliente</strong> — a SACS só cobra uma vez a taxa da certificação. Te certificamos, te entregamos o diploma e o badge oficial, e a partir daí você pode oferecer o serviço.' },
+
+  'cert.fee.lbl':        { es: 'Cuota de certificación · pago único', en: 'Certification fee · one-time payment', fr: 'Frais de certification · paiement unique', it: 'Quota di certificazione · pagamento unico', pt: 'Taxa de certificação · pagamento único' },
+  'cert.charge.lbl':     { es: 'Lo que cobras al cliente', en: 'What you charge the client', fr: 'Ce que vous facturez au client', it: 'Quanto fatturi al cliente', pt: 'Quanto você cobra do cliente' },
+  'cert.keep.text':      { es: 'para ti — SACS no cobra comisión sobre lo que tú cobres al cliente.', en: 'for you — SACS doesn\'t take commission on what you charge the client.', fr: 'pour vous — SACS ne prend pas de commission sur ce que vous facturez au client.', it: 'per te — SACS non prende commissione su quello che fatturi al cliente.', pt: 'para você — a SACS não cobra comissão sobre o que você cobra do cliente.' },
+
+  // Cert unlock 4 items
+  'cert.u.eyebrow': { es: 'Cómo funciona', en: 'How it works', fr: 'Comment ça marche', it: 'Come funziona', pt: 'Como funciona' },
+  'cert.u1.t': { es: 'Pagas una vez la certificación', en: 'You pay once for the certification', fr: 'Vous payez la certification une seule fois', it: 'Paghi una volta la certificazione', pt: 'Você paga a certificação uma só vez' },
+  'cert.u1.d': { es: 'Cuota única que va de $1,500 a $6,000 MXN según el curso. Es la única vez que SACS te cobra por este programa de capacitación.', en: 'One-time fee from $1,500 to $6,000 MXN depending on the course. This is the only time SACS charges you for this training program.', fr: 'Frais uniques de 1 500 à 6 000 MXN selon le cours. C\'est la seule fois que SACS vous facture pour ce programme de formation.', it: 'Quota unica da $1.500 a $6.000 MXN a seconda del corso. È l\'unica volta che SACS ti addebita per questo programma di formazione.', pt: 'Taxa única de $1.500 a $6.000 MXN dependendo do curso. É a única vez que a SACS te cobra por este programa de capacitação.' },
+  'cert.u2.t': { es: 'Te certificamos y entregamos diploma', en: 'We certify you and deliver the diploma', fr: 'Nous vous certifions et remettons le diplôme', it: 'Ti certifichiamo e ti consegniamo il diploma', pt: 'Te certificamos e entregamos diploma' },
+  'cert.u2.d': { es: 'Sesiones en vivo, materiales y casos prácticos. Al aprobar el examen recibes tu diploma digital + badge oficial visible en tu portal y comunicación con clientes.', en: 'Live sessions, materials and case studies. Upon passing the exam you receive your digital diploma + official badge visible on your portal and client communications.', fr: 'Sessions en direct, supports et cas pratiques. À la réussite de l\'examen, vous recevez votre diplôme numérique + badge officiel visible sur votre portail et dans vos communications client.', it: 'Sessioni live, materiali e casi pratici. Dopo aver superato l\'esame ricevi il tuo diploma digitale + badge ufficiale visibile sul tuo portale e nelle comunicazioni con i clienti.', pt: 'Sessões ao vivo, materiais e casos práticos. Ao aprovar o exame você recebe seu diploma digital + badge oficial visível no seu portal e na comunicação com clientes.' },
+  'cert.u3.t': { es: 'Empiezas a ofrecer el servicio', en: 'You start offering the service', fr: 'Vous commencez à proposer le service', it: 'Inizi a offrire il servizio', pt: 'Você começa a oferecer o serviço' },
+  'cert.u3.d': { es: 'Con el badge de partner certificado puedes vender el servicio a tus propios clientes y a leads que SACS te asigna. Cobras por proyecto o retainer mensual según el caso.', en: 'With the certified partner badge you can sell the service to your own clients and to leads that SACS assigns you. Charge per project or monthly retainer depending on the case.', fr: 'Avec le badge de partenaire certifié vous pouvez vendre le service à vos propres clients et aux leads que SACS vous assigne. Facturez par projet ou en retainer mensuel selon le cas.', it: 'Con il badge di partner certificato puoi vendere il servizio ai tuoi clienti e ai lead che SACS ti assegna. Fatturi per progetto o retainer mensile secondo il caso.', pt: 'Com o badge de parceiro certificado você pode vender o serviço para seus próprios clientes e leads que a SACS te atribui. Cobra por projeto ou retainer mensal conforme o caso.' },
+  'cert.u4.t': { es: 'Te quedas con el 100% de lo cobrado', en: 'You keep 100% of what you charge', fr: 'Vous gardez 100% de ce que vous facturez', it: 'Tieni il 100% di quanto fatturi', pt: 'Você fica com 100% do que cobra' },
+  'cert.u4.d': { es: 'Lo que el cliente te paga por implementación, migración, automatización o consultoría es 100% para ti. Esto se suma a tus comisiones SACS por venta de licencias.', en: 'What the client pays you for implementation, migration, automation or consulting is 100% yours. This adds on top of your SACS commissions on license sales.', fr: 'Ce que le client vous paye pour implémentation, migration, automatisation ou conseil est 100% pour vous. Cela s\'ajoute à vos commissions SACS sur les ventes de licences.', it: 'Quello che il cliente ti paga per implementazione, migrazione, automazione o consulenza è il 100% tuo. Si somma alle tue commissioni SACS sulle vendite di licenze.', pt: 'O que o cliente te paga por implementação, migração, automação ou consultoria é 100% seu. Isso soma sobre suas comissões SACS por venda de licenças.' },
+  'cert.cta.eyebrow': { es: 'Cuando estés listo', en: 'When you\'re ready', fr: 'Quand vous êtes prêt', it: 'Quando sei pronto', pt: 'Quando estiver pronto' },
+  'cert.cta.body':    { es: 'Las certificaciones se ofrecen desde el panel de partners. No hay prisa — empieza cuando ya cerraste un par de clientes y quieras llevar tu rol al siguiente nivel.', en: 'Certifications are offered from the partners portal. No rush — start when you\'ve closed a couple of clients and want to take your role to the next level.', fr: 'Les certifications sont proposées depuis le portail partenaires. Pas de hâte — commencez quand vous avez conclu quelques clients et voulez passer au niveau supérieur.', it: 'Le certificazioni si offrono dal portale partner. Nessuna fretta — inizia quando hai chiuso un paio di clienti e vuoi portare il tuo ruolo al livello successivo.', pt: 'As certificações são oferecidas do portal de parceiros. Sem pressa — comece quando já tiver fechado alguns clientes e quiser levar seu papel ao próximo nível.' },
+
+  // Comp tab section eyebrows + projection labels
+  'comp.tab1.eyebrow': { es: '1 · Tabulador de recompensas', en: '1 · Reward fee schedule', fr: '1 · Grille de rémunération', it: '1 · Tariffario delle ricompense', pt: '1 · Tabela de recompensas' },
+  'comp.tab1.lead':    { es: 'Te pagamos por cada paso del proceso, no sólo por la venta final.', en: 'We pay for every step of the process, not only the final sale.', fr: 'Nous payons à chaque étape du processus, pas seulement la vente finale.', it: 'Ti paghiamo per ogni step del processo, non solo per la vendita finale.', pt: 'Pagamos por cada etapa do processo, não só pela venta final.' },
+  'comp.tab2.eyebrow': { es: '2 · Tu potencial', en: '2 · Your potential', fr: '2 · Votre potentiel', it: '2 · Il tuo potenziale', pt: '2 · Seu potencial' },
+  'comp.tab2.lead':    { es: 'Cada prueba gratis activada, cada demo completada y cada cliente cerrado se traducen en ingresos. Estas son las matemáticas, basadas en tu comisión y los precios públicos de SACS.', en: 'Every activated free trial, every completed demo and every closed client translates to income. Here\'s the math, based on your commission and SACS\' public prices.', fr: 'Chaque essai gratuit activé, chaque démo complétée et chaque client conclu se traduit en revenus. Voici les calculs, basés sur votre commission et les prix publics de SACS.', it: 'Ogni prova gratuita attivata, ogni demo completata e ogni cliente chiuso si traduce in entrate. Ecco la matematica, basata sulla tua commissione e sui prezzi pubblici di SACS.', pt: 'Cada teste grátis ativado, cada demo concluída e cada cliente fechado se traduz em receita. Esta é a matemática, baseada na sua comissão e nos preços públicos da SACS.' },
+
+  // Demo scenarios labels (Conservador / Realista / Ambicioso)
+  'scen.cons':   { es: 'Conservador', en: 'Conservative', fr: 'Conservateur', it: 'Conservativo', pt: 'Conservador' },
+  'scen.real':   { es: 'Realista',    en: 'Realistic',    fr: 'Réaliste',     it: 'Realistico',   pt: 'Realista' },
+  'scen.amb':    { es: 'Ambicioso',   en: 'Ambitious',    fr: 'Ambitieux',    it: 'Ambizioso',    pt: 'Ambicioso' },
+  'scen.cons.h': { es: '~5 horas/mes de difusión', en: '~5 hours/month of outreach', fr: '~5 heures/mois de diffusion', it: '~5 ore/mese di diffusione', pt: '~5 horas/mês de difusão' },
+  'scen.real.h': { es: '~10 horas/mes de difusión', en: '~10 hours/month of outreach', fr: '~10 heures/mois de diffusion', it: '~10 ore/mese di diffusione', pt: '~10 horas/mês de difusão' },
+  'scen.amb.h':  { es: 'Tiempo completo', en: 'Full time', fr: 'Temps plein', it: 'Tempo pieno', pt: 'Tempo integral' },
 };
 
 function tt(key: string): string {
@@ -609,9 +647,9 @@ const CLIENT_TIERS = [10, 20, 50, 100, 200, 500];
 // Escenarios de actividad mensual: usuarios que se registran a prueba gratis
 // (entran por tu link único) y demos completadas (asisten al demo válido).
 const DEMO_SCENARIOS = [
-  { label: 'Conservador', pruebas_gratis: 4,  completadas: 2,  hint: '~5 horas/mes de difusión' },
-  { label: 'Realista',    pruebas_gratis: 10, completadas: 6,  hint: '~10 horas/mes de difusión' },
-  { label: 'Ambicioso',   pruebas_gratis: 25, completadas: 15, hint: 'Tiempo completo' },
+  { id: 'cons', label: tt('scen.cons'), pruebas_gratis: 4,  completadas: 2,  hint: tt('scen.cons.h') },
+  { id: 'real', label: tt('scen.real'), pruebas_gratis: 10, completadas: 6,  hint: tt('scen.real.h') },
+  { id: 'amb',  label: tt('scen.amb'),  pruebas_gratis: 25, completadas: 15, hint: tt('scen.amb.h') },
 ];
 
 const ratePartner = comisionPct / 100;
@@ -2929,8 +2967,8 @@ const partnerLandingUrl = invitation.slug_landing
 
         {Object.keys(tabulador).length > 0 && (
         <>
-        <div class="p-comp-section-eyebrow">1 · Tabulador de recompensas</div>
-        <p class="p-comp-section-lead">Te pagamos por cada paso del proceso, no sólo por la venta final.</p>
+        <div class="p-comp-section-eyebrow">{tt('comp.tab1.eyebrow')}</div>
+        <p class="p-comp-section-lead">{tt('comp.tab1.lead')}</p>
 
         <div class="p-payout-grid">
           {bonusPruebaGratis > 0 && (
@@ -2981,11 +3019,8 @@ const partnerLandingUrl = invitation.slug_landing
         {comisionPct > 0 && (
         <>
         <div class="p-comp-divider"></div>
-        <div class="p-comp-section-eyebrow">2 · Tu potencial como {tipoLabel[tipo] || tipo}</div>
-        <p class="p-comp-section-lead">
-          Cada prueba gratis activada, cada demo completada y cada cliente cerrado se traducen en ingresos.
-          Estas son las matemáticas, basadas en tu {comisionPct}% de comisión y los precios públicos de SACS.
-        </p>
+        <div class="p-comp-section-eyebrow">{tt('comp.tab2.eyebrow')}</div>
+        <p class="p-comp-section-lead">{tt('comp.tab2.lead')}</p>
 
         <!-- ── Bonos por activaciones y demos ── -->
         {(bonusPruebaGratis > 0 || bonusCompletada > 0) && (
@@ -3178,82 +3213,70 @@ const partnerLandingUrl = invitation.slug_landing
         <div class="p-cert-hero">
           <img src="/images/partner-cert-hero.webp" alt="Partner certificado en sesión con un cliente" loading="lazy" width="1600" height="900" class="p-cert-hero-img" />
           <div class="p-cert-hero-overlay">
-            <div class="p-cert-hero-eyebrow">Capítulo siguiente</div>
-            <h3 class="p-cert-hero-title">De partner a consultor certificado.</h3>
+            <div class="p-cert-hero-eyebrow">{tt('cert.hero.eyebrow')}</div>
+            <h3 class="p-cert-hero-title">{tt('cert.hero.title')}</h3>
           </div>
         </div>
 
-        <div class="p-comp-section-eyebrow">3 · Sube de nivel con certificaciones</div>
-        <p class="p-comp-section-lead">
-          La comisión por venta es el piso. Si quieres ganar más, certifícate y empieza a
-          cobrar servicios profesionales a tus clientes. <strong>Te quedas con el 100% de lo
-          que cobras al cliente</strong> — SACS solo cobra una vez la cuota de la
-          certificación. Te certificamos, te entregamos tu diploma y badge oficial, y desde
-          ese momento puedes ofrecer el servicio.
-        </p>
+        <div class="p-comp-section-eyebrow">{tt('cert.section.eyebrow')}</div>
+        <p class="p-comp-section-lead" set:html={tt('cert.section.lead')}></p>
 
         <div class="p-cert-rows">
-          {CERTIFICATIONS.map((c, i) => (
+          {CERTIFICATIONS.map((c, i) => {
+            const ci = CERT_I18N[lang]?.[c.id];
+            const cName = ci?.shortName  || c.shortName;
+            const cDesc = ci?.descripcion || c.descripcion;
+            const cLvl  = ci?.nivel       || c.nivel;
+            const cDur  = ci?.duracion    || c.duracion;
+            const cUnit = ci?.serviceUnit || c.serviceUnit;
+            return (
             <article class={`p-cert-rowcard ${i % 2 === 1 ? 'p-cert-rowcard--reverse' : ''}`}>
               <div class="p-cert-rowcard-media">
-                <img src={c.cover} alt={c.shortName} loading="lazy" width="1200" height="900" class="p-cert-rowcard-img" />
-                <span class="p-cert-rowcard-level">{c.nivel}</span>
+                <img src={c.cover} alt={cName} loading="lazy" width="1200" height="900" class="p-cert-rowcard-img" />
+                <span class="p-cert-rowcard-level">{cLvl}</span>
               </div>
               <div class="p-cert-rowcard-body">
                 <div class="p-cert-rowcard-num">{String(i + 1).padStart(2, '0')}</div>
-                <h4 class="p-cert-rowcard-name">{c.shortName}</h4>
-                <div class="p-cert-rowcard-meta">{c.duracion}</div>
-                <p class="p-cert-rowcard-desc">{c.descripcion}</p>
+                <h4 class="p-cert-rowcard-name">{cName}</h4>
+                <div class="p-cert-rowcard-meta">{cDur}</div>
+                <p class="p-cert-rowcard-desc">{cDesc}</p>
 
                 <div class="p-cert-rowcard-prices">
                   <div class="p-cert-rowcard-price">
-                    <span class="p-cert-rowcard-price-lbl">Cuota de certificación · pago único</span>
+                    <span class="p-cert-rowcard-price-lbl">{tt('cert.fee.lbl')}</span>
                     <span class="p-cert-rowcard-price-val">{fmtMoney(c.precio / 100)}</span>
                   </div>
                   <div class="p-cert-rowcard-price p-cert-rowcard-price--earn">
-                    <span class="p-cert-rowcard-price-lbl">Lo que cobras al cliente</span>
-                    <span class="p-cert-rowcard-price-val">{fmtMoney(c.serviceChargeMin)} – {fmtMoney(c.serviceChargeMax)} <em>{c.serviceUnit}</em></span>
+                    <span class="p-cert-rowcard-price-lbl">{tt('cert.charge.lbl')}</span>
+                    <span class="p-cert-rowcard-price-val">{fmtMoney(c.serviceChargeMin)} – {fmtMoney(c.serviceChargeMax)} <em>{cUnit}</em></span>
                   </div>
                 </div>
 
                 <div class="p-cert-rowcard-keep">
                   <span class="p-cert-rowcard-keep-pct">100%</span>
-                  <span class="p-cert-rowcard-keep-text">para ti — SACS no cobra comisión sobre lo que tú cobres al cliente.</span>
+                  <span class="p-cert-rowcard-keep-text">{tt('cert.keep.text')}</span>
                 </div>
               </div>
             </article>
-          ))}
+          )})}
         </div>
 
         <div class="p-cert-unlock">
-          <div class="p-cert-unlock-eyebrow">Cómo funciona</div>
+          <div class="p-cert-unlock-eyebrow">{tt('cert.u.eyebrow')}</div>
           <div class="p-cert-unlock-grid">
-            <div class="p-cert-unlock-item">
-              <div class="p-cert-unlock-num">01</div>
-              <div class="p-cert-unlock-title">Pagas una vez la certificación</div>
-              <div class="p-cert-unlock-detail">Cuota única que va de $1,500 a $6,000 MXN según el curso. Es la única vez que SACS te cobra por este programa de capacitación.</div>
-            </div>
-            <div class="p-cert-unlock-item">
-              <div class="p-cert-unlock-num">02</div>
-              <div class="p-cert-unlock-title">Te certificamos y entregamos diploma</div>
-              <div class="p-cert-unlock-detail">Sesiones en vivo, materiales y casos prácticos. Al aprobar el examen recibes tu diploma digital + badge oficial visible en tu portal y comunicación con clientes.</div>
-            </div>
-            <div class="p-cert-unlock-item">
-              <div class="p-cert-unlock-num">03</div>
-              <div class="p-cert-unlock-title">Empiezas a ofrecer el servicio</div>
-              <div class="p-cert-unlock-detail">Con el badge de partner certificado puedes vender el servicio a tus propios clientes y a leads que SACS te asigna. Cobras por proyecto o retainer mensual según el caso.</div>
-            </div>
-            <div class="p-cert-unlock-item">
-              <div class="p-cert-unlock-num">04</div>
-              <div class="p-cert-unlock-title">Te quedas con el 100% de lo cobrado</div>
-              <div class="p-cert-unlock-detail">Lo que el cliente te paga por implementación, migración, automatización o consultoría es 100% para ti. Esto se suma a tus comisiones SACS por venta de licencias.</div>
-            </div>
+            {[1,2,3,4].map(n => (
+              <div class="p-cert-unlock-item">
+                <div class="p-cert-unlock-num">{String(n).padStart(2,'0')}</div>
+                <div class="p-cert-unlock-title">{tt(`cert.u${n}.t`)}</div>
+                <div class="p-cert-unlock-detail">{tt(`cert.u${n}.d`)}</div>
+              </div>
+            ))}
           </div>
         </div>
 
         <div class="p-cert-cta">
-          <span class="p-cert-cta-eyebrow">Cuando estés listo</span>
-          <p>Las certificaciones se ofrecen desde el panel de partners. No hay prisa — empieza cuando ya cerraste un par de clientes y quieras llevar tu rol al siguiente nivel.</p>
+          <span class="p-cert-cta-eyebrow">{tt('cert.cta.eyebrow')}</span>
+          <p>{tt('cert.cta.body')}</p>
         </div>
 
         <!-- ── FAQ · objeciones honestas ── -->
