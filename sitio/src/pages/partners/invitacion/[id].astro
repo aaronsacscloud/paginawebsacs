@@ -419,6 +419,14 @@ const I18N: Record<string, Record<Lang, string>> = {
   'cnt.h4.t': { es: 'Te mantienes activo en el programa', en: 'You stay active in the program', fr: 'Vous restez actif dans le programme', it: 'Resti attivo nel programma', pt: 'Você se mantém ativo no programa' },
   'cnt.h4.d': { es: 'Cumplir 100 pts/mes es la señal de que sigues participando. Sin reporte en el panel, no se acreditan puntos ni se mantienen los beneficios.', en: 'Meeting 100 pts/month is the signal that you\'re still participating. No report in the panel, no points credited and benefits won\'t hold.', fr: 'Atteindre 100 pts/mois est le signal que vous participez toujours. Pas de rapport sur le portail, pas de points crédités et les avantages ne tiennent pas.', it: 'Raggiungere 100 punti/mese è il segnale che continui a partecipare. Senza report sul pannello, nessun punto viene accreditato e i benefici non si mantengono.', pt: 'Cumprir 100 pts/mês é o sinal de que você segue participando. Sem reporte no painel, não há pontos creditados nem benefícios mantidos.' },
 
+  // Notas finales del tab contenido (Detalles importantes)
+  'cnt.notes.title': { es: 'Detalles importantes', en: 'Important details', fr: 'Détails importants', it: 'Dettagli importanti', pt: 'Detalhes importantes' },
+  'cnt.notes.acumulacion': { es: '<strong>Acumulación:</strong> si en abril haces 160 puntos, llegas a mayo con 60 puntos ya hechos.', en: '<strong>Carry-over:</strong> if in April you hit 160 points, you start May with 60 points already done.', fr: '<strong>Report :</strong> si en avril vous faites 160 points, vous commencez mai avec 60 points déjà faits.', it: '<strong>Accumulo:</strong> se ad aprile fai 160 punti, arrivi a maggio con 60 punti già fatti.', pt: '<strong>Acúmulo:</strong> se em abril você fizer 160 pontos, chega a maio com 60 pontos já feitos.' },
+  'cnt.notes.bonus': { es: '<strong>Bonus serie:</strong> entregar 10 episodios juntos te da 600 puntos (60 × 10), te ahorras rounds de aprobación y aseguras una serie cohesiva.', en: '<strong>Series bonus:</strong> delivering 10 episodes together earns you 600 points (60 × 10), saves you approval rounds and ensures a cohesive series.', fr: '<strong>Bonus série :</strong> livrer 10 épisodes ensemble vous donne 600 points (60 × 10), vous évite des cycles d\'approbation et assure une série cohérente.', it: '<strong>Bonus serie:</strong> consegnare 10 episodi insieme ti dà 600 punti (60 × 10), ti risparmi i round di approvazione e garantisci una serie coesa.', pt: '<strong>Bônus série:</strong> entregar 10 episódios juntos te dá 600 pontos (60 × 10), economiza rounds de aprovação e garante uma série coesa.' },
+  'cnt.notes.calidad': { es: '<strong>Calidad sobre cantidad:</strong> si rechazamos contenido, te explicamos por qué para que el próximo sí cuente.', en: '<strong>Quality over quantity:</strong> if we reject content, we explain why so the next one counts.', fr: '<strong>Qualité sur quantité :</strong> si nous rejetons un contenu, nous expliquons pourquoi pour que le prochain compte.', it: '<strong>Qualità sulla quantità:</strong> se rifiutiamo contenuti, ti spieghiamo il perché così il prossimo conta.', pt: '<strong>Qualidade acima de quantidade:</strong> se recusarmos conteúdo, explicamos o porquê para que o próximo conte.' },
+  'cnt.notes.keywords': { es: '<strong>Palabras clave:</strong> SACS te las envía cada mes 1 — no son obligatorias, pero te dan ventaja para SEO conjunto.', en: '<strong>Keywords:</strong> SACS sends them on the 1st of each month — not mandatory, but they give you a joint SEO edge.', fr: '<strong>Mots-clés :</strong> SACS vous les envoie le 1er de chaque mois — pas obligatoires, mais ils vous donnent un avantage SEO commun.', it: '<strong>Parole chiave:</strong> SACS te le invia il 1° di ogni mese — non sono obbligatorie, ma ti danno un vantaggio SEO congiunto.', pt: '<strong>Palavras-chave:</strong> a SACS te envia no dia 1 de cada mês — não são obrigatórias, mas dão vantagem de SEO conjunto.' },
+  'cnt.notes.penal': { es: '<strong>Sin penalización:</strong> si un mes no llegas a 100, no pasa nada. Si tres meses seguidos &lt; 50, agendamos una llamada para ajustar.', en: '<strong>No penalty:</strong> if you miss 100 in a month, nothing happens. If three months in a row &lt; 50, we book a call to adjust.', fr: '<strong>Pas de pénalité :</strong> si un mois vous n\'atteignez pas 100, rien ne se passe. Si trois mois d\'affilée &lt; 50, nous planifions un appel pour ajuster.', it: '<strong>Nessuna penalità:</strong> se un mese non arrivi a 100, non succede niente. Se per tre mesi consecutivi &lt; 50, fissiamo una call per aggiustare.', pt: '<strong>Sem penalidade:</strong> se um mês não chegar a 100, não passa nada. Se três meses seguidos &lt; 50, agendamos uma chamada para ajustar.' },
+
   // Card meta labels + ideas/platforms label
   'card.effort':       { es: 'esfuerzo', en: 'effort', fr: 'effort', it: 'sforzo', pt: 'esforço' },
   'card.examples':     { es: 'Ejemplos:', en: 'Examples:', fr: 'Exemples :', it: 'Esempi:', pt: 'Exemplos:' },
@@ -3033,13 +3041,13 @@ const partnerLandingUrl = invitation.slug_landing
 
         <!-- Notas finales -->
         <div class="p-content-notes">
-          <div class="p-content-notes-title">Detalles importantes</div>
+          <div class="p-content-notes-title">{tt('cnt.notes.title')}</div>
           <ul>
-            <li><strong>Acumulación:</strong> si en abril haces 130 puntos, llegas a mayo con 30 puntos ya hechos.</li>
-            <li><strong>Bonus serie:</strong> entregar 10 episodios de tu serie te da 300 puntos (vs 30×10 = 300, +0 bonus pero te ahorra rounds de aprobación).</li>
-            <li><strong>Calidad sobre cantidad:</strong> si rechazamos contenido, te explicamos por qué para que el próximo sí cuente.</li>
-            <li><strong>Palabras clave:</strong> SACS te las envía cada mes 1 — no son obligatorias, pero te dan ventaja para SEO conjunto.</li>
-            <li><strong>Sin penalización:</strong> si un mes no llegas a 100, no pasa nada. Si tres meses seguidos &lt; 50, agendamos una llamada para ajustar.</li>
+            <li set:html={tt('cnt.notes.acumulacion')}></li>
+            <li set:html={tt('cnt.notes.bonus')}></li>
+            <li set:html={tt('cnt.notes.calidad')}></li>
+            <li set:html={tt('cnt.notes.keywords')}></li>
+            <li set:html={tt('cnt.notes.penal')}></li>
           </ul>
         </div>
       </section>
@@ -3092,15 +3100,6 @@ const partnerLandingUrl = invitation.slug_landing
             <p>{tabulador.notas}</p>
           </div>
         )}
-
-        <!-- Tu link / landing -->
-        <div class="p-landing">
-          <div class="p-landing-eyebrow">Tu landing personalizada</div>
-          <div class="p-landing-url">{partnerLandingUrl}</div>
-          <p class="p-landing-detail">
-            Al firmar tu invitación se activa un link y landing con tu nombre. Cualquier prospecto que llegue por este link se atribuye a ti automáticamente — sin códigos, sin formularios extra, sin perder atribución.
-          </p>
-        </div>
 
         </>
         )}

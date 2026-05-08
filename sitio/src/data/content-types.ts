@@ -49,7 +49,7 @@ export const CONTENT_TYPES: ContentType[] = [
   {
     id: 'story_reel',
     nombre: 'Story / Reel corto',
-    puntos: 10,
+    puntos: 20,
     duracion: '15-60 seg',
     esfuerzo: 'bajo',
     descripcion: 'Pieza vertical rápida — un feature, un tip, un antes/después. Ideal para Instagram Stories, Reels y TikTok.',
@@ -69,7 +69,7 @@ export const CONTENT_TYPES: ContentType[] = [
   {
     id: 'tutorial',
     nombre: 'Tutorial / Guía paso a paso',
-    puntos: 15,
+    puntos: 30,
     duracion: '60-120 seg',
     esfuerzo: 'medio',
     descripcion: 'Cómo configurar o usar una funcionalidad específica del sistema. Utilidad práctica directa.',
@@ -89,7 +89,7 @@ export const CONTENT_TYPES: ContentType[] = [
   {
     id: 'caso_uso',
     nombre: 'Caso de uso en tu negocio',
-    puntos: 20,
+    puntos: 40,
     duracion: '90-120 seg',
     esfuerzo: 'medio',
     perfiles: ['dueño', 'nomada', 'consultor'],
@@ -109,7 +109,7 @@ export const CONTENT_TYPES: ContentType[] = [
   {
     id: 'tour',
     nombre: 'Tour del sistema en acción',
-    puntos: 20,
+    puntos: 40,
     duracion: '90-180 seg',
     esfuerzo: 'medio',
     descripcion: 'Walkthrough en pantalla compartida mostrando una sección o flujo completo del sistema.',
@@ -128,7 +128,7 @@ export const CONTENT_TYPES: ContentType[] = [
   {
     id: 'dia_en_la_vida',
     nombre: 'Un día en la vida',
-    puntos: 25,
+    puntos: 50,
     duracion: '60-120 seg',
     esfuerzo: 'medio-alto',
     descripcion: 'Sigue tu rutina diaria mostrando cómo SACS se integra en cada momento del día.',
@@ -147,7 +147,7 @@ export const CONTENT_TYPES: ContentType[] = [
   {
     id: 'testimonial',
     nombre: 'Testimonial / historia',
-    puntos: 30,
+    puntos: 60,
     duracion: '60-180 seg',
     esfuerzo: 'alto',
     perfiles: ['dueño', 'consultor'],
@@ -167,7 +167,7 @@ export const CONTENT_TYPES: ContentType[] = [
   {
     id: 'serie_episodio',
     nombre: 'Episodio de serie embajador',
-    puntos: 30,
+    puntos: 60,
     duracion: '5-10 min',
     esfuerzo: 'alto',
     perfiles: ['influencer', 'nomada', 'consultor'],
@@ -186,7 +186,7 @@ export const CONTENT_TYPES: ContentType[] = [
   {
     id: 'webinar',
     nombre: 'Webinar / Sesión en vivo',
-    puntos: 40,
+    puntos: 80,
     duracion: '15-30 min',
     esfuerzo: 'alto',
     descripcion: 'Sesión en vivo sobre un tema relevante. Q&A con audiencia. Se graba y se reusa.',
@@ -205,7 +205,7 @@ export const CONTENT_TYPES: ContentType[] = [
   {
     id: 'mini_documental',
     nombre: 'Mini-documental / Historia',
-    puntos: 50,
+    puntos: 100,
     duracion: '3-7 min',
     esfuerzo: 'muy-alto',
     perfiles: ['influencer'],
@@ -226,11 +226,11 @@ export const CONTENT_TYPES: ContentType[] = [
   {
     id: 'serie_completa',
     nombre: '🎁 Bonus: Serie completa (10 episodios)',
-    puntos: 300,
+    puntos: 600,
     duracion: 'trimestral',
     esfuerzo: 'muy-alto',
     perfiles: ['influencer'],
-    descripcion: 'Bonus por entregar una serie completa de 10 episodios sobre un tema. Equivale a 30 puntos por episodio + 60 de bonus.',
+    descripcion: 'Bonus por entregar una serie completa de 10 episodios sobre un tema. Equivale a 60 puntos por episodio entregados juntos como serie cohesiva.',
     ideasContenido: [
       'Estrategias para Retail 2026 (10 eps)',
       'Cómo abrir una boutique exitosa (10 eps)',
@@ -250,7 +250,7 @@ export const CONTENT_TYPES: ContentType[] = [
 const APOYO_TYPES: ContentType[] = [
   {
     id: 'demo_evento_sector', nombre: 'Demo de SACS en evento del sector',
-    puntos: 25, duracion: '1-3 horas', esfuerzo: 'medio-alto', categoria: 'apoyo',
+    puntos: 50, duracion: '1-3 horas', esfuerzo: 'medio-alto', categoria: 'apoyo',
     perfiles: ['dueño', 'nomada', 'consultor'],
     descripcion: 'Mostrar SACS funcionando en un evento, feria o expo del sector retail/restaurantes. Subes foto del stand o sesión + lista de asistentes/contactos generados.',
     ideasContenido: [
@@ -262,7 +262,7 @@ const APOYO_TYPES: ContentType[] = [
   },
   {
     id: 'resena_publica', nombre: 'Reseña pública en plataforma de software',
-    puntos: 10, duracion: '20-30 min', esfuerzo: 'bajo', categoria: 'apoyo',
+    puntos: 20, duracion: '20-30 min', esfuerzo: 'bajo', categoria: 'apoyo',
     descripcion: 'Reseña honesta y detallada de SACS en G2, Capterra, GetApp o Google Maps. Mín. 200 palabras + screenshot real de tu cuenta.',
     ideasContenido: [
       'Reseña en G2 con caso de uso real',
@@ -273,7 +273,7 @@ const APOYO_TYPES: ContentType[] = [
   },
   {
     id: 'activacion_sucursal', nombre: 'Activación abierta en tu sucursal',
-    puntos: 30, duracion: '4-6 horas', esfuerzo: 'alto', categoria: 'apoyo',
+    puntos: 60, duracion: '4-6 horas', esfuerzo: 'alto', categoria: 'apoyo',
     perfiles: ['dueño'],
     descripcion: 'Día abierto donde otros dueños de negocio vienen a tu sucursal a ver SACS funcionando en vivo. Mín. 5 asistentes externos. Documentar con foto + lista.',
     ideasContenido: [
@@ -285,7 +285,7 @@ const APOYO_TYPES: ContentType[] = [
   },
   {
     id: 'speaking_panel', nombre: 'Speaking en panel o foro del sector',
-    puntos: 35, duracion: '1-2 horas', esfuerzo: 'alto', categoria: 'apoyo',
+    puntos: 70, duracion: '1-2 horas', esfuerzo: 'alto', categoria: 'apoyo',
     descripcion: 'Hablar como embajador SACS en un panel, foro o conferencia donde se mencione la marca. Documentar con foto del evento + grabación o programa.',
     ideasContenido: [
       'Panel de retail moderno en feria nacional',
@@ -296,7 +296,7 @@ const APOYO_TYPES: ContentType[] = [
   },
   {
     id: 'intro_calificada', nombre: 'Intro calificada (lead vivo)',
-    puntos: 15, duracion: '15-30 min', esfuerzo: 'bajo', categoria: 'apoyo',
+    puntos: 30, duracion: '15-30 min', esfuerzo: 'bajo', categoria: 'apoyo',
     descripcion: 'Conectar al equipo SACS con un prospecto cualificado (decisor real de un negocio con 1+ sucursal). Cuenta cuando el lead acepta una llamada.',
     ideasContenido: [
       'Presentar al dueño de una cadena de restaurantes',
@@ -307,7 +307,7 @@ const APOYO_TYPES: ContentType[] = [
   },
   {
     id: 'meetup_local', nombre: 'Meetup o mesa redonda en tu local',
-    puntos: 30, duracion: '2-3 horas', esfuerzo: 'medio-alto', categoria: 'apoyo',
+    puntos: 60, duracion: '2-3 horas', esfuerzo: 'medio-alto', categoria: 'apoyo',
     perfiles: ['dueño', 'consultor'],
     descripcion: 'Hostear un meetup presencial sobre retail, ecommerce, finanzas o gestión de negocio con SACS visible. Mín. 10 asistentes — en tu sucursal o en un espacio aliado.',
     ideasContenido: [
@@ -319,7 +319,7 @@ const APOYO_TYPES: ContentType[] = [
   },
   {
     id: 'co_marketing', nombre: 'Co-marketing con marca aliada',
-    puntos: 25, duracion: 'variable', esfuerzo: 'medio', categoria: 'apoyo',
+    puntos: 50, duracion: 'variable', esfuerzo: 'medio', categoria: 'apoyo',
     perfiles: ['influencer', 'consultor'],
     descripcion: 'Colaboración con una marca o consultoría complementaria (no competidora) que mencione a SACS en su canal. Reels conjuntos, blog cruzado, evento doble.',
     ideasContenido: [
@@ -331,7 +331,7 @@ const APOYO_TYPES: ContentType[] = [
   },
   {
     id: 'beta_feedback', nombre: 'Beta tester con feedback estructurado',
-    puntos: 15, duracion: '2-4 horas', esfuerzo: 'medio', categoria: 'apoyo',
+    puntos: 30, duracion: '2-4 horas', esfuerzo: 'medio', categoria: 'apoyo',
     descripcion: 'Probar a fondo una feature nueva de SACS y mandar reporte estructurado (qué funcionó, qué no, sugerencias). Mín. 1 página de notas + screenshots.',
     ideasContenido: [
       'Beta del nuevo CRM Omnicanal',
@@ -342,7 +342,7 @@ const APOYO_TYPES: ContentType[] = [
   },
   {
     id: 'material_local', nombre: 'Material físico de SACS en tu local',
-    puntos: 10, duracion: 'continuo', esfuerzo: 'bajo', categoria: 'apoyo',
+    puntos: 20, duracion: 'continuo', esfuerzo: 'bajo', categoria: 'apoyo',
     perfiles: ['dueño'],
     descripcion: 'Mantener material visible en tu sucursal: QR, folleto, tarjeta, sticker o display SACS. Sumas puntos cada mes que se mantenga visible. Foto mensual.',
     ideasContenido: [
@@ -354,7 +354,7 @@ const APOYO_TYPES: ContentType[] = [
   },
   {
     id: 'stand_feria', nombre: 'Compartir stand en feria del sector',
-    puntos: 50, duracion: '1-2 días', esfuerzo: 'muy-alto', categoria: 'apoyo',
+    puntos: 100, duracion: '1-2 días', esfuerzo: 'muy-alto', categoria: 'apoyo',
     perfiles: ['dueño'],
     descripcion: 'Representar la marca SACS desde un stand propio o compartido en una feria/expo regional o nacional. Documentar con foto + reporte de leads.',
     ideasContenido: [
@@ -374,7 +374,7 @@ const APOYO_TYPES: ContentType[] = [
 const FILANTROPIA_TYPES: ContentType[] = [
   {
     id: 'voluntariado_animales', nombre: 'Voluntariado en refugio de animales',
-    puntos: 20, duracion: '4 horas', esfuerzo: 'medio', categoria: 'filantropia',
+    puntos: 40, duracion: '4 horas', esfuerzo: 'medio', categoria: 'filantropia',
     descripcion: 'Donar mínimo 4 horas en un refugio canino, felino, equino o de fauna en riesgo. Limpiar, alimentar, pasear, ayudar en consultas. Documentar con foto.',
     ideasContenido: [
       'Jornada en refugio canino',
@@ -385,7 +385,7 @@ const FILANTROPIA_TYPES: ContentType[] = [
   },
   {
     id: 'jornada_adopcion', nombre: 'Jornada de adopción o esterilización',
-    puntos: 30, duracion: '6-8 horas', esfuerzo: 'alto', categoria: 'filantropia',
+    puntos: 60, duracion: '6-8 horas', esfuerzo: 'alto', categoria: 'filantropia',
     descripcion: 'Organizar o apoyar logísticamente una jornada de adopción o esterilización gratuita de animales. Documentar con foto + cantidad de adopciones/esterilizaciones.',
     ideasContenido: [
       'Jornada de adopción en parque público',
@@ -396,7 +396,7 @@ const FILANTROPIA_TYPES: ContentType[] = [
   },
   {
     id: 'banco_alimentos', nombre: 'Voluntariado en banco de alimentos',
-    puntos: 20, duracion: '4 horas', esfuerzo: 'medio', categoria: 'filantropia',
+    puntos: 40, duracion: '4 horas', esfuerzo: 'medio', categoria: 'filantropia',
     descripcion: 'Donar mínimo 4 horas a un banco de alimentos: selección, empaque, distribución, logística. Documentar con foto + nombre del banco.',
     ideasContenido: [
       'Empaque de despensas en banco local',
@@ -407,7 +407,7 @@ const FILANTROPIA_TYPES: ContentType[] = [
   },
   {
     id: 'comedor_comunitario', nombre: 'Apoyo en comedor comunitario',
-    puntos: 25, duracion: '4-6 horas', esfuerzo: 'medio', categoria: 'filantropia',
+    puntos: 50, duracion: '4-6 horas', esfuerzo: 'medio', categoria: 'filantropia',
     descripcion: 'Cocinar, servir o donar insumos en un comedor comunitario para personas en situación vulnerable. Mín. medio día de jornada.',
     ideasContenido: [
       'Servir comida en comedor del DIF',
@@ -418,7 +418,7 @@ const FILANTROPIA_TYPES: ContentType[] = [
   },
   {
     id: 'distribucion_despensas', nombre: 'Distribución de despensas a personas vulnerables',
-    puntos: 25, duracion: '4-8 horas', esfuerzo: 'medio-alto', categoria: 'filantropia',
+    puntos: 50, duracion: '4-8 horas', esfuerzo: 'medio-alto', categoria: 'filantropia',
     descripcion: 'Organizar o participar en una jornada de entrega de despensas, agua, ropa o medicamentos a familias en situación vulnerable. Documentar con foto + zona.',
     ideasContenido: [
       'Entrega de despensas en comunidad rural',
@@ -429,7 +429,7 @@ const FILANTROPIA_TYPES: ContentType[] = [
   },
   {
     id: 'albergue_personas', nombre: 'Voluntariado en albergue de personas',
-    puntos: 30, duracion: '4-6 horas', esfuerzo: 'medio-alto', categoria: 'filantropia',
+    puntos: 60, duracion: '4-6 horas', esfuerzo: 'medio-alto', categoria: 'filantropia',
     descripcion: 'Apoyar en albergue de personas en situación de calle, casa hogar de niñas/os, asilo de adultos mayores o albergue de migrantes. Mín. medio día.',
     ideasContenido: [
       'Tarde con adultos mayores en asilo',
@@ -440,7 +440,7 @@ const FILANTROPIA_TYPES: ContentType[] = [
   },
   {
     id: 'limpieza_publica', nombre: 'Limpieza de espacio público / playa / parque',
-    puntos: 15, duracion: '3-4 horas', esfuerzo: 'medio', categoria: 'filantropia',
+    puntos: 30, duracion: '3-4 horas', esfuerzo: 'medio', categoria: 'filantropia',
     descripcion: 'Jornada de limpieza grupal en parque, playa, río o reserva natural. Mín. 3 horas y grupo de 5+ personas. Documentar con foto antes/después.',
     ideasContenido: [
       'Limpieza de playa en grupo',
@@ -451,7 +451,7 @@ const FILANTROPIA_TYPES: ContentType[] = [
   },
   {
     id: 'mentoria_emprendedor', nombre: 'Mentoría 1:1 a emprendedor de bajos recursos',
-    puntos: 15, duracion: '1 hora', esfuerzo: 'bajo', categoria: 'filantropia',
+    puntos: 30, duracion: '1 hora', esfuerzo: 'bajo', categoria: 'filantropia',
     descripcion: 'Sesión 1:1 gratuita a un emprendedor de microempresa familiar o de comunidad vulnerable. Documentar con foto + descripción del caso.',
     ideasContenido: [
       'Asesorar a vendedora de mercado popular',
@@ -462,7 +462,7 @@ const FILANTROPIA_TYPES: ContentType[] = [
   },
   {
     id: 'conferencia_escuela', nombre: 'Conferencia gratuita en escuela pública',
-    puntos: 25, duracion: '1-2 horas', esfuerzo: 'medio-alto', categoria: 'filantropia',
+    puntos: 50, duracion: '1-2 horas', esfuerzo: 'medio-alto', categoria: 'filantropia',
     descripcion: 'Charla gratuita en preparatoria pública, CECyT, CONALEP o universidad de zona vulnerable sobre emprendimiento o tecnología.',
     ideasContenido: [
       'Charla de emprendimiento en CONALEP',
@@ -473,7 +473,7 @@ const FILANTROPIA_TYPES: ContentType[] = [
   },
   {
     id: 'beca_patrocinio', nombre: 'Beca o patrocinio a una persona',
-    puntos: 30, duracion: 'mensual', esfuerzo: 'alto', categoria: 'filantropia',
+    puntos: 60, duracion: 'mensual', esfuerzo: 'alto', categoria: 'filantropia',
     descripcion: 'Patrocinar un curso, kit, herramienta o servicio para alguien que no podría costearlo. Cuenta una vez al mes mientras se mantenga el patrocinio.',
     ideasContenido: [
       'Beca de curso técnico a joven sin acceso',
