@@ -652,6 +652,10 @@ const I18N: Record<string, Record<Lang, string>> = {
   'ct.h19': { es: '19. Aceptación', en: '19. Acceptance', fr: '19. Acceptation', it: '19. Accettazione', pt: '19. Aceitação' },
   'ct.p19': { es: 'Al firmar al final de este documento, el Partner declara que ha leído íntegramente este acuerdo, que entiende las condiciones de compensación, compromisos, suspensión, certificaciones, propiedad intelectual y demás cláusulas, y que acepta vincularse legalmente a las mismas. La firma electrónica tiene la misma validez que una firma autógrafa conforme a la NOM-151-SCFI-2016.', en: 'By signing at the end of this document, the Partner declares having fully read this agreement, understanding the conditions on compensation, commitments, suspension, certifications, intellectual property and other clauses, and accepting to be legally bound by them. The electronic signature has the same validity as a handwritten signature pursuant to NOM-151-SCFI-2016.', fr: 'En signant à la fin de ce document, le Partenaire déclare avoir lu intégralement cet accord, comprendre les conditions de rémunération, engagements, suspension, certifications, propriété intellectuelle et autres clauses, et accepter d\'y être légalement lié. La signature électronique a la même validité qu\'une signature manuscrite conformément à NOM-151-SCFI-2016.', it: 'Firmando alla fine di questo documento, il Partner dichiara di aver letto integralmente questo accordo, di comprendere le condizioni di compenso, impegni, sospensione, certificazioni, proprietà intellettuale e altre clausole, e di accettare di esserne legalmente vincolato. La firma elettronica ha la stessa validità di una firma autografa ai sensi della NOM-151-SCFI-2016.', pt: 'Ao assinar ao final deste documento, o Parceiro declara ter lido integralmente este acordo, entender as condições de remuneração, compromissos, suspensão, certificações, propriedade intelectual e demais cláusulas, e aceitar vincular-se legalmente a elas. A assinatura eletrônica tem a mesma validade de uma assinatura autógrafa conforme a NOM-151-SCFI-2016.' },
   'ct.accept': { es: 'He leído íntegramente este contrato y acepto sus términos.', en: 'I have fully read this contract and accept its terms.', fr: 'J\'ai lu intégralement ce contrat et j\'accepte ses conditions.', it: 'Ho letto integralmente questo contratto e accetto i suoi termini.', pt: 'Li integralmente este contrato e aceito seus termos.' },
+  'ct.preview.eyebrow': { es: 'Condiciones generales', en: 'General conditions', fr: 'Conditions générales', it: 'Condizioni generali', pt: 'Condições gerais' },
+  'ct.preview.title':   { es: 'Programa Embajador SACS — Términos y Condiciones', en: 'SACS Ambassador Program — Terms and Conditions', fr: 'Programme Ambassadeur SACS — Conditions générales', it: 'Programma Ambasciatori SACS — Termini e Condizioni', pt: 'Programa Embaixador SACS — Termos e Condições' },
+  'ct.preview.note':    { es: 'Este es el contrato completo que firmarás al final del proceso. Aquí lo presentamos íntegro para tu lectura.', en: 'This is the full contract you will sign at the end of the process. We present it here in full for your review.', fr: 'Ceci est le contrat intégral que vous signerez à la fin du processus. Nous le présentons ici en entier pour votre lecture.', it: 'Questo è il contratto completo che firmerai alla fine del processo. Lo presentiamo qui integralmente per la tua lettura.', pt: 'Este é o contrato completo que você assinará ao final do processo. Apresentamos aqui na íntegra para sua leitura.' },
+  'ct.preview.extra':   { es: 'Cláusulas adicionales para esta invitación', en: 'Additional clauses for this invitation', fr: 'Clauses supplémentaires pour cette invitation', it: 'Clausole aggiuntive per questo invito', pt: 'Cláusulas adicionais para este convite' },
 };
 
 function tt(key: string): string {
@@ -2834,12 +2838,116 @@ const partnerLandingUrl = invitation.slug_landing
           </div>
         </div>
 
-        {invitation.terminos && (
-          <div class="p-terms-extra">
-            <div class="p-terms-extra-title">Condiciones generales</div>
-            <p class="p-terms-extra-text">{invitation.terminos}</p>
+        <div class="p-terms-contract">
+          <div class="p-terms-contract-eyebrow">{tt('ct.preview.eyebrow')}</div>
+          <h3 class="p-terms-contract-title">{tt('ct.preview.title')}</h3>
+          <p class="p-terms-contract-note">{tt('ct.preview.note')}</p>
+          {isLocalized && (
+            <div class="p-contract-legal-notice">{tt('ct.legal_notice')}</div>
+          )}
+
+          <div class="p-contract-doc p-contract-doc--preview">
+            <p set:html={ctIntroHtml}></p>
+
+            <h4>{tt('ct.h1')}</h4>
+            <p set:html={ctP1Html}></p>
+
+            <h4>{tt('ct.h2')}</h4>
+            <ul>
+              <li set:html={ctP21Html}></li>
+              <li set:html={tt('ct.p2.2')}></li>
+              <li set:html={tt('ct.p2.3')}></li>
+              <li set:html={ctP24Html}></li>
+            </ul>
+
+            <h4>{tt('ct.h3')}</h4>
+            <p set:html={tt('ct.p3')}></p>
+
+            <h4>{tt('ct.h4')}</h4>
+            <ul>
+              <li set:html={tt('ct.p4.1')}></li>
+              <li set:html={tt('ct.p4.2')}></li>
+              <li set:html={tt('ct.p4.3')}></li>
+              <li set:html={tt('ct.p4.4')}></li>
+              <li set:html={tt('ct.p4.5')}></li>
+            </ul>
+
+            <h4>{tt('ct.h5')}</h4>
+            <ul>
+              <li set:html={tt('ct.p5.1')}></li>
+              <li set:html={tt('ct.p5.2')}></li>
+              <li set:html={tt('ct.p5.3')}></li>
+              <li set:html={tt('ct.p5.4')}></li>
+              <li set:html={tt('ct.p5.5')}></li>
+              <li set:html={tt('ct.p5.6')}></li>
+            </ul>
+
+            <h4>{tt('ct.h6')}</h4>
+            <p set:html={tt('ct.p6.intro')}></p>
+            <ul>
+              <li set:html={tt('ct.p6.c1')}></li>
+              <li set:html={tt('ct.p6.c2')}></li>
+              <li set:html={tt('ct.p6.c3')}></li>
+              <li set:html={tt('ct.p6.c4')}></li>
+              <li set:html={tt('ct.p6.c5')}></li>
+              <li set:html={tt('ct.p6.c6')}></li>
+            </ul>
+
+            <h4>{tt('ct.h7')}</h4>
+            <p set:html={tt('ct.p7')}></p>
+
+            <h4>{tt('ct.h8')}</h4>
+            <p set:html={tt('ct.p8.intro')}></p>
+            <ul>
+              <li set:html={tt('ct.p8.cert1')}></li>
+              <li set:html={tt('ct.p8.cert2')}></li>
+              <li set:html={tt('ct.p8.cert3')}></li>
+              <li set:html={tt('ct.p8.cert4')}></li>
+              <li set:html={tt('ct.p8.cert5')}></li>
+            </ul>
+            <p set:html={tt('ct.p8.outro')}></p>
+
+            <h4>{tt('ct.h9')}</h4>
+            <p set:html={tt('ct.p9')}></p>
+
+            <h4>{tt('ct.h10')}</h4>
+            <p set:html={tt('ct.p10')}></p>
+
+            <h4>{tt('ct.h11')}</h4>
+            <p set:html={tt('ct.p11')}></p>
+
+            <h4>{tt('ct.h12')}</h4>
+            <p set:html={tt('ct.p12')}></p>
+
+            <h4>{tt('ct.h13')}</h4>
+            <p set:html={tt('ct.p13')}></p>
+
+            <h4>{tt('ct.h14')}</h4>
+            <p set:html={tt('ct.p14')}></p>
+
+            <h4>{tt('ct.h15')}</h4>
+            <p set:html={tt('ct.p15')}></p>
+
+            <h4>{tt('ct.h16')}</h4>
+            <p set:html={tt('ct.p16')}></p>
+
+            <h4>{tt('ct.h17')}</h4>
+            <p set:html={tt('ct.p17')}></p>
+
+            <h4>{tt('ct.h18')}</h4>
+            <p set:html={tt('ct.p18')}></p>
+
+            <h4>{tt('ct.h19')}</h4>
+            <p set:html={tt('ct.p19')}></p>
           </div>
-        )}
+
+          {invitation.terminos && (
+            <div class="p-terms-extra">
+              <div class="p-terms-extra-title">{tt('ct.preview.extra')}</div>
+              <p class="p-terms-extra-text">{invitation.terminos}</p>
+            </div>
+          )}
+        </div>
       </section>
 
       <!-- TAB: EMBUDO Y SEGUIMIENTO DE VENTAS -->
@@ -4633,6 +4741,47 @@ const partnerLandingUrl = invitation.slug_landing
     line-height: 1.6;
     margin: 0;
     white-space: pre-line;
+  }
+
+  /* ── Contrato preview en tab Términos ── */
+  .p-terms-contract {
+    margin-top: 40px;
+    padding: 36px 36px 32px;
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 14px;
+  }
+  .p-terms-contract-eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: #4B7BE5;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .p-terms-contract-title {
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    margin: 0 0 10px;
+    letter-spacing: -0.01em;
+  }
+  .p-terms-contract-note {
+    font-size: 0.8125rem;
+    color: #777;
+    line-height: 1.55;
+    margin: 0 0 24px;
+    font-style: italic;
+  }
+  .p-contract-doc--preview {
+    font-size: 0.875rem;
+    line-height: 1.65;
+  }
+  .p-contract-doc--preview h4 {
+    font-size: 0.9375rem;
+  }
+  @media (max-width: 720px) {
+    .p-terms-contract { padding: 24px 18px 22px; }
   }
 
   /* Compromisos */
