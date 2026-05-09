@@ -654,8 +654,11 @@ const I18N: Record<string, Record<Lang, string>> = {
   'ct.accept': { es: 'He leído íntegramente este contrato y acepto sus términos.', en: 'I have fully read this contract and accept its terms.', fr: 'J\'ai lu intégralement ce contrat et j\'accepte ses conditions.', it: 'Ho letto integralmente questo contratto e accetto i suoi termini.', pt: 'Li integralmente este contrato e aceito seus termos.' },
   'ct.preview.eyebrow': { es: 'Condiciones generales', en: 'General conditions', fr: 'Conditions générales', it: 'Condizioni generali', pt: 'Condições gerais' },
   'ct.preview.title':   { es: 'Programa Embajador SACS — Términos y Condiciones', en: 'SACS Ambassador Program — Terms and Conditions', fr: 'Programme Ambassadeur SACS — Conditions générales', it: 'Programma Ambasciatori SACS — Termini e Condizioni', pt: 'Programa Embaixador SACS — Termos e Condições' },
-  'ct.preview.note':    { es: 'Este es el contrato completo que firmarás al final del proceso. Aquí lo presentamos íntegro para tu lectura.', en: 'This is the full contract you will sign at the end of the process. We present it here in full for your review.', fr: 'Ceci est le contrat intégral que vous signerez à la fin du processus. Nous le présentons ici en entier pour votre lecture.', it: 'Questo è il contratto completo che firmerai alla fine del processo. Lo presentiamo qui integralmente per la tua lettura.', pt: 'Este é o contrato completo que você assinará ao final do processo. Apresentamos aqui na íntegra para sua leitura.' },
+  'ct.preview.note':    { es: 'El acuerdo formal completo: 19 cláusulas que cubren compensación, pagos, certificaciones, suspensión, conducta y propiedad intelectual. Lo firmas al final del proceso.', en: 'The full formal agreement: 19 clauses covering compensation, payments, certifications, suspension, conduct and intellectual property. You sign it at the end of the process.', fr: "L'accord formel complet : 19 clauses couvrant rémunération, paiements, certifications, suspension, conduite et propriété intellectuelle. Vous le signez à la fin du processus.", it: "L'accordo formale completo: 19 clausole che coprono compenso, pagamenti, certificazioni, sospensione, condotta e proprietà intellettuale. Lo firmi alla fine del processo.", pt: 'O acordo formal completo: 19 cláusulas que cobrem remuneração, pagamentos, certificações, suspensão, conduta e propriedade intelectual. Você o assina ao final do processo.' },
+  'ct.preview.cta':     { es: 'Ver términos completos', en: 'View full terms', fr: 'Voir les conditions complètes', it: 'Vedi i termini completi', pt: 'Ver termos completos' },
   'ct.preview.extra':   { es: 'Cláusulas adicionales para esta invitación', en: 'Additional clauses for this invitation', fr: 'Clauses supplémentaires pour cette invitation', it: 'Clausole aggiuntive per questo invito', pt: 'Cláusulas adicionais para este convite' },
+  'ct.modal.close':     { es: 'Cerrar', en: 'Close', fr: 'Fermer', it: 'Chiudi', pt: 'Fechar' },
+  'ct.modal.lang':      { es: 'Versión vigente · español', en: 'Active version · {lang_label}', fr: 'Version active · {lang_label}', it: 'Versione attiva · {lang_label}', pt: 'Versão ativa · {lang_label}' },
 };
 
 function tt(key: string): string {
@@ -2838,116 +2841,24 @@ const partnerLandingUrl = invitation.slug_landing
           </div>
         </div>
 
-        <div class="p-terms-contract">
+        <div class="p-terms-contract-card">
           <div class="p-terms-contract-eyebrow">{tt('ct.preview.eyebrow')}</div>
           <h3 class="p-terms-contract-title">{tt('ct.preview.title')}</h3>
           <p class="p-terms-contract-note">{tt('ct.preview.note')}</p>
-          {isLocalized && (
-            <div class="p-contract-legal-notice">{tt('ct.legal_notice')}</div>
-          )}
-
-          <div class="p-contract-doc p-contract-doc--preview">
-            <p set:html={ctIntroHtml}></p>
-
-            <h4>{tt('ct.h1')}</h4>
-            <p set:html={ctP1Html}></p>
-
-            <h4>{tt('ct.h2')}</h4>
-            <ul>
-              <li set:html={ctP21Html}></li>
-              <li set:html={tt('ct.p2.2')}></li>
-              <li set:html={tt('ct.p2.3')}></li>
-              <li set:html={ctP24Html}></li>
-            </ul>
-
-            <h4>{tt('ct.h3')}</h4>
-            <p set:html={tt('ct.p3')}></p>
-
-            <h4>{tt('ct.h4')}</h4>
-            <ul>
-              <li set:html={tt('ct.p4.1')}></li>
-              <li set:html={tt('ct.p4.2')}></li>
-              <li set:html={tt('ct.p4.3')}></li>
-              <li set:html={tt('ct.p4.4')}></li>
-              <li set:html={tt('ct.p4.5')}></li>
-            </ul>
-
-            <h4>{tt('ct.h5')}</h4>
-            <ul>
-              <li set:html={tt('ct.p5.1')}></li>
-              <li set:html={tt('ct.p5.2')}></li>
-              <li set:html={tt('ct.p5.3')}></li>
-              <li set:html={tt('ct.p5.4')}></li>
-              <li set:html={tt('ct.p5.5')}></li>
-              <li set:html={tt('ct.p5.6')}></li>
-            </ul>
-
-            <h4>{tt('ct.h6')}</h4>
-            <p set:html={tt('ct.p6.intro')}></p>
-            <ul>
-              <li set:html={tt('ct.p6.c1')}></li>
-              <li set:html={tt('ct.p6.c2')}></li>
-              <li set:html={tt('ct.p6.c3')}></li>
-              <li set:html={tt('ct.p6.c4')}></li>
-              <li set:html={tt('ct.p6.c5')}></li>
-              <li set:html={tt('ct.p6.c6')}></li>
-            </ul>
-
-            <h4>{tt('ct.h7')}</h4>
-            <p set:html={tt('ct.p7')}></p>
-
-            <h4>{tt('ct.h8')}</h4>
-            <p set:html={tt('ct.p8.intro')}></p>
-            <ul>
-              <li set:html={tt('ct.p8.cert1')}></li>
-              <li set:html={tt('ct.p8.cert2')}></li>
-              <li set:html={tt('ct.p8.cert3')}></li>
-              <li set:html={tt('ct.p8.cert4')}></li>
-              <li set:html={tt('ct.p8.cert5')}></li>
-            </ul>
-            <p set:html={tt('ct.p8.outro')}></p>
-
-            <h4>{tt('ct.h9')}</h4>
-            <p set:html={tt('ct.p9')}></p>
-
-            <h4>{tt('ct.h10')}</h4>
-            <p set:html={tt('ct.p10')}></p>
-
-            <h4>{tt('ct.h11')}</h4>
-            <p set:html={tt('ct.p11')}></p>
-
-            <h4>{tt('ct.h12')}</h4>
-            <p set:html={tt('ct.p12')}></p>
-
-            <h4>{tt('ct.h13')}</h4>
-            <p set:html={tt('ct.p13')}></p>
-
-            <h4>{tt('ct.h14')}</h4>
-            <p set:html={tt('ct.p14')}></p>
-
-            <h4>{tt('ct.h15')}</h4>
-            <p set:html={tt('ct.p15')}></p>
-
-            <h4>{tt('ct.h16')}</h4>
-            <p set:html={tt('ct.p16')}></p>
-
-            <h4>{tt('ct.h17')}</h4>
-            <p set:html={tt('ct.p17')}></p>
-
-            <h4>{tt('ct.h18')}</h4>
-            <p set:html={tt('ct.p18')}></p>
-
-            <h4>{tt('ct.h19')}</h4>
-            <p set:html={tt('ct.p19')}></p>
-          </div>
-
-          {invitation.terminos && (
-            <div class="p-terms-extra">
-              <div class="p-terms-extra-title">{tt('ct.preview.extra')}</div>
-              <p class="p-terms-extra-text">{invitation.terminos}</p>
-            </div>
-          )}
+          <button type="button" class="p-terms-view-btn" data-open-contract>
+            <span>{tt('ct.preview.cta')}</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14M13 5l7 7-7 7"/>
+            </svg>
+          </button>
         </div>
+
+        {invitation.terminos && (
+          <div class="p-terms-extra">
+            <div class="p-terms-extra-title">{tt('ct.preview.extra')}</div>
+            <p class="p-terms-extra-text">{invitation.terminos}</p>
+          </div>
+        )}
       </section>
 
       <!-- TAB: EMBUDO Y SEGUIMIENTO DE VENTAS -->
@@ -4057,6 +3968,121 @@ const partnerLandingUrl = invitation.slug_landing
 </div>
 )}
 
+<!-- ── Modal: Contrato completo (Términos y Condiciones) ─── -->
+<dialog class="p-contract-modal no-print" id="contract-modal" aria-labelledby="contract-modal-title">
+  <div class="p-contract-modal-head">
+    <div class="p-contract-modal-head-text">
+      <div class="p-contract-modal-eyebrow">{tt('ct.preview.eyebrow')}</div>
+      <h2 class="p-contract-modal-title" id="contract-modal-title">{tt('ct.preview.title')}</h2>
+    </div>
+    <button type="button" class="p-contract-modal-close" data-close-contract aria-label={tt('ct.modal.close')}>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  <div class="p-contract-modal-body">
+    {isLocalized && (
+      <div class="p-contract-legal-notice">{tt('ct.legal_notice')}</div>
+    )}
+
+    <div class="p-contract-doc p-contract-doc--modal">
+      <p set:html={ctIntroHtml}></p>
+
+      <h4>{tt('ct.h1')}</h4>
+      <p set:html={ctP1Html}></p>
+
+      <h4>{tt('ct.h2')}</h4>
+      <ul>
+        <li set:html={ctP21Html}></li>
+        <li set:html={tt('ct.p2.2')}></li>
+        <li set:html={tt('ct.p2.3')}></li>
+        <li set:html={ctP24Html}></li>
+      </ul>
+
+      <h4>{tt('ct.h3')}</h4>
+      <p set:html={tt('ct.p3')}></p>
+
+      <h4>{tt('ct.h4')}</h4>
+      <ul>
+        <li set:html={tt('ct.p4.1')}></li>
+        <li set:html={tt('ct.p4.2')}></li>
+        <li set:html={tt('ct.p4.3')}></li>
+        <li set:html={tt('ct.p4.4')}></li>
+        <li set:html={tt('ct.p4.5')}></li>
+      </ul>
+
+      <h4>{tt('ct.h5')}</h4>
+      <ul>
+        <li set:html={tt('ct.p5.1')}></li>
+        <li set:html={tt('ct.p5.2')}></li>
+        <li set:html={tt('ct.p5.3')}></li>
+        <li set:html={tt('ct.p5.4')}></li>
+        <li set:html={tt('ct.p5.5')}></li>
+        <li set:html={tt('ct.p5.6')}></li>
+      </ul>
+
+      <h4>{tt('ct.h6')}</h4>
+      <p set:html={tt('ct.p6.intro')}></p>
+      <ul>
+        <li set:html={tt('ct.p6.c1')}></li>
+        <li set:html={tt('ct.p6.c2')}></li>
+        <li set:html={tt('ct.p6.c3')}></li>
+        <li set:html={tt('ct.p6.c4')}></li>
+        <li set:html={tt('ct.p6.c5')}></li>
+        <li set:html={tt('ct.p6.c6')}></li>
+      </ul>
+
+      <h4>{tt('ct.h7')}</h4>
+      <p set:html={tt('ct.p7')}></p>
+
+      <h4>{tt('ct.h8')}</h4>
+      <p set:html={tt('ct.p8.intro')}></p>
+      <ul>
+        <li set:html={tt('ct.p8.cert1')}></li>
+        <li set:html={tt('ct.p8.cert2')}></li>
+        <li set:html={tt('ct.p8.cert3')}></li>
+        <li set:html={tt('ct.p8.cert4')}></li>
+        <li set:html={tt('ct.p8.cert5')}></li>
+      </ul>
+      <p set:html={tt('ct.p8.outro')}></p>
+
+      <h4>{tt('ct.h9')}</h4>
+      <p set:html={tt('ct.p9')}></p>
+
+      <h4>{tt('ct.h10')}</h4>
+      <p set:html={tt('ct.p10')}></p>
+
+      <h4>{tt('ct.h11')}</h4>
+      <p set:html={tt('ct.p11')}></p>
+
+      <h4>{tt('ct.h12')}</h4>
+      <p set:html={tt('ct.p12')}></p>
+
+      <h4>{tt('ct.h13')}</h4>
+      <p set:html={tt('ct.p13')}></p>
+
+      <h4>{tt('ct.h14')}</h4>
+      <p set:html={tt('ct.p14')}></p>
+
+      <h4>{tt('ct.h15')}</h4>
+      <p set:html={tt('ct.p15')}></p>
+
+      <h4>{tt('ct.h16')}</h4>
+      <p set:html={tt('ct.p16')}></p>
+
+      <h4>{tt('ct.h17')}</h4>
+      <p set:html={tt('ct.p17')}></p>
+
+      <h4>{tt('ct.h18')}</h4>
+      <p set:html={tt('ct.p18')}></p>
+
+      <h4>{tt('ct.h19')}</h4>
+      <p set:html={tt('ct.p19')}></p>
+    </div>
+  </div>
+</dialog>
+
 <!-- ── Floating utility buttons: WhatsApp + Print/PDF ─── -->
 <div class="p-fab no-print" id="p-fab" aria-hidden="true">
   <button type="button" class="p-fab-btn p-fab-btn--print" id="p-fab-print" title={tt('fab.print')} aria-label={tt('fab.print')}>
@@ -4743,10 +4769,10 @@ const partnerLandingUrl = invitation.slug_landing
     white-space: pre-line;
   }
 
-  /* ── Contrato preview en tab Términos ── */
-  .p-terms-contract {
+  /* ── Tarjeta CTA "Ver términos completos" en tab Términos ── */
+  .p-terms-contract-card {
     margin-top: 40px;
-    padding: 36px 36px 32px;
+    padding: 32px 32px 28px;
     background: #fff;
     border: 1px solid #ececec;
     border-radius: 14px;
@@ -4763,26 +4789,129 @@ const partnerLandingUrl = invitation.slug_landing
     font-size: 1.125rem;
     font-weight: 500;
     color: #1a1a1a;
-    margin: 0 0 10px;
+    margin: 0 0 12px;
     letter-spacing: -0.01em;
   }
   .p-terms-contract-note {
-    font-size: 0.8125rem;
-    color: #777;
-    line-height: 1.55;
-    margin: 0 0 24px;
-    font-style: italic;
-  }
-  .p-contract-doc--preview {
-    font-size: 0.875rem;
-    line-height: 1.65;
-  }
-  .p-contract-doc--preview h4 {
     font-size: 0.9375rem;
+    color: #555;
+    line-height: 1.6;
+    margin: 0 0 22px;
   }
+  .p-terms-view-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 22px;
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.005em;
+    cursor: pointer;
+    transition: background 160ms ease, transform 160ms ease;
+  }
+  .p-terms-view-btn:hover { background: #000; transform: translateY(-1px); }
+  .p-terms-view-btn svg { transition: transform 160ms ease; }
+  .p-terms-view-btn:hover svg { transform: translateX(2px); }
   @media (max-width: 720px) {
-    .p-terms-contract { padding: 24px 18px 22px; }
+    .p-terms-contract-card { padding: 22px 20px 20px; }
   }
+
+  /* ── Modal fullscreen del contrato ── */
+  .p-contract-modal {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: #fafaf7;
+    color: #1a1a1a;
+    overflow: hidden;
+  }
+  .p-contract-modal::backdrop {
+    background: rgba(15, 15, 18, 0.82);
+    backdrop-filter: blur(6px);
+  }
+  .p-contract-modal[open] {
+    display: flex;
+    flex-direction: column;
+  }
+  .p-contract-modal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 22px 40px;
+    border-bottom: 1px solid #e8e6df;
+    background: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  .p-contract-modal-eyebrow {
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: #4B7BE5;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .p-contract-modal-title {
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    margin: 0;
+    letter-spacing: -0.01em;
+    line-height: 1.35;
+  }
+  .p-contract-modal-close {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid #e0ddd5;
+    border-radius: 999px;
+    color: #555;
+    cursor: pointer;
+    transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+  }
+  .p-contract-modal-close:hover { background: #1a1a1a; border-color: #1a1a1a; color: #fff; }
+  .p-contract-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 36px 40px 64px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .p-contract-doc--modal {
+    max-width: 760px;
+    margin: 0 auto;
+    font-size: 0.9375rem;
+    line-height: 1.7;
+  }
+  .p-contract-doc--modal h4 {
+    font-size: 1rem;
+    margin-top: 28px;
+  }
+  .p-contract-doc--modal h4:first-child { margin-top: 0; }
+
+  @media (max-width: 720px) {
+    .p-contract-modal-head { padding: 16px 20px; }
+    .p-contract-modal-title { font-size: 1rem; }
+    .p-contract-modal-body { padding: 24px 20px 56px; }
+    .p-contract-doc--modal { font-size: 0.875rem; }
+    .p-contract-doc--modal h4 { font-size: 0.9375rem; }
+  }
+
+  /* Disable body scroll when modal open (browsers without :modal support) */
+  body:has(.p-contract-modal[open]) { overflow: hidden; }
 
   /* Compromisos */
   .p-commits {
@@ -10747,6 +10876,27 @@ const partnerLandingUrl = invitation.slug_landing
         b.setAttribute('aria-selected', isActive ? 'true' : 'false');
       });
     });
+  });
+})();
+
+// ── Modal de contrato (Términos y Condiciones) ──
+(function () {
+  const modal = document.getElementById('contract-modal');
+  if (!modal || typeof modal.showModal !== 'function') return;
+  document.querySelectorAll('[data-open-contract]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      modal.showModal();
+      // Reset scroll to top when opening
+      const body = modal.querySelector('.p-contract-modal-body');
+      if (body) body.scrollTop = 0;
+    });
+  });
+  modal.querySelectorAll('[data-close-contract]').forEach((btn) => {
+    btn.addEventListener('click', () => modal.close());
+  });
+  // Close on backdrop click (click outside the modal content)
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.close();
   });
 })();
 </script>
