@@ -3694,9 +3694,6 @@ const partnerLandingUrl = invitation.slug_landing
               <div class="p-network-tier-photo" style={`background-image:url('/images/network-expansion/${tier.img}.webp')`} aria-hidden="true"></div>
               <div class="p-network-tier-content">
                 <div class="p-network-tier-num">0{i + 1}</div>
-                <div class="p-network-tier-progress" aria-hidden="true">
-                  <div class="p-network-tier-bar" style={`width:${tier.ratio * 100}%`}></div>
-                </div>
                 <div class="p-network-tier-meta">
                   <span class="p-network-tier-stores">{tier.stores}{i === 3 ? '+' : ''}</span>
                   <span class="p-network-tier-stores-lbl">{lang === 'en' ? 'active stores' : lang === 'fr' ? 'boutiques actives' : lang === 'it' ? 'negozi attivi' : lang === 'pt' ? 'lojas ativas' : 'sucursales activas'}</span>
@@ -6134,18 +6131,17 @@ const partnerLandingUrl = invitation.slug_landing
   /* Contenido: métricas en fila arriba, body completo debajo (sin truncamiento) */
   .p-network-tier-content {
     display: grid;
-    grid-template-columns: 48px minmax(0, 1fr) auto auto auto;
+    grid-template-columns: 48px minmax(0, 1fr) auto auto;
     grid-template-areas:
-      "num progress meta arrow invites"
-      "body body body body body";
+      "num meta arrow invites"
+      "body body body body";
     align-items: center;
-    column-gap: 18px;
+    column-gap: 24px;
     row-gap: 20px;
     padding: 26px 30px 28px;
   }
   .p-network-tier-num { grid-area: num; }
-  .p-network-tier-progress { grid-area: progress; }
-  .p-network-tier-meta { grid-area: meta; }
+  .p-network-tier-meta { grid-area: meta; justify-self: end; text-align: right; }
   .p-network-tier-arrow { grid-area: arrow; }
   .p-network-tier-invites { grid-area: invites; }
   .p-network-tier-body {
@@ -6179,10 +6175,10 @@ const partnerLandingUrl = invitation.slug_landing
   }
   @media (max-width: 560px) {
     .p-network-tier-content {
-      grid-template-columns: 44px 1fr auto;
+      grid-template-columns: 44px 1fr;
       grid-template-areas:
-        "num progress meta"
-        "body body body";
+        "num meta"
+        "body body";
       column-gap: 14px;
     }
     .p-network-tier-arrow,
