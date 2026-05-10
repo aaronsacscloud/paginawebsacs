@@ -55,6 +55,7 @@ const I18N: Record<string, Record<Lang, string>> = {
   'tab.contenido':    { es: 'Contenido y puntos', en: 'Content & points', fr: 'Contenu & points', it: 'Contenuti & punti', pt: 'Conteúdo & pontos' },
   'tab.compensacion': { es: 'Lo que puedes ganar', en: 'What you can earn', fr: "Ce que vous pouvez gagner", it: 'Quanto puoi guadagnare', pt: 'O que você pode ganhar' },
   'tab.canales':      { es: '¿A quién le puedo vender?', en: 'Who can I sell to?', fr: 'À qui puis-je vendre ?', it: 'A chi posso vendere?', pt: 'A quem posso vender?' },
+  'tab.red':          { es: 'Expande tu red', en: 'Expand your network', fr: 'Étendez votre réseau', it: 'Espandi la tua rete', pt: 'Expanda sua rede' },
   'tab.proceso':      { es: 'Proceso de inscripción', en: 'Enrollment process', fr: 'Processus d\'inscription', it: 'Processo di iscrizione', pt: 'Processo de inscrição' },
 
   // TL;DR
@@ -293,6 +294,52 @@ const I18N: Record<string, Record<Lang, string>> = {
   'can.c14.d':   { es: 'Si ya manejas o quieres aprender ad spend, lanzas campañas pagadas en <strong>Meta (Facebook + Instagram)</strong>, <strong>LinkedIn Ads</strong> o TikTok Ads dirigidas a dueños de negocio. Tu link único hace la atribución automática. Es el canal que más rápido escala — pero requiere presupuesto y lectura de métricas semanal.', en: 'If you already run paid ads or want to learn, launch paid campaigns on <strong>Meta (Facebook + Instagram)</strong>, <strong>LinkedIn Ads</strong> or TikTok Ads targeting business owners. Your unique link handles attribution automatically. It\'s the fastest-scaling channel — but it needs budget and weekly metric reading.', fr: 'Si vous gérez déjà ou voulez apprendre les pubs payantes, lancez des campagnes sur <strong>Meta (Facebook + Instagram)</strong>, <strong>LinkedIn Ads</strong> ou TikTok Ads ciblant les chefs d\'entreprise. Votre lien unique gère l\'attribution automatiquement. C\'est le canal qui scale le plus vite — mais demande du budget et une lecture hebdo des métriques.', it: 'Se già gestisci o vuoi imparare ad spend, lanci campagne a pagamento su <strong>Meta (Facebook + Instagram)</strong>, <strong>LinkedIn Ads</strong> o TikTok Ads rivolte a titolari di attività. Il tuo link unico gestisce l\'attribuzione automaticamente. È il canale che scala più rapidamente — ma richiede budget e lettura settimanale delle metriche.', pt: 'Se já gerencia ou quer aprender ad spend, lança campanhas pagas no <strong>Meta (Facebook + Instagram)</strong>, <strong>LinkedIn Ads</strong> ou TikTok Ads direcionadas a donos de negócio. Seu link único faz a atribuição automaticamente. É o canal que mais rápido escala — mas requer orçamento e leitura semanal de métricas.' },
   'can.c14.f':   { es: '$200-2000/mes en ad spend', en: '$200-2000/mo in ad spend', fr: '$200-2000/mois en ad spend', it: '$200-2000/mese in ad spend', pt: '$200-2000/mês em ad spend' },
 
+  // ─── Tab "Expande tu red" · sistema de milestones de network expansion ───
+  'red.eyebrow':   { es: 'Network expansion · partner builder', en: 'Network expansion · partner builder', fr: 'Expansion réseau · partner builder', it: 'Espansione rete · partner builder', pt: 'Expansão de rede · partner builder' },
+  'red.title':     { es: 'Tu red crece contigo.', en: 'Your network grows with you.', fr: 'Votre réseau grandit avec vous.', it: 'La tua rete cresce con te.', pt: 'Sua rede cresce com você.' },
+  'red.lead':      { es: 'Cuando ya hayas demostrado tracción real con tus propios clientes, te abrimos la puerta a <strong>invitar a otros partners</strong> a la red SACS. Cada hito de sucursales activas te desbloquea más invitaciones — empezando por 5 y hasta sin límite. La meta no es solo vender: es construir un equipo de embajadores contigo a la cabeza.', en: 'Once you\'ve proven real traction with your own clients, we open the door for you to <strong>invite other partners</strong> into the SACS network. Each active-store milestone unlocks more invitations — starting at 5 and up to unlimited. The goal isn\'t just to sell: it\'s to build a team of ambassadors with you leading.', fr: 'Une fois que vous aurez prouvé une vraie traction avec vos propres clients, nous vous ouvrons la porte pour <strong>inviter d\'autres partenaires</strong> au réseau SACS. Chaque palier de boutiques actives débloque plus d\'invitations — à partir de 5 et jusqu\'à illimité. L\'objectif n\'est pas seulement de vendre : c\'est de bâtir une équipe d\'ambassadeurs avec vous à la tête.', it: 'Una volta dimostrata una vera trazione con i tuoi clienti, ti apriamo la porta a <strong>invitare altri partner</strong> nella rete SACS. Ogni milestone di negozi attivi sblocca più inviti — a partire da 5 fino a illimitato. L\'obiettivo non è solo vendere: è costruire un team di ambasciatori con te a capo.', pt: 'Quando já tiver provado tração real com seus próprios clientes, te abrimos a porta para <strong>convidar outros parceiros</strong> à rede SACS. Cada marco de lojas ativas desbloqueia mais convites — começando em 5 e até ilimitado. O objetivo não é só vender: é construir um time de embaixadores com você à frente.' },
+
+  // 4 milestones (cada uno: shortLabel para el step, fullLabel/title para la card, desc explicación)
+  'red.t1.tag':    { es: 'Hito 1', en: 'Milestone 1', fr: 'Palier 1', it: 'Milestone 1', pt: 'Marco 1' },
+  'red.t1.title':  { es: 'Tu primer círculo', en: 'Your inner circle', fr: 'Votre premier cercle', it: 'Il tuo primo cerchio', pt: 'Seu primeiro círculo' },
+  'red.t1.desc':   { es: 'Cuando llegues a 5 sucursales activas vendidas por ti, desbloqueas 5 invitaciones para meter a tus primeros partners — gente cercana y de confianza con potencial real.', en: 'When you hit 5 active stores sold by you, you unlock 5 invitations to bring in your first partners — close, trusted people with real potential.', fr: 'Lorsque vous atteignez 5 boutiques actives vendues par vous, vous débloquez 5 invitations pour faire entrer vos premiers partenaires — des proches de confiance avec un vrai potentiel.', it: 'Quando arrivi a 5 negozi attivi venduti da te, sblocchi 5 inviti per portare i tuoi primi partner — persone vicine e fidate con potenziale reale.', pt: 'Quando chegar a 5 lojas ativas vendidas por você, desbloqueia 5 convites para trazer seus primeiros parceiros — pessoas próximas e de confiança com potencial real.' },
+
+  'red.t2.tag':    { es: 'Hito 2', en: 'Milestone 2', fr: 'Palier 2', it: 'Milestone 2', pt: 'Marco 2' },
+  'red.t2.title':  { es: 'Tu equipo en formación', en: 'Your team taking shape', fr: 'Votre équipe en formation', it: 'Il tuo team in formazione', pt: 'Seu time em formação' },
+  'red.t2.desc':   { es: 'Con 10 sucursales activas, tienes hasta 10 invitaciones disponibles. Tu primer círculo ya está dando frutos — ahora extiendes la red a más colegas, antiguos compañeros de trabajo, gente recomendada por tu primer círculo.', en: 'With 10 active stores, you have up to 10 invitations. Your inner circle is bearing fruit — now you extend the network to more peers, ex-coworkers, people referred by your first circle.', fr: 'Avec 10 boutiques actives, vous disposez de 10 invitations. Votre premier cercle porte ses fruits — vous étendez maintenant le réseau à plus de collègues, anciens collaborateurs, personnes recommandées par votre premier cercle.', it: 'Con 10 negozi attivi, hai fino a 10 inviti disponibili. Il tuo primo cerchio sta dando frutti — ora estendi la rete a più colleghi, ex collaboratori, persone raccomandate dal tuo primo cerchio.', pt: 'Com 10 lojas ativas, você tem até 10 convites disponíveis. Seu primeiro círculo já está dando frutos — agora estende a rede a mais colegas, ex-colaboradores, pessoas recomendadas pelo seu primeiro círculo.' },
+
+  'red.t3.tag':    { es: 'Hito 3', en: 'Milestone 3', fr: 'Palier 3', it: 'Milestone 3', pt: 'Marco 3' },
+  'red.t3.title':  { es: 'Tu red establecida', en: 'Your established network', fr: 'Votre réseau établi', it: 'La tua rete affermata', pt: 'Sua rede estabelecida' },
+  'red.t3.desc':   { es: 'Con 20 sucursales activas, desbloqueas 20 invitaciones. Aquí ya no eres solo partner — eres referente de tu sector. Tu red empieza a tener impacto medible en el ecosistema SACS y en el mercado regional.', en: 'With 20 active stores, you unlock 20 invitations. Here you\'re no longer just a partner — you\'re a reference in your sector. Your network starts having measurable impact on the SACS ecosystem and the regional market.', fr: 'Avec 20 boutiques actives, vous débloquez 20 invitations. Ici, vous n\'êtes plus juste un partenaire — vous êtes une référence de votre secteur. Votre réseau commence à avoir un impact mesurable sur l\'écosystème SACS et le marché régional.', it: 'Con 20 negozi attivi, sblocchi 20 inviti. Qui non sei più solo partner — sei un punto di riferimento del tuo settore. La tua rete inizia ad avere impatto misurabile sull\'ecosistema SACS e sul mercato regionale.', pt: 'Com 20 lojas ativas, desbloqueia 20 convites. Aqui você já não é só parceiro — é referência do seu setor. Sua rede começa a ter impacto mensurável no ecossistema SACS e no mercado regional.' },
+
+  'red.t4.tag':    { es: 'Hito 4 · Sin límite', en: 'Milestone 4 · No limit', fr: 'Palier 4 · Sans limite', it: 'Milestone 4 · Senza limite', pt: 'Marco 4 · Sem limite' },
+  'red.t4.title':  { es: 'Network builder', en: 'Network builder', fr: 'Network builder', it: 'Network builder', pt: 'Network builder' },
+  'red.t4.desc':   { es: 'Pasados los 50 sucursales activas, ya no hay tope: invitas a las personas que tú decidas, sin límite numérico. Te conviertes oficialmente en <strong>Network Builder</strong> dentro de SACS, con badge especial, leads premium asignados primero y acceso anticipado a nuevas funcionalidades del producto.', en: 'Past 50 active stores, there\'s no cap: you invite whoever you choose, no numeric limit. You officially become a <strong>Network Builder</strong> within SACS, with a special badge, premium leads assigned first and early access to new product features.', fr: 'Au-delà de 50 boutiques actives, plus de plafond : vous invitez qui vous voulez, sans limite numérique. Vous devenez officiellement <strong>Network Builder</strong> chez SACS, avec un badge spécial, des leads premium assignés en priorité et un accès anticipé aux nouvelles fonctionnalités du produit.', it: 'Oltre i 50 negozi attivi, non c\'è più tetto: inviti chi decidi tu, senza limite numerico. Diventi ufficialmente <strong>Network Builder</strong> in SACS, con un badge speciale, lead premium assegnati per primi e accesso anticipato alle nuove funzionalità del prodotto.', pt: 'Passados 50 lojas ativas, não há mais teto: você convida quem quiser, sem limite numérico. Torna-se oficialmente <strong>Network Builder</strong> dentro da SACS, com badge especial, leads premium atribuídos primeiro e acesso antecipado a novas funcionalidades do produto.' },
+
+  // Cómo funciona
+  'red.how.eyebrow': { es: 'Cómo funciona', en: 'How it works', fr: 'Comment ça marche', it: 'Come funziona', pt: 'Como funciona' },
+  'red.how.title':   { es: 'Tu red, tus reglas. Pero con estándar.', en: 'Your network, your rules. With a standard.', fr: 'Votre réseau, vos règles. Avec un standard.', it: 'La tua rete, le tue regole. Con uno standard.', pt: 'Sua rede, suas regras. Com padrão.' },
+  'red.how.r1':      { es: '<strong>Cada partner que invitas firma su propio acuerdo</strong> con SACS y cumple sus propios compromisos (100 puntos al mes, conducta, certificación si aplica).', en: '<strong>Each partner you invite signs their own agreement</strong> with SACS and meets their own commitments (100 points per month, conduct, certification if applicable).', fr: '<strong>Chaque partenaire que vous invitez signe son propre accord</strong> avec SACS et respecte ses propres engagements (100 points par mois, conduite, certification si applicable).', it: '<strong>Ogni partner che inviti firma il proprio accordo</strong> con SACS e rispetta i propri impegni (100 punti al mese, condotta, certificazione se applicabile).', pt: '<strong>Cada parceiro que você convida assina seu próprio acordo</strong> com a SACS e cumpre seus próprios compromissos (100 pontos por mês, conduta, certificação se aplicável).' },
+  'red.how.r2':      { es: '<strong>Eres responsable del primer onboarding</strong> de cada partner que invitas: presentárselo al equipo SACS, ayudarlo a entender el programa y velar por que mantenga el estándar de marca dentro de tu red.', en: '<strong>You\'re responsible for the first onboarding</strong> of each partner you invite: introducing them to the SACS team, helping them understand the program and ensuring they hold the brand standard within your network.', fr: '<strong>Vous êtes responsable du premier onboarding</strong> de chaque partenaire que vous invitez : le présenter à l\'équipe SACS, l\'aider à comprendre le programme et veiller à ce qu\'il maintienne le standard de marque dans votre réseau.', it: '<strong>Sei responsabile del primo onboarding</strong> di ogni partner che inviti: presentarlo al team SACS, aiutarlo a comprendere il programma e vigilare che mantenga lo standard di marchio nella tua rete.', pt: '<strong>Você é responsável pelo primeiro onboarding</strong> de cada parceiro que convida: apresentá-lo ao time SACS, ajudá-lo a entender o programa e zelar para que mantenha o padrão de marca na sua rede.' },
+  'red.how.r3':      { es: '<strong>Cada partner gana sus propias comisiones directas</strong> sobre las ventas que cierra (no hay overrides ni cadenas de cobro). Tú no cobras sobre lo de ellos — pero tu red activa te da visibilidad, leads y badge.', en: '<strong>Each partner earns their own direct commissions</strong> on the sales they close (no overrides, no commission chains). You don\'t earn on their sales — but your active network gives you visibility, leads and badge.', fr: '<strong>Chaque partenaire gagne ses propres commissions directes</strong> sur les ventes qu\'il conclut (pas d\'overrides, pas de chaînes de commissions). Vous ne gagnez pas sur leurs ventes — mais votre réseau actif vous donne visibilité, leads et badge.', it: '<strong>Ogni partner guadagna le proprie commissioni dirette</strong> sulle vendite che chiude (nessun override, nessuna catena di commissioni). Non guadagni sulle loro vendite — ma la tua rete attiva ti dà visibilità, lead e badge.', pt: '<strong>Cada parceiro ganha suas próprias comissões diretas</strong> sobre as vendas que fecha (sem overrides, sem cadeias de comissão). Você não ganha sobre as vendas deles — mas sua rede ativa te dá visibilidade, leads e badge.' },
+  'red.how.r4':      { es: '<strong>SACS valida cada invitación.</strong> No basta con enviar el link — cada invitado pasa por el mismo proceso de revisión que tú pasaste. Si no encaja con el programa, se rechaza con respeto.', en: '<strong>SACS validates every invitation.</strong> Sending the link isn\'t enough — each invitee goes through the same review process you went through. If they don\'t fit the program, they\'re respectfully declined.', fr: '<strong>SACS valide chaque invitation.</strong> Envoyer le lien ne suffit pas — chaque invité passe par le même processus de revue que vous. S\'il ne correspond pas au programme, il est respectueusement refusé.', it: '<strong>SACS valida ogni invito.</strong> Non basta inviare il link — ogni invitato passa per lo stesso processo di revisione che hai fatto tu. Se non si adatta al programma, viene rifiutato con rispetto.', pt: '<strong>A SACS valida cada convite.</strong> Não basta enviar o link — cada convidado passa pelo mesmo processo de revisão que você passou. Se não encaixar no programa, é recusado com respeito.' },
+
+  // Beneficios
+  'red.ben.eyebrow':   { es: 'Lo que ganas tú', en: 'What you gain', fr: 'Ce que vous gagnez', it: 'Cosa guadagni tu', pt: 'O que você ganha' },
+  'red.ben.title':     { es: 'No es override económico — es capital social.', en: 'It\'s not financial override — it\'s social capital.', fr: 'Ce n\'est pas un override financier — c\'est du capital social.', it: 'Non è un override economico — è capitale sociale.', pt: 'Não é override financeiro — é capital social.' },
+  'red.ben.b1.t':      { es: 'Badge de Network Builder', en: 'Network Builder badge', fr: 'Badge Network Builder', it: 'Badge Network Builder', pt: 'Badge de Network Builder' },
+  'red.ben.b1.d':      { es: 'Distintivo público en tu portal SACS, en tu landing personalizada y en cualquier comunicación oficial. Te diferencia del resto de la comunidad.', en: 'Public distinction on your SACS portal, your personalized landing and any official communication. Sets you apart from the rest of the community.', fr: 'Distinction publique sur votre portail SACS, votre landing personnalisée et toute communication officielle. Vous distingue du reste de la communauté.', it: 'Distintivo pubblico sul tuo portale SACS, sulla tua landing personalizzata e in ogni comunicazione ufficiale. Ti distingue dal resto della community.', pt: 'Distinção pública no seu portal SACS, na sua landing personalizada e em qualquer comunicação oficial. Te diferencia do resto da comunidade.' },
+  'red.ben.b2.t':      { es: 'Leads premium asignados primero', en: 'Premium leads assigned first', fr: 'Leads premium attribués en priorité', it: 'Lead premium assegnati per primi', pt: 'Leads premium atribuídos primeiro' },
+  'red.ben.b2.d':      { es: 'Cuando SACS recibe leads grandes (cadenas con 10+ sucursales, enterprise, restauranteros con varios conceptos), los Network Builders aparecen primero en la lista de asignación.', en: 'When SACS receives large leads (chains with 10+ stores, enterprise, restaurateurs with multiple concepts), Network Builders appear first in the assignment queue.', fr: 'Lorsque SACS reçoit de gros leads (chaînes 10+ boutiques, enterprise, restaurateurs multi-concepts), les Network Builders apparaissent en premier dans la file d\'attribution.', it: 'Quando SACS riceve grandi lead (catene con 10+ negozi, enterprise, ristoratori con più concetti), i Network Builder appaiono per primi nella coda di assegnazione.', pt: 'Quando a SACS recebe leads grandes (redes com 10+ lojas, enterprise, restauranteiros multi-conceito), os Network Builders aparecem primeiro na fila de atribuição.' },
+  'red.ben.b3.t':      { es: 'Acceso anticipado a betas', en: 'Early access to betas', fr: 'Accès anticipé aux bêtas', it: 'Accesso anticipato alle beta', pt: 'Acesso antecipado a betas' },
+  'red.ben.b3.d':      { es: 'Probás features nuevos antes que el resto del mercado. Tienes ventaja para crear contenido fresco y posicionarte como referente.', en: 'You test new features before the rest of the market. You get an edge to create fresh content and position yourself as a reference.', fr: 'Vous testez les nouvelles fonctionnalités avant le reste du marché. Vous avez l\'avantage pour créer du contenu frais et vous positionner comme référence.', it: 'Provi le nuove feature prima del resto del mercato. Hai un vantaggio per creare contenuti freschi e posizionarti come riferimento.', pt: 'Você testa features novos antes do resto do mercado. Tem vantagem para criar conteúdo fresco e se posicionar como referência.' },
+  'red.ben.b4.t':      { es: 'Mentoría 1:1 con el founder', en: '1:1 mentoring with the founder', fr: 'Mentorat 1:1 avec le founder', it: 'Mentoring 1:1 con il founder', pt: 'Mentoria 1:1 com o founder' },
+  'red.ben.b4.d':      { es: 'Sesiones cerradas trimestrales con Aaron Herzberg, founder & CEO de SACS — visión de producto, estrategia comercial, feedback directo sobre tu red.', en: 'Closed quarterly sessions with Aaron Herzberg, founder & CEO of SACS — product vision, commercial strategy, direct feedback on your network.', fr: 'Sessions trimestrielles fermées avec Aaron Herzberg, founder & CEO de SACS — vision produit, stratégie commerciale, feedback direct sur votre réseau.', it: 'Sessioni chiuse trimestrali con Aaron Herzberg, founder & CEO di SACS — visione di prodotto, strategia commerciale, feedback diretto sulla tua rete.', pt: 'Sessões fechadas trimestrais com Aaron Herzberg, founder & CEO da SACS — visão de produto, estratégia comercial, feedback direto sobre sua rede.' },
+
+  // Footer note · cómo arrancar
+  'red.cta.eyebrow': { es: 'Cuando llegues al hito 1', en: 'When you reach milestone 1', fr: 'Quand vous atteindrez le palier 1', it: 'Quando raggiungi il milestone 1', pt: 'Quando chegar ao marco 1' },
+  'red.cta.body':    { es: 'Tu portal de Partner reflejará automáticamente las invitaciones desbloqueadas. Desde ahí generas el link de invitación de cada nuevo partner — SACS valida y activa.', en: 'Your Partner portal will automatically reflect the unlocked invitations. From there you generate the invitation link for each new partner — SACS validates and activates.', fr: 'Votre portail Partenaire reflétera automatiquement les invitations débloquées. De là vous générez le lien d\'invitation de chaque nouveau partenaire — SACS valide et active.', it: 'Il tuo portale Partner rifletterà automaticamente gli inviti sbloccati. Da lì generi il link d\'invito di ogni nuovo partner — SACS valida e attiva.', pt: 'Seu portal de Parceiro refletirá automaticamente os convites desbloqueados. A partir daí você gera o link de convite de cada novo parceiro — a SACS valida e ativa.' },
+
   // Phase C · Bienvenida sections 2-8
   'why.eyebrow': { es: 'Por qué SACS · el origen', en: 'Why SACS · the origin', fr: 'Pourquoi SACS · l\'origine', it: 'Perché SACS · l\'origine', pt: 'Por que SACS · a origem' },
   'why.title':   { es: 'No vendemos software — construimos un sistema operativo para retailers conscientes.', en: 'We don\'t sell software — we build an operating system for conscious retailers.', fr: 'Nous ne vendons pas de logiciel — nous construisons un système d\'exploitation pour les détaillants conscients.', it: 'Non vendiamo software — costruiamo un sistema operativo per retailer consapevoli.', pt: 'Não vendemos software — construímos um sistema operacional para varejistas conscientes.' },
@@ -451,7 +498,9 @@ const I18N: Record<string, Record<Lang, string>> = {
   'glos.mxn.t':        { es: 'MXN · Pesos mexicanos', en: 'MXN · Mexican pesos', fr: 'MXN · Pesos mexicains', it: 'MXN · Pesi messicani', pt: 'MXN · Pesos mexicanos' },
   'glos.mxn.d':        { es: 'Moneda de pago oficial del programa. Si tu país usa otra moneda, los pagos se hacen vía transferencia internacional con la conversión del día.', en: 'Official payment currency of the program. If your country uses another currency, payments are sent via international transfer at the day\'s conversion rate.', fr: 'Monnaie officielle de paiement du programme. Si votre pays utilise une autre monnaie, les paiements sont effectués par virement international au taux du jour.', it: 'Valuta ufficiale di pagamento del programma. Se il tuo paese usa un\'altra valuta, i pagamenti avvengono tramite bonifico internazionale al cambio del giorno.', pt: 'Moeda oficial de pagamento do programa. Se seu país usa outra moeda, os pagamentos são feitos por transferência internacional na conversão do dia.' },
   'glos.suc.t':        { es: 'Sucursal activa', en: 'Active store', fr: 'Boutique active', it: 'Negozio attivo', pt: 'Loja ativa' },
-  'glos.suc.d':        { es: 'Una sucursal vendida en cualquier plan de SACS y con su primera factura cobrada. La cuota mínima anual son 10 sucursales activas.', en: 'A store sold on any SACS plan with its first invoice paid. The minimum annual quota is 10 active stores.', fr: 'Une boutique vendue sur n\'importe quel plan SACS avec sa première facture payée. Le quota annuel minimum est de 10 boutiques actives.', it: 'Un negozio venduto su qualsiasi piano SACS con la prima fattura incassata. La quota minima annua è di 10 negozi attivi.', pt: 'Uma loja vendida em qualquer plano da SACS com sua primeira nota fiscal paga. A cota mínima anual é de 10 lojas ativas.' },
+  'glos.suc.d':        { es: 'Una sucursal vendida en cualquier plan de SACS y con su primera factura cobrada. La cuota mínima anual son 10 sucursales activas; también es la unidad que desbloquea los hitos de la red de partner (5, 10, 20, 50+).', en: 'A store sold on any SACS plan with its first invoice paid. The minimum annual quota is 10 active stores; it\'s also the unit that unlocks partner network milestones (5, 10, 20, 50+).', fr: 'Une boutique vendue sur n\'importe quel plan SACS avec sa première facture payée. Le quota annuel minimum est de 10 boutiques actives ; c\'est aussi l\'unité qui débloque les paliers du réseau de partenaires (5, 10, 20, 50+).', it: 'Un negozio venduto su qualsiasi piano SACS con la prima fattura incassata. La quota minima annua è di 10 negozi attivi; è anche l\'unità che sblocca i milestone della rete partner (5, 10, 20, 50+).', pt: 'Uma loja vendida em qualquer plano da SACS com sua primeira nota fiscal paga. A cota mínima anual é de 10 lojas ativas; também é a unidade que desbloqueia os marcos da rede de parceiros (5, 10, 20, 50+).' },
+  'glos.red.t':        { es: 'Red de partner / Network expansion', en: 'Partner network / Network expansion', fr: 'Réseau de partenaire / Expansion du réseau', it: 'Rete di partner / Espansione di rete', pt: 'Rede de parceiro / Expansão de rede' },
+  'glos.red.d':        { es: 'Sistema de hitos por el cual un partner desbloquea invitaciones para meter nuevos partners a SACS según sus sucursales activas vendidas: 5 → 5 invitaciones, 10 → 10, 20 → 20, 50+ → ilimitado (Network Builder). Cada partner invitado firma su propio acuerdo y gana sus propias comisiones; no hay overrides.', en: 'Milestone system whereby a partner unlocks invitations to bring new partners into SACS based on their active stores sold: 5 → 5 invitations, 10 → 10, 20 → 20, 50+ → unlimited (Network Builder). Each invited partner signs their own agreement and earns their own commissions; no overrides.', fr: 'Système de paliers par lequel un partenaire débloque des invitations pour faire entrer de nouveaux partenaires chez SACS selon ses boutiques actives vendues : 5 → 5 invitations, 10 → 10, 20 → 20, 50+ → illimité (Network Builder). Chaque partenaire invité signe son propre accord et gagne ses propres commissions ; pas d\'overrides.', it: 'Sistema di milestone con cui un partner sblocca inviti per portare nuovi partner in SACS in base ai suoi negozi attivi venduti: 5 → 5 inviti, 10 → 10, 20 → 20, 50+ → illimitato (Network Builder). Ogni partner invitato firma il proprio accordo e guadagna le proprie commissioni; nessun override.', pt: 'Sistema de marcos pelo qual um parceiro desbloqueia convites para trazer novos parceiros à SACS conforme suas lojas ativas vendidas: 5 → 5 convites, 10 → 10, 20 → 20, 50+ → ilimitado (Network Builder). Cada parceiro convidado assina seu próprio acordo e ganha suas próprias comissões; sem overrides.' },
   'glos.demo.t':       { es: 'Demo válido', en: 'Valid demo', fr: 'Démo valide', it: 'Demo valida', pt: 'Demo válida' },
   'glos.demo.d':       { es: 'Sesión de demostración de mínimo 25 minutos con el tomador de decisión presente. Solo cuentan demos válidos para el bono.', en: 'Demonstration session of at least 25 minutes with the decision-maker present. Only valid demos count toward the bonus.', fr: 'Session de démonstration d\'au moins 25 minutes avec le décideur présent. Seules les démos valides comptent pour le bonus.', it: 'Sessione dimostrativa di almeno 25 minuti con il decisore presente. Solo le demo valide contano per il bonus.', pt: 'Sessão de demonstração de mínimo 25 minutos com o tomador de decisão presente. Só demos válidas contam para o bônus.' },
   'glos.attr.t':       { es: 'Atribución', en: 'Attribution', fr: 'Attribution', it: 'Attribuzione', pt: 'Atribuição' },
@@ -733,6 +782,15 @@ const I18N: Record<string, Record<Lang, string>> = {
   'ct.h16': { es: '16. Vigencia y rescisión', en: '16. Term and termination', fr: '16. Durée et résiliation', it: '16. Durata e risoluzione', pt: '16. Vigência e rescisão' },
   'ct.p16': { es: 'Este acuerdo tiene una vigencia inicial de <strong>12 meses</strong> a partir de la fecha de firma, renovable automáticamente por periodos sucesivos del mismo plazo. Cualquiera de las partes puede dar por terminado el acuerdo con <strong>30 días naturales de aviso por escrito</strong>, sin necesidad de causa. SACS puede dar por terminado el acuerdo de inmediato en caso de actualización de cualquiera de las causales de la cláusula 6 (suspensión y baja).', en: 'This agreement has an initial term of <strong>12 months</strong> from the signature date, automatically renewable for successive periods of the same length. Either party may terminate the agreement with <strong>30 natural days written notice</strong>, without cause. SACS may terminate the agreement immediately upon the occurrence of any of the events in clause 6 (suspension and removal).', fr: 'Cet accord a une durée initiale de <strong>12 mois</strong> à compter de la date de signature, renouvelable automatiquement par périodes successives de même durée. Chaque partie peut mettre fin à l\'accord avec <strong>30 jours calendaires de préavis écrit</strong>, sans cause. SACS peut résilier immédiatement en cas de survenance de l\'un des motifs de la clause 6 (suspension et exclusion).', it: 'Questo accordo ha una durata iniziale di <strong>12 mesi</strong> dalla data di firma, rinnovabile automaticamente per periodi successivi di pari durata. Ciascuna parte può risolvere l\'accordo con <strong>30 giorni naturali di preavviso scritto</strong>, senza causa. SACS può risolvere immediatamente al verificarsi di una qualsiasi delle situazioni della clausola 6 (sospensione e rimozione).', pt: 'Este acordo tem vigência inicial de <strong>12 meses</strong> a partir da data de assinatura, renovável automaticamente por períodos sucessivos do mesmo prazo. Qualquer parte pode dar por encerrado o acordo com <strong>30 dias corridos de aviso por escrito</strong>, sem necessidade de causa. A SACS pode dar por encerrado o acordo imediatamente em caso de verificação de qualquer das causas da cláusula 6 (suspensão e baixa).' },
 
+  // Cláusula 16-bis (intermedia) · Expansión de red de partner
+  'ct.h16b': { es: '16-bis. Expansión de red de partner (network builder)', en: '16-bis. Partner network expansion (network builder)', fr: '16-bis. Expansion du réseau partenaire (network builder)', it: '16-bis. Espansione della rete partner (network builder)', pt: '16-bis. Expansão da rede de parceiros (network builder)' },
+  'ct.p16b.intro': { es: 'Una vez que el Partner haya cerrado el número de sucursales activas que se indican abajo, SACS le concede el derecho de invitar nuevos partners a la red, dentro de los topes correspondientes:', en: 'Once the Partner has closed the number of active stores indicated below, SACS grants them the right to invite new partners into the network, within the corresponding caps:', fr: 'Une fois que le Partenaire aura conclu le nombre de boutiques actives indiqué ci-dessous, SACS lui accorde le droit d\'inviter de nouveaux partenaires dans le réseau, dans les limites correspondantes :', it: 'Una volta che il Partner abbia chiuso il numero di negozi attivi indicato sotto, SACS gli concede il diritto di invitare nuovi partner nella rete, entro i limiti corrispondenti:', pt: 'Uma vez que o Parceiro tenha fechado o número de lojas ativas indicado abaixo, a SACS lhe concede o direito de convidar novos parceiros à rede, dentro dos tetos correspondentes:' },
+  'ct.p16b.t1': { es: '<strong>5 sucursales activas → 5 invitaciones</strong>', en: '<strong>5 active stores → 5 invitations</strong>', fr: '<strong>5 boutiques actives → 5 invitations</strong>', it: '<strong>5 negozi attivi → 5 inviti</strong>', pt: '<strong>5 lojas ativas → 5 convites</strong>' },
+  'ct.p16b.t2': { es: '<strong>10 sucursales activas → 10 invitaciones</strong>', en: '<strong>10 active stores → 10 invitations</strong>', fr: '<strong>10 boutiques actives → 10 invitations</strong>', it: '<strong>10 negozi attivi → 10 inviti</strong>', pt: '<strong>10 lojas ativas → 10 convites</strong>' },
+  'ct.p16b.t3': { es: '<strong>20 sucursales activas → 20 invitaciones</strong>', en: '<strong>20 active stores → 20 invitations</strong>', fr: '<strong>20 boutiques actives → 20 invitations</strong>', it: '<strong>20 negozi attivi → 20 inviti</strong>', pt: '<strong>20 lojas ativas → 20 convites</strong>' },
+  'ct.p16b.t4': { es: '<strong>50+ sucursales activas → invitaciones ilimitadas</strong> + estatus de Network Builder', en: '<strong>50+ active stores → unlimited invitations</strong> + Network Builder status', fr: '<strong>50+ boutiques actives → invitations illimitées</strong> + statut Network Builder', it: '<strong>50+ negozi attivi → inviti illimitati</strong> + status Network Builder', pt: '<strong>50+ lojas ativas → convites ilimitados</strong> + status de Network Builder' },
+  'ct.p16b.outro': { es: 'Cada partner invitado firma su propio acuerdo y cumple sus propios compromisos; no existen comisiones override ni cadenas de cobro entre el Partner inviter y sus invitados. Las ventas y comisiones de cada partner son individuales. El Partner inviter es responsable del primer onboarding del invitado y de mantener el estándar de marca dentro de su red. SACS revisa y valida cada invitación antes de activarla y se reserva el derecho de rechazar invitados que no encajen con el programa o las políticas de marca.', en: 'Each invited partner signs their own agreement and meets their own commitments; there are no override commissions or commission chains between the inviting Partner and their invitees. Sales and commissions for each partner are individual. The inviting Partner is responsible for the first onboarding of the invitee and for upholding the brand standard within their network. SACS reviews and validates each invitation before activation and reserves the right to decline invitees who do not fit the program or brand policies.', fr: 'Chaque partenaire invité signe son propre accord et respecte ses propres engagements ; il n\'existe pas de commissions override ni de chaînes de commissions entre le Partenaire inviteur et ses invités. Les ventes et commissions de chaque partenaire sont individuelles. Le Partenaire inviteur est responsable du premier onboarding de l\'invité et du maintien du standard de marque au sein de son réseau. SACS révise et valide chaque invitation avant son activation et se réserve le droit de refuser les invités qui ne correspondent pas au programme ou aux politiques de marque.', it: 'Ogni partner invitato firma il proprio accordo e rispetta i propri impegni; non esistono commissioni override o catene di commissioni tra il Partner invitante e i suoi invitati. Vendite e commissioni di ogni partner sono individuali. Il Partner invitante è responsabile del primo onboarding dell\'invitato e del mantenimento dello standard di marchio all\'interno della sua rete. SACS revisiona e convalida ogni invito prima dell\'attivazione e si riserva il diritto di rifiutare invitati che non si adattano al programma o alle politiche di marchio.', pt: 'Cada parceiro convidado assina seu próprio acordo e cumpre seus próprios compromissos; não existem comissões override nem cadeias de comissão entre o Parceiro convidante e seus convidados. As vendas e comissões de cada parceiro são individuais. O Parceiro convidante é responsável pelo primeiro onboarding do convidado e pela manutenção do padrão de marca dentro de sua rede. A SACS revisa e valida cada convite antes da ativação e se reserva o direito de rejeitar convidados que não se encaixem no programa ou nas políticas de marca.' },
+
   'ct.h17': { es: '17. Resolución de disputas y fuerza mayor', en: '17. Dispute resolution and force majeure', fr: '17. Résolution des litiges et force majeure', it: '17. Risoluzione delle controversie e forza maggiore', pt: '17. Resolução de disputas e força maior' },
   'ct.p17': { es: '<strong>Resolución amistosa.</strong> Las partes intentarán resolver de buena fe cualquier desacuerdo durante un periodo mínimo de <strong>treinta (30) días naturales</strong> antes de iniciar acción judicial, mediante reunión documentada del founder de SACS y el Partner. Si no se alcanza acuerdo, las partes se someten a la jurisdicción de los tribunales competentes de la <strong>Ciudad de México</strong>, renunciando a cualquier otro fuero que pudiera corresponderles.<br/><br/><strong>Fuerza mayor.</strong> Ninguna de las partes será responsable por el incumplimiento total o parcial de sus obligaciones cuando éste se deba a caso fortuito o fuerza mayor (desastres naturales, conflictos armados, decisiones gubernamentales, interrupciones generalizadas de internet o energía eléctrica), debiendo notificar a la otra parte tan pronto sea razonablemente posible y restablecer el cumplimiento al cesar la causa.', en: '<strong>Amicable resolution.</strong> The parties will attempt to resolve any disagreement in good faith for a minimum period of <strong>thirty (30) natural days</strong> before initiating legal action, through a documented meeting between SACS\'s founder and the Partner. If no agreement is reached, the parties submit to the jurisdiction of the competent courts of <strong>Mexico City</strong>, waiving any other jurisdiction that might apply.<br/><br/><strong>Force majeure.</strong> Neither party shall be liable for total or partial breach of obligations when due to act of God or force majeure (natural disasters, armed conflicts, governmental decisions, generalized internet or power outages), being required to notify the other party as soon as reasonably possible and to resume performance when the cause ceases.', fr: '<strong>Résolution amiable.</strong> Les parties tenteront de résoudre tout désaccord de bonne foi pendant une période minimale de <strong>trente (30) jours calendaires</strong> avant toute action en justice, par une réunion documentée entre le founder de SACS et le Partenaire. À défaut d\'accord, les parties se soumettent à la juridiction des tribunaux compétents de <strong>Mexico City</strong>, renonçant à tout autre for qui pourrait leur revenir.<br/><br/><strong>Force majeure.</strong> Aucune des parties ne sera responsable de l\'inexécution totale ou partielle de ses obligations en cas de force majeure (catastrophes naturelles, conflits armés, décisions gouvernementales, interruptions généralisées d\'internet ou d\'énergie), devant en notifier l\'autre partie dès que raisonnablement possible et reprendre l\'exécution dès la cessation de la cause.', it: '<strong>Risoluzione amichevole.</strong> Le parti cercheranno di risolvere in buona fede qualsiasi disaccordo per un periodo minimo di <strong>trenta (30) giorni naturali</strong> prima di intraprendere azione legale, mediante riunione documentata tra il founder di SACS e il Partner. In assenza di accordo, le parti si sottopongono alla giurisdizione dei tribunali competenti di <strong>Città del Messico</strong>, rinunciando a qualsiasi altro foro che potesse essere competente.<br/><br/><strong>Forza maggiore.</strong> Nessuna delle parti sarà responsabile per l\'inadempimento totale o parziale degli obblighi quando dovuto a caso fortuito o forza maggiore (disastri naturali, conflitti armati, decisioni governative, interruzioni generalizzate di internet o di energia elettrica), dovendo notificare all\'altra parte appena ragionevolmente possibile e ripristinare l\'adempimento al cessare della causa.', pt: '<strong>Resolução amigável.</strong> As partes tentarão resolver qualquer desacordo de boa-fé durante um período mínimo de <strong>trinta (30) dias corridos</strong> antes de iniciar ação judicial, por meio de reunião documentada entre o founder da SACS e o Parceiro. Não havendo acordo, as partes se submetem à jurisdição dos tribunais competentes da <strong>Cidade do México</strong>, renunciando a qualquer outro foro que possa lhes corresponder.<br/><br/><strong>Força maior.</strong> Nenhuma das partes será responsável pelo descumprimento total ou parcial de suas obrigações quando este se deva a caso fortuito ou força maior (desastres naturais, conflitos armados, decisões governamentais, interrupções generalizadas de internet ou energia elétrica), devendo notificar à outra parte tão logo seja razoavelmente possível e restabelecer o cumprimento ao cessar a causa.' },
 
@@ -923,6 +981,7 @@ const tabsDef = [
   { id: 'contenido',   label: tt('tab.contenido'),    show: tipo === 'embajador' },
   { id: 'compensacion', label: tt('tab.compensacion'), show: comisionPct > 0 || Object.keys(tabulador).length > 0 },
   { id: 'canales',     label: tt('tab.canales'),      show: true },
+  { id: 'red',         label: tt('tab.red'),          show: true },
   { id: 'proceso',     label: tt('tab.proceso'),      show: true },
   { id: 'firma',       label: isAccepted ? sl.firmada : (isDeclined ? sl.rechazada : (isSubmitted ? sl.revision : sl.firmar)), show: true },
 ];
@@ -3583,6 +3642,83 @@ const partnerLandingUrl = invitation.slug_landing
       </section>
 
 
+      <!-- TAB: EXPANDE TU RED — milestones de network expansion -->
+      <section class="p-tab-panel" data-tab="red">
+        <div class="p-section-head">
+          <div class="p-section-eyebrow">{tt('red.eyebrow')}</div>
+          <h2 class="p-section-title">{tt('red.title')}</h2>
+          <p class="p-section-lead" set:html={tt('red.lead')}></p>
+        </div>
+
+        <div class="p-network-tiers">
+          {[
+            { n: 't1', stores: 5,  inv: '5',  ratio: 0.18 },
+            { n: 't2', stores: 10, inv: '10', ratio: 0.36 },
+            { n: 't3', stores: 20, inv: '20', ratio: 0.65 },
+            { n: 't4', stores: 50, inv: '∞',  ratio: 1.0  },
+          ].map((tier, i) => (
+            <article class={`p-network-tier p-network-tier--${i + 1}`}>
+              <div class="p-network-tier-num">0{i + 1}</div>
+              <div class="p-network-tier-progress" aria-hidden="true">
+                <div class="p-network-tier-bar" style={`width:${tier.ratio * 100}%`}></div>
+              </div>
+              <div class="p-network-tier-meta">
+                <span class="p-network-tier-stores">{tier.stores}{i === 3 ? '+' : ''}</span>
+                <span class="p-network-tier-stores-lbl">{lang === 'en' ? 'active stores' : lang === 'fr' ? 'boutiques actives' : lang === 'it' ? 'negozi attivi' : lang === 'pt' ? 'lojas ativas' : 'sucursales activas'}</span>
+              </div>
+              <div class="p-network-tier-arrow">→</div>
+              <div class="p-network-tier-invites">
+                <span class="p-network-tier-invites-num">{tier.inv}</span>
+                <span class="p-network-tier-invites-lbl">{i === 3 ? (lang === 'en' ? 'invitations · no limit' : lang === 'fr' ? 'invitations · sans limite' : lang === 'it' ? 'inviti · senza limite' : lang === 'pt' ? 'convites · sem limite' : 'invitaciones · sin límite') : (lang === 'en' ? 'invitations unlocked' : lang === 'fr' ? 'invitations débloquées' : lang === 'it' ? 'inviti sbloccati' : lang === 'pt' ? 'convites desbloqueados' : 'invitaciones desbloqueadas')}</span>
+              </div>
+              <div class="p-network-tier-body">
+                <div class="p-network-tier-tag">{tt(`red.${tier.n}.tag`)}</div>
+                <h3 class="p-network-tier-title">{tt(`red.${tier.n}.title`)}</h3>
+                <p class="p-network-tier-desc">{tt(`red.${tier.n}.desc`)}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div class="p-network-how">
+          <div class="p-network-how-head">
+            <div class="p-section-eyebrow">{tt('red.how.eyebrow')}</div>
+            <h3 class="p-network-how-title">{tt('red.how.title')}</h3>
+          </div>
+          <ul class="p-network-how-list">
+            <li set:html={tt('red.how.r1')}></li>
+            <li set:html={tt('red.how.r2')}></li>
+            <li set:html={tt('red.how.r3')}></li>
+            <li set:html={tt('red.how.r4')}></li>
+          </ul>
+        </div>
+
+        <div class="p-network-benefits">
+          <div class="p-section-eyebrow">{tt('red.ben.eyebrow')}</div>
+          <h3 class="p-network-ben-title">{tt('red.ben.title')}</h3>
+          <div class="p-network-ben-grid">
+            {['b1','b2','b3','b4'].map(b => (
+              <div class="p-network-ben-card">
+                <h4 class="p-network-ben-card-t">{tt(`red.ben.${b}.t`)}</h4>
+                <p class="p-network-ben-card-d">{tt(`red.ben.${b}.d`)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div class="p-cert-readiness" style="margin-top:32px">
+          <svg class="p-cert-readiness-seal" width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="22" cy="22" r="20.5" stroke="#c9a96b" stroke-width="0.75" opacity="0.6"/>
+            <circle cx="22" cy="22" r="16" stroke="#c9a96b" stroke-width="0.5" opacity="0.4"/>
+            <text x="22" y="27" text-anchor="middle" font-family="Georgia, serif" font-size="14" font-style="italic" fill="#c9a96b" letter-spacing="-0.02em">N</text>
+          </svg>
+          <div class="p-cert-readiness-rule"></div>
+          <span class="p-cert-readiness-eyebrow">{tt('red.cta.eyebrow')}</span>
+          <p class="p-cert-readiness-body">{tt('red.cta.body')}</p>
+        </div>
+      </section>
+
+
       <!-- TAB: FIRMA -->
       <section class="p-tab-panel" data-tab="firma">
         {isAccepted ? (
@@ -3963,6 +4099,16 @@ const partnerLandingUrl = invitation.slug_landing
                   <h4>{tt('ct.h16')}</h4>
                   <p set:html={tt('ct.p16')}></p>
 
+                  <h4>{tt('ct.h16b')}</h4>
+                  <p set:html={tt('ct.p16b.intro')}></p>
+                  <ul>
+                    <li set:html={tt('ct.p16b.t1')}></li>
+                    <li set:html={tt('ct.p16b.t2')}></li>
+                    <li set:html={tt('ct.p16b.t3')}></li>
+                    <li set:html={tt('ct.p16b.t4')}></li>
+                  </ul>
+                  <p set:html={tt('ct.p16b.outro')}></p>
+
                   <h4>{tt('ct.h17')}</h4>
                   <p set:html={tt('ct.p17')}></p>
 
@@ -4041,7 +4187,7 @@ const partnerLandingUrl = invitation.slug_landing
           <div class="p-glos-body">
             <dl class="p-glos-list">
               {[
-                'cfdi','mxn','suc','demo','attr','rec','ret','b2b','fid','pt','3s','cert',
+                'cfdi','mxn','suc','red','demo','attr','rec','ret','b2b','fid','pt','3s','cert',
               ].map(k => (
                 <div class="p-glos-item">
                   <dt>{tt(`glos.${k}.t`)}</dt>
@@ -4197,6 +4343,16 @@ const partnerLandingUrl = invitation.slug_landing
 
       <h4>{tt('ct.h16')}</h4>
       <p set:html={tt('ct.p16')}></p>
+
+      <h4>{tt('ct.h16b')}</h4>
+      <p set:html={tt('ct.p16b.intro')}></p>
+      <ul>
+        <li set:html={tt('ct.p16b.t1')}></li>
+        <li set:html={tt('ct.p16b.t2')}></li>
+        <li set:html={tt('ct.p16b.t3')}></li>
+        <li set:html={tt('ct.p16b.t4')}></li>
+      </ul>
+      <p set:html={tt('ct.p16b.outro')}></p>
 
       <h4>{tt('ct.h17')}</h4>
       <p set:html={tt('ct.p17')}></p>
@@ -5577,6 +5733,250 @@ const partnerLandingUrl = invitation.slug_landing
     .p-cert-readiness-rule { left: 24px; right: 24px; }
     .p-cert-readiness-seal { top: 18px; right: 16px; width: 36px; height: 36px; }
     .p-cert-readiness-body { font-size: 1rem; max-width: none; }
+  }
+
+  /* ── Tab "Expande tu red" — milestones de network expansion ── */
+  .p-network-tiers {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin: 32px 0 48px;
+  }
+  .p-network-tier {
+    position: relative;
+    display: grid;
+    grid-template-columns: 56px 1fr auto auto auto minmax(0, 1.4fr);
+    align-items: center;
+    gap: 28px;
+    padding: 28px 32px;
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 16px;
+    transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+  }
+  .p-network-tier:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.06);
+    border-color: #d9d9d9;
+  }
+  .p-network-tier--4 {
+    background: linear-gradient(180deg, #14141a 0%, #0f0f12 100%);
+    border-color: #14141a;
+    color: #f5efe6;
+  }
+  .p-network-tier--4:hover {
+    border-color: #c9a96b;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  }
+  .p-network-tier--4 .p-network-tier-num,
+  .p-network-tier--4 .p-network-tier-stores,
+  .p-network-tier--4 .p-network-tier-invites-num,
+  .p-network-tier--4 .p-network-tier-arrow,
+  .p-network-tier--4 .p-network-tier-title { color: #f5efe6; }
+  .p-network-tier--4 .p-network-tier-stores-lbl,
+  .p-network-tier--4 .p-network-tier-invites-lbl,
+  .p-network-tier--4 .p-network-tier-desc { color: rgba(245, 239, 230, 0.65); }
+  .p-network-tier--4 .p-network-tier-tag { color: #c9a96b; border-color: rgba(201, 169, 107, 0.4); }
+  .p-network-tier--4 .p-network-tier-progress { background: rgba(245, 239, 230, 0.1); }
+  .p-network-tier--4 .p-network-tier-bar { background: #c9a96b; }
+
+  .p-network-tier-num {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.625rem;
+    font-style: italic;
+    color: #999;
+    letter-spacing: -0.02em;
+  }
+  .p-network-tier-progress {
+    height: 4px;
+    background: #f0f0ee;
+    border-radius: 999px;
+    overflow: hidden;
+    min-width: 80px;
+  }
+  .p-network-tier-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #4B7BE5, #6b8fee);
+    border-radius: 999px;
+    transition: width 600ms ease;
+  }
+  .p-network-tier-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: right;
+    min-width: 90px;
+  }
+  .p-network-tier-stores {
+    font-size: 1.875rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .p-network-tier-stores-lbl {
+    font-size: 0.6875rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .p-network-tier-arrow {
+    font-size: 1.25rem;
+    color: #ccc;
+    font-weight: 300;
+  }
+  .p-network-tier-invites {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 100px;
+  }
+  .p-network-tier-invites-num {
+    font-size: 1.875rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .p-network-tier-invites-lbl {
+    font-size: 0.6875rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .p-network-tier-body {
+    border-left: 1px solid #ececec;
+    padding-left: 28px;
+  }
+  .p-network-tier--4 .p-network-tier-body { border-left-color: rgba(245, 239, 230, 0.15); }
+  .p-network-tier-tag {
+    display: inline-block;
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: #4B7BE5;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 4px 10px;
+    border: 1px solid rgba(75, 123, 229, 0.2);
+    border-radius: 999px;
+    margin-bottom: 10px;
+  }
+  .p-network-tier-title {
+    font-size: 1.125rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .p-network-tier-desc {
+    font-size: 0.875rem;
+    color: #555;
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  @media (max-width: 920px) {
+    .p-network-tier {
+      grid-template-columns: 56px 1fr auto;
+      grid-template-areas:
+        "num progress meta"
+        "body body body";
+      row-gap: 20px;
+      padding: 22px 22px 24px;
+    }
+    .p-network-tier-num { grid-area: num; }
+    .p-network-tier-progress { grid-area: progress; }
+    .p-network-tier-meta { grid-area: meta; }
+    .p-network-tier-arrow,
+    .p-network-tier-invites { display: none; }
+    .p-network-tier-body {
+      grid-area: body;
+      border-left: none;
+      padding-left: 0;
+      padding-top: 14px;
+      border-top: 1px solid #ececec;
+    }
+    .p-network-tier--4 .p-network-tier-body { border-top-color: rgba(245, 239, 230, 0.15); }
+  }
+
+  .p-network-how {
+    margin-top: 56px;
+    padding: 36px 36px 30px;
+    background: #fafaf7;
+    border: 1px solid #ececec;
+    border-radius: 16px;
+  }
+  .p-network-how-head { margin-bottom: 22px; }
+  .p-network-how-title {
+    font-size: 1.375rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    margin: 8px 0 0;
+    letter-spacing: -0.015em;
+  }
+  .p-network-how-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .p-network-how-list li {
+    position: relative;
+    padding-left: 22px;
+    font-size: 0.9375rem;
+    color: #444;
+    line-height: 1.6;
+  }
+  .p-network-how-list li::before {
+    content: "·";
+    position: absolute;
+    left: 6px;
+    top: 0;
+    color: #4B7BE5;
+    font-weight: 700;
+    font-size: 1.25rem;
+    line-height: 1.4;
+  }
+  .p-network-how-list li strong { color: #1a1a1a; font-weight: 600; }
+
+  .p-network-benefits {
+    margin-top: 48px;
+  }
+  .p-network-ben-title {
+    font-size: 1.375rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    margin: 8px 0 24px;
+    letter-spacing: -0.015em;
+  }
+  .p-network-ben-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .p-network-ben-card {
+    padding: 24px;
+    background: #fff;
+    border: 1px solid #ececec;
+    border-radius: 12px;
+  }
+  .p-network-ben-card-t {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 8px;
+  }
+  .p-network-ben-card-d {
+    font-size: 0.875rem;
+    color: #555;
+    line-height: 1.55;
+    margin: 0;
+  }
+  @media (max-width: 720px) {
+    .p-network-how { padding: 22px 18px 20px; }
+    .p-network-ben-grid { grid-template-columns: 1fr; }
   }
 
   .p-payout-grid {
