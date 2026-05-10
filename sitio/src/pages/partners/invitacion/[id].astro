@@ -3706,7 +3706,7 @@ const partnerLandingUrl = invitation.slug_landing
                 <div class="p-network-tier-body" data-invites={`${tier.inv} ${i === 3 ? (lang === 'en' ? 'invitations · no limit' : lang === 'fr' ? 'invitations · sans limite' : lang === 'it' ? 'inviti · senza limite' : lang === 'pt' ? 'convites · sem limite' : 'invitaciones · sin límite') : (lang === 'en' ? 'invitations unlocked' : lang === 'fr' ? 'invitations débloquées' : lang === 'it' ? 'inviti sbloccati' : lang === 'pt' ? 'convites desbloqueados' : 'invitaciones desbloqueadas')}`}>
                   <div class="p-network-tier-tag">{tt(`red.${tier.n}.tag`)}</div>
                   <h3 class="p-network-tier-title">{tt(`red.${tier.n}.title`)}</h3>
-                  <p class="p-network-tier-desc">{tt(`red.${tier.n}.desc`)}</p>
+                  <p class="p-network-tier-desc" set:html={tt(`red.${tier.n}.desc`)}></p>
                 </div>
               </div>
             </article>
