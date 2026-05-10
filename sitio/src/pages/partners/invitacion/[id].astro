@@ -3823,23 +3823,6 @@ const partnerLandingUrl = invitation.slug_landing
           </div>
         </div>
 
-        {/* ── #8 Wall de Network Builders ── */}
-        <div class="p-network-wall">
-          <div class="p-section-eyebrow">{tt('red.wall.eyebrow')}</div>
-          <h3 class="p-network-how-title">{tt('red.wall.title')}</h3>
-          <p class="p-network-wall-lead">{tt('red.wall.lead')}</p>
-          <div class="p-network-wall-grid">
-            {Array.from({ length: 12 }, (_, i) => {
-              const n = String(i + 1).padStart(2, '0');
-              return (
-                <div class="p-network-wall-cell">
-                  <img src={`/images/network-expansion/red-wall-${n}.webp`} alt="" loading="lazy" width="600" height="600" />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
         {/* ── #4 Closing wide arriba del CTA dorado ── */}
         <div class="p-network-closing">
           <img src="/images/network-expansion/red-closing.webp" alt="" loading="lazy" width="1600" height="900" />
