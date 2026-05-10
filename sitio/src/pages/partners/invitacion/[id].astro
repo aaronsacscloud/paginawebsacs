@@ -3706,7 +3706,7 @@ const partnerLandingUrl = invitation.slug_landing
                   <span class="p-network-tier-invites-num">{tier.inv}</span>
                   <span class="p-network-tier-invites-lbl">{i === 3 ? (lang === 'en' ? 'invitations · no limit' : lang === 'fr' ? 'invitations · sans limite' : lang === 'it' ? 'inviti · senza limite' : lang === 'pt' ? 'convites · sem limite' : 'invitaciones · sin límite') : (lang === 'en' ? 'invitations unlocked' : lang === 'fr' ? 'invitations débloquées' : lang === 'it' ? 'inviti sbloccati' : lang === 'pt' ? 'convites desbloqueados' : 'invitaciones desbloqueadas')}</span>
                 </div>
-                <div class="p-network-tier-body">
+                <div class="p-network-tier-body" data-invites={`${tier.inv} ${i === 3 ? (lang === 'en' ? 'invitations · no limit' : lang === 'fr' ? 'invitations · sans limite' : lang === 'it' ? 'inviti · senza limite' : lang === 'pt' ? 'convites · sem limite' : 'invitaciones · sin límite') : (lang === 'en' ? 'invitations unlocked' : lang === 'fr' ? 'invitations débloquées' : lang === 'it' ? 'inviti sbloccati' : lang === 'pt' ? 'convites desbloqueados' : 'invitaciones desbloqueadas')}`}>
                   <div class="p-network-tier-tag">{tt(`red.${tier.n}.tag`)}</div>
                   <h3 class="p-network-tier-title">{tt(`red.${tier.n}.title`)}</h3>
                   <p class="p-network-tier-desc">{tt(`red.${tier.n}.desc`)}</p>
@@ -6136,7 +6136,7 @@ const partnerLandingUrl = invitation.slug_landing
   /* ── Foto de escala dentro de cada tier card (mejora #2) ── */
   .p-network-tier {
     /* override: el card ahora es un grid de 2 columnas (foto | contenido) */
-    grid-template-columns: minmax(0, 280px) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
     gap: 0;
     padding: 0;
     overflow: hidden;
@@ -6145,34 +6145,77 @@ const partnerLandingUrl = invitation.slug_landing
     background-size: cover;
     background-position: center;
     background-color: #eee;
-    min-height: 220px;
     align-self: stretch;
+    min-height: 220px;
   }
+  /* Contenido: métricas en fila arriba, body completo debajo (sin truncamiento) */
   .p-network-tier-content {
     display: grid;
-    grid-template-columns: 56px 1fr auto auto auto minmax(0, 1.4fr);
+    grid-template-columns: 48px minmax(0, 1fr) auto auto auto;
+    grid-template-areas:
+      "num progress meta arrow invites"
+      "body body body body body";
     align-items: center;
-    gap: 22px;
-    padding: 28px 32px;
+    column-gap: 18px;
+    row-gap: 20px;
+    padding: 26px 30px 28px;
   }
+  .p-network-tier-num { grid-area: num; }
+  .p-network-tier-progress { grid-area: progress; }
+  .p-network-tier-meta { grid-area: meta; }
+  .p-network-tier-arrow { grid-area: arrow; }
+  .p-network-tier-invites { grid-area: invites; }
+  .p-network-tier-body {
+    grid-area: body;
+    border-left: none;
+    padding-left: 0;
+    padding-top: 18px;
+    border-top: 1px solid #ececec;
+  }
+  .p-network-tier--4 .p-network-tier-body { border-top-color: rgba(245, 239, 230, 0.15); }
   .p-network-tier--4 .p-network-tier-photo { filter: brightness(0.85); }
-  @media (max-width: 1024px) {
-    .p-network-tier { grid-template-columns: minmax(0, 200px) minmax(0, 1fr); }
-    .p-network-tier-content { grid-template-columns: 56px 1fr auto auto auto minmax(0, 1.4fr); padding: 22px 24px; gap: 18px; }
+
+  @media (max-width: 1100px) {
+    .p-network-tier-meta,
+    .p-network-tier-invites { min-width: 80px; }
+    .p-network-tier-stores,
+    .p-network-tier-invites-num { font-size: 1.5rem; }
   }
-  @media (max-width: 920px) {
+  @media (max-width: 900px) {
     .p-network-tier {
       grid-template-columns: 1fr;
     }
-    .p-network-tier-photo { min-height: 180px; }
+    .p-network-tier-photo {
+      min-height: 200px;
+      max-height: 240px;
+    }
     .p-network-tier-content {
-      grid-template-columns: 56px 1fr auto;
+      padding: 22px 22px 24px;
+      row-gap: 18px;
+    }
+  }
+  @media (max-width: 560px) {
+    .p-network-tier-content {
+      grid-template-columns: 44px 1fr auto;
       grid-template-areas:
         "num progress meta"
         "body body body";
-      row-gap: 18px;
-      padding: 22px 22px 24px;
+      column-gap: 14px;
     }
+    .p-network-tier-arrow,
+    .p-network-tier-invites { display: none; }
+    .p-network-tier-meta { text-align: right; }
+    /* En mobile mostrar invites como sub-línea del body */
+    .p-network-tier-body::after {
+      content: "→ " attr(data-invites);
+      display: block;
+      margin-top: 10px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #4B7BE5;
+      letter-spacing: 0.04em;
+    }
+    .p-network-tier--4 .p-network-tier-body::after { color: #c9a96b; }
   }
 
   /* ── #6 Network Builder iconic portrait ── */
