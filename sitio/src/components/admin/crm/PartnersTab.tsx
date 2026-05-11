@@ -94,6 +94,33 @@ export default function PartnersTab() {
   const [search, setSearch] = useState('');
   const [detailPartnerId, setDetailPartnerId] = useState<string | null>(null);
   const [recoverInvitation, setRecoverInvitation] = useState<Invitation | null>(null);
+  // Kebab menu de acciones: ID de la fila con menu abierto + posición del dropdown
+  const [openMenu, setOpenMenu] = useState<{ id: string; top: number; right: number } | null>(null);
+
+  // Click fuera del menú lo cierra
+  useEffect(() => {
+    if (!openMenu) return;
+    function onDoc(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-row-actions-menu]') && !target.closest('[data-row-actions-trigger]')) {
+        setOpenMenu(null);
+      }
+    }
+    function onEsc(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpenMenu(null);
+    }
+    function onScroll() {
+      setOpenMenu(null);
+    }
+    document.addEventListener('click', onDoc);
+    document.addEventListener('keydown', onEsc);
+    window.addEventListener('scroll', onScroll, { capture: true });
+    return () => {
+      document.removeEventListener('click', onDoc);
+      document.removeEventListener('keydown', onEsc);
+      window.removeEventListener('scroll', onScroll, { capture: true } as any);
+    };
+  }, [openMenu]);
 
   async function load() {
     setLoading(true);
@@ -270,7 +297,7 @@ export default function PartnersTab() {
           <EmptyState onCreate={() => setShowCreate(true)} />
         ) : (
           <div style={{ overflowX: 'auto', overflowY: 'visible', WebkitOverflowScrolling: 'touch', borderRadius: 14 }}>
-          <table style={{ width: '100%', minWidth: 1650, borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+          <table style={{ width: '100%', minWidth: 1100, borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
             <thead>
               <tr style={{ background: '#fafafa', borderBottom: '1px solid #e5e5e5' }}>
                 <th style={thStyle}>Folio</th>
@@ -358,26 +385,42 @@ export default function PartnersTab() {
                       }}>{estadoInfo.label}</span>
                     </td>
                     <td style={{ ...tdStyle, textAlign: 'right' as const }}>
-                      <div style={{ display: 'inline-flex', gap: 4 }}>
-                        <a href={`/partners/invitacion/${it.id}?admin=1`} target="_blank" rel="noopener" style={btnSm()}>Ver</a>
-                        <button style={btnSm()} onClick={() => copyLink(it.id)}>Link</button>
-                        <button style={btnSm()} onClick={() => { setEditing(it); setShowCreate(true); }}>Editar</button>
-                        {it.estado === 'draft' && (
-                          <button style={btnSm('#1a1a1a', '#fff')} onClick={() => markAsSent(it)}>Enviar</button>
-                        )}
-                        {it.estado === 'submitted_for_review' && (
-                          <button style={btnSm('#2AB5A0', '#fff')} onClick={() => approveInvitation(it)}>Aprobar</button>
-                        )}
-                        {it.estado === 'accepted' && (
-                          <button style={btnSm('#6C5CE7', '#fff')} onClick={() => provisionFideliza(it)} title="Activar SACS Plan Fideliza para este partner">Fideliza</button>
-                        )}
-                        {(it.estado === 'accepted' || it.estado === 'submitted_for_review') && (
-                          <button style={btnSm('#E8A838', '#fff')} onClick={() => setRecoverInvitation(it)} title="Cambiar email o reenviar link de acceso del partner">Acceso</button>
-                        )}
-                        {(it as any).team_member_id && (
-                          <button style={btnSm()} onClick={() => setDetailPartnerId((it as any).team_member_id)} title="Ver detalle completo del partner">Detalle</button>
-                        )}
-                      </div>
+                      <button
+                        data-row-actions-trigger
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                          if (openMenu?.id === it.id) {
+                            setOpenMenu(null);
+                          } else {
+                            setOpenMenu({
+                              id: it.id,
+                              top: rect.bottom + 6,
+                              right: window.innerWidth - rect.right,
+                            });
+                          }
+                        }}
+                        title="Acciones"
+                        style={{
+                          width: 32, height: 32,
+                          padding: 0,
+                          background: openMenu?.id === it.id ? '#1a1a1a' : '#fff',
+                          color: openMenu?.id === it.id ? '#fff' : '#666',
+                          border: '1px solid ' + (openMenu?.id === it.id ? '#1a1a1a' : '#e0e0e0'),
+                          borderRadius: 8,
+                          cursor: 'pointer',
+                          fontSize: '1rem',
+                          fontWeight: 700,
+                          letterSpacing: '0.06em',
+                          lineHeight: 1,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'background 160ms ease, border-color 160ms ease, color 160ms ease',
+                        }}
+                      >
+                        ⋯
+                      </button>
                     </td>
                   </tr>
                 );
@@ -387,6 +430,97 @@ export default function PartnersTab() {
           </div>
         )}
       </div>
+
+      {/* Dropdown de acciones del kebab — position fixed para escapar el overflow del table */}
+      {openMenu && (() => {
+        const it = filtered.find(x => x.id === openMenu.id);
+        if (!it) return null;
+        const items: Array<{ label: string; onClick: () => void; href?: string; color?: string; bg?: string }> = [
+          { label: 'Ver invitación', onClick: () => {}, href: `/partners/invitacion/${it.id}?admin=1` },
+          { label: 'Copiar link público', onClick: () => copyLink(it.id) },
+          { label: 'Editar invitación', onClick: () => { setEditing(it); setShowCreate(true); } },
+        ];
+        if (it.estado === 'draft') {
+          items.push({ label: 'Marcar como enviada', onClick: () => markAsSent(it), color: '#fff', bg: '#1a1a1a' });
+        }
+        if (it.estado === 'submitted_for_review') {
+          items.push({ label: 'Aprobar invitación', onClick: () => approveInvitation(it), color: '#fff', bg: '#2AB5A0' });
+        }
+        if (it.estado === 'accepted') {
+          items.push({ label: 'Activar Plan Fideliza', onClick: () => provisionFideliza(it), color: '#fff', bg: '#6C5CE7' });
+        }
+        if (it.estado === 'accepted' || it.estado === 'submitted_for_review') {
+          items.push({ label: 'Cambiar / reenviar acceso', onClick: () => setRecoverInvitation(it) });
+        }
+        if ((it as any).team_member_id) {
+          items.push({ label: 'Ver detalle del partner', onClick: () => setDetailPartnerId((it as any).team_member_id) });
+        }
+        return (
+          <div
+            data-row-actions-menu
+            role="menu"
+            style={{
+              position: 'fixed',
+              top: openMenu.top,
+              right: openMenu.right,
+              minWidth: 220,
+              background: '#fff',
+              border: '1px solid #e5e5e5',
+              borderRadius: 12,
+              boxShadow: '0 12px 32px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.04)',
+              padding: 6,
+              zIndex: 999,
+              animation: 'fadeInMenu 120ms ease-out',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {items.map((item, i) => {
+              const styles: React.CSSProperties = {
+                display: 'block',
+                width: '100%',
+                textAlign: 'left' as const,
+                padding: '10px 12px',
+                background: item.bg || 'transparent',
+                color: item.color || '#1a1a1a',
+                border: 'none',
+                borderRadius: 8,
+                fontSize: '0.8125rem',
+                fontWeight: 500,
+                cursor: 'pointer',
+                textDecoration: 'none',
+                transition: 'background 120ms ease',
+              };
+              const handleClick = () => {
+                item.onClick();
+                if (!item.href) setOpenMenu(null);
+              };
+              if (item.href) {
+                return (
+                  <a
+                    key={i}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener"
+                    style={styles}
+                    onMouseEnter={e => (e.currentTarget.style.background = item.bg ? item.bg : '#fafafa')}
+                    onMouseLeave={e => (e.currentTarget.style.background = item.bg || 'transparent')}
+                    onClick={() => setOpenMenu(null)}
+                  >{item.label}</a>
+                );
+              }
+              return (
+                <button
+                  key={i}
+                  style={styles}
+                  onClick={handleClick}
+                  onMouseEnter={e => (e.currentTarget.style.background = item.bg ? item.bg : '#fafafa')}
+                  onMouseLeave={e => (e.currentTarget.style.background = item.bg || 'transparent')}
+                >{item.label}</button>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {showCreate && (
         <CreateDrawer
