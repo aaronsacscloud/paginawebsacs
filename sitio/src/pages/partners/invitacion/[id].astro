@@ -1098,10 +1098,10 @@ const ratePartner = comisionPct / 100;
 // Bonos por prueba gratis y demo completada DESCONTINUADOS — solo se paga el
 // 50% de comisión directa sobre la venta. El partner ve la actividad de cada
 // lead (clicks, demos, registros) en su portal, pero no monetiza esos eventos.
-// Conservamos las variables a 0 para que el código existente que las usa los
-// trate como "no aplica" sin romper la página.
-const bonusPruebaGratis = Number(tabulador.prueba_gratis ?? 0);
-const bonusCompletada   = Number(tabulador.demo_completada ?? 0);
+// Hardcoded a 0 (ignoramos el tabulador de la DB) para que NUNCA aparezcan
+// los bloques de bono, sin importar lo que diga la invitación específica.
+const bonusPruebaGratis = 0;
+const bonusCompletada   = 0;
 
 // Per-cell calculation: clientes × precio_plan × comision%
 function calcSale(planPrice: number, clients: number) {
