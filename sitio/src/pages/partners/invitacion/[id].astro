@@ -1029,6 +1029,7 @@ const fmtDateLong = (d: string | null) => {
 };
 
 const fechaCreado = fmtDate(invitation.created_at);
+const fechaCreadoLargo = fmtDateLong(invitation.created_at);
 const vigenciaFecha = fmtDate(invitation.vigencia);
 const vigenciaLarga = fmtDateLong(invitation.vigencia);
 
@@ -3032,10 +3033,19 @@ const partnerLandingUrl = invitation.slug_landing
 
           <div class="p-term-row">
             <div class="p-term-info">
-              <div class="p-term-label">Vigencia de la invitación</div>
-              <div class="p-term-detail">Después de esta fecha la invitación se cierra y deberá renegociarse.</div>
+              <div class="p-term-label">Periodo de la invitación</div>
+              <div class="p-term-detail">La invitación corre desde su fecha de emisión hasta la vigencia. Después de la fecha de cierre debe renegociarse — pero puede extenderse antes desde el panel de admin.</div>
             </div>
-            <div class="p-term-value">{vigenciaLarga || 'Sin vencimiento'}</div>
+            <div class="p-term-value p-term-value--range">
+              {invitation.vigencia ? (
+                <>
+                  <span class="p-term-range-row"><span class="p-term-range-lbl">Inicia</span> <span class="p-term-range-date">{fechaCreadoLargo}</span></span>
+                  <span class="p-term-range-row"><span class="p-term-range-lbl">Cierra</span> <span class="p-term-range-date">{vigenciaLarga}</span></span>
+                </>
+              ) : (
+                <span class="p-term-range-row"><span class="p-term-range-lbl">Inicia</span> <span class="p-term-range-date">{fechaCreadoLargo}</span> · <span class="p-term-range-lbl">Sin vencimiento</span></span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -4993,6 +5003,37 @@ const partnerLandingUrl = invitation.slug_landing
     text-align: right;
     letter-spacing: -0.01em;
   }
+  /* Rango de fechas (inicio → cierre) en p-term-row */
+  .p-term-value--range {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 400;
+    line-height: 1.4;
+  }
+  .p-term-range-row {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .p-term-range-lbl {
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+  .p-term-range-date {
+    font-family: var(--font-display);
+    font-size: 1.0625rem;
+    font-weight: 500;
+    color: #1a1a1a;
+    letter-spacing: -0.005em;
+  }
+
   .p-term-value--accent {
     font-size: 2rem;
     font-weight: 300;

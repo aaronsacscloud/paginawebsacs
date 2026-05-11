@@ -1002,7 +1002,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
             <Grid3>
               <Field label="Comisión %" type="number" value={form.comision_pct} onChange={v => set('comision_pct', Number(v) || 0)} />
               <Field label="Moneda" value={form.moneda} onChange={v => set('moneda', v)} />
-              <Field label="Vigencia" type="date" value={form.vigencia} onChange={v => set('vigencia', v)} />
+              <Field label="Vigencia (fecha de cierre)" type="date" value={form.vigencia} onChange={v => set('vigencia', v)} hint={editing ? 'Puedes extender editando esta fecha. El inicio se mantiene en la creación original.' : 'Inicio se cuenta desde hoy (creación de la invitación).'} />
             </Grid3>
             <Field label="Slug de landing (opcional)" value={form.slug_landing} onChange={v => set('slug_landing', v)} placeholder="ej. juanperez (sacscloud.com/p/juanperez)" />
 
@@ -1183,11 +1183,12 @@ function Grid3({ children }: { children: React.ReactNode }) {
   return <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 10 }}>{children}</div>;
 }
 
-function Field({ label, value, onChange, placeholder, type = 'text' }: { label: string; value: any; onChange: (v: string) => void; placeholder?: string; type?: string }) {
+function Field({ label, value, onChange, placeholder, type = 'text', hint }: { label: string; value: any; onChange: (v: string) => void; placeholder?: string; type?: string; hint?: string }) {
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       <span style={{ fontSize: '0.625rem', fontWeight: 700, color: '#999', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{label}</span>
       <input type={type} value={value ?? ''} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={inputStyle} />
+      {hint && <span style={{ fontSize: '0.6875rem', color: '#888', lineHeight: 1.4 }}>{hint}</span>}
     </label>
   );
 }
