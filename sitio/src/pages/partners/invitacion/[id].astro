@@ -12513,6 +12513,11 @@ const partnerLandingUrl = invitation.slug_landing
     return 'desktop';
   }
 
+  // Para skip de pings vacíos: el último ts en el que mandamos algo al server.
+  let lastFlushAt = 0;
+  const MIN_DELTA_FOR_PING = 60;   // si solo lee silencioso, esperar al menos 60s
+  const KEEPALIVE_MS = 120000;     // pero forzar ping cada 2 min para mantener live
+
   function flush(endSession) {
     const now = Date.now();
     // Solo cuenta delta si la pestaña era visible
@@ -12523,6 +12528,23 @@ const partnerLandingUrl = invitation.slug_landing
 
     // Si no hay nada que reportar Y no es endSession, no enviar
     if (pending.deltaSeconds === 0 && pending.events.length === 0 && !endSession && pending.sentInitialContext) {
+      return;
+    }
+
+    // Skip pings "vacíos de eventos" en lectura silenciosa:
+    // si solo hay tiempo acumulado (sin eventos) Y aún no llegamos a MIN_DELTA Y
+    // tampoco al keepalive — esperar al próximo ciclo.
+    const sinceLastFlush = now - lastFlushAt;
+    const isFirstPing = !pending.sentInitialContext;
+    const onlyTimeNoEvents = pending.deltaSeconds > 0 && pending.events.length === 0;
+    if (
+      !endSession &&
+      !isFirstPing &&
+      onlyTimeNoEvents &&
+      pending.deltaSeconds < MIN_DELTA_FOR_PING &&
+      sinceLastFlush < KEEPALIVE_MS
+    ) {
+      // Hold — acumula hasta el siguiente ciclo o hasta que haya un evento
       return;
     }
 
@@ -12545,6 +12567,7 @@ const partnerLandingUrl = invitation.slug_landing
 
     pending.deltaSeconds = 0;
     pending.events = [];
+    lastFlushAt = now;
 
     try {
       const body = JSON.stringify(payload);
@@ -12562,8 +12585,8 @@ const partnerLandingUrl = invitation.slug_landing
     } catch {}
   }
 
-  // ── Heartbeat cada 15s ──
-  const HEARTBEAT_MS = 15000;
+  // ── Heartbeat cada 30s (Opt A: ahorra 50% vs el 15s original) ──
+  const HEARTBEAT_MS = 30000;
   setInterval(() => flush(false), HEARTBEAT_MS);
 
   // ── Visibility tracking (Page Visibility API) ──
