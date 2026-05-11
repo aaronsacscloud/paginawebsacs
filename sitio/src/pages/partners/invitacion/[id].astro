@@ -3493,24 +3493,6 @@ const partnerLandingUrl = invitation.slug_landing
           </div>
         </div>
 
-        <!-- ── Big closing number ── -->
-        <div class="p-projection-closing" data-projection-scope>
-          <div class="p-projection-closing-stack">
-            <div class="p-projection-closing-card p-projection-closing-card--realistic">
-              <div class="p-projection-closing-label">{tt('proj.real.lbl')}</div>
-              <div class="p-projection-closing-amount p-view-mensual">{fmtMoney(realisticClosingMonthly)}</div>
-              <div class="p-projection-closing-amount p-view-anual">{fmtMoney(realisticClosingAnnual)}</div>
-              <div class="p-projection-closing-detail">{tt('proj.real.det').replace('{pct}', String(comisionPct))}</div>
-            </div>
-            <div class="p-projection-closing-card p-projection-closing-card--ceiling">
-              <div class="p-projection-closing-label">{tt('proj.ceil.lbl')}</div>
-              <div class="p-projection-closing-amount p-view-mensual">{fmtMoney(ceilingClosingMonthly)}</div>
-              <div class="p-projection-closing-amount p-view-anual">{fmtMoney(ceilingClosingAnnual)}</div>
-              <div class="p-projection-closing-detail">{tt('proj.ceil.det')}</div>
-            </div>
-          </div>
-          <p class="p-projection-closing-bottom" set:html={tt('proj.bottom')}></p>
-        </div>
         </>
         )}
 
