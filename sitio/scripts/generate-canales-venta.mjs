@@ -76,6 +76,10 @@ const ITEMS = [
     prompt: `Two cool late-20s Latin business professionals — a 28-year-old woman in an oversized cream blazer and a 29-year-old man in a black turtleneck — sitting side by side at a stylish cafe table in Mexico, both with open slim laptops (screens angled away from camera) and a printed marketing calendar on the table between them. They are mid-discussion, one pointing at the calendar with a pen. Daylight from a large window beside them. Plants, ceramic flat-white cups, a small succulent. The mood is "we are co-planning a joint campaign as allied modern brands".`,
   },
   {
+    file: 'canal-cursos-online',
+    prompt: `A cool 29-year-old Latin femme online course creator standing in front of a modern minimalist whiteboard with hand-drawn diagrams (illegible) in a sunlit home studio in Mexico City. She wears a fitted cream oversized blazer over a black tee, layered gold necklaces, fresh haircut. A slim ring light and a professional camera on a tripod (lens visible, no detail) are positioned in front of her framing her for recording. A small wooden side table holds a ceramic coffee cup and a slim notebook. Plants, exposed brick wall behind. She's mid-gesture, explaining something with her hands. The mood is "I'm recording the next module of my online course about how to run a successful business — and recommending SACS as what my students should use after finishing."`,
+  },
+  {
     file: 'canal-speaking-paneles',
     prompt: `A cool 30-year-old Latin femme wearing a fitted modern blazer over a silk camisole, slim trousers, and clean white sneakers, mid-talk on stage at a sector conference in Mexico City. She holds a wireless mic, gesturing with the other hand, standing beside a tall minimal podium-style table with a glass of water. The blurred audience of about 80-100 Latin professionals (modern casual energy, mixed ages skewing 25-40) fills the lower foreground. Warm theatrical stage light with one accent gel, contemporary modern event venue. The mood is "I was invited to share a real client case".`,
   },
