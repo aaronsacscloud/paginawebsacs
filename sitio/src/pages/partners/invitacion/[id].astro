@@ -3683,7 +3683,7 @@ const partnerLandingUrl = invitation.slug_landing
               <div class="p-perfil-row-body">
                 <div class="p-perfil-row-num">{String(i + 1).padStart(2, '0')}</div>
                 <h3 class="p-perfil-row-title">{tt(`can.${c.n}.t`)}</h3>
-                <p class="p-perfil-row-desc">{tt(`can.${c.n}.d`)}</p>
+                <p class="p-perfil-row-desc" set:html={tt(`can.${c.n}.d`)}></p>
                 <div class="p-perfil-row-from">{tt(`can.${c.n}.f`)}</div>
               </div>
             </article>
