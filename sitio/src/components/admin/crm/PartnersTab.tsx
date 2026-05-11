@@ -752,7 +752,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
     slug_landing: editing?.slug_landing || '',
     beneficios: editing?.beneficios || [],
     compromisos: editing?.compromisos || [],
-    tabulador: editing?.tabulador || { prueba_gratis: 250, demo_completada: 300, venta_directa_pct: 50, moneda: 'MXN' },
+    tabulador: editing?.tabulador || { prueba_gratis: 0, demo_completada: 0, venta_directa_pct: 50, override_red_pct: 10, moneda: 'MXN' },
     terminos: editing?.terminos || '',
     auto_approve: editing ? !!(editing as any).auto_approve : false,
   }));
@@ -783,38 +783,14 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
           { title: 'Uso correcto del logotipo y tipografías',     detail: 'Aplicar el logotipo SACS solo en su versión oficial. Respetar tipografías, paleta y guidelines del manual de marca.', frequency: 'Continuo' },
         ],
         tabulador: {
-          prueba_gratis: 250,
-          demo_completada: 300,
+          prueba_gratis: 0,
+          demo_completada: 0,
           venta_directa_pct: 50,
+          override_red_pct: 10,
           moneda: 'MXN',
-          notas: 'Pagos cada 30 días por transferencia bancaria, con desglose detallado por concepto y cliente visible siempre en tu portal de partner. Bono por prueba gratis se acredita cuando un usuario referido se registra y activa una prueba gratuita en SACS. Bono por demo completada se acredita al cierre del demo válido (mínimo 25 min con tomador de decisión presente). Comisión por venta directa se acredita al cobrar la primera factura del cliente cerrado.',
+          notas: 'Pagos cada 30 días por transferencia bancaria. Ciclo con corte el día 1 de cada mes — el partner envía factura entre 1-3 días hábiles antes para que SACS pueda emitir el pago. La comisión del 50% sobre venta directa se acredita al cobrar la primera factura del cliente cerrado por el link único. Al alcanzar Master Partner Nv 1 (5 sucursales activas vendidas) se desbloquea automáticamente un 10% override sobre todo lo que la red del partner venda, pagado por SACS sin descontar nada del 50% directo del invitado. El partner ve en su portal cada click, prueba gratis activada y demo agendada del lead — eso queda como tracking informativo, no genera pago directo.',
         },
-        terminos: `Programa Embajador SACS — Términos y Condiciones
-
-1. Vigencia y evaluación. El programa tiene vigencia indefinida sujeta a evaluación trimestral del cumplimiento de compromisos por parte de SACS Cloud. SACS se reserva el derecho de revisar el desempeño cada 90 días.
-
-2. Comisiones y pagos. Las comisiones se calculan sobre el monto efectivamente cobrado a clientes referidos (vía link único o atribución manual). El pago se realiza por transferencia bancaria cada 30 días naturales contados desde el inicio del programa, con desglose detallado por concepto, cliente y referido visible siempre desde el portal del partner. Cada liquidación va contra emisión de recibo o factura del embajador.
-
-3. Landing page y portal del partner. SACS habilitará al embajador (i) una landing page personalizada con su nombre y link único bajo el dominio sacscloud.com, y (ii) un portal de partner con métricas en tiempo real (visitas, registros, prospectos, conversiones, comisiones devengadas y pagos liquidados). El embajador es responsable de la información, fotografía y biografía que comparta para su landing.
-
-4. Cumplimiento de compromisos.
-   (i) Cuota anual mínima: el embajador se compromete a generar la venta de al menos 10 sucursales activas en SACS durante los primeros 12 meses del programa, en cualquier plan disponible y bajo cualquier combinación (clientes con una o varias sucursales). Esta meta hace al programa sustentable para ambas partes y desbloquea la renovación automática.
-   (ii) Si el embajador deja de cumplir los compromisos de contenido por dos (2) meses consecutivos, SACS notificará por escrito y otorgará un periodo de regularización de 30 días naturales antes de pausar los beneficios.
-   (iii) Si al cumplirse 12 meses el embajador no alcanza la cuota mínima, SACS y el embajador acordarán un plan de recuperación de 90 días o, en su defecto, terminarán el acuerdo conforme a la cláusula 8.
-
-5. Confidencialidad. El embajador se compromete a no divulgar información estratégica, comercial o financiera de SACS Cloud, sus clientes o aliados, que reciba durante su participación en el programa.
-
-6. Imagen y propiedad intelectual. SACS otorga al embajador una licencia limitada, no exclusiva y revocable para usar la marca SACS conforme al manual de marca durante la vigencia del programa. La propiedad intelectual de los videos creados por el embajador permanece del embajador, quien otorga a SACS una licencia perpetua, mundial y libre de regalías para republicar y promocionar dichos videos en cualquier canal de SACS.
-
-7. Exclusividad parcial. Durante la vigencia del programa, el embajador no representará simultáneamente plataformas competidoras directas (POS / SaaS retail mexicano) sin autorización previa por escrito de SACS.
-
-8. Terminación. Cualquiera de las partes podrá terminar el acuerdo con 30 días de aviso por escrito. Las comisiones devengadas hasta el momento de la terminación se pagarán conforme al ciclo regular y serán visibles en el portal hasta su liquidación.
-
-9. No relación laboral. Este acuerdo no constituye relación laboral, mercantil-asociativa ni de mandato entre las partes. El embajador actúa como colaborador independiente y es responsable de sus propias obligaciones fiscales.
-
-10. Datos personales. El tratamiento de datos personales se rige por el Aviso de Privacidad publicado en sacscloud.com/privacidad.
-
-11. Jurisdicción. Para la interpretación y cumplimiento de este acuerdo, las partes se someten a las leyes y tribunales de la Ciudad de México.`,
+        terminos: '',
       },
       distribuidor: {
         comision_pct: 30, costo_unico: 0, costo_mensual: 0,
@@ -827,8 +803,8 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
           { title: 'Vender', detail: 'Mínimo 2 nuevos clientes por trimestre.', frequency: 'Trimestral' },
           { title: 'Implementar', detail: 'Acompañar al cliente las primeras 4 semanas.', frequency: 'Por cliente' },
         ],
-        tabulador: { prueba_gratis: 0, demo_completada: 300, venta_directa_pct: 30, moneda: 'MXN' },
-        terminos: 'Comisión recurrente sobre MRR cobrado mientras el cliente esté al corriente.',
+        tabulador: { prueba_gratis: 0, demo_completada: 0, venta_directa_pct: 30, override_red_pct: 10, moneda: 'MXN' },
+        terminos: '',
       },
       integrador: {
         comision_pct: 25, costo_unico: 0, costo_mensual: 0,
@@ -839,8 +815,8 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
         compromisos: [
           { title: 'Certificarse técnicamente', detail: 'Pasar la certificación SACS Integrator.', frequency: 'Una vez' },
         ],
-        tabulador: { prueba_gratis: 0, demo_completada: 0, venta_directa_pct: 25, moneda: 'MXN' },
-        terminos: 'Programa para casas de software e integradores B2B.',
+        tabulador: { prueba_gratis: 0, demo_completada: 0, venta_directa_pct: 25, override_red_pct: 10, moneda: 'MXN' },
+        terminos: '',
       },
       reseller: {
         comision_pct: 20, costo_unico: 0, costo_mensual: 0,
@@ -850,8 +826,8 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
         compromisos: [
           { title: 'Vender bajo tu marca', detail: 'Manejo de la relación comercial bajo tu canal.', frequency: 'Continuo' },
         ],
-        tabulador: { prueba_gratis: 0, demo_completada: 0, venta_directa_pct: 20, moneda: 'MXN' },
-        terminos: 'Programa de reventa con white-labeling sujeto a aprobación.',
+        tabulador: { prueba_gratis: 0, demo_completada: 0, venta_directa_pct: 20, override_red_pct: 10, moneda: 'MXN' },
+        terminos: '',
       },
       consultor: {
         comision_pct: 15, costo_unico: 0, costo_mensual: 0,
@@ -861,8 +837,8 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
         compromisos: [
           { title: 'Recomendar SACS', detail: 'Cuando aplique al diagnóstico del cliente.', frequency: 'Por caso' },
         ],
-        tabulador: { prueba_gratis: 0, demo_completada: 0, venta_directa_pct: 15, moneda: 'MXN' },
-        terminos: 'Programa de consultoría con referidos pagados a 30 días post-cobro.',
+        tabulador: { prueba_gratis: 0, demo_completada: 0, venta_directa_pct: 15, override_red_pct: 10, moneda: 'MXN' },
+        terminos: '',
       },
     };
     setForm((p: any) => ({ ...p, tipo, ...(defaults[tipo] || {}) }));
@@ -1080,17 +1056,35 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
 
           {/* Tabulador */}
           <Section title="Tabulador de recompensas">
-            <Grid3>
-              <Field label="Prueba gratis ($)" type="number" value={form.tabulador?.prueba_gratis ?? 0} onChange={v => setTab('prueba_gratis', Number(v) || 0)} />
-              <Field label="Demo completada ($)" type="number" value={form.tabulador?.demo_completada ?? 0} onChange={v => setTab('demo_completada', Number(v) || 0)} />
-              <Field label="Venta directa (%)" type="number" value={form.tabulador?.venta_directa_pct ?? 0} onChange={v => setTab('venta_directa_pct', Number(v) || 0)} />
-            </Grid3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <Field label="Venta directa (%)" type="number" value={form.tabulador?.venta_directa_pct ?? 0} onChange={v => setTab('venta_directa_pct', Number(v) || 0)} hint="50% es el valor estándar del programa Embajador. Se cobra sobre la primera factura de cada cliente cerrado por su link." />
+              <div style={{
+                display: 'flex', flexDirection: 'column', gap: 4,
+                padding: '12px 14px', background: 'linear-gradient(135deg, #fafaf7, #f5f0e6)',
+                border: '1px solid rgba(201,169,107,0.25)', borderRadius: 10,
+              }}>
+                <span style={{ fontSize: '0.625rem', fontWeight: 700, color: '#c9a96b', letterSpacing: '0.14em', textTransform: 'uppercase' }}>Override sobre red</span>
+                <span style={{ fontSize: '1.5rem', fontWeight: 500, color: '#1a1a1a', letterSpacing: '-0.02em', lineHeight: 1 }}>10%</span>
+                <span style={{ fontSize: '0.6875rem', color: '#888', lineHeight: 1.4 }}>Automático al alcanzar Master Partner Nv 1 (5 sucursales activas). No editable — es estándar del programa.</span>
+              </div>
+            </div>
             <FieldArea label="Notas del tabulador" value={form.tabulador?.notas || ''} onChange={v => setTab('notas', v)} placeholder="Cómo se calculan los pagos..." />
           </Section>
 
-          {/* Términos legales */}
-          <Section title="Condiciones y términos legales">
-            <FieldArea label="Términos generales" value={form.terminos} onChange={v => set('terminos', v)} placeholder="Texto legal o condiciones especiales..." rows={4} />
+          {/* Nota interna */}
+          <Section title="Nota interna (no visible al partner)">
+            <div style={{
+              padding: '12px 14px', marginBottom: 10,
+              background: '#fafafa', border: '1px solid #ececec', borderRadius: 8,
+              fontSize: '0.75rem', color: '#666', lineHeight: 1.5,
+            }}>
+              ℹ️ El <strong>contrato completo de 19 cláusulas</strong> (compensación, suspensión, certificaciones,
+              override 10% sobre la red, propiedad intelectual, no-competencia, indemnización…) se muestra
+              automáticamente en la invitación pública y al firmar — no necesita configurarse aquí. Este campo
+              es solo para tu uso interno: recordatorios, contexto del negocio, acuerdos verbales, etc.
+              <strong> No se muestra al partner.</strong>
+            </div>
+            <FieldArea label="Notas internas sobre este partner" value={form.terminos} onChange={v => set('terminos', v)} placeholder="Ej: lo conocí en feria ANTAD · comisión 60% acordada verbal · sector farmacia · referido por Mariana López · etc." rows={4} />
           </Section>
 
           {/* Visual */}
