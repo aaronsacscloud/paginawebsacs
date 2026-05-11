@@ -262,7 +262,8 @@ export default function PartnersTab() {
         ) : filtered.length === 0 ? (
           <EmptyState onCreate={() => setShowCreate(true)} />
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <table style={{ width: '100%', minWidth: 1100, borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
             <thead>
               <tr style={{ background: '#fafafa', borderBottom: '1px solid #e5e5e5' }}>
                 <th style={thStyle}>Folio</th>
@@ -365,6 +366,7 @@ export default function PartnersTab() {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
