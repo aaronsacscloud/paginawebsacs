@@ -11785,7 +11785,7 @@ const partnerLandingUrl = invitation.slug_landing
   }
 </style>
 
-<script is:inline define:vars={{ invitationId: id, isClosed }}>
+<script is:inline define:vars={{ invitationId: id, isClosed, isAdminMode }}>
 (function() {
   // ─── Tab switcher ───
   const doc = document.getElementById('partner-doc');
@@ -12472,5 +12472,262 @@ const partnerLandingUrl = invitation.slug_landing
   modal.addEventListener('click', (e) => {
     if (e.target === modal) modal.close();
   });
+})();
+
+// ─────────────────────────────────────────────────────────────────────────
+// Interest tracking · 10 métricas de interacción
+// ─────────────────────────────────────────────────────────────────────────
+// Pings al server cada 15s con tiempo activo + tab actual + scroll + eventos
+// pendientes. Skip si admin=1 o invitación cerrada. sendBeacon en visibilitychange
+// para no perder la última sesión.
+(function () {
+  if (isAdminMode || isClosed) return;
+  if (!invitationId) return;
+
+  // sessionStorage para persistir el sessionId entre reloads dentro de la pestaña
+  const SS_KEY = 'sacs_inv_sid_' + invitationId;
+  let sessionId = sessionStorage.getItem(SS_KEY);
+  if (!sessionId) {
+    sessionId = (crypto.randomUUID && crypto.randomUUID()) ||
+                (Date.now() + '-' + Math.random().toString(36).slice(2));
+    sessionStorage.setItem(SS_KEY, sessionId);
+  }
+
+  // Buffer de eventos pendientes + estado
+  const pending = {
+    deltaSeconds: 0,
+    events: [],
+    scrollPctByTab: {},
+    contractOpenTs: null,  // ts al abrir modal del contrato
+    sentInitialContext: false,
+  };
+
+  let currentTab = (location.hash || '').replace('#', '') || 'bienvenida';
+  let lastTick = Date.now();
+  let isVisible = !document.hidden;
+
+  function getDevice() {
+    const w = window.innerWidth;
+    if (w < 600) return 'mobile';
+    if (w < 1024) return 'tablet';
+    return 'desktop';
+  }
+
+  function flush(endSession) {
+    const now = Date.now();
+    // Solo cuenta delta si la pestaña era visible
+    if (isVisible) {
+      pending.deltaSeconds += Math.floor((now - lastTick) / 1000);
+    }
+    lastTick = now;
+
+    // Si no hay nada que reportar Y no es endSession, no enviar
+    if (pending.deltaSeconds === 0 && pending.events.length === 0 && !endSession && pending.sentInitialContext) {
+      return;
+    }
+
+    const scrollPct = pending.scrollPctByTab[currentTab];
+    const payload = {
+      invitationId,
+      sessionId,
+      deltaSeconds: pending.deltaSeconds,
+      currentTab,
+      scrollPct: typeof scrollPct === 'number' ? scrollPct : undefined,
+      events: pending.events.slice(),
+      endSession: !!endSession,
+    };
+    if (!pending.sentInitialContext) {
+      payload.device = getDevice();
+      payload.userAgent = navigator.userAgent.slice(0, 500);
+      payload.referrer = document.referrer ? document.referrer.slice(0, 500) : undefined;
+      pending.sentInitialContext = true;
+    }
+
+    pending.deltaSeconds = 0;
+    pending.events = [];
+
+    try {
+      const body = JSON.stringify(payload);
+      if (endSession && navigator.sendBeacon) {
+        const blob = new Blob([body], { type: 'application/json' });
+        navigator.sendBeacon('/api/partners/invitation-heartbeat', blob);
+      } else {
+        fetch('/api/partners/invitation-heartbeat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body,
+          keepalive: true,
+        }).catch(() => {});
+      }
+    } catch {}
+  }
+
+  // ── Heartbeat cada 15s ──
+  const HEARTBEAT_MS = 15000;
+  setInterval(() => flush(false), HEARTBEAT_MS);
+
+  // ── Visibility tracking (Page Visibility API) ──
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      // se va a fondo: contabiliza el delta hasta ahora
+      const now = Date.now();
+      if (isVisible) pending.deltaSeconds += Math.floor((now - lastTick) / 1000);
+      lastTick = now;
+      isVisible = false;
+      flush(false);
+    } else {
+      // vuelve al foco
+      lastTick = Date.now();
+      isVisible = true;
+    }
+  });
+
+  // ── sendBeacon al cerrar/navegar ──
+  window.addEventListener('pagehide', () => flush(true), { capture: true });
+  window.addEventListener('beforeunload', () => flush(true));
+
+  // ── Tab tracking (hashchange y clicks en data-tab-link) ──
+  function recordTab(tab) {
+    if (!tab || tab === currentTab) return;
+    // Flush time on old tab antes de cambiar
+    flush(false);
+    currentTab = tab;
+    pending.events.push({ type: 'tab_view', tab, ts: new Date().toISOString() });
+  }
+  window.addEventListener('hashchange', () => {
+    const tab = (location.hash || '').replace('#', '');
+    if (tab) recordTab(tab);
+  });
+  document.addEventListener('click', (e) => {
+    const link = e.target && (e.target.closest ? e.target.closest('[data-tab-link]') : null);
+    if (link) {
+      const tab = link.getAttribute('data-tab-link');
+      if (tab) setTimeout(() => recordTab(tab), 50);
+    }
+  }, true);
+  // Inicial
+  pending.events.push({ type: 'tab_view', tab: currentTab, ts: new Date().toISOString() });
+
+  // ── Scroll depth por tab (con throttle) ──
+  let scrollTick = 0;
+  function updateScrollPct() {
+    const panel = document.querySelector('.p-tab-panel[data-tab="' + currentTab + '"]') ||
+                  document.querySelector('.p-tab-panel.active') ||
+                  document.documentElement;
+    if (!panel) return;
+    const rect = panel.getBoundingClientRect ? panel.getBoundingClientRect() : null;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const scrollTop = window.scrollY || window.pageYOffset || 0;
+    const pct = docHeight > 0 ? Math.min(100, Math.round((scrollTop / docHeight) * 100)) : 0;
+    const prev = pending.scrollPctByTab[currentTab] || 0;
+    if (pct > prev) pending.scrollPctByTab[currentTab] = pct;
+  }
+  window.addEventListener('scroll', () => {
+    if (scrollTick) return;
+    scrollTick = requestAnimationFrame(() => {
+      scrollTick = 0;
+      updateScrollPct();
+    });
+  }, { passive: true });
+  updateScrollPct();
+
+  // ── Modal de contrato: open/close timing ──
+  document.querySelectorAll('[data-open-contract]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      pending.events.push({ type: 'contract_modal_open' });
+      pending.contractOpenTs = Date.now();
+    });
+  });
+  const contractModal = document.getElementById('contract-modal');
+  if (contractModal) {
+    contractModal.addEventListener('close', () => {
+      if (pending.contractOpenTs) {
+        const secs = Math.floor((Date.now() - pending.contractOpenTs) / 1000);
+        pending.events.push({ type: 'contract_modal_close', secondsInside: secs });
+        pending.contractOpenTs = null;
+      }
+    });
+  }
+
+  // ── Modal de glosario: solo count ──
+  document.querySelectorAll('[data-open-glossary]').forEach((btn) => {
+    btn.addEventListener('click', () => pending.events.push({ type: 'glossary_open' }));
+  });
+
+  // ── Calculadora: drag/change en los sliders ──
+  let calcDebounce = null;
+  function onCalcInput() {
+    if (calcDebounce) clearTimeout(calcDebounce);
+    calcDebounce = setTimeout(() => {
+      const inputs = document.querySelectorAll('[data-calc-input]');
+      const finalState = {};
+      inputs.forEach((el) => {
+        const k = el.getAttribute('data-calc-input');
+        if (k) finalState[k] = el.value;
+      });
+      pending.events.push({ type: 'calc_interaction', finalState });
+    }, 500);
+  }
+  document.querySelectorAll('[data-calc-input]').forEach((el) => {
+    el.addEventListener('input', onCalcInput);
+    el.addEventListener('change', onCalcInput);
+  });
+
+  // ── Canvas de firma: mousedown/touchstart = señal premium ──
+  const sigCanvas = document.getElementById('signature-canvas');
+  if (sigCanvas) {
+    let signatureSignaled = false;
+    const onSig = () => {
+      if (signatureSignaled) return;
+      signatureSignaled = true;
+      pending.events.push({ type: 'signature_attempted' });
+      // flush rápido para que aparezca pronto en el admin (alerta de casi-firma)
+      setTimeout(() => flush(false), 1000);
+    };
+    sigCanvas.addEventListener('mousedown', onSig, { passive: true });
+    sigCanvas.addEventListener('touchstart', onSig, { passive: true });
+  }
+
+  // ── Checkbox de aceptación del contrato ──
+  const acceptBox = document.getElementById('contract-accept');
+  if (acceptBox) {
+    acceptBox.addEventListener('change', () => {
+      if (acceptBox.checked) pending.events.push({ type: 'contract_checkbox' });
+    });
+  }
+
+  // ── FAB clicks: WhatsApp y Print ──
+  document.querySelectorAll('.p-fab-btn--wa, .p-signed-cta').forEach((el) => {
+    if (el.href && /wa\.me\//.test(el.href)) {
+      el.addEventListener('click', () => pending.events.push({ type: 'wa_clicked' }));
+    }
+  });
+  const printBtn = document.getElementById('p-fab-print');
+  if (printBtn) {
+    printBtn.addEventListener('click', () => pending.events.push({ type: 'print_clicked' }));
+  }
+
+  // ── Lang switch: detecta click en p-langswitch-btn ──
+  document.querySelectorAll('.p-langswitch-btn').forEach((el) => {
+    el.addEventListener('click', () => {
+      const code = el.querySelector('.p-langswitch-code');
+      const lang = code ? code.textContent.toLowerCase() : null;
+      if (lang) {
+        // El click navega a otra URL; mandamos via sendBeacon antes de irnos
+        fetch('/api/partners/invitation-heartbeat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            invitationId, sessionId, langSwitchedTo: lang,
+            deltaSeconds: 0, events: [],
+          }),
+          keepalive: true,
+        }).catch(() => {});
+      }
+    });
+  });
+
+  // Ping inicial con contexto
+  setTimeout(() => flush(false), 2000);
 })();
 </script>

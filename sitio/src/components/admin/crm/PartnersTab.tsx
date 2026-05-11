@@ -29,6 +29,13 @@ interface Invitation {
   view_count?: number;
   first_viewed_at?: string;
   last_viewed_at?: string;
+  // Interest tracking (enriched from API)
+  interest_score?: number;
+  interest_signature_attempted?: boolean;
+  interest_contract_accepted?: boolean;
+  interest_modal_opens?: number;
+  interest_active_seconds?: number;
+  interest_sessions?: number;
 }
 
 const TIPO_LABELS: Record<string, { label: string; tagline: string; color: string }> = {
@@ -263,7 +270,7 @@ export default function PartnersTab() {
           <EmptyState onCreate={() => setShowCreate(true)} />
         ) : (
           <div style={{ overflowX: 'auto', overflowY: 'visible', WebkitOverflowScrolling: 'touch', borderRadius: 14 }}>
-          <table style={{ width: '100%', minWidth: 1500, borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+          <table style={{ width: '100%', minWidth: 1650, borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
             <thead>
               <tr style={{ background: '#fafafa', borderBottom: '1px solid #e5e5e5' }}>
                 <th style={thStyle}>Folio</th>
@@ -271,6 +278,7 @@ export default function PartnersTab() {
                 <th style={thStyle}>Tipo</th>
                 <th style={thStyle}>Comisión</th>
                 <th style={thStyle} title="Veces que el prospecto abrió su invitación">Vistas</th>
+                <th style={thStyle} title="Interés del partner basado en tiempo activo, apertura del contrato, calc, intento de firma">Interés</th>
                 <th style={thStyle} title="Última vez que abrió la invitación">Última apertura</th>
                 <th style={thStyle}>Vigencia</th>
                 <th style={thStyle}>Estado</th>
@@ -317,6 +325,16 @@ export default function PartnersTab() {
                     <td style={tdStyle}>
                       <span style={{ fontWeight: 700, color: viewsColor, fontSize: '0.9375rem' }}>{views}</span>
                       {views >= 5 && <span style={{ marginLeft: 6, fontSize: '0.625rem', color: '#4B7BE5', fontWeight: 700, letterSpacing: '0.06em' }}>HOT</span>}
+                    </td>
+                    <td style={tdStyle}>
+                      <InterestBadge
+                        score={Number(it.interest_score || 0)}
+                        signatureAttempted={!!it.interest_signature_attempted}
+                        contractAccepted={!!it.interest_contract_accepted}
+                        modalOpens={Number(it.interest_modal_opens || 0)}
+                        activeSeconds={Number(it.interest_active_seconds || 0)}
+                        sessions={Number(it.interest_sessions || 0)}
+                      />
                     </td>
                     <td style={tdStyle}>
                       {lastViewed ? (
@@ -1159,6 +1177,46 @@ const inputStyle: React.CSSProperties = {
   boxSizing: 'border-box' as const,
   width: '100%',
 };
+
+function InterestBadge({
+  score, signatureAttempted, contractAccepted, modalOpens, activeSeconds, sessions,
+}: {
+  score: number; signatureAttempted: boolean; contractAccepted: boolean;
+  modalOpens: number; activeSeconds: number; sessions: number;
+}) {
+  if (score === 0 && !signatureAttempted && sessions === 0) {
+    return <span style={{ fontSize: '0.75rem', color: '#bbb', fontStyle: 'italic' }}>—</span>;
+  }
+  let icon = '❄️', bg = '#f0f4ff', fg = '#5a6c8a';
+  if (score >= 75) { icon = '🔥'; bg = '#fff1ee'; fg = '#c94a2c'; }
+  else if (score >= 50) { icon = '✨'; bg = '#fff8e1'; fg = '#b8870b'; }
+  else if (score >= 25) { icon = '👀'; bg = '#eef9f6'; fg = '#1A8F7A'; }
+
+  const mins = Math.floor(activeSeconds / 60);
+  const tooltip = [
+    `Score: ${score}/100`,
+    `Tiempo activo: ${mins} min`,
+    `Sesiones: ${sessions}`,
+    `Abrió contrato: ${modalOpens} vez(es)`,
+    contractAccepted ? '✓ Marcó "he leído íntegramente"' : null,
+    signatureAttempted ? '✓ Intentó firmar (no completó)' : null,
+  ].filter(Boolean).join('\n');
+
+  return (
+    <span title={tooltip} style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      padding: '4px 10px',
+      background: bg, color: fg,
+      borderRadius: 999,
+      fontSize: '0.75rem', fontWeight: 700,
+      letterSpacing: '0.02em',
+    }}>
+      <span aria-hidden="true">{icon}</span>
+      <span>{score}</span>
+      {signatureAttempted && <span style={{ fontSize: '0.625rem', color: '#c94a2c', fontWeight: 700, letterSpacing: '0.08em' }}>· CASI FIRMA</span>}
+    </span>
+  );
+}
 
 function Section({ title, actions, children }: { title: string; actions?: React.ReactNode; children: React.ReactNode }) {
   return (

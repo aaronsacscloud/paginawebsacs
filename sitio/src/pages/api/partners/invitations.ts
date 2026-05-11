@@ -168,7 +168,49 @@ export const GET: APIRoute = async ({ request, url }) => {
 
   const { data, error } = await query.limit(500);
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
-  return new Response(JSON.stringify(data || []), { status: 200, headers: { 'Content-Type': 'application/json' } });
+
+  // Enrich con interest score: el MAX score de cualquier sesión + flag de "intentó firmar"
+  const invitations = data || [];
+  if (invitations.length === 0) {
+    return new Response(JSON.stringify([]), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }
+
+  const invitationIds = invitations.map((i: any) => i.id);
+  try {
+    const { data: sessions } = await supabase
+      .from('partner_invitation_sessions')
+      .select('invitation_id, interest_score, signature_attempted_at, contract_checkbox_at, total_active_seconds, contract_modal_opens, started_at')
+      .in('invitation_id', invitationIds)
+      .order('interest_score', { ascending: false });
+
+    const scoreMap = new Map<string, any>();
+    const countMap = new Map<string, number>();
+    for (const s of (sessions || [])) {
+      const inv = s.invitation_id;
+      countMap.set(inv, (countMap.get(inv) || 0) + 1);
+      const cur = scoreMap.get(inv);
+      if (!cur || (s.interest_score || 0) > (cur.interest_score || 0)) {
+        scoreMap.set(inv, s);
+      }
+    }
+
+    const enriched = invitations.map((inv: any) => {
+      const best = scoreMap.get(inv.id);
+      return {
+        ...inv,
+        interest_score: best ? (best.interest_score || 0) : 0,
+        interest_signature_attempted: !!best?.signature_attempted_at,
+        interest_contract_accepted: !!best?.contract_checkbox_at,
+        interest_modal_opens: best?.contract_modal_opens || 0,
+        interest_active_seconds: best?.total_active_seconds || 0,
+        interest_sessions: countMap.get(inv.id) || 0,
+      };
+    });
+    return new Response(JSON.stringify(enriched), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  } catch {
+    // Si la tabla no existe (migración pendiente) devolvemos sin enrich
+    return new Response(JSON.stringify(invitations), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }
 };
 
 export const POST: APIRoute = async ({ request }) => {
