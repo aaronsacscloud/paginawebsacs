@@ -683,7 +683,13 @@ const I18N: Record<string, Record<Lang, string>> = {
 
   // Comp tab section eyebrows + projection labels
   'comp.tab1.eyebrow': { es: '1 · Tabulador de recompensas', en: '1 · Reward fee schedule', fr: '1 · Grille de rémunération', it: '1 · Tariffario delle ricompense', pt: '1 · Tabela de recompensas' },
-  'comp.tab1.lead':    { es: 'Te pagamos por cada paso del proceso, no sólo por la venta final.', en: 'We pay for every step of the process, not only the final sale.', fr: 'Nous payons à chaque étape du processus, pas seulement la vente finale.', it: 'Ti paghiamo per ogni step del processo, non solo per la vendita finale.', pt: 'Pagamos por cada etapa do processo, não só pela venta final.' },
+  'comp.tab1.lead':    { es: 'Dos fuentes de ingreso: lo que ganas por <strong>tus propias ventas</strong> y lo que ganas por las <strong>ventas de tu red</strong> cuando llegues a Master Partner.', en: 'Two income streams: what you earn from <strong>your own sales</strong> and what you earn from your <strong>network\'s sales</strong> once you reach Master Partner.', fr: 'Deux sources de revenus : ce que vous gagnez sur <strong>vos propres ventes</strong> et ce que vous gagnez sur les <strong>ventes de votre réseau</strong> une fois Master Partner.', it: 'Due fonti di reddito: ciò che guadagni dalle <strong>tue vendite</strong> e ciò che guadagni dalle <strong>vendite della tua rete</strong> una volta raggiunto Master Partner.', pt: 'Duas fontes de receita: o que você ganha por <strong>suas próprias vendas</strong> e o que ganha pelas <strong>vendas da sua rede</strong> ao chegar a Master Partner.' },
+  'comp.payout.direct.name':   { es: 'Venta directa', en: 'Direct sale', fr: 'Vente directe', it: 'Vendita diretta', pt: 'Venda direta' },
+  'comp.payout.direct.detail': { es: 'Comisión sobre el cobro de la primera factura de cada cliente cerrado por tu link único. Mientras el cliente siga activo, mantienes comisión recurrente sobre las renovaciones.', en: 'Commission on the first invoice of every client closed through your unique link. While the client stays active, you keep recurring commission on renewals.', fr: 'Commission sur la première facture de chaque client conclu via votre lien unique. Tant que le client reste actif, vous gardez la commission récurrente sur les renouvellements.', it: 'Commissione sulla prima fattura di ogni cliente chiuso tramite il tuo link unico. Finché il cliente resta attivo, mantieni la commissione ricorrente sui rinnovi.', pt: 'Comissão sobre a primeira nota fiscal de cada cliente fechado pelo seu link único. Enquanto o cliente seguir ativo, mantém comissão recorrente sobre as renovações.' },
+  'comp.payout.override.step':   { es: 'Paso 2 · al ser Master Partner', en: 'Step 2 · once Master Partner', fr: 'Étape 2 · une fois Master Partner', it: 'Step 2 · da Master Partner', pt: 'Passo 2 · ao ser Master Partner' },
+  'comp.payout.override.name':   { es: 'Override sobre tu red', en: 'Network override', fr: 'Override de votre réseau', it: 'Override sulla tua rete', pt: 'Override sobre sua rede' },
+  'comp.payout.override.detail': { es: 'A partir de 5 sucursales activas vendidas (Master Partner Nv 1), desbloqueas un <strong>10% sobre todo lo que tu red de partners invitados venda</strong>. Pagado por SACS, sin descontar nada del 50% directo de tu invitado. Tu red escala — tu ingreso escala con ella.', en: 'From 5 active stores sold (Master Partner Nv 1), you unlock a <strong>10% on everything your invited partner network sells</strong>. Paid by SACS, with nothing deducted from your invitee\'s 50% direct. Your network scales — your income scales with it.', fr: 'À partir de 5 boutiques actives vendues (Master Partner Nv 1), vous débloquez un <strong>10% sur tout ce que vend votre réseau de partenaires invités</strong>. Payé par SACS, sans rien déduire des 50% directs de votre invité. Votre réseau grandit — vos revenus aussi.', it: 'A partire da 5 negozi attivi venduti (Master Partner Nv 1), sblocchi un <strong>10% su tutto ciò che vende la tua rete di partner invitati</strong>. Pagato da SACS, senza scalare nulla dal 50% diretto del tuo invitato. La tua rete cresce — il tuo reddito cresce con essa.', pt: 'A partir de 5 lojas ativas vendidas (Master Partner Nv 1), você desbloqueia um <strong>10% sobre tudo o que sua rede de parceiros convidados vende</strong>. Pago pela SACS, sem descontar nada dos 50% diretos do seu convidado. Sua rede escala — seu ingresso escala com ela.' },
+  'comp.payout.override.cta':    { es: 'Ver detalles en "Expande tu red" →', en: 'See details in "Expand your network" →', fr: 'Voir détails dans « Étendez votre réseau » →', it: 'Vedi dettagli in "Espandi la tua rete" →', pt: 'Ver detalhes em "Expanda sua rede" →' },
   'comp.tab2.eyebrow': { es: '2 · Tu potencial', en: '2 · Your potential', fr: '2 · Votre potentiel', it: '2 · Il tuo potenziale', pt: '2 · Seu potencial' },
   'comp.tab2.lead':    { es: 'Cada cliente cerrado por tu link se traduce en tu 50% de comisión directa más recurrente. Estas son las matemáticas, basadas en tu porcentaje y los precios públicos de SACS.', en: 'Every client closed via your link translates to your 50% direct commission plus recurring. Here\'s the math, based on your percentage and SACS\' public prices.', fr: 'Chaque client conclu via votre lien se traduit par votre commission directe de 50% plus la récurrente. Voici les calculs, basés sur votre pourcentage et les prix publics de SACS.', it: 'Ogni cliente chiuso tramite il tuo link si traduce nella tua commissione diretta del 50% più ricorrente. Ecco la matematica, basata sulla tua percentuale e sui prezzi pubblici di SACS.', pt: 'Cada cliente fechado pelo seu link se traduz em sua comissão direta de 50% mais recorrente. Esta é a matemática, baseada no seu percentual e nos preços públicos da SACS.' },
 
@@ -3328,31 +3334,20 @@ const partnerLandingUrl = invitation.slug_landing
         <div class="p-comp-section-eyebrow">{tt('comp.tab1.eyebrow')}</div>
         <p class="p-comp-section-lead">{tt('comp.tab1.lead')}</p>
 
-        <div class="p-payout-grid">
-          {bonusPruebaGratis > 0 && (
-            <div class="p-payout-card">
-              <div class="p-payout-step">Paso 1</div>
-              <div class="p-payout-amount">{fmtMoney(bonusPruebaGratis)}</div>
-              <div class="p-payout-name">Prueba gratis activada</div>
-              <div class="p-payout-detail">Cada usuario que llega por tu link y se registra para una prueba gratis. Pago al confirmar el alta.</div>
-            </div>
-          )}
-          {bonusCompletada > 0 && (
-            <div class="p-payout-card">
-              <div class="p-payout-step">Paso 2</div>
-              <div class="p-payout-amount">{fmtMoney(bonusCompletada)}</div>
-              <div class="p-payout-name">Demo completada</div>
-              <div class="p-payout-detail">Cuando el prospecto asiste y completa un demo válido con SACS (mín. 25 min, decisor presente).</div>
-            </div>
-          )}
-          {tabulador.venta_directa_pct !== undefined && (
-            <div class="p-payout-card p-payout-card--featured">
-              <div class="p-payout-step">Paso 3</div>
-              <div class="p-payout-amount">{tabulador.venta_directa_pct}%</div>
-              <div class="p-payout-name">Venta directa</div>
-              <div class="p-payout-detail">Comisión sobre el cobro de la primera factura del cliente cerrado a través de tu link.</div>
-            </div>
-          )}
+        <div class="p-payout-grid p-payout-grid--2col">
+          <div class="p-payout-card p-payout-card--featured">
+            <div class="p-payout-step">Paso 1 · desde el día 1</div>
+            <div class="p-payout-amount">{tabulador.venta_directa_pct ?? comisionPct}%</div>
+            <div class="p-payout-name">{tt('comp.payout.direct.name')}</div>
+            <div class="p-payout-detail" set:html={tt('comp.payout.direct.detail')}></div>
+          </div>
+          <div class="p-payout-card p-payout-card--override">
+            <div class="p-payout-step">{tt('comp.payout.override.step')}</div>
+            <div class="p-payout-amount">10%</div>
+            <div class="p-payout-name">{tt('comp.payout.override.name')}</div>
+            <div class="p-payout-detail" set:html={tt('comp.payout.override.detail')}></div>
+            <a href="#red" data-tab-link="red" class="p-payout-card-cta">{tt('comp.payout.override.cta')}</a>
+          </div>
         </div>
 
         {tabulador.notas && (
@@ -3370,36 +3365,6 @@ const partnerLandingUrl = invitation.slug_landing
         <div class="p-comp-divider"></div>
         <div class="p-comp-section-eyebrow">{tt('comp.tab2.eyebrow')}</div>
         <p class="p-comp-section-lead">{tt('comp.tab2.lead')}</p>
-
-        <!-- ── Bonos por activaciones y demos ── -->
-        {(bonusPruebaGratis > 0 || bonusCompletada > 0) && (
-          <div class="p-projection-block">
-            <div class="p-projection-eyebrow">{tt('proj.bonos.eyebrow')}</div>
-            <div class="p-projection-title">{tt('proj.bonos.title')}</div>
-            <p class="p-projection-lead">
-              {bonusPruebaGratis > 0 && <>Cada usuario que llega por tu link y activa una <strong>prueba gratis</strong> te paga <strong>{fmtMoney(bonusPruebaGratis)}</strong>{bonusCompletada > 0 && <>, y cada <strong>demo completada</strong> te paga <strong>{fmtMoney(bonusCompletada)}</strong></>}.</>}
-              {bonusPruebaGratis === 0 && bonusCompletada > 0 && <>Cada demo completada te paga <strong>{fmtMoney(bonusCompletada)}</strong>.</>}
-              {' '}Esto es lo que ganas según tu ritmo:
-            </p>
-
-            <div class="p-demo-cards">
-              {DEMO_SCENARIOS.map((s, idx) => {
-                const monthly = calcDemoMonthly(s);
-                const annual = monthly * 12;
-                return (
-                  <div class={`p-demo-card ${idx === 1 ? 'p-demo-card--featured' : ''}`}>
-                    <div class="p-demo-card-label">{s.label}</div>
-                    <div class="p-demo-card-meta">{s.pruebas_gratis} pruebas gratis · {s.completadas} demos / mes</div>
-                    <div class="p-demo-card-amount">{fmtMoney(monthly)}</div>
-                    <div class="p-demo-card-period">/ mes en bonos</div>
-                    <div class="p-demo-card-annual">{fmtMoney(annual)} al año</div>
-                    <div class="p-demo-card-hint">{s.hint}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
         <!-- ── Calculadora interactiva ── -->
         <div class="p-calc" data-calc data-rate={ratePartner} data-bp={bonusPruebaGratis} data-bd={bonusCompletada} data-fx={FX[lang].rate} data-cur={FX[lang].code} data-loc={FX[lang].locale}>
@@ -7069,6 +7034,46 @@ const partnerLandingUrl = invitation.slug_landing
     margin-top: 4px;
   }
   .p-payout-card--featured .p-payout-detail { color: rgba(255,255,255,0.65); }
+  .p-payout-card--featured .p-payout-detail strong { color: #fff; }
+
+  /* Layout 2-col (Venta directa + Override) */
+  .p-payout-grid--2col {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+  }
+  @media (max-width: 720px) { .p-payout-grid--2col { grid-template-columns: 1fr; } }
+
+  /* Card de Override 10% (paso 2) — beige/cream con accent dorado */
+  .p-payout-card--override {
+    background: linear-gradient(135deg, #fafaf7 0%, #f5f0e6 100%);
+    border: 1px solid rgba(201, 169, 107, 0.25);
+  }
+  .p-payout-card--override .p-payout-step {
+    color: #c9a96b;
+  }
+  .p-payout-card--override .p-payout-amount {
+    color: #1a1a1a;
+    background: linear-gradient(135deg, #1a1a1a 0%, #b8965a 80%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .p-payout-card-cta {
+    margin-top: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #4B7BE5;
+    text-decoration: none;
+    letter-spacing: 0.005em;
+    transition: color 160ms ease, transform 160ms ease;
+    align-self: flex-start;
+  }
+  .p-payout-card-cta:hover { color: #1a1a1a; transform: translateX(2px); }
+  .p-payout-card--override .p-payout-card-cta { color: #8a7240; }
+  .p-payout-card--override .p-payout-card-cta:hover { color: #1a1a1a; }
 
   .p-payout-notes {
     margin-top: 28px;
