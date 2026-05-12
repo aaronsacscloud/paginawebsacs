@@ -182,7 +182,10 @@ export const demoLinkStats = {
 };
 
 // ─── Content / puntos ───
+import { CONTENT_TYPES as REAL_CONTENT_TYPES } from './content-types';
+
 export const demoContent = {
+  tipos: REAL_CONTENT_TYPES,
   items: [
     { id: 'd1', tipo: 'reel', plataforma: 'instagram', url: 'https://instagram.com/reel/demo1', puntos: 40, estado: 'approved', categoria: 'contenido', mes_acreditado: nowYM(), created_at: daysAgo(3), descripcion: 'Reel mostrando POS en mi tienda' },
     { id: 'd2', tipo: 'tiktok', plataforma: 'tiktok', url: 'https://tiktok.com/@demo/video/2', puntos: 25, estado: 'approved', categoria: 'contenido', mes_acreditado: nowYM(), created_at: daysAgo(7), descripcion: 'TikTok caso de uso' },
