@@ -95,7 +95,7 @@ export default function PartnersTab() {
   const [detailPartnerId, setDetailPartnerId] = useState<string | null>(null);
   const [recoverInvitation, setRecoverInvitation] = useState<Invitation | null>(null);
   // Kebab menu de acciones: ID de la fila con menu abierto + posición del dropdown
-  const [openMenu, setOpenMenu] = useState<{ id: string; top: number; right: number } | null>(null);
+  const [openMenu, setOpenMenu] = useState<{ id: string; top?: number; bottom?: number; right: number } | null>(null);
 
   // Click fuera del menú lo cierra
   useEffect(() => {
@@ -422,9 +422,15 @@ export default function PartnersTab() {
                           if (openMenu?.id === it.id) {
                             setOpenMenu(null);
                           } else {
+                            // Estima la altura del dropdown: ~44px por item × hasta 8 items + 12 padding
+                            const ESTIMATED_HEIGHT = 360;
+                            const spaceBelow = window.innerHeight - rect.bottom;
+                            const spaceAbove = rect.top;
+                            const openUp = spaceBelow < ESTIMATED_HEIGHT && spaceAbove > spaceBelow;
                             setOpenMenu({
                               id: it.id,
-                              top: rect.bottom + 6,
+                              top: openUp ? undefined : rect.bottom + 6,
+                              bottom: openUp ? window.innerHeight - rect.top + 6 : undefined,
                               right: window.innerWidth - rect.right,
                             });
                           }
@@ -492,9 +498,12 @@ export default function PartnersTab() {
             role="menu"
             style={{
               position: 'fixed',
-              top: openMenu.top,
+              ...(openMenu.top !== undefined ? { top: openMenu.top } : {}),
+              ...(openMenu.bottom !== undefined ? { bottom: openMenu.bottom } : {}),
               right: openMenu.right,
               minWidth: 220,
+              maxHeight: 'calc(100vh - 24px)',
+              overflowY: 'auto' as const,
               background: '#fff',
               border: '1px solid #e5e5e5',
               borderRadius: 12,
