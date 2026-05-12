@@ -121,7 +121,7 @@ export default function HomeTab({ user, go }: Props) {
       )}
 
       {/* 4 hero stats */}
-      <div style={SS.statGrid}>
+      <div data-tour="home-stats" style={SS.statGrid}>
         <StatCard
           label="Próximo pago"
           value={fmt(proximoPago)}
@@ -167,7 +167,7 @@ export default function HomeTab({ user, go }: Props) {
 
       {/* Tu link inline */}
       <h2 style={SS.h2}>Tu link único</h2>
-      <div style={SS.linkBig}>
+      <div data-tour="home-link" style={SS.linkBig}>
         <div style={SS.linkUrl}>{partnerUrl}</div>
         <div style={SS.linkActions}>
           <button style={iconBtnDark} onClick={async () => {
@@ -199,7 +199,7 @@ export default function HomeTab({ user, go }: Props) {
 
       {/* Pipeline activo */}
       <h2 style={SS.h2}>Pipeline activo</h2>
-      <div style={SS.pipeRow}>
+      <div data-tour="home-pipeline" style={SS.pipeRow}>
         <PipelineCard Icon={Icon.Sparkle}    num={stage.nuevos}             label="Nuevos"          sub={stage.nuevos > 0 ? 'Sin contactar' : 'Llegan vía tu link'} onClick={() => go('leads')} accent={C.muted} />
         <PipelineCard Icon={Icon.Gift}       num={stage.prueba}             label="Prueba activa"   sub={stage.prueba > 0 ? 'En período de 14 días' : 'Aún ninguno'}  onClick={() => go('leads')} accent={C.amber} />
         <PipelineCard Icon={Icon.Phone}      num={stage.demoAg}             label="Demo agendada"   sub={proximaDemo ? `Próx: ${proximaDemo.invitee_nombre?.split(' ')[0] || 'cliente'}` : 'Por agendar'} onClick={() => go('leads')} accent={C.accent} />

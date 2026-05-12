@@ -159,6 +159,7 @@ export default function PortalShell({ initialUser }: Props) {
                     const isActive = tab === t.id;
                     return (
                       <button key={t.id} onClick={() => go(t.id)}
+                        data-tour={`sidebar-${t.id}`}
                         style={{ ...S.sideBtn, ...(isActive ? S.sideBtnActive : {}) }}
                         onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = C.borderSoft; }}
                         onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>

@@ -1,509 +1,449 @@
-// Onboarding tour del portal partner · 10 steps full-screen modal-by-modal.
-// Estilo Linear / Stripe Atlas — sin spotlight, sin overlays con hueco.
-// Cada paso = pantalla limpia con mini-preview del componente del portal.
+// Onboarding tour interactivo · spotlight estilo Intercom/Driver.js.
+// El portal demo sigue visible debajo. Overlay con hueco + tooltip flotante.
+// Auto-switch de tabs cuando el step lo requiere.
 
-import { useEffect, useState } from 'react';
-import { C, SS } from './styles';
+import { useEffect, useRef, useState } from 'react';
+import { C } from './styles';
 import { Icon } from './icons';
+
+type Step = {
+  tabHash: string;                                    // tab donde debe estar
+  target?: string;                                    // data-tour selector. Si no hay target → modal centrado
+  title: string | ((name: string) => string);
+  desc: string | ((name: string) => string);
+  preferPosition?: 'top' | 'bottom' | 'right' | 'left' | 'center';
+};
+
+type Rect = { top: number; left: number; width: number; height: number };
 
 type Props = {
   user: { id: string; nombre: string; email: string };
   onComplete: () => void;
 };
 
+const PAD = 10;        // padding alrededor del spotlight
+const TOOLTIP_W = 360;
+const TOOLTIP_GAP = 14;
+
 export default function OnboardingTour({ user, onComplete }: Props) {
   const [step, setStep] = useState(0);
-  const [animating, setAnimating] = useState(false);
+  const [rect, setRect] = useState<Rect | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number; arrow?: 'top' | 'bottom' | 'left' | 'right' }>({ top: 0, left: 0 });
+  const [ready, setReady] = useState(false);
+  const tooltipRef = useRef<HTMLDivElement>(null);
 
   const firstName = (user.nombre || 'partner').split(' ')[0];
+  const current = STEPS[step];
+  const isLast = step === STEPS.length - 1;
+  const isFirst = step === 0;
+  const isCentered = !current.target;
 
-  // Bloquea scroll del body mientras está activo
+  // ─── Tab switch automático ──
   useEffect(() => {
-    const original = document.body.style.overflow;
+    setReady(false);
+    setRect(null);
+    const currentHash = (window.location.hash || '#home').replace('#', '');
+    if (currentHash !== current.tabHash) {
+      window.location.hash = current.tabHash;
+    }
+    // Espera 250ms para que React renderice la tab nueva, luego mide el target
+    const t = setTimeout(() => measure(), 280);
+    return () => clearTimeout(t);
+  }, [step]);
+
+  // ─── Medición del target + reposicionamiento del tooltip ──
+  function measure() {
+    if (isCentered) {
+      setRect(null);
+      setReady(true);
+      return;
+    }
+    const sel = `[data-tour="${current.target}"]`;
+    const el = document.querySelector(sel) as HTMLElement | null;
+    if (!el) {
+      // Si no encuentra el target, lo trata como centrado
+      setRect(null);
+      setReady(true);
+      return;
+    }
+
+    // Scroll el target a la vista si está fuera
+    el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+
+    // Espera un frame para que termine el scroll
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const r = el.getBoundingClientRect();
+        const newRect: Rect = {
+          top: r.top,
+          left: r.left,
+          width: r.width,
+          height: r.height,
+        };
+        setRect(newRect);
+        setTooltipPos(calcTooltipPos(newRect, current.preferPosition));
+        setReady(true);
+      });
+    });
+  }
+
+  // Recalcular en resize/scroll
+  useEffect(() => {
+    if (!current.target) return;
+    const onResize = () => {
+      const el = document.querySelector(`[data-tour="${current.target}"]`) as HTMLElement | null;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const nr = { top: r.top, left: r.left, width: r.width, height: r.height };
+      setRect(nr);
+      setTooltipPos(calcTooltipPos(nr, current.preferPosition));
+    };
+    window.addEventListener('resize', onResize);
+    window.addEventListener('scroll', onResize, true);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('scroll', onResize, true);
+    };
+  }, [step, current.target]);
+
+  // ─── Lock body scroll ──
+  useEffect(() => {
+    const orig = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = original; };
+    return () => { document.body.style.overflow = orig; };
   }, []);
 
-  // Keyboard nav: solo derecha/izquierda. NO Escape (no se puede cancelar).
+  // ─── Keyboard nav ──
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === 'Enter') next();
-      else if (e.key === 'ArrowLeft') prev();
+      if (e.key === 'ArrowLeft') prev();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   });
 
   function next() {
-    if (animating) return;
     if (step >= STEPS.length - 1) return;
-    setAnimating(true);
-    setTimeout(() => { setStep(s => s + 1); setAnimating(false); }, 200);
+    setStep(s => s + 1);
   }
-
   function prev() {
-    if (animating) return;
     if (step <= 0) return;
-    setAnimating(true);
-    setTimeout(() => { setStep(s => s - 1); setAnimating(false); }, 200);
+    setStep(s => s - 1);
   }
-
   function finish() {
     try { localStorage.setItem('sacs_onboarding_done', '1'); } catch (_e) {}
     onComplete();
-    // Redirige al portal real (sin ?demo=1)
-    const target = '/partner/portal';
-    if (window.location.pathname === target && window.location.search.includes('demo=1')) {
-      window.location.href = target;
+    if (window.location.search.includes('demo=1')) {
+      window.location.href = '/partner/portal';
     } else {
-      window.location.hash = 'home';
       window.location.reload();
     }
   }
 
-  const current = STEPS[step];
-  const isLast = step === STEPS.length - 1;
-  const isFirst = step === 0;
+  const title = typeof current.title === 'function' ? current.title(firstName) : current.title;
+  const desc = typeof current.desc === 'function' ? current.desc(firstName) : current.desc;
 
   return (
-    <div className="onb-root">
-      {/* Progress bar */}
-      <div className="onb-progress">
-        <div className="onb-progress-fill" style={{ width: `${((step + 1) / STEPS.length) * 100}%` }} />
-      </div>
+    <>
+      {/* Overlay con hueco (SVG mask) */}
+      <svg
+        className="onb-overlay"
+        style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9998 }}>
+        <defs>
+          <mask id="onb-cutout">
+            <rect width="100%" height="100%" fill="white" />
+            {rect && (
+              <rect
+                x={rect.left - PAD}
+                y={rect.top - PAD}
+                width={rect.width + PAD * 2}
+                height={rect.height + PAD * 2}
+                rx="12"
+                fill="black"
+              />
+            )}
+          </mask>
+        </defs>
+        <rect
+          width="100%"
+          height="100%"
+          fill="rgba(15, 23, 42, 0.65)"
+          mask="url(#onb-cutout)"
+          style={{ transition: 'opacity 0.3s' }}
+        />
+        {/* Borde decorativo alrededor del hueco */}
+        {rect && (
+          <rect
+            x={rect.left - PAD}
+            y={rect.top - PAD}
+            width={rect.width + PAD * 2}
+            height={rect.height + PAD * 2}
+            rx="12"
+            fill="none"
+            stroke={C.brand}
+            strokeWidth="2"
+            style={{ filter: 'drop-shadow(0 0 12px rgba(75,123,229,0.55))' }}
+          />
+        )}
+      </svg>
 
-      <div className="onb-counter">
-        Paso <strong>{step + 1}</strong> de {STEPS.length}
-      </div>
-
-      {/* Step content */}
-      <div className="onb-stage" key={step}>
-        <div className="onb-content">
-          {/* Eyebrow */}
-          {current.eyebrow && (
-            <div className="onb-eyebrow">{current.eyebrow}</div>
-          )}
+      {/* Tooltip card */}
+      {ready && (
+        <div
+          ref={tooltipRef}
+          className="onb-tooltip"
+          style={{
+            position: 'fixed',
+            ...(isCentered ? {
+              top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+            } : {
+              top: tooltipPos.top, left: tooltipPos.left,
+            }),
+            width: TOOLTIP_W,
+            maxWidth: 'calc(100vw - 32px)',
+            background: '#fff',
+            borderRadius: 14,
+            boxShadow: '0 20px 50px -8px rgba(0,0,0,0.25), 0 4px 12px -4px rgba(0,0,0,0.10)',
+            zIndex: 9999,
+            padding: '22px 24px 18px',
+            animation: 'onb-pop 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+          }}>
+          {/* Counter */}
+          <div style={{
+            fontSize: 10, color: C.brand, fontWeight: 700,
+            letterSpacing: '0.12em', textTransform: 'uppercase',
+            marginBottom: 8,
+          }}>
+            Paso {step + 1} de {STEPS.length}
+          </div>
 
           {/* Title */}
-          <h1 className="onb-title">{typeof current.title === 'function' ? current.title(firstName) : current.title}</h1>
+          <h3 style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: isCentered ? 26 : 19,
+            fontWeight: 600,
+            color: C.text,
+            margin: '0 0 8px',
+            letterSpacing: '-0.018em',
+            lineHeight: 1.25,
+          }}>
+            {title}
+          </h3>
 
-          {/* Description */}
-          <p className="onb-desc">{typeof current.desc === 'function' ? current.desc(firstName) : current.desc}</p>
+          {/* Desc */}
+          <p style={{
+            fontSize: 14,
+            color: C.muted,
+            lineHeight: 1.55,
+            margin: '0 0 18px',
+          }}>
+            {desc}
+          </p>
 
-          {/* Visual / preview */}
-          <div className="onb-visual">
-            {current.visual(firstName, user)}
+          {/* Progress bar */}
+          <div style={{
+            height: 3, background: C.borderSoft,
+            borderRadius: 999, overflow: 'hidden', marginBottom: 16,
+          }}>
+            <div style={{
+              height: '100%', width: `${((step + 1) / STEPS.length) * 100}%`,
+              background: `linear-gradient(90deg, ${C.brand}, ${C.brandDark})`,
+              transition: 'width 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+            }} />
+          </div>
+
+          {/* Footer nav */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+          }}>
+            <button onClick={prev}
+              disabled={isFirst}
+              style={{
+                padding: '8px 12px',
+                background: 'transparent',
+                color: isFirst ? C.mutedLight : C.muted,
+                border: 'none',
+                fontSize: 13, fontWeight: 600,
+                cursor: isFirst ? 'default' : 'pointer',
+                fontFamily: 'inherit',
+                opacity: isFirst ? 0.5 : 1,
+              }}>
+              ← Anterior
+            </button>
+            {isLast ? (
+              <button onClick={finish}
+                style={{
+                  padding: '10px 20px',
+                  background: C.brand, color: '#fff',
+                  border: 'none', borderRadius: 999,
+                  fontSize: 13, fontWeight: 600,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  letterSpacing: '-0.005em',
+                }}>
+                Ir a mi cuenta real <Icon.ArrowRight size={14} />
+              </button>
+            ) : (
+              <button onClick={next}
+                style={{
+                  padding: '10px 20px',
+                  background: C.brand, color: '#fff',
+                  border: 'none', borderRadius: 999,
+                  fontSize: 13, fontWeight: 600,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  letterSpacing: '-0.005em',
+                }}>
+                Siguiente <Icon.ArrowRight size={14} />
+              </button>
+            )}
           </div>
         </div>
-      </div>
-
-      {/* Footer nav */}
-      <div className="onb-footer">
-        <button
-          onClick={prev}
-          disabled={isFirst}
-          className="onb-btn onb-btn-ghost"
-          style={{ visibility: isFirst ? 'hidden' : 'visible' }}>
-          ← Anterior
-        </button>
-        <div className="onb-dots">
-          {STEPS.map((_, i) => (
-            <span key={i} className="onb-dot" style={{
-              background: i === step ? C.brand : i < step ? `${C.brand}66` : C.border,
-              transform: i === step ? 'scale(1.4)' : 'scale(1)',
-            }} />
-          ))}
-        </div>
-        {isLast ? (
-          <button onClick={finish} className="onb-btn onb-btn-primary">
-            Ir a mi cuenta real <Icon.ArrowRight size={14} />
-          </button>
-        ) : (
-          <button onClick={next} className="onb-btn onb-btn-primary">
-            Siguiente <Icon.ArrowRight size={14} />
-          </button>
-        )}
-      </div>
+      )}
 
       <style dangerouslySetInnerHTML={{ __html: `
-        .onb-root {
-          position: fixed; inset: 0; z-index: 9999;
-          background: #fafafa;
-          font-family: var(--font-body, system-ui);
-          color: ${C.text};
-          display: flex; flex-direction: column;
-          animation: onb-fade-in 0.3s ease-out;
+        @keyframes onb-pop {
+          from { opacity: 0; transform: scale(0.96) translate(var(--tx, 0), var(--ty, 0)); }
+          to   { opacity: 1; transform: scale(1) translate(var(--tx, 0), var(--ty, 0)); }
         }
-        @keyframes onb-fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        .onb-progress {
-          height: 3px; background: ${C.border};
-          position: relative; flex-shrink: 0;
-        }
-        .onb-progress-fill {
-          height: 100%; background: linear-gradient(90deg, ${C.brand}, ${C.brandDark});
-          transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .onb-counter {
-          position: absolute; top: 18px; right: 24px;
-          font-size: 11px; color: ${C.muted}; font-weight: 600;
-          letter-spacing: 0.08em; text-transform: uppercase;
-        }
-        .onb-counter strong { color: ${C.text}; font-weight: 700; }
-
-        .onb-stage {
-          flex: 1;
-          overflow-y: auto;
-          display: flex; align-items: center; justify-content: center;
-          padding: 48px 24px;
-          animation: onb-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        @keyframes onb-slide-in {
-          from { opacity: 0; transform: translateY(12px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .onb-content {
-          max-width: 640px; width: 100%; text-align: center;
-        }
-        .onb-eyebrow {
-          font-size: 11px; color: ${C.brand};
-          font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
-          margin-bottom: 14px;
-        }
-        .onb-title {
-          font-family: var(--font-display);
-          font-size: 42px; font-weight: 500;
-          line-height: 1.1; letter-spacing: -0.03em;
-          margin: 0 0 16px; color: ${C.text};
-        }
-        .onb-desc {
-          font-size: 17px; color: ${C.muted};
-          line-height: 1.55; margin: 0 auto 40px;
-          max-width: 540px;
-        }
-        .onb-visual {
-          width: 100%; display: flex; align-items: center; justify-content: center;
-        }
-
-        .onb-footer {
-          flex-shrink: 0;
-          padding: 22px 32px;
-          display: flex; align-items: center; justify-content: space-between; gap: 16px;
-          border-top: 1px solid ${C.borderSoft};
-          background: #fff;
-        }
-        .onb-btn {
-          padding: 12px 22px;
-          border-radius: 999px;
-          font-family: inherit; font-size: 14px; font-weight: 600;
-          letter-spacing: -0.005em;
-          cursor: pointer; border: none;
-          display: inline-flex; align-items: center; gap: 8px;
-          transition: background 0.15s, transform 0.1s;
-        }
-        .onb-btn:disabled { opacity: 0.5; cursor: default; }
-        .onb-btn-primary { background: ${C.brand}; color: #fff; }
-        .onb-btn-primary:hover:not(:disabled) { background: ${C.brandDark}; transform: translateY(-1px); }
-        .onb-btn-ghost { background: transparent; color: ${C.muted}; }
-        .onb-btn-ghost:hover:not(:disabled) { color: ${C.text}; }
-
-        .onb-dots {
-          display: flex; gap: 8px; align-items: center;
-        }
-        .onb-dot {
-          width: 6px; height: 6px; border-radius: 50%;
-          transition: background 0.3s, transform 0.3s;
-        }
-
-        @media (max-width: 720px) {
-          .onb-title { font-size: 30px; }
-          .onb-desc { font-size: 15px; margin-bottom: 28px; }
-          .onb-stage { padding: 36px 18px; }
-          .onb-footer { padding: 16px 18px; }
-          .onb-btn { padding: 10px 18px; font-size: 13px; }
-          .onb-counter { font-size: 10px; right: 16px; }
-        }
+        .onb-tooltip { will-change: transform; }
       ` }} />
-    </div>
+    </>
   );
 }
 
-// ─── Mini-previews (reuso de styles del portal) ────────────────────
+// ─── Posicionamiento smart del tooltip ──
+function calcTooltipPos(rect: Rect, prefer?: string): { top: number; left: number; arrow?: 'top' | 'bottom' | 'left' | 'right' } {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const tw = TOOLTIP_W;
+  const th = 240; // estimación promedio
+  const gap = TOOLTIP_GAP;
+  const margin = 16; // margen mínimo a los bordes
 
-function MiniCard({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
-  return (
-    <div style={{
-      background: '#fff',
-      border: `1px solid ${C.border}`,
-      borderRadius: 14,
-      padding: '20px 22px',
-      boxShadow: '0 8px 24px -16px rgba(0,0,0,0.08)',
-      ...style,
-    }}>{children}</div>
-  );
+  const spaceBelow = vh - (rect.top + rect.height);
+  const spaceAbove = rect.top;
+  const spaceRight = vw - (rect.left + rect.width);
+  const spaceLeft = rect.left;
+
+  // Decide posición preferida (right si el target está en sidebar/izquierda)
+  let position: 'bottom' | 'top' | 'right' | 'left' = 'bottom';
+  if (prefer === 'right' || (rect.left < 280 && spaceRight > tw + gap)) {
+    position = 'right';
+  } else if (prefer === 'left' || (rect.left > vw - 280 && spaceLeft > tw + gap)) {
+    position = 'left';
+  } else if (prefer === 'top' || (spaceBelow < th + gap && spaceAbove > th + gap)) {
+    position = 'top';
+  } else {
+    position = 'bottom';
+  }
+
+  let top = 0, left = 0;
+  if (position === 'bottom') {
+    top = rect.top + rect.height + gap;
+    left = rect.left + rect.width / 2 - tw / 2;
+  } else if (position === 'top') {
+    top = rect.top - th - gap;
+    left = rect.left + rect.width / 2 - tw / 2;
+  } else if (position === 'right') {
+    top = rect.top + rect.height / 2 - th / 2;
+    left = rect.left + rect.width + gap;
+  } else if (position === 'left') {
+    top = rect.top + rect.height / 2 - th / 2;
+    left = rect.left - tw - gap;
+  }
+
+  // Clamp a los bordes
+  if (left < margin) left = margin;
+  if (left + tw > vw - margin) left = vw - tw - margin;
+  if (top < margin) top = margin;
+  if (top + th > vh - margin) top = vh - th - margin;
+
+  return { top, left, arrow: position };
 }
 
-function StatPreview({ label, value, hint, accent }: { label: string; value: string; hint?: string; accent: string }) {
-  return (
-    <MiniCard style={{ position: 'relative', flex: 1, minWidth: 140 }}>
-      <span style={{ position: 'absolute', top: 16, right: 16, width: 6, height: 6, borderRadius: '50%', background: accent }} />
-      <div style={{ fontSize: 10, color: C.muted, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginBottom: 10 }}>{label}</div>
-      <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 500, color: C.text, letterSpacing: '-0.022em' }}>{value}</div>
-      {hint && <div style={{ fontSize: 11, color: C.mutedLight, marginTop: 6 }}>{hint}</div>}
-    </MiniCard>
-  );
-}
+// ─── STEPS ──────────────────────────────────────────────
 
-function Avatar({ initial, large }: { initial: string; large?: boolean }) {
-  const s = large ? 120 : 80;
-  return (
-    <span style={{
-      width: s, height: s, borderRadius: '50%',
-      background: `linear-gradient(135deg, ${C.brand}, ${C.purple})`,
-      color: '#fff',
-      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-      fontFamily: 'var(--font-display)', fontSize: large ? 52 : 32, fontWeight: 600,
-      boxShadow: `0 20px 50px -16px rgba(75,123,229,0.45)`,
-    }}>{initial}</span>
-  );
-}
-
-// ─── STEPS ────────────────────────────────────────────────
-
-const STEPS: Array<{
-  eyebrow?: string;
-  title: string | ((name: string) => string);
-  desc: string | ((name: string) => string);
-  visual: (name: string, user: any) => JSX.Element;
-}> = [
-  // 1. Bienvenida
+const STEPS: Step[] = [
   {
-    eyebrow: 'Bienvenida al programa',
+    tabHash: 'home',
     title: (n) => `Hola, ${n}`,
-    desc: (n) =>
-      'Soy Aiko, te voy a guiar por tu portal en 60 segundos. Sin sorpresas, sin opciones que confundan — solo lo que necesitas saber.',
-    visual: (n, u) => <Avatar initial={(u.nombre || 'A').charAt(0).toUpperCase()} large />,
+    desc: 'Te voy a guiar por tu portal en 60 segundos sobre los datos demo. Cuando entres a tu cuenta real, todo se va a ver igual pero con tus propios números.',
   },
-
-  // 2. Inicio
   {
-    eyebrow: 'Paso 1 · Tu dashboard',
-    title: 'Inicio',
-    desc: 'Cada que entras al portal, lo primero que ves. Tus 4 números clave en una sola pantalla: cuánto vas a cobrar, cuánto llevas, en qué nivel estás, qué te falta de actividad.',
-    visual: () => (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, width: '100%', maxWidth: 520 }}>
-        <StatPreview label="Próximo pago" value="$3,500" hint="Se deposita el día 1" accent={C.green} />
-        <StatPreview label="Total año" value="$17,500" hint="5 liquidados · 9 en camino" accent={C.accent} />
-        <StatPreview label="Mi nivel" value="Lvl 1" hint="Partner Referidor" accent={C.muted} />
-        <StatPreview label="Puntos del mes" value="87/100" hint="22 días restantes" accent={C.purple} />
-      </div>
-    ),
+    tabHash: 'home',
+    target: 'sidebar-home',
+    title: 'Tu Inicio',
+    desc: 'Tu dashboard principal. Siempre arrancas aquí — todo lo importante en una pantalla.',
+    preferPosition: 'right',
   },
-
-  // 3. Tu link único
   {
-    eyebrow: 'Paso 2 · Tu herramienta clave',
+    tabHash: 'home',
+    target: 'home-stats',
+    title: 'Tus 4 números clave',
+    desc: 'Próximo pago · total año · nivel actual · puntos del mes. Cambian en tiempo real cuando algo pasa con tus leads o tus pagos.',
+    preferPosition: 'bottom',
+  },
+  {
+    tabHash: 'home',
+    target: 'home-link',
     title: 'Tu link único',
-    desc: 'Cada persona que entra usando este link queda atribuida a ti automáticamente — por 90 días vía cookie y permanente en la base de datos. Sin códigos, sin fricción.',
-    visual: (_n, u) => (
-      <div style={{
-        background: `linear-gradient(135deg, ${C.brand}, ${C.brandDark})`,
-        color: '#fff',
-        borderRadius: 16,
-        padding: '24px 28px',
-        width: '100%', maxWidth: 540,
-        textAlign: 'left' as const,
-        boxShadow: '0 12px 32px -12px rgba(75,123,229,0.35)',
-      }}>
-        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 10 }}>Tu link único</div>
-        <div style={{ fontFamily: 'SF Mono, Courier New, monospace', fontSize: 15, marginBottom: 16, wordBreak: 'break-all' as const }}>
-          sacscloud.com/p/{(u.nombre || 'andrea').toLowerCase().split(' ')[0]}
-        </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
-          <span style={{ padding: '6px 12px', background: 'rgba(255,255,255,0.14)', borderRadius: 999, fontSize: 11, fontWeight: 500 }}>Copiar</span>
-          <span style={{ padding: '6px 12px', background: 'rgba(255,255,255,0.14)', borderRadius: 999, fontSize: 11, fontWeight: 500 }}>WhatsApp</span>
-          <span style={{ padding: '6px 12px', background: 'rgba(255,255,255,0.14)', borderRadius: 999, fontSize: 11, fontWeight: 500 }}>Email</span>
-        </div>
-      </div>
-    ),
+    desc: 'Comparte esto en redes, WhatsApp, eventos — donde quieras. Cada persona que entra usándolo queda atribuida a ti por 90 días.',
+    preferPosition: 'top',
   },
-
-  // 4. Pipeline activo
   {
-    eyebrow: 'Paso 3 · Tus prospectos',
-    title: 'Pipeline activo',
-    desc: 'Ve en qué etapa está cada prospecto: desde "Nuevo" hasta "Cliente firmado". Cada vez que algo cambia, tu pipeline se actualiza automáticamente.',
-    visual: () => (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, width: '100%', maxWidth: 560 }}>
-        {[
-          { num: 3, label: 'Nuevos', accent: C.muted },
-          { num: 4, label: 'Prueba', accent: C.amber },
-          { num: 2, label: 'Demo agendada', accent: C.accent },
-          { num: 1, label: 'Demo realizada', accent: C.purple },
-          { num: 14, label: 'Clientes', accent: C.greenDark },
-        ].map((p, i) => (
-          <div key={i} style={{
-            background: '#fff', border: `1px solid ${C.border}`, borderRadius: 12,
-            padding: '14px 12px', textAlign: 'center' as const,
-            boxShadow: '0 4px 12px -8px rgba(0,0,0,0.06)',
-          }}>
-            <div style={{ width: 18, height: 18, borderRadius: 6, background: `${p.accent}1a`, color: p.accent, margin: '0 auto 8px', fontWeight: 700, fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>•</div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 500, color: C.text, letterSpacing: '-0.025em', lineHeight: 1 }}>{p.num}</div>
-            <div style={{ fontSize: 10, color: C.muted, fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginTop: 4 }}>{p.label}</div>
-          </div>
-        ))}
-      </div>
-    ),
+    tabHash: 'home',
+    target: 'home-pipeline',
+    title: 'Tu pipeline activo',
+    desc: 'Aquí ves cuántos prospectos tienes en cada etapa: nuevos, en prueba, demo agendada, demo realizada, ya clientes.',
+    preferPosition: 'top',
   },
-
-  // 5. Dinero estilo banco
   {
-    eyebrow: 'Paso 4 · Tu cuenta SACS',
-    title: 'Dinero, como banco',
-    desc: 'Tu saldo, tu próximo pago, tu historial de movimientos. El día 30 de cada mes liberamos tus comisiones confirmadas. Lo retiras a tu cuenta o lo usas para comprar certificaciones — directo.',
-    visual: () => (
-      <div style={{
-        background: `linear-gradient(135deg, ${C.brand}, ${C.brandDark})`,
-        color: '#fff',
-        borderRadius: 18,
-        padding: '28px 32px',
-        width: '100%', maxWidth: 540,
-        textAlign: 'left' as const,
-        boxShadow: '0 16px 40px -20px rgba(75,123,229,0.45)',
-      }}>
-        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase' as const, marginBottom: 8 }}>Saldo disponible</div>
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: 48, fontWeight: 500, letterSpacing: '-0.04em', lineHeight: 1 }}>$21,830</div>
-        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 10 }}>Disponible para retirar o usar en una certificación.</div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 18, paddingTop: 18, borderTop: '1px solid rgba(255,255,255,0.18)' }}>
-          <span style={{ padding: '8px 14px', background: '#fff', color: C.brand, borderRadius: 999, fontSize: 12, fontWeight: 600 }}>Retirar a mi cuenta</span>
-          <span style={{ padding: '8px 14px', background: 'rgba(255,255,255,0.18)', color: '#fff', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>Usar para certificación</span>
-        </div>
-      </div>
-    ),
+    tabHash: 'dinero',
+    target: 'sidebar-dinero',
+    title: 'Dinero · tu cuenta SACS',
+    desc: 'Aquí está tu saldo disponible, tu historial de pagos y la opción de retirar o usar el dinero para certificaciones.',
+    preferPosition: 'right',
   },
-
-  // 6. Leads y Clientes (CRM)
   {
-    eyebrow: 'Paso 5 · Tu CRM',
-    title: 'Leads y Clientes',
-    desc: 'Tus prospectos pre-pago en "Leads". Cuando alguno firma plan y paga, pasa automáticamente a "Clientes" con su MRR, mi comisión recurrente y la salud de su cuenta.',
-    visual: () => (
-      <div style={{ display: 'flex', gap: 12, width: '100%', maxWidth: 560, flexWrap: 'wrap' as const, justifyContent: 'center' }}>
-        <MiniCard style={{ flex: 1, minWidth: 200, textAlign: 'left' as const }}>
-          <div style={{ fontSize: 10, color: C.muted, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginBottom: 12 }}>Leads · 10 en pipeline</div>
-          <div style={{ fontSize: 12, color: C.text, marginBottom: 6, fontWeight: 500 }}>Joyería Mariana · Nuevo</div>
-          <div style={{ fontSize: 12, color: C.text, marginBottom: 6, fontWeight: 500 }}>Café de Laura · Prueba</div>
-          <div style={{ fontSize: 12, color: C.text, fontWeight: 500 }}>Vázquez Joyas · Demo agendada</div>
-        </MiniCard>
-        <MiniCard style={{ flex: 1, minWidth: 200, textAlign: 'left' as const }}>
-          <div style={{ fontSize: 10, color: C.muted, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginBottom: 12 }}>Clientes · 14 activos</div>
-          <div style={{ fontSize: 12, color: C.text, marginBottom: 6, fontWeight: 500 }}>Cruz Boutique · $1,750/mes</div>
-          <div style={{ fontSize: 12, color: C.text, marginBottom: 6, fontWeight: 500 }}>Castillo Spa · $2,450/mes</div>
-          <div style={{ fontSize: 12, color: C.text, fontWeight: 500 }}>Aguilar Tech · $2,450/mes</div>
-        </MiniCard>
-      </div>
-    ),
+    tabHash: 'dinero',
+    target: 'money-hero',
+    title: 'Saldo disponible',
+    desc: 'El día 30 de cada mes liberamos tus comisiones confirmadas a este saldo. Lo retiras a tu cuenta bancaria o lo usas para comprar una certificación directamente.',
+    preferPosition: 'bottom',
   },
-
-  // 7. Mi nivel + compromisos
   {
-    eyebrow: 'Paso 6 · Tu nivel',
+    tabHash: 'leads',
+    target: 'sidebar-leads',
+    title: 'Leads · tus prospectos',
+    desc: 'Los que aún no firman plan. Filtrables por etapa, con drawer de detalle al hacer click. Tu pipeline pre-cliente.',
+    preferPosition: 'right',
+  },
+  {
+    tabHash: 'clientes',
+    target: 'sidebar-clientes',
+    title: 'Clientes · los que pagan',
+    desc: 'Los clientes activos en su plan. Te generan comisión recurrente mientras estén activos. Ves su MRR, salud, meses activos.',
+    preferPosition: 'right',
+  },
+  {
+    tabHash: 'nivel',
+    target: 'sidebar-nivel',
     title: 'Mi nivel · 100 puntos al mes',
-    desc: 'Cada mes generas 100 puntos con contenido en redes, demos, eventos o actividades de apoyo. Te dan certeza de continuidad y subes de nivel automáticamente al cumplir milestones.',
-    visual: () => (
-      <MiniCard style={{ width: '100%', maxWidth: 540, textAlign: 'left' as const }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 500, color: C.text, letterSpacing: '-0.025em' }}>
-            87 <span style={{ fontSize: 14, color: C.muted, fontWeight: 400 }}>/ 100 puntos</span>
-          </span>
-          <span style={{ fontSize: 11, color: C.amber, fontWeight: 600 }}>22 días restantes</span>
-        </div>
-        <div style={{ height: 10, background: '#f0f0ee', borderRadius: 999, overflow: 'hidden' as const, marginBottom: 14 }}>
-          <div style={{ height: '100%', width: '87%', background: `linear-gradient(90deg, #6CD6C2, ${C.brand})`, borderRadius: 999 }} />
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {[1, 2, 3, 4].map(lv => (
-            <div key={lv} style={{ flex: 1, height: 4, borderRadius: 2, background: lv === 1 ? C.green : C.border }} />
-          ))}
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: 10, color: C.muted, fontWeight: 600 }}>
-          <span>Lvl 1 · Referidor</span>
-          <span>Lvl 4 · Founder Circle</span>
-        </div>
-      </MiniCard>
-    ),
+    desc: 'Reporta tu actividad (reels, demos, eventos) para sumar puntos. 100 puntos al mes te mantienen activa. Subes de nivel automáticamente al cumplir milestones.',
+    preferPosition: 'right',
   },
-
-  // 8. Certificaciones
   {
-    eyebrow: 'Paso 7 · Cómo ganar más',
-    title: 'Certificaciones',
-    desc: 'La primera es "Demos · Consultoría Consciente" ($3,500). Te enseña el método para hacer demos profesionales y desbloquea capturar leads directos en tu portal — clientes que tú mismo conociste, sin link.',
-    visual: () => (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, width: '100%', maxWidth: 540 }}>
-        {[
-          { name: 'Demos · Consultoría Consciente', precio: '$3,500', highlight: true },
-          { name: 'Implementación · 1 sucursal', precio: '$7,500' },
-          { name: 'Migración de datos', precio: '$7,500' },
-          { name: 'Automatización con IA', precio: '$14,000' },
-        ].map((c, i) => (
-          <MiniCard key={i} style={{
-            textAlign: 'left' as const,
-            background: c.highlight ? C.brandSoft : '#fff',
-            borderColor: c.highlight ? C.brandTint : C.border,
-          }}>
-            {c.highlight && (
-              <div style={{ display: 'inline-block', padding: '2px 8px', background: C.brand, color: '#fff', borderRadius: 999, fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' as const, marginBottom: 6 }}>
-                Inicial
-              </div>
-            )}
-            <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 6 }}>{c.name}</div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600, color: c.highlight ? C.brand : C.text }}>{c.precio}</div>
-          </MiniCard>
-        ))}
-      </div>
-    ),
+    tabHash: 'home',
+    target: 'wa-fab',
+    title: 'Soporte por WhatsApp',
+    desc: 'Si te trabas en algo, este botón siempre está visible — esquina inferior derecha. Te conecta directo con un humano del equipo. Respondemos en menos de 2 horas hábiles.',
+    preferPosition: 'left',
   },
-
-  // 9. WhatsApp soporte
   {
-    eyebrow: 'Paso 8 · Soporte siempre',
-    title: 'Si te trabas, escríbenos',
-    desc: 'El botón verde de WhatsApp está siempre visible en tu portal — esquina inferior derecha. Respondemos en menos de 2 horas hábiles, directo con un humano del equipo de partners.',
-    visual: () => (
-      <div style={{
-        display: 'inline-flex', alignItems: 'center', gap: 10,
-        padding: '14px 24px', background: '#25D366', color: '#fff',
-        borderRadius: 999, fontFamily: 'var(--font-body, system-ui)',
-        fontSize: 15, fontWeight: 600,
-        boxShadow: '0 12px 28px -8px rgba(37,211,102,0.45)',
-      }}>
-        <svg width="20" height="20" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
-          <path d="M16.04 4.011C9.443 4.011 4.075 9.376 4.072 15.97c-.001 2.108.55 4.166 1.597 5.98L4 28l6.184-1.622a11.954 11.954 0 005.85 1.49h.005c6.595 0 11.962-5.366 11.965-11.96.001-3.196-1.242-6.201-3.5-8.461a11.886 11.886 0 00-8.464-3.436zm0 21.815a9.96 9.96 0 01-5.071-1.388l-.364-.216-3.768.988 1.006-3.672-.237-.376a9.937 9.937 0 01-1.524-5.293c.002-5.478 4.461-9.936 9.944-9.936a9.882 9.882 0 017.029 2.913 9.873 9.873 0 012.91 7.03c-.002 5.479-4.461 9.95-9.925 9.95zm5.452-7.448c-.299-.149-1.769-.873-2.043-.972-.274-.1-.474-.149-.673.15-.2.299-.773.972-.948 1.171-.174.2-.349.224-.648.075-.299-.149-1.262-.465-2.405-1.485-.889-.793-1.49-1.773-1.664-2.071-.174-.299-.018-.46.131-.609.134-.134.299-.349.448-.523.149-.174.199-.299.299-.498.099-.2.05-.374-.025-.523-.075-.149-.673-1.62-.922-2.219-.243-.583-.49-.504-.673-.514-.174-.008-.374-.01-.573-.01a1.097 1.097 0 00-.798.374c-.274.299-1.046 1.022-1.046 2.493s1.07 2.891 1.22 3.09c.149.2 2.107 3.217 5.105 4.512.713.308 1.27.492 1.704.63.715.227 1.367.195 1.882.119.574-.086 1.769-.723 2.018-1.421.249-.698.249-1.297.174-1.421-.074-.124-.273-.199-.572-.348z" />
-        </svg>
-        WhatsApp
-      </div>
-    ),
-  },
-
-  // 10. Final
-  {
-    eyebrow: 'Estás listo',
-    title: 'Empieza a generar',
-    desc: 'Ya conoces tu portal. Entra a tu cuenta real y empieza desde tu primer cliente. Comparte tu link, agenda demos, suma puntos. Estaremos contigo en cada paso.',
-    visual: (n, u) => (
-      <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 18 }}>
-        <Avatar initial={(u.nombre || 'A').charAt(0).toUpperCase()} large />
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          padding: '8px 18px', background: 'rgba(42,181,160,0.12)', color: C.greenDark,
-          borderRadius: 999, fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' as const,
-        }}>
-          ✓ Tour completado
-        </div>
-      </div>
-    ),
+    tabHash: 'home',
+    title: (n) => `Listo, ${n}`,
+    desc: 'Ya conoces tu portal. El botón abajo te lleva a tu cuenta real con tus propios datos. Empieza por compartir tu link único y agendar tu primera demo.',
   },
 ];

@@ -127,7 +127,7 @@ export default function MoneyTab({ user }: { user: { id: string; nombre: string;
       <p style={SS.leadSm}>Tu cuenta SACS — todo el dinero que has generado, lo que está confirmado y lo que ya puedes retirar.</p>
 
       {/* HERO BANCARIO · Saldo disponible */}
-      <div style={{
+      <div data-tour="money-hero" style={{
         background: `linear-gradient(135deg, ${C.brand} 0%, ${C.brandDark} 100%)`,
         color: '#fff',
         borderRadius: 20,

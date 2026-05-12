@@ -69,6 +69,7 @@ export default function PortalFabs({ user }: Props) {
       {/* WhatsApp pill button · logo oficial + label */}
       <a href={waLink} target="_blank" rel="noopener"
         className="pp-wa-pill"
+        data-tour="wa-fab"
         aria-label="Contactar soporte por WhatsApp">
         <WhatsAppOfficialIcon size={22} />
         <span className="pp-wa-label">WhatsApp</span>
