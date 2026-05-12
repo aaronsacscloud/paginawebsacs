@@ -114,8 +114,16 @@ const allSchemas = structuredData
         var tipo = parts[1] || 'Partner SACS';
         if (!name) return;
 
-        // El strip aparece cada vez que el visitante entra (no se persiste el dismiss).
-        // El botón X solo lo oculta para la página actual.
+        // El strip se muestra UNA SOLA VEZ por device + nombre de partner.
+        // Si ya se mostró (cualquier dismiss o vista completa), no vuelve a aparecer.
+        var storageKey = 'sacs_strip_seen_' + name.replace(/\s+/g, '_').toLowerCase();
+        try {
+          if (localStorage.getItem(storageKey) === '1') return;
+        } catch (e) { /* localStorage bloqueado, mostrar de todas formas */ }
+
+        function markSeen() {
+          try { localStorage.setItem(storageKey, '1'); } catch (e) {}
+        }
 
         function init() {
           var strip = document.getElementById('partner-strip');
@@ -127,10 +135,16 @@ const allSchemas = structuredData
           if (tipoEl) tipoEl.textContent = ' · ' + tipo + ' oficial';
           strip.hidden = false;
           document.body.classList.add('has-partner-strip');
+
+          // Auto-marcar como visto a los 12s (asume que el usuario lo leyó)
+          var autoTimer = setTimeout(markSeen, 12000);
+
           if (closeBtn) {
             closeBtn.addEventListener('click', function() {
+              clearTimeout(autoTimer);
+              markSeen();
               strip.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
-              strip.style.transform = 'translateY(-100%)';
+              strip.style.transform = 'translateX(-50%) translateY(120%)';
               strip.style.opacity = '0';
               setTimeout(function() {
                 strip.hidden = true;
