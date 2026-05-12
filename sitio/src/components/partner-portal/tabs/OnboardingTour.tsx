@@ -31,13 +31,12 @@ type Props = {
 };
 
 const PAD = 10;
-const TOOLTIP_W = 340;
-const TOOLTIP_GAP = 24;
+const TOOLTIP_W = 380;
+const PANEL_GAP = 20;
 
 export default function OnboardingTour({ user, onComplete }: Props) {
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
-  const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const [ready, setReady] = useState(false);
   const [peek, setPeek] = useState(false);   // hold-to-peek: oculta tooltip temporalmente
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -72,13 +71,20 @@ export default function OnboardingTour({ user, onComplete }: Props) {
       setReady(true);
       return;
     }
+    // Reservar espacio del panel derecho · scroll para que target quede en zona visible izquierda
+    const panelW = TOOLTIP_W + PANEL_GAP * 2;
+    const visibleAreaCenter = (window.innerWidth - panelW) / 2;
     el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         const r = el.getBoundingClientRect();
-        const newRect: Rect = { top: r.top, left: r.left, width: r.width, height: r.height };
+        // Si el elemento queda detrás del panel derecho, scroll lateral para correrlo
+        if (r.right > window.innerWidth - panelW) {
+          window.scrollBy({ left: r.right - (window.innerWidth - panelW) + 40, behavior: 'smooth' });
+        }
+        const r2 = el.getBoundingClientRect();
+        const newRect: Rect = { top: r2.top, left: r2.left, width: r2.width, height: r2.height };
         setRect(newRect);
-        setTooltipPos(calcTooltipPos(newRect, current.preferPosition));
         setReady(true);
       });
     });
@@ -90,9 +96,7 @@ export default function OnboardingTour({ user, onComplete }: Props) {
       const el = document.querySelector(`[data-tour="${current.target}"]`) as HTMLElement | null;
       if (!el) return;
       const r = el.getBoundingClientRect();
-      const nr = { top: r.top, left: r.left, width: r.width, height: r.height };
-      setRect(nr);
-      setTooltipPos(calcTooltipPos(nr, current.preferPosition));
+      setRect({ top: r.top, left: r.left, width: r.width, height: r.height });
     };
     window.addEventListener('resize', onResize);
     window.addEventListener('scroll', onResize, true);
@@ -102,11 +106,7 @@ export default function OnboardingTour({ user, onComplete }: Props) {
     };
   }, [step, current.target]);
 
-  useEffect(() => {
-    const orig = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = orig; };
-  }, []);
+  // No bloqueamos scroll: el portal a la izquierda debe poder scrollear si el contenido lo necesita
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -192,7 +192,7 @@ export default function OnboardingTour({ user, onComplete }: Props) {
       {/* Confetti final */}
       {isLast && <Confetti />}
 
-      {/* Tooltip card · translúcido con backdrop blur */}
+      {/* Panel lateral fijo derecho (con target) o modal centrado (sin target) */}
       {ready && (
         <div
           ref={tooltipRef}
@@ -201,217 +201,189 @@ export default function OnboardingTour({ user, onComplete }: Props) {
             position: 'fixed',
             ...(isCentered ? {
               top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+              width: TOOLTIP_W,
+              maxWidth: 'calc(100vw - 32px)',
+              maxHeight: 'calc(100vh - 32px)',
             } : {
-              top: tooltipPos.top, left: tooltipPos.left,
+              top: 20, right: PANEL_GAP, bottom: 20,
+              width: TOOLTIP_W,
+              maxWidth: 'calc(100vw - 32px)',
             }),
-            width: TOOLTIP_W,
-            maxWidth: 'calc(100vw - 32px)',
-            maxHeight: 'calc(100vh - 32px)',
-            overflowY: 'auto',
-            background: 'rgba(255,255,255,0.97)',
-            borderRadius: 16,
+            display: 'flex',
+            flexDirection: 'column' as const,
+            background: 'rgba(255,255,255,0.98)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            borderRadius: 18,
             border: `1px solid ${C.border}`,
-            boxShadow: '0 24px 60px -10px rgba(0,0,0,0.20), 0 6px 16px -4px rgba(0,0,0,0.08)',
+            boxShadow: '0 24px 60px -10px rgba(15,23,42,0.22), 0 6px 16px -4px rgba(15,23,42,0.10)',
             zIndex: 9999,
-            padding: '20px 22px 18px',
-            animation: 'onb-pop 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+            animation: isCentered ? 'onb-pop 0.35s cubic-bezier(0.16, 1, 0.3, 1)' : 'onb-slide-right 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
             opacity: peek ? 0 : 1,
             pointerEvents: peek ? 'none' : 'auto',
             transition: 'opacity 0.18s ease',
+            overflow: 'hidden',
           }}>
-          {/* Top row: counter + emoji */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-            <div style={{
-              padding: '4px 10px',
-              background: C.brandSoft,
-              color: C.brand,
-              fontSize: 10, fontWeight: 700,
-              letterSpacing: '0.12em', textTransform: 'uppercase' as const,
-              borderRadius: 999,
-            }}>
-              Paso {step + 1} / {STEPS.length}
-            </div>
-            {current.emoji && <span style={{ fontSize: 16 }}>{current.emoji}</span>}
-          </div>
-
-          {/* Title */}
-          <h3 style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: isCentered ? 28 : 20,
-            fontWeight: 600,
-            color: C.text,
-            margin: '0 0 12px',
-            letterSpacing: '-0.020em',
-            lineHeight: 1.22,
-          }}>
-            {title}
-          </h3>
-
-          {/* Body */}
-          {desc.intro && (
-            <p style={{ fontSize: 14, color: C.textSoft, lineHeight: 1.62, margin: '0 0 14px' }}>
-              {desc.intro}
-            </p>
-          )}
-
-          {desc.illustration && (
-            <div style={{ margin: '14px 0', display: 'flex', justifyContent: 'center' }}>
-              {desc.illustration}
-            </div>
-          )}
-
-          {desc.bullets && (
-            <ul style={{ listStyle: 'none' as const, padding: 0, margin: '4px 0 14px', display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
-              {desc.bullets.map((b, i) => (
-                <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                  <span style={{
-                    flexShrink: 0,
-                    width: 24, height: 24, borderRadius: '50%',
-                    background: b.color ? `${b.color}1a` : C.brandSoft,
-                    color: b.color || C.brand,
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 11, fontWeight: 700,
-                    marginTop: 1,
-                  }}>
-                    {b.icon || `${i + 1}`}
-                  </span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 600, color: C.text, lineHeight: 1.4 }}>{b.label}</div>
-                    {b.sub && <div style={{ fontSize: 12.5, color: C.muted, marginTop: 2, lineHeight: 1.5 }}>{b.sub}</div>}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {desc.outro && (
-            <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.55, margin: '8px 0 14px', fontStyle: 'italic' as const }}>
-              {desc.outro}
-            </p>
-          )}
-
-          {/* Progress bar */}
-          <div style={{ height: 3, background: C.borderSoft, borderRadius: 999, overflow: 'hidden', marginBottom: 14 }}>
-            <div style={{
-              height: '100%', width: `${((step + 1) / STEPS.length) * 100}%`,
-              background: `linear-gradient(90deg, ${C.brand}, ${C.brandDark})`,
-              transition: 'width 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-              borderRadius: 999,
-            }} />
-          </div>
-
-          {/* Hint hold-to-peek (no en step centrado) */}
-          {!isCentered && (
-            <div style={{ fontSize: 10, color: C.mutedLight, fontWeight: 500, marginBottom: 12, textAlign: 'center' as const, letterSpacing: '0.02em' }}>
-              Mantén <kbd style={{ display: 'inline-block', padding: '1px 6px', background: C.borderSoft, borderRadius: 4, fontSize: 10, fontFamily: 'SF Mono, monospace', color: C.text, fontWeight: 600 }}>H</kbd> para ver mejor el portal
-            </div>
-          )}
-
-          {/* Nav */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-            <button onClick={prev} disabled={isFirst}
-              style={{
-                padding: '8px 12px', background: 'transparent',
-                color: isFirst ? C.mutedLight : C.muted,
-                border: 'none', fontSize: 13, fontWeight: 600,
-                cursor: isFirst ? 'default' : 'pointer', fontFamily: 'inherit',
-                opacity: isFirst ? 0.4 : 1,
+          {/* Header pinned */}
+          <div style={{ padding: '22px 24px 14px', flexShrink: 0, borderBottom: `1px solid ${C.borderSoft}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <div style={{
+                padding: '4px 10px',
+                background: C.brandSoft,
+                color: C.brand,
+                fontSize: 10, fontWeight: 700,
+                letterSpacing: '0.12em', textTransform: 'uppercase' as const,
+                borderRadius: 999,
               }}>
-              ← Anterior
-            </button>
-            {isLast ? (
-              <button onClick={finish}
-                style={{
-                  padding: '11px 22px', background: C.brand, color: '#fff',
-                  border: 'none', borderRadius: 999, fontSize: 13.5, fontWeight: 600,
-                  cursor: 'pointer', fontFamily: 'inherit',
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  letterSpacing: '-0.005em',
-                  boxShadow: '0 8px 24px -8px rgba(75,123,229,0.55)',
-                }}>
-                Ir a mi cuenta real <Icon.ArrowRight size={14} />
-              </button>
-            ) : (
-              <button onClick={next}
-                style={{
-                  padding: '10px 22px', background: C.brand, color: '#fff',
-                  border: 'none', borderRadius: 999, fontSize: 13.5, fontWeight: 600,
-                  cursor: 'pointer', fontFamily: 'inherit',
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  letterSpacing: '-0.005em',
-                }}>
-                Siguiente <Icon.ArrowRight size={14} />
-              </button>
+                Paso {step + 1} / {STEPS.length}
+              </div>
+              {current.emoji && <span style={{ fontSize: 18 }}>{current.emoji}</span>}
+            </div>
+            <h3 style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: isCentered ? 26 : 21,
+              fontWeight: 600,
+              color: C.text,
+              margin: 0,
+              letterSpacing: '-0.020em',
+              lineHeight: 1.25,
+            }}>
+              {title}
+            </h3>
+          </div>
+
+          {/* Body scrollable */}
+          <div style={{
+            flex: '1 1 auto',
+            overflowY: 'auto',
+            padding: '16px 24px 18px',
+            minHeight: 0,
+          }}>
+            {desc.intro && (
+              <p style={{ fontSize: 14, color: C.textSoft, lineHeight: 1.62, margin: '0 0 14px' }}>
+                {desc.intro}
+              </p>
             )}
+
+            {desc.illustration && (
+              <div style={{ margin: '14px 0', display: 'flex', justifyContent: 'center' }}>
+                {desc.illustration}
+              </div>
+            )}
+
+            {desc.bullets && (
+              <ul style={{ listStyle: 'none' as const, padding: 0, margin: '4px 0 14px', display: 'flex', flexDirection: 'column' as const, gap: 12 }}>
+                {desc.bullets.map((b, i) => (
+                  <li key={i} style={{ display: 'flex', gap: 11, alignItems: 'flex-start' }}>
+                    <span style={{
+                      flexShrink: 0,
+                      width: 26, height: 26, borderRadius: '50%',
+                      background: b.color ? `${b.color}1a` : C.brandSoft,
+                      color: b.color || C.brand,
+                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 12, fontWeight: 700,
+                      marginTop: 1,
+                    }}>
+                      {b.icon || `${i + 1}`}
+                    </span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 600, color: C.text, lineHeight: 1.4 }}>{b.label}</div>
+                      {b.sub && <div style={{ fontSize: 12.5, color: C.muted, marginTop: 3, lineHeight: 1.5 }}>{b.sub}</div>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {desc.outro && (
+              <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.6, margin: '12px 0 0', fontStyle: 'italic' as const, paddingTop: 12, borderTop: `1px solid ${C.borderSoft}` }}>
+                {desc.outro}
+              </p>
+            )}
+          </div>
+
+          {/* Footer pinned */}
+          <div style={{ padding: '14px 24px 18px', flexShrink: 0, borderTop: `1px solid ${C.borderSoft}`, background: 'rgba(248,250,252,0.6)' }}>
+            <div style={{ height: 3, background: C.borderSoft, borderRadius: 999, overflow: 'hidden', marginBottom: 12 }}>
+              <div style={{
+                height: '100%', width: `${((step + 1) / STEPS.length) * 100}%`,
+                background: `linear-gradient(90deg, ${C.brand}, ${C.brandDark})`,
+                transition: 'width 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                borderRadius: 999,
+              }} />
+            </div>
+
+            {!isCentered && (
+              <div style={{ fontSize: 10, color: C.mutedLight, fontWeight: 500, marginBottom: 10, textAlign: 'center' as const, letterSpacing: '0.02em' }}>
+                Mantén <kbd style={{ display: 'inline-block', padding: '1px 6px', background: C.borderSoft, borderRadius: 4, fontSize: 10, fontFamily: 'SF Mono, monospace', color: C.text, fontWeight: 600 }}>H</kbd> para ver mejor el portal
+              </div>
+            )}
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <button onClick={prev} disabled={isFirst}
+                style={{
+                  padding: '8px 12px', background: 'transparent',
+                  color: isFirst ? C.mutedLight : C.muted,
+                  border: 'none', fontSize: 13, fontWeight: 600,
+                  cursor: isFirst ? 'default' : 'pointer', fontFamily: 'inherit',
+                  opacity: isFirst ? 0.4 : 1,
+                }}>
+                ← Anterior
+              </button>
+              {isLast ? (
+                <button onClick={finish}
+                  style={{
+                    padding: '11px 22px', background: C.brand, color: '#fff',
+                    border: 'none', borderRadius: 999, fontSize: 13.5, fontWeight: 600,
+                    cursor: 'pointer', fontFamily: 'inherit',
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    letterSpacing: '-0.005em',
+                    boxShadow: '0 8px 24px -8px rgba(75,123,229,0.55)',
+                  }}>
+                  Ir a mi cuenta real <Icon.ArrowRight size={14} />
+                </button>
+              ) : (
+                <button onClick={next}
+                  style={{
+                    padding: '10px 22px', background: C.brand, color: '#fff',
+                    border: 'none', borderRadius: 999, fontSize: 13.5, fontWeight: 600,
+                    cursor: 'pointer', fontFamily: 'inherit',
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    letterSpacing: '-0.005em',
+                  }}>
+                  Siguiente <Icon.ArrowRight size={14} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
 
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes onb-pop {
-          from { opacity: 0; transform: scale(0.95) translateY(8px); }
-          to   { opacity: 1; transform: scale(1) translateY(0); }
+          from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+          to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        @keyframes onb-slide-right {
+          from { opacity: 0; transform: translateX(24px); }
+          to   { opacity: 1; transform: translateX(0); }
         }
         @keyframes onb-confetti-fall {
           0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
           100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
         }
-        .onb-tooltip { will-change: transform; }
-        .onb-tooltip::-webkit-scrollbar { width: 4px; }
-        .onb-tooltip::-webkit-scrollbar-thumb { background: ${C.border}; border-radius: 4px; }
+        .onb-tooltip *::-webkit-scrollbar { width: 6px; }
+        .onb-tooltip *::-webkit-scrollbar-track { background: transparent; }
+        .onb-tooltip *::-webkit-scrollbar-thumb { background: ${C.border}; border-radius: 999px; }
+        .onb-tooltip *::-webkit-scrollbar-thumb:hover { background: ${C.muted}; }
+        @media (max-width: 900px) {
+          .onb-tooltip { width: calc(100vw - 24px) !important; right: 12px !important; left: 12px !important; bottom: 12px !important; top: auto !important; max-height: 60vh !important; }
+        }
       ` }} />
     </>
   );
 }
 
-function calcTooltipPos(rect: Rect, prefer?: string): { top: number; left: number } {
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  const tw = TOOLTIP_W;
-  const th = 380;  // estimación más realista del tooltip compacto
-  const gap = TOOLTIP_GAP;
-  const margin = 16;
-
-  const spaceBelow = vh - (rect.top + rect.height);
-  const spaceAbove = rect.top;
-  const spaceRight = vw - (rect.left + rect.width);
-  const spaceLeft = rect.left;
-
-  // Heurística:
-  // 1. Si user prefiere posición explícita y cabe → respetar
-  // 2. Si target es ANCHO (>480px) — preferir lateral (right o left) para no tapar contenido abajo/arriba
-  // 3. Si target está pegado al sidebar (izquierda <280px) → derecha
-  // 4. Si target está pegado al borde derecho → izquierda
-  // 5. Si target es estrecho y central → arriba o abajo según espacio
-  const isWide = rect.width > 480;
-
-  let position: 'bottom' | 'top' | 'right' | 'left' = 'bottom';
-  if (prefer === 'right' && spaceRight > tw + gap) position = 'right';
-  else if (prefer === 'left' && spaceLeft > tw + gap) position = 'left';
-  else if (prefer === 'top' && spaceAbove > th + gap) position = 'top';
-  else if (prefer === 'bottom' && spaceBelow > th + gap) position = 'bottom';
-  // Sin preferencia: heurística por geometría
-  else if (rect.left < 280 && spaceRight > tw + gap) position = 'right';
-  else if (rect.left > vw - 280 && spaceLeft > tw + gap) position = 'left';
-  // Target ancho → preferir lateral si hay espacio
-  else if (isWide && spaceRight > tw + gap) position = 'right';
-  else if (isWide && spaceLeft > tw + gap) position = 'left';
-  // Default
-  else if (spaceBelow < th + gap && spaceAbove > th + gap) position = 'top';
-  else position = 'bottom';
-
-  let top = 0, left = 0;
-  if (position === 'bottom') { top = rect.top + rect.height + gap; left = rect.left + rect.width / 2 - tw / 2; }
-  else if (position === 'top') { top = rect.top - th - gap; left = rect.left + rect.width / 2 - tw / 2; }
-  else if (position === 'right') { top = rect.top + rect.height / 2 - th / 2; left = rect.left + rect.width + gap; }
-  else if (position === 'left') { top = rect.top + rect.height / 2 - th / 2; left = rect.left - tw - gap; }
-
-  if (left < margin) left = margin;
-  if (left + tw > vw - margin) left = vw - tw - margin;
-  if (top < margin) top = margin;
-  if (top + th > vh - margin) top = vh - th - margin;
-  return { top, left };
-}
 
 // ─── Confetti SVG decorativo para step final ──
 function Confetti() {
