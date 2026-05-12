@@ -72,32 +72,44 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
         </div>
       </div>
 
-      {/* 4 niveles · roadmap */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10, marginBottom: 24 }}>
-        {LEVELS.map((lv) => {
-          const isActive = lv.id === level.current;
-          const isPast = lv.id < level.current;
-          const isMaster = lv.id === 3;
-          const isFounder = lv.id === 4;
-          return (
-            <div key={lv.id} style={{
-              background: C.card, border: `1px solid ${C.border}`,
-              borderTop: `3px solid ${isPast || isActive ? (isFounder ? C.gold : isMaster ? C.gold : C.green) : C.border}`,
-              borderRadius: 14, padding: '20px 20px 18px',
-              opacity: isPast || isActive ? 1 : 0.75,
-              boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: C.muted }}>LVL {lv.id}</span>
-                {isPast && <span style={{ fontSize: 11, color: C.green, fontWeight: 700 }}>✓</span>}
-                {isActive && <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 999, background: C.green, color: '#fff', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Actual</span>}
+      {/* Tracker horizontal · single row */}
+      <div style={{ ...SS.card, marginBottom: 24, padding: '28px 32px 24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0, position: 'relative' }}>
+          {LEVELS.map((lv, idx) => {
+            const isActive = lv.id === level.current;
+            const isPast = lv.id < level.current;
+            const isReached = isPast || isActive;
+            const accent = lv.id >= 3 ? C.gold : C.green;
+            return (
+              <div key={lv.id} style={{ flex: 1, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', position: 'relative' as const }}>
+                {/* connector line to next */}
+                {idx < LEVELS.length - 1 && (
+                  <div style={{
+                    position: 'absolute' as const, top: 16, left: '50%', right: '-50%',
+                    height: 2, background: isPast ? accent : C.border, zIndex: 0,
+                  }} />
+                )}
+                {/* dot */}
+                <div style={{
+                  width: 32, height: 32, borderRadius: '50%',
+                  background: isReached ? accent : '#fff',
+                  border: isReached ? `2px solid ${accent}` : `2px solid ${C.border}`,
+                  color: isReached ? '#fff' : C.muted,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 12, fontWeight: 700, position: 'relative' as const, zIndex: 1,
+                  boxShadow: isActive ? `0 0 0 6px ${accent}1a` : 'none',
+                }}>
+                  {isPast ? '✓' : lv.id}
+                </div>
+                <div style={{ marginTop: 12, textAlign: 'center' as const, padding: '0 4px' }}>
+                  <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' as const, marginBottom: 4 }}>LVL {lv.id}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: isReached ? C.text : C.muted, lineHeight: 1.3, marginBottom: 4 }}>{lv.nombre}</div>
+                  {isActive && <div style={{ fontSize: 11, color: accent, fontWeight: 600 }}>Estás aquí</div>}
+                </div>
               </div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 600, color: C.text, lineHeight: 1.25, marginBottom: 6 }}>{lv.nombre}</div>
-              <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5, marginBottom: 8 }}>{lv.requirement}</div>
-              <div style={{ fontSize: 13, color: C.text, fontWeight: 600 }}>{lv.commission}% comisión</div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {/* Compromisos del mes */}

@@ -131,7 +131,12 @@ export default function HomeTab({ user, go }: Props) {
         <StatCard
           label="Total año"
           value={fmt(totalAno)}
-          hint={`${ventasAno} ${ventasAno === 1 ? 'venta cerrada' : 'ventas cerradas'}`}
+          hint={(() => {
+            const enCamino = Math.max(0, stage.clientes - ventasAno);
+            if (ventasAno === 0 && enCamino === 0) return 'Aún sin ventas';
+            if (enCamino === 0) return `${ventasAno} ${ventasAno === 1 ? 'pago liquidado' : 'pagos liquidados'}`;
+            return `${ventasAno} liquidados · ${enCamino} en camino`;
+          })()}
           accent={C.accent}
           ctaLabel="Histórico →"
           onCta={() => go('dinero')}
