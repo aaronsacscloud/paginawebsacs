@@ -149,7 +149,9 @@ export default function OnboardingTour({ user, onComplete }: Props) {
       {/* Overlay con hueco (SVG mask) */}
       <svg
         className="onb-overlay"
-        style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9998 }}>
+        width="100%"
+        height="100%"
+        style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', pointerEvents: 'none', zIndex: 9998 }}>
         <defs>
           <mask id="onb-cutout">
             <rect width="100%" height="100%" fill="white" />
