@@ -97,6 +97,54 @@ const allSchemas = structuredData
     }(window, document, 'ttq');
     </script>
 
+    <!-- Partner attribution strip hydration -->
+    <script is:inline>
+    (function() {
+      try {
+        // Lee cookie sacs_ref_name (formato: encoded "Nombre|Tipo")
+        var m = document.cookie.match(/(?:^|;\s*)sacs_ref_name=([^;]+)/);
+        if (!m) return;
+        var val = decodeURIComponent(m[1]);
+        var parts = val.split('|');
+        var name = parts[0] || '';
+        var tipo = parts[1] || 'Partner SACS';
+        if (!name) return;
+
+        // Si el usuario lo cerró en esta sesión, no mostrar
+        if (sessionStorage.getItem('sacs_strip_closed') === '1') return;
+
+        function init() {
+          var strip = document.getElementById('partner-strip');
+          if (!strip) return;
+          var nameEl = document.getElementById('partner-strip-name');
+          var tipoEl = document.getElementById('partner-strip-tipo');
+          var closeBtn = document.getElementById('partner-strip-close');
+          if (nameEl) nameEl.textContent = name;
+          if (tipoEl) tipoEl.textContent = tipo + ' oficial';
+          strip.hidden = false;
+          document.body.classList.add('has-partner-strip');
+          if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+              strip.style.transition = 'transform 0.25s ease, opacity 0.25s ease';
+              strip.style.transform = 'translateY(-100%)';
+              strip.style.opacity = '0';
+              setTimeout(function() {
+                strip.hidden = true;
+                document.body.classList.remove('has-partner-strip');
+                try { sessionStorage.setItem('sacs_strip_closed', '1'); } catch(e) {}
+              }, 260);
+            });
+          }
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', init);
+        } else {
+          init();
+        }
+      } catch (e) { /* ignore */ }
+    })();
+    </script>
+
     <!-- Font face declarations -->
     <style is:inline>
       @font-face {
@@ -201,6 +249,24 @@ const allSchemas = structuredData
     {!bareLayout && (
       <a href="#main-content" class="skip-link">{t('common.skipToContent', locale)}</a>
     )}
+
+    {/* Partner attribution strip · se hidrata client-side desde cookie sacs_ref_name */}
+    {!bareLayout && (
+      <div id="partner-strip" class="partner-strip" hidden>
+        <div class="partner-strip-inner">
+          <span class="partner-strip-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="partner-strip-text">
+            Recomendado por <strong id="partner-strip-name"></strong> · <span id="partner-strip-tipo"></span>
+          </span>
+          <button id="partner-strip-close" class="partner-strip-close" aria-label="Cerrar">&times;</button>
+        </div>
+      </div>
+    )}
+
     {!bareLayout && <Nav locale={locale} />}
     <main id="main-content">
       <slot />
@@ -224,6 +290,85 @@ const allSchemas = structuredData
     </div>
 
     <style>
+      /* Partner attribution strip — header global persistente */
+      .partner-strip {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 1001;
+        background: linear-gradient(90deg, #1A8F7A 0%, #4B7BE5 100%);
+        color: #fff;
+        padding: 8px 16px;
+        font-family: var(--font-body, system-ui);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        line-height: 1.4;
+        animation: pstrip-slide 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .partner-strip[hidden] { display: none !important; }
+      @keyframes pstrip-slide {
+        from { transform: translateY(-100%); opacity: 0; }
+        to   { transform: translateY(0); opacity: 1; }
+      }
+      .partner-strip-inner {
+        max-width: 1280px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        position: relative;
+      }
+      .partner-strip-icon {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        color: rgba(255,255,255,0.95);
+      }
+      .partner-strip-text {
+        text-align: center;
+      }
+      .partner-strip-text strong {
+        font-weight: 700;
+      }
+      .partner-strip-close {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        background: transparent;
+        border: none;
+        color: rgba(255,255,255,0.85);
+        font-size: 1.25rem;
+        line-height: 1;
+        cursor: pointer;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-family: inherit;
+      }
+      .partner-strip-close:hover {
+        background: rgba(255,255,255,0.12);
+        color: #fff;
+      }
+      /* Cuando el strip está visible, empuja la nav hacia abajo */
+      body.has-partner-strip .nav,
+      body.has-partner-strip nav[class*="nav"]:first-of-type {
+        top: 38px !important;
+      }
+      body.has-partner-strip #main-content {
+        padding-top: 38px;
+      }
+      @media (max-width: 640px) {
+        .partner-strip { font-size: 0.75rem; padding: 7px 36px 7px 12px; }
+        .partner-strip-text { font-size: 0.75rem; line-height: 1.35; }
+        body.has-partner-strip .nav,
+        body.has-partner-strip nav[class*="nav"]:first-of-type {
+          top: 44px !important;
+        }
+        body.has-partner-strip #main-content {
+          padding-top: 44px;
+        }
+      }
+
       .cs-modal-overlay {
         position: fixed;
         inset: 0;

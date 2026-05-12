@@ -44,9 +44,31 @@ if (!resolved || !resolved.team_member_id || resolved.estado !== 'accepted') {
 }
 
 const partnerId = resolved.team_member_id as string;
+const partnerName = resolved.nombre || 'tu asesor';
+const tipoLabels: Record<string, string> = {
+  embajador: 'Embajador SACS',
+  distribuidor: 'Distribuidor Autorizado',
+  integrador: 'Integrador Certificado',
+  reseller: 'Reseller',
+  consultor: 'Consultor Partner',
+};
+const partnerTipo = tipoLabels[resolved.tipo] || 'Partner SACS';
 
 // ── Construir headers de respuesta ──
 const headers = new Headers();
+
+// Cookie display (no httponly) — leíble por client-side para mostrar strip
+// Formato: encoded "Andrea Araujo|Embajador SACS"
+const displayValue = `${partnerName}|${partnerTipo}`;
+const isProd = (import.meta.env.PROD || process.env.NODE_ENV === 'production');
+const displayCookieParts = [
+  `sacs_ref_name=${encodeURIComponent(displayValue)}`,
+  `Path=/`,
+  `Max-Age=${90 * 24 * 60 * 60}`,
+  `SameSite=Lax`,
+];
+if (isProd) displayCookieParts.push('Secure');
+headers.append('Set-Cookie', displayCookieParts.join('; '));
 
 // Visitor ID estable de 1 año en cookie sacs_pv (partner visitor).
 // Distingue únicos vs recurrentes sin loggear IP cruda.
