@@ -43,15 +43,18 @@ export default function PartnerNetworkTab({ user }: Props) {
   if (loading) return <div style={SS.loading}>Cargando red…</div>;
 
   // Determinar si está unlocked
-  const sucursalesActivas = isDemo
+  const realSucursales = isDemo
     ? demoPartnerNetwork.stats.sucursales_activas
     : (leads?.deals || []).filter((d: any) => d.stage === 'won').length;
-  const realLevel = sucursalesActivas >= 5 ? 3 : sucursalesActivas >= 1 ? 2 : 1;
+  const realLevel = realSucursales >= 5 ? 3 : realSucursales >= 1 ? 2 : 1;
   const currentLevel = forceLevel ?? (isDemo ? 3 : realLevel);
   const isUnlocked = currentLevel >= 3;
 
   if (!isUnlocked) {
-    return <LockedView sucursalesActivas={sucursalesActivas} currentLevel={currentLevel} />;
+    // Si forzamos un nivel bajo en demo, usa un conteo demo bajo para que la barra
+    // de progreso tenga sentido (en lugar de mostrar 26/5).
+    const sucursalesShown = forceLevel !== null ? Math.min(realSucursales, currentLevel === 2 ? 3 : 2) : realSucursales;
+    return <LockedView sucursalesActivas={sucursalesShown} currentLevel={currentLevel} />;
   }
 
   return <UnlockedView user={user} />;
