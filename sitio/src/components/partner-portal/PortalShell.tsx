@@ -96,54 +96,61 @@ export default function PortalShell({ initialUser }: Props) {
 
   return (
     <div style={S.root}>
-      {/* Topbar */}
-      <header style={S.topbar}>
-        <a href="/" style={S.brand}>Sacs</a>
-        <span style={S.brandSep}>·</span>
-        <span style={S.brandSub}>Portal de partner</span>
-        {demoBanner && <span style={S.demoTag}>DEMO</span>}
-        <div style={{ flex: 1 }} />
-        <ProfileDropdown user={initialUser} />
-      </header>
-
-      {/* Demo banner */}
+      {/* Demo banner · arriba de todo */}
       {demoBanner && (
         <div style={S.demoBanner}>
           Estás viendo el portal con <strong>datos demo</strong>. Quita <code style={{ background: 'rgba(75,123,229,0.14)', padding: '2px 6px', borderRadius: 4, fontFamily: 'SF Mono, Courier New, monospace' }}>?demo=1</code> de la URL para ver tus datos reales.
         </div>
       )}
 
+      {/* Topbar mobile-only · para mostrar logo + avatar cuando sidebar está oculto */}
+      <header style={S.topbarMobile} className="pp-topbar-mobile">
+        <a href="/" style={S.brand}>Sacs</a>
+        <span style={S.brandSep}>·</span>
+        <span style={S.brandSub}>Portal</span>
+        {demoBanner && <span style={S.demoTag}>DEMO</span>}
+        <div style={{ flex: 1 }} />
+        <ProfileDropdown user={initialUser} />
+      </header>
+
       <div style={S.body}>
-        {/* Sidebar (desktop) */}
+        {/* Sidebar (desktop) — logo arriba, profile abajo */}
         <nav style={S.sidebar} className="pp-sidebar">
-          {SECTIONS.map((section, sIdx) => (
-            <div key={section.title} style={{ marginBottom: sIdx < SECTIONS.length - 1 ? 28 : 0 }}>
-              <div style={S.sectionTitle}>{section.title}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                {section.items.map(t => {
-                  const isActive = tab === t.id;
-                  return (
-                    <button key={t.id} onClick={() => go(t.id)}
-                      style={{ ...S.sideBtn, ...(isActive ? S.sideBtnActive : {}) }}
-                      onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = C.borderSoft; }}
-                      onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
-                      <span style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 18 }}>
-                        <t.icon size={17} color={isActive ? C.brand : C.muted} />
-                      </span>
-                      <span>{t.label}</span>
-                    </button>
-                  );
-                })}
+          {/* Brand block */}
+          <div style={S.sidebarBrand}>
+            <a href="/" style={S.brand}>Sacs</a>
+            <div style={S.brandSubSide}>Portal de partner</div>
+            {demoBanner && <span style={{ ...S.demoTag, marginLeft: 0, marginTop: 8, display: 'inline-block' }}>DEMO</span>}
+          </div>
+
+          {/* Sections */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '8px 14px 16px' }}>
+            {SECTIONS.map((section, sIdx) => (
+              <div key={section.title} style={{ marginBottom: sIdx < SECTIONS.length - 1 ? 24 : 0 }}>
+                <div style={S.sectionTitle}>{section.title}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  {section.items.map(t => {
+                    const isActive = tab === t.id;
+                    return (
+                      <button key={t.id} onClick={() => go(t.id)}
+                        style={{ ...S.sideBtn, ...(isActive ? S.sideBtnActive : {}) }}
+                        onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = C.borderSoft; }}
+                        onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
+                        <span style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 18 }}>
+                          <t.icon size={17} color={isActive ? C.brand : C.muted} />
+                        </span>
+                        <span>{t.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
-          <div style={{ flex: 1 }} />
-          <div style={S.sideFoot}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{initialUser.nombre || 'Partner'}</div>
-            <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{initialUser.email}</div>
-            <a href="mailto:partners@sacscloud.com" style={{ display: 'block', marginTop: 12, fontSize: 12, color: C.accent, textDecoration: 'none', fontWeight: 500 }}>
-              ¿Necesitas ayuda?
-            </a>
+            ))}
+          </div>
+
+          {/* Profile pinned al fondo del sidebar */}
+          <div style={S.sidebarProfile}>
+            <ProfileDropdown user={initialUser} variant="sidebar" />
           </div>
         </nav>
 
@@ -187,12 +194,14 @@ export default function PortalShell({ initialUser }: Props) {
         @media (max-width: 900px) {
           .pp-sidebar { display: none !important; }
           .pp-bottomnav { display: flex !important; }
+          .pp-topbar-mobile { display: flex !important; }
           .pp-main { padding-bottom: 84px !important; }
           .pp-main-inner { padding: 32px 22px 32px !important; }
           .pp-username { display: none !important; }
         }
         @media (min-width: 901px) {
           .pp-bottomnav { display: none !important; }
+          .pp-topbar-mobile { display: none !important; }
         }
         @keyframes slideInRight {
           from { transform: translateX(120%); opacity: 0; }
@@ -206,34 +215,48 @@ export default function PortalShell({ initialUser }: Props) {
 const S: Record<string, React.CSSProperties> = {
   root: { minHeight: '100vh', background: C.bg, fontFamily: 'var(--font-body)', color: C.text },
 
-  topbar: {
-    display: 'flex', alignItems: 'center', gap: 10,
-    padding: '12px 24px',
+  // Topbar solo aparece en mobile (sidebar oculto)
+  topbarMobile: {
+    display: 'none',
+    alignItems: 'center', gap: 10,
+    padding: '12px 18px',
     background: '#fff', borderBottom: `1px solid ${C.border}`,
-    position: 'sticky', top: 0, zIndex: 10,
+    position: 'sticky' as const, top: 0, zIndex: 10,
   },
   brand: { fontFamily: 'Clash Display, sans-serif', fontWeight: 700, fontSize: 22, color: C.text, textDecoration: 'none', letterSpacing: '-0.02em' },
   brandSep: { color: '#ccc' },
   brandSub: { fontSize: 13, color: C.muted, fontWeight: 500 },
+  brandSubSide: { fontSize: 12, color: C.muted, fontWeight: 500, marginTop: 4 },
   demoTag: { marginLeft: 10, padding: '3px 9px', background: C.brandSoft, color: C.brandDark, fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', borderRadius: 4 },
 
   demoBanner: { padding: '10px 24px', background: C.brandSoft, color: C.brandDark, fontSize: 13, textAlign: 'center' as const, borderBottom: `1px solid ${C.brandTint}` },
 
-  body: { display: 'flex', minHeight: 'calc(100vh - 53px)' },
+  body: { display: 'flex', minHeight: '100vh' },
   sidebar: {
-    width: 230, padding: '28px 16px 18px',
+    width: 240,
     display: 'flex', flexDirection: 'column' as const,
     borderRight: `1px solid ${C.border}`, background: '#fff', flexShrink: 0,
+    position: 'sticky' as const, top: 0, height: '100vh',
+  },
+  sidebarBrand: {
+    padding: '24px 26px 20px',
+    borderBottom: `1px solid ${C.borderSoft}`,
+  },
+  sidebarProfile: {
+    padding: '14px 14px',
+    borderTop: `1px solid ${C.borderSoft}`,
+    background: '#fafafa',
   },
   sectionTitle: {
     fontSize: 10, fontWeight: 700, color: C.mutedLight,
     letterSpacing: '0.12em', textTransform: 'uppercase' as const,
-    padding: '0 12px',
-    marginBottom: 10,
+    padding: '0 14px',
+    marginTop: 8,
+    marginBottom: 8,
   },
   sideBtn: {
     display: 'flex', alignItems: 'center', gap: 12,
-    padding: '11px 14px',
+    padding: '10px 14px',
     background: 'transparent', color: C.textSoft, border: 'none', borderRadius: 10,
     cursor: 'pointer', textAlign: 'left' as const,
     fontSize: 14, fontWeight: 500, fontFamily: 'inherit',
@@ -241,7 +264,6 @@ const S: Record<string, React.CSSProperties> = {
     letterSpacing: '-0.005em',
   },
   sideBtnActive: { background: C.brandSoft, color: C.brand, fontWeight: 600 },
-  sideFoot: { marginTop: 28, padding: 16, borderTop: `1px solid ${C.borderSoft}` },
 
   main: { flex: 1, overflowY: 'auto' as const, minWidth: 0, background: C.bg },
   mainInner: { padding: '56px 64px 96px', maxWidth: 1080, margin: '0 auto' },

@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 import { C } from './styles';
 import { Icon } from './icons';
 
-const SUPPORT_WHATSAPP = '525540621003';
+const SUPPORT_WHATSAPP = '5215536634392';
 
 type Props = {
   user: { id: string; nombre: string; email: string };

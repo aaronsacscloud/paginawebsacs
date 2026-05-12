@@ -6,9 +6,10 @@ import { demoProfile } from '../../../data/partner-portal-demo';
 
 type Props = {
   user: { id: string; nombre: string; email: string };
+  variant?: 'topbar' | 'sidebar';
 };
 
-export default function ProfileDropdown({ user }: Props) {
+export default function ProfileDropdown({ user, variant = 'topbar' }: Props) {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<'menu' | 'password' | 'payout' | 'direccion'>('menu');
   const [profile, setProfile] = useState<any>(null);
@@ -46,16 +47,57 @@ export default function ProfileDropdown({ user }: Props) {
     window.location.href = '/partner/login';
   }
 
+  const isSidebar = variant === 'sidebar';
+
+  // Trigger button — sidebar variant es horizontal full-width con nombre + email
+  const trigger = isSidebar ? (
+    <button onClick={() => setOpen(o => !o)} style={{
+      display: 'flex', alignItems: 'center', gap: 12, width: '100%',
+      padding: '10px 12px', borderRadius: 10, border: 'none',
+      background: open ? C.brandSoft : 'transparent',
+      cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' as const,
+      transition: 'background 0.12s',
+    }}
+      onMouseEnter={e => { if (!open) (e.currentTarget as HTMLElement).style.background = C.borderSoft; }}
+      onMouseLeave={e => { if (!open) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
+      <span style={{ flexShrink: 0, width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #4B7BE5, #6C5CE7)', color: '#fff', fontSize: 14, fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{initials}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{user.nombre || 'Partner'}</div>
+        <div style={{ fontSize: 11, color: C.muted, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{user.email}</div>
+      </div>
+      <span style={{ fontSize: 10, color: C.muted, flexShrink: 0 }}>{open ? '▾' : '▴'}</span>
+    </button>
+  ) : (
+    <button onClick={() => setOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 10px 6px 6px', borderRadius: 999, border: `1px solid ${C.border}`, background: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}>
+      <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg, #4B7BE5, #6C5CE7)', color: '#fff', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{initials}</span>
+      <span style={{ fontSize: 13, color: C.text, fontWeight: 500 }} className="pp-username">{(user.nombre || user.email).split(' ')[0]}</span>
+      <span style={{ fontSize: 10, color: C.muted, marginRight: 4 }}>▾</span>
+    </button>
+  );
+
+  // Menu position — sidebar abre hacia arriba, topbar hacia abajo
+  const menuStyle: React.CSSProperties = isSidebar
+    ? {
+        position: 'absolute', bottom: 'calc(100% + 8px)', left: 0,
+        background: '#fff', border: `1px solid ${C.border}`, borderRadius: 14,
+        width: 320, maxWidth: 'calc(100vw - 32px)',
+        boxShadow: '0 -16px 40px -12px rgba(0,0,0,0.18)',
+        zIndex: 100, padding: 0, overflow: 'hidden',
+      }
+    : {
+        position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+        background: '#fff', border: `1px solid ${C.border}`, borderRadius: 14,
+        width: 340, maxWidth: 'calc(100vw - 32px)',
+        boxShadow: '0 16px 40px -12px rgba(0,0,0,0.18)',
+        zIndex: 100, padding: 0, overflow: 'hidden',
+      };
+
   return (
     <div ref={ref} style={{ position: 'relative' }}>
-      <button onClick={() => setOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 10px 6px 6px', borderRadius: 999, border: `1px solid ${C.border}`, background: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}>
-        <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg, #4B7BE5, #6C5CE7)', color: '#fff', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{initials}</span>
-        <span style={{ fontSize: 13, color: C.text, fontWeight: 500 }} className="pp-username">{(user.nombre || user.email).split(' ')[0]}</span>
-        <span style={{ fontSize: 10, color: C.muted, marginRight: 4 }}>▾</span>
-      </button>
+      {trigger}
 
       {open && (
-        <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, background: '#fff', border: `1px solid ${C.border}`, borderRadius: 14, width: 340, maxWidth: 'calc(100vw - 32px)', boxShadow: '0 16px 40px -12px rgba(0,0,0,0.18)', zIndex: 100, padding: 0, overflow: 'hidden' }}>
+        <div style={menuStyle}>
           <div style={{ padding: '18px 20px', borderBottom: `1px solid ${C.borderSoft}`, background: '#fafafa' }}>
             <div style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{user.nombre || 'Partner'}</div>
             <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{user.email}</div>

@@ -290,15 +290,16 @@ export default function MyAccountTab({ user }: { user: { id: string; nombre: str
               <Icon.Close size={20} />
             </button>
             <h2 style={SS.h1Small}>Cambiar email</h2>
-            <p style={SS.leadSm}>Por seguridad, te validaremos por WhatsApp antes de cambiar tu email principal. Recibirás un código de 6 dígitos.</p>
+            <p style={SS.leadSm}>Por seguridad, cambiar tu email principal requiere validación humana. Escríbenos por WhatsApp con el nuevo email y validamos identidad en <strong>menos de 24h hábiles</strong>.</p>
             <Field label="Email actual"><input type="email" value={user.email} disabled style={{ ...inputStyle, opacity: 0.6 }} /></Field>
-            <Field label="Nuevo email"><input type="email" style={inputStyle} placeholder="nuevo@email.mx" /></Field>
-            <Field label="Tu contraseña actual"><input type="password" style={inputStyle} /></Field>
-            <button onClick={() => { alert('Te enviamos código por WhatsApp (demo)'); setEmailOpen(false); }} style={{ ...SS.btn, marginTop: 14 }}>
-              Enviar código por WhatsApp
-            </button>
+            <Field label="Nuevo email que quieres usar"><input type="email" style={inputStyle} placeholder="nuevo@email.mx" id="new-email-input" /></Field>
+            <a href={`https://wa.me/5215536634392?text=${encodeURIComponent(`Hola, soy ${user.nombre || 'partner'} (${user.email}). Quiero cambiar mi email principal a otro. Te confirmo los detalles aquí.`)}`}
+              target="_blank" rel="noopener"
+              style={{ ...SS.btn, marginTop: 14, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <Icon.WhatsApp size={14} /> Pedir cambio por WhatsApp
+            </a>
             <div style={{ ...SS.note, marginTop: 18, fontSize: 12 }}>
-              ¿No tienes acceso a tu WhatsApp registrado? Escríbenos a <a href="mailto:partners@sacscloud.com" style={{ color: C.brand, fontWeight: 600 }}>partners@sacscloud.com</a>.
+              Sin acceso a WhatsApp? Escríbenos a <a href="mailto:partners@sacscloud.com" style={{ color: C.brand, fontWeight: 600 }}>partners@sacscloud.com</a>.
             </div>
           </div>
         </>
