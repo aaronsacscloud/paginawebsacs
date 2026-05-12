@@ -1,7 +1,7 @@
 // Onboarding tour interactivo · spotlight estilo Intercom/Driver.js.
 // El portal demo sigue visible debajo. Overlay con hueco + tooltip flotante.
 // Auto-switch de tabs cuando el step lo requiere.
-// 18 pasos con explicaciones detalladas + mini-ilustraciones inline.
+// 17 pasos con explicaciones detalladas + mini-ilustraciones inline.
 
 import { useEffect, useRef, useState } from 'react';
 import { C } from './styles';
@@ -753,23 +753,7 @@ const STEPS: Step[] = [
     preferPosition: 'left',
   },
 
-  // 17. Vista previa final · qué sigue
-  {
-    tabHash: 'home',
-    emoji: '🎯',
-    title: 'Tus primeros 3 pasos',
-    desc: () => ({
-      intro: 'Cuando entres a tu cuenta real, esto es lo que recomendamos hacer en orden:',
-      bullets: [
-        { icon: '1', label: 'Comparte tu link en redes', sub: 'Empieza por tu mejor canal — el que ya usas. WhatsApp, IG, lo que sea.', color: C.brand },
-        { icon: '2', label: 'Reporta tu primera actividad', sub: 'Un Reel mostrando tu negocio + SACS suma 20-30 puntos. Arrancas tu marcador del mes.', color: C.purple },
-        { icon: '3', label: 'Compra Demos · Consultoría Consciente', sub: '$3,500 una vez, te da el método pro + desbloquea leads directos. Es el unlock más importante.', color: C.greenDark },
-      ],
-      outro: 'Si te trabas, escríbenos por WhatsApp · estamos contigo.',
-    }),
-  },
-
-  // 18. Final
+  // 17. Final
   {
     tabHash: 'home',
     emoji: '🚀',
