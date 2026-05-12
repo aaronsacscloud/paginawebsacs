@@ -1,5 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import PartnerAttributionBanner from '../components/PartnerAttributionBanner.astro';
+
+export const prerender = false;
 ---
 
 <BaseLayout
@@ -18,6 +21,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
         <h1 class="signup-title" id="signup-title">Empieza tu prueba gratis</h1>
         <p class="signup-subtitle" id="signup-subtitle">7 dias con todas las funciones. Sin tarjeta de credito.</p>
+
+        <PartnerAttributionBanner />
 
         <form class="signup-form" id="signup-form">
           <div class="signup-field" data-validate="text">

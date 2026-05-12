@@ -1,0 +1,136 @@
+---
+// Banner que muestra "Te recomendó X" cuando el visitante llegó vía link de partner.
+// Lee la cookie sacs_ref (o ?ref query) y resuelve el nombre del partner.
+// Solo renderiza si hay attribution válida.
+
+import { getReferrerFromRequest } from '../lib/attribution';
+import { supabase } from '../lib/supabase';
+
+interface Props {
+  variant?: 'inline' | 'banner';
+}
+
+const { variant = 'banner' } = Astro.props;
+
+const partnerId = await getReferrerFromRequest(Astro.request);
+let partnerName: string | null = null;
+let partnerTipo: string | null = null;
+
+if (partnerId) {
+  const { data: tm } = await supabase
+    .from('team_members')
+    .select('nombre')
+    .eq('id', partnerId)
+    .maybeSingle();
+  partnerName = (tm as any)?.nombre || null;
+
+  // Tipo (Embajador, Distribuidor, etc) viene de la invitación
+  const { data: inv } = await supabase
+    .from('partner_invitations')
+    .select('tipo')
+    .eq('team_member_id', partnerId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const tipoLabels: Record<string, string> = {
+    embajador: 'Embajador SACS',
+    distribuidor: 'Distribuidor Autorizado',
+    integrador: 'Integrador Certificado',
+    reseller: 'Reseller',
+    consultor: 'Consultor Partner',
+  };
+  partnerTipo = inv ? (tipoLabels[(inv as any).tipo] || 'Partner SACS') : 'Partner SACS';
+}
+
+const showBanner = !!(partnerId && partnerName);
+const firstName = partnerName?.split(' ')[0] || 'tu asesor';
+---
+
+{showBanner && (
+  <>
+    {/* Hidden input para que el form lo envíe explícitamente */}
+    <input type="hidden" name="ref_partner_id" value={partnerId} />
+
+    {variant === 'banner' ? (
+      <div class="pab-banner" data-pab-banner>
+        <div class="pab-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="pab-text">
+          <div class="pab-title">
+            Te recomendó <strong>{partnerName}</strong>
+          </div>
+          <div class="pab-sub">
+            {partnerTipo} oficial · tu cuenta queda atribuida a {firstName} automáticamente
+          </div>
+        </div>
+      </div>
+    ) : (
+      <div class="pab-inline" data-pab-banner>
+        <span class="pab-inline-dot" aria-hidden="true"></span>
+        <span>Te recomendó <strong>{partnerName}</strong> · queda atribuido automáticamente</span>
+      </div>
+    )}
+  </>
+)}
+
+<style>
+  .pab-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 18px;
+    background: linear-gradient(120deg, rgba(75,123,229,0.06), rgba(108,92,231,0.04));
+    border: 1px solid rgba(75,123,229,0.18);
+    border-radius: 12px;
+    margin: 0 0 24px;
+    font-family: var(--font-body, system-ui);
+  }
+  .pab-icon {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(75,123,229,0.18);
+    color: #2D5FCE;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+  }
+  .pab-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    line-height: 1.3;
+  }
+  .pab-title strong { font-weight: 700; color: #2D5FCE; }
+  .pab-sub {
+    font-size: 0.75rem;
+    color: #666;
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+
+  .pab-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(75,123,229,0.08);
+    color: #2D5FCE;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 999px;
+  }
+  .pab-inline strong { font-weight: 700; }
+  .pab-inline-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #2AB5A0;
+    flex-shrink: 0;
+  }
+</style>

@@ -1,6 +1,9 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import PartnerAttributionBanner from '../components/PartnerAttributionBanner.astro';
 const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
+
+export const prerender = false;
 ---
 
 <BaseLayout
@@ -20,6 +23,8 @@ const stripePk = import.meta.env.PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
 
         <h1 class="signup-title" id="reg-title">Crea tu cuenta</h1>
         <p class="signup-subtitle" id="reg-subtitle">Registrate para activar tu plan. Podras elegir pago mensual o anual.</p>
+
+        <PartnerAttributionBanner />
 
         <!-- Step indicators -->
         <div class="signup-steps">

@@ -58,6 +58,11 @@ export default function ShareTab({ user }: { user: { id: string; nombre: string;
             {copied === 'main' ? '✓ Copiado' : '🔗 Copiar'}
           </button>
           <a style={{ ...SS.btnDark, textDecoration: 'none', display: 'inline-block' }}
+            href={`${partnerUrl}?notrack=1`}
+            target="_blank" rel="noopener">
+            👁️ Probar mi link
+          </a>
+          <a style={{ ...SS.btnDark, textDecoration: 'none', display: 'inline-block' }}
             href={`https://wa.me/?text=${encodeURIComponent(`Te paso info sobre SACS, el sistema con el que llevo mi negocio: ${partnerUrl}`)}`}
             target="_blank" rel="noopener">📱 WhatsApp</a>
           <a style={{ ...SS.btnDark, textDecoration: 'none', display: 'inline-block' }}
@@ -67,6 +72,40 @@ export default function ShareTab({ user }: { user: { id: string; nombre: string;
             target="_blank" rel="noopener">🐦 Twitter / X</a>
           <a style={{ ...SS.btnDark, textDecoration: 'none', display: 'inline-block' }}
             href={qrUrl} target="_blank" rel="noopener" download="sacs-qr.png">📲 Ver QR</a>
+        </div>
+        <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.12)', fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>
+          Tu link manda a <strong style={{ color: '#fff', fontWeight: 600 }}>sacscloud.com</strong> con un cookie de atribución de <strong style={{ color: '#fff', fontWeight: 600 }}>90 días</strong>. Cada acción del visitante queda registrada a tu nombre — incluso si regresa días después por otro medio.
+        </div>
+      </div>
+
+      {/* Cómo funciona tu link */}
+      <h2 style={SS.h2}>Cómo funciona tu link</h2>
+      <p style={{ ...SS.leadSm, marginTop: -8 }}>Todas las acciones que haga un visitante quedan atribuidas a ti, automáticamente.</p>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+        <FlowStep num="1" title="Visitante hace click" desc="Llega a la página principal de SACS (sin landing extra). Su navegador recibe un cookie de partner por 90 días." accent={C.accent} />
+        <FlowStep num="2" title="Te aparece su nombre" desc="Cuando entra a registro o prueba gratis, ve un banner: 'Te recomendó [tu nombre]'. Igual que un código de descuento de influencer." accent={C.purple} />
+        <FlowStep num="3" title="Todo queda atribuido" desc="Sus visitas, demos agendadas, prueba gratis, plan firmado y pago — TODO aparece en tu portal." accent={C.green} />
+        <FlowStep num="4" title="Cobras tu comisión" desc="50% sobre la venta directa, depósito el día 1 del mes siguiente. Sin ambigüedad — el sistema te asigna el crédito automáticamente." accent={C.amber} />
+      </div>
+
+      {/* Qué se registra */}
+      <h2 style={SS.h2}>Qué queda registrado</h2>
+      <div style={SS.card}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 18 }}>
+          <TrackItem icon="👁️" label="Visitas al sitio" desc="Cada click a tu link, con visitor único" />
+          <TrackItem icon="📊" label="Páginas vistas" desc="Qué páginas ven (planes, producto, etc)" />
+          <TrackItem icon="📩" label="Formularios" desc="Si dejan email, WhatsApp o agendan demo" />
+          <TrackItem icon="🎁" label="Prueba gratis activada" desc="14 días para evaluar SACS sin pago" />
+          <TrackItem icon="💳" label="Suscripción pagada" desc="Plan firmado · genera tu comisión" />
+          <TrackItem icon="🔁" label="Renovaciones" desc="Sigues cobrando mientras el cliente esté activo" />
+        </div>
+      </div>
+
+      <div style={{ ...SS.note, marginTop: 18, display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+        <span style={{ flexShrink: 0, fontSize: 20 }}>🔒</span>
+        <div>
+          <strong>Tu atribución es vinculante.</strong> Si tu link trae un cliente que se registra hoy y paga en 89 días, sigue siendo tuyo. Si trae uno que se registra hoy y paga en 91 días, también sigue siendo tuyo — el cookie expira pero la asignación al partner queda registrada en la base de datos desde el primer click.
         </div>
       </div>
 
@@ -183,6 +222,35 @@ function BrandAsset({ name, desc, href, external }: { name: string; desc: string
       <div style={{ fontSize: 12, color: C.muted, marginBottom: 12 }}>{desc}</div>
       <div style={{ fontSize: 12, color: C.accent, fontWeight: 600 }}>{external ? 'Abrir →' : 'Descargar →'}</div>
     </a>
+  );
+}
+
+function FlowStep({ num, title, desc, accent }: { num: string; title: string; desc: string; accent: string }) {
+  return (
+    <div style={{ ...SS.card, position: 'relative' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+        <span style={{
+          width: 28, height: 28, borderRadius: '50%',
+          background: accent, color: '#fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 700,
+        }}>{num}</span>
+        <div style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{title}</div>
+      </div>
+      <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.55 }}>{desc}</div>
+    </div>
+  );
+}
+
+function TrackItem({ icon, label, desc }: { icon: string; label: string; desc: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+      <span style={{ flexShrink: 0, fontSize: 22, lineHeight: 1, marginTop: 2 }}>{icon}</span>
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{label}</div>
+        <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5, marginTop: 2 }}>{desc}</div>
+      </div>
+    </div>
   );
 }
 
