@@ -313,3 +313,37 @@ export const PUT: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ error: err?.message || String(err) }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
 };
+
+// DELETE /api/partners/invitations?id=X
+// Hard delete de la invitación + sus sesiones de tracking. Solo founder/cs.
+// El team_member (si la invitación fue aceptada y generó partner) permanece
+// intacto — borrar al partner se hace desde la UI de Team Members.
+export const DELETE: APIRoute = async ({ request }) => {
+  try {
+    const url = new URL(request.url);
+    const id = url.searchParams.get('id');
+    if (!id) {
+      return new Response(JSON.stringify({ error: 'id required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    const user = await getCurrentUser(request);
+    if (!user || (user.role !== 'founder' && user.role !== 'cs')) {
+      return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    // Borra sesiones de tracking explícitamente (por si el FK CASCADE falla)
+    try {
+      await supabase.from('partner_invitation_sessions').delete().eq('invitation_id', id);
+    } catch {}
+
+    // Borra la invitación
+    const { error } = await supabase.from('partner_invitations').delete().eq('id', id);
+    if (error) {
+      return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: err?.message || String(err) }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+  }
+};

@@ -225,6 +225,35 @@ export default function PartnersTab() {
     }
   }
 
+  async function deleteInvitation(it: Invitation) {
+    const isAccepted = it.estado === 'accepted';
+    const firstConfirm = isAccepted
+      ? `⚠️ Esta invitación YA FUE ACEPTADA y generó un partner activo en SACS.\n\nEliminar borra:\n• La invitación (folio ${it.numero})\n• El link público y landing\n• Todas las sesiones de tracking\n\nNO borra:\n• El partner del team (sigue activo en SACS)\n• Comisiones registradas (siguen en el portal)\n\n¿Continuar?`
+      : `Vas a eliminar la invitación ${it.numero} de ${it.nombre}.\n\nSe borran:\n• La invitación de la base de datos\n• El link público y la landing personalizada\n• Todas las sesiones de tracking\n\nEsta acción NO se puede deshacer.\n\n¿Continuar?`;
+    if (!confirm(firstConfirm)) return;
+    if (isAccepted) {
+      const second = `Confirmación final: escribe el número de folio (${it.numero}) para eliminar.`;
+      const typed = prompt(second, '');
+      if (typed !== it.numero) {
+        alert('Folio incorrecto. Eliminación cancelada.');
+        return;
+      }
+    }
+    try {
+      const res = await fetch('/api/partners/invitations?id=' + encodeURIComponent(it.id), {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        const e = await res.json();
+        throw new Error(e.error || 'Error eliminando invitación');
+      }
+      setOpenMenu(null);
+      load();
+    } catch (err: any) {
+      alert('Error: ' + err.message);
+    }
+  }
+
   return (
     <div style={{ padding: 24, minHeight: '100vh', background: '#f5f6f8' }}>
       {/* Header */}
@@ -455,6 +484,8 @@ export default function PartnersTab() {
         if ((it as any).team_member_id) {
           items.push({ label: 'Ver detalle del partner', onClick: () => setDetailPartnerId((it as any).team_member_id) });
         }
+        // Eliminar siempre disponible (al final, en rojo)
+        items.push({ label: '🗑 Eliminar invitación', onClick: () => deleteInvitation(it), color: '#c94a2c' });
         return (
           <div
             data-row-actions-menu
