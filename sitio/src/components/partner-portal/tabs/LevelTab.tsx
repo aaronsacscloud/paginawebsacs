@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fmt, fmtDate, fmtNum, isDemoMode, apiGet } from './utils';
 import { SS, C } from './styles';
+import { Icon } from './icons';
 import { demoContent, demoCertifications, demoProfile, demoLevel, demoSacsAccount, demoLeads } from '../../../data/partner-portal-demo';
 
 type LevelInfo = { current: number; nombre: string };
@@ -180,8 +181,8 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
             <span style={{
               flexShrink: 0, width: 44, height: 44, borderRadius: 12,
               background: 'rgba(75,123,229,0.12)', color: C.accent,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
-            }}>📚</span>
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            }}><Icon.Book size={22} /></span>
             <div>
               <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 4 }}>Ver catálogo de tareas</div>
               <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.4 }}>Explora los 30+ tipos con puntos e ideas</div>
@@ -199,8 +200,8 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
             <span style={{
               flexShrink: 0, width: 44, height: 44, borderRadius: 12,
               background: 'rgba(255,255,255,0.14)', color: '#fff',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
-            }}>✨</span>
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            }}><Icon.Plus size={22} strokeWidth={2} /></span>
             <div>
               <div style={{ fontSize: 14, fontWeight: 600, color: '#fff', marginBottom: 4 }}>Reportar actividad</div>
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', lineHeight: 1.4 }}>Pega el link de lo que hiciste</div>
@@ -266,10 +267,6 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
           ))}
         </div>
       </button>
-
-      {/* Cuenta SACS */}
-      <h2 style={SS.h2}>Tu cuenta SACS Plan Fideliza</h2>
-      <SacsAccountCard />
 
       {/* Mi acuerdo */}
       <h2 style={SS.h2}>Mi acuerdo</h2>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fmt, fmtNum, fmtRel, isDemoMode, apiGet, copyToClipboard, buildSparkline } from './utils';
 import { SS, C } from './styles';
+import { Icon } from './icons';
 import { demoLinkStats, demoProfile } from '../../../data/partner-portal-demo';
 
 export default function ShareTab({ user }: { user: { id: string; nombre: string; email: string } }) {
@@ -54,24 +55,33 @@ export default function ShareTab({ user }: { user: { id: string; nombre: string;
         <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 10 }}>Tu link único</div>
         <div style={SS.linkUrl}>{partnerUrl}</div>
         <div style={SS.linkActions}>
-          <button style={SS.btnDark} onClick={() => handleCopy(partnerUrl, 'main')}>
-            {copied === 'main' ? '✓ Copiado' : '🔗 Copiar'}
+          <button style={iconBtnDark} onClick={() => handleCopy(partnerUrl, 'main')}>
+            {copied === 'main' ? <Icon.Check size={14} strokeWidth={2.4} /> : <Icon.Copy size={14} />}
+            {copied === 'main' ? 'Copiado' : 'Copiar'}
           </button>
-          <a style={{ ...SS.btnDark, textDecoration: 'none', display: 'inline-block' }}
+          <a style={{ ...iconBtnDark, textDecoration: 'none' }}
             href={`${partnerUrl}?notrack=1`}
             target="_blank" rel="noopener">
-            👁️ Probar mi link
+            <Icon.Eye size={14} /> Probar mi link
           </a>
-          <a style={{ ...SS.btnDark, textDecoration: 'none', display: 'inline-block' }}
+          <a style={{ ...iconBtnDark, textDecoration: 'none' }}
             href={`https://wa.me/?text=${encodeURIComponent(`Te paso info sobre SACS, el sistema con el que llevo mi negocio: ${partnerUrl}`)}`}
-            target="_blank" rel="noopener">📱 WhatsApp</a>
-          <a style={{ ...SS.btnDark, textDecoration: 'none', display: 'inline-block' }}
-            href={`mailto:?subject=${encodeURIComponent('Una herramienta que te va a interesar')}&body=${encodeURIComponent(`Llevo un tiempo usando SACS para mi negocio. Te paso el link: ${partnerUrl}`)}`}>✉️ Email</a>
-          <a style={{ ...SS.btnDark, textDecoration: 'none', display: 'inline-block' }}
+            target="_blank" rel="noopener">
+            <Icon.WhatsApp size={14} /> WhatsApp
+          </a>
+          <a style={{ ...iconBtnDark, textDecoration: 'none' }}
+            href={`mailto:?subject=${encodeURIComponent('Una herramienta que te va a interesar')}&body=${encodeURIComponent(`Llevo un tiempo usando SACS para mi negocio. Te paso el link: ${partnerUrl}`)}`}>
+            <Icon.Mail size={14} /> Email
+          </a>
+          <a style={{ ...iconBtnDark, textDecoration: 'none' }}
             href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Llevo mi negocio con SACS: ${partnerUrl}`)}`}
-            target="_blank" rel="noopener">🐦 Twitter / X</a>
-          <a style={{ ...SS.btnDark, textDecoration: 'none', display: 'inline-block' }}
-            href={qrUrl} target="_blank" rel="noopener" download="sacs-qr.png">📲 Ver QR</a>
+            target="_blank" rel="noopener">
+            <Icon.Twitter size={14} /> X
+          </a>
+          <a style={{ ...iconBtnDark, textDecoration: 'none' }}
+            href={qrUrl} target="_blank" rel="noopener" download="sacs-qr.png">
+            <Icon.QrCode size={14} /> QR
+          </a>
         </div>
         <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.12)', fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>
           Tu link manda a <strong style={{ color: '#fff', fontWeight: 600 }}>sacscloud.com</strong> con un cookie de atribución de <strong style={{ color: '#fff', fontWeight: 600 }}>90 días</strong>. Cada acción del visitante queda registrada a tu nombre — incluso si regresa días después por otro medio.
@@ -93,17 +103,16 @@ export default function ShareTab({ user }: { user: { id: string; nombre: string;
       <h2 style={SS.h2}>Qué queda registrado</h2>
       <div style={SS.card}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 18 }}>
-          <TrackItem icon="👁️" label="Visitas al sitio" desc="Cada click a tu link, con visitor único" />
-          <TrackItem icon="📊" label="Páginas vistas" desc="Qué páginas ven (planes, producto, etc)" />
-          <TrackItem icon="📩" label="Formularios" desc="Si dejan email, WhatsApp o agendan demo" />
-          <TrackItem icon="🎁" label="Prueba gratis activada" desc="14 días para evaluar SACS sin pago" />
-          <TrackItem icon="💳" label="Suscripción pagada" desc="Plan firmado · genera tu comisión" />
-          <TrackItem icon="🔁" label="Renovaciones" desc="Sigues cobrando mientras el cliente esté activo" />
+          <TrackItem Ico={Icon.Eye}         label="Visitas al sitio"        desc="Cada click a tu link, con visitor único" />
+          <TrackItem Ico={Icon.Activity}    label="Páginas vistas"           desc="Qué páginas ven (planes, producto, etc)" />
+          <TrackItem Ico={Icon.Mail}        label="Formularios"              desc="Si dejan email, WhatsApp o agendan demo" />
+          <TrackItem Ico={Icon.Gift}        label="Prueba gratis activada"   desc="14 días para evaluar SACS sin pago" />
+          <TrackItem Ico={Icon.Briefcase}   label="Suscripción pagada"       desc="Plan firmado · genera tu comisión" />
+          <TrackItem Ico={Icon.TrendingUp}  label="Renovaciones"             desc="Sigues cobrando mientras el cliente esté activo" />
         </div>
       </div>
 
       <div style={{ ...SS.note, marginTop: 18, display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-        <span style={{ flexShrink: 0, fontSize: 20 }}>🔒</span>
         <div>
           <strong>Tu atribución es vinculante.</strong> Si tu link trae un cliente que se registra hoy y paga en 89 días, sigue siendo tuyo. Si trae uno que se registra hoy y paga en 91 días, también sigue siendo tuyo — el cookie expira pero la asignación al partner queda registrada en la base de datos desde el primer click.
         </div>
@@ -179,23 +188,7 @@ export default function ShareTab({ user }: { user: { id: string; nombre: string;
         ))}
       </div>
 
-      {/* Brand kit */}
-      <h2 style={SS.h2}>Brand kit</h2>
-      <p style={{ ...SS.leadSm, marginTop: -8 }}>Logos, imágenes y plantillas oficiales de SACS para tus posts y materiales.</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
-        <BrandAsset name="Logo SACS · PNG" desc="Versión a color · transparente" href="/brandkit/sacs-logo-color.png" />
-        <BrandAsset name="Logo SACS · SVG" desc="Vector escalable" href="/brandkit/sacs-logo.svg" />
-        <BrandAsset name="Logo negro · PNG" desc="Para fondos claros" href="/brandkit/sacs-logo-black.png" />
-        <BrandAsset name="Foto producto · POS" desc="Vista del dashboard" href="/brandkit/sacs-screenshot-dashboard.png" />
-        <BrandAsset name="Foto producto · iPad" desc="POS en operación" href="/brandkit/sacs-screenshot-ipad.png" />
-        <BrandAsset name="Banner email signature" desc="600x150 px" href="/brandkit/sacs-email-banner.png" />
-        <BrandAsset name="Templates Canva" desc="Reels e historias listas" href="https://www.canva.com/" external />
-        <BrandAsset name="Guía de tono · PDF" desc="Cómo hablar de SACS" href="/brandkit/sacs-tone-guide.pdf" />
-      </div>
-
-      <div style={{ ...SS.note, marginTop: 32 }}>
-        <strong>¿Necesitas algo más?</strong> Si necesitas un asset específico o quieres que diseñemos algo para tu campaña, escríbenos a <a href="mailto:partners@sacscloud.com" style={{ color: C.accent, fontWeight: 600 }}>partners@sacscloud.com</a>.
-      </div>
+      {/* Brand kit ahora vive en su propia tab (Activos · Brand kit) */}
     </div>
   );
 }
@@ -208,20 +201,6 @@ function SimpleStat({ label, value, hint, accent }: { label: string; value: stri
       <div style={SS.statValueSm}>{value}</div>
       {hint && <div style={SS.statHint}>{hint}</div>}
     </div>
-  );
-}
-
-function BrandAsset({ name, desc, href, external }: { name: string; desc: string; href: string; external?: boolean }) {
-  return (
-    <a href={href} target={external ? '_blank' : undefined} rel={external ? 'noopener' : undefined}
-      download={external ? undefined : true}
-      style={{ ...SS.card, textDecoration: 'none', color: 'inherit', display: 'block', transition: 'transform 0.12s', cursor: 'pointer' }}
-      onMouseEnter={e => (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'}
-      onMouseLeave={e => (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'}>
-      <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 4 }}>{name}</div>
-      <div style={{ fontSize: 12, color: C.muted, marginBottom: 12 }}>{desc}</div>
-      <div style={{ fontSize: 12, color: C.accent, fontWeight: 600 }}>{external ? 'Abrir →' : 'Descargar →'}</div>
-    </a>
   );
 }
 
@@ -242,10 +221,16 @@ function FlowStep({ num, title, desc, accent }: { num: string; title: string; de
   );
 }
 
-function TrackItem({ icon, label, desc }: { icon: string; label: string; desc: string }) {
+function TrackItem({ Ico, label, desc }: { Ico: (p: any) => JSX.Element; label: string; desc: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-      <span style={{ flexShrink: 0, fontSize: 22, lineHeight: 1, marginTop: 2 }}>{icon}</span>
+      <span style={{
+        flexShrink: 0, width: 32, height: 32, borderRadius: 8,
+        background: 'rgba(75,123,229,0.10)', color: C.accent,
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <Ico size={16} />
+      </span>
       <div>
         <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{label}</div>
         <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5, marginTop: 2 }}>{desc}</div>
@@ -253,6 +238,21 @@ function TrackItem({ icon, label, desc }: { icon: string; label: string; desc: s
     </div>
   );
 }
+
+const iconBtnDark: React.CSSProperties = {
+  padding: '10px 16px',
+  background: 'rgba(255,255,255,0.10)',
+  color: '#fff',
+  border: '1px solid rgba(255,255,255,0.22)',
+  borderRadius: 10,
+  fontSize: 13,
+  fontWeight: 500,
+  cursor: 'pointer',
+  fontFamily: 'inherit',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 8,
+};
 
 function buildTemplates(link: string, nombre: string) {
   return [

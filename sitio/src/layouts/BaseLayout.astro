@@ -110,8 +110,8 @@ const allSchemas = structuredData
         var tipo = parts[1] || 'Partner SACS';
         if (!name) return;
 
-        // Si el usuario lo cerró en esta sesión, no mostrar
-        if (sessionStorage.getItem('sacs_strip_closed') === '1') return;
+        // El strip aparece cada vez que el visitante entra (no se persiste el dismiss).
+        // El botón X solo lo oculta para la página actual.
 
         function init() {
           var strip = document.getElementById('partner-strip');
@@ -131,7 +131,6 @@ const allSchemas = structuredData
               setTimeout(function() {
                 strip.hidden = true;
                 document.body.classList.remove('has-partner-strip');
-                try { sessionStorage.setItem('sacs_strip_closed', '1'); } catch(e) {}
               }, 260);
             });
           }
@@ -254,15 +253,15 @@ const allSchemas = structuredData
     {!bareLayout && (
       <div id="partner-strip" class="partner-strip" hidden>
         <div class="partner-strip-inner">
-          <span class="partner-strip-icon" aria-hidden="true">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </span>
           <span class="partner-strip-text">
-            Recomendado por <strong id="partner-strip-name"></strong> · <span id="partner-strip-tipo"></span>
+            Recomendado por <strong id="partner-strip-name"></strong>, <span id="partner-strip-tipo"></span>
           </span>
-          <button id="partner-strip-close" class="partner-strip-close" aria-label="Cerrar">&times;</button>
+          <button id="partner-strip-close" class="partner-strip-close" aria-label="Cerrar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
         </div>
       </div>
     )}
@@ -295,14 +294,15 @@ const allSchemas = structuredData
         position: fixed;
         top: 0; left: 0; right: 0;
         z-index: 1001;
-        background: linear-gradient(90deg, #1A8F7A 0%, #4B7BE5 100%);
+        background: #4B7BE5;
         color: #fff;
-        padding: 8px 16px;
+        padding: 10px 16px;
         font-family: var(--font-body, system-ui);
         font-size: 0.8125rem;
         font-weight: 500;
         line-height: 1.4;
         animation: pstrip-slide 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        letter-spacing: -0.005em;
       }
       .partner-strip[hidden] { display: none !important; }
       @keyframes pstrip-slide {
@@ -318,12 +318,6 @@ const allSchemas = structuredData
         gap: 10px;
         position: relative;
       }
-      .partner-strip-icon {
-        flex-shrink: 0;
-        display: inline-flex;
-        align-items: center;
-        color: rgba(255,255,255,0.95);
-      }
       .partner-strip-text {
         text-align: center;
       }
@@ -337,13 +331,16 @@ const allSchemas = structuredData
         transform: translateY(-50%);
         background: transparent;
         border: none;
-        color: rgba(255,255,255,0.85);
-        font-size: 1.25rem;
+        color: rgba(255,255,255,0.75);
         line-height: 1;
         cursor: pointer;
-        padding: 4px 10px;
+        padding: 6px 8px;
         border-radius: 4px;
         font-family: inherit;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.15s, background 0.15s;
       }
       .partner-strip-close:hover {
         background: rgba(255,255,255,0.12);

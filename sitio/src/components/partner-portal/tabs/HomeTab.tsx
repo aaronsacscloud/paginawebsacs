@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fmt, fmtNum, fmtRel, isDemoMode, apiGet, STAGE_LABELS, copyToClipboard } from './utils';
 import { SS, C } from './styles';
+import { Icon } from './icons';
 import {
   demoSummary, demoLeads, demoLinkStats, demoContent, demoActivity, demoProfile, demoLevel,
 } from '../../../data/partner-portal-demo';
@@ -125,7 +126,7 @@ export default function HomeTab({ user, go }: Props) {
           value={fmt(proximoPago)}
           hint={proximoPago > 0 ? 'Se deposita el día 1' : 'Aún no hay confirmadas'}
           accent={C.green}
-          ctaLabel="Ver desglose →"
+          ctaLabel="Ver desglose"
           onCta={() => go('dinero')}
         />
         <StatCard
@@ -165,16 +166,24 @@ export default function HomeTab({ user, go }: Props) {
       <div style={SS.linkBig}>
         <div style={SS.linkUrl}>{partnerUrl}</div>
         <div style={SS.linkActions}>
-          <button style={SS.btnDark} onClick={async () => {
+          <button style={iconBtnDark} onClick={async () => {
             const ok = await copyToClipboard(partnerUrl);
             if (ok) alert('Link copiado');
-          }}>🔗 Copiar</button>
-          <a style={{ ...SS.btnDark, textDecoration: 'none', display: 'inline-block' }}
+          }}>
+            <Icon.Copy size={14} /> Copiar
+          </button>
+          <a style={{ ...iconBtnDark, textDecoration: 'none' }}
             href={`https://wa.me/?text=${encodeURIComponent(`Te paso info sobre SACS, el sistema con el que llevo mi negocio: ${partnerUrl}`)}`}
-            target="_blank" rel="noopener">📱 WhatsApp</a>
-          <a style={{ ...SS.btnDark, textDecoration: 'none', display: 'inline-block' }}
-            href={`mailto:?subject=${encodeURIComponent('Una herramienta que te va a interesar')}&body=${encodeURIComponent(`Llevo un tiempo usando SACS para mi negocio y me ha funcionado muy bien. Te paso el link: ${partnerUrl}`)}`}>✉️ Email</a>
-          <button style={SS.btnDark} onClick={() => go('compartir')}>Más opciones →</button>
+            target="_blank" rel="noopener">
+            <Icon.WhatsApp size={14} /> WhatsApp
+          </a>
+          <a style={{ ...iconBtnDark, textDecoration: 'none' }}
+            href={`mailto:?subject=${encodeURIComponent('Una herramienta que te va a interesar')}&body=${encodeURIComponent(`Llevo un tiempo usando SACS para mi negocio y me ha funcionado muy bien. Te paso el link: ${partnerUrl}`)}`}>
+            <Icon.Mail size={14} /> Email
+          </a>
+          <button style={iconBtnDark} onClick={() => go('compartir')}>
+            Más opciones <Icon.ArrowRight size={14} />
+          </button>
         </div>
         <div style={{ marginTop: 20, paddingTop: 18, borderTop: '1px solid rgba(255,255,255,0.12)', display: 'flex', flexWrap: 'wrap', gap: 24, fontSize: 13, color: 'rgba(255,255,255,0.72)' }}>
           <span><strong style={{ color: '#fff', fontWeight: 600 }}>{fmtNum(visits)}</strong> visitas</span>
@@ -187,11 +196,11 @@ export default function HomeTab({ user, go }: Props) {
       {/* Pipeline activo */}
       <h2 style={SS.h2}>Pipeline activo</h2>
       <div style={SS.pipeRow}>
-        <PipelineCard icon="🆕" num={stage.nuevos} label="Nuevos" sub={stage.nuevos > 0 ? 'Sin contactar' : 'Llegan via tu link'} onClick={() => go('dinero')} />
-        <PipelineCard icon="🎁" num={stage.prueba} label="Prueba activa" sub={stage.prueba > 0 ? 'En período de 14 días' : 'Aún ninguno'} onClick={() => go('dinero')} />
-        <PipelineCard icon="📞" num={stage.demoAg} label="Demo agendada" sub={proximaDemo ? `Próx: ${proximaDemo.invitee_nombre?.split(' ')[0] || 'cliente'}` : 'Por agendar'} onClick={() => go('dinero')} />
-        <PipelineCard icon="🤝" num={Math.max(0, stage.demoReal)} label="Demo realizada" sub="Esperando propuesta" onClick={() => go('dinero')} />
-        <PipelineCard icon="✅" num={stage.clientes} label="Clientes" sub={totalAno > 0 ? `${fmt(totalAno)} generado` : '$0 aún'} onClick={() => go('dinero')} />
+        <PipelineCard Icon={Icon.Sparkle}    num={stage.nuevos}             label="Nuevos"          sub={stage.nuevos > 0 ? 'Sin contactar' : 'Llegan vía tu link'} onClick={() => go('leads')} accent={C.muted} />
+        <PipelineCard Icon={Icon.Gift}       num={stage.prueba}             label="Prueba activa"   sub={stage.prueba > 0 ? 'En período de 14 días' : 'Aún ninguno'}  onClick={() => go('leads')} accent={C.amber} />
+        <PipelineCard Icon={Icon.Phone}      num={stage.demoAg}             label="Demo agendada"   sub={proximaDemo ? `Próx: ${proximaDemo.invitee_nombre?.split(' ')[0] || 'cliente'}` : 'Por agendar'} onClick={() => go('leads')} accent={C.accent} />
+        <PipelineCard Icon={Icon.Handshake}  num={Math.max(0, stage.demoReal)} label="Demo realizada" sub="Esperando propuesta"                                       onClick={() => go('leads')} accent={C.purple} />
+        <PipelineCard Icon={Icon.CheckCircle} num={stage.clientes}          label="Clientes"        sub={totalAno > 0 ? `${fmt(totalAno)} generado` : '$0 aún'}      onClick={() => go('clientes')} accent={C.greenDark} />
       </div>
 
       {/* Recent activity */}
@@ -233,27 +242,52 @@ function StatCard({ label, value, hint, accent, ctaLabel, onCta, progress }: {
         </div>
       )}
       {ctaLabel && onCta && (
-        <button style={SS.statCta} onClick={onCta}>{ctaLabel}</button>
+        <button style={{ ...SS.statCta, display: 'inline-flex', alignItems: 'center', gap: 4 }} onClick={onCta}>
+          {ctaLabel.replace(/\s*→\s*$/, '')}
+          <Icon.ArrowRight size={12} />
+        </button>
       )}
     </div>
   );
 }
 
 // ─── Pipeline Card ───
-function PipelineCard({ icon, num, label, sub, onClick }: {
-  icon: string; num: number; label: string; sub: string; onClick: () => void;
+function PipelineCard({ Icon: IconCmp, num, label, sub, onClick, accent }: {
+  Icon: (p: any) => JSX.Element; num: number; label: string; sub: string; onClick: () => void; accent: string;
 }) {
   return (
     <button onClick={onClick} style={{ ...SS.pipeCard, textAlign: 'left' as const, fontFamily: 'inherit' }}
       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 18px -10px rgba(0,0,0,0.12)'; }}
       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 2px rgba(0,0,0,0.02)'; }}>
-      <span style={SS.pipeIcon}>{icon}</span>
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        width: 32, height: 32, borderRadius: 8,
+        background: `${accent}14`, color: accent,
+        marginBottom: 10,
+      }}>
+        <IconCmp size={18} />
+      </span>
       <div style={SS.pipeNum}>{num}</div>
       <div style={SS.pipeLbl}>{label}</div>
       <div style={SS.pipeSub}>{sub}</div>
     </button>
   );
 }
+
+const iconBtnDark: React.CSSProperties = {
+  padding: '10px 16px',
+  background: 'rgba(255,255,255,0.10)',
+  color: '#fff',
+  border: '1px solid rgba(255,255,255,0.22)',
+  borderRadius: 10,
+  fontSize: 13,
+  fontWeight: 500,
+  cursor: 'pointer',
+  fontFamily: 'inherit',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 8,
+};
 
 // ─── Helpers ───
 function activityColor(type?: string): string {
