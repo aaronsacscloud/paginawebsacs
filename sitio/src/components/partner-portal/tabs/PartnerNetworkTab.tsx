@@ -70,34 +70,36 @@ function LockedView({ sucursalesActivas, currentLevel }: { sucursalesActivas: nu
       <h1 style={SS.h1Small}>Red de partners</h1>
       <p style={SS.leadSm}>Invita a otros partners y gana 10% de override sobre cada venta de tu red — ingreso recurrente sin tope.</p>
 
-      {/* Locked hero — gradient oscuro/dorado */}
+      {/* Locked hero — azul SACS gradient */}
       <div style={{
-        background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d44 100%)',
+        background: `linear-gradient(135deg, ${C.brand} 0%, ${C.brandDark} 100%)`,
         color: '#fff',
         borderRadius: 18,
-        padding: '44px 48px',
-        marginBottom: 32,
+        padding: '52px 56px',
+        marginBottom: 36,
         position: 'relative' as const,
         overflow: 'hidden' as const,
+        boxShadow: '0 16px 40px -20px rgba(75,123,229,0.45)',
       }}>
         {/* Lock badge */}
         <div style={{
-          position: 'absolute' as const, top: 24, right: 24,
+          position: 'absolute' as const, top: 28, right: 28,
           display: 'inline-flex', alignItems: 'center', gap: 8,
-          padding: '8px 14px', background: 'rgba(200,165,91,0.18)', color: '#C8A55B',
+          padding: '8px 14px', background: 'rgba(255,255,255,0.18)', color: '#fff',
           borderRadius: 999, fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' as const,
+          backdropFilter: 'blur(8px)',
         }}>
           <LockIcon size={12} /> Bloqueado · Lvl 3+
         </div>
 
-        <div style={{ maxWidth: 600 }}>
-          <span style={{ fontSize: 11, color: '#C8A55B', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase' as const }}>
+        <div style={{ maxWidth: 620 }}>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.78)', fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase' as const }}>
             Master Partner
           </span>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 34, fontWeight: 500, color: '#fff', margin: '14px 0 16px', letterSpacing: '-0.025em', lineHeight: 1.15 }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 38, fontWeight: 500, color: '#fff', margin: '16px 0 18px', letterSpacing: '-0.025em', lineHeight: 1.12 }}>
             Tu propia red.<br/>10% override recurrente.
           </h2>
-          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, margin: 0 }}>
+          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.82)', lineHeight: 1.65, margin: 0 }}>
             Cuando completes <strong style={{ color: '#fff' }}>5 sucursales activas</strong>, se activa Master Partner Nv 1 — automáticamente.
             A partir de ahí puedes invitar partners y ganar 10% de cada venta que cierren, mes con mes,
             mientras estén activos.
@@ -105,23 +107,23 @@ function LockedView({ sucursalesActivas, currentLevel }: { sucursalesActivas: nu
         </div>
 
         {/* Progress to unlock */}
-        <div style={{ marginTop: 36, paddingTop: 28, borderTop: '1px solid rgba(255,255,255,0.12)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12, flexWrap: 'wrap' as const, gap: 8 }}>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const }}>
+        <div style={{ marginTop: 40, paddingTop: 32, borderTop: '1px solid rgba(255,255,255,0.18)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14, flexWrap: 'wrap' as const, gap: 8 }}>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const }}>
               Tu progreso
             </span>
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 500, color: '#fff', letterSpacing: '-0.02em' }}>
-              {sucursalesActivas} <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 16 }}>/ 5 sucursales</span>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 500, color: '#fff', letterSpacing: '-0.02em' }}>
+              {sucursalesActivas} <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 16 }}>/ 5 sucursales</span>
             </span>
           </div>
-          <div style={{ height: 8, background: 'rgba(255,255,255,0.10)', borderRadius: 999, overflow: 'hidden' as const }}>
+          <div style={{ height: 8, background: 'rgba(255,255,255,0.18)', borderRadius: 999, overflow: 'hidden' as const }}>
             <div style={{
               width: `${progress}%`, height: '100%',
-              background: 'linear-gradient(90deg, #C8A55B 0%, #E8C878 100%)',
+              background: '#fff',
               borderRadius: 999, transition: 'width 0.6s ease-out',
             }} />
           </div>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', margin: '14px 0 0', lineHeight: 1.5 }}>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)', margin: '16px 0 0', lineHeight: 1.55 }}>
             {remaining === 0
               ? '¡Listo! Se activa en las próximas 24-48h automáticamente.'
               : `Te faltan ${remaining} ${remaining === 1 ? 'sucursal' : 'sucursales'} más para desbloquear. Sigue compartiendo tu link y cerrando clientes.`}
@@ -164,8 +166,9 @@ function LockedView({ sucursalesActivas, currentLevel }: { sucursalesActivas: nu
             <div style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               width: 54, height: 54, borderRadius: '50%',
-              background: '#1a1a1a', color: '#C8A55B',
+              background: C.brand, color: '#fff',
               marginBottom: 14,
+              boxShadow: '0 8px 20px -8px rgba(75,123,229,0.45)',
             }}>
               <LockIcon size={22} />
             </div>
@@ -446,14 +449,15 @@ function TabBtn({ active, label, onClick }: { active: boolean; label: string; on
       style={{
         padding: '12px 18px',
         background: 'transparent',
-        color: active ? C.text : C.muted,
+        color: active ? C.brand : C.muted,
         border: 'none',
-        borderBottom: active ? `2px solid ${C.text}` : '2px solid transparent',
+        borderBottom: active ? `2px solid ${C.brand}` : '2px solid transparent',
         fontFamily: 'inherit',
         fontSize: 14,
         fontWeight: active ? 600 : 500,
         cursor: 'pointer',
         marginBottom: -1,
+        transition: 'color 0.15s, border-color 0.15s',
       }}>{label}</button>
   );
 }
@@ -463,14 +467,15 @@ function Chip({ active, label, onClick }: { active: boolean; label: string; onCl
     <button onClick={onClick}
       style={{
         padding: '8px 14px',
-        border: `1px solid ${active ? C.text : C.border}`,
-        background: active ? C.text : '#fff',
+        border: `1px solid ${active ? C.brand : C.border}`,
+        background: active ? C.brand : '#fff',
         color: active ? '#fff' : C.text,
         borderRadius: 999,
         fontSize: 12,
         fontWeight: 600,
         cursor: 'pointer',
         fontFamily: 'inherit',
+        transition: 'background 0.15s, border-color 0.15s',
       }}>{label}</button>
   );
 }
@@ -813,10 +818,11 @@ function InviteDrawer({ myInviteLink, onClose }: { myInviteLink: string; onClose
               Cualquier persona que use este link y SACS le acepte la solicitud, queda automáticamente bajo tu red:
             </p>
             <div style={{
-              padding: '14px 16px', background: '#1a1a1a', color: '#fff',
+              padding: '14px 16px', background: C.brandSoft, color: C.brandDark,
               fontFamily: 'SF Mono, Courier New, monospace', fontSize: 13,
               borderRadius: 10, wordBreak: 'break-all' as const,
               marginBottom: 12,
+              border: `1px solid ${C.brandTint}`,
             }}>
               {myInviteLink}
             </div>

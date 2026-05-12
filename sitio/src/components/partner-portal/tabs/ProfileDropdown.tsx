@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { fmt, isDemoMode, apiGet } from './utils';
 import { SS, C } from './styles';
+import { Icon } from './icons';
 import { demoProfile } from '../../../data/partner-portal-demo';
 
 type Props = {
@@ -62,12 +63,12 @@ export default function ProfileDropdown({ user }: Props) {
 
           {view === 'menu' && (
             <div style={{ padding: 8 }}>
-              <MenuItem icon="🏦" label="Forma de pago" sub={payout?.banco ? `${payout.banco} •••${String(payout.clabe).slice(-4)}` : 'Sin configurar'} onClick={() => setView('payout')} />
-              <MenuItem icon="📍" label="Dirección fiscal" sub={direccion?.ciudad || 'Sin configurar'} onClick={() => setView('direccion')} />
-              <MenuItem icon="🔒" label="Cambiar contraseña" onClick={() => setView('password')} />
-              <MenuItem icon="📧" label="Cambiar email" sub={user.email} onClick={() => alert('Para cambiar tu email escríbenos a partners@sacscloud.com')} />
+              <MenuItem Ico={Icon.Bank}    label="Forma de pago"      sub={payout?.banco ? `${payout.banco} •••${String(payout.clabe).slice(-4)}` : 'Sin configurar'} onClick={() => setView('payout')} />
+              <MenuItem Ico={Icon.MapPin}  label="Dirección fiscal"   sub={direccion?.ciudad || 'Sin configurar'} onClick={() => setView('direccion')} />
+              <MenuItem Ico={Icon.Lock}    label="Cambiar contraseña" onClick={() => setView('password')} />
+              <MenuItem Ico={Icon.AtSign}  label="Cambiar email"      sub={user.email} onClick={() => alert('Para cambiar tu email escríbenos a partners@sacscloud.com')} />
               <div style={{ borderTop: `1px solid ${C.borderSoft}`, margin: '8px 0' }} />
-              <MenuItem icon="🚪" label="Cerrar sesión" onClick={logout} red />
+              <MenuItem Ico={Icon.LogOut}  label="Cerrar sesión"      onClick={logout} red />
             </div>
           )}
 
@@ -80,12 +81,14 @@ export default function ProfileDropdown({ user }: Props) {
   );
 }
 
-function MenuItem({ icon, label, sub, onClick, red }: { icon: string; label: string; sub?: string; onClick: () => void; red?: boolean }) {
+function MenuItem({ Ico, label, sub, onClick, red }: { Ico: (p: any) => JSX.Element; label: string; sub?: string; onClick: () => void; red?: boolean }) {
   return (
     <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '12px 14px', background: 'transparent', border: 'none', borderRadius: 8, cursor: 'pointer', textAlign: 'left' as const, fontFamily: 'inherit', color: red ? C.red : C.text, transition: 'background 0.1s' }}
-      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = C.bg}
+      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = C.brandSoft}
       onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}>
-      <span style={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }}>{icon}</span>
+      <span style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', color: red ? C.red : C.muted }}>
+        <Ico size={16} />
+      </span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 500 }}>{label}</div>
         {sub && <div style={{ fontSize: 11, color: C.muted, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</div>}

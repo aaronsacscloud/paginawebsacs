@@ -379,15 +379,17 @@ function CertaintyBlock({ label, value, sub, accent, level }: { label: string; v
 }
 
 function Chip({ active, label, onClick, color }: { active: boolean; label: string; onClick: () => void; color?: string }) {
+  const accent = color || C.brand;
   return (
     <button onClick={onClick}
       style={{
         padding: '8px 14px', borderRadius: 999,
-        border: `1px solid ${active ? (color || C.text) : C.border}`,
-        background: active ? (color || C.text) : '#fff',
+        border: `1px solid ${active ? accent : C.border}`,
+        background: active ? accent : '#fff',
         color: active ? '#fff' : C.text,
         fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
         letterSpacing: '-0.005em',
+        transition: 'background 0.15s, border-color 0.15s',
       }}>{label}</button>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fmt, isDemoMode, apiGet } from './utils';
 import { SS, C } from './styles';
+import { Icon } from './icons';
 
 type Cert = {
   id: string;
@@ -298,8 +299,9 @@ function CertCard({ cert, expanded, onToggle, onBuy, purchasing }: {
 
           {/* CTA */}
           <div style={{ marginTop: 22, paddingTop: 16, borderTop: `1px solid ${C.borderSoft}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' as const }}>
-            <div style={{ fontSize: 12, color: C.muted }}>
-              {cert.serviceModel === 'monthly' ? '🔁 Ingreso recurrente mensual' : '⚡ Proyecto puntual'}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: C.muted }}>
+              {cert.serviceModel === 'monthly' ? <Icon.Refresh size={13} /> : <Icon.Zap size={13} />}
+              {cert.serviceModel === 'monthly' ? 'Ingreso recurrente mensual' : 'Proyecto puntual'}
             </div>
             {isActive ? (
               <span style={{ ...stagePill(C.greenDark), padding: '8px 16px', fontSize: 12 }}>

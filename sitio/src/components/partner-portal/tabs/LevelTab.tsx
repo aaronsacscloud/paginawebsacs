@@ -54,10 +54,10 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
       <p style={SS.leadSm}>Dónde estás, cómo subes, y todo lo que necesitas para mantenerte activo.</p>
 
       {/* Hero · tu nivel actual */}
-      <div style={{ ...SS.cardLg, background: level.current >= 3 ? 'linear-gradient(135deg, #1a1a1a 0%, #2d2d44 100%)' : C.card, color: level.current >= 3 ? '#fff' : C.text, marginBottom: 24 }}>
+      <div style={{ ...SS.cardLg, background: level.current >= 3 ? `linear-gradient(135deg, ${C.brand} 0%, ${C.brandDark} 100%)` : C.card, color: level.current >= 3 ? '#fff' : C.text, marginBottom: 24, boxShadow: level.current >= 3 ? '0 12px 32px -16px rgba(75,123,229,0.35)' : '0 1px 2px rgba(0,0,0,0.02)' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 240 }}>
-            <span style={{ fontSize: 11, color: level.current >= 3 ? '#C8A55B' : C.muted, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase' }}>Tu nivel actual</span>
+            <span style={{ fontSize: 11, color: level.current >= 3 ? 'rgba(255,255,255,0.78)' : C.muted, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase' }}>Tu nivel actual</span>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 500, margin: '10px 0 6px', letterSpacing: '-0.025em', color: 'inherit' }}>
               Lvl {level.current} · {level.nombre}
             </h2>
@@ -190,21 +190,22 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
           </button>
           <button onClick={() => setReportOpen(true)}
             style={{
-              background: C.text, color: '#fff', border: 'none', borderRadius: 12,
+              background: C.brand, color: '#fff', border: 'none', borderRadius: 12,
               padding: '20px 22px', textAlign: 'left' as const, cursor: 'pointer', fontFamily: 'inherit',
               display: 'flex', alignItems: 'center', gap: 16,
-              transition: 'transform 0.12s, box-shadow 0.12s',
+              transition: 'transform 0.12s, box-shadow 0.12s, background 0.15s',
+              boxShadow: '0 8px 18px -12px rgba(75,123,229,0.45)',
             }}
-            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = '0 8px 18px -10px rgba(0,0,0,0.25)'; }}
-            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(0)'; el.style.boxShadow = 'none'; }}>
+            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = '0 12px 24px -10px rgba(75,123,229,0.45)'; el.style.background = C.brandDark; }}
+            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(0)'; el.style.boxShadow = '0 8px 18px -12px rgba(75,123,229,0.45)'; el.style.background = C.brand; }}>
             <span style={{
               flexShrink: 0, width: 44, height: 44, borderRadius: 12,
-              background: 'rgba(255,255,255,0.14)', color: '#fff',
+              background: 'rgba(255,255,255,0.18)', color: '#fff',
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             }}><Icon.Plus size={22} strokeWidth={2} /></span>
             <div>
               <div style={{ fontSize: 14, fontWeight: 600, color: '#fff', marginBottom: 4 }}>Reportar actividad</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', lineHeight: 1.4 }}>Pega el link de lo que hiciste</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.78)', lineHeight: 1.4 }}>Pega el link de lo que hiciste</div>
             </div>
           </button>
         </div>
@@ -442,7 +443,10 @@ function LevelDetailModal({ lvId, currentLevel, onClose }: { lvId: number; curre
 
         {/* Auto-reconocimiento */}
         <div style={{ padding: '16px 20px', background: 'rgba(75,123,229,0.06)', borderRadius: 10, fontSize: 13, color: C.textSoft, lineHeight: 1.6, marginTop: 8 }}>
-          <strong style={{ color: C.text }}>⚙️ Activación automática.</strong> El portal te reconoce y te sube de nivel solo — no necesitas pedirlo. Cuando cumples los requisitos, tu Lvl {lv.id} se activa en el próximo ciclo (típicamente 24-48h).
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: C.text, fontWeight: 600 }}>
+            <Icon.Settings size={13} /> Activación automática.
+          </span>
+          {' '}El portal te reconoce y te sube de nivel solo — no necesitas pedirlo. Cuando cumples los requisitos, tu Lvl {lv.id} se activa en el próximo ciclo (típicamente 24-48h).
         </div>
       </div>
     </>
@@ -536,8 +540,9 @@ function CatalogDrawer({ tipos, onClose, onPick }: { tipos: any[]; onClose: () =
               style={{
                 padding: '8px 14px', border: `1px solid ${C.border}`, borderRadius: 999,
                 fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                background: filter === f.id ? C.text : '#fff',
+                background: filter === f.id ? C.brand : '#fff',
                 color: filter === f.id ? '#fff' : C.text,
+                borderColor: filter === f.id ? C.brand : C.border,
               }}>{f.label}</button>
           ))}
         </div>
@@ -685,8 +690,9 @@ function ReportDrawer({ tipos, onClose, onSubmitted }: { tipos: any[]; onClose: 
                   style={{
                     padding: '8px 14px', border: `1px solid ${C.border}`, borderRadius: 999,
                     fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                    background: categoryFilter === f.id ? C.text : '#fff',
+                    background: categoryFilter === f.id ? C.brand : '#fff',
                     color: categoryFilter === f.id ? '#fff' : C.text,
+                    borderColor: categoryFilter === f.id ? C.brand : C.border,
                   }}>{f.label}</button>
               ))}
             </div>

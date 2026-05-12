@@ -98,7 +98,7 @@ export default function PortalShell({ initialUser }: Props) {
       {/* Demo banner */}
       {demoBanner && (
         <div style={S.demoBanner}>
-          Estás viendo el portal con <strong>datos demo</strong>. Quita <code style={{ background: 'rgba(255,255,255,0.18)', padding: '2px 6px', borderRadius: 4 }}>?demo=1</code> de la URL para ver tus datos reales.
+          Estás viendo el portal con <strong>datos demo</strong>. Quita <code style={{ background: 'rgba(75,123,229,0.14)', padding: '2px 6px', borderRadius: 4, fontFamily: 'SF Mono, Courier New, monospace' }}>?demo=1</code> de la URL para ver tus datos reales.
         </div>
       )}
 
@@ -113,9 +113,11 @@ export default function PortalShell({ initialUser }: Props) {
                   const isActive = tab === t.id;
                   return (
                     <button key={t.id} onClick={() => go(t.id)}
-                      style={{ ...S.sideBtn, ...(isActive ? S.sideBtnActive : {}) }}>
+                      style={{ ...S.sideBtn, ...(isActive ? S.sideBtnActive : {}) }}
+                      onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = C.borderSoft; }}
+                      onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}>
                       <span style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 18 }}>
-                        <t.icon size={17} color={isActive ? '#fff' : C.muted} />
+                        <t.icon size={17} color={isActive ? C.brand : C.muted} />
                       </span>
                       <span>{t.label}</span>
                     </button>
@@ -197,9 +199,9 @@ const S: Record<string, React.CSSProperties> = {
   brand: { fontFamily: 'Clash Display, sans-serif', fontWeight: 700, fontSize: 22, color: C.text, textDecoration: 'none', letterSpacing: '-0.02em' },
   brandSep: { color: '#ccc' },
   brandSub: { fontSize: 13, color: C.muted, fontWeight: 500 },
-  demoTag: { marginLeft: 10, padding: '2px 8px', background: '#1a1a1a', color: '#C8A55B', fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', borderRadius: 4 },
+  demoTag: { marginLeft: 10, padding: '3px 9px', background: C.brandSoft, color: C.brandDark, fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', borderRadius: 4 },
 
-  demoBanner: { padding: '10px 24px', background: '#1a1a1a', color: '#fff', fontSize: 13, textAlign: 'center' as const },
+  demoBanner: { padding: '10px 24px', background: C.brandSoft, color: C.brandDark, fontSize: 13, textAlign: 'center' as const, borderBottom: `1px solid ${C.brandTint}` },
 
   body: { display: 'flex', minHeight: 'calc(100vh - 53px)' },
   sidebar: {
@@ -215,15 +217,15 @@ const S: Record<string, React.CSSProperties> = {
   },
   sideBtn: {
     display: 'flex', alignItems: 'center', gap: 12,
-    padding: '10px 12px',
-    background: 'transparent', color: C.textSoft, border: 'none', borderRadius: 8,
+    padding: '11px 14px',
+    background: 'transparent', color: C.textSoft, border: 'none', borderRadius: 10,
     cursor: 'pointer', textAlign: 'left' as const,
     fontSize: 14, fontWeight: 500, fontFamily: 'inherit',
     transition: 'background 0.12s, color 0.12s',
     letterSpacing: '-0.005em',
   },
-  sideBtnActive: { background: C.text, color: '#fff' },
-  sideFoot: { marginTop: 24, padding: 14, borderTop: `1px solid ${C.borderSoft}` },
+  sideBtnActive: { background: C.brandSoft, color: C.brand, fontWeight: 600 },
+  sideFoot: { marginTop: 28, padding: 16, borderTop: `1px solid ${C.borderSoft}` },
 
   main: { flex: 1, overflowY: 'auto' as const, minWidth: 0, background: C.bg },
   mainInner: { padding: '56px 64px 96px', maxWidth: 1080, margin: '0 auto' },
