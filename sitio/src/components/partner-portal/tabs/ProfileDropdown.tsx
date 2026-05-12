@@ -1,0 +1,240 @@
+import { useEffect, useRef, useState } from 'react';
+import { fmt, isDemoMode, apiGet } from './utils';
+import { SS, C } from './styles';
+import { demoProfile } from '../../../data/partner-portal-demo';
+
+type Props = {
+  user: { id: string; nombre: string; email: string };
+};
+
+export default function ProfileDropdown({ user }: Props) {
+  const [open, setOpen] = useState(false);
+  const [view, setView] = useState<'menu' | 'password' | 'payout' | 'direccion'>('menu');
+  const [profile, setProfile] = useState<any>(null);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    apiGet('/api/partner-portal/profile', isDemoMode() ? demoProfile : undefined).then(setProfile);
+  }, []);
+
+  useEffect(() => {
+    // listen para event externo "open-profile-dropdown"
+    const onOpen = () => { setOpen(true); setView('payout'); };
+    window.addEventListener('open-profile-dropdown', onOpen);
+    return () => window.removeEventListener('open-profile-dropdown', onOpen);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setView('menu');
+      }
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [open]);
+
+  const initials = (user.nombre || user.email || '?').charAt(0).toUpperCase();
+  const payout = profile?.payout;
+  const direccion = profile?.direccion;
+
+  async function logout() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/partner/login';
+  }
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button onClick={() => setOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 10px 6px 6px', borderRadius: 999, border: `1px solid ${C.border}`, background: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}>
+        <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg, #4B7BE5, #6C5CE7)', color: '#fff', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{initials}</span>
+        <span style={{ fontSize: 13, color: C.text, fontWeight: 500 }} className="pp-username">{(user.nombre || user.email).split(' ')[0]}</span>
+        <span style={{ fontSize: 10, color: C.muted, marginRight: 4 }}>▾</span>
+      </button>
+
+      {open && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, background: '#fff', border: `1px solid ${C.border}`, borderRadius: 14, width: 340, maxWidth: 'calc(100vw - 32px)', boxShadow: '0 16px 40px -12px rgba(0,0,0,0.18)', zIndex: 100, padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '18px 20px', borderBottom: `1px solid ${C.borderSoft}`, background: '#fafafa' }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{user.nombre || 'Partner'}</div>
+            <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>{user.email}</div>
+          </div>
+
+          {view === 'menu' && (
+            <div style={{ padding: 8 }}>
+              <MenuItem icon="🏦" label="Forma de pago" sub={payout?.banco ? `${payout.banco} •••${String(payout.clabe).slice(-4)}` : 'Sin configurar'} onClick={() => setView('payout')} />
+              <MenuItem icon="📍" label="Dirección fiscal" sub={direccion?.ciudad || 'Sin configurar'} onClick={() => setView('direccion')} />
+              <MenuItem icon="🔒" label="Cambiar contraseña" onClick={() => setView('password')} />
+              <MenuItem icon="📧" label="Cambiar email" sub={user.email} onClick={() => alert('Para cambiar tu email escríbenos a partners@sacscloud.com')} />
+              <div style={{ borderTop: `1px solid ${C.borderSoft}`, margin: '8px 0' }} />
+              <MenuItem icon="🚪" label="Cerrar sesión" onClick={logout} red />
+            </div>
+          )}
+
+          {view === 'password' && <PasswordForm onBack={() => setView('menu')} />}
+          {view === 'payout' && <PayoutForm payout={payout} onBack={() => setView('menu')} onSaved={(p) => { setProfile({ ...profile, payout: p }); setView('menu'); }} />}
+          {view === 'direccion' && <DireccionForm direccion={direccion} onBack={() => setView('menu')} onSaved={(d) => { setProfile({ ...profile, direccion: d }); setView('menu'); }} />}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MenuItem({ icon, label, sub, onClick, red }: { icon: string; label: string; sub?: string; onClick: () => void; red?: boolean }) {
+  return (
+    <button onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '12px 14px', background: 'transparent', border: 'none', borderRadius: 8, cursor: 'pointer', textAlign: 'left' as const, fontFamily: 'inherit', color: red ? C.red : C.text, transition: 'background 0.1s' }}
+      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = C.bg}
+      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}>
+      <span style={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }}>{icon}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 500 }}>{label}</div>
+        {sub && <div style={{ fontSize: 11, color: C.muted, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</div>}
+      </div>
+      <span style={{ fontSize: 12, color: C.muted }}>›</span>
+    </button>
+  );
+}
+
+function PasswordForm({ onBack }: { onBack: () => void }) {
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function save() {
+    setError(null);
+    if (next.length < 6) { setError('Mínimo 6 caracteres'); return; }
+    setSaving(true);
+    try {
+      const r = await fetch('/api/partner-portal/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ current_password: current, new_password: next }),
+      });
+      const d = await r.json();
+      if (d.error) { setError(d.error); setSaving(false); return; }
+      alert('Contraseña actualizada');
+      onBack();
+    } catch (e: any) {
+      setError(e?.message || 'Error');
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div style={{ padding: 16 }}>
+      <BackBtn onClick={onBack} title="Cambiar contraseña" />
+      {error && <div style={{ padding: '10px 14px', background: 'rgba(220,38,38,0.06)', border: `1px solid rgba(220,38,38,0.22)`, borderRadius: 8, fontSize: 12, color: C.red, marginBottom: 10 }}>{error}</div>}
+      <Field label="Contraseña actual">
+        <input type="password" value={current} onChange={e => setCurrent(e.target.value)} style={inputStyle} />
+      </Field>
+      <Field label="Nueva contraseña">
+        <input type="password" value={next} onChange={e => setNext(e.target.value)} style={inputStyle} />
+      </Field>
+      <button onClick={save} disabled={saving} style={{ ...SS.btn, width: '100%', marginTop: 8 }}>{saving ? 'Guardando…' : 'Guardar'}</button>
+    </div>
+  );
+}
+
+function PayoutForm({ payout, onBack, onSaved }: { payout: any; onBack: () => void; onSaved: (p: any) => void }) {
+  const [titular, setTitular] = useState(payout?.titular || '');
+  const [rfc, setRfc] = useState(payout?.rfc || '');
+  const [banco, setBanco] = useState(payout?.banco || '');
+  const [clabe, setClabe] = useState(payout?.clabe || '');
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    setSaving(true);
+    const p = { metodo: 'transferencia', titular, rfc, banco, clabe };
+    try {
+      await fetch('/api/partner-portal/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payout: p }),
+      });
+      onSaved(p);
+    } catch {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div style={{ padding: 16 }}>
+      <BackBtn onClick={onBack} title="Forma de pago" />
+      <Field label="Titular"><input value={titular} onChange={e => setTitular(e.target.value)} style={inputStyle} /></Field>
+      <Field label="RFC"><input value={rfc} onChange={e => setRfc(e.target.value)} style={inputStyle} /></Field>
+      <Field label="Banco"><input value={banco} onChange={e => setBanco(e.target.value)} style={inputStyle} placeholder="BBVA, Santander, etc." /></Field>
+      <Field label="CLABE (18 dígitos)"><input value={clabe} onChange={e => setClabe(e.target.value)} style={inputStyle} maxLength={18} /></Field>
+      <button onClick={save} disabled={saving} style={{ ...SS.btn, width: '100%', marginTop: 8 }}>{saving ? 'Guardando…' : 'Guardar'}</button>
+    </div>
+  );
+}
+
+function DireccionForm({ direccion, onBack, onSaved }: { direccion: any; onBack: () => void; onSaved: (d: any) => void }) {
+  const [calle, setCalle] = useState(direccion?.calle || '');
+  const [colonia, setColonia] = useState(direccion?.colonia || '');
+  const [ciudad, setCiudad] = useState(direccion?.ciudad || '');
+  const [estado, setEstado] = useState(direccion?.estado || '');
+  const [cp, setCp] = useState(direccion?.cp || '');
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    setSaving(true);
+    const d = { calle, colonia, ciudad, estado, cp, pais: 'México' };
+    try {
+      await fetch('/api/partner-portal/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ direccion: d }),
+      });
+      onSaved(d);
+    } catch {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div style={{ padding: 16 }}>
+      <BackBtn onClick={onBack} title="Dirección fiscal" />
+      <Field label="Calle y número"><input value={calle} onChange={e => setCalle(e.target.value)} style={inputStyle} /></Field>
+      <Field label="Colonia"><input value={colonia} onChange={e => setColonia(e.target.value)} style={inputStyle} /></Field>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        <Field label="Ciudad"><input value={ciudad} onChange={e => setCiudad(e.target.value)} style={inputStyle} /></Field>
+        <Field label="Estado"><input value={estado} onChange={e => setEstado(e.target.value)} style={inputStyle} /></Field>
+      </div>
+      <Field label="CP"><input value={cp} onChange={e => setCp(e.target.value)} style={inputStyle} maxLength={6} /></Field>
+      <button onClick={save} disabled={saving} style={{ ...SS.btn, width: '100%', marginTop: 8 }}>{saving ? 'Guardando…' : 'Guardar'}</button>
+    </div>
+  );
+}
+
+function BackBtn({ onClick, title }: { onClick: () => void; title: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+      <button onClick={onClick} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: C.muted, fontSize: 14, padding: '4px 8px', borderRadius: 6, fontFamily: 'inherit' }}>← </button>
+      <div style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{title}</div>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ fontSize: 11, color: C.muted, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 5 }}>{label}</div>
+      {children}
+    </div>
+  );
+}
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '10px 12px',
+  fontSize: 13,
+  fontFamily: 'inherit',
+  color: C.text,
+  border: `1px solid ${C.border}`,
+  borderRadius: 8,
+  background: '#fafafa',
+  outline: 'none',
+  boxSizing: 'border-box',
+};
