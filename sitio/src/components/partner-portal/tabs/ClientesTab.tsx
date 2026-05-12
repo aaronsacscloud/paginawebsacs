@@ -99,7 +99,7 @@ export default function ClientesTab({ user }: { user: { id: string; nombre: stri
       {/* Stats */}
       <div style={SS.statGrid}>
         <SimpleStat label="Clientes activos" value={String(clientes.length)} hint={pendientes > 0 ? `${pendientes} pendientes de cobro` : 'Todos al corriente'} accent={C.greenDark} />
-        <SimpleStat label=\"Ingreso mensual\" value={fmt(totalMrr)} hint=\"Cobros mensuales recurrentes\" accent={C.accent} />
+        <SimpleStat label="Ingreso mensual" value={fmt(totalMrr)} hint="Cobros mensuales recurrentes" accent={C.accent} />
         <SimpleStat label="Tu comisión total" value={fmt(totalComision)} hint="Histórico de estos clientes" accent={C.green} />
         <SimpleStat label="En riesgo" value={String(enRiesgo)} hint={enRiesgo > 0 ? 'Uso bajo · revisa con ellos' : 'Salud OK'} accent={enRiesgo > 0 ? C.amber : C.muted} />
       </div>
@@ -165,8 +165,8 @@ export default function ClientesTab({ user }: { user: { id: string; nombre: stri
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
               <MiniStat label="Plan" value={drawerCliente.plan} />
-              <MiniStat label=\"Cobro / mes\" value={fmt(drawerCliente.mrr)} />
-              <MiniStat label=\"Valor estimado\" value={fmt(drawerCliente.ltv)} />
+              <MiniStat label="Cobro / mes" value={fmt(drawerCliente.mrr)} />
+              <MiniStat label="Valor estimado" value={fmt(drawerCliente.ltv)} />
               <MiniStat label="Mi comisión total" value={fmt(drawerCliente.mi_comision_total)} accent={C.greenDark} />
             </div>
 
