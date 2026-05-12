@@ -49,7 +49,7 @@ export const SS: Record<string, React.CSSProperties> = {
   leadSm: { fontSize: 14, color: C.muted, margin: '0 0 28px', lineHeight: 1.6 },
 
   // Stat cards (más respiración)
-  statGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 18 },
+  statGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 18, marginBottom: 36 },
   statCard: { background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: '28px 28px 26px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)', position: 'relative' },
   statLabel: { fontSize: 11, color: C.muted, textTransform: 'uppercase' as const, letterSpacing: '0.1em', fontWeight: 600, marginBottom: 16 },
   statValue: { fontFamily: 'var(--font-display)', fontSize: 36, fontWeight: 500, color: C.text, lineHeight: 1, letterSpacing: '-0.035em' },
