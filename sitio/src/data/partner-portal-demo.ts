@@ -290,10 +290,12 @@ export const demoPayments = {
 // ─── Pending commissions (próximo pago breakdown) ───
 export const demoPending = {
   earned: [
-    { id: 'e1', tipo: 'venta_directa', commission_amount: 3500, status: 'earned', earned_at: daysAgo(3), nota: 'Plan Fideliza Plus · Vázquez Joyas', contact_nombre: 'Roberto Vázquez' },
+    { id: 'e1', tipo: 'venta_directa', commission_amount: 2450, status: 'earned', earned_at: daysAgo(3),  nota: 'Vázquez Joyas · Plan Fideliza Plus',         contact_nombre: 'Roberto Vázquez' },
+    { id: 'e2', tipo: 'venta_directa', commission_amount: 1050, status: 'earned', earned_at: daysAgo(8),  nota: 'Mariana López · Plan Fideliza',              contact_nombre: 'Mariana López' },
   ],
   pending: [
-    { id: 'p1', tipo: 'venta_directa', commission_amount: 1750, status: 'pending', created_at: daysAgo(2), nota: 'Plan Fideliza · esperando depósito · Mariana López', contact_nombre: 'Mariana López' },
+    { id: 'p1', tipo: 'venta_directa', commission_amount: 1750, status: 'pending', created_at: daysAgo(2), nota: 'Méndez Boutique · Plan Fideliza',           contact_nombre: 'Carlos Méndez' },
+    { id: 'p2', tipo: 'venta_directa', commission_amount: 995,  status: 'pending', created_at: daysAgo(5), nota: 'Ramírez Tienda · Plan Control',             contact_nombre: 'Sofía Ramírez' },
   ],
 };
 
