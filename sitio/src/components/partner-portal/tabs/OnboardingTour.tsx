@@ -31,14 +31,15 @@ type Props = {
 };
 
 const PAD = 10;
-const TOOLTIP_W = 400;
-const TOOLTIP_GAP = 16;
+const TOOLTIP_W = 340;
+const TOOLTIP_GAP = 24;
 
 export default function OnboardingTour({ user, onComplete }: Props) {
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const [ready, setReady] = useState(false);
+  const [peek, setPeek] = useState(false);   // hold-to-peek: oculta tooltip temporalmente
   const tooltipRef = useRef<HTMLDivElement>(null);
 
   const firstName = (user.nombre || 'partner').split(' ')[0];
@@ -111,9 +112,17 @@ export default function OnboardingTour({ user, onComplete }: Props) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === 'Enter') next();
       if (e.key === 'ArrowLeft') prev();
+      if ((e.key === 'h' || e.key === 'H') && !e.repeat) setPeek(true);
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'h' || e.key === 'H') setPeek(false);
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('keyup', onKeyUp);
+    };
   });
 
   function next() { if (step < STEPS.length - 1) setStep(s => s + 1); }
@@ -134,11 +143,17 @@ export default function OnboardingTour({ user, onComplete }: Props) {
 
   return (
     <>
-      {/* Overlay SVG con hueco */}
+      {/* Overlay SVG con hueco · azul SACS tenue */}
       <svg
         className="onb-overlay"
         width="100%" height="100%"
-        style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', pointerEvents: 'none', zIndex: 9998 }}>
+        style={{
+          position: 'fixed', inset: 0,
+          width: '100vw', height: '100vh',
+          pointerEvents: 'none', zIndex: 9998,
+          transition: 'opacity 0.25s ease',
+          opacity: peek ? 0 : 1,
+        }}>
         <defs>
           <mask id="onb-cutout">
             <rect width="100%" height="100%" fill="white" />
@@ -151,22 +166,33 @@ export default function OnboardingTour({ user, onComplete }: Props) {
             )}
           </mask>
         </defs>
-        <rect width="100%" height="100%" fill="rgba(15, 23, 42, 0.68)" mask="url(#onb-cutout)" />
+        {/* Velo azul SACS tenue · el portal se ve casi al 100% */}
+        <rect width="100%" height="100%" fill="rgba(75, 123, 229, 0.16)" mask="url(#onb-cutout)" />
         {rect && (
-          <rect
-            x={rect.left - PAD} y={rect.top - PAD}
-            width={rect.width + PAD * 2} height={rect.height + PAD * 2}
-            rx="12" fill="none"
-            stroke={C.brand} strokeWidth="2"
-            style={{ filter: 'drop-shadow(0 0 12px rgba(75,123,229,0.65))' }}
-          />
+          <>
+            {/* Halo expansivo · glow azul fuera del spotlight */}
+            <rect
+              x={rect.left - PAD} y={rect.top - PAD}
+              width={rect.width + PAD * 2} height={rect.height + PAD * 2}
+              rx="12" fill="none"
+              stroke={C.brand} strokeWidth="3"
+              style={{ filter: 'drop-shadow(0 0 0 4px rgba(75,123,229,0.25)) drop-shadow(0 0 32px rgba(75,123,229,0.55))' }}
+            />
+            {/* Anillo interior nítido */}
+            <rect
+              x={rect.left - PAD + 1} y={rect.top - PAD + 1}
+              width={rect.width + PAD * 2 - 2} height={rect.height + PAD * 2 - 2}
+              rx="11" fill="none"
+              stroke="rgba(255,255,255,0.5)" strokeWidth="1"
+            />
+          </>
         )}
       </svg>
 
       {/* Confetti final */}
       {isLast && <Confetti />}
 
-      {/* Tooltip card */}
+      {/* Tooltip card · translúcido con backdrop blur */}
       {ready && (
         <div
           ref={tooltipRef}
@@ -182,12 +208,16 @@ export default function OnboardingTour({ user, onComplete }: Props) {
             maxWidth: 'calc(100vw - 32px)',
             maxHeight: 'calc(100vh - 32px)',
             overflowY: 'auto',
-            background: '#fff',
+            background: 'rgba(255,255,255,0.97)',
             borderRadius: 16,
-            boxShadow: '0 24px 60px -10px rgba(0,0,0,0.30), 0 6px 16px -4px rgba(0,0,0,0.12)',
+            border: `1px solid ${C.border}`,
+            boxShadow: '0 24px 60px -10px rgba(0,0,0,0.20), 0 6px 16px -4px rgba(0,0,0,0.08)',
             zIndex: 9999,
-            padding: '24px 26px 20px',
+            padding: '20px 22px 18px',
             animation: 'onb-pop 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+            opacity: peek ? 0 : 1,
+            pointerEvents: peek ? 'none' : 'auto',
+            transition: 'opacity 0.18s ease',
           }}>
           {/* Top row: counter + emoji */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
@@ -270,6 +300,13 @@ export default function OnboardingTour({ user, onComplete }: Props) {
             }} />
           </div>
 
+          {/* Hint hold-to-peek (no en step centrado) */}
+          {!isCentered && (
+            <div style={{ fontSize: 10, color: C.mutedLight, fontWeight: 500, marginBottom: 12, textAlign: 'center' as const, letterSpacing: '0.02em' }}>
+              Mantén <kbd style={{ display: 'inline-block', padding: '1px 6px', background: C.borderSoft, borderRadius: 4, fontSize: 10, fontFamily: 'SF Mono, monospace', color: C.text, fontWeight: 600 }}>H</kbd> para ver mejor el portal
+            </div>
+          )}
+
           {/* Nav */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
             <button onClick={prev} disabled={isFirst}
@@ -331,7 +368,7 @@ function calcTooltipPos(rect: Rect, prefer?: string): { top: number; left: numbe
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   const tw = TOOLTIP_W;
-  const th = 460; // estimación mayor por más contenido
+  const th = 380;  // estimación más realista del tooltip compacto
   const gap = TOOLTIP_GAP;
   const margin = 16;
 
@@ -340,10 +377,27 @@ function calcTooltipPos(rect: Rect, prefer?: string): { top: number; left: numbe
   const spaceRight = vw - (rect.left + rect.width);
   const spaceLeft = rect.left;
 
+  // Heurística:
+  // 1. Si user prefiere posición explícita y cabe → respetar
+  // 2. Si target es ANCHO (>480px) — preferir lateral (right o left) para no tapar contenido abajo/arriba
+  // 3. Si target está pegado al sidebar (izquierda <280px) → derecha
+  // 4. Si target está pegado al borde derecho → izquierda
+  // 5. Si target es estrecho y central → arriba o abajo según espacio
+  const isWide = rect.width > 480;
+
   let position: 'bottom' | 'top' | 'right' | 'left' = 'bottom';
-  if (prefer === 'right' || (rect.left < 280 && spaceRight > tw + gap)) position = 'right';
-  else if (prefer === 'left' || (rect.left > vw - 280 && spaceLeft > tw + gap)) position = 'left';
-  else if (prefer === 'top' || (spaceBelow < th + gap && spaceAbove > th + gap)) position = 'top';
+  if (prefer === 'right' && spaceRight > tw + gap) position = 'right';
+  else if (prefer === 'left' && spaceLeft > tw + gap) position = 'left';
+  else if (prefer === 'top' && spaceAbove > th + gap) position = 'top';
+  else if (prefer === 'bottom' && spaceBelow > th + gap) position = 'bottom';
+  // Sin preferencia: heurística por geometría
+  else if (rect.left < 280 && spaceRight > tw + gap) position = 'right';
+  else if (rect.left > vw - 280 && spaceLeft > tw + gap) position = 'left';
+  // Target ancho → preferir lateral si hay espacio
+  else if (isWide && spaceRight > tw + gap) position = 'right';
+  else if (isWide && spaceLeft > tw + gap) position = 'left';
+  // Default
+  else if (spaceBelow < th + gap && spaceAbove > th + gap) position = 'top';
   else position = 'bottom';
 
   let top = 0, left = 0;
