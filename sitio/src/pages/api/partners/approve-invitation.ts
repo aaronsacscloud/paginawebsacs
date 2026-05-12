@@ -44,6 +44,21 @@ export async function approveInvitationInternal(invitation: any, opts: { nota?: 
   const partnerName = invitation.aceptado_por || invitation.nombre;
   const id = invitation.id;
 
+  // Si el founder definió una contraseña inicial en el form admin,
+  // la usamos al crear el team_member (en lugar del flujo de reset-link).
+  // La pw viene en notas.meta.initial_password (plaintext temporal).
+  const notasInfo = parseNotas(invitation.notas);
+  const initialPwPlain: string | undefined = notasInfo.meta?.initial_password;
+  let initialPwHash: string | null = null;
+  if (initialPwPlain && initialPwPlain.length >= 6) {
+    try {
+      const { hashPassword } = await import('../../../lib/auth/password');
+      initialPwHash = await hashPassword(initialPwPlain);
+    } catch (e) {
+      console.warn('[approve-invitation] hashPassword failed:', e);
+    }
+  }
+
   // Crear team_member (idempotente por email)
   let team_member_id = invitation.team_member_id as string | null;
   if (!team_member_id && partnerEmail) {
@@ -55,25 +70,29 @@ export async function approveInvitationInternal(invitation: any, opts: { nota?: 
 
     if (existing) {
       const newRol = existing.rol === 'founder' ? 'founder' : 'partner';
+      const upd: Record<string, any> = {
+        rol: newRol,
+        default_commission_pct: invitation.comision_pct ?? existing.default_commission_pct ?? 50,
+        activo: true,
+      };
+      if (initialPwHash) upd.password_hash = initialPwHash;
       await supabase
         .from('team_members')
-        .update({
-          rol: newRol,
-          default_commission_pct: invitation.comision_pct ?? existing.default_commission_pct ?? 50,
-          activo: true,
-        })
+        .update(upd)
         .eq('id', existing.id);
       team_member_id = existing.id;
     } else {
+      const insertPayload: Record<string, any> = {
+        nombre: partnerName,
+        email: partnerEmail,
+        rol: 'partner',
+        default_commission_pct: invitation.comision_pct ?? 50,
+        activo: true,
+      };
+      if (initialPwHash) insertPayload.password_hash = initialPwHash;
       const { data: created, error: createErr } = await supabase
         .from('team_members')
-        .insert({
-          nombre: partnerName,
-          email: partnerEmail,
-          rol: 'partner',
-          default_commission_pct: invitation.comision_pct ?? 50,
-          activo: true,
-        })
+        .insert(insertPayload)
         .select('id')
         .single();
       if (createErr) {
@@ -88,6 +107,11 @@ export async function approveInvitationInternal(invitation: any, opts: { nota?: 
   meta.approved_at = new Date().toISOString();
   if (autoApproved) meta.auto_approved = true;
   if (nota) meta.approval_note = nota;
+  // SCRUB: nunca dejes la pw en la DB después de aprobar.
+  if (meta.initial_password) {
+    meta.initial_password_used_at = meta.approved_at;
+    delete meta.initial_password;
+  }
 
   const updates: Record<string, any> = {
     estado: 'accepted',
@@ -138,11 +162,14 @@ export async function approveInvitationInternal(invitation: any, opts: { nota?: 
     const partnerLandingUrl = `https://www.sacscloud.com/p/${finalSlug}`;
 
     let setPasswordUrl = 'https://www.sacscloud.com/partner/login';
-    try {
-      const { token } = await createPasswordResetToken(team_member_id, 'initial');
-      setPasswordUrl = `https://www.sacscloud.com/partner/reset-password?token=${encodeURIComponent(token)}&mode=initial`;
-    } catch (e) {
-      console.warn('[approve-invitation] reset token failed:', e);
+    // Solo generamos token de reset si el founder NO definió pw manual
+    if (!initialPwHash) {
+      try {
+        const { token } = await createPasswordResetToken(team_member_id, 'initial');
+        setPasswordUrl = `https://www.sacscloud.com/partner/reset-password?token=${encodeURIComponent(token)}&mode=initial`;
+      } catch (e) {
+        console.warn('[approve-invitation] reset token failed:', e);
+      }
     }
 
     try {
@@ -158,6 +185,11 @@ export async function approveInvitationInternal(invitation: any, opts: { nota?: 
           setPasswordUrl,
           loginUrl: 'https://www.sacscloud.com/partner/login',
           nota,
+          // Si hay pw inicial, mandamos las credenciales directamente
+          // (la template del email decide cómo mostrarlas vs el setPasswordUrl)
+          credentialsEmail: initialPwHash ? partnerEmail : undefined,
+          credentialsPassword: initialPwHash ? initialPwPlain : undefined,
+          hasCredentials: !!initialPwHash,
         },
       });
     } catch (e) {

@@ -31,6 +31,26 @@ function pick(obj: Record<string, any>, fields: string[]): Record<string, any> {
   return result;
 }
 
+// Embed un password inicial dentro del campo `notas` (en su sección meta jsonb).
+// Se borra al aprobar la invitación. NO es un mecanismo de almacenamiento
+// permanente — solo es para mover la pw del form admin al flujo de aprobación
+// sin agregar columna nueva a la DB.
+const NOTAS_SEP = '\n---SACS-META---\n';
+function embedInitialPassword(notas: string | null | undefined, plainPw: string): string {
+  let plain = notas || '';
+  let meta: Record<string, any> = {};
+  if (notas) {
+    const idx = notas.indexOf(NOTAS_SEP);
+    if (idx >= 0) {
+      plain = notas.slice(0, idx);
+      try { meta = JSON.parse(notas.slice(idx + NOTAS_SEP.length)); } catch { meta = {}; }
+    }
+  }
+  meta.initial_password = plainPw;
+  meta.initial_password_set_at = new Date().toISOString();
+  return `${plain}${NOTAS_SEP}${JSON.stringify(meta)}`;
+}
+
 const DEFAULT_TEMPLATES: Record<string, any> = {
   embajador: {
     comision_pct: 50,
@@ -230,6 +250,11 @@ export const POST: APIRoute = async ({ request }) => {
     };
 
     const clean = pick(merged, INVITATION_FIELDS);
+    // Si el founder definió contraseña inicial, la embebemos en notas.meta
+    // (se mueve a un campo controlado del approve-invitation y se borra al aprobar)
+    if (body.initial_password && typeof body.initial_password === 'string' && body.initial_password.length >= 6) {
+      clean.notas = embedInitialPassword(clean.notas, body.initial_password);
+    }
     if (!clean.nombre) {
       return new Response(JSON.stringify({ error: 'nombre is required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
@@ -287,6 +312,13 @@ export const PUT: APIRoute = async ({ request }) => {
     // Public access is allowed only for accept/decline transitions on a single record.
     const fields = (user && (user.role === 'founder' || user.role === 'cs')) ? INVITATION_FIELDS : PUBLIC_FIELDS;
     const clean = pick(body, fields);
+
+    // Si el founder está actualizando la pw inicial, la embebemos en notas.meta
+    if (body.initial_password && typeof body.initial_password === 'string' && body.initial_password.length >= 6 && user && (user.role === 'founder' || user.role === 'cs')) {
+      // Necesitamos las notas actuales para fusionar correctamente
+      const { data: cur } = await supabase.from('partner_invitations').select('notas').eq('id', id).maybeSingle();
+      clean.notas = embedInitialPassword(cur?.notas, body.initial_password);
+    }
 
     // Strip auto_approve if false (defensive: column may not exist yet in some DBs)
     if (clean.auto_approve === false || clean.auto_approve === undefined) {

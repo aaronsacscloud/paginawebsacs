@@ -194,6 +194,23 @@ const templates: Record<string, Template> = {
           Tu programa <strong>${d.programa || 'Partner SACS'}</strong> está activo con una comisión del <strong>${d.comision_pct || 0}%</strong>.
         </p>
         ${d.nota ? `<div style="background:#fff8e1;border-left:3px solid #E8A838;padding:12px 14px;margin:18px 0;font-size:0.875rem;color:#5a4a1f;line-height:1.55">${d.nota}</div>` : ''}
+        ${d.hasCredentials ? `
+        <div style="background:#1a1a1a;color:#fff;padding:20px;border-radius:10px;margin:18px 0">
+          <div style="font-size:0.6875rem;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.10em;margin-bottom:12px;text-align:center">Paso 1 — Tus credenciales de acceso</div>
+          <div style="background:rgba(255,255,255,0.06);border-radius:8px;padding:14px;margin-bottom:14px">
+            <div style="font-size:0.6875rem;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Email</div>
+            <div style="font-family:monospace;font-size:0.9375rem;color:#fff;word-break:break-all">${d.credentialsEmail || ''}</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.06);border-radius:8px;padding:14px;margin-bottom:16px">
+            <div style="font-size:0.6875rem;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Contraseña</div>
+            <div style="font-family:monospace;font-size:0.9375rem;color:#fff">${d.credentialsPassword || ''}</div>
+          </div>
+          <div style="text-align:center">
+            <a href="${d.loginUrl || 'https://www.sacscloud.com/partner/login'}" style="display:inline-block;background:#fff;color:#1a1a1a;padding:13px 26px;border-radius:6px;text-decoration:none;font-weight:700;font-size:0.875rem">Entrar a mi portal</a>
+          </div>
+          <div style="font-size:0.6875rem;color:rgba(255,255,255,0.5);margin-top:14px;text-align:center;line-height:1.5">Te recomendamos cambiar la contraseña en tu primer login (Mi perfil → Contraseña).</div>
+        </div>
+        ` : `
         <div style="background:#1a1a1a;color:#fff;padding:20px;border-radius:10px;margin:18px 0;text-align:center">
           <div style="font-size:0.6875rem;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.10em;margin-bottom:10px">Paso 1 — Crea tu contraseña</div>
           <p style="color:rgba(255,255,255,0.85);font-size:0.875rem;line-height:1.5;margin:0 0 16px">
@@ -202,6 +219,7 @@ const templates: Record<string, Template> = {
           <a href="${d.setPasswordUrl || ''}" style="display:inline-block;background:#fff;color:#1a1a1a;padding:13px 26px;border-radius:6px;text-decoration:none;font-weight:700;font-size:0.875rem">Crear mi contraseña</a>
           <div style="font-size:0.6875rem;color:rgba(255,255,255,0.5);margin-top:12px">Este link expira en 14 días.</div>
         </div>
+        `}
         <div style="background:#fafafa;border:1px solid #ececec;padding:18px;border-radius:10px;margin:18px 0">
           <div style="font-size:0.6875rem;color:#999;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px">Tu link único de partner</div>
           <a href="${d.partnerLandingUrl || ''}" style="font-family:monospace;font-size:0.875rem;color:#4B7BE5;word-break:break-all">${d.partnerLandingUrl || ''}</a>
@@ -214,7 +232,9 @@ const templates: Record<string, Template> = {
         <p style="color:#999;font-size:0.75rem;margin-top:24px;line-height:1.5;text-align:center">Cualquier duda: partners@sacscloud.com</p>
       </div>
     `,
-    text: `¡Bienvenido ${d.nombre}! Tu programa ${d.programa} está activo (${d.comision_pct}% comisión). Crea tu contraseña: ${d.setPasswordUrl}. Tu link: ${d.partnerLandingUrl}.`,
+    text: d.hasCredentials
+      ? `¡Bienvenido ${d.nombre}! Tu programa ${d.programa} está activo (${d.comision_pct}% comisión). Tus credenciales — Email: ${d.credentialsEmail}, Contraseña: ${d.credentialsPassword}. Entra a ${d.loginUrl || 'https://www.sacscloud.com/partner/login'}. Tu link único: ${d.partnerLandingUrl}.`
+      : `¡Bienvenido ${d.nombre}! Tu programa ${d.programa} está activo (${d.comision_pct}% comisión). Crea tu contraseña: ${d.setPasswordUrl}. Tu link: ${d.partnerLandingUrl}.`,
   }),
   partner_fideliza_ready: (d) => ({
     subject: `🛍️ Tu cuenta SACS Plan Fideliza está lista`,

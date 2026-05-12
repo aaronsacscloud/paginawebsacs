@@ -943,6 +943,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
     email: editing?.email || '',
     whatsapp: editing?.whatsapp || '',
     empresa: editing?.empresa || '',
+    initial_password: '',  // siempre se reinicia en cada edit por seguridad (no persiste en form state)
     comision_pct: editing?.comision_pct ?? 50,
     costo_unico: editing?.costo_unico ?? 0,
     costo_mensual: editing?.costo_mensual ?? 0,
@@ -1173,6 +1174,14 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
               <Field label="Email" type="email" value={form.email} onChange={v => set('email', v)} placeholder="tu@correo.com" />
               <Field label="WhatsApp" value={form.whatsapp} onChange={v => set('whatsapp', v)} placeholder="55 1234 5678" />
             </Grid2>
+            <Field
+              label="Contraseña inicial (opcional)"
+              type="text"
+              value={form.initial_password || ''}
+              onChange={v => set('initial_password', v)}
+              placeholder="Mín. 6 caracteres · ej. SacsPartner2026"
+              hint="Si la defines aquí, al aprobar la invitación el partner recibe un email con email + esta contraseña y puede entrar de inmediato a sacscloud.com/partner/login. Si la dejas vacía, recibe un link para crear su propia contraseña."
+            />
           </Section>
 
           {/* Términos económicos */}
