@@ -106,7 +106,11 @@ export default function OnboardingTour({ user, onComplete }: Props) {
     };
   }, [step, current.target]);
 
-  // No bloqueamos scroll: el portal a la izquierda debe poder scrollear si el contenido lo necesita
+  // No bloqueamos scroll · solo marcamos el body para que otros componentes (WhatsApp FAB) se reposicionen
+  useEffect(() => {
+    document.body.setAttribute('data-onb-active', '1');
+    return () => { document.body.removeAttribute('data-onb-active'); };
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -166,8 +170,8 @@ export default function OnboardingTour({ user, onComplete }: Props) {
             )}
           </mask>
         </defs>
-        {/* Velo azul SACS tenue · el portal se ve casi al 100% */}
-        <rect width="100%" height="100%" fill="rgba(75, 123, 229, 0.16)" mask="url(#onb-cutout)" />
+        {/* Velo casi transparente · portal se ve natural · solo el halo destaca el target */}
+        <rect width="100%" height="100%" fill="rgba(15, 23, 42, 0.04)" mask="url(#onb-cutout)" />
         {rect && (
           <>
             {/* Halo expansivo · glow azul fuera del spotlight */}
@@ -376,8 +380,19 @@ export default function OnboardingTour({ user, onComplete }: Props) {
         .onb-tooltip *::-webkit-scrollbar-track { background: transparent; }
         .onb-tooltip *::-webkit-scrollbar-thumb { background: ${C.border}; border-radius: 999px; }
         .onb-tooltip *::-webkit-scrollbar-thumb:hover { background: ${C.muted}; }
+        /* WhatsApp FAB y otros: empujar a la izquierda del panel durante el tour */
+        body[data-onb-active] .pp-wa-pill,
+        body[data-onb-active] .pp-install-toast {
+          right: ${TOOLTIP_W + PANEL_GAP * 2 + 16}px !important;
+          transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
         @media (max-width: 900px) {
           .onb-tooltip { width: calc(100vw - 24px) !important; right: 12px !important; left: 12px !important; bottom: 12px !important; top: auto !important; max-height: 60vh !important; }
+          body[data-onb-active] .pp-wa-pill,
+          body[data-onb-active] .pp-install-toast {
+            right: 22px !important;
+            bottom: calc(60vh + 24px) !important;
+          }
         }
       ` }} />
     </>
