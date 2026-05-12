@@ -16,10 +16,13 @@ export default function ShareTab({ user }: { user: { id: string; nombre: string;
     ]).then(([s, p]) => { setStats(s); setProfile(p); setLoading(false); });
   }, []);
 
-  if (loading) return <div style={SS.loading}>Cargando…</div>;
-
   const partnerUrl: string = profile?.partnerLandingUrl || `https://www.sacscloud.com/p/${(user.nombre || 'tu-link').toLowerCase().split(' ')[0]}`;
   const nombrePartner = user.nombre || profile?.user?.nombre || 'tu partner';
+
+  const sparkPath = useMemo(() => buildSparkline(stats?.daily || [], 600, 80), [stats?.daily]);
+  const templates = useMemo(() => buildTemplates(partnerUrl, nombrePartner), [partnerUrl, nombrePartner]);
+
+  if (loading) return <div style={SS.loading}>Cargando…</div>;
 
   const total = stats?.total ?? 0;
   const unique = stats?.unique ?? 0;
@@ -29,11 +32,6 @@ export default function ShareTab({ user }: { user: { id: string; nombre: string;
   const topRef = topRefs[0];
 
   const cr = total > 0 ? ((unique / total) * 100).toFixed(1) : '0';
-
-  const sparkPath = useMemo(() => buildSparkline(stats?.daily || [], 600, 80), [stats?.daily]);
-
-  // Templates con variables sustituidas
-  const templates = useMemo(() => buildTemplates(partnerUrl, nombrePartner), [partnerUrl, nombrePartner]);
 
   // QR code via api externa gratis (qrserver.com)
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=10&data=${encodeURIComponent(partnerUrl)}`;

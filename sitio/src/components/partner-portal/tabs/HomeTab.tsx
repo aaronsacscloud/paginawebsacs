@@ -43,13 +43,26 @@ export default function HomeTab({ user, go }: Props) {
   const bookings = leads?.bookings || [];
   const deals = leads?.deals || [];
 
-  const stage = {
-    nuevos:     contacts.filter((c: any) => !c.lifecycle_stage || c.lifecycle_stage === 'lead').length,
-    prueba:     contacts.filter((c: any) => c.lifecycle_stage === 'prueba_gratis').length,
-    demoAg:     bookings.filter((b: any) => b.estado === 'agendada' || b.estado === 'confirmada').length,
-    demoReal:   bookings.filter((b: any) => b.estado === 'realizada').length - deals.filter((d: any) => d.stage === 'won').length,
-    clientes:   deals.filter((d: any) => d.stage === 'won' || d.stage === 'pending_payment').length,
-  };
+  // Stages: contar leads únicos por stage final, no doble-contar
+  // Un lead con deal=won es cliente, no demo_realizada
+  const stage = (() => {
+    const dealsByContact: Record<string, any> = {};
+    for (const d of deals) if (d.contact_id) dealsByContact[d.contact_id] = d;
+    const bookingsByContact: Record<string, any> = {};
+    for (const b of bookings) if (b.contact_id) bookingsByContact[b.contact_id] = b;
+
+    let nuevos = 0, prueba = 0, demoAg = 0, demoReal = 0, clientes = 0;
+    for (const c of contacts) {
+      const dl = dealsByContact[c.id];
+      const bk = bookingsByContact[c.id];
+      if (dl) clientes++;
+      else if (bk?.estado === 'realizada') demoReal++;
+      else if (bk?.estado === 'agendada' || bk?.estado === 'confirmada') demoAg++;
+      else if (c.lifecycle_stage === 'prueba_gratis') prueba++;
+      else nuevos++;
+    }
+    return { nuevos, prueba, demoAg, demoReal, clientes };
+  })();
 
   // Próxima demo agendada
   const proximaDemo = bookings
