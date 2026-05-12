@@ -51,29 +51,8 @@ export default function MoneyTab({ user }: { user: { id: string; nombre: string;
     });
   }, []);
 
-  if (loading) return <div style={SS.loading}>Cargando tu cuenta…</div>;
-  if (!summary) return <div style={{ ...SS.loading, color: C.red }}>No se pudo cargar</div>;
-
-  // ── Cálculo del saldo bancario ──
-  const proximoPago     = summary.proximoPago ?? 0;      // earned · listo día 30
-  const pendienteRev    = summary.pendiente ?? 0;        // en revisión 24-48h
-
-  // Pipeline esperado = deals firmados pero cliente aún no pagó
-  const projectedFromDeals = (leads?.deals || [])
-    .filter((d: any) => d.stage === 'pending_payment')
-    .reduce((s: number, d: any) => s + Math.round((Number(d.valor_total) || 0) * 0.5), 0);
-
-  // Saldo disponible = todo lo "earned" se libera el día 30. Por simplicidad en demo,
-  // si estamos antes del día 30, lo confirmado se muestra como "disponible próximo 30"
-  // y solo lo ya liquidado (pagos pasados) es realmente "en el banco".
-  const today = new Date();
-  const isPastReleaseDay = today.getDate() >= 30;
-  const saldoDisponible = isPastReleaseDay ? proximoPago : 0;
-  const liberacionPendiente = isPastReleaseDay ? 0 : proximoPago;
-
-  const totalPaidLifetime = payments?.total_paid_lifetime ?? 0;
-
   // ── Construye historial de movimientos (entradas + salidas) ──
+  // useMemo va ANTES de cualquier return condicional (rule of hooks)
   const movements: Movement[] = useMemo(() => {
     const out: Movement[] = [];
 
@@ -115,6 +94,23 @@ export default function MoneyTab({ user }: { user: { id: string; nombre: string;
     }
     return out.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   }, [payments, pending]);
+
+  if (loading) return <div style={SS.loading}>Cargando tu cuenta…</div>;
+  if (!summary) return <div style={{ ...SS.loading, color: C.red }}>No se pudo cargar</div>;
+
+  // ── Cálculo del saldo bancario (después del loading check) ──
+  const proximoPago     = summary.proximoPago ?? 0;
+  const pendienteRev    = summary.pendiente ?? 0;
+
+  const projectedFromDeals = (leads?.deals || [])
+    .filter((d: any) => d.stage === 'pending_payment')
+    .reduce((s: number, d: any) => s + Math.round((Number(d.valor_total) || 0) * 0.5), 0);
+
+  const today = new Date();
+  const isPastReleaseDay = today.getDate() >= 30;
+  const saldoDisponible = isPastReleaseDay ? proximoPago : 0;
+  const liberacionPendiente = isPastReleaseDay ? 0 : proximoPago;
+  const totalPaidLifetime = payments?.total_paid_lifetime ?? 0;
 
   const filteredMovs = filter === 'todos' ? movements : movements.filter(m => m.type === filter);
 
