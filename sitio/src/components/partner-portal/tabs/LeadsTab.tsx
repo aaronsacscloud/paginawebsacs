@@ -24,11 +24,17 @@ export default function LeadsTab({ user }: { user: { id: string; nombre: string;
   const [loading, setLoading] = useState(true);
   const [drawerLead, setDrawerLead] = useState<Lead | null>(null);
   const [filter, setFilter] = useState<string | null>(null);
+  const [certs, setCerts] = useState<any[]>([]);
+  const [addOpen, setAddOpen] = useState(false);
 
   useEffect(() => {
-    apiGet('/api/partner-portal/leads', isDemoMode() ? demoLeads : undefined)
-      .then((d) => { setLeads(d); setLoading(false); });
+    Promise.all([
+      apiGet('/api/partner-portal/leads', isDemoMode() ? demoLeads : undefined),
+      apiGet<{ certifications: any[] }>('/api/partner-portal/certifications', isDemoMode() ? { certifications: [{ id: 'demos_consultoria_consciente', unlocked: false }] } : undefined),
+    ]).then(([d, c]) => { setLeads(d); setCerts(c?.certifications || []); setLoading(false); });
   }, []);
+
+  const tieneCertDemos = certs.some(c => c.id === 'demos_consultoria_consciente' && c.unlocked);
 
   const allLeads: Lead[] = useMemo(() => {
     if (!leads) return [];
@@ -89,6 +95,39 @@ export default function LeadsTab({ user }: { user: { id: string; nombre: string;
         <SimpleStat label="Activos en prueba" value={String(allLeads.filter(l => l.stage === 'prueba_gratis').length)} hint="Día 1–14 de evaluación" accent={C.amber} />
         <SimpleStat label="Demos agendadas" value={String(allLeads.filter(l => l.stage === 'demo_agendada').length)} hint={proximaDemo ? `Próx: ${fmtRel(proximaDemo.bookingFecha)}` : 'Sin demos próximas'} accent={C.purple} />
         <SimpleStat label="En propuesta" value={String(allLeads.filter(l => l.stage === 'demo_realizada').length)} hint="Esperando cierre" accent={C.greenDark} />
+      </div>
+
+      {/* Agregar lead directo · solo visible con cert Demos Consciente */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: 18, flexWrap: 'wrap' as const,
+        background: tieneCertDemos ? C.brandSoft : C.bg,
+        border: `1px solid ${tieneCertDemos ? C.brandTint : C.border}`,
+        borderRadius: 14, padding: '20px 24px', marginTop: 28,
+      }}>
+        <div style={{ flex: 1, minWidth: 220 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+            <Icon.Sparkle size={14} color={tieneCertDemos ? C.brand : C.muted} />
+            <span style={{ fontSize: 13, fontWeight: 600, color: tieneCertDemos ? C.brandDark : C.text }}>
+              Captura tus propios leads directos
+            </span>
+          </div>
+          <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
+            {tieneCertDemos
+              ? 'Como certificado en Consultoría Consciente, puedes registrar leads que conociste en persona o por llamada — quedan atribuidos a ti automáticamente.'
+              : 'Disponible al completar la certificación "Demos · Consultoría Consciente" ($3,500). Te enseña el método para hacer demos pro y desbloquea esta función.'}
+          </div>
+        </div>
+        {tieneCertDemos ? (
+          <button onClick={() => setAddOpen(true)} style={{ ...SS.btn, display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' as const }}>
+            <Icon.Plus size={14} strokeWidth={2.2} /> Agregar lead directo
+          </button>
+        ) : (
+          <button onClick={() => { window.location.hash = 'certs'; }}
+            style={{ ...SS.btnGhost, display: 'inline-flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' as const }}>
+            Ver certificación <Icon.ArrowRight size={12} />
+          </button>
+        )}
       </div>
 
       {/* Filtros */}
@@ -163,9 +202,123 @@ export default function LeadsTab({ user }: { user: { id: string; nombre: string;
           </div>
         </>
       )}
+
+      {/* Drawer: agregar lead directo */}
+      {addOpen && <AddDirectLeadDrawer onClose={() => setAddOpen(false)} onSaved={() => { setAddOpen(false); alert('Lead directo agregado (demo) · aparecerá en tu pipeline en 24h.'); }} />}
     </div>
   );
 }
+
+function AddDirectLeadDrawer({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  const [nombre, setNombre] = useState('');
+  const [empresa, setEmpresa] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
+  const [email, setEmail] = useState('');
+  const [ciudad, setCiudad] = useState('');
+  const [giro, setGiro] = useState('moda');
+  const [planInteres, setPlanInteres] = useState('fideliza');
+  const [notas, setNotas] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  async function submit() {
+    if (!nombre.trim() || !empresa.trim()) { alert('Nombre y empresa son requeridos'); return; }
+    if (!whatsapp.trim() && !email.trim()) { alert('Necesitas al menos WhatsApp o email'); return; }
+    setSubmitting(true);
+    // En demo no hay endpoint real — onSaved simula
+    setTimeout(() => { setSubmitting(false); onSaved(); }, 700);
+  }
+
+  return (
+    <>
+      <div style={SS.drawerBackdrop} onClick={onClose} />
+      <div style={SS.drawer}>
+        <button onClick={onClose} style={{ position: 'absolute', top: 24, right: 24, background: 'transparent', border: 'none', cursor: 'pointer', color: C.muted, padding: 8 }}>
+          <Icon.Close size={20} />
+        </button>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: C.brandSoft, color: C.brand, borderRadius: 999, fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' as const, marginBottom: 14 }}>
+          <Icon.Sparkle size={12} /> Lead directo
+        </div>
+        <h2 style={SS.h1Small}>Agregar lead directo</h2>
+        <p style={SS.leadSm}>Captura un prospecto que conociste tú mismo (videollamada, evento, referido). Queda atribuido a ti automáticamente, igual que los que vienen vía tu link.</p>
+
+        <Field label="Nombre completo">
+          <input value={nombre} onChange={e => setNombre(e.target.value)} style={inputStyle} placeholder="Ej. Carlos Martínez" />
+        </Field>
+        <Field label="Empresa">
+          <input value={empresa} onChange={e => setEmpresa(e.target.value)} style={inputStyle} placeholder="Boutique de Carlos" />
+        </Field>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <Field label="WhatsApp">
+            <input value={whatsapp} onChange={e => setWhatsapp(e.target.value)} style={inputStyle} placeholder="+52 55 1234 5678" />
+          </Field>
+          <Field label="Email">
+            <input value={email} onChange={e => setEmail(e.target.value)} style={inputStyle} placeholder="carlos@ejemplo.mx" type="email" />
+          </Field>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <Field label="Ciudad">
+            <input value={ciudad} onChange={e => setCiudad(e.target.value)} style={inputStyle} placeholder="CDMX" />
+          </Field>
+          <Field label="Giro">
+            <select value={giro} onChange={e => setGiro(e.target.value)} style={inputStyle}>
+              <option value="moda">Moda y ropa</option>
+              <option value="calzado">Calzado</option>
+              <option value="accesorios">Accesorios / joyería</option>
+              <option value="cosmeticos">Cosméticos y belleza</option>
+              <option value="alimentos">Alimentos y gourmet</option>
+              <option value="hogar">Hogar y decoración</option>
+              <option value="deportes">Deportes</option>
+              <option value="otro">Otro</option>
+            </select>
+          </Field>
+        </div>
+        <Field label="Plan de interés">
+          <select value={planInteres} onChange={e => setPlanInteres(e.target.value)} style={inputStyle}>
+            <option value="control">Plan Control</option>
+            <option value="fideliza">Plan Fideliza</option>
+            <option value="fideliza_plus">Plan Fideliza Plus</option>
+          </select>
+        </Field>
+        <Field label="Notas de la demo (opcional)">
+          <textarea rows={3} value={notas} onChange={e => setNotas(e.target.value)} style={{ ...inputStyle, resize: 'vertical' as const }} placeholder="Hablamos de... le interesa principalmente..." />
+        </Field>
+
+        <div style={{ ...SS.note, marginTop: 14, marginBottom: 18, fontSize: 12 }}>
+          El lead queda atribuido a ti como Lead directo. Si firma plan en los próximos 90 días, generas tu comisión normal del 50%.
+        </div>
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={submit} disabled={submitting} style={{ ...SS.btn, opacity: submitting ? 0.6 : 1 }}>
+            {submitting ? 'Guardando…' : 'Agregar lead'}
+          </button>
+          <button onClick={onClose} style={SS.btnGhost}>Cancelar</button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ fontSize: 11, color: C.muted, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' as const, marginBottom: 6 }}>{label}</div>
+      {children}
+    </div>
+  );
+}
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '12px 14px',
+  fontSize: 14,
+  fontFamily: 'inherit',
+  color: C.text,
+  border: `1px solid ${C.border}`,
+  borderRadius: 10,
+  background: '#fafafa',
+  outline: 'none',
+  boxSizing: 'border-box',
+};
 
 function FilterChip({ active, label, onClick, color }: { active: boolean; label: string; onClick: () => void; color?: string }) {
   const accent = color || C.brand;

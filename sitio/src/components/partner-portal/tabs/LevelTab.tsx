@@ -798,6 +798,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const DEMO_CERT_LIST = [
+  { id: 'demos_consultoria_consciente', shortName: 'Demos · Consultoría Consciente', precioMostrar: '$3,500', duracion: '4h', serviceChargeMostrar: 'Habilitación de portal', serviceUnit: '/ obligatoria', nivel: 'Inicial', unlocked: false, status: 'none' },
   { id: 'impl_una_sucursal', shortName: 'Implementación · 1 sucursal', precioMostrar: '$7,500', duracion: '4h', serviceChargeMostrar: '$5,000 – $12,000', serviceUnit: '/ implementación', nivel: 'Principiante', unlocked: false, status: 'none' },
   { id: 'impl_multisucursal', shortName: 'Implementación · Multi-sucursal', precioMostrar: '$14,000', duracion: '10h', serviceChargeMostrar: '$20,000 – $60,000', serviceUnit: '/ implementación', nivel: 'Intermedio', unlocked: false, status: 'none' },
   { id: 'migracion_datos', shortName: 'Migración de datos', precioMostrar: '$7,500', duracion: '6h', serviceChargeMostrar: '$8,000 – $25,000', serviceUnit: '/ migración', nivel: 'Especialización', unlocked: false, status: 'none' },

@@ -21,7 +21,6 @@ export default function ShareTab({ user }: { user: { id: string; nombre: string;
   const nombrePartner = user.nombre || profile?.user?.nombre || 'tu partner';
 
   const sparkPath = useMemo(() => buildSparkline(stats?.daily || [], 600, 80), [stats?.daily]);
-  const templates = useMemo(() => buildTemplates(partnerUrl, nombrePartner), [partnerUrl, nombrePartner]);
 
   if (loading) return <div style={SS.loading}>Cargando…</div>;
 
@@ -170,24 +169,6 @@ export default function ShareTab({ user }: { user: { id: string; nombre: string;
         </>
       )}
 
-      {/* Mensajes listos */}
-      <h2 style={SS.h2}>Mensajes listos para enviar</h2>
-      <p style={{ ...SS.leadSm, marginTop: -8 }}>Tu link ya está incrustado. Copia, pega y manda.</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
-        {templates.map(t => (
-          <div key={t.id} style={SS.card}>
-            <div style={{ fontSize: 11, color: C.muted, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>{t.platform}</div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, fontWeight: 600, color: C.text, marginBottom: 12 }}>{t.title}</div>
-            <div style={{ background: '#fafaf8', borderRadius: 10, padding: '14px 16px', fontSize: 13, color: C.textSoft, lineHeight: 1.55, marginBottom: 14, whiteSpace: 'pre-wrap', maxHeight: 180, overflow: 'auto' }}>
-              {t.body}
-            </div>
-            <button style={SS.btnGhost} onClick={() => handleCopy(t.body, t.id)}>
-              {copied === t.id ? '✓ Copiado' : 'Copiar texto'}
-            </button>
-          </div>
-        ))}
-      </div>
-
       {/* Brand kit ahora vive en su propia tab (Activos · Brand kit) */}
     </div>
   );
@@ -254,61 +235,3 @@ const iconBtnDark: React.CSSProperties = {
   gap: 8,
 };
 
-function buildTemplates(link: string, nombre: string) {
-  return [
-    {
-      id: 'wa-1a1',
-      platform: 'WhatsApp · 1:1',
-      title: 'Para escribir a alguien directo',
-      body: `Hola [nombre],
-
-Te quería platicar sobre SACS — es el sistema con el que llevo mi negocio (POS, inventario, clientes, todo). Lo conocí hace unos meses y desde entonces tengo la operación bajo control.
-
-Te paso el link para que veas: ${link}
-
-Si te interesa, te pueden dar una demo gratis sin compromiso. Yo te puedo conectar.`,
-    },
-    {
-      id: 'email-b2b',
-      platform: 'Email · B2B',
-      title: 'Cold email a un dueño de negocio',
-      body: `Asunto: Una herramienta que está cambiando cómo opero mi negocio
-
-Hola [nombre],
-
-Soy ${nombre}. Te escribo porque llevo unos meses usando SACS — una plataforma operativa para retail (POS + inventario + CRM + reportes) que me ha cambiado cómo manejo mi día a día.
-
-Pensé en ti porque me imagino que tienes retos similares con [inventario, multisucursal, conciliación bancaria, etc].
-
-Te paso el link directo a una demo gratis: ${link}
-
-Si quieres, agendamos 20 minutos para que te lo cuente con detalle. Sin compromiso.
-
-— ${nombre}`,
-    },
-    {
-      id: 'ig-caption',
-      platform: 'Instagram / TikTok · Caption',
-      title: 'Para post o reel mostrando SACS',
-      body: `Llevo mi tienda con SACS y se nota.
-
-POS, inventario, clientes, reportes, todo en un solo lugar. Lo que más me ayudó fue [tu razón aquí — ej. saber qué se vende mejor, no perder ventas por inventario, etc].
-
-Te dejo el link en bio o aquí: ${link}
-
-#retail #emprendedor #pyme #sacscloud`,
-    },
-    {
-      id: 'linkedin',
-      platform: 'LinkedIn · Post',
-      title: 'Para tu network profesional',
-      body: `Llevo ${Math.floor(Math.random() * 5) + 2} meses operando mi negocio con SACS y creo que vale la pena contarlo.
-
-Lo que más me gusta es que centraliza POS, inventario, clientes y reportes en una sola plataforma — sin tener que pegar tres herramientas con cinta adhesiva.
-
-Si están en retail o servicios y quieren ver cómo funciona, les paso el link a una demo gratuita: ${link}
-
-(Sin compromiso. Solo si les hace sentido.)`,
-    },
-  ];
-}

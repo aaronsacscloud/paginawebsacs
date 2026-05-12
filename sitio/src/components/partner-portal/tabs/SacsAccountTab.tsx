@@ -104,6 +104,73 @@ export default function SacsAccountTab({ user }: { user: { id: string; nombre: s
         <IncludeCard title="Reportes y analítica" desc="Ventas por sucursal, mix de productos, ABC de clientes, dashboards en vivo." />
       </div>
 
+      {/* Academia SACS */}
+      <h2 style={SS.h2}>Academia SACS</h2>
+      <p style={{ ...SS.leadSm, marginTop: -8 }}>Aprende todo de SACS directamente desde tu cuenta. Videos paso a paso, plantillas, casos prácticos.</p>
+
+      <div style={{
+        background: C.card, border: `1px solid ${C.border}`, borderRadius: 18,
+        overflow: 'hidden' as const, marginBottom: 14,
+        boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+      }}>
+        {/* Image hero */}
+        <div style={{
+          position: 'relative' as const,
+          aspectRatio: '16 / 7',
+          background: `linear-gradient(135deg, ${C.brand} 0%, ${C.brandDark} 100%)`,
+          overflow: 'hidden' as const,
+        }}>
+          <img
+            src="/images/screen-ecommerce.webp"
+            alt="Academia SACS · tutoriales y cursos"
+            loading="lazy"
+            style={{
+              position: 'absolute' as const, inset: 0,
+              width: '100%', height: '100%',
+              objectFit: 'cover' as const,
+              opacity: 0.55,
+              mixBlendMode: 'luminosity' as any,
+            }}
+          />
+          <div style={{
+            position: 'absolute' as const, inset: 0,
+            background: `linear-gradient(135deg, rgba(75,123,229,0.78) 0%, rgba(55,100,196,0.85) 100%)`,
+          }} />
+          <div style={{ position: 'absolute' as const, inset: 0, padding: '32px 36px', display: 'flex', flexDirection: 'column' as const, justifyContent: 'flex-end', color: '#fff' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: 'rgba(255,255,255,0.20)', borderRadius: 999, fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' as const, alignSelf: 'flex-start' as const, marginBottom: 12, backdropFilter: 'blur(6px)' }}>
+              <Icon.Book size={12} /> Academia
+            </span>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 500, letterSpacing: '-0.022em', lineHeight: 1.2, marginBottom: 6, maxWidth: 560 }}>
+              Aprende SACS a tu ritmo, dentro de tu cuenta.
+            </div>
+            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.78)', lineHeight: 1.55, maxWidth: 580 }}>
+              Configurar productos, activar POS, crear tienda en línea, inventario multi-sucursal, reportes y mucho más.
+            </div>
+          </div>
+        </div>
+
+        {/* Course list */}
+        <div style={{ padding: '24px 28px 28px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+            <CourseRow num="1" title="Configurar tu cuenta" desc="Setup inicial, datos del negocio, equipo." />
+            <CourseRow num="2" title="Configurar tus productos" desc="Categorías, variantes, precios, impuestos." />
+            <CourseRow num="3" title="Activar tu punto de venta" desc="POS en navegador, iPad o SmartPOS." />
+            <CourseRow num="4" title="Crear tu tienda en línea" desc="Dominio, layout, métodos de pago, envíos." />
+            <CourseRow num="5" title="Inventario y multi-sucursal" desc="Transferencias, alertas de stock, conteos." />
+            <CourseRow num="6" title="CRM y programa de lealtad" desc="Segmentos, puntos canjeables, campañas." />
+          </div>
+
+          <a href="https://app.sacscloud.com/academia" target="_blank" rel="noopener"
+            style={{ ...SS.btn, display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 20, textDecoration: 'none' }}>
+            Entrar a Academia <Icon.ArrowRight size={14} />
+          </a>
+        </div>
+      </div>
+
+      <div style={{ ...SS.note, fontSize: 13, marginBottom: 32 }}>
+        <strong>Acceso desde tu cuenta SACS.</strong> Cuando entres a app.sacscloud.com, encuentras "Academia" en el menú lateral. Todos los cursos son gratuitos para partners y se actualizan cada mes con nuevas lecciones.
+      </div>
+
       {/* Acceso info */}
       <h2 style={SS.h2}>Tu acceso</h2>
       <div style={SS.card}>
@@ -116,6 +183,23 @@ export default function SacsAccountTab({ user }: { user: { id: string; nombre: s
 
       <div style={{ ...SS.note, marginTop: 24 }}>
         <strong>Úsalo para operar tu propio negocio.</strong> Mientras más uses SACS, mejor podrás venderlo. Conoces las features, generas screenshots reales, y tus demos se vuelven casos de uso vivos.
+      </div>
+    </div>
+  );
+}
+
+function CourseRow({ num, title, desc }: { num: string; title: string; desc: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '12px 0' }}>
+      <span style={{
+        flexShrink: 0, width: 28, height: 28, borderRadius: '50%',
+        background: C.brandSoft, color: C.brand,
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 700,
+      }}>{num}</span>
+      <div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 4 }}>{title}</div>
+        <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>{desc}</div>
       </div>
     </div>
   );
