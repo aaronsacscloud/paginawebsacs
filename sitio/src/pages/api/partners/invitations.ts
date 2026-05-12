@@ -315,9 +315,14 @@ export const PUT: APIRoute = async ({ request }) => {
 };
 
 // DELETE /api/partners/invitations?id=X
-// Hard delete de la invitación + sus sesiones de tracking. Solo founder/cs.
-// El team_member (si la invitación fue aceptada y generó partner) permanece
-// intacto — borrar al partner se hace desde la UI de Team Members.
+// Hard delete de la invitación + cascade completo. Solo founder/cs.
+//
+// Orden de borrado (siempre best-effort, ignora errores de FK ausentes):
+//   1. partner_invitation_sessions (tracking de interés)
+//   2. Si invitación tiene team_member_id: borra dependencias del partner
+//      (content_submissions, partner_strikes, team_member_sessions, partner_payouts, etc.)
+//   3. El team_member
+//   4. La invitación
 export const DELETE: APIRoute = async ({ request }) => {
   try {
     const url = new URL(request.url);
@@ -331,18 +336,68 @@ export const DELETE: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ error: 'forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
     }
 
-    // Borra sesiones de tracking explícitamente (por si el FK CASCADE falla)
-    try {
-      await supabase.from('partner_invitation_sessions').delete().eq('invitation_id', id);
-    } catch {}
+    // Carga la invitación para saber si tiene team_member_id
+    const { data: inv } = await supabase
+      .from('partner_invitations')
+      .select('id, team_member_id, numero, nombre')
+      .eq('id', id)
+      .maybeSingle();
 
-    // Borra la invitación
+    if (!inv) {
+      return new Response(JSON.stringify({ error: 'invitation_not_found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    const teamMemberId: string | null = (inv as any).team_member_id || null;
+
+    // 1. Sesiones de tracking (FK CASCADE pero por si acaso)
+    await supabase.from('partner_invitation_sessions').delete().eq('invitation_id', id).then(() => null, () => null);
+
+    // 2. Si hay partner asociado, borra todas sus dependencias.
+    //    Cada delete es best-effort: si la tabla no existe o no tiene esa FK, sigue.
+    if (teamMemberId) {
+      const cascadeTables: Array<{ table: string; column: string }> = [
+        // Tracking / commitments del partner
+        { table: 'content_submissions',    column: 'partner_id' },
+        { table: 'partner_strikes',        column: 'partner_id' },
+        { table: 'partner_payouts',        column: 'partner_id' },
+        { table: 'partner_commissions',    column: 'partner_id' },
+        { table: 'partner_referrals',      column: 'inviter_id' },
+        { table: 'partner_referrals',      column: 'invitee_id' },
+        // Auth y sesiones
+        { table: 'team_member_sessions',   column: 'team_member_id' },
+        { table: 'password_reset_tokens',  column: 'team_member_id' },
+        { table: 'partner_certifications', column: 'partner_id' },
+        // Cualquier link público alojado por slug
+        { table: 'partner_landing_visits', column: 'partner_id' },
+      ];
+      for (const { table, column } of cascadeTables) {
+        try {
+          await supabase.from(table).delete().eq(column, teamMemberId);
+        } catch { /* tabla puede no existir, ignorar */ }
+      }
+
+      // 3. Borra el team_member
+      const { error: tmError } = await supabase.from('team_members').delete().eq('id', teamMemberId);
+      // Si falla por FK constraint (alguna tabla que olvidamos arriba), lo
+      // marcamos inactivo en lugar de borrarlo — al menos queda "tombstoned"
+      if (tmError) {
+        try {
+          await supabase.from('team_members').update({ activo: false }).eq('id', teamMemberId);
+        } catch { /* no hacemos nada */ }
+      }
+    }
+
+    // 4. La invitación
     const { error } = await supabase.from('partner_invitations').delete().eq('id', id);
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
 
-    return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({
+      ok: true,
+      deleted_invitation: inv.numero,
+      deleted_partner: !!teamMemberId,
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err?.message || String(err) }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }

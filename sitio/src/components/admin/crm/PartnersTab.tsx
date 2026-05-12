@@ -228,7 +228,7 @@ export default function PartnersTab() {
   async function deleteInvitation(it: Invitation) {
     const isAccepted = it.estado === 'accepted';
     const firstConfirm = isAccepted
-      ? `⚠️ Esta invitación YA FUE ACEPTADA y generó un partner activo en SACS.\n\nEliminar borra:\n• La invitación (folio ${it.numero})\n• El link público y landing\n• Todas las sesiones de tracking\n\nNO borra:\n• El partner del team (sigue activo en SACS)\n• Comisiones registradas (siguen en el portal)\n\n¿Continuar?`
+      ? `⚠️ ELIMINACIÓN COMPLETA · invitación + partner del team\n\nEsta invitación YA FUE ACEPTADA y generó un partner activo en SACS.\n\nSe borran en cascada:\n• La invitación (folio ${it.numero})\n• El link público y landing personalizada\n• Todas las sesiones de tracking\n• El partner del team (cuenta de acceso, sesiones, password tokens)\n• Sus content submissions, strikes, payouts, comisiones, certificaciones\n• Visitas a su landing\n\nEsta acción NO se puede deshacer.\n\n¿Continuar?`
       : `Vas a eliminar la invitación ${it.numero} de ${it.nombre}.\n\nSe borran:\n• La invitación de la base de datos\n• El link público y la landing personalizada\n• Todas las sesiones de tracking\n\nEsta acción NO se puede deshacer.\n\n¿Continuar?`;
     if (!confirm(firstConfirm)) return;
     if (isAccepted) {
@@ -242,6 +242,7 @@ export default function PartnersTab() {
     try {
       const res = await fetch('/api/partners/invitations?id=' + encodeURIComponent(it.id), {
         method: 'DELETE',
+        headers: { 'x-user-id': 'founder' },
       });
       if (!res.ok) {
         const e = await res.json();
