@@ -12,7 +12,9 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
   const [leads, setLeads] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [reportOpen, setReportOpen] = useState(false);
+  const [catalogOpen, setCatalogOpen] = useState(false);
   const [contractOpen, setContractOpen] = useState(false);
+  const [levelModalId, setLevelModalId] = useState<number | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -72,7 +74,7 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
         </div>
       </div>
 
-      {/* Tracker horizontal · single row */}
+      {/* Tracker horizontal · single row · clickeable */}
       <div style={{ ...SS.card, marginBottom: 24, padding: '28px 32px 24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 0, position: 'relative' }}>
           {LEVELS.map((lv, idx) => {
@@ -81,11 +83,21 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
             const isReached = isPast || isActive;
             const accent = lv.id >= 3 ? C.gold : C.green;
             return (
-              <div key={lv.id} style={{ flex: 1, display: 'flex', flexDirection: 'column' as const, alignItems: 'center', position: 'relative' as const }}>
+              <button
+                key={lv.id}
+                onClick={() => setLevelModalId(lv.id)}
+                style={{
+                  flex: 1, display: 'flex', flexDirection: 'column' as const, alignItems: 'center',
+                  position: 'relative' as const, background: 'transparent', border: 'none',
+                  cursor: 'pointer', padding: '4px 4px 8px', fontFamily: 'inherit', borderRadius: 10,
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = C.bg}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}>
                 {/* connector line to next */}
                 {idx < LEVELS.length - 1 && (
                   <div style={{
-                    position: 'absolute' as const, top: 16, left: '50%', right: '-50%',
+                    position: 'absolute' as const, top: 20, left: '50%', right: '-50%',
                     height: 2, background: isPast ? accent : C.border, zIndex: 0,
                   }} />
                 )}
@@ -104,9 +116,13 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
                 <div style={{ marginTop: 12, textAlign: 'center' as const, padding: '0 4px' }}>
                   <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' as const, marginBottom: 4 }}>LVL {lv.id}</div>
                   <div style={{ fontSize: 13, fontWeight: 600, color: isReached ? C.text : C.muted, lineHeight: 1.3, marginBottom: 4 }}>{lv.nombre}</div>
-                  {isActive && <div style={{ fontSize: 11, color: accent, fontWeight: 600 }}>Estás aquí</div>}
+                  {isActive ? (
+                    <div style={{ fontSize: 11, color: accent, fontWeight: 600 }}>Estás aquí</div>
+                  ) : (
+                    <div style={{ fontSize: 10, color: C.muted, fontWeight: 500 }}>Ver detalle →</div>
+                  )}
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -136,7 +152,6 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
               {diasRest > 0 ? `${diasRest} días restantes del mes` : 'Cierre del mes'}
             </div>
           </div>
-          <button style={SS.btn} onClick={() => setReportOpen(true)}>+ Reportar actividad</button>
         </div>
         <div style={{ ...SS.bar, height: 12 }}>
           <div style={{ ...SS.barFill, width: `${Math.min(100, progresoPct)}%` }} />
@@ -147,9 +162,51 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
           </div>
         ) : (
           <div style={{ marginTop: 18, padding: '12px 18px', background: C.bg, borderRadius: 10, fontSize: 13, color: C.textSoft, lineHeight: 1.5 }}>
-            Te faltan <strong style={{ color: C.text }}>{Math.max(0, meta - puntos)} pts</strong>. Sugerencias rápidas: 1 Reel (20 pts), 1 demo en feria (35 pts), o referir 1 lead nuevo (15 pts).
+            Te faltan <strong style={{ color: C.text }}>{Math.max(0, meta - puntos)} pts</strong>. Reporta una actividad y se acreditará en 24-48h.
           </div>
         )}
+
+        {/* 2 botones grandes · visuales */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginTop: 22 }}>
+          <button onClick={() => setCatalogOpen(true)}
+            style={{
+              background: C.bg, border: `1px solid ${C.border}`, borderRadius: 12,
+              padding: '20px 22px', textAlign: 'left' as const, cursor: 'pointer', fontFamily: 'inherit',
+              display: 'flex', alignItems: 'center', gap: 16,
+              transition: 'transform 0.12s, box-shadow 0.12s',
+            }}
+            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = '0 8px 18px -10px rgba(0,0,0,0.12)'; }}
+            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(0)'; el.style.boxShadow = 'none'; }}>
+            <span style={{
+              flexShrink: 0, width: 44, height: 44, borderRadius: 12,
+              background: 'rgba(75,123,229,0.12)', color: C.accent,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
+            }}>📚</span>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 4 }}>Ver catálogo de tareas</div>
+              <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.4 }}>Explora los 30+ tipos con puntos e ideas</div>
+            </div>
+          </button>
+          <button onClick={() => setReportOpen(true)}
+            style={{
+              background: C.text, color: '#fff', border: 'none', borderRadius: 12,
+              padding: '20px 22px', textAlign: 'left' as const, cursor: 'pointer', fontFamily: 'inherit',
+              display: 'flex', alignItems: 'center', gap: 16,
+              transition: 'transform 0.12s, box-shadow 0.12s',
+            }}
+            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = '0 8px 18px -10px rgba(0,0,0,0.25)'; }}
+            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(0)'; el.style.boxShadow = 'none'; }}>
+            <span style={{
+              flexShrink: 0, width: 44, height: 44, borderRadius: 12,
+              background: 'rgba(255,255,255,0.14)', color: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
+            }}>✨</span>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#fff', marginBottom: 4 }}>Reportar actividad</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', lineHeight: 1.4 }}>Pega el link de lo que hiciste</div>
+            </div>
+          </button>
+        </div>
 
         {/* Actividades reportadas */}
         {(content?.items?.length || 0) > 0 && (
@@ -235,8 +292,14 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
       {/* Drawer: Compromisos completos */}
       {contractOpen && <ContractDrawer onClose={() => setContractOpen(false)} tipo={invitation?.tipo} />}
 
-      {/* Drawer: reportar actividad */}
-      {reportOpen && <ReportDrawer onClose={() => setReportOpen(false)} onSubmitted={() => { setReportOpen(false); window.location.reload(); }} />}
+      {/* Modal: detalle de un nivel */}
+      {levelModalId !== null && <LevelDetailModal lvId={levelModalId} currentLevel={level.current} onClose={() => setLevelModalId(null)} />}
+
+      {/* Drawer: catálogo visual de tareas */}
+      {catalogOpen && <CatalogDrawer tipos={content?.tipos || []} onClose={() => setCatalogOpen(false)} onPick={(tipoId) => { setCatalogOpen(false); setReportOpen(true); setTimeout(() => { const ev = new CustomEvent('preset-tipo', { detail: tipoId }); window.dispatchEvent(ev); }, 100); }} />}
+
+      {/* Drawer: reportar actividad (con catálogo visual integrado) */}
+      {reportOpen && <ReportDrawer tipos={content?.tipos || []} onClose={() => setReportOpen(false)} onSubmitted={() => { setReportOpen(false); window.location.reload(); }} />}
     </div>
   );
 }
@@ -315,6 +378,210 @@ function SacsAccountCard() {
   );
 }
 
+// ─── Modal: detalle de un nivel ───
+function LevelDetailModal({ lvId, currentLevel, onClose }: { lvId: number; currentLevel: number; onClose: () => void }) {
+  const lv = LEVELS.find(l => l.id === lvId);
+  if (!lv) return null;
+  const isActive = lvId === currentLevel;
+  const isPast = lvId < currentLevel;
+  const accent = lvId >= 3 ? C.gold : C.green;
+
+  const details = LEVEL_DETAILS[lvId];
+
+  return (
+    <>
+      <div style={SS.drawerBackdrop} onClick={onClose} />
+      <div style={SS.drawer}>
+        <button onClick={onClose} style={{ position: 'absolute', top: 24, right: 24, background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 22, color: C.muted, padding: 8 }}>×</button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
+          <span style={{
+            width: 48, height: 48, borderRadius: '50%',
+            background: isPast || isActive ? accent : '#fff',
+            border: isPast || isActive ? `2px solid ${accent}` : `2px solid ${C.border}`,
+            color: isPast || isActive ? '#fff' : C.muted,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700,
+          }}>{isPast ? '✓' : lv.id}</span>
+          <div>
+            <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>LVL {lv.id}</div>
+            <h2 style={{ ...SS.h1Small, margin: '2px 0 0' }}>{lv.nombre}</h2>
+          </div>
+        </div>
+
+        {isActive && (
+          <div style={{ display: 'inline-block', padding: '6px 14px', background: `${accent}1a`, color: accent, borderRadius: 999, fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', marginBottom: 18 }}>
+            ✓ Estás aquí
+          </div>
+        )}
+
+        <p style={{ fontSize: 14, color: C.textSoft, lineHeight: 1.6, margin: '0 0 24px' }}>{details.descripcion}</p>
+
+        {/* Cómo se activa */}
+        <h3 style={SS.h3}>Cómo se {isActive ? 'mantiene' : 'activa'}</h3>
+        <ul style={{ listStyle: 'none' as const, padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+          {details.requisitos.map((r, i) => (
+            <li key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              <span style={{
+                flexShrink: 0, width: 22, height: 22, borderRadius: '50%',
+                background: 'rgba(42,181,160,0.12)', color: C.greenDark,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12,
+              }}>{i + 1}</span>
+              <span style={{ fontSize: 14, color: C.textSoft, lineHeight: 1.55 }}>{r}</span>
+            </li>
+          ))}
+        </ul>
+
+        {/* Beneficios */}
+        <h3 style={SS.h3}>Lo que ganas</h3>
+        <ul style={{ listStyle: 'none' as const, padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column' as const, gap: 10 }}>
+          {details.beneficios.map((b, i) => (
+            <li key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              <span style={{ flexShrink: 0, color: accent, fontWeight: 700, fontSize: 14 }}>✓</span>
+              <span style={{ fontSize: 14, color: C.textSoft, lineHeight: 1.55 }}>{b}</span>
+            </li>
+          ))}
+        </ul>
+
+        {/* Auto-reconocimiento */}
+        <div style={{ padding: '16px 20px', background: 'rgba(75,123,229,0.06)', borderRadius: 10, fontSize: 13, color: C.textSoft, lineHeight: 1.6, marginTop: 8 }}>
+          <strong style={{ color: C.text }}>⚙️ Activación automática.</strong> El portal te reconoce y te sube de nivel solo — no necesitas pedirlo. Cuando cumples los requisitos, tu Lvl {lv.id} se activa en el próximo ciclo (típicamente 24-48h).
+        </div>
+      </div>
+    </>
+  );
+}
+
+const LEVEL_DETAILS: Record<number, { descripcion: string; requisitos: string[]; beneficios: string[] }> = {
+  1: {
+    descripcion: 'Tu punto de entrada al programa. Ya tienes tu link único activo y puedes empezar a generar comisiones desde el primer cliente que firme.',
+    requisitos: [
+      'Tu invitación está aceptada y firmada',
+      'Tu link único está activo en sacscloud.com/p/[tu-slug]',
+      'Mantén 100 pts/mes de actividad reportada',
+    ],
+    beneficios: [
+      'Comisión 50% sobre cada venta directa',
+      'Plan Fideliza activo en tu cuenta SACS · gratis',
+      'Acceso al brand kit oficial + plantillas listas',
+      'Tu link con cookie de atribución de 90 días',
+    ],
+  },
+  2: {
+    descripcion: 'El siguiente nivel desbloquea cobro de servicios profesionales. Implementaciones, migraciones, automatizaciones con IA — el cliente te paga directo y te quedas con el 100%.',
+    requisitos: [
+      'Completar al menos 1 certificación oficial (desde $7,500)',
+      'Aprobar el examen final de la cert',
+      'Mantener 100 pts/mes de actividad',
+    ],
+    beneficios: [
+      'Cobras servicios profesionales de $5,000 a $60,000+ por proyecto',
+      'Te quedas con el 100% del cobro de servicios — SACS solo cobra la cert una vez',
+      'Badge "Partner Certificado" visible en tu portal',
+      'Acceso a comunidad privada de partners certificados',
+      'Sigues con tu 50% de comisión sobre venta directa',
+    ],
+  },
+  3: {
+    descripcion: 'Empiezas a construir tu propia red de partners. Cobras override del 10% sobre todas las ventas que generen los partners que tú trajiste — ingreso recurrente sin tope.',
+    requisitos: [
+      '5 sucursales activas pagando en tu red (directas o de tus partners)',
+      'Al menos 1 certificación oficial activa',
+      'Mantener 100 pts/mes de actividad',
+    ],
+    beneficios: [
+      'Override del 10% sobre cada venta de partners en tu red',
+      '4 sub-niveles (Nv 1-4) que escalan con el tamaño de tu red',
+      'Badge "Master Partner Nv X" + visibilidad en directorio',
+      'Acceso prioritario a leads enterprise pre-calificados de SACS',
+      'Sigues con 50% comisión directa + servicios al 100%',
+    ],
+  },
+  4: {
+    descripcion: 'El círculo más alto del programa. Reservado para partners que sostienen Master Partner Nv 4 por 12 meses consecutivos — los socios estratégicos a largo plazo.',
+    requisitos: [
+      'Sostener Master Partner Nv 4 por 12 meses consecutivos',
+      'Mantener red de 40+ sucursales activas',
+      'Mantener 100 pts/mes de actividad',
+    ],
+    beneficios: [
+      'Override del 12% sobre todas las ventas de tu red',
+      'Invitación al Founder Circle anual (evento presencial)',
+      'Participación en roadmap de producto y feature requests prioritarios',
+      'Co-marketing pagado por SACS (campañas conjuntas)',
+      'Badge "Founder Circle" + reconocimiento público',
+    ],
+  },
+};
+
+// ─── Drawer: Catálogo visual de tareas ───
+function CatalogDrawer({ tipos, onClose, onPick }: { tipos: any[]; onClose: () => void; onPick: (tipoId: string) => void }) {
+  const [filter, setFilter] = useState<'todos' | 'contenido' | 'apoyo' | 'filantropia'>('todos');
+  const filtered = tipos.filter(t => filter === 'todos' || (t.categoria || 'contenido') === filter);
+
+  return (
+    <>
+      <div style={SS.drawerBackdrop} onClick={onClose} />
+      <div style={{ ...SS.drawer, width: 'min(720px, 100vw)' }}>
+        <button onClick={onClose} style={{ position: 'absolute', top: 24, right: 24, background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 22, color: C.muted, padding: 8 }}>×</button>
+        <h2 style={SS.h1Small}>Catálogo de tareas</h2>
+        <p style={SS.leadSm}>30+ tipos de actividad que suman puntos. Click en cualquiera para reportar tu evidencia.</p>
+
+        {/* Filtros */}
+        <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8, marginBottom: 22 }}>
+          {[
+            { id: 'todos', label: 'Todos' },
+            { id: 'contenido', label: 'Contenido' },
+            { id: 'apoyo', label: 'Apoyo a la marca' },
+            { id: 'filantropia', label: 'Filantropía' },
+          ].map(f => (
+            <button key={f.id} onClick={() => setFilter(f.id as any)}
+              style={{
+                padding: '8px 14px', border: `1px solid ${C.border}`, borderRadius: 999,
+                fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                background: filter === f.id ? C.text : '#fff',
+                color: filter === f.id ? '#fff' : C.text,
+              }}>{f.label}</button>
+          ))}
+        </div>
+
+        {/* Grid visual */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14 }}>
+          {filtered.map(t => (
+            <button key={t.id} onClick={() => onPick(t.id)}
+              style={{
+                background: '#fff', border: `1px solid ${C.border}`, borderRadius: 12,
+                overflow: 'hidden' as const, cursor: 'pointer', fontFamily: 'inherit',
+                textAlign: 'left' as const, padding: 0, display: 'flex', flexDirection: 'column' as const,
+                transition: 'transform 0.12s, box-shadow 0.12s',
+              }}
+              onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = '0 8px 18px -10px rgba(0,0,0,0.12)'; }}
+              onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(0)'; el.style.boxShadow = 'none'; }}>
+              {t.ejemploImage && (
+                <div style={{ aspectRatio: '4 / 3', background: '#1a1a1a', overflow: 'hidden' as const, position: 'relative' as const }}>
+                  <img src={t.ejemploImage} alt={t.nombre} loading="lazy"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' as const, display: 'block' }} />
+                  <div style={{ position: 'absolute' as const, top: 8, right: 8, padding: '4px 8px', background: 'rgba(0,0,0,0.65)', color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', borderRadius: 6 }}>
+                    +{t.puntos} pts
+                  </div>
+                </div>
+              )}
+              <div style={{ padding: '12px 14px 14px' }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: C.text, lineHeight: 1.3, marginBottom: 4 }}>{t.nombre}</div>
+                <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.4 }}>{t.duracion} · {t.esfuerzo}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        <div style={{ ...SS.note, marginTop: 24 }}>
+          <strong>Click en cualquier tarjeta</strong> para abrir el formulario de reporte con ese tipo pre-seleccionado.
+        </div>
+      </div>
+    </>
+  );
+}
+
 function ContractDrawer({ onClose, tipo }: { onClose: () => void; tipo?: string }) {
   return (
     <>
@@ -353,23 +620,40 @@ function ContractItem({ n, title, children }: { n: string; title: string; childr
   );
 }
 
-function ReportDrawer({ onClose, onSubmitted }: { onClose: () => void; onSubmitted: () => void }) {
+function ReportDrawer({ tipos, onClose, onSubmitted }: { tipos: any[]; onClose: () => void; onSubmitted: () => void }) {
   const [url, setUrl] = useState('');
-  const [tipo, setTipo] = useState('reel');
+  const [tipoId, setTipoId] = useState<string | null>(null);
   const [plataforma, setPlataforma] = useState('instagram');
   const [descripcion, setDescripcion] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [step, setStep] = useState<'pick' | 'form'>('pick');
+  const [categoryFilter, setCategoryFilter] = useState<'todos' | 'contenido' | 'apoyo' | 'filantropia'>('todos');
+
+  useEffect(() => {
+    const onPreset = (e: any) => {
+      const tipoId = e?.detail;
+      if (tipoId) {
+        setTipoId(tipoId);
+        setStep('form');
+      }
+    };
+    window.addEventListener('preset-tipo', onPreset);
+    return () => window.removeEventListener('preset-tipo', onPreset);
+  }, []);
+
+  const tipoSeleccionado = tipos.find(t => t.id === tipoId);
 
   async function submit() {
     if (!url.trim()) { setError('URL requerida'); return; }
+    if (!tipoId) { setError('Selecciona un tipo'); return; }
     setSubmitting(true);
     setError(null);
     try {
       const r = await fetch('/api/partner-portal/content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, tipo, plataforma, descripcion }),
+        body: JSON.stringify({ url, tipo: tipoId, plataforma, descripcion }),
       });
       const d = await r.json();
       if (d.error) { setError(d.error); setSubmitting(false); return; }
@@ -380,53 +664,122 @@ function ReportDrawer({ onClose, onSubmitted }: { onClose: () => void; onSubmitt
     }
   }
 
+  const filteredTipos = tipos.filter(t => categoryFilter === 'todos' || (t.categoria || 'contenido') === categoryFilter);
+
   return (
     <>
       <div style={SS.drawerBackdrop} onClick={onClose} />
-      <div style={SS.drawer}>
+      <div style={{ ...SS.drawer, width: 'min(720px, 100vw)' }}>
         <button onClick={onClose} style={{ position: 'absolute', top: 24, right: 24, background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 22, color: C.muted, padding: 8 }}>×</button>
-        <h2 style={SS.h1Small}>Reportar actividad</h2>
-        <p style={SS.leadSm}>Pega el link del contenido, demo, evento o acción que realizaste. Se revisa en menos de 48h.</p>
 
-        {error && <div style={{ padding: '12px 18px', background: 'rgba(220,38,38,0.06)', border: `1px solid rgba(220,38,38,0.25)`, borderRadius: 10, fontSize: 13, color: C.red, marginBottom: 16 }}>{error}</div>}
+        {step === 'pick' && (
+          <>
+            <h2 style={SS.h1Small}>Reportar actividad</h2>
+            <p style={SS.leadSm}>Elige primero qué tipo de actividad realizaste. Luego pegas la URL como evidencia.</p>
 
-        <Field label="URL del contenido / evidencia">
-          <input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://instagram.com/reel/..." style={inputStyle} />
-        </Field>
-        <Field label="Tipo">
-          <select value={tipo} onChange={e => setTipo(e.target.value)} style={inputStyle}>
-            <option value="reel">Reel</option>
-            <option value="tiktok">TikTok</option>
-            <option value="post">Post</option>
-            <option value="historia">Historia</option>
-            <option value="testimonial">Testimonial cliente</option>
-            <option value="demo_feria">Demo en feria/evento</option>
-            <option value="podcast">Podcast / video largo</option>
-            <option value="apoyo">Apoyo a la marca</option>
-            <option value="filantropia">Filantropía</option>
-          </select>
-        </Field>
-        <Field label="Plataforma">
-          <select value={plataforma} onChange={e => setPlataforma(e.target.value)} style={inputStyle}>
-            <option value="instagram">Instagram</option>
-            <option value="tiktok">TikTok</option>
-            <option value="youtube">YouTube</option>
-            <option value="linkedin">LinkedIn</option>
-            <option value="twitter">X / Twitter</option>
-            <option value="spotify">Spotify</option>
-            <option value="otro">Otro</option>
-          </select>
-        </Field>
-        <Field label="Descripción breve (opcional)">
-          <textarea value={descripcion} onChange={e => setDescripcion(e.target.value)} rows={3} style={{ ...inputStyle, resize: 'vertical' }} placeholder="Reel mostrando SACS en mi tienda, casos de uso, etc." />
-        </Field>
+            <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8, marginBottom: 22 }}>
+              {[
+                { id: 'todos', label: 'Todos' },
+                { id: 'contenido', label: 'Contenido' },
+                { id: 'apoyo', label: 'Apoyo a la marca' },
+                { id: 'filantropia', label: 'Filantropía' },
+              ].map(f => (
+                <button key={f.id} onClick={() => setCategoryFilter(f.id as any)}
+                  style={{
+                    padding: '8px 14px', border: `1px solid ${C.border}`, borderRadius: 999,
+                    fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                    background: categoryFilter === f.id ? C.text : '#fff',
+                    color: categoryFilter === f.id ? '#fff' : C.text,
+                  }}>{f.label}</button>
+              ))}
+            </div>
 
-        <div style={{ marginTop: 24, display: 'flex', gap: 10 }}>
-          <button onClick={submit} disabled={submitting} style={{ ...SS.btn, opacity: submitting ? 0.6 : 1 }}>
-            {submitting ? 'Enviando…' : 'Enviar para revisión'}
-          </button>
-          <button onClick={onClose} style={SS.btnGhost}>Cancelar</button>
-        </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
+              {filteredTipos.map(t => (
+                <button key={t.id} onClick={() => { setTipoId(t.id); setStep('form'); }}
+                  style={{
+                    background: '#fff', border: `1px solid ${C.border}`, borderRadius: 12,
+                    overflow: 'hidden' as const, cursor: 'pointer', fontFamily: 'inherit',
+                    textAlign: 'left' as const, padding: 0, display: 'flex', flexDirection: 'column' as const,
+                    transition: 'transform 0.12s, box-shadow 0.12s',
+                  }}
+                  onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = '0 8px 18px -10px rgba(0,0,0,0.12)'; }}
+                  onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(0)'; el.style.boxShadow = 'none'; }}>
+                  {t.ejemploImage && (
+                    <div style={{ aspectRatio: '4 / 3', background: '#1a1a1a', overflow: 'hidden' as const, position: 'relative' as const }}>
+                      <img src={t.ejemploImage} alt={t.nombre} loading="lazy"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' as const, display: 'block' }} />
+                      <div style={{ position: 'absolute' as const, top: 8, right: 8, padding: '4px 8px', background: 'rgba(0,0,0,0.65)', color: '#fff', fontSize: 11, fontWeight: 700, letterSpacing: '0.04em', borderRadius: 6 }}>
+                        +{t.puntos} pts
+                      </div>
+                    </div>
+                  )}
+                  <div style={{ padding: '10px 12px 12px' }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: C.text, lineHeight: 1.3 }}>{t.nombre}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {step === 'form' && tipoSeleccionado && (
+          <>
+            <button onClick={() => { setStep('pick'); setTipoId(null); }}
+              style={{ background: 'transparent', border: 'none', color: C.muted, fontSize: 13, cursor: 'pointer', padding: '4px 0', marginBottom: 14, fontFamily: 'inherit' }}>
+              ← Cambiar tipo
+            </button>
+
+            <h2 style={SS.h1Small}>{tipoSeleccionado.nombre}</h2>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' as const }}>
+              <span style={{ display: 'inline-block', padding: '4px 10px', background: 'rgba(42,181,160,0.12)', color: C.greenDark, fontSize: 12, fontWeight: 700, borderRadius: 999, letterSpacing: '0.04em' }}>
+                +{tipoSeleccionado.puntos} pts
+              </span>
+              <span style={{ fontSize: 12, color: C.muted }}>{tipoSeleccionado.duracion} · {tipoSeleccionado.esfuerzo}</span>
+            </div>
+
+            {tipoSeleccionado.ejemploImage && (
+              <img src={tipoSeleccionado.ejemploImage} alt={tipoSeleccionado.nombre}
+                style={{ width: '100%', aspectRatio: '16 / 9', objectFit: 'cover' as const, borderRadius: 10, marginBottom: 14 }} />
+            )}
+
+            {tipoSeleccionado.descripcion && (
+              <p style={{ fontSize: 13, color: C.textSoft, lineHeight: 1.6, margin: '0 0 22px' }}>{tipoSeleccionado.descripcion}</p>
+            )}
+
+            {error && <div style={{ padding: '12px 18px', background: 'rgba(220,38,38,0.06)', border: `1px solid rgba(220,38,38,0.25)`, borderRadius: 10, fontSize: 13, color: C.red, marginBottom: 16 }}>{error}</div>}
+
+            <Field label="URL del contenido / evidencia">
+              <input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://instagram.com/reel/..." style={inputStyle} />
+            </Field>
+
+            {(tipoSeleccionado.plataformasSugeridas || []).length > 0 && (
+              <Field label="Plataforma">
+                <select value={plataforma} onChange={e => setPlataforma(e.target.value)} style={inputStyle}>
+                  <option value="instagram">Instagram</option>
+                  <option value="tiktok">TikTok</option>
+                  <option value="youtube">YouTube</option>
+                  <option value="linkedin">LinkedIn</option>
+                  <option value="twitter">X / Twitter</option>
+                  <option value="spotify">Spotify</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </Field>
+            )}
+
+            <Field label="Descripción breve (opcional)">
+              <textarea value={descripcion} onChange={e => setDescripcion(e.target.value)} rows={3} style={{ ...inputStyle, resize: 'vertical' as const }}
+                placeholder={(tipoSeleccionado.ideasContenido || [])[0] || 'Cuéntanos brevemente qué hiciste...'} />
+            </Field>
+
+            <div style={{ marginTop: 24, display: 'flex', gap: 10 }}>
+              <button onClick={submit} disabled={submitting} style={{ ...SS.btn, opacity: submitting ? 0.6 : 1 }}>
+                {submitting ? 'Enviando…' : `Enviar · +${tipoSeleccionado.puntos} pts`}
+              </button>
+              <button onClick={onClose} style={SS.btnGhost}>Cancelar</button>
+            </div>
+          </>
+        )}
       </div>
     </>
   );
