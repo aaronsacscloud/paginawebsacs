@@ -14,7 +14,10 @@ import ClientesTab from './tabs/ClientesTab';
 import PartnerNetworkTab from './tabs/PartnerNetworkTab';
 import BrandKitTab from './tabs/BrandKitTab';
 import SacsAccountTab from './tabs/SacsAccountTab';
+import MyAccountTab from './tabs/MyAccountTab';
+import HelpTab from './tabs/HelpTab';
 import ProfileDropdown from './tabs/ProfileDropdown';
+import PortalFabs from './tabs/PortalFabs';
 import { C } from './tabs/styles';
 import { Icon } from './tabs/icons';
 import { isDemoMode } from './tabs/utils';
@@ -22,7 +25,8 @@ import { isDemoMode } from './tabs/utils';
 type TabId =
   | 'home' | 'dinero' | 'compartir' | 'nivel' | 'certs'
   | 'leads' | 'clientes' | 'red'
-  | 'brandkit' | 'sacs-account';
+  | 'brandkit' | 'sacs-account'
+  | 'mi-cuenta' | 'ayuda';
 
 interface Props {
   initialUser: { id: string; nombre: string; email: string };
@@ -54,6 +58,13 @@ const SECTIONS: { title: string; items: TabItem[] }[] = [
     items: [
       { id: 'brandkit',     label: 'Brand kit',   icon: Icon.BrandKit },
       { id: 'sacs-account', label: 'Cuenta SACS', icon: Icon.SacsAccount },
+    ],
+  },
+  {
+    title: 'Cuenta',
+    items: [
+      { id: 'mi-cuenta', label: 'Mi perfil', icon: Icon.Customers },
+      { id: 'ayuda',     label: 'Ayuda',     icon: Icon.Settings },
     ],
   },
 ];
@@ -149,9 +160,14 @@ export default function PortalShell({ initialUser }: Props) {
             {tab === 'red'          && <PartnerNetworkTab user={initialUser} />}
             {tab === 'brandkit'     && <BrandKitTab />}
             {tab === 'sacs-account' && <SacsAccountTab user={initialUser} />}
+            {tab === 'mi-cuenta'    && <MyAccountTab user={initialUser} />}
+            {tab === 'ayuda'        && <HelpTab user={initialUser} />}
           </div>
         </main>
       </div>
+
+      {/* Floating action buttons · WhatsApp + Install PWA */}
+      <PortalFabs user={initialUser} />
 
       {/* Mobile bottom nav · solo administración */}
       <nav style={S.bottomNav} className="pp-bottomnav">

@@ -21,9 +21,13 @@ interface Props {
   /** Cuando true, omite Nav/Footer/WhatsApp/PageTracker — para experiencias enfocadas
       (cotizaciones, invitaciones, acuses, etc.) sin chrome de marketing. */
   bareLayout?: boolean;
+  /** Path al manifest PWA. Si presente, agrega los meta tags necesarios para install. */
+  manifestUrl?: string;
+  /** Color del theme PWA (status bar). Default azul SACS. */
+  themeColor?: string;
 }
 
-const { title, description, image, type, noindex, structuredData, preloadImage, bareLayout = false } = Astro.props;
+const { title, description, image, type, noindex, structuredData, preloadImage, bareLayout = false, manifestUrl, themeColor = '#4B7BE5' } = Astro.props;
 const locale = Astro.props.locale || getLangFromUrl(Astro.url);
 const hreflangLinks = getHreflangLinks(Astro.url.pathname);
 
@@ -243,6 +247,17 @@ const allSchemas = structuredData
       .nav-inner { display: flex; align-items: center; height: 100%; }
       .wa-bar { opacity: 0; pointer-events: none; }
     </style>
+
+    {manifestUrl && (
+      <>
+        <link rel="manifest" href={manifestUrl} />
+        <meta name="theme-color" content={themeColor} />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="SACS Partner" />
+        <link rel="apple-touch-icon" href="/favicon.svg" />
+      </>
+    )}
   </head>
   <body class={bareLayout ? 'is-bare' : undefined}>
     {!bareLayout && (

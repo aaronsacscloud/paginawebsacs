@@ -1,0 +1,21 @@
+{
+  "name": "Portal SACS · Partner",
+  "short_name": "SACS Partner",
+  "description": "Tu portal de partner SACS: comisiones, leads, clientes y red.",
+  "start_url": "/partner/portal",
+  "scope": "/partner/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#4B7BE5",
+  "background_color": "#fafafa",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "finance", "productivity"],
+  "lang": "es-MX"
+}
