@@ -19,6 +19,7 @@ import HelpTab from './tabs/HelpTab';
 import ProfileDropdown from './tabs/ProfileDropdown';
 import PortalFabs from './tabs/PortalFabs';
 import PWAManager from './tabs/PWAManager';
+import OnboardingTour from './tabs/OnboardingTour';
 import { C } from './tabs/styles';
 import { Icon } from './tabs/icons';
 import { isDemoMode } from './tabs/utils';
@@ -75,6 +76,7 @@ const ALL_TABS: TabItem[] = SECTIONS.flatMap(s => s.items);
 export default function PortalShell({ initialUser }: Props) {
   const [tab, setTab] = useState<TabId>('home');
   const [demoBanner, setDemoBanner] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     setDemoBanner(isDemoMode());
@@ -86,6 +88,29 @@ export default function PortalShell({ initialUser }: Props) {
       if (valid.includes(h)) setTab(h);
     };
     window.addEventListener('hashchange', onHash);
+
+    // ── Onboarding tour trigger ──
+    try {
+      const url = new URL(window.location.href);
+      const param = url.searchParams.get('onboarding');
+      const done = localStorage.getItem('sacs_onboarding_done') === '1';
+
+      if (param === 'replay' || param === '1') {
+        setShowOnboarding(true);
+      } else if (!done) {
+        // Auto-trigger primera vez · solo en demo o si nunca ha visto el tour
+        setShowOnboarding(true);
+      }
+
+      // Listen para evento "replay" desde otros componentes
+      const onReplay = () => setShowOnboarding(true);
+      window.addEventListener('sacs-onboarding-replay', onReplay);
+      return () => {
+        window.removeEventListener('hashchange', onHash);
+        window.removeEventListener('sacs-onboarding-replay', onReplay);
+      };
+    } catch (_e) { /* ignore */ }
+
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
@@ -179,6 +204,11 @@ export default function PortalShell({ initialUser }: Props) {
 
       {/* PWA Manager · SW register, offline detection, push hooks */}
       <PWAManager user={initialUser} />
+
+      {/* Onboarding tour · primera vez o ?onboarding=replay */}
+      {showOnboarding && (
+        <OnboardingTour user={initialUser} onComplete={() => setShowOnboarding(false)} />
+      )}
 
       {/* Mobile bottom nav · solo administración */}
       <nav style={S.bottomNav} className="pp-bottomnav">

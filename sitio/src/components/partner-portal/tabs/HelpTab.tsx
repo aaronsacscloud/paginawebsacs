@@ -51,6 +51,7 @@ const FAQS: { q: string; a: string }[] = [
 ];
 
 const RESOURCES = [
+  { title: 'Ver tutorial del portal', desc: 'Tour guiado de 60 segundos por todas las secciones', action: 'replay-tour' },
   { title: 'Guía rápida del partner', desc: 'PDF · 12 pp con todo lo esencial para arrancar', href: '/recursos/guia-partner.pdf' },
   { title: 'Plan de compensación completo', desc: 'Términos legales, tabuladores, cláusulas', href: '/recursos/plan-compensacion.pdf' },
   { title: 'Brand kit oficial', desc: 'Logos, fotos, plantillas Canva, paleta', href: '#brandkit', internal: true },
@@ -148,34 +149,44 @@ export default function HelpTab({ user }: { user: { id: string; nombre: string; 
       {/* Recursos */}
       <h2 style={SS.h2}>Recursos</h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14 }}>
-        {RESOURCES.map((r, i) => (
-          <a key={i} href={r.href}
-            target={r.internal ? undefined : '_blank'}
-            rel={r.internal ? undefined : 'noopener'}
-            onClick={r.internal ? (e) => {
-              e.preventDefault();
-              window.location.hash = r.href.replace('#', '');
-            } : undefined}
-            style={{
-              ...SS.card,
-              display: 'flex', alignItems: 'flex-start', gap: 14,
-              textDecoration: 'none', color: 'inherit',
-              transition: 'transform 0.12s, box-shadow 0.12s',
-            }}
-            onMouseEnter={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = '0 12px 24px -14px rgba(0,0,0,0.15)'; }}
-            onMouseLeave={e => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(0)'; el.style.boxShadow = '0 1px 2px rgba(0,0,0,0.02)'; }}>
-            <span style={{ flexShrink: 0, width: 36, height: 36, borderRadius: 10, background: C.brandSoft, color: C.brand, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Icon.Book size={18} />
-            </span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 4 }}>{r.title}</div>
-              <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>{r.desc}</div>
-              <div style={{ fontSize: 12, color: C.brand, fontWeight: 600, marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                {r.internal ? 'Abrir' : 'Descargar'} <Icon.ArrowRight size={12} />
+        {RESOURCES.map((r: any, i: number) => {
+          const isReplay = r.action === 'replay-tour';
+          const Component: any = isReplay ? 'button' : 'a';
+          const props: any = isReplay
+            ? { onClick: () => window.dispatchEvent(new CustomEvent('sacs-onboarding-replay')) }
+            : {
+                href: r.href,
+                target: r.internal ? undefined : '_blank',
+                rel: r.internal ? undefined : 'noopener',
+                onClick: r.internal ? (e: any) => { e.preventDefault(); window.location.hash = r.href.replace('#', ''); } : undefined,
+              };
+          return (
+            <Component key={i} {...props}
+              style={{
+                ...SS.card,
+                display: 'flex', alignItems: 'flex-start', gap: 14,
+                textDecoration: 'none', color: 'inherit',
+                transition: 'transform 0.12s, box-shadow 0.12s',
+                cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' as const,
+                width: '100%',
+                border: isReplay ? `1px solid ${C.brandTint}` : `1px solid ${C.border}`,
+                background: isReplay ? C.brandSoft : '#fff',
+              }}
+              onMouseEnter={(e: any) => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(-2px)'; el.style.boxShadow = '0 12px 24px -14px rgba(0,0,0,0.15)'; }}
+              onMouseLeave={(e: any) => { const el = e.currentTarget as HTMLElement; el.style.transform = 'translateY(0)'; el.style.boxShadow = '0 1px 2px rgba(0,0,0,0.02)'; }}>
+              <span style={{ flexShrink: 0, width: 36, height: 36, borderRadius: 10, background: isReplay ? 'rgba(75,123,229,0.18)' : C.brandSoft, color: C.brand, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                {isReplay ? <Icon.Sparkle size={18} /> : <Icon.Book size={18} />}
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 4 }}>{r.title}</div>
+                <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>{r.desc}</div>
+                <div style={{ fontSize: 12, color: C.brand, fontWeight: 600, marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  {isReplay ? 'Empezar tour' : (r.internal ? 'Abrir' : 'Descargar')} <Icon.ArrowRight size={12} />
+                </div>
               </div>
-            </div>
-          </a>
-        ))}
+            </Component>
+          );
+        })}
       </div>
 
       <div style={{ ...SS.note, marginTop: 28 }}>
