@@ -12,21 +12,23 @@ import HomeTab from './tabs/HomeTab';
 import MoneyTab from './tabs/MoneyTab';
 import ShareTab from './tabs/ShareTab';
 import LevelTab from './tabs/LevelTab';
+import CertificationsTab from './tabs/CertificationsTab';
 import ProfileDropdown from './tabs/ProfileDropdown';
 import { C } from './tabs/styles';
 import { isDemoMode } from './tabs/utils';
 
-type TabId = 'home' | 'dinero' | 'compartir' | 'nivel';
+type TabId = 'home' | 'dinero' | 'compartir' | 'nivel' | 'certs';
 
 interface Props {
   initialUser: { id: string; nombre: string; email: string };
 }
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
-  { id: 'home',      label: 'Inicio',     icon: '◉' },
-  { id: 'dinero',    label: 'Dinero',     icon: '◈' },
-  { id: 'compartir', label: 'Compartir',  icon: '◇' },
-  { id: 'nivel',     label: 'Mi nivel',   icon: '◆' },
+  { id: 'home',      label: 'Inicio',           icon: '◉' },
+  { id: 'dinero',    label: 'Dinero',           icon: '◈' },
+  { id: 'compartir', label: 'Compartir',        icon: '◇' },
+  { id: 'nivel',     label: 'Mi nivel',         icon: '◆' },
+  { id: 'certs',     label: 'Certificaciones',  icon: '◐' },
 ];
 
 export default function PortalShell({ initialUser }: Props) {
@@ -35,7 +37,7 @@ export default function PortalShell({ initialUser }: Props) {
 
   useEffect(() => {
     setDemoBanner(isDemoMode());
-    const validTabs: TabId[] = ['home', 'dinero', 'compartir', 'nivel'];
+    const validTabs: TabId[] = ['home', 'dinero', 'compartir', 'nivel', 'certs'];
     const hash = (window.location.hash || '').replace('#', '') as TabId;
     if (validTabs.includes(hash)) setTab(hash);
     const onHash = () => {
@@ -101,6 +103,7 @@ export default function PortalShell({ initialUser }: Props) {
             {tab === 'dinero'    && <MoneyTab user={initialUser} />}
             {tab === 'compartir' && <ShareTab user={initialUser} />}
             {tab === 'nivel'     && <LevelTab user={initialUser} />}
+            {tab === 'certs'     && <CertificationsTab user={initialUser} />}
           </div>
         </main>
       </div>

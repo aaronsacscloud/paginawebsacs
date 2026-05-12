@@ -17,7 +17,7 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
   useEffect(() => {
     Promise.all([
       apiGet('/api/partner-portal/content', isDemoMode() ? demoContent : undefined),
-      apiGet<{ certifications: any[] }>('/api/partner-portal/certifications', isDemoMode() ? { certifications: [] } : undefined),
+      apiGet<{ certifications: any[] }>('/api/partner-portal/certifications', isDemoMode() ? { certifications: DEMO_CERT_LIST } : undefined),
       apiGet('/api/partner-portal/profile', isDemoMode() ? demoProfile : undefined),
       apiGet('/api/partner-portal/leads', isDemoMode() ? demoLeads : undefined),
     ]).then(([c, cert, p, l]) => {
@@ -172,31 +172,43 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
         )}
       </div>
 
-      {/* Certificaciones · Lvl 2 path */}
+      {/* Certificaciones · resumen + link a la tab dedicada */}
       <h2 style={SS.h2}>Certificaciones · sube a Lvl 2</h2>
-      <p style={{ ...SS.leadSm, marginTop: -8 }}>Sin certificación solo vendes vía link. Con certificación puedes cobrar servicios profesionales y te quedas con el 100%.</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
-        {certifsList.slice(0, 5).map((c: any) => (
-          <div key={c.id} style={SS.card}>
-            <div style={{ fontSize: 11, color: C.muted, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>{c.nivel || 'Nivel 1'}</div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 600, color: C.text, marginBottom: 10, lineHeight: 1.3 }}>{c.shortName || c.nombre}</div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, paddingBottom: 14, marginBottom: 14, borderBottom: `1px solid ${C.borderSoft}` }}>
-              <div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 500, color: C.text, letterSpacing: '-0.02em' }}>{c.precioMostrar || fmt(c.precio / 100)}</div>
-                <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{c.duracion}</div>
-              </div>
-              {c.unlocked ? (
-                <span style={{ ...stagePill(C.greenDark), padding: '6px 12px' }}>Activa</span>
-              ) : (
-                <button style={SS.btnSm} onClick={() => buyCert(c.id)}>Comprar</button>
-              )}
+      <button
+        onClick={() => { window.location.hash = 'certs'; }}
+        style={{ ...SS.cardLg, width: '100%', textAlign: 'left' as const, cursor: 'pointer', fontFamily: 'inherit', display: 'block', border: `1px solid ${C.border}`, background: C.card }}
+        onMouseEnter={e => (e.currentTarget as HTMLElement).style.boxShadow = '0 12px 32px -16px rgba(0,0,0,0.18)'}
+        onMouseLeave={e => (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 2px rgba(0,0,0,0.02)'}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap' as const, marginBottom: 18 }}>
+          <div style={{ flex: 1, minWidth: 240 }}>
+            <span style={{ fontSize: 11, color: certsOwned > 0 ? C.greenDark : C.muted, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' as const }}>
+              {certsOwned > 0 ? `${certsOwned} ${certsOwned === 1 ? 'activa' : 'activas'}` : 'Sin certificaciones aún'}
+            </span>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 600, color: C.text, marginTop: 8, lineHeight: 1.25, letterSpacing: '-0.018em' }}>
+              5 certificaciones disponibles
             </div>
-            <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.5 }}>
-              Cobras <strong style={{ color: C.text }}>{c.serviceChargeMostrar}</strong> {c.serviceUnit || 'al cliente'}
-            </div>
+            <p style={{ fontSize: 14, color: C.muted, lineHeight: 1.55, margin: '6px 0 0', maxWidth: 520 }}>
+              Cobras implementaciones, migraciones y consultorías de $5,000 a $60,000. Te quedas con el 100%.
+              SACS solo cobra una vez la certificación.
+            </p>
           </div>
-        ))}
-      </div>
+          <span style={{ ...SS.btn, fontSize: 13, padding: '12px 20px', whiteSpace: 'nowrap' as const, pointerEvents: 'none' as const }}>
+            Ver catálogo →
+          </span>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, paddingTop: 16, borderTop: `1px solid ${C.borderSoft}` }}>
+          {certifsList.slice(0, 5).map((c: any) => (
+            <span key={c.id} style={{
+              padding: '6px 12px', fontSize: 12, fontWeight: 600,
+              background: c.unlocked ? 'rgba(42,181,160,0.12)' : C.bg,
+              color: c.unlocked ? C.greenDark : C.muted,
+              borderRadius: 8,
+            }}>
+              {c.unlocked && '✓ '}{c.shortName || c.nombre}
+            </span>
+          ))}
+        </div>
+      </button>
 
       {/* Cuenta SACS */}
       <h2 style={SS.h2}>Tu cuenta SACS Plan Fideliza</h2>
@@ -428,6 +440,14 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
+
+const DEMO_CERT_LIST = [
+  { id: 'impl_una_sucursal', shortName: 'Implementación · 1 sucursal', precioMostrar: '$1,500', duracion: '4h', serviceChargeMostrar: '$5,000 – $12,000', serviceUnit: '/ implementación', nivel: 'Principiante', unlocked: false, status: 'none' },
+  { id: 'impl_multisucursal', shortName: 'Implementación · Multi-sucursal', precioMostrar: '$4,000', duracion: '10h', serviceChargeMostrar: '$20,000 – $60,000', serviceUnit: '/ implementación', nivel: 'Intermedio', unlocked: false, status: 'none' },
+  { id: 'migracion_datos', shortName: 'Migración de datos', precioMostrar: '$2,500', duracion: '6h', serviceChargeMostrar: '$8,000 – $25,000', serviceUnit: '/ migración', nivel: 'Especialización', unlocked: false, status: 'none' },
+  { id: 'ia_automatizacion', shortName: 'Automatización con IA', precioMostrar: '$5,000', duracion: '12h', serviceChargeMostrar: '$15,000 – $45,000', serviceUnit: '/ proyecto', nivel: 'Avanzado', unlocked: false, status: 'none' },
+  { id: 'consultor_ia', shortName: 'Consultor en IA', precioMostrar: '$6,000', duracion: '14h', serviceChargeMostrar: '$5,000 – $15,000', serviceUnit: '/ mes', nivel: 'Senior', unlocked: false, status: 'none' },
+];
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
