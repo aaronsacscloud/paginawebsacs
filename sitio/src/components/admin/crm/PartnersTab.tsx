@@ -47,13 +47,16 @@ const TIPO_LABELS: Record<string, { label: string; tagline: string; color: strin
 };
 
 const ESTADO_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  draft:                 { label: 'Borrador',     color: '#666',    bg: '#f5f5f5' },
-  sent:                  { label: 'Enviada',      color: '#3764c4', bg: 'rgba(75,123,229,0.1)' },
-  viewed:                { label: 'Vista',        color: '#7a4ed3', bg: 'rgba(108,92,231,0.10)' },
-  submitted_for_review:  { label: 'Por aprobar',  color: '#a06600', bg: 'rgba(232,168,56,0.16)' },
-  accepted:              { label: 'Aprobada',     color: '#1e8471', bg: 'rgba(42,181,160,0.12)' },
-  declined:              { label: 'Rechazada',    color: '#b93333', bg: 'rgba(229,75,75,0.10)' },
-  expired:               { label: 'Vencida',      color: '#999',    bg: 'rgba(153,153,153,0.10)' },
+  // Al crearse la invitación ya queda ACTIVA (el link funciona) — eliminamos el
+  // concepto de borrador. draft / sent / viewed se muestran todos como 'Activa'.
+  draft:                 { label: 'Activa',                 color: '#3764c4', bg: 'rgba(75,123,229,0.1)' },
+  sent:                  { label: 'Activa',                 color: '#3764c4', bg: 'rgba(75,123,229,0.1)' },
+  viewed:                { label: 'Activa · vista',         color: '#3764c4', bg: 'rgba(75,123,229,0.1)' },
+  submitted_for_review:  { label: 'Aceptada por el partner', color: '#a06600', bg: 'rgba(232,168,56,0.16)' },
+  accepted:              { label: 'Aprobada',               color: '#1e8471', bg: 'rgba(42,181,160,0.12)' },
+  declined:              { label: 'Rechazada',              color: '#b93333', bg: 'rgba(229,75,75,0.10)' },
+  cancelled:             { label: 'Cancelada',              color: '#666',    bg: '#f0f0f0' },
+  expired:               { label: 'Vencida',                color: '#999',    bg: 'rgba(153,153,153,0.10)' },
 };
 
 const fmt = (n?: number) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
@@ -152,10 +155,10 @@ export default function PartnersTab() {
   // Stats
   const stats = {
     total: list.length,
-    sent: list.filter(i => i.estado === 'sent' || i.estado === 'viewed').length,
+    sent: list.filter(i => i.estado === 'draft' || i.estado === 'sent' || i.estado === 'viewed').length,
     pending: list.filter(i => i.estado === 'submitted_for_review').length,
     accepted: list.filter(i => i.estado === 'accepted').length,
-    declined: list.filter(i => i.estado === 'declined').length,
+    declined: list.filter(i => i.estado === 'declined' || i.estado === 'cancelled').length,
   };
   const conversionPct = stats.total > 0 ? Math.round((stats.accepted / stats.total) * 100) : 0;
 
@@ -208,17 +211,19 @@ export default function PartnersTab() {
     }
   }
 
-  async function markAsSent(it: Invitation) {
+  async function cancelInvitation(it: Invitation) {
+    if (!confirm(`¿Cancelar la invitación ${it.numero} de ${it.nombre}?\n\nEl link público dejará de funcionar y el estado pasa a "Cancelada". Si más adelante quieres reactivarla, edítala y vuelve a poner el estado en "Activa".\n\nEsto NO borra la invitación — solo la deja inactiva. Para borrar usa "Eliminar invitación".`)) return;
     try {
       const res = await fetch('/api/partners/invitations', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: it.id, estado: 'sent' }),
+        headers: { 'Content-Type': 'application/json', 'x-user-id': 'founder' },
+        body: JSON.stringify({ id: it.id, estado: 'cancelled' }),
       });
       if (!res.ok) {
         const e = await res.json();
         throw new Error(e.error || 'Error');
       }
+      setOpenMenu(null);
       load();
     } catch (err: any) {
       alert('Error: ' + err.message);
@@ -289,8 +294,8 @@ export default function PartnersTab() {
       {/* Stat cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
         <StatCard label="Invitaciones totales" value={stats.total.toString()} />
-        <StatCard label="Enviadas / vistas" value={stats.sent.toString()} accent="#4B7BE5" />
-        <StatCard label="Por aprobar" value={stats.pending.toString()} accent="#E8A838" />
+        <StatCard label="Activas" value={stats.sent.toString()} accent="#4B7BE5" />
+        <StatCard label="Aceptadas · por aprobar" value={stats.pending.toString()} accent="#E8A838" />
         <StatCard label="Aprobadas" value={stats.accepted.toString()} accent="#2AB5A0" />
         <StatCard label="Conversión" value={`${conversionPct}%`} accent="#6C5CE7" />
       </div>
@@ -476,9 +481,6 @@ export default function PartnersTab() {
           { label: 'Copiar link público', onClick: () => copyLink(it.id) },
           { label: 'Editar invitación', onClick: () => { setEditing(it); setShowCreate(true); } },
         ];
-        if (it.estado === 'draft') {
-          items.push({ label: 'Marcar como enviada', onClick: () => markAsSent(it), color: '#fff', bg: '#1a1a1a' });
-        }
         if (it.estado === 'submitted_for_review') {
           items.push({ label: 'Aprobar invitación', onClick: () => approveInvitation(it), color: '#fff', bg: '#2AB5A0' });
         }
@@ -490,6 +492,11 @@ export default function PartnersTab() {
         }
         if ((it as any).team_member_id) {
           items.push({ label: 'Ver detalle del partner', onClick: () => setDetailPartnerId((it as any).team_member_id) });
+        }
+        // Cancelar disponible para invitaciones no aceptadas / no canceladas
+        const isCancellable = it.estado !== 'cancelled' && it.estado !== 'accepted' && it.estado !== 'declined';
+        if (isCancellable) {
+          items.push({ label: 'Cancelar invitación', onClick: () => cancelInvitation(it), color: '#a06600' });
         }
         // Eliminar siempre disponible (al final, en rojo)
         items.push({ label: '🗑 Eliminar invitación', onClick: () => deleteInvitation(it), color: '#c94a2c' });

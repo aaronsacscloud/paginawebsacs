@@ -223,7 +223,7 @@ export const POST: APIRoute = async ({ request }) => {
       tipo,
       moneda: 'MXN',
       template: 'modern',
-      estado: 'draft',
+      estado: 'sent',  // al crearse, la invitación nace ACTIVA — el link ya funciona
       pais: 'MX',
       ...tpl,
       ...body,

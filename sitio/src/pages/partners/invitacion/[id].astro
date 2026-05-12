@@ -1009,7 +1009,7 @@ const compromisos: any[] = Array.isArray(invitation.compromisos) ? invitation.co
 const tabulador: any = invitation.tabulador && typeof invitation.tabulador === 'object' ? invitation.tabulador : {};
 
 const isAccepted = invitation.estado === 'accepted';
-const isDeclined = invitation.estado === 'declined';
+const isDeclined = invitation.estado === 'declined' || invitation.estado === 'cancelled';
 const isSubmitted = invitation.estado === 'submitted_for_review';
 const isClosed = isAccepted || isDeclined || isSubmitted;
 
