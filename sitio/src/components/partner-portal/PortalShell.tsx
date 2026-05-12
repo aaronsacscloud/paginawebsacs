@@ -18,6 +18,7 @@ import MyAccountTab from './tabs/MyAccountTab';
 import HelpTab from './tabs/HelpTab';
 import ProfileDropdown from './tabs/ProfileDropdown';
 import PortalFabs from './tabs/PortalFabs';
+import PWAManager from './tabs/PWAManager';
 import { C } from './tabs/styles';
 import { Icon } from './tabs/icons';
 import { isDemoMode } from './tabs/utils';
@@ -175,6 +176,9 @@ export default function PortalShell({ initialUser }: Props) {
 
       {/* Floating action buttons · WhatsApp + Install PWA */}
       <PortalFabs user={initialUser} />
+
+      {/* PWA Manager · SW register, offline detection, push hooks */}
+      <PWAManager user={initialUser} />
 
       {/* Mobile bottom nav · solo administración */}
       <nav style={S.bottomNav} className="pp-bottomnav">

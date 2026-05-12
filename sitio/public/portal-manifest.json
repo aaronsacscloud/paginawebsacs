@@ -16,6 +16,37 @@
       "purpose": "any maskable"
     }
   ],
+  "shortcuts": [
+    {
+      "name": "Compartir mi link",
+      "short_name": "Compartir",
+      "description": "Copia tu link único o compártelo por WhatsApp",
+      "url": "/partner/portal#compartir",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Ver mis leads",
+      "short_name": "Leads",
+      "description": "Pipeline de prospectos atribuidos a ti",
+      "url": "/partner/portal#leads",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Reportar actividad",
+      "short_name": "Reportar",
+      "description": "Agrega una actividad que te suma puntos del mes",
+      "url": "/partner/portal#nivel",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Mi dinero",
+      "short_name": "Dinero",
+      "description": "Próximo pago y proyección del mes",
+      "url": "/partner/portal#dinero",
+      "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ],
   "categories": ["business", "finance", "productivity"],
-  "lang": "es-MX"
+  "lang": "es-MX",
+  "prefer_related_applications": false
 }

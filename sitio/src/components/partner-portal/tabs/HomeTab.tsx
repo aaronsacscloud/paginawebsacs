@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { fmt, fmtNum, fmtRel, isDemoMode, apiGet, STAGE_LABELS, copyToClipboard } from './utils';
 import { SS, C } from './styles';
 import { Icon } from './icons';
+import { ensurePushSubscription, checkPushStatus, sendTestPush } from './PWAManager';
 import {
   demoSummary, demoLeads, demoLinkStats, demoContent, demoActivity, demoProfile, demoLevel,
 } from '../../../data/partner-portal-demo';
@@ -160,6 +161,9 @@ export default function HomeTab({ user, go }: Props) {
           progress={Math.min(100, puntosPct)}
         />
       </div>
+
+      {/* Card promocional · Activa notificaciones (solo si no están activas) */}
+      <PushPromoCard />
 
       {/* Tu link inline */}
       <h2 style={SS.h2}>Tu link único</h2>
@@ -329,4 +333,161 @@ function guessLevel(deals: any[], content: any): { current: number; nombre: stri
   if (ventasAno >= 10) return { current: 3, nombre: 'Master Partner Nv 1' };
   if (ventasAno >= 1) return { current: 2, nombre: 'Partner Certificado' };
   return { current: 1, nombre: 'Partner Referidor' };
+}
+
+// ─── PushPromoCard ──────────────────────────────────────────
+// Card "Activa notificaciones" en HomeTab.
+// - Solo aparece si push está supported pero NO subscribed
+// - Después de activar, se oculta automáticamente
+// - Si ya está activo, muestra mini panel con test buttons
+
+function PushPromoCard() {
+  const [status, setStatus] = useState<{ supported: boolean; permission: NotificationPermission; subscribed: boolean } | null>(null);
+  const [activating, setActivating] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [testing, setTesting] = useState<string | null>(null);
+
+  useEffect(() => {
+    checkPushStatus().then(setStatus);
+    const onSub = () => checkPushStatus().then(setStatus);
+    window.addEventListener('sacs-push-subscribed', onSub);
+    return () => window.removeEventListener('sacs-push-subscribed', onSub);
+  }, []);
+
+  if (!status) return null;
+  if (!status.supported) return null;
+  if (dismissed && !status.subscribed) return null;
+
+  // Si ya está suscrito: panel compacto con test buttons
+  if (status.subscribed) {
+    return (
+      <div style={{
+        background: 'rgba(42,181,160,0.06)',
+        border: `1px solid rgba(42,181,160,0.22)`,
+        borderRadius: 14,
+        padding: '16px 20px',
+        marginBottom: 32,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        gap: 14, flexWrap: 'wrap' as const,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 220 }}>
+          <span style={{ flexShrink: 0, width: 32, height: 32, borderRadius: '50%', background: 'rgba(42,181,160,0.18)', color: C.greenDark, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Icon.CheckCircle size={16} />
+          </span>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.greenDark }}>Notificaciones activas</div>
+            <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Te avisamos en tiempo real cuando confirmen un pago, llegue un lead o agenden demo.</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+          <TestPushBtn label="Pago" type="pago" testing={testing} setTesting={setTesting} />
+          <TestPushBtn label="Lead" type="lead" testing={testing} setTesting={setTesting} />
+          <TestPushBtn label="Demo" type="demo" testing={testing} setTesting={setTesting} />
+        </div>
+      </div>
+    );
+  }
+
+  // Si NO está suscrito: card promocional grande
+  async function activate() {
+    setActivating(true);
+    setError(null);
+    const r = await ensurePushSubscription();
+    setActivating(false);
+    if (!r.ok) {
+      setError(
+        r.error === 'permission_denied' ? 'Permiso denegado · habilita notificaciones en la configuración de tu navegador.'
+        : r.error === 'push_not_supported' ? 'Tu navegador no soporta notificaciones push.'
+        : r.error === 'vapid_not_configured' || r.error === 'not_configured' ? 'Funcionalidad disponible próximamente · pendiente de configurar en servidor.'
+        : r.error || 'No se pudo activar'
+      );
+    } else {
+      checkPushStatus().then(setStatus);
+    }
+  }
+
+  return (
+    <div style={{
+      background: `linear-gradient(135deg, ${C.brand} 0%, ${C.brandDark} 100%)`,
+      color: '#fff',
+      borderRadius: 16,
+      padding: '24px 28px',
+      marginBottom: 32,
+      boxShadow: '0 12px 28px -14px rgba(75,123,229,0.40)',
+      position: 'relative' as const,
+    }}>
+      <button onClick={() => setDismissed(true)}
+        style={{
+          position: 'absolute' as const, top: 12, right: 12,
+          background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.7)',
+          cursor: 'pointer', padding: 6, borderRadius: 6,
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        }}
+        aria-label="Cerrar"
+        onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = '#fff'}
+        onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.7)'}>
+        <Icon.Close size={14} />
+      </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' as const }}>
+        <span style={{
+          flexShrink: 0, width: 48, height: 48, borderRadius: 14,
+          background: 'rgba(255,255,255,0.18)', color: '#fff',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          backdropFilter: 'blur(8px)',
+        }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M22 17a3 3 0 01-3 3H5a3 3 0 01-3-3V7a3 3 0 013-3h14a3 3 0 013 3z" />
+            <path d="M12 7v6m0 3v.5" />
+          </svg>
+        </span>
+        <div style={{ flex: 1, minWidth: 220 }}>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600, color: '#fff', marginBottom: 4, letterSpacing: '-0.012em' }}>
+            Entérate en el momento exacto
+          </div>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.82)', lineHeight: 1.55 }}>
+            Activa las notificaciones y recibe un aviso al instante cuando confirmen un pago, llegue un lead nuevo, o agenden una demo. No correos, no apps · directo en tu pantalla.
+          </div>
+        </div>
+        <button onClick={activate} disabled={activating}
+          style={{
+            padding: '12px 22px', background: '#fff', color: C.brand,
+            border: 'none', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
+            fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' as const,
+            opacity: activating ? 0.6 : 1,
+            letterSpacing: '-0.005em',
+          }}>
+          {activating ? 'Activando…' : 'Activar notificaciones'}
+        </button>
+      </div>
+      {error && (
+        <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(255,255,255,0.12)', borderRadius: 8, fontSize: 12, color: '#fff', lineHeight: 1.5 }}>
+          {error}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TestPushBtn({ label, type, testing, setTesting }: { label: string; type: 'pago' | 'lead' | 'demo' | 'partner' | 'achievement'; testing: string | null; setTesting: (s: string | null) => void }) {
+  const isLoading = testing === type;
+  return (
+    <button onClick={async () => {
+      setTesting(type);
+      const r = await sendTestPush(type);
+      setTesting(null);
+      if (!r.ok) alert(r.error === 'vapid_not_configured' ? 'Notifs sin VAPID keys configuradas en servidor' : (r.error || 'Error'));
+    }}
+      disabled={isLoading}
+      style={{
+        padding: '6px 12px',
+        background: '#fff', color: C.greenDark,
+        border: `1px solid rgba(42,181,160,0.30)`,
+        borderRadius: 999, fontSize: 11, fontWeight: 600,
+        cursor: 'pointer', fontFamily: 'inherit',
+        opacity: isLoading ? 0.6 : 1,
+      }}>
+      {isLoading ? '...' : `Probar ${label}`}
+    </button>
+  );
 }
