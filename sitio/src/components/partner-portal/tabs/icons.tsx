@@ -164,4 +164,10 @@ export const Icon = {
     <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
     <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" />
   </> }),
+  Network: (p: IconProps) => base({ ...p, children: <>
+    <circle cx="12" cy="5" r="2" />
+    <circle cx="5" cy="19" r="2" />
+    <circle cx="19" cy="19" r="2" />
+    <path d="M12 7v3M12 13l-5 4M12 13l5 4" />
+  </> }),
 };
