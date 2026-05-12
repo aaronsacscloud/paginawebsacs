@@ -442,11 +442,11 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const DEMO_CERT_LIST = [
-  { id: 'impl_una_sucursal', shortName: 'Implementación · 1 sucursal', precioMostrar: '$1,500', duracion: '4h', serviceChargeMostrar: '$5,000 – $12,000', serviceUnit: '/ implementación', nivel: 'Principiante', unlocked: false, status: 'none' },
-  { id: 'impl_multisucursal', shortName: 'Implementación · Multi-sucursal', precioMostrar: '$4,000', duracion: '10h', serviceChargeMostrar: '$20,000 – $60,000', serviceUnit: '/ implementación', nivel: 'Intermedio', unlocked: false, status: 'none' },
-  { id: 'migracion_datos', shortName: 'Migración de datos', precioMostrar: '$2,500', duracion: '6h', serviceChargeMostrar: '$8,000 – $25,000', serviceUnit: '/ migración', nivel: 'Especialización', unlocked: false, status: 'none' },
-  { id: 'ia_automatizacion', shortName: 'Automatización con IA', precioMostrar: '$5,000', duracion: '12h', serviceChargeMostrar: '$15,000 – $45,000', serviceUnit: '/ proyecto', nivel: 'Avanzado', unlocked: false, status: 'none' },
-  { id: 'consultor_ia', shortName: 'Consultor en IA', precioMostrar: '$6,000', duracion: '14h', serviceChargeMostrar: '$5,000 – $15,000', serviceUnit: '/ mes', nivel: 'Senior', unlocked: false, status: 'none' },
+  { id: 'impl_una_sucursal', shortName: 'Implementación · 1 sucursal', precioMostrar: '$7,500', duracion: '4h', serviceChargeMostrar: '$5,000 – $12,000', serviceUnit: '/ implementación', nivel: 'Principiante', unlocked: false, status: 'none' },
+  { id: 'impl_multisucursal', shortName: 'Implementación · Multi-sucursal', precioMostrar: '$14,000', duracion: '10h', serviceChargeMostrar: '$20,000 – $60,000', serviceUnit: '/ implementación', nivel: 'Intermedio', unlocked: false, status: 'none' },
+  { id: 'migracion_datos', shortName: 'Migración de datos', precioMostrar: '$7,500', duracion: '6h', serviceChargeMostrar: '$8,000 – $25,000', serviceUnit: '/ migración', nivel: 'Especialización', unlocked: false, status: 'none' },
+  { id: 'ia_automatizacion', shortName: 'Automatización con IA', precioMostrar: '$14,000', duracion: '12h', serviceChargeMostrar: '$15,000 – $45,000', serviceUnit: '/ proyecto', nivel: 'Avanzado', unlocked: false, status: 'none' },
+  { id: 'consultor_ia', shortName: 'Consultor en IA', precioMostrar: '$21,000', duracion: '14h', serviceChargeMostrar: '$5,000 – $15,000', serviceUnit: '/ mes', nivel: 'Senior', unlocked: false, status: 'none' },
 ];
 
 const inputStyle: React.CSSProperties = {

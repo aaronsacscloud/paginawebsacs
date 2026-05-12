@@ -73,12 +73,76 @@ export default function CertificationsTab({ user }: { user: { id: string; nombre
         Te quedas con <strong style={{ color: C.text, fontWeight: 600 }}>el 100%</strong> de lo que cobras.
       </p>
 
-      {/* Stats hero */}
-      <div style={SS.statGrid}>
-        <SimpleStat label="Certificaciones activas" value={`${owned} / ${certs.length}`} hint={owned === 0 ? 'Sube a Lvl 2 con tu primera cert' : 'Sigue sumando'} accent={C.green} />
-        <SimpleStat label="Lo que puedes cobrar" value={owned > 0 ? `${fmt(totalIngresosMin)} – ${fmt(totalIngresosMax)}` : '—'} hint="Por proyecto · 100% para ti" accent={C.accent} />
-        <SimpleStat label="Inversión total catálogo" value={fmt(certs.reduce((s, c) => s + c.precio / 100, 0))} hint="Una sola vez · sin renovación" accent={C.purple} />
-        <SimpleStat label="ROI con 1 proyecto" value="3x – 10x" hint="Recuperas la cert en el primer cliente" accent={C.amber} />
+      {/* Hero stat · solo certificaciones activas con peso visual */}
+      <div style={{
+        background: owned > 0 ? 'linear-gradient(135deg, #1A8F7A 0%, #4B7BE5 100%)' : C.card,
+        color: owned > 0 ? '#fff' : C.text,
+        border: owned > 0 ? 'none' : `1px solid ${C.border}`,
+        borderRadius: 18,
+        padding: '40px 44px',
+        boxShadow: owned > 0 ? '0 12px 32px -16px rgba(26,143,122,0.35)' : '0 1px 2px rgba(0,0,0,0.02)',
+        marginBottom: 8,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 32,
+        flexWrap: 'wrap' as const,
+      }}>
+        <div>
+          <div style={{
+            fontSize: 11,
+            color: owned > 0 ? 'rgba(255,255,255,0.72)' : C.muted,
+            fontWeight: 700,
+            letterSpacing: '0.16em',
+            textTransform: 'uppercase' as const,
+            marginBottom: 12,
+          }}>
+            Certificaciones activas
+          </div>
+          <div style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 72,
+            fontWeight: 500,
+            lineHeight: 1,
+            letterSpacing: '-0.04em',
+            color: 'inherit',
+          }}>
+            {owned} <span style={{ color: owned > 0 ? 'rgba(255,255,255,0.45)' : C.mutedLight, fontWeight: 400 }}>/ {certs.length}</span>
+          </div>
+          <div style={{
+            fontSize: 14,
+            color: owned > 0 ? 'rgba(255,255,255,0.75)' : C.muted,
+            marginTop: 14,
+            lineHeight: 1.5,
+            maxWidth: 420,
+          }}>
+            {owned === 0
+              ? 'Sin certificación solo vendes vía link. Compra tu primera cert y empieza a cobrar servicios profesionales con el 100% para ti.'
+              : owned === certs.length
+                ? '¡Catálogo completo! Eres uno de los partners con todas las certs activas.'
+                : `Sigue sumando — cada cert nueva te abre un nuevo tipo de proyecto que puedes cobrar.`}
+          </div>
+        </div>
+        {owned === 0 ? (
+          <div style={{
+            fontSize: 12,
+            color: owned > 0 ? 'rgba(255,255,255,0.7)' : C.muted,
+            textAlign: 'right' as const,
+            lineHeight: 1.5,
+          }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600, color: C.green, marginBottom: 4 }}>
+              ↓ Elige una para empezar
+            </div>
+          </div>
+        ) : (
+          <div style={{ textAlign: 'right' as const }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginBottom: 8 }}>Puedes cobrar</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 500, letterSpacing: '-0.025em', lineHeight: 1 }}>
+              {fmt(totalIngresosMin)} – {fmt(totalIngresosMax)}
+            </div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 6 }}>por proyecto · 100% para ti</div>
+          </div>
+        )}
       </div>
 
       {/* Cómo funciona */}
@@ -109,17 +173,6 @@ export default function CertificationsTab({ user }: { user: { id: string; nombre
       <div style={{ ...SS.note, marginTop: 32 }}>
         <strong>¿Dudas sobre cuál te conviene?</strong> Escríbenos a <a href="mailto:partners@sacscloud.com" style={{ color: C.accent, fontWeight: 600 }}>partners@sacscloud.com</a> y te recomendamos la ruta según tu mercado y tu meta de ingresos.
       </div>
-    </div>
-  );
-}
-
-function SimpleStat({ label, value, hint, accent }: { label: string; value: string; hint?: string; accent: string }) {
-  return (
-    <div style={SS.statCard}>
-      <span style={{ position: 'absolute', top: 24, right: 24, width: 6, height: 6, borderRadius: '50%', background: accent }} />
-      <div style={SS.statLabel}>{label}</div>
-      <div style={SS.statValueSm}>{value}</div>
-      {hint && <div style={SS.statHint}>{hint}</div>}
     </div>
   );
 }
@@ -283,8 +336,8 @@ const DEMO_CERTS: Cert[] = [
     id: 'impl_una_sucursal',
     nombre: 'Certificación · Implementación de una sucursal',
     shortName: 'Implementación · 1 sucursal',
-    precio: 150000,
-    precioMostrar: '$1,500',
+    precio: 750000,
+    precioMostrar: '$7,500',
     duracion: '4 horas en vivo + materiales',
     nivel: 'Principiante',
     cover: '/images/certificaciones/impl-una-sucursal.webp',
@@ -315,8 +368,8 @@ const DEMO_CERTS: Cert[] = [
     id: 'impl_multisucursal',
     nombre: 'Certificación · Implementación multi-sucursal',
     shortName: 'Implementación · Multi-sucursal',
-    precio: 400000,
-    precioMostrar: '$4,000',
+    precio: 1400000,
+    precioMostrar: '$14,000',
     duracion: '10 horas en vivo + casos prácticos + mentoría',
     nivel: 'Intermedio / Avanzado',
     cover: '/images/certificaciones/impl-multisucursal.webp',
@@ -348,8 +401,8 @@ const DEMO_CERTS: Cert[] = [
     id: 'migracion_datos',
     nombre: 'Certificación · Migración de datos a SACS',
     shortName: 'Migración de datos',
-    precio: 250000,
-    precioMostrar: '$2,500',
+    precio: 750000,
+    precioMostrar: '$7,500',
     duracion: '6 horas en vivo + plantillas + ejercicios',
     nivel: 'Especialización',
     cover: '/images/certificaciones/migracion-datos.webp',
@@ -380,8 +433,8 @@ const DEMO_CERTS: Cert[] = [
     id: 'ia_automatizacion',
     nombre: 'Certificación · Automatización con IA en SACS',
     shortName: 'Automatización con IA',
-    precio: 500000,
-    precioMostrar: '$5,000',
+    precio: 1400000,
+    precioMostrar: '$14,000',
     duracion: '12 horas en vivo + workshops + mentoría',
     nivel: 'Avanzado',
     cover: '/images/certificaciones/ia-automatizacion.webp',
@@ -413,8 +466,8 @@ const DEMO_CERTS: Cert[] = [
     id: 'consultor_ia',
     nombre: 'Certificación · Consultor en IA y análisis de datos',
     shortName: 'Consultor en IA',
-    precio: 600000,
-    precioMostrar: '$6,000',
+    precio: 2100000,
+    precioMostrar: '$21,000',
     duracion: '14 horas en vivo + casos reales + mentoría continua',
     nivel: 'Senior',
     cover: '/images/certificaciones/consultor-ia.webp',
