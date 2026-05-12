@@ -135,7 +135,7 @@ export default function MoneyTab({ user }: { user: { id: string; nombre: string;
 
       {/* 4 hero stats */}
       <div style={{ ...SS.statGrid, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-        <BreakdownCard label="Pagado YTD" value={fmt(totalPaid)} accent={C.greenDark} hint={`${payments?.payments?.length || 0} pagos liquidados`} />
+        <BreakdownCard label="Pagado este año" value={fmt(totalPaid)} accent={C.greenDark} hint={`${payments?.payments?.length || 0} pagos liquidados`} />
         <BreakdownCard label="Próximo pago" value={fmt(proximoPago)} accent={C.green} hint={`Confirmado · día 1 de ${nextMonthName}`} />
         <BreakdownCard label="Pipeline esperado" value={fmt(pipelineEspera)} accent={C.accent} hint="Proyección de leads activos" />
         <BreakdownCard label="Pendiente revisión" value={fmt(pendienteRev)} accent={C.amber} hint="En revisión por SACS" />
@@ -315,7 +315,7 @@ export default function MoneyTab({ user }: { user: { id: string; nombre: string;
         style={{ ...SS.card, width: '100%', textAlign: 'left' as const, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '22px 28px' }}>
         <div>
           <div style={{ fontWeight: 600, color: C.text, fontSize: 15 }}>Reglas del programa</div>
-          <div style={{ fontSize: 13, color: C.muted, marginTop: 4 }}>50% comisión directa · 10% override Master Partner</div>
+          <div style={{ fontSize: 13, color: C.muted, marginTop: 4 }}>50% comisión directa · 10% sobre tu red de Master Partner</div>
         </div>
         <span style={{ color: C.muted, transition: 'transform 0.2s', transform: calcOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
           <Icon.ChevronDown size={18} />

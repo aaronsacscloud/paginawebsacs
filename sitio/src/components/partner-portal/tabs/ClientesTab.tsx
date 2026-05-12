@@ -99,7 +99,7 @@ export default function ClientesTab({ user }: { user: { id: string; nombre: stri
       {/* Stats */}
       <div style={SS.statGrid}>
         <SimpleStat label="Clientes activos" value={String(clientes.length)} hint={pendientes > 0 ? `${pendientes} pendientes de cobro` : 'Todos al corriente'} accent={C.greenDark} />
-        <SimpleStat label="MRR generado" value={fmt(totalMrr)} hint="Ingresos recurrentes mensuales" accent={C.accent} />
+        <SimpleStat label=\"Ingreso mensual\" value={fmt(totalMrr)} hint=\"Cobros mensuales recurrentes\" accent={C.accent} />
         <SimpleStat label="Tu comisión total" value={fmt(totalComision)} hint="Histórico de estos clientes" accent={C.green} />
         <SimpleStat label="En riesgo" value={String(enRiesgo)} hint={enRiesgo > 0 ? 'Uso bajo · revisa con ellos' : 'Salud OK'} accent={enRiesgo > 0 ? C.amber : C.muted} />
       </div>
@@ -118,7 +118,7 @@ export default function ClientesTab({ user }: { user: { id: string; nombre: stri
                 <tr>
                   <th style={SS.th}>Cliente</th>
                   <th style={SS.th}>Plan</th>
-                  <th style={SS.th}>MRR</th>
+                  <th style={SS.th}>Cobro/mes</th>
                   <th style={SS.th}>Mi comisión</th>
                   <th style={SS.th}>Estado</th>
                   <th style={SS.th}>Uso</th>
@@ -146,7 +146,7 @@ export default function ClientesTab({ user }: { user: { id: string; nombre: stri
           </div>
 
           <div style={{ ...SS.note, marginTop: 24, fontSize: 13 }}>
-            <strong>Tip:</strong> los clientes en riesgo suelen tener uso bajo. Una llamada de seguimiento mensual reduce mucho el churn — y proteges tu comisión recurrente.
+            <strong>Tip:</strong> los clientes en riesgo suelen tener uso bajo. Una llamada de seguimiento mensual reduce mucho la cancelación — y proteges tu comisión recurrente.
           </div>
         </>
       )}
@@ -165,8 +165,8 @@ export default function ClientesTab({ user }: { user: { id: string; nombre: stri
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
               <MiniStat label="Plan" value={drawerCliente.plan} />
-              <MiniStat label="MRR" value={fmt(drawerCliente.mrr)} />
-              <MiniStat label="LTV est." value={fmt(drawerCliente.ltv)} />
+              <MiniStat label=\"Cobro / mes\" value={fmt(drawerCliente.mrr)} />
+              <MiniStat label=\"Valor estimado\" value={fmt(drawerCliente.ltv)} />
               <MiniStat label="Mi comisión total" value={fmt(drawerCliente.mi_comision_total)} accent={C.greenDark} />
             </div>
 
@@ -188,7 +188,7 @@ export default function ClientesTab({ user }: { user: { id: string; nombre: stri
 
             <div style={{ ...SS.note, fontSize: 13 }}>
               {drawerCliente.estado_cuenta === 'en_riesgo' && (
-                <><strong>Cliente en riesgo.</strong> El uso bajo predice churn. Te sugerimos contactarlo esta semana para retomarlo.</>
+                <><strong>Cliente en riesgo.</strong> El uso bajo predice cancelación. Te sugerimos contactarlo esta semana para retomarlo.</>
               )}
               {drawerCliente.estado_cuenta === 'pendiente' && (
                 <><strong>Pago pendiente.</strong> Aún no se ha confirmado el cobro de este ciclo. Recibirás tu comisión cuando se complete.</>

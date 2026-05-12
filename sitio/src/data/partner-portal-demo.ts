@@ -554,7 +554,7 @@ export const demoPartnerNetwork = {
       tiempo_total_seg: 420,
       interest_score: 35,
       secciones_vistas: ['hero', 'comisiones'],
-      decline_reason: 'No tengo tiempo para dedicar 100 pts/mes ahorita',
+      decline_reason: 'No tengo tiempo para dedicar 100 puntos al mes ahorita',
     },
   ],
 

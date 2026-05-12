@@ -45,7 +45,7 @@ const FAQS: { q: string; a: string }[] = [
     a: 'Los leads que ya cerraron como clientes siguen generando comisión recurrente para ti (no perdemos esa atribución). Lo que pausa son los nuevos leads — tu link se desactiva temporalmente hasta que reactives.',
   },
   {
-    q: '¿Cómo funciona el override del 10% en Master Partner?',
+    q: '¿Cómo funciona el comisión adicional del 10% en Master Partner?',
     a: 'Cuando seas Master Partner (Lvl 3+), por cada venta que cierre un partner de tu red ganas 10% adicional, mes con mes, mientras ese cliente siga pagando. Sin tope. El partner directo se queda con su 50% normal.',
   },
 ];

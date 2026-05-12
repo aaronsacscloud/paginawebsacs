@@ -147,7 +147,7 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
           <div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, fontWeight: 500, color: C.text, lineHeight: 1, letterSpacing: '-0.03em' }}>
-              {puntos} <span style={{ fontSize: 18, color: C.muted, fontWeight: 400 }}>/ {meta} pts</span>
+              {puntos} <span style={{ fontSize: 18, color: C.muted, fontWeight: 400 }}>/ {meta} puntos</span>
             </div>
             <div style={{ fontSize: 13, color: C.muted, marginTop: 8 }}>
               {diasRest > 0 ? `${diasRest} días restantes del mes` : 'Cierre del mes'}
@@ -163,7 +163,7 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
           </div>
         ) : (
           <div style={{ marginTop: 18, padding: '12px 18px', background: C.bg, borderRadius: 10, fontSize: 13, color: C.textSoft, lineHeight: 1.5 }}>
-            Te faltan <strong style={{ color: C.text }}>{Math.max(0, meta - puntos)} pts</strong>. Reporta una actividad y se acreditará en 24-48h.
+            Te faltan <strong style={{ color: C.text }}>{Math.max(0, meta - puntos)} puntos</strong>. Reporta una actividad y se acreditará en 24-48h.
           </div>
         )}
 
@@ -222,7 +222,7 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: it.estado === 'approved' ? C.green : it.estado === 'rejected' ? C.red : C.amber }}>
-                    {it.estado === 'approved' ? `+${it.puntos} pts` : it.estado === 'rejected' ? 'Rechazado' : 'En revisión'}
+                    {it.estado === 'approved' ? `+${it.puntos} puntos` : it.estado === 'rejected' ? 'Rechazado' : 'En revisión'}
                   </div>
                 </div>
               </div>
@@ -459,7 +459,7 @@ const LEVEL_DETAILS: Record<number, { descripcion: string; requisitos: string[];
     requisitos: [
       'Tu invitación está aceptada y firmada',
       'Tu link único está activo en sacscloud.com/p/[tu-slug]',
-      'Mantén 100 pts/mes de actividad reportada',
+      'Mantén 100 puntos al mes de actividad reportada',
     ],
     beneficios: [
       'Comisión 50% sobre cada venta directa',
@@ -473,7 +473,7 @@ const LEVEL_DETAILS: Record<number, { descripcion: string; requisitos: string[];
     requisitos: [
       'Completar al menos 1 certificación oficial (desde $7,500)',
       'Aprobar el examen final de la cert',
-      'Mantener 100 pts/mes de actividad',
+      'Mantener 100 puntos al mes de actividad',
     ],
     beneficios: [
       'Cobras servicios profesionales de $5,000 a $60,000+ por proyecto',
@@ -484,11 +484,11 @@ const LEVEL_DETAILS: Record<number, { descripcion: string; requisitos: string[];
     ],
   },
   3: {
-    descripcion: 'Empiezas a construir tu propia red de partners. Cobras override del 10% sobre todas las ventas que generen los partners que tú trajiste — ingreso recurrente sin tope.',
+    descripcion: 'Empiezas a construir tu propia red de partners. Ganas el 10% sobre todas las ventas que generen los partners que tú trajiste — ingreso recurrente sin tope.',
     requisitos: [
       '5 sucursales activas pagando en tu red (directas o de tus partners)',
       'Al menos 1 certificación oficial activa',
-      'Mantener 100 pts/mes de actividad',
+      'Mantener 100 puntos al mes de actividad',
     ],
     beneficios: [
       'Override del 10% sobre cada venta de partners en tu red',
@@ -503,7 +503,7 @@ const LEVEL_DETAILS: Record<number, { descripcion: string; requisitos: string[];
     requisitos: [
       'Sostener Master Partner Nv 4 por 12 meses consecutivos',
       'Mantener red de 40+ sucursales activas',
-      'Mantener 100 pts/mes de actividad',
+      'Mantener 100 puntos al mes de actividad',
     ],
     beneficios: [
       'Override del 12% sobre todas las ventas de tu red',
@@ -593,11 +593,11 @@ function ContractDrawer({ onClose, tipo }: { onClose: () => void; tipo?: string 
         <h2 style={SS.h1Small}>Tus compromisos</h2>
         <p style={SS.leadSm}>Resumen de las 19 cláusulas que firmaste. Para el contrato completo, descárgalo desde tu acuerdo.</p>
 
-        <ContractItem n="1" title="Meta mínima mensual">100 pts/mes de actividad documentada (contenido, demos, apoyo a la marca).</ContractItem>
+        <ContractItem n="1" title="Meta mínima mensual">100 puntos al mes de actividad documentada (contenido, demos, apoyo a la marca).</ContractItem>
         <ContractItem n="2" title="3-strike system">3 meses consecutivos sin meta → suspensión automática.</ContractItem>
         <ContractItem n="3" title="Meta anual">10 sucursales nuevas activadas por año.</ContractItem>
         <ContractItem n="4" title="Vigencia">12 meses desde firma · renovación automática.</ContractItem>
-        <ContractItem n="5" title="Comisiones">50% sobre venta directa · 10% override Master Partner.</ContractItem>
+        <ContractItem n="5" title="Comisiones">50% sobre venta directa · 10% sobre tu red de Master Partner.</ContractItem>
         <ContractItem n="6" title="Pagos">Día 1 del mes · CFDI 1-3 días antes · transferencia/PayPal/Mercado Pago.</ContractItem>
         <ContractItem n="7" title="Filantropía como ruta alterna">Acciones filantrópicas validadas pueden contar como compromisos.</ContractItem>
         <ContractItem n="8" title="Uso de marca">Solo en el contexto autorizado. No prometas funciones que SACS no tiene.</ContractItem>
@@ -777,7 +777,7 @@ function ReportDrawer({ tipos, onClose, onSubmitted }: { tipos: any[]; onClose: 
 
             <div style={{ marginTop: 24, display: 'flex', gap: 10 }}>
               <button onClick={submit} disabled={submitting} style={{ ...SS.btn, opacity: submitting ? 0.6 : 1 }}>
-                {submitting ? 'Enviando…' : `Enviar · +${tipoSeleccionado.puntos} pts`}
+                {submitting ? 'Enviando…' : `Enviar · +${tipoSeleccionado.puntos} puntos`}
               </button>
               <button onClick={onClose} style={SS.btnGhost}>Cancelar</button>
             </div>

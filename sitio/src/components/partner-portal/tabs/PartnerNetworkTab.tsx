@@ -68,7 +68,7 @@ function LockedView({ sucursalesActivas, currentLevel }: { sucursalesActivas: nu
   return (
     <div>
       <h1 style={SS.h1Small}>Red de partners</h1>
-      <p style={SS.leadSm}>Invita a otros partners y gana 10% de override sobre cada venta de tu red — ingreso recurrente sin tope.</p>
+      <p style={SS.leadSm}>Invita a otros partners y gana 10% sobre cada venta que cierre tu red — ingreso recurrente sin tope.</p>
 
       {/* Locked hero — azul SACS gradient */}
       <div style={{
@@ -97,7 +97,7 @@ function LockedView({ sucursalesActivas, currentLevel }: { sucursalesActivas: nu
             Master Partner
           </span>
           <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 38, fontWeight: 500, color: '#fff', margin: '16px 0 18px', letterSpacing: '-0.025em', lineHeight: 1.12 }}>
-            Tu propia red.<br/>10% override recurrente.
+            Tu propia red.<br/>10% sobre tu red, recurrente.
           </h2>
           <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.82)', lineHeight: 1.65, margin: 0 }}>
             Cuando completes <strong style={{ color: '#fff' }}>5 sucursales activas</strong>, se activa Master Partner Nv 1 — automáticamente.
@@ -136,7 +136,7 @@ function LockedView({ sucursalesActivas, currentLevel }: { sucursalesActivas: nu
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
         <Feature Ico={Icon.Share} title="Tu propio link de invitación" desc="Comparte un link único para que partners se unan bajo tu red. SACS valida y aprueba." />
         <Feature Ico={Icon.Customers} title="Lista de partners en tu red" desc="Ve a todos tus partners con sus clientes, MRR, certificaciones y compromisos del mes." />
-        <Feature Ico={Icon.TrendingUp} title="10% override recurrente" desc="Cada venta de tus partners genera 10% para ti, mes con mes, sin tope mientras estén activos." />
+        <Feature Ico={Icon.TrendingUp} title="10% sobre tu red, recurrente" desc="Cada venta de tus partners genera 10% para ti, mes con mes, sin tope mientras estén activos." />
         <Feature Ico={Icon.Activity} title="Tracking de invitaciones" desc="Ve quién vio tu invitación, cuánto tiempo le dedicó, qué secciones leyó, si aceptó o no." />
       </div>
 
@@ -268,13 +268,13 @@ function UnlockedView({ user }: { user: { id: string; nombre: string; email: str
   return (
     <div>
       <h1 style={SS.h1Small}>Red de partners</h1>
-      <p style={SS.leadSm}>Tus partners y tu override del 10% sobre todas las ventas que generan, mes con mes.</p>
+      <p style={SS.leadSm}>Tus partners y tu comisión del 10% sobre todas las ventas que generan, mes con mes.</p>
 
       {/* Hero stats */}
       <div style={SS.statGrid}>
         <BigStat label="Partners activos" value={String(data.stats.partners_activos)} hint={`${data.stats.partners_suspendidos} suspendido${data.stats.partners_suspendidos === 1 ? '' : 's'}`} accent={C.green} />
-        <BigStat label="MRR de la red" value={fmt(data.stats.mrr_red_total)} hint={`${data.partners.reduce((s, p) => s + p.clientes_count, 0)} clientes`} accent={C.accent} />
-        <BigStat label="Mi override / mes" value={fmt(data.stats.mi_override_mes_total)} hint="10% recurrente · sin tope" accent={C.greenDark} />
+        <BigStat label="Ingreso mensual de la red" value={fmt(data.stats.mrr_red_total)} hint={`${data.partners.reduce((s, p) => s + p.clientes_count, 0)} clientes`} accent={C.accent} />
+        <BigStat label="Mi comisión / mes" value={fmt(data.stats.mi_override_mes_total)} hint="10% recurrente · sin tope" accent={C.greenDark} />
         <BigStat label="Invitaciones" value={String(data.stats.invitaciones_pendientes)} hint={`${data.stats.invitaciones_aceptadas_30d} aceptada${data.stats.invitaciones_aceptadas_30d === 1 ? '' : 's'} este mes`} accent={C.amber} />
       </div>
 
@@ -340,8 +340,8 @@ function UnlockedView({ user }: { user: { id: string; nombre: string; email: str
                   <th style={SS.th}>Partner</th>
                   <th style={SS.th}>Nivel</th>
                   <th style={SS.th}>Clientes</th>
-                  <th style={SS.th}>MRR cartera</th>
-                  <th style={SS.th}>Mi override</th>
+                  <th style={SS.th}>Cobro mensual</th>
+                  <th style={SS.th}>Mi comisión</th>
                   <th style={SS.th}>Estado</th>
                 </tr>
               </thead>
@@ -579,9 +579,9 @@ function PartnerDrawer({ partner, onClose }: { partner: Partner; onClose: () => 
         {/* Stats grid */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
           <MiniStat label="Clientes activos" value={String(partner.clientes_count)} />
-          <MiniStat label="MRR cartera" value={fmt(partner.mrr_total)} />
-          <MiniStat label="Mi override / mes" value={fmt(partner.mi_override_mes)} accent={C.greenDark} />
-          <MiniStat label="Override total" value={fmt(partner.mi_override_total)} />
+          <MiniStat label="Cobro mensual" value={fmt(partner.mrr_total)} />
+          <MiniStat label="Mi comisión / mes" value={fmt(partner.mi_override_mes)} accent={C.greenDark} />
+          <MiniStat label="Total ganado" value={fmt(partner.mi_override_total)} />
         </div>
 
         {/* Compromisos del mes */}
@@ -630,7 +630,7 @@ function PartnerDrawer({ partner, onClose }: { partner: Partner; onClose: () => 
 
         {partner.estado === 'suspendida' && (
           <div style={{ padding: '16px 22px', background: 'rgba(220,38,38,0.06)', border: `1px solid rgba(220,38,38,0.20)`, borderLeft: `4px solid ${C.red}`, borderRadius: 10, fontSize: 13, color: '#8a1f1f', lineHeight: 1.5 }}>
-            <strong>Partner suspendido.</strong> 3 meses consecutivos sin alcanzar la meta. Mientras esté suspendido, no genera override para tu red.
+            <strong>Partner suspendido.</strong> 3 meses consecutivos sin alcanzar la meta. Mientras esté suspendido, no te genera comisión.
           </div>
         )}
       </div>
@@ -774,7 +774,7 @@ function InviteDrawer({ myInviteLink, onClose }: { myInviteLink: string; onClose
         {step === 'form' ? (
           <>
             <h2 style={SS.h1Small}>Invitar partner</h2>
-            <p style={SS.leadSm}>SACS revisa cada invitación y aprueba en menos de 48h hábiles. Tú recibes el 10% override de cada venta que generen, mes con mes.</p>
+            <p style={SS.leadSm}>SACS revisa cada invitación y aprueba en menos de 48h hábiles. Tú recibes el 10% de cada venta que generen, mes con mes.</p>
 
             <Field label="Nombre completo">
               <input value={nombre} onChange={e => setNombre(e.target.value)} style={inputStyle} placeholder="Ej. Lucía Torres" />
