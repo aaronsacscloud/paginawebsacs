@@ -5,12 +5,21 @@ import PortalShell from '../../components/partner-portal/PortalShell.tsx';
 
 export const prerender = false;
 
-const user = await getSessionFromRequest(Astro.request);
-if (!user) {
-  return Astro.redirect('/partner/login');
-}
-if (user.role !== 'partner' && user.role !== 'founder') {
-  return Astro.redirect('/');
+// Demo mode bypass: ?demo=1 muestra el portal con datos mock sin requerir
+// sesión. Útil para QA, preview a partners potenciales, screenshots.
+const isDemo = Astro.url.searchParams.get('demo') === '1';
+
+let user: any = null;
+if (isDemo) {
+  user = { id: 'demo-partner-id', nombre: 'Andrea Araujo', email: 'andrea@ejemplo.mx', role: 'partner' };
+} else {
+  user = await getSessionFromRequest(Astro.request);
+  if (!user) {
+    return Astro.redirect('/partner/login');
+  }
+  if (user.role !== 'partner' && user.role !== 'founder') {
+    return Astro.redirect('/');
+  }
 }
 ---
 <BaseLayout
