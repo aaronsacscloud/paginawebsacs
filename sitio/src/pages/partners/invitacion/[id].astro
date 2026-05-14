@@ -1290,6 +1290,16 @@ const partnerLandingUrl = invitation.slug_landing
         </div>
       </div>
 
+      <!-- Cover ilustrada · comunidad de partners SACS -->
+      <div class="p-mi-cover">
+        <img src="/img/partner-invitation/cover.webp" alt="" loading="eager" fetchpriority="high" width="1024" height="683" />
+      </div>
+
+      <div class="p-mi-listtitle">
+        <span class="p-mi-listtitle-num">{visibleTabs.length}</span>
+        <span class="p-mi-listtitle-text">secciones para conocer el programa</span>
+      </div>
+
       <div class="p-mi-list">
         {visibleTabs.map((t, i) => (
           <button
@@ -12313,6 +12323,43 @@ const partnerLandingUrl = invitation.slug_landing
       font-size: 0.6875rem;
       color: #777;
       letter-spacing: 0.02em;
+    }
+
+    /* Cover ilustrada del programa */
+    .p-mi-cover {
+      margin: 0 -4px 32px;
+      border-radius: 20px;
+      overflow: hidden;
+      background: #faf7f2;
+      aspect-ratio: 3 / 2;
+      box-shadow: 0 8px 24px -10px rgba(75,123,229,0.18);
+    }
+    .p-mi-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Título de la lista de secciones */
+    .p-mi-listtitle {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin: 0 4px 14px;
+    }
+    .p-mi-listtitle-num {
+      font-family: var(--font-display, 'Inter', system-ui, sans-serif);
+      font-size: 1.625rem;
+      font-weight: 500;
+      color: #4B7BE5;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    .p-mi-listtitle-text {
+      font-size: 0.875rem;
+      color: #666;
+      line-height: 1.4;
     }
 
     /* Cards de secciones */
