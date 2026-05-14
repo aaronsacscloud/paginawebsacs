@@ -11783,6 +11783,263 @@ const partnerLandingUrl = invitation.slug_landing
   @media (max-width: 600px) {
     .p-faq-a p { padding-left: 20px; }
   }
+
+  /* ===================================================================
+     MOBILE-FIRST OVERRIDES · auditoría UX 2026-05
+     Aplica fixes globales A-E + parches específicos por sección.
+     =================================================================== */
+
+  /* A. Section-head compactar en mobile */
+  @media (max-width: 480px) {
+    .p-section-head { padding: 24px 0 16px; }
+    .p-section-title { font-size: 1.5rem !important; line-height: 1.18; }
+    .p-section-eyebrow { font-size: 0.6875rem; }
+    .p-section-lead { font-size: 0.9375rem; line-height: 1.55; }
+  }
+
+  /* C. Touch targets ≥ 44px en todos los CTAs/botones interactivos */
+  @media (max-width: 768px) {
+    .p-btn,
+    .p-cert-btn,
+    .p-fab-btn,
+    .p-perfil-pill,
+    .p-commit-cta,
+    .p-mobnav-tab,
+    .p-terms-view-btn,
+    .p-faq-q {
+      min-height: 44px;
+    }
+  }
+
+  /* D. Remover backdrop-filter en mobile (perf standards) */
+  @media (max-width: 900px) {
+    .p-mobnav,
+    .p-perfil-row-tag,
+    .p-cert-rowcard-level,
+    .p-bw-tracker,
+    .p-langswitch-btn,
+    .pp-app-nav {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+    .p-perfil-row-tag {
+      background: rgba(26, 26, 26, 0.95) !important;
+    }
+  }
+
+  /* ─── SECCIÓN 1 · Bienvenida ─── */
+  @media (max-width: 640px) {
+    .p-hero-title {
+      font-size: clamp(1.875rem, 8vw, 2.5rem) !important;
+      word-break: break-word;
+      hyphens: auto;
+    }
+    .p-bw-vision-num { font-size: clamp(3rem, 14vw, 5rem) !important; }
+  }
+
+  /* Lang switcher compacto en mobile */
+  @media (max-width: 640px) {
+    .p-langswitch {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .p-langswitch-btn {
+      padding: 6px 10px !important;
+      font-size: 0.6875rem !important;
+    }
+  }
+
+  /* ─── SECCIÓN 2 · Embudo + App preview ─── */
+  @media (max-width: 480px) {
+    .p-funnel {
+      padding: 36px 20px !important;
+      margin: 32px 0 12px;
+    }
+    .p-funnel-title { font-size: 1.75rem !important; }
+    .p-funnel-lead {
+      font-size: 0.9375rem !important;
+      margin-bottom: 32px !important;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .pp-app-nav {
+      font-size: 0.9375rem !important;
+      min-height: 44px;
+      padding: 10px 16px !important;
+    }
+    .pp-app-sidebar {
+      -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+      mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    }
+    .pp-kpi-row,
+    .pp-kpi-row--3 {
+      grid-template-columns: 1fr !important;
+      gap: 12px !important;
+    }
+    .pp-h1 { font-size: 1.5rem !important; }
+  }
+
+  /* ─── SECCIÓN 3 · Términos ─── */
+  @media (max-width: 640px) {
+    .p-term-row {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 6px !important;
+      padding: 18px 0 !important;
+    }
+    .p-term-value { text-align: left !important; }
+    .p-term-value--range { align-items: flex-start !important; }
+    .p-term-value--accent { font-size: 1.625rem !important; }
+    .p-contract-doc--modal {
+      font-size: 0.9375rem !important;
+      line-height: 1.7 !important;
+    }
+    .p-terms-view-btn {
+      padding: 14px 22px !important;
+    }
+  }
+
+  /* ─── SECCIÓN 4 · Compromisos ─── */
+  @media (max-width: 640px) {
+    .p-commit-row {
+      gap: 14px !important;
+      padding: 20px 0 !important;
+    }
+    .p-commit-num {
+      width: 22px !important;
+      font-size: 0.75rem !important;
+    }
+    .p-commit-cta {
+      padding: 12px 16px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+    }
+    .p-commit-strikes { padding: 20px 18px !important; }
+    .p-commit-strikes-title { font-size: 1.125rem !important; }
+  }
+
+  /* ─── SECCIÓN 5 · Contenido y puntos ─── */
+  @media (max-width: 600px) {
+    .p-cat-tabs {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .p-cat-tabs::-webkit-scrollbar { display: none; }
+    .p-cat-tab {
+      flex: 0 0 auto !important;
+      min-width: max-content !important;
+      min-height: 44px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .p-content-types-grid {
+      grid-template-columns: 1fr !important;
+      gap: 12px !important;
+    }
+    .p-content-type-img-wrap { height: 140px !important; }
+    .p-content-type-card { padding: 16px !important; }
+    .p-content-type-pts { font-size: 1.5rem !important; }
+    .p-perfil-pill {
+      padding: 12px 18px !important;
+    }
+  }
+
+  /* ─── SECCIÓN 6 · Compensación ─── */
+  @media (max-width: 640px) {
+    .p-matrix-wrap {
+      position: relative;
+    }
+    .p-matrix-wrap::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 36px;
+      height: 100%;
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.96));
+      pointer-events: none;
+    }
+    .p-calc {
+      padding: 24px 20px !important;
+      border-radius: 12px !important;
+    }
+    .p-calc-title { font-size: 1.375rem !important; }
+    .p-projection-closing {
+      padding: 24px 20px !important;
+      border-radius: 14px !important;
+    }
+    .p-projection-closing-eyebrow { margin-bottom: 16px !important; }
+  }
+
+  /* ─── SECCIÓN 7 · Canales ─── */
+  @media (max-width: 720px) {
+    .p-perfil-row-desc {
+      font-size: 0.875rem !important;
+      line-height: 1.55 !important;
+    }
+    .p-perfil-row-media { aspect-ratio: 16 / 9 !important; }
+  }
+
+  /* ─── SECCIÓN 8 · Red ─── */
+  @media (max-width: 480px) {
+    .p-network-wall { gap: 6px !important; }
+    .p-network-wall > :nth-child(n+13) { display: none; }
+    .p-network-builder-title {
+      font-size: 1.375rem !important;
+      text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
+    }
+  }
+
+  @media (max-width: 560px) {
+    .p-network-tier-stores,
+    .p-network-tier-invites-num { font-size: 1.375rem !important; }
+    .p-network-tier-meta { min-width: 64px !important; }
+  }
+
+  /* ─── SECCIÓN 9 · Crecimiento ─── */
+  @media (max-width: 480px) {
+    .p-grow-level { padding: 28px 20px 32px !important; }
+    .p-grow-subpills {
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 8px !important;
+    }
+    .p-grow-level-status { font-size: 0.6875rem !important; }
+  }
+
+  /* ─── SECCIÓN 10 · Firma + CTA sticky ─── */
+  @media (max-width: 640px) {
+    .p-sw-stepper {
+      gap: 8px !important;
+      margin: 16px 0 28px !important;
+    }
+    .p-sw-step-num {
+      width: 32px !important;
+      height: 32px !important;
+      font-size: 1rem !important;
+    }
+    .p-sw-step-line {
+      flex: 1 1 auto !important;
+      min-width: 20px !important;
+    }
+    .p-sign-canvas { height: 220px !important; }
+    .p-sign-canvas-actions { justify-content: space-between !important; }
+    .p-sign-actions {
+      position: sticky !important;
+      bottom: 0 !important;
+      background: #fff !important;
+      padding: 16px 20px calc(16px + env(safe-area-inset-bottom)) !important;
+      margin: 24px -20px 0 !important;
+      border-top: 1px solid #ececec !important;
+      box-shadow: 0 -8px 24px -8px rgba(0, 0, 0, 0.08) !important;
+      z-index: 20;
+    }
+    .p-sign-actions .p-btn--primary,
+    .p-sign-actions .p-btn { width: 100% !important; }
+  }
 </style>
 
 <script is:inline define:vars={{ invitationId: id, isClosed, isAdminMode }}>
