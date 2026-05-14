@@ -1208,20 +1208,40 @@ const partnerLandingUrl = invitation.slug_landing
 
   <div class:list={['p-page', `p-${template}`]} id="partner-doc" data-initial-tab={initialTab}>
 
-    <!-- Language switcher (sticky top-right, hidden on print) -->
+    <!-- Language switcher · select dropdown con bandera default -->
     <div class="p-langswitch no-print" role="group" aria-label={tt('lang.label')}>
-      {SUPPORTED_LANGS.map((l) => {
-        const url = new URL(Astro.url);
-        if (l === 'es') url.searchParams.delete('lang'); else url.searchParams.set('lang', l);
-        const href = url.pathname + (url.search || '') + url.hash;
+      {(() => {
+        const names = { es: 'Español', en: 'English', fr: 'Français', it: 'Italiano', pt: 'Português' } as const;
         const flags = { es: '🇲🇽', en: '🇺🇸', fr: '🇫🇷', it: '🇮🇹', pt: '🇧🇷' } as const;
+        const optionData = SUPPORTED_LANGS.map((l) => {
+          const url = new URL(Astro.url);
+          if (l === 'es') url.searchParams.delete('lang'); else url.searchParams.set('lang', l);
+          return { code: l, href: url.pathname + (url.search || '') + url.hash };
+        });
         return (
-          <a href={href} class={`p-langswitch-btn${l === lang ? ' is-active' : ''}`} hreflang={l} title={l.toUpperCase()}>
-            <span class="p-langswitch-flag" aria-hidden="true">{flags[l]}</span>
-            <span class="p-langswitch-code">{l.toUpperCase()}</span>
-          </a>
+          <div class="p-langswitch-wrap">
+            <span class="p-langswitch-current" aria-hidden="true">
+              <span class="p-langswitch-flag">{flags[lang]}</span>
+              <span class="p-langswitch-code">{lang.toUpperCase()}</span>
+              <svg class="p-langswitch-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </span>
+            <select
+              class="p-langswitch-select"
+              id="p-langswitch-select"
+              aria-label={tt('lang.label')}
+              data-current={lang}
+            >
+              {optionData.map((o) => (
+                <option value={o.href} selected={o.code === lang}>
+                  {flags[o.code]} {names[o.code]} ({o.code.toUpperCase()})
+                </option>
+              ))}
+            </select>
+          </div>
         );
-      })}
+      })()}
     </div>
 
     <!-- Mobile sticky nav (oculta en desktop) -->
@@ -11277,43 +11297,66 @@ const partnerLandingUrl = invitation.slug_landing
   }
   .p-paths-note strong { color: #1a1a1a; font-weight: 600; }
 
-  /* ─── Language switcher (top-right, scrolls with page) ─── */
+  /* ─── Language switcher · select dropdown bonito ─── */
   .p-langswitch {
     display: flex;
-    gap: 4px;
     justify-content: flex-end;
     padding: 10px 32px 0;
   }
   @media (max-width: 1023px) { .p-langswitch { padding: 10px 20px 0; } }
-  .p-langswitch-btn {
+  .p-langswitch-wrap {
+    position: relative;
+    display: inline-block;
     pointer-events: auto;
-    padding: 5px 10px 5px 8px;
-    background: rgba(255,255,255,0.92);
-    border: 1px solid #ececec;
-    border-radius: 999px;
-    color: #555;
-    font-family: var(--font-display);
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-decoration: none;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+  }
+  /* Visible "current" pill */
+  .p-langswitch-current {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-  }
-  .p-langswitch-flag { font-size: 0.875rem; line-height: 1; }
-  .p-langswitch-code { line-height: 1; }
-  .p-langswitch-btn:hover {
-    color: #1a1a1a;
-    border-color: #cfd6e2;
-  }
-  .p-langswitch-btn.is-active {
+    gap: 8px;
+    padding: 7px 12px 7px 11px;
     background: #1a1a1a;
     color: #fff;
-    border-color: #1a1a1a;
+    border-radius: 999px;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    border: 1px solid #1a1a1a;
+    pointer-events: none;
+    transition: background 0.15s;
+  }
+  .p-langswitch-wrap:hover .p-langswitch-current { background: #333; }
+  .p-langswitch-flag { font-size: 1rem; line-height: 1; }
+  .p-langswitch-code { line-height: 1; }
+  .p-langswitch-caret { opacity: 0.7; margin-left: 2px; }
+  /* Select transparente encima del pill, captura clicks */
+  .p-langswitch-select {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    border: none;
+    background: transparent;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .p-langswitch-select:focus + .p-langswitch-current,
+  .p-langswitch-select:focus-visible + .p-langswitch-current {
+    outline: 2px solid #4B7BE5;
+    outline-offset: 2px;
+  }
+  /* Reordenar: select primero (z-index encima) + visual current debajo */
+  .p-langswitch-wrap { display: inline-flex; }
+  .p-langswitch-wrap > .p-langswitch-select { order: 1; }
+  .p-langswitch-wrap > .p-langswitch-current { order: 0; }
+  @media (max-width: 640px) {
+    .p-langswitch-current { padding: 8px 14px 8px 12px; font-size: 0.8125rem; min-height: 36px; }
+    .p-langswitch-flag { font-size: 1.0625rem; }
   }
 
   /* ─── Aviso legal del contrato (vista localizada) ─── */
@@ -13363,13 +13406,15 @@ const partnerLandingUrl = invitation.slug_landing
     printBtn.addEventListener('click', () => pending.events.push({ type: 'print_clicked' }));
   }
 
-  // ── Lang switch: detecta click en p-langswitch-btn ──
-  document.querySelectorAll('.p-langswitch-btn').forEach((el) => {
-    el.addEventListener('click', () => {
-      const code = el.querySelector('.p-langswitch-code');
-      const lang = code ? code.textContent.toLowerCase() : null;
-      if (lang) {
-        // El click navega a otra URL; mandamos via sendBeacon antes de irnos
+  // ── Lang switch: select dropdown navega al idioma seleccionado ──
+  const langSelect = document.getElementById('p-langswitch-select');
+  if (langSelect) {
+    langSelect.addEventListener('change', (e) => {
+      const target = e.target;
+      const href = target.value;
+      const opt = target.options[target.selectedIndex];
+      const lang = opt?.textContent?.match(/\(([A-Z]{2})\)/)?.[1]?.toLowerCase() || null;
+      if (lang && lang !== target.dataset.current) {
         fetch('/api/partners/invitation-heartbeat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -13380,8 +13425,9 @@ const partnerLandingUrl = invitation.slug_landing
           keepalive: true,
         }).catch(() => {});
       }
+      if (href) window.location.href = href;
     });
-  });
+  }
 
   // Ping inicial con contexto
   setTimeout(() => flush(false), 2000);
