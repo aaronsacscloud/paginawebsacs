@@ -1262,7 +1262,7 @@ const partnerLandingUrl = invitation.slug_landing
       </div>
 
       <!-- TAB: BIENVENIDA -->
-      <section class="p-tab-panel" data-tab="bienvenida">
+      <section class={`p-tab-panel${initialTab === 'bienvenida' ? ' is-active' : ''}`} data-tab="bienvenida">
         {isLocalized && (
           <div class="p-localized-banner no-print">
             <span class="p-localized-icon" aria-hidden="true">🌐</span>
@@ -1725,7 +1725,7 @@ const partnerLandingUrl = invitation.slug_landing
       </section>
 
       <!-- TAB: PROCESO DE INSCRIPCIÓN -->
-      <section class="p-tab-panel" data-tab="proceso">
+      <section class={`p-tab-panel${initialTab === 'proceso' ? ' is-active' : ''}`} data-tab="proceso">
         <div class="p-section-head">
           <div class="p-section-eyebrow">{tt('proc.eyebrow')}</div>
           <h2 class="p-section-title">{tt('proc.title')}</h2>
@@ -2928,7 +2928,7 @@ const partnerLandingUrl = invitation.slug_landing
       </div>
 
       <!-- TAB: TÉRMINOS (incluye lo económico + lo que SACS te da + costos) -->
-      <section class="p-tab-panel" data-tab="terminos">
+      <section class={`p-tab-panel${initialTab === 'terminos' ? ' is-active' : ''}`} data-tab="terminos">
         <div class="p-section-head">
           <div class="p-section-eyebrow">{tt('terms.eyebrow')}</div>
           <h2 class="p-section-title">{tt('terms.title')}</h2>
@@ -3070,7 +3070,7 @@ const partnerLandingUrl = invitation.slug_landing
       </section>
 
       <!-- TAB: EMBUDO Y SEGUIMIENTO DE VENTAS -->
-      <section class="p-tab-panel" data-tab="embudo">
+      <section class={`p-tab-panel${initialTab === 'embudo' ? ' is-active' : ''}`} data-tab="embudo">
         <div class="p-section-head">
           <div class="p-section-eyebrow">{tt('fun.eyebrow')}</div>
           <h2 class="p-section-title">{tt('fun.title')}</h2>
@@ -3113,7 +3113,7 @@ const partnerLandingUrl = invitation.slug_landing
 
       <!-- TAB: COMPROMISOS -->
       {compromisos.length > 0 && (
-      <section class="p-tab-panel" data-tab="compromisos">
+      <section class={`p-tab-panel${initialTab === 'compromisos' ? ' is-active' : ''}`} data-tab="compromisos">
         <div class="p-section-head">
           <div class="p-section-eyebrow">{tt('commits.eyebrow')}</div>
           <h2 class="p-section-title">{tt('commits.title')}</h2>
@@ -3186,7 +3186,7 @@ const partnerLandingUrl = invitation.slug_landing
 
       <!-- TAB: CONTENIDO Y PUNTOS (solo embajador) -->
       {tipo === 'embajador' && (
-      <section class="p-tab-panel" data-tab="contenido">
+      <section class={`p-tab-panel${initialTab === 'contenido' ? ' is-active' : ''}`} data-tab="contenido">
         <div class="p-section-head">
           <div class="p-section-eyebrow">{tt('cnt.eyebrow')}</div>
           <h2 class="p-section-title">{tt('cnt.title')}</h2>
@@ -3322,7 +3322,7 @@ const partnerLandingUrl = invitation.slug_landing
 
       <!-- TAB: RECOMPENSAS -->
       {(comisionPct > 0 || Object.keys(tabulador).length > 0) && (
-      <section class="p-tab-panel" data-tab="compensacion">
+      <section class={`p-tab-panel${initialTab === 'compensacion' ? ' is-active' : ''}`} data-tab="compensacion">
         <div class="p-section-head">
           <div class="p-section-eyebrow">{tt('comp.eyebrow')}</div>
           <h2 class="p-section-title">{tt('comp.title')}</h2>
@@ -3601,7 +3601,7 @@ const partnerLandingUrl = invitation.slug_landing
 
 
       <!-- TAB: ¿A QUIÉN LE PUEDO VENDER? — 12 canales de venta -->
-      <section class="p-tab-panel" data-tab="canales">
+      <section class={`p-tab-panel${initialTab === 'canales' ? ' is-active' : ''}`} data-tab="canales">
         <div class="p-section-head">
           <div class="p-section-eyebrow">{tt('can.eyebrow')}</div>
           <h2 class="p-section-title">{tt('can.title')}</h2>
@@ -3644,7 +3644,7 @@ const partnerLandingUrl = invitation.slug_landing
 
 
       <!-- TAB: TU CRECIMIENTO — escala de 4 niveles del partner -->
-      <section class="p-tab-panel" data-tab="crecimiento">
+      <section class={`p-tab-panel${initialTab === 'crecimiento' ? ' is-active' : ''}`} data-tab="crecimiento">
         <div class="p-section-head">
           <div class="p-section-eyebrow">{tt('grw.eyebrow')}</div>
           <h2 class="p-section-title">{tt('grw.title')}</h2>
@@ -3719,7 +3719,7 @@ const partnerLandingUrl = invitation.slug_landing
 
 
       <!-- TAB: EXPANDE TU RED — milestones de network expansion -->
-      <section class="p-tab-panel" data-tab="red">
+      <section class={`p-tab-panel${initialTab === 'red' ? ' is-active' : ''}`} data-tab="red">
         <div class="p-section-head">
           <div class="p-section-eyebrow">{tt('red.eyebrow')}</div>
           <h2 class="p-section-title">{tt('red.title')}</h2>
@@ -3891,7 +3891,7 @@ const partnerLandingUrl = invitation.slug_landing
 
 
       <!-- TAB: FIRMA -->
-      <section class="p-tab-panel" data-tab="firma">
+      <section class={`p-tab-panel${initialTab === 'firma' ? ' is-active' : ''}`} data-tab="firma">
         {isAccepted ? (
           <div class="p-cert-wrap">
             <div class="p-cert-actions">
