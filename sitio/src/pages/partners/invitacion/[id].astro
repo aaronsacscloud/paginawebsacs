@@ -1262,7 +1262,7 @@ const partnerLandingUrl = invitation.slug_landing
       </div>
 
       <!-- TAB: BIENVENIDA -->
-      <section class={`p-tab-panel${initialTab === 'bienvenida' ? ' is-active' : ''}`} data-tab="bienvenida">
+      <section id="bienvenida" class={`p-tab-panel${initialTab === 'bienvenida' ? ' is-active' : ''}`} data-tab="bienvenida">
         {isLocalized && (
           <div class="p-localized-banner no-print">
             <span class="p-localized-icon" aria-hidden="true">🌐</span>
@@ -1725,7 +1725,7 @@ const partnerLandingUrl = invitation.slug_landing
       </section>
 
       <!-- TAB: PROCESO DE INSCRIPCIÓN -->
-      <section class={`p-tab-panel${initialTab === 'proceso' ? ' is-active' : ''}`} data-tab="proceso">
+      <section id="proceso" class={`p-tab-panel${initialTab === 'proceso' ? ' is-active' : ''}`} data-tab="proceso">
         <div class="p-section-head">
           <div class="p-section-eyebrow">{tt('proc.eyebrow')}</div>
           <h2 class="p-section-title">{tt('proc.title')}</h2>
@@ -2928,7 +2928,7 @@ const partnerLandingUrl = invitation.slug_landing
       </div>
 
       <!-- TAB: TÉRMINOS (incluye lo económico + lo que SACS te da + costos) -->
-      <section class={`p-tab-panel${initialTab === 'terminos' ? ' is-active' : ''}`} data-tab="terminos">
+      <section id="terminos" class={`p-tab-panel${initialTab === 'terminos' ? ' is-active' : ''}`} data-tab="terminos">
         <div class="p-section-head">
           <div class="p-section-eyebrow">{tt('terms.eyebrow')}</div>
           <h2 class="p-section-title">{tt('terms.title')}</h2>
@@ -3070,7 +3070,7 @@ const partnerLandingUrl = invitation.slug_landing
       </section>
 
       <!-- TAB: EMBUDO Y SEGUIMIENTO DE VENTAS -->
-      <section class={`p-tab-panel${initialTab === 'embudo' ? ' is-active' : ''}`} data-tab="embudo">
+      <section id="embudo" class={`p-tab-panel${initialTab === 'embudo' ? ' is-active' : ''}`} data-tab="embudo">
         <div class="p-section-head">
           <div class="p-section-eyebrow">{tt('fun.eyebrow')}</div>
           <h2 class="p-section-title">{tt('fun.title')}</h2>
@@ -3113,7 +3113,7 @@ const partnerLandingUrl = invitation.slug_landing
 
       <!-- TAB: COMPROMISOS -->
       {compromisos.length > 0 && (
-      <section class={`p-tab-panel${initialTab === 'compromisos' ? ' is-active' : ''}`} data-tab="compromisos">
+      <section id="compromisos" class={`p-tab-panel${initialTab === 'compromisos' ? ' is-active' : ''}`} data-tab="compromisos">
         <div class="p-section-head">
           <div class="p-section-eyebrow">{tt('commits.eyebrow')}</div>
           <h2 class="p-section-title">{tt('commits.title')}</h2>
@@ -3186,7 +3186,7 @@ const partnerLandingUrl = invitation.slug_landing
 
       <!-- TAB: CONTENIDO Y PUNTOS (solo embajador) -->
       {tipo === 'embajador' && (
-      <section class={`p-tab-panel${initialTab === 'contenido' ? ' is-active' : ''}`} data-tab="contenido">
+      <section id="contenido" class={`p-tab-panel${initialTab === 'contenido' ? ' is-active' : ''}`} data-tab="contenido">
         <div class="p-section-head">
           <div class="p-section-eyebrow">{tt('cnt.eyebrow')}</div>
           <h2 class="p-section-title">{tt('cnt.title')}</h2>
@@ -3322,7 +3322,7 @@ const partnerLandingUrl = invitation.slug_landing
 
       <!-- TAB: RECOMPENSAS -->
       {(comisionPct > 0 || Object.keys(tabulador).length > 0) && (
-      <section class={`p-tab-panel${initialTab === 'compensacion' ? ' is-active' : ''}`} data-tab="compensacion">
+      <section id="compensacion" class={`p-tab-panel${initialTab === 'compensacion' ? ' is-active' : ''}`} data-tab="compensacion">
         <div class="p-section-head">
           <div class="p-section-eyebrow">{tt('comp.eyebrow')}</div>
           <h2 class="p-section-title">{tt('comp.title')}</h2>
@@ -3601,7 +3601,7 @@ const partnerLandingUrl = invitation.slug_landing
 
 
       <!-- TAB: ¿A QUIÉN LE PUEDO VENDER? — 12 canales de venta -->
-      <section class={`p-tab-panel${initialTab === 'canales' ? ' is-active' : ''}`} data-tab="canales">
+      <section id="canales" class={`p-tab-panel${initialTab === 'canales' ? ' is-active' : ''}`} data-tab="canales">
         <div class="p-section-head">
           <div class="p-section-eyebrow">{tt('can.eyebrow')}</div>
           <h2 class="p-section-title">{tt('can.title')}</h2>
@@ -3644,7 +3644,7 @@ const partnerLandingUrl = invitation.slug_landing
 
 
       <!-- TAB: TU CRECIMIENTO — escala de 4 niveles del partner -->
-      <section class={`p-tab-panel${initialTab === 'crecimiento' ? ' is-active' : ''}`} data-tab="crecimiento">
+      <section id="crecimiento" class={`p-tab-panel${initialTab === 'crecimiento' ? ' is-active' : ''}`} data-tab="crecimiento">
         <div class="p-section-head">
           <div class="p-section-eyebrow">{tt('grw.eyebrow')}</div>
           <h2 class="p-section-title">{tt('grw.title')}</h2>
@@ -3719,7 +3719,7 @@ const partnerLandingUrl = invitation.slug_landing
 
 
       <!-- TAB: EXPANDE TU RED — milestones de network expansion -->
-      <section class={`p-tab-panel${initialTab === 'red' ? ' is-active' : ''}`} data-tab="red">
+      <section id="red" class={`p-tab-panel${initialTab === 'red' ? ' is-active' : ''}`} data-tab="red">
         <div class="p-section-head">
           <div class="p-section-eyebrow">{tt('red.eyebrow')}</div>
           <h2 class="p-section-title">{tt('red.title')}</h2>
@@ -3891,7 +3891,7 @@ const partnerLandingUrl = invitation.slug_landing
 
 
       <!-- TAB: FIRMA -->
-      <section class={`p-tab-panel${initialTab === 'firma' ? ' is-active' : ''}`} data-tab="firma">
+      <section id="firma" class={`p-tab-panel${initialTab === 'firma' ? ' is-active' : ''}`} data-tab="firma">
         {isAccepted ? (
           <div class="p-cert-wrap">
             <div class="p-cert-actions">
@@ -12045,6 +12045,45 @@ const partnerLandingUrl = invitation.slug_landing
     .p-sign-actions .p-btn--primary,
     .p-sign-actions .p-btn { width: 100% !important; }
   }
+
+  /* ===================================================================
+     MOBILE LAYOUT REWRITE · scroll continuo sin tabs (< 900px)
+     Razón: en mobile las tabs causan bugs (cache, SSR, Safari Privacy
+     Mode). Mejor mostrar todo apilado con scroll natural — UX más simple
+     y robusto, similar a un long-form document estilo Stripe Press.
+     =================================================================== */
+  @media (max-width: 900px) {
+    /* TODOS los paneles visibles · scroll continuo */
+    .p-tab-panel {
+      display: block !important;
+      animation: none !important;
+      scroll-margin-top: 80px;
+      padding-bottom: 32px !important;
+      border-bottom: 1px solid #ececec;
+    }
+    .p-tab-panel:last-of-type { border-bottom: none; }
+
+    /* Cada panel actúa como anchor target (id se asigna vía JS al cargar
+       o el navegador lo encuentra por data-tab) */
+
+    /* Mobnav sticky · ahora navega por scroll, no por toggle */
+    .p-mobnav {
+      position: sticky !important;
+      top: 0;
+      z-index: 50;
+      background: #fafaf8;
+      border-bottom: 1px solid #ececec;
+    }
+
+    /* Separación visual entre secciones */
+    .p-tab-panel + .p-tab-panel {
+      margin-top: 16px;
+      padding-top: 24px !important;
+    }
+
+    /* Print mode no afecta mobile */
+    body.print-mode-doc .p-tab-panel { border-bottom: none; }
+  }
 </style>
 
 <script is:inline define:vars={{ invitationId: id, isClosed, isAdminMode }}>
@@ -12098,15 +12137,31 @@ const partnerLandingUrl = invitation.slug_landing
     });
   }
 
-  // Wire links
+  // Wire links · en mobile scroll a sección, en desktop toggle tab
+  const isMobileLayout = () => window.matchMedia('(max-width: 900px)').matches;
   document.addEventListener('click', e => {
     const link = e.target.closest('[data-tab-link]');
     if (!link) return;
     const tabId = link.dataset.tabLink;
     if (!tabId) return;
     e.preventDefault();
-    showTab(tabId);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (isMobileLayout()) {
+      // Mobile: todos los paneles están visibles, scroll al target
+      const target = document.getElementById(tabId);
+      if (target) {
+        const rect = target.getBoundingClientRect();
+        const navH = document.querySelector('.p-mobnav')?.getBoundingClientRect().height || 70;
+        window.scrollTo({ top: window.scrollY + rect.top - navH - 8, behavior: 'smooth' });
+      }
+      // Marcar pill activo
+      document.querySelectorAll('.p-mobnav-tab').forEach(l => {
+        l.classList.toggle('p-mobnav-tab--active', l.dataset.tabLink === tabId);
+      });
+      if (history.replaceState) history.replaceState(null, '', '#' + tabId);
+    } else {
+      showTab(tabId);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   });
 
   // ─── FAQ accordion (objeciones) ───
@@ -12241,7 +12296,25 @@ const partnerLandingUrl = invitation.slug_landing
 
   // Initial tab from hash or initialTab
   const hash = (location.hash || '').replace('#', '');
-  showTab(hash || initialTab);
+  // En mobile, todos los paneles ya están visibles (CSS). Solo marcar el pill activo y scroll si hay hash.
+  if (isMobileLayout()) {
+    const initial = hash || (isClosed ? 'firma' : 'bienvenida');
+    document.querySelectorAll('.p-mobnav-tab').forEach(l => {
+      l.classList.toggle('p-mobnav-tab--active', l.dataset.tabLink === initial);
+    });
+    if (hash) {
+      const target = document.getElementById(hash);
+      if (target) {
+        requestAnimationFrame(() => {
+          const rect = target.getBoundingClientRect();
+          const navH = document.querySelector('.p-mobnav')?.getBoundingClientRect().height || 70;
+          window.scrollTo({ top: window.scrollY + rect.top - navH - 8, behavior: 'auto' });
+        });
+      }
+    }
+  } else {
+    showTab(hash || initialTab);
+  }
 
   // ─── Preview del panel modal (siempre disponible) ───
   const previewOverlay = document.getElementById('preview-overlay');
