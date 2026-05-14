@@ -4666,6 +4666,11 @@ const partnerLandingUrl = invitation.slug_landing
   /* Tab switcher */
   .p-tab-panel { display: none; animation: tabFade 220ms ease; padding-bottom: 64px; }
   .p-tab-panel.is-active { display: block; }
+  /* Fallback robusto: si NINGÚN panel tiene .is-active (cache stale, SSR edge, JS bloqueado),
+     mostrar el panel de bienvenida por defecto · :has() soportado iOS Safari 15.4+ */
+  .p-page:not(:has(.p-tab-panel.is-active)) .p-tab-panel[data-tab="bienvenida"] {
+    display: block;
+  }
   @keyframes tabFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
   @media (prefers-reduced-motion: reduce) {
     .p-tab-panel { animation: none; }
