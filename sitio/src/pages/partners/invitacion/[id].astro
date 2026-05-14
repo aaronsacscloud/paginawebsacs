@@ -1240,6 +1240,60 @@ const partnerLandingUrl = invitation.slug_landing
       </div>
     </nav>
 
+    <!-- Mobile header (visible solo cuando hay sección activa en mobile) -->
+    <header class="p-mh no-print" id="p-mh" role="navigation" aria-label="Navegación de sección">
+      <button class="p-mh-back" id="p-mh-back" type="button" aria-label="Volver al índice">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+        <span>Inicio</span>
+      </button>
+      <select class="p-mh-select" id="p-mh-select" aria-label="Ir a sección">
+        {visibleTabs.map((t, i) => (
+          <option value={t.id}>{(i + 1).toString().padStart(2, '0')} · {t.label}</option>
+        ))}
+      </select>
+    </header>
+
+    <!-- Mobile index · pantalla inicial con cards de las secciones -->
+    <div class="p-mi no-print" id="p-mi" role="navigation" aria-label="Índice de secciones">
+      <div class="p-mi-hero">
+        <div class="p-mi-eyebrow">Programa Partners SACS</div>
+        <h1 class="p-mi-title">Hola, <span>{invitation.nombre?.split(' ')[0] || 'partner'}</span></h1>
+        <p class="p-mi-sub">Tu invitación al programa de partners SACS · <strong>{comisionPct}% de comisión</strong> sobre cada venta directa.</p>
+        <div class="p-mi-meta">
+          {!isExpired && !isClosed && <span class="p-mi-badge p-mi-badge--active"><span class="p-mi-dot"></span>Activa</span>}
+          {isAccepted && <span class="p-mi-badge p-mi-badge--accepted"><span class="p-mi-dot"></span>Firmada</span>}
+          {isDeclined && <span class="p-mi-badge p-mi-badge--declined"><span class="p-mi-dot"></span>Rechazada</span>}
+          {isExpired && !isClosed && <span class="p-mi-badge p-mi-badge--expired"><span class="p-mi-dot"></span>Vencida</span>}
+          <span class="p-mi-numero">{invitation.numero}</span>
+        </div>
+      </div>
+
+      <div class="p-mi-list">
+        {visibleTabs.map((t, i) => (
+          <button
+            type="button"
+            class="p-mi-card"
+            data-tab-link={t.id}
+            aria-label={`Ir a sección ${t.label}`}
+          >
+            <span class="p-mi-card-num">{(i + 1).toString().padStart(2, '0')}</span>
+            <span class="p-mi-card-body">
+              <span class="p-mi-card-title">{t.label}</span>
+            </span>
+            <svg class="p-mi-card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </button>
+        ))}
+      </div>
+
+      <div class="p-mi-footer">
+        <p>Tómate tu tiempo. Cuando termines de revisar, ve a la sección <strong>Firma</strong> para aceptar.</p>
+      </div>
+    </div>
+
     <div class="p-container">
 
       <!-- Header -->
@@ -12066,42 +12120,233 @@ const partnerLandingUrl = invitation.slug_landing
   }
 
   /* ===================================================================
-     MOBILE LAYOUT REWRITE · scroll continuo sin tabs (< 900px)
-     Razón: en mobile las tabs causan bugs (cache, SSR, Safari Privacy
-     Mode). Mejor mostrar todo apilado con scroll natural — UX más simple
-     y robusto, similar a un long-form document estilo Stripe Press.
+     MOBILE NAV REWRITE · index + sections (< 1024px)
+     Comportamiento estilo iOS Settings:
+     1. Al cargar → vista index con cards bonitas de cada sección
+     2. Click en card → muestra solo esa sección + header sticky con
+        ← back y select para saltar entre secciones
+     3. Click back → vuelve al index
      =================================================================== */
-  @media (max-width: 900px) {
-    /* TODOS los paneles visibles · scroll continuo */
-    .p-tab-panel {
-      display: block !important;
-      animation: none !important;
-      scroll-margin-top: 80px;
-      padding-bottom: 32px !important;
-      border-bottom: 1px solid #ececec;
-    }
-    .p-tab-panel:last-of-type { border-bottom: none; }
+  .p-mh, .p-mi { display: none; }
 
-    /* Cada panel actúa como anchor target (id se asigna vía JS al cargar
-       o el navegador lo encuentra por data-tab) */
+  @media (max-width: 1023px) {
+    /* Ocultar el header desktop y la mobnav antigua */
+    .p-header { display: none; }
+    .p-mobnav { display: none !important; }
 
-    /* Mobnav sticky · ahora navega por scroll, no por toggle */
-    .p-mobnav {
-      position: sticky !important;
+    /* Por default body está en mode 'index': muestra index, oculta paneles y mobile header */
+    body:not(.is-mb-section) .p-mi { display: block; }
+    body:not(.is-mb-section) .p-tab-panel { display: none !important; }
+    body:not(.is-mb-section) .p-mh { display: none; }
+    body:not(.is-mb-section) .p-langswitch { padding: 14px 16px 4px; }
+
+    /* Mode 'section': header sticky visible, solo panel activo visible */
+    body.is-mb-section .p-mh { display: flex; }
+    body.is-mb-section .p-mi { display: none; }
+    body.is-mb-section .p-tab-panel { display: none; }
+    body.is-mb-section .p-tab-panel.is-active { display: block !important; }
+    body.is-mb-section .p-langswitch { display: none; }
+
+    /* Mobile header sticky · back + select */
+    .p-mh {
+      position: sticky;
       top: 0;
-      z-index: 50;
+      z-index: 60;
       background: #fafaf8;
       border-bottom: 1px solid #ececec;
+      padding: 10px 16px;
+      align-items: center;
+      gap: 12px;
+      min-height: 56px;
+    }
+    .p-mh-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: none;
+      color: #1a1a1a;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 8px 10px 8px 6px;
+      margin-left: -6px;
+      border-radius: 8px;
+      min-height: 44px;
+    }
+    .p-mh-back:active { background: rgba(0,0,0,0.05); }
+    .p-mh-select {
+      flex: 1;
+      min-width: 0;
+      appearance: none;
+      -webkit-appearance: none;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 10px 36px 10px 14px;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #1a1a1a;
+      letter-spacing: -0.005em;
+      min-height: 44px;
+      cursor: pointer;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 16px;
+    }
+    .p-mh-select:focus {
+      outline: none;
+      border-color: #4B7BE5;
+      box-shadow: 0 0 0 3px rgba(75,123,229,0.15);
     }
 
-    /* Separación visual entre secciones */
-    .p-tab-panel + .p-tab-panel {
-      margin-top: 16px;
-      padding-top: 24px !important;
+    /* Mobile index · pantalla inicial */
+    .p-mi {
+      padding: 24px 20px 80px;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    .p-mi-hero { margin-bottom: 32px; }
+    .p-mi-eyebrow {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      color: #4B7BE5;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      margin-bottom: 14px;
+    }
+    .p-mi-title {
+      font-family: var(--font-display, 'Inter', system-ui, sans-serif);
+      font-size: clamp(1.875rem, 8vw, 2.5rem);
+      font-weight: 500;
+      letter-spacing: -0.028em;
+      line-height: 1.1;
+      color: #1a1a1a;
+      margin: 0 0 14px;
+      word-break: break-word;
+    }
+    .p-mi-title span { color: #4B7BE5; }
+    .p-mi-sub {
+      font-size: 0.9375rem;
+      line-height: 1.55;
+      color: #555;
+      margin: 0 0 20px;
+    }
+    .p-mi-sub strong { color: #1a1a1a; font-weight: 600; }
+    .p-mi-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.75rem;
+    }
+    .p-mi-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.6875rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .p-mi-badge--active { background: rgba(75,123,229,0.10); color: #4B7BE5; }
+    .p-mi-badge--accepted { background: rgba(42,181,160,0.12); color: #2AB5A0; }
+    .p-mi-badge--declined { background: rgba(229,75,75,0.12); color: #C03E3E; }
+    .p-mi-badge--expired { background: rgba(120,120,120,0.12); color: #555; }
+    .p-mi-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: currentColor;
+    }
+    .p-mi-numero {
+      font-family: 'SF Mono', Menlo, monospace;
+      font-size: 0.6875rem;
+      color: #777;
+      letter-spacing: 0.02em;
     }
 
-    /* Print mode no afecta mobile */
-    body.print-mode-doc .p-tab-panel { border-bottom: none; }
+    /* Cards de secciones */
+    .p-mi-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: #fff;
+      border: 1px solid #ececec;
+      border-radius: 16px;
+      padding: 4px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .p-mi-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 14px;
+      background: transparent;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      width: 100%;
+      min-height: 64px;
+      transition: background 0.15s;
+    }
+    .p-mi-card:hover { background: #fafaf8; }
+    .p-mi-card:active { background: #f0f0ed; }
+    .p-mi-card + .p-mi-card { border-top: 1px solid #f4f4f1; }
+    .p-mi-card-num {
+      flex-shrink: 0;
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: rgba(75,123,229,0.08);
+      color: #4B7BE5;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'SF Mono', Menlo, monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .p-mi-card-body {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .p-mi-card-title {
+      font-size: 1rem;
+      font-weight: 500;
+      color: #1a1a1a;
+      letter-spacing: -0.005em;
+      line-height: 1.3;
+    }
+    .p-mi-card-arrow {
+      flex-shrink: 0;
+      color: #999;
+    }
+
+    /* Footer del index */
+    .p-mi-footer {
+      margin-top: 24px;
+      padding: 16px 4px;
+      font-size: 0.8125rem;
+      color: #777;
+      line-height: 1.55;
+      text-align: center;
+    }
+    .p-mi-footer strong { color: #4B7BE5; font-weight: 600; }
+
+    /* Scroll suave a top cuando cambia de sección */
+    body.is-mb-section .p-tab-panel.is-active {
+      padding-top: 8px !important;
+      padding-bottom: 80px !important;
+    }
   }
 </style>
 
@@ -12315,21 +12560,55 @@ const partnerLandingUrl = invitation.slug_landing
 
   // Initial tab from hash or initialTab
   const hash = (location.hash || '').replace('#', '');
-  // En mobile, todos los paneles ya están visibles (CSS). Solo marcar el pill activo y scroll si hay hash.
-  if (isMobileLayout()) {
-    const initial = hash || (isClosed ? 'firma' : 'bienvenida');
-    document.querySelectorAll('.p-mobnav-tab').forEach(l => {
-      l.classList.toggle('p-mobnav-tab--active', l.dataset.tabLink === initial);
+  // ─── Mobile: lógica index ↔ section ───
+  function mobileShowSection(tabId) {
+    document.body.classList.add('is-mb-section');
+    document.querySelectorAll('.p-tab-panel').forEach(p => {
+      p.classList.toggle('is-active', p.dataset.tab === tabId);
     });
+    const sel = document.getElementById('p-mh-select');
+    if (sel) sel.value = tabId;
+    if (history.replaceState) history.replaceState(null, '', '#' + tabId);
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+    // Inicializar firma canvas si entra al tab firma
+    if (tabId === 'firma') {
+      requestAnimationFrame(() => {
+        if (typeof initSignature === 'function') initSignature();
+      });
+    }
+  }
+  function mobileShowIndex() {
+    document.body.classList.remove('is-mb-section');
+    document.querySelectorAll('.p-tab-panel').forEach(p => p.classList.remove('is-active'));
+    if (history.replaceState) history.replaceState(null, '', window.location.pathname);
+    requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+  }
+
+  if (isMobileLayout()) {
+    // Click en cards del index
+    document.querySelectorAll('.p-mi-card').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.preventDefault();
+        const tabId = btn.dataset.tabLink;
+        if (tabId) mobileShowSection(tabId);
+      });
+    });
+    // Click en back button
+    const backBtn = document.getElementById('p-mh-back');
+    if (backBtn) backBtn.addEventListener('click', () => mobileShowIndex());
+    // Change en select
+    const sel = document.getElementById('p-mh-select');
+    if (sel) sel.addEventListener('change', e => {
+      const v = e.target.value;
+      if (v) mobileShowSection(v);
+    });
+    // Estado inicial: si hay hash, abre esa sección; si está cerrado, abre firma; si no, muestra index
     if (hash) {
-      const target = document.getElementById(hash);
-      if (target) {
-        requestAnimationFrame(() => {
-          const rect = target.getBoundingClientRect();
-          const navH = document.querySelector('.p-mobnav')?.getBoundingClientRect().height || 70;
-          window.scrollTo({ top: window.scrollY + rect.top - navH - 8, behavior: 'auto' });
-        });
-      }
+      mobileShowSection(hash);
+    } else if (isClosed) {
+      mobileShowSection('firma');
+    } else {
+      mobileShowIndex();
     }
   } else {
     showTab(hash || initialTab);
