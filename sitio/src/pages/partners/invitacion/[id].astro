@@ -12150,14 +12150,14 @@ const partnerLandingUrl = invitation.slug_landing
 
   /* ===================================================================
      CRITICAL · Prevent horizontal overflow en mobile
-     El bug era: .p-mobnav-inner con flex + flex-shrink:0 hijos
-     expandía hasta 1694px arrastrando al .p-page entero. Necesitamos
-     guard rails en todos los containers padres.
+     Usar overflow-x: clip en lugar de hidden — clip NO rompe sticky en
+     descendientes. hidden creaba un scroll container que rompía el
+     header sticky (.p-mh) que se comportaba como relative.
      =================================================================== */
   @media (max-width: 1023px) {
-    html, body { overflow-x: hidden; max-width: 100vw; }
-    .p-page { max-width: 100vw; overflow-x: hidden; }
-    .p-layout { max-width: 100vw; overflow-x: hidden; }
+    html, body { overflow-x: clip; max-width: 100vw; }
+    .p-page { max-width: 100vw; overflow-x: clip; }
+    .p-layout { max-width: 100vw; overflow-x: clip; }
     .p-langswitch { max-width: 100%; flex-wrap: wrap; }
     .p-container { max-width: 100% !important; }
   }
