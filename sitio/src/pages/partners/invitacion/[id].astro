@@ -4616,15 +4616,20 @@ const partnerLandingUrl = invitation.slug_landing
       -webkit-backdrop-filter: blur(8px);
       backdrop-filter: blur(8px);
       border-bottom: 1px solid #ececec;
+      max-width: 100%;
+      overflow: hidden;
     }
     .p-mobnav-inner {
       display: flex;
       gap: 4px;
       overflow-x: auto;
+      overflow-y: hidden;
       scrollbar-width: none;
       -webkit-overflow-scrolling: touch;
       padding: 10px 16px;
       scroll-snap-type: x proximity;
+      max-width: 100%;
+      min-width: 0;
     }
     .p-mobnav-inner::-webkit-scrollbar { display: none; }
     .p-mobnav-tab {
@@ -12044,6 +12049,20 @@ const partnerLandingUrl = invitation.slug_landing
     }
     .p-sign-actions .p-btn--primary,
     .p-sign-actions .p-btn { width: 100% !important; }
+  }
+
+  /* ===================================================================
+     CRITICAL · Prevent horizontal overflow en mobile
+     El bug era: .p-mobnav-inner con flex + flex-shrink:0 hijos
+     expandía hasta 1694px arrastrando al .p-page entero. Necesitamos
+     guard rails en todos los containers padres.
+     =================================================================== */
+  @media (max-width: 1023px) {
+    html, body { overflow-x: hidden; max-width: 100vw; }
+    .p-page { max-width: 100vw; overflow-x: hidden; }
+    .p-layout { max-width: 100vw; overflow-x: hidden; }
+    .p-langswitch { max-width: 100%; flex-wrap: wrap; }
+    .p-container { max-width: 100% !important; }
   }
 
   /* ===================================================================
