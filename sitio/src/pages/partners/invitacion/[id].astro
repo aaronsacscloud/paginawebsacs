@@ -1067,19 +1067,19 @@ const SIGN_LABELS: Record<Lang, { firmada: string; rechazada: string; revision: 
 };
 const sl = SIGN_LABELS[lang];
 const tabsDef = [
-  { id: 'bienvenida',  label: tt('tab.bienvenida'),   show: true },
-  { id: 'terminos',    label: tt('tab.terminos'),     show: true },
-  { id: 'embudo',      label: tt('tab.embudo'),       show: true },
-  { id: 'compromisos', label: tt('tab.compromisos'),  show: compromisos.length > 0 },
-  { id: 'contenido',   label: tt('tab.contenido'),    show: tipo === 'embajador' },
-  { id: 'compensacion', label: tt('tab.compensacion'), show: comisionPct > 0 || Object.keys(tabulador).length > 0 },
-  { id: 'canales',     label: tt('tab.canales'),      show: true },
-  { id: 'red',         label: tt('tab.red'),          show: true },
-  { id: 'crecimiento', label: tt('tab.crecimiento'),  show: true },
-  { id: 'proceso',     label: tt('tab.proceso'),      show: true },
-  { id: 'firma',       label: isAccepted ? sl.firmada : (isDeclined ? sl.rechazada : (isSubmitted ? sl.revision : sl.firmar)), show: true },
+  { id: 'bienvenida',   label: tt('tab.bienvenida'),    show: true, minutes: 2 },
+  { id: 'terminos',     label: tt('tab.terminos'),      show: true, minutes: 5 },
+  { id: 'embudo',       label: tt('tab.embudo'),        show: true, minutes: 6 },
+  { id: 'compromisos',  label: tt('tab.compromisos'),   show: compromisos.length > 0, minutes: 3 },
+  { id: 'contenido',    label: tt('tab.contenido'),     show: tipo === 'embajador', minutes: 4 },
+  { id: 'compensacion', label: tt('tab.compensacion'),  show: comisionPct > 0 || Object.keys(tabulador).length > 0, minutes: 6 },
+  { id: 'canales',      label: tt('tab.canales'),       show: true, minutes: 3 },
+  { id: 'red',          label: tt('tab.red'),           show: true, minutes: 3 },
+  { id: 'crecimiento',  label: tt('tab.crecimiento'),   show: true, minutes: 3 },
+  { id: 'proceso',      label: tt('tab.proceso'),       show: true, minutes: 4 },
+  { id: 'firma',        label: isAccepted ? sl.firmada : (isDeclined ? sl.rechazada : (isSubmitted ? sl.revision : sl.firmar)), show: true, minutes: 2 },
 ];
-const visibleTabs = tabsDef.filter(t => t.show).map(({ id, label }) => ({ id, label }));
+const visibleTabs = tabsDef.filter(t => t.show).map(({ id, label, minutes }) => ({ id, label, minutes }));
 const initialTab = isClosed ? 'firma' : 'bienvenida';
 
 // ─── Projection data: SACS plan pricing (MXN) y escenarios ───
@@ -1306,13 +1306,23 @@ const partnerLandingUrl = invitation.slug_landing
             type="button"
             class="p-mi-card"
             data-tab-link={t.id}
+            style={`--i:${i}`}
             aria-label={`Ir a sección ${t.label}`}
           >
             <span class="p-mi-card-img">
               <img src={`/img/partner-invitation/${t.id}.webp`} alt="" loading="lazy" width="80" height="80" />
+              <span class="p-mi-card-check" aria-label="Visto">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </span>
             </span>
             <span class="p-mi-card-body">
-              <span class="p-mi-card-num">{(i + 1).toString().padStart(2, '0')}</span>
+              <span class="p-mi-card-meta">
+                <span class="p-mi-card-num">{(i + 1).toString().padStart(2, '0')}</span>
+                <span class="p-mi-card-sep">·</span>
+                <span class="p-mi-card-time">{t.minutes} min</span>
+              </span>
               <span class="p-mi-card-title">{t.label}</span>
             </span>
             <svg class="p-mi-card-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1322,8 +1332,22 @@ const partnerLandingUrl = invitation.slug_landing
         ))}
       </div>
 
+      <!-- Banner CTA "Firmar" al final del index -->
+      {!isClosed && (
+        <button type="button" class="p-mi-cta" data-tab-link="firma" aria-label="Ir a firmar">
+          <span class="p-mi-cta-eyebrow">¿Listo para empezar?</span>
+          <span class="p-mi-cta-title">Firmar y aceptar</span>
+          <span class="p-mi-cta-sub">Tu portal queda activo al instante</span>
+          <span class="p-mi-cta-arrow" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14M13 5l7 7-7 7"/>
+            </svg>
+          </span>
+        </button>
+      )}
+
       <div class="p-mi-footer">
-        <p>Tómate tu tiempo. Cuando termines de revisar, ve a la sección <strong>Firma</strong> para aceptar.</p>
+        <p>Tómate tu tiempo · puedes volver al índice en cualquier momento desde el header.</p>
       </div>
     </div>
 
@@ -12392,6 +12416,7 @@ const partnerLandingUrl = invitation.slug_landing
     .p-mi-card:active { background: #f0f0ed; }
     .p-mi-card + .p-mi-card { border-top: 1px solid #f4f4f1; }
     .p-mi-card-img {
+      position: relative;
       flex-shrink: 0;
       width: 56px; height: 56px;
       border-radius: 12px;
@@ -12412,11 +12437,128 @@ const partnerLandingUrl = invitation.slug_landing
       -webkit-user-select: none;
       -webkit-user-drag: none;
     }
+    /* Checkmark overlay · solo visible cuando card está marcada como visitada */
+    .p-mi-card-check {
+      position: absolute;
+      bottom: -4px;
+      right: -4px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #2AB5A0;
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 2px #fff, 0 2px 6px rgba(42,181,160,0.35);
+      opacity: 0;
+      transform: scale(0.5);
+      transition: opacity 0.2s, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .p-mi-card.is-visited .p-mi-card-check {
+      opacity: 1;
+      transform: scale(1);
+    }
+    .p-mi-card.is-visited .p-mi-card-img img {
+      opacity: 0.78;
+      transition: opacity 0.2s;
+    }
+    .p-mi-card.is-visited .p-mi-card-title {
+      color: #777;
+    }
+
+    /* Meta línea: num · tiempo */
+    .p-mi-card-meta {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'SF Mono', Menlo, monospace;
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #4B7BE5;
+      text-transform: uppercase;
+    }
+    .p-mi-card-sep { color: #c5cad3; font-weight: 400; }
+    .p-mi-card-time { color: #999; font-weight: 600; }
+
     /* Asegurar que TODO el contenido interno de la card no captura touch */
     .p-mi-card > * { pointer-events: none; }
     .p-mi-card {
       -webkit-tap-highlight-color: rgba(75,123,229,0.10);
       touch-action: manipulation;
+      animation: pmiCardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-delay: calc(var(--i, 0) * 55ms + 80ms);
+      opacity: 0;
+    }
+    @keyframes pmiCardIn {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .p-mi-card { animation: none !important; opacity: 1; }
+    }
+
+    /* Banner CTA "Firmar" al final del index */
+    .p-mi-cta {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      margin: 28px 0 8px;
+      padding: 22px 64px 22px 22px;
+      background: linear-gradient(135deg, #4B7BE5 0%, #3866d0 100%);
+      color: #fff;
+      border: none;
+      border-radius: 18px;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      width: 100%;
+      box-shadow: 0 12px 32px -10px rgba(75,123,229,0.45);
+      -webkit-tap-highlight-color: rgba(255,255,255,0.10);
+      touch-action: manipulation;
+      animation: pmiCardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation-delay: calc(var(--total, 11) * 55ms + 200ms);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .p-mi-cta > * { pointer-events: none; }
+    .p-mi-cta:active { transform: scale(0.985); box-shadow: 0 8px 20px -10px rgba(75,123,229,0.55); }
+    .p-mi-cta-eyebrow {
+      font-size: 0.6875rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.78);
+    }
+    .p-mi-cta-title {
+      font-family: var(--font-display, 'Inter', system-ui, sans-serif);
+      font-size: 1.375rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      color: #fff;
+    }
+    .p-mi-cta-sub {
+      font-size: 0.8125rem;
+      color: rgba(255,255,255,0.82);
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+    .p-mi-cta-arrow {
+      position: absolute;
+      right: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.16);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
     }
     .p-mi-card-body {
       flex: 1;
@@ -12674,7 +12816,29 @@ const partnerLandingUrl = invitation.slug_landing
 
   // Initial tab from hash or initialTab
   const hash = (location.hash || '').replace('#', '');
-  // ─── Mobile: lógica index ↔ section ───
+  // ─── Mobile: lógica index ↔ section + tracking de visitadas ───
+  const VISITED_KEY = 'sacs_inv_visited_' + invitationId;
+  function loadVisited() {
+    try { return new Set(JSON.parse(localStorage.getItem(VISITED_KEY) || '[]')); }
+    catch { return new Set(); }
+  }
+  function saveVisited(set) {
+    try { localStorage.setItem(VISITED_KEY, JSON.stringify([...set])); } catch {}
+  }
+  function refreshVisitedUI() {
+    const visited = loadVisited();
+    document.querySelectorAll('.p-mi-card').forEach(card => {
+      card.classList.toggle('is-visited', visited.has(card.dataset.tabLink));
+    });
+  }
+  function markVisited(tabId) {
+    const visited = loadVisited();
+    if (!visited.has(tabId)) {
+      visited.add(tabId);
+      saveVisited(visited);
+    }
+  }
+
   function mobileShowSection(tabId) {
     document.body.classList.add('is-mb-section');
     document.querySelectorAll('.p-tab-panel').forEach(p => {
@@ -12684,6 +12848,7 @@ const partnerLandingUrl = invitation.slug_landing
     if (sel) sel.value = tabId;
     if (history.replaceState) history.replaceState(null, '', '#' + tabId);
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+    markVisited(tabId);
     // Inicializar firma canvas si entra al tab firma
     if (tabId === 'firma') {
       requestAnimationFrame(() => {
@@ -12695,12 +12860,14 @@ const partnerLandingUrl = invitation.slug_landing
     document.body.classList.remove('is-mb-section');
     document.querySelectorAll('.p-tab-panel').forEach(p => p.classList.remove('is-active'));
     if (history.replaceState) history.replaceState(null, '', window.location.pathname);
+    refreshVisitedUI();
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'auto' }));
   }
 
   if (isMobileLayout()) {
-    // Click en cards del index
-    document.querySelectorAll('.p-mi-card').forEach(btn => {
+    refreshVisitedUI();
+    // Click en cards del index Y en banner CTA
+    document.querySelectorAll('.p-mi-card, .p-mi-cta').forEach(btn => {
       btn.addEventListener('click', e => {
         e.preventDefault();
         const tabId = btn.dataset.tabLink;
