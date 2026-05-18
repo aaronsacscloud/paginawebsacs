@@ -9,6 +9,7 @@ import MoneyTab from './tabs/MoneyTab';
 import ShareTab from './tabs/ShareTab';
 import LevelTab from './tabs/LevelTab';
 import NotificationsTab from './tabs/NotificationsTab';
+import AcademyTab from './tabs/AcademyTab';
 import CertificationsTab from './tabs/CertificationsTab';
 import LeadsTab from './tabs/LeadsTab';
 import ClientesTab from './tabs/ClientesTab';
@@ -26,7 +27,7 @@ import { Icon } from './tabs/icons';
 import { isDemoMode } from './tabs/utils';
 
 type TabId =
-  | 'home' | 'notificaciones' | 'dinero' | 'compartir' | 'nivel' | 'certs'
+  | 'home' | 'notificaciones' | 'dinero' | 'compartir' | 'nivel' | 'aprende' | 'certs'
   | 'leads' | 'clientes' | 'red'
   | 'brandkit' | 'sacs-account'
   | 'mi-cuenta' | 'ayuda';
@@ -46,6 +47,7 @@ const SECTIONS: { title: string; items: TabItem[] }[] = [
       { id: 'dinero',         label: 'Dinero',          icon: Icon.Money },
       { id: 'compartir',      label: 'Compartir',       icon: Icon.Share },
       { id: 'nivel',          label: 'Mi nivel',        icon: Icon.Level },
+      { id: 'aprende',        label: 'Aprende SACS',    icon: Icon.Academy },
       { id: 'certs',          label: 'Certificaciones', icon: Icon.Certificate },
     ],
   },
@@ -191,6 +193,7 @@ export default function PortalShell({ initialUser }: Props) {
             {tab === 'dinero'         && <MoneyTab user={initialUser} />}
             {tab === 'compartir'      && <ShareTab user={initialUser} />}
             {tab === 'nivel'          && <LevelTab user={initialUser} />}
+            {tab === 'aprende'        && <AcademyTab user={initialUser} />}
             {tab === 'certs'          && <CertificationsTab user={initialUser} />}
             {tab === 'leads'        && <LeadsTab user={initialUser} />}
             {tab === 'clientes'     && <ClientesTab user={initialUser} />}

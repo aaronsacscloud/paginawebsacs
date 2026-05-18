@@ -211,4 +211,12 @@ export const Icon = {
     <line x1="12" y1="8" x2="12" y2="12" />
     <line x1="12" y1="16" x2="12.01" y2="16" />
   </> }),
+  Clock: (p: IconProps) => base({ ...p, children: <>
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="12 6 12 12 16 14" />
+  </> }),
+  Academy: (p: IconProps) => base({ ...p, children: <>
+    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+    <path d="M6 12v5c3 3 9 3 12 0v-5" />
+  </> }),
 };
