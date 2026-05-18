@@ -83,16 +83,19 @@ export default function ShareTab({ user }: { user: { id: string; nombre: string;
           </a>
         </div>
         <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.12)', fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>
-          Tu link manda a <strong style={{ color: '#fff', fontWeight: 600 }}>sacscloud.com</strong> con un cookie de atribución de <strong style={{ color: '#fff', fontWeight: 600 }}>90 días</strong>. Cada acción del visitante queda registrada a tu nombre — incluso si regresa días después por otro medio.
+          Tu link manda a <strong style={{ color: '#fff', fontWeight: 600 }}>sacscloud.com</strong> con una cookie de atribución de <strong style={{ color: '#fff', fontWeight: 600 }}>90 días</strong>. Cada acción del visitante queda registrada a tu nombre — incluso si regresa días después por otro medio.
         </div>
       </div>
+
+      {/* ─── Cookie de atribución · explicación detallada ─── */}
+      <CookieAttributionExplainer />
 
       {/* Cómo funciona tu link */}
       <h2 style={SS.h2}>Cómo funciona tu link</h2>
       <p style={{ ...SS.leadSm, marginTop: -8 }}>Todas las acciones que haga un visitante quedan atribuidas a ti, automáticamente.</p>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
-        <FlowStep num="1" title="Visitante hace click" desc="Llega a la página principal de SACS (sin landing extra). Su navegador recibe un cookie de partner por 90 días." accent={C.accent} />
+        <FlowStep num="1" title="Visitante hace click" desc="Llega a la página principal de SACS (sin landing extra). Su navegador recibe una cookie de partner por 90 días." accent={C.accent} />
         <FlowStep num="2" title="Te aparece su nombre" desc="Cuando entra a registro o prueba gratis, ve un banner: 'Te recomendó [tu nombre]'. Igual que un código de descuento de influencer." accent={C.purple} />
         <FlowStep num="3" title="Todo queda atribuido" desc="Sus visitas, demos agendadas, prueba gratis, plan firmado y pago — TODO aparece en tu portal." accent={C.green} />
         <FlowStep num="4" title="Cobras tu comisión" desc="50% sobre la venta directa, depósito el día 1 del mes siguiente. Sin ambigüedad — el sistema te asigna el crédito automáticamente." accent={C.amber} />
@@ -113,7 +116,7 @@ export default function ShareTab({ user }: { user: { id: string; nombre: string;
 
       <div style={{ ...SS.note, marginTop: 18, display: 'flex', alignItems: 'flex-start', gap: 14 }}>
         <div>
-          <strong>Tu atribución es vinculante.</strong> Si tu link trae un cliente que se registra hoy y paga en 89 días, sigue siendo tuyo. Si trae uno que se registra hoy y paga en 91 días, también sigue siendo tuyo — el cookie expira pero la asignación al partner queda registrada en la base de datos desde el primer click.
+          <strong>Tu atribución es vinculante.</strong> En el momento que el visitante deja su email, agenda demo o se registra a la prueba — la atribución se graba en BD permanentemente. Si paga en 30 días, 6 meses o 2 años después: sigue siendo tuyo.
         </div>
       </div>
 
@@ -170,6 +173,252 @@ export default function ShareTab({ user }: { user: { id: string; nombre: string;
       )}
 
       {/* Brand kit ahora vive en su propia tab (Activos · Brand kit) */}
+    </div>
+  );
+}
+
+// ─── Cookie attribution explainer ─────────────────────────────
+// Sección dedicada a explicar al partner cómo funciona la atribución para
+// que sienta certeza total. Cubre los 4 escenarios reales:
+//   1. Cookie nueva al primer click
+//   2. Reseteo a 90 días al volver a entrar por el link
+//   3. Atribución vinculante en BD una vez convierte (no depende de cookie)
+//   4. Multi-dispositivo / borrar cookies → si re-entra por tu link queda
+//      atribuido de nuevo
+
+function CookieAttributionExplainer() {
+  return (
+    <>
+      <h2 style={SS.h2}>Tu cookie de atribución</h2>
+      <p style={{ ...SS.leadSm, marginTop: -8 }}>
+        Cómo te aseguramos que cada lead tuyo queda registrado a tu nombre — sin ambigüedad y sin que dependa de tu memoria.
+      </p>
+
+      <div style={SS.card}>
+        {/* Regla principal */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24,
+          paddingBottom: 22, borderBottom: `1px solid ${C.borderSoft}`,
+        }}>
+          <span style={{
+            flexShrink: 0,
+            width: 54, height: 54, borderRadius: 14,
+            background: 'linear-gradient(135deg, #4B7BE5 0%, #6C5CE7 100%)',
+            color: '#fff',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, letterSpacing: '-0.025em',
+          }}>
+            90
+          </span>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 600, color: C.text, marginBottom: 4 }}>
+              90 días por cada click
+            </div>
+            <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.55 }}>
+              Cuando alguien entra a SACS por tu link, su navegador guarda una cookie con tu identificador de partner.
+              La cookie dura 90 días — durante ese tiempo, todo lo que haga ese visitante queda atribuido a ti.
+            </div>
+          </div>
+        </div>
+
+        {/* Timeline / casos */}
+        <div style={{
+          fontSize: 11, color: C.muted, fontWeight: 700,
+          letterSpacing: '0.1em', textTransform: 'uppercase' as const,
+          marginBottom: 14,
+        }}>
+          Casos reales
+        </div>
+
+        <CaseRow
+          icon={<TimelineSimple labels={['Click', '+30d', '+60d', '+90d']} fill={1/3} />}
+          title="Cliente entra hoy y vuelve dentro de 30 días por Google"
+          desc="Sigue siendo tuyo. La cookie aún está activa (le quedan 60 días). Si agenda demo, paga, o lo que sea — comisión tuya."
+          accent={C.green}
+          accentLabel="Atribuido"
+        />
+
+        <CaseRow
+          icon={<TimelineReset />}
+          title="Cliente entra hoy y vuelve a dar click en tu link en día 80"
+          desc={
+            <>
+              <strong style={{ color: C.text, fontWeight: 600 }}>El contador se reinicia a 90 días desde el último click.</strong>{' '}
+              Cada vez que alguien entra por tu link, la cookie se renueva. Mientras siga consumiendo tu contenido y volviendo, tu atribución se mantiene viva indefinidamente.
+            </>
+          }
+          accent={C.accent}
+          accentLabel="Reset · +90 días"
+        />
+
+        <CaseRow
+          icon={<TimelineLocked />}
+          title="Cliente deja email, agenda demo o paga dentro de los 90 días"
+          desc={
+            <>
+              A partir de ese momento, la atribución <strong style={{ color: C.text, fontWeight: 600 }}>queda grabada en la base de datos</strong> — ya no depende del cookie.
+              Aunque borre cookies, cambie de dispositivo o pasen 2 años hasta que pague: <strong style={{ color: C.text, fontWeight: 600 }}>sigue siendo tuyo</strong>.
+            </>
+          }
+          accent={C.purple}
+          accentLabel="Vinculante en BD"
+        />
+
+        <CaseRow
+          icon={<TimelineMultiDevice />}
+          title="Cliente da click desde su teléfono y luego abre desde la laptop"
+          desc="Cada navegador es independiente. Si llega a la laptop por Google directo (sin tu link), no está atribuido en esa sesión. Pero apenas dejé su email o agende demo en cualquiera de los dos, las identidades se unifican y la atribución se mantiene tuya."
+          accent={C.amber}
+          accentLabel="Multi-dispositivo"
+          isLast
+        />
+      </div>
+
+      {/* Garantía vinculante */}
+      <div style={{
+        marginTop: 18,
+        background: 'rgba(42,181,160,0.06)',
+        border: '1px solid rgba(42,181,160,0.22)',
+        borderRadius: 14,
+        padding: '18px 22px',
+        display: 'flex', alignItems: 'flex-start', gap: 14,
+      }}>
+        <span style={{
+          flexShrink: 0, width: 32, height: 32, borderRadius: 10,
+          background: 'rgba(42,181,160,0.18)', color: C.greenDark,
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Icon.CheckCircle size={16} />
+        </span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: C.greenDark, marginBottom: 4 }}>
+            Tu atribución es vinculante y verificable
+          </div>
+          <div style={{ fontSize: 13, color: C.textSoft, lineHeight: 1.55 }}>
+            Cada visita, cookie y conversión queda con timestamp en la base de datos. Puedes ver el rastro completo en{' '}
+            <a href="#notificaciones" style={{ color: C.brand, fontWeight: 600 }}>Notificaciones</a> con el momento exacto de cada evento.
+            Si crees que algo no cuadra, escríbenos a partners@sacscloud.com con el nombre/email del cliente y revisamos los logs juntos.
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function CaseRow({ icon, title, desc, accent, accentLabel, isLast }: {
+  icon: React.ReactNode;
+  title: string;
+  desc: React.ReactNode;
+  accent: string;
+  accentLabel: string;
+  isLast?: boolean;
+}) {
+  return (
+    <div style={{
+      display: 'grid', gridTemplateColumns: '88px 1fr',
+      gap: 18, alignItems: 'flex-start',
+      padding: '18px 0',
+      borderBottom: isLast ? 'none' : `1px solid ${C.borderSoft}`,
+    }}>
+      <div style={{
+        display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 8,
+      }}>
+        <div style={{ width: '100%' }}>{icon}</div>
+        <span style={{
+          display: 'inline-block',
+          padding: '3px 8px',
+          background: `${accent}14`, color: accent,
+          borderRadius: 999,
+          fontSize: 9, fontWeight: 700, letterSpacing: '0.06em',
+          textTransform: 'uppercase' as const,
+          textAlign: 'center' as const,
+          whiteSpace: 'nowrap' as const,
+        }}>
+          {accentLabel}
+        </span>
+      </div>
+      <div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 6, lineHeight: 1.4 }}>
+          {title}
+        </div>
+        <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.6 }}>
+          {desc}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Mini timeline visual (88px wide) con marca de progreso
+function TimelineSimple({ labels, fill }: { labels: string[]; fill: number }) {
+  return (
+    <div>
+      <div style={{ position: 'relative' as const, height: 6, background: '#eef0f4', borderRadius: 999, marginBottom: 6 }}>
+        <div style={{ position: 'absolute' as const, left: 0, top: 0, height: '100%', width: `${fill * 100}%`, background: C.green, borderRadius: 999 }} />
+        <span style={{ position: 'absolute' as const, left: 0, top: -3, width: 12, height: 12, borderRadius: '50%', background: C.green, border: '2px solid #fff', boxShadow: '0 0 0 1px rgba(0,0,0,0.05)' }} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, color: C.mutedLight, fontWeight: 600, letterSpacing: '0.04em' }}>
+        {labels.map((l, i) => <span key={i}>{l}</span>)}
+      </div>
+    </div>
+  );
+}
+
+function TimelineReset() {
+  return (
+    <div>
+      <div style={{ position: 'relative' as const, height: 6, background: '#eef0f4', borderRadius: 999, marginBottom: 6, overflow: 'hidden' }}>
+        <div style={{ position: 'absolute' as const, left: 0, top: 0, height: '100%', width: '89%', background: C.brand, borderRadius: 999, opacity: 0.4 }} />
+        <span style={{ position: 'absolute' as const, left: '89%', top: -3, width: 12, height: 12, borderRadius: '50%', background: C.brand, border: '2px solid #fff', boxShadow: '0 0 0 1px rgba(0,0,0,0.05)' }} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, color: C.mutedLight, fontWeight: 600 }}>
+        <span>D0</span>
+        <span style={{ color: C.brand, fontWeight: 700 }}>D80 ↻</span>
+        <span>+90d</span>
+      </div>
+    </div>
+  );
+}
+
+function TimelineLocked() {
+  return (
+    <div>
+      <div style={{ position: 'relative' as const, height: 6, background: C.purple, borderRadius: 999, marginBottom: 6, opacity: 0.7 }}>
+        <span style={{ position: 'absolute' as const, left: '50%', top: -5, transform: 'translateX(-50%)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 16, height: 16, borderRadius: '50%', background: C.purple, color: '#fff' }}>
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 018 0v4" /></svg>
+        </span>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, color: C.mutedLight, fontWeight: 600 }}>
+        <span>Click</span>
+        <span style={{ color: C.purple, fontWeight: 700 }}>BD lock</span>
+        <span>∞</span>
+      </div>
+    </div>
+  );
+}
+
+function TimelineMultiDevice() {
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 6, justifyContent: 'center' }}>
+        <span style={{
+          width: 22, height: 30, borderRadius: 4, border: `2px solid ${C.amber}`,
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' as const,
+        }}>
+          <span style={{ fontSize: 7, color: C.amber, fontWeight: 700 }}>📱</span>
+        </span>
+        <span style={{ alignSelf: 'center', fontSize: 12, color: C.amber, fontWeight: 700 }}>↔</span>
+        <span style={{
+          width: 32, height: 22, borderRadius: 4, border: `2px solid ${C.amber}`,
+          marginTop: 4,
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <span style={{ fontSize: 7, color: C.amber, fontWeight: 700 }}>💻</span>
+        </span>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'center', fontSize: 8, color: C.mutedLight, fontWeight: 600 }}>
+        <span>Unifica al convertir</span>
+      </div>
     </div>
   );
 }
