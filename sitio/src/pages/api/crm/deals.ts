@@ -78,6 +78,13 @@ export const PUT: APIRoute = async ({ request }) => {
   const { id, ...updates } = body;
   if (!id) return new Response(JSON.stringify({ error: 'id required' }), { status: 400 });
 
+  // Cargar deal previo para detectar transición de stage
+  const { data: prev } = await supabase
+    .from('deals')
+    .select('stage, referrer_partner_id, valor_total, contact_id')
+    .eq('id', id)
+    .maybeSingle();
+
   const { data, error } = await supabase
     .from('deals')
     .update(updates)
@@ -107,6 +114,46 @@ export const PUT: APIRoute = async ({ request }) => {
           fecha_inicio: new Date().toISOString().slice(0, 10),
         })
         .eq('id', data.company_id);
+    }
+
+    // Sellar closed_at si no estaba
+    if (!data.closed_at) {
+      await supabase.from('deals').update({ closed_at: new Date().toISOString() }).eq('id', id);
+    }
+
+    // Activity log para que partner lo vea como movimiento
+    await supabase.from('activities').insert({
+      contact_id: data.contact_id,
+      company_id: data.company_id,
+      deal_id: id,
+      tipo: 'deal_ganado',
+      titulo: `Deal cerrado: ${data.nombre}`,
+      metadata: { valor: data.valor_total, plan: data.plan, referrer_partner_id: data.referrer_partner_id },
+      automatico: true,
+    });
+
+    // Comisión venta_directa al partner referido (idempotente)
+    if (data.referrer_partner_id) {
+      try {
+        const { createCommissionForDeal } = await import('../../../lib/commissions/calculate');
+        await createCommissionForDeal({
+          deal_id: id,
+          partner_id: data.referrer_partner_id,
+          deal_value: Number(data.valor_total || 0),
+        });
+      } catch (e) {
+        console.warn('[crm/deals.PUT] createCommissionForDeal failed:', e);
+      }
+    }
+  }
+
+  // Si se reabre un deal previamente ganado → cancelar comisión venta_directa
+  if (prev?.stage === 'cerrada_ganada' && updates.stage && updates.stage !== 'cerrada_ganada') {
+    try {
+      const { cancelCommission } = await import('../../../lib/commissions/calculate');
+      await cancelCommission(id, `Deal reabierto a ${updates.stage}`);
+    } catch (e) {
+      console.warn('[crm/deals.PUT] cancelCommission failed:', e);
     }
   }
 

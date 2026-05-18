@@ -202,4 +202,13 @@ export const Icon = {
     <circle cx="12" cy="12" r="4" />
     <path d="M16 8v5a3 3 0 006 0v-1a10 10 0 10-3.92 7.94" />
   </> }),
+  Bell: (p: IconProps) => base({ ...p, children: <>
+    <path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+    <path d="M13.73 21a2 2 0 01-3.46 0" />
+  </> }),
+  AlertCircle: (p: IconProps) => base({ ...p, children: <>
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="8" x2="12" y2="12" />
+    <line x1="12" y1="16" x2="12.01" y2="16" />
+  </> }),
 };

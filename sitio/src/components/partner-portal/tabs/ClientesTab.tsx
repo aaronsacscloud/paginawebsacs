@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { fmt, fmtDate, fmtRel, isDemoMode, apiGet, PLAN_LABELS } from './utils';
+import { fmt, fmtDate, fmtRel, isDemoMode, apiGet, PLAN_LABELS, isDealWon } from './utils';
 import { SS, C } from './styles';
 import { Icon } from './icons';
 import { demoLeads, demoPayments } from '../../../data/partner-portal-demo';
@@ -44,7 +44,7 @@ export default function ClientesTab({ user }: { user: { id: string; nombre: stri
     const deals = leads.deals || [];
 
     return deals
-      .filter((d: any) => d.stage === 'won' || d.stage === 'pending_payment')
+      .filter((d: any) => isDealWon(d) || d.stage === 'pending_payment')
       .map((d: any, idx: number) => {
         const c = contacts.find((c: any) => c.id === d.contact_id);
         const planRaw = (d.nombre || '').split(' · ')[1] || c?.plan_interes || 'fideliza';
@@ -56,7 +56,7 @@ export default function ClientesTab({ user }: { user: { id: string; nombre: stri
           : 0;
 
         // Estimación: comisión cruzada × meses + bono inicial
-        const comisionTotal = d.stage === 'won' ? Math.round(valor * 0.5) + (mrr * 0.5 * Math.max(0, mesesActivo - 1)) : 0;
+        const comisionTotal = isDealWon(d) ? Math.round(valor * 0.5) + (mrr * 0.5 * Math.max(0, mesesActivo - 1)) : 0;
         const ltv = Math.round(valor + (mrr * 12)); // bruto estimado
 
         // Estado dummy: rota usos por idx

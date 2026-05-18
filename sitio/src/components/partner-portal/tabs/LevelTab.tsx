@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fmt, fmtDate, fmtNum, isDemoMode, apiGet } from './utils';
+import { fmt, fmtDate, fmtNum, isDemoMode, apiGet, isDealWon } from './utils';
 import { SS, C } from './styles';
 import { Icon } from './icons';
 import { demoContent, demoCertifications, demoProfile, demoLevel, demoSacsAccount, demoLeads } from '../../../data/partner-portal-demo';
@@ -33,7 +33,7 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
   // Calcula nivel actual
   const certifsList = certifs?.certifications || [];
   const certsOwned = certifsList.filter((c: any) => c.status === 'paid').length;
-  const ventasCerradas = (leads?.deals || []).filter((d: any) => d.stage === 'won').length;
+  const ventasCerradas = (leads?.deals || []).filter((d: any) => isDealWon(d)).length;
   const level = computeLevel(certsOwned, ventasCerradas);
 
   const summary = content?.summary || {};

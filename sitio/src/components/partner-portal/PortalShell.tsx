@@ -8,6 +8,7 @@ import HomeTab from './tabs/HomeTab';
 import MoneyTab from './tabs/MoneyTab';
 import ShareTab from './tabs/ShareTab';
 import LevelTab from './tabs/LevelTab';
+import NotificationsTab from './tabs/NotificationsTab';
 import CertificationsTab from './tabs/CertificationsTab';
 import LeadsTab from './tabs/LeadsTab';
 import ClientesTab from './tabs/ClientesTab';
@@ -25,7 +26,7 @@ import { Icon } from './tabs/icons';
 import { isDemoMode } from './tabs/utils';
 
 type TabId =
-  | 'home' | 'dinero' | 'compartir' | 'nivel' | 'certs'
+  | 'home' | 'notificaciones' | 'dinero' | 'compartir' | 'nivel' | 'certs'
   | 'leads' | 'clientes' | 'red'
   | 'brandkit' | 'sacs-account'
   | 'mi-cuenta' | 'ayuda';
@@ -40,11 +41,12 @@ const SECTIONS: { title: string; items: TabItem[] }[] = [
   {
     title: 'Administración',
     items: [
-      { id: 'home',      label: 'Inicio',          icon: Icon.Home },
-      { id: 'dinero',    label: 'Dinero',          icon: Icon.Money },
-      { id: 'compartir', label: 'Compartir',       icon: Icon.Share },
-      { id: 'nivel',     label: 'Mi nivel',        icon: Icon.Level },
-      { id: 'certs',     label: 'Certificaciones', icon: Icon.Certificate },
+      { id: 'home',           label: 'Inicio',          icon: Icon.Home },
+      { id: 'notificaciones', label: 'Notificaciones',  icon: Icon.Bell },
+      { id: 'dinero',         label: 'Dinero',          icon: Icon.Money },
+      { id: 'compartir',      label: 'Compartir',       icon: Icon.Share },
+      { id: 'nivel',          label: 'Mi nivel',        icon: Icon.Level },
+      { id: 'certs',          label: 'Certificaciones', icon: Icon.Certificate },
     ],
   },
   {
@@ -184,11 +186,12 @@ export default function PortalShell({ initialUser }: Props) {
         {/* Main content */}
         <main style={S.main} className="pp-main">
           <div style={S.mainInner} className="pp-main-inner">
-            {tab === 'home'         && <HomeTab user={initialUser} go={(t) => go(t as TabId)} />}
-            {tab === 'dinero'       && <MoneyTab user={initialUser} />}
-            {tab === 'compartir'    && <ShareTab user={initialUser} />}
-            {tab === 'nivel'        && <LevelTab user={initialUser} />}
-            {tab === 'certs'        && <CertificationsTab user={initialUser} />}
+            {tab === 'home'           && <HomeTab user={initialUser} go={(t) => go(t as TabId)} />}
+            {tab === 'notificaciones' && <NotificationsTab user={initialUser} />}
+            {tab === 'dinero'         && <MoneyTab user={initialUser} />}
+            {tab === 'compartir'      && <ShareTab user={initialUser} />}
+            {tab === 'nivel'          && <LevelTab user={initialUser} />}
+            {tab === 'certs'          && <CertificationsTab user={initialUser} />}
             {tab === 'leads'        && <LeadsTab user={initialUser} />}
             {tab === 'clientes'     && <ClientesTab user={initialUser} />}
             {tab === 'red'          && <PartnerNetworkTab user={initialUser} />}

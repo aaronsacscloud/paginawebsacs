@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fmt, fmtNum, fmtRel, isDemoMode, apiGet, STAGE_LABELS, copyToClipboard } from './utils';
+import { fmt, fmtNum, fmtRel, isDemoMode, apiGet, STAGE_LABELS, copyToClipboard, isDealWon } from './utils';
 import { SS, C } from './styles';
 import { Icon } from './icons';
 import { ensurePushSubscription, checkPushStatus, sendTestPush } from './PWAManager';
@@ -74,7 +74,7 @@ export default function HomeTab({ user, go }: Props) {
   // Total generado año
   const totalAno = summary.totalAno || 0;
   const proximoPago = summary.proximoPago || 0;
-  const ventasAno = deals.filter((d: any) => d.stage === 'won').length;
+  const ventasAno = deals.filter((d: any) => isDealWon(d)).length;
 
   // Puntos del mes
   const puntos = content?.summary?.puntos_mes ?? 0;
@@ -329,7 +329,7 @@ function buildRealActivity(deals: any[], bookings: any[], contacts: any[]): Arra
 }
 
 function guessLevel(deals: any[], content: any): { current: number; nombre: string } {
-  const ventasAno = deals.filter(d => d.stage === 'won').length;
+  const ventasAno = deals.filter(d => isDealWon(d)).length;
   if (ventasAno >= 10) return { current: 3, nombre: 'Master Partner Nv 1' };
   if (ventasAno >= 1) return { current: 2, nombre: 'Partner Certificado' };
   return { current: 1, nombre: 'Partner Referidor' };

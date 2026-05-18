@@ -1,6 +1,9 @@
 import type { APIRoute } from 'astro';
 import Stripe from 'stripe';
 import { createHash } from 'crypto';
+import { supabase } from '../../lib/supabase';
+import { getReferrerFromRequest } from '../../lib/attribution';
+import { createCommissionForDeal } from '../../lib/commissions/calculate';
 
 export const prerender = false;
 
@@ -147,9 +150,168 @@ export const POST: APIRoute = async ({ request }) => {
 
     // TikTok server-side: CompletePayment
     const planPrices: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 5900 };
+    const planValue = planPrices[planId] || 0;
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || '';
     const ua = request.headers.get('user-agent') || '';
-    sendTikTokEvent(email, whatsapp || '', planId, planPrices[planId] || 0, ip, ua).catch(() => {});
+    sendTikTokEvent(email, whatsapp || '', planId, planValue, ip, ua).catch(() => {});
+
+    // ─── Atribución partner + CRM ──────────────────────────────────────
+    // 1. Resolver partner referido (cookie sacs_ref o ?ref)
+    // 2. Crear/actualizar contact en Supabase
+    // 3. Crear deal stage='won' + atribución
+    // 4. Disparar venta_directa commission
+    try {
+      const referrerPartnerId = await getReferrerFromRequest(request);
+
+      // Upsert company
+      let company_id: string | null = null;
+      if (empresa) {
+        const { data: existingCo } = await supabase
+          .from('companies')
+          .select('id')
+          .eq('nombre', empresa)
+          .limit(1)
+          .maybeSingle();
+        if (existingCo) {
+          company_id = existingCo.id;
+        } else {
+          const { data: newCo } = await supabase
+            .from('companies')
+            .insert({ nombre: empresa, giro: giro || null, sucursales: parseInt(String(sucursales)) || 1 })
+            .select('id')
+            .single();
+          if (newCo) company_id = newCo.id;
+        }
+      }
+
+      // Upsert contact (by email)
+      const { data: existingContact } = await supabase
+        .from('contacts')
+        .select('id, referrer_partner_id')
+        .eq('email', email)
+        .limit(1)
+        .maybeSingle();
+
+      let contactId: string | null = null;
+      if (existingContact) {
+        contactId = existingContact.id;
+        const updates: Record<string, any> = {
+          lifecycle_stage: 'cliente',
+          plan_interes: planId,
+          stripe_customer_id: customer.id,
+          company_id: company_id || undefined,
+        };
+        if (referrerPartnerId && !existingContact.referrer_partner_id) {
+          updates.referrer_partner_id = referrerPartnerId;
+          updates.fuente = 'partner-link';
+        }
+        await supabase.from('contacts').update(updates).eq('id', contactId);
+      } else {
+        const { data: newContact } = await supabase
+          .from('contacts')
+          .insert({
+            nombre: nombre || 'Sin nombre',
+            email,
+            whatsapp: whatsapp || null,
+            tipo: 'lead',
+            lifecycle_stage: 'cliente',
+            fuente: referrerPartnerId ? 'partner-link' : 'website-prueba-gratis',
+            company_id,
+            plan_interes: planId,
+            giro: giro || null,
+            sucursales_interes: parseInt(String(sucursales)) || null,
+            stripe_customer_id: customer.id,
+            referrer_partner_id: referrerPartnerId,
+          })
+          .select('id')
+          .single();
+        if (newContact) contactId = newContact.id;
+      }
+
+      // Upsert deal — reusar el deal abierto del contact si existe (creado al agendar demo)
+      let dealId: string | null = null;
+      if (contactId) {
+        const { data: openDeal } = await supabase
+          .from('deals')
+          .select('id, referrer_partner_id')
+          .eq('contact_id', contactId)
+          .not('stage', 'in', '(cerrada_ganada,cerrada_perdida)')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (openDeal) {
+          dealId = openDeal.id;
+          const updates: Record<string, any> = {
+            stage: 'cerrada_ganada',
+            closed_at: new Date().toISOString(),
+            valor_total: planValue,
+            valor_mensual: billingPeriod === 'monthly' ? planValue : Math.round((planValue / 12) * 100) / 100,
+            plan: planId,
+            billing_period: billingPeriod === 'monthly' ? 'mensual' : 'anual',
+            probabilidad: 100,
+          };
+          if (referrerPartnerId && !openDeal.referrer_partner_id) {
+            updates.referrer_partner_id = referrerPartnerId;
+          }
+          await supabase.from('deals').update(updates).eq('id', dealId);
+        } else {
+          const { data: newDeal } = await supabase
+            .from('deals')
+            .insert({
+              nombre: `Plan ${planId} · ${empresa || nombre || email}`,
+              contact_id: contactId,
+              company_id,
+              stage: 'cerrada_ganada',
+              valor_total: planValue,
+              valor_mensual: billingPeriod === 'monthly' ? planValue : Math.round((planValue / 12) * 100) / 100,
+              closed_at: new Date().toISOString(),
+              referrer_partner_id: referrerPartnerId,
+              plan: planId,
+              billing_period: billingPeriod === 'monthly' ? 'mensual' : 'anual',
+              sucursales: parseInt(String(sucursales)) || 1,
+              probabilidad: 100,
+            })
+            .select('id')
+            .single();
+          if (newDeal) dealId = newDeal.id;
+        }
+      }
+
+      // Activity log
+      if (contactId) {
+        await supabase.from('activities').insert({
+          contact_id: contactId,
+          company_id,
+          deal_id: dealId,
+          tipo: 'pago_confirmado',
+          titulo: `Suscripción ${planId} (${billingPeriod}) · ${empresa || email}`,
+          metadata: {
+            stripe_subscription_id: subscription.id,
+            plan: planId,
+            billing: billingPeriod,
+            value: planValue,
+            referrer_partner_id: referrerPartnerId,
+          },
+          automatico: true,
+        });
+      }
+
+      // Comisión venta_directa al partner referido
+      if (referrerPartnerId && dealId) {
+        try {
+          await createCommissionForDeal({
+            deal_id: dealId,
+            partner_id: referrerPartnerId,
+            deal_value: planValue,
+          });
+        } catch (e) {
+          console.warn('[create-subscription] createCommissionForDeal failed:', e);
+        }
+      }
+    } catch (crmErr) {
+      console.error('[create-subscription] CRM sync error:', crmErr);
+    }
 
     return new Response(
       JSON.stringify({

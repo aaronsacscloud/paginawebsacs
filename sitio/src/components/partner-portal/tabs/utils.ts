@@ -43,6 +43,15 @@ export function fmtRel(d?: string | null): string {
   return fmtShort(d);
 }
 
+// Un deal cuenta como "ganado/cliente" si su stage es ganado o ya tiene closed_at.
+// Soporta ambos: legacy 'won' y schema oficial 'cerrada_ganada'.
+export function isDealWon(deal: any): boolean {
+  if (!deal) return false;
+  if (deal.stage === 'won' || deal.stage === 'cerrada_ganada') return true;
+  if (deal.closed_at && deal.stage !== 'cerrada_perdida' && deal.stage !== 'lost') return true;
+  return false;
+}
+
 // Detecta si estamos en modo demo via query param
 export function isDemoMode(): boolean {
   if (typeof window === 'undefined') return false;

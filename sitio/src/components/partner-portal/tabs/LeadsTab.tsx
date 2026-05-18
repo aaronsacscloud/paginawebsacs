@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { fmt, fmtDate, fmtRel, isDemoMode, apiGet, STAGE_LABELS, STAGE_COLORS, PLAN_LABELS } from './utils';
+import { fmt, fmtDate, fmtRel, isDemoMode, apiGet, STAGE_LABELS, STAGE_COLORS, PLAN_LABELS, isDealWon } from './utils';
 import { SS, C, stagePillStyle } from './styles';
 import { Icon } from './icons';
 import { demoLeads, demoProfile } from '../../../data/partner-portal-demo';
@@ -48,7 +48,7 @@ export default function LeadsTab({ user }: { user: { id: string; nombre: string;
         const dl = deals.find((d: any) => d.contact_id === c.id);
         let stage = c.lifecycle_stage || 'lead';
         if (dl) {
-          stage = dl.stage === 'won' || dl.closed_at ? 'pagado' : 'cliente';
+          stage = isDealWon(dl) ? 'pagado' : 'cliente';
         } else if (bk) {
           stage = bk.estado === 'realizada' ? 'demo_realizada' : 'demo_agendada';
         } else if (c.lifecycle_stage === 'prueba_gratis') {

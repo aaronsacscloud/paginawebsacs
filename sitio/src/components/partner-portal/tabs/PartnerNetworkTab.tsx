@@ -2,7 +2,7 @@
 // Si el partner no tiene el nivel, ve el preview "locked" con call-to-action motivacional.
 
 import { useEffect, useMemo, useState } from 'react';
-import { fmt, fmtNum, fmtDate, fmtRel, isDemoMode, apiGet, copyToClipboard } from './utils';
+import { fmt, fmtNum, fmtDate, fmtRel, isDemoMode, apiGet, copyToClipboard, isDealWon } from './utils';
 import { SS, C } from './styles';
 import { Icon } from './icons';
 import { demoPartnerNetwork, demoLeads } from '../../../data/partner-portal-demo';
@@ -45,7 +45,7 @@ export default function PartnerNetworkTab({ user }: Props) {
   // Determinar si está unlocked
   const realSucursales = isDemo
     ? demoPartnerNetwork.stats.sucursales_activas
-    : (leads?.deals || []).filter((d: any) => d.stage === 'won').length;
+    : (leads?.deals || []).filter((d: any) => isDealWon(d)).length;
   const realLevel = realSucursales >= 5 ? 3 : realSucursales >= 1 ? 2 : 1;
   const currentLevel = forceLevel ?? (isDemo ? 3 : realLevel);
   const isUnlocked = currentLevel >= 3;

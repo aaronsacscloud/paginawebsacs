@@ -248,10 +248,11 @@ export const POST: APIRoute = async ({ request }) => {
   // 4. Find or create contact
   let contact_id: string | null = null;
   let company_id: string | null = null;
+  let isNewContact = false;
 
   const { data: existingContact } = await supabase
     .from('contacts')
-    .select('id, lifecycle_stage')
+    .select('id, lifecycle_stage, referrer_partner_id')
     .eq('email', email)
     .limit(1)
     .single();
@@ -259,14 +260,17 @@ export const POST: APIRoute = async ({ request }) => {
   if (existingContact) {
     contact_id = existingContact.id;
 
-    // Update lifecycle if currently lower
+    // Update lifecycle if currently lower, y atribuir partner si aún no tiene
     const currentIdx = LIFECYCLE_ORDER.indexOf(existingContact.lifecycle_stage || 'lead');
     const targetIdx = LIFECYCLE_ORDER.indexOf('lead_calificado');
-    if (currentIdx < targetIdx) {
-      await supabase
-        .from('contacts')
-        .update({ lifecycle_stage: 'lead_calificado' })
-        .eq('id', contact_id);
+    const updates: Record<string, any> = {};
+    if (currentIdx < targetIdx) updates.lifecycle_stage = 'lead_calificado';
+    if (referrerPartnerId && !existingContact.referrer_partner_id) {
+      updates.referrer_partner_id = referrerPartnerId;
+      updates.fuente = 'partner-link';
+    }
+    if (Object.keys(updates).length > 0) {
+      await supabase.from('contacts').update(updates).eq('id', contact_id);
     }
   } else {
     const { data: newContact, error: cErr } = await supabase
@@ -277,18 +281,20 @@ export const POST: APIRoute = async ({ request }) => {
         whatsapp: whatsapp || null,
         tipo: 'lead',
         lifecycle_stage: 'lead_calificado',
-        fuente: 'booking-page',
+        fuente: referrerPartnerId ? 'partner-link' : 'booking-page',
         utm_source: utm_source || null,
         utm_medium: utm_medium || null,
         utm_campaign: utm_campaign || null,
         giro: giro || null,
         sucursales_interes: parseInt(String(sucursales)) || null,
+        referrer_partner_id: referrerPartnerId,
       })
       .select('id')
       .single();
 
     if (cErr) return new Response(JSON.stringify({ error: cErr.message }), { status: 500 });
     contact_id = newContact.id;
+    isNewContact = true;
   }
 
   // 5. Find or create company
@@ -340,6 +346,7 @@ export const POST: APIRoute = async ({ request }) => {
       company_id,
       stage: 'demo_agendada',
       owner_id: assignedHostId,
+      referrer_partner_id: referrerPartnerId,
     })
     .select('id')
     .single();
