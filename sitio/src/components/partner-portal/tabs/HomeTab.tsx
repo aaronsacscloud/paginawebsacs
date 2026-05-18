@@ -45,8 +45,10 @@ export default function HomeTab({ user, go }: Props) {
   const bookings = leads?.bookings || [];
   const deals = leads?.deals || [];
 
-  // Stages: contar leads únicos por stage final, no doble-contar
-  // Un lead con deal=won es cliente, no demo_realizada
+  // Stages: contar leads únicos por stage final, no doble-contar.
+  // Orden de prioridad: deal_ganado > demo_realizada > demo_agendada > prueba > nuevo.
+  // OJO: un deal se crea al agendar demo con stage='demo_agendada' — no es cliente
+  // hasta que isDealWon(deal) sea true (stage='cerrada_ganada' o closed_at).
   const stage = (() => {
     const dealsByContact: Record<string, any> = {};
     for (const d of deals) if (d.contact_id) dealsByContact[d.contact_id] = d;
@@ -57,11 +59,21 @@ export default function HomeTab({ user, go }: Props) {
     for (const c of contacts) {
       const dl = dealsByContact[c.id];
       const bk = bookingsByContact[c.id];
-      if (dl) clientes++;
-      else if (bk?.estado === 'realizada') demoReal++;
-      else if (bk?.estado === 'agendada' || bk?.estado === 'confirmada') demoAg++;
-      else if (c.lifecycle_stage === 'prueba_gratis') prueba++;
-      else nuevos++;
+
+      if (dl && isDealWon(dl)) {
+        clientes++;
+      } else if (bk?.estado === 'realizada' || dl?.stage === 'demo_realizada') {
+        demoReal++;
+      } else if (
+        bk?.estado === 'confirmada' || bk?.estado === 'agendada' ||
+        dl?.stage === 'demo_agendada'
+      ) {
+        demoAg++;
+      } else if (c.lifecycle_stage === 'prueba_gratis') {
+        prueba++;
+      } else {
+        nuevos++;
+      }
     }
     return { nuevos, prueba, demoAg, demoReal, clientes };
   })();
@@ -70,6 +82,18 @@ export default function HomeTab({ user, go }: Props) {
   const proximaDemo = bookings
     .filter((b: any) => (b.estado === 'agendada' || b.estado === 'confirmada') && new Date(b.fecha).getTime() > Date.now() - 86400000)
     .sort((a: any, b: any) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime())[0];
+
+  const proximaDemoLabel = (() => {
+    if (!proximaDemo?.fecha) return null;
+    const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    const [y, mo, d] = proximaDemo.fecha.split('-').map(Number);
+    const fecha = `${d} ${months[mo - 1]}`;
+    if (!proximaDemo.hora_inicio) return fecha;
+    const [h, m] = proximaDemo.hora_inicio.split(':').map(Number);
+    const ampm = h >= 12 ? 'pm' : 'am';
+    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return `${fecha} · ${h12}:${String(m).padStart(2, '0')}${ampm}`;
+  })();
 
   // Total generado año
   const totalAno = summary.totalAno || 0;
@@ -202,7 +226,7 @@ export default function HomeTab({ user, go }: Props) {
       <div data-tour="home-pipeline" style={SS.pipeRow}>
         <PipelineCard Icon={Icon.Sparkle}    num={stage.nuevos}             label="Nuevos"          sub={stage.nuevos > 0 ? 'Sin contactar' : 'Llegan vía tu link'} onClick={() => go('leads')} accent={C.muted} />
         <PipelineCard Icon={Icon.Gift}       num={stage.prueba}             label="Prueba activa"   sub={stage.prueba > 0 ? 'En período de 14 días' : 'Aún ninguno'}  onClick={() => go('leads')} accent={C.amber} />
-        <PipelineCard Icon={Icon.Phone}      num={stage.demoAg}             label="Demo agendada"   sub={proximaDemo ? `Próx: ${proximaDemo.invitee_nombre?.split(' ')[0] || 'cliente'}` : 'Por agendar'} onClick={() => go('leads')} accent={C.accent} />
+        <PipelineCard Icon={Icon.Phone}      num={stage.demoAg}             label="Demo agendada"   sub={proximaDemo ? `${proximaDemo.invitee_nombre?.split(' ')[0] || 'Lead'} · ${proximaDemoLabel}` : 'Por agendar'} onClick={() => go('leads')} accent={C.accent} />
         <PipelineCard Icon={Icon.Handshake}  num={Math.max(0, stage.demoReal)} label="Demo realizada" sub="Esperando propuesta"                                       onClick={() => go('leads')} accent={C.purple} />
         <PipelineCard Icon={Icon.CheckCircle} num={stage.clientes}          label="Clientes"        sub={totalAno > 0 ? `${fmt(totalAno)} generado` : '$0 aún'}      onClick={() => go('clientes')} accent={C.greenDark} />
       </div>
@@ -307,14 +331,16 @@ function activityColor(type?: string): string {
 function buildRealActivity(deals: any[], bookings: any[], contacts: any[]): Array<{ when: string; type: string; text: string; detail?: string }> {
   const out: Array<{ when: string; type: string; text: string; detail?: string }> = [];
   for (const d of deals.slice(0, 5)) {
-    if (d.closed_at) out.push({ when: d.closed_at, type: 'sale', text: `${d.nombre || 'Cliente'} firmó contrato`, detail: d.valor_total ? `${fmt(d.valor_total)} — Plan cerrado` : 'Plan cerrado' });
+    if (d.closed_at && isDealWon(d)) {
+      out.push({ when: d.closed_at, type: 'sale', text: `${d.nombre || 'Cliente'} firmó contrato`, detail: d.valor_total ? `${fmt(d.valor_total)} — Plan cerrado` : 'Plan cerrado' });
+    }
   }
   for (const b of bookings.slice(0, 5)) {
     out.push({
       when: b.created_at || b.fecha,
       type: 'booking',
       text: `${b.invitee_nombre || 'Lead'} agendó demo`,
-      detail: b.fecha ? `${new Date(b.fecha).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })} · ${b.hora_inicio || ''}` : undefined,
+      detail: b.fecha ? formatBookingSlot(b.fecha, b.hora_inicio) : undefined,
     });
   }
   for (const c of contacts.slice(0, 5)) {
@@ -326,6 +352,18 @@ function buildRealActivity(deals: any[], bookings: any[], contacts: any[]): Arra
     });
   }
   return out.sort((a, b) => new Date(b.when).getTime() - new Date(a.when).getTime()).slice(0, 5);
+}
+
+function formatBookingSlot(fechaIso?: string | null, hora?: string | null): string {
+  if (!fechaIso) return '';
+  const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const [y, mo, d] = fechaIso.split('-').map(Number);
+  const fecha = `${d} ${months[mo - 1]}`;
+  if (!hora) return fecha;
+  const [h, m] = hora.split(':').map(Number);
+  const ampm = h >= 12 ? 'pm' : 'am';
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${fecha} · ${h12}:${String(m).padStart(2, '0')}${ampm}`;
 }
 
 function guessLevel(deals: any[], content: any): { current: number; nombre: string } {

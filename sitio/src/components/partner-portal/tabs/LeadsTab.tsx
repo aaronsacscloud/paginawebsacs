@@ -10,6 +10,8 @@ type Lead = {
   id: string;
   nombre: string;
   empresa: string;
+  email?: string;
+  whatsapp?: string;
   ciudad?: string;
   fuente?: string;
   plan?: string;
@@ -17,6 +19,8 @@ type Lead = {
   commission_est?: number | null;
   created_at: string;
   bookingFecha?: string | null;
+  bookingHora?: string | null;
+  bookingEstado?: string | null;
 };
 
 export default function LeadsTab({ user }: { user: { id: string; nombre: string; email: string } }) {
@@ -46,11 +50,18 @@ export default function LeadsTab({ user }: { user: { id: string; nombre: string;
       .map((c: any) => {
         const bk = bookings.find((b: any) => b.contact_id === c.id);
         const dl = deals.find((d: any) => d.contact_id === c.id);
-        let stage = c.lifecycle_stage || 'lead';
-        if (dl) {
-          stage = isDealWon(dl) ? 'pagado' : 'cliente';
-        } else if (bk) {
-          stage = bk.estado === 'realizada' ? 'demo_realizada' : 'demo_agendada';
+        // Orden: deal_ganado > demo_realizada > demo_agendada > prueba > lead.
+        // El deal se crea al agendar demo — NO marca cliente hasta que esté won.
+        let stage: string;
+        if (dl && isDealWon(dl)) {
+          stage = 'pagado';
+        } else if (bk?.estado === 'realizada' || dl?.stage === 'demo_realizada') {
+          stage = 'demo_realizada';
+        } else if (
+          bk?.estado === 'confirmada' || bk?.estado === 'agendada' ||
+          dl?.stage === 'demo_agendada'
+        ) {
+          stage = 'demo_agendada';
         } else if (c.lifecycle_stage === 'prueba_gratis') {
           stage = 'prueba_gratis';
         } else {
@@ -60,6 +71,8 @@ export default function LeadsTab({ user }: { user: { id: string; nombre: string;
           id: c.id,
           nombre: c.nombre || 'Sin nombre',
           empresa: c.empresa || '—',
+          email: c.email || undefined,
+          whatsapp: c.whatsapp || undefined,
           ciudad: c.ciudad || undefined,
           fuente: c.fuente || undefined,
           plan: c.plan_interes || undefined,
@@ -67,6 +80,8 @@ export default function LeadsTab({ user }: { user: { id: string; nombre: string;
           commission_est: null,
           created_at: c.created_at,
           bookingFecha: bk?.fecha || null,
+          bookingHora: bk?.hora_inicio || null,
+          bookingEstado: bk?.estado || null,
         } as Lead;
       })
       // Excluir pagados — esos van a ClientesTab
@@ -152,6 +167,7 @@ export default function LeadsTab({ user }: { user: { id: string; nombre: string;
               <tr>
                 <th style={SS.th}>Negocio</th>
                 <th style={SS.th}>Etapa</th>
+                <th style={SS.th}>Demo</th>
                 <th style={SS.th}>Plan de interés</th>
                 <th style={SS.th}>Fuente</th>
                 <th style={SS.th}>Llegó</th>
@@ -166,6 +182,11 @@ export default function LeadsTab({ user }: { user: { id: string; nombre: string;
                   </td>
                   <td style={SS.td}>
                     <span style={stagePillStyle(STAGE_COLORS[l.stage] || C.muted)}>{STAGE_LABELS[l.stage]}</span>
+                  </td>
+                  <td style={SS.td}>
+                    {l.bookingFecha
+                      ? <span style={{ fontSize: 13, color: C.text }}>{fmtDemoSlot(l.bookingFecha, l.bookingHora)}</span>
+                      : <span style={{ color: C.mutedLight }}>—</span>}
                   </td>
                   <td style={SS.td}>{PLAN_LABELS[l.plan || ''] || (l.plan ? l.plan : '—')}</td>
                   <td style={SS.td}>{l.fuente ? capitalize(l.fuente) : '—'}</td>
@@ -190,10 +211,15 @@ export default function LeadsTab({ user }: { user: { id: string; nombre: string;
             <p style={{ fontSize: 14, color: C.muted, margin: '0 0 28px' }}>{drawerLead.nombre}{drawerLead.ciudad ? ` · ${drawerLead.ciudad}` : ''}</p>
 
             <DrawerRow label="Llegó" value={`${fmtRel(drawerLead.created_at)} (${fmtDate(drawerLead.created_at)})`} />
+            {drawerLead.email && <DrawerRow label="Email" value={drawerLead.email} />}
+            {drawerLead.whatsapp && <DrawerRow label="WhatsApp" value={drawerLead.whatsapp} />}
             {drawerLead.fuente && <DrawerRow label="Fuente" value={capitalize(drawerLead.fuente)} />}
             {drawerLead.plan && <DrawerRow label="Plan de interés" value={PLAN_LABELS[drawerLead.plan] || drawerLead.plan} />}
             {drawerLead.bookingFecha && (
-              <DrawerRow label="Demo" value={`${fmtDate(drawerLead.bookingFecha)} · ${new Date(drawerLead.bookingFecha) > new Date() ? 'Próxima' : 'Realizada'}`} />
+              <DrawerRow
+                label="Demo agendada"
+                value={`${fmtDemoSlotFull(drawerLead.bookingFecha, drawerLead.bookingHora)} · ${demoStatusLabel(drawerLead.bookingFecha, drawerLead.bookingEstado)}`}
+              />
             )}
 
             <div style={{ ...SS.note, marginTop: 24, fontSize: 13 }}>
@@ -362,4 +388,46 @@ function DrawerRow({ label, value }: { label: string; value: string }) {
 
 function capitalize(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+}
+
+const MONTHS_SHORT = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+// "22 may · 4:00pm" — fecha + hora compacta para la tabla
+function fmtDemoSlot(fechaIso?: string | null, hora?: string | null): string {
+  if (!fechaIso) return '—';
+  try {
+    const [y, mo, d] = fechaIso.split('-').map(Number);
+    const fecha = `${d} ${MONTHS_SHORT[mo - 1]}`;
+    if (!hora) return fecha;
+    const [h, m] = hora.split(':').map(Number);
+    const ampm = h >= 12 ? 'pm' : 'am';
+    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return `${fecha} · ${h12}:${String(m).padStart(2, '0')}${ampm}`;
+  } catch { return '—'; }
+}
+
+// "lunes 22 de may a las 4:00 PM" — verboso para drawer
+function fmtDemoSlotFull(fechaIso?: string | null, hora?: string | null): string {
+  if (!fechaIso) return '—';
+  try {
+    const [y, mo, d] = fechaIso.split('-').map(Number);
+    const dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+    const dow = new Date(y, mo - 1, d).getDay();
+    const fecha = `${dias[dow]} ${d} de ${MONTHS_SHORT[mo - 1]}`;
+    if (!hora) return fecha;
+    const [h, m] = hora.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return `${fecha} a las ${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+  } catch { return '—'; }
+}
+
+// Etiqueta del estado de la demo
+function demoStatusLabel(fechaIso?: string | null, estado?: string | null): string {
+  if (estado === 'realizada') return 'Completada';
+  if (estado === 'cancelada') return 'Cancelada';
+  if (estado === 'no_show') return 'No asistió';
+  if (!fechaIso) return 'Confirmada';
+  const ts = new Date(fechaIso + 'T12:00:00').getTime();
+  return ts > Date.now() ? 'Próxima' : 'Pasada · esperando actualización';
 }
