@@ -36,6 +36,17 @@ interface Invitation {
   interest_modal_opens?: number;
   interest_active_seconds?: number;
   interest_sessions?: number;
+  // Stats vivas del partner (solo presentes si team_member_id existe)
+  member_last_login_at?: string | null;
+  member_created_at?: string | null;
+  member_activo?: boolean | null;
+  stats_leads?: number;
+  stats_demos_agendadas?: number;
+  stats_demos_realizadas?: number;
+  stats_clientes?: number;
+  stats_comm_pending?: number;
+  stats_comm_earned?: number;
+  stats_comm_paid?: number;
 }
 
 const TIPO_LABELS: Record<string, { label: string; tagline: string; color: string }> = {
@@ -52,12 +63,32 @@ const ESTADO_LABELS: Record<string, { label: string; color: string; bg: string }
   draft:                 { label: 'Activa',                 color: '#3764c4', bg: 'rgba(75,123,229,0.1)' },
   sent:                  { label: 'Activa',                 color: '#3764c4', bg: 'rgba(75,123,229,0.1)' },
   viewed:                { label: 'Activa · vista',         color: '#3764c4', bg: 'rgba(75,123,229,0.1)' },
-  submitted_for_review:  { label: 'Aceptada por el partner', color: '#a06600', bg: 'rgba(232,168,56,0.16)' },
+  submitted_for_review:  { label: 'Firmada · por aprobar',  color: '#a06600', bg: 'rgba(232,168,56,0.16)' },
   accepted:              { label: 'Aprobada',               color: '#1e8471', bg: 'rgba(42,181,160,0.12)' },
   declined:              { label: 'Rechazada',              color: '#b93333', bg: 'rgba(229,75,75,0.10)' },
   cancelled:             { label: 'Cancelada',              color: '#666',    bg: '#f0f0f0' },
   expired:               { label: 'Vencida',                color: '#999',    bg: 'rgba(153,153,153,0.10)' },
 };
+
+// Sub-estado de actividad real del partner (solo aplica cuando estado='accepted').
+// Capa de información encima del estado de invitación para que el founder vea
+// si el partner ya está produciendo, solo entró sin hacer nada, o todavía no entró.
+type Activity = { label: string; color: string; bg: string };
+function getActivitySubstate(it: Invitation): Activity | null {
+  if (it.estado !== 'accepted') return null;
+  const clientes = Number(it.stats_clientes || 0);
+  const leads = Number(it.stats_leads || 0);
+  const demosAg = Number(it.stats_demos_agendadas || 0);
+  const demosRe = Number(it.stats_demos_realizadas || 0);
+  const hasLogin = !!it.member_last_login_at;
+
+  if (clientes > 0) return { label: `Produciendo · ${clientes} ${clientes === 1 ? 'cliente' : 'clientes'}`, color: '#0a6b3d', bg: 'rgba(16,185,129,0.16)' };
+  if (demosRe > 0)  return { label: `${demosRe} ${demosRe === 1 ? 'demo realizada' : 'demos realizadas'}`, color: '#5b21b6', bg: 'rgba(139,92,246,0.16)' };
+  if (demosAg > 0)  return { label: `${demosAg} ${demosAg === 1 ? 'demo agendada' : 'demos agendadas'}`, color: '#1e40af', bg: 'rgba(59,130,246,0.16)' };
+  if (leads > 0)    return { label: `${leads} ${leads === 1 ? 'lead' : 'leads'}`, color: '#3764c4', bg: 'rgba(75,123,229,0.14)' };
+  if (hasLogin)     return { label: 'Entró · sin actividad', color: '#a06600', bg: 'rgba(232,168,56,0.14)' };
+  return { label: 'No ha entrado al portal', color: '#999', bg: 'rgba(153,153,153,0.12)' };
+}
 
 const fmt = (n?: number) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const fmtDate = (d?: string) => {
@@ -332,7 +363,7 @@ export default function PartnersTab() {
           <EmptyState onCreate={() => setShowCreate(true)} />
         ) : (
           <div style={{ overflowX: 'auto', overflowY: 'visible', WebkitOverflowScrolling: 'touch', borderRadius: 14 }}>
-          <table style={{ width: '100%', minWidth: 1100, borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+          <table style={{ width: '100%', minWidth: 1400, borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
             <thead>
               <tr style={{ background: '#fafafa', borderBottom: '1px solid #e5e5e5' }}>
                 <th style={thStyle}>Folio</th>
@@ -342,6 +373,8 @@ export default function PartnersTab() {
                 <th style={thStyle} title="Veces que el prospecto abrió su invitación">Vistas</th>
                 <th style={thStyle} title="Interés del partner basado en tiempo activo, apertura del contrato, calc, intento de firma">Interés</th>
                 <th style={thStyle} title="Última vez que abrió la invitación">Última apertura</th>
+                <th style={thStyle} title="Última vez que el partner entró al portal post-aprobación">Actividad</th>
+                <th style={thStyle} title="Leads · demos agendadas / realizadas · clientes firmados">Pipeline</th>
                 <th style={thStyle}>Vigencia</th>
                 <th style={thStyle}>Estado</th>
                 <th style={{ ...thStyle, textAlign: 'right' as const }}>Acciones</th>
@@ -408,16 +441,63 @@ export default function PartnersTab() {
                         <span style={{ fontSize: '0.75rem', color: '#bbb', fontStyle: 'italic' }}>nunca</span>
                       )}
                     </td>
+                    {/* Actividad — login del portal post-aprobación */}
+                    <td style={tdStyle}>
+                      {it.estado !== 'accepted' ? (
+                        <span style={{ fontSize: '0.6875rem', color: '#ccc' }}>—</span>
+                      ) : it.member_last_login_at ? (
+                        <>
+                          <div style={{ fontSize: '0.75rem', color: '#0a6b3d', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5 }}>
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981' }} />
+                            {fmtRelative(it.member_last_login_at)}
+                          </div>
+                          <div style={{ fontSize: '0.625rem', color: '#999', marginTop: 1 }}>{fmtDate(it.member_last_login_at)}</div>
+                        </>
+                      ) : (
+                        <span style={{ fontSize: '0.6875rem', color: '#a06600', fontWeight: 600, fontStyle: 'italic' }}>
+                          no ha entrado
+                        </span>
+                      )}
+                    </td>
+                    {/* Pipeline — leads · demos · clientes */}
+                    <td style={tdStyle}>
+                      {it.estado !== 'accepted' ? (
+                        <span style={{ fontSize: '0.6875rem', color: '#ccc' }}>—</span>
+                      ) : (
+                        <PipelineCell
+                          leads={Number(it.stats_leads || 0)}
+                          demosAg={Number(it.stats_demos_agendadas || 0)}
+                          demosRe={Number(it.stats_demos_realizadas || 0)}
+                          clientes={Number(it.stats_clientes || 0)}
+                        />
+                      )}
+                    </td>
                     <td style={tdStyle}>{fmtDate(it.vigencia)}</td>
                     <td style={tdStyle}>
-                      <span style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                        padding: '4px 10px',
-                        background: estadoInfo.bg, color: estadoInfo.color,
-                        borderRadius: 999,
-                        fontSize: '0.6875rem', fontWeight: 700,
-                        letterSpacing: '0.04em', textTransform: 'uppercase',
-                      }}>{estadoInfo.label}</span>
+                      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 5, alignItems: 'flex-start' }}>
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          padding: '4px 10px',
+                          background: estadoInfo.bg, color: estadoInfo.color,
+                          borderRadius: 999,
+                          fontSize: '0.6875rem', fontWeight: 700,
+                          letterSpacing: '0.04em', textTransform: 'uppercase',
+                        }}>{estadoInfo.label}</span>
+                        {(() => {
+                          const sub = getActivitySubstate(it);
+                          if (!sub) return null;
+                          return (
+                            <span style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 5,
+                              padding: '2px 8px',
+                              background: sub.bg, color: sub.color,
+                              borderRadius: 999,
+                              fontSize: '0.625rem', fontWeight: 700,
+                              letterSpacing: '0.04em',
+                            }}>{sub.label}</span>
+                          );
+                        })()}
+                      </div>
                     </td>
                     <td style={{ ...tdStyle, textAlign: 'right' as const }}>
                       <button
@@ -648,6 +728,43 @@ function PartnerDetailDrawer({ partnerId, onClose }: { partnerId: string; onClos
           {error && <div style={{ padding: 16, background: 'rgba(229,75,75,0.10)', color: '#b93333', borderRadius: 8 }}>{error}</div>}
           {data && (
             <>
+              {/* Hero: estado vivo del partner */}
+              {(() => {
+                const leads = (data.contacts || []).length;
+                const demosAg = (data.bookings || []).filter((b: any) => b.estado === 'agendada' || b.estado === 'confirmada').length;
+                const demosRe = (data.bookings || []).filter((b: any) => b.estado === 'realizada').length;
+                const clientes = (data.deals || []).filter((d: any) => d.stage === 'cerrada_ganada' || d.stage === 'won' || (d.closed_at && d.stage !== 'cerrada_perdida')).length;
+                const hasLogin = !!data.member.last_login_at;
+                const stateColor = clientes > 0 ? '#0a6b3d' : demosRe > 0 ? '#5b21b6' : demosAg > 0 ? '#1e40af' : leads > 0 ? '#3764c4' : hasLogin ? '#a06600' : '#999';
+                const stateLabel =
+                  clientes > 0 ? `Produciendo · ${clientes} ${clientes === 1 ? 'cliente' : 'clientes'}`
+                  : demosRe > 0 ? `${demosRe} ${demosRe === 1 ? 'demo realizada' : 'demos realizadas'}`
+                  : demosAg > 0 ? `${demosAg} ${demosAg === 1 ? 'demo agendada' : 'demos agendadas'}`
+                  : leads > 0 ? `${leads} ${leads === 1 ? 'lead atribuido' : 'leads atribuidos'}`
+                  : hasLogin ? 'Entró al portal · sin actividad aún'
+                  : 'No ha entrado al portal aún';
+                return (
+                  <section style={{
+                    background: `linear-gradient(135deg, ${stateColor}10, ${stateColor}06)`,
+                    border: `1px solid ${stateColor}33`,
+                    borderRadius: 12,
+                    padding: '16px 18px',
+                    marginBottom: 16,
+                  }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '4px 10px', background: stateColor + '20', color: stateColor, borderRadius: 999, fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 12 }}>
+                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: stateColor }} />
+                      {stateLabel}
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+                      <HeroStat label="Login portal" value={hasLogin ? fmtRelative(data.member.last_login_at) : 'Nunca'} accent={hasLogin ? '#0a6b3d' : '#a06600'} />
+                      <HeroStat label="Leads" value={String(leads)} accent="#3764c4" />
+                      <HeroStat label="Demos" value={`${demosAg + demosRe}`} sub={`${demosAg} ag · ${demosRe} real`} accent="#5b21b6" />
+                      <HeroStat label="Clientes" value={String(clientes)} accent="#0a6b3d" />
+                    </div>
+                  </section>
+                );
+              })()}
+
               {/* Member overview */}
               <section style={dCard}>
                 <h3 style={dCardTitle}>Datos básicos</h3>
@@ -823,6 +940,16 @@ function DetailKpi({ label, value, accent }: { label: string; value: string; acc
     <div style={{ background: '#fff', borderRadius: 6, padding: 10, border: '1px solid #ececec', borderLeft: accent ? `3px solid ${accent}` : '1px solid #ececec' }}>
       <div style={{ fontSize: 9, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 4 }}>{label}</div>
       <div style={{ fontFamily: 'Clash Display, Sora, sans-serif', fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{value}</div>
+    </div>
+  );
+}
+
+function HeroStat({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent: string }) {
+  return (
+    <div style={{ background: '#fff', borderRadius: 8, padding: '10px 12px', border: '1px solid #ececec' }}>
+      <div style={{ fontSize: 9, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 4 }}>{label}</div>
+      <div style={{ fontFamily: 'Clash Display, Sora, sans-serif', fontSize: 18, fontWeight: 600, color: accent, letterSpacing: '-0.02em', lineHeight: 1.1 }}>{value}</div>
+      {sub && <div style={{ fontSize: 10, color: '#999', marginTop: 3 }}>{sub}</div>}
     </div>
   );
 }
@@ -1368,6 +1495,37 @@ const inputStyle: React.CSSProperties = {
   boxSizing: 'border-box' as const,
   width: '100%',
 };
+
+/** Celda compacta con leads · demos · clientes del partner. */
+function PipelineCell({ leads, demosAg, demosRe, clientes }: {
+  leads: number; demosAg: number; demosRe: number; clientes: number;
+}) {
+  if (!leads && !demosAg && !demosRe && !clientes) {
+    return <span style={{ fontSize: '0.6875rem', color: '#bbb', fontStyle: 'italic' }}>sin actividad aún</span>;
+  }
+  const Pill = ({ n, label, color, bg }: { n: number; label: string; color: string; bg: string }) => (
+    <span style={{
+      display: 'inline-flex', alignItems: 'baseline', gap: 3,
+      padding: '2px 7px',
+      background: bg, color,
+      borderRadius: 6,
+      fontSize: '0.6875rem', fontWeight: 700,
+      lineHeight: 1.3,
+    }}
+    title={label}>
+      <span style={{ fontFamily: 'var(--font-display)', fontSize: '0.8125rem' }}>{n}</span>
+      <span style={{ fontSize: '0.5625rem', fontWeight: 600, opacity: 0.8, letterSpacing: '0.04em', textTransform: 'uppercase' as const }}>{label}</span>
+    </span>
+  );
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 4 }}>
+      {leads > 0    && <Pill n={leads}    label="leads"    color="#3764c4" bg="rgba(75,123,229,0.12)" />}
+      {demosAg > 0  && <Pill n={demosAg}  label="agend."   color="#5b21b6" bg="rgba(139,92,246,0.12)" />}
+      {demosRe > 0  && <Pill n={demosRe}  label="realiz."  color="#7c3aed" bg="rgba(139,92,246,0.18)" />}
+      {clientes > 0 && <Pill n={clientes} label="clientes" color="#0a6b3d" bg="rgba(16,185,129,0.16)" />}
+    </div>
+  );
+}
 
 function InterestBadge({
   score, signatureAttempted, contractAccepted, modalOpens, activeSeconds, sessions,

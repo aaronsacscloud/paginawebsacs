@@ -196,6 +196,11 @@ export const GET: APIRoute = async ({ request, url }) => {
   }
 
   const invitationIds = invitations.map((i: any) => i.id);
+  const memberIds = invitations.map((i: any) => i.team_member_id).filter(Boolean) as string[];
+
+  // ─── 1. Interest sessions (mismo que antes) ─────────────────
+  let scoreMap = new Map<string, any>();
+  let countMap = new Map<string, number>();
   try {
     const { data: sessions } = await supabase
       .from('partner_invitation_sessions')
@@ -203,8 +208,6 @@ export const GET: APIRoute = async ({ request, url }) => {
       .in('invitation_id', invitationIds)
       .order('interest_score', { ascending: false });
 
-    const scoreMap = new Map<string, any>();
-    const countMap = new Map<string, number>();
     for (const s of (sessions || [])) {
       const inv = s.invitation_id;
       countMap.set(inv, (countMap.get(inv) || 0) + 1);
@@ -213,24 +216,126 @@ export const GET: APIRoute = async ({ request, url }) => {
         scoreMap.set(inv, s);
       }
     }
+  } catch { /* tabla puede no existir aún */ }
 
-    const enriched = invitations.map((inv: any) => {
-      const best = scoreMap.get(inv.id);
-      return {
-        ...inv,
-        interest_score: best ? (best.interest_score || 0) : 0,
-        interest_signature_attempted: !!best?.signature_attempted_at,
-        interest_contract_accepted: !!best?.contract_checkbox_at,
-        interest_modal_opens: best?.contract_modal_opens || 0,
-        interest_active_seconds: best?.total_active_seconds || 0,
-        interest_sessions: countMap.get(inv.id) || 0,
+  // ─── 2. Member stats (login + activity) ─────────────────────
+  // Para los partners que ya tienen team_member creado, traemos last_login_at
+  // y el contador real de leads/demos/clientes atribuidos a ellos.
+  const memberMap = new Map<string, { last_login_at: string | null; created_at: string; activo: boolean }>();
+  const leadsCountMap = new Map<string, number>();
+  const bookingsAgendadasMap = new Map<string, number>();
+  const bookingsRealizadasMap = new Map<string, number>();
+  const clientesCountMap = new Map<string, number>();
+  const commsPendingMap = new Map<string, number>();
+  const commsEarnedMap = new Map<string, number>();
+  const commsPaidMap = new Map<string, number>();
+
+  if (memberIds.length > 0) {
+    try {
+      const [
+        membersRes,
+        contactsRes,
+        bookingsAgRes,
+        bookingsReRes,
+        dealsRes,
+        commsRes,
+      ] = await Promise.all([
+        supabase
+          .from('team_members')
+          .select('id, last_login_at, created_at, activo')
+          .in('id', memberIds),
+        supabase
+          .from('contacts')
+          .select('referrer_partner_id')
+          .in('referrer_partner_id', memberIds),
+        supabase
+          .from('bookings')
+          .select('referrer_partner_id')
+          .in('referrer_partner_id', memberIds)
+          .in('estado', ['agendada', 'confirmada']),
+        supabase
+          .from('bookings')
+          .select('referrer_partner_id')
+          .in('referrer_partner_id', memberIds)
+          .eq('estado', 'realizada'),
+        supabase
+          .from('deals')
+          .select('referrer_partner_id, stage, closed_at')
+          .in('referrer_partner_id', memberIds),
+        supabase
+          .from('partner_commissions')
+          .select('partner_id, status, commission_amount')
+          .in('partner_id', memberIds)
+          .neq('status', 'cancelled'),
+      ]);
+
+      for (const m of (membersRes.data || [])) {
+        memberMap.set(m.id, {
+          last_login_at: m.last_login_at,
+          created_at: m.created_at,
+          activo: m.activo !== false,
+        });
+      }
+      const tally = (map: Map<string, number>, rows: any[] | null | undefined, key: string) => {
+        for (const r of (rows || [])) {
+          const k = r[key];
+          if (k) map.set(k, (map.get(k) || 0) + 1);
+        }
       };
-    });
-    return new Response(JSON.stringify(enriched), { status: 200, headers: { 'Content-Type': 'application/json' } });
-  } catch {
-    // Si la tabla no existe (migración pendiente) devolvemos sin enrich
-    return new Response(JSON.stringify(invitations), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      tally(leadsCountMap,         contactsRes.data,    'referrer_partner_id');
+      tally(bookingsAgendadasMap,  bookingsAgRes.data,  'referrer_partner_id');
+      tally(bookingsRealizadasMap, bookingsReRes.data,  'referrer_partner_id');
+      for (const d of (dealsRes.data || [])) {
+        const isWon = d.stage === 'cerrada_ganada' || d.stage === 'won' ||
+          (d.closed_at && d.stage !== 'cerrada_perdida' && d.stage !== 'lost');
+        if (isWon && d.referrer_partner_id) {
+          clientesCountMap.set(d.referrer_partner_id, (clientesCountMap.get(d.referrer_partner_id) || 0) + 1);
+        }
+      }
+      for (const c of (commsRes.data || [])) {
+        const k = c.partner_id;
+        const amt = Number(c.commission_amount || 0);
+        if (!k) continue;
+        if (c.status === 'pending') commsPendingMap.set(k, (commsPendingMap.get(k) || 0) + amt);
+        else if (c.status === 'earned') commsEarnedMap.set(k, (commsEarnedMap.get(k) || 0) + amt);
+        else if (c.status === 'paid')   commsPaidMap.set(k,   (commsPaidMap.get(k)   || 0) + amt);
+      }
+    } catch (e) {
+      console.warn('[partners/invitations] member stats enrichment failed:', e);
+    }
   }
+
+  // ─── 3. Construir respuesta enriquecida ────────────────────
+  const enriched = invitations.map((inv: any) => {
+    const best = scoreMap.get(inv.id);
+    const memberId = inv.team_member_id as string | null;
+    const memberInfo = memberId ? memberMap.get(memberId) : null;
+    const leads = memberId ? (leadsCountMap.get(memberId) || 0) : 0;
+    const demosAg = memberId ? (bookingsAgendadasMap.get(memberId) || 0) : 0;
+    const demosRe = memberId ? (bookingsRealizadasMap.get(memberId) || 0) : 0;
+    const clientes = memberId ? (clientesCountMap.get(memberId) || 0) : 0;
+    return {
+      ...inv,
+      interest_score: best ? (best.interest_score || 0) : 0,
+      interest_signature_attempted: !!best?.signature_attempted_at,
+      interest_contract_accepted: !!best?.contract_checkbox_at,
+      interest_modal_opens: best?.contract_modal_opens || 0,
+      interest_active_seconds: best?.total_active_seconds || 0,
+      interest_sessions: countMap.get(inv.id) || 0,
+      // Stats vivas del partner (solo presentes si ya hay team_member)
+      member_last_login_at: memberInfo?.last_login_at || null,
+      member_created_at: memberInfo?.created_at || null,
+      member_activo: memberInfo ? memberInfo.activo : null,
+      stats_leads: leads,
+      stats_demos_agendadas: demosAg,
+      stats_demos_realizadas: demosRe,
+      stats_clientes: clientes,
+      stats_comm_pending: memberId ? (commsPendingMap.get(memberId) || 0) : 0,
+      stats_comm_earned:  memberId ? (commsEarnedMap.get(memberId)  || 0) : 0,
+      stats_comm_paid:    memberId ? (commsPaidMap.get(memberId)    || 0) : 0,
+    };
+  });
+  return new Response(JSON.stringify(enriched), { status: 200, headers: { 'Content-Type': 'application/json' } });
 };
 
 export const POST: APIRoute = async ({ request }) => {
