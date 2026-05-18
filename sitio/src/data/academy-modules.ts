@@ -18,6 +18,19 @@ export type AcademyModule = {
   emoji: string;
   description: string;
   color: string;
+  /** Imagen ambiental del momento real de un cliente en este módulo. */
+  image: string;
+  /** Fase narrativa del journey ("Día 1", "Semana 1", etc.) */
+  phase: string;
+  /** Por qué este módulo le importa al cliente — para que el partner lo venda desde ese ángulo. */
+  clientStory: {
+    /** Qué siente/necesita el cliente cuando llega a este módulo. */
+    feeling: string;
+    /** Cómo le cambia la vida al terminar este módulo. */
+    outcome: string;
+    /** Frase que el partner puede usar al pitch. */
+    pitch: string;
+  };
   tasks: AcademyTask[];
 };
 
@@ -30,6 +43,13 @@ export const ACADEMY_MODULES: AcademyModule[] = [
     emoji: '🏢',
     color: '#3B82F6',
     description: 'Tu negocio, sucursales, almacenes, cajas y equipo de trabajo — la base de todo.',
+    image: '/images/aprende-sacs/modulo-1.webp',
+    phase: 'Día 1 · Cimientos',
+    clientStory: {
+      feeling: 'Acaba de firmar plan y abre el sistema por primera vez. Está nervioso — "espero no echarlo a perder". Tiene datos sueltos en la cabeza: cuántas sucursales tiene, quién es su equipo, qué impuestos aplica.',
+      outcome: 'En 40 minutos tiene su negocio configurado: logo, sucursales, almacenes, cajas, impuestos, ticket personalizado y su equipo invitado. La sensación es "esto ya es mío, ya está hecho a mi medida".',
+      pitch: 'Es la base — todo lo demás se construye encima. Aquí decidimos cómo opera su negocio (caja compartida vs. caja por vendedor) y lo configuramos para siempre.',
+    },
     tasks: [
       { id: 'v1t1', title: 'Completa la información de tu negocio', time: '5 min', category: 'Negocio' },
       { id: 'v1t2', title: 'Sucursales, almacenes, cajas y agentes', time: '8 min', category: 'Estructura' },
@@ -46,6 +66,13 @@ export const ACADEMY_MODULES: AcademyModule[] = [
     emoji: '📦',
     color: '#10B981',
     description: 'Tu catálogo profesional para venta física y en línea — productos que se ven bien y se venden solos.',
+    image: '/images/aprende-sacs/modulo-2.webp',
+    phase: 'Día 2-5 · Producto',
+    clientStory: {
+      feeling: 'Tiene 200, 500 o 2,000 productos en la cabeza, en un Excel viejo o en cajas sin etiquetar. Sabe que "subir todo" suena agobiante. La pregunta real: ¿cómo lo hago sin perder dos semanas?',
+      outcome: 'Termina con su catálogo profesional vivo: productos con fotos buenas (incluso si nunca tomó una foto pro), variantes correctas, precios estratégicos con margen visible, códigos de barras impresos. Su tienda en línea y POS comparten el mismo catálogo.',
+      pitch: 'Aquí pasa de "tengo productos sueltos" a "tengo un catálogo profesional listo para vender en todos lados". Las fotos con IA, las listas de precios y los combos cambian la economía del negocio.',
+    },
     tasks: [
       { id: 'v2t1',  title: 'Tipos de producto: simple, variante y compuesto', time: '4 min', category: 'Productos' },
       { id: 'v2t2',  title: 'Configura tus productos con variantes', time: '5 min', category: 'Variantes' },
@@ -65,6 +92,13 @@ export const ACADEMY_MODULES: AcademyModule[] = [
     emoji: '🛒',
     color: '#8B5CF6',
     description: 'Domina el punto de venta, pedidos, devoluciones, corte de caja y ventas desde tu tienda en línea.',
+    image: '/images/aprende-sacs/modulo-3.webp',
+    phase: 'Día 6-9 · Vender',
+    clientStory: {
+      feeling: 'El POS es el momento de la verdad — donde el cliente paga. Si algo falla aquí, pierde la venta y la confianza del comprador. Lo que más le preocupa: ¿qué pasa cuando llegue una devolución? ¿Y si mi vendedor se equivoca?',
+      outcome: 'Su equipo cobra en segundos con código de barras, aplica descuentos sin calculadora, procesa devoluciones y cambios sin pánico, cierra caja al centavo y maneja pedidos con anticipos sin confundir el dinero. Cada venta queda registrada y atribuida.',
+      pitch: 'Lo más importante para el cliente: aquí su negocio empieza a generar dinero medible. Cada escenario complicado (devolución, cambio, pago mixto, pedido con abono) tiene un flujo claro.',
+    },
     tasks: [
       { id: 'v3t1', title: 'Tu primera venta completa en el Punto de Venta', time: '6 min', category: 'Ventas' },
       { id: 'v3t2', title: 'Búsqueda de productos: nombre, SKU, código de barras y búsqueda directa', time: '5 min', category: 'Ventas' },
@@ -83,6 +117,13 @@ export const ACADEMY_MODULES: AcademyModule[] = [
     emoji: '🚀',
     color: '#F59E0B',
     description: 'Importa tu catálogo, carga tu inventario, trae tus clientes y arranca a vender de verdad.',
+    image: '/images/aprende-sacs/modulo-4.webp',
+    phase: 'Día 10 · Lanzamiento',
+    clientStory: {
+      feeling: 'Es el día de arranque real. Trae años de datos en otro sistema o en hojas de cálculo. El miedo: "¿y si pierdo el historial de mis clientes? ¿y si los precios suben mal? ¿y si el primer día algo falla frente al cliente?"',
+      outcome: 'Migra todo limpio (catálogo, inventario, clientes con saldos pendientes), corrige los errores típicos antes de que duelan, hace una venta de prueba completa, y termina el día 1 real con su primer corte de caja en SACS sin sorpresas.',
+      pitch: 'Este es el módulo que vuelve la migración un evento controlado y no un trauma. Si el partner acompaña este día específicamente, el cliente nunca lo olvida.',
+    },
     tasks: [
       { id: 'v4t1', title: 'Elige tu ruta: las 3 formas de cargar tu catálogo e inventario', time: '5 min',  category: 'Planificación' },
       { id: 'v4t2', title: 'Importa tu catálogo e inventario inicial', time: '10 min', category: 'Importación' },
@@ -98,6 +139,13 @@ export const ACADEMY_MODULES: AcademyModule[] = [
     emoji: '📊',
     color: '#EC4899',
     description: 'Cortes de caja, reportes, recepción de mercancía, KPIs y tu rutina de operación.',
+    image: '/images/aprende-sacs/modulo-5.webp',
+    phase: 'Semana 2 · Rutina',
+    clientStory: {
+      feeling: 'Ya vende, pero opera en automático sin entender qué le dicen los números. "¿Por qué siempre me falta dinero al cierre?" "¿Cuál es mi producto que sí deja margen?" Sospecha que pierde dinero pero no sabe dónde.',
+      outcome: 'Domina el dashboard en 30 segundos: sabe cuánto vendió, cuál es su ticket promedio, qué productos ya no se mueven, cuál vendedor rinde más y dónde está su mejor margen. Cierra cada día con una rutina clara — apertura, monitoreo, cierre.',
+      pitch: 'Aquí el cliente pasa de "tener un POS" a "operar con datos". Es donde percibe que el sistema le devuelve valor todos los días — y por eso renueva.',
+    },
     tasks: [
       { id: 'v5t1', title: 'Entiende tu corte de caja: leyendo los números', time: '6 min', category: 'Caja' },
       { id: 'v5t2', title: 'Tus reportes de ventas: las métricas que importan', time: '6 min', category: 'Reportes' },
@@ -113,6 +161,13 @@ export const ACADEMY_MODULES: AcademyModule[] = [
     emoji: '🌐',
     color: '#3B82F6',
     description: 'Tu tienda en línea, pagos, envíos, pedidos digitales y canales de venta — todo con el mismo inventario.',
+    image: '/images/aprende-sacs/modulo-6.webp',
+    phase: 'Semana 3 · Escalar',
+    clientStory: {
+      feeling: 'Su tienda física ya opera bien — ahora quiere abrir el canal digital sin volverse loca. La preocupación: "¿se me va a duplicar el inventario? ¿voy a vender lo que no tengo? ¿cómo cobro y envío sin que sea un caos?"',
+      outcome: 'Su tienda en línea queda lista con su marca, métodos de pago conectados (Stripe, MercadoPago), zonas de envío configuradas, y todo conectado al mismo inventario del POS. Empieza a recibir pedidos en línea mientras duerme — sin sobreventas, sin doble captura.',
+      pitch: 'Este es el módulo que escala el negocio. Una venta en línea descuenta del mismo stock que el POS — un solo inventario, todos los canales. Aquí el cliente ve el verdadero ROI de SACS.',
+    },
     tasks: [
       { id: 'v6t1', title: 'Configura y personaliza tu tienda en línea', time: '7 min', category: 'Tienda' },
       { id: 'v6t2', title: 'Publica productos y arma tu catálogo digital', time: '6 min', category: 'Catálogo' },
