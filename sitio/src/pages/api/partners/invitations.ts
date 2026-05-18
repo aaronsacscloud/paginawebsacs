@@ -325,6 +325,15 @@ export const PUT: APIRoute = async ({ request }) => {
       delete clean.auto_approve;
     }
 
+    if (Object.keys(clean).length === 0) {
+      // Most common cause: admin UI sent the PUT without `x-user-id: founder`,
+      // so the role check above downgraded to PUBLIC_FIELDS and none of the
+      // submitted keys matched. Without this guard, Supabase would run
+      // `update({})` and return 0 rows → cryptic "Cannot coerce the result
+      // to a single JSON object".
+      return new Response(JSON.stringify({ error: 'no_editable_fields_in_payload' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    }
+
     let { data, error } = await supabase
       .from('partner_invitations')
       .update(clean)

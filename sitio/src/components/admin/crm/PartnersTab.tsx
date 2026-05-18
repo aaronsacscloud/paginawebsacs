@@ -1060,7 +1060,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
       const method = editing ? 'PUT' : 'POST';
       const body = editing ? { id: editing.id, ...form } : form;
       const res = await fetch('/api/partners/invitations', {
-        method, headers: { 'Content-Type': 'application/json' },
+        method, headers: { 'Content-Type': 'application/json', 'x-user-id': 'founder' },
         body: JSON.stringify(body),
       });
       const data = await res.json();
