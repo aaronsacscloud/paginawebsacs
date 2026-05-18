@@ -423,6 +423,7 @@ export default function PartnersTab() {
                     </td>
                     <td style={tdStyle}>
                       <InterestBadge
+                        estado={it.estado}
                         score={Number(it.interest_score || 0)}
                         signatureAttempted={!!it.interest_signature_attempted}
                         contractAccepted={!!it.interest_contract_accepted}
@@ -1528,11 +1529,49 @@ function PipelineCell({ leads, demosAg, demosRe, clientes }: {
 }
 
 function InterestBadge({
-  score, signatureAttempted, contractAccepted, modalOpens, activeSeconds, sessions,
+  estado, score, signatureAttempted, contractAccepted, modalOpens, activeSeconds, sessions,
 }: {
+  estado?: string;
   score: number; signatureAttempted: boolean; contractAccepted: boolean;
   modalOpens: number; activeSeconds: number; sessions: number;
 }) {
+  // Si la persona ya firmó (submitted_for_review) o ya está aprobada (accepted),
+  // el "interés" pre-firma deja de ser información viva — pasamos a mostrar
+  // que la firma quedó hecha. No tiene sentido seguir diciendo "casi firma"
+  // cuando ya firmó.
+  if (estado === 'submitted_for_review' || estado === 'accepted') {
+    const isApproved = estado === 'accepted';
+    return (
+      <span
+        title={isApproved ? 'Firmó la invitación y fue aprobada como partner' : 'Firmó la invitación · pendiente de aprobación del founder'}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '4px 10px',
+          background: 'rgba(16,185,129,0.12)', color: '#0a6b3d',
+          borderRadius: 999,
+          fontSize: '0.75rem', fontWeight: 700,
+          letterSpacing: '0.02em',
+        }}>
+        <span aria-hidden="true">✓</span>
+        <span>FIRMÓ</span>
+      </span>
+    );
+  }
+  if (estado === 'declined') {
+    return (
+      <span style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        padding: '4px 10px',
+        background: 'rgba(229,75,75,0.10)', color: '#b93333',
+        borderRadius: 999,
+        fontSize: '0.75rem', fontWeight: 700,
+        letterSpacing: '0.02em',
+      }}>
+        <span aria-hidden="true">✕</span>
+        <span>RECHAZÓ</span>
+      </span>
+    );
+  }
   if (score === 0 && !signatureAttempted && sessions === 0) {
     return <span style={{ fontSize: '0.75rem', color: '#bbb', fontStyle: 'italic' }}>—</span>;
   }
