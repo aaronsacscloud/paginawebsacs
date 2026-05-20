@@ -32,7 +32,7 @@ PLANES DISPONIBLES (cada plan incluye todo lo del plan anterior):
    - 3 créditos de Addons incluidos
    - Soporte 9 AM–5 PM con tickets en 15–30 min, migración en 1 día
 
-4. AUTOMATIZA ($2,900 MXN/mes, $2,417 anual) — Operación en piloto automático con IA.
+4. AUTOMATIZA ($5,900 MXN/mes, $4,917 anual) — Operación en piloto automático con IA.
    - Todo de Fideliza +
    - IA: nivelación, reabasto y traspasos automáticos
    - AXO copiloto IA: consultas, detección de problemas, sugerencias
