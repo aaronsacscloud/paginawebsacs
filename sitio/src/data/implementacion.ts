@@ -142,7 +142,7 @@ export const INCLUIDO_ITEMS: ImplItem[] = [
   { emoji: '👨‍💼', title: '2 sesiones con consultor', description: 'Dos sesiones personalizadas con un consultor experto para resolver dudas específicas de tu negocio, optimizar tu operación o planear la siguiente etapa de crecimiento.' },
   { emoji: '🎓', title: 'Academia SACS', description: 'Dentro del sistema tienes acceso a la Academia: un programa paso a paso que te guía por todo el proceso de implementación para medir, analizar y mejorar tu negocio.' },
   { emoji: '📅', title: 'Workshops semanales', description: 'Sesiones en vivo cada semana donde puedes aprender funciones nuevas del sistema, ver mejores prácticas y hacer preguntas directamente al equipo de SACS.' },
-  { emoji: '💬', title: 'Chat y WhatsApp 24/7', description: 'Para cualquier duda rápida o tema menor del sistema, tienes acceso a soporte por chat y WhatsApp las 24 horas, los 7 días de la semana. Siempre hay alguien para ayudarte.' },
+  { emoji: '💬', title: 'Chat y WhatsApp', description: 'Para cualquier duda rápida o tema menor del sistema, tienes acceso a soporte por chat de SACS y WhatsApp de 9 AM a 5 PM. Siempre hay alguien para ayudarte.' },
   { emoji: '📚', title: 'Curso paso a paso', description: 'Un curso completo que te lleva de la mano por todos los módulos del sistema. Desde lo básico hasta lo avanzado, con ejemplos prácticos para tu tipo de negocio.' },
   { emoji: '🔄', title: 'Migración completa', description: 'No empiezas de cero. Migramos toda tu información de tu sistema anterior o Excel: productos, precios, clientes, proveedores e inventario. Nosotros hacemos todo el trabajo.' },
 ];
@@ -151,7 +151,7 @@ export const SOPORTE_ITEMS: ImplItem[] = [
   { emoji: '👨‍💼', title: 'Consultor 1-a-1', description: 'Dos sesiones personalizadas incluidas para temas complejos de tu negocio.', badge: '2 sesiones incluidas' },
   { emoji: '📅', title: 'Workshops en vivo', description: 'Sesiones semanales para aprender funciones avanzadas y mejores prácticas.', badge: 'Cada semana' },
   { emoji: '🎓', title: 'Academia SACS', description: 'Programa paso a paso dentro del sistema para aprender a tu propio ritmo.', badge: 'Siempre disponible' },
-  { emoji: '💬', title: 'Chat y WhatsApp', description: 'Soporte inmediato para cualquier duda rápida o tema menor del sistema.', badge: '24/7 — siempre abierto' },
+  { emoji: '💬', title: 'Chat y WhatsApp', description: 'Soporte inmediato para cualquier duda rápida o tema menor del sistema.', badge: '9 AM–5 PM · chat SACS y WhatsApp' },
 ];
 
 export const OUTCOMES: ImplOutcome[] = [

@@ -373,7 +373,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
   const QuotesView = () => {
     const [quotes, setQuotes] = useState<any[]>([]);
     const [showDrawer, setShowDrawer] = useState(false);
-    const [qf, setQf] = useState<any>({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida en planes de pago. Soporte 24/7 incluido. Sin contratos de permanencia.' });
+    const [qf, setQf] = useState<any>({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida en planes de pago. Soporte por chat SACS y WhatsApp incluido. Sin contratos de permanencia.' });
     const [qSearch, setQSearch] = useState('');
     const [qFilter, setQFilter] = useState<string>('all');
     const [qSort, setQSort] = useState<{ col: string; asc: boolean }>({ col: 'created_at', asc: false });
@@ -572,7 +572,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       }
 
       setShowDrawer(false);
-      setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida. Soporte 24/7. Sin contratos.' });
+      setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida. Soporte por chat SACS y WhatsApp. Sin contratos.' });
       const d = await fetch('/api/revenue/quotes').then(r => r.json());
       setQuotes(Array.isArray(d) ? d : []);
       setSaving(false);
@@ -968,7 +968,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               Exportar
             </button>
             <button onClick={() => { setTranscript(''); setAnalysisResult(null); setShowTranscriptModal(true); }} style={{ ...S.btn, background: '#f5f5f5', color: '#555', padding: '8px 14px' }}>Transcripción</button>
-            <button onClick={() => { setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida. Soporte 24/7. Sin contratos.' }); setShowDrawer(true); }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', padding: '8px 18px' }}>+ Nueva cotización</button>
+            <button onClick={() => { setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida. Soporte por chat SACS y WhatsApp. Sin contratos.' }); setShowDrawer(true); }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', padding: '8px 18px' }}>+ Nueva cotización</button>
           </div>
         </div>
 
@@ -1533,7 +1533,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   const ivaMode = rec.iva_mode || 'sin';
                   // Notas extra → condiciones
                   const notasExtra = (r.notas_extra || []).filter(Boolean);
-                  const condBase = 'Precios en MXN. Migracion incluida. Soporte 24/7. Sin contratos.';
+                  const condBase = 'Precios en MXN. Migracion incluida. Soporte por chat SACS y WhatsApp. Sin contratos.';
                   const condiciones = notasExtra.length > 0 ? condBase + '\n\n' + notasExtra.join('\n') : condBase;
                   setQf({
                     empresa: r.client?.empresa || '', contacto: r.client?.contacto || '',

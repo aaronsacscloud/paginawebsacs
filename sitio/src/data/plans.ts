@@ -65,7 +65,8 @@ export const plans: Plan[] = [
     ],
     services: [
       '1 sucursal',
-      'Soporte 9 AM–5 PM (<30 min)',
+      'Soporte 9 AM–5 PM · chat SACS y WhatsApp',
+      'Tickets resueltos en 30–90 min',
     ],
   },
   {
@@ -88,7 +89,8 @@ export const plans: Plan[] = [
     services: [
       'Multi-sucursal',
       'Reunión de introducción',
-      'Soporte 9 AM–5 PM (<30 min)',
+      'Soporte 9 AM–5 PM · chat SACS y WhatsApp',
+      'Tickets resueltos en 30–90 min',
       'Migración gratis (3 días)',
     ],
   },
@@ -113,9 +115,9 @@ export const plans: Plan[] = [
     ],
     services: [
       'Multi-sucursal',
-      'Ejecutivo de cuenta',
       'Reunión mensual',
-      'Soporte 24/7 (<2 min)',
+      'Soporte 9 AM–5 PM · chat SACS y WhatsApp',
+      'Tickets resueltos en 15–30 min',
       'Migración gratis (1 día)',
     ],
   },
@@ -143,7 +145,8 @@ export const plans: Plan[] = [
       'Especialista IA dedicado',
       'Onboarding de automatización (diseño de workflows)',
       'Sesión mensual de optimización IA',
-      'Soporte 24/7 (<2 min)',
+      'Soporte 24/7 · chat SACS y WhatsApp',
+      'Tickets resueltos en <2 min',
       'Migración gratis',
       'Acceso anticipado a nuevas funciones IA',
     ],
@@ -157,7 +160,7 @@ export const universalFeatures: string[] = [
   'Tienda en línea',
   'Vende en Facebook, Instagram y TikTok Shop',
   'Aparece en Google, ChatGPT y Gemini',
-  'Soporte 24/7 por chat y WhatsApp',
+  'Soporte por chat SACS y WhatsApp',
   'Dispositivos ilimitados',
   'Usuarios ilimitados',
   'Hasta 10,000 productos',
@@ -390,6 +393,6 @@ export const pricingFaqs: FAQ[] = [
   },
   {
     question: '¿El soporte tiene costo adicional?',
-    answer: 'No. Todos los planes incluyen soporte 24/7 por chat y WhatsApp. Los planes Controla, Fideliza y Multiplica y Automatiza incluyen ejecutivo de cuenta dedicado.',
+    answer: 'No. Todos los planes incluyen soporte por chat de SACS y WhatsApp sin costo adicional. Vende y Controla atienden de 9 AM a 5 PM con resolución de tickets en 30–90 min; Fideliza y Multiplica, en 15–30 min; y Automatiza incluye soporte 24/7. Automatiza además incluye un especialista IA dedicado.',
   },
 ];
