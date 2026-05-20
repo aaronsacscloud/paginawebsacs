@@ -36,8 +36,8 @@ export const PLANS: Plan[] = [
   {
     id: 'fideliza',
     nombre: 'Fideliza',
-    precio_mensual: 2400,
-    precio_anual: 24000,
+    precio_mensual: 1400,
+    precio_anual: 14000,
     sucursales_min: 1,
     descripcion: 'Controla + CRM + programa de lealtad + e-commerce',
     features: ['Todo Controla', 'CRM integrado', 'Programa de lealtad', 'Tienda en línea', 'Social commerce', 'Email marketing', 'Promociones avanzadas'],
