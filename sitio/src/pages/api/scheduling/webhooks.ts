@@ -1,7 +1,20 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { getCurrentUser } from '../../../lib/auth/scope';
 
 export const prerender = false;
+
+// Webhooks de scheduling son integraciones internas SACS (Zapier, n8n, etc.).
+// Reciben TODOS los bookings del sistema. Solo founder/cs pueden gestionarlos.
+// Si en el futuro queremos webhooks por partner, requiere refactor de schema
+// (agregar owner_id a cada webhook entry y filtrar en fireSchedulingWebhooks).
+async function assertFounder(request: Request) {
+  const user = await getCurrentUser(request);
+  if (!user || (user.role !== 'founder' && user.role !== 'cs')) {
+    return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403 });
+  }
+  return null;
+}
 
 const CONFIG_SLUG = '_branding';
 
@@ -32,7 +45,9 @@ async function saveConfig(rowId: string, config: any): Promise<void> {
 }
 
 // GET: List webhooks
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ request }) => {
+  const denied = await assertFounder(request);
+  if (denied) return denied;
   try {
     const { config } = await loadConfig();
     const webhooks = config.webhooks || [];
@@ -47,6 +62,8 @@ export const GET: APIRoute = async () => {
 
 // POST: Register a webhook
 export const POST: APIRoute = async ({ request }) => {
+  const denied = await assertFounder(request);
+  if (denied) return denied;
   try {
     const body = await request.json();
     const { url, events, secret } = body;
@@ -95,6 +112,8 @@ export const POST: APIRoute = async ({ request }) => {
 
 // DELETE: Remove a webhook
 export const DELETE: APIRoute = async ({ request }) => {
+  const denied = await assertFounder(request);
+  if (denied) return denied;
   try {
     const body = await request.json();
     const { id } = body;

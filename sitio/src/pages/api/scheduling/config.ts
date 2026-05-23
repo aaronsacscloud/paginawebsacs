@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { getCurrentUser } from '../../../lib/auth/scope';
 
 export const prerender = false;
 
@@ -34,6 +35,12 @@ export const GET: APIRoute = async () => {
 };
 
 export const PUT: APIRoute = async ({ request }) => {
+  // Config de scheduling es GLOBAL (branding, webhooks). Solo founder/cs
+  // pueden modificarla. Partner no edita config global.
+  const user = await getCurrentUser(request);
+  if (!user || (user.role !== 'founder' && user.role !== 'cs')) {
+    return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403 });
+  }
   try {
     const body = await request.json();
 
