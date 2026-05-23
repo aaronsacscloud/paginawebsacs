@@ -759,10 +759,15 @@ const COTIZADOR_MOBILE_CSS = `
   .cq-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .cq-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   @media (max-width: 640px) {
-    .cq-drawer { padding: 20px 18px 96px !important; width: 100vw !important; max-width: 100vw !important; }
+    .cq-drawer { padding: 20px 18px 24px !important; width: 100vw !important; max-width: 100vw !important; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0)) !important; }
     .cq-row-2 { grid-template-columns: 1fr; gap: 0; }
     .cq-row-3 { grid-template-columns: 1fr; gap: 0; }
-    .cq-actions { position: sticky; bottom: 0; background: linear-gradient(180deg, transparent, #fff 24%); padding-top: 24px; padding-bottom: 12px; margin-left: -18px; margin-right: -18px; padding-left: 18px; padding-right: 18px; }
+    .cq-actions {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 10px !important;
+      margin-top: 32px !important;
+    }
     .cq-actions > button { width: 100%; padding: 14px 20px; font-size: 14px; }
   }
 `;

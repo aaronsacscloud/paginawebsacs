@@ -104,33 +104,75 @@ export default function CrmDashboard() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearch, setShowSearch] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const close = (e: MouseEvent) => {
       if (!(e.target as HTMLElement)?.closest?.('.crm-search-wrapper')) setShowSearch(false);
     };
     document.addEventListener('click', close);
-    return () => document.removeEventListener('click', close);
+
+    // Detectar mobile y auto-colapsar
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 900;
+      setIsMobile(mobile);
+      if (mobile) setSidebarCollapsed(true);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => {
+      document.removeEventListener('click', close);
+      window.removeEventListener('resize', checkMobile);
+    };
   }, []);
 
   const switchTab = (t: Tab) => {
     setTab(t);
+    if (isMobile) setSidebarCollapsed(true);
     const url = new URL(window.location.href);
     url.searchParams.set('tab', t);
     history.replaceState(null, '', url.toString());
   };
 
   const revenueTab = (['clientes', 'cotizaciones', 'pagos', 'config'].includes(tab)) ? tab : 'dashboard';
-  const sidebarWidth = sidebarCollapsed ? 60 : 220;
+  // En mobile, cuando expanded el sidebar es overlay (no empuja el contenido)
+  const mobileExpanded = isMobile && !sidebarCollapsed;
+  const sidebarWidth = sidebarCollapsed ? (isMobile ? 0 : 60) : 220;
+  const mainMarginLeft = isMobile ? 0 : sidebarWidth;
 
   return (
     <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", minHeight: '100vh', background: '#f5f6f8', display: 'flex' }}>
+      <style dangerouslySetInnerHTML={{ __html: CRM_MOBILE_CSS }} />
+      {/* Backdrop mobile cuando sidebar overlay abierto */}
+      {mobileExpanded && (
+        <div onClick={() => setSidebarCollapsed(true)} style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 109,
+        }} />
+      )}
+      {/* Hamburger button mobile (visible solo cuando sidebar colapsado) */}
+      {isMobile && sidebarCollapsed && (
+        <button onClick={() => setSidebarCollapsed(false)} style={{
+          position: 'fixed', top: 12, left: 12, zIndex: 108, width: 40, height: 40,
+          background: '#fff', border: '1px solid #e8e8e8', borderRadius: 10,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        }} aria-label="Abrir menú">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.8" strokeLinecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"/>
+            <line x1="4" y1="12" x2="20" y2="12"/>
+            <line x1="4" y1="17" x2="20" y2="17"/>
+          </svg>
+        </button>
+      )}
       {/* ─── Sidebar ─── */}
       <div style={{
-        width: sidebarWidth, flexShrink: 0, background: '#fff', color: '#1a1a1a',
-        display: 'flex', flexDirection: 'column', transition: 'width 0.2s ease',
+        width: mobileExpanded ? 260 : sidebarWidth, flexShrink: 0, background: '#fff', color: '#1a1a1a',
+        display: 'flex', flexDirection: 'column', transition: 'width 0.2s ease, transform 0.2s ease',
         position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 110, overflow: 'hidden',
         borderRight: '1px solid #e8e8e8',
+        transform: (isMobile && sidebarCollapsed) ? 'translateX(-100%)' : 'translateX(0)',
+        boxShadow: mobileExpanded ? '4px 0 24px rgba(0,0,0,0.18)' : 'none',
       }}>
         {/* Logo */}
         <div style={{
@@ -268,7 +310,7 @@ export default function CrmDashboard() {
       </div>
 
       {/* ─── Main Content ─── */}
-      <div style={{ flex: 1, marginLeft: sidebarWidth, transition: 'margin-left 0.2s ease', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <div style={{ flex: 1, marginLeft: mainMarginLeft, transition: 'margin-left 0.2s ease', display: 'flex', flexDirection: 'column', minHeight: '100vh', paddingTop: isMobile ? 60 : 0 }}>
         {/* Content */}
         {tab === 'dashboard' ? (
           <ErrorBoundary><DashboardTab /></ErrorBoundary>
@@ -334,3 +376,9 @@ export default function CrmDashboard() {
     </div>
   );
 }
+
+const CRM_MOBILE_CSS = `
+  @media (max-width: 900px) {
+    body { overflow-x: hidden; }
+  }
+`;
