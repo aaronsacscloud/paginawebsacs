@@ -12,7 +12,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { SS, C, stagePillStyle } from './styles';
 import { Icon } from './icons';
-import { fmt, fmtDate, isDemoMode, apiGet, copyToClipboard } from './utils';
+import { fmt, fmtDate, fmtRel, isDemoMode, apiGet, copyToClipboard } from './utils';
 import { demoQuotes } from '../../../data/partner-portal-demo';
 import { PLAN_PRICES, IMPL_PRICES, PLANS } from '../../../lib/quotes/constants';
 import { calcQuoteTotals } from '../../../lib/quotes/totals';
@@ -75,6 +75,45 @@ const PLAN_LABELS_ES: Record<string, string> = {
 
 const isLocked = (estado: string) => ['accepted', 'paid', 'rejected'].includes(estado);
 
+// ─── Engagement helpers ────────────────────────────────────────────────────
+// Backend trackea views/timeline en meta dentro de `notas` (POST /api/revenue/quote-view
+// cada vez que el cliente abre el link público). Aquí solo leemos.
+
+type QuoteAnalytics = {
+  views: number;
+  firstViewedAt: string | null;
+  lastViewedAt: string | null;
+  timeline: Array<{ event: string; at: string; [k: string]: any }>;
+};
+
+function getQuoteAnalytics(q: Pick<Quote, 'notas'>): QuoteAnalytics {
+  const meta = parseMeta(q.notas || '').meta || {};
+  return {
+    views: Number(meta.views) || 0,
+    firstViewedAt: meta.first_viewed_at || null,
+    lastViewedAt: meta.last_viewed_at || null,
+    timeline: Array.isArray(meta.timeline) ? meta.timeline : [],
+  };
+}
+
+const TIMELINE_LABELS: Record<string, string> = {
+  viewed: 'Cliente abrió la cotización',
+  accepted: 'Cliente aceptó',
+  rejected: 'Cliente rechazó',
+  paid: 'Cliente pagó',
+  extended: 'Vigencia extendida',
+  sent: 'Cotización enviada',
+};
+
+const TIMELINE_COLORS: Record<string, string> = {
+  viewed: C.brand,
+  accepted: C.green,
+  rejected: C.red,
+  paid: C.greenDark,
+  extended: C.amber,
+  sent: C.muted,
+};
+
 export default function CotizacionesTab({ user }: { user: { id: string; nombre: string; email: string } }) {
   const [quotes, setQuotes] = useState<Quote[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -103,10 +142,12 @@ export default function CotizacionesTab({ user }: { user: { id: string; nombre: 
   }, [quotes, filter]);
 
   const stats = useMemo(() => {
-    if (!quotes) return { total: 0, enviadas: 0, aceptadas: 0, valorPipeline: 0 };
+    if (!quotes) return { total: 0, enviadas: 0, aceptadas: 0, valorPipeline: 0, sinAbrir: 0 };
+    const enviadasArr = quotes.filter((q) => q.estado === 'sent');
     return {
       total: quotes.length,
-      enviadas: quotes.filter((q) => q.estado === 'sent').length,
+      enviadas: enviadasArr.length,
+      sinAbrir: enviadasArr.filter((q) => getQuoteAnalytics(q).views === 0).length,
       aceptadas: quotes.filter((q) => ['accepted', 'paid'].includes(q.estado)).length,
       valorPipeline: quotes
         .filter((q) => ['sent', 'draft'].includes(q.estado))
@@ -153,7 +194,13 @@ export default function CotizacionesTab({ user }: { user: { id: string; nombre: 
         <div style={SS.statCard}>
           <div style={SS.statLabel}>Enviadas activas</div>
           <div style={SS.statValueSm}>{stats.enviadas}</div>
-          <div style={SS.statHint}>esperando respuesta</div>
+          <div style={SS.statHint}>
+            {stats.sinAbrir > 0
+              ? <span style={{ color: C.amber, fontWeight: 600 }}>{stats.sinAbrir} sin abrir</span>
+              : stats.enviadas > 0
+                ? 'todas vistas por el cliente'
+                : 'esperando respuesta'}
+          </div>
         </div>
         <div style={SS.statCard}>
           <div style={SS.statLabel}>Aceptadas</div>
@@ -215,7 +262,10 @@ export default function CotizacionesTab({ user }: { user: { id: string; nombre: 
               </tr>
             </thead>
             <tbody>
-              {visible.map((q) => (
+              {visible.map((q) => {
+                const a = getQuoteAnalytics(q);
+                const showEng = ['sent', 'accepted', 'paid', 'rejected', 'expired'].includes(q.estado);
+                return (
                 <tr
                   key={q.id}
                   onClick={() => setSelected(q)}
@@ -226,7 +276,10 @@ export default function CotizacionesTab({ user }: { user: { id: string; nombre: 
                   <td style={SS.td}><strong>{q.numero || '—'}</strong></td>
                   <td style={SS.td}>
                     <div style={{ fontWeight: 600 }}>{q.empresa || '—'}</div>
-                    <div style={{ color: C.muted, fontSize: 12, marginTop: 2 }}>{q.contacto || ''}</div>
+                    <div style={{ color: C.muted, fontSize: 12, marginTop: 2, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      {q.contacto || ''}
+                      {showEng && <EngagementBadge analytics={a} />}
+                    </div>
                   </td>
                   <td style={SS.td}>
                     <strong>{fmt(q.total)}</strong> <span style={{ color: C.muted, fontSize: 12 }}>{q.moneda || 'MXN'}</span>
@@ -250,7 +303,8 @@ export default function CotizacionesTab({ user }: { user: { id: string; nombre: 
                     </button>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -337,6 +391,9 @@ function QuoteDetail({
             <span>{fmtDate(quote.vigencia)}</span>
           </div>
         </div>
+
+        {/* Actividad del cliente · solo si está enviada o en estado terminal */}
+        {quote.estado !== 'draft' && <QuoteActivity quote={quote} />}
 
         <h3 style={{ ...SS.h3, fontSize: 13, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Conceptos</h3>
         <div style={{ marginBottom: 24 }}>
@@ -438,6 +495,89 @@ function QuoteDetail({
         </div>
       </div>
     </>
+  );
+}
+
+// ─── Engagement UI ─────────────────────────────────────────────────────────
+
+function EngagementBadge({ analytics }: { analytics: QuoteAnalytics }) {
+  const { views, lastViewedAt } = analytics;
+  if (views <= 0) {
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: C.mutedLight, padding: '2px 7px', background: C.borderSoft, borderRadius: 999, fontWeight: 500 }}>
+        Sin abrir
+      </span>
+    );
+  }
+  return (
+    <span
+      title={lastViewedAt ? `Última vista: ${fmtRel(lastViewedAt)}` : `${views} vista${views === 1 ? '' : 's'}`}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: C.brandDark, padding: '2px 7px', background: C.brandSoft, borderRadius: 999, fontWeight: 600 }}
+    >
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+      {views} {views === 1 ? 'vista' : 'vistas'}
+      {lastViewedAt && <span style={{ color: C.brand, fontWeight: 500 }}>· {fmtRel(lastViewedAt)}</span>}
+    </span>
+  );
+}
+
+function QuoteActivity({ quote }: { quote: Quote }) {
+  const a = getQuoteAnalytics(quote);
+  // Eventos del timeline relevantes para mostrar (más recientes primero, máx 6)
+  const events = [...a.timeline]
+    .filter((e) => e?.event && e?.at)
+    .sort((x, y) => (new Date(y.at).getTime() - new Date(x.at).getTime()))
+    .slice(0, 6);
+  return (
+    <div style={{ background: '#fafbfd', border: `1px solid ${C.border}`, borderRadius: 12, padding: 16, marginBottom: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <h3 style={{ ...SS.h3, fontSize: 13, color: C.muted, textTransform: 'uppercase' as const, letterSpacing: '0.08em', margin: 0 }}>
+          Actividad del cliente
+        </h3>
+        <EngagementBadge analytics={a} />
+      </div>
+      {a.views === 0 ? (
+        <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.6 }}>
+          El cliente aún no abre la cotización. Si ya la enviaste, considera reenviársela por WhatsApp.
+        </div>
+      ) : (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: events.length ? 14 : 0 }}>
+            <div>
+              <div style={{ fontSize: 11, color: C.muted, fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 4 }}>Primera vista</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{fmtRel(a.firstViewedAt)}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: C.muted, fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 4 }}>Última vista</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{fmtRel(a.lastViewedAt)}</div>
+            </div>
+          </div>
+          {events.length > 0 && (
+            <div>
+              <div style={{ fontSize: 11, color: C.muted, fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 8 }}>
+                Eventos recientes
+              </div>
+              <ul style={{ listStyle: 'none' as const, padding: 0, margin: 0, display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
+                {events.map((ev, idx) => {
+                  const label = TIMELINE_LABELS[ev.event] || ev.event;
+                  const color = TIMELINE_COLORS[ev.event] || C.muted;
+                  return (
+                    <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: C.textSoft }}>
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                      <span style={{ flex: 1 }}>{label}</span>
+                      <span style={{ color: C.mutedLight, fontSize: 11 }}>{fmtRel(ev.at)}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 
