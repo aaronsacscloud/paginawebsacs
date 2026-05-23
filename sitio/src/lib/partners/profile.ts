@@ -14,6 +14,7 @@ export interface PartnerProfile {
   pais: string | null;
   slug_landing: string | null;
   tipo: string | null;
+  logo_url: string | null;
 }
 
 export async function getPartnerProfile(partnerId: string | null | undefined): Promise<PartnerProfile | null> {
@@ -21,7 +22,7 @@ export async function getPartnerProfile(partnerId: string | null | undefined): P
 
   const { data: tm } = await supabase
     .from('team_members')
-    .select('id, nombre, email, rol')
+    .select('id, nombre, email, rol, logo_url')
     .eq('id', partnerId)
     .maybeSingle();
 
@@ -40,6 +41,7 @@ export async function getPartnerProfile(partnerId: string | null | undefined): P
       pais: null,
       slug_landing: null,
       tipo: null,
+      logo_url: (tm as any).logo_url || null,
     };
   }
 
@@ -66,5 +68,6 @@ export async function getPartnerProfile(partnerId: string | null | undefined): P
     pais: invitation?.pais || null,
     slug_landing: invitation?.slug_landing || null,
     tipo: invitation?.tipo || null,
+    logo_url: (tm as any).logo_url || null,
   };
 }

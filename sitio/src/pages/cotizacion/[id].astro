@@ -300,27 +300,34 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 
     {partnerAssigned && (
       <div class="quote-asesor">
-        <div class="quote-asesor-label">Tu asesor SACS</div>
-        <div class="quote-asesor-name">{partnerAssigned.nombre}</div>
-        {(partnerAssigned.empresa || partnerAssigned.ciudad) && (
-          <div class="quote-asesor-meta">
-            {partnerAssigned.empresa}{partnerAssigned.empresa && partnerAssigned.ciudad ? ' · ' : ''}{partnerAssigned.ciudad}
+        {partnerAssigned.logo_url && (
+          <div class="quote-asesor-logo">
+            <img src={partnerAssigned.logo_url} alt={partnerAssigned.empresa || partnerAssigned.nombre || 'Logo del asesor'} loading="lazy" />
           </div>
         )}
-        <div class="quote-asesor-contacts">
-          {partnerAssigned.email && <a href={`mailto:${partnerAssigned.email}`} class="quote-asesor-contact">{partnerAssigned.email}</a>}
-          {partnerAssigned.whatsapp && (
-            <a
-              href={`https://wa.me/${String(partnerAssigned.whatsapp).replace(/\D/g, '')}`}
-              target="_blank"
-              rel="noopener"
-              class="quote-asesor-contact quote-asesor-wa"
-            >
-              {partnerAssigned.whatsapp}
-            </a>
+        <div class="quote-asesor-body">
+          <div class="quote-asesor-label">Tu asesor SACS</div>
+          <div class="quote-asesor-name">{partnerAssigned.nombre}</div>
+          {(partnerAssigned.empresa || partnerAssigned.ciudad) && (
+            <div class="quote-asesor-meta">
+              {partnerAssigned.empresa}{partnerAssigned.empresa && partnerAssigned.ciudad ? ' · ' : ''}{partnerAssigned.ciudad}
+            </div>
           )}
+          <div class="quote-asesor-contacts">
+            {partnerAssigned.email && <a href={`mailto:${partnerAssigned.email}`} class="quote-asesor-contact">{partnerAssigned.email}</a>}
+            {partnerAssigned.whatsapp && (
+              <a
+                href={`https://wa.me/${String(partnerAssigned.whatsapp).replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noopener"
+                class="quote-asesor-contact quote-asesor-wa"
+              >
+                {partnerAssigned.whatsapp}
+              </a>
+            )}
+          </div>
+          <div class="quote-asesor-badge">Partner certificado SACS · cobro y soporte gestionados por SACS</div>
         </div>
-        <div class="quote-asesor-badge">Partner certificado SACS · cobro y soporte gestionados por SACS</div>
       </div>
     )}
 
@@ -329,6 +336,28 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
         padding: 16px 40px;
         border-top: 1px solid #e5e5e5;
         background: #fafafa;
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+      }
+      .quote-asesor-body { flex: 1; min-width: 0; }
+      .quote-asesor-logo {
+        flex-shrink: 0;
+        width: 56px;
+        height: 56px;
+        border-radius: 10px;
+        background: #fff;
+        border: 1px solid #e5e5e5;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .quote-asesor-logo img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        display: block;
       }
       .quote-asesor-label {
         font-size: 0.625rem;
@@ -371,7 +400,8 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
         letter-spacing: 0.02em;
       }
       @media (max-width: 640px) {
-        .quote-asesor { padding: 10px 20px; }
+        .quote-asesor { padding: 10px 20px; gap: 10px; }
+        .quote-asesor-logo { width: 44px; height: 44px; border-radius: 8px; }
         .quote-asesor-label { font-size: 0.5625rem; margin-bottom: 4px; }
         .quote-asesor-name { font-size: 0.9375rem; }
         .quote-asesor-contact { font-size: 0.75rem; }

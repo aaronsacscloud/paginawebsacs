@@ -11,7 +11,16 @@ type Props = {
 
 export default function ProfileDropdown({ user, variant = 'topbar' }: Props) {
   const [open, setOpen] = useState(false);
-  const [view, setView] = useState<'menu' | 'password' | 'payout' | 'direccion'>('menu');
+  const [view, setView] = useState<'menu' | 'password' | 'payout' | 'direccion' | 'marca'>('menu');
+  const [brand, setBrand] = useState<{ logo_url: string | null } | null>(null);
+
+  useEffect(() => {
+    if (isDemoMode()) { setBrand({ logo_url: null }); return; }
+    fetch('/api/partners/profile')
+      .then(r => r.ok ? r.json() : null)
+      .then(p => { if (p && !p.error) setBrand({ logo_url: p.logo_url || null }); })
+      .catch(() => {});
+  }, []);
   const [profile, setProfile] = useState<any>(null);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -105,6 +114,7 @@ export default function ProfileDropdown({ user, variant = 'topbar' }: Props) {
 
           {view === 'menu' && (
             <div style={{ padding: 8 }}>
+              <MenuItem Ico={Icon.Image}   label="Mi marca (logo)"    sub={brand?.logo_url ? 'Logo configurado' : 'Sin logo · aparece en tus cotizaciones'} onClick={() => setView('marca')} />
               <MenuItem Ico={Icon.Bank}    label="Forma de pago"      sub={payout?.banco ? `${payout.banco} •••${String(payout.clabe).slice(-4)}` : 'Sin configurar'} onClick={() => setView('payout')} />
               <MenuItem Ico={Icon.MapPin}  label="Dirección fiscal"   sub={direccion?.ciudad || 'Sin configurar'} onClick={() => setView('direccion')} />
               <MenuItem Ico={Icon.Lock}    label="Cambiar contraseña" onClick={() => setView('password')} />
@@ -117,6 +127,7 @@ export default function ProfileDropdown({ user, variant = 'topbar' }: Props) {
           {view === 'password' && <PasswordForm onBack={() => setView('menu')} />}
           {view === 'payout' && <PayoutForm payout={payout} onBack={() => setView('menu')} onSaved={(p) => { setProfile({ ...profile, payout: p }); setView('menu'); }} />}
           {view === 'direccion' && <DireccionForm direccion={direccion} onBack={() => setView('menu')} onSaved={(d) => { setProfile({ ...profile, direccion: d }); setView('menu'); }} />}
+          {view === 'marca' && <MarcaForm brand={brand} onBack={() => setView('menu')} onSaved={(b) => setBrand(b)} />}
         </div>
       )}
     </div>
@@ -137,6 +148,127 @@ function MenuItem({ Ico, label, sub, onClick, red }: { Ico: (p: any) => JSX.Elem
       </div>
       <span style={{ fontSize: 12, color: C.muted }}>›</span>
     </button>
+  );
+}
+
+function MarcaForm({
+  brand,
+  onBack,
+  onSaved,
+}: {
+  brand: { logo_url: string | null } | null;
+  onBack: () => void;
+  onSaved: (b: { logo_url: string | null }) => void;
+}) {
+  const [logoUrl, setLogoUrl] = useState<string | null>(brand?.logo_url || null);
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function uploadLogo(file: File) {
+    setError(null);
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const r = await fetch('/api/revenue/upload-logo', { method: 'POST', body: fd });
+      const d = await r.json();
+      if (!r.ok || !d.url) { setError(d.error || 'Error al subir'); return; }
+      setLogoUrl(d.url);
+    } catch (e: any) {
+      setError(e?.message || 'Error de red');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function save(nextLogo: string | null) {
+    setError(null);
+    setSaving(true);
+    try {
+      const r = await fetch('/api/partners/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ logo_url: nextLogo }),
+      });
+      const d = await r.json();
+      if (!r.ok) { setError(d.error || 'Error al guardar'); return; }
+      onSaved({ logo_url: d.logo_url || null });
+      onBack();
+    } catch (e: any) {
+      setError(e?.message || 'Error de red');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const removeLogo = () => {
+    if (!confirm('¿Quitar tu logo? Dejará de aparecer en tus cotizaciones nuevas y existentes.')) return;
+    setLogoUrl(null);
+    save(null);
+  };
+
+  return (
+    <div style={{ padding: 16 }}>
+      <BackBtn onClick={onBack} title="Mi marca" />
+      <div style={{ fontSize: 12, color: C.muted, marginBottom: 14, lineHeight: 1.55 }}>
+        Tu logo aparece junto a tu nombre cuando el cliente abre cualquier cotización tuya.
+        PNG, JPG, WebP o SVG. Máximo 2MB. Lo ideal es un fondo transparente.
+      </div>
+
+      {error && (
+        <div style={{ padding: '10px 14px', background: 'rgba(220,38,38,0.06)', border: `1px solid rgba(220,38,38,0.22)`, borderRadius: 8, fontSize: 12, color: C.red, marginBottom: 10 }}>
+          {error}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 12, background: '#fafbfd', border: `1px solid ${C.border}`, borderRadius: 10, marginBottom: 12 }}>
+        <div style={{ width: 56, height: 56, borderRadius: 10, background: '#fff', border: `1px solid ${C.border}`, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          {logoUrl
+            ? <img src={logoUrl} alt="Tu logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+            : <span style={{ fontSize: 11, color: C.mutedLight, textAlign: 'center', padding: 4 }}>Sin logo</span>}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>
+            {logoUrl ? 'Logo activo' : 'Aún no tienes logo'}
+          </div>
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {logoUrl || 'Súbelo y se mostrará al instante.'}
+          </div>
+        </div>
+      </div>
+
+      <label style={{ ...SS.btn, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: uploading || saving ? 'not-allowed' : 'pointer', opacity: uploading || saving ? 0.6 : 1, marginBottom: logoUrl ? 8 : 0 }}>
+        {uploading ? 'Subiendo…' : logoUrl ? 'Cambiar logo' : 'Subir logo'}
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+          style={{ display: 'none' }}
+          disabled={uploading || saving}
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (!file) return;
+            await uploadLogo(file);
+            // Si subió bien y cambió, persistir automáticamente.
+            // El estado se actualizó en uploadLogo; leemos el último valor vía closure es complejo,
+            // así que volvemos a leer desde el response handler — uploadLogo ya setea logoUrl.
+            // Aquí solo persistimos si el upload completó sin error.
+          }}
+        />
+      </label>
+      {/* Guardar manual si el upload acaba de pasar y aún no se ha persistido */}
+      {logoUrl && logoUrl !== brand?.logo_url && (
+        <button onClick={() => save(logoUrl)} disabled={saving} style={{ ...SS.btn, width: '100%', marginTop: 8 }}>
+          {saving ? 'Guardando…' : 'Guardar logo'}
+        </button>
+      )}
+      {logoUrl && (
+        <button onClick={removeLogo} disabled={saving} style={{ background: 'transparent', border: 'none', color: C.red, fontSize: 12, cursor: 'pointer', padding: '10px 0', width: '100%', marginTop: 4, fontFamily: 'inherit' }}>
+          Quitar logo
+        </button>
+      )}
+    </div>
   );
 }
 

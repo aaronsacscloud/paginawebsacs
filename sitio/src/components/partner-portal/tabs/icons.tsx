@@ -195,6 +195,11 @@ export const Icon = {
   Bank: (p: IconProps) => base({ ...p, children: <>
     <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3" />
   </> }),
+  Image: (p: IconProps) => base({ ...p, children: <>
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+    <circle cx="8.5" cy="8.5" r="1.5" />
+    <polyline points="21 15 16 10 5 21" />
+  </> }),
   MapPin: (p: IconProps) => base({ ...p, children: <>
     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
     <circle cx="12" cy="10" r="3" />
