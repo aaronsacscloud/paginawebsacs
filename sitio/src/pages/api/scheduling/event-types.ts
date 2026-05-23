@@ -9,7 +9,12 @@ export const GET: APIRoute = async ({ request, url }) => {
   const user = await getCurrentUser(request);
   const activo = url.searchParams.get('activo');
   const slug = url.searchParams.get('slug');
-  const publicLookup = !!slug; // /agendar/[slug] consulta sin auth
+  const publicLookup = !!slug; // /agendar/[slug] consulta sin auth (lookup por slug exacto)
+
+  // Listado general (sin slug) requiere auth — sino expone todos los event_types.
+  if (!publicLookup && !user) {
+    return new Response(JSON.stringify({ error: 'No autenticado' }), { status: 401 });
+  }
 
   let query = supabase
     .from('event_types')
@@ -17,9 +22,14 @@ export const GET: APIRoute = async ({ request, url }) => {
     .order('created_at', { ascending: false });
 
   if (activo === 'true') query = query.eq('activo', true);
-  if (slug) query = query.eq('slug', slug);
+  if (slug) {
+    query = query.eq('slug', slug);
+    // En lookup público solo exponer event_types activos.
+    query = query.eq('activo', true);
+  }
 
-  // Partner solo ve sus event_types salvo que sea lookup público por slug.
+  // Partner solo ve sus event_types (en listado interno; el lookup público
+  // por slug ya está restringido a activo=true y la página /agendar valida más).
   if (!publicLookup && isPartner(user)) {
     query = query.eq('owner_id', user!.id);
   }

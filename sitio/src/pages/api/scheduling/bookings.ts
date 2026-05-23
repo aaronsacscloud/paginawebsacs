@@ -8,6 +8,7 @@ export const prerender = false;
 
 export const GET: APIRoute = async ({ request, url }) => {
   const user = await getCurrentUser(request);
+  if (!user) return new Response(JSON.stringify({ error: 'No autenticado' }), { status: 401 });
   const host_id = url.searchParams.get('host_id');
   const estado = url.searchParams.get('estado');
   const from = url.searchParams.get('from');
@@ -21,7 +22,7 @@ export const GET: APIRoute = async ({ request, url }) => {
 
   // Partner scope: solo ve sus propios bookings (ignora host_id externo).
   if (isPartner(user)) {
-    query = query.eq('host_id', user!.id);
+    query = query.eq('host_id', user.id);
   } else if (host_id) {
     query = query.eq('host_id', host_id);
   }

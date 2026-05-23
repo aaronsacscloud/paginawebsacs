@@ -7,6 +7,7 @@ export const prerender = false;
 
 export const POST: APIRoute = async ({ request }) => {
   const user = await getCurrentUser(request);
+  if (!user) return new Response(JSON.stringify({ error: 'No autenticado' }), { status: 401 });
   const body = await request.json().catch(() => ({}));
   const team_member_id = resolveSchedulingTarget(user, body?.team_member_id);
   if (!team_member_id) {

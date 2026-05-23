@@ -13,6 +13,9 @@ export const prerender = false;
  */
 export const GET: APIRoute = async ({ request, url }) => {
   const user = await getCurrentUser(request);
+  if (!user) {
+    return new Response(JSON.stringify({ error: 'No autenticado' }), { status: 401 });
+  }
   const teamMemberId = resolveSchedulingTarget(user, url.searchParams.get('team_member_id'));
   if (!teamMemberId) {
     return new Response(JSON.stringify({ error: 'team_member_id required' }), { status: 400 });

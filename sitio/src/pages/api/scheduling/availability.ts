@@ -7,6 +7,7 @@ export const prerender = false;
 
 export const GET: APIRoute = async ({ request, url }) => {
   const user = await getCurrentUser(request);
+  if (!user) return new Response(JSON.stringify({ error: 'No autenticado' }), { status: 401 });
   // Force partner a su propio team_member_id; founder/cs pueden pasar otro.
   const team_member_id = resolveSchedulingTarget(user, url.searchParams.get('team_member_id'));
   if (!team_member_id) {
@@ -69,6 +70,17 @@ export const POST: APIRoute = async ({ request }) => {
     .single();
 
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+
+  // Defensive cleanup: si por race entre dos POSTs concurrentes quedaron
+  // múltiples defaults, este insert "gana" y se borra el flag en los demás.
+  if (body.es_default && data?.id) {
+    await supabase
+      .from('availability_schedules')
+      .update({ es_default: false })
+      .eq('team_member_id', team_member_id)
+      .eq('es_default', true)
+      .neq('id', data.id);
+  }
   return new Response(JSON.stringify(data), { status: 201 });
 };
 
@@ -111,5 +123,16 @@ export const PUT: APIRoute = async ({ request }) => {
     .single();
 
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+
+  // Defensive cleanup post-update: si dos PUTs concurrentes marcaron como
+  // default, este "gana" y reset al resto.
+  if (updates.es_default) {
+    await supabase
+      .from('availability_schedules')
+      .update({ es_default: false })
+      .eq('team_member_id', current.team_member_id)
+      .eq('es_default', true)
+      .neq('id', id);
+  }
   return new Response(JSON.stringify(data));
 };

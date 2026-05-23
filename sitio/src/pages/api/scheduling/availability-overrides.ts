@@ -7,6 +7,7 @@ export const prerender = false;
 
 export const GET: APIRoute = async ({ request, url }) => {
   const user = await getCurrentUser(request);
+  if (!user) return new Response(JSON.stringify({ error: 'No autenticado' }), { status: 401 });
   const team_member_id = resolveSchedulingTarget(user, url.searchParams.get('team_member_id'));
   const from = url.searchParams.get('from');
   const to = url.searchParams.get('to');

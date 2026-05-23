@@ -32,12 +32,25 @@ async function lookupEventTypeIdByQuestion(questionId: string): Promise<string |
   return data?.event_type_id || null;
 }
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ request, url }) => {
   const eventTypeId = url.searchParams.get('event_type_id');
   if (!eventTypeId) return new Response(JSON.stringify([]), { status: 200 });
 
-  // Lectura pública (BookingPage la usa sin auth). Las respuestas son de un
-  // event_type publicado, así que no exponemos datos sensibles.
+  // La página pública /agendar/[slug] lee booking_questions vía supabase directo
+  // (no este endpoint), así que aquí podemos restringir a usuarios con ownership.
+  // Esto evita enumeración de event_types privados/inactivos.
+  const { data: et } = await supabase
+    .from('event_types')
+    .select('owner_id')
+    .eq('id', eventTypeId)
+    .maybeSingle();
+  if (!et) return new Response(JSON.stringify([]), { status: 404 });
+
+  const user = await getCurrentUser(request);
+  if (!canActOnSchedulingOwner(user, et.owner_id)) {
+    return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403 });
+  }
+
   const { data, error } = await supabase
     .from('booking_questions')
     .select('*')
