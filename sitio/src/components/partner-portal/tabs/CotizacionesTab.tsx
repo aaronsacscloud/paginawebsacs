@@ -1,18 +1,22 @@
 // CotizacionesTab — Partners crean y gestionan sus propias cotizaciones.
 // Reusa la tabla `quotes` del CRM. POST/PUT/GET via /api/revenue/quotes.
 //
-// Reglas (validadas en backend, también clamped aquí):
-// - Descuento global ≤ 15%
-// - Extras solo del catálogo SACS (planes + servicios whitelisted)
-// - No editar quotes 'accepted'/'paid'/'rejected'
+// Paridad funcional con el editor admin (RevenueHub) excepto:
+// - Sin bank account selector (cobro es de SACS)
+// - Sin Stripe link manual (SACS lo genera)
+// - Sin folio offset (admin only)
+// - Sin template selector (siempre 'modern')
+// - Sin IA analyze-transcript / format-minuta (manual)
+// - Descuento global y por línea capeados a 15%
 
 import { useEffect, useMemo, useState } from 'react';
 import { SS, C, stagePillStyle } from './styles';
 import { Icon } from './icons';
 import { fmt, fmtDate, isDemoMode, apiGet, copyToClipboard } from './utils';
 import { demoQuotes } from '../../../data/partner-portal-demo';
-import { PLAN_PRICES, PLANS } from '../../../lib/quotes/constants';
+import { PLAN_PRICES, IMPL_PRICES, PLANS } from '../../../lib/quotes/constants';
 import { calcQuoteTotals } from '../../../lib/quotes/totals';
+import { parseMeta, serializeMeta } from '../../../lib/quotes/meta';
 import { PARTNER_EXTRAS_CATALOG } from '../../../lib/quotes/partner-catalog';
 import { PARTNER_MAX_DISCOUNT_PCT } from '../../../lib/quotes/permissions';
 
@@ -450,23 +454,51 @@ function QuoteEditor({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [form, setForm] = useState<Partial<Quote>>(() => ({
+  // Parse meta del initial (logo_url, mostrar_*, key_points, roi, antes_despues, promo_label, minuta_raw)
+  const initialMeta = useMemo(() => {
+    if (!initial?.notas) return {};
+    return parseMeta(initial.notas).meta;
+  }, [initial?.notas]);
+
+  const [form, setForm] = useState<Partial<Quote> & Record<string, any>>(() => ({
     moneda: 'MXN',
     descuento_global: 0,
     descuento_tipo: 'pct',
     iva_incluido: true,
     items: [],
+    // Meta-derived (controlados aquí, serializados al guardar)
+    logo_url: initialMeta.logo_url || '',
+    key_points: Array.isArray(initialMeta.key_points) ? initialMeta.key_points : [],
+    roi: initialMeta.roi || null,
+    antes_despues: Array.isArray(initialMeta.antes_despues) ? initialMeta.antes_despues : [],
+    promo_label: initialMeta.promo_label || '',
+    minuta_raw: initialMeta.minuta_raw || '',
+    mostrar_timer: initialMeta.mostrar_timer !== undefined ? initialMeta.mostrar_timer : true,
+    mostrar_features: initialMeta.mostrar_features !== undefined ? initialMeta.mostrar_features : true,
+    mostrar_desglose: initialMeta.mostrar_desglose !== undefined ? initialMeta.mostrar_desglose : true,
+    mostrar_condiciones: initialMeta.mostrar_condiciones !== undefined ? initialMeta.mostrar_condiciones : true,
+    mostrar_firma: initialMeta.mostrar_firma !== undefined ? initialMeta.mostrar_firma : true,
+    mostrar_key_points: initialMeta.mostrar_key_points !== undefined ? initialMeta.mostrar_key_points : true,
+    mostrar_roi: !!initialMeta.mostrar_roi,
+    mostrar_antes_despues: !!initialMeta.mostrar_antes_despues,
+    mostrar_timeline: initialMeta.mostrar_timeline !== undefined ? initialMeta.mostrar_timeline : true,
+    mostrar_implementacion: initialMeta.mostrar_implementacion !== undefined ? initialMeta.mostrar_implementacion : true,
+    mostrar_porque_sacs: initialMeta.mostrar_porque_sacs !== undefined ? initialMeta.mostrar_porque_sacs : true,
+    mostrar_qr: initialMeta.mostrar_qr !== undefined ? initialMeta.mostrar_qr : true,
+    mostrar_animaciones: initialMeta.mostrar_animaciones !== undefined ? initialMeta.mostrar_animaciones : true,
+    timeline_tipo: initialMeta.timeline_tipo || '1suc',
+    implementacion_nota: initialMeta.implementacion_nota || '',
     ...initial,
   }));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const isEdit = !!initial?.id;
 
   const items: any[] = Array.isArray(form.items) ? form.items : [];
 
   const updateItem = (idx: number, patch: any) => {
     const arr = items.map((it, i) => (i === idx ? { ...it, ...patch } : it));
-    // Recalc subtotal del item si cambió cantidad/precio
     arr[idx].subtotal = computeItemSubtotal(arr[idx]);
     arr[idx].monto = arr[idx].subtotal;
     setForm({ ...form, items: arr });
@@ -478,36 +510,139 @@ function QuoteEditor({
 
   const addPlan = () => {
     const nombre = 'controla';
-    const it = {
-      tipo: 'plan',
-      nombre,
-      precio_unitario: PLAN_PRICES[nombre],
-      periodo: 'mensual',
-      sucursales: 1,
-      descuento_pct: 0,
-      subtotal: PLAN_PRICES[nombre],
-      monto: PLAN_PRICES[nombre],
-      recurrente: true,
-      periodo_extra: 'mensual',
-      descripcion: `Plan ${PLAN_LABELS_ES[nombre]} · 1 sucursal`,
-    };
-    setForm({ ...form, items: [...items, it] });
+    setForm({
+      ...form,
+      items: [...items, {
+        tipo: 'plan',
+        nombre,
+        precio_unitario: PLAN_PRICES[nombre],
+        periodo: 'mensual',
+        sucursales: 1,
+        descuento_pct: 0,
+        subtotal: PLAN_PRICES[nombre],
+        monto: PLAN_PRICES[nombre],
+        recurrente: true,
+        periodo_extra: 'mensual',
+        descripcion: `Plan ${PLAN_LABELS_ES[nombre]} · 1 sucursal`,
+      }],
+    });
   };
 
-  const addExtra = (nombre: string) => {
+  const addExtraFromCatalog = (nombre: string) => {
     const def = PARTNER_EXTRAS_CATALOG.find((e) => e.nombre === nombre);
     if (!def) return;
-    const it = {
-      tipo: 'extra',
-      nombre: def.nombre,
-      precio_unitario: def.precio_default,
-      monto: def.precio_default,
-      subtotal: def.precio_default,
-      recurrente: def.recurrente,
-      periodo_extra: def.periodo_extra,
-      descripcion: def.descripcion || def.nombre,
-    };
-    setForm({ ...form, items: [...items, it] });
+    setForm({
+      ...form,
+      items: [...items, {
+        tipo: 'extra',
+        nombre: def.nombre,
+        precio_unitario: def.precio_default,
+        monto: def.precio_default,
+        subtotal: def.precio_default,
+        recurrente: def.recurrente,
+        periodo_extra: def.periodo_extra,
+        descripcion: def.descripcion || def.nombre,
+      }],
+    });
+  };
+
+  const addExtraCustom = () => {
+    setForm({
+      ...form,
+      items: [...items, {
+        tipo: 'extra',
+        nombre: 'Servicio adicional',
+        precio_unitario: 0,
+        monto: 0,
+        subtotal: 0,
+        recurrente: false,
+        periodo_extra: 'unico',
+        descripcion: '',
+      }],
+    });
+  };
+
+  const addPromoImpl = () => {
+    // Promo de implementación gratis (basado en plan principal)
+    const mainPlan = items.find((i) => i.tipo === 'plan')?.nombre || 'controla';
+    const valor = IMPL_PRICES[mainPlan] || 4000;
+    setForm({
+      ...form,
+      items: [...items, {
+        tipo: 'extra',
+        es_promocion: true,
+        nombre: `Implementación gratis (Plan ${PLAN_LABELS_ES[mainPlan]})`,
+        precio_unitario: 0,
+        monto: 0,
+        subtotal: 0,
+        precio_original: valor,
+        recurrente: false,
+        periodo_extra: 'unico',
+        descripcion: `Setup, capacitación y migración inicial. Valor regular: $${valor.toLocaleString('es-MX')}`,
+      }],
+    });
+  };
+
+  const addPromoCustom = () => {
+    setForm({
+      ...form,
+      items: [...items, {
+        tipo: 'extra',
+        es_promocion: true,
+        nombre: 'Promoción especial',
+        precio_unitario: 0,
+        monto: 0,
+        subtotal: 0,
+        precio_original: 0,
+        recurrente: false,
+        periodo_extra: 'unico',
+        descripcion: '',
+      }],
+    });
+  };
+
+  const setVigenciaPreset = (days: number) => {
+    const d = new Date(Date.now() + days * 86400000);
+    setForm({ ...form, vigencia: d.toISOString().slice(0, 10), urgencia: days <= 5 ? 'urgente' : days <= 3 ? 'oferta' : 'normal' });
+  };
+
+  const uploadLogo = async (file: File) => {
+    setUploadingLogo(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/revenue/upload-logo', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.url) setForm({ ...form, logo_url: data.url });
+      else setError(data.error || 'Error al subir logo');
+    } catch (err: any) {
+      setError(String(err?.message || err));
+    }
+    setUploadingLogo(false);
+  };
+
+  const addKeyPoint = () => {
+    const kp = [...(form.key_points || []), { title: '', detail: '' }];
+    setForm({ ...form, key_points: kp });
+  };
+  const updateKeyPoint = (idx: number, patch: any) => {
+    const kp = (form.key_points || []).map((p: any, i: number) => i === idx ? { ...p, ...patch } : p);
+    setForm({ ...form, key_points: kp });
+  };
+  const removeKeyPoint = (idx: number) => {
+    setForm({ ...form, key_points: (form.key_points || []).filter((_: any, i: number) => i !== idx) });
+  };
+
+  const addAntesDespues = () => {
+    const ad = [...(form.antes_despues || []), { aspecto: '', antes: '', despues: '' }];
+    setForm({ ...form, antes_despues: ad });
+  };
+  const updateAntesDespues = (idx: number, patch: any) => {
+    const ad = (form.antes_despues || []).map((p: any, i: number) => i === idx ? { ...p, ...patch } : p);
+    setForm({ ...form, antes_despues: ad });
+  };
+  const removeAntesDespues = (idx: number) => {
+    setForm({ ...form, antes_despues: (form.antes_despues || []).filter((_: any, i: number) => i !== idx) });
   };
 
   const ivaMode: 'sin' | 'suma' | 'incluido' = form.iva_incluido ? 'suma' : 'sin';
@@ -517,6 +652,26 @@ function QuoteEditor({
     descuento_tipo: form.descuento_tipo,
     iva_mode: ivaMode,
   });
+
+  // Desglose pagos: primer pago (no recurrentes + primer pago de recurrentes), mensual recurrente, anual
+  const breakdown = useMemo(() => {
+    const monthlyPlan = items.filter((i) => i.tipo === 'plan' && i.periodo === 'mensual')
+      .reduce((s, i) => s + (i.subtotal || 0), 0);
+    const annualPlan = items.filter((i) => i.tipo === 'plan' && i.periodo === 'anual')
+      .reduce((s, i) => s + (i.subtotal || 0), 0);
+    const recurMonthly = items.filter((i) => i.tipo === 'extra' && i.recurrente && i.periodo_extra === 'mensual')
+      .reduce((s, i) => s + (i.subtotal || 0), 0);
+    const recurAnnual = items.filter((i) => i.tipo === 'extra' && i.recurrente && i.periodo_extra === 'anual')
+      .reduce((s, i) => s + (i.subtotal || 0), 0);
+    const oneTime = items.filter((i) => i.tipo === 'extra' && !i.recurrente)
+      .reduce((s, i) => s + (i.subtotal || 0), 0);
+    return {
+      mensualRecurrente: monthlyPlan + recurMonthly,
+      anualRecurrente: annualPlan + recurAnnual,
+      primerPago: monthlyPlan + recurMonthly + annualPlan + recurAnnual + oneTime,
+      unicoSetup: oneTime,
+    };
+  }, [items]);
 
   const save = async (estado: Estado = 'sent') => {
     setError(null);
@@ -542,12 +697,61 @@ function QuoteEditor({
     }
 
     setSaving(true);
-    const body = {
-      ...form,
+
+    // Build meta JSON con todo lo customizable
+    const { text } = parseMeta(form.notas || '');
+    const meta: Record<string, any> = {
+      iva_mode: ivaMode,
+      mostrar_timer: form.mostrar_timer,
+      mostrar_features: form.mostrar_features,
+      mostrar_desglose: form.mostrar_desglose,
+      mostrar_condiciones: form.mostrar_condiciones,
+      mostrar_firma: form.mostrar_firma,
+      mostrar_key_points: form.mostrar_key_points,
+      mostrar_roi: !!form.mostrar_roi,
+      mostrar_antes_despues: !!form.mostrar_antes_despues,
+      mostrar_timeline: form.mostrar_timeline,
+      mostrar_implementacion: form.mostrar_implementacion,
+      mostrar_porque_sacs: form.mostrar_porque_sacs,
+      mostrar_qr: form.mostrar_qr,
+      mostrar_animaciones: form.mostrar_animaciones,
+      timeline_tipo: form.timeline_tipo || '1suc',
+    };
+    if (form.logo_url) meta.logo_url = form.logo_url;
+    if (form.promo_label?.trim()) meta.promo_label = form.promo_label.trim();
+    if (form.minuta_raw?.trim()) meta.minuta_raw = form.minuta_raw.trim();
+    if (form.implementacion_nota?.trim()) meta.implementacion_nota = form.implementacion_nota.trim();
+    const validKP = (form.key_points || []).filter((k: any) => k.title?.trim() || k.detail?.trim());
+    if (validKP.length) meta.key_points = validKP;
+    if (form.roi && (form.roi.ahorro_mensual > 0 || form.roi.problema || form.roi.detalle)) {
+      meta.roi = form.roi;
+    }
+    const validAD = (form.antes_despues || []).filter((a: any) => a.aspecto?.trim() || a.antes?.trim() || a.despues?.trim());
+    if (validAD.length) meta.antes_despues = validAD;
+
+    const notasFinal = serializeMeta(text || '', meta);
+
+    // Body: solo campos de DB + notas con meta serializada
+    const body: any = {
+      id: form.id,
+      empresa: form.empresa,
+      contacto: form.contacto,
+      email: form.email,
+      whatsapp: form.whatsapp,
+      items,
+      iva_incluido: ivaMode !== 'sin',
+      descuento_global: form.descuento_global,
+      descuento_tipo: form.descuento_tipo,
+      moneda: form.moneda,
+      template: 'modern', // partner siempre usa modern
+      condiciones: form.condiciones,
+      vigencia: form.vigencia,
+      urgencia: form.urgencia,
       estado,
       subtotal: totals.itemsSubtotal,
       iva_monto: Math.round(totals.ivaMonto),
       total: Math.round(totals.grandTotal),
+      notas: notasFinal,
     };
 
     try {
@@ -573,11 +777,11 @@ function QuoteEditor({
     <>
       <div style={SS.drawerBackdrop} onClick={() => !saving && onClose()} />
       <div style={SS.drawer} className="cq-drawer">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, gap: 10 }}>
           <h2 style={{ ...SS.h3, margin: 0 }}>
             {isEdit ? 'Editar cotización' : 'Nueva cotización'}
           </h2>
-          <button onClick={onClose} disabled={saving} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: 28, padding: '0 4px', lineHeight: 1 }}>
+          <button onClick={onClose} disabled={saving} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: 28, padding: '0 4px', lineHeight: 1 }} aria-label="Cerrar">
             ×
           </button>
         </div>
@@ -588,148 +792,352 @@ function QuoteEditor({
           </div>
         )}
 
-        {/* Cliente */}
-        <Field label="Empresa *">
-          <input value={form.empresa || ''} onChange={(e) => setForm({ ...form, empresa: e.target.value })} style={inputStyle} />
-        </Field>
-        <Field label="Contacto">
-          <input value={form.contacto || ''} onChange={(e) => setForm({ ...form, contacto: e.target.value })} style={inputStyle} />
-        </Field>
-        <div className="cq-row-2">
-          <Field label="Email *">
-            <input type="email" value={form.email || ''} onChange={(e) => setForm({ ...form, email: e.target.value })} style={inputStyle} />
+        {/* ───── 1. Cliente ───── */}
+        <Section title="Cliente" defaultOpen>
+          <Field label="Empresa *">
+            <input value={form.empresa || ''} onChange={(e) => setForm({ ...form, empresa: e.target.value })} style={inputStyle} />
           </Field>
-          <Field label="WhatsApp *">
-            <input value={form.whatsapp || ''} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} style={inputStyle} placeholder="+52 442 555 0101" />
+          <Field label="Contacto">
+            <input value={form.contacto || ''} onChange={(e) => setForm({ ...form, contacto: e.target.value })} style={inputStyle} />
           </Field>
-        </div>
-
-        {/* Items */}
-        <h3 style={{ ...SS.h3, fontSize: 13, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '24px 0 10px' }}>Conceptos</h3>
-        {items.map((it, idx) => (
-          <div key={idx} style={{ border: `1px solid ${C.border}`, borderRadius: 10, padding: 14, marginBottom: 10, background: C.borderSoft }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <strong style={{ fontSize: 13 }}>
-                {it.tipo === 'plan' ? `Plan ${PLAN_LABELS_ES[it.nombre] || it.nombre}` : it.nombre}
-              </strong>
-              <button onClick={() => removeItem(idx)} style={{ background: 'none', border: 'none', color: C.red, cursor: 'pointer', fontSize: 12 }}>
-                Quitar
-              </button>
-            </div>
-            {it.tipo === 'plan' ? (
-              <div className="cq-row-3">
-                <Field label="Plan" small>
-                  <select
-                    value={it.nombre}
-                    onChange={(e) => {
-                      const newName = e.target.value;
-                      updateItem(idx, {
-                        nombre: newName,
-                        precio_unitario: PLAN_PRICES[newName],
-                        descripcion: `Plan ${PLAN_LABELS_ES[newName]} · ${it.sucursales || 1} sucursal${(it.sucursales || 1) > 1 ? 'es' : ''}`,
-                      });
-                    }}
-                    style={inputStyle}
-                  >
-                    {PLANS.map((p) => (
-                      <option key={p} value={p}>{PLAN_LABELS_ES[p]} (${PLAN_PRICES[p]}/mes)</option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Sucursales" small>
-                  <input
-                    type="number"
-                    min={1}
-                    value={it.sucursales || 1}
-                    onChange={(e) => {
-                      const suc = Math.max(1, Number(e.target.value) || 1);
-                      updateItem(idx, {
-                        sucursales: suc,
-                        descripcion: `Plan ${PLAN_LABELS_ES[it.nombre]} · ${suc} sucursal${suc > 1 ? 'es' : ''}`,
-                      });
-                    }}
-                    style={inputStyle}
-                  />
-                </Field>
-                <Field label={`Descuento (máx ${PARTNER_MAX_DISCOUNT_PCT}%)`} small>
-                  <input
-                    type="number"
-                    min={0}
-                    max={PARTNER_MAX_DISCOUNT_PCT}
-                    value={it.descuento_pct || 0}
-                    onChange={(e) => {
-                      const d = Math.min(PARTNER_MAX_DISCOUNT_PCT, Math.max(0, Number(e.target.value) || 0));
-                      updateItem(idx, { descuento_pct: d });
-                    }}
-                    style={inputStyle}
-                  />
-                </Field>
-              </div>
-            ) : (
-              <div style={{ fontSize: 12, color: C.muted }}>{it.descripcion}</div>
-            )}
-            <div style={{ marginTop: 8, fontSize: 13, textAlign: 'right' }}>
-              <span style={{ color: C.muted, marginRight: 8 }}>Subtotal:</span>
-              <strong>{fmt(it.subtotal)}</strong>
-            </div>
+          <div className="cq-row-2">
+            <Field label="Email *">
+              <input type="email" value={form.email || ''} onChange={(e) => setForm({ ...form, email: e.target.value })} style={inputStyle} />
+            </Field>
+            <Field label="WhatsApp *">
+              <input value={form.whatsapp || ''} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} style={inputStyle} placeholder="+52 442 555 0101" />
+            </Field>
           </div>
-        ))}
+          <Field label="Logo del cliente (opcional)">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              {form.logo_url && (
+                <div style={{ position: 'relative', width: 48, height: 48, borderRadius: 8, border: `1px solid ${C.border}`, overflow: 'hidden', background: '#fafafa' }}>
+                  <img src={form.logo_url} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  <button onClick={() => setForm({ ...form, logo_url: '' })} style={{ position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: '50%', background: C.red, color: '#fff', border: 'none', fontSize: 11, cursor: 'pointer', lineHeight: '16px' }}>×</button>
+                </div>
+              )}
+              <label style={{ ...SS.btnGhost, fontSize: 12, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                {uploadingLogo ? 'Subiendo…' : form.logo_url ? 'Cambiar logo' : 'Subir logo'}
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) uploadLogo(file);
+                  e.target.value = '';
+                }} />
+              </label>
+            </div>
+          </Field>
+        </Section>
 
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
-          <button onClick={addPlan} style={{ ...SS.btnGhost, fontSize: 12 }}>+ Agregar plan</button>
-          {PARTNER_EXTRAS_CATALOG.map((e) => (
-            <button key={e.nombre} onClick={() => addExtra(e.nombre)} style={{ ...SS.btnGhost, fontSize: 12 }}>
-              + {e.nombre}
-            </button>
+        {/* ───── 2. Minuta (key points) ───── */}
+        <Section title="Minuta de la llamada">
+          <Field label="Transcripción / notas crudas (opcional)">
+            <textarea
+              value={form.minuta_raw || ''}
+              onChange={(e) => setForm({ ...form, minuta_raw: e.target.value })}
+              rows={4}
+              placeholder="Pega aquí tus notas o la transcripción de la llamada con el cliente. No es visible al cliente — es solo tu referencia."
+              style={{ ...inputStyle, fontFamily: 'inherit', resize: 'vertical' }}
+            />
+          </Field>
+          <div style={{ fontSize: 12, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+            Puntos clave (visibles al cliente)
+          </div>
+          {(form.key_points || []).map((kp: any, idx: number) => (
+            <div key={idx} style={{ background: C.borderSoft, padding: 10, borderRadius: 8, marginBottom: 8 }}>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+                <input
+                  value={kp.title || ''}
+                  onChange={(e) => updateKeyPoint(idx, { title: e.target.value })}
+                  placeholder="Título"
+                  style={{ ...inputStyle, fontWeight: 600 }}
+                />
+                <button onClick={() => removeKeyPoint(idx)} style={{ background: 'none', border: 'none', color: C.red, cursor: 'pointer', fontSize: 12, padding: '0 6px' }}>×</button>
+              </div>
+              <textarea
+                value={kp.detail || ''}
+                onChange={(e) => updateKeyPoint(idx, { detail: e.target.value })}
+                placeholder="Detalle"
+                rows={2}
+                style={{ ...inputStyle, fontFamily: 'inherit', fontSize: 12, resize: 'vertical' }}
+              />
+            </div>
           ))}
-        </div>
+          <button onClick={addKeyPoint} style={{ ...SS.btnGhost, fontSize: 12 }}>+ Agregar punto clave</button>
+        </Section>
 
-        {/* Descuento global */}
-        <div className="cq-row-2">
-          <Field label={`Descuento global (% max ${PARTNER_MAX_DISCOUNT_PCT})`}>
-            <input
-              type="number"
-              min={0}
-              max={PARTNER_MAX_DISCOUNT_PCT}
-              value={form.descuento_global || 0}
-              onChange={(e) => {
+        {/* ───── 3. Conceptos ───── */}
+        <Section title={`Conceptos (${items.length})`} defaultOpen>
+          {items.map((it, idx) => (
+            <div key={idx} style={{
+              border: it.es_promocion ? `1.5px solid ${C.green}` : `1px solid ${C.border}`,
+              borderRadius: 10, padding: 12, marginBottom: 10,
+              background: it.es_promocion ? '#ecfdf5' : C.borderSoft,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  {it.es_promocion && (
+                    <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', background: C.green, padding: '2px 7px', borderRadius: 3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Promoción</span>
+                  )}
+                  <strong style={{ fontSize: 13 }}>
+                    {it.tipo === 'plan' ? `Plan ${PLAN_LABELS_ES[it.nombre] || it.nombre}` : it.nombre || 'Extra'}
+                  </strong>
+                </div>
+                <button onClick={() => removeItem(idx)} style={{ background: 'none', border: 'none', color: C.red, cursor: 'pointer', fontSize: 11, padding: '2px 6px' }}>Quitar</button>
+              </div>
+              {it.tipo === 'plan' ? (
+                <>
+                  <div className="cq-row-3">
+                    <Field label="Plan" small>
+                      <select value={it.nombre} onChange={(e) => {
+                        const n = e.target.value;
+                        updateItem(idx, { nombre: n, precio_unitario: PLAN_PRICES[n], descripcion: `Plan ${PLAN_LABELS_ES[n]} · ${it.sucursales || 1} sucursal${(it.sucursales || 1) > 1 ? 'es' : ''}` });
+                      }} style={inputStyle}>
+                        {PLANS.map((p) => <option key={p} value={p}>{PLAN_LABELS_ES[p]} (${PLAN_PRICES[p]}/mes)</option>)}
+                      </select>
+                    </Field>
+                    <Field label="Sucursales" small>
+                      <input type="number" min={1} value={it.sucursales || 1} onChange={(e) => {
+                        const suc = Math.max(1, Number(e.target.value) || 1);
+                        updateItem(idx, { sucursales: suc, descripcion: `Plan ${PLAN_LABELS_ES[it.nombre]} · ${suc} sucursal${suc > 1 ? 'es' : ''}` });
+                      }} style={inputStyle} />
+                    </Field>
+                    <Field label="Periodo" small>
+                      <select value={it.periodo || 'mensual'} onChange={(e) => updateItem(idx, { periodo: e.target.value })} style={inputStyle}>
+                        <option value="mensual">Mensual</option>
+                        <option value="anual">Anual (2 meses gratis)</option>
+                      </select>
+                    </Field>
+                  </div>
+                  <div className="cq-row-2" style={{ marginTop: 6 }}>
+                    <Field label={`Desc. (máx ${PARTNER_MAX_DISCOUNT_PCT}%)`} small>
+                      <input type="number" min={0} max={PARTNER_MAX_DISCOUNT_PCT} value={it.descuento_pct || 0} onChange={(e) => {
+                        const d = Math.min(PARTNER_MAX_DISCOUNT_PCT, Math.max(0, Number(e.target.value) || 0));
+                        updateItem(idx, { descuento_pct: d });
+                      }} style={inputStyle} />
+                    </Field>
+                    <Field label="Nota (opcional)" small>
+                      <input value={it.nota || ''} onChange={(e) => updateItem(idx, { nota: e.target.value })} style={inputStyle} placeholder="Ej. precio especial" />
+                    </Field>
+                  </div>
+                </>
+              ) : it.es_promocion ? (
+                <>
+                  <div className="cq-row-2">
+                    <Field label="Concepto" small>
+                      <input value={it.nombre || ''} onChange={(e) => updateItem(idx, { nombre: e.target.value })} style={inputStyle} />
+                    </Field>
+                    <Field label="Valor original" small>
+                      <input type="number" min={0} value={it.precio_original || 0} onChange={(e) => updateItem(idx, { precio_original: Number(e.target.value) || 0 })} style={inputStyle} />
+                    </Field>
+                  </div>
+                  <Field label="Descripción" small>
+                    <input value={it.descripcion || ''} onChange={(e) => updateItem(idx, { descripcion: e.target.value })} style={inputStyle} placeholder="Qué incluye la promoción" />
+                  </Field>
+                  <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>
+                    Las promociones se muestran al cliente con el valor original tachado y $0 como precio.
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="cq-row-2">
+                    <Field label="Concepto" small>
+                      <input value={it.nombre || ''} onChange={(e) => updateItem(idx, { nombre: e.target.value })} style={inputStyle} />
+                    </Field>
+                    <Field label="Monto" small>
+                      <input type="number" min={0} value={it.precio_unitario || 0} onChange={(e) => {
+                        const v = Number(e.target.value) || 0;
+                        updateItem(idx, { precio_unitario: v, monto: v });
+                      }} style={inputStyle} />
+                    </Field>
+                  </div>
+                  <Field label="Descripción" small>
+                    <input value={it.descripcion || ''} onChange={(e) => updateItem(idx, { descripcion: e.target.value })} style={inputStyle} />
+                  </Field>
+                  <div className="cq-row-2" style={{ marginTop: 6 }}>
+                    <Field label="Tipo" small>
+                      <select value={it.recurrente ? 'recurrente' : 'unico'} onChange={(e) => {
+                        const recur = e.target.value === 'recurrente';
+                        updateItem(idx, { recurrente: recur, periodo_extra: recur ? 'mensual' : 'unico' });
+                      }} style={inputStyle}>
+                        <option value="unico">Único</option>
+                        <option value="recurrente">Recurrente</option>
+                      </select>
+                    </Field>
+                    {it.recurrente && (
+                      <Field label="Frecuencia" small>
+                        <select value={it.periodo_extra || 'mensual'} onChange={(e) => updateItem(idx, { periodo_extra: e.target.value })} style={inputStyle}>
+                          <option value="mensual">Mensual</option>
+                          <option value="anual">Anual</option>
+                        </select>
+                      </Field>
+                    )}
+                  </div>
+                </>
+              )}
+              <div style={{ marginTop: 8, fontSize: 13, textAlign: 'right' }}>
+                <span style={{ color: C.muted, marginRight: 8 }}>Subtotal:</span>
+                <strong style={{ color: it.es_promocion ? C.green : C.text }}>
+                  {it.es_promocion ? 'GRATIS' : fmt(it.subtotal)}
+                </strong>
+              </div>
+            </div>
+          ))}
+
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button onClick={addPlan} style={{ ...SS.btnGhost, fontSize: 12 }}>+ Plan</button>
+            <button onClick={addExtraCustom} style={{ ...SS.btnGhost, fontSize: 12 }}>+ Extra</button>
+            <button onClick={addPromoImpl} style={{ ...SS.btnGhost, fontSize: 12, borderColor: C.green, color: C.greenDark }}>+ Promo impl.</button>
+            <button onClick={addPromoCustom} style={{ ...SS.btnGhost, fontSize: 12, borderColor: C.green, color: C.greenDark }}>+ Promo custom</button>
+          </div>
+          <div style={{ marginTop: 10, fontSize: 11, color: C.muted }}>
+            Catálogo SACS:
+            {PARTNER_EXTRAS_CATALOG.map((e) => (
+              <button key={e.nombre} onClick={() => addExtraFromCatalog(e.nombre)} style={{ ...SS.btnGhost, fontSize: 11, padding: '4px 8px', marginLeft: 6, marginTop: 4 }}>+ {e.nombre}</button>
+            ))}
+          </div>
+        </Section>
+
+        {/* ───── 4. ROI ───── */}
+        <Section title="ROI (retorno de inversión)">
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 12, cursor: 'pointer' }}>
+            <input type="checkbox" checked={!!form.mostrar_roi} onChange={(e) => setForm({ ...form, mostrar_roi: e.target.checked })} />
+            Mostrar sección de ROI al cliente
+          </label>
+          {form.mostrar_roi && (
+            <>
+              <Field label="Problema actual del cliente">
+                <input
+                  value={form.roi?.problema || ''}
+                  onChange={(e) => setForm({ ...form, roi: { ...(form.roi || {}), problema: e.target.value } })}
+                  style={inputStyle}
+                  placeholder="Ej. Pierde 8 horas/semana cuadrando inventario"
+                />
+              </Field>
+              <Field label="Ahorro mensual estimado (MXN)">
+                <input
+                  type="number" min={0}
+                  value={form.roi?.ahorro_mensual || 0}
+                  onChange={(e) => setForm({ ...form, roi: { ...(form.roi || {}), ahorro_mensual: Number(e.target.value) || 0, ahorro_anual: (Number(e.target.value) || 0) * 12 } })}
+                  style={inputStyle}
+                />
+              </Field>
+              <Field label="Detalle">
+                <textarea
+                  value={form.roi?.detalle || ''}
+                  onChange={(e) => setForm({ ...form, roi: { ...(form.roi || {}), detalle: e.target.value } })}
+                  rows={2}
+                  style={{ ...inputStyle, fontFamily: 'inherit', resize: 'vertical' }}
+                />
+              </Field>
+            </>
+          )}
+        </Section>
+
+        {/* ───── 5. Antes vs Después ───── */}
+        <Section title="Antes vs Después">
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 12, cursor: 'pointer' }}>
+            <input type="checkbox" checked={!!form.mostrar_antes_despues} onChange={(e) => setForm({ ...form, mostrar_antes_despues: e.target.checked })} />
+            Mostrar comparación al cliente
+          </label>
+          {form.mostrar_antes_despues && (
+            <>
+              {(form.antes_despues || []).map((ad: any, idx: number) => (
+                <div key={idx} style={{ background: C.borderSoft, padding: 10, borderRadius: 8, marginBottom: 8 }}>
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+                    <input value={ad.aspecto || ''} onChange={(e) => updateAntesDespues(idx, { aspecto: e.target.value })} placeholder="Aspecto (ej. Inventario)" style={inputStyle} />
+                    <button onClick={() => removeAntesDespues(idx)} style={{ background: 'none', border: 'none', color: C.red, cursor: 'pointer', fontSize: 12, padding: '0 6px' }}>×</button>
+                  </div>
+                  <div className="cq-row-2">
+                    <Field label="Antes" small>
+                      <input value={ad.antes || ''} onChange={(e) => updateAntesDespues(idx, { antes: e.target.value })} style={inputStyle} placeholder="Situación actual" />
+                    </Field>
+                    <Field label="Después" small>
+                      <input value={ad.despues || ''} onChange={(e) => updateAntesDespues(idx, { despues: e.target.value })} style={inputStyle} placeholder="Con SACS" />
+                    </Field>
+                  </div>
+                </div>
+              ))}
+              <button onClick={addAntesDespues} style={{ ...SS.btnGhost, fontSize: 12 }}>+ Agregar comparación</button>
+            </>
+          )}
+        </Section>
+
+        {/* ───── 6. Configuración ───── */}
+        <Section title="Configuración" defaultOpen>
+          <div className="cq-row-2">
+            <Field label={`Descuento global (% max ${PARTNER_MAX_DISCOUNT_PCT})`}>
+              <input type="number" min={0} max={PARTNER_MAX_DISCOUNT_PCT} value={form.descuento_global || 0} onChange={(e) => {
                 const d = Math.min(PARTNER_MAX_DISCOUNT_PCT, Math.max(0, Number(e.target.value) || 0));
                 setForm({ ...form, descuento_global: d, descuento_tipo: 'pct' });
-              }}
-              style={inputStyle}
-            />
-          </Field>
+              }} style={inputStyle} />
+            </Field>
+            <Field label="IVA">
+              <select value={form.iva_incluido ? 'suma' : 'sin'} onChange={(e) => setForm({ ...form, iva_incluido: e.target.value === 'suma' })} style={inputStyle}>
+                <option value="suma">Suma 16% al total</option>
+                <option value="sin">Sin IVA</option>
+              </select>
+            </Field>
+          </div>
           <Field label="Vigencia">
-            <input
-              type="date"
-              value={form.vigencia || ''}
-              onChange={(e) => setForm({ ...form, vigencia: e.target.value })}
-              style={inputStyle}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 6, flexWrap: 'wrap' }}>
+              <button onClick={() => setVigenciaPreset(15)} style={{ ...SS.btnGhost, fontSize: 11, padding: '6px 10px' }}>Normal (15 días)</button>
+              <button onClick={() => setVigenciaPreset(5)} style={{ ...SS.btnGhost, fontSize: 11, padding: '6px 10px', borderColor: C.amber, color: C.amber }}>Urgente (5 días)</button>
+              <button onClick={() => setVigenciaPreset(3)} style={{ ...SS.btnGhost, fontSize: 11, padding: '6px 10px', borderColor: C.red, color: C.red }}>Oferta (3 días)</button>
+            </div>
+            <input type="date" value={form.vigencia || ''} onChange={(e) => setForm({ ...form, vigencia: e.target.value })} style={inputStyle} />
+          </Field>
+          <Field label="Etiqueta de promoción (opcional)">
+            <input value={form.promo_label || ''} onChange={(e) => setForm({ ...form, promo_label: e.target.value })} placeholder="Ej. OFERTA MAYO -20%" maxLength={40} style={inputStyle} />
+          </Field>
+          <Field label="Condiciones / notas">
+            <textarea
+              value={form.condiciones || ''}
+              onChange={(e) => setForm({ ...form, condiciones: e.target.value })}
+              rows={3}
+              placeholder="Términos especiales, qué incluye, qué no, plazos, etc."
+              style={{ ...inputStyle, fontFamily: 'inherit', resize: 'vertical' }}
             />
           </Field>
-        </div>
+        </Section>
 
-        <Field label="IVA">
-          <select
-            value={form.iva_incluido ? 'suma' : 'sin'}
-            onChange={(e) => setForm({ ...form, iva_incluido: e.target.value === 'suma' })}
-            style={inputStyle}
-          >
-            <option value="suma">Suma 16% al total</option>
-            <option value="sin">Sin IVA</option>
-          </select>
-        </Field>
+        {/* ───── 7. Visibilidad ───── */}
+        <Section title="Qué ve el cliente">
+          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
+            <Toggle label="Contador de vigencia (urgencia)" checked={!!form.mostrar_timer} onChange={(v) => setForm({ ...form, mostrar_timer: v })} />
+            <Toggle label="Detalle del plan (qué incluye)" checked={!!form.mostrar_features} onChange={(v) => setForm({ ...form, mostrar_features: v })} />
+            <Toggle label="Desglose de pagos" checked={!!form.mostrar_desglose} onChange={(v) => setForm({ ...form, mostrar_desglose: v })} />
+            <Toggle label="Puntos clave (minuta)" checked={!!form.mostrar_key_points} onChange={(v) => setForm({ ...form, mostrar_key_points: v })} />
+            <Toggle label="Condiciones / notas" checked={!!form.mostrar_condiciones} onChange={(v) => setForm({ ...form, mostrar_condiciones: v })} />
+            <Toggle label="Timeline de implementación" checked={!!form.mostrar_timeline} onChange={(v) => setForm({ ...form, mostrar_timeline: v })} />
+            <Toggle label="Proceso de implementación (pasos operativos)" checked={!!form.mostrar_implementacion} onChange={(v) => setForm({ ...form, mostrar_implementacion: v })} />
+            <Toggle label="¿Por qué SACS? (historia, casos de éxito)" checked={!!form.mostrar_porque_sacs} onChange={(v) => setForm({ ...form, mostrar_porque_sacs: v })} />
+            <Toggle label="Firma del cliente" checked={!!form.mostrar_firma} onChange={(v) => setForm({ ...form, mostrar_firma: v })} />
+            <Toggle label="Código QR" checked={!!form.mostrar_qr} onChange={(v) => setForm({ ...form, mostrar_qr: v })} />
+            <Toggle label="Números animados" checked={!!form.mostrar_animaciones} onChange={(v) => setForm({ ...form, mostrar_animaciones: v })} />
+          </div>
+          {form.mostrar_timeline && (
+            <Field label="Tipo de timeline">
+              <select value={form.timeline_tipo || '1suc'} onChange={(e) => setForm({ ...form, timeline_tipo: e.target.value })} style={inputStyle}>
+                <option value="1suc">1 sucursal — Arrancando su primera tienda</option>
+                <option value="2a5suc">2–5 sucursales — Creciendo y necesita orden</option>
+                <option value="5massuc">5+ sucursales — Operación compleja, automatización</option>
+              </select>
+            </Field>
+          )}
+          {form.mostrar_implementacion && (
+            <Field label="Nota en proceso de implementación (opcional)">
+              <textarea
+                value={form.implementacion_nota || ''}
+                onChange={(e) => setForm({ ...form, implementacion_nota: e.target.value })}
+                rows={2}
+                placeholder="Ej. Tu migración incluye integración con SAP"
+                style={{ ...inputStyle, fontFamily: 'inherit', resize: 'vertical' }}
+              />
+            </Field>
+          )}
+        </Section>
 
-        <Field label="Condiciones / notas (opcional)">
-          <textarea
-            value={form.condiciones || ''}
-            onChange={(e) => setForm({ ...form, condiciones: e.target.value })}
-            rows={3}
-            style={{ ...inputStyle, fontFamily: 'inherit', resize: 'vertical' }}
-          />
-        </Field>
-
-        {/* Totales */}
+        {/* ───── 8. Totales + Desglose ───── */}
         <div style={{ background: C.brandSoft, padding: 16, borderRadius: 12, marginTop: 18 }}>
           <Row label="Subtotal" value={fmt(totals.itemsSubtotal)} muted />
           {totals.globalDisc > 0 && <Row label="Descuento" value={`-${fmt(totals.globalDisc)}`} muted />}
@@ -737,6 +1145,14 @@ function QuoteEditor({
           <div style={{ borderTop: `1px solid ${C.brandTint}`, marginTop: 8, paddingTop: 8 }}>
             <Row label="Total" value={`${fmt(totals.grandTotal)} ${form.moneda || 'MXN'}`} bold />
           </div>
+          {(breakdown.mensualRecurrente > 0 || breakdown.unicoSetup > 0) && (
+            <div style={{ borderTop: `1px solid ${C.brandTint}`, marginTop: 12, paddingTop: 10 }}>
+              <div style={{ fontSize: 11, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Desglose</div>
+              {breakdown.unicoSetup > 0 && <Row label="Pago único (setup)" value={fmt(breakdown.unicoSetup)} muted />}
+              {breakdown.mensualRecurrente > 0 && <Row label="Mensual recurrente" value={`${fmt(breakdown.mensualRecurrente)}/mes`} muted />}
+              {breakdown.anualRecurrente > 0 && <Row label="Anual recurrente" value={`${fmt(breakdown.anualRecurrente)}/año`} muted />}
+            </div>
+          )}
         </div>
 
         {/* Actions */}
@@ -754,14 +1170,46 @@ function QuoteEditor({
   );
 }
 
+// ─── UI helpers locales ───────────────────────────────────────────────────
+
+function Section({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div style={{ borderTop: `1px solid ${C.border}`, marginTop: 14, paddingTop: 14 }}>
+      <button onClick={() => setOpen(!open)} style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%',
+        background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: open ? 12 : 0,
+        fontFamily: 'inherit', textAlign: 'left',
+      }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: C.text, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          {title}
+        </span>
+        <span style={{ fontSize: 16, color: C.muted, transition: 'transform 0.2s', transform: open ? 'rotate(90deg)' : 'rotate(0deg)' }}>›</span>
+      </button>
+      {open && <div>{children}</div>}
+    </div>
+  );
+}
+
+function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="cq-toggle" style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, cursor: 'pointer', padding: '8px 4px', borderRadius: 6, lineHeight: 1.3 }}>
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} style={{ minWidth: 18, minHeight: 18, accentColor: C.accent }} />
+      <span>{label}</span>
+    </label>
+  );
+}
+
 // CSS responsive del editor (drawer mobile-friendly)
 const COTIZADOR_MOBILE_CSS = `
   .cq-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .cq-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .cq-toggle:hover { background: #f4f5f7; }
   @media (max-width: 640px) {
     .cq-drawer { padding: 20px 18px 24px !important; width: 100vw !important; max-width: 100vw !important; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0)) !important; }
     .cq-row-2 { grid-template-columns: 1fr; gap: 0; }
     .cq-row-3 { grid-template-columns: 1fr; gap: 0; }
+    .cq-toggle { padding: 10px 4px !important; min-height: 40px; }
     .cq-actions {
       display: flex !important;
       flex-direction: column !important;

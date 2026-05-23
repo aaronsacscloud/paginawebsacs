@@ -233,6 +233,7 @@ export default function PortalShell({ initialUser }: Props) {
           const isActive = tab === item.id;
           return (
             <button key={item.id} onClick={() => go(item.id)}
+              data-tour={`sidebar-${item.id}`}
               style={{ ...S.bottomBtn, color: isActive ? C.brand : C.muted }}>
               <item.icon size={20} color={isActive ? C.brand : C.muted} />
               <span style={{ fontSize: 10, marginTop: 3, fontWeight: isActive ? 700 : 500 }}>{item.label}</span>
@@ -240,6 +241,7 @@ export default function PortalShell({ initialUser }: Props) {
           );
         })}
         <button onClick={() => setMobileMenuOpen(true)}
+          data-tour="more-menu"
           style={{ ...S.bottomBtn, color: mobileMenuOpen ? C.brand : C.muted }}>
           <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={mobileMenuOpen ? C.brand : C.muted} strokeWidth={1.8} strokeLinecap="round">
             <circle cx="5" cy="12" r="1.5" fill={mobileMenuOpen ? C.brand : C.muted}/>

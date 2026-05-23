@@ -2,7 +2,7 @@
 // Estas reglas se aplican en backend (los endpoints) — UI debería respetarlas también.
 
 import type { CurrentUser } from '../auth/scope';
-import { isPartnerAllowedExtra, isPartnerAllowedPlan } from './partner-catalog';
+import { isPartnerAllowedPlan } from './partner-catalog';
 
 export const PARTNER_MAX_DISCOUNT_PCT = 15;
 export const PARTNER_MAX_EXTENSIONS = 1;
@@ -42,7 +42,7 @@ export function validatePartnerQuoteBody(
     };
   }
 
-  // 2. Items: solo planes y extras del catálogo
+  // 2. Items: planes deben ser del catálogo; extras pueden ser libres (catálogo SACS o custom)
   const items = Array.isArray(body.items) ? body.items : [];
   for (const it of items) {
     if (it?.tipo === 'plan') {
@@ -62,15 +62,9 @@ export function validatePartnerQuoteBody(
           message: `Descuento por línea máximo ${PARTNER_MAX_DISCOUNT_PCT}%`,
         };
       }
-    } else if (it?.tipo === 'extra') {
-      if (!isPartnerAllowedExtra(it.nombre)) {
-        return {
-          status: 422,
-          code: 'extra_not_allowed',
-          message: `Extra no permitido para partners: "${it.nombre}". Usa solo los del catálogo SACS.`,
-        };
-      }
     }
+    // Extras (tipo='extra', incl. es_promocion) no tienen whitelist —
+    // el partner puede agregar servicios propios o promos custom como el admin.
   }
 
   return null;

@@ -17,6 +17,7 @@ type StepBody = {
 type Step = {
   tabHash: string;
   target?: string;
+  mobileTarget?: string;  // fallback cuando el target principal está hidden en mobile (ej. sidebar)
   emoji?: string;
   title: string | ((name: string) => string);
   desc: string | ((name: string) => string) | StepBody | ((name: string) => StepBody);
@@ -58,33 +59,73 @@ export default function OnboardingTour({ user, onComplete }: Props) {
     return () => clearTimeout(t);
   }, [step]);
 
+  function findVisibleTarget(): HTMLElement | null {
+    const isMobile = window.innerWidth <= 900;
+    // En mobile, intentar primero mobileTarget si está definido
+    const candidates: string[] = [];
+    if (isMobile && current.mobileTarget) candidates.push(current.mobileTarget);
+    if (current.target) candidates.push(current.target);
+    if (isMobile && !current.mobileTarget && current.target?.startsWith('sidebar-')) {
+      // Fallback genérico: si el target es sidebar-* y no se ve, usar more-menu
+      candidates.push('more-menu');
+    }
+    for (const sel of candidates) {
+      const nodes = document.querySelectorAll(`[data-tour="${sel}"]`);
+      for (const node of Array.from(nodes)) {
+        const el = node as HTMLElement;
+        const r = el.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) return el;
+      }
+    }
+    return null;
+  }
+
   function measure() {
     if (isCentered) {
       setRect(null);
       setReady(true);
       return;
     }
-    const sel = `[data-tour="${current.target}"]`;
-    const el = document.querySelector(sel) as HTMLElement | null;
+    const el = findVisibleTarget();
     if (!el) {
       setRect(null);
       setReady(true);
       return;
     }
-    // Reservar espacio del panel derecho · scroll para que target quede en zona visible izquierda
+    const isMobile = window.innerWidth <= 900;
+    if (isMobile) {
+      // Mobile: tooltip ocupa el bottom · scroll para que target quede en top ~25vh
+      el.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const r = el.getBoundingClientRect();
+          // Si target queda muy arriba (clipped por topbar sticky ~52px) o tapado por tooltip bottom (60vh), ajusta
+          // Tooltip ocupa max 56vh con bottom: 96px + safe-area → calculamos su top edge
+          const tooltipTop = window.innerHeight - 96 - (window.innerHeight * 0.56);
+          const minTop = 64; // espacio para topbar mobile
+          if (r.top < minTop) {
+            window.scrollBy({ top: r.top - minTop - 12, behavior: 'smooth' });
+          } else if (r.bottom > tooltipTop - 12) {
+            window.scrollBy({ top: r.bottom - (tooltipTop - 12) + 16, behavior: 'smooth' });
+          }
+          const r2 = el.getBoundingClientRect();
+          setRect({ top: r2.top, left: r2.left, width: r2.width, height: r2.height });
+          setReady(true);
+        });
+      });
+      return;
+    }
+    // Desktop: tooltip a la derecha · reservar panel derecho
     const panelW = TOOLTIP_W + PANEL_GAP * 2;
-    const visibleAreaCenter = (window.innerWidth - panelW) / 2;
     el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         const r = el.getBoundingClientRect();
-        // Si el elemento queda detrás del panel derecho, scroll lateral para correrlo
         if (r.right > window.innerWidth - panelW) {
           window.scrollBy({ left: r.right - (window.innerWidth - panelW) + 40, behavior: 'smooth' });
         }
         const r2 = el.getBoundingClientRect();
-        const newRect: Rect = { top: r2.top, left: r2.left, width: r2.width, height: r2.height };
-        setRect(newRect);
+        setRect({ top: r2.top, left: r2.left, width: r2.width, height: r2.height });
         setReady(true);
       });
     });
@@ -93,7 +134,7 @@ export default function OnboardingTour({ user, onComplete }: Props) {
   useEffect(() => {
     if (!current.target) return;
     const onResize = () => {
-      const el = document.querySelector(`[data-tour="${current.target}"]`) as HTMLElement | null;
+      const el = findVisibleTarget();
       if (!el) return;
       const r = el.getBoundingClientRect();
       setRect({ top: r.top, left: r.left, width: r.width, height: r.height });
@@ -104,7 +145,7 @@ export default function OnboardingTour({ user, onComplete }: Props) {
       window.removeEventListener('resize', onResize);
       window.removeEventListener('scroll', onResize, true);
     };
-  }, [step, current.target]);
+  }, [step, current.target, current.mobileTarget]);
 
   // No bloqueamos scroll · solo marcamos el body para que otros componentes (WhatsApp FAB) se reposicionen
   useEffect(() => {
@@ -387,12 +428,22 @@ export default function OnboardingTour({ user, onComplete }: Props) {
           transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
         @media (max-width: 900px) {
-          .onb-tooltip { width: calc(100vw - 24px) !important; right: 12px !important; left: 12px !important; bottom: 12px !important; top: auto !important; max-height: 60vh !important; }
+          .onb-tooltip {
+            width: calc(100vw - 24px) !important;
+            right: 12px !important;
+            left: 12px !important;
+            bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important;
+            top: auto !important;
+            max-height: 56vh !important;
+          }
           body[data-onb-active] .pp-wa-pill,
           body[data-onb-active] .pp-install-toast {
-            right: 22px !important;
-            bottom: calc(60vh + 24px) !important;
+            right: 14px !important;
+            bottom: calc(56vh + 110px + env(safe-area-inset-bottom, 0px)) !important;
           }
+        }
+        @media (max-width: 900px) and (max-height: 600px) {
+          .onb-tooltip { max-height: 70vh !important; bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important; }
         }
       ` }} />
     </>
