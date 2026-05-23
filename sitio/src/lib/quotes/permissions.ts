@@ -48,6 +48,12 @@ export function validatePartnerQuoteBody(
 
   // 2. Items: planes deben ser del catálogo; extras pueden ser libres (catálogo SACS o custom)
   const items = Array.isArray(body.items) ? body.items : [];
+
+  // Subtotal de items pagados (excluyendo promociones) para validar caps relativos.
+  const paidSubtotal = items
+    .filter((it: any) => !(it?.tipo === 'extra' && it?.es_promocion))
+    .reduce((s: number, it: any) => s + (Number(it?.subtotal) || Number(it?.monto) || 0), 0);
+
   for (const it of items) {
     if (it?.tipo === 'plan') {
       if (!isPartnerAllowedPlan(it.nombre)) {
@@ -67,8 +73,24 @@ export function validatePartnerQuoteBody(
         };
       }
     }
-    // Extras (tipo='extra', incl. es_promocion) no tienen whitelist —
-    // el partner puede agregar servicios propios o promos custom como el admin.
+    // Promociones (precio_unitario=0, precio_original>0): cap el valor publicitado
+    // para evitar "ahorro de $1M" en una cotización de $5k (engaño al cliente).
+    if (it?.tipo === 'extra' && it?.es_promocion) {
+      const precioOriginal = Number(it?.precio_original) || 0;
+      // Una sola promo no puede valer más que el subtotal pagado de la cotización.
+      // Para una cotización sin items pagados (solo promos), no permitir promos > $0.
+      if (precioOriginal > paidSubtotal) {
+        return {
+          status: 422,
+          code: 'promo_value_too_high',
+          message: paidSubtotal > 0
+            ? `El valor de una promoción no puede superar el subtotal pagado de la cotización (${paidSubtotal}).`
+            : 'Las promociones requieren al menos un plan o extra pagado en la cotización.',
+        };
+      }
+    }
+    // Extras no-promo (tipo='extra', sin es_promocion) no tienen whitelist —
+    // el partner puede agregar servicios propios igual que el admin.
   }
 
   return null;
