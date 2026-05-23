@@ -572,12 +572,12 @@ function QuoteEditor({
   return (
     <>
       <div style={SS.drawerBackdrop} onClick={() => !saving && onClose()} />
-      <div style={SS.drawer}>
+      <div style={SS.drawer} className="cq-drawer">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
           <h2 style={{ ...SS.h3, margin: 0 }}>
             {isEdit ? 'Editar cotización' : 'Nueva cotización'}
           </h2>
-          <button onClick={onClose} disabled={saving} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: 22 }}>
+          <button onClick={onClose} disabled={saving} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: 28, padding: '0 4px', lineHeight: 1 }}>
             ×
           </button>
         </div>
@@ -595,7 +595,7 @@ function QuoteEditor({
         <Field label="Contacto">
           <input value={form.contacto || ''} onChange={(e) => setForm({ ...form, contacto: e.target.value })} style={inputStyle} />
         </Field>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="cq-row-2">
           <Field label="Email *">
             <input type="email" value={form.email || ''} onChange={(e) => setForm({ ...form, email: e.target.value })} style={inputStyle} />
           </Field>
@@ -617,7 +617,7 @@ function QuoteEditor({
               </button>
             </div>
             {it.tipo === 'plan' ? (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+              <div className="cq-row-3">
                 <Field label="Plan" small>
                   <select
                     value={it.nombre}
@@ -685,7 +685,7 @@ function QuoteEditor({
         </div>
 
         {/* Descuento global */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="cq-row-2">
           <Field label={`Descuento global (% max ${PARTNER_MAX_DISCOUNT_PCT})`}>
             <input
               type="number"
@@ -740,7 +740,7 @@ function QuoteEditor({
         </div>
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: 10, marginTop: 24, flexWrap: 'wrap' }}>
+        <div className="cq-actions" style={{ display: 'flex', gap: 10, marginTop: 24, flexWrap: 'wrap' }}>
           <button onClick={() => save('sent')} disabled={saving} style={SS.btn}>
             {saving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Crear y enviar'}
           </button>
@@ -749,9 +749,23 @@ function QuoteEditor({
           </button>
         </div>
       </div>
+      <style dangerouslySetInnerHTML={{ __html: COTIZADOR_MOBILE_CSS }} />
     </>
   );
 }
+
+// CSS responsive del editor (drawer mobile-friendly)
+const COTIZADOR_MOBILE_CSS = `
+  .cq-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .cq-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  @media (max-width: 640px) {
+    .cq-drawer { padding: 20px 18px 96px !important; width: 100vw !important; max-width: 100vw !important; }
+    .cq-row-2 { grid-template-columns: 1fr; gap: 0; }
+    .cq-row-3 { grid-template-columns: 1fr; gap: 0; }
+    .cq-actions { position: sticky; bottom: 0; background: linear-gradient(180deg, transparent, #fff 24%); padding-top: 24px; padding-bottom: 12px; margin-left: -18px; margin-right: -18px; padding-left: 18px; padding-right: 18px; }
+    .cq-actions > button { width: 100%; padding: 14px 20px; font-size: 14px; }
+  }
+`;
 
 // ─── helpers ───────────────────────────────────────────────────────────────
 

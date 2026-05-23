@@ -79,10 +79,14 @@ const SECTIONS: { title: string; items: TabItem[] }[] = [
 
 const ALL_TABS: TabItem[] = SECTIONS.flatMap(s => s.items);
 
+// Items que aparecen fijos en el bottom nav mobile (5 max). El resto vive en el sheet "Más".
+const MOBILE_PRIMARY: TabId[] = ['home', 'leads', 'cotizaciones', 'dinero'];
+
 export default function PortalShell({ initialUser }: Props) {
   const [tab, setTab] = useState<TabId>('home');
   const [demoBanner, setDemoBanner] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setDemoBanner(isDemoMode());
@@ -122,6 +126,7 @@ export default function PortalShell({ initialUser }: Props) {
 
   function go(t: TabId) {
     setTab(t);
+    setMobileMenuOpen(false);
     window.location.hash = t;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -220,19 +225,68 @@ export default function PortalShell({ initialUser }: Props) {
         <OnboardingTour user={initialUser} onComplete={() => setShowOnboarding(false)} />
       )}
 
-      {/* Mobile bottom nav · solo administración */}
+      {/* Mobile bottom nav · 4 atajos prioritarios + "Más" */}
       <nav style={S.bottomNav} className="pp-bottomnav">
-        {SECTIONS[0].items.map(t => {
-          const isActive = tab === t.id;
+        {MOBILE_PRIMARY.map(id => {
+          const item = ALL_TABS.find(t => t.id === id);
+          if (!item) return null;
+          const isActive = tab === item.id;
           return (
-            <button key={t.id} onClick={() => go(t.id)}
-              style={{ ...S.bottomBtn, color: isActive ? C.text : C.muted }}>
-              <t.icon size={18} color={isActive ? C.text : C.muted} />
-              <span style={{ fontSize: 10, marginTop: 3, fontWeight: isActive ? 600 : 500 }}>{t.label}</span>
+            <button key={item.id} onClick={() => go(item.id)}
+              style={{ ...S.bottomBtn, color: isActive ? C.brand : C.muted }}>
+              <item.icon size={20} color={isActive ? C.brand : C.muted} />
+              <span style={{ fontSize: 10, marginTop: 3, fontWeight: isActive ? 700 : 500 }}>{item.label}</span>
             </button>
           );
         })}
+        <button onClick={() => setMobileMenuOpen(true)}
+          style={{ ...S.bottomBtn, color: mobileMenuOpen ? C.brand : C.muted }}>
+          <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke={mobileMenuOpen ? C.brand : C.muted} strokeWidth={1.8} strokeLinecap="round">
+            <circle cx="5" cy="12" r="1.5" fill={mobileMenuOpen ? C.brand : C.muted}/>
+            <circle cx="12" cy="12" r="1.5" fill={mobileMenuOpen ? C.brand : C.muted}/>
+            <circle cx="19" cy="12" r="1.5" fill={mobileMenuOpen ? C.brand : C.muted}/>
+          </svg>
+          <span style={{ fontSize: 10, marginTop: 3, fontWeight: mobileMenuOpen ? 700 : 500 }}>Más</span>
+        </button>
       </nav>
+
+      {/* Mobile menu sheet · todas las secciones */}
+      {mobileMenuOpen && (
+        <>
+          <div onClick={() => setMobileMenuOpen(false)} style={S.mobileSheetBackdrop} />
+          <div style={S.mobileSheet}>
+            <div style={S.mobileSheetHandle} />
+            <div style={{ padding: '4px 8px 32px', maxHeight: '78vh', overflowY: 'auto' }}>
+              {SECTIONS.map(section => (
+                <div key={section.title} style={{ marginBottom: 18 }}>
+                  <div style={{ ...S.sectionTitle, padding: '8px 16px' }}>{section.title}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 2 }}>
+                    {section.items.map(t => {
+                      const isActive = tab === t.id;
+                      return (
+                        <button key={t.id} onClick={() => go(t.id)}
+                          style={{
+                            ...S.sideBtn,
+                            padding: '14px 16px',
+                            background: isActive ? C.brandSoft : 'transparent',
+                            color: isActive ? C.brand : C.textSoft,
+                            fontWeight: isActive ? 600 : 500,
+                            fontSize: 15,
+                          }}>
+                          <span style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22 }}>
+                            <t.icon size={19} color={isActive ? C.brand : C.muted} />
+                          </span>
+                          <span>{t.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
 
       <style dangerouslySetInnerHTML={{ __html: `
         @media (max-width: 900px) {
@@ -324,5 +378,23 @@ const S: Record<string, React.CSSProperties> = {
     display: 'flex', flexDirection: 'column' as const, alignItems: 'center',
     background: 'none', border: 'none', cursor: 'pointer',
     padding: '4px 8px', fontFamily: 'inherit',
+    minWidth: 0, flex: 1,
+  },
+  mobileSheetBackdrop: {
+    position: 'fixed' as const, inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 30,
+    backdropFilter: 'none',
+  },
+  mobileSheet: {
+    position: 'fixed' as const, bottom: 0, left: 0, right: 0,
+    background: '#fff',
+    borderRadius: '20px 20px 0 0',
+    boxShadow: '0 -8px 32px rgba(0,0,0,0.18)',
+    zIndex: 31,
+    paddingBottom: 'env(safe-area-inset-bottom, 0)',
+  },
+  mobileSheetHandle: {
+    width: 36, height: 4, borderRadius: 999,
+    background: '#e0e0e0',
+    margin: '10px auto 6px',
   },
 };

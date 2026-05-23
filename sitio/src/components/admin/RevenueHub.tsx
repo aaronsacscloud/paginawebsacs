@@ -1630,9 +1630,9 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
 
         {/* ─── Quote Drawer ─── */}
         {showDrawer && (
-          <div style={{ position: 'fixed' as const, inset: 0, zIndex: 200, background: '#f5f6f8', display: 'flex', flexDirection: 'column' as const }}>
+          <div className="rh-quote-drawer" style={{ position: 'fixed' as const, inset: 0, zIndex: 200, background: '#f5f6f8', display: 'flex', flexDirection: 'column' as const }}>
             {/* Top bar */}
-            <div style={{ background: '#fff', borderBottom: '1px solid #eee', padding: '10px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+            <div className="rh-quote-topbar" style={{ background: '#fff', borderBottom: '1px solid #eee', padding: '10px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
               <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800 }}>{qf.id ? `Editar ${qf.numero || 'cotización'}` : 'Nueva cotización'}</h3>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <button onClick={createQuote} disabled={saving || !items.length || !qf.empresa} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', fontSize: '0.75rem', padding: '6px 16px' }}>{saving ? 'Guardando...' : qf.id ? 'Guardar cambios' : 'Crear y enviar'}</button>
@@ -1640,9 +1640,9 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               </div>
             </div>
             {/* Split layout */}
-            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+            <div className="rh-quote-split" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
             {/* Left: Form */}
-            <div style={{ width: 480, flexShrink: 0, background: '#fff', overflowY: 'auto' as const, padding: 24, borderRight: '1px solid #eee' }}>
+            <div className="rh-quote-form" style={{ width: 480, flexShrink: 0, background: '#fff', overflowY: 'auto' as const, padding: 24, borderRight: '1px solid #eee' }}>
 
               {/* Client */}
               <div style={S.label}>Cliente</div>
@@ -2086,7 +2086,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
 
             </div>
             {/* Right: Preview */}
-            <div style={{ flex: 1, overflowY: 'auto' as const, padding: 32 }}>
+            <div className="rh-quote-preview" style={{ flex: 1, overflowY: 'auto' as const, padding: 32 }}>
               <div style={{ width: '100%', maxWidth: 640, margin: '0 auto', background: '#fff', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
                 {/* Preview Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '28px 32px 18px', borderBottom: '1px solid #f0f0f0' }}>
@@ -2319,6 +2319,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
   // ─── Main Layout ───
   return (
     <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", minHeight: '100vh', background: '#f5f6f8' }}>
+      <style dangerouslySetInnerHTML={{ __html: REVENUE_HUB_MOBILE_CSS }} />
       {/* Nav */}
       {!_hideNav && (
       <div style={{ background: '#fff', borderBottom: '1px solid #eee', padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
@@ -2446,3 +2447,18 @@ const S: Record<string, React.CSSProperties> = {
   listItem: { padding: '10px 0', borderBottom: '1px solid #f5f5f5', fontSize: '0.8125rem' },
   empty: { textAlign: 'center' as const, padding: 32, color: '#ccc', fontSize: '0.875rem' },
 };
+
+// CSS responsive — drawer del editor de cotizaciones mobile-friendly
+const REVENUE_HUB_MOBILE_CSS = `
+  @media (max-width: 900px) {
+    .rh-quote-topbar { padding: 10px 14px !important; }
+    .rh-quote-topbar h3 { font-size: 0.875rem !important; }
+    .rh-quote-split { flex-direction: column !important; overflow-y: auto !important; }
+    .rh-quote-form { width: 100% !important; padding: 16px !important; border-right: none !important; border-bottom: 1px solid #eee !important; }
+    .rh-quote-form > div[style*="grid-template-columns"],
+    .rh-quote-form div[style*="gridTemplateColumns"] { grid-template-columns: 1fr !important; }
+    .rh-quote-preview { padding: 18px !important; }
+    .rh-quote-preview > div[style*="max-width: 640"],
+    .rh-quote-preview > div[style*="maxWidth: 640"] { max-width: 100% !important; }
+  }
+`;
