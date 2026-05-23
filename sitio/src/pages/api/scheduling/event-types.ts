@@ -47,6 +47,22 @@ export const POST: APIRoute = async ({ request }) => {
   // Partner: owner siempre es él mismo. Founder/cs: pueden crear para cualquiera.
   const owner_id = isPartner(user) ? user.id : (body.owner_id || user.id);
 
+  // Pre-check de slug colisión — el UNIQUE constraint es global (legacy).
+  // Devolvemos 409 con mensaje accionable en vez de 500 genérico.
+  if (body.slug) {
+    const { data: existing } = await supabase
+      .from('event_types')
+      .select('id')
+      .eq('slug', body.slug)
+      .maybeSingle();
+    if (existing) {
+      return new Response(JSON.stringify({
+        error: `El slug "${body.slug}" ya está en uso. Usa otro (ej. agrega tu nombre o iniciales).`,
+        code: 'slug_taken',
+      }), { status: 409 });
+    }
+  }
+
   const { data, error } = await supabase
     .from('event_types')
     .insert({
@@ -67,7 +83,16 @@ export const POST: APIRoute = async ({ request }) => {
     .select()
     .single();
 
-  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  if (error) {
+    // Race: alguien insertó el mismo slug entre el pre-check y este insert.
+    if ((error as any).code === '23505') {
+      return new Response(JSON.stringify({
+        error: `El slug "${body.slug}" ya fue tomado. Usa otro.`,
+        code: 'slug_taken',
+      }), { status: 409 });
+    }
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  }
   return new Response(JSON.stringify(data), { status: 201 });
 };
 
@@ -102,7 +127,15 @@ export const PUT: APIRoute = async ({ request }) => {
     .select()
     .single();
 
-  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  if (error) {
+    if ((error as any).code === '23505') {
+      return new Response(JSON.stringify({
+        error: `El slug "${updates.slug}" ya está en uso por otro tipo de evento.`,
+        code: 'slug_taken',
+      }), { status: 409 });
+    }
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  }
   return new Response(JSON.stringify(data));
 };
 
