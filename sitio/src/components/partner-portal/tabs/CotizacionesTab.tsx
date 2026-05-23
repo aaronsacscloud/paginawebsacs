@@ -319,6 +319,34 @@ export default function CotizacionesTab({ user }: { user: { id: string; nombre: 
             setEditing(selected);
             setSelected(null);
           }}
+          onDuplicate={() => {
+            const src = selected;
+            // Limpia notas: conserva texto + meta de personalización; borra analytics/extensiones
+            // (views, timeline, first/last_viewed_at, extensions) — pertenecen al original.
+            const { text, meta } = parseMeta(src.notas || '');
+            const { views: _v, first_viewed_at: _f, last_viewed_at: _l, timeline: _tl, extensions: _ex, ...cleanMeta } = meta;
+            const cleanNotas = serializeMeta(text || '', cleanMeta);
+            // Copia limpia: borra ids/folios/timestamps/acepts → vuelve a ser draft.
+            const copy: Partial<Quote> = {
+              empresa: src.empresa,
+              contacto: src.contacto,
+              email: src.email,
+              whatsapp: src.whatsapp,
+              items: Array.isArray(src.items)
+                ? src.items.map((it: any) => ({ ...it }))
+                : [],
+              moneda: src.moneda || 'MXN',
+              descuento_global: src.descuento_global || 0,
+              descuento_tipo: src.descuento_tipo || 'pct',
+              iva_incluido: src.iva_incluido !== false,
+              vigencia: new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10),
+              condiciones: src.condiciones || '',
+              notas: cleanNotas,
+              estado: 'draft',
+            };
+            setEditing(copy);
+            setSelected(null);
+          }}
           onReload={load}
         />
       )}
@@ -345,11 +373,13 @@ function QuoteDetail({
   quote,
   onClose,
   onEdit,
+  onDuplicate,
   onReload,
 }: {
   quote: Quote;
   onClose: () => void;
   onEdit: () => void;
+  onDuplicate: () => void;
   onReload: () => void;
 }) {
   const locked = isLocked(quote.estado);
@@ -357,6 +387,38 @@ function QuoteDetail({
     ? `${window.location.origin}/cotizacion/${quote.id}`
     : `/cotizacion/${quote.id}`;
   const [copied, setCopied] = useState(false);
+  const [extending, setExtending] = useState(false);
+
+  // Extension status — partner puede extender +15d una vez por quote
+  const meta = useMemo(() => parseMeta(quote.notas || '').meta, [quote.notas]);
+  const extensions: any[] = Array.isArray(meta.extensions) ? meta.extensions : [];
+  const canExtend = !locked && quote.estado !== 'rejected' && quote.estado !== 'draft' && extensions.length === 0;
+  const wasExtended = extensions.length > 0;
+
+  const extend = async () => {
+    if (isDemoMode()) {
+      alert('En modo demo no se modifican cotizaciones.');
+      return;
+    }
+    if (!confirm('Extender la vigencia +15 días? Solo se puede hacer una vez por cotización.')) return;
+    setExtending(true);
+    try {
+      const res = await fetch('/api/revenue/extend-quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: quote.id, days: 15 }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert('Error: ' + (err.error || res.statusText));
+        return;
+      }
+      onReload();
+      onClose();
+    } finally {
+      setExtending(false);
+    }
+  };
 
   return (
     <>
@@ -388,7 +450,14 @@ function QuoteDetail({
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: C.muted }}>
             <span>Vigencia</span>
-            <span>{fmtDate(quote.vigencia)}</span>
+            <span>
+              {fmtDate(quote.vigencia)}
+              {wasExtended && (
+                <span style={{ fontSize: 11, color: C.amber, marginLeft: 6, fontWeight: 600 }}>
+                  (extendida +{extensions.reduce((s, ex) => s + (Number(ex.days) || 0), 0)}d)
+                </span>
+              )}
+            </span>
           </div>
         </div>
 
@@ -462,6 +531,14 @@ function QuoteDetail({
           {!locked && (
             <button onClick={onEdit} style={SS.btn}>
               Editar cotización
+            </button>
+          )}
+          <button onClick={onDuplicate} style={SS.btnGhost}>
+            Duplicar
+          </button>
+          {canExtend && (
+            <button onClick={extend} disabled={extending} style={{ ...SS.btnGhost, opacity: extending ? 0.6 : 1 }}>
+              {extending ? 'Extendiendo…' : 'Extender +15 días'}
             </button>
           )}
           {!locked && quote.estado !== 'rejected' && (
