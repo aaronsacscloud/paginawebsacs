@@ -12,6 +12,7 @@ import NotificationsTab from './tabs/NotificationsTab';
 import AcademyTab from './tabs/AcademyTab';
 import CertificationsTab from './tabs/CertificationsTab';
 import LeadsTab from './tabs/LeadsTab';
+import CotizacionesTab from './tabs/CotizacionesTab';
 import ClientesTab from './tabs/ClientesTab';
 import PartnerNetworkTab from './tabs/PartnerNetworkTab';
 import BrandKitTab from './tabs/BrandKitTab';
@@ -28,7 +29,7 @@ import { isDemoMode } from './tabs/utils';
 
 type TabId =
   | 'home' | 'notificaciones' | 'dinero' | 'compartir' | 'nivel' | 'aprende' | 'certs'
-  | 'leads' | 'clientes' | 'red'
+  | 'leads' | 'cotizaciones' | 'clientes' | 'red'
   | 'brandkit' | 'sacs-account'
   | 'mi-cuenta' | 'ayuda';
 
@@ -54,9 +55,10 @@ const SECTIONS: { title: string; items: TabItem[] }[] = [
   {
     title: 'CRM',
     items: [
-      { id: 'leads',    label: 'Leads',            icon: Icon.Leads },
-      { id: 'clientes', label: 'Clientes',         icon: Icon.Customers },
-      { id: 'red',      label: 'Red de partners',  icon: Icon.Network },
+      { id: 'leads',        label: 'Leads',            icon: Icon.Leads },
+      { id: 'cotizaciones', label: 'Cotizaciones',     icon: Icon.Quotes },
+      { id: 'clientes',     label: 'Clientes',         icon: Icon.Customers },
+      { id: 'red',          label: 'Red de partners',  icon: Icon.Network },
     ],
   },
   {
@@ -196,6 +198,7 @@ export default function PortalShell({ initialUser }: Props) {
             {tab === 'aprende'        && <AcademyTab user={initialUser} />}
             {tab === 'certs'          && <CertificationsTab user={initialUser} />}
             {tab === 'leads'        && <LeadsTab user={initialUser} />}
+            {tab === 'cotizaciones' && <CotizacionesTab user={initialUser} />}
             {tab === 'clientes'     && <ClientesTab user={initialUser} />}
             {tab === 'red'          && <PartnerNetworkTab user={initialUser} />}
             {tab === 'brandkit'     && <BrandKitTab />}

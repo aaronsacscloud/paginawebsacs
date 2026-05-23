@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { syncQuoteToDeal, ensureContactForQuote } from '../../../lib/crm/sync-quote-deal';
 import { notify, getSalesInbox } from '../../../lib/notify';
+import { getCurrentUser } from '../../../lib/auth/scope';
 
 export const prerender = false;
 
@@ -71,6 +72,12 @@ export const POST: APIRoute = async ({ request, url }) => {
     }
     if (quote.estado === 'accepted') {
       return new Response(JSON.stringify({ error: 'la cotización ya está aceptada' }), { status: 409, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    // Partner NO puede aceptar manualmente: solo el cliente final puede aceptar desde la vista pública.
+    const requester = await getCurrentUser(request);
+    if (requester?.role === 'partner' && method === 'admin_manual') {
+      return new Response(JSON.stringify({ error: 'Solo el cliente puede aceptar la cotización' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
     }
 
     const sep = '\n---META---\n';
@@ -174,6 +181,14 @@ export const POST: APIRoute = async ({ request, url }) => {
       })();
       const origin = url ? new URL(url).origin : 'https://www.sacscloud.com';
       const adminUrl = `${origin}/admin/crm?tab=cotizaciones`;
+
+      // Si la cotización fue creada por un partner, incluir su perfil + destinatario + reply-to
+      let partnerProfile: any = null;
+      if (quote.partner_id) {
+        const { getPartnerProfile } = await import('../../../lib/partners/profile');
+        partnerProfile = await getPartnerProfile(quote.partner_id);
+      }
+
       const notifyData = {
         numero: quote.numero,
         empresa: quote.empresa,
@@ -185,10 +200,23 @@ export const POST: APIRoute = async ({ request, url }) => {
         method: method || 'firma digital',
         nota_interna: nota_interna || '',
         adminUrl,
+        partner: partnerProfile,
       };
-      const targets = [getSalesInbox(), ownerEmail].filter(Boolean) as string[];
+
+      const targets = Array.from(new Set([
+        getSalesInbox(),
+        ownerEmail,
+        partnerProfile?.email || null,
+      ].filter(Boolean))) as string[];
+
       for (const to of targets) {
-        await notify({ channel: 'email', to, template: 'quote_accepted_owner', data: notifyData });
+        await notify({
+          channel: 'email',
+          to,
+          template: 'quote_accepted_owner',
+          data: notifyData,
+          replyTo: partnerProfile?.email || undefined,
+        });
       }
     } catch (postErr) {
       console.error('[mark-accepted] post-acceptance flow error:', postErr);

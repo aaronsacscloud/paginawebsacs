@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { syncQuoteToDeal, ensureContactForQuote } from '../../../lib/crm/sync-quote-deal';
 import { notify, getSalesInbox } from '../../../lib/notify';
+import { getCurrentUser } from '../../../lib/auth/scope';
 
 export const prerender = false;
 
@@ -30,6 +31,12 @@ export const POST: APIRoute = async ({ request, url }) => {
 
     if (fetchErr || !quote) {
       return new Response(JSON.stringify({ error: 'cotización no encontrada' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    // Partner ownership check
+    const user = await getCurrentUser(request);
+    if (user?.role === 'partner' && quote.partner_id && quote.partner_id !== user.id) {
+      return new Response(JSON.stringify({ error: 'no autorizado' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
     }
 
     if (quote.estado === 'paid') {

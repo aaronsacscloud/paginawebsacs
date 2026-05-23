@@ -40,18 +40,18 @@ const saldoRestante = Math.max(0, Number(quote.total || 0) - totalPagado);
 const porcentajePagado = (quote.total || 0) > 0 ? Math.min(100, Math.round((totalPagado / quote.total) * 100)) : 0;
 const isAdminMode = Astro.url.searchParams.has('admin');
 
-// Fetch partner/owner if deal has one assigned — for voice-per-partner in public quote
+// Fetch partner asesor — preferimos quote.partner_id (cotización creada por partner directamente),
+// y como fallback usamos deal.owner_id (atribución legacy)
 let partnerAssigned: any = null;
-if (quote.deal_id) {
-  const { data: dealData } = await supabase.from('deals').select('owner_id').eq('id', quote.deal_id).maybeSingle();
-  if (dealData?.owner_id) {
-    const { data: partnerData } = await supabase
-      .from('team_members')
-      .select('id, nombre, email, rol')
-      .eq('id', dealData.owner_id)
-      .maybeSingle();
-    if (partnerData && (partnerData as any).rol === 'partner') {
-      partnerAssigned = partnerData;
+{
+  const { getPartnerProfile } = await import('../../lib/partners/profile');
+  if (quote.partner_id) {
+    partnerAssigned = await getPartnerProfile(quote.partner_id);
+  } else if (quote.deal_id) {
+    const { data: dealData } = await supabase.from('deals').select('owner_id').eq('id', quote.deal_id).maybeSingle();
+    if (dealData?.owner_id) {
+      const profile = await getPartnerProfile(dealData.owner_id);
+      if (profile) partnerAssigned = profile;
     }
   }
 }
@@ -302,7 +302,25 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
       <div class="quote-asesor">
         <div class="quote-asesor-label">Tu asesor SACS</div>
         <div class="quote-asesor-name">{partnerAssigned.nombre}</div>
-        {partnerAssigned.email && <a href={`mailto:${partnerAssigned.email}`} class="quote-asesor-contact">{partnerAssigned.email}</a>}
+        {(partnerAssigned.empresa || partnerAssigned.ciudad) && (
+          <div class="quote-asesor-meta">
+            {partnerAssigned.empresa}{partnerAssigned.empresa && partnerAssigned.ciudad ? ' · ' : ''}{partnerAssigned.ciudad}
+          </div>
+        )}
+        <div class="quote-asesor-contacts">
+          {partnerAssigned.email && <a href={`mailto:${partnerAssigned.email}`} class="quote-asesor-contact">{partnerAssigned.email}</a>}
+          {partnerAssigned.whatsapp && (
+            <a
+              href={`https://wa.me/${String(partnerAssigned.whatsapp).replace(/\D/g, '')}`}
+              target="_blank"
+              rel="noopener"
+              class="quote-asesor-contact quote-asesor-wa"
+            >
+              {partnerAssigned.whatsapp}
+            </a>
+          )}
+        </div>
+        <div class="quote-asesor-badge">Partner certificado SACS · cobro y soporte gestionados por SACS</div>
       </div>
     )}
 
@@ -327,19 +345,38 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
         color: #1a1a1a;
         letter-spacing: -0.005em;
       }
+      .quote-asesor-meta {
+        font-size: 0.8125rem;
+        color: #666;
+        margin-top: 2px;
+      }
+      .quote-asesor-contacts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-top: 6px;
+      }
       .quote-asesor-contact {
         display: inline-block;
-        margin-top: 4px;
         font-size: 0.8125rem;
         color: #2AB5A0;
         text-decoration: none;
       }
+      .quote-asesor-wa { color: #25D366; }
       .quote-asesor-contact:hover { text-decoration: underline; }
+      .quote-asesor-badge {
+        margin-top: 10px;
+        font-size: 0.6875rem;
+        color: #999;
+        letter-spacing: 0.02em;
+      }
       @media (max-width: 640px) {
         .quote-asesor { padding: 10px 20px; }
         .quote-asesor-label { font-size: 0.5625rem; margin-bottom: 4px; }
         .quote-asesor-name { font-size: 0.9375rem; }
-        .quote-asesor-contact { font-size: 0.75rem; margin-top: 2px; }
+        .quote-asesor-contact { font-size: 0.75rem; }
+        .quote-asesor-meta { font-size: 0.75rem; }
+        .quote-asesor-badge { font-size: 0.625rem; margin-top: 6px; }
       }
     </style>
 

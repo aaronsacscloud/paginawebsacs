@@ -14,19 +14,21 @@ export interface NotifyArgs {
   template: string;
   data?: Record<string, any>;
   cc?: string[];
+  replyTo?: string;
 }
 
 export type Template = (data: any) => { subject: string; html: string; text?: string };
 
 const templates: Record<string, Template> = {
   quote_accepted_owner: (d) => ({
-    subject: `✅ Cotización ${d.numero || ''} aceptada — ${d.empresa || ''}`,
+    subject: `✅ Cotización ${d.numero || ''} aceptada — ${d.empresa || ''}${d.partner ? ` (Partner: ${d.partner.nombre})` : ''}`,
     html: `
       <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
         <h2 style="font-size:1.25rem;margin:0 0 12px;color:#1a1a1a">Cliente aceptó la cotización</h2>
         <p style="color:#555;line-height:1.55;margin:0 0 16px">
           <strong>${d.empresa || 'Cliente'}</strong> aceptó la cotización <strong>${d.numero || ''}</strong> por <strong>$${Number(d.total || 0).toLocaleString('es-MX')} ${d.moneda || 'MXN'}</strong>.
         </p>
+        ${d.partner ? `<div style="background:#EEF2FB;border-left:3px solid #4B7BE5;padding:12px 14px;border-radius:6px;margin:0 0 16px;font-size:0.875rem;color:#3764C4"><strong>Cotización generada por el partner ${d.partner.nombre}</strong>${d.partner.empresa ? ` (${d.partner.empresa})` : ''}.</div>` : ''}
         <div style="background:#fafafa;border:1px solid #e5e5e5;padding:16px;border-radius:8px;margin:16px 0">
           <div style="font-size:0.75rem;color:#999;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Detalles</div>
           <table style="width:100%;font-size:0.875rem;color:#555;border-collapse:collapse">
@@ -41,7 +43,7 @@ const templates: Record<string, Template> = {
         <p style="color:#999;font-size:0.75rem;margin-top:24px">Siguiente paso: generar link de pago y comenzar onboarding.</p>
       </div>
     `,
-    text: `Cliente ${d.empresa} aceptó cotización ${d.numero} por $${d.total} ${d.moneda || 'MXN'}. Abrir en CRM: ${d.adminUrl || ''}`,
+    text: `Cliente ${d.empresa} aceptó cotización ${d.numero} por $${d.total} ${d.moneda || 'MXN'}${d.partner ? ` (partner: ${d.partner.nombre})` : ''}. Abrir en CRM: ${d.adminUrl || ''}`,
   }),
   quote_rejected_owner: (d) => ({
     subject: `❌ Cotización ${d.numero || ''} rechazada — ${d.empresa || ''}`,
@@ -62,7 +64,9 @@ const templates: Record<string, Template> = {
     text: `${d.empresa} rechazó la cotización ${d.numero}. Motivo: ${d.motivo_label || d.motivo}. ${d.detalle || ''}`,
   }),
   quote_reminder_client: (d) => ({
-    subject: `Recordatorio: tu cotización ${d.numero || ''} de SACS`,
+    subject: d.partner
+      ? `${d.partner.nombre}: recordatorio de tu cotización ${d.numero || ''}`
+      : `Recordatorio: tu cotización ${d.numero || ''} de SACS`,
     html: `
       <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
         <h2 style="font-size:1.375rem;font-weight:300;margin:0 0 12px;color:#1a1a1a;letter-spacing:-0.01em">Hola ${d.contacto || ''},</h2>
@@ -73,10 +77,12 @@ const templates: Record<string, Template> = {
           ${d.cta_text || '¿Pudiste revisarla? Si tienes dudas estoy a tu orden.'}
         </p>
         <a href="${d.quoteUrl}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Ver cotización</a>
-        <p style="color:#999;font-size:0.75rem;margin-top:24px;line-height:1.5">Saludos,<br/>Equipo SACS</p>
+        ${d.partner
+          ? `<p style="color:#555;font-size:0.8125rem;margin-top:28px;line-height:1.55">Saludos,<br/><strong>${d.partner.nombre}</strong>${d.partner.empresa ? `<br/>${d.partner.empresa}` : ''}${d.partner.email ? `<br/><a href="mailto:${d.partner.email}" style="color:#4B7BE5;text-decoration:none">${d.partner.email}</a>` : ''}${d.partner.whatsapp ? `<br/>${d.partner.whatsapp}` : ''}</p><p style="color:#bbb;font-size:0.6875rem;margin-top:18px;line-height:1.5">Enviado por SACS en nombre de ${d.partner.nombre}, partner certificado.</p>`
+          : `<p style="color:#999;font-size:0.75rem;margin-top:24px;line-height:1.5">Saludos,<br/>Equipo SACS</p>`}
       </div>
     `,
-    text: `Hola ${d.contacto || ''}, te recordamos tu cotización ${d.numero}: ${d.quoteUrl}`,
+    text: `Hola ${d.contacto || ''}, te recordamos tu cotización ${d.numero}: ${d.quoteUrl}${d.partner ? `\n\n— ${d.partner.nombre}` : ''}`,
   }),
   payment_receipt_client: (d) => {
     const fmt = (n: number) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
@@ -463,7 +469,14 @@ const templates: Record<string, Template> = {
   }),
 };
 
-async function sendEmailViaResend(to: string, subject: string, html: string, text?: string, cc?: string[]) {
+async function sendEmailViaResend(
+  to: string,
+  subject: string,
+  html: string,
+  text?: string,
+  cc?: string[],
+  replyTo?: string,
+) {
   if (!RESEND_API_KEY) {
     console.warn('[notify] RESEND_API_KEY not set — skipping email');
     return { ok: false, reason: 'no_api_key' };
@@ -479,6 +492,7 @@ async function sendEmailViaResend(to: string, subject: string, html: string, tex
         from: INTERNAL_FROM,
         to: [to],
         cc: cc && cc.length ? cc : undefined,
+        reply_to: replyTo || undefined,
         subject,
         html,
         text,
@@ -506,7 +520,7 @@ export async function notify(args: NotifyArgs): Promise<{ ok: boolean; reason?: 
   }
   const rendered = tpl(args.data || {});
   const subject = args.subject || rendered.subject;
-  return sendEmailViaResend(args.to, subject, rendered.html, rendered.text, args.cc);
+  return sendEmailViaResend(args.to, subject, rendered.html, rendered.text, args.cc, args.replyTo);
 }
 
 export function getSalesInbox() {

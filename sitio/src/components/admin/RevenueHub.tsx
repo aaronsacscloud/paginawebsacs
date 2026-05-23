@@ -1,40 +1,8 @@
 import { useState, useEffect } from 'react';
 import { plans as plansData } from '../../data/plans';
-
-const PLANS = ['vende', 'controla', 'fideliza', 'automatiza'];
-const PLAN_PRICES: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 5900 };
-const IMPL_PRICES: Record<string, number> = { vende: 2000, controla: 4000, fideliza: 6000, automatiza: 9000 };
-const METODOS = ['transferencia', 'tarjeta', 'oxxo', 'otro'];
-const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
-const fmtDate = (d: string | null | undefined): string => {
-  if (!d) return '—';
-  const date = new Date(d.length === 10 ? d + 'T12:00:00' : d);
-  if (isNaN(date.getTime())) return '—';
-  const day = date.getDate();
-  const month = date.toLocaleDateString('es-MX', { month: 'short' }).replace('.', '');
-  const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
-};
-
-// ─── Meta helpers (analytics stored in notas field) ───
-function parseMeta(notas: string | null): { text: string; meta: Record<string, any> } {
-  if (!notas) return { text: '', meta: {} };
-  const sep = '\n---META---\n';
-  const idx = notas.indexOf(sep);
-  if (idx === -1) return { text: notas, meta: {} };
-  try { return { text: notas.slice(0, idx), meta: JSON.parse(notas.slice(idx + sep.length)) }; }
-  catch { return { text: notas, meta: {} }; }
-}
-function serializeMeta(text: string, meta: Record<string, any>): string {
-  if (!Object.keys(meta).length) return text;
-  return text + '\n---META---\n' + JSON.stringify(meta);
-}
-function addTimelineEvent(notas: string | null, event: string): string {
-  const { text, meta } = parseMeta(notas);
-  if (!meta.timeline) meta.timeline = [];
-  meta.timeline.push({ event, at: new Date().toISOString() });
-  return serializeMeta(text, meta);
-}
+import { PLANS, PLAN_PRICES, IMPL_PRICES, METODOS, fmt, fmtDate } from '../../lib/quotes/constants';
+import { parseMeta, serializeMeta, addTimelineEvent } from '../../lib/quotes/meta';
+import { calcQuoteTotals } from '../../lib/quotes/totals';
 
 interface Client {
   id: string; empresa: string; contacto: string; email: string; whatsapp: string;
@@ -63,18 +31,25 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
   const [bankAccounts, setBankAccounts] = useState<any[]>([]);
   const [bankForm, setBankForm] = useState<any>({});
   const [allQuotes, setAllQuotes] = useState<any[]>([]);
+  const [partnersById, setPartnersById] = useState<Record<string, { nombre: string; email?: string }>>({});
 
   const load = async () => {
-    const [d, c, ba, q] = await Promise.all([
+    const [d, c, ba, q, p] = await Promise.all([
       fetch('/api/revenue/dashboard').then(r => r.json()),
       fetch('/api/revenue/clients').then(r => r.json()),
       fetch('/api/revenue/bank-accounts').then(r => r.json()),
       fetch('/api/revenue/quotes').then(r => r.json()),
+      fetch('/api/revenue/partners-list').then(r => r.json()).catch(() => []),
     ]);
     setDash(d);
     setClients(Array.isArray(c) ? c : []);
     setBankAccounts(Array.isArray(ba) ? ba : []);
     setAllQuotes(Array.isArray(q) ? q : []);
+    const map: Record<string, { nombre: string; email?: string }> = {};
+    (Array.isArray(p) ? p : []).forEach((row: any) => {
+      if (row?.id) map[row.id] = { nombre: row.nombre || 'Partner', email: row.email };
+    });
+    setPartnersById(map);
   };
 
   useEffect(() => { load(); }, []);
@@ -384,9 +359,10 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     const [qSelected, setQSelected] = useState<Set<string>>(new Set());
     const [qDensity, setQDensity] = useState<'compact' | 'comfortable'>(() => typeof window !== 'undefined' ? ((localStorage.getItem('sacs_q_density') as any) || 'comfortable') : 'comfortable');
     const [qVisibleCols, setQVisibleCols] = useState<Set<string>>(() => {
-      if (typeof window === 'undefined') return new Set(['numero', 'created_at', 'empresa', 'total', 'estado', 'views', 'actions']);
+      const defaults = ['numero', 'created_at', 'empresa', 'origen', 'total', 'estado', 'views', 'actions'];
+      if (typeof window === 'undefined') return new Set(defaults);
       const saved = localStorage.getItem('sacs_q_cols');
-      return new Set(saved ? JSON.parse(saved) : ['numero', 'created_at', 'empresa', 'total', 'estado', 'views', 'actions']);
+      return new Set(saved ? JSON.parse(saved) : defaults);
     });
     const [qShowColsMenu, setQShowColsMenu] = useState(false);
     const [qShowFilterPopover, setQShowFilterPopover] = useState(false);
@@ -461,14 +437,14 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       setQf({ ...qf, items: items.filter((_: any, i: number) => i !== idx) });
     };
 
-    // Calculate totals
-    const itemsSubtotal = items.reduce((s: number, i: any) => s + (i.subtotal || parseFloat(i.monto) || 0), 0);
-    const globalDisc = qf.descuento_tipo === 'pct' ? itemsSubtotal * (parseFloat(qf.descuento_global) || 0) / 100 : (parseFloat(qf.descuento_global) || 0);
-    const afterDisc = itemsSubtotal - globalDisc;
     // iva_mode: 'sin' = sin IVA, 'suma' = IVA sumado al total, 'incluido' = IVA ya incluido en precios
     const ivaMode = qf.iva_mode || (qf.iva_incluido ? 'suma' : 'sin');
-    const ivaMonto = ivaMode === 'suma' ? afterDisc * 0.16 : ivaMode === 'incluido' ? afterDisc - (afterDisc / 1.16) : 0;
-    const grandTotal = ivaMode === 'suma' ? afterDisc + (afterDisc * 0.16) : afterDisc;
+    const { itemsSubtotal, globalDisc, afterDisc, ivaMonto, grandTotal } = calcQuoteTotals({
+      items,
+      descuento_global: qf.descuento_global,
+      descuento_tipo: qf.descuento_tipo,
+      iva_mode: ivaMode,
+    });
 
     const createQuote = async () => {
       // Validate required fields for TikTok tracking
@@ -928,6 +904,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       { id: 'numero', label: '#' },
       { id: 'created_at', label: 'Fecha' },
       { id: 'empresa', label: 'Empresa' },
+      { id: 'origen', label: 'Origen' },
       { id: 'total', label: 'Total' },
       { id: 'vigencia', label: 'Vigencia' },
       { id: 'estado', label: 'Estado' },
@@ -1153,6 +1130,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   {qVisibleCols.has('numero') && <SortHeader col="numero" label="#" />}
                   {qVisibleCols.has('created_at') && <SortHeader col="created_at" label="Fecha" />}
                   {qVisibleCols.has('empresa') && <SortHeader col="empresa" label="Empresa" />}
+                  {qVisibleCols.has('origen') && <th style={{ ...S.th, position: 'sticky' as const, top: 0, background: '#fafafa', zIndex: 2, whiteSpace: 'nowrap' as const }}>Origen</th>}
                   {qVisibleCols.has('total') && <SortHeader col="total" label="Total" />}
                   {qVisibleCols.has('vigencia') && <SortHeader col="vigencia" label="Vigencia" />}
                   {qVisibleCols.has('estado') && <SortHeader col="estado" label="Estado" />}
@@ -1186,6 +1164,15 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                       {qVisibleCols.has('empresa') && <td style={{ ...S.td, padding: rowPad }}>
                         <div style={{ fontWeight: 600, color: '#1a1a1a' }}>{q.empresa || '—'}</div>
                         {(q.contacto || q.email) && <div style={{ fontSize: '0.6875rem', color: '#999', marginTop: 1 }}>{q.contacto}{q.contacto && q.email ? ' · ' : ''}{q.email}</div>}
+                      </td>}
+                      {qVisibleCols.has('origen') && <td style={{ ...S.td, padding: rowPad, whiteSpace: 'nowrap' as const }}>
+                        {q.partner_id ? (
+                          <span style={{ display: 'inline-block', padding: '3px 8px', borderRadius: 999, background: '#EEF2FB', color: '#3764C4', fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.02em' }}>
+                            P: {partnersById[q.partner_id]?.nombre || 'Partner'}
+                          </span>
+                        ) : (
+                          <span style={{ display: 'inline-block', padding: '3px 8px', borderRadius: 999, background: '#f0f0f0', color: '#666', fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.02em' }}>SACS</span>
+                        )}
                       </td>}
                       {qVisibleCols.has('total') && <td style={{ ...S.td, padding: rowPad, fontWeight: 700, color: '#1a1a1a', whiteSpace: 'nowrap' as const }}>{fmt(q.total || 0)} <span style={{ fontSize: '0.625rem', color: '#aaa', fontWeight: 500 }}>{q.moneda || 'MXN'}</span></td>}
                       {qVisibleCols.has('vigencia') && <td style={{ ...S.td, padding: rowPad, whiteSpace: 'nowrap' as const, color: days !== null && days < 0 ? '#c62828' : days !== null && days <= 5 ? '#e65100' : '#666' }}>

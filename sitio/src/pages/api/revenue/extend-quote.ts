@@ -1,5 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { getCurrentUser } from '../../../lib/auth/scope';
+import { PARTNER_MAX_EXTENSIONS, PARTNER_MAX_EXTENSION_DAYS } from '../../../lib/quotes/permissions';
 
 export const prerender = false;
 
@@ -28,15 +30,32 @@ export const POST: APIRoute = async ({ request }) => {
   if (!id || typeof id !== 'string') return json({ error: 'Falta el id de la cotización' }, 400);
   if (!Number.isFinite(n) || n < 1 || n > 60) return json({ error: 'Los días deben ser un número entre 1 y 60' }, 400);
 
+  const user = await getCurrentUser(request);
+
   const { data: quote, error: fetchErr } = await supabase
     .from('quotes')
-    .select('id, numero, vigencia, estado, notas')
+    .select('id, numero, vigencia, estado, notas, partner_id')
     .eq('id', id)
     .single();
   if (fetchErr || !quote) return json({ error: 'Cotización no encontrada' }, 404);
 
   if (quote.estado === 'paid' || quote.estado === 'accepted' || quote.estado === 'rejected') {
     return json({ error: `No se puede extender una cotización en estado ${quote.estado}` }, 400);
+  }
+
+  // Partner: ownership + límite extensiones (1 vez, +15 días)
+  if (user?.role === 'partner') {
+    if (quote.partner_id && quote.partner_id !== user.id) {
+      return json({ error: 'no autorizado' }, 403);
+    }
+    if (n > PARTNER_MAX_EXTENSION_DAYS) {
+      return json({ error: `Como partner puedes extender máximo ${PARTNER_MAX_EXTENSION_DAYS} días` }, 422);
+    }
+    const prevMeta = parseMeta(quote.notas).meta;
+    const prevExtensions = Array.isArray(prevMeta.extensions) ? prevMeta.extensions.length : 0;
+    if (prevExtensions >= PARTNER_MAX_EXTENSIONS) {
+      return json({ error: `Ya extendiste esta cotización ${PARTNER_MAX_EXTENSIONS} vez. Contacta a SACS para más extensiones.` }, 422);
+    }
   }
 
   // Calculate new vigencia from a date-only base (avoids timezone drift with timestamp formats)
