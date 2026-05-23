@@ -1,10 +1,13 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
+import { getCurrentUser } from '../../../lib/auth/scope';
+import { isPartner, canActOnSchedulingOwner } from '../../../lib/scheduling/scope';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ request, url }) => {
+  const user = await getCurrentUser(request);
   const host_id = url.searchParams.get('host_id');
   const estado = url.searchParams.get('estado');
   const from = url.searchParams.get('from');
@@ -16,7 +19,12 @@ export const GET: APIRoute = async ({ url }) => {
     .order('fecha', { ascending: true })
     .order('hora_inicio', { ascending: true });
 
-  if (host_id) query = query.eq('host_id', host_id);
+  // Partner scope: solo ve sus propios bookings (ignora host_id externo).
+  if (isPartner(user)) {
+    query = query.eq('host_id', user!.id);
+  } else if (host_id) {
+    query = query.eq('host_id', host_id);
+  }
   if (estado) query = query.eq('estado', estado);
   if (from) query = query.gte('fecha', from);
   if (to) query = query.lte('fecha', to);
@@ -27,6 +35,7 @@ export const GET: APIRoute = async ({ url }) => {
 };
 
 export const PUT: APIRoute = async ({ request }) => {
+  const user = await getCurrentUser(request);
   const body = await request.json();
   const { id, ...updates } = body;
   if (!id) return new Response(JSON.stringify({ error: 'id required' }), { status: 400 });
@@ -40,6 +49,11 @@ export const PUT: APIRoute = async ({ request }) => {
 
   if (curErr || !current) {
     return new Response(JSON.stringify({ error: 'Booking not found' }), { status: 404 });
+  }
+
+  // Partner solo puede editar bookings cuyo host es él mismo.
+  if (!canActOnSchedulingOwner(user, current.host_id)) {
+    return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403 });
   }
 
   const { data, error } = await supabase

@@ -2,6 +2,8 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { deleteCalendarEvent, createCalendarEvent } from '../../../lib/google-calendar';
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
+import { getCurrentUser } from '../../../lib/auth/scope';
+import { canActOnSchedulingOwner } from '../../../lib/scheduling/scope';
 
 export const prerender = false;
 
@@ -72,10 +74,8 @@ function generateToken(): string {
   return token;
 }
 
-export const POST: APIRoute = async ({ request, url }) => {
+export const POST: APIRoute = async ({ request }) => {
   const body = await request.json();
-  const isAdmin = url.searchParams.get('admin') === '1';
-
   const { booking_id, token, nueva_fecha, nueva_hora, timezone } = body;
 
   if (!booking_id || !nueva_fecha || !nueva_hora) {
@@ -96,11 +96,15 @@ export const POST: APIRoute = async ({ request, url }) => {
     return new Response(JSON.stringify({ error: 'Booking not found' }), { status: 404 });
   }
 
-  // Verify token (unless admin)
-  if (!isAdmin) {
-    if (!token || token !== oldBooking.token_reagendar) {
-      return new Response(JSON.stringify({ error: 'Invalid reschedule token' }), { status: 403 });
+  // Auth: token público válido (invitado se reagenda) o auth con ownership (host).
+  let isAdmin = false;
+  const hasValidToken = token && token === oldBooking.token_reagendar;
+  if (!hasValidToken) {
+    const user = await getCurrentUser(request);
+    if (!canActOnSchedulingOwner(user, oldBooking.host_id)) {
+      return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403 });
     }
+    isAdmin = true;
   }
 
   // Check booking is reschedulable

@@ -1,10 +1,13 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { getCurrentUser } from '../../../lib/auth/scope';
+import { resolveSchedulingTarget, canActOnSchedulingOwner } from '../../../lib/scheduling/scope';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ url }) => {
-  const team_member_id = url.searchParams.get('team_member_id');
+export const GET: APIRoute = async ({ request, url }) => {
+  const user = await getCurrentUser(request);
+  const team_member_id = resolveSchedulingTarget(user, url.searchParams.get('team_member_id'));
   const from = url.searchParams.get('from');
   const to = url.searchParams.get('to');
 
@@ -27,16 +30,19 @@ export const GET: APIRoute = async ({ url }) => {
 };
 
 export const POST: APIRoute = async ({ request }) => {
+  const user = await getCurrentUser(request);
+  if (!user) return new Response(JSON.stringify({ error: 'No autenticado' }), { status: 401 });
   const body = await request.json();
 
-  if (!body.team_member_id || !body.fecha) {
+  const team_member_id = resolveSchedulingTarget(user, body.team_member_id);
+  if (!team_member_id || !body.fecha) {
     return new Response(JSON.stringify({ error: 'team_member_id and fecha required' }), { status: 400 });
   }
 
   const { data, error } = await supabase
     .from('availability_overrides')
     .insert({
-      team_member_id: body.team_member_id,
+      team_member_id,
       fecha: body.fecha,
       ranges: body.ranges || null,
       motivo: body.motivo || null,
@@ -49,9 +55,21 @@ export const POST: APIRoute = async ({ request }) => {
 };
 
 export const DELETE: APIRoute = async ({ request }) => {
+  const user = await getCurrentUser(request);
+  if (!user) return new Response(JSON.stringify({ error: 'No autenticado' }), { status: 401 });
   const body = await request.json();
   if (!body.id) {
     return new Response(JSON.stringify({ error: 'id required' }), { status: 400 });
+  }
+
+  const { data: current } = await supabase
+    .from('availability_overrides')
+    .select('team_member_id')
+    .eq('id', body.id)
+    .single();
+  if (!current) return new Response(JSON.stringify({ error: 'No encontrado' }), { status: 404 });
+  if (!canActOnSchedulingOwner(user, current.team_member_id)) {
+    return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403 });
   }
 
   const { error } = await supabase

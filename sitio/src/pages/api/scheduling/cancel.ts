@@ -2,6 +2,8 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { deleteCalendarEvent } from '../../../lib/google-calendar';
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
+import { getCurrentUser } from '../../../lib/auth/scope';
+import { canActOnSchedulingOwner } from '../../../lib/scheduling/scope';
 
 export const prerender = false;
 
@@ -45,10 +47,8 @@ async function sendEmail(to: string, subject: string, html: string) {
   } catch {}
 }
 
-export const POST: APIRoute = async ({ request, url }) => {
+export const POST: APIRoute = async ({ request }) => {
   const body = await request.json();
-  const isAdmin = url.searchParams.get('admin') === '1';
-
   const { booking_id, token, motivo, cancelado_por } = body;
 
   if (!booking_id) {
@@ -66,11 +66,16 @@ export const POST: APIRoute = async ({ request, url }) => {
     return new Response(JSON.stringify({ error: 'Booking not found' }), { status: 404 });
   }
 
-  // Verify token (unless admin)
-  if (!isAdmin) {
-    if (!token || token !== booking.token_cancelar) {
-      return new Response(JSON.stringify({ error: 'Invalid cancellation token' }), { status: 403 });
+  // Auth: o token público válido (cliente cancela su cita) o usuario autenticado
+  // con ownership del booking (admin/partner cancela cita propia).
+  let isAdmin = false;
+  const hasValidToken = token && token === booking.token_cancelar;
+  if (!hasValidToken) {
+    const user = await getCurrentUser(request);
+    if (!canActOnSchedulingOwner(user, booking.host_id)) {
+      return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403 });
     }
+    isAdmin = true;
   }
 
   // Check booking is still cancellable

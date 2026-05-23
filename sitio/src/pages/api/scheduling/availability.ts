@@ -1,10 +1,14 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { getCurrentUser } from '../../../lib/auth/scope';
+import { resolveSchedulingTarget, canActOnSchedulingOwner } from '../../../lib/scheduling/scope';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ url }) => {
-  const team_member_id = url.searchParams.get('team_member_id');
+export const GET: APIRoute = async ({ request, url }) => {
+  const user = await getCurrentUser(request);
+  // Force partner a su propio team_member_id; founder/cs pueden pasar otro.
+  const team_member_id = resolveSchedulingTarget(user, url.searchParams.get('team_member_id'));
   if (!team_member_id) {
     return new Response(JSON.stringify({ error: 'team_member_id required' }), { status: 400 });
   }
@@ -33,9 +37,13 @@ export const GET: APIRoute = async ({ url }) => {
 };
 
 export const POST: APIRoute = async ({ request }) => {
+  const user = await getCurrentUser(request);
+  if (!user) return new Response(JSON.stringify({ error: 'No autenticado' }), { status: 401 });
   const body = await request.json();
 
-  if (!body.team_member_id || !body.weekly_hours) {
+  // Partner solo puede crear para sí mismo.
+  const team_member_id = resolveSchedulingTarget(user, body.team_member_id);
+  if (!team_member_id || !body.weekly_hours) {
     return new Response(JSON.stringify({ error: 'team_member_id and weekly_hours required' }), { status: 400 });
   }
 
@@ -44,14 +52,14 @@ export const POST: APIRoute = async ({ request }) => {
     await supabase
       .from('availability_schedules')
       .update({ es_default: false })
-      .eq('team_member_id', body.team_member_id)
+      .eq('team_member_id', team_member_id)
       .eq('es_default', true);
   }
 
   const { data, error } = await supabase
     .from('availability_schedules')
     .insert({
-      team_member_id: body.team_member_id,
+      team_member_id,
       weekly_hours: body.weekly_hours,
       timezone: body.timezone || 'America/Mexico_City',
       es_default: body.es_default || false,
@@ -65,26 +73,34 @@ export const POST: APIRoute = async ({ request }) => {
 };
 
 export const PUT: APIRoute = async ({ request }) => {
+  const user = await getCurrentUser(request);
+  if (!user) return new Response(JSON.stringify({ error: 'No autenticado' }), { status: 401 });
   const body = await request.json();
   const { id, ...updates } = body;
   if (!id) return new Response(JSON.stringify({ error: 'id required' }), { status: 400 });
 
-  // If setting as default, unset other defaults for this team member
-  if (updates.es_default) {
-    const { data: current } = await supabase
-      .from('availability_schedules')
-      .select('team_member_id')
-      .eq('id', id)
-      .single();
+  const { data: current } = await supabase
+    .from('availability_schedules')
+    .select('team_member_id')
+    .eq('id', id)
+    .single();
+  if (!current) return new Response(JSON.stringify({ error: 'No encontrado' }), { status: 404 });
+  if (!canActOnSchedulingOwner(user, current.team_member_id)) {
+    return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403 });
+  }
 
-    if (current) {
-      await supabase
-        .from('availability_schedules')
-        .update({ es_default: false })
-        .eq('team_member_id', current.team_member_id)
-        .eq('es_default', true)
-        .neq('id', id);
-    }
+  // Partner no puede transferir su schedule a otro team_member.
+  if ('team_member_id' in updates && updates.team_member_id !== current.team_member_id) {
+    if (user.role === 'partner') delete updates.team_member_id;
+  }
+
+  if (updates.es_default) {
+    await supabase
+      .from('availability_schedules')
+      .update({ es_default: false })
+      .eq('team_member_id', current.team_member_id)
+      .eq('es_default', true)
+      .neq('id', id);
   }
 
   const { data, error } = await supabase

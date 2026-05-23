@@ -13,6 +13,7 @@ import AcademyTab from './tabs/AcademyTab';
 import CertificationsTab from './tabs/CertificationsTab';
 import LeadsTab from './tabs/LeadsTab';
 import CotizacionesTab from './tabs/CotizacionesTab';
+import AgendaTab from './tabs/AgendaTab';
 import ClientesTab from './tabs/ClientesTab';
 import PartnerNetworkTab from './tabs/PartnerNetworkTab';
 import BrandKitTab from './tabs/BrandKitTab';
@@ -29,7 +30,7 @@ import { isDemoMode } from './tabs/utils';
 
 type TabId =
   | 'home' | 'notificaciones' | 'dinero' | 'compartir' | 'nivel' | 'aprende' | 'certs'
-  | 'leads' | 'cotizaciones' | 'clientes' | 'red'
+  | 'leads' | 'cotizaciones' | 'agenda' | 'clientes' | 'red'
   | 'brandkit' | 'sacs-account'
   | 'mi-cuenta' | 'ayuda';
 
@@ -57,6 +58,7 @@ const SECTIONS: { title: string; items: TabItem[] }[] = [
     items: [
       { id: 'leads',        label: 'Leads',            icon: Icon.Leads },
       { id: 'cotizaciones', label: 'Cotizaciones',     icon: Icon.Quotes },
+      { id: 'agenda',       label: 'Agenda',           icon: Icon.Calendar },
       { id: 'clientes',     label: 'Clientes',         icon: Icon.Customers },
       { id: 'red',          label: 'Red de partners',  icon: Icon.Network },
     ],
@@ -204,6 +206,7 @@ export default function PortalShell({ initialUser }: Props) {
             {tab === 'certs'          && <CertificationsTab user={initialUser} />}
             {tab === 'leads'        && <LeadsTab user={initialUser} />}
             {tab === 'cotizaciones' && <CotizacionesTab user={initialUser} />}
+            {tab === 'agenda'       && <AgendaTab user={initialUser} />}
             {tab === 'clientes'     && <ClientesTab user={initialUser} />}
             {tab === 'red'          && <PartnerNetworkTab user={initialUser} />}
             {tab === 'brandkit'     && <BrandKitTab />}
