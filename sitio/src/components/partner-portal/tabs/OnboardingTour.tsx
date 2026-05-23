@@ -444,6 +444,10 @@ export default function OnboardingTour({ user, onComplete }: Props) {
         }
         @media (max-width: 900px) and (max-height: 600px) {
           .onb-tooltip { max-height: 70vh !important; bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important; }
+          /* En landscape low-height, esconder FAB durante el tour: el panel ocupa casi todo
+             y reposicionarlo sólo lo deja flotando arriba tapando contenido. */
+          body[data-onb-active] .pp-wa-pill,
+          body[data-onb-active] .pp-install-toast { display: none !important; }
         }
       ` }} />
     </>

@@ -34,12 +34,16 @@ export function validatePartnerQuoteBody(
       message: `El descuento máximo permitido es ${PARTNER_MAX_DISCOUNT_PCT}%`,
     };
   }
-  if (descTipo === 'monto' && body.subtotal && descVal > body.subtotal * (PARTNER_MAX_DISCOUNT_PCT / 100)) {
-    return {
-      status: 422,
-      code: 'discount_too_high',
-      message: `El descuento máximo permitido es ${PARTNER_MAX_DISCOUNT_PCT}% del subtotal`,
-    };
+  if (descTipo === 'monto' && descVal > 0) {
+    // Si el cliente no manda subtotal o es <= 0 no podemos validar el cap → rechazar por seguridad.
+    const subtotal = Number(body.subtotal) || 0;
+    if (subtotal <= 0 || descVal > subtotal * (PARTNER_MAX_DISCOUNT_PCT / 100)) {
+      return {
+        status: 422,
+        code: 'discount_too_high',
+        message: `El descuento máximo permitido es ${PARTNER_MAX_DISCOUNT_PCT}% del subtotal`,
+      };
+    }
   }
 
   // 2. Items: planes deben ser del catálogo; extras pueden ser libres (catálogo SACS o custom)

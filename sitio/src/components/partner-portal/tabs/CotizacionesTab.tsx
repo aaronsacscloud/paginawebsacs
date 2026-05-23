@@ -617,8 +617,9 @@ function QuoteEditor({
       else setError(data.error || 'Error al subir logo');
     } catch (err: any) {
       setError(String(err?.message || err));
+    } finally {
+      setUploadingLogo(false);
     }
-    setUploadingLogo(false);
   };
 
   const addKeyPoint = () => {
@@ -697,64 +698,64 @@ function QuoteEditor({
     }
 
     setSaving(true);
-
-    // Build meta JSON con todo lo customizable
-    const { text } = parseMeta(form.notas || '');
-    const meta: Record<string, any> = {
-      iva_mode: ivaMode,
-      mostrar_timer: form.mostrar_timer,
-      mostrar_features: form.mostrar_features,
-      mostrar_desglose: form.mostrar_desglose,
-      mostrar_condiciones: form.mostrar_condiciones,
-      mostrar_firma: form.mostrar_firma,
-      mostrar_key_points: form.mostrar_key_points,
-      mostrar_roi: !!form.mostrar_roi,
-      mostrar_antes_despues: !!form.mostrar_antes_despues,
-      mostrar_timeline: form.mostrar_timeline,
-      mostrar_implementacion: form.mostrar_implementacion,
-      mostrar_porque_sacs: form.mostrar_porque_sacs,
-      mostrar_qr: form.mostrar_qr,
-      mostrar_animaciones: form.mostrar_animaciones,
-      timeline_tipo: form.timeline_tipo || '1suc',
-    };
-    if (form.logo_url) meta.logo_url = form.logo_url;
-    if (form.promo_label?.trim()) meta.promo_label = form.promo_label.trim();
-    if (form.minuta_raw?.trim()) meta.minuta_raw = form.minuta_raw.trim();
-    if (form.implementacion_nota?.trim()) meta.implementacion_nota = form.implementacion_nota.trim();
-    const validKP = (form.key_points || []).filter((k: any) => k.title?.trim() || k.detail?.trim());
-    if (validKP.length) meta.key_points = validKP;
-    if (form.roi && (form.roi.ahorro_mensual > 0 || form.roi.problema || form.roi.detalle)) {
-      meta.roi = form.roi;
-    }
-    const validAD = (form.antes_despues || []).filter((a: any) => a.aspecto?.trim() || a.antes?.trim() || a.despues?.trim());
-    if (validAD.length) meta.antes_despues = validAD;
-
-    const notasFinal = serializeMeta(text || '', meta);
-
-    // Body: solo campos de DB + notas con meta serializada
-    const body: any = {
-      id: form.id,
-      empresa: form.empresa,
-      contacto: form.contacto,
-      email: form.email,
-      whatsapp: form.whatsapp,
-      items,
-      iva_incluido: ivaMode !== 'sin',
-      descuento_global: form.descuento_global,
-      descuento_tipo: form.descuento_tipo,
-      moneda: form.moneda,
-      template: 'modern', // partner siempre usa modern
-      condiciones: form.condiciones,
-      vigencia: form.vigencia,
-      urgencia: form.urgencia,
-      estado,
-      subtotal: totals.itemsSubtotal,
-      iva_monto: Math.round(totals.ivaMonto),
-      total: Math.round(totals.grandTotal),
-      notas: notasFinal,
-    };
-
+    let savedOk = false;
     try {
+      // Build meta JSON con todo lo customizable
+      const { text } = parseMeta(form.notas || '');
+      const meta: Record<string, any> = {
+        iva_mode: ivaMode,
+        mostrar_timer: form.mostrar_timer,
+        mostrar_features: form.mostrar_features,
+        mostrar_desglose: form.mostrar_desglose,
+        mostrar_condiciones: form.mostrar_condiciones,
+        mostrar_firma: form.mostrar_firma,
+        mostrar_key_points: form.mostrar_key_points,
+        mostrar_roi: !!form.mostrar_roi,
+        mostrar_antes_despues: !!form.mostrar_antes_despues,
+        mostrar_timeline: form.mostrar_timeline,
+        mostrar_implementacion: form.mostrar_implementacion,
+        mostrar_porque_sacs: form.mostrar_porque_sacs,
+        mostrar_qr: form.mostrar_qr,
+        mostrar_animaciones: form.mostrar_animaciones,
+        timeline_tipo: form.timeline_tipo || '1suc',
+      };
+      if (form.logo_url) meta.logo_url = form.logo_url;
+      if (form.promo_label?.trim()) meta.promo_label = form.promo_label.trim();
+      if (form.minuta_raw?.trim()) meta.minuta_raw = form.minuta_raw.trim();
+      if (form.implementacion_nota?.trim()) meta.implementacion_nota = form.implementacion_nota.trim();
+      const validKP = (form.key_points || []).filter((k: any) => k.title?.trim() || k.detail?.trim());
+      if (validKP.length) meta.key_points = validKP;
+      if (form.roi && (form.roi.ahorro_mensual > 0 || form.roi.problema || form.roi.detalle)) {
+        meta.roi = form.roi;
+      }
+      const validAD = (form.antes_despues || []).filter((a: any) => a.aspecto?.trim() || a.antes?.trim() || a.despues?.trim());
+      if (validAD.length) meta.antes_despues = validAD;
+
+      const notasFinal = serializeMeta(text || '', meta);
+
+      // Body: solo campos de DB + notas con meta serializada
+      const body: any = {
+        id: form.id,
+        empresa: form.empresa,
+        contacto: form.contacto,
+        email: form.email,
+        whatsapp: form.whatsapp,
+        items,
+        iva_incluido: ivaMode !== 'sin',
+        descuento_global: form.descuento_global,
+        descuento_tipo: form.descuento_tipo,
+        moneda: form.moneda,
+        template: 'modern', // partner siempre usa modern
+        condiciones: form.condiciones,
+        vigencia: form.vigencia,
+        urgencia: form.urgencia,
+        estado,
+        subtotal: totals.itemsSubtotal,
+        iva_monto: Math.round(totals.ivaMonto),
+        total: Math.round(totals.grandTotal),
+        notas: notasFinal,
+      };
+
       const res = await fetch('/api/revenue/quotes', {
         method: isEdit ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -763,14 +764,17 @@ function QuoteEditor({
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         setError(err.error || `Error ${res.status}`);
-        setSaving(false);
         return;
       }
-      onSaved();
+      savedOk = true;
     } catch (err: any) {
       setError(String(err?.message || err));
+    } finally {
+      // En éxito el componente se desmonta vía onSaved → setSaving es benigno.
+      // En error nos quedamos en el drawer y el botón debe volver a estar habilitado.
       setSaving(false);
     }
+    if (savedOk) onSaved();
   };
 
   return (
