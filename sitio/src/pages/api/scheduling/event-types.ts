@@ -122,6 +122,23 @@ export const DELETE: APIRoute = async ({ request, url }) => {
     return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403 });
   }
 
+  // Verifica que no haya bookings asociados — borrar el event_type dejaría
+  // bookings huérfanos (event_types(...) joins retornarían null y los emails
+  // de recordatorio fallarían). Mejor exigir cancelar/archivar bookings primero.
+  const { count: bookingsCount } = await supabase
+    .from('bookings')
+    .select('id', { count: 'exact', head: true })
+    .eq('event_type_id', id);
+  if ((bookingsCount || 0) > 0) {
+    return new Response(JSON.stringify({
+      error: `No se puede borrar: tiene ${bookingsCount} citas asociadas. Desactívalo en lugar de borrarlo (PUT { activo: false }).`,
+      code: 'has_bookings',
+    }), { status: 409 });
+  }
+
+  // Limpieza de hijos antes de borrar (booking_questions no tiene ON DELETE CASCADE).
+  await supabase.from('booking_questions').delete().eq('event_type_id', id);
+
   const { error } = await supabase.from('event_types').delete().eq('id', id);
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   return new Response(JSON.stringify({ ok: true }));

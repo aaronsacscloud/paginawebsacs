@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useContext, createContext } from 'react';
 
 // ─── Types ───
 interface EventType {
@@ -162,14 +162,23 @@ const modalContent: React.CSSProperties = {
 };
 
 // ─── Helpers ───
-// schedFetch: wrapper para llamadas a /api/scheduling/*. Envía cookie de
-// sesión (partner usa sacs_session) y header x-user-id como fallback admin.
-// El backend prefiere la cookie sobre el header, así que el partner se
-// identifica correctamente cuando ambos están presentes.
-function schedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-  const headers = new Headers(init?.headers as HeadersInit | undefined);
-  if (!headers.has('x-user-id')) headers.set('x-user-id', 'founder');
-  return fetch(input, { ...init, headers, credentials: 'same-origin' });
+// Variant context para que sub-componentes sepan si son admin o partner.
+// El helper schedFetch que retorna useSchedFetch() inyecta el header
+// `x-user-id: founder` SOLO en variant='admin' (la página /admin/crm no
+// tiene cookie de sesión, depende del header). Para variant='partner' NO
+// se envía el header — si la cookie sacs_session expiró, los endpoints
+// retornan 401 (correcto) en lugar de tratar al partner como founder.
+const SchedulingVariantContext = createContext<SchedulingHubVariant>('admin');
+
+function useSchedFetch() {
+  const variant = useContext(SchedulingVariantContext);
+  return useCallback((input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    const headers = new Headers(init?.headers as HeadersInit | undefined);
+    if (variant === 'admin' && !headers.has('x-user-id')) {
+      headers.set('x-user-id', 'founder');
+    }
+    return fetch(input, { ...init, headers, credentials: 'same-origin' });
+  }, [variant]);
 }
 
 function fmtDate(d: string): string {
@@ -223,6 +232,7 @@ export default function SchedulingHub({ variant = 'admin' }: { variant?: Schedul
       ];
 
   return (
+    <SchedulingVariantContext.Provider value={variant}>
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       {/* Sub-tab nav */}
       <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #f0f0f0', background: '#fff', padding: '0 24px' }}>
@@ -254,6 +264,7 @@ export default function SchedulingHub({ variant = 'admin' }: { variant?: Schedul
         {subTab === 'estadisticas' && variant === 'admin' && <EstadisticasView />}
       </div>
     </div>
+    </SchedulingVariantContext.Provider>
   );
 }
 
@@ -261,6 +272,7 @@ export default function SchedulingHub({ variant = 'admin' }: { variant?: Schedul
 // Sub-tab 1: Reservas
 // ═══════════════════════════════════════════════════════════
 function ReservasView() {
+  const schedFetch = useSchedFetch();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [eventTypes, setEventTypes] = useState<EventType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -534,6 +546,7 @@ function BookingRow({
 // Sub-tab 2: Tipos de Evento
 // ═══════════════════════════════════════════════════════════
 function TiposEventoView() {
+  const schedFetch = useSchedFetch();
   const [eventTypes, setEventTypes] = useState<EventType[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -708,6 +721,7 @@ function EventTypeModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const schedFetch = useSchedFetch();
   const [form, setForm] = useState({
     nombre: eventType?.nombre || '',
     slug: eventType?.slug || '',
@@ -1148,6 +1162,7 @@ function EventTypeModal({
 
 // ── Questions Manager ──
 function QuestionsManager({ eventTypeId }: { eventTypeId: string }) {
+  const schedFetch = useSchedFetch();
   const [questions, setQuestions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -1376,6 +1391,7 @@ function DisponibilidadView({ variant }: { variant: SchedulingHubVariant }) {
 // Reusa /api/scheduling/google/status, /auth, /disconnect. Auto-resuelve
 // team_member_id basado en cookie sacs_session.
 function GoogleCalendarPanel() {
+  const schedFetch = useSchedFetch();
   const [status, setStatus] = useState<{ connected: boolean; connected_at: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -1467,6 +1483,7 @@ function GoogleCalendarPanel() {
 
 // Editor de horarios semanales + overrides (lo que era DisponibilidadView original).
 function DisponibilidadSchedule() {
+  const schedFetch = useSchedFetch();
   const [schedule, setSchedule] = useState<AvailabilitySlot[]>([]);
   const [overrides, setOverrides] = useState<AvailabilityOverride[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1836,6 +1853,7 @@ interface StatsData {
 }
 
 function EstadisticasView() {
+  const schedFetch = useSchedFetch();
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [days, setDays] = useState(30);

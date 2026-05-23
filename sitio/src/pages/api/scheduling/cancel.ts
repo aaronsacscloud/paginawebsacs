@@ -100,11 +100,15 @@ export const POST: APIRoute = async ({ request }) => {
 
   if (upErr) return new Response(JSON.stringify({ error: upErr.message }), { status: 500 });
 
-  // Delete Google Calendar event if exists
+  // Delete Google Calendar event if exists. Si falla (token revocado,
+  // calendar desconectado, network), el booking ya está cancelado en DB.
+  // Logueamos para auditoría — el evento queda huérfano en Google del host.
   if (booking.google_event_id && booking.host_id) {
     try {
       await deleteCalendarEvent(booking.host_id, booking.google_event_id);
-    } catch {}
+    } catch (err) {
+      console.warn('[cancel] deleteCalendarEvent failed (event may remain in Google):', err);
+    }
   }
 
   // Log activity
