@@ -1,22 +1,30 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { getCurrentUser } from '../../../lib/auth/scope';
+import { isPartner } from '../../../lib/scheduling/scope';
 
 export const prerender = false;
 
 const DAY_LABELS = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ request, url }) => {
+  const user = await getCurrentUser(request);
+  if (!user) return new Response(JSON.stringify({ error: 'No autenticado' }), { status: 401 });
   const days = Number(url.searchParams.get('days')) || 30;
+  // Partner solo ve sus propios bookings; founder/cs ven todo.
+  const scopedHostId = isPartner(user) ? user.id : null;
 
   const since = new Date();
   since.setDate(since.getDate() - days);
   const sinceISO = since.toISOString().slice(0, 10);
 
-  // Fetch all bookings in period
-  const { data: bookings, error } = await supabase
+  // Fetch all bookings in period (scoped)
+  let bookingsQuery = supabase
     .from('bookings')
     .select('id, created_at, fecha, hora_inicio, estado, event_type_id')
     .gte('created_at', sinceISO);
+  if (scopedHostId) bookingsQuery = bookingsQuery.eq('host_id', scopedHostId);
+  const { data: bookings, error } = await bookingsQuery;
 
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
@@ -135,9 +143,11 @@ export const GET: APIRoute = async ({ url }) => {
     }
   }
 
-  // Per event type detailed metrics
+  // Per event type detailed metrics (scoped a event_types del partner)
   const nDaysAgo = sinceISO;
-  const { data: activeEventTypes } = await supabase.from('event_types').select('id, nombre, color').eq('activo', true);
+  let etQuery = supabase.from('event_types').select('id, nombre, color').eq('activo', true);
+  if (scopedHostId) etQuery = etQuery.eq('owner_id', scopedHostId);
+  const { data: activeEventTypes } = await etQuery;
 
   const byEventTypeDetailed: Array<{
     id: string;
@@ -153,11 +163,16 @@ export const GET: APIRoute = async ({ url }) => {
   }> = [];
 
   for (const et of (activeEventTypes || [])) {
-    const { count: etTotal } = await supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('event_type_id', et.id).gte('fecha', nDaysAgo);
-    const { count: etRealizada } = await supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('event_type_id', et.id).eq('estado', 'realizada').gte('fecha', nDaysAgo);
-    const { count: etNoShow } = await supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('event_type_id', et.id).eq('estado', 'no_show').gte('fecha', nDaysAgo);
-    const { count: etCancelada } = await supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('event_type_id', et.id).eq('estado', 'cancelada').gte('fecha', nDaysAgo);
-    const { count: etReagendada } = await supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('event_type_id', et.id).eq('estado', 'reagendada').gte('fecha', nDaysAgo);
+    const baseQ = () => {
+      let q = supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('event_type_id', et.id).gte('fecha', nDaysAgo);
+      if (scopedHostId) q = q.eq('host_id', scopedHostId);
+      return q;
+    };
+    const { count: etTotal } = await baseQ();
+    const { count: etRealizada } = await baseQ().eq('estado', 'realizada');
+    const { count: etNoShow } = await baseQ().eq('estado', 'no_show');
+    const { count: etCancelada } = await baseQ().eq('estado', 'cancelada');
+    const { count: etReagendada } = await baseQ().eq('estado', 'reagendada');
 
     byEventTypeDetailed.push({
       id: et.id,

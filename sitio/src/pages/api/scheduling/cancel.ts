@@ -68,14 +68,14 @@ export const POST: APIRoute = async ({ request }) => {
 
   // Auth: o token público válido (cliente cancela su cita) o usuario autenticado
   // con ownership del booking (admin/partner cancela cita propia).
-  let isAdmin = false;
+  let canceledByDefault = 'invitado';
   const hasValidToken = token && token === booking.token_cancelar;
   if (!hasValidToken) {
     const user = await getCurrentUser(request);
     if (!canActOnSchedulingOwner(user, booking.host_id)) {
       return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403 });
     }
-    isAdmin = true;
+    canceledByDefault = user!.role === 'partner' ? 'partner' : 'admin';
   }
 
   // Check booking is still cancellable
@@ -92,7 +92,7 @@ export const POST: APIRoute = async ({ request }) => {
     .update({
       estado: 'cancelada',
       cancelacion_motivo: motivo || null,
-      cancelado_por: cancelado_por || (isAdmin ? 'admin' : 'invitado'),
+      cancelado_por: cancelado_por || canceledByDefault,
     })
     .eq('id', booking_id)
     .select()
@@ -117,7 +117,7 @@ export const POST: APIRoute = async ({ request }) => {
       metadata: {
         booking_id,
         motivo: motivo || null,
-        cancelado_por: cancelado_por || (isAdmin ? 'admin' : 'invitado'),
+        cancelado_por: cancelado_por || canceledByDefault,
       },
       automatico: true,
     });

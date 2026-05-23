@@ -36,27 +36,39 @@ export const GET: APIRoute = async ({ request, url }) => {
   const eventTypeId = url.searchParams.get('event_type_id');
   if (!eventTypeId) return new Response(JSON.stringify([]), { status: 200 });
 
-  // La página pública /agendar/[slug] lee booking_questions vía supabase directo
-  // (no este endpoint), así que aquí podemos restringir a usuarios con ownership.
-  // Esto evita enumeración de event_types privados/inactivos.
+  // BookingPage (página pública /agendar/[slug]) hace hydration y re-fetch
+  // de questions desde aquí. Permitimos lectura pública SI el event_type
+  // existe y está activo (mismo gate que la página pública). Si está inactivo
+  // o no existe, 404 — esto cierra la enumeración de event_types privados.
   const { data: et } = await supabase
     .from('event_types')
-    .select('owner_id')
+    .select('owner_id, activo')
     .eq('id', eventTypeId)
     .maybeSingle();
   if (!et) return new Response(JSON.stringify([]), { status: 404 });
 
-  const user = await getCurrentUser(request);
-  if (!canActOnSchedulingOwner(user, et.owner_id)) {
-    return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403 });
+  // Si el event_type está inactivo, requiere auth + ownership para verlo
+  // (admin/partner editando). Si está activo, lectura pública OK.
+  if (!et.activo) {
+    const user = await getCurrentUser(request);
+    if (!canActOnSchedulingOwner(user, et.owner_id)) {
+      return new Response(JSON.stringify([]), { status: 404 });
+    }
   }
 
-  const { data, error } = await supabase
+  // Para lectura pública (event_type activo), solo exponer preguntas activas.
+  // Para owner autenticado, exponer todas.
+  const user = et.activo ? null : await getCurrentUser(request);
+  const isOwnerView = !!user && canActOnSchedulingOwner(user, et.owner_id);
+
+  let q = supabase
     .from('booking_questions')
     .select('*')
     .eq('event_type_id', eventTypeId)
     .order('orden');
+  if (!isOwnerView) q = q.eq('activo', true);
 
+  const { data, error } = await q;
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   return new Response(JSON.stringify(data || []));
 };

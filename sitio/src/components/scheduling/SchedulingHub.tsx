@@ -162,6 +162,16 @@ const modalContent: React.CSSProperties = {
 };
 
 // ─── Helpers ───
+// schedFetch: wrapper para llamadas a /api/scheduling/*. Envía cookie de
+// sesión (partner usa sacs_session) y header x-user-id como fallback admin.
+// El backend prefiere la cookie sobre el header, así que el partner se
+// identifica correctamente cuando ambos están presentes.
+function schedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const headers = new Headers(init?.headers as HeadersInit | undefined);
+  if (!headers.has('x-user-id')) headers.set('x-user-id', 'founder');
+  return fetch(input, { ...init, headers, credentials: 'same-origin' });
+}
+
 function fmtDate(d: string): string {
   if (!d) return '—';
   const [y, m, day] = d.split('-').map(Number);
@@ -272,8 +282,8 @@ function ReservasView() {
       if (filterTo) params.set('to', filterTo);
 
       const [bRes, etRes] = await Promise.all([
-        fetch(`/api/scheduling/bookings?${params.toString()}`),
-        fetch('/api/scheduling/event-types'),
+        schedFetch(`/api/scheduling/bookings?${params.toString()}`),
+        schedFetch('/api/scheduling/event-types'),
       ]);
       const bData = await bRes.json();
       const etData = await etRes.json();
@@ -288,7 +298,7 @@ function ReservasView() {
   useEffect(() => { load(); }, [filterEstado, filterEventType, filterFrom, filterTo]);
 
   const updateBookingEstado = async (bookingId: string, estado: string) => {
-    await fetch('/api/scheduling/bookings', {
+    await schedFetch('/api/scheduling/bookings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: bookingId, estado }),
@@ -297,7 +307,7 @@ function ReservasView() {
   };
 
   const cancelBooking = async (bookingId: string) => {
-    await fetch('/api/scheduling/cancel', {
+    await schedFetch('/api/scheduling/cancel', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ booking_id: bookingId, admin: 1 }),
@@ -310,7 +320,7 @@ function ReservasView() {
     if (!newDate) return;
     const newTime = prompt('Nueva hora (HH:MM):', '10:00');
     if (!newTime) return;
-    await fetch(`/api/scheduling/reschedule?admin=1`, {
+    await schedFetch(`/api/scheduling/reschedule`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ booking_id: bookingId, nueva_fecha: newDate, nueva_hora: newTime, timezone: 'America/Mexico_City' }),
@@ -534,7 +544,7 @@ function TiposEventoView() {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/scheduling/event-types');
+      const res = await schedFetch('/api/scheduling/event-types');
       const data = await res.json();
       setEventTypes(Array.isArray(data) ? data : []);
     } catch {
@@ -546,7 +556,7 @@ function TiposEventoView() {
   useEffect(() => { load(); }, []);
 
   const toggleActivo = async (et: EventType) => {
-    await fetch('/api/scheduling/event-types', {
+    await schedFetch('/api/scheduling/event-types', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: et.id, activo: !et.activo }),
@@ -787,7 +797,7 @@ function EventTypeModal({
       payload.id = eventType.id;
     }
 
-    const res = await fetch('/api/scheduling/event-types', {
+    const res = await schedFetch('/api/scheduling/event-types', {
       method: eventType ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -1146,7 +1156,7 @@ function QuestionsManager({ eventTypeId }: { eventTypeId: string }) {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/scheduling/questions?event_type_id=${eventTypeId}`);
+      const res = await schedFetch(`/api/scheduling/questions?event_type_id=${eventTypeId}`);
       const data = await res.json();
       setQuestions(Array.isArray(data) ? data : []);
     } catch {
@@ -1159,7 +1169,7 @@ function QuestionsManager({ eventTypeId }: { eventTypeId: string }) {
 
   const addQuestion = async () => {
     if (!newQ.label.trim()) return;
-    await fetch('/api/scheduling/questions', {
+    await schedFetch('/api/scheduling/questions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1179,7 +1189,7 @@ function QuestionsManager({ eventTypeId }: { eventTypeId: string }) {
   };
 
   const toggleVisible = async (q: any) => {
-    await fetch('/api/scheduling/questions', {
+    await schedFetch('/api/scheduling/questions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'toggle', id: q.id }),
@@ -1193,7 +1203,7 @@ function QuestionsManager({ eventTypeId }: { eventTypeId: string }) {
     const targetGroup = newRequired ? requiredQs : optionalQs;
     const maxOrden = targetGroup.length > 0 ? Math.max(...targetGroup.map((x: any) => x.orden)) : 0;
     const newOrden = newRequired ? maxOrden + 1 : 100 + maxOrden + 1; // Opcionales empiezan en 100+
-    await fetch('/api/scheduling/questions', {
+    await schedFetch('/api/scheduling/questions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'update', id: q.id, required: newRequired, orden: newOrden }),
@@ -1203,7 +1213,7 @@ function QuestionsManager({ eventTypeId }: { eventTypeId: string }) {
 
   const removeQuestion = async (questionId: string) => {
     if (!confirm('¿Eliminar esta pregunta?')) return;
-    await fetch('/api/scheduling/questions', {
+    await schedFetch('/api/scheduling/questions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'delete', id: questionId }),
@@ -1223,8 +1233,8 @@ function QuestionsManager({ eventTypeId }: { eventTypeId: string }) {
     if (swapIdx < 0 || swapIdx >= group.length) return;
     const other = group[swapIdx];
     await Promise.all([
-      fetch('/api/scheduling/questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update', id: q.id, orden: other.orden }) }),
-      fetch('/api/scheduling/questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update', id: other.id, orden: q.orden }) }),
+      schedFetch('/api/scheduling/questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update', id: q.id, orden: other.orden }) }),
+      schedFetch('/api/scheduling/questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update', id: other.id, orden: q.orden }) }),
     ]);
     load();
   };
@@ -1373,7 +1383,7 @@ function GoogleCalendarPanel() {
   const load = async () => {
     setLoading(true);
     try {
-      const r = await fetch('/api/scheduling/google/status', { credentials: 'include' });
+      const r = await schedFetch('/api/scheduling/google/status', { credentials: 'include' });
       const d = await r.json();
       setStatus({ connected: !!d.connected, connected_at: d.connected_at || null });
     } catch {
@@ -1385,16 +1395,17 @@ function GoogleCalendarPanel() {
   useEffect(() => { load(); }, []);
 
   const connect = () => {
-    // Redirige al flow OAuth. Al volver del callback, vuelve a esta página
-    // y el siguiente render muestra "Conectado".
-    window.location.href = '/api/scheduling/google/auth';
+    // Redirige al flow OAuth pasando la URL actual como return_url para que
+    // el callback regrese al mismo portal (admin o partner) donde inició.
+    const ret = encodeURIComponent(window.location.pathname + window.location.hash);
+    window.location.href = `/api/scheduling/google/auth?return_url=${ret}`;
   };
 
   const disconnect = async () => {
     if (!confirm('¿Desconectar tu Google Calendar? Las nuevas citas ya no se sincronizarán automáticamente.')) return;
     setBusy(true);
     try {
-      await fetch('/api/scheduling/google/disconnect', {
+      await schedFetch('/api/scheduling/google/disconnect', {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
@@ -1472,8 +1483,8 @@ function DisponibilidadSchedule() {
     setLoading(true);
     try {
       const [avRes, ovRes] = await Promise.all([
-        fetch('/api/scheduling/availability'),
-        fetch('/api/scheduling/availability-overrides'),
+        schedFetch('/api/scheduling/availability'),
+        schedFetch('/api/scheduling/availability-overrides'),
       ]);
       const avData = await avRes.json();
       const ovData = await ovRes.json();
@@ -1546,7 +1557,7 @@ function DisponibilidadSchedule() {
 
   const saveSchedule = async () => {
     setSaving(true);
-    await fetch('/api/scheduling/availability', {
+    await schedFetch('/api/scheduling/availability', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ slots: schedule }),
@@ -1565,7 +1576,7 @@ function DisponibilidadSchedule() {
       payload.hora_fin = overrideEnd;
     }
 
-    await fetch('/api/scheduling/availability-overrides', {
+    await schedFetch('/api/scheduling/availability-overrides', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -1575,7 +1586,7 @@ function DisponibilidadSchedule() {
   };
 
   const deleteOverride = async (id: string) => {
-    await fetch('/api/scheduling/availability-overrides', {
+    await schedFetch('/api/scheduling/availability-overrides', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
@@ -1832,7 +1843,7 @@ function EstadisticasView() {
   const load = async (d: number) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/scheduling/stats?days=${d}`);
+      const res = await schedFetch(`/api/scheduling/stats?days=${d}`);
       const data = await res.json();
       setStats(data);
     } catch {
