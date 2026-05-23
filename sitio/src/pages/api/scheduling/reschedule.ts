@@ -97,14 +97,12 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   // Auth: token público válido (invitado se reagenda) o auth con ownership (host).
-  let isAdmin = false;
   const hasValidToken = token && token === oldBooking.token_reagendar;
   if (!hasValidToken) {
     const user = await getCurrentUser(request);
     if (!canActOnSchedulingOwner(user, oldBooking.host_id)) {
       return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403 });
     }
-    isAdmin = true;
   }
 
   // Check booking is reschedulable

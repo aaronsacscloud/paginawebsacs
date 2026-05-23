@@ -47,19 +47,15 @@ export const GET: APIRoute = async ({ request, url }) => {
     .maybeSingle();
   if (!et) return new Response(JSON.stringify([]), { status: 404 });
 
-  // Si el event_type está inactivo, requiere auth + ownership para verlo
-  // (admin/partner editando). Si está activo, lectura pública OK.
-  if (!et.activo) {
-    const user = await getCurrentUser(request);
-    if (!canActOnSchedulingOwner(user, et.owner_id)) {
-      return new Response(JSON.stringify([]), { status: 404 });
-    }
-  }
+  // Auth: resuelve user una sola vez. Owner ve todo (activo o inactivo);
+  // público solo ve event_types activos y preguntas activas.
+  const user = await getCurrentUser(request);
+  const isOwnerView = canActOnSchedulingOwner(user, et.owner_id);
 
-  // Para lectura pública (event_type activo), solo exponer preguntas activas.
-  // Para owner autenticado, exponer todas.
-  const user = et.activo ? null : await getCurrentUser(request);
-  const isOwnerView = !!user && canActOnSchedulingOwner(user, et.owner_id);
+  // Inactivo + no owner → 404 para no exponer existencia del event_type.
+  if (!et.activo && !isOwnerView) {
+    return new Response(JSON.stringify([]), { status: 404 });
+  }
 
   let q = supabase
     .from('booking_questions')
