@@ -3123,3 +3123,23 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
     });
   })();
 </script>
+
+<script is:inline>
+  // Auto-print cuando se abre con ?print=1 (usado por el botón "PDF" del partner portal).
+  // Espera a que fuentes e imágenes carguen para que el PDF no salga con fallbacks.
+  (() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('print') !== '1') return;
+    const trigger = () => { try { window.print(); } catch (_) {} };
+    const ready = document.fonts && document.fonts.ready
+      ? document.fonts.ready
+      : Promise.resolve();
+    Promise.all([
+      ready,
+      new Promise((resolve) => {
+        if (document.readyState === 'complete') return resolve();
+        window.addEventListener('load', () => resolve(), { once: true });
+      }),
+    ]).then(() => setTimeout(trigger, 350));
+  })();
+</script>

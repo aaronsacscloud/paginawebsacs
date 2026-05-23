@@ -524,6 +524,15 @@ function QuoteDetail({
             >
               Abrir vista cliente
             </a>
+            <a
+              href={`${publicUrl}?print=1`}
+              target="_blank"
+              rel="noopener"
+              style={{ ...SS.btnGhost, padding: '8px 14px', fontSize: 12, textDecoration: 'none' }}
+              title="Abre la cotización y dispara el diálogo de impresión (Guardar como PDF)"
+            >
+              Descargar PDF
+            </a>
           </div>
         </div>
 
