@@ -235,7 +235,7 @@ export default function SchedulingHub({ variant = 'admin' }: { variant?: Schedul
     <SchedulingVariantContext.Provider value={variant}>
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       {/* Sub-tab nav */}
-      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #f0f0f0', background: '#fff', padding: '0 24px' }}>
+      <div className="sh-subtab-nav" style={{ display: 'flex', gap: 0, borderBottom: '1px solid #f0f0f0', background: '#fff', padding: '0 24px' }}>
         {subTabs.map(t => (
           <button
             key={t.id}
@@ -257,13 +257,43 @@ export default function SchedulingHub({ variant = 'admin' }: { variant?: Schedul
       </div>
 
       {/* Sub-tab content */}
-      <div style={{ flex: 1, overflow: 'auto' }}>
+      <div className="sh-content" style={{ flex: 1, overflow: 'auto' }}>
         {subTab === 'reservas' && <ReservasView />}
         {subTab === 'tipos' && <TiposEventoView />}
         {subTab === 'disponibilidad' && <DisponibilidadView variant={variant} />}
         {subTab === 'estadisticas' && variant === 'admin' && <EstadisticasView />}
       </div>
     </div>
+
+    {/* CSS responsive — apunta a clases que asignamos a los grids más críticos
+        + selectores genéricos por estructura. Aplica al admin y al partner. */}
+    <style dangerouslySetInnerHTML={{ __html: `
+      @media (max-width: 640px) {
+        /* Padding del contenedor scrolleable interno */
+        .sh-content > div { padding-left: 14px !important; padding-right: 14px !important; }
+        /* Sub-tab nav scrolleable horizontal */
+        .sh-content { -webkit-overflow-scrolling: touch; }
+        /* Grids 1fr 1fr → 1fr */
+        .sh-grid-2 { grid-template-columns: 1fr !important; }
+        .sh-grid-3 { grid-template-columns: 1fr !important; }
+        /* Tabla con scroll horizontal */
+        .sh-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .sh-table-wrap table { min-width: 540px; }
+        /* Modal full-screen en mobile */
+        .sh-modal-content {
+          max-height: 100vh !important;
+          height: 100vh !important;
+          border-radius: 0 !important;
+          padding: 18px !important;
+        }
+        .sh-modal-overlay { padding: 0 !important; }
+        /* Cards en EventType list */
+        .sh-event-card-grid { grid-template-columns: 1fr !important; }
+        /* Sub-tab buttons touch-friendly */
+        .sh-subtab-nav { overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+        .sh-subtab-nav button { flex-shrink: 0; }
+      }
+    ` }} />
     </SchedulingVariantContext.Provider>
   );
 }
@@ -392,6 +422,7 @@ function ReservasView() {
         ) : bookings.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 48, color: '#bbb' }}>No hay reservas</div>
         ) : (
+          <div className="sh-table-wrap">
           <table style={{ width: '100%', borderCollapse: 'collapse' as const }}>
             <thead>
               <tr>
@@ -419,6 +450,7 @@ function ReservasView() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>
@@ -827,8 +859,8 @@ function EventTypeModal({
   };
 
   return (
-    <div style={modalOverlay} onClick={onClose}>
-      <div style={modalContent} onClick={e => e.stopPropagation()}>
+    <div className="sh-modal-overlay" style={modalOverlay} onClick={onClose}>
+      <div className="sh-modal-content" style={modalContent} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#1A1A1A' }}>
             {eventType ? 'Editar tipo de evento' : 'Nuevo tipo de evento'}
@@ -859,7 +891,7 @@ function EventTypeModal({
           />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+        <div className="sh-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
           <div>
             <label style={label}>Duración (min)</label>
             <select value={form.duracion_minutos} onChange={e => updateForm('duracion_minutos', Number(e.target.value))} style={selectStyle}>
@@ -885,7 +917,7 @@ function EventTypeModal({
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+        <div className="sh-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
           <div>
             <label style={label}>Buffer antes (min)</label>
             <select value={form.buffer_antes_minutos} onChange={e => updateForm('buffer_antes_minutos', Number(e.target.value))} style={selectStyle}>
@@ -900,7 +932,7 @@ function EventTypeModal({
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
+        <div className="sh-grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
           <div>
             <label style={label}>Aviso minimo (hrs)</label>
             <select value={form.aviso_minimo_horas} onChange={e => updateForm('aviso_minimo_horas', Number(e.target.value))} style={selectStyle}>
@@ -980,7 +1012,7 @@ function EventTypeModal({
                 <input type="checkbox" checked={form.oferta_activa !== false} onChange={e => updateForm('oferta_activa', e.target.checked)} style={{ accentColor: '#4B7BE5' }} />
                 Mostrar oferta especial
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+              <div className="sh-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
                 <div>
                   <label style={label}>Días de prueba</label>
                   <input type="number" value={form.trial_dias || 7} onChange={e => updateForm('trial_dias', Number(e.target.value))} style={input} />
@@ -990,7 +1022,7 @@ function EventTypeModal({
                   <input type="number" value={form.descuento_pct || 35} onChange={e => updateForm('descuento_pct', Number(e.target.value))} style={input} />
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+              <div className="sh-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
                 <div>
                   <label style={label}>Valor migración ($)</label>
                   <input type="number" value={form.migracion_valor || 9000} onChange={e => updateForm('migracion_valor', Number(e.target.value))} style={input} />
@@ -1333,7 +1365,7 @@ function QuestionsManager({ eventTypeId }: { eventTypeId: string }) {
 
       {showAdd && (
         <div style={{ marginTop: 8, padding: 12, background: '#fafafa', borderRadius: 8, border: '1px solid #f0f0f0' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+          <div className="sh-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
             <div>
               <label style={{ ...label, fontSize: '0.6875rem' }}>Tipo de campo</label>
               <select value={newQ.tipo} onChange={e => setNewQ(p => ({ ...p, tipo: e.target.value }))} style={{ ...selectStyle, fontSize: '0.75rem', padding: '6px 8px' }}>

@@ -644,6 +644,53 @@ export const POST: APIRoute = async ({ request }) => {
     console.error('Invitee email notification failed:', inviteeEmailErr);
   }
 
+  // 10b. Notify host (partner o founder) — email con detalles de la nueva cita
+  // y links a su portal para gestionarla.
+  try {
+    const { data: hostMember } = await supabase
+      .from('team_members')
+      .select('email, nombre, rol')
+      .eq('id', assignedHostId)
+      .maybeSingle();
+
+    if (hostMember?.email) {
+      const [y, mo, d] = fecha.split('-').map(Number);
+      const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+      const hostDateStr = `${d} ${months[mo - 1]} ${y}`;
+      const [hh, mm] = hora_inicio.split(':').map(Number);
+      const hostAmpm = hh >= 12 ? 'PM' : 'AM';
+      const hostH12 = hh === 0 ? 12 : hh > 12 ? hh - 12 : hh;
+      const hostTimeStr = `${hostH12}:${String(mm).padStart(2, '0')} ${hostAmpm}`;
+
+      const portalUrl = hostMember.rol === 'partner'
+        ? 'https://www.sacscloud.com/partner/portal#agenda'
+        : 'https://www.sacscloud.com/admin/crm?tab=agenda';
+
+      const hostSubject = `🗓️ Nueva cita: ${nombre} · ${hostDateStr} ${hostTimeStr}`;
+      const hostBody = `Tienes una nueva cita agendada. Aquí están los detalles:`;
+      const hostExtras = `
+        <div style="background:#fafbfd;border:1px solid #e8eaf0;border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+          <div style="font-size:0.875rem;color:#1a1a1a;line-height:1.7;">
+            <strong style="color:#4B7BE5;">${eventType.nombre}</strong><br/>
+            <strong>${hostDateStr}</strong> a las <strong>${hostTimeStr}</strong> (${eventType.duracion_minutos} min)
+          </div>
+        </div>
+        <div style="font-size:0.875rem;line-height:1.7;margin-bottom:16px;color:#1a1a1a;">
+          <strong>Cliente:</strong> ${nombre}<br/>
+          <strong>Email:</strong> <a href="mailto:${email}" style="color:#4B7BE5;">${email}</a>${whatsapp ? `<br/><strong>WhatsApp:</strong> <a href="https://wa.me/${String(whatsapp).replace(/\D/g, '')}" style="color:#25D366;">${whatsapp}</a>` : ''}${empresa ? `<br/><strong>Empresa:</strong> ${empresa}` : ''}
+        </div>
+        ${google_meet_link ? `<div style="margin-bottom:16px;"><a href="${google_meet_link}" style="background:#1A73E8;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:0.875rem;font-weight:600;display:inline-block;">Abrir Google Meet</a></div>` : ''}
+        <div style="text-align:center;margin-top:20px;">
+          <a href="${portalUrl}" style="color:#4B7BE5;font-size:0.8125rem;">Ver en tu portal →</a>
+        </div>
+      `;
+      const hostEmailHtml = buildEmailHtml('Nueva cita confirmada', hostBody, hostExtras);
+      await sendEmail(hostMember.email, hostSubject, hostEmailHtml);
+    }
+  } catch (hostEmailErr) {
+    console.error('Host email notification failed:', hostEmailErr);
+  }
+
   // 11. Send SMS/WhatsApp confirmation to invitee (Feature 11)
   if (whatsapp) {
     try {

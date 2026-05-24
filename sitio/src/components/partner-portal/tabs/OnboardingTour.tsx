@@ -716,6 +716,25 @@ const STEPS: Step[] = [
     preferPosition: 'right',
   },
 
+  // 11b. Agenda · link de booking + Google Calendar
+  {
+    tabHash: 'agenda',
+    target: 'sidebar-agenda',
+    emoji: '📅',
+    title: 'Agenda · tu link de booking',
+    desc: () => ({
+      intro: 'Conecta tu Google Calendar, configura tu disponibilidad, y comparte tu link público con prospectos para que agenden contigo directo — sin emails de ida y vuelta.',
+      bullets: [
+        { icon: '🔗', label: 'Tu link público', sub: 'Compártelo por WhatsApp, email o QR. El prospecto elige hora y la cita queda en tu calendario.', color: C.brand },
+        { icon: '📅', label: 'Sync con Google', sub: 'Las citas se crean automáticamente con link de Google Meet. Si bloqueas tu calendar, no puede agendarse encima.', color: C.greenDark },
+        { icon: '🕒', label: 'Disponibilidad semanal', sub: 'Defines tus horarios; el sistema sólo muestra esos slots libres al cliente.', color: C.amber },
+        { icon: '👤', label: 'Tipos de evento', sub: 'Demo 30 min, consultoría 60 min, llamada exprés — cada uno con su propio link.', color: C.purple },
+      ],
+      outro: 'Misma herramienta que usa el equipo SACS internamente. Cuando un cliente agenda, te llega email con los detalles.',
+    }),
+    preferPosition: 'right',
+  },
+
   // 12. Sidebar Mi nivel
   {
     tabHash: 'nivel',
