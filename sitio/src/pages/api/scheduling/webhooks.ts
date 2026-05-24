@@ -75,6 +75,44 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
+    // URL validation: solo http(s), bloquea localhost/IPs privadas (SSRF prevention).
+    // Los webhooks fire-and-forget desde el server podrían apuntar a servicios
+    // internos si no validamos.
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      return new Response(JSON.stringify({ error: 'URL inválida' }), { status: 400 });
+    }
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+      return new Response(JSON.stringify({ error: 'Solo http(s) permitido' }), { status: 400 });
+    }
+    const host = parsedUrl.hostname.toLowerCase();
+    const isPrivate =
+      host === 'localhost' ||
+      host === '0.0.0.0' ||
+      host.endsWith('.local') ||
+      /^127\./.test(host) ||
+      /^10\./.test(host) ||
+      /^192\.168\./.test(host) ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
+      /^169\.254\./.test(host) ||
+      /^fe80::/i.test(host) ||
+      /^::1$/.test(host);
+    if (isPrivate) {
+      return new Response(JSON.stringify({
+        error: 'No se permiten URLs locales/privadas (localhost, 10.*, 192.168.*, etc.)',
+      }), { status: 400 });
+    }
+
+    // HMAC secret obligatorio (mín 16 chars) — el receiver lo necesita para
+    // validar origen. Sin secret cualquiera podría forge eventos.
+    if (!secret || typeof secret !== 'string' || secret.length < 16) {
+      return new Response(JSON.stringify({
+        error: 'secret obligatorio (mínimo 16 caracteres) para validar firma HMAC',
+      }), { status: 400 });
+    }
+
     const { row, config } = await loadConfig();
     if (!row) {
       return new Response(
@@ -93,7 +131,7 @@ export const POST: APIRoute = async ({ request }) => {
         'booking.rescheduled',
         'booking.completed',
       ],
-      secret: secret || '',
+      secret,
       activo: true,
     };
 

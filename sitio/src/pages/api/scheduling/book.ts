@@ -3,6 +3,7 @@ import { google } from 'googleapis';
 import { supabase } from '../../../lib/supabase';
 import { createCalendarEvent } from '../../../lib/google-calendar';
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
+import { escapeHtml } from '../../../lib/scheduling/email-utils';
 
 export const prerender = false;
 
@@ -109,13 +110,13 @@ function addMinutes(time: string, minutes: number): string {
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
+import { randomBytes } from 'node:crypto';
+
+// CSPRNG-backed token (Math.random was predictable enough to brute-force
+// tokens of cancel/reschedule sin rate limit). 24 bytes = 192 bits → 32-char
+// base64url, mismo "shape" que el legacy pero criptográficamente seguro.
 function generateToken(): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  let token = '';
-  for (let i = 0; i < 32; i++) {
-    token += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return token;
+  return randomBytes(24).toString('base64url');
 }
 
 /** Lifecycle stages in order of progression. */
@@ -509,16 +510,16 @@ export const POST: APIRoute = async ({ request }) => {
         <table width="100%" cellpadding="0" cellspacing="0">
           <tr>
             <td style="padding:6px 0;font-size:0.875rem;color:#999;width:110px;">Nombre</td>
-            <td style="padding:6px 0;font-size:0.875rem;font-weight:600;color:#1A1A1A;">${nombre}</td>
+            <td style="padding:6px 0;font-size:0.875rem;font-weight:600;color:#1A1A1A;">${escapeHtml(nombre)}</td>
           </tr>
           <tr>
             <td style="padding:6px 0;font-size:0.875rem;color:#999;width:110px;">Email</td>
-            <td style="padding:6px 0;font-size:0.875rem;color:#555;">${email}</td>
+            <td style="padding:6px 0;font-size:0.875rem;color:#555;">${escapeHtml(email)}</td>
           </tr>
-          ${whatsapp ? `<tr><td style="padding:6px 0;font-size:0.875rem;color:#999;width:110px;">WhatsApp</td><td style="padding:6px 0;font-size:0.875rem;color:#555;">${whatsapp}</td></tr>` : ''}
-          ${empresa ? `<tr><td style="padding:6px 0;font-size:0.875rem;color:#999;width:110px;">Empresa</td><td style="padding:6px 0;font-size:0.875rem;font-weight:600;color:#1A1A1A;">${empresa}</td></tr>` : ''}
-          ${giro ? `<tr><td style="padding:6px 0;font-size:0.875rem;color:#999;width:110px;">Giro</td><td style="padding:6px 0;font-size:0.875rem;color:#555;">${giro}</td></tr>` : ''}
-          ${sucursales ? `<tr><td style="padding:6px 0;font-size:0.875rem;color:#999;width:110px;">Sucursales</td><td style="padding:6px 0;font-size:0.875rem;color:#555;">${sucursales}</td></tr>` : ''}
+          ${whatsapp ? `<tr><td style="padding:6px 0;font-size:0.875rem;color:#999;width:110px;">WhatsApp</td><td style="padding:6px 0;font-size:0.875rem;color:#555;">${escapeHtml(whatsapp)}</td></tr>` : ''}
+          ${empresa ? `<tr><td style="padding:6px 0;font-size:0.875rem;color:#999;width:110px;">Empresa</td><td style="padding:6px 0;font-size:0.875rem;font-weight:600;color:#1A1A1A;">${escapeHtml(empresa)}</td></tr>` : ''}
+          ${giro ? `<tr><td style="padding:6px 0;font-size:0.875rem;color:#999;width:110px;">Giro</td><td style="padding:6px 0;font-size:0.875rem;color:#555;">${escapeHtml(giro)}</td></tr>` : ''}
+          ${sucursales ? `<tr><td style="padding:6px 0;font-size:0.875rem;color:#999;width:110px;">Sucursales</td><td style="padding:6px 0;font-size:0.875rem;color:#555;">${escapeHtml(sucursales)}</td></tr>` : ''}
         </table>
       </td></tr>
     </table>
@@ -565,7 +566,7 @@ export const POST: APIRoute = async ({ request }) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             to: hostEmail,
-            subject: `Nueva demo agendada: ${nombre} - ${empresa || ''}`,
+            subject: `Nueva demo agendada: ${String(nombre || '').replace(/[\r\n]/g, ' ').slice(0, 80)} - ${String(empresa || '').replace(/[\r\n]/g, ' ').slice(0, 80)}`,
             html: emailHtml,
           }),
         });
@@ -666,22 +667,28 @@ export const POST: APIRoute = async ({ request }) => {
         ? 'https://www.sacscloud.com/partner/portal#agenda'
         : 'https://www.sacscloud.com/admin/crm?tab=agenda';
 
-      const hostSubject = `🗓️ Nueva cita: ${nombre} · ${hostDateStr} ${hostTimeStr}`;
+      // Subject va a SMTP envelope — no es HTML, pero saneamos newlines para
+      // evitar header injection.
+      const safeName = String(nombre || '').replace(/[\r\n]/g, ' ').slice(0, 80);
+      const hostSubject = `🗓️ Nueva cita: ${safeName} · ${hostDateStr} ${hostTimeStr}`;
       const hostBody = `Tienes una nueva cita agendada. Aquí están los detalles:`;
+      const whatsappDigits = String(whatsapp || '').replace(/\D/g, '');
+      const meetLink = google_meet_link && /^https?:\/\//.test(google_meet_link) ? google_meet_link : '';
+      const portalUrlSafe = /^https?:\/\//.test(portalUrl) ? portalUrl : '#';
       const hostExtras = `
         <div style="background:#fafbfd;border:1px solid #e8eaf0;border-radius:8px;padding:14px 16px;margin-bottom:16px;">
           <div style="font-size:0.875rem;color:#1a1a1a;line-height:1.7;">
-            <strong style="color:#4B7BE5;">${eventType.nombre}</strong><br/>
-            <strong>${hostDateStr}</strong> a las <strong>${hostTimeStr}</strong> (${eventType.duracion_minutos} min)
+            <strong style="color:#4B7BE5;">${escapeHtml(eventType.nombre)}</strong><br/>
+            <strong>${escapeHtml(hostDateStr)}</strong> a las <strong>${escapeHtml(hostTimeStr)}</strong> (${escapeHtml(eventType.duracion_minutos)} min)
           </div>
         </div>
         <div style="font-size:0.875rem;line-height:1.7;margin-bottom:16px;color:#1a1a1a;">
-          <strong>Cliente:</strong> ${nombre}<br/>
-          <strong>Email:</strong> <a href="mailto:${email}" style="color:#4B7BE5;">${email}</a>${whatsapp ? `<br/><strong>WhatsApp:</strong> <a href="https://wa.me/${String(whatsapp).replace(/\D/g, '')}" style="color:#25D366;">${whatsapp}</a>` : ''}${empresa ? `<br/><strong>Empresa:</strong> ${empresa}` : ''}
+          <strong>Cliente:</strong> ${escapeHtml(nombre)}<br/>
+          <strong>Email:</strong> <a href="mailto:${escapeHtml(email)}" style="color:#4B7BE5;">${escapeHtml(email)}</a>${whatsapp ? `<br/><strong>WhatsApp:</strong> <a href="https://wa.me/${escapeHtml(whatsappDigits)}" style="color:#25D366;">${escapeHtml(whatsapp)}</a>` : ''}${empresa ? `<br/><strong>Empresa:</strong> ${escapeHtml(empresa)}` : ''}
         </div>
-        ${google_meet_link ? `<div style="margin-bottom:16px;"><a href="${google_meet_link}" style="background:#1A73E8;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:0.875rem;font-weight:600;display:inline-block;">Abrir Google Meet</a></div>` : ''}
+        ${meetLink ? `<div style="margin-bottom:16px;"><a href="${escapeHtml(meetLink)}" style="background:#1A73E8;color:#fff;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:0.875rem;font-weight:600;display:inline-block;">Abrir Google Meet</a></div>` : ''}
         <div style="text-align:center;margin-top:20px;">
-          <a href="${portalUrl}" style="color:#4B7BE5;font-size:0.8125rem;">Ver en tu portal →</a>
+          <a href="${escapeHtml(portalUrlSafe)}" style="color:#4B7BE5;font-size:0.8125rem;">Ver en tu portal →</a>
         </div>
       `;
       const hostEmailHtml = buildEmailHtml('Nueva cita confirmada', hostBody, hostExtras);

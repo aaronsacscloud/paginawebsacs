@@ -1,12 +1,17 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { getCurrentUser } from '../../../lib/auth/scope';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ url }) => {
-  const key = url.searchParams.get('key');
-  if (key !== 'sacs-seed-2026') {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
+// Endpoint admin-only para sembrar event_types y availability iniciales.
+// Antes tenía una key hardcoded ("sacs-seed-2026") — trivial de adivinar y
+// permitía a cualquiera resetear la config de scheduling. Ahora requiere auth
+// real de founder/cs vía cookie sacs_session.
+export const GET: APIRoute = async ({ request }) => {
+  const user = await getCurrentUser(request);
+  if (!user || (user.role !== 'founder' && user.role !== 'cs')) {
+    return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403 });
   }
 
   // 1. Get admin team member (first one)

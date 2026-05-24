@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { escapeHtml } from '../../../lib/scheduling/email-utils';
 
 export const prerender = false;
 
@@ -38,7 +39,7 @@ export const GET: APIRoute = async ({ url }) => {
     });
   }
 
-  // Return success page
+  // Return success page — escapeHtml en todo input para evitar XSS.
   const eventName = (booking.event_types as any)?.nombre || 'Demo';
   return new Response(`
     <html><head><meta charset="utf-8"><title>Asistencia confirmada — SACS</title></head>
@@ -49,7 +50,7 @@ export const GET: APIRoute = async ({ url }) => {
         </div>
         <h2 style="font-size:1.25rem;font-weight:700;color:#1a1a1a;margin:0 0 8px;">Asistencia confirmada</h2>
         <p style="color:#888;font-size:0.875rem;margin:0 0 16px;">
-          Gracias ${booking.invitee_nombre}. Te esperamos en tu ${eventName} el ${booking.fecha}.
+          Gracias ${escapeHtml(booking.invitee_nombre)}. Te esperamos en tu ${escapeHtml(eventName)} el ${escapeHtml(booking.fecha)}.
         </p>
         <p style="color:#bbb;font-size:0.75rem;">Puedes cerrar esta pagina.</p>
       </div>

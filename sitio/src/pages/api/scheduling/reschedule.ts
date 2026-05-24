@@ -9,14 +9,17 @@ export const prerender = false;
 
 const RESEND_API_KEY = (import.meta.env.RESEND_API_KEY || '').trim();
 
+import { escapeHtml } from '../../../lib/scheduling/email-utils';
+
 function replaceEmailTokens(text: string, data: { nombre?: string; empresa?: string; fecha?: string; hora?: string; duracion?: number; meet_link?: string }): string {
+  const meetUrl = data.meet_link && /^https?:\/\//.test(data.meet_link) ? data.meet_link : '';
   return (text || '')
-    .replace(/\{\{nombre\}\}/g, data.nombre || '')
-    .replace(/\{\{empresa\}\}/g, data.empresa || '')
-    .replace(/\{\{fecha\}\}/g, data.fecha || '')
-    .replace(/\{\{hora\}\}/g, data.hora || '')
+    .replace(/\{\{nombre\}\}/g, escapeHtml(data.nombre || ''))
+    .replace(/\{\{empresa\}\}/g, escapeHtml(data.empresa || ''))
+    .replace(/\{\{fecha\}\}/g, escapeHtml(data.fecha || ''))
+    .replace(/\{\{hora\}\}/g, escapeHtml(data.hora || ''))
     .replace(/\{\{duracion\}\}/g, String(data.duracion || 30))
-    .replace(/\{\{meet_link\}\}/g, data.meet_link || '');
+    .replace(/\{\{meet_link\}\}/g, escapeHtml(meetUrl));
 }
 
 function buildEmailHtml(heading: string, body: string, extras: string = ''): string {
@@ -65,13 +68,11 @@ function timeToMinutes(time: string): number {
   return h * 60 + m;
 }
 
+import { randomBytes } from 'node:crypto';
+
+// CSPRNG token — ver book.ts mismo cambio. 24 bytes = 192 bits.
 function generateToken(): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  let token = '';
-  for (let i = 0; i < 32; i++) {
-    token += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return token;
+  return randomBytes(24).toString('base64url');
 }
 
 export const POST: APIRoute = async ({ request }) => {

@@ -1,5 +1,6 @@
 import { google } from 'googleapis';
 import { supabase } from './supabase';
+import { encryptToken, decryptToken } from './crypto/oauth-tokens';
 
 const CLIENT_ID = (import.meta.env.GOOGLE_CALENDAR_CLIENT_ID || '').trim();
 const CLIENT_SECRET = (import.meta.env.GOOGLE_CALENDAR_CLIENT_SECRET || '').trim();
@@ -50,9 +51,11 @@ export async function getAuthenticatedClient(teamMemberId: string) {
   if (!conn) return null;
 
   const client = getOAuth2Client();
+  // Tokens en DB pueden estar encrypted (prefix `enc:v1:`) o plaintext legacy.
+  // decryptToken maneja ambos casos transparentemente.
   client.setCredentials({
-    access_token: conn.access_token,
-    refresh_token: conn.refresh_token,
+    access_token: decryptToken(conn.access_token),
+    refresh_token: decryptToken(conn.refresh_token),
     expiry_date: new Date(conn.token_expires_at).getTime(),
   });
 
@@ -62,14 +65,20 @@ export async function getAuthenticatedClient(teamMemberId: string) {
   if (now >= expiresAt - 60000) { // Refresh 1 min before expiry
     try {
       const { credentials } = await client.refreshAccessToken();
-      // Update stored tokens
-      await supabase.from('calendar_connections').update({
-        access_token: credentials.access_token,
+      // Al guardar el nuevo access_token, re-encryptamos. Si el connection
+      // tenía tokens legacy plaintext, este refresh los migra a encrypted.
+      const update: Record<string, any> = {
+        access_token: encryptToken(credentials.access_token || ''),
         token_expires_at: new Date(credentials.expiry_date || now + 3600000).toISOString(),
-      }).eq('id', conn.id);
+      };
+      // Google a veces devuelve refresh_token nuevo en refresh — si viene, encrypt y persist.
+      if (credentials.refresh_token) {
+        update.refresh_token = encryptToken(credentials.refresh_token);
+      }
+      await supabase.from('calendar_connections').update(update).eq('id', conn.id);
       client.setCredentials(credentials);
-    } catch (err) {
-      console.error('Token refresh failed:', err);
+    } catch (err: any) {
+      console.error('Token refresh failed:', err?.message || 'unknown', err?.response?.status);
       return null;
     }
   }
@@ -102,8 +111,8 @@ export async function getFreeBusy(
 
     const busy = res.data.calendars?.[auth.calendarId]?.busy || [];
     return busy.map(b => ({ start: b.start || '', end: b.end || '' }));
-  } catch (err) {
-    console.error('Freebusy query failed:', err);
+  } catch (err: any) {
+    console.error('Freebusy query failed:', err?.message || 'unknown');
     return [];
   }
 }
@@ -164,8 +173,8 @@ export async function createCalendarEvent(
       eventId: res.data.id || '',
       meetLink: res.data.conferenceData?.entryPoints?.find(e => e.entryPointType === 'video')?.uri || '',
     };
-  } catch (err) {
-    console.error('Calendar event creation failed:', err);
+  } catch (err: any) {
+    console.error('Calendar event creation failed:', err?.message || 'unknown');
     return null;
   }
 }
@@ -181,8 +190,8 @@ export async function deleteCalendarEvent(teamMemberId: string, eventId: string)
     const calendar = google.calendar({ version: 'v3', auth: auth.client });
     await calendar.events.delete({ calendarId: auth.calendarId, eventId, sendUpdates: 'all' });
     return true;
-  } catch (err) {
-    console.error('Calendar event deletion failed:', err);
+  } catch (err: any) {
+    console.error('Calendar event deletion failed:', err?.message || 'unknown');
     return false;
   }
 }

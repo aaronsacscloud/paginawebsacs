@@ -30,6 +30,13 @@ export async function fireSchedulingWebhooks(event: string, payload: any) {
     for (const wh of webhooks) {
       if (!wh.activo || !wh.url) continue;
       if (wh.events && !wh.events.includes(event)) continue;
+      // Skip webhooks legacy sin secret — antes mandábamos firma vacía y el
+      // receiver no podía validar origen. Ahora obligamos a re-registrar
+      // con un secret válido (mín 16 chars).
+      if (!wh.secret || typeof wh.secret !== 'string' || wh.secret.length < 16) {
+        console.warn('[scheduling-webhooks] skipping webhook sin secret válido (re-registrar):', wh.id);
+        continue;
+      }
 
       const body = JSON.stringify({
         event,
@@ -37,15 +44,14 @@ export async function fireSchedulingWebhooks(event: string, payload: any) {
         data: payload,
       });
 
+      const signature = await hmacSign(body, wh.secret);
       // Fire and forget
       fetch(wh.url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-SACS-Event': event,
-          'X-SACS-Signature': wh.secret
-            ? await hmacSign(body, wh.secret)
-            : '',
+          'X-SACS-Signature': signature,
         },
         body,
       }).catch(() => {});

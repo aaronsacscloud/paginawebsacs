@@ -76,7 +76,10 @@ export const PUT: APIRoute = async ({ request }) => {
         .eq('id', current.deal_id);
     }
 
-    // Log activity
+    // Log activity con audit trail: quién marcó la cita como realizada.
+    // Crítico para fraud prevention: el bono $300 (createDemoCompletadaBonus)
+    // se dispara aquí, así que necesitamos saber si el partner se auto-marcó.
+    const selfMarked = !!(current.referrer_partner_id && user?.id === current.referrer_partner_id);
     await supabase.from('activities').insert({
       contact_id: current.contact_id,
       company_id: null,
@@ -87,6 +90,9 @@ export const PUT: APIRoute = async ({ request }) => {
         booking_id: id,
         fecha: current.fecha,
         hora_inicio: current.hora_inicio,
+        changed_by_user_id: user?.id || null,
+        changed_by_role: user?.role || null,
+        self_marked: selfMarked, // partner marcó su propio booking → revisar comisión
       },
       automatico: true,
     });
@@ -158,7 +164,7 @@ export const PUT: APIRoute = async ({ request }) => {
   }
 
   if (updates.estado === 'no_show') {
-    // Log activity
+    // Log activity con audit trail
     await supabase.from('activities').insert({
       contact_id: current.contact_id,
       company_id: null,
@@ -169,6 +175,8 @@ export const PUT: APIRoute = async ({ request }) => {
         booking_id: id,
         fecha: current.fecha,
         hora_inicio: current.hora_inicio,
+        changed_by_user_id: user?.id || null,
+        changed_by_role: user?.role || null,
       },
       automatico: true,
     });

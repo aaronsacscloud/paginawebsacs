@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { exchangeCode } from '../../../../lib/google-calendar';
 import { supabase } from '../../../../lib/supabase';
+import { encryptToken } from '../../../../lib/crypto/oauth-tokens';
 
 export const prerender = false;
 
@@ -65,13 +66,15 @@ export const GET: APIRoute = async ({ url }) => {
       email = tm?.email || 'calendar@sacscloud.com';
     }
 
-    // Upsert calendar connection
+    // Upsert calendar connection — tokens encriptados con AES-256-GCM antes
+    // de persistir. Si OAUTH_TOKEN_ENCRYPTION_KEY no está definida, el helper
+    // devuelve plaintext con un warning (backwards-compat).
     await supabase.from('calendar_connections').upsert({
       team_member_id: teamMemberId,
       provider: 'google',
       email,
-      access_token: tokens.access_token || '',
-      refresh_token: tokens.refresh_token || '',
+      access_token: encryptToken(tokens.access_token || ''),
+      refresh_token: encryptToken(tokens.refresh_token || ''),
       token_expires_at: new Date(tokens.expiry_date || Date.now() + 3600000).toISOString(),
       calendar_id: 'primary',
       activo: true,

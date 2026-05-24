@@ -9,14 +9,20 @@ export const prerender = false;
 
 const RESEND_API_KEY = (import.meta.env.RESEND_API_KEY || '').trim();
 
+import { escapeHtml } from '../../../lib/scheduling/email-utils';
+
+// Reemplaza tokens en templates de email. Los valores se escapan como HTML
+// porque el template final se inyecta en buildEmailHtml (HTML body).
 function replaceEmailTokens(text: string, data: { nombre?: string; empresa?: string; fecha?: string; hora?: string; duracion?: number; meet_link?: string }): string {
+  // meet_link es URL — solo permitimos http(s) para que no se inyecte javascript:
+  const meetUrl = data.meet_link && /^https?:\/\//.test(data.meet_link) ? data.meet_link : '';
   return (text || '')
-    .replace(/\{\{nombre\}\}/g, data.nombre || '')
-    .replace(/\{\{empresa\}\}/g, data.empresa || '')
-    .replace(/\{\{fecha\}\}/g, data.fecha || '')
-    .replace(/\{\{hora\}\}/g, data.hora || '')
+    .replace(/\{\{nombre\}\}/g, escapeHtml(data.nombre || ''))
+    .replace(/\{\{empresa\}\}/g, escapeHtml(data.empresa || ''))
+    .replace(/\{\{fecha\}\}/g, escapeHtml(data.fecha || ''))
+    .replace(/\{\{hora\}\}/g, escapeHtml(data.hora || ''))
     .replace(/\{\{duracion\}\}/g, String(data.duracion || 30))
-    .replace(/\{\{meet_link\}\}/g, data.meet_link || '');
+    .replace(/\{\{meet_link\}\}/g, escapeHtml(meetUrl));
 }
 
 function buildEmailHtml(heading: string, body: string, extras: string = ''): string {
