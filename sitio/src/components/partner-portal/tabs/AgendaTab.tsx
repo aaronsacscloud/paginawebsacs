@@ -4,10 +4,13 @@
 //
 // Cualquier mejora a SchedulingHub se propaga automáticamente al admin y aquí.
 
-import { useEffect, useState } from 'react';
-import SchedulingHub from '../../scheduling/SchedulingHub';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { SS, C } from './styles';
 import { copyToClipboard } from './utils';
+
+// Lazy: el Hub son ~2k líneas, no las descargamos hasta que el partner abre
+// el tab Agenda. La ShareLinkCard arriba sigue siendo síncrona (es ligera).
+const SchedulingHub = lazy(() => import('../../scheduling/SchedulingHub'));
 
 type Props = {
   user: { id: string; nombre: string; email: string };
@@ -15,7 +18,7 @@ type Props = {
 
 type EventType = { id: string; nombre: string; slug: string; activo: boolean; duracion_minutos: number };
 
-export default function AgendaTab({ user: _user }: Props) {
+export default function AgendaTab({ user }: Props) {
   return (
     <div>
       <div style={{ marginBottom: 12 }}>
@@ -26,10 +29,16 @@ export default function AgendaTab({ user: _user }: Props) {
         </p>
       </div>
 
-      <ShareLinkCard />
+      <ShareLinkCard partnerId={user.id} />
 
       <div style={{ marginTop: 18, background: '#fff', border: '1px solid #eee', borderRadius: 14, overflow: 'hidden' }}>
-        <SchedulingHub variant="partner" />
+        <Suspense fallback={
+          <div style={{ padding: 48, textAlign: 'center', color: '#bbb', fontSize: '0.875rem' }}>
+            Cargando agenda…
+          </div>
+        }>
+          <SchedulingHub variant="partner" />
+        </Suspense>
       </div>
     </div>
   );
@@ -37,7 +46,10 @@ export default function AgendaTab({ user: _user }: Props) {
 
 // Card que muestra el link público principal del partner para que lo comparta.
 // Se basa en el primer event_type activo. Si no hay, sugiere crear uno.
-function ShareLinkCard() {
+//
+// La URL siempre es scoped por partner (/agendar/u/{partner_id}/{slug}) para
+// que dos partners puedan tener el mismo slug sin colisión.
+function ShareLinkCard({ partnerId }: { partnerId: string }) {
   const [eventTypes, setEventTypes] = useState<EventType[] | null>(null);
   const [selectedId, setSelectedId] = useState<string>('');
   const [copied, setCopied] = useState(false);
@@ -55,7 +67,7 @@ function ShareLinkCard() {
 
   const selected = eventTypes?.find((e) => e.id === selectedId) || null;
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://www.sacscloud.com';
-  const publicUrl = selected ? `${origin}/agendar/${selected.slug}` : '';
+  const publicUrl = selected ? `${origin}/agendar/u/${partnerId}/${selected.slug}` : '';
   const qrUrl = publicUrl
     ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(publicUrl)}&margin=4`
     : '';

@@ -1,0 +1,98 @@
+---
+// /agendar/u/[handle]/[slug] — URL scoped por partner.
+//
+// El handle es el id del team_member O su slug_landing (de partner_invitations).
+// Esto permite que dos partners tengan el mismo slug de event_type
+// (ej. "demo") sin colisión global.
+//
+// La página legacy /agendar/[slug] sigue funcionando para event_types
+// con slug único globalmente (founder o partners que no tienen colisión).
+
+export const prerender = false;
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import BookingLoader from '../../../../components/scheduling/BookingLoader';
+import { supabase } from '../../../../lib/supabase';
+
+const handle = Astro.params.handle || '';
+const slug = Astro.params.slug || 'demo';
+
+let eventType: any = null;
+let questions: any[] = [];
+
+try {
+  // Resolver handle → team_member_id
+  // Acepta UUID (id directo) o slug_landing (de partner_invitations).
+  let teamMemberId: string | null = null;
+
+  // Intenta como UUID (forma robusta)
+  const uuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(handle);
+  if (uuidLike) {
+    const { data: tm } = await supabase
+      .from('team_members')
+      .select('id')
+      .eq('id', handle)
+      .eq('activo', true)
+      .maybeSingle();
+    if (tm) teamMemberId = tm.id;
+  }
+
+  // Fallback: slug_landing en partner_invitations → team_member_id
+  if (!teamMemberId) {
+    const { data: inv } = await supabase
+      .from('partner_invitations')
+      .select('team_member_id')
+      .eq('slug_landing', handle)
+      .not('team_member_id', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (inv?.team_member_id) teamMemberId = inv.team_member_id as string;
+  }
+
+  if (teamMemberId) {
+    const { data } = await supabase
+      .from('event_types')
+      .select('*')
+      .eq('slug', slug)
+      .eq('owner_id', teamMemberId)
+      .eq('activo', true)
+      .maybeSingle();
+    eventType = data;
+
+    if (eventType?.owner_id) {
+      const { data: host } = await supabase
+        .from('team_members')
+        .select('nombre, email')
+        .eq('id', eventType.owner_id)
+        .single();
+      if (host) eventType.team_members = host;
+    }
+
+    if (eventType) {
+      const { data: q } = await supabase
+        .from('booking_questions')
+        .select('*')
+        .eq('event_type_id', eventType.id)
+        .eq('activo', true)
+        .order('orden');
+      questions = q || [];
+    }
+  }
+} catch {}
+
+if (!eventType) {
+  return new Response(
+    '<html><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;"><p>Evento no encontrado</p></body></html>',
+    { status: 404, headers: { 'Content-Type': 'text/html' } },
+  );
+}
+---
+
+<BaseLayout title={`Agendar ${eventType.nombre} — Sacs`} description={eventType.descripcion || 'Agenda tu sesión con SACS'} noindex={true}>
+  <BookingLoader client:only="react" eventType={eventType} questions={questions} />
+</BaseLayout>
+
+<style is:global>
+  .nav, .wa-bar, footer { display: none !important; }
+  main { padding: 0 !important; margin: 0 !important; }
+</style>

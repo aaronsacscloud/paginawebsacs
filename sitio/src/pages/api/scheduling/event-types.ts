@@ -47,17 +47,18 @@ export const POST: APIRoute = async ({ request }) => {
   // Partner: owner siempre es él mismo. Founder/cs: pueden crear para cualquiera.
   const owner_id = isPartner(user) ? user.id : (body.owner_id || user.id);
 
-  // Pre-check de slug colisión — el UNIQUE constraint es global (legacy).
+  // Pre-check de slug colisión per-owner (UNIQUE (owner_id, slug) tras migración).
   // Devolvemos 409 con mensaje accionable en vez de 500 genérico.
   if (body.slug) {
     const { data: existing } = await supabase
       .from('event_types')
       .select('id')
       .eq('slug', body.slug)
+      .eq('owner_id', owner_id)
       .maybeSingle();
     if (existing) {
       return new Response(JSON.stringify({
-        error: `El slug "${body.slug}" ya está en uso. Usa otro (ej. agrega tu nombre o iniciales).`,
+        error: `Ya tienes un tipo de evento con el slug "${body.slug}". Elige otro.`,
         code: 'slug_taken',
       }), { status: 409 });
     }
@@ -87,7 +88,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Race: alguien insertó el mismo slug entre el pre-check y este insert.
     if ((error as any).code === '23505') {
       return new Response(JSON.stringify({
-        error: `El slug "${body.slug}" ya fue tomado. Usa otro.`,
+        error: `Ya tienes un tipo de evento con el slug "${body.slug}". Elige otro.`,
         code: 'slug_taken',
       }), { status: 409 });
     }
