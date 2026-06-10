@@ -1,0 +1,240 @@
+---
+// /regalo/[codigo] · Landing del Regalo Buddy
+//
+// Un cliente Sacs (padrino) regaló a este negocio su primer año del Plan
+// Vende ($6,000 MXN). SSR: valida el código contra la tabla `gifts`.
+// Código inválido / expirado / ya usado → redirect a la home (fallback).
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { plans } from '../../data/plans';
+import { expireGiftIfNeeded, getGiftByCode } from '../../lib/gifts';
+
+export const prerender = false;
+
+const { codigo } = Astro.params;
+
+const found = codigo ? await getGiftByCode(codigo) : null;
+const gift = found ? await expireGiftIfNeeded(found) : null;
+
+if (!gift || gift.status !== 'pending') {
+  return Astro.redirect('https://www.sacscloud.com', 302);
+}
+
+const padrinoNombre = gift.padrino_nombre || 'Un negocio amigo';
+const vende = plans.find((p) => p.id === 'vende')!;
+const featureGroups = vende.features.filter(
+  (f): f is { category: string; items: string[] } => typeof f !== 'string',
+);
+const expiraFecha = new Date(gift.expires_at).toLocaleDateString('es-MX', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
+---
+
+<BaseLayout
+  title={`${padrinoNombre} te regaló tu primer año de Sacs`}
+  description="Te regalaron el primer año del Plan Vende de Sacs: punto de venta, tienda en línea e inventario. Actívalo gratis."
+>
+
+<section class="gift-page">
+  <div class="gift-inner">
+    <div class="gift-card">
+      <div class="gift-emoji" aria-hidden="true">🎁</div>
+      <p class="gift-eyebrow">Tienes un regalo</p>
+      <h1 class="gift-title">
+        <strong>{padrinoNombre}</strong> te regaló tu primer año del <span class="gift-plan">Plan Vende</span>
+      </h1>
+      <p class="gift-value">
+        Valor del regalo: <strong>$6,000 MXN</strong> — tu primer año completo, sin costo.
+      </p>
+
+      <a href={`/registro?gift=${gift.code}`} class="gift-cta">Activar mi regalo</a>
+      <p class="gift-fineprint">
+        Sin costo el primer año. La suscripción renueva automáticamente al segundo año a precio
+        normal ($6,000 MXN/año) — puedes cancelar cuando quieras. Este regalo vence el {expiraFecha}.
+      </p>
+    </div>
+
+    <div class="gift-includes">
+      <h2 class="gift-includes-title">Lo que incluye tu Plan Vende</h2>
+      <div class="gift-includes-grid">
+        {featureGroups.map((group) => (
+          <div class="gift-includes-group">
+            <h3>{group.category}</h3>
+            <ul>
+              {group.items.map((item) => (
+                <li>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M3 8.5l3.5 3.5L13 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div class="gift-bottom-cta">
+      <a href={`/registro?gift=${gift.code}`} class="gift-cta">Activar mi regalo</a>
+    </div>
+  </div>
+</section>
+
+</BaseLayout>
+
+<style>
+.gift-page {
+  min-height: 100vh;
+  padding: var(--space-12, 64px) var(--space-5, 20px) var(--space-16, 96px);
+  background: var(--color-bg, #fff);
+}
+
+.gift-inner {
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.gift-card {
+  text-align: center;
+  background: #fff;
+  border: 1.5px solid var(--color-border, #e5e5e5);
+  border-radius: 20px;
+  padding: 56px 32px 40px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+}
+
+.gift-emoji {
+  font-size: 56px;
+  line-height: 1;
+  margin-bottom: 16px;
+}
+
+.gift-eyebrow {
+  font-family: var(--font-body, sans-serif);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-secondary, #2e9e83);
+  margin: 0 0 12px;
+}
+
+.gift-title {
+  font-family: var(--font-display, sans-serif);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-text, #1a1a1a);
+  margin: 0 auto 16px;
+  max-width: 640px;
+}
+
+.gift-plan {
+  color: var(--color-primary, #4b7be5);
+}
+
+.gift-value {
+  font-size: 1.0625rem;
+  color: var(--color-text-secondary, #555);
+  margin: 0 0 28px;
+}
+
+.gift-cta {
+  display: inline-block;
+  background: var(--color-primary, #4b7be5);
+  color: #fff;
+  font-family: var(--font-body, sans-serif);
+  font-weight: 700;
+  font-size: 1.0625rem;
+  padding: 16px 40px;
+  border-radius: var(--radius-md, 10px);
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gift-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(75, 123, 229, 0.35);
+}
+
+.gift-fineprint {
+  font-size: 0.8125rem;
+  color: var(--color-text-tertiary, #8c8c8c);
+  max-width: 520px;
+  margin: 20px auto 0;
+  line-height: 1.5;
+}
+
+.gift-includes {
+  margin-top: 56px;
+}
+
+.gift-includes-title {
+  font-family: var(--font-display, sans-serif);
+  font-size: 1.375rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--color-text, #1a1a1a);
+  text-align: center;
+  margin: 0 0 28px;
+}
+
+.gift-includes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.gift-includes-group {
+  background: var(--color-bg-secondary, #f7f8fa);
+  border-radius: 14px;
+  padding: 24px;
+}
+
+.gift-includes-group h3 {
+  font-family: var(--font-body, sans-serif);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-tertiary, #8c8c8c);
+  margin: 0 0 12px;
+}
+
+.gift-includes-group ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gift-includes-group li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary, #444);
+  line-height: 1.45;
+}
+
+.gift-includes-group li svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: var(--color-secondary, #2e9e83);
+}
+
+.gift-bottom-cta {
+  text-align: center;
+  margin-top: 44px;
+}
+
+@media (max-width: 767px) {
+  .gift-card { padding: 40px 20px 32px; }
+  .gift-includes-grid { grid-template-columns: 1fr; }
+}
+</style>

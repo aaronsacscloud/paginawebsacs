@@ -188,6 +188,130 @@ async function syncSubscriptionToCompany(subscriptionId: string, customerId: str
   }
 }
 
+// ─── Regalo Buddy: confirmar redención cuando la subscription queda activa ───
+// La subscription gift trae metadata.gift_code (la setea create-subscription, que
+// dejó el gift en 'redeeming'). Aquí: gift → 'redeemed' + contact + deal + activity.
+// Idempotente: el UPDATE condicionado por status solo transiciona una vez.
+async function handleGiftRedemption(sub: Stripe.Subscription) {
+  const giftCode = sub.metadata?.gift_code;
+  if (!giftCode) return;
+  if (sub.status !== 'active' && sub.status !== 'trialing') return;
+
+  const { data: rows } = await supabase
+    .from('gifts')
+    .update({
+      status: 'redeemed',
+      redeemed_at: new Date().toISOString(),
+      stripe_subscription_id: sub.id,
+    })
+    .eq('code', giftCode)
+    .in('status', ['redeeming', 'pending'])
+    .select('*');
+
+  const gift = rows?.[0];
+  if (!gift) return; // ya redimido (retry de Stripe) o revocado
+
+  try {
+    // Resolver email del redentor: gift.redeemed_email o el customer de Stripe
+    let email: string = gift.redeemed_email || '';
+    const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id;
+    if (!email && customerId) {
+      try {
+        const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer;
+        email = (customer.email || '').trim().toLowerCase();
+      } catch {}
+    }
+
+    // Crear/actualizar contact con la nota del padrino
+    let contactId: string | null = null;
+    let companyId: string | null = null;
+    if (email) {
+      const { data: contact } = await supabase
+        .from('contacts')
+        .select('id, company_id')
+        .eq('email', email)
+        .limit(1)
+        .maybeSingle();
+      if (contact) {
+        contactId = contact.id;
+        companyId = contact.company_id || null;
+        await supabase
+          .from('contacts')
+          .update({
+            fuente: 'regalo-buddy',
+            fuente_detalle: `Regalo Buddy de ${gift.padrino_account}${gift.padrino_nombre ? ` (${gift.padrino_nombre})` : ''}`,
+            lifecycle_stage: 'cliente',
+          })
+          .eq('id', contactId);
+      } else {
+        const { data: newContact } = await supabase
+          .from('contacts')
+          .insert({
+            nombre: email,
+            email,
+            tipo: 'lead',
+            lifecycle_stage: 'cliente',
+            fuente: 'regalo-buddy',
+            fuente_detalle: `Regalo Buddy de ${gift.padrino_account}${gift.padrino_nombre ? ` (${gift.padrino_nombre})` : ''}`,
+            plan_interes: 'vende',
+            stripe_customer_id: customerId || null,
+          })
+          .select('id')
+          .single();
+        if (newContact) contactId = newContact.id;
+      }
+    }
+
+    if (contactId) {
+      await supabase.from('gifts').update({ redeemed_by_contact: contactId }).eq('id', gift.id);
+    }
+
+    // Deal ganado: origen regalo-buddy, plan Vende anual, valor $6,000
+    let dealId: string | null = null;
+    if (contactId) {
+      const { data: newDeal } = await supabase
+        .from('deals')
+        .insert({
+          nombre: `Regalo Buddy · Plan Vende anual · ${sub.metadata?.empresa || email}`,
+          contact_id: contactId,
+          company_id: companyId,
+          stage: 'cerrada_ganada',
+          plan: 'vende',
+          billing_period: 'anual',
+          valor_total: 6000,
+          valor_mensual: 500,
+          probabilidad: 100,
+          closed_at: new Date().toISOString(),
+        })
+        .select('id')
+        .single();
+      if (newDeal) dealId = newDeal.id;
+    }
+
+    // Activity en el contact
+    if (contactId) {
+      await supabase.from('activities').insert({
+        contact_id: contactId,
+        company_id: companyId,
+        deal_id: dealId,
+        tipo: 'sistema',
+        titulo: `Redimió regalo Buddy de ${gift.padrino_account}`,
+        metadata: {
+          origen: 'regalo-buddy',
+          gift_code: gift.code,
+          padrino_account: gift.padrino_account,
+          padrino_nombre: gift.padrino_nombre,
+          stripe_subscription_id: sub.id,
+          valor: 6000,
+        },
+        automatico: true,
+      });
+    }
+  } catch (err) {
+    console.error('[stripe-webhook] gift redemption CRM error:', err);
+  }
+}
+
 export const POST: APIRoute = async ({ request }) => {
   const body = await request.text();
   const sig = request.headers.get('stripe-signature') || '';
@@ -357,6 +481,8 @@ export const POST: APIRoute = async ({ request }) => {
       const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id;
       const quoteId = sub.metadata?.quote_id;
       await syncSubscriptionToCompany(sub.id, customerId, quoteId);
+      // Regalo Buddy: confirmar redención (solo subscriptions con metadata.gift_code)
+      await handleGiftRedemption(sub);
     }
 
     // ─── invoice.paid (renewal) ───

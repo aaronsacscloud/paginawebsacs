@@ -754,7 +754,9 @@ export const prerender = false;
 <script>
   // ─── Read plan from URL ───
   const urlParams = new URLSearchParams(window.location.search);
-  const planParam = urlParams.get('plan') || 'controla';
+  // Regalo Buddy: ?gift=<code> fuerza plan Vende (el server lo re-fuerza anual)
+  const giftParam = (urlParams.get('gift') || '').trim();
+  const planParam = giftParam ? 'vende' : (urlParams.get('plan') || 'controla');
   const planInfo: Record<string, { name: string; price: string }> = {
     vende: { name: 'Vende', price: '$600 MXN/mes por sucursal' },
     controla: { name: 'Controla', price: '$900 MXN/mes por sucursal' },
@@ -775,6 +777,14 @@ export const prerender = false;
   if (planInput) planInput.value = planParam;
   if (planNameDisplay) planNameDisplay.textContent = `Plan ${plan.name}`;
   if (planPriceDisplay) planPriceDisplay.textContent = plan.price;
+
+  // Regalo Buddy: copy especial — primer año gratis, renueva a precio normal
+  if (giftParam) {
+    if (regTitle) regTitle.textContent = '🎁 Activa tu regalo — Plan Vende';
+    if (regSubtitle) regSubtitle.textContent = 'Tu primer año del Plan Vende es de regalo ($0 hoy). Tu tarjeta solo se usará para la renovación automática del segundo año.';
+    if (planNameDisplay) planNameDisplay.textContent = 'Plan Vende — Regalo Buddy';
+    if (planPriceDisplay) planPriceDisplay.textContent = '🎁 Primer año gratis · después $6,000 MXN/año';
+  }
 
   // ─── Field validation ───
   const fields = document.querySelectorAll<HTMLElement>('.signup-field[data-validate]');
@@ -1006,7 +1016,8 @@ export const prerender = false;
           email: (document.getElementById('email') as HTMLInputElement).value,
           paymentMethodId: paymentMethod.id,
           planId: selectedPlan,
-          billing: 'monthly',
+          billing: giftParam ? 'annual' : 'monthly',
+          gift: giftParam || undefined,
         }),
       });
 

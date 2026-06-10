@@ -4,6 +4,15 @@ import { createHash } from 'crypto';
 import { supabase } from '../../lib/supabase';
 import { getReferrerFromRequest } from '../../lib/attribution';
 import { createCommissionForDeal } from '../../lib/commissions/calculate';
+import {
+  GIFT_COUPON_ID,
+  GIFT_PLAN_VALUE_MXN,
+  getGiftByCode,
+  isGiftExpired,
+  normalizeEmail,
+  normalizeWhatsapp,
+  type GiftRow,
+} from '../../lib/gifts';
 
 export const prerender = false;
 
@@ -81,10 +90,33 @@ const PRICE_MAP: Record<string, { monthly: string; annual: string }> = {
   },
 };
 
+// ─── Regalo Buddy: cupón 100% primer año (get-or-create idempotente) ───
+async function getOrCreateGiftCoupon(): Promise<string> {
+  try {
+    await stripe.coupons.retrieve(GIFT_COUPON_ID);
+    return GIFT_COUPON_ID;
+  } catch (err: any) {
+    if (err?.code !== 'resource_missing' && err?.statusCode !== 404) throw err;
+  }
+  try {
+    await stripe.coupons.create({
+      id: GIFT_COUPON_ID,
+      percent_off: 100,
+      duration: 'once',
+      name: 'Regalo Buddy — Primer año Vende',
+    });
+  } catch (err: any) {
+    // Carrera: otro request lo creó primero
+    if (err?.code !== 'resource_already_exists') throw err;
+  }
+  return GIFT_COUPON_ID;
+}
+
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
-    const { nombre, empresa, giro, sucursales, whatsapp, email, paymentMethodId, planId, billing } = body;
+    const { nombre, empresa, giro, sucursales, whatsapp, email, paymentMethodId, billing } = body;
+    let { planId } = body;
 
     // Validate required fields
     if (!email || !paymentMethodId || !planId) {
@@ -94,7 +126,42 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    const billingPeriod = billing === 'annual' ? 'annual' : 'monthly';
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || '';
+
+    // ─── Regalo Buddy: validar gift code (flujo aditivo, solo entra con code) ───
+    const giftCode = typeof body.gift === 'string' ? body.gift.trim() : '';
+    let gift: GiftRow | null = null;
+    if (giftCode) {
+      gift = await getGiftByCode(giftCode);
+      if (!gift || gift.status !== 'pending' || isGiftExpired(gift)) {
+        if (gift && gift.status === 'pending' && isGiftExpired(gift)) {
+          await supabase.from('gifts').update({ status: 'expired' }).eq('id', gift.id).eq('status', 'pending');
+        }
+        return new Response(JSON.stringify({ error: 'Este regalo ya no es válido o ya fue usado.' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Seguridad anti auto-regalo: el padrino no puede redimir su propio regalo
+      const emailNorm = normalizeEmail(email);
+      const waNorm = normalizeWhatsapp(whatsapp);
+      const padrinoEmailNorm = normalizeEmail(gift.padrino_email);
+      const padrinoWaNorm = normalizeWhatsapp(gift.padrino_whatsapp);
+      if (
+        (padrinoEmailNorm && emailNorm === padrinoEmailNorm) ||
+        (padrinoWaNorm && waNorm && waNorm === padrinoWaNorm)
+      ) {
+        return new Response(JSON.stringify({ error: 'Este regalo es para un negocio amigo, no para la cuenta que lo regaló.' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // Gift fuerza plan Vende ANUAL server-side (ignora lo que mande el cliente)
+    if (gift) planId = 'vende';
+    const billingPeriod = gift ? 'annual' : (billing === 'annual' ? 'annual' : 'monthly');
     const priceId = PRICE_MAP[planId]?.[billingPeriod];
 
     if (!priceId) {
@@ -128,13 +195,38 @@ export const POST: APIRoute = async ({ request }) => {
     await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
     await stripe.customers.update(customer.id, {
       invoice_settings: { default_payment_method: paymentMethodId },
+      ...(gift
+        ? { metadata: { gift_code: gift.code, padrino_account: gift.padrino_account } }
+        : {}),
     });
 
-    // Create subscription with 7-day trial
-    const subscription = await stripe.subscriptions.create({
+    // ─── Regalo Buddy: lock optimista ANTES de crear la subscription ───
+    // UPDATE ... WHERE status='pending' — si no afecta filas, alguien más lo redimió.
+    if (gift) {
+      const { data: locked, error: lockErr } = await supabase
+        .from('gifts')
+        .update({
+          status: 'redeeming',
+          redeemed_email: normalizeEmail(email),
+          meta: { ...(gift.meta || {}), redeem_ip: ip, redeem_at_attempt: new Date().toISOString() },
+        })
+        .eq('id', gift.id)
+        .eq('status', 'pending')
+        .select('id');
+      if (lockErr || !locked || locked.length === 0) {
+        return new Response(JSON.stringify({ error: 'Este regalo ya fue usado.' }), {
+          status: 409,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // Create subscription
+    // Flujo normal: trial de 7 días. Flujo gift: SIN trial + cupón 100% 'once'
+    // (primer año $0, renueva automático al año 2 a precio normal).
+    const subscriptionParams: Stripe.SubscriptionCreateParams = {
       customer: customer.id,
       items: [{ price: priceId }],
-      trial_period_days: 7,
       payment_settings: {
         payment_method_types: ['card'],
         save_default_payment_method: 'on_subscription',
@@ -146,14 +238,46 @@ export const POST: APIRoute = async ({ request }) => {
         plan: planId,
         billing: billingPeriod,
       },
-    });
+    };
+    if (gift) {
+      subscriptionParams.discounts = [{ coupon: await getOrCreateGiftCoupon() }];
+      subscriptionParams.metadata = {
+        ...subscriptionParams.metadata,
+        gift_code: gift.code,
+        padrino_account: gift.padrino_account,
+      };
+    } else {
+      subscriptionParams.trial_period_days = 7;
+    }
 
-    // TikTok server-side: CompletePayment
+    let subscription: Stripe.Subscription;
+    try {
+      subscription = await stripe.subscriptions.create(subscriptionParams);
+    } catch (stripeErr) {
+      // Si Stripe falla, liberar el gift para que pueda reintentarse
+      if (gift) {
+        await supabase
+          .from('gifts')
+          .update({ status: 'pending', redeemed_email: null })
+          .eq('id', gift.id)
+          .eq('status', 'redeeming');
+      }
+      throw stripeErr;
+    }
+
+    // Gift: amarrar la subscription al gift (el webhook lo pasa a 'redeemed')
+    if (gift) {
+      await supabase
+        .from('gifts')
+        .update({ stripe_subscription_id: subscription.id })
+        .eq('id', gift.id);
+    }
+
+    // TikTok server-side: CompletePayment (no aplica en gift: cargo $0)
     const planPrices: Record<string, number> = { vende: 600, controla: 900, fideliza: 1400, automatiza: 5900 };
-    const planValue = planPrices[planId] || 0;
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || '';
+    const planValue = gift ? GIFT_PLAN_VALUE_MXN : (planPrices[planId] || 0);
     const ua = request.headers.get('user-agent') || '';
-    sendTikTokEvent(email, whatsapp || '', planId, planValue, ip, ua).catch(() => {});
+    if (!gift) sendTikTokEvent(email, whatsapp || '', planId, planValue, ip, ua).catch(() => {});
 
     // ─── Atribución partner + CRM ──────────────────────────────────────
     // 1. Resolver partner referido (cookie sacs_ref o ?ref)
@@ -215,7 +339,7 @@ export const POST: APIRoute = async ({ request }) => {
             whatsapp: whatsapp || null,
             tipo: 'lead',
             lifecycle_stage: 'cliente',
-            fuente: referrerPartnerId ? 'partner-link' : 'website-prueba-gratis',
+            fuente: gift ? 'regalo-buddy' : (referrerPartnerId ? 'partner-link' : 'website-prueba-gratis'),
             company_id,
             plan_interes: planId,
             giro: giro || null,
@@ -229,8 +353,10 @@ export const POST: APIRoute = async ({ request }) => {
       }
 
       // Upsert deal — reusar el deal abierto del contact si existe (creado al agendar demo)
+      // Gift: el deal + activity los crea el webhook al confirmar la redención
+      // (origen regalo-buddy, valor $6,000, stage ganado) — aquí solo el contact.
       let dealId: string | null = null;
-      if (contactId) {
+      if (contactId && !gift) {
         const { data: openDeal } = await supabase
           .from('deals')
           .select('id, referrer_partner_id')
@@ -278,8 +404,8 @@ export const POST: APIRoute = async ({ request }) => {
         }
       }
 
-      // Activity log
-      if (contactId) {
+      // Activity log (gift: la registra el webhook con el padrino)
+      if (contactId && !gift) {
         await supabase.from('activities').insert({
           contact_id: contactId,
           company_id,
