@@ -12,6 +12,7 @@ import {
   giftCorsHeaders,
   giftLink,
   giftOptionsResponse,
+  logGiftEvent,
   normalizeEmail,
   requireGiftSecret,
   type GiftRow,
@@ -58,7 +59,7 @@ export const POST: APIRoute = async ({ request }) => {
     const nombre = body.nombre ? String(body.nombre).trim().slice(0, 200) : null;
     const whatsapp = body.whatsapp ? String(body.whatsapp).trim().slice(0, 30) : null;
 
-    // Idempotencia: si ya existe gift para este account, regresar el mismo
+    // Idempotencia + RE-EMISIÓN: si ya existe gift para este account...
     const { data: existing } = await supabase
       .from('gifts')
       .select('*')
@@ -66,7 +67,57 @@ export const POST: APIRoute = async ({ request }) => {
       .maybeSingle();
 
     if (existing) {
-      return giftResponse(existing as GiftRow, headers);
+      const prev = existing as GiftRow;
+      // 'redeemed' → NUNCA re-emitir: el ahijado ya activó el plan. Devolver el
+      // redimido tal cual (status incluido) para que sacs3 pinte "ya canjeado".
+      // pending / redeeming → idempotente: mismo regalo de siempre.
+      // 'expired' (o 'revoked') → RE-EMITIR: nuevo code, status pending, +120d,
+      // shared_at/created_at reseteados. Reusa la misma fila (UNIQUE por account).
+      if (prev.status === 'expired' || prev.status === 'revoked') {
+        const nowIso = new Date().toISOString();
+        const newExpiresAt = new Date(Date.now() + GIFT_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+        const { data: reissued, error: reErr } = await supabase
+          .from('gifts')
+          .update({
+            code: crypto.randomUUID(),
+            status: 'pending',
+            expires_at: newExpiresAt,
+            shared_at: null,
+            created_at: nowIso,
+            redeeming_at: null,
+            redeemed_email: null,
+            // datos del padrino refrescados por si cambiaron
+            padrino_nombre: nombre,
+            padrino_email: email,
+            padrino_whatsapp: whatsapp,
+          })
+          .eq('id', prev.id)
+          // Solo si SIGUE expired/revoked (anti-carrera con una redención en vuelo)
+          .in('status', ['expired', 'revoked'])
+          .select('*')
+          .maybeSingle();
+        if (reErr) {
+          console.error('[gifts/create] reissue error:', reErr);
+          return new Response(JSON.stringify({ error: 'No se pudo reemitir el regalo' }), { status: 500, headers });
+        }
+        if (reissued) {
+          logGiftEvent({
+            event: 'created',
+            code: (reissued as GiftRow).code,
+            padrino_account: account,
+            meta: { reissued_from: prev.code, previous_status: prev.status },
+          }).catch(() => {});
+          return giftResponse(reissued as GiftRow, headers);
+        }
+        // Carrera: alguien lo movió de expired — re-leer y devolver el estado real
+        const { data: raced } = await supabase
+          .from('gifts')
+          .select('*')
+          .eq('padrino_account', account)
+          .maybeSingle();
+        return giftResponse((raced || prev) as GiftRow, headers);
+      }
+      return giftResponse(prev, headers);
     }
 
     const expiresAt = new Date(Date.now() + GIFT_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString();
@@ -95,6 +146,13 @@ export const POST: APIRoute = async ({ request }) => {
       console.error('[gifts/create] insert error:', error);
       return new Response(JSON.stringify({ error: 'No se pudo crear el regalo' }), { status: 500, headers });
     }
+
+    // Telemetría del embudo (best-effort, no bloquea la respuesta)
+    logGiftEvent({
+      event: 'created',
+      code: (created as GiftRow).code,
+      padrino_account: account,
+    }).catch(() => {});
 
     return giftResponse(created as GiftRow, headers, 201);
   } catch (err) {

@@ -72,6 +72,7 @@ export const GET: APIRoute = async ({ request, url }) => {
         status: gift.status,
         redeemed_by: redeemedBy,
         redeemed_at: gift.redeemed_at,
+        shared_at: gift.shared_at || null,
         expires_at: gift.expires_at,
       }),
       { status: 200, headers },

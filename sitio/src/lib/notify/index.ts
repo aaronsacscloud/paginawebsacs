@@ -454,6 +454,27 @@ const templates: Record<string, Template> = {
     `,
     text: `Restablece tu contraseña: ${d.resetUrl} (expira en 1h)`,
   }),
+  // Regalo Buddy: aviso al PADRINO de que su ahijado activó el regalo.
+  gift_redeemed_padrino: (d) => ({
+    subject: `🤝 ${d.redentor || 'Tu amigo'} activó tu regalo del Plan Vende — ya son Buddys`,
+    html: `
+      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:520px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <div style="text-align:center;margin-bottom:18px">
+          <div style="display:inline-block;padding:6px 14px;background:#2AB5A0;color:#fff;font-size:0.6875rem;font-weight:800;text-transform:uppercase;letter-spacing:0.10em;border-radius:4px">Regalo activado</div>
+        </div>
+        <h2 style="font-size:1.5rem;font-weight:600;margin:0 0 12px;letter-spacing:-0.01em;text-align:center">¡Ya son Buddys, ${d.padrino || ''}! 🤝</h2>
+        <p style="color:#555;line-height:1.6;margin:0 0 16px;text-align:center">
+          <strong>${d.redentor || 'El negocio que invitaste'}</strong> activó el regalo que le hiciste: su <strong>primer año del Plan Vende</strong> en SACS, gracias a ti.
+        </p>
+        <p style="color:#555;line-height:1.6;margin:0 0 20px;text-align:center;font-size:0.875rem">
+          Gracias por sumar a otro negocio a la red SACS. 💙
+        </p>
+        ${d.adminUrl ? `<div style="text-align:center;margin:22px 0"><a href="${d.adminUrl}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:13px 26px;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.875rem">Ver mi Regalo Buddy</a></div>` : ''}
+        <p style="color:#bbb;font-size:0.6875rem;margin-top:24px;text-align:center">SACS Cloud · hola@sacscloud.com</p>
+      </div>
+    `,
+    text: `🤝 ${d.redentor || 'Tu amigo'} activó tu regalo del Plan Vende — ya son Buddys, ${d.padrino || ''}. Gracias por sumar a otro negocio a la red SACS.`,
+  }),
   renewal_reminder: (d) => ({
     subject: `Tu renovación SACS se acerca — ${d.days} días`,
     html: `

@@ -32,8 +32,40 @@ export interface GiftRow {
   redeemed_email: string | null;
   redeemed_at: string | null;
   redeeming_at: string | null;
+  shared_at: string | null;
   stripe_subscription_id: string | null;
   meta: Record<string, any> | null;
+}
+
+export type GiftEventType = 'created' | 'shared' | 'opened' | 'redeemed';
+
+/**
+ * Bitácora de telemetría del embudo Regalo Buddy (tabla gift_events).
+ * best-effort: nunca rompe el flujo principal — si la tabla no existe o falla,
+ * solo loguea un warning. Devuelve true si insertó.
+ */
+export async function logGiftEvent(args: {
+  event: GiftEventType;
+  code?: string | null;
+  padrino_account?: string | null;
+  meta?: Record<string, any>;
+}): Promise<boolean> {
+  try {
+    const { error } = await supabase.from('gift_events').insert({
+      gift_code: args.code && isUuid(args.code) ? args.code : null,
+      padrino_account: args.padrino_account || null,
+      event: args.event,
+      meta: args.meta || {},
+    });
+    if (error) {
+      console.warn('[gifts] logGiftEvent error:', error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('[gifts] logGiftEvent threw:', err);
+    return false;
+  }
 }
 
 export function giftLink(code: string): string {

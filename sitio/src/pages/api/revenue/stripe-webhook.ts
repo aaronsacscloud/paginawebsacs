@@ -3,6 +3,9 @@ import Stripe from 'stripe';
 import { createHash } from 'crypto';
 import { supabase } from '../../../lib/supabase';
 import { sendAcuseEmail } from '../../../lib/payments/send-acuse';
+import { notify } from '../../../lib/notify';
+import { sendWhatsApp } from '../../../lib/kapso';
+import { logGiftEvent } from '../../../lib/gifts';
 
 export const prerender = false;
 
@@ -310,6 +313,69 @@ async function handleGiftRedemption(sub: Stripe.Subscription) {
         automatico: true,
       });
     }
+
+    // ─── M3 — NOTIFICAR AL PADRINO: su ahijado activó el regalo ───
+    // Resolver un nombre legible del redentor (empresa del subscription, nombre
+    // del contact, o el email). Mandar por WhatsApp (Kapso) y/o Email (Resend)
+    // según los datos del padrino. best-effort: nunca rompe la redención.
+    let notifyDelivered = false;
+    let notifyAttempted = false;
+    try {
+      let redentorNombre: string | null = sub.metadata?.empresa || null;
+      if (!redentorNombre && contactId) {
+        const { data: rc } = await supabase.from('contacts').select('nombre').eq('id', contactId).maybeSingle();
+        redentorNombre = rc?.nombre || null;
+      }
+      if (!redentorNombre) redentorNombre = email || 'tu negocio amigo';
+      const padrinoNombre = gift.padrino_nombre || '';
+      const mensajeWa = `🤝 ${redentorNombre} activó tu regalo del Plan Vende — ya son Buddys${padrinoNombre ? `, ${padrinoNombre}` : ''}. ¡Gracias por sumar a otro negocio a la red SACS!`;
+
+      // WhatsApp (Kapso) — solo si el padrino dejó número
+      if (gift.padrino_whatsapp) {
+        notifyAttempted = true;
+        const wa = await sendWhatsApp(gift.padrino_whatsapp, mensajeWa);
+        if (wa?.sent) notifyDelivered = true;
+      }
+      // Email (Resend) — solo si el padrino dejó email
+      if (gift.padrino_email) {
+        notifyAttempted = true;
+        const em = await notify({
+          channel: 'email',
+          to: gift.padrino_email,
+          template: 'gift_redeemed_padrino',
+          data: {
+            padrino: padrinoNombre,
+            redentor: redentorNombre,
+            adminUrl: 'https://app.sacscloud.com',
+          },
+        });
+        if (em?.ok) notifyDelivered = true;
+      }
+    } catch (notifyErr) {
+      console.error('[stripe-webhook] gift padrino notify error:', notifyErr);
+    }
+
+    // Bitácora de telemetría: 'redeemed'. Si NO se pudo notificar (sin infra /
+    // sin contacto del padrino / proveedor caído) → flag notify_pending para
+    // reintentar/seguir a mano. (No inventamos credenciales — si no hay canal,
+    // queda registrado el intento.)
+    logGiftEvent({
+      event: 'redeemed',
+      code: gift.code,
+      padrino_account: gift.padrino_account,
+      meta: {
+        redeemed_email: email || null,
+        // IP de la redención (la guardó el lock optimista en gifts.meta.redeem_ip)
+        // — la usa el rate-limit por IP de create-subscription.
+        ip: gift.meta?.redeem_ip || null,
+        redeem_ip: gift.meta?.redeem_ip || null,
+        stripe_subscription_id: sub.id,
+        notify_attempted: notifyAttempted,
+        notify_delivered: notifyDelivered,
+        // TODO si notify_pending: revisar canal del padrino / proveedor (Kapso/Resend)
+        notify_pending: !notifyDelivered,
+      },
+    }).catch(() => {});
   } catch (err) {
     console.error('[stripe-webhook] gift redemption CRM error:', err);
   }

@@ -9,10 +9,22 @@ import {
   GIFT_PLAN_VALUE_MXN,
   getGiftByCode,
   isGiftExpired,
+  logGiftEvent,
   normalizeEmail,
   normalizeWhatsapp,
   type GiftRow,
 } from '../../lib/gifts';
+
+// Normaliza un nombre de empresa/persona para comparar (lowercase + colapsa
+// espacios + quita acentos) — para el anti-fraude "empresa == padrino_nombre".
+function normalizeName(value: string | null | undefined): string {
+  return (value || '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '') // quitar marcas diacríticas (acentos)
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+}
 
 export const prerender = false;
 
@@ -148,14 +160,65 @@ export const POST: APIRoute = async ({ request }) => {
       const waNorm = normalizeWhatsapp(whatsapp);
       const padrinoEmailNorm = normalizeEmail(gift.padrino_email);
       const padrinoWaNorm = normalizeWhatsapp(gift.padrino_whatsapp);
-      if (
+      // Refuerzo: además del email/whatsapp, bloquear si el NOMBRE de empresa del
+      // registrante coincide con el nombre del padrino (mismo dueño, otro correo).
+      const empresaNorm = normalizeName(empresa);
+      const padrinoNombreNorm = normalizeName(gift.padrino_nombre);
+      const selfByContact =
         (padrinoEmailNorm && emailNorm === padrinoEmailNorm) ||
-        (padrinoWaNorm && waNorm && waNorm === padrinoWaNorm)
-      ) {
+        (padrinoWaNorm && waNorm && waNorm === padrinoWaNorm);
+      const selfByName = !!empresaNorm && empresaNorm === padrinoNombreNorm;
+      if (selfByContact || selfByName) {
+        logGiftEvent({
+          event: 'redeemed',
+          code: gift.code,
+          padrino_account: gift.padrino_account,
+          meta: {
+            blocked: true,
+            reason: selfByName ? 'self_gift_name_match' : 'self_gift_contact_match',
+            ip,
+            registrante_email: emailNorm || null,
+            registrante_empresa: empresaNorm || null,
+          },
+        }).catch(() => {});
         return new Response(JSON.stringify({ error: 'Este regalo es para un negocio amigo, no para la cuenta que lo regaló.' }), {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
         });
+      }
+
+      // Rate-limit best-effort: rechazar si ya hubo >3 redenciones exitosas desde
+      // la MISMA IP en las últimas 24h (anti-abuso de un solo actor reclamando
+      // muchos regalos). Se apoya en gift_events (event 'redeemed', meta.ip /
+      // meta.redeem_ip). Si la consulta falla, NO bloqueamos (best-effort).
+      if (ip) {
+        try {
+          const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+          const { data: recent } = await supabase
+            .from('gift_events')
+            .select('id, meta')
+            .eq('event', 'redeemed')
+            .gte('created_at', since)
+            .limit(200);
+          const fromThisIp = (recent || []).filter((r: any) => {
+            const m = r?.meta || {};
+            return !m.blocked && (m.ip === ip || m.redeem_ip === ip);
+          }).length;
+          if (fromThisIp > 3) {
+            logGiftEvent({
+              event: 'redeemed',
+              code: gift.code,
+              padrino_account: gift.padrino_account,
+              meta: { blocked: true, reason: 'ip_rate_limit', ip, count_24h: fromThisIp },
+            }).catch(() => {});
+            return new Response(JSON.stringify({ error: 'Demasiadas redenciones desde esta conexión. Intenta más tarde o contáctanos.' }), {
+              status: 429,
+              headers: { 'Content-Type': 'application/json' },
+            });
+          }
+        } catch (rlErr) {
+          console.warn('[create-subscription] gift IP rate-limit check failed:', rlErr);
+        }
       }
     }
 
