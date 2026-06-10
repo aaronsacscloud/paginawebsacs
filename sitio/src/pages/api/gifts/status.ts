@@ -10,6 +10,7 @@ import {
   giftCorsHeaders,
   giftLink,
   giftOptionsResponse,
+  requireGiftSecret,
   type GiftRow,
 } from '../../../lib/gifts';
 
@@ -19,6 +20,10 @@ export const OPTIONS: APIRoute = async ({ request }) => giftOptionsResponse(requ
 
 export const GET: APIRoute = async ({ request, url }) => {
   const headers = giftCorsHeaders(request);
+  // 🔴 Exigir el secreto ANTES de leer nada: sin esto, adivinando el slug
+  // (`?account=`) cualquiera filtra el code/link del regalo de otra cuenta.
+  const unauthorized = requireGiftSecret(request, headers);
+  if (unauthorized) return unauthorized;
   try {
     const account = (url.searchParams.get('account') || '').trim().toLowerCase();
     if (!account) {

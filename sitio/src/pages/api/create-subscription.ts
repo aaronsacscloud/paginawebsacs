@@ -195,8 +195,17 @@ export const POST: APIRoute = async ({ request }) => {
     await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
     await stripe.customers.update(customer.id, {
       invoice_settings: { default_payment_method: paymentMethodId },
+      // Gift: MERGE sobre la metadata existente — nunca pisar empresa/giro/
+      // sucursales/source que ya traía el customer (cliente recurrente o recién
+      // creado). Solo agregamos las llaves del regalo.
       ...(gift
-        ? { metadata: { gift_code: gift.code, padrino_account: gift.padrino_account } }
+        ? {
+            metadata: {
+              ...(customer.metadata || {}),
+              gift_code: gift.code,
+              padrino_account: gift.padrino_account,
+            },
+          }
         : {}),
     });
 
@@ -207,6 +216,7 @@ export const POST: APIRoute = async ({ request }) => {
         .from('gifts')
         .update({
           status: 'redeeming',
+          redeeming_at: new Date().toISOString(),
           redeemed_email: normalizeEmail(email),
           meta: { ...(gift.meta || {}), redeem_ip: ip, redeem_at_attempt: new Date().toISOString() },
         })
@@ -246,6 +256,13 @@ export const POST: APIRoute = async ({ request }) => {
         gift_code: gift.code,
         padrino_account: gift.padrino_account,
       };
+      // M4 — Año 1 es gratis (cupón 100% 'once'), pero DEBEMOS validar la tarjeta
+      // para que la renovación del año 2 no falle (churn). Mismo patrón que el
+      // trial: como no hay cobro inmediato, default_incomplete +
+      // save_default_payment_method:'on_subscription' hace que Stripe cree un
+      // pending_setup_intent cuyo client_secret confirmamos en el cliente
+      // (igual que el trial) para validar y guardar la tarjeta de la renovación.
+      subscriptionParams.payment_behavior = 'default_incomplete';
     } else {
       subscriptionParams.trial_period_days = 7;
     }
@@ -258,7 +275,7 @@ export const POST: APIRoute = async ({ request }) => {
       if (gift) {
         await supabase
           .from('gifts')
-          .update({ status: 'pending', redeemed_email: null })
+          .update({ status: 'pending', redeeming_at: null, redeemed_email: null })
           .eq('id', gift.id)
           .eq('status', 'redeeming');
       }

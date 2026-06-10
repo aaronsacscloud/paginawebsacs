@@ -205,11 +205,14 @@ async function handleGiftRedemption(sub: Stripe.Subscription) {
       stripe_subscription_id: sub.id,
     })
     .eq('code', giftCode)
-    .in('status', ['redeeming', 'pending'])
+    // M3 — SOLO transicionar desde 'redeeming'. Si el gift ya fue revertido a
+    // 'pending' (lock viejo expirado / checkout abortado), NO lo marcamos
+    // redeemed: hacerlo regalaría el plan sin un checkout activo que lo respalde.
+    .eq('status', 'redeeming')
     .select('*');
 
   const gift = rows?.[0];
-  if (!gift) return; // ya redimido (retry de Stripe) o revocado
+  if (!gift) return; // ya redimido (retry de Stripe), revertido a pending o revocado
 
   try {
     // Resolver email del redentor: gift.redeemed_email o el customer de Stripe

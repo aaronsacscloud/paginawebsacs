@@ -29,6 +29,12 @@ CREATE TABLE IF NOT EXISTS gifts (
   meta jsonb DEFAULT '{}'::jsonb
 );
 
+-- Lock optimista del checkout: cuándo entró el gift a 'redeeming'. Si Stripe
+-- cuelga / el proceso muere, un gift quedaría atorado en 'redeeming' para
+-- siempre; con esto se revierte a 'pending' tras 15 min (ver
+-- expireGiftIfNeeded en src/lib/gifts.ts). ALTER idempotente (re-correr seguro).
+ALTER TABLE gifts ADD COLUMN IF NOT EXISTS redeeming_at timestamptz;
+
 -- 1 regalo por cuenta padrino — seguridad server-side (la API create es idempotente)
 CREATE UNIQUE INDEX IF NOT EXISTS idx_gifts_padrino_account ON gifts(padrino_account);
 CREATE INDEX IF NOT EXISTS idx_gifts_code ON gifts(code);

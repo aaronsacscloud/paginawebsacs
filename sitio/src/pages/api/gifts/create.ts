@@ -12,6 +12,8 @@ import {
   giftCorsHeaders,
   giftLink,
   giftOptionsResponse,
+  normalizeEmail,
+  requireGiftSecret,
   type GiftRow,
 } from '../../../lib/gifts';
 
@@ -33,6 +35,10 @@ export const OPTIONS: APIRoute = async ({ request }) => giftOptionsResponse(requ
 
 export const POST: APIRoute = async ({ request }) => {
   const headers = giftCorsHeaders(request);
+  // 🔴 Barrera real (CORS no protege server-to-server): exigir el secreto ANTES
+  // de cualquier lógica. Sin esto, cualquiera mintea cupones de $6,000 con curl.
+  const unauthorized = requireGiftSecret(request, headers);
+  if (unauthorized) return unauthorized;
   try {
     const body = await request.json().catch(() => ({}));
 
@@ -42,8 +48,14 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ error: 'account inválido' }), { status: 400, headers });
     }
 
+    // Email del padrino OBLIGATORIO: sin él, el anti auto-regalo es evadible
+    // (el padrino podría redimir su propio regalo sin que lo detectemos).
+    const email = normalizeEmail(body.email).slice(0, 200);
+    if (!email) {
+      return new Response(JSON.stringify({ error: 'email del padrino requerido' }), { status: 400, headers });
+    }
+
     const nombre = body.nombre ? String(body.nombre).trim().slice(0, 200) : null;
-    const email = body.email ? String(body.email).trim().toLowerCase().slice(0, 200) : null;
     const whatsapp = body.whatsapp ? String(body.whatsapp).trim().slice(0, 30) : null;
 
     // Idempotencia: si ya existe gift para este account, regresar el mismo
