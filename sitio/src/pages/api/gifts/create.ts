@@ -12,6 +12,7 @@ import {
   giftCorsHeaders,
   giftLink,
   giftOptionsResponse,
+  isGiftExpired,
   logGiftEvent,
   normalizeEmail,
   requireGiftSecret,
@@ -59,65 +60,99 @@ export const POST: APIRoute = async ({ request }) => {
     const nombre = body.nombre ? String(body.nombre).trim().slice(0, 200) : null;
     const whatsapp = body.whatsapp ? String(body.whatsapp).trim().slice(0, 30) : null;
 
-    // Idempotencia + RE-EMISIÓN: si ya existe gift para este account...
-    const { data: existing } = await supabase
+    // MULTI-BUDDY: una cuenta puede tener MUCHOS regalos a lo largo del tiempo,
+    // pero solo UNO ACTIVO (pending/redeeming) a la vez, y solo crea uno nuevo si
+    // tiene "licencia disponible":
+    //   disponibles = 1 (inicial) + nº de referidos que YA PAGARON (comisiones)
+    //   usadas      = regalos que consumieron licencia (pending/redeeming/redeemed)
+    // Los expirados/revocados NO cuentan como usadas (nadie activó) → re-armables.
+    const { data: allGifts } = await supabase
       .from('gifts')
       .select('*')
       .eq('padrino_account', account)
-      .maybeSingle();
+      .order('created_at', { ascending: false });
+    const gifts = (allGifts || []) as GiftRow[];
 
-    if (existing) {
-      const prev = existing as GiftRow;
-      // 'redeemed' → NUNCA re-emitir: el ahijado ya activó el plan. Devolver el
-      // redimido tal cual (status incluido) para que sacs3 pinte "ya canjeado".
-      // pending / redeeming → idempotente: mismo regalo de siempre.
-      // 'expired' (o 'revoked') → RE-EMITIR: nuevo code, status pending, +120d,
-      // shared_at/created_at reseteados. Reusa la misma fila (UNIQUE por account).
-      if (prev.status === 'expired' || prev.status === 'revoked') {
-        const nowIso = new Date().toISOString();
-        const newExpiresAt = new Date(Date.now() + GIFT_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString();
-        const { data: reissued, error: reErr } = await supabase
-          .from('gifts')
-          .update({
-            code: crypto.randomUUID(),
-            status: 'pending',
-            expires_at: newExpiresAt,
-            shared_at: null,
-            created_at: nowIso,
-            redeeming_at: null,
-            redeemed_email: null,
-            // datos del padrino refrescados por si cambiaron
-            padrino_nombre: nombre,
-            padrino_email: email,
-            padrino_whatsapp: whatsapp,
-          })
-          .eq('id', prev.id)
-          // Solo si SIGUE expired/revoked (anti-carrera con una redención en vuelo)
-          .in('status', ['expired', 'revoked'])
-          .select('*')
-          .maybeSingle();
-        if (reErr) {
-          console.error('[gifts/create] reissue error:', reErr);
-          return new Response(JSON.stringify({ error: 'No se pudo reemitir el regalo' }), { status: 500, headers });
-        }
-        if (reissued) {
-          logGiftEvent({
-            event: 'created',
-            code: (reissued as GiftRow).code,
-            padrino_account: account,
-            meta: { reissued_from: prev.code, previous_status: prev.status },
-          }).catch(() => {});
-          return giftResponse(reissued as GiftRow, headers);
-        }
-        // Carrera: alguien lo movió de expired — re-leer y devolver el estado real
-        const { data: raced } = await supabase
-          .from('gifts')
-          .select('*')
-          .eq('padrino_account', account)
-          .maybeSingle();
-        return giftResponse((raced || prev) as GiftRow, headers);
+    // Marcar pendientes VENCIDOS como expired (best-effort) y reflejarlo local.
+    for (const g of gifts) {
+      if (g.status === 'pending' && isGiftExpired(g)) {
+        await supabase.from('gifts').update({ status: 'expired' }).eq('id', g.id).eq('status', 'pending');
+        g.status = 'expired';
       }
-      return giftResponse(prev, headers);
+    }
+
+    // 1) ¿Hay un regalo ACTIVO? → idempotente, devolver ese (no crear otro).
+    const active = gifts.find((g) => g.status === 'pending' || g.status === 'redeeming');
+    if (active) return giftResponse(active, headers);
+
+    // 2) Calcular licencias disponibles vs usadas.
+    let commissionCount = 0;
+    try {
+      const { count } = await supabase
+        .from('wallet_ledger')
+        .select('id', { count: 'exact', head: true })
+        .eq('account', account)
+        .eq('kind', 'referral_payment_commission');
+      commissionCount = count || 0;
+    } catch {
+      // wallet_ledger aún no existe (migración pendiente) → 0 comisiones.
+      commissionCount = 0;
+    }
+    const available = 1 + commissionCount;
+    const used = gifts.filter(
+      (g) => g.status === 'pending' || g.status === 'redeeming' || g.status === 'redeemed',
+    ).length;
+
+    if (used >= available) {
+      // Sin licencias: ya regaló y aún no convierte a pago. Se desbloquea otra
+      // cuando su Buddy pague (handleReferralCommission en el webhook).
+      return new Response(
+        JSON.stringify({
+          error: 'Ya usaste tu licencia para regalar. Se desbloqueará otra cuando tu Buddy active y pague su plan. 🎁',
+          locked: true,
+          available,
+          used,
+        }),
+        { status: 409, headers },
+      );
+    }
+    // 3) Hay licencia. Si existe una fila EXPIRED/REVOKED, la RE-ARMAMOS (nuevo
+    //    code, pending, +120d) en vez de acumular filas muertas — y así también
+    //    es compatible con el esquema viejo (UNIQUE por cuenta, pre-migración).
+    //    Si no hay reusable, insertamos una fila nueva (multi-Buddy).
+    const reusable = gifts.find((g) => g.status === 'expired' || g.status === 'revoked');
+    if (reusable) {
+      const nowIso = new Date().toISOString();
+      const newExpiresAt = new Date(Date.now() + GIFT_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString();
+      const { data: reissued } = await supabase
+        .from('gifts')
+        .update({
+          code: crypto.randomUUID(),
+          status: 'pending',
+          expires_at: newExpiresAt,
+          shared_at: null,
+          created_at: nowIso,
+          redeeming_at: null,
+          redeemed_email: null,
+          stripe_subscription_id: null,
+          padrino_nombre: nombre,
+          padrino_email: email,
+          padrino_whatsapp: whatsapp,
+        })
+        .eq('id', reusable.id)
+        .in('status', ['expired', 'revoked'])
+        .select('*')
+        .maybeSingle();
+      if (reissued) {
+        logGiftEvent({
+          event: 'created',
+          code: (reissued as GiftRow).code,
+          padrino_account: account,
+          meta: { reissued_from: reusable.code, previous_status: reusable.status },
+        }).catch(() => {});
+        return giftResponse(reissued as GiftRow, headers);
+      }
+      // Carrera: alguien lo movió — cae al insert normal.
     }
 
     const expiresAt = new Date(Date.now() + GIFT_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString();
@@ -134,12 +169,16 @@ export const POST: APIRoute = async ({ request }) => {
       .single();
 
     if (error) {
-      // Carrera contra el UNIQUE(padrino_account): re-leer y regresar el existente
+      // Carrera contra el índice único parcial (1 activo) o el UNIQUE viejo:
+      // re-leer el activo y regresarlo.
       if (String(error.code) === '23505') {
         const { data: raced } = await supabase
           .from('gifts')
           .select('*')
           .eq('padrino_account', account)
+          .in('status', ['pending', 'redeeming'])
+          .order('created_at', { ascending: false })
+          .limit(1)
           .maybeSingle();
         if (raced) return giftResponse(raced as GiftRow, headers);
       }

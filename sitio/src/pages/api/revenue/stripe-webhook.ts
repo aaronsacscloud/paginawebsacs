@@ -6,7 +6,7 @@ import { sendAcuseEmail } from '../../../lib/payments/send-acuse';
 import { notify } from '../../../lib/notify';
 import { sendWhatsApp } from '../../../lib/kapso';
 import { logGiftEvent } from '../../../lib/gifts';
-import { creditWallet, GIFT_ACTIVATION_BONUS_MXN } from '../../../lib/wallet';
+import { creditWallet, GIFT_ACTIVATION_BONUS_MXN, REFERRAL_COMMISSION_PCT } from '../../../lib/wallet';
 
 export const prerender = false;
 
@@ -399,6 +399,62 @@ async function handleGiftRedemption(sub: Stripe.Subscription) {
   }
 }
 
+// 💸 Comisión del 30% al PADRINO cuando su referido PAGA (renovación año 2 o
+// upgrade). Se dispara en invoice.paid con monto > 0 sobre una subscription que
+// trae metadata.gift_code (la puso create-subscription al redimir). Tope "1 vez
+// al año por cliente": el índice único parcial (referred_email, ref_year) lo
+// hace cumplir a nivel DB → aunque haya 2 invoices pagados el mismo año, solo el
+// primero acredita. Además, cada comisión DESBLOQUEA una nueva licencia para
+// regalar (lo cuenta create.ts). Best-effort: nunca tumba el procesamiento del
+// invoice.
+async function handleReferralCommission(invoice: Stripe.Invoice) {
+  try {
+    const subId = (invoice as any).subscription
+      ? (typeof (invoice as any).subscription === 'string' ? (invoice as any).subscription : (invoice as any).subscription.id)
+      : null;
+    if (!subId) return;
+    const amount = (invoice.amount_paid || 0) / 100;
+    if (amount <= 0) return;
+
+    const sub = await stripe.subscriptions.retrieve(subId);
+    const giftCode = sub.metadata?.gift_code;
+    const padrinoAccount = sub.metadata?.padrino_account;
+    if (!giftCode || !padrinoAccount) return; // no es una subscription de regalo
+
+    // Datos del referido (para el concepto y el tope por cliente).
+    const { data: giftRow } = await supabase
+      .from('gifts')
+      .select('redeemed_email, padrino_email, padrino_whatsapp')
+      .eq('code', giftCode)
+      .maybeSingle();
+    const referredEmail = (giftRow?.redeemed_email || '').toLowerCase() || null;
+    const refYear = new Date().getFullYear();
+    const commission = Math.round(amount * REFERRAL_COMMISSION_PCT * 100) / 100;
+
+    const nombreRef = referredEmail || 'tu referido';
+    const { credited } = await creditWallet({
+      account: padrinoAccount,
+      amount_mxn: commission,
+      kind: 'referral_payment_commission',
+      concepto: `30% del pago de ${nombreRef} (gracias por traerlo a Sacs)`,
+      gift_code: giftCode,
+      referred_email: referredEmail,
+      stripe_payment_id: invoice.id,
+      ref_year: refYear,
+      meta: { invoice_amount: amount, pct: REFERRAL_COMMISSION_PCT },
+    });
+
+    // Solo notificar si ESTA llamada fue la que acreditó (no en duplicados).
+    // WhatsApp (Kapso) free-form — mismo canal que usa la notificación de redención.
+    if (credited && giftRow?.padrino_whatsapp) {
+      const msg = `💸 ¡Tu Buddy pagó su plan en Sacs! Ganaste $${commission.toLocaleString('es-MX')} MXN en créditos (Saldo Sacs) y se te desbloqueó otra licencia para regalar. 🎁`;
+      sendWhatsApp(giftRow.padrino_whatsapp, msg).catch(() => {});
+    }
+  } catch (err) {
+    console.error('[stripe-webhook] referral commission error:', err);
+  }
+}
+
 export const POST: APIRoute = async ({ request }) => {
   const body = await request.text();
   const sig = request.headers.get('stripe-signature') || '';
@@ -626,6 +682,9 @@ export const POST: APIRoute = async ({ request }) => {
         const subId = typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription.id;
         if (customerId) await syncSubscriptionToCompany(subId, customerId);
       }
+
+      // 💸 Comisión 30% al padrino si este pago es de un referido (Buddy).
+      await handleReferralCommission(invoice);
 
       // TikTok event
       if (customerId) {

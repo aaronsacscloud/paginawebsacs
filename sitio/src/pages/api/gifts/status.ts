@@ -30,17 +30,24 @@ export const GET: APIRoute = async ({ request, url }) => {
       return new Response(JSON.stringify({ error: 'account requerido' }), { status: 400, headers });
     }
 
-    const { data } = await supabase
+    // MULTI-BUDDY: una cuenta puede tener varios regalos. status devuelve el MÁS
+    // RELEVANTE para la tarjeta del padrino: el ACTIVO (pending/redeeming) si lo
+    // hay; si no, el último REDIMIDO (para celebrar); si no, el más reciente.
+    const { data: rows } = await supabase
       .from('gifts')
       .select('*')
       .eq('padrino_account', account)
-      .maybeSingle();
-
-    if (!data) {
+      .order('created_at', { ascending: false });
+    const all = (rows || []) as GiftRow[];
+    if (!all.length) {
       return new Response(JSON.stringify({ exists: false }), { status: 200, headers });
     }
+    const picked =
+      all.find((g) => g.status === 'pending' || g.status === 'redeeming') ||
+      all.find((g) => g.status === 'redeemed') ||
+      all[0];
 
-    const gift = await expireGiftIfNeeded(data as GiftRow);
+    const gift = await expireGiftIfNeeded(picked);
 
     // Nombre/empresa del contact que redimió (si aplica)
     let redeemedBy: { nombre: string | null; empresa: string | null } | null = null;
