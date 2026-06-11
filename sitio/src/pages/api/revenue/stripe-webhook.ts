@@ -6,6 +6,7 @@ import { sendAcuseEmail } from '../../../lib/payments/send-acuse';
 import { notify } from '../../../lib/notify';
 import { sendWhatsApp } from '../../../lib/kapso';
 import { logGiftEvent } from '../../../lib/gifts';
+import { creditWallet, GIFT_ACTIVATION_BONUS_MXN } from '../../../lib/wallet';
 
 export const prerender = false;
 
@@ -216,6 +217,23 @@ async function handleGiftRedemption(sub: Stripe.Subscription) {
 
   const gift = rows?.[0];
   if (!gift) return; // ya redimido (retry de Stripe), revertido a pending o revocado
+
+  // 💰 Bono $2,000 al PADRINO por que su amigo activó el año gratis. Idempotente:
+  // el índice único parcial (gift_code WHERE kind='referral_activation_bonus')
+  // impide pagar doble aunque el webhook se repita. Best-effort: si falla, NO
+  // tumba la redención (el regalo ya quedó 'redeemed').
+  try {
+    await creditWallet({
+      account: gift.padrino_account,
+      amount_mxn: GIFT_ACTIVATION_BONUS_MXN,
+      kind: 'referral_activation_bonus',
+      concepto: 'Bono por activación de tu Buddy (año gratis del Plan Vende)',
+      gift_code: gift.code,
+      referred_email: gift.redeemed_email || null,
+    });
+  } catch (e) {
+    console.error('[stripe-webhook] gift activation bonus error:', e);
+  }
 
   try {
     // Resolver email del redentor: gift.redeemed_email o el customer de Stripe
