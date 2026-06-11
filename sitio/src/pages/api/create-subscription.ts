@@ -4,6 +4,7 @@ import { createHash } from 'crypto';
 import { supabase } from '../../lib/supabase';
 import { getReferrerFromRequest } from '../../lib/attribution';
 import { createCommissionForDeal } from '../../lib/commissions/calculate';
+import { provisionAccount, generateUniqueAccountId, isValidAccountId } from '../../lib/register';
 import {
   GIFT_COUPON_ID,
   GIFT_PLAN_VALUE_MXN,
@@ -152,6 +153,9 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
     const { nombre, empresa, giro, sucursales, whatsapp, email, paymentMethodId, billing } = body;
+    // Credenciales para PROVISIONAR la cuenta real (Firebase/Mongo) tras el pago.
+    const password = String(body.password || '');
+    const accountIdInput = String(body.account_id || '').trim().toLowerCase();
     let { planId } = body;
 
     // Validate required fields
@@ -543,10 +547,44 @@ export const POST: APIRoute = async ({ request }) => {
       console.error('[create-subscription] CRM sync error:', crmErr);
     }
 
+    // ── PROVISIONAR LA CUENTA SACS REAL (cierra el hueco: pagaban y no podían
+    //    entrar). Pago confirmado en Stripe → creamos Firebase+Mongo vía el
+    //    webservice probado. Si falla, NO tumbamos el pago: devolvemos
+    //    provision_pending para reintento/soporte, y alertamos.
+    let provisioned: { account_id?: string; pending?: boolean; reason?: string } = {};
+    if (password && password.length >= 8) {
+      let accId = isValidAccountId(accountIdInput) ? accountIdInput : await generateUniqueAccountId(empresa || nombre);
+      let pr = await provisionAccount({
+        account_name: empresa, account_id: accId, nombre, email, password,
+        client_ip: ip, whatsapp, giro, sucursales,
+        plan: planId, source: gift ? 'web-regalo' : 'web-pago',
+      });
+      // Colisión de subdominio → regenerar y reintentar una vez.
+      if (!pr.ok && pr.code === 'account_taken') {
+        accId = await generateUniqueAccountId((empresa || nombre) + 'sacs');
+        pr = await provisionAccount({
+          account_name: empresa, account_id: accId, nombre, email, password,
+          client_ip: ip, whatsapp, giro, sucursales,
+          plan: planId, source: gift ? 'web-regalo' : 'web-pago',
+        });
+      }
+      if (pr.ok) {
+        provisioned = { account_id: pr.data?.account_id || accId };
+      } else {
+        provisioned = { pending: true, reason: pr.code || 'server' };
+        console.error('[create-subscription] PROVISION FAILED (pago OK, cuenta NO):', email, pr.code, pr.error);
+      }
+    } else {
+      provisioned = { pending: true, reason: 'no_password' };
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         subscriptionId: subscription.id,
+        account_id: provisioned.account_id || null,
+        provision_pending: !!provisioned.pending,
+        provision_reason: provisioned.reason || null,
         clientSecret: subscription.pending_setup_intent
           ? (typeof subscription.pending_setup_intent === 'string'
               ? subscription.pending_setup_intent

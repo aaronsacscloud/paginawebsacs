@@ -107,6 +107,16 @@ export const prerender = false;
               </div>
             </div>
 
+            <div class="signup-field" data-validate="subdominio">
+              <label for="subdominio">Tu dirección web</label>
+              <div class="signup-input-icon signup-subdom-wrap">
+                <input type="text" id="subdominio" name="subdominio" placeholder="minegocio" autocomplete="off" maxlength="30" inputmode="latin" />
+                <span class="signup-subdom-suffix">.sacscloud.com</span>
+                <span class="field-status">✓</span>
+              </div>
+              <span class="signup-subdom-hint" id="subdom-hint">Se genera de tu negocio · puedes cambiarla</span>
+            </div>
+
             <div class="signup-field" data-validate="password">
               <label for="password">Contraseña</label>
               <div class="signup-input-icon">
@@ -377,6 +387,24 @@ export const prerender = false;
   right: 12px;
   bottom: 12px;
 }
+
+/* Subdominio (auto + editable + check) */
+.signup-subdom-wrap { display: flex; align-items: center; padding-right: 8px; }
+.signup-subdom-wrap input {
+  flex: 1; min-width: 0; padding-left: 14px !important;
+  text-transform: lowercase;
+}
+.signup-subdom-suffix {
+  flex-shrink: 0; color: var(--color-text-tertiary); font-size: 0.85rem;
+  font-weight: 600; padding: 0 6px; white-space: nowrap;
+}
+.signup-subdom-hint {
+  display: block; margin-top: 6px; font-size: 0.78rem; line-height: 1.4;
+  color: var(--color-text-tertiary);
+}
+.signup-subdom-hint.is-good { color: #16a34a; font-weight: 600; }
+.signup-subdom-hint.is-bad { color: #dc2626; font-weight: 600; }
+.signup-subdom-hint.is-checking { color: var(--color-text-tertiary); font-style: italic; }
 
 .signup-phone-wrap {
   position: relative;
@@ -789,6 +817,65 @@ export const prerender = false;
   // ─── Field validation ───
   const fields = document.querySelectorAll<HTMLElement>('.signup-field[data-validate]');
 
+  // ─── Subdominio: auto desde el negocio + check en vivo de disponibilidad ───
+  let subdomAvailable: boolean | null = null; // null = sin verificar, true/false = resultado
+  let subdomTouched = false;
+  let subdomTimer: ReturnType<typeof setTimeout> | null = null;
+  function slugifySubdom(s: string): string {
+    return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]/g, '').slice(0, 30);
+  }
+  function setSubdomHint(text: string, cls: string) {
+    const hint = document.getElementById('subdom-hint');
+    if (hint) { hint.textContent = text; hint.className = 'signup-subdom-hint ' + cls; }
+  }
+  async function checkSubdom() {
+    const sub = document.getElementById('subdominio') as HTMLInputElement | null;
+    const field = sub?.closest('.signup-field') as HTMLElement | null;
+    if (!sub || !field) return;
+    const val = sub.value.trim().toLowerCase();
+    if (!/^[a-z]{3,30}$/.test(val)) {
+      subdomAvailable = null;
+      setSubdomHint('Usa 3 a 30 letras minúsculas (a-z), sin números ni espacios.', 'is-bad');
+      validateField(field);
+      return;
+    }
+    setSubdomHint('Verificando disponibilidad…', 'is-checking');
+    try {
+      const r = await fetch('/api/register-check?account_id=' + encodeURIComponent(val));
+      const j = await r.json();
+      subdomAvailable = j.account_available === true;
+      setSubdomHint(
+        subdomAvailable ? '✓ ' + val + '.sacscloud.com está disponible' : '✗ Ese subdominio ya está tomado, prueba otro.',
+        subdomAvailable ? 'is-good' : 'is-bad',
+      );
+    } catch {
+      subdomAvailable = null;
+      setSubdomHint('No pudimos verificar ahora, lo confirmamos al crear tu cuenta.', '');
+    }
+    validateField(field);
+  }
+  (function wireSubdom() {
+    const empresa = document.getElementById('empresa') as HTMLInputElement | null;
+    const sub = document.getElementById('subdominio') as HTMLInputElement | null;
+    if (!sub) return;
+    if (empresa) {
+      empresa.addEventListener('input', () => {
+        if (subdomTouched) return; // si el usuario ya lo editó, no lo pisamos
+        sub.value = slugifySubdom(empresa.value);
+        if (subdomTimer) clearTimeout(subdomTimer);
+        subdomTimer = setTimeout(checkSubdom, 450);
+      });
+    }
+    sub.addEventListener('input', () => {
+      subdomTouched = true;
+      const clean = slugifySubdom(sub.value);
+      if (clean !== sub.value) sub.value = clean; // sanea en vivo
+      subdomAvailable = null;
+      if (subdomTimer) clearTimeout(subdomTimer);
+      subdomTimer = setTimeout(checkSubdom, 450);
+    });
+  })();
+
   function validateField(field: HTMLElement): boolean {
     const type = field.dataset.validate;
     const input = (type === 'phone'
@@ -806,6 +893,7 @@ export const prerender = false;
       case 'phone': isValid = val.replace(/\D/g, '').length >= 10; break;
       case 'email': isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val); break;
       case 'password': isValid = val.length >= 8; break;
+      case 'subdominio': isValid = /^[a-z]{3,30}$/.test(val) && subdomAvailable === true; break;
     }
 
     field.classList.toggle('valid', isValid);
@@ -1014,6 +1102,8 @@ export const prerender = false;
           sucursales: (document.getElementById('sucursales') as HTMLSelectElement).value,
           whatsapp: (document.getElementById('whatsapp') as HTMLInputElement).value,
           email: (document.getElementById('email') as HTMLInputElement).value,
+          password: (document.getElementById('password') as HTMLInputElement).value,
+          account_id: (document.getElementById('subdominio') as HTMLInputElement | null)?.value?.trim().toLowerCase() || undefined,
           paymentMethodId: paymentMethod.id,
           planId: selectedPlan,
           billing: giftParam ? 'annual' : 'monthly',
@@ -1039,7 +1129,11 @@ export const prerender = false;
           }
         } catch {}
 
-        window.location.href = '/bienvenida';
+        // Lleva el subdominio creado a /bienvenida para mostrar el acceso real.
+        const q = new URLSearchParams();
+        if (data.account_id) q.set('cuenta', data.account_id);
+        if (data.provision_pending) q.set('pendiente', '1');
+        window.location.href = '/bienvenida' + (q.toString() ? '?' + q.toString() : '');
       } else {
         const errEl = document.getElementById('card-errors');
         if (errEl) errEl.textContent = data.error || 'Error al crear la suscripción';

@@ -16,8 +16,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       </svg>
     </div>
 
-    <h1 class="welcome-title">Tu cuenta está lista</h1>
-    <p class="welcome-desc">Tienes 7 días gratis para explorar todas las funciones de Sacs. No se realizará ningún cobro durante tu prueba.</p>
+    <h1 class="welcome-title" id="welcome-title">Tu cuenta está lista</h1>
+    <p class="welcome-desc" id="welcome-desc">Tienes 7 días gratis para explorar todas las funciones de Sacs. No se realizará ningún cobro durante tu prueba.</p>
+
+    <div class="welcome-account" id="welcome-account" hidden>
+      <span class="welcome-account-label">Tu cuenta</span>
+      <span class="welcome-account-url" id="welcome-account-url"></span>
+    </div>
 
     <div class="welcome-next">
       <h2 class="welcome-next-title">Siguientes pasos</h2>
@@ -25,8 +30,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="welcome-step">
           <span class="welcome-step-num">1</span>
           <div>
-            <strong>Revisa tu correo</strong>
-            <span>Te enviamos los datos de acceso a tu cuenta.</span>
+            <strong>Entra a tu cuenta</strong>
+            <span id="welcome-step1-sub">Inicia sesión en app.sacscloud.com con tu correo y la contraseña que elegiste.</span>
           </div>
         </div>
         <div class="welcome-step">
@@ -46,10 +51,33 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       </div>
     </div>
 
-    <a class="welcome-btn" href="https://app.sacscloud.com" target="_blank">Ir a mi cuenta</a>
+    <a class="welcome-btn" href="https://app.sacscloud.com" target="_blank" id="welcome-btn">Ir a mi cuenta</a>
     <a class="welcome-link" href="/">Volver al inicio</a>
   </div>
 </section>
+
+<script>
+  // Personaliza con la cuenta recién creada (?cuenta=slug[&pendiente=1]).
+  const p = new URLSearchParams(window.location.search);
+  const cuenta = (p.get('cuenta') || '').trim();
+  const pendiente = p.get('pendiente') === '1';
+
+  if (cuenta) {
+    const box = document.getElementById('welcome-account');
+    const url = document.getElementById('welcome-account-url');
+    if (box && url) { url.textContent = cuenta + '.sacscloud.com'; box.removeAttribute('hidden'); }
+  }
+
+  if (pendiente) {
+    // El pago entró pero la cuenta se está terminando de crear (reintento/soporte).
+    const t = document.getElementById('welcome-title');
+    const d = document.getElementById('welcome-desc');
+    const s1 = document.getElementById('welcome-step1-sub');
+    if (t) t.textContent = 'Tu pago fue confirmado 🎉';
+    if (d) d.textContent = 'Estamos terminando de preparar tu cuenta. En unos minutos te llega un correo con tu acceso — si no lo ves, escríbenos y lo resolvemos al instante.';
+    if (s1) s1.textContent = 'Te enviaremos tu acceso por correo en cuanto esté lista (normalmente unos minutos).';
+  }
+</script>
 
 </BaseLayout>
 
@@ -85,6 +113,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   color: var(--color-text-secondary);
   line-height: 1.6;
   margin: 0 0 var(--space-10);
+}
+
+.welcome-account {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light, #e5e5e5);
+  border-radius: var(--radius-lg, 12px);
+  padding: 14px 18px;
+  margin: 0 auto var(--space-8);
+  max-width: 360px;
+}
+.welcome-account-label {
+  font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+.welcome-account-url {
+  font-family: var(--font-display, sans-serif); font-size: 1.1rem; font-weight: 800;
+  color: var(--color-primary, #2563EB);
 }
 
 .welcome-next {

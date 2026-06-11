@@ -102,6 +102,9 @@ export const prerender = false;
           </div>
 
           <input type="hidden" id="plan-input" name="plan" value="fideliza-trial" />
+          <input type="hidden" id="subdominio" name="subdominio" value="" />
+
+          <p id="signup-error" style="display:none; color:#dc2626; font-size:0.85rem; font-weight:600; margin:8px 0 0; text-align:center;"></p>
 
           <button type="submit" class="signup-btn" id="btn-submit">
             <span id="btn-submit-text">Crear cuenta gratis</span>
@@ -323,7 +326,30 @@ export const prerender = false;
           });
         }
 
-        window.location.href = '/bienvenida';
+        // PROVISIONAR la cuenta SACS real (Firebase/Mongo). El subdominio lo genera
+        // el backend desde el nombre del negocio (editable luego en la app).
+        const provRes = await fetch('/api/register-account', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nombre: data.nombre, empresa: data.empresa, email: data.email,
+            password: data.password, whatsapp: data.whatsapp, giro: data.giro,
+            sucursales: data.sucursales, account_id: (data.subdominio || '').trim().toLowerCase() || undefined,
+          }),
+        });
+        const prov = await provRes.json().catch(() => ({}));
+        if (!provRes.ok || !prov.success) {
+          const errEl = document.getElementById('signup-error');
+          const msg = prov.code === 'email_taken'
+            ? 'Ese correo ya tiene una cuenta. Inicia sesión.'
+            : (prov.error || 'No pudimos crear tu cuenta. Intenta de nuevo.');
+          if (errEl) { errEl.textContent = msg; (errEl as HTMLElement).style.display = 'block'; }
+          btn.disabled = false; btnText.style.display = 'inline'; btnLoading.style.display = 'none';
+          return;
+        }
+        const q = new URLSearchParams();
+        if (prov.account_id) q.set('cuenta', prov.account_id);
+        window.location.href = '/bienvenida' + (q.toString() ? '?' + q.toString() : '');
       } catch {
         btn.disabled = false;
         btnText.style.display = 'inline';
