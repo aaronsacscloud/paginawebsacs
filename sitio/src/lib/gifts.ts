@@ -127,17 +127,28 @@ export async function expireGiftIfNeeded(gift: GiftRow): Promise<GiftRow> {
     return { ...gift, status: 'expired' };
   }
   if (gift.status === 'redeeming') {
+    // ⚠️ NUNCA reabrir un gift que YA tiene una suscripción de Stripe creada.
+    // create-subscription escribe `stripe_subscription_id` apenas crea la sub
+    // (antes de que llegue el webhook). Si reabrimos ese gift, un segundo amigo
+    // puede redimirlo → DOS suscripciones reales con cupón 100% de UN solo
+    // regalo. Solo rescatamos locks REALMENTE abandonados (sin sub creada:
+    // checkout abortado antes de llegar a Stripe). Los que sí tienen sub se
+    // resuelven por el webhook tardío o por el cron de reconciliación.
+    if (gift.stripe_subscription_id) {
+      return gift;
+    }
     const staleMs = GIFT_REDEEMING_STALE_MIN * 60 * 1000;
     const startedAt = gift.redeeming_at ? new Date(gift.redeeming_at).getTime() : 0;
     if (startedAt && startedAt < Date.now() - staleMs) {
-      // Revertir SOLO si sigue en redeeming y sigue siendo el mismo lock viejo
-      // (condicionar por redeeming_at evita pisar un reintento recién hecho).
+      // Revertir SOLO si sigue en redeeming, mismo lock viejo (redeeming_at) y
+      // sin sub de Stripe (doble guard con la condición de arriba).
       await supabase
         .from('gifts')
         .update({ status: 'pending', redeeming_at: null, redeemed_email: null })
         .eq('id', gift.id)
         .eq('status', 'redeeming')
-        .eq('redeeming_at', gift.redeeming_at);
+        .eq('redeeming_at', gift.redeeming_at)
+        .is('stripe_subscription_id', null);
       return { ...gift, status: 'pending', redeeming_at: null };
     }
   }

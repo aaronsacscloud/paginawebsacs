@@ -33,8 +33,10 @@ const expiraFecha = new Date(gift.expires_at).toLocaleDateString('es-MX', {
 ---
 
 <BaseLayout
-  title={`${padrinoNombre} te regaló tu primer año de Sacs`}
-  description="Te regalaron el primer año del Plan Vende de Sacs: punto de venta, tienda en línea e inventario. Actívalo gratis."
+  title={`🎁 ${padrinoNombre} te regaló $6,000 — tu primer año del Plan Vende`}
+  description={`${padrinoNombre} te regaló tu primer año completo del Plan Vende de Sacs (valor $6,000 MXN): punto de venta, tienda en línea e inventario. Actívalo sin costo — no se te cobra nada hoy.`}
+  image="/og-default.png"
+  noindex={true}
 >
 
 <section class="gift-page">
@@ -50,9 +52,11 @@ const expiraFecha = new Date(gift.expires_at).toLocaleDateString('es-MX', {
       </p>
 
       <a href={`/registro?gift=${gift.code}`} class="gift-cta">Activar mi regalo</a>
+      <p class="gift-reassure">✓ No se te cobra nada hoy · ✓ Tu primer año es $0 · ✓ Cancela cuando quieras</p>
       <p class="gift-fineprint">
-        Sin costo el primer año. La suscripción renueva automáticamente al segundo año a precio
-        normal ($6,000 MXN/año) — puedes cancelar cuando quieras. Este regalo vence el {expiraFecha}.
+        Sin costo el primer año. Te pedimos una tarjeta solo para guardar la renovación —
+        no se te cobra nada hasta el segundo año, cuando renueva automáticamente a precio
+        normal ($6,000 MXN/año) y puedes cancelar antes sin costo. Este regalo vence el {expiraFecha}.
       </p>
     </div>
 
@@ -160,11 +164,19 @@ const expiraFecha = new Date(gift.expires_at).toLocaleDateString('es-MX', {
   box-shadow: 0 6px 20px rgba(75, 123, 229, 0.35);
 }
 
+.gift-reassure {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-secondary, #2e9e83);
+  margin: 16px auto 0;
+  line-height: 1.5;
+}
+
 .gift-fineprint {
   font-size: 0.8125rem;
   color: var(--color-text-tertiary, #8c8c8c);
   max-width: 520px;
-  margin: 20px auto 0;
+  margin: 12px auto 0;
   line-height: 1.5;
 }
 

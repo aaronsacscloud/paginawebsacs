@@ -103,25 +103,49 @@ const PRICE_MAP: Record<string, { monthly: string; annual: string }> = {
 };
 
 // ─── Regalo Buddy: cupón 100% primer año (get-or-create idempotente) ───
-async function getOrCreateGiftCoupon(): Promise<string> {
+// SCOPED al producto Vende (defense-in-depth, B4): el cupón GIFT_VENDE_YEAR
+// original era 100%-off GLOBAL → si su id se filtra o se usa desde otro flujo,
+// regala CUALQUIER plan gratis. Usamos un id VERSIONADO (_V2) con
+// `applies_to.products = [productoVende]`, así aunque se aplique en otro lado
+// solo descuenta Vende. Versionado porque los cupones de Stripe son inmutables
+// (no se le puede agregar applies_to al viejo). El viejo `GIFT_VENDE_YEAR`, si
+// existe en Stripe, queda huérfano (ningún código lo referencia) — borrarlo a
+// mano es opcional.
+const GIFT_COUPON_ID_SCOPED = `${GIFT_COUPON_ID}_V2`;
+
+async function getOrCreateGiftCoupon(vendePriceId: string): Promise<string> {
+  // Idempotente: si ya existe el cupón scopeado, úsalo.
   try {
-    await stripe.coupons.retrieve(GIFT_COUPON_ID);
-    return GIFT_COUPON_ID;
+    await stripe.coupons.retrieve(GIFT_COUPON_ID_SCOPED);
+    return GIFT_COUPON_ID_SCOPED;
   } catch (err: any) {
     if (err?.code !== 'resource_missing' && err?.statusCode !== 404) throw err;
   }
+  // Resolver el PRODUCTO Vende desde el price para scopear el cupón. Best-effort:
+  // si falla, creamos el cupón SIN scope (mejor sin scope que romper la redención
+  // del regalo — el forzado server-side de planId='vende' ya impide stacking en
+  // ESTE endpoint; el scope es solo defensa extra).
+  let appliesTo: { products: string[] } | undefined;
+  try {
+    const price = await stripe.prices.retrieve(vendePriceId);
+    const productId = typeof price.product === 'string' ? price.product : (price.product as any)?.id;
+    if (productId) appliesTo = { products: [productId] };
+  } catch (e) {
+    console.warn('[gift coupon] no se pudo resolver el producto Vende para scopear:', e);
+  }
   try {
     await stripe.coupons.create({
-      id: GIFT_COUPON_ID,
+      id: GIFT_COUPON_ID_SCOPED,
       percent_off: 100,
       duration: 'once',
       name: 'Regalo Buddy — Primer año Vende',
+      ...(appliesTo ? { applies_to: appliesTo } : {}),
     });
   } catch (err: any) {
     // Carrera: otro request lo creó primero
     if (err?.code !== 'resource_already_exists') throw err;
   }
-  return GIFT_COUPON_ID;
+  return GIFT_COUPON_ID_SCOPED;
 }
 
 export const POST: APIRoute = async ({ request }) => {
@@ -313,7 +337,7 @@ export const POST: APIRoute = async ({ request }) => {
       },
     };
     if (gift) {
-      subscriptionParams.discounts = [{ coupon: await getOrCreateGiftCoupon() }];
+      subscriptionParams.discounts = [{ coupon: await getOrCreateGiftCoupon(priceId) }];
       subscriptionParams.metadata = {
         ...subscriptionParams.metadata,
         gift_code: gift.code,

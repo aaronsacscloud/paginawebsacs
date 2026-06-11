@@ -385,13 +385,20 @@ export const POST: APIRoute = async ({ request }) => {
   const body = await request.text();
   const sig = request.headers.get('stripe-signature') || '';
 
+  // FAIL-CLOSED: sin el secreto del webhook NUNCA confiamos en el body. Antes
+  // se hacía `JSON.parse(body)` cuando endpointSecret estaba vacío — eso permitía
+  // forjar un evento `customer.subscription.created` con metadata.gift_code y
+  // redimir un regalo (flip a 'redeemed' + CRM + notificación al padrino) sin
+  // pagarle un centavo a Stripe. En producción el secreto SIEMPRE está seteado;
+  // si falta, es un error de configuración y rechazamos, no abrimos la puerta.
+  if (!endpointSecret) {
+    console.error('[stripe-webhook] STRIPE_WEBHOOK_SECRET no configurado — rechazando (fail-closed)');
+    return new Response(JSON.stringify({ error: 'Webhook no configurado' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+  }
+
   let event: Stripe.Event;
   try {
-    if (endpointSecret) {
-      event = stripe.webhooks.constructEvent(body, sig, endpointSecret);
-    } else {
-      event = JSON.parse(body) as Stripe.Event;
-    }
+    event = stripe.webhooks.constructEvent(body, sig, endpointSecret);
   } catch (err: any) {
     return new Response(JSON.stringify({ error: `Webhook error: ${err.message}` }), { status: 400, headers: { 'Content-Type': 'application/json' } });
   }
