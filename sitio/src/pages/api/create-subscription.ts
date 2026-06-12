@@ -165,6 +165,15 @@ export const POST: APIRoute = async ({ request }) => {
         headers: { 'Content-Type': 'application/json' },
       });
     }
+    // Password OBLIGATORIO aquí (antes de Stripe): provisionar la cuenta lo
+    // necesita y SOLO existe en este request. Sin él crearíamos una suscripción
+    // que es estructuralmente imposible de provisionar (cobrar sin poder dar cuenta).
+    if (!password || password.length < 8) {
+      return new Response(JSON.stringify({ error: 'La contraseña debe tener al menos 8 caracteres.' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || '';
 
@@ -322,6 +331,46 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
+    // ── PROVISIONAR LA CUENTA *ANTES* DE CREAR LA SUSCRIPCIÓN ────────────────
+    // Antes se provisionaba DESPUÉS de crear la sub → si fallaba, el cliente
+    // quedaba suscrito/por-cobrar SIN cuenta usable y sin recuperación. Ahora va
+    // ANTES: si el provisioning falla, NADIE queda con una suscripción imposible
+    // de honrar (devolvemos error y, si es regalo, liberamos el lock). Si la sub
+    // luego falla, la cuenta ya existe → recuperable, sin cobro de más.
+    let accId = isValidAccountId(accountIdInput) ? accountIdInput : await generateUniqueAccountId(empresa || nombre);
+    let pr = await provisionAccount({
+      account_name: empresa, account_id: accId, nombre, email, password,
+      client_ip: ip, whatsapp, giro, sucursales,
+      plan: planId, source: gift ? 'web-regalo' : 'web-pago',
+    });
+    if (!pr.ok && pr.code === 'account_taken') {
+      // Colisión de subdominio → regenerar y reintentar una vez.
+      accId = await generateUniqueAccountId((empresa || nombre) + 'sacs');
+      pr = await provisionAccount({
+        account_name: empresa, account_id: accId, nombre, email, password,
+        client_ip: ip, whatsapp, giro, sucursales,
+        plan: planId, source: gift ? 'web-regalo' : 'web-pago',
+      });
+    }
+    if (!pr.ok) {
+      // Liberar el gift (si aplica) — nadie se cobró, no se creó ninguna sub.
+      if (gift) {
+        await supabase.from('gifts')
+          .update({ status: 'pending', redeeming_at: null, redeemed_email: null })
+          .eq('id', gift.id).eq('status', 'redeeming');
+      }
+      const msg = pr.code === 'email_taken'
+        ? 'Ese correo ya tiene una cuenta. Inicia sesión.'
+        : pr.code === 'rate_limited'
+          ? 'Demasiados intentos desde esta conexión. Espera un momento.'
+          : (pr.error || 'No pudimos crear tu cuenta. Intenta de nuevo.');
+      return new Response(JSON.stringify({ error: msg, code: pr.code }), {
+        status: pr.code === 'rate_limited' ? 429 : 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    const provisionedAccountId = pr.data?.account_id || accId;
+
     // Create subscription
     // Flujo normal: trial de 7 días. Flujo gift: SIN trial + cupón 100% 'once'
     // (primer año $0, renueva automático al año 2 a precio normal).
@@ -360,7 +409,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     let subscription: Stripe.Subscription;
     try {
-      subscription = await stripe.subscriptions.create(subscriptionParams);
+      // Idempotencia: dos submits del mismo (email+price+método) NO crean 2 subs
+      // (anti doble-cobro por doble-click / reintento). Stripe la honra 24h.
+      const idemKey = 'sub_' + createHash('sha256').update(email + '|' + priceId + '|' + paymentMethodId).digest('hex').slice(0, 48);
+      subscription = await stripe.subscriptions.create(subscriptionParams, { idempotencyKey: idemKey });
     } catch (stripeErr) {
       // Si Stripe falla, liberar el gift para que pueda reintentarse
       if (gift) {
@@ -547,44 +599,13 @@ export const POST: APIRoute = async ({ request }) => {
       console.error('[create-subscription] CRM sync error:', crmErr);
     }
 
-    // ── PROVISIONAR LA CUENTA SACS REAL (cierra el hueco: pagaban y no podían
-    //    entrar). Pago confirmado en Stripe → creamos Firebase+Mongo vía el
-    //    webservice probado. Si falla, NO tumbamos el pago: devolvemos
-    //    provision_pending para reintento/soporte, y alertamos.
-    let provisioned: { account_id?: string; pending?: boolean; reason?: string } = {};
-    if (password && password.length >= 8) {
-      let accId = isValidAccountId(accountIdInput) ? accountIdInput : await generateUniqueAccountId(empresa || nombre);
-      let pr = await provisionAccount({
-        account_name: empresa, account_id: accId, nombre, email, password,
-        client_ip: ip, whatsapp, giro, sucursales,
-        plan: planId, source: gift ? 'web-regalo' : 'web-pago',
-      });
-      // Colisión de subdominio → regenerar y reintentar una vez.
-      if (!pr.ok && pr.code === 'account_taken') {
-        accId = await generateUniqueAccountId((empresa || nombre) + 'sacs');
-        pr = await provisionAccount({
-          account_name: empresa, account_id: accId, nombre, email, password,
-          client_ip: ip, whatsapp, giro, sucursales,
-          plan: planId, source: gift ? 'web-regalo' : 'web-pago',
-        });
-      }
-      if (pr.ok) {
-        provisioned = { account_id: pr.data?.account_id || accId };
-      } else {
-        provisioned = { pending: true, reason: pr.code || 'server' };
-        console.error('[create-subscription] PROVISION FAILED (pago OK, cuenta NO):', email, pr.code, pr.error);
-      }
-    } else {
-      provisioned = { pending: true, reason: 'no_password' };
-    }
-
+    // La cuenta YA se provisionó antes de crear la suscripción (provisionedAccountId).
     return new Response(
       JSON.stringify({
         success: true,
         subscriptionId: subscription.id,
-        account_id: provisioned.account_id || null,
-        provision_pending: !!provisioned.pending,
-        provision_reason: provisioned.reason || null,
+        account_id: provisionedAccountId,
+        provision_pending: false,
         clientSecret: subscription.pending_setup_intent
           ? (typeof subscription.pending_setup_intent === 'string'
               ? subscription.pending_setup_intent
