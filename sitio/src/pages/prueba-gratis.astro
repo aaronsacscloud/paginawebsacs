@@ -342,7 +342,9 @@ export const prerender = false;
           const errEl = document.getElementById('signup-error');
           const msg = prov.code === 'email_taken'
             ? 'Ese correo ya tiene una cuenta. Inicia sesión.'
-            : (prov.error || 'No pudimos crear tu cuenta. Intenta de nuevo.');
+            : (provRes.status === 429 || prov.code === 'rate_limited')
+              ? 'Demasiados intentos desde esta conexión. Espera un momento e intenta de nuevo.'
+              : (prov.error || 'No pudimos crear tu cuenta. Intenta de nuevo.');
           if (errEl) { errEl.textContent = msg; (errEl as HTMLElement).style.display = 'block'; }
           btn.disabled = false; btnText.style.display = 'inline'; btnLoading.style.display = 'none';
           return;
@@ -351,6 +353,9 @@ export const prerender = false;
         if (prov.account_id) q.set('cuenta', prov.account_id);
         window.location.href = '/bienvenida' + (q.toString() ? '?' + q.toString() : '');
       } catch {
+        // Falla de red: mostrar mensaje (antes el form se reseteaba en silencio).
+        const errEl = document.getElementById('signup-error');
+        if (errEl) { errEl.textContent = 'No pudimos conectar. Revisa tu internet e intenta de nuevo.'; (errEl as HTMLElement).style.display = 'block'; }
         btn.disabled = false;
         btnText.style.display = 'inline';
         btnLoading.style.display = 'none';
