@@ -107,16 +107,6 @@ export const prerender = false;
               </div>
             </div>
 
-            <div class="signup-field" data-validate="subdominio">
-              <label for="subdominio">Tu dirección web</label>
-              <div class="signup-input-icon signup-subdom-wrap">
-                <input type="text" id="subdominio" name="subdominio" placeholder="minegocio" autocomplete="off" maxlength="30" inputmode="latin" />
-                <span class="signup-subdom-suffix">.sacscloud.com</span>
-                <span class="field-status">✓</span>
-              </div>
-              <span class="signup-subdom-hint" id="subdom-hint">Se genera de tu negocio · puedes cambiarla</span>
-            </div>
-
             <div class="signup-field" data-validate="password">
               <label for="password">Contraseña</label>
               <div class="signup-input-icon">
@@ -1125,7 +1115,8 @@ export const prerender = false;
           whatsapp: (document.getElementById('whatsapp') as HTMLInputElement).value,
           email: (document.getElementById('email') as HTMLInputElement).value,
           password: (document.getElementById('password') as HTMLInputElement).value,
-          account_id: (document.getElementById('subdominio') as HTMLInputElement | null)?.value?.trim().toLowerCase() || undefined,
+          // El account_id (identificador interno) lo genera el backend del nombre
+          // del negocio. NO es una URL — todos entran por app.sacscloud.com.
           paymentMethodId: paymentMethod.id,
           planId: selectedPlan,
           billing: giftParam ? 'annual' : 'monthly',

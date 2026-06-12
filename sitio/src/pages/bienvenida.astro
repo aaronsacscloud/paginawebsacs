@@ -19,9 +19,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <h1 class="welcome-title" id="welcome-title">Tu cuenta está lista</h1>
     <p class="welcome-desc" id="welcome-desc">Tienes 7 días gratis para explorar todas las funciones de Sacs. No se realizará ningún cobro durante tu prueba.</p>
 
-    <div class="welcome-account" id="welcome-account" hidden>
-      <span class="welcome-account-label">Tu cuenta</span>
-      <span class="welcome-account-url" id="welcome-account-url"></span>
+    <div class="welcome-account">
+      <span class="welcome-account-label">Entra aquí</span>
+      <a class="welcome-account-url" href="https://app.sacscloud.com" target="_blank">app.sacscloud.com</a>
     </div>
 
     <div class="welcome-next">
@@ -57,16 +57,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 </section>
 
 <script>
-  // Personaliza con la cuenta recién creada (?cuenta=slug[&pendiente=1]).
+  // Todos entran por app.sacscloud.com (el account_id es interno, no una URL).
   const p = new URLSearchParams(window.location.search);
-  const cuenta = (p.get('cuenta') || '').trim();
   const pendiente = p.get('pendiente') === '1';
-
-  if (cuenta) {
-    const box = document.getElementById('welcome-account');
-    const url = document.getElementById('welcome-account-url');
-    if (box && url) { url.textContent = cuenta + '.sacscloud.com'; box.removeAttribute('hidden'); }
-  }
 
   if (pendiente) {
     // El pago entró pero la cuenta se está terminando de crear (reintento/soporte).
@@ -132,8 +125,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 }
 .welcome-account-url {
   font-family: var(--font-display, sans-serif); font-size: 1.1rem; font-weight: 800;
-  color: var(--color-primary, #2563EB);
+  color: var(--color-primary, #2563EB); text-decoration: none;
 }
+.welcome-account-url:hover { text-decoration: underline; }
 
 .welcome-next {
   text-align: left;
