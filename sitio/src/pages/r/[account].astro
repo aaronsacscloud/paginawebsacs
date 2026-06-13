@@ -1,0 +1,110 @@
+---
+// /r/[account] · Landing del Programa Embajador (link de referido del cliente)
+//
+// Cada cliente Sacs tiene un link permanente sacscloud.com/r/<su-account>.
+// Quien entra obtiene 50% en su primer año del Plan Vende (1 sucursal).
+// El nombre de la marca del referidor llega por ?n=<nombre> (lo pone sacs3 al
+// generar el link); si no viene, copy genérico. No valida el account contra
+// sacs3 (el cliente comparte SU link real); el bono al referidor lo resuelve el
+// webhook por metadata.client_ref_account.
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { plans } from '../../data/plans';
+
+export const prerender = false;
+
+const { account } = Astro.params;
+const refAccount = (account || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+
+if (!refAccount) {
+  return Astro.redirect('https://www.sacscloud.com', 302);
+}
+
+const nombreRef = (Astro.url.searchParams.get('n') || '').trim().slice(0, 60) || 'Un negocio amigo';
+const vende = plans.find((p) => p.id === 'vende')!;
+const featureGroups = vende.features.filter(
+  (f): f is { category: string; items: string[] } => typeof f !== 'string',
+);
+const registroUrl = `/registro?ref_account=${encodeURIComponent(refAccount)}`;
+---
+
+<BaseLayout
+  title={`${nombreRef} te recomienda Sacs · 50% en tu primer año del Plan Vende`}
+  description={`${nombreRef} te recomienda Sacs. Activa el Plan Vende con 50% de descuento en tu primer año: punto de venta, tienda en línea e inventario. Solo pagas la mitad.`}
+  image="/og-default.png"
+  noindex={true}
+>
+
+<section class="ref-page">
+  <div class="ref-inner">
+    <div class="ref-card">
+      <div class="ref-emoji" aria-hidden="true">🤝</div>
+      <p class="ref-eyebrow">{nombreRef} te recomienda Sacs</p>
+      <h1 class="ref-title">
+        Activa el <span class="ref-plan">Plan Vende</span> con <span class="ref-hl">50% de descuento</span> tu primer año
+      </h1>
+      <p class="ref-value">
+        Por venir recomendado, tu primer año cuesta la mitad: <strong>$3,000 MXN</strong> en vez de $6,000.
+      </p>
+
+      <a href={registroUrl} class="ref-cta">Activar mi 50% de descuento</a>
+      <p class="ref-reassure">✓ 50% off tu primer año · ✓ Punto de venta + tienda en línea + inventario · ✓ Cancela cuando quieras</p>
+      <p class="ref-fineprint">
+        Descuento del 50% aplicado a tu primer año del Plan Vende (1 sucursal). Después renueva
+        automáticamente a precio normal ($6,000 MXN/año) y puedes cancelar antes sin costo.
+      </p>
+    </div>
+
+    <div class="ref-includes">
+      <h2 class="ref-includes-title">Lo que incluye tu Plan Vende</h2>
+      <div class="ref-includes-grid">
+        {featureGroups.map((group) => (
+          <div class="ref-includes-group">
+            <h3>{group.category}</h3>
+            <ul>
+              {group.items.map((item) => (
+                <li>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M3 8.5l3.5 3.5L13 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div class="ref-bottom-cta">
+      <a href={registroUrl} class="ref-cta">Activar mi 50% de descuento</a>
+    </div>
+  </div>
+</section>
+
+</BaseLayout>
+
+<style>
+.ref-page { min-height: 100vh; padding: clamp(48px, 8vw, 80px) 20px clamp(64px, 10vw, 96px); background: var(--color-bg, #fff); }
+.ref-inner { max-width: 880px; margin: 0 auto; }
+.ref-card { text-align: center; background: #fff; border: 1.5px solid var(--color-border, #e5e5e5); border-radius: 20px; padding: clamp(40px, 6vw, 56px) 32px 40px; box-shadow: 0 8px 32px rgba(0,0,0,0.06); }
+.ref-emoji { font-size: 56px; line-height: 1; margin-bottom: 16px; }
+.ref-eyebrow { font-family: var(--font-body, sans-serif); font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-secondary, #2e9e83); margin: 0 0 12px; }
+.ref-title { font-family: var(--font-display, sans-serif); font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 800; letter-spacing: -0.02em; color: var(--color-text, #1a1a1a); margin: 0 auto 16px; max-width: 640px; line-height: 1.15; }
+.ref-plan { color: var(--color-primary, #4b7be5); }
+.ref-hl { color: #2e9e83; }
+.ref-value { font-size: 1.0625rem; color: var(--color-text-secondary, #555); margin: 0 0 28px; }
+.ref-value strong { color: var(--color-text, #1a1a1a); }
+.ref-cta { display: inline-block; background: var(--color-primary, #4b7be5); color: #fff; font-family: var(--font-body, sans-serif); font-weight: 700; font-size: 1.0625rem; padding: 16px 40px; border-radius: var(--radius-md, 10px); text-decoration: none; transition: transform 0.15s ease, box-shadow 0.15s ease; box-shadow: 0 10px 24px -10px rgba(75,123,229,0.5); }
+.ref-cta:hover { transform: translateY(-2px); box-shadow: 0 16px 32px -12px rgba(75,123,229,0.55); }
+.ref-reassure { font-size: 0.85rem; font-weight: 600; color: var(--color-text-secondary, #555); margin: 16px 0 0; }
+.ref-fineprint { font-size: 0.78rem; color: var(--color-text-muted, #94a3b8); margin: 14px auto 0; max-width: 520px; line-height: 1.5; }
+.ref-includes { margin-top: clamp(40px, 6vw, 64px); }
+.ref-includes-title { font-family: var(--font-display, sans-serif); font-size: clamp(1.3rem, 3vw, 1.7rem); font-weight: 800; text-align: center; margin: 0 0 28px; }
+.ref-includes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; }
+.ref-includes-group h3 { font-size: 0.95rem; font-weight: 800; color: var(--color-primary, #4b7be5); margin: 0 0 12px; }
+.ref-includes-group ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ref-includes-group li { display: flex; align-items: flex-start; gap: 8px; font-size: 0.92rem; color: var(--color-text-secondary, #555); line-height: 1.45; }
+.ref-includes-group li svg { flex-shrink: 0; margin-top: 3px; color: #2e9e83; }
+.ref-bottom-cta { text-align: center; margin-top: clamp(36px, 5vw, 52px); }
+</style>

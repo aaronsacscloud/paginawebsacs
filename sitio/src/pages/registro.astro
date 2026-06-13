@@ -783,7 +783,9 @@ export const prerender = false;
   const urlParams = new URLSearchParams(window.location.search);
   // Regalo Buddy: ?gift=<code> fuerza plan Vende (el server lo re-fuerza anual)
   const giftParam = (urlParams.get('gift') || '').trim();
-  const planParam = giftParam ? 'vende' : (urlParams.get('plan') || 'controla');
+  // Embajador: ?ref_account=<account> → 50% off primer año Vende (no aplica con gift)
+  const refAccountParam = giftParam ? '' : (urlParams.get('ref_account') || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+  const planParam = (giftParam || refAccountParam) ? 'vende' : (urlParams.get('plan') || 'controla');
   const planInfo: Record<string, { name: string; price: string }> = {
     vende: { name: 'Vende', price: '$600 MXN/mes por sucursal' },
     controla: { name: 'Controla', price: '$900 MXN/mes por sucursal' },
@@ -811,6 +813,12 @@ export const prerender = false;
     if (regSubtitle) regSubtitle.textContent = 'Tu primer año del Plan Vende es de regalo ($0 hoy). Tu tarjeta solo se usará para la renovación automática del segundo año.';
     if (planNameDisplay) planNameDisplay.textContent = 'Plan Vende — Regalo Buddy';
     if (planPriceDisplay) planPriceDisplay.textContent = '🎁 Primer año gratis · después $6,000 MXN/año';
+  } else if (refAccountParam) {
+    // Embajador: copy especial — 50% off el primer año
+    if (regTitle) regTitle.textContent = '🤝 Te recomendaron Sacs — Plan Vende con 50%';
+    if (regSubtitle) regSubtitle.textContent = 'Tienes 50% de descuento en tu primer año del Plan Vende. Hoy pagas la mitad; después renueva a precio normal.';
+    if (planNameDisplay) planNameDisplay.textContent = 'Plan Vende — 50% primer año';
+    if (planPriceDisplay) planPriceDisplay.textContent = '🤝 50% off: $3,000 hoy (1er año) · después $6,000 MXN/año';
   }
 
   // ─── Field validation ───
@@ -1119,8 +1127,9 @@ export const prerender = false;
           // del negocio. NO es una URL — todos entran por app.sacscloud.com.
           paymentMethodId: paymentMethod.id,
           planId: selectedPlan,
-          billing: giftParam ? 'annual' : 'monthly',
+          billing: (giftParam || refAccountParam) ? 'annual' : 'monthly',
           gift: giftParam || undefined,
+          ref_account: refAccountParam || undefined,
         }),
       });
 

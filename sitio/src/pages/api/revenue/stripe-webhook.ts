@@ -7,6 +7,7 @@ import { notify } from '../../../lib/notify';
 import { sendWhatsApp } from '../../../lib/kapso';
 import { logGiftEvent } from '../../../lib/gifts';
 import { creditWallet, GIFT_ACTIVATION_BONUS_MXN, REFERRAL_COMMISSION_PCT } from '../../../lib/wallet';
+import { CLIENT_REF_COMMISSION_MXN } from '../../../data/referral';
 
 export const prerender = false;
 
@@ -456,6 +457,70 @@ async function handleReferralCommission(invoice: Stripe.Invoice) {
   }
 }
 
+// 🤝 EMBAJADOR: 40% del valor de la licencia ($2,400 fijo) al CLIENTE referidor
+// cuando su referido PAGA (su primer año del Plan Vende, con 50% off). Se dispara
+// en invoice.payment_succeeded con monto > 0 sobre una subscription que trae
+// metadata.client_ref_account (la puso create-subscription). Idempotente: el
+// índice único parcial (referred_email WHERE kind='client_referral_commission')
+// garantiza UNA sola comisión por referido. Best-effort: nunca tumba el invoice.
+async function handleClientReferralCommission(invoice: Stripe.Invoice) {
+  try {
+    const subId = (invoice as any).subscription
+      ? (typeof (invoice as any).subscription === 'string' ? (invoice as any).subscription : (invoice as any).subscription.id)
+      : null;
+    if (!subId) return;
+    const amount = (invoice.amount_paid || 0) / 100;
+    if (amount <= 0) return; // solo pagos reales (el 50% del primer año)
+
+    const sub = await stripe.subscriptions.retrieve(subId);
+    const refAccount = sub.metadata?.client_ref_account;
+    if (!refAccount) return; // no es un referido del programa Embajador
+
+    // Email del referido (para concepto + tope idempotente).
+    const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id;
+    let referredEmail = '';
+    if (customerId) {
+      try {
+        const cu = await stripe.customers.retrieve(customerId) as Stripe.Customer;
+        referredEmail = (cu.email || '').trim().toLowerCase();
+      } catch {}
+    }
+
+    const { credited } = await creditWallet({
+      account: refAccount,
+      amount_mxn: CLIENT_REF_COMMISSION_MXN,
+      kind: 'client_referral_commission',
+      concepto: `40% de la licencia por tu referido${referredEmail ? ' ' + referredEmail : ''} (gracias por traerlo a Sacs)`,
+      referred_email: referredEmail || null,
+      stripe_payment_id: invoice.id,
+      meta: { invoice_amount: amount, program: 'embajador' },
+    });
+
+    // Marcar el referido como pagado en el tracking (para métricas en sacs3).
+    if (referredEmail) {
+      await supabase
+        .from('client_referrals')
+        .update({ status: 'paid', commission_credited: credited, paid_at: new Date().toISOString() })
+        .eq('referrer_account', refAccount)
+        .eq('referred_email', referredEmail);
+    }
+
+    // CRM: deja rastro de que un referido de cliente pagó (solo si acreditó ahora).
+    if (credited) {
+      try {
+        await supabase.from('activities').insert({
+          tipo: 'sistema',
+          titulo: `Embajador: ${refAccount} ganó $${CLIENT_REF_COMMISSION_MXN.toLocaleString('es-MX')} en créditos (su referido ${referredEmail || ''} pagó)`,
+          metadata: { referrer_account: refAccount, referred_email: referredEmail, amount: CLIENT_REF_COMMISSION_MXN, program: 'embajador' },
+          automatico: true,
+        });
+      } catch {}
+    }
+  } catch (err) {
+    console.error('[stripe-webhook] client referral commission error:', err);
+  }
+}
+
 export const POST: APIRoute = async ({ request }) => {
   const body = await request.text();
   const sig = request.headers.get('stripe-signature') || '';
@@ -686,6 +751,8 @@ export const POST: APIRoute = async ({ request }) => {
 
       // 💸 Comisión 40% al padrino si este pago es de un referido (Buddy).
       await handleReferralCommission(invoice);
+      // 🤝 Comisión 40% ($2,400) al cliente referidor si es del programa Embajador.
+      await handleClientReferralCommission(invoice);
 
       // TikTok event
       if (customerId) {

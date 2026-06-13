@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { getReferrerFromRequest } from '../../lib/attribution';
 import { createCommissionForDeal } from '../../lib/commissions/calculate';
 import { provisionAccount, generateUniqueAccountId, isValidAccountId } from '../../lib/register';
+import { CLIENT_REF_DISCOUNT_PCT } from '../../data/referral';
 import {
   GIFT_COUPON_ID,
   GIFT_PLAN_VALUE_MXN,
@@ -149,6 +150,41 @@ async function getOrCreateGiftCoupon(vendePriceId: string): Promise<string> {
   return GIFT_COUPON_ID_SCOPED;
 }
 
+// ─── Embajador: cupón 50% primer año Vende (get-or-create idempotente) ───
+// Cada cliente Sacs refiere con su link /r/<account>. El referido paga su
+// PRIMER AÑO del Plan Vende con 50% off (duration:once → solo el 1er pago;
+// renueva a precio normal). Scoped al producto Vende (misma defensa que el gift).
+const CLIENT_REF_COUPON_ID = 'CLIENT_REF_VENDE_50';
+
+async function getOrCreateClientRefCoupon(vendePriceId: string): Promise<string> {
+  try {
+    await stripe.coupons.retrieve(CLIENT_REF_COUPON_ID);
+    return CLIENT_REF_COUPON_ID;
+  } catch (err: any) {
+    if (err?.code !== 'resource_missing' && err?.statusCode !== 404) throw err;
+  }
+  let appliesTo: { products: string[] } | undefined;
+  try {
+    const price = await stripe.prices.retrieve(vendePriceId);
+    const productId = typeof price.product === 'string' ? price.product : (price.product as any)?.id;
+    if (productId) appliesTo = { products: [productId] };
+  } catch (e) {
+    console.warn('[client-ref coupon] no se pudo resolver el producto Vende para scopear:', e);
+  }
+  try {
+    await stripe.coupons.create({
+      id: CLIENT_REF_COUPON_ID,
+      percent_off: Math.round(CLIENT_REF_DISCOUNT_PCT * 100), // 50
+      duration: 'once',
+      name: 'Embajador Sacs — 50% primer año Vende',
+      ...(appliesTo ? { applies_to: appliesTo } : {}),
+    });
+  } catch (err: any) {
+    if (err?.code !== 'resource_already_exists') throw err;
+  }
+  return CLIENT_REF_COUPON_ID;
+}
+
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body = await request.json();
@@ -259,9 +295,17 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    // Gift fuerza plan Vende ANUAL server-side (ignora lo que mande el cliente)
-    if (gift) planId = 'vende';
-    const billingPeriod = gift ? 'annual' : (billing === 'annual' ? 'annual' : 'monthly');
+    // ─── Embajador: link de referido de un cliente (?ref_account=<account>) ───
+    // Solo aplica si NO hay gift (el regalo gratis gana al descuento 50%). El
+    // referido paga su PRIMER AÑO del Plan Vende con 50% off. Anti auto-referido:
+    // el account referidor no puede ser el mismo email/empresa que se registra.
+    const refAccount = (!gift && typeof body.ref_account === 'string')
+      ? body.ref_account.trim().toLowerCase().replace(/[^a-z0-9-]/g, '')
+      : '';
+
+    // Gift y Embajador fuerzan plan Vende ANUAL server-side (ignora lo que mande el cliente)
+    if (gift || refAccount) planId = 'vende';
+    const billingPeriod = (gift || refAccount) ? 'annual' : (billing === 'annual' ? 'annual' : 'monthly');
     const priceId = PRICE_MAP[planId]?.[billingPeriod];
 
     if (!priceId) {
@@ -341,7 +385,7 @@ export const POST: APIRoute = async ({ request }) => {
     let pr = await provisionAccount({
       account_name: empresa, account_id: accId, nombre, email, password,
       client_ip: ip, whatsapp, giro, sucursales,
-      plan: planId, source: gift ? 'web-regalo' : 'web-pago',
+      plan: planId, source: gift ? 'web-regalo' : (refAccount ? 'web-referido' : 'web-pago'),
     });
     if (!pr.ok && pr.code === 'account_taken') {
       // Colisión de subdominio → regenerar y reintentar una vez.
@@ -349,7 +393,7 @@ export const POST: APIRoute = async ({ request }) => {
       pr = await provisionAccount({
         account_name: empresa, account_id: accId, nombre, email, password,
         client_ip: ip, whatsapp, giro, sucursales,
-        plan: planId, source: gift ? 'web-regalo' : 'web-pago',
+        plan: planId, source: gift ? 'web-regalo' : (refAccount ? 'web-referido' : 'web-pago'),
       });
     }
     if (!pr.ok) {
@@ -403,6 +447,13 @@ export const POST: APIRoute = async ({ request }) => {
       // pending_setup_intent cuyo client_secret confirmamos en el cliente
       // (igual que el trial) para validar y guardar la tarjeta de la renovación.
       subscriptionParams.payment_behavior = 'default_incomplete';
+    } else if (refAccount) {
+      // Embajador: 50% off el primer año (cobro inmediato del 50%, SIN trial).
+      subscriptionParams.discounts = [{ coupon: await getOrCreateClientRefCoupon(priceId) }];
+      subscriptionParams.metadata = {
+        ...subscriptionParams.metadata,
+        client_ref_account: refAccount,
+      };
     } else {
       subscriptionParams.trial_period_days = 7;
     }
@@ -431,6 +482,21 @@ export const POST: APIRoute = async ({ request }) => {
         .from('gifts')
         .update({ stripe_subscription_id: subscription.id })
         .eq('id', gift.id);
+    }
+
+    // Embajador: registrar el referido (status 'started'). El webhook lo pasa a
+    // 'paid' y acredita el 40% al referidor cuando el pago se confirma.
+    // Anti auto-referido: si el referidor es la misma cuenta recién provisionada,
+    // NO se registra (no se premia referirse a sí mismo).
+    if (refAccount && refAccount !== provisionedAccountId) {
+      await supabase.from('client_referrals').upsert({
+        referrer_account: refAccount,
+        referred_email: normalizeEmail(email),
+        referred_account: provisionedAccountId,
+        stripe_subscription_id: subscription.id,
+        status: 'started',
+        meta: { empresa, plan: planId, ip },
+      }, { onConflict: 'referrer_account,referred_email' });
     }
 
     // TikTok server-side: CompletePayment (no aplica en gift: cargo $0)

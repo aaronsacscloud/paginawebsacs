@@ -16,6 +16,7 @@ export const REFERRAL_COMMISSION_PCT = REFERRAL_PCT;
 export type WalletKind =
   | 'referral_activation_bonus'
   | 'referral_payment_commission'
+  | 'client_referral_commission'
   | 'academia_reward'
   | 'spend_plugin'
   | 'spend_consultoria'
