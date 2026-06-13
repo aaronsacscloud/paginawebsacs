@@ -32,6 +32,11 @@ export const prerender = false;
 
 const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2025-03-31.basil',
+  // Resiliencia ante errores de red transitorios (StripeConnectionError
+  // "connection to Stripe, retried N times"): el SDK reintenta solo las
+  // peticiones idempotentes/seguras. Sube el timeout para Vercel↔Stripe.
+  maxNetworkRetries: 3,
+  timeout: 30000,
 });
 
 const TIKTOK_TOKEN = (import.meta.env.TIKTOK_ACCESS_TOKEN || '').trim();
@@ -687,9 +692,20 @@ export const POST: APIRoute = async ({ request }) => {
         headers: { 'Content-Type': 'application/json' },
       }
     );
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Error interno';
-    return new Response(JSON.stringify({ error: message }), {
+  } catch (err: any) {
+    // Errores de Stripe → mensaje CLARO al usuario (no el técnico crudo
+    // "An error occurred with our connection to Stripe. Request was retried…").
+    const type = err && (err.type || err.rawType);
+    let message = 'No pudimos procesar tu pago. Intenta de nuevo en un momento.';
+    if (type === 'StripeCardError') {
+      // Tarjeta rechazada / fondos insuficientes: el mensaje de Stripe ya es claro.
+      message = err.message || 'Tu tarjeta fue rechazada. Revisa los datos o usa otra tarjeta.';
+    } else if (type === 'StripeConnectionError' || type === 'StripeAPIError') {
+      // Problema transitorio de red con Stripe (ya se reintentó con maxNetworkRetries).
+      message = 'Hubo un problema temporal con el procesador de pago. Espera unos segundos e inténtalo de nuevo — no se realizó ningún cargo.';
+    }
+    console.error('[create-subscription] error:', type || 'unknown', err && err.message);
+    return new Response(JSON.stringify({ error: message, code: type || 'error' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

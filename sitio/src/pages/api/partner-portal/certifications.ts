@@ -68,7 +68,7 @@ export const POST: APIRoute = async ({ request }) => {
     return jsonRes({ error: 'ya tienes esta certificación', already_paid: true }, 400);
   }
 
-  const stripe = new Stripe(STRIPE_KEY, { apiVersion: '2024-06-20' });
+  const stripe = new Stripe(STRIPE_KEY, { apiVersion: '2024-06-20', maxNetworkRetries: 3, timeout: 30000 });
 
   // Get partner email for prefill + receipt
   const { data: partner } = await supabase

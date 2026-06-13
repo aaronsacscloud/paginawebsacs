@@ -27,6 +27,8 @@ export const prerender = false;
 
 const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2025-03-31.basil',
+  maxNetworkRetries: 3,
+  timeout: 30000,
 });
 
 export const OPTIONS: APIRoute = async ({ request }) => giftOptionsResponse(request);

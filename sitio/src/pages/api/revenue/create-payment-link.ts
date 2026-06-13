@@ -5,6 +5,8 @@ export const prerender = false;
 
 const stripe = new Stripe(import.meta.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2025-03-31.basil',
+  maxNetworkRetries: 3,
+  timeout: 30000,
 });
 
 const CURRENCY_MAP: Record<string, string> = {
