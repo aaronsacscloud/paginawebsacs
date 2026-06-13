@@ -461,9 +461,11 @@ async function handleReferralCommission(invoice: Stripe.Invoice) {
 // 🤝 EMBAJADOR: 40% del valor de la licencia ($2,400 fijo) al CLIENTE referidor
 // cuando su referido PAGA (su primer año del Plan Vende, con 50% off). Se dispara
 // en invoice.payment_succeeded con monto > 0 sobre una subscription que trae
-// metadata.client_ref_account (la puso create-subscription). Idempotente: el
-// índice único parcial (referred_email WHERE kind='client_referral_commission')
-// garantiza UNA sola comisión por referido. Best-effort: nunca tumba el invoice.
+// metadata.client_ref_account (la puso create-subscription). UNA sola comisión
+// por referido: defensa en capas → (1) solo el PRIMER pago (billing_reason),
+// (2) índice único parcial (referred_email) como respaldo cuando el email se
+// resuelve, (3) alreadyProcessed(event.id) contra reintentos del mismo evento.
+// Best-effort: nunca tumba el invoice.
 async function handleClientReferralCommission(invoice: Stripe.Invoice) {
   try {
     const subId = (invoice as any).subscription
@@ -472,6 +474,14 @@ async function handleClientReferralCommission(invoice: Stripe.Invoice) {
     if (!subId) return;
     const amount = (invoice.amount_paid || 0) / 100;
     if (amount <= 0) return; // solo pagos reales (el 50% del primer año)
+
+    // SOLO el PRIMER pago acredita — el bono Embajador es "40% de la licencia"
+    // UNA vez, no cada año. Las renovaciones traen billing_reason
+    // 'subscription_cycle' → se ignoran. Esto cierra el doble-pago en
+    // renovaciones de forma robusta, INDEPENDIENTE de que referred_email se
+    // resuelva (un referred_email null NO protege el índice único en Postgres,
+    // porque los NULL se tratan como distintos).
+    if ((invoice as any).billing_reason && (invoice as any).billing_reason !== 'subscription_create') return;
 
     const sub = await stripe.subscriptions.retrieve(subId);
     const refAccount = sub.metadata?.client_ref_account;
