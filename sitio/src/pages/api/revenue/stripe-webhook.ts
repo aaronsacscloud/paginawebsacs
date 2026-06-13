@@ -8,6 +8,7 @@ import { sendWhatsApp } from '../../../lib/kapso';
 import { logGiftEvent } from '../../../lib/gifts';
 import { creditWallet, GIFT_ACTIVATION_BONUS_MXN, REFERRAL_COMMISSION_PCT } from '../../../lib/wallet';
 import { CLIENT_REF_COMMISSION_MXN } from '../../../data/referral';
+import { getAccountInfo } from '../../../lib/register';
 
 export const prerender = false;
 
@@ -476,6 +477,16 @@ async function handleClientReferralCommission(invoice: Stripe.Invoice) {
     const refAccount = sub.metadata?.client_ref_account;
     if (!refAccount) return; // no es un referido del programa Embajador
 
+    // ANTI-FRAUDE: solo acreditar si la cuenta referidora EXISTE en sacs3.
+    // Evita créditos a cuentas inventadas (?ref_account=loquesea) y nos da el
+    // contacto del dueño para notificarle. Si no existe → no acreditamos (pero
+    // el referido conserva su 50%: su pago no se revierte).
+    const refInfo = await getAccountInfo(refAccount);
+    if (!refInfo.exists) {
+      console.warn('[client referral] ref_account no existe en sacs3, no se acredita:', refAccount);
+      return;
+    }
+
     // Email del referido (para concepto + tope idempotente).
     const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id;
     let referredEmail = '';
@@ -503,6 +514,13 @@ async function handleClientReferralCommission(invoice: Stripe.Invoice) {
         .update({ status: 'paid', commission_credited: credited, paid_at: new Date().toISOString() })
         .eq('referrer_account', refAccount)
         .eq('referred_email', referredEmail);
+    }
+
+    // Notificar al referidor por WhatsApp que ganó (solo si acreditó ahora y
+    // tenemos su WhatsApp). Cierra el loop emocional — igual que el Buddy.
+    if (credited && refInfo.whatsapp) {
+      const msg = `🤝 ¡Tu referido activó Sacs! Ganaste $${CLIENT_REF_COMMISSION_MXN.toLocaleString('es-MX')} MXN en créditos (Saldo Sacs). Sigue compartiendo tu link y gana más. 🎁`;
+      sendWhatsApp(refInfo.whatsapp, msg).catch(() => {});
     }
 
     // CRM: deja rastro de que un referido de cliente pagó (solo si acreditó ahora).

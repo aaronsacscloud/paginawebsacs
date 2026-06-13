@@ -135,3 +135,22 @@ export async function generateUniqueAccountId(nombre: string): Promise<string> {
   }
   return base; // que el register decida (devolverá account_taken si choca)
 }
+
+// ── Embajador: info de una cuenta sacs3 (existe + contacto del dueño) ──
+// Server-to-server (x-register-secret). Lo usa el webhook de Stripe para
+// (1) NO acreditar el 40% a cuentas inventadas y (2) notificar al referidor.
+export interface AccountInfo { exists: boolean; nombre?: string; whatsapp?: string; email?: string; }
+
+export async function getAccountInfo(account: string): Promise<AccountInfo> {
+  try {
+    const r = await fetchWithTimeout(
+      SACS_API_BASE + '/gifts/account-info?account=' + encodeURIComponent(account),
+      { method: 'GET', headers: authHeaders() },
+    );
+    const j = await r.json().catch(() => null);
+    if (!r.ok || !j || !j.success || !j.data) return { exists: false };
+    return j.data as AccountInfo;
+  } catch {
+    return { exists: false };
+  }
+}
