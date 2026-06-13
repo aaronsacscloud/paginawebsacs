@@ -1,4 +1,5 @@
 {
+  "installCommand": "npm ci --include=dev",
   "crons": [
     {
       "path": "/api/scheduling/google/sync?key=sacs-cron-2026",
