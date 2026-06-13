@@ -5,15 +5,11 @@
 // y para LEER el resumen. La redención (gastar) se construye después.
 
 import { supabase } from './supabase';
+// Fuente única de verdad del programa (módulo PURO, compartido con la landing).
+import { REFERRAL_PCT, GIFT_LICENSE_VALUE_MXN, GIFT_ACTIVATION_BONUS_MXN } from '../data/referral';
 
-// PROGRAMA PADRINO: el padrino gana el 40% del valor de la licencia en
-// créditos (Saldo Sacs, redimibles en plugins/consultorías) — en AMBOS
-// momentos: al activarse el regalo y cuando el referido paga.
-export const REFERRAL_PCT = 0.40;
-// Valor de la licencia que se regala (Plan Vende anual).
-export const GIFT_LICENSE_VALUE_MXN = 6000;
-// Bono al padrino cuando su amigo activa el año gratis = 40% de la licencia ($2,400).
-export const GIFT_ACTIVATION_BONUS_MXN = Math.round(GIFT_LICENSE_VALUE_MXN * REFERRAL_PCT);
+// Re-export para los consumidores existentes (webhook) — sin cambiar imports.
+export { REFERRAL_PCT, GIFT_LICENSE_VALUE_MXN, GIFT_ACTIVATION_BONUS_MXN };
 // Comisión sobre el pago del referido (1 vez/año/cliente) = 40% del pago.
 export const REFERRAL_COMMISSION_PCT = REFERRAL_PCT;
 

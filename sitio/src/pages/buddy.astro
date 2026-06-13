@@ -1,0 +1,254 @@
+---
+// /buddy · Landing del Programa Padrino (Buddy) de Sacs
+//
+// Página pública de marketing que explica el programa: regala una licencia
+// gratis del Plan Vende a un amigo empresario y gana el 40% del valor en
+// créditos (Saldo Sacs), tanto al activarse como cuando tu amigo paga.
+// Los montos se calculan desde las constantes reales del programa para que
+// la landing NUNCA diga un número distinto al que el backend acredita.
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { plans } from '../data/plans';
+import {
+  REFERRAL_PCT,
+  GIFT_LICENSE_VALUE_MXN,
+  GIFT_ACTIVATION_BONUS_MXN,
+} from '../data/referral';
+
+export const prerender = true;
+
+const pct = Math.round(REFERRAL_PCT * 100); // 40
+const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+
+// Comisión que gana el padrino cuando su amigo paga cada plan (40% del total anual).
+// Precio real = plan.annualTotal.mxn (campo verificado en data/plans.ts).
+const planRows = plans.map((p) => {
+  const anual = p.annualTotal && p.annualTotal.mxn ? p.annualTotal.mxn : 0;
+  return { nombre: p.name || p.id, anual, comision: Math.round(anual * REFERRAL_PCT) };
+}).filter((r) => r.anual > 0);
+
+// Tabla de ganancias acumuladas por nº de amigos (activación + 1er pago del Plan Vende).
+const porAmigo = GIFT_ACTIVATION_BONUS_MXN + Math.round(GIFT_LICENSE_VALUE_MXN * REFERRAL_PCT);
+const tabla = [1, 3, 5, 10].map((n) => ({ amigos: n, total: porAmigo * n }));
+
+const title = `Programa Padrino Sacs · Regala una licencia y gana ${pct}% en créditos`;
+const description = `Regala el primer año del Plan Vende a un amigo empresario. Cuando lo active ganas ${pct}% del valor en créditos Sacs (${fmt(GIFT_ACTIVATION_BONUS_MXN)}), y otro ${pct}% cuando pague su plan. Redímelo en plugins y consultorías.`;
+---
+
+<BaseLayout title={title} description={description} image="/og-default.png">
+  <main class="bd">
+
+    <!-- HERO -->
+    <section class="bd-hero">
+      <div class="bd-hero-inner">
+        <span class="bd-eyebrow">🎁 Programa Padrino</span>
+        <h1 class="bd-title">
+          Regala una licencia de Sacs y gana <span class="bd-hl">{pct}% en créditos</span>
+        </h1>
+        <p class="bd-lead">
+          Como cliente Sacs tienes una licencia <strong>GRATIS</strong> del Plan Vende para
+          regalar a un amigo empresario. Cuando la active en su negocio ganas el {pct}% del
+          valor en <strong>dinero Sacs</strong>, y otro {pct}% cuando pague su plan — para
+          siempre, sin límite.
+        </p>
+        <div class="bd-hero-stats">
+          <div class="bd-stat">
+            <span class="bd-stat-num">{fmt(GIFT_ACTIVATION_BONUS_MXN)}</span>
+            <span class="bd-stat-lbl">al activar tu amigo</span>
+          </div>
+          <div class="bd-stat">
+            <span class="bd-stat-num">{pct}%</span>
+            <span class="bd-stat-lbl">de cada pago suyo</span>
+          </div>
+          <div class="bd-stat">
+            <span class="bd-stat-num">♾️</span>
+            <span class="bd-stat-lbl">licencias para seguir regalando</span>
+          </div>
+        </div>
+        <a href="https://app.sacscloud.com" class="bd-cta">Obtener mi licencia de regalo →</a>
+        <p class="bd-reassure">✓ Incluida con tu cuenta · ✓ Se gana al terminar tu Academia · ✓ Créditos redimibles</p>
+      </div>
+    </section>
+
+    <!-- CÓMO FUNCIONA -->
+    <section class="bd-section">
+      <h2 class="bd-h2">Cómo funciona</h2>
+      <div class="bd-steps">
+        <div class="bd-step">
+          <span class="bd-step-n">1</span>
+          <h3>Comparte tu link</h3>
+          <p>Desde tu cuenta Sacs envías tu licencia de regalo por WhatsApp, QR o copiando el link — a un amigo con negocio (no el tuyo).</p>
+        </div>
+        <div class="bd-step">
+          <span class="bd-step-n">2</span>
+          <h3>Tu amigo la activa</h3>
+          <p>Activa su primer año del Plan Vende sin costo. Tú ganas <strong>{fmt(GIFT_ACTIVATION_BONUS_MXN)}</strong> en créditos — el {pct}% del valor de la licencia.</p>
+        </div>
+        <div class="bd-step">
+          <span class="bd-step-n">3</span>
+          <h3>Tu amigo paga su plan</h3>
+          <p>Cuando renueva o sube de plan ganas otro <strong>{pct}%</strong> de su pago, y se te activa <strong>otra licencia</strong> para seguir regalando.</p>
+        </div>
+        <div class="bd-step">
+          <span class="bd-step-n">4</span>
+          <h3>Todo automático</h3>
+          <p>Cada ganancia se suma sola a tu <strong>Saldo Sacs</strong>. No haces nada: lo ves crecer en tu cuenta.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TABLA DE GANANCIAS -->
+    <section class="bd-section bd-section-alt">
+      <h2 class="bd-h2">Cuánto puedes ganar</h2>
+      <p class="bd-sub">Por cada amigo que digitaliza su negocio: {fmt(GIFT_ACTIVATION_BONUS_MXN)} al activar + {fmt(Math.round(GIFT_LICENSE_VALUE_MXN * REFERRAL_PCT))} cuando paga su Plan Vende = <strong>{fmt(porAmigo)}</strong>.</p>
+      <div class="bd-table-wrap">
+        <table class="bd-table">
+          <thead>
+            <tr><th>Amigos que invitas</th><th>Dinero Sacs que ganas</th></tr>
+          </thead>
+          <tbody>
+            {tabla.map((r) => (
+              <tr class={r.amigos === 10 ? 'bd-row-hl' : ''}>
+                <td>{r.amigos} {r.amigos === 1 ? 'amigo' : 'amigos'}</td>
+                <td>{fmt(r.total)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="bd-note">Y si tu amigo sube a un plan superior, tu {pct}% es aún mayor:</p>
+      <div class="bd-table-wrap">
+        <table class="bd-table">
+          <thead>
+            <tr><th>Plan que paga tu amigo</th><th>Tu {pct}% en créditos</th></tr>
+          </thead>
+          <tbody>
+            {planRows.map((p) => (
+              <tr><td>{p.nombre} · {fmt(p.anual)}/año</td><td>{fmt(p.comision)}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- REDENCIÓN -->
+    <section class="bd-section">
+      <h2 class="bd-h2">Tu dinero Sacs, a tu favor</h2>
+      <div class="bd-redeem">
+        <div class="bd-redeem-item"><span>🔌</span><div><h3>Plugins</h3><p>Activa funciones premium que potencian tu operación.</p></div></div>
+        <div class="bd-redeem-item"><span>🎓</span><div><h3>Consultorías</h3><p>Sesiones 1 a 1 con expertos Sacs para crecer tu negocio.</p></div></div>
+        <div class="bd-redeem-item"><span>⚡</span><div><h3>Automático</h3><p>Se acumula solo en tu Saldo Sacs — sin trámites, listo para usar.</p></div></div>
+      </div>
+    </section>
+
+    <!-- MISIÓN -->
+    <section class="bd-mission">
+      <div class="bd-mission-inner">
+        <span class="bd-mission-emoji">🌱</span>
+        <h2 class="bd-mission-title">Cada regalo hace un mundo mejor</h2>
+        <p class="bd-mission-lead">
+          Cuando invitas a un amigo a Sacs, un negocio más se digitaliza, ahorra papel y
+          empieza a tomar mejores decisiones. Tú ganas créditos; ellos ganan un mejor
+          negocio; juntos hacemos un comercio más consciente.
+        </p>
+        <a href="https://app.sacscloud.com" class="bd-cta bd-cta-light">Empezar a regalar →</a>
+      </div>
+    </section>
+
+  </main>
+</BaseLayout>
+
+<style>
+  .bd { background: var(--color-bg, #fff); color: var(--color-text, #1a1a1a); }
+
+  /* HERO */
+  .bd-hero {
+    background: linear-gradient(160deg, #1E1B4B 0%, #312E81 55%, #3730A3 100%);
+    color: #fff;
+    padding: clamp(64px, 10vw, 110px) 20px clamp(56px, 8vw, 90px);
+  }
+  .bd-hero-inner { max-width: 760px; margin: 0 auto; text-align: center; }
+  .bd-eyebrow {
+    display: inline-block; font-family: var(--font-body, sans-serif);
+    font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em;
+    color: #FDE68A; background: rgba(253, 230, 138, 0.12);
+    border-radius: 999px; padding: 6px 16px; margin-bottom: 22px;
+  }
+  .bd-title {
+    font-family: var(--font-display, sans-serif);
+    font-size: clamp(2rem, 5.5vw, 3.4rem); font-weight: 800;
+    letter-spacing: -0.025em; line-height: 1.1; margin: 0 0 20px;
+  }
+  .bd-hl { color: #FBBF24; }
+  .bd-lead { font-size: clamp(1rem, 2.2vw, 1.18rem); line-height: 1.6; color: #C7D2FE; margin: 0 auto 32px; max-width: 620px; }
+  .bd-lead strong { color: #fff; }
+  .bd-hero-stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-bottom: 34px; }
+  .bd-stat {
+    background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 16px; padding: 18px 22px; min-width: 150px;
+  }
+  .bd-stat-num { display: block; font-family: var(--font-display, sans-serif); font-size: 1.7rem; font-weight: 900; color: #FBBF24; }
+  .bd-stat-lbl { display: block; font-size: 0.82rem; font-weight: 600; color: #A5B4FC; margin-top: 4px; }
+  .bd-cta {
+    display: inline-block; background: #FBBF24; color: #1E1B4B;
+    font-family: var(--font-body, sans-serif); font-weight: 800; font-size: 1.05rem;
+    padding: 16px 38px; border-radius: 12px; text-decoration: none;
+    box-shadow: 0 14px 32px -12px rgba(251, 191, 36, 0.6);
+    transition: transform 0.15s ease;
+  }
+  .bd-cta:hover { transform: translateY(-2px); }
+  .bd-reassure { font-size: 0.85rem; font-weight: 600; color: #A5B4FC; margin: 18px 0 0; }
+
+  /* SECCIONES */
+  .bd-section { max-width: 980px; margin: 0 auto; padding: clamp(48px, 7vw, 84px) 20px; }
+  .bd-section-alt { background: var(--color-bg-alt, #F8FAFC); max-width: none; }
+  .bd-section-alt > * { max-width: 980px; margin-left: auto; margin-right: auto; }
+  .bd-h2 {
+    font-family: var(--font-display, sans-serif); font-size: clamp(1.6rem, 4vw, 2.3rem);
+    font-weight: 800; letter-spacing: -0.02em; text-align: center; margin: 0 0 12px;
+  }
+  .bd-sub { text-align: center; font-size: 1.02rem; color: var(--color-text-secondary, #555); line-height: 1.6; margin: 0 auto 32px; max-width: 640px; }
+  .bd-sub strong { color: #16A34A; }
+
+  /* PASOS */
+  .bd-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 18px; margin-top: 36px; }
+  .bd-step { background: #fff; border: 1.5px solid var(--color-border, #e5e5e5); border-radius: 18px; padding: 26px 22px; }
+  .bd-step-n {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, #FBBF24, #D97706); color: #fff;
+    font-family: var(--font-display, sans-serif); font-weight: 900; font-size: 1.05rem; margin-bottom: 14px;
+  }
+  .bd-step h3 { font-size: 1.1rem; font-weight: 800; margin: 0 0 8px; }
+  .bd-step p { font-size: 0.93rem; line-height: 1.55; color: var(--color-text-secondary, #555); margin: 0; }
+  .bd-step strong { color: #B45309; }
+
+  /* TABLAS */
+  .bd-table-wrap { overflow-x: auto; border-radius: 16px; border: 1.5px solid var(--color-border, #e5e5e5); background: #fff; margin: 0 auto 18px; max-width: 560px; }
+  .bd-table { width: 100%; border-collapse: collapse; }
+  .bd-table th {
+    text-align: left; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--color-text-secondary, #64748B); padding: 14px 20px; border-bottom: 1.5px solid var(--color-border, #e5e5e5);
+  }
+  .bd-table th:last-child, .bd-table td:last-child { text-align: right; }
+  .bd-table td { padding: 13px 20px; border-bottom: 1px solid #F1F5F9; font-size: 0.96rem; font-weight: 600; }
+  .bd-table tbody tr:last-child td { border-bottom: none; }
+  .bd-table td:last-child { font-weight: 900; color: #16A34A; white-space: nowrap; }
+  .bd-row-hl td { background: #F0FDF4; color: #15803D; }
+  .bd-note { text-align: center; font-size: 0.95rem; font-weight: 700; color: var(--color-text-secondary, #555); margin: 22px 0 18px; }
+
+  /* REDENCIÓN */
+  .bd-redeem { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-top: 32px; }
+  .bd-redeem-item { display: flex; gap: 14px; align-items: flex-start; background: #fff; border: 1.5px solid var(--color-border, #e5e5e5); border-radius: 16px; padding: 22px; }
+  .bd-redeem-item > span { font-size: 28px; line-height: 1; }
+  .bd-redeem-item h3 { font-size: 1.05rem; font-weight: 800; margin: 0 0 4px; }
+  .bd-redeem-item p { font-size: 0.9rem; line-height: 1.5; color: var(--color-text-secondary, #555); margin: 0; }
+
+  /* MISIÓN */
+  .bd-mission { background: linear-gradient(160deg, #065F46, #047857); color: #fff; padding: clamp(56px, 8vw, 96px) 20px; }
+  .bd-mission-inner { max-width: 640px; margin: 0 auto; text-align: center; }
+  .bd-mission-emoji { font-size: 48px; }
+  .bd-mission-title { font-family: var(--font-display, sans-serif); font-size: clamp(1.6rem, 4vw, 2.3rem); font-weight: 800; letter-spacing: -0.02em; margin: 14px 0 16px; }
+  .bd-mission-lead { font-size: 1.05rem; line-height: 1.65; color: #D1FAE5; margin: 0 0 32px; }
+  .bd-cta-light { background: #fff; color: #047857; box-shadow: 0 14px 32px -12px rgba(0, 0, 0, 0.3); }
+</style>
