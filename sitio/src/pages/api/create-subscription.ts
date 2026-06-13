@@ -565,7 +565,10 @@ export const POST: APIRoute = async ({ request }) => {
             whatsapp: whatsapp || null,
             tipo: 'lead',
             lifecycle_stage: 'cliente',
-            fuente: gift ? 'regalo-buddy' : (referrerPartnerId ? 'partner-link' : 'website-prueba-gratis'),
+            // Fuente real: create-subscription SIEMPRE implica tarjeta/Stripe
+            // (la prueba gratis SIN tarjeta va por /api/register-account). Por
+            // eso el fallback es 'website-pago', NO 'website-prueba-gratis'.
+            fuente: gift ? 'regalo-buddy' : (refAccount ? 'cliente-referido' : (referrerPartnerId ? 'partner-link' : 'website-pago')),
             company_id,
             plan_interes: planId,
             giro: giro || null,
