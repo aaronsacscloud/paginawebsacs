@@ -67,6 +67,10 @@ export const GET: APIRoute = async ({ request, url }) => {
 
 function maskEmail(email: string): string {
   const at = email.indexOf('@');
-  if (at <= 1) return email;
-  return email.slice(0, 2) + '***' + email.slice(at);
+  if (at < 1) return '***'; // sin @ o local-part vacío → no exponer nada
+  const local = email.slice(0, at);
+  const domain = email.slice(at);
+  // Local-part corto (1-2 chars): enmascarar el primero para no exponerlo crudo.
+  const shown = local.length >= 3 ? local.slice(0, 2) : local.slice(0, 1);
+  return shown + '***' + domain;
 }

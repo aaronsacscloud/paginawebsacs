@@ -5,7 +5,7 @@ import { supabase } from '../../../lib/supabase';
 import { sendAcuseEmail } from '../../../lib/payments/send-acuse';
 import { notify } from '../../../lib/notify';
 import { sendWhatsApp } from '../../../lib/kapso';
-import { logGiftEvent } from '../../../lib/gifts';
+import { logGiftEvent, normalizeEmail } from '../../../lib/gifts';
 import { creditWallet, GIFT_ACTIVATION_BONUS_MXN, REFERRAL_COMMISSION_PCT } from '../../../lib/wallet';
 import { CLIENT_REF_COMMISSION_MXN } from '../../../data/referral';
 import { getAccountInfo } from '../../../lib/register';
@@ -505,7 +505,10 @@ async function handleClientReferralCommission(invoice: Stripe.Invoice) {
     if (customerId) {
       try {
         const cu = await stripe.customers.retrieve(customerId) as Stripe.Customer;
-        referredEmail = (cu.email || '').trim().toLowerCase();
+        // normalizeEmail (igual que el INSERT en create-subscription): sin esto,
+        // gmail con alias/puntos no matchea el client_referrals guardado (métricas
+        // rotas) y el índice único anti-doble-pago se evade.
+        referredEmail = normalizeEmail(cu.email || '');
       } catch {}
     }
 

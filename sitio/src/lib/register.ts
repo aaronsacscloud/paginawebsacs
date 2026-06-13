@@ -142,15 +142,20 @@ export async function generateUniqueAccountId(nombre: string): Promise<string> {
 export interface AccountInfo { exists: boolean; nombre?: string; whatsapp?: string; email?: string; }
 
 export async function getAccountInfo(account: string): Promise<AccountInfo> {
-  try {
-    const r = await fetchWithTimeout(
-      SACS_API_BASE + '/gifts/account-info?account=' + encodeURIComponent(account),
-      { method: 'GET', headers: authHeaders() },
-    );
-    const j = await r.json().catch(() => null);
-    if (!r.ok || !j || !j.success || !j.data) return { exists: false };
-    return j.data as AccountInfo;
-  } catch {
-    return { exists: false };
+  // Reintenta ante error TRANSITORIO (red / 5xx) para no perder una comisión
+  // legítima por un blip. Una respuesta 200 válida (incluso con exists:false =
+  // cuenta no existe) es DEFINITIVA → se devuelve sin reintentar.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const r = await fetchWithTimeout(
+        SACS_API_BASE + '/gifts/account-info?account=' + encodeURIComponent(account),
+        { method: 'GET', headers: authHeaders() },
+      );
+      const j = await r.json().catch(() => null);
+      if (r.ok && j && j.success && j.data) return j.data as AccountInfo;
+      if (r.status >= 400 && r.status < 500) return { exists: false }; // respuesta definitiva (no 5xx)
+      // 5xx → reintentar
+    } catch { /* error de red → reintentar */ }
   }
+  return { exists: false }; // tras reintentos sin confirmar (best-effort)
 }

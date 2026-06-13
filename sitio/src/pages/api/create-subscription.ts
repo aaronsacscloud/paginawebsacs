@@ -460,45 +460,83 @@ export const POST: APIRoute = async ({ request }) => {
       throw stripeErr;
     }
 
+    // ── VALIDAR que Stripe REALMENTE confirmó antes de provisionar ───────────
+    // subscriptions.create NO lanza si: (a) la tarjeta es rechazada en cobro
+    // inmediato → sub queda 'incomplete' (sin cobro); (b) el idemKey reusado
+    // tras un rollback devuelve una sub previamente 'canceled'. Sin validar,
+    // ambos casos entregarían cuenta sin pago real. Estados válidos por flujo:
+    //   • gift: 'incomplete' es ESPERADO (default_incomplete, $0, la tarjeta se
+    //     confirma luego para la renovación) — también active/trialing.
+    //   • embajador (cobro inmediato 50%): exige 'active' (el cargo pasó).
+    //   • normal: 'trialing' (trial 7d) o 'active'.
+    const subStatus = subscription.status;
+    const stripeConfirmed = gift
+      ? (subStatus === 'incomplete' || subStatus === 'active' || subStatus === 'trialing')
+      : refAccount
+        ? (subStatus === 'active')
+        : (subStatus === 'trialing' || subStatus === 'active');
+    if (!stripeConfirmed) {
+      try { await stripe.subscriptions.cancel(subscription.id); } catch (e) { console.error('[create-subscription] cancel unconfirmed sub:', e); }
+      if (gift) {
+        await supabase.from('gifts').update({ status: 'pending', redeeming_at: null, redeemed_email: null }).eq('id', gift.id).eq('status', 'redeeming');
+      }
+      const msg = subStatus === 'incomplete'
+        ? 'No pudimos confirmar el cargo con tu tarjeta. Revisa los datos o usa otra — no se realizó ningún cargo.'
+        : 'No pudimos activar tu plan. Intenta de nuevo — no se realizó ningún cargo.';
+      return new Response(JSON.stringify({ error: msg, code: 'payment_not_confirmed' }), {
+        status: 402, headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     // ── PROVISIONAR LA CUENTA *DESPUÉS* del éxito de Stripe ──────────────────
-    // Solo creamos la cuenta cuando Stripe YA confirmó la subscription → un
-    // fallo de pago no deja cuentas basura. Si la provisión falla aquí (raro:
-    // el email se pre-validó arriba), REVERTIMOS la subscription para no dejar
-    // al cliente con cobro/suscripción sin cuenta usable, y liberamos el gift.
-    let accId = isValidAccountId(accountIdInput) ? accountIdInput : await generateUniqueAccountId(empresa || nombre);
-    let pr = await provisionAccount({
-      account_name: empresa, account_id: accId, nombre, email, password,
-      client_ip: ip, whatsapp, giro, sucursales,
-      plan: planId, source: gift ? 'web-regalo' : (refAccount ? 'web-referido' : 'web-pago'),
-    });
-    if (!pr.ok && pr.code === 'account_taken') {
-      accId = await generateUniqueAccountId((empresa || nombre) + 'sacs');
-      pr = await provisionAccount({
+    // Solo creamos la cuenta cuando Stripe YA confirmó. Si la provisión falla
+    // (raro: el email se pre-validó) o LANZA, REVERTIMOS la subscription para no
+    // dejar al cliente con cobro/suscripción sin cuenta, y liberamos el gift.
+    let provisionedAccountId = '';
+    try {
+      let accId = isValidAccountId(accountIdInput) ? accountIdInput : await generateUniqueAccountId(empresa || nombre);
+      let pr = await provisionAccount({
         account_name: empresa, account_id: accId, nombre, email, password,
         client_ip: ip, whatsapp, giro, sucursales,
         plan: planId, source: gift ? 'web-regalo' : (refAccount ? 'web-referido' : 'web-pago'),
       });
-    }
-    if (!pr.ok) {
-      // Revertir Stripe: cancelar la subscription recién creada (no dejar al
-      // cliente cobrado/suscrito sin cuenta). Best-effort.
-      try { await stripe.subscriptions.cancel(subscription.id); } catch (e) { console.error('[create-subscription] rollback cancel sub:', e); }
+      if (!pr.ok && pr.code === 'account_taken') {
+        accId = await generateUniqueAccountId((empresa || nombre) + 'sacs');
+        pr = await provisionAccount({
+          account_name: empresa, account_id: accId, nombre, email, password,
+          client_ip: ip, whatsapp, giro, sucursales,
+          plan: planId, source: gift ? 'web-regalo' : (refAccount ? 'web-referido' : 'web-pago'),
+        });
+      }
+      if (!pr.ok) {
+        try { await stripe.subscriptions.cancel(subscription.id); } catch (e) { console.error('[create-subscription] rollback cancel sub:', e); }
+        if (gift) {
+          await supabase.from('gifts')
+            .update({ status: 'pending', redeeming_at: null, redeemed_email: null })
+            .eq('id', gift.id).eq('status', 'redeeming');
+        }
+        const msg = pr.code === 'email_taken'
+          ? 'Ese correo ya tiene una cuenta. Inicia sesión.'
+          : pr.code === 'rate_limited'
+            ? 'Demasiados intentos desde esta conexión. Espera un momento.'
+            : (pr.error || 'No pudimos crear tu cuenta. No se realizó ningún cargo; intenta de nuevo.');
+        return new Response(JSON.stringify({ error: msg, code: pr.code }), {
+          status: pr.code === 'rate_limited' ? 429 : 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      provisionedAccountId = pr.data?.account_id || accId;
+    } catch (provErr) {
+      // Excepción inesperada (p.ej. generateUniqueAccountId / red) DESPUÉS de
+      // crear la sub → revertir la sub y liberar el gift para no dejar huérfanos.
+      try { await stripe.subscriptions.cancel(subscription.id); } catch (e) { console.error('[create-subscription] rollback cancel sub (throw):', e); }
       if (gift) {
         await supabase.from('gifts')
           .update({ status: 'pending', redeeming_at: null, redeemed_email: null })
           .eq('id', gift.id).eq('status', 'redeeming');
       }
-      const msg = pr.code === 'email_taken'
-        ? 'Ese correo ya tiene una cuenta. Inicia sesión.'
-        : pr.code === 'rate_limited'
-          ? 'Demasiados intentos desde esta conexión. Espera un momento.'
-          : (pr.error || 'No pudimos crear tu cuenta. No se realizó ningún cargo; intenta de nuevo.');
-      return new Response(JSON.stringify({ error: msg, code: pr.code }), {
-        status: pr.code === 'rate_limited' ? 429 : 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      throw provErr;
     }
-    const provisionedAccountId = pr.data?.account_id || accId;
 
     // Gift: amarrar la subscription al gift (el webhook lo pasa a 'redeemed')
     if (gift) {
