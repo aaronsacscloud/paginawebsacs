@@ -4,7 +4,7 @@ import { createHash } from 'crypto';
 import { supabase } from '../../lib/supabase';
 import { getReferrerFromRequest } from '../../lib/attribution';
 import { createCommissionForDeal } from '../../lib/commissions/calculate';
-import { provisionAccount, generateUniqueAccountId, isValidAccountId } from '../../lib/register';
+import { provisionAccount, generateUniqueAccountId, isValidAccountId, checkAvailability } from '../../lib/register';
 import { CLIENT_REF_DISCOUNT_PCT } from '../../data/referral';
 import {
   GIFT_COUPON_ID,
@@ -320,6 +320,22 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
+    // ── PRE-CHECK de correo ANTES de tocar Stripe ───────────────────────────
+    // Si el correo ya tiene cuenta, NO creamos subscription ni cuenta — evita
+    // cobrar/crear basura y le da al usuario un mensaje claro de inmediato.
+    // (best-effort: si el check falla por red, seguimos; el provisioning
+    // post-pago lo vuelve a validar como backstop.)
+    try {
+      const probeAcc = isValidAccountId(accountIdInput) ? accountIdInput : 'probe';
+      const avail = await checkAvailability(probeAcc, email);
+      if (avail.email_available === false) {
+        return new Response(JSON.stringify({ error: 'Ese correo ya tiene una cuenta. Inicia sesión.', code: 'email_taken' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    } catch { /* check no disponible → continúa, el provisioning revalida */ }
+
     // Create or find customer
     const existingCustomers = await stripe.customers.list({ email, limit: 1 });
     let customer: Stripe.Customer;
@@ -380,45 +396,8 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    // ── PROVISIONAR LA CUENTA *ANTES* DE CREAR LA SUSCRIPCIÓN ────────────────
-    // Antes se provisionaba DESPUÉS de crear la sub → si fallaba, el cliente
-    // quedaba suscrito/por-cobrar SIN cuenta usable y sin recuperación. Ahora va
-    // ANTES: si el provisioning falla, NADIE queda con una suscripción imposible
-    // de honrar (devolvemos error y, si es regalo, liberamos el lock). Si la sub
-    // luego falla, la cuenta ya existe → recuperable, sin cobro de más.
-    let accId = isValidAccountId(accountIdInput) ? accountIdInput : await generateUniqueAccountId(empresa || nombre);
-    let pr = await provisionAccount({
-      account_name: empresa, account_id: accId, nombre, email, password,
-      client_ip: ip, whatsapp, giro, sucursales,
-      plan: planId, source: gift ? 'web-regalo' : (refAccount ? 'web-referido' : 'web-pago'),
-    });
-    if (!pr.ok && pr.code === 'account_taken') {
-      // Colisión de subdominio → regenerar y reintentar una vez.
-      accId = await generateUniqueAccountId((empresa || nombre) + 'sacs');
-      pr = await provisionAccount({
-        account_name: empresa, account_id: accId, nombre, email, password,
-        client_ip: ip, whatsapp, giro, sucursales,
-        plan: planId, source: gift ? 'web-regalo' : (refAccount ? 'web-referido' : 'web-pago'),
-      });
-    }
-    if (!pr.ok) {
-      // Liberar el gift (si aplica) — nadie se cobró, no se creó ninguna sub.
-      if (gift) {
-        await supabase.from('gifts')
-          .update({ status: 'pending', redeeming_at: null, redeemed_email: null })
-          .eq('id', gift.id).eq('status', 'redeeming');
-      }
-      const msg = pr.code === 'email_taken'
-        ? 'Ese correo ya tiene una cuenta. Inicia sesión.'
-        : pr.code === 'rate_limited'
-          ? 'Demasiados intentos desde esta conexión. Espera un momento.'
-          : (pr.error || 'No pudimos crear tu cuenta. Intenta de nuevo.');
-      return new Response(JSON.stringify({ error: msg, code: pr.code }), {
-        status: pr.code === 'rate_limited' ? 429 : 400,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-    const provisionedAccountId = pr.data?.account_id || accId;
+    // La cuenta se provisiona DESPUÉS de que Stripe confirme la subscription
+    // (ver más abajo) — así un fallo de pago NUNCA deja cuentas basura.
 
     // Create subscription
     // Flujo normal: trial de 7 días. Flujo gift: SIN trial + cupón 100% 'once'
@@ -480,6 +459,46 @@ export const POST: APIRoute = async ({ request }) => {
       }
       throw stripeErr;
     }
+
+    // ── PROVISIONAR LA CUENTA *DESPUÉS* del éxito de Stripe ──────────────────
+    // Solo creamos la cuenta cuando Stripe YA confirmó la subscription → un
+    // fallo de pago no deja cuentas basura. Si la provisión falla aquí (raro:
+    // el email se pre-validó arriba), REVERTIMOS la subscription para no dejar
+    // al cliente con cobro/suscripción sin cuenta usable, y liberamos el gift.
+    let accId = isValidAccountId(accountIdInput) ? accountIdInput : await generateUniqueAccountId(empresa || nombre);
+    let pr = await provisionAccount({
+      account_name: empresa, account_id: accId, nombre, email, password,
+      client_ip: ip, whatsapp, giro, sucursales,
+      plan: planId, source: gift ? 'web-regalo' : (refAccount ? 'web-referido' : 'web-pago'),
+    });
+    if (!pr.ok && pr.code === 'account_taken') {
+      accId = await generateUniqueAccountId((empresa || nombre) + 'sacs');
+      pr = await provisionAccount({
+        account_name: empresa, account_id: accId, nombre, email, password,
+        client_ip: ip, whatsapp, giro, sucursales,
+        plan: planId, source: gift ? 'web-regalo' : (refAccount ? 'web-referido' : 'web-pago'),
+      });
+    }
+    if (!pr.ok) {
+      // Revertir Stripe: cancelar la subscription recién creada (no dejar al
+      // cliente cobrado/suscrito sin cuenta). Best-effort.
+      try { await stripe.subscriptions.cancel(subscription.id); } catch (e) { console.error('[create-subscription] rollback cancel sub:', e); }
+      if (gift) {
+        await supabase.from('gifts')
+          .update({ status: 'pending', redeeming_at: null, redeemed_email: null })
+          .eq('id', gift.id).eq('status', 'redeeming');
+      }
+      const msg = pr.code === 'email_taken'
+        ? 'Ese correo ya tiene una cuenta. Inicia sesión.'
+        : pr.code === 'rate_limited'
+          ? 'Demasiados intentos desde esta conexión. Espera un momento.'
+          : (pr.error || 'No pudimos crear tu cuenta. No se realizó ningún cargo; intenta de nuevo.');
+      return new Response(JSON.stringify({ error: msg, code: pr.code }), {
+        status: pr.code === 'rate_limited' ? 429 : 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    const provisionedAccountId = pr.data?.account_id || accId;
 
     // Gift: amarrar la subscription al gift (el webhook lo pasa a 'redeemed')
     if (gift) {
