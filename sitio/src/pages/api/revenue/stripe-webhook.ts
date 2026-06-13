@@ -218,7 +218,8 @@ async function handleGiftRedemption(sub: Stripe.Subscription) {
   const gift = rows?.[0];
   if (!gift) return; // ya redimido (retry de Stripe), revertido a pending o revocado
 
-  // 💰 Bono $2,000 al PADRINO por que su amigo activó el año gratis. Idempotente:
+  // 💰 Bono al PADRINO por que su amigo activó el año gratis = 40% del valor
+  // de la licencia ($2,400 con Vende anual $6,000). Idempotente:
   // el índice único parcial (gift_code WHERE kind='referral_activation_bonus')
   // impide pagar doble aunque el webhook se repita. Best-effort: si falla, NO
   // tumba la redención (el regalo ya quedó 'redeemed').
@@ -227,7 +228,7 @@ async function handleGiftRedemption(sub: Stripe.Subscription) {
       account: gift.padrino_account,
       amount_mxn: GIFT_ACTIVATION_BONUS_MXN,
       kind: 'referral_activation_bonus',
-      concepto: 'Bono por activación de tu Buddy (año gratis del Plan Vende)',
+      concepto: 'Bono por activación de tu Buddy — 40% de la licencia (Plan Vende)',
       gift_code: gift.code,
       referred_email: gift.redeemed_email || null,
     });
@@ -399,7 +400,7 @@ async function handleGiftRedemption(sub: Stripe.Subscription) {
   }
 }
 
-// 💸 Comisión del 30% al PADRINO cuando su referido PAGA (renovación año 2 o
+// 💸 Comisión del 40% al PADRINO cuando su referido PAGA (renovación año 2 o
 // upgrade). Se dispara en invoice.paid con monto > 0 sobre una subscription que
 // trae metadata.gift_code (la puso create-subscription al redimir). Tope "1 vez
 // al año por cliente": el índice único parcial (referred_email, ref_year) lo
@@ -436,7 +437,7 @@ async function handleReferralCommission(invoice: Stripe.Invoice) {
       account: padrinoAccount,
       amount_mxn: commission,
       kind: 'referral_payment_commission',
-      concepto: `30% del pago de ${nombreRef} (gracias por traerlo a Sacs)`,
+      concepto: `${Math.round(REFERRAL_COMMISSION_PCT * 100)}% del pago de ${nombreRef} (gracias por traerlo a Sacs)`,
       gift_code: giftCode,
       referred_email: referredEmail,
       stripe_payment_id: invoice.id,
@@ -683,7 +684,7 @@ export const POST: APIRoute = async ({ request }) => {
         if (customerId) await syncSubscriptionToCompany(subId, customerId);
       }
 
-      // 💸 Comisión 30% al padrino si este pago es de un referido (Buddy).
+      // 💸 Comisión 40% al padrino si este pago es de un referido (Buddy).
       await handleReferralCommission(invoice);
 
       // TikTok event

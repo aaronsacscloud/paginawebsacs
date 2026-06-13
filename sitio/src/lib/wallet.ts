@@ -6,10 +6,16 @@
 
 import { supabase } from './supabase';
 
-// Bono fijo al padrino cuando su amigo activa el año gratis.
-export const GIFT_ACTIVATION_BONUS_MXN = 2000;
-// Porcentaje de comisión sobre el pago del referido (1 vez/año/cliente).
-export const REFERRAL_COMMISSION_PCT = 0.30;
+// PROGRAMA PADRINO: el padrino gana el 40% del valor de la licencia en
+// créditos (Saldo Sacs, redimibles en plugins/consultorías) — en AMBOS
+// momentos: al activarse el regalo y cuando el referido paga.
+export const REFERRAL_PCT = 0.40;
+// Valor de la licencia que se regala (Plan Vende anual).
+export const GIFT_LICENSE_VALUE_MXN = 6000;
+// Bono al padrino cuando su amigo activa el año gratis = 40% de la licencia ($2,400).
+export const GIFT_ACTIVATION_BONUS_MXN = Math.round(GIFT_LICENSE_VALUE_MXN * REFERRAL_PCT);
+// Comisión sobre el pago del referido (1 vez/año/cliente) = 40% del pago.
+export const REFERRAL_COMMISSION_PCT = REFERRAL_PCT;
 
 export type WalletKind =
   | 'referral_activation_bonus'
