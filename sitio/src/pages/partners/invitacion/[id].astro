@@ -537,6 +537,22 @@ const I18N: Record<string, Record<Lang, string>> = {
   'esc.after.title':  { es: '¿Y cuando agotes tu paquete?', en: 'And once you sell out your package?', fr: 'Et quand votre pack est épuisé ?', it: 'E quando esaurisci il pacchetto?', pt: 'E quando esgotar seu pacote?' },
   'esc.after.body':   { es: 'Cuando vendas todas las licencias de tu paquete, vuelves al modelo de comisión: ganas {pct}% sobre cada nueva licencia Fideliza que cierres (≈ {comm} por licencia a precio público). Por eso conviene escalar de nivel — tu paquete al mayoreo siempre te deja más que la comisión.', en: 'Once you sell every license in your package, you return to the commission model: you earn {pct}% on each new Fideliza license you close (≈ {comm} per license at public price). That\'s why scaling up pays off — your wholesale package always nets you more than the commission.', fr: 'Quand vous avez vendu toutes les licences de votre pack, vous revenez au modèle de commission : vous gagnez {pct}% sur chaque nouvelle licence Fideliza conclue (≈ {comm} par licence au prix public). C\'est pourquoi monter de niveau est rentable — votre pack en gros rapporte toujours plus que la commission.', it: 'Quando vendi tutte le licenze del pacchetto, torni al modello a commissione: guadagni il {pct}% su ogni nuova licenza Fideliza che chiudi (≈ {comm} per licenza a prezzo pubblico). Per questo conviene salire di livello — il tuo pacchetto all\'ingrosso rende sempre più della commissione.', pt: 'Quando vender todas as licenças do seu pacote, você volta ao modelo de comissão: ganha {pct}% sobre cada nova licença Fideliza que fechar (≈ {comm} por licença a preço público). Por isso vale a pena escalar de nível — seu pacote no atacado sempre rende mais que a comissão.' },
   'esc.compare.body': { es: 'En todos los niveles ganas más que con la comisión del {pct}%: en vez de quedarte con ≈ {comm} por licencia, te llevas el margen completo de la reventa — y crece con cada nivel que subes.', en: 'At every tier you earn more than with the {pct}% commission: instead of ≈ {comm} per license, you keep the full resale margin — and it grows with every tier you climb.', fr: 'À chaque niveau, vous gagnez plus qu\'avec la commission de {pct}% : au lieu de ≈ {comm} par licence, vous gardez toute la marge de revente — et elle augmente à chaque niveau.', it: 'A ogni livello guadagni più della commissione del {pct}%: invece di ≈ {comm} per licenza, tieni tutto il margine di rivendita — e cresce a ogni livello.', pt: 'Em todos os níveis você ganha mais que com a comissão de {pct}%: em vez de ≈ {comm} por licença, você fica com toda a margem de revenda — e cresce a cada nível.' },
+  'esc.hero.profit':  { es: 'Ganancia máx. con tu paquete', en: 'Max profit with your package', fr: 'Profit max avec votre pack', it: 'Profitto max col tuo pacchetto', pt: 'Lucro máx. com seu pacote' },
+  'esc.hero.invest':  { es: 'Inversión desde', en: 'Investment from', fr: 'Investissement dès', it: 'Investimento da', pt: 'Investimento a partir de' },
+
+  // Flujo "Pagas → Recibes → Ganas" (claridad arriba del documento)
+  'flow.eyebrow':  { es: 'En una línea', en: 'At a glance', fr: 'En un coup d\'œil', it: 'In sintesi', pt: 'Em resumo' },
+  'flow.pay':      { es: 'Pagas', en: 'You pay', fr: 'Vous payez', it: 'Paghi', pt: 'Você paga' },
+  'flow.get':      { es: 'Recibes', en: 'You get', fr: 'Vous recevez', it: 'Ricevi', pt: 'Você recebe' },
+  'flow.earn':     { es: 'Ganas', en: 'You earn', fr: 'Vous gagnez', it: 'Guadagni', pt: 'Você ganha' },
+  'flow.pay.free': { es: 'Nada · sin costo', en: 'Nothing · no cost', fr: 'Rien · sans frais', it: 'Niente · gratis', pt: 'Nada · sem custo' },
+  'flow.pay.from': { es: 'Desde {m}', en: 'From {m}', fr: 'Dès {m}', it: 'Da {m}', pt: 'A partir de {m}' },
+  'flow.pay.once': { es: '{m} · pago único', en: '{m} · one-time', fr: '{m} · paiement unique', it: '{m} · una tantum', pt: '{m} · pagamento único' },
+  'flow.get.std':  { es: 'Plan Fideliza, portal, academia y brand kit', en: 'Fideliza Plan, portal, academy and brand kit', fr: 'Plan Fideliza, portail, académie et kit de marque', it: 'Piano Fideliza, portale, academy e brand kit', pt: 'Plano Fideliza, portal, academia e brand kit' },
+  'flow.get.esc':  { es: 'Un paquete de licencias Fideliza al mayoreo', en: 'A wholesale package of Fideliza licenses', fr: 'Un pack de licences Fideliza en gros', it: 'Un pacchetto di licenze Fideliza all\'ingrosso', pt: 'Um pacote de licenças Fideliza no atacado' },
+  'flow.earn.std': { es: '{pct}% por cada venta que cierras', en: '{pct}% on every sale you close', fr: '{pct}% sur chaque vente conclue', it: '{pct}% su ogni vendita che chiudi', pt: '{pct}% sobre cada venda que fecha' },
+  'flow.earn.esc': { es: 'Hasta {m} revendiendo a precio público', en: 'Up to {m} reselling at public price', fr: 'Jusqu\'à {m} en revendant au prix public', it: 'Fino a {m} rivendendo a prezzo pubblico', pt: 'Até {m} revendendo a preço público' },
+  'flow.cta':      { es: 'Ya estoy listo · firmar ahora', en: 'I\'m ready · sign now', fr: 'Je suis prêt · signer', it: 'Sono pronto · firma ora', pt: 'Estou pronto · assinar agora' },
 
   // Embudo
   'fun.eyebrow': { es: 'Cómo se cierra cada venta', en: 'How each sale closes', fr: 'Comment chaque vente se conclut', it: 'Come si chiude ogni vendita', pt: 'Como cada venda fecha' },
@@ -1136,7 +1152,24 @@ if (escalonadoOn) {
     it: `Il tuo pacchetto a livelli ti consegna licenze Fideliza all'ingrosso da rivendere. Qui vedi quanto investi, quante licenze ricevi e quanto guadagni — e come supera la commissione del ${pct}%.`,
     pt: `Seu pacote escalonado te entrega licenças Fideliza no atacado para revender. Aqui você vê quanto investe, quantas licenças recebe e quanto ganha — e como isso supera a comissão de ${pct}%.`,
   };
+  // El tab "Lo que puedes ganar" pasa a hablar de reventa; las tarjetas 50%/10%
+  // se reenmarcan como el modelo que aplica DESPUÉS de agotar el paquete.
+  I18N['comp.eyebrow'] = { es: 'Tu modelo de ganancias', en: 'Your earnings model', fr: 'Votre modèle de gains', it: 'Il tuo modello di guadagni', pt: 'Seu modelo de ganhos' };
+  I18N['comp.title'] = { es: 'Tu paquete de licencias — y lo que ganas con él', en: 'Your license package — and what you earn with it', fr: 'Votre pack de licences — et ce que vous gagnez', it: 'Il tuo pacchetto di licenze — e quanto guadagni', pt: 'Seu pacote de licenças — e o que você ganha' };
+  I18N['comp.tab1.eyebrow'] = { es: 'Después de tu paquete · modelo de comisión', en: 'After your package · commission model', fr: 'Après votre pack · modèle de commission', it: 'Dopo il pacchetto · modello a commissione', pt: 'Depois do seu pacote · modelo de comissão' };
+  I18N['comp.tab1.lead'] = { es: `Cuando agotes tu paquete, estas son las comisiones que ganas sobre cada nueva venta que cierres con tu link.`, en: `Once you sell out your package, these are the commissions you earn on every new sale you close with your link.`, fr: `Une fois votre pack épuisé, voici les commissions que vous gagnez sur chaque nouvelle vente conclue avec votre lien.`, it: `Una volta esaurito il pacchetto, queste sono le commissioni che guadagni su ogni nuova vendita chiusa col tuo link.`, pt: `Quando esgotar seu pacote, estas são as comissões que você ganha sobre cada nova venda fechada com seu link.` };
 }
+
+// Resumen accionable "Pagas → Recibes → Ganas" (claridad arriba del documento).
+const flowPay = (escalonadoOn && escTiers.length > 0)
+  ? tt('flow.pay.from').split('{m}').join(fmtMoney(escTiers[0].price))
+  : esDeCobro
+    ? tt('flow.pay.once').split('{m}').join(costoEntradaStr)
+    : tt('flow.pay.free');
+const flowGet = escalonadoOn ? tt('flow.get.esc') : tt('flow.get.std');
+const flowEarn = (escalonadoOn && escBest)
+  ? tt('flow.earn.esc').split('{m}').join(fmtMoney(escBest.netProfit))
+  : tt('flow.earn.std').split('{pct}').join(String(comisionPct));
 
 const isAccepted = invitation.estado === 'accepted';
 const isDeclined = invitation.estado === 'declined' || invitation.estado === 'cancelled';
@@ -1522,6 +1555,19 @@ const partnerLandingUrl = invitation.slug_landing
           <p class="p-hero-sub">{heroSubtitle}</p>
 
           <div class="p-hero-stats">
+            {escalonadoOn && escBest ? (
+              <>
+                <div class="p-hero-stat">
+                  <div class="p-hero-stat-num">{fmtMoney(escBest.netProfit)}</div>
+                  <div class="p-hero-stat-label">{tt('esc.hero.profit')}</div>
+                </div>
+                <div class="p-hero-stat">
+                  <div class="p-hero-stat-num">{fmtMoney(escTiers[0].price)}</div>
+                  <div class="p-hero-stat-label">{tt('esc.hero.invest')}</div>
+                </div>
+              </>
+            ) : (
+            <>
             <div class="p-hero-stat">
               <div class="p-hero-stat-num">{comisionPct}<span class="p-hero-stat-pct">%</span></div>
               <div class="p-hero-stat-label">{tt('hero.commission')}</div>
@@ -1542,7 +1588,31 @@ const partnerLandingUrl = invitation.slug_landing
                 <div class="p-hero-stat-label">{tt('cost.acceso_programa')}</div>
               </div>
             )}
+            </>
+            )}
           </div>
+        </div>
+
+        <!-- ── Resumen accionable · Pagas → Recibes → Ganas ── -->
+        <div class="no-print" style="margin:20px 0 4px;">
+          <div style="font-size:0.625rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#999;margin-bottom:8px;">{tt('flow.eyebrow')}</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;">
+            <div style="background:#fff;border:1px solid #e7e7ea;border-radius:12px;padding:14px 16px;">
+              <div style="font-size:0.625rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#999;margin-bottom:6px;">{tt('flow.pay')}</div>
+              <div style="font-size:0.95rem;font-weight:600;color:#1a1a1a;line-height:1.35;">{flowPay}</div>
+            </div>
+            <div style="background:#fff;border:1px solid #e7e7ea;border-radius:12px;padding:14px 16px;">
+              <div style="font-size:0.625rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#999;margin-bottom:6px;">{tt('flow.get')}</div>
+              <div style="font-size:0.95rem;font-weight:600;color:#1a1a1a;line-height:1.35;">{flowGet}</div>
+            </div>
+            <div style="background:#fff;border:1px solid #d7f0e4;border-radius:12px;padding:14px 16px;">
+              <div style="font-size:0.625rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#0a6b3d;margin-bottom:6px;">{tt('flow.earn')}</div>
+              <div style="font-size:0.95rem;font-weight:700;color:#0a6b3d;line-height:1.35;">{flowEarn}</div>
+            </div>
+          </div>
+          {!isClosed && (
+            <a href="#firma" data-tab-link="firma" style="display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:12px 22px;background:#1a1a1a;color:#fff;border-radius:10px;font-weight:600;font-size:0.9rem;text-decoration:none;">{tt('flow.cta')} →</a>
+          )}
         </div>
 
         <!-- ── TL;DR · resumen rápido ── -->
@@ -1553,7 +1623,7 @@ const partnerLandingUrl = invitation.slug_landing
           </div>
           <ol class="p-tldr-list">
             <li>{tt('tldr.l1')}</li>
-            <li><strong>{comisionPct}% {tt('tldr.l2.commission')}</strong> {tt('tldr.l2')}</li>
+            <li>{escalonadoOn ? tt('tldr.l2') : (<><strong>{comisionPct}% {tt('tldr.l2.commission')}</strong> {tt('tldr.l2')}</>)}</li>
             <li>{tt('tldr.l3')}</li>
             <li>{tt('tldr.l4')}</li>
             <li>{tt('tldr.l5')}</li>
@@ -3641,7 +3711,7 @@ const partnerLandingUrl = invitation.slug_landing
         </>
         )}
 
-        {comisionPct > 0 && (
+        {comisionPct > 0 && !escalonadoOn && (
         <>
         <div class="p-comp-divider"></div>
         <div class="p-comp-section-eyebrow">{tt('comp.tab2.eyebrow')}</div>
@@ -11584,11 +11654,13 @@ const partnerLandingUrl = invitation.slug_landing
     align-items: center;
     gap: 10px;
     margin-bottom: 14px;
-    padding: 10px 16px;
-    background: rgba(75,123,229,0.07);
-    border: 1px solid rgba(75,123,229,0.20);
+    padding: 12px 16px;
+    background: rgba(75,123,229,0.13);
+    border: 1px solid rgba(75,123,229,0.38);
+    border-left: 3px solid #4B7BE5;
     border-radius: 10px;
     font-size: 0.8125rem;
+    font-weight: 500;
     color: #1a4a85;
     line-height: 1.45;
   }
