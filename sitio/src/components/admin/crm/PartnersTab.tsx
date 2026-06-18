@@ -1674,6 +1674,39 @@ function RecoverAccessModal({ invitation, onClose }: { invitation: Invitation; o
   const [newEmail, setNewEmail] = useState(invitation.email || '');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; msg: string; resetUrl?: string } | null>(null);
+  // Fijar contraseña manualmente
+  const [settingPassword, setSettingPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwResult, setPwResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const teamMemberId = (invitation as any).team_member_id as string | undefined;
+
+  async function setManualPassword() {
+    if (newPassword.length < 8) {
+      setPwResult({ ok: false, msg: 'La contraseña debe tener al menos 8 caracteres.' });
+      return;
+    }
+    setPwBusy(true); setPwResult(null);
+    try {
+      const res = await fetch('/api/partners/set-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': 'founder' },
+        body: JSON.stringify({ team_member_id: teamMemberId, new_password: newPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error');
+      setPwResult({
+        ok: true,
+        msg: `✓ Contraseña fijada para ${data.email}. El partner ya puede entrar en sacscloud.com/partner/login con esa contraseña. (Sus sesiones anteriores se cerraron.)`,
+      });
+      setSettingPassword(false);
+      setNewPassword('');
+    } catch (e: any) {
+      setPwResult({ ok: false, msg: e.message || String(e) });
+    } finally {
+      setPwBusy(false);
+    }
+  }
 
   async function recover(opts: { changeEmail: boolean }) {
     setBusy(true); setResult(null);
@@ -1771,7 +1804,47 @@ function RecoverAccessModal({ invitation, onClose }: { invitation: Invitation; o
                 background: 'transparent', color: '#1a1a1a',
                 border: '1px solid #ddd', borderRadius: 8, cursor: busy ? 'wait' : 'pointer', fontFamily: 'inherit',
               }}>Cambiar email</button>
+              {teamMemberId && (
+                <button onClick={() => { setSettingPassword(s => !s); setPwResult(null); }} disabled={busy} style={{
+                  padding: '11px 18px', fontSize: 13, fontWeight: 600,
+                  background: settingPassword ? '#1a1a1a' : 'transparent', color: settingPassword ? '#fff' : '#1a1a1a',
+                  border: '1px solid ' + (settingPassword ? '#1a1a1a' : '#ddd'), borderRadius: 8, cursor: busy ? 'wait' : 'pointer', fontFamily: 'inherit',
+                }}>Fijar contraseña</button>
+              )}
             </div>
+
+            {settingPassword && (
+              <div style={{ marginTop: 14, padding: 14, background: '#f7f8fa', border: '1px solid #e5e5e5', borderRadius: 10 }}>
+                <div style={{ fontSize: 12, color: '#666', marginBottom: 8, lineHeight: 1.5 }}>
+                  Escribe la contraseña que quieres asignarle (mín. 8 caracteres). Anótala — no se vuelve a mostrar.
+                  Sus sesiones activas se cerrarán y deberá entrar con la nueva contraseña.
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <input
+                    type="text"
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    placeholder="nueva contraseña"
+                    autoComplete="off"
+                    style={{ flex: 1, minWidth: 200, padding: '11px 14px', fontSize: 14, fontFamily: 'monospace', border: '1px solid #ddd', borderRadius: 8, outline: 'none' }}
+                  />
+                  <button onClick={setManualPassword} disabled={pwBusy} style={{
+                    padding: '11px 18px', fontSize: 13, fontWeight: 600,
+                    background: '#1a1a1a', color: '#fff',
+                    border: 'none', borderRadius: 8, cursor: pwBusy ? 'wait' : 'pointer', fontFamily: 'inherit',
+                  }}>{pwBusy ? 'Guardando…' : 'Guardar'}</button>
+                </div>
+              </div>
+            )}
+
+            {pwResult && (
+              <div style={{
+                marginTop: 14, padding: '12px 14px', borderRadius: 8, fontSize: 12, lineHeight: 1.5,
+                background: pwResult.ok ? 'rgba(42,181,160,0.10)' : 'rgba(229,75,75,0.10)',
+                color: pwResult.ok ? '#1A8F7A' : '#b93333',
+                border: `1px solid ${pwResult.ok ? 'rgba(42,181,160,0.25)' : 'rgba(229,75,75,0.25)'}`,
+              }}>{pwResult.msg}</div>
+            )}
           </>
         ) : (
           <div>
