@@ -521,6 +521,10 @@ const I18N: Record<string, Record<Lang, string>> = {
   'cost.acceso_label':       { es: 'Acceso al sistema SACS', en: 'Access to the SACS system', fr: 'Accès au système SACS', it: 'Accesso al sistema SACS', pt: 'Acesso ao sistema SACS' },
   'cost.acceso_free_detail': { es: 'Sin costo durante toda la participación, mientras cumplas los compromisos del programa.', en: 'No cost throughout your participation, as long as you meet the program commitments.', fr: 'Sans frais pendant toute votre participation, tant que vous respectez les engagements du programme.', it: 'Nessun costo per tutta la partecipazione, finché rispetti gli impegni del programma.', pt: 'Sem custo durante toda a participação, enquanto você cumprir os compromissos do programa.' },
   'cost.acceso_paid_detail': { es: 'Sujeto a la cuota indicada arriba.', en: 'Subject to the fee indicated above.', fr: 'Soumis aux frais indiqués ci-dessus.', it: 'Soggetto alla quota indicata sopra.', pt: 'Sujeito à taxa indicada acima.' },
+  'cost.acceso_esc_detail': { es: 'Tu inversión es el paquete de licencias que eliges; el acceso al programa en sí no tiene cuota mensual ni anual.', en: 'Your investment is the license package you choose; access to the program itself has no monthly or annual fee.', fr: 'Votre investissement est le pack de licences que vous choisissez ; l\'accès au programme lui-même n\'a aucun frais mensuel ni annuel.', it: 'Il tuo investimento è il pacchetto di licenze che scegli; l\'accesso al programma in sé non ha quote mensili o annuali.', pt: 'Seu investimento é o pacote de licenças que você escolhe; o acesso ao programa em si não tem mensalidade nem anuidade.' },
+  'cost.con_paquete':       { es: 'Con paquete', en: 'With package', fr: 'Avec pack', it: 'Con pacchetto', pt: 'Com pacote' },
+  'cost.paquete_label':     { es: 'Paquete de licencias Fideliza', en: 'Fideliza license package', fr: 'Pack de licences Fideliza', it: 'Pacchetto di licenze Fideliza', pt: 'Pacote de licenças Fideliza' },
+  'cost.paquete_detail':    { es: 'Compras licencias al mayoreo según el nivel que elijas y las revendes a precio público.', en: 'You buy licenses wholesale at your chosen tier and resell them at public price.', fr: 'Vous achetez des licences en gros selon le niveau choisi et les revendez au prix public.', it: 'Compri licenze all\'ingrosso secondo il livello scelto e le rivendi a prezzo pubblico.', pt: 'Você compra licenças no atacado conforme o nível escolhido e as revende a preço público.' },
 
   // Paquete escalonado de licencias (modo interno)
   'esc.eyebrow':   { es: 'Paquete escalonado de licencias', en: 'Tiered license package', fr: 'Pack de licences échelonné', it: 'Pacchetto di licenze a livelli', pt: 'Pacote escalonado de licenças' },
@@ -1158,6 +1162,52 @@ if (escalonadoOn) {
   I18N['comp.title'] = { es: 'Tu paquete de licencias — y lo que ganas con él', en: 'Your license package — and what you earn with it', fr: 'Votre pack de licences — et ce que vous gagnez', it: 'Il tuo pacchetto di licenze — e quanto guadagni', pt: 'Seu pacote de licenças — e o que você ganha' };
   I18N['comp.tab1.eyebrow'] = { es: 'Después de tu paquete · modelo de comisión', en: 'After your package · commission model', fr: 'Après votre pack · modèle de commission', it: 'Dopo il pacchetto · modello a commissione', pt: 'Depois do seu pacote · modelo de comissão' };
   I18N['comp.tab1.lead'] = { es: `Cuando agotes tu paquete, estas son las comisiones que ganas sobre cada nueva venta que cierres con tu link.`, en: `Once you sell out your package, these are the commissions you earn on every new sale you close with your link.`, fr: `Une fois votre pack épuisé, voici les commissions que vous gagnez sur chaque nouvelle vente conclue avec votre lien.`, it: `Una volta esaurito il pacchetto, queste sono le commissioni che guadagni su ogni nuova vendita chiusa col tuo link.`, pt: `Quando esgotar seu pacote, estas são as comissões que você ganha sobre cada nova venda fechada com seu link.` };
+  // Coherencia de COSTO en escalonado: el partner SÍ invierte (en su paquete),
+  // así que reescribimos las frases que decían "gratis / sin costo / 100% gratuito".
+  // La cuenta Fideliza para SU negocio sigue siendo gratis (beneficio).
+  const minStr = fmtMoney(escTiers[0].price);
+  I18N['tldr.l4'] = {
+    es: `Tu inversión es tu paquete de licencias para revender (desde ${minStr}). El Plan Fideliza ($14k/año) para tu propio negocio sigue siendo gratis.`,
+    en: `Your investment is your license package to resell (from ${minStr}). The Fideliza Plan ($14k/year) for your own business stays free.`,
+    fr: `Votre investissement est votre pack de licences à revendre (dès ${minStr}). Le Plan Fideliza (14k$/an) pour votre propre entreprise reste gratuit.`,
+    it: `Il tuo investimento è il tuo pacchetto di licenze da rivendere (da ${minStr}). Il Piano Fideliza ($14k/anno) per la tua attività resta gratis.`,
+    pt: `Seu investimento é seu pacote de licenças para revender (a partir de ${minStr}). O Plano Fideliza ($14k/ano) para seu próprio negócio continua grátis.`,
+  };
+  I18N['who.note'] = {
+    es: `<strong>Mismo programa, mismas oportunidades, sin límite de crecimiento.</strong> Donde sea que arranques, inviertes en tu paquete de licencias Fideliza al mayoreo (desde ${minStr}) y las revendes a precio público quedándote con el margen — más pagos cada 30 días y la red de partners SACS detrás tuyo.`,
+    en: `<strong>Same program, same opportunities, no ceiling on growth.</strong> Wherever you start, you invest in your wholesale Fideliza license package (from ${minStr}) and resell at public price keeping the margin — plus payments every 30 days and the SACS partner network behind you.`,
+    fr: `<strong>Même programme, mêmes opportunités, sans plafond de croissance.</strong> Où que vous démarriez, vous investissez dans votre pack de licences Fideliza en gros (dès ${minStr}) et les revendez au prix public en gardant la marge — avec des paiements tous les 30 jours et le réseau partenaires SACS derrière vous.`,
+    it: `<strong>Stesso programma, stesse opportunità, senza tetto di crescita.</strong> Da dove inizi, investi nel tuo pacchetto di licenze Fideliza all'ingrosso (da ${minStr}) e le rivendi a prezzo pubblico tenendo il margine — più pagamenti ogni 30 giorni e la rete di partner SACS dietro di te.`,
+    pt: `<strong>Mesmo programa, mesmas oportunidades, sem teto de crescimento.</strong> De onde começar, você investe no seu pacote de licenças Fideliza no atacado (a partir de ${minStr}) e as revende a preço público ficando com a margem — além de pagamentos a cada 30 dias e a rede de parceiros SACS atrás de você.`,
+  };
+  I18N['terms.g3.l'] = {
+    es: `Lo que cuesta participar. Tu inversión es el paquete de licencias Fideliza al mayoreo que elijas (desde ${minStr}); luego las revendes a precio público y te quedas con el margen. Sin cuotas escondidas.`,
+    en: `What it costs to participate. Your investment is the wholesale Fideliza license package you choose (from ${minStr}); you then resell at public price and keep the margin. No hidden fees.`,
+    fr: `Ce que coûte la participation. Votre investissement est le pack de licences Fideliza en gros que vous choisissez (dès ${minStr}) ; vous les revendez ensuite au prix public et gardez la marge. Sans frais cachés.`,
+    it: `Quanto costa partecipare. Il tuo investimento è il pacchetto di licenze Fideliza all'ingrosso che scegli (da ${minStr}); poi le rivendi a prezzo pubblico e tieni il margine. Senza costi nascosti.`,
+    pt: `Quanto custa participar. Seu investimento é o pacote de licenças Fideliza no atacado que você escolher (a partir de ${minStr}); depois revende a preço público e fica com a margem. Sem taxas escondidas.`,
+  };
+  I18N['faq.q4.a'] = {
+    es: `Tu paquete de licencias Fideliza al mayoreo (desde ${minStr}, según el nivel que elijas), que revendes a tus clientes a precio público. Incluye Plan Fideliza activo en tu cuenta SACS sin costo, materiales de marca, capacitaciones y soporte sin cargo.`,
+    en: `Your wholesale Fideliza license package (from ${minStr}, depending on the tier you pick), which you resell to your clients at public price. It includes the Fideliza Plan active in your SACS account at no cost, brand materials, training and support free of charge.`,
+    fr: `Votre pack de licences Fideliza en gros (dès ${minStr}, selon le niveau choisi), que vous revendez à vos clients au prix public. Il inclut le Plan Fideliza actif dans votre compte SACS sans frais, supports de marque, formations et accompagnement gratuits.`,
+    it: `Il tuo pacchetto di licenze Fideliza all'ingrosso (da ${minStr}, secondo il livello che scegli), che rivendi ai tuoi clienti a prezzo pubblico. Include il Piano Fideliza attivo nel tuo account SACS senza costi, materiali di brand, formazione e supporto gratis.`,
+    pt: `Seu pacote de licenças Fideliza no atacado (a partir de ${minStr}, conforme o nível que escolher), que você revende aos seus clientes a preço público. Inclui o Plano Fideliza ativo na sua conta SACS sem custo, materiais de marca, capacitação e suporte sem cobrança.`,
+  };
+  I18N['ct.p5.6'] = {
+    es: `<strong>Costo de participación:</strong> el Partner adquiere un paquete de licencias Fideliza al mayoreo (desde ${minStr}, según el nivel que elija) para revenderlas a sus clientes. No existe cuota mensual ni anual al programa — la inversión del Partner es el paquete de licencias.`,
+    en: `<strong>Participation cost:</strong> the Partner acquires a wholesale Fideliza license package (from ${minStr}, depending on the tier chosen) to resell to their clients. There is no monthly or annual program fee — the Partner's investment is the license package.`,
+    fr: `<strong>Coût de participation :</strong> le Partenaire acquiert un pack de licences Fideliza en gros (dès ${minStr}, selon le niveau choisi) pour les revendre à ses clients. Il n'existe aucune cotisation mensuelle ni annuelle au programme — l'investissement du Partenaire est le pack de licences.`,
+    it: `<strong>Costo di partecipazione:</strong> il Partner acquista un pacchetto di licenze Fideliza all'ingrosso (da ${minStr}, secondo il livello scelto) per rivenderle ai suoi clienti. Non esiste quota mensile o annuale al programma — l'investimento del Partner è il pacchetto di licenze.`,
+    pt: `<strong>Custo de participação:</strong> o Parceiro adquire um pacote de licenças Fideliza no atacado (a partir de ${minStr}, conforme o nível escolhido) para revendê-las aos seus clientes. Não existe mensalidade nem anuidade ao programa — o investimento do Parceiro é o pacote de licenças.`,
+  };
+  I18N['ct.p2.1'] = {
+    es: `<strong>Modelo de compensación — reventa de licencias:</strong> el Partner compra licencias Fideliza al mayoreo y las revende a sus clientes al precio público vigente, conservando el margen completo de cada licencia. Una vez agotado su paquete, aplica una comisión del ${pct}% sobre el cobro de la primera factura de cada nueva venta cerrada con su link único.`,
+    en: `<strong>Compensation model — license resale:</strong> the Partner buys Fideliza licenses wholesale and resells them to clients at the current public price, keeping the full margin on each license. Once the package is sold out, a ${pct}% commission applies on the first invoice of each new sale closed through their unique link.`,
+    fr: `<strong>Modèle de rémunération — revente de licences :</strong> le Partenaire achète des licences Fideliza en gros et les revend à ses clients au prix public en vigueur, en conservant toute la marge de chaque licence. Une fois le pack épuisé, une commission de ${pct}% s'applique sur la première facture de chaque nouvelle vente conclue via son lien unique.`,
+    it: `<strong>Modello di compenso — rivendita di licenze:</strong> il Partner compra licenze Fideliza all'ingrosso e le rivende ai clienti al prezzo pubblico vigente, mantenendo l'intero margine di ogni licenza. Esaurito il pacchetto, si applica una commissione del ${pct}% sulla prima fattura di ogni nuova vendita chiusa col suo link unico.`,
+    pt: `<strong>Modelo de compensação — revenda de licenças:</strong> o Parceiro compra licenças Fideliza no atacado e as revende aos clientes pelo preço público vigente, mantendo a margem completa de cada licença. Esgotado o pacote, aplica-se uma comissão de ${pct}% sobre a primeira fatura de cada nova venda fechada com seu link único.`,
+  };
 }
 
 // Resumen accionable "Pagas → Recibes → Ganas" (claridad arriba del documento).
@@ -1443,7 +1493,7 @@ const partnerLandingUrl = invitation.slug_landing
       <div class="p-mi-hero">
         <div class="p-mi-eyebrow">Programa Partners SACS</div>
         <h1 class="p-mi-title">Hola, <span>{invitation.nombre?.split(' ')[0] || 'partner'}</span></h1>
-        <p class="p-mi-sub">Tu invitación al programa de partners SACS · <strong>{comisionPct}% de comisión</strong> sobre cada venta directa.</p>
+        <p class="p-mi-sub">{escalonadoOn ? (<>Tu invitación al programa de partners SACS · <strong>paquete de licencias Fideliza al mayoreo</strong> para revender.</>) : (<>Tu invitación al programa de partners SACS · <strong>{comisionPct}% de comisión</strong> sobre cada venta directa.</>)}</p>
         <div class="p-mi-meta">
           {!isExpired && !isClosed && <span class="p-mi-badge p-mi-badge--active"><span class="p-mi-dot"></span>Activa</span>}
           {isAccepted && <span class="p-mi-badge p-mi-badge--accepted"><span class="p-mi-dot"></span>Firmada</span>}
@@ -1693,7 +1743,7 @@ const partnerLandingUrl = invitation.slug_landing
           <div class="p-paths-note" set:html={tt('who.note')}></div>
 
           <div class="p-bw-bullets">
-            <div class="p-bw-bullet"><span class="p-bw-bullet-mark">·</span><span><strong>Comisiones que sí valen el esfuerzo.</strong> 50% sobre cada venta directa + comisión recurrente. Todo el seguimiento del lead visible en tu portal.</span></div>
+            <div class="p-bw-bullet"><span class="p-bw-bullet-mark">·</span><span>{escalonadoOn ? (<><strong>Reventa de licencias al mayoreo.</strong> Compras tu paquete de licencias Fideliza y las revendes a precio público — te quedas con todo el margen. Al agotar tu paquete, ganas {comisionPct}% de comisión sobre nuevas ventas.</>) : (<><strong>Comisiones que sí valen el esfuerzo.</strong> 50% sobre cada venta directa + comisión recurrente. Todo el seguimiento del lead visible en tu portal.</>)}</span></div>
             <div class="p-bw-bullet"><span class="p-bw-bullet-mark">·</span><span><strong>Tres formas de sumar puntos.</strong> Contenido publicado, acciones de promoción o actividades filantrópicas.</span></div>
             <div class="p-bw-bullet"><span class="p-bw-bullet-mark">·</span><span><strong>Plan Fideliza gratis ($14k/año).</strong> Para que uses SACS en tu propio negocio o como demo en vivo.</span></div>
             <div class="p-bw-bullet"><span class="p-bw-bullet-mark">·</span><span><strong>Pagos puntuales cada 30 días.</strong> Transparente. Sin letras chicas. Sin "depende de…".</span></div>
@@ -3320,6 +3370,16 @@ const partnerLandingUrl = invitation.slug_landing
         <div class="p-terms-group-eyebrow">{tt('terms.g3.t')}</div>
         <p class="p-terms-group-lead">{tt('terms.g3.l')}</p>
         <div class="p-terms">
+          {escalonadoOn && escTiers.length > 0 && (
+            <div class="p-term-row">
+              <div class="p-term-info">
+                <div class="p-term-label">{tt('cost.paquete_label')}</div>
+                <div class="p-term-detail">{tt('cost.paquete_detail')}</div>
+              </div>
+              <div class="p-term-value">{tt('flow.pay.from').split('{m}').join(fmtMoney(escTiers[0].price))}</div>
+            </div>
+          )}
+
           {costoUnico > 0 && (
             <div class="p-term-row">
               <div class="p-term-info">
@@ -3343,9 +3403,9 @@ const partnerLandingUrl = invitation.slug_landing
           <div class="p-term-row">
             <div class="p-term-info">
               <div class="p-term-label">{tt('cost.acceso_label')}</div>
-              <div class="p-term-detail">{(costoMensual === 0 && costoUnico === 0) ? tt('cost.acceso_free_detail') : tt('cost.acceso_paid_detail')}</div>
+              <div class="p-term-detail">{escalonadoOn ? tt('cost.acceso_esc_detail') : (costoMensual === 0 && costoUnico === 0) ? tt('cost.acceso_free_detail') : tt('cost.acceso_paid_detail')}</div>
             </div>
-            <div class="p-term-value">{(costoMensual === 0 && costoUnico === 0) ? tt('cost.sin_costo') : tt('cost.con_cuota')}</div>
+            <div class="p-term-value">{escalonadoOn ? tt('cost.con_paquete') : (costoMensual === 0 && costoUnico === 0) ? tt('cost.sin_costo') : tt('cost.con_cuota')}</div>
           </div>
 
           <div class="p-term-row">
