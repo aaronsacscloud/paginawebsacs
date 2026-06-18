@@ -508,6 +508,20 @@ const I18N: Record<string, Record<Lang, string>> = {
   'terms.g3.t': { es: '3 · Costos y vigencia', en: '3 · Costs and validity', fr: '3 · Coûts et validité', it: '3 · Costi e validità', pt: '3 · Custos e validade' },
   'terms.g3.l': { es: 'Lo que cuesta participar. Si dice "sin costo", es sin costo — la transparencia es parte del trato.', en: 'What it costs to participate. If it says "no cost", it\'s no cost — transparency is part of the deal.', fr: 'Ce que coûte la participation. Si c\'est marqué « sans frais », c\'est sans frais — la transparence fait partie du contrat.', it: 'Quanto costa partecipare. Se dice "nessun costo", è nessun costo — la trasparenza fa parte del patto.', pt: 'Quanto custa participar. Se diz "sem custo", é sem custo — a transparência faz parte do trato.' },
 
+  // Costos / cuotas (labels de la sección de términos y del hero stat)
+  'cost.cuota_unica':        { es: 'Cuota única', en: 'One-time fee', fr: 'Frais unique', it: 'Quota una tantum', pt: 'Taxa única' },
+  'cost.cuota_mensual':      { es: 'Cuota mensual', en: 'Monthly fee', fr: 'Frais mensuel', it: 'Quota mensile', pt: 'Taxa mensal' },
+  'cost.sin_costo':          { es: 'Sin costo', en: 'No cost', fr: 'Sans frais', it: 'Nessun costo', pt: 'Sem custo' },
+  'cost.con_cuota':          { es: 'Con cuota', en: 'Paid', fr: 'Avec frais', it: 'Con quota', pt: 'Com taxa' },
+  'cost.acceso_programa':    { es: 'Acceso al programa', en: 'Program access', fr: 'Accès au programme', it: 'Accesso al programma', pt: 'Acesso ao programa' },
+  'cost.inscr_label':        { es: 'Cuota única de inscripción', en: 'One-time enrollment fee', fr: 'Frais d\'inscription unique', it: 'Quota di iscrizione una tantum', pt: 'Taxa única de inscrição' },
+  'cost.inscr_detail':       { es: 'Pago único al activar tu programa.', en: 'One-time payment when you activate your program.', fr: 'Paiement unique à l\'activation de votre programme.', it: 'Pagamento una tantum all\'attivazione del tuo programma.', pt: 'Pagamento único ao ativar seu programa.' },
+  'cost.mensual_label':      { es: 'Cuota mensual del sistema SACS', en: 'Monthly SACS system fee', fr: 'Frais mensuel du système SACS', it: 'Quota mensile del sistema SACS', pt: 'Taxa mensal do sistema SACS' },
+  'cost.mensual_detail':     { es: 'Suscripción mensual al sistema SACS para uso interno y demos.', en: 'Monthly subscription to the SACS system for internal use and demos.', fr: 'Abonnement mensuel au système SACS pour usage interne et démos.', it: 'Abbonamento mensile al sistema SACS per uso interno e demo.', pt: 'Assinatura mensal ao sistema SACS para uso interno e demos.' },
+  'cost.acceso_label':       { es: 'Acceso al sistema SACS', en: 'Access to the SACS system', fr: 'Accès au système SACS', it: 'Accesso al sistema SACS', pt: 'Acesso ao sistema SACS' },
+  'cost.acceso_free_detail': { es: 'Sin costo durante toda la participación, mientras cumplas los compromisos del programa.', en: 'No cost throughout your participation, as long as you meet the program commitments.', fr: 'Sans frais pendant toute votre participation, tant que vous respectez les engagements du programme.', it: 'Nessun costo per tutta la partecipazione, finché rispetti gli impegni del programma.', pt: 'Sem custo durante toda a participação, enquanto você cumprir os compromissos do programa.' },
+  'cost.acceso_paid_detail': { es: 'Sujeto a la cuota indicada arriba.', en: 'Subject to the fee indicated above.', fr: 'Soumis aux frais indiqués ci-dessus.', it: 'Soggetto alla quota indicata sopra.', pt: 'Sujeito à taxa indicada acima.' },
+
   // Embudo
   'fun.eyebrow': { es: 'Cómo se cierra cada venta', en: 'How each sale closes', fr: 'Comment chaque vente se conclut', it: 'Come si chiude ogni vendita', pt: 'Como cada venda fecha' },
   'fun.title':   { es: 'Embudo y seguimiento de ventas', en: 'Sales funnel & follow-up', fr: 'Entonnoir et suivi des ventes', it: 'Funnel e follow-up vendite', pt: 'Funil e acompanhamento de vendas' },
@@ -1004,6 +1018,57 @@ const comisionPct = Number(invitation.comision_pct ?? 50);
 const costoUnico = Number(invitation.costo_unico ?? 0);
 const costoMensual = Number(invitation.costo_mensual ?? 0);
 
+// ─── Cobro de entrada al programa (configurable por invitación) ───
+// Si el admin define un costo único > 0, la invitación deja de ser "gratis"
+// y pasa a ser "de cobro": las frases narrativas de COSTO DE ENTRADA se
+// sustituyen por el monto, en los 5 idiomas. NO se tocan (siguen como están):
+//   · el trial gratis del CLIENTE ("prueba gratis" / 14 días) y sus bonos,
+//   · la cuenta Fideliza ($14k/año), que sigue siendo beneficio gratis,
+//   · las herramientas/soporte incluidos.
+// Los displays estructurados (hero stat "Cuota única" y la sección de costos)
+// ya son condicionales sobre costoUnico, así que solo hay que reescribir el
+// texto narrativo que afirma que el programa es gratis.
+const esDeCobro = costoUnico > 0;
+const costoEntradaStr = esDeCobro ? fmtLocalMoney(costoUnico) : '';
+if (esDeCobro) {
+  const m = costoEntradaStr;
+  I18N['tldr.l4'] = {
+    es: `Inversión única de ${m} para participar en el programa. Plan Fideliza ($14k/año) gratis para que uses SACS en tu negocio.`,
+    en: `One-time investment of ${m} to join the program. Fideliza Plan ($14k/year value) free for you to use SACS in your own business.`,
+    fr: `Investissement unique de ${m} pour rejoindre le programme. Plan Fideliza (14k$/an) gratuit pour utiliser SACS dans votre entreprise.`,
+    it: `Investimento una tantum di ${m} per partecipare al programma. Piano Fideliza ($14k/anno) gratis per usare SACS nella tua attività.`,
+    pt: `Investimento único de ${m} para participar do programa. Plano Fideliza ($14k/ano) grátis para usar SACS no seu próprio negócio.`,
+  };
+  I18N['who.note'] = {
+    es: `<strong>Mismo programa, mismas oportunidades, sin límite de crecimiento.</strong> Buscamos abrir puertas — no filtrar a quien ya tenía éxito. Donde sea que arranques, el programa tiene una inversión única de ${m} para participar, y cualquier camino te lleva a pagos cada 30 días, comisiones reales y la red de partners SACS detrás tuyo.`,
+    en: `<strong>Same program, same opportunities, no ceiling on growth.</strong> We aim to open doors — not filter out those without prior success. Wherever you start, the program has a one-time investment of ${m} to join, and any path leads to payments every 30 days, real commissions and the SACS partner network behind you.`,
+    fr: `<strong>Même programme, mêmes opportunités, sans plafond de croissance.</strong> Nous cherchons à ouvrir des portes — pas à filtrer ceux qui n'ont pas encore réussi. Où que vous démarriez, le programme requiert un investissement unique de ${m} pour participer, et tout chemin mène à des paiements tous les 30 jours, des commissions réelles et le réseau partenaires SACS derrière vous.`,
+    it: `<strong>Stesso programma, stesse opportunità, senza tetto di crescita.</strong> Vogliamo aprire porte — non filtrare chi non ha ancora avuto successo. Da dove inizi non importa: il programma prevede un investimento una tantum di ${m} per partecipare, e ogni percorso ti porta a pagamenti ogni 30 giorni, commissioni reali e la rete dei partner SACS dietro di te.`,
+    pt: `<strong>Mesmo programa, mesmas oportunidades, sem teto de crescimento.</strong> Buscamos abrir portas — não filtrar quem ainda não teve sucesso. De onde você começar, o programa tem um investimento único de ${m} para participar, e qualquer caminho leva a pagamentos a cada 30 dias, comissões reais e a rede de parceiros SACS atrás de você.`,
+  };
+  I18N['terms.g3.l'] = {
+    es: `Lo que cuesta participar. Tu inversión única de inscripción es ${m} — transparente, sin letras chicas y sin cuotas escondidas.`,
+    en: `What it costs to participate. Your one-time enrollment investment is ${m} — transparent, no fine print and no hidden fees.`,
+    fr: `Ce que coûte la participation. Votre investissement unique d'inscription est de ${m} — transparent, sans petits caractères et sans frais cachés.`,
+    it: `Quanto costa partecipare. Il tuo investimento una tantum di iscrizione è ${m} — trasparente, senza clausole in piccolo e senza costi nascosti.`,
+    pt: `Quanto custa participar. Seu investimento único de inscrição é ${m} — transparente, sem letras miúdas e sem taxas escondidas.`,
+  };
+  I18N['faq.q4.a'] = {
+    es: `Una inversión única de ${m} para participar en el programa. Incluye Plan Fideliza activo en tu cuenta SACS sin costo, materiales de marca, capacitaciones y soporte sin cargo. Solo si decides certificarte (opcional) hay una cuota única adicional que va de $7,500 a $21,000 MXN. Esa cert te permite cobrar servicios profesionales con el 100% del cobro para ti.`,
+    en: `A one-time investment of ${m} to join the program. It includes the Fideliza Plan active in your SACS account at no cost, brand materials, training and support free of charge. Only if you choose to get certified (optional) is there an additional one-time fee from $7,500 to $21,000 MXN. That cert lets you charge professional services with 100% of the billing for you.`,
+    fr: `Un investissement unique de ${m} pour rejoindre le programme. Il inclut le Plan Fideliza actif dans votre compte SACS sans frais, supports de marque, formations et accompagnement gratuits. Uniquement si vous choisissez de vous certifier (optionnel) il y a un paiement unique supplémentaire de 7 500 à 21 000 MXN. Cette certification vous permet de facturer des services professionnels avec 100% de la facturation pour vous.`,
+    it: `Un investimento una tantum di ${m} per partecipare al programma. Include il Piano Fideliza attivo nel tuo account SACS senza costi, materiali di brand, formazione e supporto gratis. Solo se scegli di certificarti (opzionale) c'è una quota unica aggiuntiva da $7.500 a $21.000 MXN. Quella certificazione ti permette di fatturare servizi professionali con il 100% della fattura per te.`,
+    pt: `Um investimento único de ${m} para participar do programa. Inclui o Plano Fideliza ativo na sua conta SACS sem custo, materiais de marca, capacitação e suporte sem cobrança. Só se você escolher se certificar (opcional) há uma taxa única adicional de $7.500 a $21.000 MXN. Essa certificação te permite cobrar serviços profissionais com 100% da cobrança para você.`,
+  };
+  I18N['ct.p5.6'] = {
+    es: `<strong>Costo de participación:</strong> el Partner paga una inversión única de ${m} para inscribirse en el programa. No hay cuotas mensuales ni anuales adicionales. Además de esta inversión, el Partner aporta actividad — los compromisos descritos en esta cláusula forman parte de la contraprestación por los beneficios incluidos.`,
+    en: `<strong>Participation cost:</strong> the Partner pays a one-time investment of ${m} to enroll in the program. There are no additional monthly or annual fees. Beyond this investment, the Partner contributes activity — the commitments described in this clause are part of the consideration for the included benefits.`,
+    fr: `<strong>Coût de participation :</strong> le Partenaire paie un investissement unique de ${m} pour s'inscrire au programme. Il n'y a aucune cotisation mensuelle ni annuelle supplémentaire. Au-delà de cet investissement, le Partenaire apporte de l'activité — les engagements décrits dans cette clause font partie de la contrepartie des avantages inclus.`,
+    it: `<strong>Costo di partecipazione:</strong> il Partner paga un investimento una tantum di ${m} per iscriversi al programma. Non ci sono quote mensili o annuali aggiuntive. Oltre a questo investimento, il Partner apporta attività — gli impegni descritti in questa clausola fanno parte del corrispettivo per i benefici inclusi.`,
+    pt: `<strong>Custo de participação:</strong> o Parceiro paga um investimento único de ${m} para se inscrever no programa. Não há cotas mensais nem anuais adicionais. Além deste investimento, o Parceiro aporta atividade — os compromissos descritos nesta cláusula fazem parte da contraprestação pelos benefícios incluídos.`,
+  };
+}
+
 const beneficios: any[] = Array.isArray(invitation.beneficios) ? invitation.beneficios : [];
 const compromisos: any[] = Array.isArray(invitation.compromisos) ? invitation.compromisos : [];
 const tabulador: any = invitation.tabulador && typeof invitation.tabulador === 'object' ? invitation.tabulador : {};
@@ -1404,12 +1469,12 @@ const partnerLandingUrl = invitation.slug_landing
             ) : (costoMensual > 0 || costoUnico > 0) ? (
               <div class="p-hero-stat">
                 <div class="p-hero-stat-num">{costoMensual > 0 ? fmtMoney(costoMensual) : fmtMoney(costoUnico)}</div>
-                <div class="p-hero-stat-label">{costoMensual > 0 ? 'Cuota mensual' : 'Cuota única'}</div>
+                <div class="p-hero-stat-label">{costoMensual > 0 ? tt('cost.cuota_mensual') : tt('cost.cuota_unica')}</div>
               </div>
             ) : (
               <div class="p-hero-stat">
-                <div class="p-hero-stat-num">Sin costo</div>
-                <div class="p-hero-stat-label">Acceso al programa</div>
+                <div class="p-hero-stat-num">{tt('cost.sin_costo')}</div>
+                <div class="p-hero-stat-label">{tt('cost.acceso_programa')}</div>
               </div>
             )}
           </div>
@@ -3123,8 +3188,8 @@ const partnerLandingUrl = invitation.slug_landing
           {costoUnico > 0 && (
             <div class="p-term-row">
               <div class="p-term-info">
-                <div class="p-term-label">Cuota única de inscripción</div>
-                <div class="p-term-detail">Pago único al activar tu programa.</div>
+                <div class="p-term-label">{tt('cost.inscr_label')}</div>
+                <div class="p-term-detail">{tt('cost.inscr_detail')}</div>
               </div>
               <div class="p-term-value">{fmtMoney(costoUnico)}</div>
             </div>
@@ -3133,8 +3198,8 @@ const partnerLandingUrl = invitation.slug_landing
           {costoMensual > 0 && (
             <div class="p-term-row">
               <div class="p-term-info">
-                <div class="p-term-label">Cuota mensual del sistema SACS</div>
-                <div class="p-term-detail">Suscripción mensual al sistema SACS para uso interno y demos.</div>
+                <div class="p-term-label">{tt('cost.mensual_label')}</div>
+                <div class="p-term-detail">{tt('cost.mensual_detail')}</div>
               </div>
               <div class="p-term-value">{fmtMoney(costoMensual)} / mes</div>
             </div>
@@ -3142,10 +3207,10 @@ const partnerLandingUrl = invitation.slug_landing
 
           <div class="p-term-row">
             <div class="p-term-info">
-              <div class="p-term-label">Acceso al sistema SACS</div>
-              <div class="p-term-detail">{(costoMensual === 0 && costoUnico === 0) ? 'Sin costo durante toda la participación, mientras cumplas los compromisos del programa.' : 'Sujeto a la cuota indicada arriba.'}</div>
+              <div class="p-term-label">{tt('cost.acceso_label')}</div>
+              <div class="p-term-detail">{(costoMensual === 0 && costoUnico === 0) ? tt('cost.acceso_free_detail') : tt('cost.acceso_paid_detail')}</div>
             </div>
-            <div class="p-term-value">{(costoMensual === 0 && costoUnico === 0) ? 'Sin costo' : 'Con cuota'}</div>
+            <div class="p-term-value">{(costoMensual === 0 && costoUnico === 0) ? tt('cost.sin_costo') : tt('cost.con_cuota')}</div>
           </div>
 
           <div class="p-term-row">

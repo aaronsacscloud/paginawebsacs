@@ -1319,6 +1319,14 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
               <Field label="Moneda" value={form.moneda} onChange={v => set('moneda', v)} />
               <Field label="Vigencia (fecha de cierre)" type="date" value={form.vigencia} onChange={v => set('vigencia', v)} hint={editing ? 'Puedes extender editando esta fecha. El inicio se mantiene en la creación original.' : 'Inicio se cuenta desde hoy (creación de la invitación).'} />
             </Grid3>
+            <Field
+              label="Monto de entrada · pago único"
+              type="number"
+              value={form.costo_unico}
+              onChange={v => set('costo_unico', Number(v) || 0)}
+              placeholder="0 = invitación gratis"
+              hint={`Déjalo en 0 para una invitación gratis. Si pones un monto (en ${form.moneda || 'MXN'}), la invitación se vuelve "de cobro": en vez de "gratis / sin costo" aparece esa inversión única de entrada en toda la invitación — resumen, términos económicos, FAQ y el contrato. La prueba gratis del cliente, los bonos y la cuenta Fideliza ($14k/año) siguen siendo gratis.`}
+            />
             <Field label="Slug de landing (opcional)" value={form.slug_landing} onChange={v => set('slug_landing', v)} placeholder="ej. juanperez (sacscloud.com/p/juanperez)" />
 
             <label style={{
