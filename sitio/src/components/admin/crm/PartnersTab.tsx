@@ -1837,6 +1837,38 @@ function RecoverAccessSection({ memberId, memberEmail, memberName }: { memberId:
   const [newEmail, setNewEmail] = useState(memberEmail || '');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; msg: string; resetUrl?: string } | null>(null);
+  // Fijar contraseña manualmente
+  const [settingPassword, setSettingPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwResult, setPwResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  async function setManualPassword() {
+    if (newPassword.length < 8) {
+      setPwResult({ ok: false, msg: 'La contraseña debe tener al menos 8 caracteres.' });
+      return;
+    }
+    setPwBusy(true); setPwResult(null);
+    try {
+      const res = await fetch('/api/partners/set-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': 'founder' },
+        body: JSON.stringify({ team_member_id: memberId, new_password: newPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error');
+      setPwResult({
+        ok: true,
+        msg: `✓ Contraseña fijada para ${data.email}. El partner ya puede entrar en ${data.login_url} con esa contraseña. (Sus sesiones anteriores se cerraron.)`,
+      });
+      setSettingPassword(false);
+      setNewPassword('');
+    } catch (e: any) {
+      setPwResult({ ok: false, msg: e.message || String(e) });
+    } finally {
+      setPwBusy(false);
+    }
+  }
 
   async function recover(opts: { changeEmail: boolean }) {
     setBusy(true); setResult(null);
@@ -1920,6 +1952,18 @@ function RecoverAccessSection({ memberId, memberEmail, memberName }: { memberId:
           >
             Cambiar email del partner
           </button>
+          <button
+            onClick={() => { setSettingPassword(true); setPwResult(null); }}
+            disabled={busy}
+            style={{
+              padding: '10px 16px', fontSize: 13, fontWeight: 600,
+              background: 'transparent', color: '#1a1a1a',
+              border: '1px solid #ddd', borderRadius: 8, cursor: busy ? 'wait' : 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            Fijar contraseña manualmente
+          </button>
         </div>
       ) : (
         <div>
@@ -1962,6 +2006,60 @@ function RecoverAccessSection({ memberId, memberEmail, memberName }: { memberId:
               }}
             >Cancelar</button>
           </div>
+        </div>
+      )}
+
+      {settingPassword && (
+        <div style={{ marginTop: 14, padding: 14, background: '#fff', border: '1px solid #e5e5e5', borderRadius: 8 }}>
+          <div style={{ fontSize: 12, color: '#666', marginBottom: 8, lineHeight: 1.5 }}>
+            Escribe la contraseña que quieres asignarle a <strong style={{ color: '#1a1a1a' }}>{memberName}</strong> (mín. 8 caracteres).
+            Anótala — no se vuelve a mostrar. Sus sesiones activas se cerrarán y deberá entrar con la nueva contraseña.
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <input
+              type="text"
+              value={newPassword}
+              onChange={e => setNewPassword(e.target.value)}
+              placeholder="nueva contraseña"
+              autoComplete="off"
+              style={{
+                flex: 1, minWidth: 220,
+                padding: '10px 14px', fontSize: 14, fontFamily: 'monospace',
+                border: '1px solid #ddd', borderRadius: 8, outline: 'none',
+              }}
+            />
+            <button
+              onClick={setManualPassword}
+              disabled={pwBusy}
+              style={{
+                padding: '10px 16px', fontSize: 13, fontWeight: 600,
+                background: '#1a1a1a', color: '#fff',
+                border: 'none', borderRadius: 8, cursor: pwBusy ? 'wait' : 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >{pwBusy ? 'Guardando…' : 'Guardar contraseña'}</button>
+            <button
+              onClick={() => { setSettingPassword(false); setNewPassword(''); }}
+              disabled={pwBusy}
+              style={{
+                padding: '10px 16px', fontSize: 13, fontWeight: 600,
+                background: 'transparent', color: '#999',
+                border: '1px solid #eee', borderRadius: 8, cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >Cancelar</button>
+          </div>
+        </div>
+      )}
+
+      {pwResult && (
+        <div style={{
+          marginTop: 14, padding: '12px 14px', borderRadius: 8, fontSize: 12, lineHeight: 1.5,
+          background: pwResult.ok ? 'rgba(42,181,160,0.10)' : 'rgba(229,75,75,0.10)',
+          color: pwResult.ok ? '#1A8F7A' : '#b93333',
+          border: `1px solid ${pwResult.ok ? 'rgba(42,181,160,0.25)' : 'rgba(229,75,75,0.25)'}`,
+        }}>
+          {pwResult.msg}
         </div>
       )}
 
