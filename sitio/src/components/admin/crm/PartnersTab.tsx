@@ -1084,6 +1084,19 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
     tabulador: editing?.tabulador || { prueba_gratis: 0, demo_completada: 0, venta_directa_pct: 50, override_red_pct: 10, moneda: 'MXN' },
     terminos: editing?.terminos || '',
     auto_approve: editing ? !!(editing as any).auto_approve : false,
+    // Paquete escalonado de licencias (modo interno). Vive dentro de tabulador.escalonado.
+    escalonado: (editing?.tabulador && (editing.tabulador as any).escalonado) || {
+      enabled: false,
+      resale_price: 14000,
+      tiers: [
+        { price: 10000, licenses: 3 },
+        { price: 18000, licenses: 5 },
+        { price: 35000, licenses: 10 },
+        { price: 50000, licenses: 15 },
+        { price: 70000, licenses: 21 },
+        { price: 100000, licenses: 30 },
+      ],
+    },
   }));
   const [saving, setSaving] = useState(false);
   const [errMsg, setErrMsg] = useState<string | null>(null);
@@ -1186,7 +1199,9 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
     setSaving(true); setErrMsg(null);
     try {
       const method = editing ? 'PUT' : 'POST';
-      const body = editing ? { id: editing.id, ...form } : form;
+      // Empaquetamos escalonado dentro de tabulador (la API persiste tabulador como JSON).
+      const merged = { ...form, tabulador: { ...(form.tabulador || {}), escalonado: form.escalonado } };
+      const body = editing ? { id: editing.id, ...merged } : merged;
       const res = await fetch('/api/partners/invitations', {
         method, headers: { 'Content-Type': 'application/json', 'x-user-id': 'founder' },
         body: JSON.stringify(body),
@@ -1208,6 +1223,32 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
   function set<K extends string>(key: K, v: any) { setForm((p: any) => ({ ...p, [key]: v })); }
   function setTab(key: string, v: any) {
     setForm((p: any) => ({ ...p, tabulador: { ...(p.tabulador || {}), [key]: v } }));
+  }
+
+  // ── Paquete escalonado helpers ──
+  function setEsc(key: string, v: any) {
+    setForm((p: any) => ({ ...p, escalonado: { ...(p.escalonado || {}), [key]: v } }));
+  }
+  function updateTier(i: number, key: 'price' | 'licenses', v: number) {
+    setForm((p: any) => ({
+      ...p,
+      escalonado: {
+        ...(p.escalonado || {}),
+        tiers: (p.escalonado?.tiers || []).map((t: any, idx: number) => idx === i ? { ...t, [key]: v } : t),
+      },
+    }));
+  }
+  function addTier() {
+    setForm((p: any) => ({
+      ...p,
+      escalonado: { ...(p.escalonado || {}), tiers: [...(p.escalonado?.tiers || []), { price: 0, licenses: 0 }] },
+    }));
+  }
+  function removeTier(i: number) {
+    setForm((p: any) => ({
+      ...p,
+      escalonado: { ...(p.escalonado || {}), tiers: (p.escalonado?.tiers || []).filter((_: any, idx: number) => idx !== i) },
+    }));
   }
 
   function addBenefit() {
@@ -1355,6 +1396,74 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
                 </span>
               </span>
             </label>
+
+            {/* Paquete escalonado de licencias — modo interno, no público */}
+            <label style={{
+              display: 'flex', alignItems: 'flex-start', gap: 12,
+              padding: '14px 16px', marginTop: 12,
+              border: form.escalonado?.enabled ? '1.5px solid #6C5CE7' : '1px solid #ececec',
+              background: form.escalonado?.enabled ? 'rgba(108,92,231,0.06)' : '#fafafa',
+              borderRadius: 10, cursor: 'pointer',
+              transition: 'border-color 0.15s, background 0.15s',
+            }}>
+              <input
+                type="checkbox"
+                checked={!!form.escalonado?.enabled}
+                onChange={e => setEsc('enabled', e.target.checked)}
+                style={{ marginTop: 3, accentColor: '#6C5CE7', width: 16, height: 16, flexShrink: 0 }}
+              />
+              <span style={{ flex: 1 }}>
+                <span style={{ display: 'block', fontWeight: 600, fontSize: '0.875rem', color: '#1a1a1a', marginBottom: 4 }}>
+                  Paquete escalonado de licencias <span style={{ fontSize: '0.6875rem', color: '#6C5CE7', fontWeight: 700, letterSpacing: '0.04em' }}>· INTERNO</span>
+                </span>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: '#666', lineHeight: 1.5 }}>
+                  El partner compra licencias Fideliza al mayoreo y las revende a precio público. Cuando se activa,
+                  la invitación reemplaza el enfoque de comisión por la reventa de paquetes y muestra las ganancias.
+                  No aparece en ninguna página pública — solo en esta invitación.
+                </span>
+              </span>
+            </label>
+
+            {form.escalonado?.enabled && (
+              <div style={{ marginTop: 12, padding: 16, border: '1px solid rgba(108,92,231,0.25)', background: '#fbfaff', borderRadius: 10 }}>
+                <Field
+                  label="Precio de reventa por licencia (precio público Fideliza)"
+                  type="number"
+                  value={form.escalonado.resale_price}
+                  onChange={v => setEsc('resale_price', Number(v) || 0)}
+                  hint="A este precio el partner revende cada licencia a sus clientes. Por defecto $14,000/año."
+                />
+                <div style={{ marginTop: 14, fontSize: '0.75rem', fontWeight: 700, color: '#5b21b6', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Niveles · inversión → licencias
+                </div>
+                <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {(form.escalonado.tiers || []).map((t: any, i: number) => {
+                    const resale = Number(form.escalonado.resale_price) || 0;
+                    const profit = resale * Number(t.licenses || 0) - Number(t.price || 0);
+                    return (
+                      <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#999' }}>$</span>
+                        <input type="number" value={t.price} onChange={e => updateTier(i, 'price', Number(e.target.value) || 0)}
+                          style={{ width: 100, padding: '8px 10px', fontSize: '0.8125rem', border: '1px solid #ddd', borderRadius: 8, outline: 'none' }} placeholder="inversión" />
+                        <span style={{ fontSize: '0.75rem', color: '#999' }}>→</span>
+                        <input type="number" value={t.licenses} onChange={e => updateTier(i, 'licenses', Number(e.target.value) || 0)}
+                          style={{ width: 70, padding: '8px 10px', fontSize: '0.8125rem', border: '1px solid #ddd', borderRadius: 8, outline: 'none' }} placeholder="lic." />
+                        <span style={{ fontSize: '0.75rem', color: '#666' }}>licencias</span>
+                        <span style={{ fontSize: '0.75rem', color: profit >= 0 ? '#0a6b3d' : '#c0392b', fontWeight: 600, marginLeft: 'auto' }}>
+                          ganancia ${Math.round(profit).toLocaleString('es-MX')}
+                        </span>
+                        <button type="button" onClick={() => removeTier(i)} title="Quitar nivel"
+                          style={{ width: 28, height: 28, border: '1px solid #eee', background: '#fff', borderRadius: 6, color: '#c0392b', cursor: 'pointer', fontSize: '0.875rem', lineHeight: 1 }}>×</button>
+                      </div>
+                    );
+                  })}
+                </div>
+                <button type="button" onClick={addTier}
+                  style={{ marginTop: 10, padding: '7px 14px', fontSize: '0.75rem', fontWeight: 600, background: 'transparent', color: '#6C5CE7', border: '1px solid rgba(108,92,231,0.4)', borderRadius: 8, cursor: 'pointer' }}>
+                  + Agregar nivel
+                </button>
+              </div>
+            )}
           </Section>
 
           {/* Beneficios */}
