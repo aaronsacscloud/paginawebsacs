@@ -8,7 +8,7 @@ import { sendWhatsApp } from '../../../lib/kapso';
 import { logGiftEvent, normalizeEmail } from '../../../lib/gifts';
 import { creditWallet, GIFT_ACTIVATION_BONUS_MXN, REFERRAL_COMMISSION_PCT } from '../../../lib/wallet';
 import { CLIENT_REF_COMMISSION_MXN } from '../../../data/referral';
-import { getAccountInfo } from '../../../lib/register';
+import { getAccountInfo, checkAvailability } from '../../../lib/register';
 
 export const prerender = false;
 
@@ -554,6 +554,59 @@ async function handleClientReferralCommission(invoice: Stripe.Invoice) {
   }
 }
 
+// 🛟 Red de seguridad EMBAJADOR (3DS): el aprovisionamiento ocurre en
+// /api/finalize-subscription tras confirmar el 3DS en el cliente. Si el cliente
+// cierra la pestaña ENTRE el pago y el finalize, el cargo del 50% pasó pero NO se
+// creó la cuenta. NO podemos auto-crearla (el password solo vive en el request
+// del cliente, nunca llega al webhook), pero SÍ detectamos el huérfano de forma
+// CONFIABLE (sin falsos positivos por carrera con finalize): si el correo NO
+// tiene cuenta en sacs3, es un huérfano real. Dejamos un breadcrumb en
+// `activities` para recuperación manual. Best-effort: nunca tumba el invoice.
+async function flagOrphanEmbajadorPayment(invoice: Stripe.Invoice) {
+  try {
+    if ((invoice as any).billing_reason && (invoice as any).billing_reason !== 'subscription_create') return; // solo el primer pago
+    if ((invoice.amount_paid || 0) <= 0) return;
+    const subId = (invoice as any).subscription
+      ? (typeof (invoice as any).subscription === 'string' ? (invoice as any).subscription : (invoice as any).subscription.id)
+      : null;
+    if (!subId) return;
+    const sub = await stripe.subscriptions.retrieve(subId);
+    if (!sub.metadata?.client_ref_account) return;   // no es del programa embajador
+    if (sub.metadata?.provisioned_account) return;    // finalize ya provisionó → ok
+
+    const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id;
+    let email = '';
+    if (customerId) {
+      try { const cu = await stripe.customers.retrieve(customerId) as Stripe.Customer; email = normalizeEmail(cu.email || ''); } catch {}
+    }
+    if (!email) return;
+
+    // ¿Existe cuenta para ese correo? email_available === false → SÍ existe → no es
+    // huérfano (finalize ganó la carrera o el marcador no se grabó). Solo si NO
+    // existe cuenta es un huérfano genuino.
+    const avail = await checkAvailability('probe', email);
+    if (avail.email_available === false) return;
+
+    console.error('[stripe-webhook] EMBAJADOR pagó SIN cuenta provisionada (huérfano):', { sub: subId, email });
+    try {
+      await supabase.from('activities').insert({
+        tipo: 'sistema',
+        titulo: `⚠️ Embajador: pago confirmado SIN cuenta (recuperar a mano) — ${email}`,
+        metadata: {
+          event: 'embajador_paid_unprovisioned',
+          stripe_subscription_id: subId,
+          email,
+          ref_account: sub.metadata?.client_ref_account || null,
+          note: 'El cliente pagó el 50% pero cerró la pestaña antes de finalizar el registro. Crear la cuenta manualmente (el password no llega al webhook).',
+        },
+        automatico: true,
+      });
+    } catch {}
+  } catch (err) {
+    console.error('[stripe-webhook] flagOrphanEmbajadorPayment error:', err);
+  }
+}
+
 export const POST: APIRoute = async ({ request }) => {
   const body = await request.text();
   const sig = request.headers.get('stripe-signature') || '';
@@ -786,6 +839,8 @@ export const POST: APIRoute = async ({ request }) => {
       await handleReferralCommission(invoice);
       // 🤝 Comisión 40% ($2,400) al cliente referidor si es del programa Embajador.
       await handleClientReferralCommission(invoice);
+      // 🛟 Red de seguridad: detectar un pago de embajador que quedó SIN cuenta.
+      await flagOrphanEmbajadorPayment(invoice);
 
       // TikTok event
       if (customerId) {

@@ -1133,7 +1133,47 @@ export const prerender = false;
         }),
       });
 
-      const data = await res.json();
+      let data = await res.json();
+
+      // ─── EMBAJADOR (3DS/SCA): confirmar el cargo en el cliente ───
+      // El backend creó la sub con default_incomplete y nos devolvió el
+      // client_secret del PaymentIntent. confirmCardPayment dispara el reto del
+      // banco (SMS/app) SOLO si la tarjeta lo exige; si no, pasa transparente.
+      // Tras el éxito, finalizamos (provisiona la cuenta) con el MISMO patrón de
+      // respuesta {success, account_id} que reusa el bloque de éxito de abajo.
+      if (data.requires_action && data.clientSecret) {
+        const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(data.clientSecret, {
+          payment_method: paymentMethod.id,
+        });
+        if (confirmError || !paymentIntent || paymentIntent.status !== 'succeeded') {
+          const errEl = document.getElementById('card-errors');
+          if (errEl) errEl.textContent = (confirmError && confirmError.message)
+            || 'No se completó la verificación de tu tarjeta. Intenta de nuevo — no se realizó ningún cargo.';
+          btnSubmit.disabled = false;
+          btnText.style.display = 'inline';
+          btnLoading.style.display = 'none';
+          return;
+        }
+        // Cargo confirmado → crear la cuenta real.
+        const finRes = await fetch('/api/finalize-subscription', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subscriptionId: data.subscriptionId,
+            nombre: (document.getElementById('nombre') as HTMLInputElement).value,
+            empresa: (document.getElementById('empresa') as HTMLInputElement).value,
+            giro: (document.getElementById('giro') as HTMLSelectElement).value,
+            sucursales: (document.getElementById('sucursales') as HTMLSelectElement).value,
+            whatsapp: (document.getElementById('whatsapp') as HTMLInputElement).value,
+            email: (document.getElementById('email') as HTMLInputElement).value,
+            password: (document.getElementById('password') as HTMLInputElement).value,
+            planId: selectedPlan,
+            ref_account: refAccountParam || undefined,
+          }),
+        });
+        // Reemplaza `data` para que el bloque de éxito de abajo siga igual.
+        data = await finRes.json();
+      }
 
       if (data.success) {
         sendLeadToSheet('Registro completado', selectedPlan);

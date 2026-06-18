@@ -17,3 +17,4 @@ sitio/.astro/
 # OS
 .DS_Store
 .gstack/
+.env*.local

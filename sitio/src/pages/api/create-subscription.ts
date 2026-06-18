@@ -55,7 +55,7 @@ function toE164(phone: string): string {
   return '+52' + digits;
 }
 
-async function sendTikTokEvent(email: string, phone: string, planId: string, value: number, ip: string, ua: string) {
+export async function sendTikTokEvent(email: string, phone: string, planId: string, value: number, ip: string, ua: string) {
   if (!TIKTOK_TOKEN) return;
   const e164 = toE164(phone);
   const event = {
@@ -188,6 +188,192 @@ async function getOrCreateClientRefCoupon(vendePriceId: string): Promise<string>
     if (err?.code !== 'resource_already_exists') throw err;
   }
   return CLIENT_REF_COUPON_ID;
+}
+
+// ─── Sync CRM + atribución partner para una suscripción YA pagada/confirmada ───
+// Best-effort: nunca lanza (envuelto en try/catch) — la cuenta ya está
+// provisionada y el pago confirmado, el CRM es secundario. Lo comparten el flujo
+// síncrono (gift/normal en create-subscription) y el flujo 3DS del embajador
+// (finalize-subscription), para una sola fuente de verdad de la atribución.
+interface CrmSyncCtx {
+  request: Request;
+  gift: GiftRow | null;
+  refAccount: string;
+  empresa: string;
+  nombre: string;
+  email: string;
+  whatsapp?: string;
+  giro?: string;
+  sucursales?: string | number;
+  planId: string;
+  billingPeriod: 'monthly' | 'annual';
+  planValue: number;
+  customerId: string;
+  subscriptionId: string;
+}
+
+export async function syncCrmForSubscription(ctx: CrmSyncCtx): Promise<void> {
+  const {
+    request, gift, refAccount, empresa, nombre, email, whatsapp, giro,
+    sucursales, planId, billingPeriod, planValue, customerId, subscriptionId,
+  } = ctx;
+  try {
+    const referrerPartnerId = await getReferrerFromRequest(request);
+
+    // Upsert company
+    let company_id: string | null = null;
+    if (empresa) {
+      const { data: existingCo } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('nombre', empresa)
+        .limit(1)
+        .maybeSingle();
+      if (existingCo) {
+        company_id = existingCo.id;
+      } else {
+        const { data: newCo } = await supabase
+          .from('companies')
+          .insert({ nombre: empresa, giro: giro || null, sucursales: parseInt(String(sucursales)) || 1 })
+          .select('id')
+          .single();
+        if (newCo) company_id = newCo.id;
+      }
+    }
+
+    // Upsert contact (by email)
+    const { data: existingContact } = await supabase
+      .from('contacts')
+      .select('id, referrer_partner_id')
+      .eq('email', email)
+      .limit(1)
+      .maybeSingle();
+
+    let contactId: string | null = null;
+    if (existingContact) {
+      contactId = existingContact.id;
+      const updates: Record<string, any> = {
+        lifecycle_stage: 'cliente',
+        plan_interes: planId,
+        stripe_customer_id: customerId,
+        company_id: company_id || undefined,
+      };
+      if (referrerPartnerId && !existingContact.referrer_partner_id) {
+        updates.referrer_partner_id = referrerPartnerId;
+        updates.fuente = 'partner-link';
+      }
+      await supabase.from('contacts').update(updates).eq('id', contactId);
+    } else {
+      const { data: newContact } = await supabase
+        .from('contacts')
+        .insert({
+          nombre: nombre || 'Sin nombre',
+          email,
+          whatsapp: whatsapp || null,
+          tipo: 'lead',
+          lifecycle_stage: 'cliente',
+          // Fuente real: create-subscription SIEMPRE implica tarjeta/Stripe
+          // (la prueba gratis SIN tarjeta va por /api/register-account). Por
+          // eso el fallback es 'website-pago', NO 'website-prueba-gratis'.
+          fuente: gift ? 'regalo-buddy' : (refAccount ? 'cliente-referido' : (referrerPartnerId ? 'partner-link' : 'website-pago')),
+          company_id,
+          plan_interes: planId,
+          giro: giro || null,
+          sucursales_interes: parseInt(String(sucursales)) || null,
+          stripe_customer_id: customerId,
+          referrer_partner_id: referrerPartnerId,
+        })
+        .select('id')
+        .single();
+      if (newContact) contactId = newContact.id;
+    }
+
+    // Upsert deal — reusar el deal abierto del contact si existe (creado al agendar demo)
+    // Gift: el deal + activity los crea el webhook al confirmar la redención
+    // (origen regalo-buddy, valor $6,000, stage ganado) — aquí solo el contact.
+    let dealId: string | null = null;
+    if (contactId && !gift) {
+      const { data: openDeal } = await supabase
+        .from('deals')
+        .select('id, referrer_partner_id')
+        .eq('contact_id', contactId)
+        .not('stage', 'in', '(cerrada_ganada,cerrada_perdida)')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (openDeal) {
+        dealId = openDeal.id;
+        const updates: Record<string, any> = {
+          stage: 'cerrada_ganada',
+          closed_at: new Date().toISOString(),
+          valor_total: planValue,
+          valor_mensual: billingPeriod === 'monthly' ? planValue : Math.round((planValue / 12) * 100) / 100,
+          plan: planId,
+          billing_period: billingPeriod === 'monthly' ? 'mensual' : 'anual',
+          probabilidad: 100,
+        };
+        if (referrerPartnerId && !openDeal.referrer_partner_id) {
+          updates.referrer_partner_id = referrerPartnerId;
+        }
+        await supabase.from('deals').update(updates).eq('id', dealId);
+      } else {
+        const { data: newDeal } = await supabase
+          .from('deals')
+          .insert({
+            nombre: `Plan ${planId} · ${empresa || nombre || email}`,
+            contact_id: contactId,
+            company_id,
+            stage: 'cerrada_ganada',
+            valor_total: planValue,
+            valor_mensual: billingPeriod === 'monthly' ? planValue : Math.round((planValue / 12) * 100) / 100,
+            closed_at: new Date().toISOString(),
+            referrer_partner_id: referrerPartnerId,
+            plan: planId,
+            billing_period: billingPeriod === 'monthly' ? 'mensual' : 'anual',
+            sucursales: parseInt(String(sucursales)) || 1,
+            probabilidad: 100,
+          })
+          .select('id')
+          .single();
+        if (newDeal) dealId = newDeal.id;
+      }
+    }
+
+    // Activity log (gift: la registra el webhook con el padrino)
+    if (contactId && !gift) {
+      await supabase.from('activities').insert({
+        contact_id: contactId,
+        company_id,
+        deal_id: dealId,
+        tipo: 'pago_confirmado',
+        titulo: `Suscripción ${planId} (${billingPeriod}) · ${empresa || email}`,
+        metadata: {
+          stripe_subscription_id: subscriptionId,
+          plan: planId,
+          billing: billingPeriod,
+          value: planValue,
+          referrer_partner_id: referrerPartnerId,
+        },
+        automatico: true,
+      });
+    }
+
+    // Comisión venta_directa al partner referido
+    if (referrerPartnerId && dealId) {
+      try {
+        await createCommissionForDeal({
+          deal_id: dealId,
+          partner_id: referrerPartnerId,
+          deal_value: planValue,
+        });
+      } catch (e) {
+        console.warn('[create-subscription] createCommissionForDeal failed:', e);
+      }
+    }
+  } catch (crmErr) {
+    console.error('[create-subscription] CRM sync error:', crmErr);
+  }
 }
 
 export const POST: APIRoute = async ({ request }) => {
@@ -438,6 +624,16 @@ export const POST: APIRoute = async ({ request }) => {
         ...subscriptionParams.metadata,
         client_ref_account: refAccount,
       };
+      // 3DS/SCA — NO cobramos de forma síncrona. Con `default_incomplete` Stripe
+      // crea la sub en estado 'incomplete' con un PaymentIntent que el CLIENTE
+      // confirma (stripe.confirmCardPayment). Esa confirmación dispara el reto del
+      // banco (SMS/app) SOLO si la tarjeta lo exige; si no, pasa transparente.
+      // Antes (sin esto) el cobro síncrono dejaba la sub 'incomplete' y el código
+      // la cancelaba → RECHAZÁBAMOS tarjetas válidas que solo pedían 3DS.
+      // El aprovisionamiento ocurre en /api/finalize-subscription tras la
+      // confirmación. `expand` nos da el client_secret del PaymentIntent.
+      subscriptionParams.payment_behavior = 'default_incomplete';
+      subscriptionParams.expand = ['latest_invoice.payment_intent'];
     } else {
       subscriptionParams.trial_period_days = 7;
     }
@@ -458,6 +654,31 @@ export const POST: APIRoute = async ({ request }) => {
           .eq('status', 'redeeming');
       }
       throw stripeErr;
+    }
+
+    // ── EMBAJADOR (3DS/SCA): devolver client_secret para confirmar en el cliente ──
+    // Con default_incomplete el cobro AÚN no se hizo: el PaymentIntent del primer
+    // invoice espera la confirmación del cliente. Devolvemos su client_secret y
+    // NO provisionamos todavía — eso ocurre en /api/finalize-subscription una vez
+    // que stripe.confirmCardPayment() (con o sin reto 3DS) deje el cargo en
+    // 'succeeded'. Así jamás creamos una cuenta sin pago confirmado.
+    if (refAccount) {
+      const li = subscription.latest_invoice;
+      const piRaw = (li && typeof li !== 'string') ? (li as Stripe.Invoice).payment_intent : null;
+      const clientSecret = (piRaw && typeof piRaw !== 'string') ? (piRaw as Stripe.PaymentIntent).client_secret : null;
+      if (!clientSecret) {
+        // Defensa: sin client_secret no se puede confirmar el cargo → cancelar la
+        // sub para no dejarla colgada (no hubo cobro). Liberar gift no aplica (no hay).
+        try { await stripe.subscriptions.cancel(subscription.id); } catch (e) { console.error('[create-subscription] cancel embajador sin client_secret:', e); }
+        return new Response(JSON.stringify({ error: 'No pudimos iniciar el cobro. Intenta de nuevo — no se realizó ningún cargo.', code: 'no_client_secret' }), {
+          status: 402, headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({
+        requires_action: true,
+        clientSecret,
+        subscriptionId: subscription.id,
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
 
     // ── VALIDAR que Stripe REALMENTE confirmó antes de provisionar ───────────
@@ -567,168 +788,13 @@ export const POST: APIRoute = async ({ request }) => {
     const ua = request.headers.get('user-agent') || '';
     if (!gift) sendTikTokEvent(email, whatsapp || '', planId, planValue, ip, ua).catch(() => {});
 
-    // ─── Atribución partner + CRM ──────────────────────────────────────
-    // 1. Resolver partner referido (cookie sacs_ref o ?ref)
-    // 2. Crear/actualizar contact en Supabase
-    // 3. Crear deal stage='won' + atribución
-    // 4. Disparar venta_directa commission
-    try {
-      const referrerPartnerId = await getReferrerFromRequest(request);
-
-      // Upsert company
-      let company_id: string | null = null;
-      if (empresa) {
-        const { data: existingCo } = await supabase
-          .from('companies')
-          .select('id')
-          .eq('nombre', empresa)
-          .limit(1)
-          .maybeSingle();
-        if (existingCo) {
-          company_id = existingCo.id;
-        } else {
-          const { data: newCo } = await supabase
-            .from('companies')
-            .insert({ nombre: empresa, giro: giro || null, sucursales: parseInt(String(sucursales)) || 1 })
-            .select('id')
-            .single();
-          if (newCo) company_id = newCo.id;
-        }
-      }
-
-      // Upsert contact (by email)
-      const { data: existingContact } = await supabase
-        .from('contacts')
-        .select('id, referrer_partner_id')
-        .eq('email', email)
-        .limit(1)
-        .maybeSingle();
-
-      let contactId: string | null = null;
-      if (existingContact) {
-        contactId = existingContact.id;
-        const updates: Record<string, any> = {
-          lifecycle_stage: 'cliente',
-          plan_interes: planId,
-          stripe_customer_id: customer.id,
-          company_id: company_id || undefined,
-        };
-        if (referrerPartnerId && !existingContact.referrer_partner_id) {
-          updates.referrer_partner_id = referrerPartnerId;
-          updates.fuente = 'partner-link';
-        }
-        await supabase.from('contacts').update(updates).eq('id', contactId);
-      } else {
-        const { data: newContact } = await supabase
-          .from('contacts')
-          .insert({
-            nombre: nombre || 'Sin nombre',
-            email,
-            whatsapp: whatsapp || null,
-            tipo: 'lead',
-            lifecycle_stage: 'cliente',
-            // Fuente real: create-subscription SIEMPRE implica tarjeta/Stripe
-            // (la prueba gratis SIN tarjeta va por /api/register-account). Por
-            // eso el fallback es 'website-pago', NO 'website-prueba-gratis'.
-            fuente: gift ? 'regalo-buddy' : (refAccount ? 'cliente-referido' : (referrerPartnerId ? 'partner-link' : 'website-pago')),
-            company_id,
-            plan_interes: planId,
-            giro: giro || null,
-            sucursales_interes: parseInt(String(sucursales)) || null,
-            stripe_customer_id: customer.id,
-            referrer_partner_id: referrerPartnerId,
-          })
-          .select('id')
-          .single();
-        if (newContact) contactId = newContact.id;
-      }
-
-      // Upsert deal — reusar el deal abierto del contact si existe (creado al agendar demo)
-      // Gift: el deal + activity los crea el webhook al confirmar la redención
-      // (origen regalo-buddy, valor $6,000, stage ganado) — aquí solo el contact.
-      let dealId: string | null = null;
-      if (contactId && !gift) {
-        const { data: openDeal } = await supabase
-          .from('deals')
-          .select('id, referrer_partner_id')
-          .eq('contact_id', contactId)
-          .not('stage', 'in', '(cerrada_ganada,cerrada_perdida)')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (openDeal) {
-          dealId = openDeal.id;
-          const updates: Record<string, any> = {
-            stage: 'cerrada_ganada',
-            closed_at: new Date().toISOString(),
-            valor_total: planValue,
-            valor_mensual: billingPeriod === 'monthly' ? planValue : Math.round((planValue / 12) * 100) / 100,
-            plan: planId,
-            billing_period: billingPeriod === 'monthly' ? 'mensual' : 'anual',
-            probabilidad: 100,
-          };
-          if (referrerPartnerId && !openDeal.referrer_partner_id) {
-            updates.referrer_partner_id = referrerPartnerId;
-          }
-          await supabase.from('deals').update(updates).eq('id', dealId);
-        } else {
-          const { data: newDeal } = await supabase
-            .from('deals')
-            .insert({
-              nombre: `Plan ${planId} · ${empresa || nombre || email}`,
-              contact_id: contactId,
-              company_id,
-              stage: 'cerrada_ganada',
-              valor_total: planValue,
-              valor_mensual: billingPeriod === 'monthly' ? planValue : Math.round((planValue / 12) * 100) / 100,
-              closed_at: new Date().toISOString(),
-              referrer_partner_id: referrerPartnerId,
-              plan: planId,
-              billing_period: billingPeriod === 'monthly' ? 'mensual' : 'anual',
-              sucursales: parseInt(String(sucursales)) || 1,
-              probabilidad: 100,
-            })
-            .select('id')
-            .single();
-          if (newDeal) dealId = newDeal.id;
-        }
-      }
-
-      // Activity log (gift: la registra el webhook con el padrino)
-      if (contactId && !gift) {
-        await supabase.from('activities').insert({
-          contact_id: contactId,
-          company_id,
-          deal_id: dealId,
-          tipo: 'pago_confirmado',
-          titulo: `Suscripción ${planId} (${billingPeriod}) · ${empresa || email}`,
-          metadata: {
-            stripe_subscription_id: subscription.id,
-            plan: planId,
-            billing: billingPeriod,
-            value: planValue,
-            referrer_partner_id: referrerPartnerId,
-          },
-          automatico: true,
-        });
-      }
-
-      // Comisión venta_directa al partner referido
-      if (referrerPartnerId && dealId) {
-        try {
-          await createCommissionForDeal({
-            deal_id: dealId,
-            partner_id: referrerPartnerId,
-            deal_value: planValue,
-          });
-        } catch (e) {
-          console.warn('[create-subscription] createCommissionForDeal failed:', e);
-        }
-      }
-    } catch (crmErr) {
-      console.error('[create-subscription] CRM sync error:', crmErr);
-    }
+    // ─── Atribución partner + CRM (best-effort, helper compartido con finalize) ───
+    await syncCrmForSubscription({
+      request, gift, refAccount,
+      empresa, nombre, email, whatsapp, giro, sucursales,
+      planId, billingPeriod, planValue,
+      customerId: customer.id, subscriptionId: subscription.id,
+    });
 
     // La cuenta YA se provisionó antes de crear la suscripción (provisionedAccountId).
     return new Response(
