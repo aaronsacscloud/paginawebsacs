@@ -6696,8 +6696,8 @@ export const pageContent: Record<string, any> = {
       "eyebrow": "SACS Membresías y Suscripciones · Piloto",
       "title": "Membresías de pago que dan acceso inmediato a tus mejores beneficios",
       "subtitle": "Dentro del Programa de Lealtad de SACS creas membresías de pago — únicas, mensuales o anuales — que llevan a tu cliente directo a un nivel con descuentos, puntos multiplicados y beneficios, sin esperar a acumular. Tú defines el nivel, el precio y la duración.",
-      "image": "/images/membresias-hero.webp",
-      "imageAlt": "Clienta mostrando credencial de membresía digital en boutique SACS"
+      "image": "/images/membresias-y-suscripciones-sistema.webp",
+      "imageAlt": "Programa de membresías y lealtad en SACS"
     },
     "features": [
       {
@@ -6783,7 +6783,7 @@ export const pageContent: Record<string, any> = {
         "label": "Membresías",
         "title": "Crea la membresía en el paso 3 del wizard",
         "description": "En el configurador del Programa de Lealtad, el paso de Membresías te deja crear cada plan: nombre, descripción, el nivel al que da acceso y las opciones de pago que quieras habilitar. Todo desde un solo modal.",
-        "image": "",
+        "image": "/images/membresias-y-suscripciones-sistema-tab.webp",
         "imageAlt": "Configurador de planes de membresía en SACS",
         "link": null,
         "details": [
