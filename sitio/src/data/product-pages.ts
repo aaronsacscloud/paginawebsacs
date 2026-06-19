@@ -3056,8 +3056,8 @@ export const pageContent: Record<string, any> = {
       "eyebrow": "SACS Inventario Omnicanal",
       "title": "Tu inventario de toda la red, leído en 10 análisis listos para decidir.",
       "subtitle": "El Tablero de Inventario consolida existencias, costos y ventas de cada sucursal y almacén en una sola pantalla. Elige el análisis que necesitas — ABC, rotación, puntos de reorden, valorización — filtra por ubicación y expórtalo a Excel cuando tu contador lo pida.",
-      "image": "/images/inventario-omnicanal-hero.webp",
-      "imageAlt": "Gerente revisando inventario en tiempo real en tablet SACS con sucursales en pantalla"
+      "image": "/images/inventario-omnicanal-sistema.webp",
+      "imageAlt": "Módulo de inventario omnicanal en SACS"
     },
     "features": [
       {
@@ -3145,7 +3145,7 @@ export const pageContent: Record<string, any> = {
         "label": "Elige el análisis",
         "title": "10 reportes, un solo tablero.",
         "description": "Cards visuales para ABC/Pareto, Rotación, Obsoletos, Mermas, Valorización (PPP/FIFO), Puntos de Reorden, Anomalías, Dashboard General, Resumen y Rendimiento. Cambias de análisis sin salir de la pantalla.",
-        "image": "",
+        "image": "/images/inventario-omnicanal-sistema-tab.webp",
         "imageAlt": "Matriz global de inventario SKU por sucursal con KPIs de stock total, reservado, en tránsito y faltantes, exportable a Excel y CSV",
         "link": null,
         "details": [
@@ -3338,8 +3338,8 @@ export const pageContent: Record<string, any> = {
       "eyebrow": "SACS Conteo Físico",
       "title": "Cuenta tu inventario, cuádralo con la realidad y ajusta en un clic.",
       "subtitle": "Elige el almacén, busca por código de barras o SKU y captura lo físico. SACS lo compara contra el teórico, te muestra cada diferencia en unidades y en dinero, y al finalizar genera los ajustes en el Kardex automáticamente.",
-      "image": "/images/conteo-fisico-hero.webp",
-      "imageAlt": "Empleado escaneando productos con celular en bodega para conteo físico SACS"
+      "image": "/images/conteo-fisico-sistema.webp",
+      "imageAlt": "Módulo de conteo fisico en SACS"
     },
     "features": [
       {
@@ -3422,7 +3422,7 @@ export const pageContent: Record<string, any> = {
         "label": "Tipos de conteo",
         "title": "Completo, parcial, manual o sorpresa",
         "description": "Cuenta todo el catálogo o solo lo que te importa: filtra el conteo parcial por categoría, marca, proveedor o etiqueta. El modo manual te deja agregar productos al vuelo y el modo sorpresa lo arrancas sin avisar. Eliges sucursal y almacén antes de empezar.",
-        "image": "",
+        "image": "/images/conteo-fisico-sistema-tab.webp",
         "imageAlt": "App de SACS en celular escaneando producto",
         "link": null,
         "details": [
@@ -3615,8 +3615,8 @@ export const pageContent: Record<string, any> = {
       "eyebrow": "SACS Nivelación de Inventario",
       "title": "El stock donde se está vendiendo. Calculado, no a corazonada.",
       "subtitle": "SACS lee la venta real por sucursal, calcula cuánto resurtir con un modelo de inventario serio y arma la propuesta de traspaso. Tú apruebas en la mesa de decisión y el sistema genera las transferencias.",
-      "image": "/images/nivelacion-de-inventario-hero.webp",
-      "imageAlt": "Gerente regional aprobando propuesta de nivelación entre sucursales en SACS"
+      "image": "/images/nivelacion-de-inventario-sistema.webp",
+      "imageAlt": "Módulo de nivelacion de inventario en SACS"
     },
     "features": [
       {
@@ -3698,7 +3698,7 @@ export const pageContent: Record<string, any> = {
         "label": "Corrida",
         "title": "Una corrida, una foto de qué mover.",
         "description": "El wizard te guía: eliges el objetivo (reabastecer desde CEDIS, entre sucursales o generar orden de compra), defines origen y destino, el horizonte de venta a analizar y los días de cobertura. SACS corre el análisis y guarda el resultado como un run que puedes retomar.",
-        "image": "",
+        "image": "/images/nivelacion-de-inventario-sistema-tab.webp",
         "imageAlt": "Pantalla de propuesta de nivelación semanal en SACS",
         "link": null,
         "details": [
@@ -3891,8 +3891,8 @@ export const pageContent: Record<string, any> = {
       "eyebrow": "SACS Órdenes de Compra",
       "title": "Pide bien. Recibe contra lo que pediste. Paga solo lo que llegó.",
       "subtitle": "Genera órdenes de compra con los términos de cada proveedor, manda el PDF con tu marca por correo, recibe capturando lo que de verdad llegó y concilia la factura a 3 vías contra la orden y la recepción. Se acaba el \"pedí 100, llegaron 87 y me cobraron 100\".",
-      "image": "/images/ordenes-de-compra-hero.webp",
-      "imageAlt": "Gerente de compras revisando orden de compra en SACS con proveedor en pantalla"
+      "image": "/images/ordenes-de-compra-sistema.webp",
+      "imageAlt": "Módulo de ordenes de compra en SACS"
     },
     "features": [
       {
@@ -3978,7 +3978,7 @@ export const pageContent: Record<string, any> = {
         "label": "Generar OC",
         "title": "De proveedor a orden enviada, en minutos",
         "description": "Eliges proveedor (con sus términos precargados), agregas líneas buscando por nombre, SKU o código —o las traes desde un CFDI con OCR y alta rápida de productos— confirmas en Revisión y al enviar sale el PDF con tu marca por correo y se prepara la CxP.",
-        "image": "",
+        "image": "/images/ordenes-de-compra-sistema-tab.webp",
         "imageAlt": "Pantalla de generación de orden de compra en SACS",
         "link": null,
         "details": [
@@ -4456,8 +4456,8 @@ export const pageContent: Record<string, any> = {
       "eyebrow": "SACS Cuentas por Pagar",
       "title": "Sabes a quién le debes, cuánto y cuándo vence.",
       "subtitle": "Tus pagos a proveedores y gastos programados en una sola pantalla: saldo vivo por beneficiario, vencimientos en calendario y pagos parciales o totales que bajan el saldo al instante. Dejas de enterarte de una factura vencida cuando te marcan.",
-      "image": "/images/cuentas-por-pagar-hero.webp",
-      "imageAlt": "Administrador revisando cuentas por pagar con proveedor en tablet SACS"
+      "image": "/images/cuentas-por-pagar-sistema.webp",
+      "imageAlt": "Módulo de cuentas por pagar en SACS"
     },
     "features": [
       {
@@ -4543,7 +4543,7 @@ export const pageContent: Record<string, any> = {
         "label": "Lista y saldos",
         "title": "Cada cuenta, su saldo, su urgencia.",
         "description": "Ves todas tus cuentas por pagar con beneficiario, monto, vencimiento y estado. Filtras por sucursal, beneficiario, tipo o folio, y agrupas por beneficiario para ver cuánto le debes a cada uno. El saldo se recalcula con cada pago.",
-        "image": "",
+        "image": "/images/cuentas-por-pagar-sistema-tab.webp",
         "imageAlt": "Pantalla de facturas por pagar por proveedor en SACS",
         "link": null,
         "details": [
@@ -4736,8 +4736,8 @@ export const pageContent: Record<string, any> = {
       "eyebrow": "SACS Reportes y Analítica",
       "title": "Todos los reportes de tu negocio, en una sola pantalla.",
       "subtitle": "Un hub con tus reportes agrupados por área —ventas, cobros, clientes, inventario, caja— y un reporte de ventas con filtros por sucursal, vendedor y periodo que se exporta a Excel con el mismo corte que ves. Sin pedirle el reporte al contador.",
-      "image": "/images/reportes-y-analitica-hero.webp",
-      "imageAlt": "Dueña revisando reportes de ventas por sucursal en tablet SACS"
+      "image": "/images/reportes-y-analitica-sistema.webp",
+      "imageAlt": "Módulo de reportes y analitica en SACS"
     },
     "features": [
       {
@@ -4823,7 +4823,7 @@ export const pageContent: Record<string, any> = {
         "label": "Hub de reportes",
         "title": "Todos tus reportes, agrupados por área.",
         "description": "Abres 'Reportes' y ves tus reportes ordenados por categoría: Punto de Venta, Ventas, Cobros, Clientes, Inventario, Campañas de Impulso y otros. Buscas por nombre y entras al que necesitas en un clic —sin recordar dónde estaba cada uno.",
-        "image": "",
+        "image": "/images/reportes-y-analitica-sistema-tab.webp",
         "imageAlt": "Dashboard principal de SACS mostrando KPIs, ventas por hora y tabs de actualizaciones",
         "link": null,
         "details": [
@@ -5292,8 +5292,8 @@ export const pageContent: Record<string, any> = {
       "eyebrow": "SACS Programa de Lealtad",
       "title": "Puntos para subir de nivel. Cashback para volver a comprar.",
       "subtitle": "Dos sistemas en uno: los puntos definen el nivel del cliente y el cashback es dinero real que gasta en su próxima compra. Lo configuras una vez en un asistente paso a paso y SACS lo aplica al cobrar —sin apps de terceros ni kioskos aparte.",
-      "image": "/images/lealtad-hero.webp",
-      "imageAlt": "Cajera aplicando puntos de lealtad en POS SACS mientras clienta paga"
+      "image": "/images/programa-de-lealtad-sistema.webp",
+      "imageAlt": "Módulo de programa de lealtad en SACS"
     },
     "features": [
       {
@@ -5379,7 +5379,7 @@ export const pageContent: Record<string, any> = {
         "label": "Configurar",
         "title": "Un asistente, no una hoja de cálculo.",
         "description": "El wizard te lleva paso a paso: porcentaje de puntos y de cashback con vista previa en vivo, niveles, membresías, recompensas y expiración. Configuras una vez y queda guardado para todas tus sucursales.",
-        "image": "",
+        "image": "/images/programa-de-lealtad-sistema-tab.webp",
         "imageAlt": "Pantalla de reglas de acumulación de puntos en SACS",
         "link": null,
         "details": [
@@ -5572,8 +5572,8 @@ export const pageContent: Record<string, any> = {
       "eyebrow": "SACS Portal de Clientes · En piloto",
       "title": "Tu portal de clientes, con tu marca. Para que se atiendan solos.",
       "subtitle": "Dale a cada cliente su propio portal digital: consulta sus puntos, su cashback, su nivel, su historial de compras y sus facturas, bajo tu logo, tu color y hasta tu propio dominio. Lo configuras en minutos con un asistente de 2 pasos, compartes el link (o el QR) y tus clientes resuelven solos lo que hoy te llena el WhatsApp.",
-      "image": "/images/portal-hero.webp",
-      "imageAlt": "Clienta consultando su portal de lealtad personalizado de marca en móvil"
+      "image": "/images/portal-de-clientes-sistema.webp",
+      "imageAlt": "Módulo de portal de clientes en SACS"
     },
     "features": [
       {
@@ -5661,7 +5661,7 @@ export const pageContent: Record<string, any> = {
         "label": "Branding y dominio",
         "title": "Un portal que se siente tuyo, porque lo es",
         "description": "Sube tu logo y favicon, elige tu color principal y escribe el mensaje de bienvenida con preview en vivo. Agrega banners promocionales con título, subtítulo, botón y enlace. Conecta tu propio dominio con la tabla DNS (CNAME a sacscloudwallet.com) y guías por proveedor (GoDaddy, Namecheap), o usa tu link sacscloudwallet.com/tucuenta.",
-        "image": "",
+        "image": "/images/portal-de-clientes-sistema-tab.webp",
         "imageAlt": "Editor de branding del portal de clientes en SACS",
         "link": null,
         "details": [
@@ -5854,8 +5854,8 @@ export const pageContent: Record<string, any> = {
       "eyebrow": "SACS Tarjetas de Regalo · Piloto",
       "title": "Tarjetas de regalo que viven dentro de tu sistema, no en un proveedor externo.",
       "subtitle": "Emite tarjetas físicas y digitales con código y PIN, véndelas en el POS y cóbralas con su saldo en cualquier sucursal. SACS crea solo el producto y el método de pago; tú solo emites, vendes y redimes. Sin comisiones por transacción.",
-      "image": "/images/tarjetas-hero.webp",
-      "imageAlt": "Tarjeta de regalo física de boutique SACS junto a versión digital en móvil"
+      "image": "/images/tarjetas-de-regalo-sistema.webp",
+      "imageAlt": "Módulo de tarjetas de regalo en SACS"
     },
     "features": [
       {
@@ -5941,7 +5941,7 @@ export const pageContent: Record<string, any> = {
         "label": "Tarjetas",
         "title": "Todas tus tarjetas, por estado y código",
         "description": "La lista filtra por estado (Activas, Inactivas, Agotadas, Desactivadas, Expiradas) y por tipo físico o digital, y busca por código. Cada fila muestra saldo, monto inicial, vencimiento y fecha de emisión; al abrirla ves su detalle y movimientos.",
-        "image": "",
+        "image": "/images/tarjetas-de-regalo-sistema-tab.webp",
         "imageAlt": "Tarjetas físicas de regalo con diseño de marca en exhibidor de tienda",
         "link": null,
         "details": [
@@ -6976,8 +6976,8 @@ export const pageContent: Record<string, any> = {
       "eyebrow": "SACS Especialista IA · Programa piloto",
       "title": "Pregúntale a tu negocio. SACS te responde con tus datos reales.",
       "subtitle": "Un asistente de inteligencia artificial dentro de tu ERP que entiende lenguaje natural y consulta tu información real: ventas del día, top de productos y clientes, mejor vendedor, comparativo por sucursal. Escribes una pregunta, recibes la respuesta — sin armar reportes.",
-      "image": "/images/especialista-ia-hero.webp",
-      "imageAlt": "Especialista SACS en sesión de trabajo con dueña de retail revisando automatizaciones"
+      "image": "/images/especialista-ia-sistema.webp",
+      "imageAlt": "Módulo de especialista ia en SACS"
     },
     "features": [
       {
@@ -7060,7 +7060,7 @@ export const pageContent: Record<string, any> = {
         "label": "Pregunta libre",
         "title": "Escribe lo que quieras saber de tu operación",
         "description": "El asistente interpreta tu pregunta en lenguaje natural y consulta tu información real para responderte: cifras de ventas, ranking de productos y clientes, desempeño de vendedores y comparativos por ubicación. La respuesta llega formateada y lista para leer.",
-        "image": "",
+        "image": "/images/especialista-ia-sistema-tab.webp",
         "imageAlt": "Especialista SACS en visita a tienda observando flujo operativo",
         "link": null,
         "details": [
@@ -7253,8 +7253,8 @@ export const pageContent: Record<string, any> = {
       "eyebrow": "SACS AXO · Copiloto IA · Early access",
       "title": "Pregúntale a tu negocio. Te responde con tus números reales.",
       "subtitle": "El Asistente IA de SACS vive dentro de tu sistema. Le escribes o le dictas \"¿cuánto vendí hoy?\", \"¿qué se está agotando?\", \"¿quién es mi mejor cliente?\" y consulta tus datos al instante: ventas, inventario y clientes, con tarjetas y gráficas. En early access con retailers seleccionados.",
-      "image": "/images/axo-copiloto-ia-hero.webp",
-      "imageAlt": "Interfaz de AXO respondiendo preguntas operativas dentro de SACS"
+      "image": "/images/axo-copiloto-ia-sistema.webp",
+      "imageAlt": "Módulo de axo copiloto ia en SACS"
     },
     "features": [
       {
@@ -7336,7 +7336,7 @@ export const pageContent: Record<string, any> = {
         "label": "Preguntar",
         "title": "Las preguntas de todos los días, contestadas al instante",
         "description": "Empiezas con sugerencias listas (\"¿Cuánto vendí hoy?\", \"¿Qué se está agotando?\", \"Top 5 productos del mes\", \"¿Quién es mi mejor cliente?\") o escribes la tuya. La IA mantiene el hilo: si luego preguntas \"y en la otra sucursal\", entiende que sigues en el mismo tema. Solo consulta; nunca toca ni modifica tus datos.",
-        "image": "",
+        "image": "/images/axo-copiloto-ia-sistema-tab.webp",
         "imageAlt": "Panel de chat de AXO con pregunta en lenguaje natural, respuesta con KPIs de ventas +12%, ticket y clientes activos, y cita de fuente",
         "link": null,
         "details": [
