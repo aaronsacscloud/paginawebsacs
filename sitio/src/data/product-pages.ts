@@ -3136,6 +3136,11 @@ export const pageContent: Record<string, any> = {
         subtitle: 'Sube el XML o una foto del ticket y SACS llena el gasto por ti. Sin duplicados, con recordatorio de lo que viene (renta, luz, nómina) y el flujo de caja proyectado a 30 días. Tu contador recibe todo ordenado y tu utilidad deja de ser un misterio.',
         image: '/images/gastos-sistema-lista.webp',
         imageAlt: 'Módulo de Gastos de SACS: total por pagar, filtros y tabla de gastos por estado',
+        video: {
+          mp4: '/videos/gastos-hero.mp4',
+          webm: '/videos/gastos-hero.webm',
+        },
+        videoPoster: '/videos/gastos-hero-poster.webp',
       },
       features: [
         {
@@ -3215,8 +3220,8 @@ export const pageContent: Record<string, any> = {
           label: 'Captura y categorías',
           title: 'Gasto capturado al momento, nunca al final del mes.',
           description: 'El equipo de piso tiene la app, sube la foto del comprobante y elige la categoría correcta. Si es recurrente, la plantilla lo deja casi listo con un toque.',
-          image: '',
-          imageAlt: 'Pantalla de captura de gastos en app móvil SACS',
+          image: '/images/gastos-tab-captura.webp',
+          imageAlt: 'Wizard Nuevo Gasto de SACS: registrar Manual, con Recibo (foto + IA) o con Factura (XML)',
           link: null,
           details: [
             {
@@ -3255,8 +3260,8 @@ export const pageContent: Record<string, any> = {
           label: 'Autorización y control',
           title: 'Nada se paga sin la firma correcta.',
           description: 'Topes por usuario, categoría y sucursal. Arriba del tope, la autorización es obligatoria — con PIN, motivo y bitácora inalterable.',
-          image: '',
-          imageAlt: 'Pantalla de autorización con reglas de monto en SACS',
+          image: '/images/gastos-tab-autorizacion.webp',
+          imageAlt: 'Detalle de gasto en SACS: requiere aprobación, alertas de presupuesto y bitácora de actividad',
           link: null,
           details: [
             {
@@ -3295,8 +3300,8 @@ export const pageContent: Record<string, any> = {
           label: 'Reportes y cierre',
           title: 'Cierre de mes sin la noche del contador.',
           description: 'Los gastos están categorizados, con comprobante y autorizados. El reporte se exporta a Excel o a tu sistema contable — sin capturar nada dos veces.',
-          image: '',
-          imageAlt: 'Reporte mensual de gastos exportable en SACS',
+          image: '/images/gastos-tab-reportes.webp',
+          imageAlt: 'Listado de gastos en SACS con totales, filtros y estados — base del cierre de mes',
           link: null,
           details: [
             {
