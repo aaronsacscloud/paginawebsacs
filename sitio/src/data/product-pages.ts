@@ -647,7 +647,7 @@ export const pageContent: Record<string, any> = {
         "label": "Descuento básico",
         "title": "Lo simple, desplegado a escala.",
         "description": "Porcentaje o monto fijo, por unidad o al total del ticket. Aplícalo donde necesites, cuando necesites, con las reglas que necesites.",
-        "image": "",
+        "image": "/images/promo-hero.webp",
         "imageAlt": "Configuración de descuento básico en SACS POS",
         "video": {
           "mp4": "/videos/promo-basico.mp4",
@@ -693,7 +693,7 @@ export const pageContent: Record<string, any> = {
         "label": "Con activador",
         "title": "Compra esto, llévate aquello. Como sea que lo imagines.",
         "description": "Activador por cantidad de items o por monto gastado. El beneficio puede ser items gratis, % de descuento, precio fijo o puntos de lealtad. Toda la gimnasia del retail cubierta.",
-        "image": "",
+        "image": "/images/promo-hero.webp",
         "imageAlt": "Configuración de promoción avanzada con activador en SACS POS",
         "video": {
           "mp4": "/videos/promo-avanzado.mp4",
@@ -739,7 +739,7 @@ export const pageContent: Record<string, any> = {
         "label": "Progresivo",
         "title": "Más lleva, más se ahorra. Automático.",
         "description": "Pieza 2 a -10%, pieza 3 a -20%, pieza 4 a -30%. SACS escala el descuento solo, sin fórmulas, sin hojas de cálculo, sin que el cajero haga la resta.",
-        "image": "",
+        "image": "/images/promo-hero.webp",
         "imageAlt": "Configuración de descuento progresivo escalonado en SACS POS",
         "video": {
           "mp4": "/videos/promo-progresivo.mp4",
@@ -1161,7 +1161,7 @@ export const pageContent: Record<string, any> = {
         "label": "Apartado clásico",
         "title": "Aparta, recuerda, cobra y entrega — sin pensarlo.",
         "description": "Configura políticas de anticipo y plazo una vez, y deja que el sistema lleve el control: recordatorios, vencimientos, extensiones y conversión a venta automática al terminar de pagar.",
-        "image": "",
+        "image": "/images/apartados-hero.webp",
         "imageAlt": "Pantalla de configuración de apartados en SACS POS",
         "video": {
           "mp4": "/videos/configuracion-pedidos.mp4",
@@ -1207,7 +1207,7 @@ export const pageContent: Record<string, any> = {
         "label": "Pagos parciales",
         "title": "Abonos sin caos. Cada pago, rastreado.",
         "description": "El cliente puede venir a abonar las veces que quiera. Cada movimiento queda registrado con método, sucursal y vendedor, y el saldo se recalcula al segundo.",
-        "image": "",
+        "image": "/images/apartados-hero.webp",
         "imageAlt": "Pantalla de historial de pagos parciales en SACS",
         "video": {
           "mp4": "/videos/abonos-pos.mp4",
@@ -1253,7 +1253,7 @@ export const pageContent: Record<string, any> = {
         "label": "Pedido especial",
         "title": "Vende lo que todavía no tienes en piso.",
         "description": "Toma el pedido, cobra el anticipo y conecta el apartado con tu orden de compra al proveedor. Cuando el producto entra, el cliente ya fue notificado — y el saldo lo paga al retirar.",
-        "image": "",
+        "image": "/images/apartados-hero.webp",
         "imageAlt": "Pantalla de pedido especial bajo orden en SACS",
         "video": {
           "mp4": "/videos/backorders-pedidos.mp4",
@@ -1585,7 +1585,7 @@ export const pageContent: Record<string, any> = {
       {
         "title": "WhatsApp Commerce nativo, sin chatbot rentado.",
         "description": "WhatsApp Business + Stripe + tu catálogo de SACS, en una sola conversación. El cliente escribe \"hola\", AXO responde con menú, arma el pedido, cobra con link y devuelve el ticket — con factura si la pide. Sin salir del chat.",
-        "image": "",
+        "image": "/images/screen-pos.webp",
         "imageAlt": "Conversación de WhatsApp Business con catálogo SACS y link de pago Stripe",
         "link": {
           "label": "Ver Marketing por WhatsApp",
@@ -1611,7 +1611,7 @@ export const pageContent: Record<string, any> = {
       {
         "title": "Tu catálogo del POS, etiquetado en TikTok, Instagram y Facebook.",
         "description": "Conectas tu cuenta una vez y SACS publica tus productos como Shop nativo. Etiquetas un Reel, un Story, un post o un live — y el cliente compra sin salir de la red. La venta cae en el mismo dashboard que tus tiendas físicas.",
-        "image": "",
+        "image": "/images/screen-pos.webp",
         "imageAlt": "Pantalla de Instagram Shop con productos etiquetados desde el catálogo SACS",
         "link": {
           "label": "Ver Tienda en Línea",
@@ -1637,7 +1637,7 @@ export const pageContent: Record<string, any> = {
       {
         "title": "Live shopping con stock real, no con promesas.",
         "description": "Durante un live en TikTok o Instagram, cada vez que un usuario aparta una pieza, SACS la reserva en el inventario al instante — sin sobreventa, sin \"ay, ya no me tocó\". Al final del live, las piezas reservadas se cobran o se liberan según la regla que configures.",
-        "image": "",
+        "image": "/images/screen-pos.webp",
         "imageAlt": "Live de TikTok con conteo de stock reservado en tiempo real desde SACS",
         "link": null,
         "featured": true,
@@ -1660,7 +1660,7 @@ export const pageContent: Record<string, any> = {
       {
         "title": "DM y comentarios convertidos en cobro, sin tocar el celular.",
         "description": "Cliente comenta \"precio\" o manda DM \"¿tienen la talla 6?\". AXO contesta con stock real, sugiere la pieza, arma el carrito y manda el link. Tú no abres el chat — pero al final del día, las ventas ya están en SACS con factura, comisión y stock descontado.",
-        "image": "",
+        "image": "/images/screen-pos.webp",
         "imageAlt": "DM de Instagram automatizado por AXO con sugerencia de productos y link de pago",
         "link": {
           "label": "Ver AXO Copiloto IA",
@@ -1699,7 +1699,7 @@ export const pageContent: Record<string, any> = {
         "label": "WhatsApp Commerce",
         "title": "Del primer \"hola\" al ticket pagado, sin salir del chat.",
         "description": "WhatsApp Business + Stripe + tu catálogo SACS, en una sola conversación. AXO atiende, arma carrito, cobra y manda factura — todo en el mismo hilo que ya tienes con tu cliente.",
-        "image": "",
+        "image": "/images/screen-pos.webp",
         "imageAlt": "Pantalla de WhatsApp Business con bot AXO procesando pedido y cobro",
         "link": {
           "label": "Ver Marketing por WhatsApp",
@@ -1742,7 +1742,7 @@ export const pageContent: Record<string, any> = {
         "label": "Live & Social Shop",
         "title": "Tag de producto, live shopping, comentarios que venden.",
         "description": "Conecta TikTok, Instagram y Facebook una vez. Tu catálogo aparece etiquetado en posts, Reels, Stories y lives. Cada venta cae en SACS — con comisión, factura y descuento de stock.",
-        "image": "",
+        "image": "/images/screen-pos.webp",
         "imageAlt": "Reel de Instagram con tag de producto y panel SACS mostrando ventas por canal",
         "link": {
           "label": "Ver Tienda en Línea",
@@ -1785,7 +1785,7 @@ export const pageContent: Record<string, any> = {
         "label": "Comments-to-cart con AXO",
         "title": "El comentario \"lo quiero\" ya es una venta cerrada.",
         "description": "AXO escucha comentarios de Instagram, TikTok y Facebook, identifica intención de compra y manda link de pago por DM. Sin que tú abras la app, sin que el cliente se pierda buscando.",
-        "image": "",
+        "image": "/images/screen-pos.webp",
         "imageAlt": "Comentario \"lo quiero\" en Instagram convertido a DM con link de pago por AXO",
         "link": {
           "label": "Ver AXO Copiloto IA",
@@ -2219,7 +2219,7 @@ export const pageContent: Record<string, any> = {
         "label": "Catálogo y stock",
         "title": "El mismo producto, el mismo precio, el mismo stock.",
         "description": "Crea una vez, vende en todos lados. Las variantes, las fotos, los precios y el stock viven en una sola base — no hay \"versión online\" distinta de la \"versión tienda\".",
-        "image": "",
+        "image": "/images/tienda-online-hero.webp",
         "imageAlt": "Pantalla de administración de catálogo en SACS",
         "link": null,
         "details": [
@@ -2259,7 +2259,7 @@ export const pageContent: Record<string, any> = {
         "label": "Checkout y pagos",
         "title": "El cliente paga fácil. Tú recibes limpio.",
         "description": "Stripe Connect configurado en minutos, Apple Pay y Google Pay activos por default, y una mesa de pagos que tu contador entiende desde el primer reporte.",
-        "image": "",
+        "image": "/images/tienda-online-hero.webp",
         "imageAlt": "Pantalla de checkout online y configuración Stripe en SACS",
         "link": null,
         "details": [
@@ -2299,7 +2299,7 @@ export const pageContent: Record<string, any> = {
         "label": "Retiro en tienda",
         "title": "Tu red física ya es tu red de entrega.",
         "description": "Click & collect aprovecha tus sucursales actuales — cero flota, cero paquetería. El cliente paga online, elige tienda, retira con QR, y tú ahorras costo de envío en todos esos pedidos.",
-        "image": "",
+        "image": "/images/tienda-online-hero.webp",
         "imageAlt": "Pantalla de pickup / click-and-collect en SACS",
         "link": null,
         "details": [
@@ -2560,7 +2560,7 @@ export const pageContent: Record<string, any> = {
         "label": "Motores de IA",
         "title": "Un catálogo, presente en todos los motores generativos.",
         "description": "ChatGPT, Gemini, Perplexity, Claude y Bing Copilot — cada uno con su protocolo, todos consumiendo el mismo catálogo SACS. No tienes que mantener un feed por plataforma ni aprender los formatos de cada uno.",
-        "image": "",
+        "image": "/images/agentic-hero.webp",
         "imageAlt": "Mapa de motores de IA conectados al catálogo SACS",
         "link": null,
         "details": [
@@ -2600,7 +2600,7 @@ export const pageContent: Record<string, any> = {
         "label": "Feeds y estructura",
         "title": "Schema y feeds, generados solos.",
         "description": "Cada producto del catálogo sale con su metadata estructurada al instante. Cero hojas de cálculo, cero plugins, cero copy-paste entre plataformas. SACS valida cada feed contra los esquemas oficiales antes de publicar.",
-        "image": "",
+        "image": "/images/agentic-hero.webp",
         "imageAlt": "Vista de feeds y schemas generados desde catálogo SACS",
         "link": null,
         "details": [
@@ -2640,7 +2640,7 @@ export const pageContent: Record<string, any> = {
         "label": "Atribución y reportes",
         "title": "De qué IA viene cada cliente — y qué vendió.",
         "description": "AEO Analytics nativo. Cada visita y cada venta queda etiquetada con su origen: motor de IA, query original, producto consultado. Reportes separados por motor para que sepas dónde invertir.",
-        "image": "",
+        "image": "/images/agentic-hero.webp",
         "imageAlt": "Reporte de atribución por motor de IA en SACS",
         "link": null,
         "details": [
@@ -2851,7 +2851,7 @@ export const pageContent: Record<string, any> = {
         "label": "Emisión CFDI",
         "title": "Timbrado en línea. Sin software externo.",
         "description": "Integración directa con Facturama y Quadrum (PACs autorizados por el SAT). Prodigia, FinKok y Edicom entran bajo demanda conforme los piden nuestros clientes.",
-        "image": "",
+        "image": "/images/factura-hero.webp",
         "imageAlt": "Pantalla de emisión CFDI 4.0 en SACS",
         "link": null,
         "details": [
@@ -2891,7 +2891,7 @@ export const pageContent: Record<string, any> = {
         "label": "Autofacturación",
         "title": "Tu cliente hace el trabajo. Con tu marca.",
         "description": "Portal de autofacturación con tu logo, tus colores y tu dominio. El cliente escanea el QR del ticket, captura datos, recibe el CFDI.",
-        "image": "",
+        "image": "/images/factura-hero.webp",
         "imageAlt": "Portal de autofacturación con marca del comercio en SACS",
         "link": null,
         "details": [
@@ -2931,7 +2931,7 @@ export const pageContent: Record<string, any> = {
         "label": "Notas y conciliación",
         "title": "Devoluciones y pagos parciales, cubiertos.",
         "description": "Nota de crédito ligada a la factura madre, complemento de pago por cada abono en crédito, y un reporte que tu contador exporta sin armar pivotes.",
-        "image": "",
+        "image": "/images/factura-hero.webp",
         "imageAlt": "Pantalla de notas de crédito y complementos de pago en SACS",
         "link": null,
         "details": [
@@ -3185,7 +3185,7 @@ export const pageContent: Record<string, any> = {
         "label": "Filtra y consolida",
         "title": "Toda la red, o solo una sucursal.",
         "description": "Filtra por sucursal y almacén, alterna entre vista por-sucursal y por-producto consolidado, aplica filtros numéricos y de texto avanzados y ordena por la columna que te importe (stock, costo, valor, rotación).",
-        "image": "",
+        "image": "/images/inventario-omnicanal-sistema-tab.webp",
         "imageAlt": "Pantalla de inventario por sucursal en SACS",
         "link": null,
         "details": [
@@ -3225,7 +3225,7 @@ export const pageContent: Record<string, any> = {
         "label": "Reorden y exporta",
         "title": "Repón a tiempo y entrega el reporte.",
         "description": "El reporte de Puntos de Reorden te da stock de seguridad y cantidad sugerida por SKU; la Valorización compara costo PPP vs FIFO. Todo se exporta a Excel y PDF para compras y contabilidad.",
-        "image": "",
+        "image": "/images/inventario-omnicanal-sistema-tab.webp",
         "imageAlt": "Pantalla de estados de stock en tránsito en SACS",
         "link": null,
         "details": [
@@ -3462,7 +3462,7 @@ export const pageContent: Record<string, any> = {
         "label": "Control durante el conteo",
         "title": "Bloquea existencias y controla quién contó",
         "description": "Oculta las existencias de ese almacén en todos los módulos mientras cuentas, para que nadie se base en el teórico. Decide si consideras apartados y revisa en cada producto quién lo contó y cuándo. Para los no contados eliges omitir o contabilizar a cero.",
-        "image": "",
+        "image": "/images/conteo-fisico-sistema-tab.webp",
         "imageAlt": "Panel de supervisión de conteo en SACS",
         "link": null,
         "details": [
@@ -3502,7 +3502,7 @@ export const pageContent: Record<string, any> = {
         "label": "Cierre y trazabilidad",
         "title": "Resumen, exportación y ajuste registrado",
         "description": "El resumen muestra la diferencia total en unidades y en costo. Expórtalo a Excel o imprime el PDF configurando qué columnas incluir. Al finalizar, cada ajuste se asienta en el Kardex con motivo y referencia al folio del conteo, listo para auditar.",
-        "image": "",
+        "image": "/images/conteo-fisico-sistema-tab.webp",
         "imageAlt": "Reporte de diferencias y ajustes de conteo físico en SACS",
         "link": null,
         "details": [
@@ -3738,7 +3738,7 @@ export const pageContent: Record<string, any> = {
         "label": "Decisión",
         "title": "La mesa donde decides con datos.",
         "description": "Resultado paginado y filtrable: producto, sucursal, clase ABC, confianza, cobertura actual, déficit y cantidad sugerida editable. Filtra por excepción (confianza baja, cantidad atípica, monto que excede) y aprueba o excluye por filtro completo.",
-        "image": "",
+        "image": "/images/nivelacion-de-inventario-sistema-tab.webp",
         "imageAlt": "Configurador de reglas de nivelación",
         "link": null,
         "details": [
@@ -3778,7 +3778,7 @@ export const pageContent: Record<string, any> = {
         "label": "Ejecución",
         "title": "De aprobado a en camino.",
         "description": "Las líneas aprobadas se vuelven transferencias reales en un clic, sin duplicar ni mover dos veces lo mismo. También puedes dejar la nivelación corriendo en automático y programada para que la propuesta esté lista sola.",
-        "image": "",
+        "image": "/images/nivelacion-de-inventario-sistema-tab.webp",
         "imageAlt": "Seguimiento de ejecución de traspaso de nivelación en SACS",
         "link": null,
         "details": [
@@ -4018,7 +4018,7 @@ export const pageContent: Record<string, any> = {
         "label": "Recibir",
         "title": "Recibe lo que de verdad llegó",
         "description": "En la pestaña de Recepción capturas lo recibido por línea con lote y caducidad. SACS muestra ordenado, recibido y diferencia, deja la orden como recibida o parcial y da entrada a inventario al último costo. ¿Otra variante? La cambias en el momento.",
-        "image": "",
+        "image": "/images/ordenes-de-compra-sistema-tab.webp",
         "imageAlt": "Pantalla de recepción de mercancía contra OC en SACS",
         "link": null,
         "details": [
@@ -4058,7 +4058,7 @@ export const pageContent: Record<string, any> = {
         "label": "Conciliar y pagar",
         "title": "Cruza la factura antes de pagar",
         "description": "Sueltas el XML/CFDI y SACS concilia a 3 vías contra la orden y la recepción: te marca RFC, total, moneda, IVA, retenciones y diferencias por línea. Verificas ante el SAT, registras el pago de la cuenta por pagar y solo pagas lo que coincide.",
-        "image": "",
+        "image": "/images/ordenes-de-compra-sistema-tab.webp",
         "imageAlt": "Ficha de proveedor con indicadores de desempeño en SACS",
         "link": null,
         "details": [
@@ -4583,7 +4583,7 @@ export const pageContent: Record<string, any> = {
         "label": "Calendario",
         "title": "Qué vence esta semana, sin sorpresas.",
         "description": "Cambias a la vista de calendario y ves los vencimientos repartidos por día. Planeas el flujo de caja con anticipación y pagas a tiempo en lugar de enterarte cuando ya estás vencido.",
-        "image": "",
+        "image": "/images/cuentas-por-pagar-sistema-tab.webp",
         "imageAlt": "Aplicación de pago a facturas de proveedor en SACS",
         "link": null,
         "details": [
@@ -4623,7 +4623,7 @@ export const pageContent: Record<string, any> = {
         "label": "Detalle y pago",
         "title": "Abres la cuenta y pagas desde ahí.",
         "description": "El detalle muestra el cronograma de parcialidades, el historial de pagos, los documentos adjuntos y una conversación interna con menciones para coordinar con tu equipo. Registras el pago en el mismo lugar y, si lo necesitas, imprimes el estado de cuenta.",
-        "image": "",
+        "image": "/images/cuentas-por-pagar-sistema-tab.webp",
         "imageAlt": "Aplicación de nota de crédito contra factura de proveedor en SACS",
         "link": null,
         "details": [
@@ -4863,7 +4863,7 @@ export const pageContent: Record<string, any> = {
         "label": "Ventas con filtros",
         "title": "Filtra, ordena y contesta en la misma tabla.",
         "description": "El reporte de ventas trae un panel de filtros por sucursal, vendedor, fecha y periodo. Aplicas, los filtros se quedan visibles como chips, ordenas por cualquier columna y ves el desglose con importe, descuentos, impuestos, costo y ganancia.",
-        "image": "",
+        "image": "/images/reportes-y-analitica-sistema-tab.webp",
         "imageAlt": "Reporte detallado de ventas en SACS",
         "link": null,
         "details": [
@@ -4903,7 +4903,7 @@ export const pageContent: Record<string, any> = {
         "label": "Exportar a Excel",
         "title": "A Excel con el mismo corte que ves.",
         "description": "Un clic en Exportar abre el modal de descarga a Excel (.xlsx). SACS toma los mismos filtros y columnas de la pantalla, cuenta los registros y descarga por bloques para que tu contador reciba exactamente los números que tú estás viendo.",
-        "image": "",
+        "image": "/images/reportes-y-analitica-sistema-tab.webp",
         "imageAlt": "Reporte de inventario y rotación en SACS",
         "link": null,
         "details": [
@@ -5099,7 +5099,7 @@ export const pageContent: Record<string, any> = {
         "label": "Perfil",
         "title": "Todo lo que sabes del cliente, en una pantalla.",
         "description": "Datos básicos editables, KPIs de Total gastado y Ticket promedio, historial de Compras, Pedidos y Facturas, Saldo a favor, Puntos de lealtad y Notas del vendedor — sin refrescar y sin capturar dos veces.",
-        "image": "",
+        "image": "/images/clientes-crm-hero.webp",
         "imageAlt": "Perfil 360 de clienta con cabecera de KPIs (gastado, ticket, frecuencia), historial de compras, notas del equipo, apartados, saldo a favor y segmentos activos",
         "link": null,
         "details": [
@@ -5139,7 +5139,7 @@ export const pageContent: Record<string, any> = {
         "label": "Filtros",
         "title": "Encuentra a tus clientes como en un CRM.",
         "description": "Filtros combinables por tipo de cliente, sucursal y etiquetas, puntos de lealtad, crédito disponible o utilizado, saldo pendiente y rango de última venta. Revisa el resultado y expórtalo para contactar.",
-        "image": "",
+        "image": "/images/clientes-crm-hero.webp",
         "imageAlt": "Pantalla de creación de segmentos con filtros combinables en SACS",
         "link": null,
         "details": [
@@ -5179,7 +5179,7 @@ export const pageContent: Record<string, any> = {
         "label": "Crédito y lealtad",
         "title": "Crédito, puntos y monedero, por cliente.",
         "description": "Configura límite y línea de crédito, consulta el estado de cuenta de su CXC con cargos y abonos, y administra su tarjeta de lealtad: nivel, multiplicador, puntos acumulados y saldo a favor.",
-        "image": "",
+        "image": "/images/clientes-crm-hero.webp",
         "imageAlt": "Pantalla de activación de segmento con canales en SACS",
         "link": null,
         "details": [
@@ -5419,7 +5419,7 @@ export const pageContent: Record<string, any> = {
         "label": "Multiplicadores",
         "title": "Premia lo que tú quieres mover.",
         "description": "Multiplicadores de puntos por categoría (joyería 2x, ropa 1x), por método de pago, promociones temporales con fecha de inicio y fin, y beneficios exclusivos asignados a cada nivel.",
-        "image": "",
+        "image": "/images/programa-de-lealtad-sistema-tab.webp",
         "imageAlt": "Pantalla de canje de puntos en POS SACS",
         "link": null,
         "details": [
@@ -5459,7 +5459,7 @@ export const pageContent: Record<string, any> = {
         "label": "Analizar",
         "title": "Mide si el programa de verdad funciona.",
         "description": "El dashboard muestra clientes activos, puntos activos, cashback pendiente y redimido, tasa de participación, recompensas canjeadas y cómo se reparten tus clientes entre los niveles.",
-        "image": "",
+        "image": "/images/programa-de-lealtad-sistema-tab.webp",
         "imageAlt": "Pantalla de configuración de niveles con beneficios en SACS",
         "link": null,
         "details": [
@@ -5701,7 +5701,7 @@ export const pageContent: Record<string, any> = {
         "label": "Puntos y recompensas",
         "title": "Lealtad que el cliente consulta solo",
         "description": "El portal se alimenta de tu programa de lealtad: puntos por compra, cashback acumulado, niveles y recompensas que tú defines. Enciende o apaga cada sección (Historial de Puntos, Historial de Cashback, Recompensas Disponibles, Progreso de Nivel) según lo que quieras mostrar. Referidos y notificaciones push vienen en camino.",
-        "image": "",
+        "image": "/images/portal-de-clientes-sistema-tab.webp",
         "imageAlt": "Cliente usando portal para ver puntos, apartados e historial",
         "link": null,
         "details": [
@@ -5741,7 +5741,7 @@ export const pageContent: Record<string, any> = {
         "label": "Publicar y compartir",
         "title": "Tu link y tu QR, listos para repartir",
         "description": "Al publicar obtienes la URL de tu portal con botón de copiar y un código QR de alta resolución para descargar e imprimir en mostrador, etiquetas o redes. Enciende el dominio personalizado (Pro) cuando quieras y el portal sigue vivo en cualquier dispositivo, sin que tu equipo conteste 'cuántos puntos tengo'.",
-        "image": "",
+        "image": "/images/portal-de-clientes-sistema-tab.webp",
         "imageAlt": "Pantalla de acceso al portal con código OTP en móvil SACS",
         "link": null,
         "details": [
@@ -5981,7 +5981,7 @@ export const pageContent: Record<string, any> = {
         "label": "Detalle",
         "title": "Saldo y movimientos de una tarjeta",
         "description": "Abre cualquier tarjeta para ver su saldo disponible, estado y vencimiento, junto con el historial completo de movimientos: emisión, redenciones, recargas y ajustes. Desde aquí puedes ajustar o desactivar la tarjeta.",
-        "image": "",
+        "image": "/images/tarjetas-de-regalo-sistema-tab.webp",
         "imageAlt": "Pantalla de compra de tarjeta de regalo digital con envío programado SACS",
         "link": null,
         "details": [
@@ -6021,7 +6021,7 @@ export const pageContent: Record<string, any> = {
         "label": "Configuración",
         "title": "Reglas de tus tarjetas en un lugar",
         "description": "Ajusta montos predefinidos, vencimiento en meses, recarga con tope, PIN y plantillas de diseño. SACS genera automáticamente el enlace público de consulta por QR y deja listos el producto de venta y el método de cobro en el POS.",
-        "image": "",
+        "image": "/images/tarjetas-de-regalo-sistema-tab.webp",
         "imageAlt": "Reporte de pasivo de tarjetas de regalo con balance histórico SACS",
         "link": null,
         "details": [
@@ -6224,7 +6224,7 @@ export const pageContent: Record<string, any> = {
         "label": "Carrito",
         "title": "El carrito abandonado, recuperado solo.",
         "description": "Configura los correos que salen cuando un cliente deja productos sin pagar en tu tienda en línea: tres plantillas, cada una con su descuento, su asunto editable con variables y preview en vivo. Se dispara solo, sin que muevas un dedo.",
-        "image": "",
+        "image": "/images/marketing-correo-hero.webp",
         "imageAlt": "Biblioteca de plantillas de email en SACS",
         "link": null,
         "details": [
@@ -6264,7 +6264,7 @@ export const pageContent: Record<string, any> = {
         "label": "Eventos",
         "title": "El cliente se entera, sin que tú escribas.",
         "description": "Define plantillas de correo por evento del negocio —pedido, pago— junto a tus avisos de WhatsApp. Cuando cambia el estatus, el correo sale. Transaccional, puntual, con la voz de tu marca.",
-        "image": "",
+        "image": "/images/marketing-correo-hero.webp",
         "imageAlt": "Pantalla de segmentos dinámicos de clientes en SACS",
         "link": null,
         "details": [
@@ -6304,7 +6304,7 @@ export const pageContent: Record<string, any> = {
         "label": "En piloto",
         "title": "Campañas segmentadas: lo estamos construyendo contigo.",
         "description": "El centro de campañas masivas por segmento (quién compró qué, quién no vuelve, tus VIP) está en piloto. No prometemos pantallas que aún no existen: dinos qué proveedor de correo usas y qué quieres mandar, y lo integramos en tu cuenta.",
-        "image": "",
+        "image": "/images/marketing-correo-hero.webp",
         "imageAlt": "Pantalla de flujos automáticos de email en SACS",
         "link": null,
         "details": [
@@ -6503,7 +6503,7 @@ export const pageContent: Record<string, any> = {
         "label": "Por evento",
         "title": "Cada momento del negocio, su aviso.",
         "description": "El catálogo cubre los eventos reales: ticket de compra, comprobante de pago, devolución, cambio y cancelación en el POS; pedido confirmado, abono, preparado, en camino y entregado; apartado creado, abono, recordatorio y liquidado; cotizaciones, eGift cards y más. Prendes solo los que te sirven.",
-        "image": "",
+        "image": "/images/marketing-whatsapp-hero.webp",
         "imageAlt": "Pantalla de conexión con BSP oficial de WhatsApp en SACS",
         "link": null,
         "details": [
@@ -6543,7 +6543,7 @@ export const pageContent: Record<string, any> = {
         "label": "Correo editable",
         "title": "El correo lo escribes tú.",
         "description": "Edita el asunto y el cuerpo de cada notificación por correo con variables como {{negocio}} y {{cliente}}. La tabla de productos, la promo y el pie se agregan automáticamente. El texto de WhatsApp lo administra SACS para mantener la plantilla aprobada por Meta.",
-        "image": "",
+        "image": "/images/marketing-whatsapp-hero.webp",
         "imageAlt": "Editor de plantillas de WhatsApp con variables dinámicas en SACS",
         "link": null,
         "details": [
@@ -6583,7 +6583,7 @@ export const pageContent: Record<string, any> = {
         "label": "Tu propio número",
         "title": "Personaliza el WhatsApp con SACS Inbox.",
         "description": "De fábrica el WhatsApp sale con la plantilla aprobada de SACS. ¿Quieres editar cada mensaje a tu marca, enviar desde tu propio número y quitar la firma publicitaria? Eso se habilita contratando SACS Inbox.",
-        "image": "",
+        "image": "/images/marketing-whatsapp-hero.webp",
         "imageAlt": "Pantalla de flujos automáticos de WhatsApp disparados por eventos en SACS",
         "link": null,
         "details": [
@@ -6823,7 +6823,7 @@ export const pageContent: Record<string, any> = {
         "label": "Pagos",
         "title": "Único, mensual o anual — tú eliges",
         "description": "Por cada membresía habilitas las opciones de pago que tengan sentido para tu negocio y les pones precio en MXN. Validamos que cada opción activa tenga su precio antes de guardar.",
-        "image": "",
+        "image": "/images/membresias-y-suscripciones-sistema-tab.webp",
         "imageAlt": "Configurador de niveles y beneficios de membresía en SACS",
         "link": null,
         "details": [
@@ -6863,7 +6863,7 @@ export const pageContent: Record<string, any> = {
         "label": "Niveles",
         "title": "El nivel manda los beneficios",
         "description": "La membresía hereda los beneficios del nivel: multiplicador de puntos, multiplicador de cashback y la lista de beneficios que escribas. Edita el nivel y todas sus membresías quedan al día.",
-        "image": "",
+        "image": "/images/membresias-y-suscripciones-sistema-tab.webp",
         "imageAlt": "Portal de miembro con historial de beneficios y próxima renovación en SACS",
         "link": null,
         "details": [
@@ -7100,7 +7100,7 @@ export const pageContent: Record<string, any> = {
         "label": "Accesos rápidos",
         "title": "Las consultas de siempre, a un clic",
         "description": "Sin escribir nada: las tarjetas de inicio disparan al instante las preguntas más comunes del retail — Ventas de Hoy, Ventas Semanales, Top 10 Productos, Top 10 Clientes, Mejor Vendedor y Ventas por Sucursal.",
-        "image": "",
+        "image": "/images/especialista-ia-sistema-tab.webp",
         "imageAlt": "Pantalla compartida construyendo workflow paso a paso",
         "link": null,
         "details": [
@@ -7140,7 +7140,7 @@ export const pageContent: Record<string, any> = {
         "label": "Historial y modelos",
         "title": "Retoma cualquier charla y ajusta el modelo",
         "description": "Todas tus conversaciones quedan guardadas y se pueden buscar por texto. Cambia el modelo de IA cuando lo necesites y, cuando un agente termina una tarea, recibes la notificación en tiempo real dentro del asistente.",
-        "image": "",
+        "image": "/images/especialista-ia-sistema-tab.webp",
         "imageAlt": "Reunión quincenal con especialista SACS revisando resultados del piloto",
         "link": null,
         "details": [
@@ -7376,7 +7376,7 @@ export const pageContent: Record<string, any> = {
         "label": "Voz y foto",
         "title": "Voz en piso, foto cuando la necesitas",
         "description": "Dictado por voz para preguntar sin teclear y lectura en voz alta para escuchar la respuesta mientras atiendes. Y con la cámara mandas una foto —un producto, un estante, un ticket o factura de proveedor— y la IA la interpreta en el contexto de tu negocio.",
-        "image": "",
+        "image": "/images/axo-copiloto-ia-sistema-tab.webp",
         "imageAlt": "Respuesta de AXO con tarjeta de cita expandida mostrando reporte fuente, tickets consultados y botón Abrir reporte",
         "link": null,
         "details": [
@@ -7416,7 +7416,7 @@ export const pageContent: Record<string, any> = {
         "label": "Actuar",
         "title": "De la respuesta a la acción, con tu visto bueno",
         "description": "Cuando la IA detecta algo accionable, te lo propone como \"Acción sugerida\" con un resumen claro y botones de Confirmar o Cancelar. La primera acción soportada crea una promoción en borrador pausado, así una confirmación nunca aplica un descuento real sin que tú lo revises y actives.",
-        "image": "",
+        "image": "/images/axo-copiloto-ia-sistema-tab.webp",
         "imageAlt": "Gerenta de tienda usando AXO por voz desde celular",
         "link": null,
         "details": [
@@ -7612,7 +7612,7 @@ export const pageContent: Record<string, any> = {
         "label": "Procesos",
         "title": "Un proceso por tipo de trabajo",
         "description": "Crea procesos de servicio distintos (por ejemplo 'Servicio Express' para trabajos menores) y consulta cuántos estados y servicios tiene cada uno desde su tarjeta.",
-        "image": "",
+        "image": "/images/workflows-hero.webp",
         "imageAlt": "Catálogo de triggers organizados en tarjetas por dominio: Apartados, Clientes, Ventas, Inventario, Programados y Manual",
         "link": null,
         "details": [
@@ -7652,7 +7652,7 @@ export const pageContent: Record<string, any> = {
         "label": "Estados",
         "title": "El flujo de la orden, paso a paso",
         "description": "Configura la línea de tiempo de estados por la que avanza cada reparación, desde RECIBIDO y EN PROCESO hasta la entrega, en el orden que use tu taller.",
-        "image": "",
+        "image": "/images/workflows-hero.webp",
         "imageAlt": "Editor de condiciones compuestas con sugerencias de simplificación",
         "link": null,
         "details": [
@@ -7692,7 +7692,7 @@ export const pageContent: Record<string, any> = {
         "label": "Editar",
         "title": "Define cada etapa",
         "description": "En el editor de proceso ajustas los estados: nombre, descripción y color de cada etapa, para que el seguimiento de cada orden sea claro.",
-        "image": "",
+        "image": "/images/workflows-hero.webp",
         "imageAlt": "Constructor visual de workflow con nodos conectados de Trigger, Condición y Acciones, biblioteca lateral de acciones disponibles",
         "link": null,
         "details": [
@@ -7891,7 +7891,7 @@ export const pageContent: Record<string, any> = {
         "label": "Gastos",
         "title": "Anomalías de gasto detectadas al capturar.",
         "description": "Hoy ya operando: al registrar un gasto, SACS marca montos fuera de lo normal, posibles duplicados y desvíos de presupuesto de los últimos 30 días. El gasto se crea igual; la alerta solo te pone sobre aviso.",
-        "image": "",
+        "image": "/images/alertas-inteligentes-hero.webp",
         "imageAlt": "Panel de alertas de ventas mostrando anomalía con banda de rango normal aprendido y lista de alertas con estado",
         "link": null,
         "details": [
@@ -7931,7 +7931,7 @@ export const pageContent: Record<string, any> = {
         "label": "Tiempo real",
         "title": "El aviso llega solo, no lo vas a buscar.",
         "description": "El motor escucha tu cuenta y dispara la alerta en el momento, con título y mensaje claros. Si requiere decisión, te da botones para confirmar o descartar sin salir de lo que estás haciendo.",
-        "image": "",
+        "image": "/images/alertas-inteligentes-hero.webp",
         "imageAlt": "Alerta de stock en riesgo con barra de días de cobertura vs plazo de reposición y sugerencia de traspaso desde otra sucursal",
         "link": null,
         "details": [
@@ -7971,7 +7971,7 @@ export const pageContent: Record<string, any> = {
         "label": "Roadmap",
         "title": "Stock en riesgo y clientes que se enfrían.",
         "description": "En desarrollo y piloto: cruzar velocidad de venta contra plazo de reposición para avisar antes de quedarte sin producto, y detectar clientes VIP que bajan su recurrencia, con el histórico al lado.",
-        "image": "",
+        "image": "/images/alertas-inteligentes-hero.webp",
         "imageAlt": "Panel de alertas de clientes con segmentos y acciones sugeridas",
         "link": null,
         "details": [
@@ -8173,7 +8173,7 @@ export const pageContent: Record<string, any> = {
         "label": "Forecast",
         "title": "Proyecta la demanda antes de reordenar",
         "description": "La IA analiza tu histórico, estacionalidad y promociones pasadas para sugerir cuánto reponer por SKU, sucursal y semana. En piloto: aprende con tus primeros 90 días de datos en SACS.",
-        "image": "",
+        "image": "/images/reportes-predictivos-hero.webp",
         "imageAlt": "Dashboard de forecast de demanda con línea histórica y proyección con banda de confianza, KPIs y ranking de SKUs a reordenar",
         "link": null,
         "details": [
@@ -8213,7 +8213,7 @@ export const pageContent: Record<string, any> = {
         "label": "Resumen diario",
         "title": "Cada mañana, un resumen escrito para ti",
         "description": "Un párrafo a las 7 am: cómo cerró ayer, qué tiendas necesitan atención y qué decisión propone la IA. En piloto con marcas beta; se equivoca a veces y mejora con tu uso.",
-        "image": "",
+        "image": "/images/reportes-predictivos-hero.webp",
         "imageAlt": "Email matutino con resumen ejecutivo generado por IA en SACS",
         "link": null,
         "details": [
@@ -8253,7 +8253,7 @@ export const pageContent: Record<string, any> = {
         "label": "Margen real",
         "title": "El margen real, no el de tu lista de precios",
         "description": "La IA cruza costo de adquisición, promociones, devoluciones, merma y comisiones para entregarte el margen neto por SKU, categoría y sucursal. Aspiracional: depende de tu histórico limpio.",
-        "image": "",
+        "image": "/images/reportes-predictivos-hero.webp",
         "imageAlt": "Tabla de rentabilidad por SKU con columnas de ventas, costo, promos, devoluciones y margen neto, incluyendo SKUs en rojo con margen negativo",
         "link": null,
         "details": [
@@ -8455,7 +8455,7 @@ export const pageContent: Record<string, any> = {
         "label": "Asistente IA",
         "title": "Chatea con tu negocio, hoy.",
         "description": "Escribe una pregunta en lenguaje natural y el asistente la responde consultando tus ventas, inventario y clientes en tiempo real. Sin reportes que armar a mano: preguntas, contesta. Es el módulo de IA que ya está vivo en SACS.",
-        "image": "",
+        "image": "/images/orquestador-de-agentes-hero.webp",
         "imageAlt": "Pipeline visual del orquestador con cinco nodos conectados: clasificador, GPT-4, Claude, Gemini y envío al cliente, tabla lateral de modelos preferidos",
         "link": null,
         "details": [
@@ -8495,7 +8495,7 @@ export const pageContent: Record<string, any> = {
         "label": "Datos seguros",
         "title": "La IA consulta, nunca controla.",
         "description": "Cada pregunta corre contra una lista blanca de colecciones de solo lectura, con bloqueo de cualquier operación de escritura y límites de tiempo. El modelo ve tu información para responder, pero jamás puede modificarla ni salirse de tu cuenta.",
-        "image": "",
+        "image": "/images/orquestador-de-agentes-hero.webp",
         "imageAlt": "Flujo de handoff entre agentes IA y humano con contexto compartido en SACS",
         "link": null,
         "details": [
@@ -8535,7 +8535,7 @@ export const pageContent: Record<string, any> = {
         "label": "Lo que viene",
         "title": "Varios cerebros, una respuesta.",
         "description": "La visión: un orquestador que rutea cada tarea al modelo más apto, encadena agentes (armar y revisar), y entrega a un humano los casos delicados con todo el contexto. Esto está en piloto cerrado y evolucionando — lo presentamos como roadmap, no como algo ya terminado.",
-        "image": "",
+        "image": "/images/orquestador-de-agentes-hero.webp",
         "imageAlt": "Pantalla de auditoría de cada respuesta de IA en SACS",
         "link": null,
         "details": [
@@ -8734,7 +8734,7 @@ export const pageContent: Record<string, any> = {
         "label": "Conectores",
         "title": "Un panel para todas tus conexiones",
         "description": "En Configuración → Integraciones ves tus conectores agrupados por categoría — Pagos, Ecommerce y Envíos — cada uno con su estado conectado o no conectado. Activas el que necesitas con un modal de conexión guiado, sin tocar código.",
-        "image": "",
+        "image": "/images/api-e-integraciones-hero.webp",
         "imageAlt": "Pantalla de documentación interactiva de API REST de SACS",
         "link": null,
         "details": [
@@ -8774,7 +8774,7 @@ export const pageContent: Record<string, any> = {
         "label": "Ecommerce",
         "title": "Shopify y WooCommerce, en sintonía",
         "description": "Shopify se conecta por OAuth y habla con la Admin API por GraphQL; WooCommerce con su API REST oficial. SACS escucha sus webhooks firmados para que catálogo, inventario y pedidos se mantengan sincronizados entre tu tienda y tu operación.",
-        "image": "",
+        "image": "/images/api-e-integraciones-hero.webp",
         "imageAlt": "Directorio de integraciones con filtros por categoría y tarjetas mostrando estado oficial, partner certificado, en roadmap o community",
         "link": null,
         "details": [
@@ -8814,7 +8814,7 @@ export const pageContent: Record<string, any> = {
         "label": "Pagos y envíos",
         "title": "Cobra y envía sin salir de SACS",
         "description": "Stripe y Mercado Pago para procesar pagos (tarjeta, OXXO, MSI) con sus webhooks de confirmación cableados, más Skydropx y Envia.com para cotizar y generar guías. Todo se administra desde el mismo panel de Integraciones.",
-        "image": "",
+        "image": "/images/api-e-integraciones-hero.webp",
         "imageAlt": "Dashboard de eventos y webhooks con entregas y reintentos en SACS",
         "link": null,
         "details": [
