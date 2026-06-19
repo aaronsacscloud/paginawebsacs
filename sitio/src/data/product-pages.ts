@@ -3145,8 +3145,8 @@ export const pageContent: Record<string, any> = {
         "label": "Elige el análisis",
         "title": "10 reportes, un solo tablero.",
         "description": "Cards visuales para ABC/Pareto, Rotación, Obsoletos, Mermas, Valorización (PPP/FIFO), Puntos de Reorden, Anomalías, Dashboard General, Resumen y Rendimiento. Cambias de análisis sin salir de la pantalla.",
-        "image": "/images/inventario-omnicanal-sistema-tab.webp",
-        "imageAlt": "Matriz global de inventario SKU por sucursal con KPIs de stock total, reservado, en tránsito y faltantes, exportable a Excel y CSV",
+        "image": "/images/inventario-omnicanal-tab-config.webp",
+        "imageAlt": "Configurador de reporte de inventario: tipo de análisis, criterio, clasificación, agrupar por y período en SACS",
         "link": null,
         "details": [
           {
@@ -3185,8 +3185,8 @@ export const pageContent: Record<string, any> = {
         "label": "Filtra y consolida",
         "title": "Toda la red, o solo una sucursal.",
         "description": "Filtra por sucursal y almacén, alterna entre vista por-sucursal y por-producto consolidado, aplica filtros numéricos y de texto avanzados y ordena por la columna que te importe (stock, costo, valor, rotación).",
-        "image": "/images/inventario-omnicanal-sistema-tab.webp",
-        "imageAlt": "Pantalla de inventario por sucursal en SACS",
+        "image": "/images/inventario-omnicanal-tab-filtros.webp",
+        "imageAlt": "Modal de filtros avanzados del dashboard de inventario en SACS",
         "link": null,
         "details": [
           {
@@ -3225,8 +3225,8 @@ export const pageContent: Record<string, any> = {
         "label": "Reorden y exporta",
         "title": "Repón a tiempo y entrega el reporte.",
         "description": "El reporte de Puntos de Reorden te da stock de seguridad y cantidad sugerida por SKU; la Valorización compara costo PPP vs FIFO. Todo se exporta a Excel y PDF para compras y contabilidad.",
-        "image": "/images/inventario-omnicanal-sistema-tab.webp",
-        "imageAlt": "Pantalla de estados de stock en tránsito en SACS",
+        "image": "/images/inventario-omnicanal-tab-reporte.webp",
+        "imageAlt": "Reporte de análisis ABC de inventario con tabla de productos por sucursal en SACS",
         "link": null,
         "details": [
           {
@@ -5941,8 +5941,8 @@ export const pageContent: Record<string, any> = {
         "label": "Tarjetas",
         "title": "Todas tus tarjetas, por estado y código",
         "description": "La lista filtra por estado (Activas, Inactivas, Agotadas, Desactivadas, Expiradas) y por tipo físico o digital, y busca por código. Cada fila muestra saldo, monto inicial, vencimiento y fecha de emisión; al abrirla ves su detalle y movimientos.",
-        "image": "/images/tarjetas-de-regalo-sistema-tab.webp",
-        "imageAlt": "Tarjetas físicas de regalo con diseño de marca en exhibidor de tienda",
+        "image": "/images/tarjetas-de-regalo-tab-lista.webp",
+        "imageAlt": "Lista de tarjetas de regalo por estado y código en SACS",
         "link": null,
         "details": [
           {
@@ -5981,8 +5981,8 @@ export const pageContent: Record<string, any> = {
         "label": "Detalle",
         "title": "Saldo y movimientos de una tarjeta",
         "description": "Abre cualquier tarjeta para ver su saldo disponible, estado y vencimiento, junto con el historial completo de movimientos: emisión, redenciones, recargas y ajustes. Desde aquí puedes ajustar o desactivar la tarjeta.",
-        "image": "/images/tarjetas-de-regalo-sistema-tab.webp",
-        "imageAlt": "Pantalla de compra de tarjeta de regalo digital con envío programado SACS",
+        "image": "/images/tarjetas-de-regalo-tab-detalle.webp",
+        "imageAlt": "Detalle de una tarjeta con saldo, movimientos y acciones en SACS",
         "link": null,
         "details": [
           {
@@ -6021,8 +6021,8 @@ export const pageContent: Record<string, any> = {
         "label": "Configuración",
         "title": "Reglas de tus tarjetas en un lugar",
         "description": "Ajusta montos predefinidos, vencimiento en meses, recarga con tope, PIN y plantillas de diseño. SACS genera automáticamente el enlace público de consulta por QR y deja listos el producto de venta y el método de cobro en el POS.",
-        "image": "/images/tarjetas-de-regalo-sistema-tab.webp",
-        "imageAlt": "Reporte de pasivo de tarjetas de regalo con balance histórico SACS",
+        "image": "/images/tarjetas-de-regalo-tab-config.webp",
+        "imageAlt": "Diseño y reglas de la tarjeta de regalo con vista previa y QR en SACS",
         "link": null,
         "details": [
           {
