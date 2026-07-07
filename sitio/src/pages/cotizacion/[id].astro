@@ -5,6 +5,8 @@ import { plans } from '../../data/plans';
 import ImplementacionContent from '../../components/ImplementacionContent.astro';
 import QuoteSidebar from '../../components/quote/QuoteSidebar.astro';
 import QuoteMobilePills from '../../components/quote/QuoteMobilePills.astro';
+import { getCasoGiro } from '../../data/casos-giro';
+import { calcQuoteTotals } from '../../lib/quotes/totals';
 
 export const prerender = false;
 
@@ -88,6 +90,41 @@ const showImplementacion = quoteMeta.mostrar_implementacion !== undefined ? quot
 const implementacionNota = quoteMeta.implementacion_nota || '';
 const promoLabel = (quoteMeta.promo_label || '').trim();
 const extensions = Array.isArray(quoteMeta.extensions) ? quoteMeta.extensions : [];
+
+// ─── Personalización extendida del partner (giro, video, adjuntos, paquetes) ───
+const casoGiro = getCasoGiro(quoteMeta.giro);
+const attachmentsList = Array.isArray(quoteMeta.attachments) ? quoteMeta.attachments.filter((a: any) => a && a.url) : [];
+
+// Video personal: solo dominios de confianza → embed; cualquier otro no se muestra.
+const rawVideoUrl = (quoteMeta.video_url || '').trim();
+let videoEmbedUrl = '';
+if (rawVideoUrl) {
+  const yt = rawVideoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{6,20})/);
+  const loom = rawVideoUrl.match(/loom\.com\/(?:share|embed)\/([a-f0-9]{16,40})/);
+  const vimeo = rawVideoUrl.match(/vimeo\.com\/(?:video\/)?(\d{6,12})/);
+  if (yt) videoEmbedUrl = `https://www.youtube-nocookie.com/embed/${yt[1]}`;
+  else if (loom) videoEmbedUrl = `https://www.loom.com/embed/${loom[1]}`;
+  else if (vimeo) videoEmbedUrl = `https://player.vimeo.com/video/${vimeo[1]}`;
+}
+
+// Paquetes A/B: totales por opción calculados server-side (misma calcQuoteTotals del editor)
+const paquetes = Array.isArray(quoteMeta.paquetes) && quoteMeta.paquetes.length >= 2 ? quoteMeta.paquetes : null;
+const opcionElegida = quoteMeta.opcion_elegida || null;
+const itemsAll = Array.isArray(quote.items) ? quote.items : [];
+const paqueteTotales: Record<string, { itemsSubtotal: number; globalDisc: number; ivaMonto: number; grandTotal: number }> = {};
+if (paquetes) {
+  for (const p of paquetes) {
+    const t = calcQuoteTotals({
+      items: itemsAll.filter((it: any) => !it.paquete || it.paquete === p.id),
+      descuento_global: quote.descuento_global,
+      descuento_tipo: quote.descuento_tipo,
+      iva_mode: ivaMode,
+    });
+    paqueteTotales[p.id] = { itemsSubtotal: t.itemsSubtotal, globalDisc: t.globalDisc, ivaMonto: t.ivaMonto, grandTotal: t.grandTotal };
+  }
+}
+// Paquete mostrado por default: el elegido (si ya aceptó) o el primero (recomendado)
+const paqueteDefault = paquetes ? (opcionElegida && paquetes.some((p: any) => p.id === opcionElegida) ? opcionElegida : paquetes[0].id) : null;
 const totalExtensionDays = extensions.reduce((s: number, ext: any) => s + (Number(ext.days) || 0), 0);
 const wasExtended = extensions.length > 0;
 const isAnnualQuote = (Array.isArray(quote.items) ? quote.items : []).some((i: any) => i.tipo === 'plan' && i.periodo === 'anual');
@@ -331,6 +368,51 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
       </div>
     )}
 
+    {videoEmbedUrl && (
+      <div style="padding:20px 40px;border-top:1px solid #e5e5e5;">
+        <div style="font-size:0.6875rem;color:#999;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:10px;">🎥 Un mensaje para ti</div>
+        <div style="position:relative;padding-bottom:56.25%;height:0;border-radius:12px;overflow:hidden;background:#0a0a0a;">
+          <iframe
+            src={videoEmbedUrl}
+            style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+            loading="lazy"
+            title="Video personalizado de tu asesor"
+          ></iframe>
+        </div>
+      </div>
+    )}
+
+    {casoGiro && (
+      <div style="padding:20px 40px;border-top:1px solid #e5e5e5;background:#fafafa;">
+        <div style="font-size:0.6875rem;color:#999;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:10px;">Resultados en {casoGiro.label}</div>
+        <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
+          <div style="flex:1;min-width:240px;">
+            <div style="font-size:0.875rem;color:#666;line-height:1.6;margin-bottom:8px;"><strong style="color:#1a1a1a;">El reto típico:</strong> {casoGiro.dolor}</div>
+            <div style="font-size:0.875rem;color:#666;line-height:1.6;"><strong style="color:#1a1a1a;">Con SACS:</strong> {casoGiro.solucion}</div>
+          </div>
+          <div style="text-align:center;padding:14px 22px;background:#fff;border:1px solid #e5e5e5;border-radius:12px;min-width:140px;">
+            <div style="font-size:1.75rem;font-weight:800;color:#2AB5A0;letter-spacing:-0.02em;">{casoGiro.stat}</div>
+            <div style="font-size:0.6875rem;color:#999;line-height:1.4;margin-top:4px;max-width:160px;">{casoGiro.statLabel}</div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {attachmentsList.length > 0 && (
+      <div style="padding:16px 40px;border-top:1px solid #e5e5e5;">
+        <div style="font-size:0.6875rem;color:#999;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:10px;">Documentos adjuntos</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          {attachmentsList.map((a: any) => (
+            <a href={a.url} target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:9px 16px;background:#fafafa;border:1px solid #e5e5e5;border-radius:8px;font-size:0.8125rem;color:#1a1a1a;text-decoration:none;font-weight:600;">
+              📎 {a.name || 'Documento'}
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
+
     <style>
       .quote-asesor {
         padding: 16px 40px;
@@ -500,7 +582,43 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
       <div class="quote-expired-notice">
         <strong>Esta cotización venció el {vigenciaFechaLarga || vigenciaFecha}{wasExtended ? ` (incluyendo extensión de +${totalExtensionDays} ${totalExtensionDays === 1 ? 'día' : 'días'})` : ''}.</strong>
         {promoLabel ? <>La promoción <em>{promoLabel}</em> ya no aplica</> : <>La promoción ya no aplica</>}
-        {' '}— los precios tachados son los que tenías; los precios en verde son los actuales. Si quieres reactivarla, contáctanos.
+        {' '}— los precios tachados son los que tenías; los precios en verde son los actuales.
+        <div style="margin-top:12px;">
+          {quoteMeta.reactivation_requested_at && !quoteMeta.reactivation_resolved_at ? (
+            <span id="reactivation-done" style="display:inline-block;padding:10px 18px;background:#E9F7F1;color:#1F7A63;border-radius:8px;font-size:0.8125rem;font-weight:600;">✓ Reactivación solicitada — tu asesor te contactará pronto</span>
+          ) : (
+            <>
+              <button id="btn-request-reactivation" class="no-print" style="padding:10px 20px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:0.8125rem;font-weight:700;cursor:pointer;font-family:inherit;">
+                ⏰ Solicitar reactivación de esta cotización
+              </button>
+              <span id="reactivation-done-live" style="display:none;padding:10px 18px;background:#E9F7F1;color:#1F7A63;border-radius:8px;font-size:0.8125rem;font-weight:600;">✓ Listo — tu asesor recibió la solicitud y te contactará pronto</span>
+            </>
+          )}
+        </div>
+      </div>
+    )}
+
+    {paquetes && (
+      <div class="no-print" style="padding:18px 40px 4px;">
+        <div style="font-size:0.6875rem;color:#999;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:10px;">
+          {opcionElegida ? 'Opción elegida' : 'Elige tu opción'}
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          {paquetes.map((p: any, pi: number) => (
+            <button
+              type="button"
+              class="paquete-tab"
+              data-paquete-btn={p.id}
+              data-active={p.id === paqueteDefault ? '1' : undefined}
+              disabled={!!opcionElegida && p.id !== opcionElegida}
+              style={`flex:1;min-width:150px;padding:14px 16px;border-radius:12px;cursor:pointer;font-family:inherit;text-align:left;border:2px solid ${p.id === paqueteDefault ? '#1a1a1a' : '#e5e5e5'};background:${p.id === paqueteDefault ? '#1a1a1a' : '#fff'};color:${p.id === paqueteDefault ? '#fff' : '#1a1a1a'};opacity:${opcionElegida && p.id !== opcionElegida ? 0.45 : 1};`}
+            >
+              <div style="font-size:0.8125rem;font-weight:700;">{p.nombre}{pi === 0 && !opcionElegida ? ' ★' : ''}</div>
+              <div style="font-size:1.125rem;font-weight:800;letter-spacing:-0.01em;margin-top:2px;">${Math.round(paqueteTotales[p.id]?.grandTotal || p.total || 0).toLocaleString('es-MX')} {quote.moneda}</div>
+              {pi === 0 && !opcionElegida && <div style="font-size:0.625rem;opacity:0.75;margin-top:2px;">Recomendada</div>}
+            </button>
+          ))}
+        </div>
       </div>
     )}
 
@@ -531,8 +649,9 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
           const normalSubtotalExtra = normalUnit; // extras: precio_original ya es el monto único
           const showExpiredCompare = isExpired && isPromo && normalUnit > 0;
 
+          const rowHidden = paquetes ? !(!item.paquete || item.paquete === paqueteDefault) : false;
           return (
-            <tr class:list={[{ 'qt-promo-row': isPromo, 'qt-expired-row': showExpiredCompare }]}>
+            <tr class:list={[{ 'qt-promo-row': isPromo, 'qt-expired-row': showExpiredCompare }]} data-paquete={item.paquete || ''} style={rowHidden ? 'display:none;' : undefined}>
               <td class="qt-concept">
                 {isPromo && <span class:list={['qt-promo-badge', { 'qt-promo-badge--expired': showExpiredCompare }]}>{showExpiredCompare ? 'PROMO VENCIDA' : 'PROMOCION'}</span>}
                 <strong>{item.tipo === 'plan' ? `Plan ${item.nombre}` : item.nombre}</strong>
@@ -585,8 +704,43 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
       </tbody>
     </table>
 
+    {/* Totales POR PAQUETE — un bloque por opción, JS muestra el del paquete activo */}
+    {paquetes && paquetes.map((p: any) => {
+      const t = paqueteTotales[p.id] || { itemsSubtotal: 0, globalDisc: 0, ivaMonto: 0, grandTotal: 0 };
+      return (
+        <div class="quote-totals" data-paquete-totals={p.id} style={p.id !== paqueteDefault ? 'display:none;' : undefined}>
+          <div class="quote-total-row">
+            <span>Subtotal · {p.nombre}</span>
+            <span>{fmt(t.itemsSubtotal)} {quote.moneda}</span>
+          </div>
+          {t.globalDisc > 0 && (
+            <div class="quote-total-row quote-discount">
+              <span>Descuento {quote.descuento_tipo === 'pct' ? `(${quote.descuento_global}%)` : ''}</span>
+              <span>-{fmt(t.globalDisc)} {quote.moneda}</span>
+            </div>
+          )}
+          {ivaMode === 'suma' && (
+            <div class="quote-total-row">
+              <span>IVA (16%)</span>
+              <span>+{fmt(t.ivaMonto)} {quote.moneda}</span>
+            </div>
+          )}
+          {ivaMode === 'incluido' && (
+            <div class="quote-total-row" style="font-size:0.75rem;color:#999">
+              <span>IVA incluido en precios</span>
+              <span>{fmt(t.ivaMonto)} {quote.moneda}</span>
+            </div>
+          )}
+          <div class="quote-total-row quote-total-final">
+            <span>Total {p.nombre} {ivaMode === 'incluido' ? '(IVA incluido)' : ''}</span>
+            <span>{fmt(t.grandTotal)} {quote.moneda}</span>
+          </div>
+        </div>
+      );
+    })}
+
     <!-- Totals -->
-    {(() => {
+    {!paquetes && (() => {
       const globalDiscAmt = quote.descuento_global > 0 ? (quote.descuento_tipo === 'pct' ? (quote.subtotal || 0) * quote.descuento_global / 100 : quote.descuento_global) : 0;
       const promoSavingsAmt = promoItems.reduce((s: number, i: any) => s + (i.precio_original || 0), 0);
       // Total sin promoción = subtotal de items SIN tomar promo (precio_original cuando aplica) y sin descuento_global
@@ -935,12 +1089,39 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
         <div class="quote-roi-problem">{roi.problema}</div>
         <div class="quote-roi-numbers">
           <div class="quote-roi-stat">
-            <div class="quote-roi-value" data-count={roi.ahorro_mensual}>{fmt(roi.ahorro_mensual)}</div>
+            <div class="quote-roi-value" data-count={roi.ahorro_mensual} data-roi-mensual>{fmt(roi.ahorro_mensual)}</div>
             <div class="quote-roi-label">Ahorro mensual estimado</div>
           </div>
           <div class="quote-roi-stat">
-            <div class="quote-roi-value" data-count={roi.ahorro_mensual * 12}>{fmt(roi.ahorro_mensual * 12)}</div>
+            <div class="quote-roi-value" data-count={roi.ahorro_mensual * 12} data-roi-anual>{fmt(roi.ahorro_mensual * 12)}</div>
             <div class="quote-roi-label">Ahorro anual proyectado</div>
+          </div>
+          <div class="quote-roi-stat">
+            <div class="quote-roi-value" data-roi-payback>
+              {(quote.total || 0) > 0 && roi.ahorro_mensual > 0
+                ? (() => { const m = (quote.total || 0) / roi.ahorro_mensual; return m <= 1 ? '< 1 mes' : `${Math.ceil(m)} meses`; })()
+                : '—'}
+            </div>
+            <div class="quote-roi-label">Tu inversión se recupera en</div>
+          </div>
+        </div>
+        {/* Slider interactivo: el CLIENTE ajusta el ahorro a su realidad y ve el impacto en vivo */}
+        <div class="no-print" style="margin:18px 0 6px;padding:14px 16px;background:rgba(255,255,255,0.55);border:1px solid #e5e5e5;border-radius:10px;">
+          <div style="font-size:0.75rem;color:#666;margin-bottom:8px;">¿Tu caso es distinto? Ajusta el ahorro mensual y mira el impacto:</div>
+          <input
+            type="range"
+            id="roi-slider"
+            min={Math.max(500, Math.round(roi.ahorro_mensual * 0.25))}
+            max={Math.round(roi.ahorro_mensual * 2.5)}
+            step="500"
+            value={roi.ahorro_mensual}
+            data-total={quote.total || 0}
+            style="width:100%;accent-color:#2AB5A0;cursor:pointer;"
+          />
+          <div style="display:flex;justify-content:space-between;font-size:0.6875rem;color:#999;margin-top:4px;">
+            <span>conservador</span>
+            <span id="roi-slider-value" style="font-weight:700;color:#1a1a1a;">{fmt(roi.ahorro_mensual)}/mes</span>
+            <span>optimista</span>
           </div>
         </div>
         <div class="quote-roi-detail">{roi.detalle}</div>
@@ -2585,6 +2766,87 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
     }).catch(() => {});
   }
 
+  // ─── Paquetes A/B: alternar opción (filas + totales) ───
+  const paqueteBtns = Array.from(document.querySelectorAll('[data-paquete-btn]')) as HTMLButtonElement[];
+  if (paqueteBtns.length) {
+    const activeBtn = paqueteBtns.find((b) => b.getAttribute('data-active') === '1');
+    (window as any).__paqueteActivo = activeBtn?.getAttribute('data-paquete-btn') || paqueteBtns[0]?.getAttribute('data-paquete-btn') || null;
+    const applyPaquete = (pid: string) => {
+      (window as any).__paqueteActivo = pid;
+      paqueteBtns.forEach((b) => {
+        const on = b.getAttribute('data-paquete-btn') === pid;
+        b.style.border = `2px solid ${on ? '#1a1a1a' : '#e5e5e5'}`;
+        b.style.background = on ? '#1a1a1a' : '#fff';
+        b.style.color = on ? '#fff' : '#1a1a1a';
+      });
+      document.querySelectorAll('tr[data-paquete]').forEach((tr) => {
+        const p = tr.getAttribute('data-paquete');
+        (tr as HTMLElement).style.display = (!p || p === pid) ? '' : 'none';
+      });
+      document.querySelectorAll('[data-paquete-totals]').forEach((el) => {
+        (el as HTMLElement).style.display = el.getAttribute('data-paquete-totals') === pid ? '' : 'none';
+      });
+    };
+    paqueteBtns.forEach((b) => {
+      b.addEventListener('click', () => {
+        if (b.disabled) return;
+        applyPaquete(b.getAttribute('data-paquete-btn') || '');
+      });
+    });
+  }
+
+  // ─── ROI interactivo: el cliente ajusta el ahorro y ve el impacto en vivo ───
+  const roiSlider = document.getElementById('roi-slider') as HTMLInputElement | null;
+  if (roiSlider) {
+    const fmtMx = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
+    const total = parseFloat(roiSlider.getAttribute('data-total') || '0') || 0;
+    roiSlider.addEventListener('input', () => {
+      const v = parseFloat(roiSlider.value) || 0;
+      const elM = document.querySelector('[data-roi-mensual]');
+      const elA = document.querySelector('[data-roi-anual]');
+      const elP = document.querySelector('[data-roi-payback]');
+      const elV = document.getElementById('roi-slider-value');
+      if (elM) elM.textContent = fmtMx(v);
+      if (elA) elA.textContent = fmtMx(v * 12);
+      if (elV) elV.textContent = fmtMx(v) + '/mes';
+      if (elP) {
+        if (total > 0 && v > 0) {
+          const m = total / v;
+          elP.textContent = m <= 1 ? '< 1 mes' : `${Math.ceil(m)} meses`;
+        } else {
+          elP.textContent = '—';
+        }
+      }
+    }, { passive: true });
+  }
+
+  // ─── Reactivación self-service (cotización vencida) ───
+  const btnReact = document.getElementById('btn-request-reactivation') as HTMLButtonElement | null;
+  if (btnReact && quoteId) {
+    btnReact.addEventListener('click', async () => {
+      btnReact.disabled = true;
+      btnReact.textContent = 'Enviando…';
+      try {
+        const res = await fetch('/api/revenue/request-reactivation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: quoteId }),
+        });
+        if (res.ok) {
+          btnReact.style.display = 'none';
+          const done = document.getElementById('reactivation-done-live');
+          if (done) done.style.display = 'inline-block';
+        } else {
+          btnReact.disabled = false;
+          btnReact.textContent = '⏰ Solicitar reactivación de esta cotización';
+        }
+      } catch (e) {
+        btnReact.disabled = false;
+        btnReact.textContent = '⏰ Solicitar reactivación de esta cotización';
+      }
+    });
+  }
+
   // ─── Comments ───
   const commentsSection = document.getElementById('comments-section');
   const commentsThread = document.getElementById('comments-thread');
@@ -2831,6 +3093,9 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
       let metaObj: any = {};
       if (sepIdx >= 0) { try { metaObj = JSON.parse(notas.slice(sepIdx + sep.length)); } catch {} }
       metaObj.firma_base64 = firmaBase64;
+      // Si la cotización tiene paquetes, registrar cuál eligió el cliente —
+      // el server (PUT) fija items y totales del paquete elegido.
+      if ((window as any).__paqueteActivo) metaObj.opcion_elegida = (window as any).__paqueteActivo;
       if (!metaObj.timeline) metaObj.timeline = [];
       metaObj.timeline.push({ event: 'accepted', at: new Date().toISOString() });
       notas = metaText + sep + JSON.stringify(metaObj);
