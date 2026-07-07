@@ -1,7 +1,8 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { getCurrentUser } from '../../../lib/auth/scope';
-import { validatePartnerQuoteBody, canPartnerEditQuote } from '../../../lib/quotes/permissions';
+import { validatePartnerQuoteBody, canPartnerEditQuote, canPartnerDeleteQuote } from '../../../lib/quotes/permissions';
+import { parseMeta, serializeMeta } from '../../../lib/quotes/meta';
 
 export const prerender = false;
 
@@ -57,6 +58,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     const { data, error } = await supabase
       .from('quotes').select('*')
       .or(orParts.join(','))
+      .neq('estado', 'deleted') // ocultar archivadas de la lista
       .order('created_at', { ascending: false });
 
     if (error) return jsonResponse({ error: error.message }, 500);
@@ -64,7 +66,9 @@ export const GET: APIRoute = async ({ request, url }) => {
   }
 
   // Founder/cs see all. Unauthenticated preserves legacy behavior (admin UI without auth header).
-  const { data, error } = await supabase.from('quotes').select('*').order('created_at', { ascending: false });
+  const { data, error } = await supabase.from('quotes').select('*')
+    .neq('estado', 'deleted') // ocultar archivadas de la lista
+    .order('created_at', { ascending: false });
   if (error) return jsonResponse({ error: error.message }, 500);
   return jsonResponse(data || []);
 };
@@ -211,4 +215,70 @@ export const PUT: APIRoute = async ({ request }) => {
   }
 
   return jsonResponse(data);
+};
+
+export const DELETE: APIRoute = async ({ request, url }) => {
+  const user = await getCurrentUser(request);
+
+  // id por query (?id=) o por body, para flexibilidad del cliente.
+  let id = url.searchParams.get('id');
+  if (!id) {
+    try { const body = await request.json(); id = body?.id; } catch (e) { /* sin body */ }
+  }
+  if (!id) return jsonResponse({ error: 'id requerido' }, 400);
+
+  const { data: prev } = await supabase
+    .from('quotes')
+    .select('id, estado, deal_id, partner_id, notas')
+    .eq('id', id)
+    .single();
+
+  if (!prev) return jsonResponse({ error: 'cotización no encontrada' }, 404);
+
+  // Ownership + estado — SIN RLS en la tabla, este check en app es la ÚNICA barrera
+  // contra que un partner borre cotizaciones de otro partner.
+  if (user?.role === 'partner') {
+    if (prev.partner_id && prev.partner_id !== user.id) {
+      return jsonResponse({ error: 'no autorizado' }, 403);
+    }
+    if (!canPartnerDeleteQuote(prev.estado)) {
+      return jsonResponse({
+        error: `No puedes eliminar una cotización ${prev.estado}: ya tiene implicaciones de pago.`,
+        code: 'quote_not_deletable',
+      }, 409);
+    }
+  }
+
+  const estado = String(prev.estado || '');
+  const isDraft = estado === 'draft';
+
+  // Desvincular el deal para no dejar referencias colgando (deals.quote_id es uuid sin FK).
+  if (prev.deal_id) {
+    try {
+      await supabase.from('deals').update({ quote_id: null }).eq('id', prev.deal_id).eq('quote_id', id);
+    } catch (e) {
+      console.error('[quotes DELETE] no se pudo desvincular el deal:', e);
+    }
+  }
+
+  if (isDraft) {
+    // Borrado REAL: un borrador no tiene valor histórico. payments/invoices con
+    // quote_id están declarados ON DELETE SET NULL, así que no rompe auditoría.
+    const { error } = await supabase.from('quotes').delete().eq('id', id);
+    if (error) return jsonResponse({ error: error.message }, 500);
+    return jsonResponse({ ok: true, mode: 'deleted' });
+  }
+
+  // ARCHIVADO (soft): estado='deleted' + guardamos el estado previo en la meta
+  // para poder restaurar y para auditoría. Se oculta de las listas (GET filtra 'deleted').
+  const { text, meta } = parseMeta(prev.notas || '');
+  meta.deleted_from = estado;
+  meta.deleted_at = new Date().toISOString();
+  if (user?.id) meta.deleted_by = user.id;
+
+  const { error } = await supabase.from('quotes')
+    .update({ estado: 'deleted', notas: serializeMeta(text, meta) })
+    .eq('id', id);
+  if (error) return jsonResponse({ error: error.message }, 500);
+  return jsonResponse({ ok: true, mode: 'archived' });
 };

@@ -104,3 +104,13 @@ export function canPartnerEditQuote(prevEstado: string | null | undefined): bool
   const locked = ['accepted', 'paid', 'rejected'];
   return !locked.includes(String(prevEstado || ''));
 }
+
+/**
+ * Reglas de BORRADO del partner. Puede eliminar/archivar cualquier cotización
+ * MENOS las que ya tienen implicaciones financieras (aceptada = comisión ganada,
+ * pagada = factura). El endpoint decide luego hard-delete (draft) vs archivar (resto).
+ */
+export function canPartnerDeleteQuote(prevEstado: string | null | undefined): boolean {
+  const financiallyLocked = ['accepted', 'paid'];
+  return !financiallyLocked.includes(String(prevEstado || ''));
+}

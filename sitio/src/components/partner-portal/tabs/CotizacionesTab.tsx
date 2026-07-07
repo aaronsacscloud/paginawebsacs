@@ -1,13 +1,15 @@
 // CotizacionesTab — Partners crean y gestionan sus propias cotizaciones.
 // Reusa la tabla `quotes` del CRM. POST/PUT/GET via /api/revenue/quotes.
 //
-// Paridad funcional con el editor admin (RevenueHub) excepto:
-// - Sin bank account selector (cobro es de SACS)
+// Paridad funcional con el editor admin (RevenueHub). Lo ÚNICO que el partner NO
+// tiene (por diseño, es lo financiero de SACS) es:
+// - Sin bank account selector (el cobro es de SACS)
 // - Sin Stripe link manual (SACS lo genera)
 // - Sin folio offset (admin only)
-// - Sin template selector (siempre 'modern')
-// - Sin IA analyze-transcript / format-minuta (manual)
-// - Descuento global y por línea capeados a 15%
+// - Sin IA analyze-transcript de audio (sí tiene format-minuta por texto)
+// - Descuento global y por línea capeados a 15% (anti revenue-leak; planes fijos)
+// Sí tiene: extras/hardware/consultoría libres, plantilla, promo_label, IVA 3 modos,
+// eliminar/archivar, IA de minuta por texto, ROI, antes/después, timeline, toggles.
 
 import { useEffect, useMemo, useState } from 'react';
 import { SS, C, stagePillStyle } from './styles';
@@ -388,6 +390,34 @@ function QuoteDetail({
     : `/cotizacion/${quote.id}`;
   const [copied, setCopied] = useState(false);
   const [extending, setExtending] = useState(false);
+  const [confirmDel, setConfirmDel] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  // Borrado: aceptada/pagada NO se pueden (ya hay comisión/factura). draft se borra
+  // de verdad; el resto se archiva (reversible). Espeja canPartnerDeleteQuote del backend.
+  const canDelete = quote.estado !== 'accepted' && quote.estado !== 'paid';
+  const deleteIsPermanent = quote.estado === 'draft';
+
+  const doDelete = async () => {
+    if (isDemoMode()) {
+      alert('En modo demo no se modifican cotizaciones.');
+      return;
+    }
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/revenue/quotes?id=${encodeURIComponent(quote.id)}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert('Error: ' + (err.error || res.statusText));
+        return;
+      }
+      onReload();
+      onClose();
+    } finally {
+      setDeleting(false);
+      setConfirmDel(false);
+    }
+  };
 
   // Extension status — partner puede extender +15d una vez por quote
   const meta = useMemo(() => parseMeta(quote.notas || '').meta, [quote.notas]);
@@ -578,6 +608,29 @@ function QuoteDetail({
               Marcar rechazada
             </button>
           )}
+          {canDelete && (
+            confirmDel ? (
+              <button
+                onClick={doDelete}
+                disabled={deleting}
+                style={{ ...SS.btnGhost, borderColor: C.red || '#dc2626', color: C.red || '#dc2626', fontWeight: 700, opacity: deleting ? 0.6 : 1 }}
+              >
+                {deleting ? 'Eliminando…' : (deleteIsPermanent ? '¿Seguro? Sí, eliminar' : '¿Seguro? Sí, archivar')}
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setConfirmDel(true);
+                  // auto-reset del "armado" a los 4s para no dejar el botón peligroso activo
+                  setTimeout(() => setConfirmDel(false), 4000);
+                }}
+                style={{ ...SS.btnGhost, color: C.muted }}
+                title={deleteIsPermanent ? 'Elimina el borrador de forma permanente' : 'Archiva la cotización (reversible)'}
+              >
+                Eliminar
+              </button>
+            )
+          )}
         </div>
       </div>
     </>
@@ -688,6 +741,7 @@ function QuoteEditor({
 
   const [form, setForm] = useState<Partial<Quote> & Record<string, any>>(() => ({
     moneda: 'MXN',
+    template: 'modern',
     descuento_global: 0,
     descuento_tipo: 'pct',
     iva_incluido: true,
@@ -723,6 +777,8 @@ function QuoteEditor({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [formattingMinuta, setFormattingMinuta] = useState(false);
+  const [minutaError, setMinutaError] = useState<string | null>(null);
   const isEdit = !!initial?.id;
 
   const items: any[] = Array.isArray(form.items) ? form.items : [];
@@ -852,6 +908,41 @@ function QuoteEditor({
     }
   };
 
+  const formatMinuta = async () => {
+    const raw = (form.minuta_raw || '').trim();
+    setMinutaError(null);
+    if (raw.length < 30) {
+      setMinutaError('Escribe al menos 30 caracteres con los puntos de la llamada.');
+      return;
+    }
+    const existing = (form.key_points || []).length;
+    if (existing > 0) {
+      const ok = confirm(`Ya tienes ${existing} ${existing === 1 ? 'punto' : 'puntos'} en la minuta. Procesar con IA reemplazará los puntos actuales. ¿Continuar?`);
+      if (!ok) return;
+    }
+    setFormattingMinuta(true);
+    try {
+      const res = await fetch('/api/revenue/format-minuta', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ raw }),
+      });
+      let data: any = {};
+      try { data = await res.json(); } catch (e) { /* respuesta no-JSON */ }
+      if (!res.ok) throw new Error(data?.error || `Error ${res.status}`);
+      const newPoints = Array.isArray(data.key_points) ? data.key_points : [];
+      if (newPoints.length === 0) {
+        setMinutaError('No se pudieron extraer puntos. Agrega más detalle y reintenta.');
+      } else {
+        setForm({ ...form, key_points: newPoints });
+      }
+    } catch (e: any) {
+      setMinutaError(e?.message || 'Error de red al procesar la minuta');
+    } finally {
+      setFormattingMinuta(false);
+    }
+  };
+
   const addKeyPoint = () => {
     const kp = [...(form.key_points || []), { title: '', detail: '' }];
     setForm({ ...form, key_points: kp });
@@ -975,7 +1066,7 @@ function QuoteEditor({
         descuento_global: form.descuento_global,
         descuento_tipo: form.descuento_tipo,
         moneda: form.moneda,
-        template: 'modern', // partner siempre usa modern
+        template: form.template || 'modern',
         condiciones: form.condiciones,
         vigencia: form.vigencia,
         urgencia: form.urgencia,
@@ -1073,6 +1164,12 @@ function QuoteEditor({
               style={{ ...inputStyle, fontFamily: 'inherit', resize: 'vertical' }}
             />
           </Field>
+          <div style={{ marginBottom: 10 }}>
+            <button onClick={formatMinuta} disabled={formattingMinuta} style={{ ...SS.btnGhost, fontSize: 12, opacity: formattingMinuta ? 0.6 : 1 }}>
+              {formattingMinuta ? 'Estructurando…' : '✨ Estructurar con IA'}
+            </button>
+            {minutaError && <div style={{ color: C.red, fontSize: 12, marginTop: 6 }}>{minutaError}</div>}
+          </div>
           <div style={{ fontSize: 12, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
             Puntos clave (visibles al cliente)
           </div>
@@ -1175,7 +1272,7 @@ function QuoteEditor({
                 <>
                   <div className="cq-row-2">
                     <Field label="Concepto" small>
-                      <input value={it.nombre || ''} onChange={(e) => updateItem(idx, { nombre: e.target.value })} style={inputStyle} />
+                      <input value={it.nombre || ''} onChange={(e) => updateItem(idx, { nombre: e.target.value })} style={inputStyle} placeholder="Ej. Terminal punto de venta, Consultoría, Migración…" />
                     </Field>
                     <Field label="Monto" small>
                       <input type="number" min={0} value={it.precio_unitario || 0} onChange={(e) => {
@@ -1310,6 +1407,21 @@ function QuoteEditor({
                 <option value="suma">Suma 16% al total</option>
                 <option value="incluido">IVA incluido en el precio</option>
                 <option value="sin">Sin IVA</option>
+              </select>
+            </Field>
+          </div>
+          <div className="cq-row-2">
+            <Field label="Moneda">
+              <select value={form.moneda || 'MXN'} onChange={(e) => setForm({ ...form, moneda: e.target.value })} style={inputStyle}>
+                <option value="MXN">MXN — Pesos</option>
+                <option value="USD">USD — Dólares</option>
+              </select>
+            </Field>
+            <Field label="Plantilla de diseño">
+              <select value={form.template || 'modern'} onChange={(e) => setForm({ ...form, template: e.target.value })} style={inputStyle}>
+                <option value="modern">Moderna</option>
+                <option value="dark">Oscura</option>
+                <option value="classic">Clásica</option>
               </select>
             </Field>
           </div>

@@ -1,5 +1,8 @@
-// Whitelist de items que un Partner puede agregar a una cotización.
-// Cualquier item fuera de esta lista se rechaza en backend (anti revenue-leak).
+// Accesos rápidos (presets) de extras para el editor del Partner.
+// OJO: NO es una whitelist — los extras libres (nombre/precio custom: hardware,
+// consultoría, etc.) SÍ están permitidos en backend (ver permissions.ts). Lo único
+// fijado al catálogo son los PLANES/licencias (isPartnerAllowedPlan), para proteger
+// el margen. Esta lista solo prellena botones "+ …" para agilizar los extras comunes.
 
 import { PLAN_PRICES, IMPL_PRICES } from './constants';
 
@@ -46,6 +49,20 @@ export const PARTNER_EXTRAS_CATALOG: PartnerExtraDef[] = [
     periodo_extra: 'mensual',
     recurrente: true,
     descripcion: 'Consultor SACS asignado mensualmente',
+  },
+  {
+    nombre: 'Hardware / Equipo',
+    precio_default: 0,
+    periodo_extra: 'unico',
+    recurrente: false,
+    descripcion: 'Terminal, lector de barras, impresora, tablet u otro equipo (pago único)',
+  },
+  {
+    nombre: 'Consultoría',
+    precio_default: 0,
+    periodo_extra: 'unico',
+    recurrente: false,
+    descripcion: 'Asesoría o servicio profesional a la medida',
   },
 ];
 
