@@ -691,6 +691,10 @@ function QuoteEditor({
     descuento_global: 0,
     descuento_tipo: 'pct',
     iva_incluido: true,
+    // IVA de 3 estados: 'suma' (16% aparte) | 'incluido' (dentro del precio) | 'sin'.
+    // Se respeta meta.iva_mode al editar para NO reinterpretar 'incluido' como 'suma'
+    // (eso inflaba el total 16% vs. lo que muestra la cotización impresa/pública).
+    iva_mode: initialMeta.iva_mode || ((initial && initial.iva_incluido === false) ? 'sin' : 'suma'),
     items: [],
     // Meta-derived (controlados aquí, serializados al guardar)
     logo_url: initialMeta.logo_url || '',
@@ -872,7 +876,7 @@ function QuoteEditor({
     setForm({ ...form, antes_despues: (form.antes_despues || []).filter((_: any, i: number) => i !== idx) });
   };
 
-  const ivaMode: 'sin' | 'suma' | 'incluido' = form.iva_incluido ? 'suma' : 'sin';
+  const ivaMode: 'sin' | 'suma' | 'incluido' = form.iva_mode || (form.iva_incluido ? 'suma' : 'sin');
   const totals = calcQuoteTotals({
     items,
     descuento_global: form.descuento_global,
@@ -1302,8 +1306,9 @@ function QuoteEditor({
               }} style={inputStyle} />
             </Field>
             <Field label="IVA">
-              <select value={form.iva_incluido ? 'suma' : 'sin'} onChange={(e) => setForm({ ...form, iva_incluido: e.target.value === 'suma' })} style={inputStyle}>
+              <select value={ivaMode} onChange={(e) => setForm({ ...form, iva_mode: e.target.value, iva_incluido: e.target.value !== 'sin' })} style={inputStyle}>
                 <option value="suma">Suma 16% al total</option>
+                <option value="incluido">IVA incluido en el precio</option>
                 <option value="sin">Sin IVA</option>
               </select>
             </Field>
@@ -1372,8 +1377,9 @@ function QuoteEditor({
           <Row label="Subtotal" value={fmt(totals.itemsSubtotal)} muted />
           {totals.globalDisc > 0 && <Row label="Descuento" value={`-${fmt(totals.globalDisc)}`} muted />}
           {ivaMode === 'suma' && <Row label="IVA (16%)" value={fmt(totals.ivaMonto)} muted />}
+          {ivaMode === 'incluido' && <Row label="IVA incluido (16%)" value={fmt(totals.ivaMonto)} muted />}
           <div style={{ borderTop: `1px solid ${C.brandTint}`, marginTop: 8, paddingTop: 8 }}>
-            <Row label="Total" value={`${fmt(totals.grandTotal)} ${form.moneda || 'MXN'}`} bold />
+            <Row label={ivaMode === 'incluido' ? 'Total (IVA incluido)' : 'Total'} value={`${fmt(totals.grandTotal)} ${form.moneda || 'MXN'}`} bold />
           </div>
           {(breakdown.mensualRecurrente > 0 || breakdown.unicoSetup > 0) && (
             <div style={{ borderTop: `1px solid ${C.brandTint}`, marginTop: 12, paddingTop: 10 }}>
