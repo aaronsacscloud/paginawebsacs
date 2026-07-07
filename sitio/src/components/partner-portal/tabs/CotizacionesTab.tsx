@@ -17,12 +17,13 @@ import { Icon } from './icons';
 import { fmt, fmtDate, fmtRel, isDemoMode, apiGet, copyToClipboard } from './utils';
 import { demoQuotes } from '../../../data/partner-portal-demo';
 import { PLAN_PRICES, IMPL_PRICES, PLANS } from '../../../lib/quotes/constants';
+import { CASOS_GIRO } from '../../../data/casos-giro';
 import { calcQuoteTotals } from '../../../lib/quotes/totals';
 import { parseMeta, serializeMeta } from '../../../lib/quotes/meta';
 import { PARTNER_EXTRAS_CATALOG } from '../../../lib/quotes/partner-catalog';
 import { PARTNER_MAX_DISCOUNT_PCT } from '../../../lib/quotes/permissions';
 
-type Estado = 'draft' | 'sent' | 'accepted' | 'paid' | 'rejected' | 'expired';
+type Estado = 'draft' | 'sent' | 'accepted' | 'paid' | 'rejected' | 'expired' | 'plantilla';
 
 interface Quote {
   id: string;
@@ -57,6 +58,7 @@ const ESTADO_LABELS: Record<Estado, string> = {
   paid: 'Pagada',
   rejected: 'Rechazada',
   expired: 'Vencida',
+  plantilla: 'Plantilla',
 };
 
 const ESTADO_COLORS: Record<Estado, string> = {
@@ -66,6 +68,7 @@ const ESTADO_COLORS: Record<Estado, string> = {
   paid: C.greenDark,
   rejected: C.red,
   expired: C.mutedLight,
+  plantilla: C.amber,
 };
 
 const PLAN_LABELS_ES: Record<string, string> = {
@@ -76,6 +79,17 @@ const PLAN_LABELS_ES: Record<string, string> = {
 };
 
 const isLocked = (estado: string) => ['accepted', 'paid', 'rejected'].includes(estado);
+
+// Estado EFECTIVO: en la BD una cotización vencida sigue como 'sent' (el vencimiento
+// se deriva de `vigencia`, igual que en la página pública). Sin esto, las vencidas
+// aparecen como "activas" para siempre en la lista, los filtros y el pipeline.
+const effectiveEstado = (q: Pick<Quote, 'estado' | 'vigencia'>): Estado => {
+  if (q.estado === 'sent' && q.vigencia) {
+    const end = new Date(q.vigencia.length === 10 ? q.vigencia + 'T23:59:59' : q.vigencia);
+    if (!isNaN(end.getTime()) && end.getTime() < Date.now()) return 'expired';
+  }
+  return q.estado;
+};
 
 // ─── Engagement helpers ────────────────────────────────────────────────────
 // Backend trackea views/timeline en meta dentro de `notas` (POST /api/revenue/quote-view
@@ -105,6 +119,10 @@ const TIMELINE_LABELS: Record<string, string> = {
   paid: 'Cliente pagó',
   extended: 'Vigencia extendida',
   sent: 'Cotización enviada',
+  comment: 'Cliente comentó',
+  reply: 'Respuesta enviada',
+  reminder: 'Recordatorio automático enviado',
+  reactivation_requested: 'Cliente pidió reactivarla',
 };
 
 const TIMELINE_COLORS: Record<string, string> = {
@@ -114,6 +132,10 @@ const TIMELINE_COLORS: Record<string, string> = {
   paid: C.greenDark,
   extended: C.amber,
   sent: C.muted,
+  comment: C.brand,
+  reply: C.muted,
+  reminder: C.muted,
+  reactivation_requested: C.amber,
 };
 
 export default function CotizacionesTab({ user }: { user: { id: string; nombre: string; email: string } }) {
@@ -132,30 +154,73 @@ export default function CotizacionesTab({ user }: { user: { id: string; nombre: 
 
   useEffect(() => { load(); }, []);
 
+  // Las plantillas viven en la misma tabla (estado='plantilla') pero NO son
+  // cotizaciones: van en su propia sección y fuera de lista/stats/filtros.
+  const plantillas = useMemo(() => (quotes || []).filter((q) => q.estado === 'plantilla'), [quotes]);
+  const reales = useMemo(() => (quotes || []).filter((q) => q.estado !== 'plantilla'), [quotes]);
+
   const visible = useMemo(() => {
-    if (!quotes) return [];
-    return quotes.filter((q) => {
+    return reales.filter((q) => {
+      const est = effectiveEstado(q);
       if (filter === 'todas') return true;
-      if (filter === 'activas') return ['draft', 'sent'].includes(q.estado);
-      if (filter === 'aceptadas') return ['accepted', 'paid'].includes(q.estado);
-      if (filter === 'cerradas') return ['rejected', 'expired'].includes(q.estado);
+      if (filter === 'activas') return ['draft', 'sent'].includes(est);
+      if (filter === 'aceptadas') return ['accepted', 'paid'].includes(est);
+      if (filter === 'cerradas') return ['rejected', 'expired'].includes(est);
       return true;
     });
-  }, [quotes, filter]);
+  }, [reales, filter]);
 
   const stats = useMemo(() => {
-    if (!quotes) return { total: 0, enviadas: 0, aceptadas: 0, valorPipeline: 0, sinAbrir: 0 };
-    const enviadasArr = quotes.filter((q) => q.estado === 'sent');
+    if (!reales.length) return { total: 0, enviadas: 0, aceptadas: 0, valorPipeline: 0, sinAbrir: 0, tasa: null as number | null, diasCierre: null as number | null, pctAbiertas: null as number | null };
+    // Estado efectivo: las 'sent' con vigencia pasada cuentan como vencidas,
+    // no como activas (antes inflaban "Enviadas activas" y el pipeline por siempre).
+    const enviadasArr = reales.filter((q) => effectiveEstado(q) === 'sent');
+    const aceptadasArr = reales.filter((q) => ['accepted', 'paid'].includes(q.estado));
+    // Métricas de cierre: sobre cotizaciones que ya tuvieron desenlace o están en juego
+    const decididas = reales.filter((q) => ['accepted', 'paid', 'rejected', 'expired'].includes(effectiveEstado(q)));
+    const tasa = decididas.length >= 3 ? Math.round((aceptadasArr.length / decididas.length) * 100) : null;
+    const conCierre = aceptadasArr.filter((q) => q.aceptado_fecha && q.created_at);
+    const diasCierre = conCierre.length > 0
+      ? Math.round(conCierre.reduce((s, q) => s + Math.max(0, (new Date(q.aceptado_fecha!).getTime() - new Date(q.created_at).getTime()) / 86400000), 0) / conCierre.length)
+      : null;
+    const enviadasTodas = reales.filter((q) => q.estado !== 'draft');
+    const pctAbiertas = enviadasTodas.length >= 3
+      ? Math.round((enviadasTodas.filter((q) => getQuoteAnalytics(q).views > 0).length / enviadasTodas.length) * 100)
+      : null;
     return {
-      total: quotes.length,
+      total: reales.length,
       enviadas: enviadasArr.length,
       sinAbrir: enviadasArr.filter((q) => getQuoteAnalytics(q).views === 0).length,
-      aceptadas: quotes.filter((q) => ['accepted', 'paid'].includes(q.estado)).length,
-      valorPipeline: quotes
-        .filter((q) => ['sent', 'draft'].includes(q.estado))
+      aceptadas: aceptadasArr.length,
+      valorPipeline: reales
+        .filter((q) => ['sent', 'draft'].includes(effectiveEstado(q)))
         .reduce((s, q) => s + (q.total || 0), 0),
+      tasa, diasCierre, pctAbiertas,
     };
-  }, [quotes]);
+  }, [reales]);
+
+  // "Mis conceptos": extras que el partner ya usó antes (dedupe por nombre,
+  // conserva el precio más reciente) → botones de un clic en el editor.
+  const conceptosPrevios = useMemo(() => {
+    const map = new Map<string, any>();
+    for (const q of reales) {
+      for (const it of Array.isArray(q.items) ? q.items : []) {
+        if (it?.tipo !== 'extra' || it?.es_promocion) continue;
+        const nombre = String(it.nombre || '').trim();
+        if (!nombre || nombre === 'Servicio adicional') continue;
+        if (!map.has(nombre.toLowerCase())) {
+          map.set(nombre.toLowerCase(), {
+            nombre,
+            precio: Number(it.precio_unitario) || Number(it.monto) || 0,
+            recurrente: !!it.recurrente,
+            periodo_extra: it.periodo_extra || 'unico',
+            descripcion: it.descripcion || '',
+          });
+        }
+      }
+    }
+    return Array.from(map.values()).slice(0, 12);
+  }, [reales]);
 
   if (loading) return <div style={SS.loading}>Cargando cotizaciones…</div>;
 
@@ -216,6 +281,83 @@ export default function CotizacionesTab({ user }: { user: { id: string; nombre: 
         </div>
       </div>
 
+      {/* Métricas de cierre — aparecen cuando hay historial suficiente */}
+      {(stats.tasa !== null || stats.diasCierre !== null || stats.pctAbiertas !== null) && (
+        <div style={{ ...SS.statGrid, marginTop: 0 }}>
+          {stats.tasa !== null && (
+            <div style={SS.statCard}>
+              <div style={SS.statLabel}>Tasa de cierre</div>
+              <div style={{ ...SS.statValueSm, color: stats.tasa >= 40 ? C.green : stats.tasa >= 20 ? C.amber : C.red }}>{stats.tasa}%</div>
+              <div style={SS.statHint}>de las decididas, aceptadas</div>
+            </div>
+          )}
+          {stats.diasCierre !== null && (
+            <div style={SS.statCard}>
+              <div style={SS.statLabel}>Días a cierre</div>
+              <div style={SS.statValueSm}>{stats.diasCierre}</div>
+              <div style={SS.statHint}>promedio de envío a aceptación</div>
+            </div>
+          )}
+          {stats.pctAbiertas !== null && (
+            <div style={SS.statCard}>
+              <div style={SS.statLabel}>Apertura</div>
+              <div style={SS.statValueSm}>{stats.pctAbiertas}%</div>
+              <div style={SS.statHint}>de tus cotizaciones son abiertas</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Mis plantillas — arranca cada cotización al 80% */}
+      {plantillas.length > 0 && (
+        <div style={{ marginBottom: 18 }}>
+          <div style={{ fontSize: 12, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+            Mis plantillas
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {plantillas.map((p) => (
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6, background: C.borderSoft, borderRadius: 8, padding: '6px 10px' }}>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>{p.empresa || 'Plantilla'}</span>
+                <span style={{ fontSize: 12, color: C.muted }}>{fmt(p.total)}</span>
+                <button
+                  onClick={() => {
+                    // Usar plantilla → nueva cotización draft con los datos precargados
+                    const pMeta = parseMeta(p.notas || '').meta;
+                    const { views: _v, first_viewed_at: _f, last_viewed_at: _l, timeline: _tl, extensions: _ex, ...cleanMeta } = pMeta;
+                    setEditing({
+                      empresa: '', contacto: '', email: '', whatsapp: '',
+                      items: Array.isArray(p.items) ? p.items.map((it: any) => ({ ...it })) : [],
+                      moneda: p.moneda || 'MXN',
+                      descuento_global: p.descuento_global || 0,
+                      descuento_tipo: p.descuento_tipo || 'pct',
+                      iva_incluido: p.iva_incluido !== false,
+                      vigencia: new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10),
+                      condiciones: p.condiciones || '',
+                      notas: serializeMeta('', cleanMeta),
+                      estado: 'draft',
+                    });
+                  }}
+                  style={{ ...SS.btnGhost, fontSize: 11, padding: '4px 10px' }}
+                >
+                  Usar
+                </button>
+                <button
+                  onClick={async () => {
+                    if (isDemoMode()) return;
+                    await fetch(`/api/revenue/quotes?id=${encodeURIComponent(p.id)}`, { method: 'DELETE' });
+                    load();
+                  }}
+                  title="Eliminar plantilla"
+                  style={{ background: 'none', border: 'none', color: C.muted, cursor: 'pointer', fontSize: 14, padding: '0 2px' }}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Filters */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
         {([
@@ -266,7 +408,8 @@ export default function CotizacionesTab({ user }: { user: { id: string; nombre: 
             <tbody>
               {visible.map((q) => {
                 const a = getQuoteAnalytics(q);
-                const showEng = ['sent', 'accepted', 'paid', 'rejected', 'expired'].includes(q.estado);
+                const est = effectiveEstado(q);
+                const showEng = ['sent', 'accepted', 'paid', 'rejected', 'expired'].includes(est);
                 return (
                 <tr
                   key={q.id}
@@ -287,8 +430,8 @@ export default function CotizacionesTab({ user }: { user: { id: string; nombre: 
                     <strong>{fmt(q.total)}</strong> <span style={{ color: C.muted, fontSize: 12 }}>{q.moneda || 'MXN'}</span>
                   </td>
                   <td style={SS.td}>
-                    <span style={stagePillStyle(ESTADO_COLORS[q.estado] || C.muted)}>
-                      {ESTADO_LABELS[q.estado] || q.estado}
+                    <span style={stagePillStyle(ESTADO_COLORS[est] || C.muted)}>
+                      {ESTADO_LABELS[est] || est}
                     </span>
                   </td>
                   <td style={SS.td}>{fmtDate(q.vigencia)}</td>
@@ -316,6 +459,7 @@ export default function CotizacionesTab({ user }: { user: { id: string; nombre: 
       {selected && (
         <QuoteDetail
           quote={selected}
+          user={user}
           onClose={() => setSelected(null)}
           onEdit={() => {
             setEditing(selected);
@@ -358,6 +502,7 @@ export default function CotizacionesTab({ user }: { user: { id: string; nombre: 
         <QuoteEditor
           initial={editing}
           user={user}
+          conceptosPrevios={conceptosPrevios}
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);
@@ -373,12 +518,14 @@ export default function CotizacionesTab({ user }: { user: { id: string; nombre: 
 
 function QuoteDetail({
   quote,
+  user,
   onClose,
   onEdit,
   onDuplicate,
   onReload,
 }: {
   quote: Quote;
+  user: { id: string; nombre: string; email: string };
   onClose: () => void;
   onEdit: () => void;
   onDuplicate: () => void;
@@ -425,6 +572,34 @@ function QuoteDetail({
   const canExtend = !locked && quote.estado !== 'rejected' && quote.estado !== 'draft' && extensions.length === 0;
   const wasExtended = extensions.length > 0;
 
+  // ─── Hilo de comentarios con el cliente (mismo canal que la página pública) ───
+  const [comments, setComments] = useState<any[]>(Array.isArray(meta.comments) ? meta.comments : []);
+  const [replyText, setReplyText] = useState('');
+  const [sendingReply, setSendingReply] = useState(false);
+  const sendReply = async () => {
+    const text = replyText.trim();
+    if (!text) return;
+    if (isDemoMode()) { alert('En modo demo no se envían respuestas.'); return; }
+    setSendingReply(true);
+    try {
+      const res = await fetch('/api/revenue/quote-comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: quote.id, from: 'admin', name: user.nombre || 'Tu asesor', text }),
+      });
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (Array.isArray(data.comments)) setComments(data.comments);
+        setReplyText('');
+      }
+    } finally {
+      setSendingReply(false);
+    }
+  };
+
+  // ─── Solicitud de reactivación pendiente (cliente la pidió desde la pública) ───
+  const reactivationPending = !!meta.reactivation_requested_at && !meta.reactivation_resolved_at;
+
   const extend = async () => {
     if (isDemoMode()) {
       alert('En modo demo no se modifican cotizaciones.');
@@ -468,10 +643,20 @@ function QuoteDetail({
         </div>
 
         <div style={{ marginBottom: 20 }}>
-          <span style={stagePillStyle(ESTADO_COLORS[quote.estado] || C.muted)}>
-            {ESTADO_LABELS[quote.estado] || quote.estado}
+          <span style={stagePillStyle(ESTADO_COLORS[effectiveEstado(quote)] || C.muted)}>
+            {ESTADO_LABELS[effectiveEstado(quote)] || quote.estado}
           </span>
         </div>
+
+        {reactivationPending && (
+          <div style={{ background: '#FEF6E7', border: `1px solid ${C.amber}`, borderRadius: 10, padding: '12px 14px', marginBottom: 16, fontSize: 13, lineHeight: 1.5 }}>
+            <strong style={{ color: '#9A6B1F' }}>⏰ ¡El cliente pidió reactivar esta cotización!</strong>
+            <div style={{ color: '#9A6B1F', marginTop: 4 }}>
+              {meta.reactivation_message ? `“${meta.reactivation_message}” — ` : ''}
+              Usa <strong>Extender vigencia</strong> para reactivarla y avísale que ya está lista.
+            </div>
+          </div>
+        )}
 
         <div style={{ background: C.borderSoft, padding: '18px 20px', borderRadius: 12, marginBottom: 20 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 13 }}>
@@ -565,6 +750,41 @@ function QuoteDetail({
             </a>
           </div>
         </div>
+
+        {/* Hilo de preguntas del cliente — responder rápido mantiene la venta caliente */}
+        {(comments.length > 0 || quote.estado === 'sent') && (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 12, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+              Conversación con el cliente
+            </div>
+            {comments.length === 0 && (
+              <div style={{ fontSize: 12, color: C.muted, marginBottom: 8 }}>Sin preguntas aún. Si el cliente comenta en la cotización, te llega un correo y aparece aquí.</div>
+            )}
+            {comments.map((cm: any, i: number) => (
+              <div key={i} style={{
+                background: cm.from === 'prospect' ? C.borderSoft : '#EEF2FB',
+                borderRadius: 10, padding: '8px 12px', marginBottom: 6, fontSize: 13, lineHeight: 1.5,
+              }}>
+                <div style={{ fontSize: 11, color: C.muted, marginBottom: 2 }}>
+                  <strong>{cm.name || (cm.from === 'prospect' ? 'Cliente' : 'Tú')}</strong> · {fmtRel(cm.at)}
+                </div>
+                {cm.text}
+              </div>
+            ))}
+            <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+              <input
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') sendReply(); }}
+                placeholder="Responde al cliente…"
+                style={{ flex: 1, padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 13, fontFamily: 'inherit' }}
+              />
+              <button onClick={sendReply} disabled={sendingReply || !replyText.trim()} style={{ ...SS.btnGhost, fontSize: 12, opacity: sendingReply ? 0.6 : 1 }}>
+                {sendingReply ? 'Enviando…' : 'Responder'}
+              </button>
+            </div>
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {!locked && (
@@ -725,11 +945,13 @@ function QuoteActivity({ quote }: { quote: Quote }) {
 function QuoteEditor({
   initial,
   user: _user,
+  conceptosPrevios = [],
   onClose,
   onSaved,
 }: {
   initial: Partial<Quote>;
   user: { id: string; nombre: string; email: string };
+  conceptosPrevios?: Array<{ nombre: string; precio: number; recurrente: boolean; periodo_extra: string; descripcion: string }>;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -772,6 +994,11 @@ function QuoteEditor({
     mostrar_animaciones: initialMeta.mostrar_animaciones !== undefined ? initialMeta.mostrar_animaciones : true,
     timeline_tipo: initialMeta.timeline_tipo || '1suc',
     implementacion_nota: initialMeta.implementacion_nota || '',
+    // Personalización extendida (meta)
+    giro: initialMeta.giro || '',
+    video_url: initialMeta.video_url || '',
+    attachments: Array.isArray(initialMeta.attachments) ? initialMeta.attachments : [],
+    paquetes: Array.isArray(initialMeta.paquetes) ? initialMeta.paquetes : [],
     ...initial,
   }));
   const [saving, setSaving] = useState(false);
@@ -779,6 +1006,18 @@ function QuoteEditor({
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [formattingMinuta, setFormattingMinuta] = useState(false);
   const [minutaError, setMinutaError] = useState<string | null>(null);
+  const [drafting, setDrafting] = useState(false);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const [commissionPct, setCommissionPct] = useState<number | null>(null);
+
+  // Tasa de comisión del partner — para "tu comisión estimada" en el resumen
+  useEffect(() => {
+    if (isDemoMode()) { setCommissionPct(20); return; }
+    fetch('/api/revenue/commission-rate')
+      .then((r) => r.json())
+      .then((d) => { if (d && typeof d.pct === 'number') setCommissionPct(d.pct); })
+      .catch(() => {});
+  }, []);
   const isEdit = !!initial?.id;
 
   const items: any[] = Array.isArray(form.items) ? form.items : [];
@@ -943,6 +1182,115 @@ function QuoteEditor({
     }
   };
 
+  // ─── IA: transcripción → borrador completo de cotización (items+minuta+roi) ───
+  const draftWithAI = async () => {
+    const transcript = (form.minuta_raw || '').trim();
+    setMinutaError(null);
+    if (transcript.length < 80) {
+      setMinutaError('Pega la transcripción o tus notas de la llamada (mínimo unas líneas) en el campo de arriba.');
+      return;
+    }
+    if (items.length > 0) {
+      const ok = confirm(`Ya tienes ${items.length} concepto(s). El borrador con IA los REEMPLAZARÁ (junto con minuta y ROI). ¿Continuar?`);
+      if (!ok) return;
+    }
+    setDrafting(true);
+    try {
+      const res = await fetch('/api/revenue/draft-quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript }),
+      });
+      let data: any = {};
+      try { data = await res.json(); } catch (e) { /* respuesta no-JSON */ }
+      if (!res.ok) throw new Error(data?.error || `Error ${res.status}`);
+      const d = data.draft || {};
+      setForm({
+        ...form,
+        // Solo llenar identidad si está vacía (no pisar lo que el partner ya escribió)
+        empresa: form.empresa || d.empresa || '',
+        contacto: form.contacto || d.contacto || '',
+        giro: d.giro && CASOS_GIRO.some((c) => c.label.toLowerCase().includes(String(d.giro).toLowerCase()))
+          ? (CASOS_GIRO.find((c) => c.label.toLowerCase().includes(String(d.giro).toLowerCase()))?.id || form.giro)
+          : form.giro,
+        items: Array.isArray(d.items) ? d.items : [],
+        key_points: Array.isArray(d.key_points) ? d.key_points : form.key_points,
+        roi: d.roi || form.roi,
+        mostrar_roi: d.roi ? true : form.mostrar_roi,
+        condiciones: form.condiciones || d.condiciones || '',
+        descuento_global: d.descuento_global || form.descuento_global || 0,
+      });
+    } catch (e: any) {
+      setMinutaError(e?.message || 'Error al generar el borrador');
+    } finally {
+      setDrafting(false);
+    }
+  };
+
+  // ─── Mis conceptos: re-usar un extra de cotizaciones anteriores ───
+  const addConceptoPrevio = (c: { nombre: string; precio: number; recurrente: boolean; periodo_extra: string; descripcion: string }) => {
+    setForm({
+      ...form,
+      items: [...items, {
+        tipo: 'extra', nombre: c.nombre,
+        precio_unitario: c.precio, monto: c.precio, subtotal: c.precio,
+        recurrente: c.recurrente, periodo_extra: c.periodo_extra || 'unico',
+        descripcion: c.descripcion || '',
+      }],
+    });
+  };
+
+  // ─── Paquetes A/B: el cliente elige entre 2-3 opciones ───
+  const paquetesOn = Array.isArray(form.paquetes) && form.paquetes.length >= 2;
+  const togglePaquetes = () => {
+    if (paquetesOn) {
+      // Apagar: los items vuelven a ser de "todos"
+      setForm({ ...form, paquetes: [], items: items.map((it) => { const { paquete: _p, ...rest } = it; return rest; }) });
+    } else {
+      setForm({ ...form, paquetes: [ { id: 'a', nombre: 'Opción Esencial' }, { id: 'b', nombre: 'Opción Completa' } ] });
+    }
+  };
+  const itemsDePaquete = (pid: string) => items.filter((it: any) => !it.paquete || it.paquete === pid);
+  const totalesDePaquete = (pid: string) => calcQuoteTotals({
+    items: itemsDePaquete(pid),
+    descuento_global: form.descuento_global,
+    descuento_tipo: form.descuento_tipo,
+    iva_mode: ivaMode,
+  });
+
+  // ─── Guardar como plantilla (arranca la próxima cotización al 80%) ───
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const saveAsTemplate = async () => {
+    if (isDemoMode()) { alert('En modo demo no se guardan plantillas.'); return; }
+    if (items.length === 0) { setError('Agrega al menos un concepto antes de guardar la plantilla.'); return; }
+    const nombre = prompt('Nombre de la plantilla (ej. "Boutique 1 sucursal con hardware")', form.empresa || 'Mi plantilla');
+    if (!nombre) return;
+    setSavingTemplate(true);
+    try {
+      const { text } = parseMeta(form.notas || '');
+      const meta: Record<string, any> = { iva_mode: ivaMode };
+      if (form.giro) meta.giro = form.giro;
+      if (Array.isArray(form.paquetes) && form.paquetes.length >= 2) meta.paquetes = form.paquetes;
+      const res = await fetch('/api/revenue/quotes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          empresa: nombre, contacto: '', email: 'plantilla@sacscloud.com', whatsapp: '—',
+          items, iva_incluido: ivaMode !== 'sin',
+          descuento_global: form.descuento_global, descuento_tipo: form.descuento_tipo,
+          moneda: form.moneda, template: form.template || 'modern',
+          condiciones: form.condiciones, estado: 'plantilla',
+          subtotal: totals.itemsSubtotal, iva_monto: Math.round(totals.ivaMonto), total: Math.round(totals.grandTotal),
+          notas: serializeMeta(text || '', meta),
+        }),
+      });
+      if (res.ok) { onSaved(); }
+      else { const err = await res.json().catch(() => ({})); setError(err.error || 'No se pudo guardar la plantilla'); }
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
+
   const addKeyPoint = () => {
     const kp = [...(form.key_points || []), { title: '', detail: '' }];
     setForm({ ...form, key_points: kp });
@@ -1041,6 +1389,17 @@ function QuoteEditor({
         timeline_tipo: form.timeline_tipo || '1suc',
       };
       if (form.logo_url) meta.logo_url = form.logo_url;
+      if (form.giro) meta.giro = form.giro; else delete meta.giro;
+      if (form.video_url?.trim()) meta.video_url = form.video_url.trim(); else delete meta.video_url;
+      if (Array.isArray(form.attachments) && form.attachments.length) meta.attachments = form.attachments; else delete meta.attachments;
+      if (paquetesOn) {
+        // Persistir paquetes CON su total precalculado (la página pública los muestra)
+        meta.paquetes = (form.paquetes as any[]).map((p: any) => ({
+          ...p, total: Math.round(totalesDePaquete(p.id).grandTotal),
+        }));
+      } else {
+        delete meta.paquetes;
+      }
       if (form.promo_label?.trim()) meta.promo_label = form.promo_label.trim();
       if (form.minuta_raw?.trim()) meta.minuta_raw = form.minuta_raw.trim();
       if (form.implementacion_nota?.trim()) meta.implementacion_nota = form.implementacion_nota.trim();
@@ -1071,9 +1430,11 @@ function QuoteEditor({
         vigencia: form.vigencia,
         urgencia: form.urgencia,
         estado,
-        subtotal: totals.itemsSubtotal,
-        iva_monto: Math.round(totals.ivaMonto),
-        total: Math.round(totals.grandTotal),
+        // Con paquetes activos, el total del documento = el de la PRIMERA opción
+        // (la recomendada); al aceptar, el server fija los del paquete elegido.
+        subtotal: paquetesOn ? totalesDePaquete((form.paquetes as any[])[0].id).itemsSubtotal : totals.itemsSubtotal,
+        iva_monto: Math.round(paquetesOn ? totalesDePaquete((form.paquetes as any[])[0].id).ivaMonto : totals.ivaMonto),
+        total: Math.round(paquetesOn ? totalesDePaquete((form.paquetes as any[])[0].id).grandTotal : totals.grandTotal),
         notas: notasFinal,
       };
 
@@ -1164,12 +1525,20 @@ function QuoteEditor({
               style={{ ...inputStyle, fontFamily: 'inherit', resize: 'vertical' }}
             />
           </Field>
-          <div style={{ marginBottom: 10 }}>
-            <button onClick={formatMinuta} disabled={formattingMinuta} style={{ ...SS.btnGhost, fontSize: 12, opacity: formattingMinuta ? 0.6 : 1 }}>
+          <div style={{ marginBottom: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button onClick={formatMinuta} disabled={formattingMinuta || drafting} style={{ ...SS.btnGhost, fontSize: 12, opacity: formattingMinuta ? 0.6 : 1 }}>
               {formattingMinuta ? 'Estructurando…' : '✨ Estructurar con IA'}
             </button>
-            {minutaError && <div style={{ color: C.red, fontSize: 12, marginTop: 6 }}>{minutaError}</div>}
+            <button
+              onClick={draftWithAI}
+              disabled={drafting || formattingMinuta}
+              title="Analiza tus notas y arma la cotización completa: plan, extras, minuta y ROI"
+              style={{ ...SS.btnGhost, fontSize: 12, borderColor: C.brand, color: C.brand, fontWeight: 600, opacity: drafting ? 0.6 : 1 }}
+            >
+              {drafting ? 'Generando borrador…' : '🤖 Generar cotización completa con IA'}
+            </button>
           </div>
+          {minutaError && <div style={{ color: C.red, fontSize: 12, marginTop: -4, marginBottom: 10 }}>{minutaError}</div>}
           <div style={{ fontSize: 12, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
             Puntos clave (visibles al cliente)
           </div>
@@ -1213,7 +1582,22 @@ function QuoteEditor({
                     {it.tipo === 'plan' ? `Plan ${PLAN_LABELS_ES[it.nombre] || it.nombre}` : it.nombre || 'Extra'}
                   </strong>
                 </div>
-                <button onClick={() => removeItem(idx)} style={{ background: 'none', border: 'none', color: C.red, cursor: 'pointer', fontSize: 11, padding: '2px 6px' }}>Quitar</button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {paquetesOn && (
+                    <select
+                      value={it.paquete || ''}
+                      onChange={(e) => updateItem(idx, { paquete: e.target.value || undefined })}
+                      title="¿En qué opción aparece este concepto?"
+                      style={{ ...inputStyle, width: 'auto', padding: '4px 8px', fontSize: 11 }}
+                    >
+                      <option value="">En todas las opciones</option>
+                      {(form.paquetes as any[]).map((p: any) => (
+                        <option key={p.id} value={p.id}>Solo {p.nombre}</option>
+                      ))}
+                    </select>
+                  )}
+                  <button onClick={() => removeItem(idx)} style={{ background: 'none', border: 'none', color: C.red, cursor: 'pointer', fontSize: 11, padding: '2px 6px' }}>Quitar</button>
+                </div>
               </div>
               {it.tipo === 'plan' ? (
                 <>
@@ -1326,6 +1710,69 @@ function QuoteEditor({
               <button key={e.nombre} onClick={() => addExtraFromCatalog(e.nombre)} style={{ ...SS.btnGhost, fontSize: 11, padding: '4px 8px', marginLeft: 6, marginTop: 4 }}>+ {e.nombre}</button>
             ))}
           </div>
+          {conceptosPrevios.length > 0 && (
+            <div style={{ marginTop: 8, fontSize: 11, color: C.muted }}>
+              Mis conceptos (usados antes):
+              {conceptosPrevios.map((c) => (
+                <button key={c.nombre} onClick={() => addConceptoPrevio(c)} title={`${c.descripcion || c.nombre} · ${fmt(c.precio)}`} style={{ ...SS.btnGhost, fontSize: 11, padding: '4px 8px', marginLeft: 6, marginTop: 4, borderColor: C.brand, color: C.brand }}>
+                  + {c.nombre} {c.precio > 0 ? `(${fmt(c.precio)})` : ''}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* ─── Paquetes A/B: el cliente elige su opción y acepta ─── */}
+          <div style={{ marginTop: 14, borderTop: `1px solid ${C.borderSoft}`, paddingTop: 12 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+              <input type="checkbox" checked={paquetesOn} onChange={togglePaquetes} />
+              Ofrecer 2–3 opciones al cliente (paquetes)
+            </label>
+            {paquetesOn && (
+              <div style={{ marginTop: 10 }}>
+                <div style={{ fontSize: 12, color: C.muted, marginBottom: 8, lineHeight: 1.5 }}>
+                  El cliente ya no decide <em>si</em> compra sino <em>cuál</em> opción. Asigna cada concepto a una opción (o déjalo "en todas") con el selector de cada tarjeta.
+                </div>
+                {(form.paquetes as any[]).map((p: any, pi: number) => {
+                  const pt = totalesDePaquete(p.id);
+                  const nItems = itemsDePaquete(p.id).length;
+                  return (
+                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <input
+                        value={p.nombre}
+                        onChange={(e) => {
+                          const arr = (form.paquetes as any[]).map((x: any, i: number) => i === pi ? { ...x, nombre: e.target.value } : x);
+                          setForm({ ...form, paquetes: arr });
+                        }}
+                        style={{ ...inputStyle, maxWidth: 220 }}
+                      />
+                      <span style={{ fontSize: 12, color: C.muted }}>{nItems} concepto{nItems !== 1 ? 's' : ''} · <strong style={{ color: C.text }}>{fmt(pt.grandTotal)}</strong></span>
+                      {(form.paquetes as any[]).length > 2 && (
+                        <button
+                          onClick={() => {
+                            const arr = (form.paquetes as any[]).filter((_: any, i: number) => i !== pi);
+                            setForm({ ...form, paquetes: arr, items: items.map((it: any) => it.paquete === p.id ? { ...it, paquete: undefined } : it) });
+                          }}
+                          style={{ background: 'none', border: 'none', color: C.red, cursor: 'pointer', fontSize: 12 }}
+                        >×</button>
+                      )}
+                    </div>
+                  );
+                })}
+                {(form.paquetes as any[]).length < 3 && (
+                  <button
+                    onClick={() => {
+                      const usados = (form.paquetes as any[]).map((p: any) => p.id);
+                      const nextId = ['a', 'b', 'c'].find((x) => !usados.includes(x)) || 'c';
+                      setForm({ ...form, paquetes: [...(form.paquetes as any[]), { id: nextId, nombre: 'Opción Premium' }] });
+                    }}
+                    style={{ ...SS.btnGhost, fontSize: 11, padding: '4px 10px' }}
+                  >
+                    + Agregar tercera opción
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </Section>
 
         {/* ───── 4. ROI ───── */}
@@ -1436,6 +1883,57 @@ function QuoteEditor({
           <Field label="Etiqueta de promoción (opcional)">
             <input value={form.promo_label || ''} onChange={(e) => setForm({ ...form, promo_label: e.target.value })} placeholder="Ej. OFERTA MAYO -20%" maxLength={40} style={inputStyle} />
           </Field>
+          <div className="cq-row-2">
+            <Field label="Giro del cliente (muestra un caso de éxito del giro)">
+              <select value={form.giro || ''} onChange={(e) => setForm({ ...form, giro: e.target.value })} style={inputStyle}>
+                <option value="">— Sin caso de éxito —</option>
+                {CASOS_GIRO.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+              </select>
+            </Field>
+            <Field label="Video personal (YouTube/Loom/Vimeo, opcional)">
+              <input
+                value={form.video_url || ''}
+                onChange={(e) => setForm({ ...form, video_url: e.target.value.trim() })}
+                placeholder="Ej. https://www.loom.com/share/…"
+                style={inputStyle}
+              />
+            </Field>
+          </div>
+          <Field label="Documentos adjuntos (specs de hardware, brochure — máx 3, PDF/imagen 5MB)">
+            <div>
+              {(form.attachments || []).map((a: any, ai: number) => (
+                <div key={ai} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 4 }}>
+                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📎 {a.name || 'documento'}</span>
+                  <button onClick={() => setForm({ ...form, attachments: (form.attachments || []).filter((_: any, i: number) => i !== ai) })} style={{ background: 'none', border: 'none', color: C.red, cursor: 'pointer', fontSize: 12 }}>×</button>
+                </div>
+              ))}
+              {(form.attachments || []).length < 3 && (
+                <label style={{ ...SS.btnGhost, fontSize: 12, display: 'inline-block', cursor: 'pointer', opacity: uploadingAttachment ? 0.6 : 1 }}>
+                  {uploadingAttachment ? 'Subiendo…' : '+ Adjuntar documento'}
+                  <input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" style={{ display: 'none' }} onChange={async (e) => {
+                    const file = e.target.files && e.target.files[0];
+                    e.target.value = '';
+                    if (!file) return;
+                    if (isDemoMode()) { alert('En modo demo no se suben archivos.'); return; }
+                    setUploadingAttachment(true);
+                    try {
+                      const fd = new FormData();
+                      fd.append('file', file);
+                      const res = await fetch('/api/revenue/upload-attachment', { method: 'POST', body: fd });
+                      const data = await res.json().catch(() => ({}));
+                      if (res.ok && data.url) {
+                        setForm({ ...form, attachments: [...(form.attachments || []), { name: file.name, url: data.url }] });
+                      } else {
+                        setError(data.error || 'No se pudo subir el archivo');
+                      }
+                    } finally {
+                      setUploadingAttachment(false);
+                    }
+                  }} />
+                </label>
+              )}
+            </div>
+          </Field>
           <Field label="Condiciones / notas">
             <textarea
               value={form.condiciones || ''}
@@ -1491,8 +1989,26 @@ function QuoteEditor({
           {ivaMode === 'suma' && <Row label="IVA (16%)" value={fmt(totals.ivaMonto)} muted />}
           {ivaMode === 'incluido' && <Row label="IVA incluido (16%)" value={fmt(totals.ivaMonto)} muted />}
           <div style={{ borderTop: `1px solid ${C.brandTint}`, marginTop: 8, paddingTop: 8 }}>
-            <Row label={ivaMode === 'incluido' ? 'Total (IVA incluido)' : 'Total'} value={`${fmt(totals.grandTotal)} ${form.moneda || 'MXN'}`} bold />
+            {paquetesOn ? (
+              <>
+                {(form.paquetes as any[]).map((p: any) => (
+                  <Row key={p.id} label={`Total ${p.nombre}`} value={`${fmt(totalesDePaquete(p.id).grandTotal)} ${form.moneda || 'MXN'}`} bold />
+                ))}
+                <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>El cliente elige su opción al abrir la cotización.</div>
+              </>
+            ) : (
+              <Row label={ivaMode === 'incluido' ? 'Total (IVA incluido)' : 'Total'} value={`${fmt(totals.grandTotal)} ${form.moneda || 'MXN'}`} bold />
+            )}
           </div>
+          {commissionPct !== null && totals.grandTotal > 0 && (
+            <div style={{ background: '#E9F7F1', borderRadius: 8, padding: '8px 12px', marginTop: 10 }}>
+              <Row
+                label={`Tu comisión estimada (${commissionPct}%)`}
+                value={`≈ ${fmt((paquetesOn ? totalesDePaquete((form.paquetes as any[])[0].id).grandTotal : totals.grandTotal) * commissionPct / 100)}`}
+              />
+              <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>Se confirma al cerrarse la venta. Cada punto de descuento también descuenta tu comisión.</div>
+            </div>
+          )}
           {(breakdown.mensualRecurrente > 0 || breakdown.unicoSetup > 0) && (
             <div style={{ borderTop: `1px solid ${C.brandTint}`, marginTop: 12, paddingTop: 10 }}>
               <div style={{ fontSize: 11, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Desglose</div>
@@ -1510,6 +2026,9 @@ function QuoteEditor({
           </button>
           <button onClick={() => save('draft')} disabled={saving} style={SS.btnGhost}>
             Guardar como borrador
+          </button>
+          <button onClick={saveAsTemplate} disabled={saving || savingTemplate} title="Guarda estos conceptos y configuración para arrancar la próxima cotización al 80%" style={{ ...SS.btnGhost, opacity: savingTemplate ? 0.6 : 1 }}>
+            {savingTemplate ? 'Guardando…' : '⭐ Guardar como plantilla'}
           </button>
         </div>
       </div>

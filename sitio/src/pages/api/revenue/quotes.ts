@@ -68,6 +68,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   // Founder/cs see all. Unauthenticated preserves legacy behavior (admin UI without auth header).
   const { data, error } = await supabase.from('quotes').select('*')
     .neq('estado', 'deleted') // ocultar archivadas de la lista
+    .neq('estado', 'plantilla') // las plantillas de partner no son cotizaciones reales
     .order('created_at', { ascending: false });
   if (error) return jsonResponse({ error: error.message }, 500);
   return jsonResponse(data || []);
@@ -114,6 +115,15 @@ export const POST: APIRoute = async ({ request }) => {
 
   const vigencia = clean.vigencia || new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10);
   const estado = clean.estado || 'draft';
+
+  // Las PLANTILLAS del partner no consumen folio COT-xxx (no son cotizaciones reales)
+  if (estado === 'plantilla') {
+    const { data, error } = await supabase.from('quotes').insert({
+      ...clean, numero: 'PLANTILLA', vigencia, estado,
+    }).select().single();
+    if (error) return jsonResponse({ error: error.message }, 500);
+    return jsonResponse(data, 201);
+  }
 
   // Intento con reintentos por si hay colisión (race o UNIQUE constraint)
   const MAX_TRIES = 6;
@@ -177,6 +187,41 @@ export const PUT: APIRoute = async ({ request }) => {
   if (user?.role === 'partner') {
     delete clean.partner_id;
     delete clean.created_via;
+  }
+
+  // ─── Paquetes A/B: al ACEPTAR con opción elegida, fijar items y totales ───
+  // La cotización multi-opción guarda total = paquete recomendado; cuando el
+  // cliente acepta una opción concreta, el documento queda con ESE paquete
+  // (los precios los recalcula el server — nunca el navegador del cliente).
+  try {
+    if (clean.estado === 'accepted' && typeof clean.notas === 'string') {
+      const { meta } = parseMeta(clean.notas);
+      const paqs = Array.isArray(meta?.paquetes) ? meta.paquetes : null;
+      const opcion = meta?.opcion_elegida;
+      if (paqs && paqs.length >= 2 && opcion && paqs.some((p: any) => p.id === opcion)) {
+        const { data: full } = await supabase.from('quotes')
+          .select('items, descuento_global, descuento_tipo, iva_incluido')
+          .eq('id', id).single();
+        const allItems = Array.isArray(full?.items) ? full.items : [];
+        const chosen = allItems.filter((it: any) => !it.paquete || it.paquete === opcion);
+        if (chosen.length > 0) {
+          const ivaMode = meta.iva_mode || (full?.iva_incluido ? 'suma' : 'sin');
+          const { calcQuoteTotals } = await import('../../../lib/quotes/totals');
+          const t = calcQuoteTotals({
+            items: chosen,
+            descuento_global: full?.descuento_global,
+            descuento_tipo: full?.descuento_tipo,
+            iva_mode: ivaMode,
+          });
+          clean.items = chosen;
+          clean.subtotal = t.itemsSubtotal;
+          clean.iva_monto = Math.round(t.ivaMonto);
+          clean.total = Math.round(t.grandTotal);
+        }
+      }
+    }
+  } catch (e) {
+    console.error('[quotes PUT] paquete resolve error:', e);
   }
 
   const { data, error } = await supabase.from('quotes').update(clean).eq('id', id).select().single();
@@ -250,7 +295,8 @@ export const DELETE: APIRoute = async ({ request, url }) => {
   }
 
   const estado = String(prev.estado || '');
-  const isDraft = estado === 'draft';
+  // Borrado real para borradores y plantillas (ninguno tiene valor histórico)
+  const isDraft = estado === 'draft' || estado === 'plantilla';
 
   // Desvincular el deal para no dejar referencias colgando (deals.quote_id es uuid sin FK).
   if (prev.deal_id) {
