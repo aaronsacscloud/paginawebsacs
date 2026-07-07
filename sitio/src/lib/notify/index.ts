@@ -84,6 +84,73 @@ const templates: Record<string, Template> = {
     `,
     text: `Hola ${d.contacto || ''}, te recordamos tu cotización ${d.numero}: ${d.quoteUrl}${d.partner ? `\n\n— ${d.partner.nombre}` : ''}`,
   }),
+  // ─── Avisos al PARTNER sobre actividad de sus cotizaciones ───
+  quote_viewed_partner: (d) => ({
+    subject: `👀 ${d.empresa || 'Tu cliente'} acaba de abrir la cotización ${d.numero || ''}`,
+    html: `
+      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <h2 style="font-size:1.25rem;margin:0 0 12px">¡Tu cliente está viendo la cotización!</h2>
+        <p style="color:#555;line-height:1.6;margin:0 0 16px">
+          <strong>${d.empresa || 'Tu cliente'}</strong>${d.contacto ? ` (${d.contacto})` : ''} acaba de abrir por primera vez la cotización <strong>${d.numero || ''}</strong> por <strong>$${Number(d.total || 0).toLocaleString('es-MX')} ${d.moneda || 'MXN'}</strong>.
+        </p>
+        <div style="background:#EEF2FB;border-left:3px solid #4B7BE5;padding:12px 14px;border-radius:6px;margin:0 0 20px;font-size:0.875rem;color:#3764C4">
+          Este es el mejor momento para llamarle o escribirle — el interés está fresco.
+        </div>
+        <a href="${d.portalUrl || 'https://www.sacscloud.com/partner/portal'}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Ver en mi portal</a>
+      </div>
+    `,
+    text: `${d.empresa || 'Tu cliente'} abrió la cotización ${d.numero} ($${d.total} ${d.moneda || 'MXN'}). Buen momento para contactarle. ${d.portalUrl || ''}`,
+  }),
+  quote_hot_partner: (d) => ({
+    subject: `🔥 Cotización caliente: ${d.empresa || ''} la ha visto ${d.views || 'varias'} veces sin decidir`,
+    html: `
+      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <h2 style="font-size:1.25rem;margin:0 0 12px">🔥 Cotización caliente</h2>
+        <p style="color:#555;line-height:1.6;margin:0 0 16px">
+          <strong>${d.empresa || 'Tu cliente'}</strong> ha abierto la cotización <strong>${d.numero || ''}</strong> <strong>${d.views || 'varias'} veces</strong> y aún no la acepta. Cuando un cliente la revisa tanto, casi siempre hay una duda o una objeción de precio.
+        </p>
+        <div style="background:#FEF6E7;border-left:3px solid #E8A23D;padding:12px 14px;border-radius:6px;margin:0 0 20px;font-size:0.875rem;color:#9A6B1F">
+          Sugerencia: llámale hoy y ofrécele resolver dudas en 10 minutos, o considera extender la vigencia si el tiempo se agota.
+        </div>
+        <a href="${d.portalUrl || 'https://www.sacscloud.com/partner/portal'}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Ver en mi portal</a>
+      </div>
+    `,
+    text: `${d.empresa} ha visto la cotización ${d.numero} ${d.views} veces sin aceptar. Buen momento para una llamada. ${d.portalUrl || ''}`,
+  }),
+  quote_comment_partner: (d) => ({
+    subject: `💬 ${d.autor || 'Tu cliente'} comentó en la cotización ${d.numero || ''}`,
+    html: `
+      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <h2 style="font-size:1.25rem;margin:0 0 12px">Nueva pregunta de tu cliente</h2>
+        <p style="color:#555;line-height:1.6;margin:0 0 16px">
+          <strong>${d.autor || 'Tu cliente'}</strong> dejó un comentario en la cotización <strong>${d.numero || ''}</strong> de <strong>${d.empresa || ''}</strong>:
+        </p>
+        <div style="background:#fafafa;border:1px solid #e5e5e5;border-radius:8px;padding:14px 16px;margin:0 0 20px;font-size:0.9375rem;color:#333;line-height:1.55">
+          “${d.comentario || ''}”
+        </div>
+        <p style="color:#555;line-height:1.6;margin:0 0 20px">Responder rápido mantiene la venta caliente.</p>
+        <a href="${d.portalUrl || 'https://www.sacscloud.com/partner/portal'}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Responder desde mi portal</a>
+      </div>
+    `,
+    text: `${d.autor || 'Cliente'} comentó en la cotización ${d.numero}: "${d.comentario}". Responde desde tu portal: ${d.portalUrl || ''}`,
+  }),
+  quote_reactivation_partner: (d) => ({
+    subject: `⏰ ${d.empresa || 'Un cliente'} pide reactivar la cotización vencida ${d.numero || ''}`,
+    html: `
+      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <h2 style="font-size:1.25rem;margin:0 0 12px">¡Venta recuperable!</h2>
+        <p style="color:#555;line-height:1.6;margin:0 0 16px">
+          <strong>${d.empresa || 'Tu cliente'}</strong>${d.contacto ? ` (${d.contacto})` : ''} pidió <strong>reactivar</strong> la cotización vencida <strong>${d.numero || ''}</strong> por <strong>$${Number(d.total || 0).toLocaleString('es-MX')} ${d.moneda || 'MXN'}</strong>.
+        </p>
+        ${d.mensaje ? `<div style="background:#fafafa;border:1px solid #e5e5e5;border-radius:8px;padding:14px 16px;margin:0 0 16px;font-size:0.9375rem;color:#333;line-height:1.55">“${d.mensaje}”</div>` : ''}
+        <div style="background:#E9F7F1;border-left:3px solid #2AB5A0;padding:12px 14px;border-radius:6px;margin:0 0 20px;font-size:0.875rem;color:#1F7A63">
+          Entra a tu portal y usa "Extender vigencia" para reactivarla — el cliente está listo para retomar.
+        </div>
+        <a href="${d.portalUrl || 'https://www.sacscloud.com/partner/portal'}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Reactivar desde mi portal</a>
+      </div>
+    `,
+    text: `${d.empresa} pidió reactivar la cotización vencida ${d.numero}${d.mensaje ? ` — "${d.mensaje}"` : ''}. Extiende la vigencia desde tu portal: ${d.portalUrl || ''}`,
+  }),
   payment_receipt_client: (d) => {
     const fmt = (n: number) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
     const metodoLabel: Record<string, string> = {

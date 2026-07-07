@@ -82,6 +82,10 @@ export const POST: APIRoute = async ({ request }) => {
   });
   if (!Array.isArray(meta.timeline)) meta.timeline = [];
   meta.timeline.push({ event: 'extended', at: new Date().toISOString(), days: n });
+  // Si el cliente había pedido reactivación, extender la resuelve
+  if (meta.reactivation_requested_at && !meta.reactivation_resolved_at) {
+    meta.reactivation_resolved_at = new Date().toISOString();
+  }
   const newNotas = serializeMeta(text, meta);
 
   // If was expired, restore to 'sent' so timer reappears

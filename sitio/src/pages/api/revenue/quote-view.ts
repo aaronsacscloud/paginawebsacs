@@ -30,7 +30,9 @@ export const POST: APIRoute = async ({ request }) => {
   const { id } = await request.json();
   if (!id) return new Response(JSON.stringify({ error: 'Missing id' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
 
-  const { data: quote, error } = await supabase.from('quotes').select('notas').eq('id', id).single();
+  const { data: quote, error } = await supabase.from('quotes')
+    .select('notas, estado, partner_id, numero, empresa, contacto, total, moneda')
+    .eq('id', id).single();
   if (error || !quote) return new Response(JSON.stringify({ error: 'Not found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
 
   const { text, meta } = parseMeta(quote.notas);
@@ -45,12 +47,51 @@ export const POST: APIRoute = async ({ request }) => {
   if (!meta.timeline) meta.timeline = [];
   meta.timeline.push({ event: 'viewed', at: now });
 
+  // ─── Avisos al partner (momento de máximo interés del cliente) ───
+  // Primera vista → "tu cliente está viendo la cotización AHORA".
+  // 4+ vistas sin aceptar → "cotización caliente" (una sola vez).
+  // Solo para quotes enviadas con partner; flags en meta evitan duplicados.
+  const notifyFirstView = meta.views === 1 && quote.estado === 'sent' && quote.partner_id && !meta.view_notified_at;
+  const notifyHot = meta.views >= 4 && quote.estado === 'sent' && quote.partner_id && !meta.hot_alerted;
+  if (notifyFirstView) meta.view_notified_at = now;
+  if (notifyHot) meta.hot_alerted = true;
+
   const { error: updateError } = await supabase
     .from('quotes')
     .update({ notas: serializeMeta(text, meta) })
     .eq('id', id);
 
   if (updateError) return new Response(JSON.stringify({ error: updateError.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+
+  // Envío fire-and-forget: un fallo de email jamás debe romper el tracking de vistas.
+  if (notifyFirstView || notifyHot) {
+    try {
+      const [{ notify }, { getPartnerProfile }] = await Promise.all([
+        import('../../../lib/notify'),
+        import('../../../lib/partners/profile'),
+      ]);
+      const partner = await getPartnerProfile(quote.partner_id);
+      if (partner && partner.email) {
+        const data = {
+          numero: quote.numero,
+          empresa: quote.empresa,
+          contacto: quote.contacto,
+          total: quote.total,
+          moneda: quote.moneda || 'MXN',
+          views: meta.views,
+          portalUrl: 'https://www.sacscloud.com/partner/portal',
+        };
+        if (notifyFirstView) {
+          await notify({ channel: 'email', to: partner.email, template: 'quote_viewed_partner', data });
+        }
+        if (notifyHot) {
+          await notify({ channel: 'email', to: partner.email, template: 'quote_hot_partner', data });
+        }
+      }
+    } catch (e) {
+      console.error('[quote-view] partner notify error:', e);
+    }
+  }
 
   return new Response(JSON.stringify({ views: meta.views }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 };

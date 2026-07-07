@@ -35,7 +35,7 @@ export const POST: APIRoute = async ({ request }) => {
   const { id, from, name, text } = await request.json();
   if (!id || !text) return new Response(JSON.stringify({ error: 'Missing fields' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
 
-  const { data: quote } = await supabase.from('quotes').select('notas, partner_id').eq('id', id).single();
+  const { data: quote } = await supabase.from('quotes').select('notas, partner_id, numero, empresa').eq('id', id).single();
   if (!quote) return new Response(JSON.stringify({ error: 'Not found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
 
   // Partner ownership: solo puede comentar en sus propias quotes
@@ -53,6 +53,34 @@ export const POST: APIRoute = async ({ request }) => {
   meta.timeline.push({ event: from === 'admin' ? 'reply' : 'comment', at: new Date().toISOString() });
 
   await supabase.from('quotes').update({ notas: serializeMeta(notasText, meta) }).eq('id', id);
+
+  // Comentario del PROSPECTO en quote de partner → avisar al partner al instante
+  // (responder rápido mantiene la venta caliente). Fire-and-forget.
+  if ((from || 'prospect') === 'prospect' && quote.partner_id) {
+    try {
+      const [{ notify }, { getPartnerProfile }] = await Promise.all([
+        import('../../../lib/notify'),
+        import('../../../lib/partners/profile'),
+      ]);
+      const partner = await getPartnerProfile(quote.partner_id);
+      if (partner && partner.email) {
+        await notify({
+          channel: 'email',
+          to: partner.email,
+          template: 'quote_comment_partner',
+          data: {
+            numero: quote.numero,
+            empresa: quote.empresa,
+            autor: name || 'Cliente',
+            comentario: String(text).slice(0, 400),
+            portalUrl: 'https://www.sacscloud.com/partner/portal',
+          },
+        });
+      }
+    } catch (e) {
+      console.error('[quote-comments] partner notify error:', e);
+    }
+  }
 
   return new Response(JSON.stringify({ comments: meta.comments }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 };
