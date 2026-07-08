@@ -78,6 +78,17 @@ const PLAN_LABELS_ES: Record<string, string> = {
   automatiza: 'Automatiza',
 };
 
+// Descripción auto-generada del plan. Solo se regenera al cambiar plan/sucursales
+// si el partner NO la personalizó (si aún matchea el patrón auto).
+const autoPlanDesc = (nombre: string, suc: number) =>
+  `Plan ${PLAN_LABELS_ES[nombre] || nombre} · ${suc} sucursal${suc > 1 ? 'es' : ''}`;
+const isAutoPlanDesc = (desc: string | undefined | null) =>
+  !desc || /^Plan .+ · \d+ sucursal(es)?$/.test(desc);
+
+// Nombre visible de un item de plan: título personalizado del partner o el del catálogo.
+const planDisplayName = (it: any) =>
+  it.titulo || `Plan ${PLAN_LABELS_ES[it.nombre] || it.nombre}`;
+
 const isLocked = (estado: string) => ['accepted', 'paid', 'rejected'].includes(estado);
 
 // Estado EFECTIVO: en la BD una cotización vencida sigue como 'sent' (el vencimiento
@@ -684,9 +695,9 @@ function QuoteDetail({
           {(quote.items || []).map((it: any, idx: number) => (
             <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: `1px solid ${C.borderSoft}`, fontSize: 13 }}>
               <div>
-                <div style={{ fontWeight: 600 }}>{it.descripcion || it.nombre || 'Item'}</div>
+                <div style={{ fontWeight: 600 }}>{(it.tipo === 'plan' && it.titulo) || it.descripcion || it.nombre || 'Item'}</div>
                 <div style={{ color: C.mutedLight, fontSize: 11, marginTop: 2 }}>
-                  {it.tipo === 'plan' ? 'Plan recurrente' : it.recurrente ? `Recurrente · ${it.periodo_extra || 'mensual'}` : 'Único'}
+                  {it.tipo === 'plan' ? `Plan recurrente · ${it.periodo === 'anual' ? 'anual' : 'mensual'}` : it.recurrente ? `Recurrente · ${it.periodo_extra || 'mensual'}` : 'Único'}
                 </div>
               </div>
               <strong>{fmt(it.subtotal || it.monto || 0)}</strong>
@@ -1048,7 +1059,7 @@ function QuoteEditor({
         monto: PLAN_PRICES[nombre],
         recurrente: true,
         periodo_extra: 'mensual',
-        descripcion: `Plan ${PLAN_LABELS_ES[nombre]} · 1 sucursal`,
+        descripcion: autoPlanDesc(nombre, 1),
       }],
     });
   };
@@ -1579,7 +1590,7 @@ function QuoteEditor({
                     <span style={{ fontSize: 9, fontWeight: 800, color: '#fff', background: C.green, padding: '2px 7px', borderRadius: 3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Promoción</span>
                   )}
                   <strong style={{ fontSize: 13 }}>
-                    {it.tipo === 'plan' ? `Plan ${PLAN_LABELS_ES[it.nombre] || it.nombre}` : it.nombre || 'Extra'}
+                    {it.tipo === 'plan' ? planDisplayName(it) : it.nombre || 'Extra'}
                   </strong>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1605,15 +1616,19 @@ function QuoteEditor({
                     <Field label="Plan" small>
                       <select value={it.nombre} onChange={(e) => {
                         const n = e.target.value;
-                        updateItem(idx, { nombre: n, precio_unitario: PLAN_PRICES[n], descripcion: `Plan ${PLAN_LABELS_ES[n]} · ${it.sucursales || 1} sucursal${(it.sucursales || 1) > 1 ? 'es' : ''}` });
+                        const patch: any = { nombre: n, precio_unitario: PLAN_PRICES[n] };
+                        if (isAutoPlanDesc(it.descripcion)) patch.descripcion = autoPlanDesc(n, it.sucursales || 1);
+                        updateItem(idx, patch);
                       }} style={inputStyle}>
-                        {PLANS.map((p) => <option key={p} value={p}>{PLAN_LABELS_ES[p]} (${PLAN_PRICES[p]}/mes)</option>)}
+                        {PLANS.map((p) => <option key={p} value={p}>{PLAN_LABELS_ES[p]} (${PLAN_PRICES[p]}/mes · ${(PLAN_PRICES[p] * 10).toLocaleString('es-MX')}/año)</option>)}
                       </select>
                     </Field>
                     <Field label="Sucursales" small>
                       <input type="number" min={1} value={it.sucursales || 1} onChange={(e) => {
                         const suc = Math.max(1, Number(e.target.value) || 1);
-                        updateItem(idx, { sucursales: suc, descripcion: `Plan ${PLAN_LABELS_ES[it.nombre]} · ${suc} sucursal${suc > 1 ? 'es' : ''}` });
+                        const patch: any = { sucursales: suc };
+                        if (isAutoPlanDesc(it.descripcion)) patch.descripcion = autoPlanDesc(it.nombre, suc);
+                        updateItem(idx, patch);
                       }} style={inputStyle} />
                     </Field>
                     <Field label="Periodo" small>
@@ -1621,6 +1636,21 @@ function QuoteEditor({
                         <option value="mensual">Mensual</option>
                         <option value="anual">Anual (2 meses gratis)</option>
                       </select>
+                    </Field>
+                  </div>
+                  {it.periodo === 'anual' && (
+                    <div style={{ fontSize: 11, color: C.greenDark, marginTop: 6 }}>
+                      Anual: {fmt(PLAN_PRICES[it.nombre] * (it.sucursales || 1))}/mes × 10 meses = {fmt(PLAN_PRICES[it.nombre] * (it.sucursales || 1) * 10)}/año · el cliente ahorra {fmt(PLAN_PRICES[it.nombre] * (it.sucursales || 1) * 2)} (2 meses gratis)
+                    </div>
+                  )}
+                  <div style={{ marginTop: 6 }}>
+                    <Field label="Nombre en la cotización (opcional)" small>
+                      <input value={it.titulo || ''} onChange={(e) => updateItem(idx, { titulo: e.target.value || undefined })} style={inputStyle} placeholder={`Ej. Plan ${PLAN_LABELS_ES[it.nombre] || it.nombre} — Punto de venta + Facturación`} />
+                    </Field>
+                  </div>
+                  <div style={{ marginTop: 6 }}>
+                    <Field label="Qué incluye / beneficios (visible al cliente)" small>
+                      <input value={it.descripcion || ''} onChange={(e) => updateItem(idx, { descripcion: e.target.value })} style={inputStyle} placeholder="Ej. POS ilimitado, inventarios, facturación y soporte" />
                     </Field>
                   </div>
                   <div className="cq-row-2" style={{ marginTop: 6 }}>
@@ -1693,6 +1723,7 @@ function QuoteEditor({
                 <span style={{ color: C.muted, marginRight: 8 }}>Subtotal:</span>
                 <strong style={{ color: it.es_promocion ? C.green : C.text }}>
                   {it.es_promocion ? 'GRATIS' : fmt(it.subtotal)}
+                  {it.tipo === 'plan' ? (it.periodo === 'anual' ? '/año' : '/mes') : ''}
                 </strong>
               </div>
             </div>
@@ -2091,7 +2122,10 @@ const COTIZADOR_MOBILE_CSS = `
 
 function computeItemSubtotal(it: any): number {
   if (it.tipo === 'plan') {
-    const base = (PLAN_PRICES[it.nombre] || 0) * (it.sucursales || 1);
+    // Anual = 12 meses al precio de 10 (2 meses gratis) — misma regla que el editor admin
+    // y que la página pública (que desglosa "× 10 meses" y calcula el ahorro con ×10).
+    const meses = it.periodo === 'anual' ? 10 : 1;
+    const base = (PLAN_PRICES[it.nombre] || 0) * (it.sucursales || 1) * meses;
     const disc = (Number(it.descuento_pct) || 0) / 100;
     return Math.round(base * (1 - disc));
   }

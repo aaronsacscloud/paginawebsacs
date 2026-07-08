@@ -37,7 +37,7 @@ export const POST: APIRoute = async ({ request }) => {
         price_data: {
           currency,
           product_data: {
-            name: item.tipo === 'plan' ? `Plan ${item.nombre}` : (item.nombre || 'Concepto'),
+            name: item.tipo === 'plan' ? (item.titulo || `Plan ${item.nombre}`) : (item.nombre || 'Concepto'),
             description: item.descripcion || undefined,
           },
           unit_amount: itemAmount,

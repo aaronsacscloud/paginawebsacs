@@ -171,6 +171,15 @@ const recurringAnnualItems = items.filter((i: any) => i.tipo === 'extra' && i.re
 const recurringItems = [...recurringMonthlyItems, ...recurringAnnualItems];
 const promoItems = items.filter((i: any) => i.es_promocion);
 
+// Nombre visible de un item de plan: título personalizado (definido por el partner/admin
+// en el editor) o el nombre del catálogo. El plan base sigue siendo `nombre` (catálogo) —
+// el título solo cambia cómo se presenta al cliente.
+const planDisplayName = (i: any) => {
+  if (i.titulo) return i.titulo;
+  const pd = plans.find((p) => p.id === String(i.nombre || '').toLowerCase());
+  return `Plan ${pd?.name || i.nombre}`;
+};
+
 // Build plan features for "Qué incluye tu plan" section
 const planFeatures = planItems.map((pi: any) => {
   const planData = plans.find(p => p.id === pi.nombre?.toLowerCase());
@@ -188,7 +197,7 @@ const planFeatures = planItems.map((pi: any) => {
     }
     current = current.inheritsFrom ? plans.find(p => p.name === current!.inheritsFrom) : undefined;
   }
-  return { planName: planData.name, features: allFeatures.reverse(), services: planData.services };
+  return { planName: planData.name, titulo: pi.titulo || null, features: allFeatures.reverse(), services: planData.services };
 }).filter(Boolean);
 
 // Calculate payment breakdown
@@ -212,7 +221,7 @@ const renewalDiscountRatio = _rawSubtotal > 0 ? _totalBeforeIva / _rawSubtotal :
 const hasRenewalDiscount = renewalDiscountRatio < 0.999;
 
 // Auto-generate summary
-const planNames = planItems.map((i: any) => `Plan ${i.nombre}`).join(' + ');
+const planNames = planItems.map((i: any) => planDisplayName(i)).join(' + ');
 const sucTotal = planItems.reduce((s: number, i: any) => s + (parseInt(i.sucursales) || 1), 0);
 const extraNames = [...uniqueItems, ...recurringItems].map((i: any) => i.nombre).filter(Boolean);
 const summary = planNames ? `${planNames} para ${sucTotal} sucursal${sucTotal > 1 ? 'es' : ''}${extraNames.length ? ' con ' + extraNames.join(' y ') : ''}` : quote.empresa;
@@ -654,7 +663,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
             <tr class:list={[{ 'qt-promo-row': isPromo, 'qt-expired-row': showExpiredCompare }]} data-paquete={item.paquete || ''} style={rowHidden ? 'display:none;' : undefined}>
               <td class="qt-concept">
                 {isPromo && <span class:list={['qt-promo-badge', { 'qt-promo-badge--expired': showExpiredCompare }]}>{showExpiredCompare ? 'PROMO VENCIDA' : 'PROMOCION'}</span>}
-                <strong>{item.tipo === 'plan' ? `Plan ${item.nombre}` : item.nombre}</strong>
+                <strong>{item.tipo === 'plan' ? planDisplayName(item) : item.nombre}</strong>
                 {item.tipo === 'plan' && (
                   <div class="qt-desc">
                     {fmt(item.precio_unitario || 0)}/suc × {suc} suc. × {isAnnual ? '10 meses' : '1 mes'}
@@ -850,7 +859,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
           <div class="quote-payment-block">
             <div class="quote-payment-label">Pago mensual recurrente</div>
             {planItems.filter((i: any) => i.periodo === 'mensual').map((i: any) => (
-              <div class="quote-payment-line"><span>Plan {i.nombre} · {i.sucursales} suc.</span><span>{fmt(i.subtotal || 0)}</span></div>
+              <div class="quote-payment-line"><span>{planDisplayName(i)} · {i.sucursales} suc.</span><span>{fmt(i.subtotal || 0)}</span></div>
             ))}
             {recurringMonthlyItems.map((i: any) => (
               <div class="quote-payment-line"><span>{i.nombre}</span><span>{fmt(i.monto || 0)}</span></div>
@@ -889,9 +898,9 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
               <div class="quote-payment-label">Próxima renovación anual: {nextAnnualStr}</div>
               {planRenewalLines.map(({ i, suc, promoRenewal, fullPrice, hasAnyDiscount }) => (
                 showRenewalCompare && hasAnyDiscount ? (
-                  <div class="quote-payment-line"><span>Renovación Plan {i.nombre} · {suc} suc.</span><span class="qt-compare"><span class="qt-price-strike">{fmt(promoRenewal)}</span><span class="qt-price-normal">{fmt(fullPrice)}</span></span></div>
+                  <div class="quote-payment-line"><span>Renovación {planDisplayName(i)} · {suc} suc.</span><span class="qt-compare"><span class="qt-price-strike">{fmt(promoRenewal)}</span><span class="qt-price-normal">{fmt(fullPrice)}</span></span></div>
                 ) : (
-                  <div class="quote-payment-line"><span>Renovación Plan {i.nombre} · {suc} suc.</span><span>{fmt(promoRenewal)}</span></div>
+                  <div class="quote-payment-line"><span>Renovación {planDisplayName(i)} · {suc} suc.</span><span>{fmt(promoRenewal)}</span></div>
                 )
               ))}
               {extraRenewalLines.map(({ i, promoRenewal, fullPrice, hasAnyDiscount }) => (
@@ -1045,7 +1054,7 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
                 <div class="qph-items-list" id="qph-items-list" style="display:none">
                   {items.map((it: any, i: number) => {
                     const lbl = it.tipo === 'plan'
-                      ? `Plan ${it.nombre}${it.sucursales ? ` · ${it.sucursales} suc.` : ''}`
+                      ? `${planDisplayName(it)}${it.sucursales ? ` · ${it.sucursales} suc.` : ''}`
                       : it.nombre || 'Concepto';
                     return (
                       <label class="qph-item-check">
@@ -1173,7 +1182,8 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
         <div class="quote-features-title">Que incluye tu plan</div>
         {planFeatures.map((pf: any) => (
           <div class="quote-plan-features">
-            <div class="quote-plan-name">Plan {pf.planName}</div>
+            <div class="quote-plan-name">{pf.titulo || `Plan ${pf.planName}`}</div>
+            {pf.titulo && <div style="font-size:12px;color:#8a94a6;margin:-4px 0 10px">Incluye todo el Plan {pf.planName}</div>}
             <div class="quote-features-grid">
               {pf.features.map((cat: any) => (
                 <div class="quote-feature-cat">

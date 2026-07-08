@@ -74,7 +74,7 @@ export async function sendAcuseEmail(paymentId: string): Promise<{ ok: boolean; 
   }
   const itemsForEmail = coveredItems.map((it: any) => ({
     label: it.tipo === 'plan'
-      ? `Plan ${it.nombre}${it.sucursales ? ` · ${it.sucursales} suc.` : ''}${it.periodo ? ` (${it.periodo})` : ''}`
+      ? `${it.titulo || `Plan ${it.nombre}`}${it.sucursales ? ` · ${it.sucursales} suc.` : ''}${it.periodo ? ` (${it.periodo})` : ''}`
       : it.nombre || 'Concepto',
     monto: Number(it.subtotal || it.monto || 0),
   }));

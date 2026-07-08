@@ -173,7 +173,7 @@ const cotizacionUrl = quote ? `/cotizacion/${quote.id}` : null;
           <tbody>
             {coveredItems.map((it: any) => {
               const label = it.tipo === 'plan'
-                ? `Plan ${it.nombre}${it.sucursales ? ` · ${it.sucursales} sucursal${Number(it.sucursales) > 1 ? 'es' : ''}` : ''}`
+                ? `${it.titulo || `Plan ${it.nombre}`}${it.sucursales ? ` · ${it.sucursales} sucursal${Number(it.sucursales) > 1 ? 'es' : ''}` : ''}`
                 : it.nombre || 'Concepto';
               const sub = it.tipo === 'plan'
                 ? (it.periodo === 'anual' ? 'Renovación anual' : it.periodo === 'mensual' ? 'Suscripción mensual' : '')
