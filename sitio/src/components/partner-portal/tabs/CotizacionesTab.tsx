@@ -16,7 +16,8 @@ import { SS, C, stagePillStyle } from './styles';
 import { Icon } from './icons';
 import { fmt, fmtDate, fmtRel, isDemoMode, apiGet, copyToClipboard } from './utils';
 import { demoQuotes } from '../../../data/partner-portal-demo';
-import { PLAN_PRICES, IMPL_PRICES, PLANS } from '../../../lib/quotes/constants';
+import { PLAN_PRICES, IMPL_PRICES, PLANS, COMISION_CATEGORIAS, COMISION_RATES, COMISION_LABELS } from '../../../lib/quotes/constants';
+import { calcComision, calcComisionQuote, categoriaDeItem, defaultCategoria } from '../../../lib/quotes/commissions';
 import { plans as PLANS_DATA } from '../../../data/plans';
 import { CASOS_GIRO } from '../../../data/casos-giro';
 import { calcQuoteTotals } from '../../../lib/quotes/totals';
@@ -89,6 +90,35 @@ const isAutoPlanDesc = (desc: string | undefined | null) =>
 // Nombre visible de un item de plan: título personalizado del partner o el del catálogo.
 const planDisplayName = (it: any) =>
   it.titulo || `Plan ${PLAN_LABELS_ES[it.nombre] || it.nombre}`;
+
+// ─── Plantillas de TÉRMINOS Y CONDICIONES ───────────────────────────────────
+// Sugeridas (hardcode) + las que el partner guarda. Las guardadas persisten como
+// filas estado='plantilla' en la tabla quotes con meta.tc_template=true —
+// mismo mecanismo que las plantillas de cotización, CERO cambios de backend.
+const TC_SUGERIDAS: Array<{ nombre: string; texto: string }> = [
+  {
+    nombre: 'Licencia mensual',
+    texto: 'Precios en MXN más IVA salvo que se indique "IVA incluido". La licencia se cobra por adelantado cada mes e incluye actualizaciones y soporte estándar. El servicio puede suspenderse por falta de pago. Esta cotización es válida hasta la vigencia indicada.',
+  },
+  {
+    nombre: 'Licencia anual',
+    texto: 'El plan anual equivale a 12 meses al precio de 10 (2 meses gratis) y se cobra en una sola exhibición al inicio del periodo. La renovación se realiza al precio vigente en la fecha de renovación. No es reembolsable una vez activada la licencia. Precios en MXN más IVA salvo indicarse "IVA incluido".',
+  },
+  {
+    nombre: 'Hardware / equipo',
+    texto: 'Los precios de hardware están sujetos a disponibilidad y pueden variar por tipo de cambio. La garantía es la del fabricante. No incluye instalación en sitio salvo que se indique como concepto. Tiempo de entrega estimado: 5 a 10 días hábiles a partir de la confirmación del pago.',
+  },
+  {
+    nombre: 'Implementación / personalización',
+    texto: 'Los trabajos de implementación y personalización requieren 50% de anticipo para agendar y 50% contra entrega. Los tiempos estimados corren a partir del anticipo y de la entrega completa de la información por parte del cliente. Incluye 2 rondas de ajustes; cambios de alcance se cotizan por separado.',
+  },
+  {
+    nombre: 'Condiciones comerciales estándar',
+    texto: 'Cotización válida hasta la vigencia indicada en el documento. Precios en MXN más IVA salvo indicarse "IVA incluido". El pago de esta cotización confirma la aceptación de los términos aquí descritos. Los conceptos marcados como promoción aplican únicamente dentro de la vigencia.',
+  },
+];
+
+export interface TcTemplate { id: string; nombre: string; texto: string }
 
 // Casos de éxito / testimonios que la cotización pública muestra AUTOMÁTICAMENTE
 // (misma data que la sección "Marcas que crecen con Sacs" de cotizacion/[id].astro).
@@ -163,6 +193,17 @@ const TIMELINE_LABELS: Record<string, string> = {
   reactivation_requested: 'Cliente pidió reactivarla',
 };
 
+// Fecha de PAGO de una quote: el evento 'paid' del timeline (lo escribe tanto el
+// pago del cliente como el botón "Marcar como pagada"); fallbacks para quotes
+// viejas sin evento.
+function getPaidAt(q: Pick<Quote, 'notas' | 'aceptado_fecha' | 'updated_at' | 'created_at'>): string | null {
+  const tl = getQuoteAnalytics(q as any).timeline;
+  for (let i = tl.length - 1; i >= 0; i--) {
+    if (tl[i].event === 'paid' && tl[i].at) return tl[i].at;
+  }
+  return q.aceptado_fecha || q.updated_at || q.created_at || null;
+}
+
 const TIMELINE_COLORS: Record<string, string> = {
   viewed: C.brand,
   accepted: C.green,
@@ -179,7 +220,11 @@ const TIMELINE_COLORS: Record<string, string> = {
 export default function CotizacionesTab({ user }: { user: { id: string; nombre: string; email: string } }) {
   const [quotes, setQuotes] = useState<Quote[] | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'todas' | 'activas' | 'aceptadas' | 'cerradas'>('todas');
+  const [filter, setFilter] = useState<'todas' | 'activas' | 'aceptadas' | 'pagadas' | 'cerradas'>('todas');
+  // Resultados por periodo (pagado + comisión)
+  const [periodo, setPeriodo] = useState<'mes' | 'mes_pasado' | 'anio' | 'todo' | 'custom'>('mes');
+  const [rangoDesde, setRangoDesde] = useState('');
+  const [rangoHasta, setRangoHasta] = useState('');
   const [selected, setSelected] = useState<Quote | null>(null);
   const [editing, setEditing] = useState<Partial<Quote> | null>(null);
 
@@ -194,7 +239,16 @@ export default function CotizacionesTab({ user }: { user: { id: string; nombre: 
 
   // Las plantillas viven en la misma tabla (estado='plantilla') pero NO son
   // cotizaciones: van en su propia sección y fuera de lista/stats/filtros.
-  const plantillas = useMemo(() => (quotes || []).filter((q) => q.estado === 'plantilla'), [quotes]);
+  // Las de meta.tc_template son plantillas de TÉRMINOS Y CONDICIONES (solo texto),
+  // no de cotización completa — se usan dentro del editor.
+  const esTcTemplate = (q: Quote) => !!parseMeta(q.notas || '').meta?.tc_template;
+  const plantillas = useMemo(() => (quotes || []).filter((q) => q.estado === 'plantilla' && !esTcTemplate(q)), [quotes]);
+  const tcTemplates = useMemo<TcTemplate[]>(
+    () => (quotes || [])
+      .filter((q) => q.estado === 'plantilla' && esTcTemplate(q))
+      .map((q) => ({ id: q.id, nombre: q.empresa || 'Plantilla', texto: q.condiciones || '' })),
+    [quotes],
+  );
   const reales = useMemo(() => (quotes || []).filter((q) => q.estado !== 'plantilla'), [quotes]);
 
   const visible = useMemo(() => {
@@ -203,13 +257,14 @@ export default function CotizacionesTab({ user }: { user: { id: string; nombre: 
       if (filter === 'todas') return true;
       if (filter === 'activas') return ['draft', 'sent'].includes(est);
       if (filter === 'aceptadas') return ['accepted', 'paid'].includes(est);
+      if (filter === 'pagadas') return est === 'paid';
       if (filter === 'cerradas') return ['rejected', 'expired'].includes(est);
       return true;
     });
   }, [reales, filter]);
 
   const stats = useMemo(() => {
-    if (!reales.length) return { total: 0, enviadas: 0, aceptadas: 0, valorPipeline: 0, sinAbrir: 0, tasa: null as number | null, diasCierre: null as number | null, pctAbiertas: null as number | null };
+    if (!reales.length) return { total: 0, enviadas: 0, aceptadas: 0, valorPipeline: 0, sinAbrir: 0, tasa: null as number | null, diasCierre: null as number | null, pctAbiertas: null as number | null, pagadas: 0, totalPagado: 0, comisionPagada: 0 };
     // Estado efectivo: las 'sent' con vigencia pasada cuentan como vencidas,
     // no como activas (antes inflaban "Enviadas activas" y el pipeline por siempre).
     const enviadasArr = reales.filter((q) => effectiveEstado(q) === 'sent');
@@ -225,6 +280,8 @@ export default function CotizacionesTab({ user }: { user: { id: string; nombre: 
     const pctAbiertas = enviadasTodas.length >= 3
       ? Math.round((enviadasTodas.filter((q) => getQuoteAnalytics(q).views > 0).length / enviadasTodas.length) * 100)
       : null;
+    // Pagadas: ingresos confirmados + comisión generada (tasas por categoría)
+    const pagadasArr = reales.filter((q) => q.estado === 'paid');
     return {
       total: reales.length,
       enviadas: enviadasArr.length,
@@ -234,8 +291,51 @@ export default function CotizacionesTab({ user }: { user: { id: string; nombre: 
         .filter((q) => ['sent', 'draft'].includes(effectiveEstado(q)))
         .reduce((s, q) => s + (q.total || 0), 0),
       tasa, diasCierre, pctAbiertas,
+      pagadas: pagadasArr.length,
+      totalPagado: pagadasArr.reduce((s, q) => s + (q.total || 0), 0),
+      comisionPagada: pagadasArr.reduce((s, q) => s + calcComisionQuote(q).total, 0),
     };
   }, [reales]);
+
+  // ─── Resultados del periodo: pagado + comisión, filtrados por fecha de pago ───
+  const periodStats = useMemo(() => {
+    const now = new Date();
+    let start: Date | null = null;
+    let end: Date | null = null;
+    if (periodo === 'mes') start = new Date(now.getFullYear(), now.getMonth(), 1);
+    else if (periodo === 'mes_pasado') {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      end = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else if (periodo === 'anio') start = new Date(now.getFullYear(), 0, 1);
+    else if (periodo === 'custom') {
+      if (rangoDesde) start = new Date(rangoDesde + 'T00:00:00');
+      if (rangoHasta) end = new Date(rangoHasta + 'T23:59:59');
+    }
+    const pagadas = reales.filter((q) => q.estado === 'paid').filter((q) => {
+      if (!start && !end) return true;
+      const raw = getPaidAt(q);
+      const d = raw ? new Date(raw) : null;
+      if (!d || isNaN(d.getTime())) return false;
+      if (start && d < start) return false;
+      if (end && d > end) return false;
+      return true;
+    });
+    const porCategoria: Record<string, number> = {};
+    let comision = 0;
+    for (const q of pagadas) {
+      const com = calcComisionQuote(q);
+      comision += com.total;
+      for (const cat of COMISION_CATEGORIAS) {
+        if (com.porCategoria[cat].comision > 0) porCategoria[cat] = (porCategoria[cat] || 0) + com.porCategoria[cat].comision;
+      }
+    }
+    return {
+      count: pagadas.length,
+      totalPagado: pagadas.reduce((s, q) => s + (q.total || 0), 0),
+      comision,
+      porCategoria,
+    };
+  }, [reales, periodo, rangoDesde, rangoHasta]);
 
   // "Mis conceptos": extras que el partner ya usó antes (dedupe por nombre,
   // conserva el precio más reciente) → botones de un clic en el editor.
@@ -317,6 +417,15 @@ export default function CotizacionesTab({ user }: { user: { id: string; nombre: 
           <div style={SS.statValueSm}>{fmt(stats.valorPipeline)}</div>
           <div style={SS.statHint}>valor cotizado en activas</div>
         </div>
+        <div style={SS.statCard}>
+          <div style={SS.statLabel}>Total pagado</div>
+          <div style={{ ...SS.statValueSm, color: C.greenDark }}>{fmt(stats.totalPagado)}</div>
+          <div style={SS.statHint}>
+            {stats.pagadas > 0
+              ? <>{stats.pagadas} pagada{stats.pagadas !== 1 ? 's' : ''} · comisión ≈ <strong style={{ color: C.greenDark }}>{fmt(stats.comisionPagada)}</strong></>
+              : 'ingresos confirmados'}
+          </div>
+        </div>
       </div>
 
       {/* Métricas de cierre — aparecen cuando hay historial suficiente */}
@@ -345,6 +454,60 @@ export default function CotizacionesTab({ user }: { user: { id: string; nombre: 
           )}
         </div>
       )}
+
+      {/* ─── Resultados del periodo: pagado real + comisión generada ─── */}
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+          <span style={{ fontSize: 12, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            Resultados del periodo
+          </span>
+          {([
+            ['mes', 'Este mes'],
+            ['mes_pasado', 'Mes pasado'],
+            ['anio', 'Este año'],
+            ['todo', 'Todo'],
+            ['custom', 'Rango…'],
+          ] as const).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setPeriodo(key)}
+              style={{
+                ...SS.pill, padding: '5px 11px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', border: 'none',
+                background: periodo === key ? C.brand : C.borderSoft,
+                color: periodo === key ? '#fff' : C.text,
+              }}
+            >
+              {label}
+            </button>
+          ))}
+          {periodo === 'custom' && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <input type="date" value={rangoDesde} onChange={(e) => setRangoDesde(e.target.value)} style={{ ...inputStyle, width: 'auto', padding: '5px 8px', fontSize: 12 }} />
+              <span style={{ fontSize: 12, color: C.muted }}>a</span>
+              <input type="date" value={rangoHasta} onChange={(e) => setRangoHasta(e.target.value)} style={{ ...inputStyle, width: 'auto', padding: '5px 8px', fontSize: 12 }} />
+            </span>
+          )}
+        </div>
+        <div style={SS.statGrid}>
+          <div style={SS.statCard}>
+            <div style={SS.statLabel}>Pagado en el periodo</div>
+            <div style={{ ...SS.statValueSm, color: C.greenDark }}>{fmt(periodStats.totalPagado)}</div>
+            <div style={SS.statHint}>{periodStats.count} cotización{periodStats.count !== 1 ? 'es' : ''} pagada{periodStats.count !== 1 ? 's' : ''}</div>
+          </div>
+          <div style={SS.statCard}>
+            <div style={SS.statLabel}>Comisión del periodo</div>
+            <div style={{ ...SS.statValueSm, color: C.greenDark }}>≈ {fmt(periodStats.comision)}</div>
+            <div style={SS.statHint}>
+              {Object.keys(periodStats.porCategoria).length > 0
+                ? (COMISION_CATEGORIAS.filter((c) => periodStats.porCategoria[c] > 0)
+                    .map((c) => `${COMISION_LABELS[c]} ${fmt(periodStats.porCategoria[c])}`)
+                    .join(' · '))
+                : 'según categoría de cada concepto'}
+            </div>
+          </div>
+        </div>
+      </div>
+
 
       {/* Mis plantillas — arranca cada cotización al 80% */}
       {plantillas.length > 0 && (
@@ -402,6 +565,7 @@ export default function CotizacionesTab({ user }: { user: { id: string; nombre: 
           ['todas', 'Todas'],
           ['activas', 'Activas'],
           ['aceptadas', 'Aceptadas'],
+          ['pagadas', 'Pagadas'],
           ['cerradas', 'Cerradas'],
         ] as const).map(([key, label]) => (
           <button
@@ -541,6 +705,8 @@ export default function CotizacionesTab({ user }: { user: { id: string; nombre: 
           initial={editing}
           user={user}
           conceptosPrevios={conceptosPrevios}
+          tcTemplates={tcTemplates}
+          onTcChanged={load}
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);
@@ -577,6 +743,8 @@ function QuoteDetail({
   const [extending, setExtending] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmPaid, setConfirmPaid] = useState(false);
+  const [markingPaid, setMarkingPaid] = useState(false);
 
   // Borrado: aceptada/pagada NO se pueden (ya hay comisión/factura). draft se borra
   // de verdad; el resto se archiva (reversible). Espeja canPartnerDeleteQuote del backend.
@@ -701,6 +869,17 @@ function QuoteDetail({
             <span style={{ color: C.muted }}>Total</span>
             <strong style={{ fontSize: 18 }}>{fmt(quote.total)} {quote.moneda || 'MXN'}</strong>
           </div>
+          {(() => {
+            const com = calcComisionQuote(quote);
+            if (com.total <= 0) return null;
+            const isPaid = quote.estado === 'paid';
+            return (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 13 }}>
+                <span style={{ color: C.muted }}>{isPaid ? 'Tu comisión generada' : 'Tu comisión (si se paga)'}</span>
+                <strong style={{ color: C.greenDark }}>≈ {fmt(com.total)}</strong>
+              </div>
+            );
+          })()}
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: C.muted }}>
             <span>Vigencia</span>
             <span>
@@ -833,6 +1012,48 @@ function QuoteDetail({
           <button onClick={onDuplicate} style={SS.btnGhost}>
             Duplicar
           </button>
+          {['sent', 'accepted'].includes(quote.estado) && (
+            confirmPaid ? (
+              <button
+                onClick={async () => {
+                  if (isDemoMode()) { alert('En modo demo no se modifican cotizaciones.'); setConfirmPaid(false); return; }
+                  setMarkingPaid(true);
+                  try {
+                    const res = await fetch('/api/revenue/quotes', {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ id: quote.id, estado: 'paid' }),
+                    });
+                    if (!res.ok) {
+                      const err = await res.json().catch(() => ({}));
+                      alert('Error: ' + (err.error || res.statusText));
+                      return;
+                    }
+                    onReload();
+                    onClose();
+                  } finally {
+                    setMarkingPaid(false);
+                    setConfirmPaid(false);
+                  }
+                }}
+                disabled={markingPaid}
+                style={{ ...SS.btnGhost, borderColor: C.green, color: C.greenDark, fontWeight: 700, opacity: markingPaid ? 0.6 : 1 }}
+              >
+                {markingPaid ? 'Marcando…' : '¿Seguro? Sí, ya pagó'}
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setConfirmPaid(true);
+                  setTimeout(() => setConfirmPaid(false), 4000);
+                }}
+                style={{ ...SS.btnGhost, borderColor: C.green, color: C.greenDark }}
+                title="El total pasa a ingresos confirmados y genera tu comisión"
+              >
+                💰 Marcar como pagada
+              </button>
+            )
+          )}
           {canExtend && (
             <button onClick={extend} disabled={extending} style={{ ...SS.btnGhost, opacity: extending ? 0.6 : 1 }}>
               {extending ? 'Extendiendo…' : 'Extender +15 días'}
@@ -984,12 +1205,16 @@ function QuoteEditor({
   initial,
   user: _user,
   conceptosPrevios = [],
+  tcTemplates = [],
+  onTcChanged,
   onClose,
   onSaved,
 }: {
   initial: Partial<Quote>;
   user: { id: string; nombre: string; email: string };
   conceptosPrevios?: Array<{ nombre: string; precio: number; recurrente: boolean; periodo_extra: string; descripcion: string }>;
+  tcTemplates?: TcTemplate[];
+  onTcChanged?: () => void;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -1053,17 +1278,56 @@ function QuoteEditor({
   const [minutaError, setMinutaError] = useState<string | null>(null);
   const [drafting, setDrafting] = useState(false);
   const [uploadingAttachment, setUploadingAttachment] = useState(false);
-  const [commissionPct, setCommissionPct] = useState<number | null>(null);
-
-  // Tasa de comisión del partner — para "tu comisión estimada" en el resumen
-  useEffect(() => {
-    if (isDemoMode()) { setCommissionPct(20); return; }
-    fetch('/api/revenue/commission-rate')
-      .then((r) => r.json())
-      .then((d) => { if (d && typeof d.pct === 'number') setCommissionPct(d.pct); })
-      .catch(() => {});
-  }, []);
   const isEdit = !!initial?.id;
+
+  // ─── Plantillas de términos y condiciones ───
+  // Copia local para que una plantilla recién guardada aparezca sin recargar.
+  const [tcLocal, setTcLocal] = useState<TcTemplate[]>(tcTemplates);
+  const [savingTc, setSavingTc] = useState(false);
+
+  const insertTc = (texto: string) => {
+    const actual = (form.condiciones || '').trim();
+    setForm({ ...form, condiciones: actual ? actual + '\n\n' + texto : texto });
+  };
+
+  const saveTcTemplate = async () => {
+    const texto = (form.condiciones || '').trim();
+    if (!texto) return;
+    if (isDemoMode()) { alert('En modo demo no se guardan plantillas.'); return; }
+    const nombre = prompt('Nombre de la plantilla de términos (ej. "Licencia anual + hardware")', '');
+    if (!nombre) return;
+    setSavingTc(true);
+    try {
+      const res = await fetch('/api/revenue/quotes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          empresa: nombre, contacto: '', email: 'plantilla@sacscloud.com', whatsapp: '—',
+          items: [], estado: 'plantilla', condiciones: texto,
+          subtotal: 0, iva_monto: 0, total: 0, moneda: form.moneda || 'MXN',
+          notas: serializeMeta('', { tc_template: true }),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data?.id) {
+        setTcLocal([...tcLocal, { id: data.id, nombre, texto }]);
+        if (onTcChanged) onTcChanged();
+      } else {
+        setError(data?.error || 'No se pudo guardar la plantilla de términos');
+      }
+    } finally {
+      setSavingTc(false);
+    }
+  };
+
+  const deleteTc = async (tid: string) => {
+    setTcLocal(tcLocal.filter((t) => t.id !== tid)); // optimista: quitar de inmediato
+    if (isDemoMode()) return;
+    try {
+      await fetch(`/api/revenue/quotes?id=${encodeURIComponent(tid)}`, { method: 'DELETE' });
+      if (onTcChanged) onTcChanged();
+    } catch (e) { /* best-effort: reaparece al recargar si falló */ }
+  };
 
   const items: any[] = Array.isArray(form.items) ? form.items : [];
 
@@ -1094,6 +1358,7 @@ function QuoteEditor({
         recurrente: true,
         periodo_extra: 'mensual',
         descripcion: autoPlanDesc(nombre, 1),
+        categoria_comision: 'licencia',
       }],
     });
   };
@@ -1112,6 +1377,7 @@ function QuoteEditor({
         recurrente: def.recurrente,
         periodo_extra: def.periodo_extra,
         descripcion: def.descripcion || def.nombre,
+        categoria_comision: defaultCategoria({ nombre: def.nombre, descripcion: def.descripcion }),
       }],
     });
   };
@@ -1128,6 +1394,7 @@ function QuoteEditor({
         recurrente: false,
         periodo_extra: 'unico',
         descripcion: '',
+        categoria_comision: 'personalizacion',
       }],
     });
   };
@@ -1281,6 +1548,7 @@ function QuoteEditor({
         precio_unitario: c.precio, monto: c.precio, subtotal: c.precio,
         recurrente: c.recurrente, periodo_extra: c.periodo_extra || 'unico',
         descripcion: c.descripcion || '',
+        categoria_comision: defaultCategoria(c),
       }],
     });
   };
@@ -1706,6 +1974,9 @@ function QuoteEditor({
                       <input value={it.nota || ''} onChange={(e) => updateItem(idx, { nota: e.target.value })} style={inputStyle} placeholder="Ej. precio especial" />
                     </Field>
                   </div>
+                  <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>
+                    Categoría de comisión: <strong>Licencia · {COMISION_RATES.licencia}%</strong> (los planes siempre son licencia)
+                  </div>
                 </>
               ) : it.es_promocion ? (
                 <>
@@ -1758,6 +2029,15 @@ function QuoteEditor({
                         </select>
                       </Field>
                     )}
+                  </div>
+                  <div style={{ marginTop: 6 }}>
+                    <Field label="Categoría (define tu comisión)" small>
+                      <select value={categoriaDeItem(it)} onChange={(e) => updateItem(idx, { categoria_comision: e.target.value })} style={inputStyle}>
+                        {COMISION_CATEGORIAS.map((c) => (
+                          <option key={c} value={c}>{COMISION_LABELS[c]} · {COMISION_RATES[c]}% de comisión</option>
+                        ))}
+                      </select>
+                    </Field>
                   </div>
                 </>
               )}
@@ -2015,6 +2295,34 @@ function QuoteEditor({
               placeholder="Términos especiales, qué incluye, qué no, plazos, etc."
               style={{ ...inputStyle, fontFamily: 'inherit', resize: 'vertical' }}
             />
+            {/* Plantillas de términos y condiciones: un clic las inserta */}
+            <div style={{ marginTop: 8, fontSize: 11, color: C.muted }}>
+              Plantillas:
+              {tcLocal.map((t) => (
+                <span key={t.id} style={{ display: 'inline-flex', alignItems: 'center', marginLeft: 6, marginTop: 4 }}>
+                  <button onClick={() => insertTc(t.texto)} title={t.texto} style={{ ...SS.btnGhost, fontSize: 11, padding: '4px 8px', borderColor: C.brand, color: C.brand, borderTopRightRadius: 0, borderBottomRightRadius: 0 }}>
+                    + {t.nombre}
+                  </button>
+                  <button
+                    onClick={() => deleteTc(t.id)}
+                    title="Eliminar esta plantilla"
+                    style={{ ...SS.btnGhost, fontSize: 11, padding: '4px 6px', borderColor: C.brand, color: C.muted, borderLeft: 'none', borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+              {TC_SUGERIDAS.map((t) => (
+                <button key={t.nombre} onClick={() => insertTc(t.texto)} title={t.texto} style={{ ...SS.btnGhost, fontSize: 11, padding: '4px 8px', marginLeft: 6, marginTop: 4 }}>
+                  + {t.nombre}
+                </button>
+              ))}
+            </div>
+            {(form.condiciones || '').trim().length > 10 && (
+              <button onClick={saveTcTemplate} disabled={savingTc} style={{ ...SS.btnGhost, fontSize: 11, padding: '4px 10px', marginTop: 8, opacity: savingTc ? 0.6 : 1 }}>
+                {savingTc ? 'Guardando…' : '💾 Guardar estas condiciones como plantilla'}
+              </button>
+            )}
           </Field>
         </Section>
 
@@ -2073,15 +2381,23 @@ function QuoteEditor({
               <Row label={ivaMode === 'incluido' ? 'Total (IVA incluido)' : 'Total'} value={`${fmt(totals.grandTotal)} ${form.moneda || 'MXN'}`} bold />
             )}
           </div>
-          {commissionPct !== null && totals.grandTotal > 0 && (
-            <div style={{ background: '#E9F7F1', borderRadius: 8, padding: '8px 12px', marginTop: 10 }}>
-              <Row
-                label={`Tu comisión estimada (${commissionPct}%)`}
-                value={`≈ ${fmt((paquetesOn ? totalesDePaquete((form.paquetes as any[])[0].id).grandTotal : totals.grandTotal) * commissionPct / 100)}`}
-              />
-              <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>Se confirma al cerrarse la venta. Cada punto de descuento también descuenta tu comisión.</div>
-            </div>
-          )}
+          {(() => {
+            // Comisión por CATEGORÍA de concepto (licencia 35 / plugin 25 / personalización 20 / hardware 5)
+            const comItems = paquetesOn ? itemsDePaquete((form.paquetes as any[])[0].id) : items;
+            const com = calcComision(comItems, { descuento_global: form.descuento_global, descuento_tipo: form.descuento_tipo });
+            if (com.total <= 0) return null;
+            return (
+              <div style={{ background: '#E9F7F1', borderRadius: 8, padding: '8px 12px', marginTop: 10 }}>
+                <Row label="Tu comisión estimada" value={`≈ ${fmt(com.total)}`} bold />
+                {COMISION_CATEGORIAS.filter((c) => com.porCategoria[c].base > 0).map((c) => (
+                  <Row key={c} label={`${COMISION_LABELS[c]} · ${COMISION_RATES[c]}% de ${fmt(com.porCategoria[c].base)}`} value={fmt(com.porCategoria[c].comision)} muted />
+                ))}
+                <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>
+                  Se confirma cuando la cotización se marca como pagada. Cada punto de descuento también descuenta tu comisión; el IVA no comisiona.{paquetesOn ? ' Calculada sobre la primera opción.' : ''}
+                </div>
+              </div>
+            );
+          })()}
           {(breakdown.mensualRecurrente > 0 || breakdown.anualRecurrente > 0 || breakdown.unicoSetup > 0) && (
             <div style={{ borderTop: `1px solid ${C.brandTint}`, marginTop: 12, paddingTop: 10 }}>
               <div style={{ fontSize: 11, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Desglose de pagos</div>

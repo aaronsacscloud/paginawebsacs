@@ -15,6 +15,26 @@ export const IMPL_PRICES: Record<string, number> = {
   automatiza: 9000,
 };
 
+// ─── Comisiones del partner por CATEGORÍA de concepto ───────────────────────
+// Tasas HARDCODE por pedido del dueño (2026-07-08); cuando existan por-partner
+// o configurables, este mapa es el único lugar a tocar.
+export const COMISION_CATEGORIAS = ['licencia', 'plugin', 'personalizacion', 'hardware'] as const;
+export type CategoriaComision = (typeof COMISION_CATEGORIAS)[number];
+
+export const COMISION_RATES: Record<CategoriaComision, number> = {
+  licencia: 35,
+  plugin: 25,
+  personalizacion: 20,
+  hardware: 5,
+};
+
+export const COMISION_LABELS: Record<CategoriaComision, string> = {
+  licencia: 'Licencia',
+  plugin: 'Plugin',
+  personalizacion: 'Personalización',
+  hardware: 'Hardware',
+};
+
 export const METODOS = ['transferencia', 'tarjeta', 'oxxo', 'otro'] as const;
 export type MetodoPago = (typeof METODOS)[number];
 

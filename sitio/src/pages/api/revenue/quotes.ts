@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { getCurrentUser } from '../../../lib/auth/scope';
 import { validatePartnerQuoteBody, canPartnerEditQuote, canPartnerDeleteQuote } from '../../../lib/quotes/permissions';
-import { parseMeta, serializeMeta } from '../../../lib/quotes/meta';
+import { parseMeta, serializeMeta, addTimelineEvent } from '../../../lib/quotes/meta';
 
 export const prerender = false;
 
@@ -171,6 +171,32 @@ export const PUT: APIRoute = async ({ request }) => {
     if (prev.partner_id && prev.partner_id !== user.id) {
       return jsonResponse({ error: 'no autorizado' }, 403);
     }
+
+    // Transición PURA a 'paid': marcar cobrada una cotización enviada/aceptada.
+    // Es la ÚNICA escritura permitida sobre una quote "locked" (aceptada), y solo
+    // si el body no trae NADA más que el estado — marcar pagada ≠ editar contenido.
+    const extraKeys = Object.keys(body).filter((k) => k !== 'id' && k !== 'estado');
+    if (body.estado === 'paid' && extraKeys.length === 0) {
+      if (!['sent', 'accepted'].includes(String(prev.estado || ''))) {
+        return jsonResponse({
+          error: `Solo puedes marcar como pagada una cotización enviada o aceptada (esta está ${prev.estado}).`,
+          code: 'invalid_paid_transition',
+        }, 409);
+      }
+      const { data: full } = await supabase.from('quotes').select('notas').eq('id', id).single();
+      // El timestamp del evento 'paid' en el timeline es la fecha de pago que
+      // usan los resultados por periodo — no solo auditoría.
+      const notas = addTimelineEvent(full?.notas || null, 'paid');
+      const { data: paidData, error: paidErr } = await supabase
+        .from('quotes')
+        .update({ estado: 'paid', notas })
+        .eq('id', id)
+        .select()
+        .single();
+      if (paidErr) return jsonResponse({ error: paidErr.message }, 500);
+      return jsonResponse(paidData);
+    }
+
     if (!canPartnerEditQuote(prev.estado)) {
       return jsonResponse({
         error: `No puedes editar una cotización ${prev.estado}`,
