@@ -17,6 +17,7 @@ import { Icon } from './icons';
 import { fmt, fmtDate, fmtRel, isDemoMode, apiGet, copyToClipboard } from './utils';
 import { demoQuotes } from '../../../data/partner-portal-demo';
 import { PLAN_PRICES, IMPL_PRICES, PLANS } from '../../../lib/quotes/constants';
+import { plans as PLANS_DATA } from '../../../data/plans';
 import { CASOS_GIRO } from '../../../data/casos-giro';
 import { calcQuoteTotals } from '../../../lib/quotes/totals';
 import { parseMeta, serializeMeta } from '../../../lib/quotes/meta';
@@ -88,6 +89,32 @@ const isAutoPlanDesc = (desc: string | undefined | null) =>
 // Nombre visible de un item de plan: título personalizado del partner o el del catálogo.
 const planDisplayName = (it: any) =>
   it.titulo || `Plan ${PLAN_LABELS_ES[it.nombre] || it.nombre}`;
+
+// Casos de éxito / testimonios que la cotización pública muestra AUTOMÁTICAMENTE
+// (misma data que la sección "Marcas que crecen con Sacs" de cotizacion/[id].astro).
+const PREVIEW_CASES = [
+  {
+    img: '/images/case-shakira-merch.webp', tag: 'Entretenimiento', tagBg: '#E84393', tagColor: '#fff',
+    name: 'Liveshow Merchandising',
+    desc: '1,500+ puntos de venta implementados para conciertos de Shakira, Metallica y Karol G en toda Latinoamérica.',
+    metrics: ['150K+ transacciones', '75% más rápido'],
+    quote: '"Con SACS no perdemos una sola venta, ni en el concierto más grande."',
+  },
+  {
+    img: '/images/case-bella-pandita.webp', tag: 'Moda y hogar', tagBg: '#6C5CE7', tagColor: '#fff',
+    name: 'La Bella Pandita',
+    desc: 'De 1 tienda piloto a 42 sucursales sincronizadas en 3 años.',
+    metrics: ['+300% lifetime value', '45% clientes leales'],
+    quote: '"Dejamos de ser solo retail físico para convertirnos en una operación omnicanal integrada."',
+  },
+  {
+    img: '/images/case-casa-maca.webp', tag: 'Moda consciente', tagBg: '#E8A838', tagColor: '#1a1a1a',
+    name: 'Casa Maca',
+    desc: 'Moda sustentable desde Guadalajara. 2 boutiques + e-commerce + social commerce conectados.',
+    metrics: ['-80% trabajo manual', '+25% ticket promedio'],
+    quote: '"Casa Maca diseña desde la intuición, pero ahora opera con datos."',
+  },
+];
 
 const isLocked = (estado: string) => ['accepted', 'paid', 'rejected'].includes(estado);
 
@@ -982,7 +1009,6 @@ function QuoteEditor({
     // Se respeta meta.iva_mode al editar para NO reinterpretar 'incluido' como 'suma'
     // (eso inflaba el total 16% vs. lo que muestra la cotización impresa/pública).
     iva_mode: initialMeta.iva_mode || ((initial && initial.iva_incluido === false) ? 'sin' : 'suma'),
-    items: [],
     // Meta-derived (controlados aquí, serializados al guardar)
     logo_url: initialMeta.logo_url || '',
     key_points: Array.isArray(initialMeta.key_points) ? initialMeta.key_points : [],
@@ -1011,6 +1037,14 @@ function QuoteEditor({
     attachments: Array.isArray(initialMeta.attachments) ? initialMeta.attachments : [],
     paquetes: Array.isArray(initialMeta.paquetes) ? initialMeta.paquetes : [],
     ...initial,
+    // Re-normalizar subtotales de PLANES al cargar: cotizaciones guardadas antes del fix
+    // del periodo anual (o drafts de IA) pueden traer subtotal stale → el total de abajo
+    // y el preview deben mostrar SIEMPRE el monto real con la regla vigente.
+    items: (Array.isArray(initial?.items) ? initial.items : []).map((it: any) => {
+      if (!it || it.tipo !== 'plan') return it;
+      const sub = computeItemSubtotal(it);
+      return { ...it, subtotal: sub, monto: sub };
+    }),
   }));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1472,16 +1506,24 @@ function QuoteEditor({
 
   return (
     <>
-      <div style={SS.drawerBackdrop} onClick={() => !saving && onClose()} />
-      <div style={SS.drawer} className="cq-drawer">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, gap: 10 }}>
-          <h2 style={{ ...SS.h3, margin: 0 }}>
-            {isEdit ? 'Editar cotización' : 'Nueva cotización'}
+      {/* Editor FULLSCREEN con topbar + split form/preview — MISMO layout que el editor admin (RevenueHub) */}
+      <div className="cq-drawer" style={{ position: 'fixed', inset: 0, zIndex: 200, background: '#f5f6f8', display: 'flex', flexDirection: 'column' }}>
+        {/* Topbar: título + guardar siempre a la vista (como el admin) */}
+        <div className="cq-topbar" style={{ background: '#fff', borderBottom: '1px solid #eee', padding: '10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0, gap: 10 }}>
+          <h2 style={{ ...SS.h3, margin: 0, fontSize: 15 }}>
+            {isEdit ? `Editar ${form.numero || 'cotización'}` : 'Nueva cotización'}
           </h2>
-          <button onClick={onClose} disabled={saving} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: 28, padding: '0 4px', lineHeight: 1 }} aria-label="Cerrar">
-            ×
-          </button>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button onClick={() => save('sent')} disabled={saving} style={{ ...SS.btn, fontSize: 12, padding: '7px 16px' }}>
+              {saving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Crear y enviar'}
+            </button>
+            <button onClick={onClose} disabled={saving} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: 26, padding: '0 4px', lineHeight: 1 }} aria-label="Cerrar">
+              ×
+            </button>
+          </div>
         </div>
+        <div className="cq-split">
+        <div className="cq-form-col">
 
         {error && (
           <div style={{ background: '#fde8e8', color: C.red, padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
@@ -2040,12 +2082,13 @@ function QuoteEditor({
               <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>Se confirma al cerrarse la venta. Cada punto de descuento también descuenta tu comisión.</div>
             </div>
           )}
-          {(breakdown.mensualRecurrente > 0 || breakdown.unicoSetup > 0) && (
+          {(breakdown.mensualRecurrente > 0 || breakdown.anualRecurrente > 0 || breakdown.unicoSetup > 0) && (
             <div style={{ borderTop: `1px solid ${C.brandTint}`, marginTop: 12, paddingTop: 10 }}>
-              <div style={{ fontSize: 11, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Desglose</div>
+              <div style={{ fontSize: 11, color: C.muted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Desglose de pagos</div>
+              {!paquetesOn && <Row label="Primer pago (hoy)" value={`${fmt(totals.grandTotal)} ${form.moneda || 'MXN'}`} bold />}
               {breakdown.unicoSetup > 0 && <Row label="Pago único (setup)" value={fmt(breakdown.unicoSetup)} muted />}
-              {breakdown.mensualRecurrente > 0 && <Row label="Mensual recurrente" value={`${fmt(breakdown.mensualRecurrente)}/mes`} muted />}
-              {breakdown.anualRecurrente > 0 && <Row label="Anual recurrente" value={`${fmt(breakdown.anualRecurrente)}/año`} muted />}
+              {breakdown.mensualRecurrente > 0 && <Row label="Después, mensual recurrente" value={`${fmt(breakdown.mensualRecurrente)}/mes`} muted />}
+              {breakdown.anualRecurrente > 0 && <Row label="Renovación anual" value={`${fmt(breakdown.anualRecurrente)}/año`} muted />}
             </div>
           )}
         </div>
@@ -2062,9 +2105,365 @@ function QuoteEditor({
             {savingTemplate ? 'Guardando…' : '⭐ Guardar como plantilla'}
           </button>
         </div>
+        </div>
+        {/* Columna derecha: preview en tiempo real de cómo verá el cliente la cotización */}
+        <div className="cq-preview-col">
+          <QuotePreviewLive form={form} ivaMode={ivaMode} />
+        </div>
+        </div>
       </div>
       <style dangerouslySetInnerHTML={{ __html: COTIZADOR_MOBILE_CSS }} />
     </>
+  );
+}
+
+// ─── Preview en tiempo real (paridad con el editor admin / RevenueHub) ─────
+// Muestra la cotización como la verá el cliente, con los MONTOS REALES
+// (mismos cálculos que la página pública: calcQuoteTotals + subtotales por item).
+
+function QuotePreviewLive({ form, ivaMode }: { form: any; ivaMode: 'sin' | 'suma' | 'incluido' }) {
+  const allItems: any[] = Array.isArray(form.items) ? form.items : [];
+  const paquetes: any[] = Array.isArray(form.paquetes) && form.paquetes.length >= 2 ? form.paquetes : [];
+  const [pSel, setPSel] = useState('');
+  const activePid = paquetes.length ? (paquetes.some((p: any) => p.id === pSel) ? pSel : paquetes[0].id) : null;
+  const items = activePid ? allItems.filter((it: any) => !it.paquete || it.paquete === activePid) : allItems;
+
+  const totals = calcQuoteTotals({
+    items,
+    descuento_global: form.descuento_global,
+    descuento_tipo: form.descuento_tipo,
+    iva_mode: ivaMode,
+  });
+
+  const pPlans = items.filter((i: any) => i.tipo === 'plan');
+  const pMonthlyPlans = pPlans.filter((i: any) => i.periodo !== 'anual');
+  const pAnnualPlans = pPlans.filter((i: any) => i.periodo === 'anual');
+  const pUnique = items.filter((i: any) => i.tipo === 'extra' && !i.recurrente && !i.es_promocion);
+  const pRecurMonthly = items.filter((i: any) => i.tipo === 'extra' && i.recurrente && i.periodo_extra !== 'anual');
+  const pRecurAnnual = items.filter((i: any) => i.tipo === 'extra' && i.recurrente && i.periodo_extra === 'anual');
+
+  // Caso del giro (aparece automático en la cotización pública al elegir giro)
+  const casoGiro = form.giro ? CASOS_GIRO.find((c) => c.id === form.giro) || null : null;
+
+  // Features del plan desde el catálogo (misma lógica de herencia que la página pública)
+  const features = (form.mostrar_features !== false) ? pPlans.map((pi: any) => {
+    const pd = PLANS_DATA.find((p) => p.id === String(pi.nombre || '').toLowerCase());
+    if (!pd) return null;
+    const allF: { category: string; items: string[] }[] = [];
+    let cur: typeof pd | undefined = pd;
+    const visited = new Set<string>();
+    while (cur && !visited.has(cur.id)) {
+      visited.add(cur.id);
+      for (const f of cur.features) { if (typeof f === 'object' && 'category' in f) allF.push(f); }
+      cur = cur.inheritsFrom ? PLANS_DATA.find((p) => p.name === cur!.inheritsFrom) : undefined;
+    }
+    return { name: pd.name, titulo: pi.titulo || null, features: allF.reverse(), services: pd.services };
+  }).filter(Boolean) : [];
+
+  const sectionPad: React.CSSProperties = { padding: '14px 26px', borderTop: '1px solid #f0f0f0' };
+  const line = (label: React.ReactNode, value: React.ReactNode, key?: any) => (
+    <div key={key} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 12, color: '#666', padding: '2px 0' }}>
+      <span>{label}</span><span style={{ whiteSpace: 'nowrap' }}>{value}</span>
+    </div>
+  );
+
+  return (
+    <div>
+      <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ width: 7, height: 7, borderRadius: '50%', background: C.green, display: 'inline-block' }} />
+        Vista previa en tiempo real — así lo verá el cliente
+      </div>
+
+      {paquetes.length > 0 && (
+        <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+          {paquetes.map((p: any) => (
+            <button key={p.id} onClick={() => setPSel(p.id)} style={{
+              border: `1.5px solid ${p.id === activePid ? C.brand : C.border}`,
+              background: p.id === activePid ? C.brandSoft : '#fff',
+              color: p.id === activePid ? C.brand : C.muted,
+              borderRadius: 20, padding: '5px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+            }}>
+              {p.nombre}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.07)', overflow: 'hidden' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '22px 26px 14px', borderBottom: '1px solid #f0f0f0', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 20, fontWeight: 800, color: '#1a1a1a' }}>Sacs</span>
+            <span style={{ fontSize: 9, fontWeight: 700, color: C.brand, background: C.brandSoft, padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Cotización</span>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#1a1a1a' }}>{form.numero || 'COT-nueva'}</div>
+            {form.vigencia && <div style={{ fontSize: 10, color: '#999' }}>Vigencia: {fmtDate(form.vigencia)}</div>}
+          </div>
+        </div>
+
+        {/* Cliente */}
+        <div style={{ padding: '12px 26px' }}>
+          <div style={{ fontSize: 9, fontWeight: 600, color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>Cotización para:</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {form.logo_url && <img src={form.logo_url} alt="" style={{ width: 30, height: 30, objectFit: 'contain', borderRadius: 6, border: '1px solid #f0f0f0' }} />}
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{form.empresa || 'Empresa'}</div>
+              {(form.contacto || form.email) && <div style={{ fontSize: 11, color: '#888' }}>{[form.contacto, form.email].filter(Boolean).join(' · ')}</div>}
+            </div>
+          </div>
+        </div>
+
+        {/* Minuta */}
+        {(form.mostrar_key_points !== false) && (form.key_points || []).length > 0 && (
+          <div style={sectionPad}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#1a1a1a', marginBottom: 6 }}>Minuta de la reunión</div>
+            {(form.key_points || []).map((kp: any, i: number) => (
+              <div key={i} style={{ display: 'flex', gap: 7, padding: '3px 0', alignItems: 'flex-start' }}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 2 }}><path d="M20 6L9 17l-5-5" stroke={C.brand} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#1a1a1a' }}>{kp.title}</span>
+                  {kp.detail && <span style={{ fontSize: 10, color: '#999' }}> — {kp.detail}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Tabla de conceptos */}
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              {['Concepto', 'Detalle', 'Subtotal'].map((h) => (
+                <th key={h} style={{ fontSize: 9, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#aaa', padding: '8px 12px', textAlign: h === 'Subtotal' ? 'right' : 'left', background: '#fafafa', borderTop: '1px solid #f0f0f0', borderBottom: '1px solid #f0f0f0' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {items.length === 0 && (
+              <tr><td colSpan={3} style={{ padding: 22, textAlign: 'center', color: '#ccc', fontSize: 12 }}>Agrega conceptos para ver el preview</td></tr>
+            )}
+            {items.map((item: any, i: number) => {
+              const isP = item.tipo === 'plan';
+              const isPromo = item.es_promocion;
+              const suc = parseInt(item.sucursales) || 1;
+              const isAnn = item.periodo === 'anual';
+              return (
+                <tr key={i} style={{ borderBottom: '1px solid #f5f5f5', background: isPromo ? 'rgba(42,181,160,0.04)' : 'transparent' }}>
+                  <td style={{ padding: '9px 12px', fontSize: 12 }}>
+                    {isPromo && <span style={{ display: 'inline-block', fontSize: 8, fontWeight: 800, color: '#fff', background: C.green, padding: '1px 5px', borderRadius: 3, textTransform: 'uppercase', marginRight: 4 }}>Promo</span>}
+                    <strong style={{ color: '#1a1a1a' }}>{isP ? planDisplayName(item) : (item.nombre || '—')}</strong>
+                    {isP && (
+                      <div style={{ fontSize: 10, color: '#aaa' }}>
+                        {fmt(item.precio_unitario || 0)}/suc × {suc} suc. × {isAnn ? '10 meses' : '1 mes'}
+                        {isAnn && <span style={{ color: C.greenDark }}> · ahorra {fmt((item.precio_unitario || 0) * suc * 2)}</span>}
+                      </div>
+                    )}
+                    {item.descripcion && <div style={{ fontSize: 10, color: '#aaa' }}>{item.descripcion}</div>}
+                    {item.nota && <div style={{ fontSize: 10, color: C.brand, fontStyle: 'italic' }}>{item.nota}</div>}
+                  </td>
+                  <td style={{ padding: '9px 8px', fontSize: 11, color: '#888', whiteSpace: 'nowrap' }}>
+                    {isPromo ? 'Promoción' : isP ? (isAnn ? 'Anual' : 'Mensual') : item.periodo_extra === 'anual' ? 'Anual' : item.recurrente ? 'Mensual' : 'Único'}
+                  </td>
+                  <td style={{ padding: '9px 12px', fontSize: 12, textAlign: 'right', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                    {isPromo ? (
+                      <>
+                        {(item.precio_original || 0) > 0 && <span style={{ textDecoration: 'line-through', color: '#ccc', fontWeight: 500, marginRight: 5 }}>{fmt(item.precio_original)}</span>}
+                        <span style={{ color: C.green, fontWeight: 800 }}>$0</span>
+                      </>
+                    ) : (
+                      <>
+                        {(Number(item.descuento_pct) || 0) > 0 && <span style={{ textDecoration: 'line-through', color: '#ccc', fontWeight: 500, marginRight: 5 }}>{fmt((item.precio_unitario || 0) * suc * (isAnn ? 10 : 1))}</span>}
+                        {fmt(item.subtotal || item.monto || 0)}{isP ? (isAnn ? '/año' : '/mes') : ''}
+                      </>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+
+        {/* Totales REALES */}
+        <div style={{ padding: '14px 26px' }}>
+          {line('Subtotal', fmt(totals.itemsSubtotal))}
+          {totals.globalDisc > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: C.greenDark, padding: '2px 0' }}>
+              <span>Descuento{form.descuento_tipo === 'pct' ? ` (${form.descuento_global}%)` : ''}</span><span>-{fmt(totals.globalDisc)}</span>
+            </div>
+          )}
+          {ivaMode !== 'sin' && line(ivaMode === 'incluido' ? 'IVA incluido (16%)' : 'IVA (16%)', fmt(totals.ivaMonto))}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 800, color: '#1a1a1a', borderTop: '2px solid #1a1a1a', paddingTop: 8, marginTop: 6 }}>
+            <span>Total{ivaMode === 'incluido' ? ' (IVA incl.)' : ''}</span>
+            <span style={{ color: C.greenDark }}>{fmt(totals.grandTotal)} {form.moneda || 'MXN'}</span>
+          </div>
+        </div>
+
+        {/* Resumen de pagos */}
+        {(form.mostrar_desglose !== false) && pPlans.length > 0 && (
+          <div style={sectionPad}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#1a1a1a', marginBottom: 8 }}>Resumen de pagos</div>
+            <div style={{ background: '#fafafa', borderRadius: 8, padding: 10, marginBottom: 6 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Primer pago (hoy)</div>
+              {pPlans.map((i: any, idx: number) => line(`${planDisplayName(i)} (${i.periodo === 'anual' ? 'anual' : 'mensual'})`, fmt(i.subtotal || 0), idx))}
+              {[...pUnique, ...pRecurMonthly, ...pRecurAnnual].map((i: any, idx: number) => line(i.nombre, fmt(i.subtotal || i.monto || 0), `x${idx}`))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 800, color: '#1a1a1a', borderTop: '1px solid #e4e4e4', paddingTop: 5, marginTop: 5 }}>
+                <span>Total primer pago</span><span>{fmt(totals.grandTotal)} {form.moneda || 'MXN'}</span>
+              </div>
+            </div>
+            {(pMonthlyPlans.length > 0 || pRecurMonthly.length > 0) && (
+              <div style={{ background: '#fafafa', borderRadius: 8, padding: 10, marginBottom: 6 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Pago mensual recurrente</div>
+                {pMonthlyPlans.map((i: any, idx: number) => line(planDisplayName(i), `${fmt(i.subtotal || 0)}/mes`, idx))}
+                {pRecurMonthly.map((i: any, idx: number) => line(i.nombre, `${fmt(i.subtotal || i.monto || 0)}/mes`, `m${idx}`))}
+              </div>
+            )}
+            {(pAnnualPlans.length > 0 || pRecurAnnual.length > 0) && (
+              <div style={{ background: '#fafafa', borderRadius: 8, padding: 10 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Renovación anual</div>
+                {pAnnualPlans.map((i: any, idx: number) => line(planDisplayName(i), `${fmt(i.subtotal || 0)}/año`, idx))}
+                {pRecurAnnual.map((i: any, idx: number) => line(i.nombre, `${fmt(i.subtotal || i.monto || 0)}/año`, `a${idx}`))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ROI */}
+        {form.mostrar_roi && form.roi?.ahorro_mensual > 0 && (
+          <div style={sectionPad}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#1a1a1a', marginBottom: 8 }}>Retorno de inversión estimado</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ flex: 1, background: '#f8f9fb', borderRadius: 8, padding: 10, textAlign: 'center' }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: C.greenDark }}>{fmt(form.roi.ahorro_mensual)}</div>
+                <div style={{ fontSize: 8, color: '#999', textTransform: 'uppercase' }}>Ahorro mensual</div>
+              </div>
+              <div style={{ flex: 1, background: '#f8f9fb', borderRadius: 8, padding: 10, textAlign: 'center' }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: C.greenDark }}>{fmt(form.roi.ahorro_mensual * 12)}</div>
+                <div style={{ fontSize: 8, color: '#999', textTransform: 'uppercase' }}>Ahorro anual</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Antes vs Después */}
+        {form.mostrar_antes_despues && (form.antes_despues || []).length > 0 && (
+          <div style={sectionPad}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#1a1a1a', marginBottom: 8 }}>Antes vs Después</div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
+              <thead><tr>
+                <th style={{ padding: '3px 6px', textAlign: 'left', color: '#aaa', fontWeight: 600 }}>Aspecto</th>
+                <th style={{ padding: '3px 6px', textAlign: 'center', color: '#ccc', fontWeight: 600 }}>Hoy</th>
+                <th style={{ padding: '3px 6px', textAlign: 'center', color: '#2AB5A0', fontWeight: 600 }}>Con SACS</th>
+              </tr></thead>
+              <tbody>
+                {(form.antes_despues || []).map((row: any, i: number) => (
+                  <tr key={i} style={{ borderBottom: '1px solid #f5f5f5' }}>
+                    <td style={{ padding: '3px 6px', fontWeight: 700, color: '#1a1a1a' }}>{row.aspecto}</td>
+                    <td style={{ padding: '3px 6px', textAlign: 'center', color: '#ccc', textDecoration: 'line-through' }}>{row.antes}</td>
+                    <td style={{ padding: '3px 6px', textAlign: 'center', fontWeight: 600, color: '#666' }}>{row.despues}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Caso del giro — aparece AUTOMÁTICO al elegir giro (igual que la página pública) */}
+        {casoGiro && (
+          <div style={sectionPad}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Resultados en {casoGiro.label}</div>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 11, color: '#666', lineHeight: 1.5, marginBottom: 6 }}><strong style={{ color: '#1a1a1a' }}>El reto típico:</strong> {casoGiro.dolor}</div>
+                <div style={{ fontSize: 11, color: '#666', lineHeight: 1.5 }}><strong style={{ color: '#1a1a1a' }}>Con SACS:</strong> {casoGiro.solucion}</div>
+              </div>
+              <div style={{ textAlign: 'center', minWidth: 90 }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: '#2AB5A0', letterSpacing: '-0.02em' }}>{casoGiro.stat}</div>
+                <div style={{ fontSize: 9, color: '#999', lineHeight: 1.4 }}>{casoGiro.statLabel}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ¿Por qué Sacs? — sección AUTOMÁTICA de la cotización pública */}
+        {(form.mostrar_porque_sacs !== false) && (
+          <div style={{ ...sectionPad, textAlign: 'center' }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#1a1a1a', marginBottom: 6 }}>¿Por qué Sacs?</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>Más de 3,000 marcas en México y Latinoamérica ya operan con Sacs</div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 22, marginTop: 10 }}>
+              {[['3,000+', 'Marcas operando'], ['42M+', 'Transacciones procesadas'], ['8', 'Países en LATAM']].map(([num, lbl]) => (
+                <div key={lbl} style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: C.brand }}>{num}</div>
+                  <div style={{ fontSize: 8, color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{lbl}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Casos de éxito / testimonios — AUTOMÁTICOS (carrusel "Marcas que crecen con Sacs") */}
+        {(form.mostrar_porque_sacs !== false) && (
+          <div style={sectionPad}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#1a1a1a', marginBottom: 8 }}>Marcas que crecen con Sacs</div>
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+              {PREVIEW_CASES.map((c) => (
+                <div key={c.name} style={{ flex: '0 0 180px', border: '1px solid #f0f0f0', borderRadius: 10, overflow: 'hidden', background: '#fff' }}>
+                  <img src={c.img} alt={c.name} loading="lazy" width="180" height="80" style={{ width: '100%', height: 80, objectFit: 'cover', display: 'block' }} />
+                  <div style={{ padding: 8 }}>
+                    <span style={{ display: 'inline-block', fontSize: 7, fontWeight: 800, color: c.tagColor, background: c.tagBg, padding: '1px 6px', borderRadius: 3, textTransform: 'uppercase', marginBottom: 3 }}>{c.tag}</span>
+                    <div style={{ fontSize: 10, fontWeight: 800, color: '#1a1a1a' }}>{c.name}</div>
+                    <div style={{ fontSize: 9, color: '#888', lineHeight: 1.4, margin: '3px 0' }}>{c.desc}</div>
+                    <div style={{ fontSize: 8, color: '#666', fontWeight: 700 }}>{c.metrics.join(' · ')}</div>
+                    <div style={{ fontSize: 9, color: '#999', fontStyle: 'italic', marginTop: 3, lineHeight: 1.4 }}>{c.quote}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Qué incluye tu plan */}
+        {features.length > 0 && (
+          <div style={sectionPad}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#1a1a1a', marginBottom: 8 }}>Qué incluye tu plan</div>
+            {features.map((pf: any, fi: number) => (
+              <div key={fi} style={{ marginBottom: 8 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: C.brand, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 5, paddingBottom: 3, borderBottom: '1px solid #f0f0f0' }}>
+                  {pf.titulo || `Plan ${pf.name}`}{pf.titulo ? ` — incluye todo el Plan ${pf.name}` : ''}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 14px' }}>
+                  {pf.features.map((cat: any, ci: number) => (
+                    <div key={ci}>
+                      <div style={{ fontSize: 8, fontWeight: 700, color: '#999', textTransform: 'uppercase', marginBottom: 1 }}>{cat.category}</div>
+                      {cat.items.map((f: string, ii: number) => (
+                        <div key={ii} style={{ display: 'flex', gap: 4, fontSize: 9, color: '#666', padding: '1px 0', alignItems: 'flex-start' }}>
+                          <svg width="8" height="8" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 1 }}><path d="M20 6L9 17l-5-5" stroke="#2AB5A0" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          <span>{f}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Condiciones */}
+        {(form.mostrar_condiciones !== false) && form.condiciones && (
+          <div style={sectionPad}>
+            <div style={{ fontSize: 9, fontWeight: 600, color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Condiciones</div>
+            <div style={{ fontSize: 10, color: '#999', lineHeight: 1.6, whiteSpace: 'pre-line' }}>{form.condiciones}</div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div style={{ padding: '12px 26px', background: '#fafafa', borderTop: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#bbb' }}>
+          <span><strong style={{ color: '#1a1a1a' }}>Sacs</strong> Sistema operativo para retailers</span>
+          <span>www.sacscloud.com</span>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -2103,8 +2502,22 @@ const COTIZADOR_MOBILE_CSS = `
   .cq-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .cq-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   .cq-toggle:hover { background: #f4f5f7; }
+
+  /* Split form + preview en vivo — calcado del editor admin (.rh-quote-split) */
+  .cq-split { display: flex; flex: 1; overflow: hidden; }
+  .cq-form-col { width: 520px; flex-shrink: 0; background: #fff; overflow-y: auto; padding: 24px 28px 56px; border-right: 1px solid #eee; box-sizing: border-box; }
+  .cq-preview-col { flex: 1; overflow-y: auto; padding: 26px 28px 48px; box-sizing: border-box; }
+
+  @media (max-width: 1024px) {
+    /* Apilado como el admin en móvil: form arriba, preview abajo, todo scrollea junto */
+    .cq-split { flex-direction: column; overflow-y: auto; }
+    .cq-form-col { width: 100%; border-right: none; border-bottom: 1px solid #eee; overflow: visible; flex-shrink: 0; }
+    .cq-preview-col { overflow: visible; }
+  }
   @media (max-width: 640px) {
-    .cq-drawer { padding: 20px 18px 24px !important; width: 100vw !important; max-width: 100vw !important; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0)) !important; }
+    .cq-topbar { padding: 10px 12px !important; }
+    .cq-form-col { padding: 20px 18px 24px !important; }
+    .cq-preview-col { padding: 18px 12px calc(40px + env(safe-area-inset-bottom, 0)) !important; }
     .cq-row-2 { grid-template-columns: 1fr; gap: 0; }
     .cq-row-3 { grid-template-columns: 1fr; gap: 0; }
     .cq-toggle { padding: 10px 4px !important; min-height: 40px; }
