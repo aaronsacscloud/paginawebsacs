@@ -52,7 +52,14 @@ export const POST: APIRoute = async ({ request, url }) => {
     if (!quoteId) {
       return new Response(JSON.stringify({ error: 'quoteId requerido' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
-    const nombre = String(aceptado_por || '').trim();
+    // Quién acepta: si el actor es un PARTNER, la aceptación queda registrada
+    // a SU nombre con la etiqueta "(Partner)" — nunca como si el cliente hubiera
+    // firmado. El nombre del body se ignora para evitar suplantar al cliente.
+    const requester = await getCurrentUser(request);
+    const isPartner = requester?.role === 'partner';
+    const nombre = isPartner
+      ? `${String(requester.nombre || aceptado_por || 'Partner').trim()} (Partner)`
+      : String(aceptado_por || '').trim();
     if (!nombre) {
       return new Response(JSON.stringify({ error: 'aceptado_por requerido' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
     }
@@ -74,10 +81,9 @@ export const POST: APIRoute = async ({ request, url }) => {
       return new Response(JSON.stringify({ error: 'la cotización ya está aceptada' }), { status: 409, headers: { 'Content-Type': 'application/json' } });
     }
 
-    // Partner NO puede aceptar manualmente: solo el cliente final puede aceptar desde la vista pública.
-    const requester = await getCurrentUser(request);
-    if (requester?.role === 'partner' && method === 'admin_manual') {
-      return new Response(JSON.stringify({ error: 'Solo el cliente puede aceptar la cotización' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+    // Partner: solo puede aceptar cotizaciones SUYAS (scoping por partner_id).
+    if (isPartner && quote.partner_id !== requester.id) {
+      return new Response(JSON.stringify({ error: 'Solo puedes aceptar cotizaciones tuyas' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
     }
 
     const sep = '\n---META---\n';
@@ -91,17 +97,28 @@ export const POST: APIRoute = async ({ request, url }) => {
     }
 
     const now = new Date().toISOString();
-    const firma = generateSignatureSVG(nombre);
+    const acceptMethod = isPartner ? 'partner_manual' : 'admin_manual';
 
-    meta.firma_base64 = firma;
-    meta.firma_auto = true;
-    meta.aceptacion_method = method || 'admin_manual';
+    // Partner NO genera firma: el cliente no firmó nada — es una confirmación
+    // verbal registrada. La página pública mostrará "Aceptada por <nombre> (Partner)"
+    // sin imagen de firma (ya tolera meta.firma_base64 ausente).
+    let firma: string | null = null;
+    if (isPartner) {
+      meta.aceptacion_partner = { id: requester.id, nombre: requester.nombre || null };
+      meta.aceptacion_via = method || null;
+      meta.aceptacion_method = 'partner_manual';
+    } else {
+      firma = generateSignatureSVG(nombre);
+      meta.firma_base64 = firma;
+      meta.firma_auto = true;
+      meta.aceptacion_method = method || 'admin_manual';
+    }
     if (nota_interna) meta.aceptacion_nota = String(nota_interna).slice(0, 1000);
     if (!meta.timeline) meta.timeline = [];
     meta.timeline.push({
       event: 'accepted',
       at: now,
-      method: 'admin_manual',
+      method: acceptMethod,
       via: method || null,
       name: nombre,
     });
@@ -156,7 +173,8 @@ export const POST: APIRoute = async ({ request, url }) => {
           quote_id: quoteId,
           total: quote.total,
           moneda: quote.moneda || 'MXN',
-          method: method || 'admin_manual',
+          method: acceptMethod,
+          via: method || null,
           aceptado_por: nombre,
         },
         automatico: true,
@@ -197,7 +215,9 @@ export const POST: APIRoute = async ({ request, url }) => {
         whatsapp: quote.whatsapp,
         total: quote.total,
         moneda: quote.moneda || 'MXN',
-        method: method || 'firma digital',
+        method: isPartner
+          ? `confirmada por el partner${method ? ` vía ${method}` : ''}`
+          : (method || 'firma digital'),
         nota_interna: nota_interna || '',
         adminUrl,
         partner: partnerProfile,

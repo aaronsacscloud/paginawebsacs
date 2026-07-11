@@ -746,6 +746,46 @@ function QuoteDetail({
   const [confirmPaid, setConfirmPaid] = useState(false);
   const [markingPaid, setMarkingPaid] = useState(false);
 
+  // Aceptar EN NOMBRE del cliente: para cuando el cliente ya dio el sí (por
+  // WhatsApp, llamada, etc.) pero nunca aceptó desde el link público. Queda
+  // registrada como "Aceptada por <partner> (Partner)" — el backend fuerza el
+  // nombre de la sesión, no se puede firmar como el cliente. Aplica a enviadas
+  // y vencidas (el sí puede llegar después de la vigencia).
+  const [acceptOpen, setAcceptOpen] = useState(false);
+  const [acceptVia, setAcceptVia] = useState('whatsapp');
+  const [acceptNota, setAcceptNota] = useState('');
+  const [accepting, setAccepting] = useState(false);
+  const canAccept = ['sent', 'expired'].includes(effectiveEstado(quote));
+
+  const doAccept = async () => {
+    if (isDemoMode()) {
+      alert('En modo demo no se modifican cotizaciones.');
+      return;
+    }
+    setAccepting(true);
+    try {
+      const res = await fetch('/api/revenue/mark-accepted', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          quoteId: quote.id,
+          aceptado_por: user.nombre,
+          method: acceptVia,
+          nota_interna: acceptNota,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert('Error: ' + (data?.error || res.statusText));
+        return;
+      }
+      onReload();
+      onClose();
+    } finally {
+      setAccepting(false);
+    }
+  };
+
   // Borrado: aceptada/pagada NO se pueden (ya hay comisión/factura). draft se borra
   // de verdad; el resto se archiva (reversible). Espeja canPartnerDeleteQuote del backend.
   const canDelete = quote.estado !== 'accepted' && quote.estado !== 'paid';
@@ -1003,10 +1043,61 @@ function QuoteDetail({
           </div>
         )}
 
+        {acceptOpen && canAccept && (
+          <div style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 4 }}>Confirmar aceptación en nombre del cliente</div>
+            <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.6, marginBottom: 12 }}>
+              Úsalo cuando el cliente ya te dio el <strong>sí</strong> pero nunca aceptó desde el link.
+              Quedará registrada como <strong>“Aceptada por {user.nombre} (Partner)”</strong> (sin firma del cliente)
+              y se notificará al equipo SACS.
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
+              <label style={{ fontSize: 12, color: C.muted, fontWeight: 600 }}>¿Cómo te confirmó el cliente?</label>
+              <select
+                value={acceptVia}
+                onChange={(e) => setAcceptVia(e.target.value)}
+                style={{ padding: '7px 10px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontFamily: 'inherit' }}
+              >
+                <option value="whatsapp">WhatsApp</option>
+                <option value="llamada">Llamada</option>
+                <option value="email">Email</option>
+                <option value="en persona">En persona</option>
+              </select>
+            </div>
+            <input
+              value={acceptNota}
+              onChange={(e) => setAcceptNota(e.target.value)}
+              placeholder="Nota interna (opcional) — ej. “Confirmó por WhatsApp el 10 jul”"
+              style={{ width: '100%', boxSizing: 'border-box', padding: '8px 12px', border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, fontFamily: 'inherit', marginBottom: 12 }}
+            />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={doAccept}
+                disabled={accepting}
+                style={{ ...SS.btn, background: C.green, opacity: accepting ? 0.6 : 1 }}
+              >
+                {accepting ? 'Registrando…' : 'Sí, el cliente ya aceptó'}
+              </button>
+              <button onClick={() => setAcceptOpen(false)} style={SS.btnGhost}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {!locked && (
             <button onClick={onEdit} style={SS.btn}>
               Editar cotización
+            </button>
+          )}
+          {canAccept && !acceptOpen && (
+            <button
+              onClick={() => setAcceptOpen(true)}
+              style={{ ...SS.btnGhost, borderColor: C.green, color: C.greenDark, fontWeight: 700 }}
+              title="El cliente ya te confirmó pero no aceptó desde el link — regístralo tú"
+            >
+              ✅ Marcar como aceptada
             </button>
           )}
           <button onClick={onDuplicate} style={SS.btnGhost}>
@@ -1180,7 +1271,9 @@ function QuoteActivity({ quote }: { quote: Quote }) {
               </div>
               <ul style={{ listStyle: 'none' as const, padding: 0, margin: 0, display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
                 {events.map((ev, idx) => {
-                  const label = TIMELINE_LABELS[ev.event] || ev.event;
+                  const label = ev.event === 'accepted' && ev.method === 'partner_manual'
+                    ? `Aceptada por el partner${ev.name ? ` — ${ev.name}` : ''}`
+                    : TIMELINE_LABELS[ev.event] || ev.event;
                   const color = TIMELINE_COLORS[ev.event] || C.muted;
                   return (
                     <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: C.textSoft }}>
