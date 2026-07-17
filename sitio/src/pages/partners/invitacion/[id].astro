@@ -7,6 +7,7 @@ import { CT_I18N } from '../../../data/content-types.i18n';
 import { CERTIFICATIONS } from '../../../data/certifications';
 import { CERT_I18N } from '../../../data/certifications.i18n';
 import { COMPROMISO_I18N } from '../../../data/compromisos.i18n';
+import { especialidadDe } from '../../../data/partner-especialidades';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -1129,6 +1130,16 @@ const beneficios: any[] = Array.isArray(invitation.beneficios) ? invitation.bene
 const compromisos: any[] = Array.isArray(invitation.compromisos) ? invitation.compromisos : [];
 const tabulador: any = invitation.tabulador && typeof invitation.tabulador === 'object' ? invitation.tabulador : {};
 
+// ─── Especialidad de nicho (por invitación, mismo patrón que escalonado) ───
+// Config viva en tabulador.especialidad. Cuando está activa, la invitación se
+// re-enfoca al giro elegido (ej. papelerías): badge en el hero, pitch del
+// nicho y la sección de verticales se convierte en "Tu especialidad" con las
+// suites del giro. Las reglas de comisión NO cambian — solo el posicionamiento.
+const esp = especialidadDe(invitation);
+const espSector = esp && esp.sectorIconId
+  ? businessSectors.find((s: any) => s.iconId === esp.sectorIconId) || null
+  : null;
+
 // ─── Paquete Escalonado de Licencias (modo interno, por invitación) ───
 // Config viva en tabulador.escalonado. El partner compra al mayoreo un paquete
 // de licencias Fideliza (inversión escalonada) y las revende al precio público
@@ -1301,9 +1312,9 @@ const tipoTagline: Record<string, string> = {
   consultor: 'Asesora a clientes en su transformación digital con SACS.',
 };
 
-const heroEyebrow = tt('hero.eyebrow');
+const heroEyebrow = esp ? esp.badge : tt('hero.eyebrow');
 const heroTitle = invitation.nombre;
-const heroSubtitle = tipoTagline[tipo] || '';
+const heroSubtitle = esp ? esp.heroPitch : (tipoTagline[tipo] || '');
 
 const SIGN_LABELS: Record<Lang, { firmada: string; rechazada: string; revision: string; firmar: string }> = {
   es: { firmada: 'Firmada', rechazada: 'Rechazada', revision: 'En revisión', firmar: 'Aceptar y firmar' },
@@ -1634,7 +1645,7 @@ const partnerLandingUrl = invitation.slug_landing
           <h1 class="p-hero-title">
             {invitation.nombre},<br/>
             <span class="p-hero-title-soft">{tt('hero.want')}</span><br/>
-            <span class="p-hero-title-strong">{tipoLabel[tipo] || tipo}</span>.
+            <span class="p-hero-title-strong">{tipoLabel[tipo] || tipo}</span>{esp && (<><br/><span class="p-hero-title-strong" style={`color:${esp.color};`}>especialista en {esp.label}</span></>)}.
           </h1>
           <p class="p-hero-sub">{heroSubtitle}</p>
 
@@ -1841,7 +1852,86 @@ const partnerLandingUrl = invitation.slug_landing
           </div>
         </div>
 
-        <!-- ── 4. Verticales en orden de prioridad ── -->
+        <!-- ── 4. Verticales en orden de prioridad · o TU ESPECIALIDAD si la invitación es de nicho ── -->
+        {esp ? (
+        <div class="p-bw-section p-bw-section--alt">
+          <div class="p-bw-eyebrow" style={`color:${esp.color};`}>Tu especialidad</div>
+          <h2 class="p-bw-title">{esp.heroTitulo}</h2>
+          <p class="p-bw-lead">{esp.argumento}</p>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:18px 0 6px;">
+            {esp.incluye.map((inc) => (
+              <div style={`background:#fff;border:1px solid #e7e7ea;border-top:3px solid ${esp.color};border-radius:14px;padding:18px;`}>
+                <div style="font-size:0.95rem;font-weight:700;color:#1a1a1a;margin-bottom:6px;">{inc.title}</div>
+                <div style="font-size:0.8125rem;color:#555;line-height:1.55;">{inc.detail}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style="margin-top:24px;">
+            <div style="font-size:0.625rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#999;margin-bottom:10px;">Tu mercado · a quién le vas a vender</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+              {esp.mercado.map((m) => (
+                <span style={`display:inline-flex;align-items:center;background:${esp.color}14;border:1px solid ${esp.color}55;color:#1a1a1a;border-radius:999px;padding:7px 14px;font-size:0.8125rem;font-weight:600;`}>{m}</span>
+              ))}
+            </div>
+          </div>
+
+          {espSector && (
+            <article class="p-bw-vertical" style={`--accent: ${espSector.color}; --accent-bg: ${espSector.bgColor}; margin-top:28px;`}>
+              {espSector.image && (
+                <div class="p-bw-vertical-media">
+                  <img
+                    src={espSector.image}
+                    alt={espSector.label}
+                    width="800"
+                    height="533"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+              )}
+              <div class="p-bw-vertical-body">
+                <div class="p-bw-vertical-eyebrow">
+                  <span class="p-bw-vertical-dot" aria-hidden="true"></span>
+                  Módulos del giro que ya existen en SACS
+                </div>
+                <h3 class="p-bw-vertical-name">{espSector.label}</h3>
+                <ul class="p-bw-vertical-modules" role="list">
+                  {espSector.personalizations.map((p: any) => (
+                    <li class="p-bw-vertical-module">
+                      <span class="p-bw-vertical-module-bullet" aria-hidden="true"></span>
+                      <div class="p-bw-vertical-module-text">
+                        <strong>{p.label}</strong>
+                        <span>{p.description}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                <div class="p-bw-vertical-foot">
+                  <span>Todo esto ya está construido — tú lo llevas a tu nicho</span>
+                  <a href={espSector.href ? `https://www.sacscloud.com${espSector.href}` : 'https://www.sacscloud.com/giros'} target="_blank" rel="noopener" class="p-bw-vertical-link">
+                    Ver detalle →
+                  </a>
+                </div>
+              </div>
+            </article>
+          )}
+
+          <div class="p-bw-verticals-more">
+            <div class="p-bw-verticals-more-icon">+</div>
+            <div class="p-bw-verticals-more-body">
+              <div class="p-bw-verticals-more-title">Tu foco es {esp.label} — pero no estás limitado</div>
+              <div class="p-bw-verticals-more-text">
+                SACS opera más de 70 giros. Tu especialidad es tu posicionamiento
+                y tu cancha principal; si en el camino cierras un cliente de otro
+                giro, tu comisión aplica exactamente igual.
+                <a href="https://www.sacscloud.com/giros" target="_blank" rel="noopener" class="p-bw-verticals-more-link">Ver catálogo completo →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        ) : (
         <div class="p-bw-section p-bw-section--alt">
           <div class="p-bw-eyebrow">Quién usa SACS</div>
           <h2 class="p-bw-title">16 verticales con módulos hechos a la medida.</h2>
@@ -1908,6 +1998,7 @@ const partnerLandingUrl = invitation.slug_landing
             </div>
           </div>
         </div>
+        )}
 
         <!-- ── 5. Clientes desde 1 hasta 1,500 sucursales ── -->
         <div class="p-bw-section">

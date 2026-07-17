@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ESPECIALIDADES } from '../../../data/partner-especialidades';
 
 interface Invitation {
   id: string;
@@ -1084,6 +1085,11 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
     tabulador: editing?.tabulador || { prueba_gratis: 0, demo_completada: 0, venta_directa_pct: 50, override_red_pct: 10, moneda: 'MXN' },
     terminos: editing?.terminos || '',
     auto_approve: editing ? !!(editing as any).auto_approve : false,
+    // Especialidad de nicho (genérico vs especialista de giro). Vive en tabulador.especialidad.
+    especialidad: (editing?.tabulador && (editing.tabulador as any).especialidad) || {
+      enabled: false,
+      giro: 'papeleria',
+    },
     // Paquete escalonado de licencias (modo interno). Vive dentro de tabulador.escalonado.
     escalonado: (editing?.tabulador && (editing.tabulador as any).escalonado) || {
       enabled: false,
@@ -1199,8 +1205,8 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
     setSaving(true); setErrMsg(null);
     try {
       const method = editing ? 'PUT' : 'POST';
-      // Empaquetamos escalonado dentro de tabulador (la API persiste tabulador como JSON).
-      const merged = { ...form, tabulador: { ...(form.tabulador || {}), escalonado: form.escalonado } };
+      // Empaquetamos escalonado y especialidad dentro de tabulador (la API persiste tabulador como JSON).
+      const merged = { ...form, tabulador: { ...(form.tabulador || {}), escalonado: form.escalonado, especialidad: form.especialidad } };
       const body = editing ? { id: editing.id, ...merged } : merged;
       const res = await fetch('/api/partners/invitations', {
         method, headers: { 'Content-Type': 'application/json', 'x-user-id': 'founder' },
@@ -1333,6 +1339,76 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
                 </button>
               ))}
             </div>
+          </Section>
+
+          {/* Enfoque: genérico vs especialista de nicho */}
+          <Section title="Enfoque de la invitación">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => set('especialidad', { ...(form.especialidad || {}), enabled: false })}
+                style={{
+                  padding: 14,
+                  background: !form.especialidad?.enabled ? 'rgba(75,123,229,0.07)' : '#fff',
+                  border: '1px solid ' + (!form.especialidad?.enabled ? '#4B7BE5' : '#e5e5e5'),
+                  borderRadius: 12, textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s ease',
+                }}
+              >
+                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: !form.especialidad?.enabled ? '#4B7BE5' : '#1a1a1a', marginBottom: 2 }}>
+                  Genérico
+                </div>
+                <div style={{ fontSize: '0.6875rem', color: '#666', lineHeight: 1.4 }}>
+                  SACS completo, todos los giros. La invitación estándar.
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => set('especialidad', { ...(form.especialidad || {}), enabled: true, giro: form.especialidad?.giro || 'papeleria' })}
+                style={{
+                  padding: 14,
+                  background: form.especialidad?.enabled ? 'rgba(34,197,94,0.07)' : '#fff',
+                  border: '1px solid ' + (form.especialidad?.enabled ? '#22C55E' : '#e5e5e5'),
+                  borderRadius: 12, textAlign: 'left', cursor: 'pointer', transition: 'all 0.15s ease',
+                }}
+              >
+                <div style={{ fontSize: '0.875rem', fontWeight: 700, color: form.especialidad?.enabled ? '#16a34a' : '#1a1a1a', marginBottom: 2 }}>
+                  Especialista de nicho
+                </div>
+                <div style={{ fontSize: '0.6875rem', color: '#666', lineHeight: 1.4 }}>
+                  La invitación entera se enfoca a UN giro (papelerías, farmacias…). Mismas reglas de comisión, distinto posicionamiento.
+                </div>
+              </button>
+            </div>
+            {form.especialidad?.enabled && (
+              <div style={{ marginTop: 12, padding: 16, border: '1px solid rgba(34,197,94,0.3)', background: '#f7fdf9', borderRadius: 10 }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#15803d', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 8 }}>
+                  Giro de especialidad
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 8 }}>
+                  {Object.values(ESPECIALIDADES).map((e: any) => (
+                    <button
+                      key={e.giro}
+                      type="button"
+                      onClick={() => set('especialidad', { ...(form.especialidad || {}), giro: e.giro })}
+                      style={{
+                        padding: '10px 12px',
+                        background: form.especialidad?.giro === e.giro ? e.color + '14' : '#fff',
+                        border: '1px solid ' + (form.especialidad?.giro === e.giro ? e.color : '#e5e5e5'),
+                        borderRadius: 10, textAlign: 'left', cursor: 'pointer',
+                      }}
+                    >
+                      <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: form.especialidad?.giro === e.giro ? e.color : '#1a1a1a' }}>{e.label}</div>
+                      <div style={{ fontSize: '0.625rem', color: '#999', marginTop: 2 }}>{e.badge}</div>
+                    </button>
+                  ))}
+                </div>
+                <div style={{ marginTop: 10, fontSize: '0.6875rem', color: '#666', lineHeight: 1.5 }}>
+                  La invitación mostrará el badge del giro en el hero, el pitch del nicho, las suites
+                  del giro (ej. papelería: Suite de Oficina + Suite de Listas Escolares + operación de
+                  mostrador) y su mercado objetivo. Comisiones y compromisos no cambian.
+                </div>
+              </div>
+            )}
           </Section>
 
           {/* Prospecto */}
