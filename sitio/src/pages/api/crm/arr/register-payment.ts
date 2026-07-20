@@ -23,6 +23,18 @@ function addCiclo(fecha: string, ciclo: 'mensual' | 'anual'): string {
   return d.toISOString().slice(0, 10);
 }
 
+// Fase 5 — normaliza el tipo de pago a un set estándar (para agrupar "por tipo" con
+// confianza). No hay CHECK en BD; se normaliza aquí al escribir.
+function normMetodo(m: any): string {
+  const s = String(m || 'transferencia').toLowerCase().trim();
+  if (s === 'card' || s.includes('tarjeta')) return 'tarjeta';
+  if (s.includes('stripe')) return 'stripe';
+  if (s.includes('transfer') || s === 'spei') return 'transferencia';
+  if (s === 'cash' || s.includes('efectivo')) return 'efectivo';
+  if (s.includes('oxxo')) return 'oxxo';
+  return ['transferencia', 'tarjeta', 'stripe', 'efectivo', 'oxxo', 'otro'].includes(s) ? s : 'otro';
+}
+
 export const POST: APIRoute = async ({ request }) => {
   const body = await request.json().catch(() => null);
   if (!body) return new Response(JSON.stringify({ error: 'bad json' }), { status: 400 });
@@ -81,6 +93,7 @@ export const POST: APIRoute = async ({ request }) => {
         ciclo, estado: 'programada', precio,
         mrr: r2(mrr), arr: r2(mrr * 12),
         fecha_inicio: fecha, proxima_factura: fecha, monto_proximo: precio,
+        partner_id: body.partner_id || null, // Fase 4 — RR/partner que vende la licencia
       }).select('*').single();
       if (se) throw new Error('subscription: ' + se.message);
       sub = ns;
@@ -90,11 +103,12 @@ export const POST: APIRoute = async ({ request }) => {
     const periodo = sub.ciclo === 'anual' ? fecha.slice(0, 4) : fecha.slice(0, 7);
     const { data: pago, error: pe } = await supabase.from('payments').insert({
       fecha, monto: r2(monto),
-      metodo: body.metodo || 'transferencia',
+      metodo: normMetodo(body.metodo),
       referencia: body.referencia || null,
       notas: body.notas || null,
       company_id: sub.company_id, contact_id: sub.contact_id,
       subscription_id: sub.id, periodo_cubierto: periodo,
+      partner_id: body.partner_id || sub.partner_id || null, // Fase 4 — atribución RR
     }).select('id').single();
     if (pe) throw new Error('payment: ' + pe.message);
 

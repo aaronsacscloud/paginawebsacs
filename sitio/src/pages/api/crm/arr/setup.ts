@@ -53,6 +53,19 @@ const DDL: string[] = [
     monto numeric(14,2) NOT NULL,
     UNIQUE (tipo, anio, mes)
   )`,
+
+  // ── Pagos v2 (vista "Pagos" ligada a BD) ──
+  // Fase 4 — atribución a PARTNER/RR: quién vendió/atiende la licencia. team_members
+  // es la tabla de partners (misma que usa partner_commissions.partner_id).
+  `ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS partner_id uuid REFERENCES team_members(id) ON DELETE SET NULL`,
+  `ALTER TABLE payments ADD COLUMN IF NOT EXISTS partner_id uuid REFERENCES team_members(id) ON DELETE SET NULL`,
+  // Fase 5 — índices para listar/agrupar pagos rápido (por tipo, fecha, contacto/empresa).
+  // NO se pone CHECK en `metodo` para no romper filas viejas; se normaliza al escribir.
+  `CREATE INDEX IF NOT EXISTS idx_payments_metodo ON payments(metodo)`,
+  `CREATE INDEX IF NOT EXISTS idx_payments_fecha ON payments(fecha DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_payments_company ON payments(company_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_payments_contact ON payments(contact_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_payments_subscription ON payments(subscription_id)`,
 ];
 
 async function verify() {
@@ -67,6 +80,10 @@ async function verify() {
   status.companies_cols = comp.error ? 'FALTA: ' + comp.error.message : 'ok';
   const pay = await supabase.from('payments').select('id, subscription_id, migrado').limit(1);
   status.payments_cols = pay.error ? 'FALTA: ' + pay.error.message : 'ok';
+  const payP = await supabase.from('payments').select('id, partner_id').limit(1);
+  status.payments_partner = payP.error ? 'FALTA: ' + payP.error.message : 'ok';
+  const subP = await supabase.from('subscriptions').select('id, partner_id').limit(1);
+  status.subscriptions_partner = subP.error ? 'FALTA: ' + subP.error.message : 'ok';
   return status;
 }
 
