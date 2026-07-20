@@ -50,8 +50,15 @@ async function alertar(companyId: string, clave: string, titulo: string, metadat
 export const GET: APIRoute = async ({ url }) => {
   if (url.searchParams.get('key') !== CRON_KEY) return new Response('Forbidden', { status: 403 });
 
+  // Lote por corrida: las MÁS desactualizadas primero (nulls al frente). Evita
+  // exceder el timeout de Vercel al crecer el número de cuentas; el cron cada
+  // 6 h rota hasta cubrir todas (4 corridas/día × lote ≥ total).
+  const limit = Math.min(60, Number(url.searchParams.get('limit')) || 45);
   const { data: companies, error } = await supabase.from('companies')
-    .select('id, nombre, sacs_account, sucursales, dias_sin_venta').not('sacs_account', 'is', null).is('archived_at', null);
+    .select('id, nombre, sacs_account, sucursales, dias_sin_venta, actividad_sync_at')
+    .not('sacs_account', 'is', null).is('archived_at', null)
+    .order('actividad_sync_at', { ascending: true, nullsFirst: true })
+    .limit(limit);
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 
   // suscripciones para las alertas de "cancelada pero usando"
