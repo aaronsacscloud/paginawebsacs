@@ -56,10 +56,12 @@ const DDL: string[] = [
 ];
 
 async function verify() {
+  // OJO: head:true en supabase-js traga el error de tabla inexistente y reporta
+  // "ok" falso — usar select().limit(1) que sí propaga el error real.
   const status: Record<string, string> = {};
-  const subs = await supabase.from('subscriptions').select('id', { count: 'exact', head: true });
+  const subs = await supabase.from('subscriptions').select('id').limit(1);
   status.subscriptions = subs.error ? 'FALTA: ' + subs.error.message : 'ok';
-  const goals = await supabase.from('crm_goals').select('id', { count: 'exact', head: true });
+  const goals = await supabase.from('crm_goals').select('id').limit(1);
   status.crm_goals = goals.error ? 'FALTA: ' + goals.error.message : 'ok';
   const comp = await supabase.from('companies').select('id, sacs_account, ultima_venta_at').limit(1);
   status.companies_cols = comp.error ? 'FALTA: ' + comp.error.message : 'ok';
