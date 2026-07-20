@@ -56,6 +56,7 @@ function normalizar(body: any) {
     monto_proximo: body.monto_proximo != null ? Number(body.monto_proximo) : precio,
     razon_cancelacion: body.razon_cancelacion || null,
     notas: body.notas || null,
+    stripe_subscription_id: body.stripe_subscription_id ? String(body.stripe_subscription_id).trim() : null,
     updated_at: new Date().toISOString(),
   };
 }

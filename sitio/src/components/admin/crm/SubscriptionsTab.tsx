@@ -597,6 +597,7 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
     id: sub.id, nombre_plan: sub.nombre_plan, ciclo: sub.ciclo, estado: sub.estado,
     precio: sub.precio, fecha_inicio: sub.fecha_inicio, proxima_factura: sub.proxima_factura,
     monto_proximo: sub.monto_proximo, razon_cancelacion: sub.razon_cancelacion || '', notas: sub.notas || '',
+    stripe_subscription_id: (sub as any).stripe_subscription_id || '',
   });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -628,6 +629,7 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
           <div><label style={S.label}>Monto próximo</label><input type="number" value={form.monto_proximo ?? ''} onChange={e => setForm({ ...form, monto_proximo: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
           <div><label style={S.label}>Fecha inicio</label><input type="date" value={form.fecha_inicio || ''} onChange={e => setForm({ ...form, fecha_inicio: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
           <div><label style={S.label}>Próxima factura</label><input type="date" value={form.proxima_factura || ''} onChange={e => setForm({ ...form, proxima_factura: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
+          <div style={{ gridColumn: '1 / -1' }}><label style={S.label}>Stripe subscription ID <span style={{ color: '#bbb', fontWeight: 400 }}>(sub_… — al cobrarse en Stripe se registra y renueva sola)</span></label><input value={form.stripe_subscription_id} onChange={e => setForm({ ...form, stripe_subscription_id: e.target.value })} style={{ ...S.input, width: '100%' }} placeholder="sub_1Abc…" /></div>
           {form.estado === 'cancelada' && (
             <div style={{ gridColumn: '1 / -1' }}>
               <label style={S.label}>Razón de cancelación *</label>

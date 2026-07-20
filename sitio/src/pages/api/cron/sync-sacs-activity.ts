@@ -55,12 +55,12 @@ export const GET: APIRoute = async ({ url }) => {
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 
   // suscripciones para las alertas de "cancelada pero usando"
-  const { data: subsAll } = await supabase.from('subscriptions').select('company_id, estado, arr');
-  const porCompany: Record<string, { activas: number; canceladas: number; arr: number }> = {};
+  const { data: subsAll } = await supabase.from('subscriptions').select('company_id, estado, arr, nombre_plan');
+  const porCompany: Record<string, { activas: number; canceladas: number; arr: number; planes: string[] }> = {};
   (subsAll || []).forEach((s: any) => {
     if (!s.company_id) return;
-    const e = (porCompany[s.company_id] = porCompany[s.company_id] || { activas: 0, canceladas: 0, arr: 0 });
-    if (s.estado === 'activa') { e.activas++; e.arr += Number(s.arr || 0); }
+    const e = (porCompany[s.company_id] = porCompany[s.company_id] || { activas: 0, canceladas: 0, arr: 0, planes: [] });
+    if (s.estado === 'activa') { e.activas++; e.arr += Number(s.arr || 0); e.planes.push(String(s.nombre_plan || '')); }
     if (s.estado === 'cancelada') e.canceladas++;
   });
 
@@ -121,6 +121,16 @@ export const GET: APIRoute = async ({ url }) => {
           await alertar(co.id, 'sucursales_excedidas',
             `🏢 ${co.nombre}: usa ${a.sucursales} sucursales pero contrató ${co.sucursales} — posible subcobro / oportunidad de upsell`,
             { reales: a.sucursales, contratadas: co.sucursales, cuenta: acct }, avisos);
+        }
+        // Paga un plan con inventario (Controla/Automatiza) pero en 30 días no usó
+        // NINGÚN módulo de inventario → no le ve valor a lo que paga = churn en
+        // cámara lenta (o oportunidad de reactivar con capacitación).
+        const pagaInventario = (subInfo.planes || []).some(pl => /controla|automatiza/i.test(pl));
+        const usaInventario = (a.modulos || []).some((m: string) => /inventario|compra|Transferencias/i.test(m));
+        if (pagaInventario && !usaInventario && (a.ventas_30d || 0) > 0) {
+          await alertar(co.id, 'plan_sin_uso',
+            `📦 ${co.nombre}: paga plan con INVENTARIO (${(subInfo.planes || []).filter(pl => /controla|automatiza/i.test(pl)).join(', ')}) pero en 30 días no usó órdenes de compra ni transferencias — no le está viendo valor: capacitar o riesgo de downgrade`,
+            { planes: subInfo.planes, modulos: a.modulos, cuenta: acct }, avisos);
         }
         if (dias != null && dias > 15 && (diasPrev == null || diasPrev <= 15) && subInfo.activas > 0) {
           await alertar(co.id, 'entro_a_riesgo',

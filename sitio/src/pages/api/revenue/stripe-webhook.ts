@@ -836,13 +836,58 @@ export const POST: APIRoute = async ({ request }) => {
       const amount = (invoice.amount_paid || 0) / 100;
       const stripePaymentId = typeof invoice.payment_intent === 'string' ? invoice.payment_intent : invoice.payment_intent?.id;
 
+      // ── Conciliación ARR: si el invoice pertenece a una suscripción del CRM
+      // (subscriptions.stripe_subscription_id), registra el pago EN la sub,
+      // la activa y recorre su próxima factura — lo cobrado por Stripe cuadra
+      // solo contra lo esperado, sin captura manual.
+      const invSubId = (invoice as any).subscription
+        ? (typeof (invoice as any).subscription === 'string' ? (invoice as any).subscription : (invoice as any).subscription.id)
+        : null;
+      let arrConciliado = false; // guard: si la sub del CRM ya registró el pago, el flujo original NO lo duplica
+      if (invSubId && amount > 0) {
+        const { data: crmSub } = await supabase.from('subscriptions').select('*').eq('stripe_subscription_id', invSubId).maybeSingle();
+        if (crmSub) {
+          arrConciliado = true;
+          const fecha = new Date().toISOString().slice(0, 10);
+          await insertPayment({
+            fecha, monto: amount, metodo: 'stripe_subscription', referencia: invoice.id,
+            contact_id: crmSub.contact_id, company_id: crmSub.company_id,
+            stripe_payment_id: stripePaymentId,
+          } as any);
+          if (stripePaymentId) {
+            await supabase.from('payments').update({ subscription_id: crmSub.id, periodo_cubierto: crmSub.ciclo === 'anual' ? fecha.slice(0, 4) : fecha.slice(0, 7) })
+              .eq('stripe_payment_id', stripePaymentId).select().maybeSingle();
+          }
+          const base = (crmSub.proxima_factura && crmSub.proxima_factura >= fecha) ? crmSub.proxima_factura : fecha;
+          const d = new Date(base + 'T12:00:00Z');
+          if (crmSub.ciclo === 'anual') d.setUTCFullYear(d.getUTCFullYear() + 1); else d.setUTCMonth(d.getUTCMonth() + 1);
+          await supabase.from('subscriptions').update({
+            estado: 'activa',
+            proxima_factura: d.toISOString().slice(0, 10),
+            pagos_realizados: Number(crmSub.pagos_realizados || 0) + 1,
+            total_pagado: Math.round((Number(crmSub.total_pagado || 0) + amount) * 100) / 100,
+            updated_at: new Date().toISOString(),
+          }).eq('id', crmSub.id);
+          if (crmSub.company_id) {
+            await supabase.from('activities').insert({
+              tipo: 'pago_recibido',
+              titulo: `💳 Stripe subscription cobrada: $${amount.toLocaleString('es-MX')} MXN — ${crmSub.nombre_plan} (${crmSub.ciclo})`,
+              company_id: crmSub.company_id, contact_id: crmSub.contact_id, automatico: true,
+              metadata: { subscription_id: crmSub.id, stripe_invoice: invoice.id },
+            }).select().maybeSingle();
+          }
+          // sigue el flujo original (comisiones de referidos, etc.) sin duplicar el pago:
+          // el insertPayment de abajo se salta porque ya registramos aquí.
+        }
+      }
+
       // Find company
       let companyId: string | null = null;
       if (customerId) {
         const { data: c } = await supabase.from('companies').select('id, contact_id').eq('stripe_customer_id', customerId).maybeSingle();
         companyId = c?.id || null;
 
-        if (companyId && amount > 0) {
+        if (companyId && amount > 0 && !arrConciliado) {
           const paymentRes = await insertPayment({
             company_id: companyId,
             contact_id: (c as any)?.contact_id || null,
