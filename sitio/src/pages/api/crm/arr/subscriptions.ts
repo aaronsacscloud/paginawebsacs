@@ -53,7 +53,9 @@ function normalizar(body: any) {
     arr: Math.round(mrr * 12 * 100) / 100,
     fecha_inicio: body.fecha_inicio || null,
     proxima_factura: body.proxima_factura || null,
-    monto_proximo: body.monto_proximo != null ? Number(body.monto_proximo) : precio,
+    // '' o 0 NO son un monto válido: Number('') === 0 dejaba próximas facturas
+    // de $0 (recordatorios de $0, proyección desinflada, Stripe rechazando el link)
+    monto_proximo: (() => { const mp = Number(body.monto_proximo); return Number.isFinite(mp) && mp > 0 ? mp : precio; })(),
     razon_cancelacion: body.razon_cancelacion || null,
     notas: body.notas || null,
     stripe_subscription_id: body.stripe_subscription_id ? String(body.stripe_subscription_id).trim() : null,
@@ -78,9 +80,26 @@ export const PUT: APIRoute = async ({ request }) => {
   const body = await request.json().catch(() => null);
   if (!body?.id) return new Response(JSON.stringify({ error: 'id requerido' }), { status: 400 });
   const { data: prev } = await supabase.from('subscriptions').select('estado, precio, proxima_factura, nombre_plan, company_id').eq('id', body.id).maybeSingle();
+  const esCancelacionNueva = body.estado === 'cancelada' && prev?.estado !== 'cancelada';
+  // razón obligatoria TAMBIÉN en servidor (el modal la valida, pero curl/bugs no)
+  if (esCancelacionNueva && !body.razon_cancelacion) {
+    return new Response(JSON.stringify({ error: 'razon_cancelacion requerida para cancelar' }), { status: 400 });
+  }
   const upd: any = normalizar(body);
   delete upd.company_id; // la suscripción no cambia de empresa por edición
-  if (body.estado === 'cancelada') upd.cancelada_at = new Date().toISOString();
+  // Solo pisar campos que el cliente MANDÓ: el modal no envía contact_id y el
+  // normalizar() lo dejaba en null en cada edición → la sub perdía su contacto
+  // y el dunning/recordatorios dejaban de llegarle a ese cliente en silencio.
+  for (const k of ['contact_id', 'fecha_inicio', 'proxima_factura', 'notas', 'stripe_subscription_id', 'razon_cancelacion'] as const) {
+    if (body[k] === undefined) delete upd[k];
+  }
+  if (esCancelacionNueva) upd.cancelada_at = new Date().toISOString();
+  // Reactivar una cancelada limpia el rastro de cancelación (si no, queda una
+  // "activa" con razón de cancelación y cancelada_at fantasma)
+  if (prev?.estado === 'cancelada' && body.estado && body.estado !== 'cancelada') {
+    upd.razon_cancelacion = null;
+    upd.cancelada_at = null;
+  }
   const { data, error } = await supabase.from('subscriptions').update(upd).eq('id', body.id).select().single();
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   // Auditoría: qué cambió (estado/precio/fecha) queda en el timeline del cliente
@@ -97,8 +116,10 @@ export const PUT: APIRoute = async ({ request }) => {
     }
   }
   await recalcCompany(data.company_id);
-  // churn_event al cancelar (alimenta las métricas de churn existentes)
-  if (body.estado === 'cancelada') {
+  // churn_event SOLO en la transición real a cancelada — antes se insertaba en
+  // cada PUT con estado 'cancelada' (editar las notas de una cancelada duplicaba
+  // el churn y re-estampaba cancelada_at, inflando las métricas)
+  if (esCancelacionNueva) {
     await supabase.from('churn_events').insert({
       company_id: data.company_id, mrr_lost: data.mrr,
       reason: body.razon_cancelacion || 'sin razón registrada',

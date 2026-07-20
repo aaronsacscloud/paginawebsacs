@@ -101,6 +101,29 @@ export const POST: APIRoute = async ({ request }) => {
 
     // ── 2 · Registrar el pago ──
     const periodo = sub.ciclo === 'anual' ? fecha.slice(0, 4) : fecha.slice(0, 7);
+
+    // Dedupe: mismo monto para la misma sub en el mismo periodo = casi seguro el
+    // mismo cobro capturado dos veces (manual + webhook de Stripe, o doble clic).
+    // Sin este guard el total_pagado se duplica y la proxima_factura se recorre
+    // DOS ciclos. Se puede insistir con forzar:true (p. ej. dos pagos legítimos
+    // iguales el mismo mes).
+    if (body.subscription_id && !body.forzar) {
+      const { data: dup } = await supabase.from('payments').select('id, fecha')
+        .eq('subscription_id', sub.id).eq('periodo_cubierto', periodo).eq('monto', r2(monto))
+        .limit(1).maybeSingle();
+      if (dup) {
+        return new Response(JSON.stringify({
+          error: `Ya existe un pago de $${r2(monto).toLocaleString('es-MX')} para esta suscripción en el periodo ${periodo} (${dup.fecha}). Si es un pago distinto legítimo, reenvía con forzar: true.`,
+          payment_id: dup.id, duplicado: true,
+        }), { status: 409 });
+      }
+    }
+
+    // Aviso de pago parcial (no bloquea — la política de parciales es decisión
+    // de negocio pendiente): que al menos quede visible en el timeline.
+    const esperado = Number(sub.monto_proximo ?? sub.precio) || 0;
+    const esParcial = body.subscription_id && esperado > 0 && monto < esperado * 0.99;
+
     const { data: pago, error: pe } = await supabase.from('payments').insert({
       fecha, monto: r2(monto),
       metodo: normMetodo(body.metodo),
@@ -130,13 +153,13 @@ export const POST: APIRoute = async ({ request }) => {
     // ── 5 · Actividad (timeline del cliente) ──
     await supabase.from('activities').insert({
       tipo: 'pago_recibido',
-      titulo: `Pago registrado: $${r2(monto).toLocaleString('es-MX')} MXN — ${subUpd.nombre_plan} (${subUpd.ciclo})`,
+      titulo: `Pago registrado: $${r2(monto).toLocaleString('es-MX')} MXN — ${subUpd.nombre_plan} (${subUpd.ciclo})` + (esParcial ? ` ⚠️ PARCIAL (esperado $${r2(esperado).toLocaleString('es-MX')})` : ''),
       metadata: { payment_id: pago.id, subscription_id: sub.id, company_id: sub.company_id, periodo },
       company_id: sub.company_id, contact_id: sub.contact_id,
       automatico: true,
     }).select().maybeSingle();
 
-    return new Response(JSON.stringify({ ok: true, payment_id: pago.id, subscription: subUpd }, null, 2),
+    return new Response(JSON.stringify({ ok: true, payment_id: pago.id, subscription: subUpd, ...(esParcial ? { advertencia: `pago parcial: $${r2(monto)} de $${r2(esperado)} esperados` } : {}) }, null, 2),
       { status: 200, headers: { 'Content-Type': 'application/json' } });
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e?.message || String(e) }), { status: 500 });

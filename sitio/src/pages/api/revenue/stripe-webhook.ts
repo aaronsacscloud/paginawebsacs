@@ -168,7 +168,13 @@ async function syncSubscriptionToCompany(subscriptionId: string, customerId: str
     const sub = await stripe.subscriptions.retrieve(subscriptionId);
     const periodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null;
     const item = sub.items?.data?.[0];
-    const mrr = item?.price?.unit_amount ? (item.price.unit_amount / 100) * (item.quantity || 1) : 0;
+    // Normalizar al MES según el intervalo del price: un plan anual de $6,000
+    // seteaba mrr=6000 (arr=72,000) porque unit_amount es POR CICLO, no por mes.
+    const porCiclo = item?.price?.unit_amount ? (item.price.unit_amount / 100) * (item.quantity || 1) : 0;
+    const interval = item?.price?.recurring?.interval || 'month';
+    const intervalCount = item?.price?.recurring?.interval_count || 1;
+    const mesesPorCiclo = interval === 'year' ? 12 * intervalCount : interval === 'month' ? intervalCount : interval === 'week' ? intervalCount / 4.33 : intervalCount / 30;
+    const mrr = mesesPorCiclo > 0 ? porCiclo / mesesPorCiclo : porCiclo;
 
     // Try find company via quote
     let companyId: string | null = null;
@@ -846,7 +852,26 @@ export const POST: APIRoute = async ({ request }) => {
       let arrConciliado = false; // guard: si la sub del CRM ya registró el pago, el flujo original NO lo duplica
       if (invSubId && amount > 0) {
         const { data: crmSub } = await supabase.from('subscriptions').select('*').eq('stripe_subscription_id', invSubId).maybeSingle();
-        if (crmSub) {
+        // Una sub CANCELADA en el CRM no se resucita sola: registrar el cobro
+        // sería válido (el dinero llegó) pero activarla revierte la decisión de
+        // negocio sin que nadie lo pida. Alerta roja para cancelar en Stripe o
+        // reactivar a propósito.
+        if (crmSub && crmSub.estado === 'cancelada') {
+          arrConciliado = true;
+          await supabase.from('activities').insert({
+            tipo: 'sistema',
+            titulo: `🚨 Stripe cobró $${amount.toLocaleString('es-MX')} de una suscripción CANCELADA (${crmSub.nombre_plan}) — cancela en Stripe o reactívala en el CRM`,
+            company_id: crmSub.company_id, contact_id: crmSub.contact_id, automatico: true,
+            metadata: { alerta: 'stripe_cobro_cancelada', subscription_id: crmSub.id, stripe_invoice: invoice.id, monto: amount },
+          }).select().maybeSingle();
+        } else if (crmSub) {
+          // Idempotencia: Stripe reintenta webhooks — el mismo invoice no debe
+          // registrar el pago (ni recorrer la próxima factura) dos veces.
+          const { data: yaRegistrado } = await supabase.from('payments').select('id')
+            .eq('referencia', invoice.id).limit(1).maybeSingle();
+          if (yaRegistrado) { arrConciliado = true; }
+        }
+        if (crmSub && crmSub.estado !== 'cancelada' && !arrConciliado) {
           arrConciliado = true;
           const fecha = new Date().toISOString().slice(0, 10);
           await insertPayment({
