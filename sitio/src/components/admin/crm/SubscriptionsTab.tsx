@@ -323,7 +323,7 @@ export default function SubscriptionsTab() {
 }
 
 /* ═══════════════ Modal: registrar pago (activa el ARR) ═══════════════ */
-function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: Sub[]; prefill?: { subscription_id?: string } | null; onClose: () => void; onDone: () => void }) {
+export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: Sub[]; prefill?: { subscription_id?: string } | null; onClose: () => void; onDone: () => void }) {
   const [modo, setModo] = useState<'existente' | 'nuevo'>('existente');
   const [subId, setSubId] = useState(prefill?.subscription_id || '');
   const [form, setForm] = useState<any>({ ciclo: 'anual', metodo: 'transferencia', fecha: new Date().toISOString().slice(0, 10) });

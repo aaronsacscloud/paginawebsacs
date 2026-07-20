@@ -13,6 +13,7 @@ import RevenueHub from './RevenueHub';
 import ClientesTab from './crm/ClientesTab';
 import ReunionesTab from './crm/ReunionesTab';
 import SubscriptionsTab from './crm/SubscriptionsTab';
+import PagosTab from './crm/PagosTab';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
   state = { error: null as string | null };
@@ -140,7 +141,7 @@ export default function CrmDashboard() {
     history.replaceState(null, '', url.toString());
   };
 
-  const revenueTab = (['cotizaciones', 'pagos', 'config'].includes(tab)) ? tab : 'dashboard';
+  const revenueTab = (['cotizaciones', 'config'].includes(tab)) ? tab : 'dashboard';
   // En mobile, cuando expanded el sidebar es overlay (no empuja el contenido)
   const mobileExpanded = isMobile && !sidebarCollapsed;
   const sidebarWidth = sidebarCollapsed ? (isMobile ? 0 : 60) : 220;
@@ -373,6 +374,8 @@ export default function CrmDashboard() {
           </div>
         ) : tab === 'reuniones' ? (
           <ReunionesTab onOpenContact={(id) => setProfileContactId(id)} />
+        ) : tab === 'pagos' ? (
+          <ErrorBoundary><PagosTab /></ErrorBoundary>
         ) : tab === 'clientes' ? (
           <ClientesTab />
         ) : (
