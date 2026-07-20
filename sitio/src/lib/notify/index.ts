@@ -555,6 +555,52 @@ const templates: Record<string, Template> = {
     `,
     text: `Tu renovación SACS se acerca: ${d.days} días. Monto $${d.total} ${d.moneda || 'MXN'}`,
   }),
+  // ═══ CRM ARR: recordatorios de renovación y dunning ═══
+  arr_renewal_reminder: (d) => ({
+    subject: `🔔 Tu licencia SACS ${d.ciclo === 'anual' ? 'anual' : 'mensual'} se renueva el ${d.fecha || ''} — ${d.empresa || ''}`,
+    html: `
+      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <h2 style="font-size:1.25rem;margin:0 0 12px">Tu renovación está cerca</h2>
+        <p style="color:#555;line-height:1.55;margin:0 0 16px">Hola${d.contacto ? ' ' + d.contacto : ''}, tu suscripción <strong>${d.plan || 'SACS'}</strong> se renueva el <strong>${d.fecha || ''}</strong> por <strong>$${Number(d.monto || 0).toLocaleString('es-MX')} MXN</strong>.</p>
+        <div style="background:#fafafa;border:1px solid #e5e5e5;padding:16px;border-radius:8px;margin:16px 0;font-size:0.875rem;color:#555">
+          <div>Plan: <strong>${d.plan || ''}</strong> · Ciclo: <strong>${d.ciclo || ''}</strong></div>
+          <div>Fecha de renovación: <strong>${d.fecha || ''}</strong> · Monto: <strong>$${Number(d.monto || 0).toLocaleString('es-MX')} MXN</strong></div>
+        </div>
+        ${d.pago_url ? `<a href="${d.pago_url}" style="display:inline-block;background:#1A8F7A;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Pagar ahora</a>` : ''}
+        <p style="color:#999;font-size:0.75rem;margin-top:24px">Si ya realizaste el pago, ignora este correo. ¿Dudas? Responde a este correo y te ayudamos.</p>
+      </div>
+    `,
+    text: `Tu suscripción ${d.plan} (${d.ciclo}) se renueva el ${d.fecha} por $${d.monto} MXN.${d.pago_url ? ' Paga aquí: ' + d.pago_url : ''}`,
+  }),
+  arr_payment_overdue: (d) => ({
+    subject: `⚠️ Pago pendiente de tu licencia SACS — ${d.empresa || ''}`,
+    html: `
+      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <h2 style="font-size:1.25rem;margin:0 0 12px">Tienes un pago pendiente</h2>
+        <p style="color:#555;line-height:1.55;margin:0 0 16px">Hola${d.contacto ? ' ' + d.contacto : ''}, el pago de tu suscripción <strong>${d.plan || 'SACS'}</strong> venció el <strong>${d.fecha || ''}</strong> (${d.dias || 0} día(s)). Monto: <strong>$${Number(d.monto || 0).toLocaleString('es-MX')} MXN</strong>.</p>
+        ${d.pago_url ? `<a href="${d.pago_url}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Regularizar mi pago</a>` : ''}
+        <p style="color:#999;font-size:0.75rem;margin-top:24px">Si ya pagaste, responde este correo con tu comprobante y lo aplicamos de inmediato.</p>
+      </div>
+    `,
+    text: `El pago de tu suscripción ${d.plan} venció el ${d.fecha} (${d.dias} días). Monto: $${d.monto} MXN.${d.pago_url ? ' Regulariza aquí: ' + d.pago_url : ''}`,
+  }),
+  arr_weekly_summary: (d) => ({
+    subject: `📊 SACS ARR semanal — $${Number(d.arr || 0).toLocaleString('es-MX')} (${d.meta_pct || 0}% de la meta)`,
+    html: `
+      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:640px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <h2 style="font-size:1.25rem;margin:0 0 12px">Resumen semanal del ARR</h2>
+        <div style="background:#fafafa;border:1px solid #e5e5e5;padding:16px;border-radius:8px;margin:0 0 16px;font-size:0.9rem;color:#333">
+          <div>ARR activo: <strong>$${Number(d.arr || 0).toLocaleString('es-MX')}</strong> · Meta: ${d.meta_pct || 0}%</div>
+          <div>Cobros esta semana: <strong>${d.cobros_semana_n || 0}</strong> por <strong>$${Number(d.cobros_semana || 0).toLocaleString('es-MX')}</strong></div>
+          <div>Vencidas: <strong>${d.vencidas_n || 0}</strong> ($${Number(d.vencidas || 0).toLocaleString('es-MX')}) · En riesgo: <strong>${d.riesgo_n || 0}</strong> clientes ($${Number(d.riesgo || 0).toLocaleString('es-MX')} ARR)</div>
+        </div>
+        ${d.detalle_html || ''}
+        <a href="https://www.sacscloud.com/admin/crm?tab=suscripciones" style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Abrir el hub ARR</a>
+      </div>
+    `,
+    text: `ARR: $${d.arr} (${d.meta_pct}% meta). Cobros semana: ${d.cobros_semana_n} ($${d.cobros_semana}). Vencidas: ${d.vencidas_n}. En riesgo: ${d.riesgo_n}.`,
+  }),
+
 };
 
 async function sendEmailViaResend(

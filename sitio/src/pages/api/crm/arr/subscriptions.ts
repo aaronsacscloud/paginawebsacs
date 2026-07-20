@@ -66,17 +66,35 @@ export const POST: APIRoute = async ({ request }) => {
   const { data, error } = await supabase.from('subscriptions').insert(normalizar(body)).select().single();
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   await recalcCompany(data.company_id);
+  await supabase.from('activities').insert({
+    tipo: 'sistema', titulo: `Suscripción creada: ${data.nombre_plan} (${data.ciclo}) · $${Number(data.precio).toLocaleString('es-MX')}`,
+    company_id: data.company_id, automatico: true, metadata: { audit: 'sub_create', subscription_id: data.id },
+  }).select().maybeSingle();
   return new Response(JSON.stringify({ data }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 };
 
 export const PUT: APIRoute = async ({ request }) => {
   const body = await request.json().catch(() => null);
   if (!body?.id) return new Response(JSON.stringify({ error: 'id requerido' }), { status: 400 });
+  const { data: prev } = await supabase.from('subscriptions').select('estado, precio, proxima_factura, nombre_plan, company_id').eq('id', body.id).maybeSingle();
   const upd: any = normalizar(body);
   delete upd.company_id; // la suscripción no cambia de empresa por edición
   if (body.estado === 'cancelada') upd.cancelada_at = new Date().toISOString();
   const { data, error } = await supabase.from('subscriptions').update(upd).eq('id', body.id).select().single();
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  // Auditoría: qué cambió (estado/precio/fecha) queda en el timeline del cliente
+  if (prev) {
+    const cambios: string[] = [];
+    if (prev.estado !== data.estado) cambios.push(`estado ${prev.estado}→${data.estado}`);
+    if (Number(prev.precio) !== Number(data.precio)) cambios.push(`precio $${Number(prev.precio).toLocaleString('es-MX')}→$${Number(data.precio).toLocaleString('es-MX')}`);
+    if (prev.proxima_factura !== data.proxima_factura) cambios.push(`próx. factura ${prev.proxima_factura || '—'}→${data.proxima_factura || '—'}`);
+    if (cambios.length) {
+      await supabase.from('activities').insert({
+        tipo: 'sistema', titulo: `Suscripción editada (${data.nombre_plan}): ${cambios.join(' · ')}` + (body.razon_cancelacion ? ` · razón: ${body.razon_cancelacion}` : ''),
+        company_id: data.company_id, automatico: true, metadata: { audit: 'sub_update', subscription_id: data.id, cambios },
+      }).select().maybeSingle();
+    }
+  }
   await recalcCompany(data.company_id);
   // churn_event al cancelar (alimenta las métricas de churn existentes)
   if (body.estado === 'cancelada') {

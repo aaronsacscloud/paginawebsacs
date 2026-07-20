@@ -639,6 +639,48 @@ export const POST: APIRoute = async ({ request }) => {
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
 
+      // ARR renewal fast path (link generado desde el CRM): registra el pago,
+      // ACTIVA la suscripción y recorre su próxima factura un ciclo.
+      if (session.metadata?.type === 'arr_renewal' && session.metadata?.subscription_id) {
+        const subId = session.metadata.subscription_id;
+        const monto = (session.amount_total || 0) / 100;
+        const { data: sub } = await supabase.from('subscriptions').select('*').eq('id', subId).maybeSingle();
+        if (sub && monto > 0) {
+          const fecha = new Date().toISOString().slice(0, 10);
+          const stripePaymentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
+          await insertPayment({
+            fecha, monto, metodo: 'tarjeta', referencia: session.id,
+            contact_id: sub.contact_id, company_id: sub.company_id,
+            stripe_payment_id: stripePaymentId,
+          } as any);
+          // ligar el pago a la sub (insertPayment no conoce subscription_id)
+          if (stripePaymentId) {
+            await supabase.from('payments').update({ subscription_id: subId, periodo_cubierto: sub.ciclo === 'anual' ? fecha.slice(0, 4) : fecha.slice(0, 7) })
+              .eq('stripe_payment_id', stripePaymentId).select().maybeSingle();
+          }
+          const base = (sub.proxima_factura && sub.proxima_factura >= fecha) ? sub.proxima_factura : fecha;
+          const d = new Date(base + 'T12:00:00Z');
+          if (sub.ciclo === 'anual') d.setUTCFullYear(d.getUTCFullYear() + 1); else d.setUTCMonth(d.getUTCMonth() + 1);
+          await supabase.from('subscriptions').update({
+            estado: 'activa',
+            proxima_factura: d.toISOString().slice(0, 10),
+            pagos_realizados: Number(sub.pagos_realizados || 0) + 1,
+            total_pagado: Math.round((Number(sub.total_pagado || 0) + monto) * 100) / 100,
+            updated_at: new Date().toISOString(),
+          }).eq('id', subId);
+          if (sub.company_id) {
+            await supabase.from('companies').update({ last_payment_at: new Date().toISOString(), estado_cuenta: 'activo' }).eq('id', sub.company_id);
+            await supabase.from('activities').insert({
+              tipo: 'pago_recibido',
+              titulo: `💳 Pago Stripe recibido: $${monto.toLocaleString('es-MX')} MXN — ${sub.nombre_plan} (renovación ${sub.ciclo})`,
+              company_id: sub.company_id, contact_id: sub.contact_id, automatico: true,
+              metadata: { subscription_id: subId, stripe_session: session.id },
+            }).select().maybeSingle();
+          }
+        }
+        return new Response(JSON.stringify({ received: true, arr_renewal: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+
       // Partner Certification fast path: distinct from quote/subscription flow
       if (session.metadata?.type === 'partner_certification') {
         const certId = session.metadata?.cert_id;

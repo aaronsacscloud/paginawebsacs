@@ -56,7 +56,9 @@ export default function SubscriptionsTab() {
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [vista, setVista] = useState<'subs' | 'riesgo' | 'cobranza'>('subs');
+  const [vista, setVista] = useState<'subs' | 'riesgo' | 'cobranza' | 'conciliacion'>('subs');
+  const [editSub, setEditSub] = useState<Sub | null>(null);
+  const [pagoPrefill, setPagoPrefill] = useState<{ subscription_id?: string; fecha?: string } | null>(null);
   const [fCiclo, setFCiclo] = useState('');
   const [fEstado, setFEstado] = useState('');
   const [search, setSearch] = useState('');
@@ -142,10 +144,10 @@ export default function SubscriptionsTab() {
 
       {/* ── Barra de acciones + sub-vistas ── */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
-        {(['subs', 'riesgo', 'cobranza'] as const).map(v => (
+        {(['subs', 'riesgo', 'cobranza', 'conciliacion'] as const).map(v => (
           <button key={v} onClick={() => setVista(v)}
             style={{ ...S.btn, background: vista === v ? '#1a1a1a' : '#f2f2f2', color: vista === v ? '#fff' : '#555' }}>
-            {v === 'subs' ? 'Suscripciones' : v === 'riesgo' ? `Riesgo (${(riesgo?.banda_3_15?.length || 0) + (riesgo?.banda_15_mas?.length || 0)})` : 'Cobranza y proyección'}
+            {v === 'subs' ? 'Suscripciones' : v === 'riesgo' ? `Riesgo (${(riesgo?.banda_3_15?.length || 0) + (riesgo?.banda_15_mas?.length || 0)})` : v === 'cobranza' ? 'Cobranza y proyección' : 'Conciliación'}
           </button>
         ))}
         <div style={{ flex: 1 }} />
@@ -168,7 +170,7 @@ export default function SubscriptionsTab() {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead><tr>
-                {['Cliente', 'Plan', 'Ciclo', 'Estado', 'Precio', 'ARR', 'Próx. factura', 'Pagos', 'Total pagado', 'Últ. venta SACS'].map(h => <th key={h} style={S.th}>{h}</th>)}
+                {['Cliente', 'Plan', 'Ciclo', 'Estado', 'Precio', 'ARR', 'Próx. factura', 'Pagos', 'Total pagado', 'Últ. venta SACS', 'Salud', ''].map(h => <th key={h} style={S.th}>{h}</th>)}
               </tr></thead>
               <tbody>
                 {filtered.map(s => {
@@ -186,6 +188,10 @@ export default function SubscriptionsTab() {
                       <td style={S.td}>{fmt(s.total_pagado)}</td>
                       <td style={{ ...S.td, color: dias != null && dias > 15 ? '#b93333' : dias != null && dias >= 3 ? '#a06600' : '#333' }}>
                         {s.companies?.ultima_venta_at ? fmtDate(s.companies.ultima_venta_at) + (dias != null ? ` (${dias}d)` : '') : '—'}
+                      </td>
+                      <td style={S.td}>{(() => { const h = (s.companies as any)?.health_score; if (h == null) return '—'; const c = h >= 70 ? '#1A8F7A' : h >= 40 ? '#a06600' : '#b93333'; return <span style={{ fontWeight: 800, color: c }}>{h}</span>; })()}</td>
+                      <td style={S.td} onClick={e => e.stopPropagation()}>
+                        <button style={S.btnSmall} onClick={() => setEditSub(s)}>Editar</button>
                       </td>
                     </tr>
                   );
@@ -232,7 +238,7 @@ export default function SubscriptionsTab() {
             <div style={{ ...S.card, borderLeft: '4px solid #E54B4B' }}>
               <div style={{ fontWeight: 800, marginBottom: 10 }}>⚠️ Facturas vencidas <span style={{ color: '#999', fontWeight: 400 }}>· {vencidas.length} · {fmt(vencidas.reduce((a: number, v: any) => a + v.monto, 0))}</span></div>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr>{['Cliente', 'Plan', 'Ciclo', 'Vencida desde', 'Días', 'Monto'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                <thead><tr>{['Cliente', 'Plan', 'Ciclo', 'Vencida desde', 'Días', 'Monto', 'Acciones'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
                 <tbody>{vencidas.map((v: any) => (
                   <tr key={v.subscription_id}>
                     <td style={{ ...S.td, fontWeight: 700 }}>{v.empresa}</td>
@@ -241,6 +247,11 @@ export default function SubscriptionsTab() {
                     <td style={S.td}>{fmtDate(v.vencida_desde)}</td>
                     <td style={{ ...S.td, fontWeight: 800, color: '#b93333' }}>{v.dias_vencida}</td>
                     <td style={{ ...S.td, fontWeight: 700 }}>{fmt(v.monto)}</td>
+                    <td style={S.td}>
+                      <button style={{ ...S.btnSmall, background: '#e8f5e9', color: '#2e7d32', marginRight: 4 }} title="¿Ya se pagó? Regístralo con su fecha real"
+                        onClick={() => { setPagoPrefill({ subscription_id: v.subscription_id }); setShowPago(true); }}>Registrar pago</button>
+                      <StripeLinkBtn subId={v.subscription_id} />
+                    </td>
                   </tr>
                 ))}</tbody>
               </table>
@@ -301,7 +312,10 @@ export default function SubscriptionsTab() {
         </div>
       )}
 
-      {showPago && <RegistrarPagoModal subs={subs} onClose={() => setShowPago(false)} onDone={() => { setShowPago(false); load(); }} />}
+      {vista === 'conciliacion' && <ConciliacionView onChanged={load} />}
+
+      {showPago && <RegistrarPagoModal subs={subs} prefill={pagoPrefill} onClose={() => { setShowPago(false); setPagoPrefill(null); }} onDone={() => { setShowPago(false); setPagoPrefill(null); load(); }} />}
+      {editSub && <EditarSubModal sub={editSub} onClose={() => setEditSub(null)} onDone={() => { setEditSub(null); load(); }} />}
       {showMeta && <MetaModal meta={meta} onClose={() => setShowMeta(false)} onDone={() => { setShowMeta(false); load(); }} />}
       {detailId && <ClienteDrawer companyId={detailId} onClose={() => setDetailId(null)} onChanged={load} />}
     </div>
@@ -309,9 +323,9 @@ export default function SubscriptionsTab() {
 }
 
 /* ═══════════════ Modal: registrar pago (activa el ARR) ═══════════════ */
-function RegistrarPagoModal({ subs, onClose, onDone }: { subs: Sub[]; onClose: () => void; onDone: () => void }) {
+function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: Sub[]; prefill?: { subscription_id?: string } | null; onClose: () => void; onDone: () => void }) {
   const [modo, setModo] = useState<'existente' | 'nuevo'>('existente');
-  const [subId, setSubId] = useState('');
+  const [subId, setSubId] = useState(prefill?.subscription_id || '');
   const [form, setForm] = useState<any>({ ciclo: 'anual', metodo: 'transferencia', fecha: new Date().toISOString().slice(0, 10) });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -555,5 +569,220 @@ function ClienteDrawer({ companyId, onClose, onChanged }: { companyId: string; o
         )}
       </div>
     </>
+  );
+}
+
+/* ═══════════════ Botón: link de pago Stripe ═══════════════ */
+function StripeLinkBtn({ subId }: { subId: string }) {
+  const [busy, setBusy] = useState(false);
+  const [url, setUrl] = useState<string | null>(null);
+  async function generar() {
+    setBusy(true);
+    try {
+      const res = await fetch('/api/crm/arr/stripe-link', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subscription_id: subId }) });
+      const j = await res.json();
+      if (j.url) { setUrl(j.url); try { await navigator.clipboard.writeText(j.url); } catch { /* igual se muestra */ } }
+      else alert(j.error || 'No se pudo generar el link');
+    } catch (e: any) { alert(e?.message || 'Error'); }
+    setBusy(false);
+  }
+  if (url) return <a href={url} target="_blank" rel="noreferrer" style={{ ...S.btnSmall, background: '#EEF2FB', color: '#3764c4', textDecoration: 'none' }} title="Link copiado al portapapeles">Link listo ✓</a>;
+  return <button style={S.btnSmall} disabled={busy} onClick={generar} title="Genera un link de pago Stripe; al pagarse se activa sola">{busy ? '…' : '💳 Link Stripe'}</button>;
+}
+
+/* ═══════════════ Modal: editar / cancelar suscripción ═══════════════ */
+const RAZONES_CANCEL = ['precio', 'no implementó', 'cerró el negocio', 'se fue con competencia', 'mal servicio/soporte', 'otro'];
+function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => void; onDone: () => void }) {
+  const [form, setForm] = useState<any>({
+    id: sub.id, nombre_plan: sub.nombre_plan, ciclo: sub.ciclo, estado: sub.estado,
+    precio: sub.precio, fecha_inicio: sub.fecha_inicio, proxima_factura: sub.proxima_factura,
+    monto_proximo: sub.monto_proximo, razon_cancelacion: sub.razon_cancelacion || '', notas: sub.notas || '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function guardar() {
+    if (form.estado === 'cancelada' && !form.razon_cancelacion) { setErr('Elige la razón de cancelación — sirve para atacar la causa del churn.'); return; }
+    setSaving(true); setErr(null);
+    try {
+      const res = await fetch('/api/crm/arr/subscriptions', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+      const j = await res.json();
+      if (!res.ok || j.error) throw new Error(j.error || 'No se pudo guardar');
+      onDone();
+    } catch (e: any) { setErr(e?.message || String(e)); setSaving(false); }
+  }
+
+  return (
+    <div style={S.overlay} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={S.modal}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
+          <h3 style={{ margin: 0, fontWeight: 800 }}>Editar suscripción</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
+        </div>
+        <div style={{ fontSize: '0.8rem', color: '#999', marginBottom: 10 }}>{sub.companies?.nombre || '—'}{sub.companies?.sacs_account ? ' · ' + sub.companies.sacs_account : ''}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div style={{ gridColumn: '1 / -1' }}><label style={S.label}>Plan</label><input value={form.nombre_plan} onChange={e => setForm({ ...form, nombre_plan: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
+          <div><label style={S.label}>Ciclo</label><select value={form.ciclo} onChange={e => setForm({ ...form, ciclo: e.target.value })} style={{ ...S.input, width: '100%' }}><option value="anual">Anual</option><option value="mensual">Mensual</option></select></div>
+          <div><label style={S.label}>Estado</label><select value={form.estado} onChange={e => setForm({ ...form, estado: e.target.value })} style={{ ...S.input, width: '100%' }}>{Object.entries(ESTADOS).map(([v, c]) => <option key={v} value={v}>{c.label}</option>)}</select></div>
+          <div><label style={S.label}>Precio por {form.ciclo === 'anual' ? 'año' : 'mes'}</label><input type="number" value={form.precio} onChange={e => setForm({ ...form, precio: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
+          <div><label style={S.label}>Monto próximo</label><input type="number" value={form.monto_proximo ?? ''} onChange={e => setForm({ ...form, monto_proximo: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
+          <div><label style={S.label}>Fecha inicio</label><input type="date" value={form.fecha_inicio || ''} onChange={e => setForm({ ...form, fecha_inicio: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
+          <div><label style={S.label}>Próxima factura</label><input type="date" value={form.proxima_factura || ''} onChange={e => setForm({ ...form, proxima_factura: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
+          {form.estado === 'cancelada' && (
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={S.label}>Razón de cancelación *</label>
+              <select value={form.razon_cancelacion} onChange={e => setForm({ ...form, razon_cancelacion: e.target.value })} style={{ ...S.input, width: '100%' }}>
+                <option value="">— elegir —</option>
+                {RAZONES_CANCEL.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+          )}
+        </div>
+        <div style={{ marginTop: 10 }}><label style={S.label}>Notas</label><textarea value={form.notas} onChange={e => setForm({ ...form, notas: e.target.value })} style={{ ...S.input, width: '100%', height: 50, resize: 'vertical' }} /></div>
+        {err && <div style={{ color: '#b93333', fontSize: '0.8rem', marginTop: 8 }}>{err}</div>}
+        <button onClick={guardar} disabled={saving} style={{ ...S.btn, width: '100%', marginTop: 14, background: '#1a1a1a', color: '#fff', opacity: saving ? 0.6 : 1 }}>{saving ? 'Guardando…' : 'Guardar cambios'}</button>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════ Vista: Conciliación (cuentas activas sin suscripción) ═══════════════ */
+const TIPOS_CUENTA: Record<string, string> = { cliente: 'Cliente', cortesia: 'Cortesía', prueba: 'Prueba', interna: 'Interna', socio: 'Socio', sin_clasificar: 'Sin clasificar' };
+function ConciliacionView({ onChanged }: { onChanged: () => void }) {
+  const [data, setData] = useState<any>(null);
+  const [ciegas, setCiegas] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [crearPara, setCrearPara] = useState<any>(null);
+  const [busyCuenta, setBusyCuenta] = useState<string | null>(null);
+
+  async function load() {
+    setLoading(true); setErr(null);
+    try {
+      const [c, l] = await Promise.all([
+        fetch('/api/crm/arr/conciliacion').then(r => r.json()),
+        fetch('/api/crm/arr/link-suggestions').then(r => r.json()),
+      ]);
+      if (c.error) throw new Error(c.error);
+      setData(c); setCiegas(l.error ? null : l);
+    } catch (e: any) { setErr(e?.message || 'No se pudo cargar'); }
+    setLoading(false);
+  }
+  useEffect(() => { load(); }, []);
+
+  async function clasificar(cuenta: string, tipo: string) {
+    setBusyCuenta(cuenta);
+    const res = await fetch('/api/crm/arr/conciliacion', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cuenta, accion: 'clasificar', tipo }) });
+    const j = await res.json();
+    if (j.error) alert(j.error);
+    setBusyCuenta(null); load();
+  }
+
+  async function ligar(companyId: string, cuenta: string) {
+    const res = await fetch('/api/crm/arr/link-suggestions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ company_id: companyId, sacs_account: cuenta }) });
+    const j = await res.json();
+    if (j.error) alert(j.error);
+    load(); onChanged();
+  }
+
+  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Cruzando cuentas SACS contra suscripciones… (tarda ~1 min)</div>;
+  if (err) return <div style={{ padding: 40, textAlign: 'center', color: '#E54B4B' }}>{err} <button style={S.btnSmall} onClick={load}>Reintentar</button></div>;
+
+  return (
+    <div>
+      {/* subs ciegas: ligar cuenta */}
+      {ciegas && ciegas.ciegas > 0 && (
+        <div style={{ ...S.card, borderLeft: '4px solid #E8A838' }}>
+          <div style={{ fontWeight: 800, marginBottom: 4 }}>🔗 Suscripciones sin cuenta SACS ligada <span style={{ color: '#999', fontWeight: 400 }}>· {ciegas.ciegas} · {fmt(ciegas.arr_ciego)} ARR sin monitoreo</span></div>
+          <div style={{ fontSize: '0.75rem', color: '#999', marginBottom: 10 }}>Sin la liga no podemos ver su actividad ni avisarte si dejan de usar el sistema. Sugerencias por el email del contacto.</div>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr>{['Cliente', 'Plan', 'ARR', 'Contacto', 'Sugerencia', 'Ligar'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+            <tbody>{ciegas.data.map((c: any) => (
+              <tr key={c.subscription_id}>
+                <td style={{ ...S.td, fontWeight: 700 }}>{c.empresa}</td>
+                <td style={S.td}>{c.nombre_plan}</td>
+                <td style={S.td}>{fmt(c.arr)}</td>
+                <td style={S.td}>{c.email || c.contacto || '—'}</td>
+                <td style={S.td}>{c.sugerencias.length ? c.sugerencias.join(', ') : <span style={{ color: '#bbb' }}>sin match</span>}</td>
+                <td style={S.td}>
+                  {c.sugerencias.length === 1 ? (
+                    <button style={{ ...S.btnSmall, background: '#e8f5e9', color: '#2e7d32' }} onClick={() => ligar(c.company_id, c.sugerencias[0])}>Ligar a {c.sugerencias[0]}</button>
+                  ) : (
+                    <button style={S.btnSmall} onClick={() => { const v = prompt('Cuenta SACS (subdominio) para ' + c.empresa + ':', c.sugerencias[0] || ''); if (v) ligar(c.company_id, v.trim().toLowerCase()); }}>Ligar…</button>
+                  )}
+                </td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      )}
+
+      {/* cuentas activas sin suscripción */}
+      <div style={{ ...S.card, borderLeft: '4px solid #E54B4B' }}>
+        <div style={{ fontWeight: 800, marginBottom: 4 }}>💸 Cuentas USANDO SACS sin suscripción registrada <span style={{ color: '#999', fontWeight: 400 }}>· {data.sin_suscripcion} de {data.cuentas_activas} activas · {data.sin_clasificar} sin clasificar</span></div>
+        <div style={{ fontSize: '0.75rem', color: '#999', marginBottom: 10 }}>Vendieron en los últimos 30 días y no aparecen en tus ingresos. Clasifícalas: las "Cliente" deberían tener suscripción (usa Crear sub).</div>
+        <div style={{ overflowX: 'auto', maxHeight: 480, overflowY: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr>{['Cuenta', 'Ventas 30d', 'Volumen 30d', 'Últ. venta', 'Clasificación', 'Acción'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+            <tbody>{data.data.map((c: any) => (
+              <tr key={c.cuenta} style={{ opacity: c.tipo_cuenta !== 'sin_clasificar' && c.tipo_cuenta !== 'cliente' ? 0.55 : 1 }}>
+                <td style={{ ...S.td, fontWeight: 700 }}>{c.cuenta}</td>
+                <td style={S.td}>{c.ventas_30d}</td>
+                <td style={{ ...S.td, fontWeight: 700 }}>{fmt(c.total_30d)}</td>
+                <td style={S.td}>{fmtDate(c.ultima_venta)}</td>
+                <td style={S.td}>
+                  <select value={c.tipo_cuenta || 'sin_clasificar'} disabled={busyCuenta === c.cuenta}
+                    onChange={e => clasificar(c.cuenta, e.target.value)} style={{ ...S.input, padding: '4px 8px', fontSize: '0.78rem' }}>
+                    {Object.entries(TIPOS_CUENTA).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                  </select>
+                </td>
+                <td style={S.td}><button style={{ ...S.btnSmall, background: '#1A8F7A', color: '#fff', border: 'none' }} onClick={() => setCrearPara(c)}>+ Crear sub</button></td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      </div>
+
+      {crearPara && <CrearSubModal cuenta={crearPara} onClose={() => setCrearPara(null)} onDone={() => { setCrearPara(null); load(); onChanged(); }} />}
+    </div>
+  );
+}
+
+function CrearSubModal({ cuenta, onClose, onDone }: { cuenta: any; onClose: () => void; onDone: () => void }) {
+  const [form, setForm] = useState<any>({ ciclo: 'anual' });
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  async function crear() {
+    if (!form.nombre_plan || !Number(form.precio)) { setErr('Plan y precio requeridos.'); return; }
+    setSaving(true); setErr(null);
+    try {
+      const res = await fetch('/api/crm/arr/conciliacion', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cuenta: cuenta.cuenta, accion: 'crear_sub', ...form, precio: Number(form.precio) }),
+      });
+      const j = await res.json();
+      if (!res.ok || j.error) throw new Error(j.error || 'No se pudo crear');
+      onDone();
+    } catch (e: any) { setErr(e?.message || String(e)); setSaving(false); }
+  }
+  return (
+    <div style={S.overlay} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={{ ...S.modal, maxWidth: 460 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+          <h3 style={{ margin: 0, fontWeight: 800 }}>Suscripción para {cuenta.cuenta}</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
+        </div>
+        <div style={{ fontSize: '0.78rem', color: '#999', marginBottom: 10 }}>Vende {fmt(cuenta.total_30d)}/30d en SACS. Queda PROGRAMADA; al registrar su primer pago se activa.</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div style={{ gridColumn: '1 / -1' }}><label style={S.label}>Plan *</label><input value={form.nombre_plan || ''} onChange={e => setForm({ ...form, nombre_plan: e.target.value })} style={{ ...S.input, width: '100%' }} placeholder="Licencia Controla Anual" /></div>
+          <div><label style={S.label}>Ciclo</label><select value={form.ciclo} onChange={e => setForm({ ...form, ciclo: e.target.value })} style={{ ...S.input, width: '100%' }}><option value="anual">Anual</option><option value="mensual">Mensual</option></select></div>
+          <div><label style={S.label}>Precio por {form.ciclo === 'anual' ? 'año' : 'mes'} *</label><input type="number" value={form.precio || ''} onChange={e => setForm({ ...form, precio: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
+          <div><label style={S.label}>Contacto</label><input value={form.contacto_nombre || ''} onChange={e => setForm({ ...form, contacto_nombre: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
+          <div><label style={S.label}>Email</label><input value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
+        </div>
+        {err && <div style={{ color: '#b93333', fontSize: '0.8rem', marginTop: 8 }}>{err}</div>}
+        <button onClick={crear} disabled={saving} style={{ ...S.btn, width: '100%', marginTop: 14, background: '#1A8F7A', color: '#fff', opacity: saving ? 0.6 : 1 }}>{saving ? 'Creando…' : 'Crear suscripción'}</button>
+      </div>
+    </div>
   );
 }
