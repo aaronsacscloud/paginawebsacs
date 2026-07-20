@@ -2,7 +2,10 @@
 // CRM (y sus deals, actividades y companies placeholder). Solo actúa sobre los
 // contact_ids que recibe explícitamente; NUNCA borra nada con suscripciones o
 // pagos (guard), para que un id equivocado no pueda tirar un cliente real.
-// Body: { contact_ids: string[], dry?: boolean }
+// Body: { contact_ids: string[], payment_ids?: string[], dry?: boolean }
+// payment_ids: pagos del SEED DEMO a borrar explícitos (id por id, nunca por
+// query amplio) — necesario porque el guard de subs/pagos bloquea al contacto
+// mientras existan.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 
@@ -17,8 +20,21 @@ export const POST: APIRoute = async ({ request, url }) => {
   const dry = !!body?.dry;
   if (!ids.length) return new Response(JSON.stringify({ error: 'contact_ids vacío' }), { status: 400 });
 
-  const out = { contactos: 0, deals: 0, activities: 0, companies: 0, saltados: [] as any[] };
+  const payIds: string[] = Array.isArray(body?.payment_ids) ? body.payment_ids : [];
+  const out = { contactos: 0, deals: 0, activities: 0, companies: 0, pagos: 0, saltados: [] as any[] };
   const companiesTocadas = new Set<string>();
+
+  for (const pid of payIds) {
+    // solo pagos sueltos del demo: sin subscription_id y no migrados del Excel
+    const { data: p } = await supabase.from('payments').select('id, subscription_id, migrado').eq('id', pid).maybeSingle();
+    if (!p) { out.saltados.push({ id: pid, motivo: 'pago no existe' }); continue; }
+    if (p.subscription_id || p.migrado) { out.saltados.push({ id: pid, motivo: 'pago ligado a sub real/migrado' }); continue; }
+    if (!dry) {
+      const { error } = await supabase.from('payments').delete().eq('id', pid);
+      if (error) { out.saltados.push({ id: pid, motivo: error.message }); continue; }
+    }
+    out.pagos++;
+  }
 
   for (const id of ids) {
     const { data: c } = await supabase.from('contacts').select('id, nombre, email, company_id').eq('id', id).maybeSingle();
