@@ -77,6 +77,13 @@ export const POST: APIRoute = async ({ request, url }) => {
         await supabase.from('subscriptions').update({ contact_id: contactId }).eq('company_id', op.company_id).is('contact_id', null);
         await supabase.from('activities').insert({ tipo: 'sistema', titulo: `Contacto actualizado: ${op.nombre || email || op.whatsapp}`, company_id: op.company_id, contact_id: contactId, automatico: true, metadata: { fix_data: true } }).select().maybeSingle();
         res.push({ op: 'contacto', quien: op.nombre || email, resultado: 'ok' });
+      } else if (op.op === 'set_plan') {
+        // Plan base del cliente (catálogo real: vende|controla|fideliza|automatiza)
+        const plan = ['vende', 'controla', 'fideliza', 'automatiza'].includes(op.plan) ? op.plan : null;
+        if (!op.company_id || !plan) throw new Error('company_id y plan válido requeridos');
+        const { error } = await supabase.from('companies').update({ plan }).eq('id', op.company_id);
+        if (error) throw new Error(error.message);
+        res.push({ op: 'set_plan', plan, resultado: 'ok' });
       } else {
         res.push({ op: op.op, resultado: 'op desconocida' });
       }
