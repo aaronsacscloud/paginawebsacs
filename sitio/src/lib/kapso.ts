@@ -19,8 +19,11 @@ export async function sendWhatsApp(to: string, message: string): Promise<{ sent:
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ phone, message, apikey: KAPSO_API_KEY }),
     });
-    const result = await res.json();
-    return { sent: true, ...result };
+    const result = await res.json().catch(() => ({}));
+    // Un 4xx/5xx de Kapso NO es enviado: quien dedupe por `sent` (p. ej. el
+    // cron de recordatorios) marcaría como avisado un mensaje que nunca salió.
+    if (!res.ok) return { sent: false, error: result?.error || `HTTP ${res.status}` };
+    return { ...result, sent: true };
   } catch (err) {
     return { sent: false, error: String(err) };
   }

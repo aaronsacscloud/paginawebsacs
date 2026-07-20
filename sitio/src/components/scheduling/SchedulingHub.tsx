@@ -215,12 +215,13 @@ function slugify(s: string): string {
 export type SchedulingHubVariant = 'admin' | 'partner';
 
 export default function SchedulingHub({ variant = 'admin' }: { variant?: SchedulingHubVariant } = {}) {
-  const [subTab, setSubTab] = useState<'reservas' | 'tipos' | 'disponibilidad' | 'estadisticas'>('reservas');
+  // Admin: la operación diaria vive en CRM → Ventas → Reuniones; aquí solo
+  // queda la CONFIGURACIÓN (tipos, disponibilidad, stats). Partner conserva sus citas.
+  const [subTab, setSubTab] = useState<'reservas' | 'tipos' | 'disponibilidad' | 'estadisticas'>(variant === 'admin' ? 'tipos' : 'reservas');
 
   // Partner no necesita "Estadísticas" globales (reporting cross-team admin).
   const subTabs = variant === 'admin'
     ? [
-        { id: 'reservas' as const, label: 'Reservas' },
         { id: 'tipos' as const, label: 'Tipos de Evento' },
         { id: 'disponibilidad' as const, label: 'Disponibilidad' },
         { id: 'estadisticas' as const, label: 'Estadisticas' },

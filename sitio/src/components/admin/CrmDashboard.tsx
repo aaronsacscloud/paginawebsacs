@@ -11,6 +11,7 @@ import CommissionsTab from './crm/CommissionsTab';
 import ContentReviewTab from './crm/ContentReviewTab';
 import RevenueHub from './RevenueHub';
 import ClientesTab from './crm/ClientesTab';
+import ReunionesTab from './crm/ReunionesTab';
 import SubscriptionsTab from './crm/SubscriptionsTab';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
@@ -27,7 +28,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'dashboard' | 'pipeline' | 'deals' | 'agenda' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review';
+type Tab = 'dashboard' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review';
 
 // SVG icons (Squarespace-style, clean strokes)
 const ICONS: Record<string, string> = {
@@ -59,7 +60,7 @@ const NAV_SECTIONS = [
       { id: 'suscripciones' as Tab, label: 'Suscripciones · ARR', icon: 'pagos' },
       { id: 'cotizaciones' as Tab, label: 'Cotizaciones', icon: 'cotizaciones' },
       { id: 'pagos' as Tab, label: 'Pagos', icon: 'pagos' },
-      { id: 'agenda' as Tab, label: 'Agenda', icon: 'agenda' },
+      { id: 'reuniones' as Tab, label: 'Reuniones', icon: 'agenda' },
     ],
   },
   {
@@ -86,6 +87,7 @@ const NAV_SECTIONS = [
   {
     label: 'Sistema',
     items: [
+      { id: 'agenda' as Tab, label: 'Agenda', icon: 'agenda' },
       { id: 'config' as Tab, label: 'Configuración', icon: 'config' },
     ],
   },
@@ -369,6 +371,8 @@ export default function CrmDashboard() {
               Reemplaza YOUR_USER_ID con tu team_members.id
             </div>
           </div>
+        ) : tab === 'reuniones' ? (
+          <ReunionesTab onOpenContact={(id) => setProfileContactId(id)} />
         ) : tab === 'clientes' ? (
           <ClientesTab />
         ) : (

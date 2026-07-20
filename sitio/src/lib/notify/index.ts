@@ -584,6 +584,37 @@ const templates: Record<string, Template> = {
     `,
     text: `El pago de tu suscripción ${d.plan} venció el ${d.fecha} (${d.dias} días). Monto: $${d.monto} MXN.${d.pago_url ? ' Regulariza aquí: ' + d.pago_url : ''}`,
   }),
+  // ═══ Agenda: recordatorios de reunión y follow-up de no-show ═══
+  booking_reminder: (d) => ({
+    subject: `⏰ Recordatorio: tu ${d.evento || 'reunión'} con SACS es ${d.cuando || 'pronto'} — ${d.fecha || ''} ${d.hora || ''}`,
+    html: `
+      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <h2 style="font-size:1.25rem;margin:0 0 12px">Tu reunión se acerca</h2>
+        <p style="color:#555;line-height:1.55;margin:0 0 16px">Hola${d.nombre ? ' ' + d.nombre : ''}, te recordamos tu <strong>${d.evento || 'reunión'}</strong> con SACS:</p>
+        <div style="background:#fafafa;border:1px solid #e5e5e5;padding:16px;border-radius:8px;margin:16px 0;font-size:0.9rem;color:#333">
+          <div>📅 <strong>${d.fecha || ''}</strong> a las <strong>${d.hora || ''}</strong> (hora CDMX)</div>
+          ${d.duracion ? `<div>⏱ ${d.duracion} minutos</div>` : ''}
+          ${d.meet_link ? `<div style="margin-top:8px">📹 <a href="${d.meet_link}" style="color:#4B7BE5">Entrar a la videollamada</a></div>` : ''}
+        </div>
+        ${d.confirmar_url ? `<a href="${d.confirmar_url}" style="display:inline-block;background:#1A8F7A;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem;margin-right:8px">✓ Confirmo mi asistencia</a>` : ''}
+        ${d.reagendar_url ? `<a href="${d.reagendar_url}" style="display:inline-block;background:#fff;color:#555;border:1px solid #ddd;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Reagendar</a>` : ''}
+        <p style="color:#999;font-size:0.75rem;margin-top:24px">Si no puedes asistir, reagenda con el botón de arriba — nos ayuda mucho más que un no-show 🙂</p>
+      </div>
+    `,
+    text: `Recordatorio: ${d.evento || 'reunión'} con SACS el ${d.fecha} a las ${d.hora} (CDMX).${d.meet_link ? ' Meet: ' + d.meet_link : ''}${d.reagendar_url ? ' Reagendar: ' + d.reagendar_url : ''}`,
+  }),
+  booking_noshow: (d) => ({
+    subject: `Te esperamos y no llegaste 😢 — reagendemos tu ${d.evento || 'demo'} de SACS`,
+    html: `
+      <div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a">
+        <h2 style="font-size:1.25rem;margin:0 0 12px">No pudimos verte hoy</h2>
+        <p style="color:#555;line-height:1.55;margin:0 0 16px">Hola${d.nombre ? ' ' + d.nombre : ''}, teníamos agendada tu <strong>${d.evento || 'demo'}</strong> el ${d.fecha || ''} a las ${d.hora || ''} y no logramos coincidir. Sin problema — pasa hasta en las mejores agendas.</p>
+        ${d.reagendar_url ? `<a href="${d.reagendar_url}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Elegir nuevo horario</a>` : ''}
+        <p style="color:#999;font-size:0.75rem;margin-top:24px">Elige el horario que mejor te acomode y listo, sin vueltas por WhatsApp.</p>
+      </div>
+    `,
+    text: `No pudimos verte en tu ${d.evento || 'demo'} del ${d.fecha}. Reagenda aquí: ${d.reagendar_url || 'https://www.sacscloud.com'}`,
+  }),
   arr_weekly_summary: (d) => ({
     subject: `📊 SACS ARR semanal — $${Number(d.arr || 0).toLocaleString('es-MX')} (${d.meta_pct || 0}% de la meta)`,
     html: `

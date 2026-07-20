@@ -67,7 +67,9 @@ export const PUT: APIRoute = async ({ request }) => {
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 
   // Side effects based on estado change
-  if (updates.estado === 'realizada') {
+  const cambioEstado = updates.estado && updates.estado !== current.estado;
+
+  if (updates.estado === 'realizada' && cambioEstado) {
     // Update deal stage to demo_realizada
     if (current.deal_id) {
       await supabase
@@ -163,7 +165,28 @@ export const PUT: APIRoute = async ({ request }) => {
     fireSchedulingWebhooks('booking.completed', { booking: data });
   }
 
-  if (updates.estado === 'no_show') {
+  if (updates.estado === 'no_show' && cambioEstado) {
+    // Follow-up automático: invitar a reagendar en 1 clic (email + WhatsApp).
+    // Best-effort: si falla el envío, el no-show queda marcado igual.
+    try {
+      const { notify } = await import('../../../lib/notify');
+      const reagendarUrl = current.token_reagendar
+        ? `https://www.sacscloud.com/agendar/reagendar?token=${current.token_reagendar}`
+        : 'https://www.sacscloud.com/agendar/demo';
+      const evento = current.event_types?.nombre || 'Demo';
+      if (current.invitee_email) {
+        await notify({
+          channel: 'email', to: current.invitee_email, template: 'booking_noshow',
+          data: { nombre: current.invitee_nombre, evento, fecha: current.fecha, hora: current.hora_inicio, reagendar_url: reagendarUrl },
+        });
+      }
+      if (current.invitee_whatsapp) {
+        const { sendWhatsApp } = await import('../../../lib/kapso');
+        await sendWhatsApp(current.invitee_whatsapp,
+          `Hola ${current.invitee_nombre || ''} 👋 teníamos tu ${evento} de SACS hoy y no logramos coincidir. Reagenda en 1 minuto aquí:\n${reagendarUrl}`);
+      }
+    } catch { /* no bloquear el marcado */ }
+
     // Log activity con audit trail
     await supabase.from('activities').insert({
       contact_id: current.contact_id,
