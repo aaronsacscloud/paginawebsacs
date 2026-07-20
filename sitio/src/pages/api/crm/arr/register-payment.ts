@@ -93,7 +93,10 @@ export const POST: APIRoute = async ({ request }) => {
         ciclo, estado: 'programada', precio,
         mrr: r2(mrr), arr: r2(mrr * 12),
         fecha_inicio: fecha, proxima_factura: fecha, monto_proximo: precio,
-        partner_id: body.partner_id || null, // Fase 4 — RR/partner que vende la licencia
+        // Fase 4 — RR/partner: solo se incluye si viene en el body, para no romper el
+        // insert mientras la columna partner_id no exista (exec_sql no está disponible;
+        // se agrega manual en el SQL Editor de Supabase con scripts/migration-...).
+        ...(body.partner_id ? { partner_id: body.partner_id } : {}),
       }).select('*').single();
       if (se) throw new Error('subscription: ' + se.message);
       sub = ns;
@@ -131,7 +134,9 @@ export const POST: APIRoute = async ({ request }) => {
       notas: body.notas || null,
       company_id: sub.company_id, contact_id: sub.contact_id,
       subscription_id: sub.id, periodo_cubierto: periodo,
-      partner_id: body.partner_id || sub.partner_id || null, // Fase 4 — atribución RR
+      // Fase 4 — atribución RR: solo si hay partner (body o sub), para no romper el
+      // insert mientras la columna partner_id no exista.
+      ...((body.partner_id || sub.partner_id) ? { partner_id: body.partner_id || sub.partner_id } : {}),
     }).select('id').single();
     if (pe) throw new Error('payment: ' + pe.message);
 
