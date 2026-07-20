@@ -28,7 +28,7 @@ const fmtDate = (d?: string | null) => d ? new Date(d + (d.length === 10 ? 'T12:
 const MES_NOM = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const fmtMes = (m: string) => { const [y, mm] = m.split('-'); return MES_NOM[Number(mm) - 1] + ' ' + y.slice(2); };
 
-const S = {
+export const S = {
   card: { background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: 18, marginBottom: 16 } as const,
   kpi: { background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '14px 18px', flex: 1, minWidth: 150 } as const,
   kLabel: { fontSize: '0.7rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.5px' },
@@ -46,7 +46,7 @@ const S = {
   label: { fontSize: '0.72rem', fontWeight: 700, color: '#777', display: 'block', marginBottom: 3 } as const,
 };
 
-function Estado({ e }: { e: string }) {
+export function Estado({ e }: { e: string }) {
   const cfg = ESTADOS[e] || ESTADOS.programada;
   return <span style={{ ...S.badge, background: cfg.bg, color: cfg.color }}>{cfg.label}</span>;
 }
@@ -444,7 +444,7 @@ function MetaModal({ meta, onClose, onDone }: { meta: any; onClose: () => void; 
 }
 
 /* ═══════════════ Drawer: cliente 360 ═══════════════ */
-function ClienteDrawer({ companyId, onClose, onChanged }: { companyId: string; onClose: () => void; onChanged: () => void }) {
+export function ClienteDrawer({ companyId, onClose, onChanged }: { companyId: string; onClose: () => void; onChanged: () => void }) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);

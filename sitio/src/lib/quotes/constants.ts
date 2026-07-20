@@ -1,4 +1,6 @@
-export const PLANS = ['vende', 'controla', 'fideliza', 'automatiza'] as const;
+// 'personalizada' (licencia anual a la medida) y 'soporte_premium' (póliza de
+// soporte como plan) se venden por cotización — su precio se define al cotizar.
+export const PLANS = ['vende', 'controla', 'fideliza', 'automatiza', 'personalizada', 'soporte_premium'] as const;
 export type PlanId = (typeof PLANS)[number];
 
 export const PLAN_PRICES: Record<string, number> = {
@@ -6,6 +8,8 @@ export const PLAN_PRICES: Record<string, number> = {
   controla: 900,
   fideliza: 1400,
   automatiza: 5900,
+  personalizada: 0,      // precio a la medida (se define en la cotización)
+  soporte_premium: 0,    // póliza de soporte: precio según alcance
 };
 
 export const IMPL_PRICES: Record<string, number> = {
@@ -13,6 +17,8 @@ export const IMPL_PRICES: Record<string, number> = {
   controla: 4000,
   fideliza: 6000,
   automatiza: 9000,
+  personalizada: 0,
+  soporte_premium: 0,
 };
 
 // ─── Comisiones del partner por CATEGORÍA de concepto ───────────────────────

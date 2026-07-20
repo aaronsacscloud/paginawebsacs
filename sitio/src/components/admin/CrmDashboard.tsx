@@ -10,6 +10,7 @@ import PartnersTab from './crm/PartnersTab';
 import CommissionsTab from './crm/CommissionsTab';
 import ContentReviewTab from './crm/ContentReviewTab';
 import RevenueHub from './RevenueHub';
+import ClientesTab from './crm/ClientesTab';
 import SubscriptionsTab from './crm/SubscriptionsTab';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
@@ -137,7 +138,7 @@ export default function CrmDashboard() {
     history.replaceState(null, '', url.toString());
   };
 
-  const revenueTab = (['clientes', 'cotizaciones', 'pagos', 'config'].includes(tab)) ? tab : 'dashboard';
+  const revenueTab = (['cotizaciones', 'pagos', 'config'].includes(tab)) ? tab : 'dashboard';
   // En mobile, cuando expanded el sidebar es overlay (no empuja el contenido)
   const mobileExpanded = isMobile && !sidebarCollapsed;
   const sidebarWidth = sidebarCollapsed ? (isMobile ? 0 : 60) : 220;
@@ -368,6 +369,8 @@ export default function CrmDashboard() {
               Reemplaza YOUR_USER_ID con tu team_members.id
             </div>
           </div>
+        ) : tab === 'clientes' ? (
+          <ClientesTab />
         ) : (
           <RevenueHub _initialTab={revenueTab as any} _hideNav={true} />
         )}
