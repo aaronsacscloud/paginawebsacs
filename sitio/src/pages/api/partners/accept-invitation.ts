@@ -42,6 +42,12 @@ interface Direccion {
   estado?: string;
 }
 
+interface Beneficiario {
+  nombre?: string;
+  parentesco?: string;
+  porcentaje?: number;
+}
+
 interface AcceptBody {
   id: string;
   nombre: string;          // nombre completo de quien firma
@@ -51,6 +57,26 @@ interface AcceptBody {
   empresa?: string;
   direccion?: Direccion;
   payout?: Payout;
+  // Designación de beneficiarios (cláusula 6-bis c5): opcional, hasta 3.
+  beneficiarios?: Beneficiario[];
+}
+
+/** Sanea la designación de beneficiarios: máx 3, con nombre, parentesco corto y
+ *  porcentaje 0–100. Devuelve [] si no hay ninguno válido (designación opcional). */
+function sanitizeBeneficiarios(raw: unknown): Beneficiario[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .slice(0, 3)
+    .map((b) => {
+      const o = (b || {}) as Beneficiario;
+      const nombre = String(o.nombre || '').trim().slice(0, 120);
+      const parentesco = String(o.parentesco || '').trim().slice(0, 60);
+      let porcentaje = Number(o.porcentaje);
+      if (!isFinite(porcentaje) || porcentaje < 0) porcentaje = 0;
+      if (porcentaje > 100) porcentaje = 100;
+      return { nombre, parentesco, porcentaje: Math.round(porcentaje * 100) / 100 };
+    })
+    .filter((b) => b.nombre.length > 0);
 }
 
 const NOTAS_SEP = '\n---META---\n';
@@ -75,6 +101,7 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     const body = (await request.json()) as AcceptBody;
     const { id, nombre, firma_base64, email, whatsapp, empresa, direccion, payout } = body;
+    const beneficiarios = sanitizeBeneficiarios(body.beneficiarios);
 
     if (!id || !nombre) {
       return new Response(JSON.stringify({ error: 'id and nombre required' }), {
@@ -125,6 +152,12 @@ export const POST: APIRoute = async ({ request }) => {
     meta.signed_user_agent = request.headers.get('user-agent') || null;
     if (direccion) meta.direccion = direccion;
     if (payout) meta.payout = payout;
+    // Designación de beneficiarios (opcional). Se guarda con timestamp para dejar
+    // constancia de "la última recibida por SACS" que exige la cláusula 6-bis c5.
+    if (beneficiarios.length > 0) {
+      meta.beneficiarios = beneficiarios;
+      meta.beneficiarios_designados_at = new Date().toISOString();
+    }
     meta.submitted_at = new Date().toISOString();
 
     const updates: Record<string, any> = {
@@ -232,6 +265,7 @@ export const POST: APIRoute = async ({ request }) => {
           partner_invitation_numero: invitation.numero,
           tipo: invitation.tipo,
           comision_pct: invitation.comision_pct,
+          beneficiarios_designados: beneficiarios.length,
         },
         automatico: true,
       });
