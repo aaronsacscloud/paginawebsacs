@@ -48,7 +48,11 @@ export const POST: APIRoute = async ({ request, url }) => {
       // orden por FKs: primero las activities colgadas de sus deals (deal_id),
       // luego las del contacto, luego los deals y al final el contacto.
       const { data: dealRows } = await supabase.from('deals').select('id').eq('contact_id', id);
-      for (const dr of dealRows || []) await supabase.from('activities').delete().eq('deal_id', dr.id);
+      for (const dr of dealRows || []) {
+        await supabase.from('activities').delete().eq('deal_id', dr.id);
+        await supabase.from('bookings').delete().eq('deal_id', dr.id);
+      }
+      await supabase.from('bookings').delete().eq('contact_id', id);
       const { count: dActs } = await supabase.from('activities').delete({ count: 'exact' }).eq('contact_id', id);
       const { count: dDeals, error: eDeals } = await supabase.from('deals').delete({ count: 'exact' }).eq('contact_id', id);
       if (eDeals) { out.saltados.push({ id, nombre: c.nombre, motivo: 'deals: ' + eDeals.message }); continue; }
