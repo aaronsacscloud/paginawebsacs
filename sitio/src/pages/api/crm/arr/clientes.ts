@@ -9,9 +9,13 @@ export const prerender = false;
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 export const GET: APIRoute = async () => {
-  const { data: companies, error } = await supabase.from('companies')
-    .select('id, nombre, sacs_account, plan, tipo_cuenta, estado_cuenta, sucursales, mrr, arr, fecha_renovacion, health_score, ultima_venta_at, dias_sin_venta, actividad, contacts(id, nombre, email, whatsapp), subscriptions(id, estado, ciclo, arr, nombre_plan, proxima_factura, pagos_realizados, total_pagado)')
-    .is('archived_at', null);
+  const baseSel = 'id, nombre, sacs_account, plan, tipo_cuenta, estado_cuenta, sucursales, mrr, arr, fecha_renovacion, health_score, ultima_venta_at, dias_sin_venta, actividad, contacts(id, nombre, email, whatsapp), subscriptions(id, estado, ciclo, arr, nombre_plan, proxima_factura, pagos_realizados, total_pagado)';
+  // pipeline_stage puede no existir aún (SQL pendiente) → reintentar sin él.
+  let res = await supabase.from('companies').select('pipeline_stage, ' + baseSel).is('archived_at', null);
+  if (res.error && /pipeline_stage|column|schema cache/i.test(res.error.message || '')) {
+    res = await supabase.from('companies').select(baseSel).is('archived_at', null);
+  }
+  const { data: companies, error } = res;
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 
   const data = (companies || [])
@@ -25,6 +29,7 @@ export const GET: APIRoute = async () => {
       return {
         id: c.id, nombre: c.nombre, sacs_account: c.sacs_account,
         plan: c.plan, tipo_cuenta: c.tipo_cuenta, estado_cuenta: c.estado_cuenta,
+        pipeline_stage: c.pipeline_stage ?? null,
         sucursales: c.sucursales,
         contacto: contacto ? { nombre: contacto.nombre, email: contacto.email, whatsapp: contacto.whatsapp } : null,
         subs_total: subs.length, subs_activas: activas.length, subs_pendientes: pend.length,

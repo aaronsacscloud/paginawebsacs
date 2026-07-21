@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ClienteDrawer, S } from './SubscriptionsTab';
+import PipelineKanban from './PipelineKanban';
 
 /* ═══ Clientes REALES — companies con suscripciones, KPIs y actividad SACS ═══
  * Reemplaza la vista legacy (tabla `clients` con datos de demo). Cada fila es
@@ -26,17 +27,34 @@ export default function ClientesTab() {
   const [fPlan, setFPlan] = useState('');
   const [fEstado, setFEstado] = useState('');
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [vista, setVista] = useState<'tabla' | 'kanban'>('tabla');
+  const [stages, setStages] = useState<{ key: string; label: string; color: string }[]>([]);
 
   async function load() {
     setLoading(true); setError(null);
     try {
-      const j = await fetch('/api/crm/arr/clientes').then(r => r.json());
+      const [j, pj] = await Promise.all([
+        fetch('/api/crm/arr/clientes').then(r => r.json()),
+        fetch('/api/crm/pipelines').then(r => r.json()).catch(() => ({ data: [] })),
+      ]);
       if (j.error) throw new Error(j.error);
       setData(j.data || []); setTot(j.tot || null);
+      const cli = (pj.data || []).find((p: any) => p.tipo === 'cliente');
+      setStages(cli?.stages || []);
     } catch (e: any) { setError(e?.message || 'No se pudo cargar'); }
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
+
+  const stageBy = useMemo(() => { const m: Record<string, any> = {}; stages.forEach(s => m[s.key] = s); return m; }, [stages]);
+  // Cambia la etapa del cliente (optimista) y persiste en companies.pipeline_stage.
+  async function setStage(id: string, key: string) {
+    setData(d => d.map(c => c.id === id ? { ...c, pipeline_stage: key } : c));
+    try {
+      const r = await fetch('/api/crm/companies', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, pipeline_stage: key }) });
+      if (!r.ok) { const j = await r.json().catch(() => ({})); if (j.error) { alert(j.error + '\n¿Corriste migration-2026-07-pipelines.sql?'); load(); } }
+    } catch { load(); }
+  }
 
   const filtered = useMemo(() => data.filter(c => {
     if (fPlan && c.plan !== fPlan) return false;
@@ -78,11 +96,41 @@ export default function ClientesTab() {
             <option value="pendientes">Con pendientes de pago</option>
             <option value="riesgo">En riesgo (≥3 días sin vender)</option>
           </select>
+          <div style={{ display: 'flex', gap: 0, marginLeft: 'auto', border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden' }}>
+            {(['tabla', 'kanban'] as const).map(v => (
+              <button key={v} onClick={() => setVista(v)} style={{ ...S.btnSmall, border: 'none', borderRadius: 0, background: vista === v ? '#1a1a1a' : '#fff', color: vista === v ? '#fff' : '#555', textTransform: 'capitalize' }}>{v === 'kanban' ? 'Kanban' : 'Tabla'}</button>
+            ))}
+          </div>
         </div>
+
+        {vista === 'kanban' ? (
+          stages.length === 0 ? (
+            <div style={{ padding: 28, textAlign: 'center', color: '#999' }}>Configura las etapas del pipeline de Clientes en <b>Configuración → Pipelines</b>.</div>
+          ) : (
+            <PipelineKanban
+              stages={stages}
+              items={filtered}
+              getId={(c: any) => c.id}
+              getStage={(c: any) => c.pipeline_stage}
+              onMove={(id, key) => setStage(id, key)}
+              renderCard={(c: any) => (
+                <div onClick={() => setDetailId(c.id)} style={{ cursor: 'pointer' }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.82rem' }}>{c.sacs_account || c.nombre}</div>
+                  {c.contacto?.nombre ? <div style={{ fontSize: '0.72rem', color: '#999' }}>{c.contacto.nombre}</div> : null}
+                  <div style={{ display: 'flex', gap: 6, marginTop: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 800, fontSize: '0.8rem' }}>{money(c.arr)}</span>
+                    {c.plan && PLAN_BADGE[c.plan] ? <span style={{ ...S.badge, background: PLAN_BADGE[c.plan].bg, color: PLAN_BADGE[c.plan].color }}>{PLAN_BADGE[c.plan].label}</span> : null}
+                    {c.dias_sin_venta != null && c.dias_sin_venta >= 3 ? <span style={{ fontSize: '0.68rem', color: c.dias_sin_venta > 15 ? '#b93333' : '#a06600' }}>{c.dias_sin_venta}d</span> : null}
+                  </div>
+                </div>
+              )}
+            />
+          )
+        ) : (
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead><tr>
-              {['Cliente', 'Contacto', 'Plan', 'Subs', 'ARR', 'Pagos', 'Total pagado', 'Próx. factura', 'Últ. venta SACS', 'Salud'].map(h => <th key={h} style={S.th}>{h}</th>)}
+              {['Cliente', 'Contacto', 'Plan', 'Etapa', 'Subs', 'ARR', 'Pagos', 'Total pagado', 'Próx. factura', 'Últ. venta SACS', 'Salud'].map(h => <th key={h} style={S.th}>{h}</th>)}
             </tr></thead>
             <tbody>
               {filtered.map(c => {
@@ -93,6 +141,15 @@ export default function ClientesTab() {
                     <td style={{ ...S.td, fontWeight: 700 }}>{c.contacto?.nombre || c.nombre}{(() => { const cuenta = c.sacs_account || c.nombre; return cuenta && cuenta !== (c.contacto?.nombre || c.nombre) ? <div style={{ color: '#aaa', fontWeight: 400, fontSize: '0.72rem' }}>{cuenta}</div> : null; })()}</td>
                     <td style={S.td}>{c.contacto ? (c.contacto.email || c.contacto.whatsapp || '—') : <span style={{ color: '#c62828' }}>sin contacto</span>}</td>
                     <td style={S.td}>{b ? <span style={{ ...S.badge, background: b.bg, color: b.color }}>{b.label}</span> : <span style={{ color: '#bbb' }}>—</span>}</td>
+                    <td style={S.td} onClick={e => e.stopPropagation()}>
+                      {stages.length === 0 ? <span style={{ color: '#bbb' }}>—</span> : (
+                        <select value={c.pipeline_stage || ''} onChange={e => setStage(c.id, e.target.value)}
+                          style={{ ...S.input, padding: '3px 6px', fontSize: '0.75rem', maxWidth: 130, borderColor: c.pipeline_stage && stageBy[c.pipeline_stage] ? stageBy[c.pipeline_stage].color : '#ddd', color: c.pipeline_stage && stageBy[c.pipeline_stage] ? stageBy[c.pipeline_stage].color : '#999', fontWeight: 700 }}>
+                          <option value="">— etapa —</option>
+                          {stages.map(s => <option key={s.key} value={s.key} style={{ color: '#333' }}>{s.label}</option>)}
+                        </select>
+                      )}
+                    </td>
                     <td style={S.td}>{c.subs_activas}{c.subs_pendientes ? <span style={{ color: '#a06600' }}> +{c.subs_pendientes}⏳</span> : ''}</td>
                     <td style={{ ...S.td, fontWeight: 800 }}>{money(c.arr)}{c.arr_pendiente > 0 ? <div style={{ fontSize: '0.68rem', color: '#a06600' }}>+{money(c.arr_pendiente)} pend.</div> : null}</td>
                     <td style={S.td}>{c.pagos_realizados}</td>
@@ -109,6 +166,7 @@ export default function ClientesTab() {
           </table>
           {!filtered.length && <div style={{ padding: 28, textAlign: 'center', color: '#999' }}>Sin clientes con esos filtros.</div>}
         </div>
+        )}
       </div>
 
       {detailId && <ClienteDrawer companyId={detailId} onClose={() => setDetailId(null)} onChanged={load} />}
