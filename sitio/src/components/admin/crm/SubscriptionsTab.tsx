@@ -716,6 +716,7 @@ const TRANSICIONES_UI: Record<string, string[]> = {
 function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => void; onDone: () => void }) {
   const [form, setForm] = useState<any>({
     id: sub.id, nombre_plan: sub.nombre_plan, ciclo: sub.ciclo, estado: sub.estado,
+    contact_id: sub.contact_id, company_id: sub.company_id,
     precio: sub.precio, plan_id: (sub as any).plan_id || '', precio_lista: (sub as any).precio_lista ?? null,
     fecha_inicio: sub.fecha_inicio, proxima_factura: sub.proxima_factura,
     monto_proximo: sub.monto_proximo, razon_cancelacion: sub.razon_cancelacion || '', notas: sub.notas || '',
@@ -734,6 +735,25 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
   const [descs, setDescs] = useState<any[]>([]);
   const [nuevoAddon, setNuevoAddon] = useState<any>({ nombre: '', precio: '' });
   const [nuevoDesc, setNuevoDesc] = useState<any>({ tipo: 'porcentaje', valor: '', motivo: '' });
+  // Reasignar contacto/cliente de la suscripción.
+  const [reasignar, setReasignar] = useState(false);
+  const [qc, setQc] = useState('');
+  const [resC, setResC] = useState<any[]>([]);
+  const [linkLabel, setLinkLabel] = useState<string | null>(null);
+  const nombreLimpio = (...xs: any[]) => xs.filter(x => x && x !== 'null' && x !== 'undefined').join(' ').trim();
+
+  useEffect(() => {
+    if (!reasignar || qc.trim().length < 2) { setResC([]); return; }
+    const t = setTimeout(() => {
+      fetch('/api/crm/contacts?search=' + encodeURIComponent(qc.trim()) + '&limit=8').then(r => r.json()).then(j => setResC(j.contacts || [])).catch(() => {});
+    }, 250);
+    return () => clearTimeout(t);
+  }, [qc, reasignar]);
+  function elegirContacto(c: any) {
+    setForm((f: any) => ({ ...f, contact_id: c.id, company_id: c.company_id || f.company_id }));
+    setLinkLabel(nombreLimpio(c.nombre, c.apellido) + (c.companies?.nombre ? ' · ' + c.companies.nombre : ''));
+    setReasignar(false); setQc(''); setResC([]);
+  }
 
   useEffect(() => { fetch('/api/crm/arr/plans').then(r => r.json()).then(j => setPlans(j.data || [])).catch(() => {}); }, []);
   const loadExtras = () => {
@@ -822,6 +842,36 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
         </div>
         <div style={{ fontSize: '0.8rem', color: '#999', marginBottom: 10 }}>{sub.contacts?.nombre || sub.companies?.nombre || '—'}{sub.companies?.sacs_account ? ' · ' + sub.companies.sacs_account : ''}</div>
+
+        {/* Reasignar contacto / cliente */}
+        <div style={{ background: '#fafafa', border: '1px solid #eee', borderRadius: 8, padding: 10, marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: '0.8rem' }}>
+              <span style={{ color: '#777' }}>Contacto / cliente: </span>
+              <b>{linkLabel || nombreLimpio(sub.contacts?.nombre) || '— sin contacto —'}</b>
+              {!linkLabel && sub.companies?.nombre ? <span style={{ color: '#999' }}> · {sub.companies.nombre}{sub.companies.sacs_account ? ' (' + sub.companies.sacs_account + ')' : ''}</span> : null}
+            </div>
+            <button type="button" onClick={() => setReasignar(!reasignar)} style={{ ...S.btnSmall }}>{reasignar ? 'Cancelar' : '✎ Cambiar'}</button>
+          </div>
+          {reasignar && (
+            <div style={{ marginTop: 8 }}>
+              <input autoFocus value={qc} onChange={e => setQc(e.target.value)} placeholder="Buscar contacto por nombre o email…" style={{ ...S.input, width: '100%' }} />
+              {resC.length > 0 && (
+                <div style={{ border: '1px solid #eee', borderRadius: 8, marginTop: 6, maxHeight: 190, overflowY: 'auto', background: '#fff' }}>
+                  {resC.map((c: any) => (
+                    <div key={c.id} onClick={() => elegirContacto(c)} style={{ padding: '7px 10px', cursor: 'pointer', borderBottom: '1px solid #f4f4f4', fontSize: '0.8rem' }}>
+                      <b>{nombreLimpio(c.nombre, c.apellido) || c.email || '(sin nombre)'}</b>
+                      {c.companies?.nombre ? <span style={{ color: '#999' }}> · {c.companies.nombre}</span> : <span style={{ color: '#c62828' }}> · sin empresa</span>}
+                      {c.email ? <span style={{ color: '#bbb' }}> · {c.email}</span> : null}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {qc.trim().length >= 2 && resC.length === 0 && <div style={{ fontSize: '0.75rem', color: '#999', marginTop: 6 }}>Sin resultados con "{qc}".</div>}
+              <div style={{ fontSize: '0.7rem', color: '#aaa', marginTop: 6 }}>Al elegir, la suscripción se mueve a ese contacto y su empresa; el ARR se recalcula en ambas.</div>
+            </div>
+          )}
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           {/* Plan desde catálogo */}
           <div style={{ gridColumn: '1 / -1' }}>

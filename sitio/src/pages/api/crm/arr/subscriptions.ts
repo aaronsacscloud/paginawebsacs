@@ -156,11 +156,11 @@ export const PUT: APIRoute = async ({ request }) => {
   }
 
   const upd: any = normalizar(body);
-  delete upd.company_id; // la suscripción no cambia de empresa por edición
-  // Solo pisar campos que el cliente MANDÓ: el modal no envía contact_id y el
-  // normalizar() lo dejaba en null en cada edición → la sub perdía su contacto
-  // y el dunning/recordatorios dejaban de llegarle a ese cliente en silencio.
-  for (const k of ['contact_id', 'fecha_inicio', 'proxima_factura', 'notas', 'stripe_subscription_id', 'razon_cancelacion', 'plan_id', 'precio_lista'] as const) {
+  // company_id/contact_id: solo se tocan si el cliente los MANDÓ explícitamente
+  // (reasignar la sub a la empresa/contacto correcto desde el modal). Si no vienen,
+  // se conservan — el normalizar() los dejaba en null y la sub perdía su vínculo,
+  // cortando dunning/recordatorios en silencio.
+  for (const k of ['company_id', 'contact_id', 'fecha_inicio', 'proxima_factura', 'notas', 'stripe_subscription_id', 'razon_cancelacion', 'plan_id', 'precio_lista'] as const) {
     if (body[k] === undefined) delete upd[k];
   }
 
@@ -233,6 +233,8 @@ export const PUT: APIRoute = async ({ request }) => {
     }).select().maybeSingle();
   }
   await recalcCompany(data.company_id);
+  // Si la sub se movió de empresa, recalcular también la anterior (pierde ese ARR).
+  if (prev.company_id && prev.company_id !== data.company_id) await recalcCompany(prev.company_id);
 
   // Ledger MRR: un solo movimiento por el cambio de aporte al ARR (alta,
   // expansión/contracción de precio, churn, reactivación).
