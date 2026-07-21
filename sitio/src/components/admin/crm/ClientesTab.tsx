@@ -90,8 +90,8 @@ export default function ClientesTab() {
                 const dias = c.dias_sin_venta;
                 return (
                   <tr key={c.id} style={{ cursor: 'pointer' }} onClick={() => setDetailId(c.id)}>
-                    <td style={{ ...S.td, fontWeight: 700 }}>{c.nombre}{c.sacs_account && c.sacs_account !== c.nombre ? <span style={{ color: '#aaa', fontWeight: 400 }}> · {c.sacs_account}</span> : null}</td>
-                    <td style={S.td}>{c.contacto ? (c.contacto.nombre + (c.contacto.email ? '' : c.contacto.whatsapp ? ' 📱' : '')) : <span style={{ color: '#c62828' }}>sin contacto</span>}</td>
+                    <td style={{ ...S.td, fontWeight: 700 }}>{c.contacto?.nombre || c.nombre}{(() => { const cuenta = c.sacs_account || c.nombre; return cuenta && cuenta !== (c.contacto?.nombre || c.nombre) ? <div style={{ color: '#aaa', fontWeight: 400, fontSize: '0.72rem' }}>{cuenta}</div> : null; })()}</td>
+                    <td style={S.td}>{c.contacto ? (c.contacto.email || c.contacto.whatsapp || '—') : <span style={{ color: '#c62828' }}>sin contacto</span>}</td>
                     <td style={S.td}>{b ? <span style={{ ...S.badge, background: b.bg, color: b.color }}>{b.label}</span> : <span style={{ color: '#bbb' }}>—</span>}</td>
                     <td style={S.td}>{c.subs_activas}{c.subs_pendientes ? <span style={{ color: '#a06600' }}> +{c.subs_pendientes}⏳</span> : ''}</td>
                     <td style={{ ...S.td, fontWeight: 800 }}>{money(c.arr)}{c.arr_pendiente > 0 ? <div style={{ fontSize: '0.68rem', color: '#a06600' }}>+{money(c.arr_pendiente)} pend.</div> : null}</td>

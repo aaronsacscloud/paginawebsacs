@@ -279,7 +279,7 @@ export default function SubscriptionsTab() {
                 <thead><tr>{['Cliente', 'Plan', 'Ciclo', 'Vencida desde', 'Días', 'Monto', 'Acciones'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
                 <tbody>{vencidas.map((v: any) => (
                   <tr key={v.subscription_id}>
-                    <td style={{ ...S.td, fontWeight: 700 }}>{v.empresa}</td>
+                    <td style={{ ...S.td, fontWeight: 700 }}>{v.empresa}{v.cuenta && v.cuenta !== v.empresa ? <div style={{ fontSize: '0.7rem', color: '#999', fontWeight: 400 }}>{v.cuenta}</div> : null}</td>
                     <td style={S.td}>{v.plan}</td>
                     <td style={S.td}>{v.ciclo}</td>
                     <td style={S.td}>{fmtDate(v.vencida_desde)}</td>
@@ -525,10 +525,9 @@ export function ClienteDrawer({ companyId, onClose, onChanged }: { companyId: st
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
               <div>
-                <h3 style={{ margin: 0, fontWeight: 800 }}>{co?.nombre}</h3>
+                <h3 style={{ margin: 0, fontWeight: 800 }}>{data?.contacts?.[0]?.nombre || co?.nombre}{data?.contacts?.[0]?.email ? <span style={{ fontSize: '0.72rem', color: '#aaa', fontWeight: 400 }}> {'<' + data.contacts[0].email + '>'}</span> : null}</h3>
                 <div style={{ fontSize: '0.78rem', color: '#999' }}>
-                  {co?.sacs_account ? 'Cuenta SACS: ' + co.sacs_account : 'Sin cuenta SACS ligada'}
-                  {data?.contacts?.[0] ? ' · ' + data.contacts[0].nombre + (data.contacts[0].email ? ' <' + data.contacts[0].email + '>' : '') : ''}
+                  {co?.sacs_account ? 'Cuenta SACS: ' + co.sacs_account : (co?.nombre && co.nombre !== data?.contacts?.[0]?.nombre ? co.nombre : 'Sin cuenta SACS ligada')}
                 </div>
               </div>
               <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
@@ -779,7 +778,7 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
           <h3 style={{ margin: 0, fontWeight: 800 }}>Editar suscripción</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
         </div>
-        <div style={{ fontSize: '0.8rem', color: '#999', marginBottom: 10 }}>{sub.companies?.nombre || '—'}{sub.companies?.sacs_account ? ' · ' + sub.companies.sacs_account : ''}</div>
+        <div style={{ fontSize: '0.8rem', color: '#999', marginBottom: 10 }}>{sub.contacts?.nombre || sub.companies?.nombre || '—'}{sub.companies?.sacs_account ? ' · ' + sub.companies.sacs_account : ''}</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           {/* Plan desde catálogo */}
           <div style={{ gridColumn: '1 / -1' }}>

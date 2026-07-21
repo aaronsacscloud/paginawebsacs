@@ -13,7 +13,7 @@ export const GET: APIRoute = async () => {
   // Active companies
   const { data: companies } = await supabase
     .from('companies')
-    .select('id, nombre, plan, mrr, arr, sucursales, fecha_renovacion, estado_cuenta, ltv, last_payment_at')
+    .select('id, nombre, sacs_account, plan, mrr, arr, sucursales, fecha_renovacion, estado_cuenta, ltv, last_payment_at, contacts(nombre)')
     .is('archived_at', null);
 
   const active = (companies || []).filter(c => c.estado_cuenta === 'activo');
@@ -37,7 +37,7 @@ export const GET: APIRoute = async () => {
 
   // Deudores (overdue)
   const deudores = overdue.map(c => ({
-    id: c.id, nombre: c.nombre, plan: c.plan, mrr: c.mrr,
+    id: c.id, nombre: (c as any).contacts?.[0]?.nombre || c.nombre, cuenta: (c as any).sacs_account || c.nombre, plan: c.plan, mrr: c.mrr,
     fecha_renovacion: c.fecha_renovacion,
     days_overdue: Math.floor((now.getTime() - new Date(c.fecha_renovacion + 'T00:00:00').getTime()) / 86400000),
   })).sort((a, b) => b.days_overdue - a.days_overdue);
@@ -96,7 +96,7 @@ export const GET: APIRoute = async () => {
     cobranza: {
       deudores,
       monto_deuda: montoDeuda,
-      renovaciones_proximas: upcoming.map(c => ({ id: c.id, nombre: c.nombre, plan: c.plan, mrr: c.mrr, fecha_renovacion: c.fecha_renovacion })),
+      renovaciones_proximas: upcoming.map(c => ({ id: c.id, nombre: (c as any).contacts?.[0]?.nombre || c.nombre, cuenta: (c as any).sacs_account || c.nombre, plan: c.plan, mrr: c.mrr, fecha_renovacion: c.fecha_renovacion })),
     },
     pipeline: {
       total_value: pipelineValue,

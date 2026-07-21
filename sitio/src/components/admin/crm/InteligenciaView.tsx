@@ -124,7 +124,7 @@ export default function InteligenciaView() {
             <tbody>{d.renovaciones.proximas.map((r: any) => (
               <tr key={r.subscription_id}>
                 <td style={{ ...S.td, whiteSpace: 'nowrap' }}>{fmtDate(r.fecha)}</td>
-                <td style={{ ...S.td, fontWeight: 700 }}>{r.empresa}</td>
+                <td style={{ ...S.td, fontWeight: 700 }}>{r.cliente || r.empresa}{r.cuenta && r.cuenta !== (r.cliente || r.empresa) ? <span style={{ color: '#aaa', fontWeight: 400, fontSize: '0.72rem' }}> · {r.cuenta}</span> : null}</td>
                 <td style={S.td}>{r.plan}</td>
                 <td style={{ ...S.td, fontWeight: 700 }}>{money(r.monto)}</td>
                 <td style={S.td}>{r.salud == null ? '—' : <span style={{ fontWeight: 700, color: r.salud >= 70 ? '#1A8F7A' : r.salud >= 40 ? '#a06600' : '#b93333' }}>{r.salud}</span>}</td>
@@ -145,7 +145,7 @@ export default function InteligenciaView() {
             <tbody>{d.riesgo.lista.map((r: any) => (
               <tr key={r.subscription_id}>
                 <td style={S.td}><span style={{ display: 'inline-block', minWidth: 34, textAlign: 'center', padding: '2px 6px', borderRadius: 6, fontWeight: 800, fontSize: '0.7rem', background: r.score >= 60 ? '#FEE2E2' : r.score >= 35 ? '#FEF3C7' : '#F3F4F6', color: r.score >= 60 ? '#B91C1C' : r.score >= 35 ? '#92400E' : '#6B7280' }}>{r.score}</span></td>
-                <td style={{ ...S.td, fontWeight: 700 }}>{r.empresa}</td>
+                <td style={{ ...S.td, fontWeight: 700 }}>{r.cliente || r.empresa}{r.cuenta && r.cuenta !== (r.cliente || r.empresa) ? <span style={{ color: '#aaa', fontWeight: 400, fontSize: '0.72rem' }}> · {r.cuenta}</span> : null}</td>
                 <td style={S.td}>{r.plan}</td>
                 <td style={{ ...S.td, fontWeight: 700 }}>{money(r.arr)}</td>
                 <td style={{ ...S.td, color: r.dias_sin_venta > 15 ? '#b93333' : r.dias_sin_venta >= 3 ? '#a06600' : '#333' }}>{r.dias_sin_venta == null ? '—' : r.dias_sin_venta + 'd'}</td>

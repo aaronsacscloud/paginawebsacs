@@ -141,7 +141,7 @@ export default function PagosTab() {
               {vencidas.map((v) => (
                 <tr key={'v' + v.subscription_id}>
                   <td style={S.td}><span style={moraBadge(v.dias_vencida)}>Vencido {v.dias_vencida}d</span></td>
-                  <td style={S.td}>{v.empresa}</td>
+                  <td style={S.td}>{v.empresa}{v.cuenta && v.cuenta !== v.empresa ? <div style={{ fontSize: '0.7rem', color: '#999' }}>{v.cuenta}</div> : null}</td>
                   <td style={S.td}>{v.plan} <span style={{ color: '#999' }}>· {v.ciclo}</span></td>
                   <td style={{ ...S.td, color: '#b93333' }}>{fmtDate(v.vencida_desde)}</td>
                   <td style={{ ...S.td, fontWeight: 700 }}>{fmt(v.monto)}</td>
@@ -154,7 +154,7 @@ export default function PagosTab() {
               {proximos.map((c) => (
                 <tr key={'p' + c.subscription_id}>
                   <td style={S.td}><span style={{ background: '#eef4ff', color: '#2563eb', padding: '2px 8px', borderRadius: 6, fontWeight: 700, fontSize: 11 }}>Próximo</span></td>
-                  <td style={S.td}>{c.empresa}</td>
+                  <td style={S.td}>{c.empresa}{c.cuenta && c.cuenta !== c.empresa ? <div style={{ fontSize: '0.7rem', color: '#999' }}>{c.cuenta}</div> : null}</td>
                   <td style={S.td}>{c.plan} <span style={{ color: '#999' }}>· {c.ciclo}</span></td>
                   <td style={S.td}>{fmtDate(c.fecha)}</td>
                   <td style={{ ...S.td, fontWeight: 700 }}>{fmt(c.monto)}</td>

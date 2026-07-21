@@ -14,9 +14,9 @@ export const GET: APIRoute = async () => {
   const hoyStr = hoy.toISOString().slice(0, 10);
 
   const [subsRes, goalsRes, compRes] = await Promise.all([
-    supabase.from('subscriptions').select('*, companies(id, nombre, sacs_account, ultima_venta_at, dias_sin_venta, estado_cuenta)').limit(2000),
+    supabase.from('subscriptions').select('*, contacts(nombre), companies(id, nombre, sacs_account, ultima_venta_at, dias_sin_venta, estado_cuenta, contacts(nombre))').limit(2000),
     supabase.from('crm_goals').select('*'),
-    supabase.from('companies').select('id, nombre, sacs_account, mrr, arr, ultima_venta_at, dias_sin_venta, actividad_sync_at, estado_cuenta').not('sacs_account', 'is', null),
+    supabase.from('companies').select('id, nombre, sacs_account, mrr, arr, ultima_venta_at, dias_sin_venta, actividad_sync_at, estado_cuenta, contacts(nombre)').not('sacs_account', 'is', null),
   ]);
   if (subsRes.error) return new Response(JSON.stringify({ error: subsRes.error.message }), { status: 500 });
 
@@ -57,7 +57,8 @@ export const GET: APIRoute = async () => {
     if (arrCliente <= 0) return;
     const dias = c.dias_sin_venta;
     if (dias == null) { riesgo.sin_liga++; return; }
-    const item = { company_id: c.id, nombre: c.nombre, sacs_account: c.sacs_account, dias_sin_venta: dias, ultima_venta: c.ultima_venta_at, arr: r2(arrCliente) };
+    const cliente = (c as any).contacts?.[0]?.nombre || c.nombre;
+    const item = { company_id: c.id, nombre: cliente, cuenta: c.sacs_account || c.nombre, sacs_account: c.sacs_account, dias_sin_venta: dias, ultima_venta: c.ultima_venta_at, arr: r2(arrCliente) };
     if (dias > 15) { riesgo.banda_15_mas.push(item); riesgo.arr_en_riesgo += arrCliente; }
     else if (dias >= 3) { riesgo.banda_3_15.push(item); riesgo.arr_en_riesgo += arrCliente; }
   });
@@ -76,7 +77,9 @@ export const GET: APIRoute = async () => {
 
   for (const s of subs) {
     const co = (s as any).companies;
-    const base = { subscription_id: s.id, plan: s.nombre_plan, ciclo: s.ciclo, estado: s.estado, empresa: co?.nombre || '—', sacs_account: co?.sacs_account || null };
+    // Nombre de la persona para identificar rápido; la cuenta va como referencia.
+    const cliente = (s as any).contacts?.nombre || co?.contacts?.[0]?.nombre || co?.nombre || '—';
+    const base = { subscription_id: s.id, plan: s.nombre_plan, ciclo: s.ciclo, estado: s.estado, empresa: cliente, cuenta: co?.sacs_account || co?.nombre || null, sacs_account: co?.sacs_account || null };
     if (s.estado === 'activa' || s.estado === 'pendiente_pago' || s.estado === 'programada') {
       if (s.ciclo === 'anual') {
         // renovación anual: cae en su mes de próxima factura
@@ -109,7 +112,8 @@ export const GET: APIRoute = async () => {
     .filter(s => (s.estado === 'activa' || s.estado === 'pendiente_pago') && s.proxima_factura && s.proxima_factura < hoyStr)
     .map(s => ({
       subscription_id: s.id, plan: s.nombre_plan, ciclo: s.ciclo, estado: s.estado,
-      empresa: (s as any).companies?.nombre || '—', vencida_desde: s.proxima_factura,
+      empresa: (s as any).contacts?.nombre || (s as any).companies?.contacts?.[0]?.nombre || (s as any).companies?.nombre || '—',
+      cuenta: (s as any).companies?.sacs_account || (s as any).companies?.nombre || null, vencida_desde: s.proxima_factura,
       dias_vencida: Math.floor((hoy.getTime() - new Date(s.proxima_factura).getTime()) / 86400000),
       monto: r2(Number(s.monto_proximo ?? s.precio) || 0),
     }))

@@ -24,7 +24,7 @@ export const GET: APIRoute = async () => {
 
   // ── datos base ──
   const [subsRes, movRes, churnRes, paysRes, savesRes] = await Promise.all([
-    supabase.from('subscriptions').select('id, company_id, estado, ciclo, precio, mrr, arr, proxima_factura, fecha_inicio, nombre_plan, monto_proximo, companies(id, nombre, health_score, dias_sin_venta, ultima_venta_at)'),
+    supabase.from('subscriptions').select('id, company_id, estado, ciclo, precio, mrr, arr, proxima_factura, fecha_inicio, nombre_plan, monto_proximo, contacts(nombre), companies(id, nombre, sacs_account, health_score, dias_sin_venta, ultima_venta_at, contacts(nombre))'),
     supabase.from('mrr_movements').select('fecha, tipo, mrr_delta, mrr_anterior, mrr_nuevo').order('fecha', { ascending: true }),
     supabase.from('churn_events').select('cancelled_at, mrr_lost, reason'),
     supabase.from('payments').select('fecha, monto').order('fecha', { ascending: false }).limit(2000),
@@ -139,12 +139,20 @@ export const GET: APIRoute = async () => {
   }
   const revenue = { reconocido_mes: mrrActivo, diferido: r2(diferido) };
 
+  // Nombre del cliente (persona) para identificarlo rápido: contacto de la sub,
+  // si no el primer contacto de la empresa, y como último recurso el nombre de
+  // la empresa. `cuenta` = subdominio SACS (referencia secundaria).
+  const clienteNombre = (s: any) =>
+    s.contacts?.nombre || (s.companies?.contacts || [])[0]?.nombre || s.companies?.nombre || '—';
+  const cuentaDe = (s: any) => s.companies?.sacs_account || s.companies?.nombre || null;
+
   // ── 7 · Pipeline de renovaciones (próximos 90 días) ──
   const en90 = addMeses(H, 3);
   const renovaciones = activas
     .filter((s: any) => s.proxima_factura && s.proxima_factura >= H && s.proxima_factura <= en90)
     .map((s: any) => ({
-      subscription_id: s.id, company_id: s.company_id, empresa: s.companies?.nombre || '—',
+      subscription_id: s.id, company_id: s.company_id,
+      cliente: clienteNombre(s), cuenta: cuentaDe(s), empresa: clienteNombre(s),
       plan: s.nombre_plan, ciclo: s.ciclo, monto: Number(s.monto_proximo ?? s.precio) || 0,
       fecha: s.proxima_factura, salud: s.companies?.health_score ?? null, dias_sin_venta: s.companies?.dias_sin_venta ?? null,
     }))
@@ -163,7 +171,8 @@ export const GET: APIRoute = async () => {
     if (salud != null) score += salud < 40 ? 30 : salud < 60 ? 18 : salud < 75 ? 8 : 0;
     if (renuevaEn != null && renuevaEn >= 0 && renuevaEn <= 30) score += 25; // renueva pronto y con señales malas = urgente
     return {
-      subscription_id: s.id, company_id: s.company_id, empresa: co.nombre || '—', plan: s.nombre_plan,
+      subscription_id: s.id, company_id: s.company_id,
+      cliente: clienteNombre(s), cuenta: cuentaDe(s), empresa: clienteNombre(s), plan: s.nombre_plan,
       arr: Number(s.arr || 0), salud, dias_sin_venta: dias, renueva_en: renuevaEn, score: Math.min(100, score),
     };
   }).filter((x: any) => x.score >= 15).sort((a: any, b: any) => b.score - a.score);
