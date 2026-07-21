@@ -27,6 +27,7 @@ export default function PagosTab() {
   const [payments, setPayments] = useState<any[]>([]);
   const [porTipo, setPorTipo] = useState<Record<string, { count: number; monto: number }>>({});
   const [total, setTotal] = useState(0);
+  const [recon, setRecon] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showPago, setShowPago] = useState(false);
   const [pagoPrefill, setPagoPrefill] = useState<any>(null);
@@ -65,6 +66,7 @@ export default function PagosTab() {
     Promise.all([
       fetch('/api/crm/arr/summary').then(r => r.json()).then(setSummary).catch(() => {}),
       fetch('/api/crm/arr/subscriptions').then(r => r.json()).then(d => setSubs(d.data || [])).catch(() => {}),
+      fetch('/api/crm/arr/reconciliacion').then(r => r.json()).then(setRecon).catch(() => {}),
       loadPayments(),
     ]).finally(() => setLoading(false));
   };
@@ -193,7 +195,9 @@ export default function PagosTab() {
                   <td style={S.td}>{contacto || empresa || '—'}{contacto && empresa ? <span style={{ color: '#999' }}> · {empresa}</span> : null}</td>
                   <td style={S.td}><span style={{ color: METODO_COLOR[p.metodo] || '#374151', fontWeight: 700, fontSize: 12 }}>{METODO_LABEL[p.metodo] || p.metodo}</span></td>
                   <td style={S.td}>{p.subscriptions?.nombre_plan || '—'}{p.subscriptions?.ciclo ? <span style={{ color: '#999' }}> · {p.subscriptions.ciclo}</span> : null}</td>
-                  <td style={{ ...S.td, color: '#888' }}>{p.numero_acuse || p.referencia || '—'}</td>
+                  <td style={S.td}>{p.numero_acuse
+                    ? <a href={`/acuse/${p.id}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#2563eb', textDecoration: 'none' }} title="Ver / imprimir recibo">🧾 {p.numero_acuse}</a>
+                    : <span style={{ color: '#888' }}>{p.referencia || '—'}</span>}</td>
                   <td style={{ ...S.td, fontWeight: 700 }}>{fmt(p.monto)}</td>
                 </tr>
               );
@@ -201,6 +205,31 @@ export default function PagosTab() {
           </tbody>
         </table>
       </div>
+
+      {/* ── Conciliación (proveniencia: manual vs Stripe + huérfanos) ── */}
+      {recon && (
+        <div style={S.card}>
+          <div style={{ fontWeight: 800, marginBottom: 10 }}>Conciliación de pagos <span style={{ color: '#999', fontWeight: 400, fontSize: 13 }}>· {recon.total} en total</span></div>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+            <div style={S.kpi}><div style={S.kLabel}>Registrados a mano</div><div style={S.kValue}>{fmt(recon.por_fuente.manual.monto)}</div><div style={S.kSub}>{recon.por_fuente.manual.count} pagos</div></div>
+            <div style={S.kpi}><div style={S.kLabel}>Vía Stripe</div><div style={S.kValue}>{fmt(recon.por_fuente.stripe.monto)}</div><div style={S.kSub}>{recon.por_fuente.stripe.count} pagos</div></div>
+          </div>
+          {recon.n_stripe_sin_sub > 0 ? (
+            <div style={{ marginBottom: 10, padding: 12, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10 }}>
+              <div style={{ fontWeight: 700, color: '#b45309', marginBottom: 6 }}>⚠️ {recon.n_stripe_sin_sub} pago(s) de Stripe sin licencia ligada</div>
+              {recon.stripe_sin_sub.slice(0, 8).map((p: any) => (
+                <div key={p.id} style={{ fontSize: 12.5, color: '#92400e', padding: '3px 0' }}>{fmtDate(p.fecha)} · {p.companies?.nombre || '—'} · {fmt(p.monto)}</div>
+              ))}
+            </div>
+          ) : null}
+          {recon.n_sin_contacto > 0 ? (
+            <div style={{ fontSize: 13, color: '#b45309' }}>⚠️ {recon.n_sin_contacto} pago(s) sin contacto ligado — no aparecen en el 360 de un contacto.</div>
+          ) : null}
+          {recon.n_stripe_sin_sub === 0 && recon.n_sin_contacto === 0 && (
+            <div style={{ color: '#16a34a', fontSize: 14 }}>✓ Todo conciliado: cada pago tiene fuente, licencia y contacto.</div>
+          )}
+        </div>
+      )}
 
       {showPago && <RegistrarPagoModal subs={subs as any} prefill={pagoPrefill} onClose={() => { setShowPago(false); setPagoPrefill(null); }} onDone={() => { setShowPago(false); setPagoPrefill(null); loadAll(); }} />}
       {drawerCompany && <ClienteDrawer companyId={drawerCompany} onClose={() => setDrawerCompany(null)} onChanged={loadAll} />}
