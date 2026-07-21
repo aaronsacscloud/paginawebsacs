@@ -28,6 +28,7 @@ export default function PagosTab() {
   const [porTipo, setPorTipo] = useState<Record<string, { count: number; monto: number }>>({});
   const [total, setTotal] = useState(0);
   const [recon, setRecon] = useState<any>(null);
+  const [mrrMov, setMrrMov] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showPago, setShowPago] = useState(false);
   const [pagoPrefill, setPagoPrefill] = useState<any>(null);
@@ -51,6 +52,18 @@ export default function PagosTab() {
     setTimeout(() => setToast(''), 4000);
   };
 
+  // Conciliación — liga los pagos sin contacto al contacto principal de su empresa.
+  const ligarHuerfanos = async () => {
+    setToast('Ligando pagos a sus contactos…');
+    try {
+      const r = await fetch('/api/crm/arr/ligar-huerfanos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      const d = await r.json();
+      setToast(d.ok ? `${d.ligados} pago(s) ligado(s)${d.sin_contacto_empresa ? ` · ${d.sin_contacto_empresa} sin contacto en su empresa` : ''}.` : (d.error || 'No se pudo ligar.'));
+      loadAll();
+    } catch { setToast('Error al ligar.'); }
+    setTimeout(() => setToast(''), 4500);
+  };
+
   const loadPayments = () => {
     const p = new URLSearchParams();
     if (fMetodo) p.set('metodo', fMetodo);
@@ -67,6 +80,7 @@ export default function PagosTab() {
       fetch('/api/crm/arr/summary').then(r => r.json()).then(setSummary).catch(() => {}),
       fetch('/api/crm/arr/subscriptions').then(r => r.json()).then(d => setSubs(d.data || [])).catch(() => {}),
       fetch('/api/crm/arr/reconciliacion').then(r => r.json()).then(setRecon).catch(() => {}),
+      fetch('/api/crm/arr/mrr-movimiento?meses=6').then(r => r.json()).then(setMrrMov).catch(() => {}),
       loadPayments(),
     ]).finally(() => setLoading(false));
   };
@@ -223,13 +237,49 @@ export default function PagosTab() {
             </div>
           ) : null}
           {recon.n_sin_contacto > 0 ? (
-            <div style={{ fontSize: 13, color: '#b45309' }}>⚠️ {recon.n_sin_contacto} pago(s) sin contacto ligado — no aparecen en el 360 de un contacto.</div>
+            <div style={{ fontSize: 13, color: '#b45309', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <span>⚠️ {recon.n_sin_contacto} pago(s) sin contacto ligado — no aparecen en el 360 de un contacto.</span>
+              <button onClick={ligarHuerfanos} style={{ ...S.btnSmall, background: '#2563eb', color: '#fff', border: 'none' }}>Ligar automáticamente</button>
+            </div>
           ) : null}
           {recon.n_stripe_sin_sub === 0 && recon.n_sin_contacto === 0 && (
             <div style={{ color: '#16a34a', fontSize: 14 }}>✓ Todo conciliado: cada pago tiene fuente, licencia y contacto.</div>
           )}
         </div>
       )}
+
+      {/* ── Movimiento de MRR (nuevo / churn / neto) ── */}
+      {mrrMov?.meses?.length ? (() => {
+        const meses = mrrMov.meses;
+        const max = Math.max(1, ...meses.map((m: any) => Math.max(m.nuevo, m.churn)));
+        const mesLabel = (ym: string) => new Date(ym + '-15T12:00:00').toLocaleDateString('es-MX', { month: 'short', year: '2-digit' });
+        return (
+          <div style={S.card}>
+            <div style={{ fontWeight: 800, marginBottom: 4 }}>Movimiento de MRR <span style={{ color: '#999', fontWeight: 400, fontSize: 13 }}>· últimos {meses.length} meses</span></div>
+            <div style={{ color: '#888', fontSize: 12.5, marginBottom: 14 }}>Nuevo (altas) vs churn (bajas) por mes. Neto = crecimiento recurrente real.</div>
+            <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+              <div style={S.kpi}><div style={S.kLabel}>Nuevo · periodo</div><div style={{ ...S.kValue, color: '#16a34a' }}>+{fmt(mrrMov.totales.nuevo)}</div></div>
+              <div style={S.kpi}><div style={S.kLabel}>Churn · periodo</div><div style={{ ...S.kValue, color: '#b93333' }}>−{fmt(mrrMov.totales.churn)}</div></div>
+              <div style={S.kpi}><div style={S.kLabel}>Neto · periodo</div><div style={{ ...S.kValue, color: mrrMov.totales.neto >= 0 ? '#16a34a' : '#b93333' }}>{mrrMov.totales.neto >= 0 ? '+' : '−'}{fmt(Math.abs(mrrMov.totales.neto))}</div></div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14, height: 120, borderBottom: '1px solid #eee', paddingBottom: 2 }}>
+              {meses.map((m: any) => (
+                <div key={m.mes} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 100 }}>
+                    <div title={`Nuevo ${fmt(m.nuevo)}`} style={{ width: 14, height: Math.round(100 * m.nuevo / max), background: '#16a34a', borderRadius: '3px 3px 0 0', minHeight: m.nuevo ? 2 : 0 }} />
+                    <div title={`Churn ${fmt(m.churn)}`} style={{ width: 14, height: Math.round(100 * m.churn / max), background: '#dc2626', borderRadius: '3px 3px 0 0', minHeight: m.churn ? 2 : 0 }} />
+                  </div>
+                  <div style={{ fontSize: 11, color: '#888' }}>{mesLabel(m.mes)}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 16, marginTop: 10, fontSize: 12, color: '#666' }}>
+              <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#16a34a', borderRadius: 2, marginRight: 5 }} />Nuevo</span>
+              <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#dc2626', borderRadius: 2, marginRight: 5 }} />Churn</span>
+            </div>
+          </div>
+        );
+      })() : null}
 
       {showPago && <RegistrarPagoModal subs={subs as any} prefill={pagoPrefill} onClose={() => { setShowPago(false); setPagoPrefill(null); }} onDone={() => { setShowPago(false); setPagoPrefill(null); loadAll(); }} />}
       {drawerCompany && <ClienteDrawer companyId={drawerCompany} onClose={() => setDrawerCompany(null)} onChanged={loadAll} />}
