@@ -21,12 +21,11 @@ function appendTimeline(notas: string | null, event: Record<string, any>): strin
 }
 
 export const GET: APIRoute = async ({ url }) => {
-  const clientId = url.searchParams.get('client_id') || '';
   const quoteId = url.searchParams.get('quote_id') || '';
 
-  let query = supabase.from('payments').select('*, clients(empresa, contacto)').order('fecha', { ascending: false });
+  // La tabla legacy `clients` fue retirada; los pagos se consultan por cotización.
+  let query = supabase.from('payments').select('*').order('fecha', { ascending: false });
 
-  if (clientId) query = query.eq('client_id', clientId);
   if (quoteId) query = query.eq('quote_id', quoteId);
 
   const { data, error } = await query;
@@ -39,7 +38,6 @@ export const POST: APIRoute = async ({ request }) => {
 
   // Insert payment — schema accepts quote_id (added in migration-2026-04-payments-receipts.sql)
   const payload: any = {
-    client_id: body.client_id || null,
     quote_id: body.quote_id || null,
     fecha: body.fecha,
     monto: Number(body.monto || 0),
@@ -54,27 +52,12 @@ export const POST: APIRoute = async ({ request }) => {
   // Retry without optional cols if migration aún no aplicada
   let { data, error } = await supabase.from('payments').insert(payload).select().single();
   if (error && /quote_id|comprobante_url|items_cubiertos|notas|estado/.test(String(error.message))) {
-    const fallback: any = { client_id: payload.client_id, fecha: payload.fecha, monto: payload.monto, metodo: payload.metodo, referencia: payload.referencia };
+    const fallback: any = { quote_id: payload.quote_id, fecha: payload.fecha, monto: payload.monto, metodo: payload.metodo, referencia: payload.referencia };
     const retry = await supabase.from('payments').insert(fallback).select().single();
     data = retry.data; error = retry.error;
   }
 
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-
-  // Update client's next renewal date (legacy flow — solo si vino client_id)
-  if (body.client_id) {
-    const { data: client } = await supabase.from('clients').select('fecha_renovacion, precio_mensual').eq('id', body.client_id).single();
-    if (client) {
-      const currentDate = new Date(body.fecha);
-      const isAnnual = body.monto >= (client.precio_mensual || 0) * 10;
-      const months = isAnnual ? 12 : 1;
-      currentDate.setMonth(currentDate.getMonth() + months);
-      await supabase.from('clients').update({
-        fecha_renovacion: currentDate.toISOString().slice(0, 10),
-        estado: 'activo',
-      }).eq('id', body.client_id);
-    }
-  }
 
   // Si el pago está ligado a una cotización, recalcular saldo y avanzar estado si se completa
   let quoteUpdate: { totalPagado: number; saldoRestante: number; isPaid: boolean } | null = null;
