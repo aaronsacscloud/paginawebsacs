@@ -8,7 +8,7 @@ import InteligenciaView from './InteligenciaView';
 
 type Sub = {
   id: string; company_id: string | null; contact_id: string | null;
-  nombre_plan: string; ciclo: 'mensual' | 'anual'; estado: string;
+  nombre_plan: string; ciclo: 'mensual' | 'anual' | 'vitalicia'; estado: string;
   precio: number; mrr: number; arr: number;
   fecha_inicio: string | null; proxima_factura: string | null; monto_proximo: number | null;
   pagos_realizados: number; total_pagado: number; razon_cancelacion: string | null; notas: string | null;
@@ -25,6 +25,8 @@ const ESTADOS: Record<string, { label: string; bg: string; color: string }> = {
 };
 
 const fmt = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
+// Sufijo de precio por ciclo: vitalicia = pago único (legacy, no recurrente).
+const sufCiclo = (c?: string) => c === 'anual' ? 'año' : c === 'vitalicia' ? 'pago único' : 'mes';
 const fmtDate = (d?: string | null) => d ? new Date(d + (d.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '—';
 const MES_NOM = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const fmtMes = (m: string) => { const [y, mm] = m.split('-'); return MES_NOM[Number(mm) - 1] + ' ' + y.slice(2); };
@@ -203,7 +205,7 @@ export default function SubscriptionsTab() {
               {nSinPlan > 0 && <option value="__none__">Sin plan de catálogo ({nSinPlan})</option>}
             </select>
             <select value={fCiclo} onChange={e => setFCiclo(e.target.value)} style={S.input}>
-              <option value="">Todos los ciclos</option><option value="anual">Anuales</option><option value="mensual">Mensuales</option>
+              <option value="">Todos los ciclos</option><option value="anual">Anuales</option><option value="mensual">Mensuales</option><option value="vitalicia">Vitalicias</option>
             </select>
             <select value={fEstado} onChange={e => setFEstado(e.target.value)} style={S.input}>
               <option value="">Todos los estados</option>
@@ -244,14 +246,15 @@ export default function SubscriptionsTab() {
                         }
                         return <span>{s.nombre_plan || '—'} <span style={{ fontSize: '0.6rem', color: '#c08a4a', border: '1px solid #eedcc4', borderRadius: 4, padding: '0 4px', verticalAlign: 'middle' }} title="Sin plan de catálogo — falta normalizar">sin catálogo</span></span>;
                       })()}</td>
-                      <td style={S.td}><span style={{ ...S.badge, background: s.ciclo === 'anual' ? 'rgba(108,92,231,0.12)' : 'rgba(75,123,229,0.12)', color: s.ciclo === 'anual' ? '#6C5CE7' : '#3764c4' }}>{s.ciclo}</span></td>
+                      <td style={S.td}><span style={{ ...S.badge, background: s.ciclo === 'vitalicia' ? 'rgba(160,102,0,0.12)' : s.ciclo === 'anual' ? 'rgba(108,92,231,0.12)' : 'rgba(75,123,229,0.12)', color: s.ciclo === 'vitalicia' ? '#a06600' : s.ciclo === 'anual' ? '#6C5CE7' : '#3764c4' }}>{s.ciclo}</span></td>
                       <td style={S.td}><Estado e={s.estado} /></td>
-                      <td style={S.td}>{fmt(s.precio)}<span style={{ color: '#aaa' }}>/{s.ciclo === 'anual' ? 'año' : 'mes'}</span>{(() => {
+                      <td style={S.td}>{fmt(s.precio)}<span style={{ color: '#aaa' }}>{s.ciclo === 'vitalicia' ? ' único' : '/' + sufCiclo(s.ciclo)}</span>{(() => {
+                        if (s.ciclo === 'vitalicia') return null;
                         const pl = Number((s as any).precio_lista) || 0, pr = Number(s.precio) || 0;
-                        if (pl > 0 && pr > 0 && pr < pl) { const d = Math.round((1 - pr / pl) * 100); if (d > 0) return <span style={{ marginLeft: 5, fontSize: '0.6rem', color: '#a06600', background: '#fff5e6', borderRadius: 4, padding: '0 4px', fontWeight: 700 }} title={`Lista ${fmt(pl)}/${s.ciclo === 'anual' ? 'año' : 'mes'}`}>−{d}%</span>; }
+                        if (pl > 0 && pr > 0 && pr < pl) { const d = Math.round((1 - pr / pl) * 100); if (d > 0) return <span style={{ marginLeft: 5, fontSize: '0.6rem', color: '#a06600', background: '#fff5e6', borderRadius: 4, padding: '0 4px', fontWeight: 700 }} title={`Lista ${fmt(pl)}/${sufCiclo(s.ciclo)}`}>−{d}%</span>; }
                         return null;
                       })()}</td>
-                      <td style={{ ...S.td, fontWeight: 700 }}>{fmt(s.arr)}</td>
+                      <td style={{ ...S.td, fontWeight: 700 }}>{s.ciclo === 'vitalicia' ? <span style={{ color: '#bbb', fontWeight: 400 }} title="Pago único — no cuenta como ARR">— (único)</span> : fmt(s.arr)}</td>
                       <td style={{ ...S.td, color: s.proxima_factura && s.proxima_factura < new Date().toISOString().slice(0, 10) && (s.estado === 'activa' || s.estado === 'pendiente_pago') ? '#b93333' : '#333' }}>{fmtDate(s.proxima_factura)}</td>
                       <td style={S.td}>{s.pagos_realizados}</td>
                       <td style={S.td}>{fmt(s.total_pagado)}</td>
@@ -457,7 +460,7 @@ export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: S
               <option value="">— elegir —</option>
               {cobrables.map(s => <option key={s.id} value={s.id}>{(s.companies?.nombre || '—') + ' · ' + s.nombre_plan + ' (' + s.ciclo + ') · próx ' + (s.proxima_factura || 's/f')}</option>)}
             </select>
-            {sel && <div style={{ fontSize: '0.75rem', color: '#999', marginTop: 4 }}>Al registrar: pasa a ACTIVA y su próxima factura se recorre un {sel.ciclo === 'anual' ? 'año' : 'mes'}.</div>}
+            {sel && <div style={{ fontSize: '0.75rem', color: '#999', marginTop: 4 }}>{sel.ciclo === 'vitalicia' ? 'Al registrar: pasa a ACTIVA (pago único, sin renovación; no cuenta como ARR).' : `Al registrar: pasa a ACTIVA y su próxima factura se recorre un ${sufCiclo(sel.ciclo)}.`}</div>}
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
@@ -466,8 +469,8 @@ export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: S
             <div><label style={S.label}>Contacto</label><input value={form.contacto_nombre || ''} onChange={e => setForm({ ...form, contacto_nombre: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
             <div><label style={S.label}>Email</label><input value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
             <div><label style={S.label}>Plan</label><input value={form.nombre_plan || ''} onChange={e => setForm({ ...form, nombre_plan: e.target.value })} style={{ ...S.input, width: '100%' }} placeholder="Licencia Controla Anual" /></div>
-            <div><label style={S.label}>Ciclo</label><select value={form.ciclo} onChange={e => setForm({ ...form, ciclo: e.target.value })} style={{ ...S.input, width: '100%' }}><option value="anual">Anual</option><option value="mensual">Mensual</option></select></div>
-            <div><label style={S.label}>Precio por {form.ciclo === 'anual' ? 'año' : 'mes'}</label><input type="number" value={form.precio || ''} onChange={e => setForm({ ...form, precio: e.target.value })} style={{ ...S.input, width: '100%' }} placeholder="= monto si vacío" /></div>
+            <div><label style={S.label}>Ciclo</label><select value={form.ciclo} onChange={e => setForm({ ...form, ciclo: e.target.value })} style={{ ...S.input, width: '100%' }}><option value="anual">Anual</option><option value="mensual">Mensual</option><option value="vitalicia">Vitalicia (pago único)</option></select></div>
+            <div><label style={S.label}>{form.ciclo === 'vitalicia' ? 'Precio (pago único)' : 'Precio por ' + sufCiclo(form.ciclo)}</label><input type="number" value={form.precio || ''} onChange={e => setForm({ ...form, precio: e.target.value })} style={{ ...S.input, width: '100%' }} placeholder="= monto si vacío" /></div>
           </div>
         )}
 
@@ -610,7 +613,7 @@ export function ClienteDrawer({ companyId, onClose, onChanged }: { companyId: st
               <div key={s.id} style={{ border: '1px solid #eee', borderRadius: 10, padding: '10px 12px', marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{s.nombre_plan} <span style={{ color: '#999', fontWeight: 400 }}>· {s.ciclo}</span></div>
-                  <div style={{ fontSize: '0.72rem', color: '#999' }}>{fmt(s.precio)}/{s.ciclo === 'anual' ? 'año' : 'mes'} · próx. {fmtDate(s.proxima_factura)} · {s.pagos_realizados} pago(s) · {fmt(s.total_pagado)} acumulado</div>
+                  <div style={{ fontSize: '0.72rem', color: '#999' }}>{fmt(s.precio)} {s.ciclo === 'vitalicia' ? '(único)' : '/' + sufCiclo(s.ciclo)} · {s.ciclo === 'vitalicia' ? 'sin renovación' : 'próx. ' + fmtDate(s.proxima_factura)} · {s.pagos_realizados} pago(s) · {fmt(s.total_pagado)} acumulado</div>
                 </div>
                 <Estado e={s.estado} />
               </div>
@@ -806,7 +809,7 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
     const lista = p.a_la_medida ? null : (form.ciclo === 'anual' ? p.precio_anual : p.precio_mensual);
     // Solo autollenar el precio si el actual coincidía con la lista (no pisar un pactado)
     const pisarPrecio = !form.precio || Number(form.precio) === Number(form.precio_lista || 0);
-    setForm({ ...form, plan_id: planId, nombre_plan: p.nombre + (form.ciclo === 'anual' ? ' Anual' : ' Mensual'),
+    setForm({ ...form, plan_id: planId, nombre_plan: p.nombre + (form.ciclo === 'vitalicia' ? '' : form.ciclo === 'anual' ? ' Anual' : ' Mensual'),
       precio_lista: lista, ...(pisarPrecio && lista ? { precio: lista, monto_proximo: lista } : {}) });
   }
   function cambiarCiclo(nuevo: string) {
@@ -886,7 +889,7 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
           {/* Ciclo con leyenda */}
           <div>
             <label style={S.label}>Ciclo</label>
-            <select value={form.ciclo} onChange={e => cambiarCiclo(e.target.value)} style={{ ...S.input, width: '100%' }}><option value="anual">Anual</option><option value="mensual">Mensual</option></select>
+            <select value={form.ciclo} onChange={e => cambiarCiclo(e.target.value)} style={{ ...S.input, width: '100%' }}><option value="anual">Anual</option><option value="mensual">Mensual</option><option value="vitalicia">Vitalicia (pago único)</option></select>
           </div>
           {/* Estado con transiciones válidas */}
           <div>
@@ -902,7 +905,7 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
 
           {/* Precio con sugerencia de lista y badge de descuento */}
           <div>
-            <label style={S.label}>Precio por {form.ciclo === 'anual' ? 'año' : 'mes'}</label>
+            <label style={S.label}>{form.ciclo === 'vitalicia' ? 'Precio (pago único)' : 'Precio por ' + sufCiclo(form.ciclo)}</label>
             <input type="number" value={form.precio} onChange={e => setForm({ ...form, precio: e.target.value })} style={{ ...S.input, width: '100%' }} />
             {precioLista != null && Number(form.precio) !== precioLista && (
               <div style={{ fontSize: '0.7rem', marginTop: 3 }}>
@@ -1140,7 +1143,7 @@ function CrearSubModal({ cuenta, onClose, onDone }: { cuenta: any; onClose: () =
     const p = plans.find(x => x.id === planId);
     if (!p) { setForm({ ...form, plan_id: '' }); return; }
     const lista = p.a_la_medida ? null : (form.ciclo === 'anual' ? p.precio_anual : p.precio_mensual);
-    setForm({ ...form, plan_id: planId, nombre_plan: p.nombre + (form.ciclo === 'anual' ? ' Anual' : ' Mensual'), precio_lista: lista, ...(lista ? { precio: lista } : {}) });
+    setForm({ ...form, plan_id: planId, nombre_plan: p.nombre + (form.ciclo === 'vitalicia' ? '' : form.ciclo === 'anual' ? ' Anual' : ' Mensual'), precio_lista: lista, ...(lista ? { precio: lista } : {}) });
   }
   async function crear() {
     if (!form.nombre_plan || !Number(form.precio)) { setErr('Plan y precio requeridos.'); return; }
@@ -1172,8 +1175,8 @@ function CrearSubModal({ cuenta, onClose, onDone }: { cuenta: any; onClose: () =
             </select>
             <input value={form.nombre_plan || ''} onChange={e => setForm({ ...form, nombre_plan: e.target.value })} style={{ ...S.input, width: '100%', marginTop: 6, fontSize: '0.78rem' }} placeholder="Licencia Controla Anual" />
           </div>
-          <div><label style={S.label}>Ciclo</label><select value={form.ciclo} onChange={e => { const c = e.target.value; const p = plans.find(x => x.id === form.plan_id); const lista = p && !p.a_la_medida ? (c === 'anual' ? p.precio_anual : p.precio_mensual) : null; setForm({ ...form, ciclo: c, precio_lista: lista, ...(lista ? { precio: lista } : {}) }); }} style={{ ...S.input, width: '100%' }}><option value="anual">Anual</option><option value="mensual">Mensual</option></select></div>
-          <div><label style={S.label}>Precio por {form.ciclo === 'anual' ? 'año' : 'mes'} *</label><input type="number" value={form.precio || ''} onChange={e => setForm({ ...form, precio: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
+          <div><label style={S.label}>Ciclo</label><select value={form.ciclo} onChange={e => { const c = e.target.value; const p = plans.find(x => x.id === form.plan_id); const lista = p && !p.a_la_medida ? (c === 'anual' ? p.precio_anual : p.precio_mensual) : null; setForm({ ...form, ciclo: c, precio_lista: lista, ...(lista ? { precio: lista } : {}) }); }} style={{ ...S.input, width: '100%' }}><option value="anual">Anual</option><option value="mensual">Mensual</option><option value="vitalicia">Vitalicia (pago único)</option></select></div>
+          <div><label style={S.label}>{form.ciclo === 'vitalicia' ? 'Precio (pago único)' : 'Precio por ' + sufCiclo(form.ciclo)} *</label><input type="number" value={form.precio || ''} onChange={e => setForm({ ...form, precio: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
           <div><label style={S.label}>Contacto</label><input value={form.contacto_nombre || ''} onChange={e => setForm({ ...form, contacto_nombre: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
           <div><label style={S.label}>Email</label><input value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
         </div>

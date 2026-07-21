@@ -14,6 +14,7 @@ const FALLBACK = [
   { slug: 'automatiza', nombre: 'Plan Automatiza', precio_mensual: 5900, precio_anual: 59000, a_la_medida: false, orden: 4 },
   { slug: 'personalizada', nombre: 'Licencia personalizada', precio_mensual: null, precio_anual: null, a_la_medida: true, orden: 5 },
   { slug: 'soporte_premium', nombre: 'Soporte premium', precio_mensual: null, precio_anual: null, a_la_medida: true, orden: 6 },
+  { slug: 'vitalicia_legacy', nombre: 'Licencia Vitalicia Legacy', precio_mensual: null, precio_anual: null, a_la_medida: true, orden: 7 },
 ];
 
 export const GET: APIRoute = async () => {

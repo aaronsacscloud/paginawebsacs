@@ -67,9 +67,10 @@ async function updateSubTolerante(id: string, upd: any) {
 }
 
 function normalizar(body: any) {
-  const ciclo = body.ciclo === 'anual' ? 'anual' : 'mensual';
+  const ciclo = body.ciclo === 'anual' ? 'anual' : body.ciclo === 'vitalicia' ? 'vitalicia' : 'mensual';
   const precio = Number(body.precio) || 0;
-  const mrr = ciclo === 'anual' ? precio / 12 : precio;
+  // Vitalicia = pago único (legacy), NO recurrente → no aporta MRR/ARR ni renueva.
+  const mrr = ciclo === 'anual' ? precio / 12 : ciclo === 'vitalicia' ? 0 : precio;
   const out: any = {
     company_id: body.company_id || null,
     contact_id: body.contact_id || null,
@@ -80,10 +81,11 @@ function normalizar(body: any) {
     mrr: Math.round(mrr * 100) / 100,
     arr: Math.round(mrr * 12 * 100) / 100,
     fecha_inicio: body.fecha_inicio || null,
-    proxima_factura: body.proxima_factura || null,
+    // Vitalicia no renueva → sin próxima factura ni monto próximo.
+    proxima_factura: ciclo === 'vitalicia' ? null : (body.proxima_factura || null),
     // '' o 0 NO son un monto válido: Number('') === 0 dejaba próximas facturas
     // de $0 (recordatorios de $0, proyección desinflada, Stripe rechazando el link)
-    monto_proximo: (() => { const mp = Number(body.monto_proximo); return Number.isFinite(mp) && mp > 0 ? mp : precio; })(),
+    monto_proximo: ciclo === 'vitalicia' ? null : (() => { const mp = Number(body.monto_proximo); return Number.isFinite(mp) && mp > 0 ? mp : precio; })(),
     razon_cancelacion: body.razon_cancelacion || null,
     notas: body.notas || null,
     stripe_subscription_id: body.stripe_subscription_id ? String(body.stripe_subscription_id).trim() : null,

@@ -150,7 +150,8 @@ export const POST: APIRoute = async ({ request }) => {
     const base = (sub.proxima_factura && sub.proxima_factura >= fecha) ? sub.proxima_factura : fecha;
     const updSub: any = {
       estado: 'activa',
-      proxima_factura: addCiclo(base, cicloEfectivo),
+      // Vitalicia = pago único: se activa pero NO tiene próxima factura (no renueva).
+      proxima_factura: sub.ciclo === 'vitalicia' ? null : addCiclo(base, cicloEfectivo),
       pagos_realizados: Number(sub.pagos_realizados || 0) + 1,
       total_pagado: r2(Number(sub.total_pagado || 0) + monto),
       // Pagar renueva: si tenía cancelación "al vencer" pendiente, el pago la
