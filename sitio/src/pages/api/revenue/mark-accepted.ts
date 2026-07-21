@@ -3,6 +3,7 @@ import { supabase } from '../../../lib/supabase';
 import { syncQuoteToDeal, ensureContactForQuote } from '../../../lib/crm/sync-quote-deal';
 import { notify, getSalesInbox } from '../../../lib/notify';
 import { getCurrentUser } from '../../../lib/auth/scope';
+import { getPlans, matchPlan, precioLista, nombreCanonico } from '../../../lib/crm/plan-catalog';
 
 export const prerender = false;
 
@@ -206,16 +207,29 @@ export const POST: APIRoute = async ({ request, url }) => {
             const precio = ciclo === 'mensual' ? valorMensual : (ciclo === 'anual' ? Math.round(annualPlan) : 0);
             if (ciclo && precio > 0) {
               const planItem = items2.find((i: any) => i.tipo === 'plan');
-              const nombrePlan = String(planItem?.nombre || planItem?.label || planItem?.descripcion || 'Licencia SACS').slice(0, 160);
+              // Normalización: liga la sub al catálogo por el slug del ítem de la
+              // cotización (o su texto), guarda el nombre canónico y precio de lista.
+              const catalogo = await getPlans().catch(() => []);
+              const planCat = matchPlan(catalogo, planItem?.nombre || planItem?.label || planItem?.descripcion);
+              const nombrePlan = (planCat ? nombreCanonico(planCat, ciclo)
+                : String(planItem?.nombre || planItem?.label || planItem?.descripcion || 'Licencia SACS')).slice(0, 160);
               const hoy = now.slice(0, 10);
               const mrr = ciclo === 'anual' ? precio / 12 : precio;
-              await supabase.from('subscriptions').insert({
+              const nuevaSub: any = {
                 company_id: quote.company_id, contact_id: contactId,
                 nombre_plan: nombrePlan, ciclo, estado: 'programada', precio,
                 mrr: Math.round(mrr * 100) / 100, arr: Math.round(mrr * 12 * 100) / 100,
                 fecha_inicio: hoy, proxima_factura: hoy, monto_proximo: precio,
+                ...(planCat ? { plan_id: planCat.id, precio_lista: precioLista(planCat, ciclo) } : {}),
                 ...(quote.partner_id ? { partner_id: quote.partner_id } : {}),
-              });
+                quote_id: quoteId,
+              };
+              // quote_id/plan_id/precio_lista pueden faltar si el SQL no aplicó aún.
+              let insSub = await supabase.from('subscriptions').insert(nuevaSub);
+              if (insSub.error && /quote_id|plan_id|precio_lista|column|schema cache/i.test(insSub.error.message || '')) {
+                const { quote_id, plan_id, precio_lista, ...base } = nuevaSub;
+                await supabase.from('subscriptions').insert(base);
+              }
             }
           }
         } catch { /* la suscripción nunca bloquea la aceptación de la cotización */ }

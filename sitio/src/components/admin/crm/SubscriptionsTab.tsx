@@ -64,6 +64,7 @@ export default function SubscriptionsTab() {
   const [fEstado, setFEstado] = useState('');
   const [fPlan, setFPlan] = useState('');
   const [fCliente, setFCliente] = useState('');
+  const [fStale, setFStale] = useState(false);
   const [plans, setPlans] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [mesAbierto, setMesAbierto] = useState<string | null>(null);
@@ -95,13 +96,14 @@ export default function SubscriptionsTab() {
     // libre bajo el plan canónico. '__none__' = subs sin plan de catálogo.
     if (fPlan) { if (fPlan === '__none__') { if ((s as any).plan_id) return false; } else if ((s as any).plan_id !== fPlan) return false; }
     if (fCliente && s.company_id !== fCliente) return false;
+    if (fStale && !esStale(s)) return false;
     if (search) {
       const q = search.toLowerCase();
       const hay = [s.nombre_plan, s.companies?.nombre, s.companies?.sacs_account, s.contacts?.nombre, s.contacts?.email].filter(Boolean).join(' ').toLowerCase();
       if (!hay.includes(q)) return false;
     }
     return true;
-  }), [subs, fCiclo, fEstado, fPlan, fCliente, search]);
+  }), [subs, fCiclo, fEstado, fPlan, fCliente, fStale, search, hace60]);
 
   // Clientes para el filtro: distintos por empresa, ordenados por cuenta.
   const clientesOpts = useMemo(() => {
@@ -110,6 +112,12 @@ export default function SubscriptionsTab() {
     return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1], 'es'));
   }, [subs]);
   const nSinPlan = useMemo(() => subs.filter(s => !(s as any).plan_id).length, [subs]);
+  const planById = useMemo(() => { const m = new Map<string, any>(); plans.forEach((p: any) => m.set(p.id, p)); return m; }, [plans]);
+  // Pendientes "stale": pendiente_pago con +60 días vencidas y 0 pagos → seguro
+  // son cierres que nunca se cobraron; conviene cancelarlas o registrarles el pago.
+  const hace60 = new Date(Date.now() - 60 * 86400000).toISOString().slice(0, 10);
+  const esStale = (s: Sub) => s.estado === 'pendiente_pago' && (s.pagos_realizados || 0) === 0 && !!s.proxima_factura && s.proxima_factura < hace60;
+  const stalePend = useMemo(() => subs.filter(esStale), [subs, hace60]);
 
   const k = summary?.kpis;
   const meta = summary?.meta;
@@ -175,6 +183,12 @@ export default function SubscriptionsTab() {
       {/* ═══ VISTA SUSCRIPCIONES ═══ */}
       {vista === 'subs' && (
         <div style={S.card}>
+          {stalePend.length > 0 && (
+            <div style={{ marginBottom: 10, padding: '8px 12px', background: '#fff8ec', border: '1px solid #f5e2b8', borderRadius: 8, fontSize: 13, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span>⚠️ {stalePend.length} pendiente(s) con +60 días vencidas y 0 pagos — probablemente cierres que nunca se cobraron (cancelar o registrar su pago).</span>
+              <button onClick={() => setFStale(!fStale)} style={{ ...S.btnSmall, background: fStale ? '#1a1a1a' : '#fff', color: fStale ? '#fff' : '#333' }}>{fStale ? 'Ver todas' : 'Ver solo esas'}</button>
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente, cuenta o plan…" style={{ ...S.input, flex: 1, minWidth: 180 }} />
             <select value={fCliente} onChange={e => setFCliente(e.target.value)} style={{ ...S.input, maxWidth: 200 }} title="Ver todas las suscripciones de un cliente">
@@ -193,8 +207,8 @@ export default function SubscriptionsTab() {
               <option value="">Todos los estados</option>
               {Object.entries(ESTADOS).map(([v, c]) => <option key={v} value={v}>{c.label}</option>)}
             </select>
-            {(fCliente || fPlan || fCiclo || fEstado || search) && (
-              <button onClick={() => { setFCliente(''); setFPlan(''); setFCiclo(''); setFEstado(''); setSearch(''); }} style={{ ...S.btnSmall, alignSelf: 'center' }} title="Limpiar filtros">✕ Limpiar</button>
+            {(fCliente || fPlan || fCiclo || fEstado || search || fStale) && (
+              <button onClick={() => { setFCliente(''); setFPlan(''); setFCiclo(''); setFEstado(''); setSearch(''); setFStale(false); }} style={{ ...S.btnSmall, alignSelf: 'center' }} title="Limpiar filtros">✕ Limpiar</button>
             )}
           </div>
           <div style={{ overflowX: 'auto' }}>
@@ -208,18 +222,33 @@ export default function SubscriptionsTab() {
                   return (
                     <tr key={s.id} style={{ cursor: 'pointer' }} onClick={() => s.company_id && setDetailId(s.company_id)}>
                       <td style={S.td}>{(() => {
-                        const cuenta = s.companies?.sacs_account || s.companies?.nombre || '';
-                        // Nombre de la persona primero (para identificarlo rápido); la cuenta abajo.
-                        const cliente = s.contacts?.nombre || (s.companies?.nombre !== cuenta ? s.companies?.nombre : '') || cuenta || '—';
+                        // Cuenta (SACS) en negritas arriba; el cliente/persona en gris chico abajo.
+                        const cuenta = s.companies?.sacs_account || s.companies?.nombre || '—';
+                        const cliente = s.contacts?.nombre || (s.companies?.nombre && s.companies.nombre !== s.companies?.sacs_account ? s.companies.nombre : '');
                         return (<>
-                          <div style={{ fontWeight: 700, color: '#1a1a1a', whiteSpace: 'nowrap' }}>{cliente}</div>
-                          {cuenta && cuenta !== cliente ? <div style={{ fontSize: '0.72rem', color: '#999', whiteSpace: 'nowrap' }}>{cuenta}</div> : null}
+                          <div style={{ fontWeight: 700, color: '#1a1a1a', whiteSpace: 'nowrap' }}>{cuenta}</div>
+                          {cliente && cliente !== cuenta ? <div style={{ fontSize: '0.72rem', color: '#999', whiteSpace: 'nowrap' }}>{cliente}</div> : null}
                         </>);
                       })()}</td>
-                      <td style={S.td}>{s.nombre_plan}</td>
+                      <td style={S.td}>{(() => {
+                        const cat = (s as any).plan_id ? planById.get((s as any).plan_id) : null;
+                        if (cat) {
+                          const base = String(cat.nombre).replace(/^Plan /, '');
+                          const distinto = s.nombre_plan && s.nombre_plan.toLowerCase().trim() !== base.toLowerCase();
+                          return (<>
+                            <div style={{ whiteSpace: 'nowrap' }}>{base}</div>
+                            {distinto ? <div style={{ fontSize: '0.7rem', color: '#bbb' }}>{s.nombre_plan}</div> : null}
+                          </>);
+                        }
+                        return <span>{s.nombre_plan || '—'} <span style={{ fontSize: '0.6rem', color: '#c08a4a', border: '1px solid #eedcc4', borderRadius: 4, padding: '0 4px', verticalAlign: 'middle' }} title="Sin plan de catálogo — falta normalizar">sin catálogo</span></span>;
+                      })()}</td>
                       <td style={S.td}><span style={{ ...S.badge, background: s.ciclo === 'anual' ? 'rgba(108,92,231,0.12)' : 'rgba(75,123,229,0.12)', color: s.ciclo === 'anual' ? '#6C5CE7' : '#3764c4' }}>{s.ciclo}</span></td>
                       <td style={S.td}><Estado e={s.estado} /></td>
-                      <td style={S.td}>{fmt(s.precio)}<span style={{ color: '#aaa' }}>/{s.ciclo === 'anual' ? 'año' : 'mes'}</span></td>
+                      <td style={S.td}>{fmt(s.precio)}<span style={{ color: '#aaa' }}>/{s.ciclo === 'anual' ? 'año' : 'mes'}</span>{(() => {
+                        const pl = Number((s as any).precio_lista) || 0, pr = Number(s.precio) || 0;
+                        if (pl > 0 && pr > 0 && pr < pl) { const d = Math.round((1 - pr / pl) * 100); if (d > 0) return <span style={{ marginLeft: 5, fontSize: '0.6rem', color: '#a06600', background: '#fff5e6', borderRadius: 4, padding: '0 4px', fontWeight: 700 }} title={`Lista ${fmt(pl)}/${s.ciclo === 'anual' ? 'año' : 'mes'}`}>−{d}%</span>; }
+                        return null;
+                      })()}</td>
                       <td style={{ ...S.td, fontWeight: 700 }}>{fmt(s.arr)}</td>
                       <td style={{ ...S.td, color: s.proxima_factura && s.proxima_factura < new Date().toISOString().slice(0, 10) && (s.estado === 'activa' || s.estado === 'pendiente_pago') ? '#b93333' : '#333' }}>{fmtDate(s.proxima_factura)}</td>
                       <td style={S.td}>{s.pagos_realizados}</td>
@@ -235,6 +264,18 @@ export default function SubscriptionsTab() {
                   );
                 })}
               </tbody>
+              {filtered.length > 0 && (
+                <tfoot>
+                  <tr style={{ borderTop: '2px solid #eee' }}>
+                    <td style={{ ...S.td, fontWeight: 800 }}>Total · {filtered.length}</td>
+                    <td style={S.td} colSpan={4} />
+                    <td style={{ ...S.td, fontWeight: 800 }}>{fmt(filtered.reduce((a, s) => a + Number(s.arr || 0), 0))}</td>
+                    <td style={S.td} colSpan={2} />
+                    <td style={{ ...S.td, fontWeight: 800 }}>{fmt(filtered.reduce((a, s) => a + Number(s.total_pagado || 0), 0))}</td>
+                    <td style={S.td} colSpan={3} />
+                  </tr>
+                </tfoot>
+              )}
             </table>
             {!filtered.length && <div style={{ padding: 28, textAlign: 'center', color: '#999' }}>Sin suscripciones con esos filtros.</div>}
           </div>
