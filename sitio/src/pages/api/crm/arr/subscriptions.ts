@@ -18,6 +18,9 @@ export async function recalcCompany(companyId: string) {
   const { data: subs } = await supabase.from('subscriptions')
     .select('mrr, arr, estado, proxima_factura').eq('company_id', companyId);
   const activas = (subs || []).filter(s => s.estado === 'activa');
+  // MRR/ARR = valor de los PLANES base (una sola definición consistente en todo
+  // el CRM). Los add-ons y descuentos ajustan lo que se COBRA (monto_proximo),
+  // no la ARR reportada, para no tener dos números de ARR distintos.
   const mrr = activas.reduce((a, s) => a + Number(s.mrr || 0), 0);
   const proximas = activas.map(s => s.proxima_factura).filter(Boolean).sort();
   await supabase.from('companies').update({
@@ -49,7 +52,9 @@ export const GET: APIRoute = async ({ url }) => {
 // Columnas agregadas en SQL-4 (plan_id, precio_lista, cancela_al_vencer,
 // pausada_hasta, ciclo_siguiente, precio_siguiente). Si el update falla porque
 // aún no existen, se reintenta sin ellas (deploy puede ir antes que el SQL).
-const COLS_SQL4 = ['plan_id', 'precio_lista', 'cancela_al_vencer', 'pausada_hasta', 'ciclo_siguiente', 'precio_siguiente'];
+const COLS_SQL4 = ['plan_id', 'precio_lista', 'cancela_al_vencer', 'pausada_hasta', 'ciclo_siguiente', 'precio_siguiente',
+  // SQL-5: trials y contrato multi-año
+  'es_trial', 'trial_fin', 'plazo_meses', 'incremento_anual_pct'];
 
 async function updateSubTolerante(id: string, upd: any) {
   let res = await supabase.from('subscriptions').update(upd).eq('id', id).select().single();
@@ -87,6 +92,11 @@ function normalizar(body: any) {
   // catálogo (SQL-4)
   if (body.plan_id !== undefined) out.plan_id = body.plan_id || null;
   if (body.precio_lista !== undefined) out.precio_lista = Number(body.precio_lista) || null;
+  // trials y multi-año (SQL-5)
+  if (body.es_trial !== undefined) out.es_trial = !!body.es_trial;
+  if (body.trial_fin !== undefined) out.trial_fin = body.trial_fin || null;
+  if (body.plazo_meses !== undefined) out.plazo_meses = body.plazo_meses ? Number(body.plazo_meses) : null;
+  if (body.incremento_anual_pct !== undefined) out.incremento_anual_pct = body.incremento_anual_pct ? Number(body.incremento_anual_pct) : null;
   return out;
 }
 

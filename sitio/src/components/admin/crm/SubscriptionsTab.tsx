@@ -541,13 +541,23 @@ export function ClienteDrawer({ companyId, onClose, onChanged }: { companyId: st
             <div style={{ fontWeight: 800, fontSize: '0.9rem', margin: '14px 0 6px' }}>Pagos ({(data.payments || []).length})</div>
             <div style={{ maxHeight: 180, overflowY: 'auto', border: '1px solid #f0f0f0', borderRadius: 10 }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <tbody>{(data.payments || []).map((p: any) => (
-                  <tr key={p.id}>
+                <tbody>{(data.payments || []).map((p: any) => {
+                  const negativo = Number(p.monto) < 0 || p.es_ajuste;
+                  return (
+                  <tr key={p.id} style={{ opacity: p.reembolsado ? 0.5 : 1 }}>
                     <td style={{ ...S.td, fontSize: '0.78rem' }}>{fmtDate(p.fecha)}</td>
-                    <td style={{ ...S.td, fontSize: '0.78rem' }}>{p.metodo}{p.migrado ? ' · histórico' : ''}</td>
-                    <td style={{ ...S.td, fontSize: '0.78rem', fontWeight: 700, textAlign: 'right' }}>{fmt(p.monto)}</td>
+                    <td style={{ ...S.td, fontSize: '0.78rem' }}>{p.metodo}{p.migrado ? ' · histórico' : ''}{p.reembolsado ? ' · reembolsado' : ''}{negativo ? ' · ajuste' : ''}</td>
+                    <td style={{ ...S.td, fontSize: '0.78rem', fontWeight: 700, textAlign: 'right', color: negativo ? '#b93333' : '#333' }}>{fmt(p.monto)}</td>
+                    <td style={{ ...S.td, textAlign: 'right' }}>
+                      {!p.reembolsado && !negativo && !p.migrado && (
+                        <button style={{ ...S.btnSmall, padding: '2px 8px', color: '#b93333', fontSize: '0.7rem' }}
+                          onClick={async () => { const m = prompt('Motivo del reembolso (opcional):', ''); if (m === null) return; const r = await fetch('/api/crm/arr/refund', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ payment_id: p.id, motivo: m }) }); const j = await r.json(); if (j.error) alert(j.error); else { load(); onChanged(); } }}>
+                          Reembolsar
+                        </button>
+                      )}
+                    </td>
                   </tr>
-                ))}</tbody>
+                ); })}</tbody>
               </table>
               {!(data.payments || []).length && <div style={{ padding: 14, color: '#999', fontSize: '0.8rem', textAlign: 'center' }}>Sin pagos registrados.</div>}
             </div>
@@ -633,12 +643,42 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
     stripe_subscription_id: (sub as any).stripe_subscription_id || '',
     aplicar_ciclo: 'al_renovar', cancela_al_vencer: true, cancelar_stripe: !!(sub as any).stripe_subscription_id, detalle_cancel: '',
     pausada_hasta: (sub as any).pausada_hasta || '',
+    es_trial: !!(sub as any).es_trial, trial_fin: (sub as any).trial_fin || '',
+    plazo_meses: (sub as any).plazo_meses || '', incremento_anual_pct: (sub as any).incremento_anual_pct || '',
   });
   const [plans, setPlans] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [showExtras, setShowExtras] = useState(false);
+  const [addons, setAddons] = useState<any[]>([]);
+  const [descs, setDescs] = useState<any[]>([]);
+  const [nuevoAddon, setNuevoAddon] = useState<any>({ nombre: '', precio: '' });
+  const [nuevoDesc, setNuevoDesc] = useState<any>({ tipo: 'porcentaje', valor: '', motivo: '' });
 
   useEffect(() => { fetch('/api/crm/arr/plans').then(r => r.json()).then(j => setPlans(j.data || [])).catch(() => {}); }, []);
+  const loadExtras = () => {
+    fetch(`/api/crm/arr/addons?subscription_id=${sub.id}`).then(r => r.json()).then(j => setAddons(j.data || [])).catch(() => {});
+    fetch(`/api/crm/arr/discounts?subscription_id=${sub.id}`).then(r => r.json()).then(j => setDescs(j.data || [])).catch(() => {});
+  };
+  useEffect(() => { if (showExtras) loadExtras(); }, [showExtras]);
+
+  // add-ons y descuentos cambian monto_proximo en el server; reflejarlo en el
+  // form para que "Guardar cambios" no lo pise con el valor viejo.
+  const aplicarMonto = (j: any) => { if (j && j.monto_proximo != null) setForm((f: any) => ({ ...f, monto_proximo: j.monto_proximo })); };
+  async function addAddon() {
+    if (!nuevoAddon.nombre || !(Number(nuevoAddon.precio) >= 0)) return;
+    const r = await fetch('/api/crm/arr/addons', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subscription_id: sub.id, ...nuevoAddon, precio: Number(nuevoAddon.precio) }) });
+    const j = await r.json(); if (j.error) { setErr(j.error); return; }
+    aplicarMonto(j); setNuevoAddon({ nombre: '', precio: '' }); loadExtras();
+  }
+  async function delAddon(id: string) { const j = await fetch(`/api/crm/arr/addons?id=${id}`, { method: 'DELETE' }).then(r => r.json()).catch(() => null); aplicarMonto(j); loadExtras(); }
+  async function addDesc() {
+    if (!(Number(nuevoDesc.valor) > 0)) return;
+    const r = await fetch('/api/crm/arr/discounts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subscription_id: sub.id, ...nuevoDesc, valor: Number(nuevoDesc.valor) }) });
+    const j = await r.json(); if (j.error) { setErr(j.error); return; }
+    aplicarMonto(j); setNuevoDesc({ tipo: 'porcentaje', valor: '', motivo: '' }); loadExtras();
+  }
+  async function delDesc(id: string) { const j = await fetch(`/api/crm/arr/discounts?id=${id}`, { method: 'DELETE' }).then(r => r.json()).catch(() => null); aplicarMonto(j); loadExtras(); }
 
   const planSel = plans.find(p => p.id === form.plan_id) || plans.find(p => p.slug && form.nombre_plan?.toLowerCase().includes(p.slug));
   const precioLista = planSel && !planSel.a_la_medida ? (form.ciclo === 'anual' ? planSel.precio_anual : planSel.precio_mensual) : null;
@@ -776,6 +816,54 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
             <input type="date" value={form.pausada_hasta} onChange={e => setForm({ ...form, pausada_hasta: e.target.value })} style={{ ...S.input, width: '100%' }} />
           </div>
         )}
+
+        {/* Panel: Extras (trial, multi-año, add-ons, descuentos) */}
+        <div style={{ marginTop: 12 }}>
+          <button type="button" onClick={() => setShowExtras(!showExtras)} style={{ ...S.btnSmall, width: '100%', textAlign: 'left', background: '#fafafa' }}>
+            {showExtras ? '▾' : '▸'} Extras: prueba, plazo, add-ons y descuentos
+          </button>
+          {showExtras && (
+            <div style={{ padding: 12, border: '1px solid #eee', borderTop: 'none', borderRadius: '0 0 8px 8px' }}>
+              {/* Trial */}
+              <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: '0.8rem', marginBottom: 8 }}>
+                <input type="checkbox" checked={form.es_trial} onChange={e => setForm({ ...form, es_trial: e.target.checked })} /> Es prueba (trial)
+                {form.es_trial && <input type="date" value={form.trial_fin} onChange={e => setForm({ ...form, trial_fin: e.target.value })} style={{ ...S.input, padding: '4px 8px' }} title="Fin del trial" />}
+              </label>
+              {/* Multi-año */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 120 }}><label style={S.label}>Plazo (meses)</label><input type="number" value={form.plazo_meses} onChange={e => setForm({ ...form, plazo_meses: e.target.value })} placeholder="12 / 24 / 36" style={{ ...S.input, width: '100%' }} /></div>
+                <div style={{ flex: 1, minWidth: 120 }}><label style={S.label}>Escalador anual %</label><input type="number" value={form.incremento_anual_pct} onChange={e => setForm({ ...form, incremento_anual_pct: e.target.value })} placeholder="8" style={{ ...S.input, width: '100%' }} /></div>
+              </div>
+              {/* Add-ons */}
+              <div style={{ fontWeight: 700, fontSize: '0.78rem', marginBottom: 6 }}>Add-ons (suman al MRR)</div>
+              {addons.map((a: any) => (
+                <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', padding: '4px 0', borderBottom: '1px solid #f5f5f5' }}>
+                  <span>{a.nombre} · {fmt(a.precio)}{a.cantidad > 1 ? ` ×${a.cantidad}` : ''}</span>
+                  <button type="button" onClick={() => delAddon(a.id)} style={{ ...S.btnSmall, color: '#b93333', padding: '2px 8px' }}>Quitar</button>
+                </div>
+              ))}
+              <div style={{ display: 'flex', gap: 6, marginTop: 6, marginBottom: 12 }}>
+                <input value={nuevoAddon.nombre} onChange={e => setNuevoAddon({ ...nuevoAddon, nombre: e.target.value })} placeholder="Sucursal extra / Soporte premium…" style={{ ...S.input, flex: 2 }} />
+                <input type="number" value={nuevoAddon.precio} onChange={e => setNuevoAddon({ ...nuevoAddon, precio: e.target.value })} placeholder="$/ciclo" style={{ ...S.input, flex: 1 }} />
+                <button type="button" onClick={addAddon} style={{ ...S.btnSmall, background: '#1A8F7A', color: '#fff', border: 'none' }}>+</button>
+              </div>
+              {/* Descuentos */}
+              <div style={{ fontWeight: 700, fontSize: '0.78rem', marginBottom: 6 }}>Descuentos (reducen lo que se cobra)</div>
+              {descs.map((dd: any) => (
+                <div key={dd.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', padding: '4px 0', borderBottom: '1px solid #f5f5f5' }}>
+                  <span>{dd.tipo === 'porcentaje' ? `${dd.valor}%` : fmt(dd.valor)}{dd.motivo ? ` · ${dd.motivo}` : ''}{dd.vigente_hasta ? ` · hasta ${dd.vigente_hasta}` : ''}</span>
+                  <button type="button" onClick={() => delDesc(dd.id)} style={{ ...S.btnSmall, color: '#b93333', padding: '2px 8px' }}>Quitar</button>
+                </div>
+              ))}
+              <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                <select value={nuevoDesc.tipo} onChange={e => setNuevoDesc({ ...nuevoDesc, tipo: e.target.value })} style={{ ...S.input, flex: 1 }}><option value="porcentaje">%</option><option value="monto">$</option></select>
+                <input type="number" value={nuevoDesc.valor} onChange={e => setNuevoDesc({ ...nuevoDesc, valor: e.target.value })} placeholder="valor" style={{ ...S.input, flex: 1 }} />
+                <input value={nuevoDesc.motivo} onChange={e => setNuevoDesc({ ...nuevoDesc, motivo: e.target.value })} placeholder="motivo" style={{ ...S.input, flex: 2 }} />
+                <button type="button" onClick={addDesc} style={{ ...S.btnSmall, background: '#1A8F7A', color: '#fff', border: 'none' }}>+</button>
+              </div>
+            </div>
+          )}
+        </div>
 
         <div style={{ marginTop: 10 }}><label style={S.label}>Notas</label><textarea value={form.notas} onChange={e => setForm({ ...form, notas: e.target.value })} style={{ ...S.input, width: '100%', height: 50, resize: 'vertical' }} /></div>
         {err && <div style={{ color: '#b93333', fontSize: '0.8rem', marginTop: 8 }}>{err}</div>}
