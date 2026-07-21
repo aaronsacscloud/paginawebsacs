@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import PipelineKanban from './PipelineKanban';
 
 interface Company {
   id: string; nombre: string; plan: string | null; sucursales: number; estado_cuenta: string; mrr: number;
@@ -12,6 +13,7 @@ interface Contact {
   sucursales_interes: number | null; plan_interes: string | null;
   next_followup: string | null; last_contact_at: string | null;
   company_id: string | null; puesto: string | null; fuente: string | null;
+  pipeline_stage: string | null;
   companies: Company | null;
 }
 
@@ -48,7 +50,8 @@ const fmtDate = (d: string | null) => {
 export default function PipelineTab() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'pipeline' | 'table'>('pipeline');
+  const [view, setView] = useState<'pipeline' | 'lead' | 'table'>('pipeline');
+  const [leadStages, setLeadStages] = useState<{ key: string; label: string; color: string }[]>([]);
   const [filterTipo, setFilterTipo] = useState('all');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Contact | null>(null);
@@ -75,6 +78,21 @@ export default function PipelineTab() {
   };
 
   useEffect(() => { load(); }, [filterTipo]);
+  useEffect(() => {
+    fetch('/api/crm/pipelines').then(r => r.json()).then(j => {
+      const lead = (j.data || []).find((p: any) => p.tipo === 'lead');
+      setLeadStages(lead?.stages || []);
+    }).catch(() => {});
+  }, []);
+
+  // Etapa del pipeline configurable (lead) — optimista + persiste en contacts.pipeline_stage.
+  const setPipelineStage = async (id: string, key: string) => {
+    setContacts(cs => cs.map(c => c.id === id ? { ...c, pipeline_stage: key } : c));
+    try {
+      const r = await fetch('/api/crm/contacts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, pipeline_stage: key }) });
+      if (!r.ok) { const j = await r.json().catch(() => ({})); if (j.error) { alert(j.error + '\n¿Corriste migration-2026-07-pipelines.sql?'); load(); } }
+    } catch { load(); }
+  };
 
   const openDetail = async (contact: Contact) => {
     setSelected(contact);
@@ -196,9 +214,11 @@ export default function PipelineTab() {
               }}>{t.label}</button>
             ))}
           </div>
-          <button onClick={() => setView(view === 'pipeline' ? 'table' : 'pipeline')} style={{ ...btn, background: '#f5f5f5', color: '#555' }}>
-            {view === 'pipeline' ? '☰ Tabla' : '▦ Pipeline'}
-          </button>
+          <div style={{ display: 'flex', border: '1px solid #e5e5e5', borderRadius: 8, overflow: 'hidden' }}>
+            {([['pipeline', '▦ Ciclo'], ['lead', '⚑ Pipeline'], ['table', '☰ Tabla']] as const).map(([v, l]) => (
+              <button key={v} onClick={() => setView(v)} style={{ ...btn, borderRadius: 0, background: view === v ? '#1a1a1a' : '#fff', color: view === v ? '#fff' : '#555' }}>{l}</button>
+            ))}
+          </div>
           <button onClick={load} style={{ ...btn, background: '#f5f5f5', color: '#555' }}>↻</button>
           <a href="/api/crm/contacts/export" style={{ ...btn, background: '#f5f5f5', color: '#555', textDecoration: 'none' }}>📥 Exportar</a>
           <button onClick={() => setShowImport(true)} style={{ ...btn, background: '#f5f5f5', color: '#555' }}>📤 Importar</button>
@@ -209,6 +229,24 @@ export default function PipelineTab() {
       <div style={{ flex: 1, padding: '16px 24px', overflow: 'auto' }}>
         {loading ? <div style={{ textAlign: 'center', padding: 48, color: '#bbb' }}>Cargando...</div> :
           view === 'pipeline' ? <PipelineView contacts={contacts} stages={pipelineStages} onSelect={openDetail} onMove={moveStage} /> :
+          view === 'lead' ? (
+            leadStages.length === 0
+              ? <div style={{ textAlign: 'center', padding: 48, color: '#999' }}>Configura las etapas del pipeline de Leads en <b>Configuración → Pipelines</b>.</div>
+              : <PipelineKanban
+                  stages={leadStages}
+                  items={contacts}
+                  getId={(c: any) => c.id}
+                  getStage={(c: any) => c.pipeline_stage}
+                  onMove={(id, key) => setPipelineStage(id, key)}
+                  renderCard={(c: any) => (
+                    <div onClick={() => openDetail(c)} style={{ cursor: 'pointer' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.82rem' }}>{[c.nombre, c.apellido].filter(Boolean).join(' ') || c.email || '—'}</div>
+                      {c.companies?.nombre ? <div style={{ fontSize: '0.72rem', color: '#999' }}>{c.companies.nombre}</div> : null}
+                      <div style={{ fontSize: '0.7rem', color: '#aaa', marginTop: 4 }}>{c.email || c.whatsapp || ''}</div>
+                    </div>
+                  )}
+                />
+          ) :
           <TableView contacts={contacts} onSelect={openDetail} />
         }
       </div>
