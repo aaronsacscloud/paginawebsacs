@@ -90,6 +90,27 @@ export default function PagosTab() {
         <button onClick={() => { setPagoPrefill(null); setShowPago(true); }} style={{ ...S.btn, background: '#2AB5A0', color: '#fff' }}>+ Registrar pago</button>
       </div>
 
+      {/* ── KPIs / pronóstico ── */}
+      {summary?.kpis && (
+        <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+          <div style={S.kpi}>
+            <div style={S.kLabel}>ARR activo</div>
+            <div style={S.kValue}>{fmt(summary.kpis.arr_activo || 0)}</div>
+            {summary.meta?.monto ? <div style={S.kSub}>{Math.round(100 * (summary.kpis.arr_activo || 0) / Number(summary.meta.monto))}% de la meta {fmt(Number(summary.meta.monto))}</div> : null}
+          </div>
+          <div style={S.kpi}>
+            <div style={S.kLabel}>Por cobrar</div>
+            <div style={S.kValue}>{fmt(totalPorCobrar)}</div>
+            <div style={{ ...S.kSub, color: vencidas.length ? '#b93333' : '#999' }}>{fmt(vencidas.reduce((a, v) => a + (Number(v.monto) || 0), 0))} vencido · {vencidas.length} cuentas</div>
+          </div>
+          <div style={S.kpi}>
+            <div style={S.kLabel}>Cobranza esperada · 12m</div>
+            <div style={S.kValue}>{fmt((summary.meses || []).reduce((a: number, m: any) => a + (Number(m.contratado) || 0), 0))}</div>
+            <div style={S.kSub}>proyección de suscripciones activas</div>
+          </div>
+        </div>
+      )}
+
       {/* ── Por cobrar (vencidos + próximos) ── */}
       <div style={S.card}>
         <div style={{ fontWeight: 800, marginBottom: 10 }}>Por cobrar
