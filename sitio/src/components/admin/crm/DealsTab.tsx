@@ -27,7 +27,9 @@ interface Activity {
 }
 
 // ─── Constants ───
-const STAGES = [
+// STAGES es mutable: por defecto trae el pipeline base y se REEMPLAZA con el
+// pipeline "oportunidad" configurable al montar (Configuración → Pipelines).
+let STAGES: { id: string; label: string; prob: number; color: string }[] = [
   { id: 'calificacion', label: 'Calificación', prob: 20, color: '#6C5CE7' },
   { id: 'demo_agendada', label: 'Demo agendada', prob: 40, color: '#4B7BE5' },
   { id: 'demo_realizada', label: 'Demo realizada', prob: 60, color: '#E8A838' },
@@ -48,6 +50,20 @@ const fmtDate = (d: string | null) => {
 };
 const stageColor = (s: string) => STAGES.find(st => st.id === s)?.color || '#ccc';
 const stageLabel = (s: string) => STAGES.find(st => st.id === s)?.label || s;
+
+// Etapas de cierre detectadas por KEY (robusto a que renombren el label). Las
+// keys del pipeline oportunidad conservan 'ganad'/'perdid'. La conversión a
+// cliente + comisión en el server (deals.ts) también se dispara con esas keys.
+const isWonKey = (k: string) => /ganad/i.test(k);
+const isLostKey = (k: string) => /perdid/i.test(k);
+const isClosedKey = (k: string) => isWonKey(k) || isLostKey(k);
+function probFor(key: string, arr: { key: string }[]): number {
+  if (isWonKey(key)) return 100;
+  if (isLostKey(key)) return 0;
+  const opens = arr.filter(s => !isClosedKey(s.key));
+  const pos = opens.findIndex(s => s.key === key);
+  return pos >= 0 ? Math.min(95, Math.round((pos + 1) / (opens.length + 1) * 100)) : 50;
+}
 
 // ─── Activity helpers ───
 function activityColor(tipo: string): string {
@@ -82,6 +98,18 @@ export default function DealsTab() {
   const [view, setView] = useState<'kanban' | 'table'>('kanban');
   const [showCreate, setShowCreate] = useState(false);
   const [selected, setSelected] = useState<Deal | null>(null);
+  const [, forceRender] = useState(0);
+
+  // Reemplaza STAGES con el pipeline "oportunidad" configurable (si existe).
+  useEffect(() => {
+    fetch('/api/crm/pipelines').then(r => r.json()).then(j => {
+      const op = (j.data || []).find((p: any) => p.tipo === 'oportunidad');
+      if (op?.stages?.length) {
+        STAGES = op.stages.map((s: any) => ({ id: s.key, label: s.label, color: s.color, prob: probFor(s.key, op.stages) }));
+        forceRender(x => x + 1);
+      }
+    }).catch(() => {});
+  }, []);
 
   const load = async () => {
     setLoading(true);
@@ -96,7 +124,7 @@ export default function DealsTab() {
   const moveStage = async (deal: Deal, newStage: string) => {
     const prob = STAGES.find(s => s.id === newStage)?.prob ?? deal.probabilidad;
     const updates: Record<string, any> = { id: deal.id, stage: newStage, probabilidad: prob };
-    if (newStage === 'cerrada_ganada' || newStage === 'cerrada_perdida') {
+    if (isClosedKey(newStage)) {
       updates.closed_at = new Date().toISOString();
     }
     await fetch('/api/crm/deals', {
@@ -108,11 +136,11 @@ export default function DealsTab() {
   };
 
   // Stats
-  const openDeals = deals.filter(d => d.stage !== 'cerrada_ganada' && d.stage !== 'cerrada_perdida');
+  const openDeals = deals.filter(d => !isClosedKey(d.stage));
   const totalPipeline = openDeals.reduce((s, d) => s + d.valor_total, 0);
   const weightedValue = openDeals.reduce((s, d) => s + d.valor_total * (d.probabilidad / 100), 0);
-  const won = deals.filter(d => d.stage === 'cerrada_ganada');
-  const lost = deals.filter(d => d.stage === 'cerrada_perdida');
+  const won = deals.filter(d => isWonKey(d.stage));
+  const lost = deals.filter(d => isLostKey(d.stage));
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -175,8 +203,8 @@ export default function DealsTab() {
 
 // ─── Kanban View ───
 function KanbanView({ deals, onSelect, onMove }: { deals: Deal[]; onSelect: (d: Deal) => void; onMove: (d: Deal, s: string) => void }) {
-  const openStages = STAGES.filter(s => s.id !== 'cerrada_ganada' && s.id !== 'cerrada_perdida');
-  const closedStages = STAGES.filter(s => s.id === 'cerrada_ganada' || s.id === 'cerrada_perdida');
+  const openStages = STAGES.filter(s => !isClosedKey(s.id));
+  const closedStages = STAGES.filter(s => isClosedKey(s.id));
 
   return (
     <div>
@@ -237,7 +265,7 @@ function KanbanView({ deals, onSelect, onMove }: { deals: Deal[]; onSelect: (d: 
 
 function DealCard({ deal, onSelect, onMove }: { deal: Deal; onSelect: (d: Deal) => void; onMove: (d: Deal, s: string) => void }) {
   const currentIdx = STAGES.findIndex(s => s.id === deal.stage);
-  const nextStages = STAGES.filter((s, i) => s.id !== deal.stage && i >= currentIdx - 1 && i <= currentIdx + 2 && s.id !== 'cerrada_perdida').slice(0, 3);
+  const nextStages = STAGES.filter((s, i) => s.id !== deal.stage && i >= currentIdx - 1 && i <= currentIdx + 2 && !isLostKey(s.id)).slice(0, 3);
 
   return (
     <div onClick={() => onSelect(deal)} style={{ background: '#fff', borderRadius: 8, padding: '10px 12px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', fontSize: '0.8125rem' }}>
@@ -521,11 +549,11 @@ function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose
       fecha_cierre_esperada: editFechaCierre || null,
       probabilidad: STAGES.find(s => s.id === editStage)?.prob ?? deal.probabilidad,
     };
-    if (editStage === 'cerrada_perdida') {
+    if (isLostKey(editStage)) {
       updates.motivo_perdida = editMotivoPerdida || null;
       updates.closed_at = deal.closed_at || new Date().toISOString();
     }
-    if (editStage === 'cerrada_ganada') {
+    if (isWonKey(editStage)) {
       updates.closed_at = deal.closed_at || new Date().toISOString();
     }
     await fetch('/api/crm/deals', {
@@ -582,7 +610,7 @@ function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose
             {STAGES.map(s => <option key={s.id} value={s.id}>{s.label} ({s.prob}%)</option>)}
           </select>
 
-          {editStage === 'cerrada_perdida' && (
+          {isLostKey(editStage) && (
             <>
               <Label>Motivo de pérdida</Label>
               <input value={editMotivoPerdida} onChange={e => setEditMotivoPerdida(e.target.value)} placeholder="¿Por qué se perdió?" style={input} />
