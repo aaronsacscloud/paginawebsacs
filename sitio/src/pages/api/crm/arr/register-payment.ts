@@ -141,14 +141,33 @@ export const POST: APIRoute = async ({ request }) => {
     if (pe) throw new Error('payment: ' + pe.message);
 
     // ── 3 · Activar y recorrer la suscripción ──
+    // Si había un cambio de ciclo/precio programado "al renovar", este cobro lo
+    // promueve: el ciclo nuevo aplica desde ahora (es la renovación).
+    const cicloEfectivo: 'mensual' | 'anual' = (sub.ciclo_siguiente === 'anual' || sub.ciclo_siguiente === 'mensual') ? sub.ciclo_siguiente : sub.ciclo;
+    const precioEfectivo = sub.precio_siguiente != null ? Number(sub.precio_siguiente) : Number(sub.precio);
+    const promoverCiclo = cicloEfectivo !== sub.ciclo || precioEfectivo !== Number(sub.precio);
     const base = (sub.proxima_factura && sub.proxima_factura >= fecha) ? sub.proxima_factura : fecha;
-    const { data: subUpd, error: ue } = await supabase.from('subscriptions').update({
+    const updSub: any = {
       estado: 'activa',
-      proxima_factura: addCiclo(base, sub.ciclo),
+      proxima_factura: addCiclo(base, cicloEfectivo),
       pagos_realizados: Number(sub.pagos_realizados || 0) + 1,
       total_pagado: r2(Number(sub.total_pagado || 0) + monto),
       updated_at: new Date().toISOString(),
-    }).eq('id', sub.id).select('*').single();
+    };
+    if (promoverCiclo) {
+      const mrrNuevo = cicloEfectivo === 'anual' ? precioEfectivo / 12 : precioEfectivo;
+      Object.assign(updSub, {
+        ciclo: cicloEfectivo, precio: precioEfectivo, mrr: r2(mrrNuevo), arr: r2(mrrNuevo * 12),
+        monto_proximo: precioEfectivo, ciclo_siguiente: null, precio_siguiente: null,
+      });
+    }
+    let subRes = await supabase.from('subscriptions').update(updSub).eq('id', sub.id).select('*').single();
+    if (subRes.error && /column .* does not exist|schema cache/i.test(subRes.error.message || '')) {
+      // SQL-4 aún no aplicado: quitar columnas de ciclo programado
+      delete updSub.ciclo_siguiente; delete updSub.precio_siguiente;
+      subRes = await supabase.from('subscriptions').update(updSub).eq('id', sub.id).select('*').single();
+    }
+    const { data: subUpd, error: ue } = subRes;
     if (ue) throw new Error('sub update: ' + ue.message);
 
     // ── 4 · Agregados de la company + last_payment ──
@@ -164,7 +183,28 @@ export const POST: APIRoute = async ({ request }) => {
       automatico: true,
     }).select().maybeSingle();
 
-    return new Response(JSON.stringify({ ok: true, payment_id: pago.id, subscription: subUpd, ...(esParcial ? { advertencia: `pago parcial: $${r2(monto)} de $${r2(esperado)} esperados` } : {}) }, null, 2),
+    // ── 6 · Comisión del partner/RR (si la licencia está atribuida) ──
+    // Extra "comisiones ligadas al pago": al abonar una licencia con partner_id, se
+    // asienta la comisión (partner_commissions, tipo 'venta_directa', status 'earned')
+    // = monto × default_commission_pct del partner. Best-effort: NUNCA rompe el pago.
+    let comision: any = null;
+    if (sub.partner_id) {
+      try {
+        const { data: pm } = await supabase.from('team_members').select('default_commission_pct').eq('id', sub.partner_id).maybeSingle();
+        const pct = Number(pm?.default_commission_pct) || 0;
+        if (pct > 0) {
+          const { data: com } = await supabase.from('partner_commissions').insert({
+            partner_id: sub.partner_id, tipo: 'venta_directa', deal_id: null,
+            contact_id: sub.contact_id, rate_pct: pct, deal_value: r2(monto),
+            commission_amount: r2(monto * pct / 100), status: 'earned',
+            earned_at: new Date().toISOString(), payment_reference: pago.id,
+          }).select('id, commission_amount').maybeSingle();
+          comision = com || null;
+        }
+      } catch (e) { /* la comisión nunca bloquea el registro del pago */ }
+    }
+
+    return new Response(JSON.stringify({ ok: true, payment_id: pago.id, subscription: subUpd, comision, ...(esParcial ? { advertencia: `pago parcial: $${r2(monto)} de $${r2(esperado)} esperados` } : {}) }, null, 2),
       { status: 200, headers: { 'Content-Type': 'application/json' } });
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e?.message || String(e) }), { status: 500 });

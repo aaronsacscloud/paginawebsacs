@@ -15,6 +15,12 @@ const METODOS = ['transferencia', 'tarjeta', 'stripe', 'efectivo', 'oxxo', 'otro
 const METODO_LABEL: Record<string, string> = { transferencia: 'Transferencia', tarjeta: 'Tarjeta', stripe: 'Stripe', efectivo: 'Efectivo', oxxo: 'OXXO', otro: 'Otro' };
 const METODO_COLOR: Record<string, string> = { transferencia: '#2563eb', tarjeta: '#7c3aed', stripe: '#635bff', efectivo: '#16a34a', oxxo: '#dc2626', otro: '#6b7280' };
 
+// Semáforo de mora: 1-7 días ámbar, 8-30 naranja, +30 rojo.
+function moraBadge(dias: number) {
+  const [bg, fg] = dias >= 30 ? ['#fde8e8', '#b93333'] : dias >= 8 ? ['#ffedd5', '#c2410c'] : ['#fef3c7', '#b45309'];
+  return { background: bg, color: fg, padding: '2px 8px', borderRadius: 6, fontWeight: 700 as const, fontSize: 11 };
+}
+
 export default function PagosTab() {
   const [summary, setSummary] = useState<any>(null);
   const [subs, setSubs] = useState<any[]>([]);
@@ -27,6 +33,22 @@ export default function PagosTab() {
   const [drawerCompany, setDrawerCompany] = useState<string | null>(null);
   const [fMetodo, setFMetodo] = useState('');
   const [fQ, setFQ] = useState('');
+  const [toast, setToast] = useState('');
+
+  // Dunning — genera un link de pago Stripe para el cobro y lo copia/abre.
+  const linkPago = async (subscription_id: string, monto: number) => {
+    setToast('Generando link de pago…');
+    try {
+      const r = await fetch('/api/crm/arr/stripe-link', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subscription_id, monto }) });
+      const d = await r.json();
+      if (d.url) {
+        try { await navigator.clipboard.writeText(d.url); } catch { /* clipboard puede fallar sin https/permiso */ }
+        window.open(d.url, '_blank');
+        setToast('Link de pago copiado y abierto en otra pestaña.');
+      } else setToast(d.error || 'No se pudo generar el link (¿Stripe configurado?).');
+    } catch { setToast('Error generando el link de pago.'); }
+    setTimeout(() => setToast(''), 4000);
+  };
 
   const loadPayments = () => {
     const p = new URLSearchParams();
@@ -81,12 +103,15 @@ export default function PagosTab() {
             <tbody>
               {vencidas.map((v) => (
                 <tr key={'v' + v.subscription_id}>
-                  <td style={S.td}><span style={{ background: '#fde8e8', color: '#b93333', padding: '2px 8px', borderRadius: 6, fontWeight: 700, fontSize: 11 }}>Vencido {v.dias_vencida}d</span></td>
+                  <td style={S.td}><span style={moraBadge(v.dias_vencida)}>Vencido {v.dias_vencida}d</span></td>
                   <td style={S.td}>{v.empresa}</td>
                   <td style={S.td}>{v.plan} <span style={{ color: '#999' }}>· {v.ciclo}</span></td>
                   <td style={{ ...S.td, color: '#b93333' }}>{fmtDate(v.vencida_desde)}</td>
                   <td style={{ ...S.td, fontWeight: 700 }}>{fmt(v.monto)}</td>
-                  <td style={S.td}><button onClick={() => abonar(v.subscription_id)} style={{ ...S.btnSmall, background: '#2AB5A0', color: '#fff', border: 'none' }}>Abonar</button></td>
+                  <td style={S.td}><div style={{ display: 'flex', gap: 6 }}>
+                    <button onClick={() => abonar(v.subscription_id)} style={{ ...S.btnSmall, background: '#2AB5A0', color: '#fff', border: 'none' }}>Abonar</button>
+                    <button onClick={() => linkPago(v.subscription_id, v.monto)} style={S.btnSmall} title="Generar link de pago Stripe">🔗 Link</button>
+                  </div></td>
                 </tr>
               ))}
               {proximos.map((c) => (
@@ -96,7 +121,10 @@ export default function PagosTab() {
                   <td style={S.td}>{c.plan} <span style={{ color: '#999' }}>· {c.ciclo}</span></td>
                   <td style={S.td}>{fmtDate(c.fecha)}</td>
                   <td style={{ ...S.td, fontWeight: 700 }}>{fmt(c.monto)}</td>
-                  <td style={S.td}><button onClick={() => abonar(c.subscription_id)} style={{ ...S.btnSmall, background: '#eef7f5', color: '#2AB5A0', border: '1px solid #cdeae4' }}>Abonar</button></td>
+                  <td style={S.td}><div style={{ display: 'flex', gap: 6 }}>
+                    <button onClick={() => abonar(c.subscription_id)} style={{ ...S.btnSmall, background: '#eef7f5', color: '#2AB5A0', border: '1px solid #cdeae4' }}>Abonar</button>
+                    <button onClick={() => linkPago(c.subscription_id, c.monto)} style={S.btnSmall} title="Generar link de pago Stripe">🔗 Link</button>
+                  </div></td>
                 </tr>
               ))}
             </tbody>
@@ -155,6 +183,7 @@ export default function PagosTab() {
 
       {showPago && <RegistrarPagoModal subs={subs as any} prefill={pagoPrefill} onClose={() => { setShowPago(false); setPagoPrefill(null); }} onDone={() => { setShowPago(false); setPagoPrefill(null); loadAll(); }} />}
       {drawerCompany && <ClienteDrawer companyId={drawerCompany} onClose={() => setDrawerCompany(null)} onChanged={loadAll} />}
+      {toast && <div style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: '#fff', padding: '10px 18px', borderRadius: 10, fontSize: 13, zIndex: 200, boxShadow: '0 8px 24px rgba(0,0,0,0.25)' }}>{toast}</div>}
     </div>
   );
 }
