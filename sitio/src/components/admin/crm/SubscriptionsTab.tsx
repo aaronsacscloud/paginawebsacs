@@ -89,6 +89,12 @@ export default function SubscriptionsTab() {
   }
   useEffect(() => { load(); }, []);
 
+  // Pendientes "stale": pendiente_pago con +60 días vencidas y 0 pagos → seguro
+  // son cierres que nunca se cobraron; conviene cancelarlas o registrarles el pago.
+  // (Declarados ANTES de `filtered` porque este los usa en el cuerpo y en sus deps.)
+  const hace60 = new Date(Date.now() - 60 * 86400000).toISOString().slice(0, 10);
+  const esStale = (s: Sub) => s.estado === 'pendiente_pago' && (s.pagos_realizados || 0) === 0 && !!s.proxima_factura && s.proxima_factura < hace60;
+
   const filtered = useMemo(() => subs.filter(s => {
     if (fCiclo && s.ciclo !== fCiclo) return false;
     if (fEstado && s.estado !== fEstado) return false;
@@ -113,10 +119,6 @@ export default function SubscriptionsTab() {
   }, [subs]);
   const nSinPlan = useMemo(() => subs.filter(s => !(s as any).plan_id).length, [subs]);
   const planById = useMemo(() => { const m = new Map<string, any>(); plans.forEach((p: any) => m.set(p.id, p)); return m; }, [plans]);
-  // Pendientes "stale": pendiente_pago con +60 días vencidas y 0 pagos → seguro
-  // son cierres que nunca se cobraron; conviene cancelarlas o registrarles el pago.
-  const hace60 = new Date(Date.now() - 60 * 86400000).toISOString().slice(0, 10);
-  const esStale = (s: Sub) => s.estado === 'pendiente_pago' && (s.pagos_realizados || 0) === 0 && !!s.proxima_factura && s.proxima_factura < hace60;
   const stalePend = useMemo(() => subs.filter(esStale), [subs, hace60]);
 
   const k = summary?.kpis;
