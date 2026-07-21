@@ -211,6 +211,7 @@ interface Props {
 // ─── Main Component ───
 export default function ContactProfile({ contactId, onClose }: Props) {
   const [contact, setContact] = useState<Contact | null>(null);
+  const [c360, setC360] = useState<any>(null); // pagos/suscripciones del cliente (company360)
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileTab, setMobileTab] = useState<'properties' | 'timeline'>('timeline');
@@ -226,7 +227,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
 
   // Collapsible sections
   const [sections, setSections] = useState({
-    contact: true, company: true, deals: true, quotes: true, metrics: true,
+    contact: true, company: true, pagos: true, deals: true, quotes: true, metrics: true,
   });
 
   // Activity form
@@ -265,6 +266,10 @@ export default function ContactProfile({ contactId, onClose }: Props) {
       if (!res.ok) throw new Error('Failed to load');
       const data = await res.json();
       setContact(data);
+      // Pagos/suscripciones del cliente (por su empresa) para la sección de Pagos.
+      if (data.company_id) {
+        fetch(`/api/crm/arr/company360?id=${data.company_id}`).then(r => r.json()).then(setC360).catch(() => {});
+      } else { setC360(null); }
       setForm({
         nombre: data.nombre || '',
         apellido: data.apellido || '',
@@ -884,6 +889,59 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                   {contact.companies.giro && <PropertyRow label="Giro">{contact.companies.giro}</PropertyRow>}
                   {contact.companies.razon_social && <PropertyRow label="Razon social">{contact.companies.razon_social}</PropertyRow>}
                 </div>
+              </CollapsibleSection>
+            )}
+
+            {/* ── Pagos y suscripciones (reusa company360 del cliente) ── */}
+            {contact.company_id && (
+              <CollapsibleSection
+                title="Pagos y suscripciones"
+                open={sections.pagos}
+                onToggle={() => toggleSection('pagos')}
+              >
+                {!c360 ? (
+                  <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Cargando…</div>
+                ) : (
+                  <div>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+                      <div style={{ flex: 1, minWidth: 90, background: '#f8fafc', borderRadius: 8, padding: '8px 10px' }}>
+                        <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>ARR</div>
+                        <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>{fmt(Number(c360.resumen?.arr) || 0)}</div>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 90, background: '#f8fafc', borderRadius: 8, padding: '8px 10px' }}>
+                        <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>MRR</div>
+                        <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>{fmt(Number(c360.resumen?.mrr) || 0)}</div>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 110, background: '#f8fafc', borderRadius: 8, padding: '8px 10px' }}>
+                        <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Próx. factura</div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f172a' }}>{c360.company?.fecha_renovacion ? new Date(c360.company.fecha_renovacion + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</div>
+                      </div>
+                    </div>
+
+                    {(c360.subscriptions || []).length > 0 && (
+                      <div style={{ marginBottom: 10 }}>
+                        {(c360.subscriptions || []).map((s: any) => (
+                          <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f1f5f9', fontSize: '0.8rem' }}>
+                            <span>{s.nombre_plan} <span style={{ color: '#94a3b8' }}>· {s.ciclo} · {s.estado}</span></span>
+                            <span style={{ fontWeight: 700 }}>{fmt(Number(s.monto_proximo ?? s.precio) || 0)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#64748b', margin: '4px 0', textTransform: 'uppercase' }}>Pagos recientes</div>
+                    {(c360.payments || []).length === 0 ? (
+                      <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Sin pagos registrados.</div>
+                    ) : (
+                      (c360.payments || []).slice(0, 8).map((p: any) => (
+                        <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0', fontSize: '0.8rem', borderBottom: '1px solid #f8fafc' }}>
+                          <span>{new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })} <span style={{ color: '#94a3b8' }}>· {p.metodo}</span></span>
+                          <span>{p.numero_acuse ? <a href={`/acuse/${p.id}`} target="_blank" rel="noreferrer" style={{ color: '#2563eb', textDecoration: 'none', marginRight: 8 }} title="Recibo">🧾</a> : null}<b>{fmt(Number(p.monto) || 0)}</b></span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
               </CollapsibleSection>
             )}
 
