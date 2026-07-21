@@ -31,7 +31,12 @@ export function matchPlan(plans: PlanRow[], texto: string | null | undefined): P
   const cont = ordered.find(p => p.slug && (t.includes(p.slug) || t.includes(p.slug.replace(/_/g, ' '))));
   if (cont) return cont;
   const byNombre = ordered.find(p => { const n = p.nombre.toLowerCase().replace(/^plan\s+/, '').trim(); return n && t.includes(n); });
-  return byNombre || null;
+  if (byNombre) return byNombre;
+  // Tolerancia a typos/truncados: contiene la RAÍZ del slug (primeros 6 chars).
+  // "control(a)" → contro, "fideliz(a)" → fideli, "soporte…" → soport. Raíces
+  // distintivas, no producen falsos positivos con los otros planes.
+  const byStem = ordered.find(p => p.slug.length >= 6 && t.includes(p.slug.slice(0, 6)));
+  return byStem || null;
 }
 
 export function precioLista(plan: PlanRow | null, ciclo: string): number | null {
