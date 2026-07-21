@@ -212,6 +212,7 @@ interface Props {
 export default function ContactProfile({ contactId, onClose }: Props) {
   const [contact, setContact] = useState<Contact | null>(null);
   const [c360, setC360] = useState<any>(null); // pagos/suscripciones del cliente (company360)
+  const [edoCuenta, setEdoCuenta] = useState<any>(null); // estado de cuenta (ledger)
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileTab, setMobileTab] = useState<'properties' | 'timeline'>('timeline');
@@ -269,7 +270,8 @@ export default function ContactProfile({ contactId, onClose }: Props) {
       // Pagos/suscripciones del cliente (por su empresa) para la sección de Pagos.
       if (data.company_id) {
         fetch(`/api/crm/arr/company360?id=${data.company_id}`).then(r => r.json()).then(setC360).catch(() => {});
-      } else { setC360(null); }
+        fetch(`/api/crm/arr/estado-cuenta?company_id=${data.company_id}`).then(r => r.json()).then(setEdoCuenta).catch(() => {});
+      } else { setC360(null); setEdoCuenta(null); }
       setForm({
         nombre: data.nombre || '',
         apellido: data.apellido || '',
@@ -903,6 +905,17 @@ export default function ContactProfile({ contactId, onClose }: Props) {
                   <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Cargando…</div>
                 ) : (
                   <div>
+                    {edoCuenta?.resumen && (
+                      Number(edoCuenta.resumen.saldo) > 0.01 ? (
+                        <div style={{ marginBottom: 10, padding: '9px 12px', borderRadius: 8, background: '#fffbeb', border: '1px solid #fde68a', fontSize: '0.82rem', color: '#92400e', fontWeight: 600 }}>
+                          Estado de cuenta: saldo pendiente <strong>{fmt(Number(edoCuenta.resumen.saldo))}</strong> <span style={{ fontWeight: 400 }}>(pagado {fmt(Number(edoCuenta.resumen.total_pagado))} de {fmt(Number(edoCuenta.resumen.total_esperado))} esperado)</span>
+                        </div>
+                      ) : (
+                        <div style={{ marginBottom: 10, padding: '9px 12px', borderRadius: 8, background: '#f0fdf4', border: '1px solid #bbf7d0', fontSize: '0.82rem', color: '#16a34a', fontWeight: 600 }}>
+                          ✓ Al día — sin saldo pendiente
+                        </div>
+                      )
+                    )}
                     <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
                       <div style={{ flex: 1, minWidth: 90, background: '#f8fafc', borderRadius: 8, padding: '8px 10px' }}>
                         <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>ARR</div>
