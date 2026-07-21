@@ -18,7 +18,7 @@ type Sub = {
 
 const ESTADOS: Record<string, { label: string; bg: string; color: string }> = {
   activa:         { label: 'Activa',          bg: 'rgba(42,181,160,0.14)', color: '#1A8F7A' },
-  pendiente_pago: { label: 'Pendiente pago',  bg: 'rgba(232,168,56,0.16)', color: '#a06600' },
+  pendiente_pago: { label: 'Pendiente',       bg: 'rgba(232,168,56,0.16)', color: '#a06600' },
   programada:     { label: 'Programada',      bg: 'rgba(75,123,229,0.12)', color: '#3764c4' },
   pausada:        { label: 'Pausada',         bg: 'rgba(150,150,150,0.15)', color: '#666' },
   cancelada:      { label: 'Cancelada',       bg: 'rgba(229,75,75,0.10)', color: '#b93333' },
@@ -40,7 +40,7 @@ export const S = {
   btnSmall: { padding: '4px 10px', border: '1px solid #ddd', background: '#fff', borderRadius: 6, fontSize: '0.75rem', cursor: 'pointer' } as const,
   th: { textAlign: 'left' as const, padding: '8px 10px', fontSize: '0.68rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.4px', borderBottom: '1px solid #eee' },
   td: { padding: '9px 10px', fontSize: '0.83rem', color: '#333', borderBottom: '1px solid #f4f4f4', fontVariantNumeric: 'tabular-nums' as const },
-  badge: { display: 'inline-block', padding: '2px 9px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700 } as const,
+  badge: { display: 'inline-block', padding: '2px 9px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap' as const } as const,
   overlay: { position: 'fixed' as const, inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 90, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 },
   modal: { background: '#fff', borderRadius: 14, padding: 22, width: '100%', maxWidth: 560, maxHeight: '88vh', overflowY: 'auto' as const },
   drawer: { position: 'fixed' as const, top: 0, right: 0, bottom: 0, width: 'min(560px, 96vw)', background: '#fff', zIndex: 95, boxShadow: '-8px 0 32px rgba(0,0,0,0.15)', overflowY: 'auto' as const, padding: 22 },
@@ -62,6 +62,9 @@ export default function SubscriptionsTab() {
   const [pagoPrefill, setPagoPrefill] = useState<{ subscription_id?: string; fecha?: string } | null>(null);
   const [fCiclo, setFCiclo] = useState('');
   const [fEstado, setFEstado] = useState('');
+  const [fPlan, setFPlan] = useState('');
+  const [fCliente, setFCliente] = useState('');
+  const [plans, setPlans] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [mesAbierto, setMesAbierto] = useState<string | null>(null);
   const [showPago, setShowPago] = useState(false);
@@ -71,13 +74,15 @@ export default function SubscriptionsTab() {
   async function load() {
     setLoading(true); setError(null);
     try {
-      const [sRes, sumRes] = await Promise.all([
+      const [sRes, sumRes, pRes] = await Promise.all([
         fetch('/api/crm/arr/subscriptions').then(r => r.json()),
         fetch('/api/crm/arr/summary').then(r => r.json()),
+        fetch('/api/crm/arr/plans').then(r => r.json()).catch(() => ({ data: [] })),
       ]);
       if (sRes.error) throw new Error(sRes.error);
       setSubs(sRes.data || []);
       setSummary(sumRes.error ? null : sumRes);
+      setPlans(pRes?.data || []);
     } catch (e: any) { setError(e?.message || 'No se pudo cargar'); }
     setLoading(false);
   }
@@ -86,13 +91,25 @@ export default function SubscriptionsTab() {
   const filtered = useMemo(() => subs.filter(s => {
     if (fCiclo && s.ciclo !== fCiclo) return false;
     if (fEstado && s.estado !== fEstado) return false;
+    // Plan filtra por CATÁLOGO (plan_id) — agrupa todas las variantes de texto
+    // libre bajo el plan canónico. '__none__' = subs sin plan de catálogo.
+    if (fPlan) { if (fPlan === '__none__') { if ((s as any).plan_id) return false; } else if ((s as any).plan_id !== fPlan) return false; }
+    if (fCliente && s.company_id !== fCliente) return false;
     if (search) {
       const q = search.toLowerCase();
       const hay = [s.nombre_plan, s.companies?.nombre, s.companies?.sacs_account, s.contacts?.nombre, s.contacts?.email].filter(Boolean).join(' ').toLowerCase();
       if (!hay.includes(q)) return false;
     }
     return true;
-  }), [subs, fCiclo, fEstado, search]);
+  }), [subs, fCiclo, fEstado, fPlan, fCliente, search]);
+
+  // Clientes para el filtro: distintos por empresa, ordenados por cuenta.
+  const clientesOpts = useMemo(() => {
+    const m = new Map<string, string>();
+    subs.forEach(s => { if (s.company_id) m.set(s.company_id, s.companies?.sacs_account || s.companies?.nombre || s.company_id); });
+    return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1], 'es'));
+  }, [subs]);
+  const nSinPlan = useMemo(() => subs.filter(s => !(s as any).plan_id).length, [subs]);
 
   const k = summary?.kpis;
   const meta = summary?.meta;
@@ -105,7 +122,7 @@ export default function SubscriptionsTab() {
   if (error) return <div style={{ padding: 48, textAlign: 'center', color: '#E54B4B' }}>{error} <button style={S.btnSmall} onClick={load}>Reintentar</button></div>;
 
   return (
-    <div>
+    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
       {/* ── KPIs + meta ── */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
         <div style={S.kpi}>
@@ -159,7 +176,16 @@ export default function SubscriptionsTab() {
       {vista === 'subs' && (
         <div style={S.card}>
           <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente, cuenta o plan…" style={{ ...S.input, flex: 1, minWidth: 200 }} />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente, cuenta o plan…" style={{ ...S.input, flex: 1, minWidth: 180 }} />
+            <select value={fCliente} onChange={e => setFCliente(e.target.value)} style={{ ...S.input, maxWidth: 200 }} title="Ver todas las suscripciones de un cliente">
+              <option value="">Todos los clientes</option>
+              {clientesOpts.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+            </select>
+            <select value={fPlan} onChange={e => setFPlan(e.target.value)} style={S.input} title="Filtra por plan del catálogo">
+              <option value="">Todos los planes</option>
+              {plans.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+              {nSinPlan > 0 && <option value="__none__">Sin plan de catálogo ({nSinPlan})</option>}
+            </select>
             <select value={fCiclo} onChange={e => setFCiclo(e.target.value)} style={S.input}>
               <option value="">Todos los ciclos</option><option value="anual">Anuales</option><option value="mensual">Mensuales</option>
             </select>
@@ -167,6 +193,9 @@ export default function SubscriptionsTab() {
               <option value="">Todos los estados</option>
               {Object.entries(ESTADOS).map(([v, c]) => <option key={v} value={v}>{c.label}</option>)}
             </select>
+            {(fCliente || fPlan || fCiclo || fEstado || search) && (
+              <button onClick={() => { setFCliente(''); setFPlan(''); setFCiclo(''); setFEstado(''); setSearch(''); }} style={{ ...S.btnSmall, alignSelf: 'center' }} title="Limpiar filtros">✕ Limpiar</button>
+            )}
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -178,7 +207,15 @@ export default function SubscriptionsTab() {
                   const dias = s.companies?.dias_sin_venta;
                   return (
                     <tr key={s.id} style={{ cursor: 'pointer' }} onClick={() => s.company_id && setDetailId(s.company_id)}>
-                      <td style={{ ...S.td, fontWeight: 700 }}>{s.companies?.nombre || '—'}{s.companies?.sacs_account ? <span style={{ color: '#aaa', fontWeight: 400 }}> · {s.companies.sacs_account}</span> : null}</td>
+                      <td style={S.td}>{(() => {
+                        const cuenta = s.companies?.sacs_account || s.companies?.nombre || '';
+                        // Nombre de la persona primero (para identificarlo rápido); la cuenta abajo.
+                        const cliente = s.contacts?.nombre || (s.companies?.nombre !== cuenta ? s.companies?.nombre : '') || cuenta || '—';
+                        return (<>
+                          <div style={{ fontWeight: 700, color: '#1a1a1a', whiteSpace: 'nowrap' }}>{cliente}</div>
+                          {cuenta && cuenta !== cliente ? <div style={{ fontSize: '0.72rem', color: '#999', whiteSpace: 'nowrap' }}>{cuenta}</div> : null}
+                        </>);
+                      })()}</td>
                       <td style={S.td}>{s.nombre_plan}</td>
                       <td style={S.td}><span style={{ ...S.badge, background: s.ciclo === 'anual' ? 'rgba(108,92,231,0.12)' : 'rgba(75,123,229,0.12)', color: s.ciclo === 'anual' ? '#6C5CE7' : '#3764c4' }}>{s.ciclo}</span></td>
                       <td style={S.td}><Estado e={s.estado} /></td>
