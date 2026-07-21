@@ -10,7 +10,7 @@ interface Client {
   fecha_inicio: string; fecha_renovacion: string; estado: string; notas: string;
 }
 
-type Tab = 'dashboard' | 'clientes' | 'pagos' | 'cotizaciones' | 'config';
+type Tab = 'dashboard' | 'cotizaciones' | 'config';
 
 interface RevenueHubProps {
   _initialTab?: Tab;
@@ -20,12 +20,6 @@ interface RevenueHubProps {
 export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = {}) {
   const [tab, setTab] = useState<Tab>(_initialTab || 'dashboard');
   const [dash, setDash] = useState<any>(null);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [selected, setSelected] = useState<Client | null>(null);
-  const [search, setSearch] = useState('');
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState<Partial<Client>>({});
-  const [payForm, setPayForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const [quoteForm, setQuoteForm] = useState<any>({});
   const [bankAccounts, setBankAccounts] = useState<any[]>([]);
@@ -34,15 +28,13 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
   const [partnersById, setPartnersById] = useState<Record<string, { nombre: string; email?: string }>>({});
 
   const load = async () => {
-    const [d, c, ba, q, p] = await Promise.all([
+    const [d, ba, q, p] = await Promise.all([
       fetch('/api/revenue/dashboard').then(r => r.json()),
-      fetch('/api/revenue/clients').then(r => r.json()),
       fetch('/api/revenue/bank-accounts').then(r => r.json()),
       fetch('/api/revenue/quotes').then(r => r.json()),
       fetch('/api/revenue/partners-list').then(r => r.json()).catch(() => []),
     ]);
     setDash(d);
-    setClients(Array.isArray(c) ? c : []);
     setBankAccounts(Array.isArray(ba) ? ba : []);
     setAllQuotes(Array.isArray(q) ? q : []);
     const map: Record<string, { nombre: string; email?: string }> = {};
@@ -190,156 +182,6 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             </div>
           );
         })()}
-      </div>
-    );
-  };
-
-  // ─── Clients ───
-  const ClientsView = () => {
-    const filtered = clients.filter(c =>
-      !search || c.empresa?.toLowerCase().includes(search.toLowerCase()) ||
-      c.contacto?.toLowerCase().includes(search.toLowerCase()) ||
-      c.email?.toLowerCase().includes(search.toLowerCase())
-    );
-
-    const saveClient = async () => {
-      setSaving(true);
-      if (form.id) {
-        await fetch('/api/revenue/clients', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
-      } else {
-        await fetch('/api/revenue/clients', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
-      }
-      setShowForm(false);
-      setForm({});
-      await load();
-      setSaving(false);
-    };
-
-    return (
-      <div>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente..." style={S.input} />
-          <button onClick={() => { setForm({}); setShowForm(true); }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff' }}>+ Nuevo cliente</button>
-        </div>
-
-        <div style={S.card}>
-          <table style={S.table}>
-            <thead>
-              <tr>{['Empresa', 'Contacto', 'Plan', 'Suc.', 'Precio/mes', 'Renovación', 'Estado', ''].map(h =>
-                <th key={h} style={S.th}>{h}</th>
-              )}</tr>
-            </thead>
-            <tbody>
-              {filtered.map(c => (
-                <tr key={c.id} style={S.tr}>
-                  <td style={{ ...S.td, fontWeight: 700, color: '#1a1a1a' }}>{c.empresa}</td>
-                  <td style={S.td}>{c.contacto}</td>
-                  <td style={S.td}><span style={{ ...S.badge, background: '#e3f2fd', color: '#1565c0', textTransform: 'capitalize' as const }}>{c.plan || '-'}</span></td>
-                  <td style={S.td}>{c.sucursales}</td>
-                  <td style={S.td}>{fmt(c.precio_mensual * (c.sucursales || 1))}</td>
-                  <td style={S.td}>
-                    <span style={{ color: c.fecha_renovacion && c.fecha_renovacion < new Date().toISOString().slice(0, 10) ? '#E54B4B' : '#555' }}>
-                      {fmtDate(c.fecha_renovacion)}
-                    </span>
-                  </td>
-                  <td style={S.td}><span style={{ ...S.badge, background: c.estado === 'activo' ? '#e8f5e9' : '#fce4ec', color: c.estado === 'activo' ? '#2e7d32' : '#c62828' }}>{c.estado}</span></td>
-                  <td style={S.td}>
-                    <button onClick={() => { setForm(c); setShowForm(true); }} style={S.btnSmall}>Editar</button>
-                    <button onClick={() => { setSelected(c); setTab('pagos'); }} style={{ ...S.btnSmall, background: '#e8f5e9', color: '#2e7d32' }}>Pago</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Client form modal */}
-        {showForm && (
-          <div style={S.overlay}>
-            <div style={S.modal}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-                <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 800 }}>{form.id ? 'Editar cliente' : 'Nuevo cliente'}</h3>
-                <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer' }}>✕</button>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <div><label style={S.label}>Empresa</label><input value={form.empresa || ''} onChange={e => setForm({ ...form, empresa: e.target.value })} style={S.input} /></div>
-                <div><label style={S.label}>Contacto</label><input value={form.contacto || ''} onChange={e => setForm({ ...form, contacto: e.target.value })} style={S.input} /></div>
-                <div><label style={S.label}>Email</label><input value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} style={S.input} /></div>
-                <div><label style={S.label}>WhatsApp</label><input value={form.whatsapp || ''} onChange={e => setForm({ ...form, whatsapp: e.target.value })} style={S.input} /></div>
-                <div><label style={S.label}>Plan</label><select value={form.plan || ''} onChange={e => setForm({ ...form, plan: e.target.value, precio_mensual: PLAN_PRICES[e.target.value] || form.precio_mensual })} style={S.input}><option value="">-</option>{PLANS.map(p => <option key={p} value={p}>{p} (${PLAN_PRICES[p]}/mes)</option>)}</select></div>
-                <div><label style={S.label}>Sucursales</label><input type="number" value={form.sucursales || 1} onChange={e => setForm({ ...form, sucursales: parseInt(e.target.value) || 1 })} style={S.input} /></div>
-                <div><label style={S.label}>Precio/mes por suc.</label><input type="number" value={form.precio_mensual || ''} onChange={e => setForm({ ...form, precio_mensual: parseFloat(e.target.value) || 0 })} style={S.input} /></div>
-                <div><label style={S.label}>Método de pago</label><select value={form.metodo_pago || 'transferencia'} onChange={e => setForm({ ...form, metodo_pago: e.target.value })} style={S.input}>{METODOS.map(m => <option key={m} value={m}>{m}</option>)}</select></div>
-                <div><label style={S.label}>Fecha inicio</label><input type="date" value={form.fecha_inicio || ''} onChange={e => setForm({ ...form, fecha_inicio: e.target.value })} style={S.input} /></div>
-                <div><label style={S.label}>Fecha renovación</label><input type="date" value={form.fecha_renovacion || ''} onChange={e => setForm({ ...form, fecha_renovacion: e.target.value })} style={S.input} /></div>
-                <div><label style={S.label}>Estado</label><select value={form.estado || 'activo'} onChange={e => setForm({ ...form, estado: e.target.value })} style={S.input}><option value="activo">Activo</option><option value="cancelado">Cancelado</option><option value="pendiente">Pendiente</option></select></div>
-              </div>
-              <div><label style={S.label}>Notas</label><textarea value={form.notas || ''} onChange={e => setForm({ ...form, notas: e.target.value })} style={{ ...S.input, height: 60, resize: 'vertical' as const }} /></div>
-              <button onClick={saveClient} disabled={saving} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', width: '100%', marginTop: 12 }}>{saving ? 'Guardando...' : 'Guardar'}</button>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // ─── Payments ───
-  const PaymentsView = () => {
-    const [payments, setPayments] = useState<any[]>([]);
-    const [loadingP, setLoadingP] = useState(true);
-
-    useEffect(() => {
-      fetch('/api/revenue/payments').then(r => r.json()).then(d => { setPayments(Array.isArray(d) ? d : []); setLoadingP(false); });
-    }, []);
-
-    const registerPayment = async () => {
-      if (!payForm.client_id || !payForm.monto) return;
-      setSaving(true);
-      await fetch('/api/revenue/payments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payForm) });
-      setPayForm({});
-      const d = await fetch('/api/revenue/payments').then(r => r.json());
-      setPayments(Array.isArray(d) ? d : []);
-      await load();
-      setSaving(false);
-    };
-
-    return (
-      <div>
-        {/* Register payment form */}
-        <div style={{ ...S.card, marginBottom: 16 }}>
-          <h3 style={S.cardTitle}>Registrar pago</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr auto', gap: 8, alignItems: 'end' }}>
-            <div><label style={S.label}>Cliente</label><select value={payForm.client_id || ''} onChange={e => setPayForm({ ...payForm, client_id: e.target.value })} style={S.input}>
-              <option value="">Seleccionar...</option>
-              {clients.filter(c => c.estado === 'activo').map(c => <option key={c.id} value={c.id}>{c.empresa}</option>)}
-            </select></div>
-            <div><label style={S.label}>Monto</label><input type="number" value={payForm.monto || ''} onChange={e => setPayForm({ ...payForm, monto: e.target.value })} placeholder="$" style={S.input} /></div>
-            <div><label style={S.label}>Fecha</label><input type="date" value={payForm.fecha || new Date().toISOString().slice(0, 10)} onChange={e => setPayForm({ ...payForm, fecha: e.target.value })} style={S.input} /></div>
-            <div><label style={S.label}>Método</label><select value={payForm.metodo || 'transferencia'} onChange={e => setPayForm({ ...payForm, metodo: e.target.value })} style={S.input}>{METODOS.map(m => <option key={m} value={m}>{m}</option>)}</select></div>
-            <button onClick={registerPayment} disabled={saving} style={{ ...S.btn, background: '#2AB5A0', color: '#fff' }}>{saving ? '...' : 'Registrar'}</button>
-          </div>
-        </div>
-
-        {/* Payments history */}
-        <div style={S.card}>
-          <h3 style={S.cardTitle}>Historial de pagos</h3>
-          {loadingP ? <div style={S.empty}>Cargando...</div> :
-            <table style={S.table}>
-              <thead><tr>{['Fecha', 'Cliente', 'Monto', 'Método', 'Referencia'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
-              <tbody>
-                {payments.map((p: any) => (
-                  <tr key={p.id} style={S.tr}>
-                    <td style={S.td}>{fmtDate(p.fecha)}</td>
-                    <td style={{ ...S.td, fontWeight: 700 }}>{p.clients?.empresa || '-'}</td>
-                    <td style={{ ...S.td, fontWeight: 700, color: '#2AB5A0' }}>{fmt(p.monto)}</td>
-                    <td style={S.td}>{p.metodo}</td>
-                    <td style={S.td}>{p.referencia || '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          }
-        </div>
       </div>
     );
   };
@@ -2328,7 +2170,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             <span style={{ fontFamily: "'Clash Display',sans-serif", fontSize: '1.25rem', fontWeight: 700 }}>Sacs</span>
             <span style={{ fontSize: '0.5625rem', fontWeight: 700, color: '#2AB5A0', background: 'rgba(42,181,160,0.08)', padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>Revenue</span>
           </div>
-          {(['dashboard', 'clientes', 'pagos', 'cotizaciones', 'config'] as Tab[]).map(t => (
+          {(['dashboard', 'cotizaciones', 'config'] as Tab[]).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{ padding: '14px 16px', fontSize: '0.8125rem', fontWeight: tab === t ? 700 : 500, color: tab === t ? '#1a1a1a' : '#999', background: 'none', border: 'none', borderBottom: tab === t ? '2px solid #1a1a1a' : '2px solid transparent', cursor: 'pointer', textTransform: 'capitalize' as const }}>{t}</button>
           ))}
         </div>
@@ -2342,8 +2184,6 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       {/* Content */}
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px' }}>
         {tab === 'dashboard' && <DashboardView />}
-        {tab === 'clientes' && <ClientsView />}
-        {tab === 'pagos' && <PaymentsView />}
         {tab === 'cotizaciones' && <QuotesView />}
         {tab === 'config' && (
           <div>

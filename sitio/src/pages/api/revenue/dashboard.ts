@@ -42,8 +42,9 @@ export const GET: APIRoute = async () => {
       supabase.from('quotes').select('id, estado, total, moneda, created_at, aceptado_fecha'),
       supabase.from('churn_events').select('id, mrr_lost, reason, cancelled_at, company_id'),
       supabase.from('deals').select('id, stage, valor_total, valor_mensual, probabilidad, created_at, closed_at'),
-      // Legacy clients table for backward compat (may be empty if fully migrated)
-      supabase.from('clients').select('*'),
+      // Tabla legacy `clients` retirada — el dashboard usa solo el sistema ARR
+      // (companies/subscriptions). Se deja el slot vacío para no tocar la lógica de fallback.
+      Promise.resolve({ data: [] as any[] }),
     ]);
 
     const companies: Company[] = (companiesRes.data as any[]) || [];
