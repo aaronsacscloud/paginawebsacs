@@ -14,6 +14,7 @@ import ClientesTab from './crm/ClientesTab';
 import ReunionesTab from './crm/ReunionesTab';
 import SubscriptionsTab from './crm/SubscriptionsTab';
 import PagosTab from './crm/PagosTab';
+import PipelinesConfig from './crm/PipelinesConfig';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
   state = { error: null as string | null };
@@ -29,7 +30,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'dashboard' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review';
+type Tab = 'dashboard' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review';
 
 // SVG icons (Squarespace-style, clean strokes)
 const ICONS: Record<string, string> = {
@@ -51,7 +52,7 @@ const NAV_SECTIONS = [
     items: [
       { id: 'dashboard' as Tab, label: 'Dashboard', icon: 'dashboard' },
       { id: 'pipeline' as Tab, label: 'Contactos', icon: 'pipeline' },
-      { id: 'deals' as Tab, label: 'Deals', icon: 'deals' },
+      { id: 'deals' as Tab, label: 'Oportunidades', icon: 'deals' },
       { id: 'clientes' as Tab, label: 'Clientes', icon: 'clientes' },
     ],
   },
@@ -89,6 +90,7 @@ const NAV_SECTIONS = [
     label: 'Sistema',
     items: [
       { id: 'agenda' as Tab, label: 'Agenda', icon: 'agenda' },
+      { id: 'pipelines' as Tab, label: 'Pipelines', icon: 'pipeline' },
       { id: 'config' as Tab, label: 'Configuración', icon: 'config' },
     ],
   },
@@ -378,6 +380,8 @@ export default function CrmDashboard() {
           <ErrorBoundary><PagosTab /></ErrorBoundary>
         ) : tab === 'clientes' ? (
           <ClientesTab />
+        ) : tab === 'pipelines' ? (
+          <ErrorBoundary><PipelinesConfig /></ErrorBoundary>
         ) : (
           <RevenueHub _initialTab={revenueTab as any} _hideNav={true} />
         )}
