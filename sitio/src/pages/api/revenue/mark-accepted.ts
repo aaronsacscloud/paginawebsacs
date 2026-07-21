@@ -188,6 +188,39 @@ export const POST: APIRoute = async ({ request, url }) => {
           .eq('id', contactId);
       }
 
+      // ─── Cotización aceptada → crear la SUSCRIPCIÓN (idempotente) ───
+      // Cierra el loop cotización→deal→suscripción: al ganar, nace la sub. Solo si la
+      // empresa aún NO tiene una suscripción viva (no duplica en re-aceptación ni en
+      // clientes ya activos). Nace 'programada' (aceptada, sin pagar); al registrar el
+      // primer pago pasa a 'activa' (register-payment). Best-effort — nunca rompe la
+      // aceptación. Hereda el partner_id (RR) de la cotización para la comisión.
+      if (quote.company_id) {
+        try {
+          const { data: subViva } = await supabase.from('subscriptions').select('id')
+            .eq('company_id', quote.company_id)
+            .in('estado', ['activa', 'programada', 'pendiente_pago', 'pausada']).limit(1).maybeSingle();
+          if (!subViva) {
+            const items2 = Array.isArray(quote.items) ? quote.items : [];
+            const annualPlan = items2.filter((i: any) => i.tipo === 'plan' && i.periodo === 'anual').reduce((s: number, i: any) => s + (i.subtotal || 0), 0);
+            const ciclo = valorMensual > 0 ? 'mensual' : (annualPlan > 0 ? 'anual' : null);
+            const precio = ciclo === 'mensual' ? valorMensual : (ciclo === 'anual' ? Math.round(annualPlan) : 0);
+            if (ciclo && precio > 0) {
+              const planItem = items2.find((i: any) => i.tipo === 'plan');
+              const nombrePlan = String(planItem?.nombre || planItem?.label || planItem?.descripcion || 'Licencia SACS').slice(0, 160);
+              const hoy = now.slice(0, 10);
+              const mrr = ciclo === 'anual' ? precio / 12 : precio;
+              await supabase.from('subscriptions').insert({
+                company_id: quote.company_id, contact_id: contactId,
+                nombre_plan: nombrePlan, ciclo, estado: 'programada', precio,
+                mrr: Math.round(mrr * 100) / 100, arr: Math.round(mrr * 12 * 100) / 100,
+                fecha_inicio: hoy, proxima_factura: hoy, monto_proximo: precio,
+                ...(quote.partner_id ? { partner_id: quote.partner_id } : {}),
+              });
+            }
+          }
+        } catch { /* la suscripción nunca bloquea la aceptación de la cotización */ }
+      }
+
       // Enqueue onboarding tasks
       await enqueueOnboardingTasks(quote, dealResult?.dealId || null, contactId);
 
