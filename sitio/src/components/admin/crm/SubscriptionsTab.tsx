@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import InteligenciaView from './InteligenciaView';
 
 /* ═══════════════ Suscripciones & ARR — hub del negocio recurrente ═══════════════
  * KPIs + meta · lista de suscripciones (mensual/anual separados) · riesgo por
@@ -56,7 +57,7 @@ export default function SubscriptionsTab() {
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [vista, setVista] = useState<'subs' | 'riesgo' | 'cobranza' | 'conciliacion'>('subs');
+  const [vista, setVista] = useState<'subs' | 'riesgo' | 'cobranza' | 'conciliacion' | 'inteligencia'>('subs');
   const [editSub, setEditSub] = useState<Sub | null>(null);
   const [pagoPrefill, setPagoPrefill] = useState<{ subscription_id?: string; fecha?: string } | null>(null);
   const [fCiclo, setFCiclo] = useState('');
@@ -144,10 +145,10 @@ export default function SubscriptionsTab() {
 
       {/* ── Barra de acciones + sub-vistas ── */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
-        {(['subs', 'riesgo', 'cobranza', 'conciliacion'] as const).map(v => (
+        {(['subs', 'riesgo', 'cobranza', 'conciliacion', 'inteligencia'] as const).map(v => (
           <button key={v} onClick={() => setVista(v)}
             style={{ ...S.btn, background: vista === v ? '#1a1a1a' : '#f2f2f2', color: vista === v ? '#fff' : '#555' }}>
-            {v === 'subs' ? 'Suscripciones' : v === 'riesgo' ? `Riesgo (${(riesgo?.banda_3_15?.length || 0) + (riesgo?.banda_15_mas?.length || 0)})` : v === 'cobranza' ? 'Cobranza y proyección' : 'Conciliación'}
+            {v === 'subs' ? 'Suscripciones' : v === 'riesgo' ? `Riesgo (${(riesgo?.banda_3_15?.length || 0) + (riesgo?.banda_15_mas?.length || 0)})` : v === 'cobranza' ? 'Cobranza y proyección' : v === 'conciliacion' ? 'Conciliación' : '★ Inteligencia ARR'}
           </button>
         ))}
         <div style={{ flex: 1 }} />
@@ -313,6 +314,8 @@ export default function SubscriptionsTab() {
       )}
 
       {vista === 'conciliacion' && <ConciliacionView onChanged={load} />}
+
+      {vista === 'inteligencia' && <InteligenciaView />}
 
       {showPago && <RegistrarPagoModal subs={subs} prefill={pagoPrefill} onClose={() => { setShowPago(false); setPagoPrefill(null); }} onDone={() => { setShowPago(false); setPagoPrefill(null); load(); }} />}
       {editSub && <EditarSubModal sub={editSub} onClose={() => setEditSub(null)} onDone={() => { setEditSub(null); load(); }} />}

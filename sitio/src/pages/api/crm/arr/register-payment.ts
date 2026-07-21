@@ -11,6 +11,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { recalcCompany } from './subscriptions';
+import { recordDelta } from '../../../../lib/crm/mrr-ledger';
 
 export const prerender = false;
 
@@ -177,6 +178,19 @@ export const POST: APIRoute = async ({ request }) => {
     // ── 4 · Agregados de la company + last_payment ──
     await recalcCompany(sub.company_id);
     await supabase.from('companies').update({ last_payment_at: new Date().toISOString() }).eq('id', sub.company_id);
+
+    // Ledger MRR. Aporte: activa/pendiente_pago cuentan (misma base que el
+    // ledger). Así: programada→activa = alta; cancelada→activa = reactivación;
+    // pendiente_pago→activa (recuperación de dunning) = sin movimiento (no es
+    // negocio nuevo). Si el pago promovió ciclo/precio, el MRR nuevo lo captura.
+    const mrrAntes = (sub.estado === 'activa' || sub.estado === 'pendiente_pago') ? Number(sub.mrr || 0) : 0;
+    await recordDelta({
+      subscription_id: sub.id, company_id: sub.company_id, fecha,
+      mrr_anterior: mrrAntes, mrr_nuevo: Number(subUpd.mrr || 0),
+      reactivacion: sub.estado === 'cancelada',
+      motivo: promoverCiclo ? `pago + cambio a ${cicloEfectivo}` : 'pago registrado',
+      actor: body.actor || 'admin',
+    });
 
     // ── 5 · Actividad (timeline del cliente) ──
     await supabase.from('activities').insert({

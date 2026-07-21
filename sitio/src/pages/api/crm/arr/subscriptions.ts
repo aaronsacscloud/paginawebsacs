@@ -2,8 +2,16 @@
 // Toda mutación recalcula los agregados (mrr/arr/fecha_renovacion/estado) de la company.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
+import { recordDelta } from '../../../../lib/crm/mrr-ledger';
 
 export const prerender = false;
+
+// MRR que una sub aporta a la BASE de ingreso recurrente (para el ledger).
+// activa y pendiente_pago cuentan (una vencida no ha cancelado, solo va tarde);
+// programada/pausada/cancelada aportan 0. Así una recuperación de dunning
+// (pendiente_pago→activa) NO se cuenta como negocio nuevo, y entrar a
+// pendiente_pago no se cuenta como churn — solo cancelar lo es.
+const mrrAporte = (estado: string, mrr: number) => (estado === 'activa' || estado === 'pendiente_pago' ? Number(mrr || 0) : 0);
 
 export async function recalcCompany(companyId: string) {
   if (!companyId) return;
@@ -88,6 +96,13 @@ export const POST: APIRoute = async ({ request }) => {
   const { data, error } = await supabase.from('subscriptions').insert(normalizar(body)).select().single();
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   await recalcCompany(data.company_id);
+  // Ledger: si nace ya aportando (activa/pendiente) es un alta; si nace
+  // programada (aporte 0) no hay movimiento hasta que se cobre.
+  await recordDelta({
+    subscription_id: data.id, company_id: data.company_id,
+    mrr_anterior: 0, mrr_nuevo: mrrAporte(data.estado, data.mrr),
+    motivo: 'alta de suscripción', actor: body.actor || 'admin',
+  });
   await supabase.from('activities').insert({
     tipo: 'sistema', titulo: `Suscripción creada: ${data.nombre_plan} (${data.ciclo}) · $${Number(data.precio).toLocaleString('es-MX')}`,
     company_id: data.company_id, automatico: true, metadata: { audit: 'sub_create', subscription_id: data.id },
@@ -208,6 +223,16 @@ export const PUT: APIRoute = async ({ request }) => {
     }).select().maybeSingle();
   }
   await recalcCompany(data.company_id);
+
+  // Ledger MRR: un solo movimiento por el cambio de aporte al ARR (alta,
+  // expansión/contracción de precio, churn, reactivación).
+  await recordDelta({
+    subscription_id: data.id, company_id: data.company_id,
+    mrr_anterior: mrrAporte(prev.estado, prev.mrr), mrr_nuevo: mrrAporte(data.estado, data.mrr),
+    reactivacion: prev.estado === 'cancelada' && data.estado === 'activa',
+    motivo: cambios.join(' · ') || (cancelacionInmediata ? body.razon_cancelacion : null),
+    actor: body.actor || 'admin',
+  });
 
   // churn_event SOLO en la transición real a cancelada (inmediata; la "al
   // vencer" lo registra el cron cuando de verdad se apaga)

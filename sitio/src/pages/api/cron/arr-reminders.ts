@@ -7,6 +7,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { notify } from '../../../lib/notify';
 import { sendWhatsApp } from '../../../lib/kapso';
+import { recordMovement } from '../../../lib/crm/mrr-ledger';
 
 export const prerender = false;
 
@@ -67,6 +68,7 @@ export const GET: APIRoute = async ({ url }) => {
         const churn: any = { company_id: s.company_id, mrr_lost: s.mrr, reason: s.razon_cancelacion || 'cancelación programada', cancelled_at: new Date().toISOString() };
         let cr = await supabase.from('churn_events').insert({ ...churn, subscription_id: s.id }).select().maybeSingle();
         if (cr.error && /column .* does not exist|schema cache/i.test(cr.error.message || '')) await supabase.from('churn_events').insert(churn).select().maybeSingle();
+        await recordMovement({ subscription_id: s.id, company_id: s.company_id, tipo: 'churn', mrr_anterior: Number(s.mrr || 0), mrr_nuevo: 0, motivo: s.razon_cancelacion || 'cancelación al vencer', actor: 'cron' });
         await marcarAviso(s, 'cancelada_al_vencer_' + s.proxima_factura, `🚫 Cancelación efectiva (era al vencer): ${empresa} · ${s.nombre_plan}`);
         continue; // no dunning ni recordatorios para algo que ya se apagó
       }

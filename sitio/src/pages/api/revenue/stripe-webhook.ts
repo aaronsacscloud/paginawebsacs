@@ -893,6 +893,19 @@ export const POST: APIRoute = async ({ request }) => {
             total_pagado: Math.round((Number(crmSub.total_pagado || 0) + amount) * 100) / 100,
             updated_at: new Date().toISOString(),
           }).eq('id', crmSub.id);
+          // Ledger MRR: el cobro de Stripe también debe entrar (si no, NRR/GRR
+          // pierden las altas/reactivaciones cobradas por tarjeta). Aporte:
+          // activa/pendiente cuentan → una renovación normal (activa→activa) es
+          // delta 0 (no genera movimiento); una reactivación/alta sí.
+          try {
+            const { recordDelta } = await import('../../../lib/crm/mrr-ledger');
+            const aporte = (e: string, m: number) => (e === 'activa' || e === 'pendiente_pago' ? Number(m || 0) : 0);
+            await recordDelta({
+              subscription_id: crmSub.id, company_id: crmSub.company_id, fecha,
+              mrr_anterior: aporte(crmSub.estado, crmSub.mrr), mrr_nuevo: Number(crmSub.mrr || 0),
+              reactivacion: crmSub.estado === 'cancelada', motivo: 'cobro Stripe', actor: 'stripe',
+            });
+          } catch { /* ledger best-effort */ }
           if (crmSub.company_id) {
             await supabase.from('activities').insert({
               tipo: 'pago_recibido',
