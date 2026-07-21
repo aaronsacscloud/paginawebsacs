@@ -645,6 +645,7 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
     pausada_hasta: (sub as any).pausada_hasta || '',
     es_trial: !!(sub as any).es_trial, trial_fin: (sub as any).trial_fin || '',
     plazo_meses: (sub as any).plazo_meses || '', incremento_anual_pct: (sub as any).incremento_anual_pct || '',
+    reten_pct: 20, reten_meses: 3,
   });
   const [plans, setPlans] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
@@ -679,6 +680,17 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
     aplicarMonto(j); setNuevoDesc({ tipo: 'porcentaje', valor: '', motivo: '' }); loadExtras();
   }
   async function delDesc(id: string) { const j = await fetch(`/api/crm/arr/discounts?id=${id}`, { method: 'DELETE' }).then(r => r.json()).catch(() => null); aplicarMonto(j); loadExtras(); }
+
+  async function retener() {
+    setSaving(true); setErr(null);
+    try {
+      const r = await fetch('/api/crm/arr/retencion', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription_id: sub.id, reason: form.razon_cancelacion || null, pct: Number(form.reten_pct) || 20, meses: Number(form.reten_meses) || 3 }) });
+      const j = await r.json();
+      if (!r.ok || j.error) throw new Error(j.error || 'No se pudo aplicar la retención');
+      onDone();
+    } catch (e: any) { setErr(e?.message || String(e)); setSaving(false); }
+  }
 
   const planSel = plans.find(p => p.id === form.plan_id) || plans.find(p => p.slug && form.nombre_plan?.toLowerCase().includes(p.slug));
   const precioLista = planSel && !planSel.a_la_medida ? (form.ciclo === 'anual' ? planSel.precio_anual : planSel.precio_mensual) : null;
@@ -800,6 +812,18 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
             {(form.razon_cancelacion === 'otro' || form.razon_cancelacion === 'competencia') && (
               <input value={form.detalle_cancel} onChange={e => setForm({ ...form, detalle_cancel: e.target.value })} placeholder={form.razon_cancelacion === 'competencia' ? '¿A qué competidor se fue?' : 'Detalle…'} style={{ ...S.input, width: '100%', marginBottom: 8 }} />
             )}
+
+            {/* Intento de retención ANTES de cancelar */}
+            <div style={{ padding: 10, margin: '4px 0 10px', borderRadius: 8, background: '#F0FBF7', border: '1px solid #B7EBD9' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#137a67', marginBottom: 6 }}>💚 Antes de perderlo, intenta retenerlo</div>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                <input type="number" value={form.reten_pct} onChange={e => setForm({ ...form, reten_pct: e.target.value })} style={{ ...S.input, width: 60 }} /> <span style={{ fontSize: '0.76rem' }}>% off ×</span>
+                <input type="number" value={form.reten_meses} onChange={e => setForm({ ...form, reten_meses: e.target.value })} style={{ ...S.input, width: 55 }} /> <span style={{ fontSize: '0.76rem' }}>meses</span>
+                <button type="button" disabled={saving} onClick={retener} style={{ ...S.btnSmall, background: '#1A8F7A', color: '#fff', border: 'none' }}>Aplicar y mantener activo</button>
+              </div>
+              <div style={{ fontSize: '0.68rem', color: '#888', marginTop: 4 }}>Aplica el descuento, mantiene la suscripción y cuenta como cliente retenido (sube el save-rate). Si no acepta, sigue abajo para cancelar.</div>
+            </div>
+
             <label style={{ display: 'block', fontSize: '0.78rem', marginBottom: 4 }}><input type="radio" checked={form.cancela_al_vencer} onChange={() => setForm({ ...form, cancela_al_vencer: true })} /> Al terminar lo pagado ({sub.proxima_factura || 'fin del periodo'}) — sigue activa hasta ahí.</label>
             <label style={{ display: 'block', fontSize: '0.78rem', marginBottom: 8 }}><input type="radio" checked={!form.cancela_al_vencer} onChange={() => setForm({ ...form, cancela_al_vencer: false })} /> Hoy — corta ya.</label>
             {form.stripe_subscription_id && (

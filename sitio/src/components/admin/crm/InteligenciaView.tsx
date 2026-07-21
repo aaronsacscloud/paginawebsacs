@@ -87,7 +87,7 @@ export default function InteligenciaView() {
           <div style={S.kpi}><div style={S.kLabel}>NRR (neto)</div><div style={{ ...S.kVal, color: ret.nrr == null ? '#bbb' : ret.nrr >= 100 ? '#137a67' : '#b93333' }}>{ret.nrr == null ? 'acumulando' : ret.nrr + '%'}</div></div>
           <div style={S.kpi}><div style={S.kLabel}>GRR (bruto)</div><div style={{ ...S.kVal, color: ret.grr == null ? '#bbb' : '#1a1a1a' }}>{ret.grr == null ? 'acumulando' : ret.grr + '%'}</div></div>
           <div style={S.kpi}><div style={S.kLabel}>Logo churn 30d</div><div style={{ ...S.kVal, color: ret.logo_churn_pct > 5 ? '#b93333' : '#1a1a1a' }}>{ret.logo_churn_pct}%</div><div style={{ fontSize: '0.66rem', color: '#999' }}>{ret.churn_30d} se fueron</div></div>
-          <div style={S.kpi}><div style={S.kLabel}>Churn 90d</div><div style={S.kVal}>{ret.churn_90d}</div></div>
+          <div style={S.kpi}><div style={S.kLabel}>Save-rate 90d</div><div style={{ ...S.kVal, color: ret.save_rate == null ? '#bbb' : ret.save_rate >= 30 ? '#137a67' : '#a06600' }}>{ret.save_rate == null ? '—' : ret.save_rate + '%'}</div><div style={{ fontSize: '0.66rem', color: '#999' }}>{ret.saves_90d || 0} retenidos</div></div>
         </div>
         {Object.keys(ret.razones || {}).length > 0 && (
           <div style={{ marginTop: 10, fontSize: '0.74rem', color: '#666' }}>

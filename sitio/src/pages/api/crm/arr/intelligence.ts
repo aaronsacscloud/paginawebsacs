@@ -23,16 +23,18 @@ export const GET: APIRoute = async () => {
   const mesActual = mesDe(H);
 
   // ── datos base ──
-  const [subsRes, movRes, churnRes, paysRes] = await Promise.all([
+  const [subsRes, movRes, churnRes, paysRes, savesRes] = await Promise.all([
     supabase.from('subscriptions').select('id, company_id, estado, ciclo, precio, mrr, arr, proxima_factura, fecha_inicio, nombre_plan, monto_proximo, companies(id, nombre, health_score, dias_sin_venta, ultima_venta_at)'),
     supabase.from('mrr_movements').select('fecha, tipo, mrr_delta, mrr_anterior, mrr_nuevo').order('fecha', { ascending: true }),
     supabase.from('churn_events').select('cancelled_at, mrr_lost, reason'),
     supabase.from('payments').select('fecha, monto').order('fecha', { ascending: false }).limit(2000),
+    supabase.from('activities').select('created_at, metadata').contains('metadata', { retencion: 'aceptada' }).order('created_at', { ascending: false }).limit(500),
   ]);
   const subs = subsRes.data || [];
   const movs = movRes.error ? [] : (movRes.data || []);      // ledger vacío/no existe → []
   const churn = churnRes.data || [];
   const pays = paysRes.data || [];
+  const saves = savesRes.error ? [] : (savesRes.data || []);
   const conLedger = movs.length > 0;
 
   const activas = subs.filter((s: any) => s.estado === 'activa');
@@ -93,6 +95,11 @@ export const GET: APIRoute = async () => {
   // razones de churn agregadas
   const razones: Record<string, number> = {};
   churn.filter((c: any) => c.cancelled_at >= addMeses(H, -3)).forEach((c: any) => { const k = c.reason || 'sin razón'; razones[k] = (razones[k] || 0) + 1; });
+
+  // save-rate: de los que iban a cancelar, cuántos se retuvieron (90d).
+  const saves90 = saves.filter((s: any) => s.created_at >= addMeses(H, -3)).length;
+  const churnEvents90 = churn.filter((c: any) => c.cancelled_at && c.cancelled_at >= addMeses(H, -3)).length;
+  const saveRate = (saves90 + churnEvents90) > 0 ? r2(saves90 / (saves90 + churnEvents90) * 100) : null;
 
   // ── 4 · Cohortes de retención por mes de alta ──
   const cohortes: Record<string, { total: number; activas: number; mrr: number }> = {};
@@ -167,7 +174,7 @@ export const GET: APIRoute = async () => {
     con_ledger: conLedger,
     mrr_activo: mrrActivo, arr_activo: r2(mrrActivo * 12), clientes_activos: clientesActivos,
     waterfall,
-    retencion: { nrr, grr, logo_churn_pct: logoChurnPct, churn_30d: churn30, churn_90d: churn90, razones },
+    retencion: { nrr, grr, logo_churn_pct: logoChurnPct, churn_30d: churn30, churn_90d: churn90, razones, save_rate: saveRate, saves_90d: saves90 },
     cohortes: cohortesArr,
     forecast, cobrado_mes: cobradoMes,
     revenue,
