@@ -152,6 +152,10 @@ export const POST: APIRoute = async ({ request }) => {
       proxima_factura: addCiclo(base, cicloEfectivo),
       pagos_realizados: Number(sub.pagos_realizados || 0) + 1,
       total_pagado: r2(Number(sub.total_pagado || 0) + monto),
+      // Pagar renueva: si tenía cancelación "al vencer" pendiente, el pago la
+      // revierte (si no, el cron la cancelaría al llegar la nueva fecha aunque
+      // el cliente ya renovó y quedaría como churn falso).
+      cancela_al_vencer: false,
       updated_at: new Date().toISOString(),
     };
     if (promoverCiclo) {
@@ -163,8 +167,8 @@ export const POST: APIRoute = async ({ request }) => {
     }
     let subRes = await supabase.from('subscriptions').update(updSub).eq('id', sub.id).select('*').single();
     if (subRes.error && /column .* does not exist|schema cache/i.test(subRes.error.message || '')) {
-      // SQL-4 aún no aplicado: quitar columnas de ciclo programado
-      delete updSub.ciclo_siguiente; delete updSub.precio_siguiente;
+      // SQL-4 aún no aplicado: quitar columnas nuevas
+      delete updSub.ciclo_siguiente; delete updSub.precio_siguiente; delete updSub.cancela_al_vencer;
       subRes = await supabase.from('subscriptions').update(updSub).eq('id', sub.id).select('*').single();
     }
     const { data: subUpd, error: ue } = subRes;

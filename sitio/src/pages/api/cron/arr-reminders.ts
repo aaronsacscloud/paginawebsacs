@@ -43,9 +43,9 @@ export const GET: APIRoute = async ({ url }) => {
       const contacto = s.contacts || {};
       const monto = Number(s.monto_proximo ?? s.precio) || 0;
 
-      // ── recordatorios previos ──
+      // ── recordatorios previos ── (no a quien ya pidió cancelar al vencer)
       const hitos = s.ciclo === 'anual' ? [30, 15, 7] : [3];
-      if (dias >= 0 && hitos.includes(dias)) {
+      if (dias >= 0 && hitos.includes(dias) && !s.cancela_al_vencer) {
         const hito = 'recordatorio_' + s.proxima_factura + '_' + dias;
         if (!(await yaAvisado(s.id, hito))) {
           if (contacto.email) {
@@ -57,6 +57,18 @@ export const GET: APIRoute = async ({ url }) => {
           await marcarAviso(s, hito, `🔔 Recordatorio de renovación enviado (${dias} días): ${empresa} · ${s.nombre_plan} · $${monto.toLocaleString('es-MX')}`);
           out.recordatorios++;
         }
+      }
+
+      // ── cancelación "al vencer": al llegar la fecha, se apaga de verdad ──
+      if (s.cancela_al_vencer && dias <= 0) {
+        await supabase.from('subscriptions').update({
+          estado: 'cancelada', cancelada_at: new Date().toISOString(), cancela_al_vencer: false, updated_at: new Date().toISOString(),
+        }).eq('id', s.id);
+        const churn: any = { company_id: s.company_id, mrr_lost: s.mrr, reason: s.razon_cancelacion || 'cancelación programada', cancelled_at: new Date().toISOString() };
+        let cr = await supabase.from('churn_events').insert({ ...churn, subscription_id: s.id }).select().maybeSingle();
+        if (cr.error && /column .* does not exist|schema cache/i.test(cr.error.message || '')) await supabase.from('churn_events').insert(churn).select().maybeSingle();
+        await marcarAviso(s, 'cancelada_al_vencer_' + s.proxima_factura, `🚫 Cancelación efectiva (era al vencer): ${empresa} · ${s.nombre_plan}`);
+        continue; // no dunning ni recordatorios para algo que ya se apagó
       }
 
       // ── dunning de vencidas ──

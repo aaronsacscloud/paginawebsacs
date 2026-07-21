@@ -94,7 +94,7 @@ export const POST: APIRoute = async ({ request }) => {
         contactId = nc?.id || null;
       }
     }
-    const { data: ns, error: se } = await supabase.from('subscriptions').insert({
+    const subRow: any = {
       company_id: co.id, contact_id: contactId,
       nombre_plan: String(body.nombre_plan || 'Licencia SACS').slice(0, 160),
       ciclo, estado: 'programada', precio,
@@ -103,7 +103,15 @@ export const POST: APIRoute = async ({ request }) => {
       proxima_factura: new Date().toISOString().slice(0, 10),
       monto_proximo: precio,
       notas: 'Creada desde Conciliación (cuenta activa sin suscripción).',
-    }).select('id').single();
+    };
+    if (body.plan_id) subRow.plan_id = body.plan_id;
+    if (body.precio_lista != null) subRow.precio_lista = Number(body.precio_lista) || null;
+    let insRes = await supabase.from('subscriptions').insert(subRow).select('id').single();
+    if (insRes.error && /column .* does not exist|schema cache/i.test(insRes.error.message || '')) {
+      delete subRow.plan_id; delete subRow.precio_lista;
+      insRes = await supabase.from('subscriptions').insert(subRow).select('id').single();
+    }
+    const { data: ns, error: se } = insRes;
     if (se) return new Response(JSON.stringify({ error: se.message }), { status: 500 });
     await supabase.from('companies').update({ tipo_cuenta: 'cliente' }).eq('id', co.id).select().maybeSingle();
     await supabase.from('activities').insert({

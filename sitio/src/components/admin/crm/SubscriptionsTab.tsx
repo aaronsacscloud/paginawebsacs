@@ -591,27 +591,94 @@ function StripeLinkBtn({ subId }: { subId: string }) {
 }
 
 /* ═══════════════ Modal: editar / cancelar suscripción ═══════════════ */
-const RAZONES_CANCEL = ['precio', 'no implementó', 'cerró el negocio', 'se fue con competencia', 'mal servicio/soporte', 'otro'];
+// Catálogo canónico de razones de churn (valor guardado → etiqueta ES). Único
+// para todo el CRM; medir churn por causa exige un set cerrado, no texto libre.
+const RAZONES_CANCEL: [string, string][] = [
+  ['precio', 'Precio / presupuesto'],
+  ['no_implemento', 'No lo implementó'],
+  ['no_uso', 'Dejó de usarlo'],
+  ['cerro_negocio', 'Cerró el negocio'],
+  ['competencia', 'Se fue con la competencia'],
+  ['mal_servicio', 'Mal servicio / soporte'],
+  ['feature_falta', 'Le faltó una función'],
+  ['otro', 'Otro'],
+];
+
+// Qué significa cada estado y qué dispara (leyenda para el dueño).
+const ESTADO_INFO: Record<string, string> = {
+  programada: 'Cerrada pero aún no paga su primer cobro. Se activa sola al registrar el pago.',
+  activa: 'Al corriente. Suma al ARR y se le recuerda su renovación.',
+  pendiente_pago: 'Su factura venció y no ha pagado. Dunning corriendo (email/WhatsApp/tarea). No suma ARR hasta pagar.',
+  pausada: 'Congelada de común acuerdo. No se le cobra ni se le manda dunning, no suma ARR. Requiere fecha de reanudación.',
+  cancelada: 'Terminó la relación. Guarda la razón para atacar el churn.',
+};
+// Transiciones permitidas desde cada estado (refleja el guard del servidor).
+const TRANSICIONES_UI: Record<string, string[]> = {
+  programada: ['programada', 'activa', 'pendiente_pago', 'cancelada'],
+  activa: ['activa', 'pendiente_pago', 'pausada', 'cancelada'],
+  pendiente_pago: ['pendiente_pago', 'activa', 'pausada', 'cancelada'],
+  pausada: ['pausada', 'activa', 'cancelada'],
+  cancelada: ['cancelada', 'activa'],
+};
+
 function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => void; onDone: () => void }) {
   const [form, setForm] = useState<any>({
     id: sub.id, nombre_plan: sub.nombre_plan, ciclo: sub.ciclo, estado: sub.estado,
-    precio: sub.precio, fecha_inicio: sub.fecha_inicio, proxima_factura: sub.proxima_factura,
+    precio: sub.precio, plan_id: (sub as any).plan_id || '', precio_lista: (sub as any).precio_lista ?? null,
+    fecha_inicio: sub.fecha_inicio, proxima_factura: sub.proxima_factura,
     monto_proximo: sub.monto_proximo, razon_cancelacion: sub.razon_cancelacion || '', notas: sub.notas || '',
     stripe_subscription_id: (sub as any).stripe_subscription_id || '',
+    aplicar_ciclo: 'al_renovar', cancela_al_vencer: true, cancelar_stripe: !!(sub as any).stripe_subscription_id, detalle_cancel: '',
+    pausada_hasta: (sub as any).pausada_hasta || '',
   });
+  const [plans, setPlans] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  useEffect(() => { fetch('/api/crm/arr/plans').then(r => r.json()).then(j => setPlans(j.data || [])).catch(() => {}); }, []);
+
+  const planSel = plans.find(p => p.id === form.plan_id) || plans.find(p => p.slug && form.nombre_plan?.toLowerCase().includes(p.slug));
+  const precioLista = planSel && !planSel.a_la_medida ? (form.ciclo === 'anual' ? planSel.precio_anual : planSel.precio_mensual) : null;
+  const cicloCambio = form.ciclo !== sub.ciclo;
+  const estadoCambio = form.estado !== sub.estado;
+  const esCancelar = form.estado === 'cancelada' && sub.estado !== 'cancelada';
+  const esPausar = form.estado === 'pausada' && sub.estado !== 'pausada';
+  const descuento = precioLista && Number(form.precio) > 0 && Number(form.precio) < precioLista
+    ? Math.round((1 - Number(form.precio) / precioLista) * 100) : 0;
+
+  function elegirPlan(planId: string) {
+    const p = plans.find(x => x.id === planId);
+    if (!p) { setForm({ ...form, plan_id: '' }); return; }
+    const lista = p.a_la_medida ? null : (form.ciclo === 'anual' ? p.precio_anual : p.precio_mensual);
+    // Solo autollenar el precio si el actual coincidía con la lista (no pisar un pactado)
+    const pisarPrecio = !form.precio || Number(form.precio) === Number(form.precio_lista || 0);
+    setForm({ ...form, plan_id: planId, nombre_plan: p.nombre + (form.ciclo === 'anual' ? ' Anual' : ' Mensual'),
+      precio_lista: lista, ...(pisarPrecio && lista ? { precio: lista, monto_proximo: lista } : {}) });
+  }
+  function cambiarCiclo(nuevo: string) {
+    const p = plans.find(x => x.id === form.plan_id);
+    const lista = p && !p.a_la_medida ? (nuevo === 'anual' ? p.precio_anual : p.precio_mensual) : null;
+    const pisarPrecio = !form.precio || Number(form.precio) === Number(form.precio_lista || 0);
+    setForm({ ...form, ciclo: nuevo, precio_lista: lista, ...(pisarPrecio && lista ? { precio: lista, monto_proximo: lista } : {}) });
+  }
+
   async function guardar() {
-    if (form.estado === 'cancelada' && !form.razon_cancelacion) { setErr('Elige la razón de cancelación — sirve para atacar la causa del churn.'); return; }
+    if (esCancelar && !form.razon_cancelacion) { setErr('Elige la razón de cancelación — sirve para atacar la causa del churn.'); return; }
+    if (esCancelar && (form.razon_cancelacion === 'otro' || form.razon_cancelacion === 'competencia') && !form.detalle_cancel.trim()) { setErr('Agrega el detalle de la cancelación.'); return; }
+    if (esPausar && !form.pausada_hasta) { setErr('Elige hasta cuándo se pausa (fecha de reanudación).'); return; }
     setSaving(true); setErr(null);
     try {
-      const res = await fetch('/api/crm/arr/subscriptions', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+      const payload = { ...form, razon_cancelacion: esCancelar ? form.razon_cancelacion : (form.estado === 'cancelada' ? form.razon_cancelacion : undefined),
+        notas: form.detalle_cancel ? `${form.notas}${form.notas ? ' · ' : ''}[cancelación] ${form.detalle_cancel}` : form.notas };
+      const res = await fetch('/api/crm/arr/subscriptions', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const j = await res.json();
       if (!res.ok || j.error) throw new Error(j.error || 'No se pudo guardar');
+      if (j.advertencia) alert(j.advertencia);
       onDone();
     } catch (e: any) { setErr(e?.message || String(e)); setSaving(false); }
   }
+
+  const estadosPermitidos = TRANSICIONES_UI[sub.estado] || [sub.estado];
 
   return (
     <div style={S.overlay} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
@@ -622,27 +689,96 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
         </div>
         <div style={{ fontSize: '0.8rem', color: '#999', marginBottom: 10 }}>{sub.companies?.nombre || '—'}{sub.companies?.sacs_account ? ' · ' + sub.companies.sacs_account : ''}</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <div style={{ gridColumn: '1 / -1' }}><label style={S.label}>Plan</label><input value={form.nombre_plan} onChange={e => setForm({ ...form, nombre_plan: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
-          <div><label style={S.label}>Ciclo</label><select value={form.ciclo} onChange={e => setForm({ ...form, ciclo: e.target.value })} style={{ ...S.input, width: '100%' }}><option value="anual">Anual</option><option value="mensual">Mensual</option></select></div>
-          <div><label style={S.label}>Estado</label><select value={form.estado} onChange={e => setForm({ ...form, estado: e.target.value })} style={{ ...S.input, width: '100%' }}>{Object.entries(ESTADOS).map(([v, c]) => <option key={v} value={v}>{c.label}</option>)}</select></div>
-          <div><label style={S.label}>Precio por {form.ciclo === 'anual' ? 'año' : 'mes'}</label><input type="number" value={form.precio} onChange={e => setForm({ ...form, precio: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
+          {/* Plan desde catálogo */}
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={S.label}>Plan</label>
+            <select value={form.plan_id} onChange={e => elegirPlan(e.target.value)} style={{ ...S.input, width: '100%' }}>
+              <option value="">— {form.nombre_plan || 'personalizado'} (sin catálogo) —</option>
+              {plans.map(p => <option key={p.id || p.slug} value={p.id || ''}>{p.nombre}{p.a_la_medida ? ' (a la medida)' : ''}</option>)}
+            </select>
+            <input value={form.nombre_plan} onChange={e => setForm({ ...form, nombre_plan: e.target.value })} style={{ ...S.input, width: '100%', marginTop: 6, fontSize: '0.78rem' }} placeholder="Etiqueta del plan" />
+          </div>
+
+          {/* Ciclo con leyenda */}
+          <div>
+            <label style={S.label}>Ciclo</label>
+            <select value={form.ciclo} onChange={e => cambiarCiclo(e.target.value)} style={{ ...S.input, width: '100%' }}><option value="anual">Anual</option><option value="mensual">Mensual</option></select>
+          </div>
+          {/* Estado con transiciones válidas */}
+          <div>
+            <label style={S.label}>Estado</label>
+            <select value={form.estado} onChange={e => setForm({ ...form, estado: e.target.value })} style={{ ...S.input, width: '100%' }}>
+              {Object.entries(ESTADOS).map(([v, c]) => <option key={v} value={v} disabled={!estadosPermitidos.includes(v)}>{c.label}{!estadosPermitidos.includes(v) ? ' (no aplica)' : ''}</option>)}
+            </select>
+          </div>
+          <div style={{ gridColumn: '1 / -1', fontSize: '0.72rem', color: '#888', marginTop: -4 }}>
+            {form.ciclo === 'anual' ? 'Anual: se cobra una vez al año; el precio es por año (suele traer 2 meses de regalo).' : 'Mensual: se cobra cada mes; el precio es por mes.'}
+            {' · '}<span style={{ color: ESTADOS[form.estado]?.color }}>{ESTADO_INFO[form.estado]}</span>
+          </div>
+
+          {/* Precio con sugerencia de lista y badge de descuento */}
+          <div>
+            <label style={S.label}>Precio por {form.ciclo === 'anual' ? 'año' : 'mes'}</label>
+            <input type="number" value={form.precio} onChange={e => setForm({ ...form, precio: e.target.value })} style={{ ...S.input, width: '100%' }} />
+            {precioLista != null && Number(form.precio) !== precioLista && (
+              <div style={{ fontSize: '0.7rem', marginTop: 3 }}>
+                <button type="button" onClick={() => setForm({ ...form, precio: precioLista, monto_proximo: precioLista })} style={{ ...S.btnSmall, padding: '2px 8px', fontSize: '0.7rem' }}>Usar ${Number(precioLista).toLocaleString('es-MX')} (lista)</button>
+                {descuento > 0 && <span style={{ color: '#a06600', marginLeft: 6 }}>Pactado −{descuento}%</span>}
+              </div>
+            )}
+          </div>
           <div><label style={S.label}>Monto próximo</label><input type="number" value={form.monto_proximo ?? ''} onChange={e => setForm({ ...form, monto_proximo: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
           <div><label style={S.label}>Fecha inicio</label><input type="date" value={form.fecha_inicio || ''} onChange={e => setForm({ ...form, fecha_inicio: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
           <div><label style={S.label}>Próxima factura</label><input type="date" value={form.proxima_factura || ''} onChange={e => setForm({ ...form, proxima_factura: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
           <div style={{ gridColumn: '1 / -1' }}><label style={S.label}>Stripe subscription ID <span style={{ color: '#bbb', fontWeight: 400 }}>(sub_… — al cobrarse en Stripe se registra y renueva sola)</span></label><input value={form.stripe_subscription_id} onChange={e => setForm({ ...form, stripe_subscription_id: e.target.value })} style={{ ...S.input, width: '100%' }} placeholder="sub_1Abc…" /></div>
-          {form.estado === 'cancelada' && (
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={S.label}>Razón de cancelación *</label>
-              <select value={form.razon_cancelacion} onChange={e => setForm({ ...form, razon_cancelacion: e.target.value })} style={{ ...S.input, width: '100%' }}>
-                <option value="">— elegir —</option>
-                {RAZONES_CANCEL.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </div>
-          )}
         </div>
+
+        {/* Panel: cambio de ciclo */}
+        {cicloCambio && (
+          <div style={{ marginTop: 12, padding: 12, borderRadius: 8, background: '#F5F8FF', border: '1px solid #D6E4FF' }}>
+            <div style={{ fontWeight: 700, fontSize: '0.82rem', marginBottom: 6 }}>Cambio de ciclo: {sub.ciclo} → {form.ciclo}</div>
+            <div style={{ fontSize: '0.75rem', color: '#555', marginBottom: 8 }}>
+              Hoy: ${Number(sub.precio).toLocaleString('es-MX')} {sub.ciclo === 'anual' ? 'al año' : 'al mes'}. Pasará a: ${Number(form.precio).toLocaleString('es-MX')} {form.ciclo === 'anual' ? 'al año' : 'al mes'}.
+            </div>
+            <label style={{ display: 'block', fontSize: '0.78rem', marginBottom: 4 }}><input type="radio" checked={form.aplicar_ciclo === 'al_renovar'} onChange={() => setForm({ ...form, aplicar_ciclo: 'al_renovar' })} /> Al renovar ({sub.proxima_factura || 'próxima factura'}) — el periodo pagado se respeta; el ciclo nuevo aplica al siguiente cobro.</label>
+            <label style={{ display: 'block', fontSize: '0.78rem' }}><input type="radio" checked={form.aplicar_ciclo === 'ahora'} onChange={() => setForm({ ...form, aplicar_ciclo: 'ahora' })} /> Ahora mismo — solo para corregir una captura; revisa la próxima factura.</label>
+          </div>
+        )}
+
+        {/* Panel: cancelación */}
+        {esCancelar && (
+          <div style={{ marginTop: 12, padding: 12, borderRadius: 8, background: '#FFF5F5', border: '1px solid #FED7D7' }}>
+            <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#b93333', marginBottom: 8 }}>Cancelar suscripción — se pierden ${Number(sub.arr).toLocaleString('es-MX')} de ARR</div>
+            <label style={S.label}>Razón *</label>
+            <select value={form.razon_cancelacion} onChange={e => setForm({ ...form, razon_cancelacion: e.target.value })} style={{ ...S.input, width: '100%', marginBottom: 8 }}>
+              <option value="">— elegir —</option>
+              {RAZONES_CANCEL.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
+            {(form.razon_cancelacion === 'otro' || form.razon_cancelacion === 'competencia') && (
+              <input value={form.detalle_cancel} onChange={e => setForm({ ...form, detalle_cancel: e.target.value })} placeholder={form.razon_cancelacion === 'competencia' ? '¿A qué competidor se fue?' : 'Detalle…'} style={{ ...S.input, width: '100%', marginBottom: 8 }} />
+            )}
+            <label style={{ display: 'block', fontSize: '0.78rem', marginBottom: 4 }}><input type="radio" checked={form.cancela_al_vencer} onChange={() => setForm({ ...form, cancela_al_vencer: true })} /> Al terminar lo pagado ({sub.proxima_factura || 'fin del periodo'}) — sigue activa hasta ahí.</label>
+            <label style={{ display: 'block', fontSize: '0.78rem', marginBottom: 8 }}><input type="radio" checked={!form.cancela_al_vencer} onChange={() => setForm({ ...form, cancela_al_vencer: false })} /> Hoy — corta ya.</label>
+            {form.stripe_subscription_id && (
+              <label style={{ display: 'block', fontSize: '0.78rem' }}><input type="checkbox" checked={form.cancelar_stripe} onChange={e => setForm({ ...form, cancelar_stripe: e.target.checked })} /> Cancelar también en Stripe {!form.cancelar_stripe && <span style={{ color: '#b93333' }}>⚠️ Stripe seguirá cobrando</span>}</label>
+            )}
+          </div>
+        )}
+
+        {/* Panel: pausa */}
+        {esPausar && (
+          <div style={{ marginTop: 12, padding: 12, borderRadius: 8, background: '#FAFAFA', border: '1px solid #E5E5E5' }}>
+            <div style={{ fontWeight: 700, fontSize: '0.82rem', marginBottom: 6 }}>Pausar — sin cobro ni dunning mientras esté pausada</div>
+            <label style={S.label}>Reanudar el *</label>
+            <input type="date" value={form.pausada_hasta} onChange={e => setForm({ ...form, pausada_hasta: e.target.value })} style={{ ...S.input, width: '100%' }} />
+          </div>
+        )}
+
         <div style={{ marginTop: 10 }}><label style={S.label}>Notas</label><textarea value={form.notas} onChange={e => setForm({ ...form, notas: e.target.value })} style={{ ...S.input, width: '100%', height: 50, resize: 'vertical' }} /></div>
         {err && <div style={{ color: '#b93333', fontSize: '0.8rem', marginTop: 8 }}>{err}</div>}
-        <button onClick={guardar} disabled={saving} style={{ ...S.btn, width: '100%', marginTop: 14, background: '#1a1a1a', color: '#fff', opacity: saving ? 0.6 : 1 }}>{saving ? 'Guardando…' : 'Guardar cambios'}</button>
+        <button onClick={guardar} disabled={saving} style={{ ...S.btn, width: '100%', marginTop: 14, background: esCancelar ? '#b93333' : '#1a1a1a', color: '#fff', opacity: saving ? 0.6 : 1 }}>
+          {saving ? 'Guardando…' : esCancelar ? `Confirmar cancelación` : 'Guardar cambios'}
+        </button>
       </div>
     </div>
   );
@@ -751,9 +887,17 @@ function ConciliacionView({ onChanged }: { onChanged: () => void }) {
 }
 
 function CrearSubModal({ cuenta, onClose, onDone }: { cuenta: any; onClose: () => void; onDone: () => void }) {
-  const [form, setForm] = useState<any>({ ciclo: 'anual' });
+  const [form, setForm] = useState<any>({ ciclo: 'anual', plan_id: '' });
+  const [plans, setPlans] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  useEffect(() => { fetch('/api/crm/arr/plans').then(r => r.json()).then(j => setPlans(j.data || [])).catch(() => {}); }, []);
+  function elegirPlan(planId: string) {
+    const p = plans.find(x => x.id === planId);
+    if (!p) { setForm({ ...form, plan_id: '' }); return; }
+    const lista = p.a_la_medida ? null : (form.ciclo === 'anual' ? p.precio_anual : p.precio_mensual);
+    setForm({ ...form, plan_id: planId, nombre_plan: p.nombre + (form.ciclo === 'anual' ? ' Anual' : ' Mensual'), precio_lista: lista, ...(lista ? { precio: lista } : {}) });
+  }
   async function crear() {
     if (!form.nombre_plan || !Number(form.precio)) { setErr('Plan y precio requeridos.'); return; }
     setSaving(true); setErr(null);
@@ -776,8 +920,15 @@ function CrearSubModal({ cuenta, onClose, onDone }: { cuenta: any; onClose: () =
         </div>
         <div style={{ fontSize: '0.78rem', color: '#999', marginBottom: 10 }}>Vende {fmt(cuenta.total_30d)}/30d en SACS. Queda PROGRAMADA; al registrar su primer pago se activa.</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <div style={{ gridColumn: '1 / -1' }}><label style={S.label}>Plan *</label><input value={form.nombre_plan || ''} onChange={e => setForm({ ...form, nombre_plan: e.target.value })} style={{ ...S.input, width: '100%' }} placeholder="Licencia Controla Anual" /></div>
-          <div><label style={S.label}>Ciclo</label><select value={form.ciclo} onChange={e => setForm({ ...form, ciclo: e.target.value })} style={{ ...S.input, width: '100%' }}><option value="anual">Anual</option><option value="mensual">Mensual</option></select></div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={S.label}>Plan *</label>
+            <select value={form.plan_id} onChange={e => elegirPlan(e.target.value)} style={{ ...S.input, width: '100%' }}>
+              <option value="">— elegir del catálogo —</option>
+              {plans.map(p => <option key={p.id || p.slug} value={p.id || ''}>{p.nombre}{p.a_la_medida ? ' (a la medida)' : ''}</option>)}
+            </select>
+            <input value={form.nombre_plan || ''} onChange={e => setForm({ ...form, nombre_plan: e.target.value })} style={{ ...S.input, width: '100%', marginTop: 6, fontSize: '0.78rem' }} placeholder="Licencia Controla Anual" />
+          </div>
+          <div><label style={S.label}>Ciclo</label><select value={form.ciclo} onChange={e => { const c = e.target.value; const p = plans.find(x => x.id === form.plan_id); const lista = p && !p.a_la_medida ? (c === 'anual' ? p.precio_anual : p.precio_mensual) : null; setForm({ ...form, ciclo: c, precio_lista: lista, ...(lista ? { precio: lista } : {}) }); }} style={{ ...S.input, width: '100%' }}><option value="anual">Anual</option><option value="mensual">Mensual</option></select></div>
           <div><label style={S.label}>Precio por {form.ciclo === 'anual' ? 'año' : 'mes'} *</label><input type="number" value={form.precio || ''} onChange={e => setForm({ ...form, precio: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
           <div><label style={S.label}>Contacto</label><input value={form.contacto_nombre || ''} onChange={e => setForm({ ...form, contacto_nombre: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
           <div><label style={S.label}>Email</label><input value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
