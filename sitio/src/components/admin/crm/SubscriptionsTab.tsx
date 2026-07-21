@@ -122,6 +122,12 @@ export default function SubscriptionsTab() {
   const nSinPlan = useMemo(() => subs.filter(s => !(s as any).plan_id).length, [subs]);
   const planById = useMemo(() => { const m = new Map<string, any>(); plans.forEach((p: any) => m.set(p.id, p)); return m; }, [plans]);
   const stalePend = useMemo(() => subs.filter(esStale), [subs, hace60]);
+  // Segmento Vitalicias legacy (pago único, fuera de ARR) — oportunidad de recurrencia.
+  const vitStats = useMemo(() => {
+    const vit = subs.filter(s => s.ciclo === 'vitalicia');
+    const usando = vit.filter(s => { const d = s.companies?.dias_sin_venta; return d != null && d <= 30; }).length;
+    return { total: vit.length, cobrado: vit.reduce((a, s) => a + Number(s.total_pagado || 0), 0), activas: vit.filter(s => s.estado === 'activa').length, usando };
+  }, [subs]);
 
   const k = summary?.kpis;
   const meta = summary?.meta;
@@ -186,6 +192,21 @@ export default function SubscriptionsTab() {
 
       {/* ═══ VISTA SUSCRIPCIONES ═══ */}
       {vista === 'subs' && (
+        <>
+        {vitStats.total > 0 && (
+          <div style={{ ...S.card, borderLeft: '4px solid #a06600' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <div style={{ fontWeight: 800 }}>♾️ Vitalicias legacy <span style={{ color: '#999', fontWeight: 400, fontSize: 13 }}>· pago único, fuera de ARR — oportunidad de recurrencia</span></div>
+              <button onClick={() => { setFCiclo(fCiclo === 'vitalicia' ? '' : 'vitalicia'); }} style={{ ...S.btnSmall, background: fCiclo === 'vitalicia' ? '#1a1a1a' : '#fff', color: fCiclo === 'vitalicia' ? '#fff' : '#333' }}>{fCiclo === 'vitalicia' ? 'Ver todas' : `Ver los ${vitStats.total} →`}</button>
+            </div>
+            <div style={{ display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
+              <div style={S.kpi}><div style={S.kLabel}>Clientes vitalicios</div><div style={S.kValue}>{vitStats.total}</div><div style={S.kSub}>{vitStats.activas} activos</div></div>
+              <div style={S.kpi}><div style={S.kLabel}>Cobrado (pago único)</div><div style={S.kValue}>{fmt(vitStats.cobrado)}</div><div style={S.kSub}>ingreso reconocido, no ARR</div></div>
+              <div style={S.kpi}><div style={S.kLabel}>Usando SACS (≤30d)</div><div style={{ ...S.kValue, color: '#1A8F7A' }}>{vitStats.usando}</div><div style={S.kSub}>upsell caliente</div></div>
+              <div style={S.kpi}><div style={S.kLabel}>Sin uso reciente</div><div style={{ ...S.kValue, color: (vitStats.total - vitStats.usando) > 0 ? '#a06600' : '#999' }}>{vitStats.total - vitStats.usando}</div><div style={S.kSub}>reactivar / recuperar</div></div>
+            </div>
+          </div>
+        )}
         <div style={S.card}>
           {stalePend.length > 0 && (
             <div style={{ marginBottom: 10, padding: '8px 12px', background: '#fff8ec', border: '1px solid #f5e2b8', borderRadius: 8, fontSize: 13, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -285,6 +306,7 @@ export default function SubscriptionsTab() {
             {!filtered.length && <div style={{ padding: 28, textAlign: 'center', color: '#999' }}>Sin suscripciones con esos filtros.</div>}
           </div>
         </div>
+        </>
       )}
 
       {/* ═══ VISTA RIESGO ═══ */}
