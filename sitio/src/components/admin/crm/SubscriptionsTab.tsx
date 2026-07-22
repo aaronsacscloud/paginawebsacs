@@ -49,6 +49,23 @@ export const S = {
   label: { fontSize: '0.72rem', fontWeight: 700, color: '#777', display: 'block', marginBottom: 3 } as const,
 };
 
+// Opciones del selector de plan: separa planes de PLUGINS (módulos SACS que
+// también se venden por suscripción y suman al ARR) en dos <optgroup>. El value
+// es id-o-slug (los plugins/fallback no tienen id) — elegirPlan resuelve por él.
+export function PlanOptions({ plans }: { plans: any[] }) {
+  const opt = (p: any) => (
+    <option key={p.id || p.slug} value={p.id || p.slug}>{p.nombre}{p.a_la_medida ? ' (a la medida)' : ''}</option>
+  );
+  const planes = plans.filter(p => (p.categoria || 'plan') !== 'plugin');
+  const plugins = plans.filter(p => p.categoria === 'plugin');
+  return (
+    <>
+      {planes.map(opt)}
+      {plugins.length > 0 && <optgroup label="🧩 Plugins / módulos (a la medida)">{plugins.map(opt)}</optgroup>}
+    </>
+  );
+}
+
 export function Estado({ e }: { e: string }) {
   const cfg = ESTADOS[e] || ESTADOS.programada;
   return <span style={{ ...S.badge, background: cfg.bg, color: cfg.color }}>{cfg.label}</span>;
@@ -222,7 +239,10 @@ export default function SubscriptionsTab() {
             </select>
             <select value={fPlan} onChange={e => setFPlan(e.target.value)} style={S.input} title="Filtra por plan del catálogo">
               <option value="">Todos los planes</option>
-              {plans.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+              {/* El filtro opera por plan_id: solo entradas con id real (las
+                  suscripciones de plugin/a-la-medida guardan plan_id='' y se
+                  distinguen por nombre_plan, no filtrables por id). */}
+              {plans.filter(p => p.id).map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
               {nSinPlan > 0 && <option value="__none__">Sin plan de catálogo ({nSinPlan})</option>}
             </select>
             <select value={fCiclo} onChange={e => setFCiclo(e.target.value)} style={S.input}>
@@ -866,13 +886,16 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
   const descuento = precioLista && Number(form.precio) > 0 && Number(form.precio) < precioLista
     ? Math.round((1 - Number(form.precio) / precioLista) * 100) : 0;
 
-  function elegirPlan(planId: string) {
-    const p = plans.find(x => x.id === planId);
+  function elegirPlan(key: string) {
+    // key = id (planes de BD) o slug (fallback + plugins sin id). Los plugins/
+    // fallback guardan plan_id='' y viven en nombre_plan, como ya hace el
+    // catálogo a la medida — su precio es pactado (a_la_medida).
+    const p = plans.find(x => (x.id || x.slug) === key);
     if (!p) { setForm({ ...form, plan_id: '' }); return; }
     const lista = p.a_la_medida ? null : (form.ciclo === 'anual' ? p.precio_anual : p.precio_mensual);
     // Solo autollenar el precio si el actual coincidía con la lista (no pisar un pactado)
     const pisarPrecio = !form.precio || Number(form.precio) === Number(form.precio_lista || 0);
-    setForm({ ...form, plan_id: planId, nombre_plan: p.nombre + (form.ciclo === 'vitalicia' ? '' : form.ciclo === 'anual' ? ' Anual' : ' Mensual'),
+    setForm({ ...form, plan_id: p.id || '', nombre_plan: p.nombre + (form.ciclo === 'vitalicia' ? '' : form.ciclo === 'anual' ? ' Anual' : ' Mensual'),
       precio_lista: lista, ...(pisarPrecio && lista ? { precio: lista, monto_proximo: lista } : {}) });
   }
   function cambiarCiclo(nuevo: string) {
@@ -985,7 +1008,7 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
             <label style={S.label}>Plan</label>
             <select value={form.plan_id} onChange={e => elegirPlan(e.target.value)} style={{ ...S.input, width: '100%' }}>
               <option value="">— {form.nombre_plan || 'personalizado'} (sin catálogo) —</option>
-              {plans.map(p => <option key={p.id || p.slug} value={p.id || ''}>{p.nombre}{p.a_la_medida ? ' (a la medida)' : ''}</option>)}
+              <PlanOptions plans={plans} />
             </select>
             <input value={form.nombre_plan} onChange={e => setForm({ ...form, nombre_plan: e.target.value })} style={{ ...S.input, width: '100%', marginTop: 6, fontSize: '0.78rem' }} placeholder="Etiqueta del plan" />
           </div>
@@ -1261,11 +1284,11 @@ function BulkCrearSubModal({ cuentas, onClose, onDone }: { cuentas: any[]; onClo
   const [err, setErr] = useState<string | null>(null);
   const [prog, setProg] = useState<{ hechas: number; total: number; fallos: string[] } | null>(null);
   useEffect(() => { fetch('/api/crm/arr/plans').then(r => r.json()).then(j => setPlans(j.data || [])).catch(() => {}); }, []);
-  function elegirPlan(planId: string) {
-    const p = plans.find(x => x.id === planId);
+  function elegirPlan(key: string) {
+    const p = plans.find(x => (x.id || x.slug) === key);
     if (!p) { setForm({ ...form, plan_id: '' }); return; }
     const lista = p.a_la_medida || form.ciclo === 'vitalicia' ? null : (form.ciclo === 'anual' ? p.precio_anual : p.precio_mensual);
-    setForm({ ...form, plan_id: planId, nombre_plan: p.nombre + (form.ciclo === 'vitalicia' ? '' : form.ciclo === 'anual' ? ' Anual' : ' Mensual'), precio_lista: lista, ...(lista ? { precio: lista } : {}) });
+    setForm({ ...form, plan_id: p.id || '', nombre_plan: p.nombre + (form.ciclo === 'vitalicia' ? '' : form.ciclo === 'anual' ? ' Anual' : ' Mensual'), precio_lista: lista, ...(lista ? { precio: lista } : {}) });
   }
   async function crear() {
     if (!form.nombre_plan || !Number(form.precio)) { setErr('Plan y precio requeridos.'); return; }
@@ -1303,7 +1326,7 @@ function BulkCrearSubModal({ cuentas, onClose, onDone }: { cuentas: any[]; onClo
             <label style={S.label}>Plan *</label>
             <select value={form.plan_id} onChange={e => elegirPlan(e.target.value)} style={{ ...S.input, width: '100%' }}>
               <option value="">— elegir del catálogo —</option>
-              {plans.map(p => <option key={p.id || p.slug} value={p.id || ''}>{p.nombre}{p.a_la_medida ? ' (a la medida)' : ''}</option>)}
+              <PlanOptions plans={plans} />
             </select>
             <input value={form.nombre_plan} onChange={e => setForm({ ...form, nombre_plan: e.target.value })} style={{ ...S.input, width: '100%', marginTop: 6, fontSize: '0.78rem' }} placeholder="Etiqueta del plan" />
           </div>
@@ -1324,11 +1347,11 @@ function CrearSubModal({ cuenta, onClose, onDone }: { cuenta: any; onClose: () =
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => { fetch('/api/crm/arr/plans').then(r => r.json()).then(j => setPlans(j.data || [])).catch(() => {}); }, []);
-  function elegirPlan(planId: string) {
-    const p = plans.find(x => x.id === planId);
+  function elegirPlan(key: string) {
+    const p = plans.find(x => (x.id || x.slug) === key);
     if (!p) { setForm({ ...form, plan_id: '' }); return; }
     const lista = p.a_la_medida ? null : (form.ciclo === 'anual' ? p.precio_anual : p.precio_mensual);
-    setForm({ ...form, plan_id: planId, nombre_plan: p.nombre + (form.ciclo === 'vitalicia' ? '' : form.ciclo === 'anual' ? ' Anual' : ' Mensual'), precio_lista: lista, ...(lista ? { precio: lista } : {}) });
+    setForm({ ...form, plan_id: p.id || '', nombre_plan: p.nombre + (form.ciclo === 'vitalicia' ? '' : form.ciclo === 'anual' ? ' Anual' : ' Mensual'), precio_lista: lista, ...(lista ? { precio: lista } : {}) });
   }
   async function crear() {
     if (!form.nombre_plan || !Number(form.precio)) { setErr('Plan y precio requeridos.'); return; }
@@ -1356,7 +1379,7 @@ function CrearSubModal({ cuenta, onClose, onDone }: { cuenta: any; onClose: () =
             <label style={S.label}>Plan *</label>
             <select value={form.plan_id} onChange={e => elegirPlan(e.target.value)} style={{ ...S.input, width: '100%' }}>
               <option value="">— elegir del catálogo —</option>
-              {plans.map(p => <option key={p.id || p.slug} value={p.id || ''}>{p.nombre}{p.a_la_medida ? ' (a la medida)' : ''}</option>)}
+              <PlanOptions plans={plans} />
             </select>
             <input value={form.nombre_plan || ''} onChange={e => setForm({ ...form, nombre_plan: e.target.value })} style={{ ...S.input, width: '100%', marginTop: 6, fontSize: '0.78rem' }} placeholder="Licencia Controla Anual" />
           </div>
