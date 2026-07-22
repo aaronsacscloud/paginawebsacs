@@ -80,9 +80,11 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   if (body.accion === 'crear_sub') {
-    const ciclo = body.ciclo === 'anual' ? 'anual' : 'mensual';
+    const ciclo = body.ciclo === 'anual' ? 'anual' : body.ciclo === 'vitalicia' ? 'vitalicia' : 'mensual';
     const precio = Number(body.precio) || 0;
-    const mrr = ciclo === 'anual' ? precio / 12 : precio;
+    // Vitalicia = pago único: no aporta MRR/ARR ni tiene próxima factura.
+    const mrr = ciclo === 'anual' ? precio / 12 : ciclo === 'vitalicia' ? 0 : precio;
+    const hoy = new Date().toISOString().slice(0, 10);
     // contacto opcional
     let contactId: string | null = null;
     const email = String(body.email || '').trim().toLowerCase();
@@ -99,9 +101,9 @@ export const POST: APIRoute = async ({ request }) => {
       nombre_plan: String(body.nombre_plan || 'Licencia SACS').slice(0, 160),
       ciclo, estado: 'programada', precio,
       mrr: Math.round(mrr * 100) / 100, arr: Math.round(mrr * 12 * 100) / 100,
-      fecha_inicio: new Date().toISOString().slice(0, 10),
-      proxima_factura: new Date().toISOString().slice(0, 10),
-      monto_proximo: precio,
+      fecha_inicio: hoy,
+      proxima_factura: ciclo === 'vitalicia' ? null : hoy,
+      monto_proximo: ciclo === 'vitalicia' ? null : precio,
       notas: 'Creada desde Conciliación (cuenta activa sin suscripción).',
     };
     if (body.plan_id) subRow.plan_id = body.plan_id;

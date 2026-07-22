@@ -1144,6 +1144,9 @@ function ConciliacionView({ onChanged }: { onChanged: () => void }) {
   const [err, setErr] = useState<string | null>(null);
   const [crearPara, setCrearPara] = useState<any>(null);
   const [busyCuenta, setBusyCuenta] = useState<string | null>(null);
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const toggleSel = (cuenta: string) => setSel(s => { const n = new Set(s); n.has(cuenta) ? n.delete(cuenta) : n.add(cuenta); return n; });
 
   async function load() {
     setLoading(true); setErr(null);
@@ -1209,12 +1212,23 @@ function ConciliacionView({ onChanged }: { onChanged: () => void }) {
       {/* cuentas activas sin suscripción */}
       <div style={{ ...S.card, borderLeft: '4px solid #E54B4B' }}>
         <div style={{ fontWeight: 800, marginBottom: 4 }}>💸 Cuentas USANDO SACS sin suscripción registrada <span style={{ color: '#999', fontWeight: 400 }}>· {data.sin_suscripcion} de {data.cuentas_activas} activas · {data.sin_clasificar} sin clasificar</span></div>
-        <div style={{ fontSize: '0.75rem', color: '#999', marginBottom: 10 }}>Vendieron en los últimos 30 días y no aparecen en tus ingresos. Clasifícalas: las "Cliente" deberían tener suscripción (usa Crear sub).</div>
+        <div style={{ fontSize: '0.75rem', color: '#999', marginBottom: 10 }}>Vendieron en los últimos 30 días y no aparecen en tus ingresos. Clasifícalas: las "Cliente" deberían tener suscripción (usa Crear sub). Selecciona varias para crearlas en lote (ideal para vitalicias con el mismo monto).</div>
+        {sel.size > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: '#eef7f5', border: '1px solid #cdeae4', borderRadius: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+            <b>{sel.size} cuenta(s) seleccionada(s)</b>
+            <button onClick={() => setBulkOpen(true)} style={{ ...S.btn, background: '#1A8F7A', color: '#fff', padding: '6px 12px' }}>+ Crear sub en lote</button>
+            <button onClick={() => setSel(new Set())} style={S.btnSmall}>Limpiar selección</button>
+          </div>
+        )}
         <div style={{ overflowX: 'auto', maxHeight: 480, overflowY: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead><tr>{['Cuenta', 'Ventas 30d', 'Volumen 30d', 'Últ. venta', 'Clasificación', 'Acción'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+            <thead><tr>
+              <th style={S.th}><input type="checkbox" checked={data.data.length > 0 && sel.size === data.data.length} onChange={e => setSel(e.target.checked ? new Set(data.data.map((c: any) => c.cuenta)) : new Set())} /></th>
+              {['Cuenta', 'Ventas 30d', 'Volumen 30d', 'Últ. venta', 'Clasificación', 'Acción'].map(h => <th key={h} style={S.th}>{h}</th>)}
+            </tr></thead>
             <tbody>{data.data.map((c: any) => (
-              <tr key={c.cuenta} style={{ opacity: c.tipo_cuenta !== 'sin_clasificar' && c.tipo_cuenta !== 'cliente' ? 0.55 : 1 }}>
+              <tr key={c.cuenta} style={{ opacity: c.tipo_cuenta !== 'sin_clasificar' && c.tipo_cuenta !== 'cliente' ? 0.55 : 1, background: sel.has(c.cuenta) ? '#f0fbf7' : undefined }}>
+                <td style={S.td}><input type="checkbox" checked={sel.has(c.cuenta)} onChange={() => toggleSel(c.cuenta)} /></td>
                 <td style={{ ...S.td, fontWeight: 700 }}>{c.cuenta}</td>
                 <td style={S.td}>{c.ventas_30d}</td>
                 <td style={{ ...S.td, fontWeight: 700 }}>{fmt(c.total_30d)}</td>
@@ -1233,6 +1247,73 @@ function ConciliacionView({ onChanged }: { onChanged: () => void }) {
       </div>
 
       {crearPara && <CrearSubModal cuenta={crearPara} onClose={() => setCrearPara(null)} onDone={() => { setCrearPara(null); load(); onChanged(); }} />}
+      {bulkOpen && <BulkCrearSubModal cuentas={(data.data || []).filter((c: any) => sel.has(c.cuenta))} onClose={() => setBulkOpen(false)} onDone={() => { setBulkOpen(false); setSel(new Set()); load(); onChanged(); }} />}
+    </div>
+  );
+}
+
+// Crea la misma suscripción para VARIAS cuentas (mismo plan/ciclo/precio). Ideal
+// para vitalicias que pagaron lo mismo: un solo monto para todas.
+function BulkCrearSubModal({ cuentas, onClose, onDone }: { cuentas: any[]; onClose: () => void; onDone: () => void }) {
+  const [form, setForm] = useState<any>({ ciclo: 'vitalicia', plan_id: '', nombre_plan: '', precio: '' });
+  const [plans, setPlans] = useState<any[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [prog, setProg] = useState<{ hechas: number; total: number; fallos: string[] } | null>(null);
+  useEffect(() => { fetch('/api/crm/arr/plans').then(r => r.json()).then(j => setPlans(j.data || [])).catch(() => {}); }, []);
+  function elegirPlan(planId: string) {
+    const p = plans.find(x => x.id === planId);
+    if (!p) { setForm({ ...form, plan_id: '' }); return; }
+    const lista = p.a_la_medida || form.ciclo === 'vitalicia' ? null : (form.ciclo === 'anual' ? p.precio_anual : p.precio_mensual);
+    setForm({ ...form, plan_id: planId, nombre_plan: p.nombre + (form.ciclo === 'vitalicia' ? '' : form.ciclo === 'anual' ? ' Anual' : ' Mensual'), precio_lista: lista, ...(lista ? { precio: lista } : {}) });
+  }
+  async function crear() {
+    if (!form.nombre_plan || !Number(form.precio)) { setErr('Plan y precio requeridos.'); return; }
+    setSaving(true); setErr(null);
+    const fallos: string[] = [];
+    let hechas = 0;
+    setProg({ hechas: 0, total: cuentas.length, fallos: [] });
+    for (const c of cuentas) {
+      try {
+        const res = await fetch('/api/crm/arr/conciliacion', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cuenta: c.cuenta, accion: 'crear_sub', ...form, precio: Number(form.precio) }),
+        });
+        const j = await res.json();
+        if (!res.ok || j.error) fallos.push(c.cuenta + ': ' + (j.error || 'error'));
+        else hechas++;
+      } catch (e: any) { fallos.push(c.cuenta + ': ' + (e?.message || 'error')); }
+      setProg({ hechas, total: cuentas.length, fallos: [...fallos] });
+    }
+    setSaving(false);
+    if (!fallos.length) onDone();
+  }
+  const esVit = form.ciclo === 'vitalicia';
+  return (
+    <div style={S.overlay} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={{ ...S.modal, maxWidth: 480 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+          <h3 style={{ margin: 0, fontWeight: 800 }}>Crear sub para {cuentas.length} cuentas</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
+        </div>
+        <div style={{ fontSize: '0.75rem', color: '#999', marginBottom: 10 }}>Mismo plan, ciclo y {esVit ? 'monto único' : 'precio'} para todas. {esVit ? 'Vitalicia: pago único, fuera de ARR.' : 'Quedan PROGRAMADAS hasta su primer pago.'}</div>
+        <div style={{ maxHeight: 90, overflowY: 'auto', background: '#fafafa', border: '1px solid #eee', borderRadius: 8, padding: 8, marginBottom: 10, fontSize: '0.72rem', color: '#666' }}>{cuentas.map(c => c.cuenta).join(' · ')}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={S.label}>Plan *</label>
+            <select value={form.plan_id} onChange={e => elegirPlan(e.target.value)} style={{ ...S.input, width: '100%' }}>
+              <option value="">— elegir del catálogo —</option>
+              {plans.map(p => <option key={p.id || p.slug} value={p.id || ''}>{p.nombre}{p.a_la_medida ? ' (a la medida)' : ''}</option>)}
+            </select>
+            <input value={form.nombre_plan} onChange={e => setForm({ ...form, nombre_plan: e.target.value })} style={{ ...S.input, width: '100%', marginTop: 6, fontSize: '0.78rem' }} placeholder="Etiqueta del plan" />
+          </div>
+          <div><label style={S.label}>Ciclo</label><select value={form.ciclo} onChange={e => setForm({ ...form, ciclo: e.target.value, ...(e.target.value === 'vitalicia' ? { precio_lista: null } : {}) })} style={{ ...S.input, width: '100%' }}><option value="vitalicia">Vitalicia (pago único)</option><option value="anual">Anual</option><option value="mensual">Mensual</option></select></div>
+          <div><label style={S.label}>{esVit ? 'Monto pagado (para todas)' : 'Precio por ' + sufCiclo(form.ciclo)} *</label><input type="number" value={form.precio || ''} onChange={e => setForm({ ...form, precio: e.target.value })} style={{ ...S.input, width: '100%' }} placeholder={esVit ? 'ej. 10475' : ''} /></div>
+        </div>
+        {prog && <div style={{ fontSize: '0.8rem', marginTop: 10, color: '#555' }}>{prog.hechas}/{prog.total} creadas{prog.fallos.length ? ` · ${prog.fallos.length} con error` : ''}{prog.fallos.length ? <div style={{ color: '#b93333', fontSize: '0.72rem', marginTop: 4 }}>{prog.fallos.slice(0, 5).join(' · ')}</div> : null}</div>}
+        {err && <div style={{ color: '#b93333', fontSize: '0.8rem', marginTop: 8 }}>{err}</div>}
+        <button onClick={crear} disabled={saving} style={{ ...S.btn, width: '100%', marginTop: 14, background: '#1A8F7A', color: '#fff', opacity: saving ? 0.6 : 1 }}>{saving ? `Creando… (${prog?.hechas || 0}/${cuentas.length})` : `Crear ${cuentas.length} suscripciones`}</button>
+      </div>
     </div>
   );
 }
