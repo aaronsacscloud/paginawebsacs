@@ -6018,6 +6018,12 @@ const partnerLandingUrl = invitation.slug_landing
     margin: 0 auto;
     font-size: 0.9375rem;
     line-height: 1.7;
+    /* Dentro del modal el scroll lo maneja .p-contract-modal-body — el doc NO
+       debe tener su propio cap de altura (480px/360px del preview inline), que
+       cortaba el contrato a ~cláusula 2. !important porque la regla base
+       .p-contract-doc viene después en el CSS y ganaría por orden de fuente. */
+    max-height: none !important;
+    overflow: visible !important;
   }
   .p-contract-doc--modal h4 {
     font-size: 1rem;
