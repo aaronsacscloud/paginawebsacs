@@ -129,6 +129,9 @@ export default function PartnersTab() {
   const [search, setSearch] = useState('');
   const [detailPartnerId, setDetailPartnerId] = useState<string | null>(null);
   const [recoverInvitation, setRecoverInvitation] = useState<Invitation | null>(null);
+  const [vigenciaEdit, setVigenciaEdit] = useState<Invitation | null>(null);
+  const [vigenciaVal, setVigenciaVal] = useState('');
+  const [vigenciaSaving, setVigenciaSaving] = useState(false);
   // Kebab menu de acciones: ID de la fila con menu abierto + posición del dropdown
   const [openMenu, setOpenMenu] = useState<{ id: string; top?: number; bottom?: number; right: number } | null>(null);
 
@@ -244,12 +247,13 @@ export default function PartnersTab() {
   }
 
   async function cancelInvitation(it: Invitation) {
-    if (!confirm(`¿Cancelar la invitación ${it.numero} de ${it.nombre}?\n\nEl link público dejará de funcionar y el estado pasa a "Cancelada". Si más adelante quieres reactivarla, edítala y vuelve a poner el estado en "Activa".\n\nEsto NO borra la invitación — solo la deja inactiva. Para borrar usa "Eliminar invitación".`)) return;
+    if (!confirm(`¿Cancelar por completo la invitación ${it.numero} de ${it.nombre}?\n\nEl link público dejará de funcionar y el partner la verá como CANCELADA y totalmente vencida. Puedes reactivarla luego con "Editar vigencia".\n\nEsto NO borra la invitación.`)) return;
     try {
       const res = await fetch('/api/partners/invitations', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'x-user-id': 'founder' },
-        body: JSON.stringify({ id: it.id, estado: 'cancelled' }),
+        // cancelada + vigencia en el pasado → el partner la ve cancelada y totalmente vencida
+        body: JSON.stringify({ id: it.id, estado: 'cancelled', vigencia: new Date().toISOString() }),
       });
       if (!res.ok) {
         const e = await res.json();
@@ -260,6 +264,36 @@ export default function PartnersTab() {
     } catch (err: any) {
       alert('Error: ' + err.message);
     }
+  }
+
+  // Editar vigencia: abre el modal con la fecha actual (o +30 días por defecto).
+  function abrirVigencia(it: Invitation) {
+    setOpenMenu(null);
+    const base = it.vigencia ? new Date(it.vigencia) : new Date(Date.now() + 30 * 86400000);
+    // si ya venció, sugiere +30 días desde hoy
+    const sug = (it.vigencia && new Date(it.vigencia) < new Date()) ? new Date(Date.now() + 30 * 86400000) : base;
+    setVigenciaVal(sug.toISOString().slice(0, 10));
+    setVigenciaEdit(it);
+  }
+  async function guardarVigencia() {
+    if (!vigenciaEdit || !vigenciaVal) return;
+    setVigenciaSaving(true);
+    try {
+      // vence al FINAL del día elegido
+      const iso = new Date(vigenciaVal + 'T23:59:59').toISOString();
+      const est = vigenciaEdit.estado;
+      // reactivar si estaba vencida/cancelada; no tocar aceptadas/en revisión/declinadas
+      const reactivar = est === 'expired' || est === 'cancelled' || est === 'sent' || est === 'viewed' || est === 'draft';
+      const body: any = { id: vigenciaEdit.id, vigencia: iso };
+      if (reactivar) body.estado = 'sent';
+      const res = await fetch('/api/partners/invitations', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json', 'x-user-id': 'founder' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || 'Error'); }
+      setVigenciaEdit(null); load();
+    } catch (err: any) { alert('Error: ' + err.message); }
+    setVigenciaSaving(false);
   }
 
   async function deleteInvitation(it: Invitation) {
@@ -562,6 +596,7 @@ export default function PartnersTab() {
           { label: 'Ver invitación', onClick: () => {}, href: `/partners/invitacion/${it.id}?admin=1` },
           { label: 'Copiar link público', onClick: () => copyLink(it.id) },
           { label: 'Editar invitación', onClick: () => { setEditing(it); setShowCreate(true); } },
+          { label: '📅 Editar vigencia', onClick: () => abrirVigencia(it) },
         ];
         if (it.estado === 'submitted_for_review') {
           items.push({ label: 'Aprobar invitación', onClick: () => approveInvitation(it), color: '#fff', bg: '#2AB5A0' });
@@ -672,6 +707,28 @@ export default function PartnersTab() {
           invitation={recoverInvitation}
           onClose={() => setRecoverInvitation(null)}
         />
+      )}
+
+      {vigenciaEdit && (
+        <div onClick={e => { if (e.target === e.currentTarget) setVigenciaEdit(null); }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: '#fff', borderRadius: 14, padding: 22, width: '100%', maxWidth: 420 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+              <h3 style={{ margin: 0, fontWeight: 800 }}>Editar vigencia</h3>
+              <button onClick={() => setVigenciaEdit(null)} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
+            </div>
+            <div style={{ fontSize: '0.82rem', color: '#666', marginBottom: 12 }}>
+              Invitación <b>{vigenciaEdit.numero}</b> de {vigenciaEdit.nombre}. Estará vigente hasta la fecha elegida; {(vigenciaEdit.estado === 'expired' || vigenciaEdit.estado === 'cancelled') ? <b>se reactivará</b> : 'seguirá activa'} y el link público funcionará.
+            </div>
+            <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#777', display: 'block', marginBottom: 4 }}>Vigente hasta</label>
+            <input type="date" value={vigenciaVal} onChange={e => setVigenciaVal(e.target.value)} style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.9rem', boxSizing: 'border-box' }} />
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              {[30, 90, 365].map(dd => (
+                <button key={dd} type="button" onClick={() => setVigenciaVal(new Date(Date.now() + dd * 86400000).toISOString().slice(0, 10))} style={{ fontSize: '0.72rem', padding: '4px 8px', border: '1px solid #ddd', borderRadius: 6, background: '#fafafa', cursor: 'pointer' }}>+{dd === 365 ? '1 año' : dd + ' días'}</button>
+              ))}
+            </div>
+            <button onClick={guardarVigencia} disabled={vigenciaSaving || !vigenciaVal} style={{ width: '100%', marginTop: 16, padding: '10px 14px', border: 'none', borderRadius: 8, background: '#1A8F7A', color: '#fff', fontWeight: 700, cursor: 'pointer', opacity: vigenciaSaving || !vigenciaVal ? 0.6 : 1 }}>{vigenciaSaving ? 'Guardando…' : 'Guardar vigencia'}</button>
+          </div>
+        </div>
       )}
     </div>
   );
