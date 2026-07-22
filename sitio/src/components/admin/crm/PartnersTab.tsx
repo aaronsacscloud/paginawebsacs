@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ESPECIALIDADES } from '../../../data/partner-especialidades';
+import { FIL_TIERS } from '../../../data/filantropia';
 
 interface Invitation {
   id: string;
@@ -134,6 +135,14 @@ export default function PartnersTab() {
   const [vigenciaSaving, setVigenciaSaving] = useState(false);
   // Kebab menu de acciones: ID de la fila con menu abierto + posición del dropdown
   const [openMenu, setOpenMenu] = useState<{ id: string; top?: number; bottom?: number; right: number } | null>(null);
+  // Rachas filantrópicas del mes (partners de cobro) — best-effort
+  const [rachas, setRachas] = useState<any>(null);
+  useEffect(() => {
+    fetch('/api/partners/rachas-filantropia')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d && Array.isArray(d.partners)) setRachas(d); })
+      .catch(() => {});
+  }, []);
 
   // Click fuera del menú lo cierra
   useEffect(() => {
@@ -201,6 +210,23 @@ export default function PartnersTab() {
     const url = `${window.location.origin}/partners/invitacion/${id}`;
     navigator.clipboard.writeText(url).then(() => {
       alert('Link copiado:\n' + url);
+    });
+  }
+
+  // Mensaje listo para WhatsApp/correo. Si la invitación es DE COBRO
+  // (costo_unico > 0), incluye el gancho del incentivo filantrópico.
+  function copyMensaje(it: Invitation) {
+    const url = `${window.location.origin}/partners/invitacion/${it.id}`;
+    const nombre = (it.nombre || '').split(' ')[0] || 'Hola';
+    const esDeCobro = Number(it.costo_unico || 0) > 0;
+    const filLine = esDeCobro
+      ? `\n\n🕊️ Incluye hasta +${FIL_TIERS[FIL_TIERS.length - 1].extra}% de comisión extra al mes por filantropía — totalmente opcional.`
+      : '';
+    const msg = `${nombre}, te comparto tu invitación personal al programa de partners de SACS. Ahí vienen tus términos, tu esquema de comisiones y la firma digital — todo en un solo link:\n\n${url}${filLine}\n\nCualquier duda me dices y lo revisamos juntos. 🤝`;
+    navigator.clipboard.writeText(msg).then(() => {
+      alert('Mensaje de invitación copiado — pégalo en WhatsApp o correo.');
+    }).catch(() => {
+      alert('No se pudo copiar automáticamente. Mensaje:\n\n' + msg);
     });
   }
 
@@ -365,6 +391,42 @@ export default function PartnersTab() {
         <StatCard label="Aprobadas" value={stats.accepted.toString()} accent="#2AB5A0" />
         <StatCard label="Conversión" value={`${conversionPct}%`} accent="#6C5CE7" />
       </div>
+
+      {/* 🕊️ Rachas filantrópicas del mes — partners DE COBRO. A quién empujar:
+          el que va cerca del siguiente nivel gana con un recordatorio. */}
+      {rachas && rachas.partners.length > 0 && (
+        <div style={{ background: '#fff', border: '1px solid #e8e8ec', borderRadius: 12, padding: '16px 20px', marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1a1a1a' }}>
+              🕊️ Rachas filantrópicas · {rachas.mes}
+              <span style={{ fontWeight: 400, color: '#888', marginLeft: 8 }}>
+                {rachas.partners.filter((p: any) => p.extra_pct > 0).length} con extra activo · {rachas.partners.filter((p: any) => p.empujable).length} a un empujón del siguiente nivel
+                · ⚠️ el % extra se aplica MANUALMENTE al preparar la liquidación del mes
+              </span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {rachas.partners.slice(0, 12).map((p: any) => (
+              <div key={p.invitation_id} title={p.pts_pendientes > 0 ? `${p.pts_pendientes} pts en revisión` : undefined}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 12px', borderRadius: 999,
+                  fontSize: '0.75rem', fontWeight: 600,
+                  background: p.extra_pct > 0 ? 'rgba(42,181,160,0.10)' : (p.empujable ? 'rgba(232,168,56,0.12)' : '#f5f6f8'),
+                  color: p.extra_pct > 0 ? '#1b7f6f' : (p.empujable ? '#8a6414' : '#555'),
+                  border: `1px solid ${p.extra_pct > 0 ? 'rgba(42,181,160,0.3)' : (p.empujable ? 'rgba(232,168,56,0.35)' : '#e8e8ec')}`,
+                }}>
+                <span>{p.nombre || p.empresa || '—'}</span>
+                <span style={{ fontWeight: 800 }}>{p.pts_aprobados} pts</span>
+                {p.extra_pct > 0 && <span>+{p.extra_pct}%</span>}
+                {p.empujable && <span>⚡ faltan {p.faltan}</span>}
+              </div>
+            ))}
+            {rachas.partners.length > 12 && (
+              <span style={{ fontSize: '0.75rem', color: '#888', alignSelf: 'center' }}>y {rachas.partners.length - 12} más…</span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -595,6 +657,7 @@ export default function PartnersTab() {
         const items: Array<{ label: string; onClick: () => void; href?: string; color?: string; bg?: string }> = [
           { label: 'Ver invitación', onClick: () => {}, href: `/partners/invitacion/${it.id}?admin=1` },
           { label: 'Copiar link público', onClick: () => copyLink(it.id) },
+          { label: '💬 Copiar mensaje de invitación', onClick: () => copyMensaje(it) },
           { label: 'Editar invitación', onClick: () => { setEditing(it); setShowCreate(true); } },
           { label: '📅 Editar vigencia', onClick: () => abrirVigencia(it) },
         ];

@@ -58,7 +58,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (action === 'approve') {
       const puntos = body.puntos_override !== undefined ? Number(body.puntos_override) : getPuntosByTipo(sub.tipo);
-      const mes = body.mes || currentYM();
+      // mes_acreditado default = mes del REPORTE (created_at), no de la
+      // aprobación: una acción del día 30 aprobada el día 1 contaba al mes
+      // siguiente y el partner perdía el nivel/meta que ya había asegurado
+      // (el contrato promete validación 24-48h). body.mes sigue mandando.
+      const mesDelReporte = sub.created_at ? String(sub.created_at).slice(0, 7) : currentYM();
+      const mes = body.mes || mesDelReporte;
       const { error } = await supabase
         .from('partner_content_submissions')
         .update({

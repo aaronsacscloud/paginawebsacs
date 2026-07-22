@@ -12,6 +12,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { fmt, fmtDate, fmtRel, isDemoMode, apiGet } from './utils';
 import { SS, C } from './styles';
 import { Icon } from './icons';
+import { FIL_TIERS, extraPorPuntos } from '../../../data/filantropia';
 import {
   demoSummary, demoLeads, demoPayments, demoPending, demoProfile,
 } from '../../../data/partner-portal-demo';
@@ -121,10 +122,23 @@ export default function MoneyTab({ user }: { user: { id: string; nombre: string;
   // Próxima fecha de liberación (día 30)
   const nextReleaseDate = new Date(today.getFullYear(), today.getMonth() + (today.getDate() >= 30 ? 1 : 0), 30);
 
+  // Racha filantrópica del mes (solo partner de cobro): la promesa del +X%
+  // debe verse donde vive el dinero.
+  const fil = summary.filantropia || { es_de_cobro: false, pts_mes: 0 };
+  const filExtraPct = fil.es_de_cobro ? extraPorPuntos(fil.pts_mes) : 0;
+
   return (
     <div>
       <h1 style={SS.h1Small}>Dinero</h1>
       <p style={SS.leadSm}>Tu cuenta SACS — todo el dinero que has generado, lo que está confirmado y lo que ya puedes retirar.</p>
+
+      {fil.es_de_cobro && (
+        <div style={{ padding: '12px 18px', background: filExtraPct > 0 ? 'rgba(42,181,160,0.08)' : C.bg, border: `1px solid ${filExtraPct > 0 ? 'rgba(42,181,160,0.3)' : C.border}`, borderRadius: 10, marginBottom: 16, fontSize: 13, color: filExtraPct > 0 ? C.greenDark : C.textSoft, lineHeight: 1.5 }}>
+          🕊️ <strong>Racha filantrópica del mes:</strong> {fil.pts_mes} puntos{filExtraPct > 0
+            ? <> → <strong>+{filExtraPct}% de comisión extra</strong> sobre tus ventas de este mes — SACS lo aplica al preparar tu liquidación del corte.</>
+            : <> — llega a {FIL_TIERS[0].pts} para ganar +{FIL_TIERS[0].extra}% extra (opcional, en la pestaña Nivel).</>}
+        </div>
+      )}
 
       {/* HERO BANCARIO · Saldo disponible */}
       <div data-tour="money-hero" style={{

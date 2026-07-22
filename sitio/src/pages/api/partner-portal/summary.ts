@@ -79,6 +79,30 @@ export const GET: APIRoute = async ({ request }) => {
     .sort((a, b) => b.count - a.count)
     .slice(0, 6);
 
+  // Racha filantrópica (partner DE COBRO): puntos filantrópicos aprobados del
+  // mes en curso — MoneyTab pinta la línea "+X% extra este mes".
+  let filantropia: { es_de_cobro: boolean; pts_mes: number } = { es_de_cobro: false, pts_mes: 0 };
+  try {
+    const { data: invPago } = await supabase
+      .from('partner_invitations')
+      .select('id, costo_unico')
+      .eq('team_member_id', partnerId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (Number(invPago?.costo_unico || 0) > 0) {
+      const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const { data: fils } = await supabase
+        .from('partner_content_submissions')
+        .select('puntos')
+        .eq('partner_id', partnerId)
+        .eq('estado', 'approved')
+        .eq('categoria', 'filantropia')
+        .eq('mes_acreditado', ym);
+      filantropia = { es_de_cobro: true, pts_mes: (fils || []).reduce((s, r) => s + Number(r.puntos || 0), 0) };
+    }
+  } catch { /* best-effort: la línea simplemente no se muestra */ }
+
   return j({
     user: { id: user.id, nombre: user.nombre, email: user.email, default_commission_pct: user.default_commission_pct },
     proximoPago,
@@ -91,6 +115,7 @@ export const GET: APIRoute = async ({ request }) => {
       bookings_realizadas: bookingsRealizadasCount || 0,
     },
     topFuentes,
+    filantropia,
   });
 };
 

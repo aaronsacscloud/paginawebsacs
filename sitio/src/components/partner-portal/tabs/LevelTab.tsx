@@ -3,6 +3,7 @@ import { fmt, fmtDate, fmtNum, isDemoMode, apiGet, isDealWon } from './utils';
 import { SS, C } from './styles';
 import { Icon } from './icons';
 import { demoContent, demoCertifications, demoProfile, demoLevel, demoSacsAccount, demoLeads } from '../../../data/partner-portal-demo';
+import { FIL_TIERS, extraPorPuntos, siguienteTier } from '../../../data/filantropia';
 
 type LevelInfo = { current: number; nombre: string };
 
@@ -43,6 +44,12 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
   const diasRest = summary.days_remaining ?? 0;
   const statusLevel = summary.status_level || 'active';
   const consecutiveFailed = summary.consecutive_failed_months ?? 0;
+  // Partner DE COBRO: sin meta obligatoria — racha filantrópica opcional
+  const esDeCobro = !!summary.es_de_cobro;
+  const filPts = summary.filantropia_mes ?? 0;
+  const filExtra = extraPorPuntos(filPts);
+  const filNext = siguienteTier(filPts);
+  const filTope = FIL_TIERS[FIL_TIERS.length - 1].pts;
 
   const invitation = profile?.invitation;
   const signedAt = profile?.signed_at;
@@ -130,20 +137,73 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
       </div>
 
       {/* Compromisos del mes */}
-      <h2 style={SS.h2}>Compromisos del mes</h2>
+      <h2 style={SS.h2}>{esDeCobro ? 'Racha filantrópica del mes' : 'Compromisos del mes'}</h2>
 
-      {statusLevel === 'warning' && (
+      {!esDeCobro && statusLevel === 'warning' && (
         <div style={{ padding: '16px 22px', background: 'rgba(232,168,56,0.10)', border: `1px solid rgba(232,168,56,0.30)`, borderLeft: `4px solid ${C.amber}`, borderRadius: 10, marginBottom: 18, fontSize: 13, color: '#7a5b1f', lineHeight: 1.5 }}>
           <strong>1er strike.</strong> No alcanzaste la meta el mes pasado. Ponte al día este mes para limpiar tu historial.
         </div>
       )}
-      {statusLevel === 'final_warning' && (
+      {!esDeCobro && statusLevel === 'final_warning' && (
         <div style={{ padding: '16px 22px', background: 'rgba(220,38,38,0.06)', border: `1px solid rgba(220,38,38,0.25)`, borderLeft: `4px solid ${C.red}`, borderRadius: 10, marginBottom: 18, fontSize: 13, color: '#8a1f1f', lineHeight: 1.5 }}>
           <strong>Aviso final.</strong> Llevas {consecutiveFailed} meses consecutivos sin meta. Un strike más activa la suspensión automática.
         </div>
       )}
 
       <div style={SS.cardLg}>
+        {esDeCobro ? (
+          <>
+            {/* RACHA FILANTRÓPICA (partner con inversión): 100% opcional. */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
+              <div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, fontWeight: 500, color: C.text, lineHeight: 1, letterSpacing: '-0.03em' }}>
+                  🕊️ {filPts} <span style={{ fontSize: 18, color: C.muted, fontWeight: 400 }}>puntos filantrópicos</span>
+                </div>
+                <div style={{ fontSize: 13, color: C.muted, marginTop: 8 }}>
+                  {diasRest > 0 ? `${diasRest} días restantes del mes` : 'Cierre del mes'} · 100% opcional — no hay meta obligatoria
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' as const }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, color: filExtra > 0 ? C.greenDark : C.muted, lineHeight: 1 }}>
+                  {filExtra > 0 ? `+${filExtra}%` : '—'}
+                </div>
+                <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>comisión extra este mes</div>
+              </div>
+            </div>
+            <div style={{ ...SS.bar, height: 12 }}>
+              <div style={{ ...SS.barFill, width: `${Math.min(100, Math.round((filPts / filTope) * 100))}%` }} />
+            </div>
+            {/* Marcadores ALINEADOS a la escala real de la barra (space-between
+                los ponía en 0/33/66/100% y la barra al 20% con 100 pts parecía
+                no haber llegado al nivel ya ganado) */}
+            <div style={{ position: 'relative', height: 18, marginTop: 8, fontSize: 12, color: C.muted }}>
+              <span style={{ position: 'absolute', left: 0 }}>0</span>
+              {FIL_TIERS.map(t => (
+                <span key={t.pts} style={{
+                  position: 'absolute',
+                  left: `${(t.pts / filTope) * 100}%`,
+                  transform: t.pts === filTope ? 'translateX(-100%)' : 'translateX(-50%)',
+                  whiteSpace: 'nowrap',
+                  color: filPts >= t.pts ? C.greenDark : C.muted,
+                  fontWeight: filPts >= t.pts ? 700 : 400,
+                }}>
+                  {t.pts} → +{t.extra}%
+                </span>
+              ))}
+            </div>
+            {filNext ? (
+              <div style={{ marginTop: 18, padding: '12px 18px', background: C.bg, borderRadius: 10, fontSize: 13, color: C.textSoft, lineHeight: 1.5 }}>
+                {filExtra > 0 && <><strong style={{ color: C.greenDark }}>Ya aseguraste +{filExtra}%</strong> de comisión extra este mes. </>}
+                Te faltan <strong style={{ color: C.text }}>{filNext.pts - filPts} puntos</strong> para el siguiente nivel (+{filNext.extra}%). Cada acción se valida en 24-48h.
+              </div>
+            ) : (
+              <div style={{ marginTop: 18, padding: '12px 18px', background: 'rgba(42,181,160,0.08)', borderRadius: 10, fontSize: 13, color: C.greenDark, lineHeight: 1.5 }}>
+                ✓ <strong>Nivel máximo:</strong> +{FIL_TIERS[FIL_TIERS.length - 1].extra}% de comisión extra asegurado este mes. Enorme. 🕊️
+              </div>
+            )}
+          </>
+        ) : (
+          <>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
           <div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, fontWeight: 500, color: C.text, lineHeight: 1, letterSpacing: '-0.03em' }}>
@@ -165,6 +225,8 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
           <div style={{ marginTop: 18, padding: '12px 18px', background: C.bg, borderRadius: 10, fontSize: 13, color: C.textSoft, lineHeight: 1.5 }}>
             Te faltan <strong style={{ color: C.text }}>{Math.max(0, meta - puntos)} puntos</strong>. Reporta una actividad y se acreditará en 24-48h.
           </div>
+        )}
+          </>
         )}
 
         {/* 2 botones grandes · visuales */}
@@ -288,10 +350,10 @@ export default function LevelTab({ user }: { user: { id: string; nombre: string;
       </div>
 
       {/* Drawer: Compromisos completos */}
-      {contractOpen && <ContractDrawer onClose={() => setContractOpen(false)} tipo={invitation?.tipo} />}
+      {contractOpen && <ContractDrawer onClose={() => setContractOpen(false)} tipo={invitation?.tipo} esDeCobro={esDeCobro} />}
 
       {/* Modal: detalle de un nivel */}
-      {levelModalId !== null && <LevelDetailModal lvId={levelModalId} currentLevel={level.current} onClose={() => setLevelModalId(null)} />}
+      {levelModalId !== null && <LevelDetailModal lvId={levelModalId} currentLevel={level.current} onClose={() => setLevelModalId(null)} esDeCobro={esDeCobro} />}
 
       {/* Drawer: catálogo visual de tareas */}
       {catalogOpen && <CatalogDrawer tipos={content?.tipos || []} onClose={() => setCatalogOpen(false)} onPick={(tipoId) => { setCatalogOpen(false); setReportOpen(true); setTimeout(() => { const ev = new CustomEvent('preset-tipo', { detail: tipoId }); window.dispatchEvent(ev); }, 100); }} />}
@@ -377,14 +439,22 @@ function SacsAccountCard() {
 }
 
 // ─── Modal: detalle de un nivel ───
-function LevelDetailModal({ lvId, currentLevel, onClose }: { lvId: number; currentLevel: number; onClose: () => void }) {
+function LevelDetailModal({ lvId, currentLevel, onClose, esDeCobro }: { lvId: number; currentLevel: number; onClose: () => void; esDeCobro?: boolean }) {
   const lv = LEVELS.find(l => l.id === lvId);
   if (!lv) return null;
   const isActive = lvId === currentLevel;
   const isPast = lvId < currentLevel;
   const accent = lvId >= 3 ? C.gold : C.green;
 
-  const details = LEVEL_DETAILS[lvId];
+  const detailsBase = LEVEL_DETAILS[lvId];
+  // Partner de cobro: el requisito de "100 puntos al mes" no existe para él —
+  // se muestra el incentivo filantrópico opcional en su lugar.
+  const details = esDeCobro && detailsBase ? {
+    ...detailsBase,
+    requisitos: detailsBase.requisitos.map((r: string) =>
+      /100 puntos/.test(r) ? `Filantropía opcional — sube tu comisión hasta +${FIL_TIERS[FIL_TIERS.length - 1].extra}% al mes` : r
+    ),
+  } : detailsBase;
 
   return (
     <>
@@ -584,7 +654,7 @@ function CatalogDrawer({ tipos, onClose, onPick }: { tipos: any[]; onClose: () =
   );
 }
 
-function ContractDrawer({ onClose, tipo }: { onClose: () => void; tipo?: string }) {
+function ContractDrawer({ onClose, tipo, esDeCobro }: { onClose: () => void; tipo?: string; esDeCobro?: boolean }) {
   return (
     <>
       <div style={SS.drawerBackdrop} onClick={onClose} />
@@ -593,13 +663,24 @@ function ContractDrawer({ onClose, tipo }: { onClose: () => void; tipo?: string 
         <h2 style={SS.h1Small}>Tus compromisos</h2>
         <p style={SS.leadSm}>Resumen de las 19 cláusulas que firmaste. Para el contrato completo, descárgalo desde tu acuerdo.</p>
 
-        <ContractItem n="1" title="Meta mínima mensual">100 puntos al mes de actividad documentada (contenido, demos, apoyo a la marca).</ContractItem>
-        <ContractItem n="2" title="3-strike system">3 meses consecutivos sin meta → suspensión automática.</ContractItem>
+        {/* Partner DE COBRO: sin meta mensual ni strikes — su cláusula es el
+            incentivo filantrópico opcional */}
+        {esDeCobro ? (
+          <>
+            <ContractItem n="1" title="Sin meta mensual de puntos">Como partner con inversión, no tienes obligación de actividad mensual — no aplican strikes ni baja por puntos.</ContractItem>
+            <ContractItem n="2" title="Incentivo filantrópico (opcional)">Puntos filantrópicos del mes suben tu comisión: {FIL_TIERS.map(t => `${t.pts} pts → +${t.extra}%`).join(' · ')}. Aplica el nivel más alto; sin arrastre entre meses.</ContractItem>
+          </>
+        ) : (
+          <>
+            <ContractItem n="1" title="Meta mínima mensual">100 puntos al mes de actividad documentada (contenido, demos, apoyo a la marca).</ContractItem>
+            <ContractItem n="2" title="3-strike system">3 meses consecutivos sin meta → suspensión automática.</ContractItem>
+          </>
+        )}
         <ContractItem n="3" title="Meta anual">10 sucursales nuevas activadas por año.</ContractItem>
         <ContractItem n="4" title="Vigencia">12 meses desde firma · renovación automática.</ContractItem>
         <ContractItem n="5" title="Comisiones">50% sobre venta directa · 10% sobre tu red de Master Partner.</ContractItem>
         <ContractItem n="6" title="Pagos">Día 1 del mes · CFDI 1-3 días antes · transferencia/PayPal/Mercado Pago.</ContractItem>
-        <ContractItem n="7" title="Filantropía como ruta alterna">Acciones filantrópicas validadas pueden contar como compromisos.</ContractItem>
+        {!esDeCobro && <ContractItem n="7" title="Filantropía como ruta alterna">Acciones filantrópicas validadas pueden contar como compromisos.</ContractItem>}
         <ContractItem n="8" title="Uso de marca">Solo en el contexto autorizado. No prometas funciones que SACS no tiene.</ContractItem>
         <ContractItem n="9" title="Contenido prohibido">Nada ofensivo, discriminatorio, ilegal o que dañe la marca.</ContractItem>
         <ContractItem n="10" title="Confidencialidad">Datos de clientes y de SACS son confidenciales.</ContractItem>
@@ -647,15 +728,23 @@ function ReportDrawer({ tipos, onClose, onSubmitted }: { tipos: any[]; onClose: 
   const tipoSeleccionado = tipos.find(t => t.id === tipoId);
 
   async function submit() {
-    if (!url.trim()) { setError('URL requerida'); return; }
     if (!tipoId) { setError('Selecciona un tipo'); return; }
+    // Filantropía: la evidencia puede ser un link (Drive/red) O una descripción
+    // con sustancia — muchas acciones (refugio, comedor) no viven en una URL.
+    const esFilantropia = (tipoSeleccionado?.categoria || 'contenido') === 'filantropia';
+    if (esFilantropia) {
+      if (!url.trim() && descripcion.trim().length < 20) {
+        setError('Comparte el link de tu evidencia (foto/video) o describe la acción (mínimo 20 caracteres).');
+        return;
+      }
+    } else if (!url.trim()) { setError('URL requerida'); return; }
     setSubmitting(true);
     setError(null);
     try {
       const r = await fetch('/api/partner-portal/content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, tipo: tipoId, plataforma, descripcion }),
+        body: JSON.stringify({ url, tipo: tipoId, plataforma: esFilantropia ? null : plataforma, descripcion }),
       });
       const d = await r.json();
       if (d.error) { setError(d.error); setSubmitting(false); return; }
@@ -752,11 +841,13 @@ function ReportDrawer({ tipos, onClose, onSubmitted }: { tipos: any[]; onClose: 
 
             {error && <div style={{ padding: '12px 18px', background: 'rgba(220,38,38,0.06)', border: `1px solid rgba(220,38,38,0.25)`, borderRadius: 10, fontSize: 13, color: C.red, marginBottom: 16 }}>{error}</div>}
 
-            <Field label="URL del contenido / evidencia">
-              <input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://instagram.com/reel/..." style={inputStyle} />
+            <Field label={(tipoSeleccionado.categoria === 'filantropia') ? 'Link de tu evidencia (opcional si describes la acción)' : 'URL del contenido / evidencia'}>
+              <input value={url} onChange={e => setUrl(e.target.value)}
+                placeholder={(tipoSeleccionado.categoria === 'filantropia') ? 'https://drive.google.com/... (foto o video)' : 'https://instagram.com/reel/...'}
+                style={inputStyle} />
             </Field>
 
-            {(tipoSeleccionado.plataformasSugeridas || []).length > 0 && (
+            {tipoSeleccionado.categoria !== 'filantropia' && (tipoSeleccionado.plataformasSugeridas || []).length > 0 && (
               <Field label="Plataforma">
                 <select value={plataforma} onChange={e => setPlataforma(e.target.value)} style={inputStyle}>
                   <option value="instagram">Instagram</option>

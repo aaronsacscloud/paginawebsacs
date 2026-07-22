@@ -8,6 +8,7 @@ import { CERTIFICATIONS } from '../../../data/certifications';
 import { CERT_I18N } from '../../../data/certifications.i18n';
 import { COMPROMISO_I18N } from '../../../data/compromisos.i18n';
 import { especialidadDe } from '../../../data/partner-especialidades';
+import { FIL_TIERS } from '../../../data/filantropia';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -706,12 +707,20 @@ const I18N: Record<string, Record<Lang, string>> = {
   'fil.opt.d':   { es: 'No hacer filantropía <strong>no te quita nada</strong>: conservas tu comisión completa, tu permanencia y todos tus beneficios. Hacerla solo puede <strong>sumarte</strong>. No hay mínimos, no hay baja por puntos, no hay strikes.', en: 'Not doing philanthropy <strong>takes nothing away from you</strong>: you keep your full commission, your standing and all your benefits. Doing it can only <strong>add</strong>. No minimums, no removal over points, no strikes.', fr: 'Ne pas faire de philanthropie <strong>ne vous enlève rien</strong> : vous gardez votre commission complète, votre statut et tous vos avantages. En faire ne peut que <strong>vous ajouter</strong>. Pas de minimums, pas d\'exclusion pour points, pas de strikes.', it: 'Non fare filantropia <strong>non ti toglie nulla</strong>: mantieni la tua commissione completa, la tua permanenza e tutti i tuoi benefici. Farla può solo <strong>aggiungerti</strong>. Nessun minimo, nessuna rimozione per punti, nessuno strike.', pt: 'Não fazer filantropia <strong>não te tira nada</strong>: você mantém sua comissão completa, sua permanência e todos os seus benefícios. Fazê-la só pode <strong>somar</strong>. Sem mínimos, sem baixa por pontos, sem strikes.' },
   'fil.racha.t': { es: 'Tu racha del mes', en: 'Your monthly streak', fr: 'Votre série du mois', it: 'La tua serie del mese', pt: 'Sua sequência do mês' },
   'fil.racha.d': { es: 'Los puntos filantrópicos se cuentan por <strong>mes natural</strong> y el extra aplica a las <strong>comisiones de ese mismo mes</strong>. Cada mes arranca en cero — cada mes puedes volver a ganarlo.', en: 'Philanthropic points are counted per <strong>calendar month</strong> and the extra applies to <strong>that same month\'s commissions</strong>. Each month starts at zero — each month you can earn it again.', fr: 'Les points philanthropiques se comptent par <strong>mois civil</strong> et le bonus s\'applique aux <strong>commissions de ce même mois</strong>. Chaque mois repart de zéro — chaque mois vous pouvez le regagner.', it: 'I punti filantropici si contano per <strong>mese solare</strong> e l\'extra si applica alle <strong>commissioni di quello stesso mese</strong>. Ogni mese riparte da zero — ogni mese puoi riguadagnarlo.', pt: 'Os pontos filantrópicos são contados por <strong>mês corrido</strong> e o extra aplica às <strong>comissões desse mesmo mês</strong>. Cada mês começa do zero — cada mês você pode ganhá-lo de novo.' },
-  'fil.t1.t':    { es: '+2.5% de comisión extra', en: '+2.5% extra commission', fr: '+2,5% de commission en plus', it: '+2,5% di commissione extra', pt: '+2,5% de comissão extra' },
-  'fil.t1.d':    { es: 'Al llegar a 100 puntos filantrópicos en el mes.', en: 'When you reach 100 philanthropic points in the month.', fr: 'En atteignant 100 points philanthropiques dans le mois.', it: 'Raggiungendo 100 punti filantropici nel mese.', pt: 'Ao chegar a 100 pontos filantrópicos no mês.' },
-  'fil.t2.t':    { es: '+5% de comisión extra', en: '+5% extra commission', fr: '+5% de commission en plus', it: '+5% di commissione extra', pt: '+5% de comissão extra' },
-  'fil.t2.d':    { es: 'Al llegar a 300 puntos filantrópicos en el mes.', en: 'When you reach 300 philanthropic points in the month.', fr: 'En atteignant 300 points philanthropiques dans le mois.', it: 'Raggiungendo 300 punti filantropici nel mese.', pt: 'Ao chegar a 300 pontos filantrópicos no mês.' },
-  'fil.t3.t':    { es: '+10% de comisión extra', en: '+10% extra commission', fr: '+10% de commission en plus', it: '+10% di commissione extra', pt: '+10% de comissão extra' },
-  'fil.t3.d':    { es: 'Al llegar a 500 puntos filantrópicos en el mes.', en: 'When you reach 500 philanthropic points in the month.', fr: 'En atteignant 500 points philanthropiques dans le mois.', it: 'Raggiungendo 500 punti filantropici nel mese.', pt: 'Ao chegar a 500 pontos filantrópicos no mês.' },
+  // Umbrales/extras interpolados desde data/filantropia.ts (fuente única)
+  'fil.t1.t':    { es: `+${FIL_TIERS[0].extra}% de comisión extra`, en: `+${FIL_TIERS[0].extra}% extra commission`, fr: `+${FIL_TIERS[0].extra}% de commission en plus`, it: `+${FIL_TIERS[0].extra}% di commissione extra`, pt: `+${FIL_TIERS[0].extra}% de comissão extra` },
+  'fil.t1.d':    { es: `Al llegar a ${FIL_TIERS[0].pts} puntos filantrópicos en el mes.`, en: `When you reach ${FIL_TIERS[0].pts} philanthropic points in the month.`, fr: `En atteignant ${FIL_TIERS[0].pts} points philanthropiques dans le mois.`, it: `Raggiungendo ${FIL_TIERS[0].pts} punti filantropici nel mese.`, pt: `Ao chegar a ${FIL_TIERS[0].pts} pontos filantrópicos no mês.` },
+  'fil.t2.t':    { es: `+${FIL_TIERS[1].extra}% de comisión extra`, en: `+${FIL_TIERS[1].extra}% extra commission`, fr: `+${FIL_TIERS[1].extra}% de commission en plus`, it: `+${FIL_TIERS[1].extra}% di commissione extra`, pt: `+${FIL_TIERS[1].extra}% de comissão extra` },
+  'fil.t2.d':    { es: `Al llegar a ${FIL_TIERS[1].pts} puntos filantrópicos en el mes.`, en: `When you reach ${FIL_TIERS[1].pts} philanthropic points in the month.`, fr: `En atteignant ${FIL_TIERS[1].pts} points philanthropiques dans le mois.`, it: `Raggiungendo ${FIL_TIERS[1].pts} punti filantropici nel mese.`, pt: `Ao chegar a ${FIL_TIERS[1].pts} pontos filantrópicos no mês.` },
+  'fil.t3.t':    { es: `+${FIL_TIERS[2].extra}% de comisión extra`, en: `+${FIL_TIERS[2].extra}% extra commission`, fr: `+${FIL_TIERS[2].extra}% de commission en plus`, it: `+${FIL_TIERS[2].extra}% di commissione extra`, pt: `+${FIL_TIERS[2].extra}% de comissão extra` },
+  'fil.t3.d':    { es: `Al llegar a ${FIL_TIERS[2].pts} puntos filantrópicos en el mes.`, en: `When you reach ${FIL_TIERS[2].pts} philanthropic points in the month.`, fr: `En atteignant ${FIL_TIERS[2].pts} points philanthropiques dans le mois.`, it: `Raggiungendo ${FIL_TIERS[2].pts} punti filantropici nel mese.`, pt: `Ao chegar a ${FIL_TIERS[2].pts} pontos filantrópicos no mês.` },
+  'fil.ej.t':    { es: 'En pesos, con un ejemplo', en: 'In money, with an example', fr: 'En argent, avec un exemple', it: 'In soldi, con un esempio', pt: 'Em dinheiro, com um exemplo' },
+  'fil.ej.lead': { es: 'Supón que este mes cerraste ventas por', en: 'Say this month you closed sales worth', fr: 'Supposons que ce mois-ci vous ayez conclu des ventes pour', it: 'Supponi che questo mese tu abbia chiuso vendite per', pt: 'Suponha que este mês você fechou vendas de' },
+  'fil.ej.base': { es: 'tu comisión base sería', en: 'your base commission would be', fr: 'votre commission de base serait', it: 'la tua commissione base sarebbe', pt: 'sua comissão base seria' },
+  'fil.ej.extra':{ es: 'extra ese mes', en: 'extra that month', fr: 'de plus ce mois-là', it: 'extra quel mese', pt: 'extra naquele mês' },
+  'fil.ej.pts':  { es: 'puntos', en: 'points', fr: 'points', it: 'punti', pt: 'pontos' },
+  'fil.cat.t':   { es: 'El catálogo filantrópico y sus puntos', en: 'The philanthropic catalog and its points', fr: 'Le catalogue philanthropique et ses points', it: 'Il catalogo filantropico e i suoi punti', pt: 'O catálogo filantrópico e seus pontos' },
+  'fil.cat.lead':{ es: 'Cada acción documentada suma estos puntos — combínalas como quieras para armar tu racha del mes.', en: 'Each documented action earns these points — combine them however you like to build your monthly streak.', fr: 'Chaque action documentée rapporte ces points — combinez-les comme vous voulez pour bâtir votre série du mois.', it: 'Ogni azione documentata vale questi punti — combinale come vuoi per costruire la tua serie del mese.', pt: 'Cada ação documentada soma estes pontos — combine como quiser para montar sua sequência do mês.' },
   'fil.how.t':   { es: '¿Cómo funciona?', en: 'How does it work?', fr: 'Comment ça marche ?', it: 'Come funziona?', pt: 'Como funciona?' },
   'fil.how.1.t': { es: 'Haz la acción', en: 'Do the action', fr: 'Faites l\'action', it: 'Fai l\'azione', pt: 'Faça a ação' },
   'fil.how.1.d': { es: 'Voluntariado, refugios, comedores, jornadas, mentorías — las del catálogo filantrópico, documentadas con foto o video.', en: 'Volunteering, shelters, kitchens, drives, mentoring — those in the philanthropic catalog, documented with photo or video.', fr: 'Bénévolat, refuges, cantines, journées, mentorat — celles du catalogue philanthropique, documentées avec photo ou vidéo.', it: 'Volontariato, rifugi, mense, giornate, mentoring — quelle del catalogo filantropico, documentate con foto o video.', pt: 'Voluntariado, abrigos, refeitórios, jornadas, mentorias — as do catálogo filantrópico, documentadas com foto ou vídeo.' },
@@ -719,7 +728,7 @@ const I18N: Record<string, Record<Lang, string>> = {
   'fil.how.2.d': { es: 'Cada acción se registra desde tu portal de partner y se valida en 24-48h hábiles. Sin reporte, no se acreditan puntos.', en: 'Each action is logged from your partner portal and validated within 24-48 business hours. With no report, no points are credited.', fr: 'Chaque action s\'enregistre depuis votre portail partenaire et se valide sous 24-48h ouvrées. Sans déclaration, aucun point n\'est crédité.', it: 'Ogni azione si registra dal tuo portale partner e si valida in 24-48h lavorative. Senza segnalazione, nessun punto viene accreditato.', pt: 'Cada ação é registrada do seu portal de parceiro e validada em 24-48h úteis. Sem reporte, não há pontos creditados.' },
   'fil.how.3.t': { es: 'Cobra el extra', en: 'Collect the extra', fr: 'Touchez le bonus', it: 'Incassa l\'extra', pt: 'Receba o extra' },
   'fil.how.3.d': { es: 'Al corte del mes, el porcentaje extra alcanzado se suma a tu comisión de las ventas de ese mes y se liquida en tu siguiente pago.', en: 'At month-end close, the extra percentage you reached is added to your commission on that month\'s sales and settled in your next payout.', fr: 'À la clôture du mois, le pourcentage bonus atteint s\'ajoute à votre commission sur les ventes de ce mois et se règle à votre prochain paiement.', it: 'Alla chiusura del mese, la percentuale extra raggiunta si somma alla tua commissione sulle vendite di quel mese e si liquida nel tuo prossimo pagamento.', pt: 'No fechamento do mês, o percentual extra alcançado soma à sua comissão sobre as vendas daquele mês e é liquidado no seu próximo pagamento.' },
-  'fil.note':    { es: 'Los niveles no se acumulan entre sí: aplica el más alto alcanzado en el mes (+2.5%, +5% o +10% en puntos porcentuales sobre tu comisión). Los puntos filantrópicos no se arrastran al mes siguiente.', en: 'Tiers do not stack: the highest one reached in the month applies (+2.5%, +5% or +10% percentage points on your commission). Philanthropic points do not carry over to the next month.', fr: 'Les paliers ne se cumulent pas : le plus haut atteint dans le mois s\'applique (+2,5%, +5% ou +10% en points de pourcentage sur votre commission). Les points philanthropiques ne se reportent pas au mois suivant.', it: 'I livelli non si cumulano: si applica il più alto raggiunto nel mese (+2,5%, +5% o +10% in punti percentuali sulla tua commissione). I punti filantropici non si riportano al mese successivo.', pt: 'Os níveis não se acumulam: aplica-se o mais alto alcançado no mês (+2,5%, +5% ou +10% em pontos percentuais sobre sua comissão). Os pontos filantrópicos não passam para o mês seguinte.' },
+  'fil.note':    { es: `Aplica el nivel más alto alcanzado en el mes (los niveles no se suman entre sí) y el extra va sobre tu <strong>comisión directa de ventas de ese mes</strong> — no sobre recurrentes ni override de red. Reporta cada acción dentro de los 5 días siguientes para que cuente al mes en que la hiciste; los puntos no se arrastran al mes siguiente. Si una evidencia se rechaza, tienes 7 días para complementarla.`, en: `The highest tier reached in the month applies (tiers don't stack) and the extra goes on your <strong>direct commission for that month's sales</strong> — not on recurring commissions or network override. Report each action within 5 days so it counts toward the month you did it; points don't carry over. If evidence is rejected, you have 7 days to supplement it.`, fr: `Le palier le plus haut atteint dans le mois s'applique (les paliers ne se cumulent pas) et le bonus porte sur votre <strong>commission directe des ventes de ce mois</strong> — pas sur les récurrentes ni l'override de réseau. Déclarez chaque action sous 5 jours pour qu'elle compte pour le mois où vous l'avez faite ; les points ne se reportent pas. Si une preuve est rejetée, vous avez 7 jours pour la compléter.`, it: `Si applica il livello più alto raggiunto nel mese (i livelli non si sommano) e l'extra va sulla tua <strong>commissione diretta delle vendite di quel mese</strong> — non su ricorrenti né override di rete. Segnala ogni azione entro 5 giorni perché conti per il mese in cui l'hai fatta; i punti non si riportano. Se un'evidenza viene respinta, hai 7 giorni per integrarla.`, pt: `Aplica-se o nível mais alto alcançado no mês (os níveis não se somam) e o extra vai sobre sua <strong>comissão direta das vendas desse mês</strong> — não sobre recorrentes nem override de rede. Reporte cada ação em até 5 dias para que conte para o mês em que a fez; os pontos não passam adiante. Se uma evidência for rejeitada, você tem 7 dias para complementá-la.` },
   'glos.racha.t': { es: 'Racha filantrópica', en: 'Philanthropic streak', fr: 'Série philanthropique', it: 'Serie filantropica', pt: 'Sequência filantrópica' },
   'glos.racha.d': { es: 'Incentivo opcional del partner con inversión: al acumular puntos filantrópicos en un mes natural (100 / 300 / 500), su comisión de ese mes sube +2.5% / +5% / +10% en puntos porcentuales. No es obligatoria, no se acumula entre meses y aplica el nivel más alto alcanzado.', en: 'Optional incentive for the investing partner: by earning philanthropic points in a calendar month (100 / 300 / 500), that month\'s commission rises +2.5% / +5% / +10% percentage points. Not mandatory, does not carry across months, highest tier reached applies.', fr: 'Incitation optionnelle du partenaire investisseur : en cumulant des points philanthropiques dans un mois civil (100 / 300 / 500), sa commission de ce mois augmente de +2,5% / +5% / +10% points de pourcentage. Non obligatoire, non reportable, le palier le plus haut atteint s\'applique.', it: 'Incentivo opzionale del partner con investimento: accumulando punti filantropici in un mese solare (100 / 300 / 500), la commissione di quel mese sale di +2,5% / +5% / +10% punti percentuali. Non obbligatoria, non si riporta tra i mesi, si applica il livello più alto raggiunto.', pt: 'Incentivo opcional do parceiro com investimento: ao acumular pontos filantrópicos em um mês corrido (100 / 300 / 500), a comissão daquele mês sobe +2,5% / +5% / +10% pontos percentuais. Não é obrigatória, não acumula entre meses e aplica o nível mais alto alcançado.' },
 
@@ -1202,11 +1211,11 @@ if (esDeCobro) {
     pt: '<strong>Filantropia opcional recompensada.</strong> Sem metas obrigatórias: se fizer ações filantrópicas, sua comissão do mês sobe até +10%.',
   };
   I18N['ct.p5.4'] = {
-    es: '<strong>Incentivo filantrópico (opcional).</strong> El Partner <strong>no tiene obligación de acumular puntos mensuales</strong>. De manera totalmente voluntaria podrá realizar actividades filantrópicas del catálogo público, reportándolas desde su portal (sin reporte no se acreditan puntos). Si en un mes natural acredita <strong>100 puntos filantrópicos</strong>, su comisión aplicable a las ventas de ese mes se incrementa en <strong>2.5 puntos porcentuales</strong>; con <strong>300 puntos</strong>, en <strong>5 puntos porcentuales</strong>; con <strong>500 puntos</strong>, en <strong>10 puntos porcentuales</strong>. Los niveles no son acumulables entre sí (aplica el más alto alcanzado), los puntos no se trasladan a meses posteriores y la no participación no genera penalización, baja ni pérdida de beneficio alguno.',
-    en: '<strong>Philanthropic incentive (optional).</strong> The Partner <strong>has no obligation to earn monthly points</strong>. Entirely voluntarily, they may perform philanthropic activities from the public catalog, reporting them from their portal (with no report, no points are credited). If in a calendar month they credit <strong>100 philanthropic points</strong>, their commission applicable to that month\'s sales increases by <strong>2.5 percentage points</strong>; with <strong>300 points</strong>, by <strong>5 percentage points</strong>; with <strong>500 points</strong>, by <strong>10 percentage points</strong>. Tiers do not stack (the highest reached applies), points do not carry into later months, and non-participation triggers no penalty, removal or loss of any benefit.',
-    fr: '<strong>Incitation philanthropique (optionnelle).</strong> Le Partenaire <strong>n\'a aucune obligation de cumuler des points mensuels</strong>. De manière totalement volontaire, il pourra réaliser des activités philanthropiques du catalogue public, en les déclarant depuis son portail (sans déclaration, aucun point n\'est crédité). Si dans un mois civil il crédite <strong>100 points philanthropiques</strong>, sa commission applicable aux ventes de ce mois augmente de <strong>2,5 points de pourcentage</strong> ; avec <strong>300 points</strong>, de <strong>5 points de pourcentage</strong> ; avec <strong>500 points</strong>, de <strong>10 points de pourcentage</strong>. Les paliers ne se cumulent pas (le plus haut atteint s\'applique), les points ne se reportent pas aux mois suivants et la non-participation n\'entraîne aucune pénalité, exclusion ni perte d\'avantage.',
-    it: '<strong>Incentivo filantropico (opzionale).</strong> Il Partner <strong>non ha alcun obbligo di accumulare punti mensili</strong>. In modo totalmente volontario potrà svolgere attività filantropiche del catalogo pubblico, segnalandole dal suo portale (senza segnalazione non si accreditano punti). Se in un mese solare accredita <strong>100 punti filantropici</strong>, la sua commissione applicabile alle vendite di quel mese aumenta di <strong>2,5 punti percentuali</strong>; con <strong>300 punti</strong>, di <strong>5 punti percentuali</strong>; con <strong>500 punti</strong>, di <strong>10 punti percentuali</strong>. I livelli non sono cumulabili (si applica il più alto raggiunto), i punti non si trasferiscono ai mesi successivi e la mancata partecipazione non genera penalità, rimozione né perdita di alcun beneficio.',
-    pt: '<strong>Incentivo filantrópico (opcional).</strong> O Parceiro <strong>não tem obrigação de acumular pontos mensais</strong>. De forma totalmente voluntária poderá realizar atividades filantrópicas do catálogo público, reportando-as do seu portal (sem reporte não há pontos creditados). Se em um mês corrido creditar <strong>100 pontos filantrópicos</strong>, sua comissão aplicável às vendas desse mês aumenta em <strong>2,5 pontos percentuais</strong>; com <strong>300 pontos</strong>, em <strong>5 pontos percentuais</strong>; com <strong>500 pontos</strong>, em <strong>10 pontos percentuais</strong>. Os níveis não são cumulativos (aplica-se o mais alto alcançado), os pontos não passam a meses posteriores e a não participação não gera penalização, baixa nem perda de benefício algum.',
+    es: `<strong>Incentivo filantrópico (opcional).</strong> El Partner <strong>no tiene obligación de acumular puntos mensuales</strong>. De manera totalmente voluntaria podrá realizar actividades filantrópicas del catálogo público, reportándolas desde su portal (sin reporte no se acreditan puntos). Si en un mes natural acredita <strong>${FIL_TIERS[0].pts} puntos filantrópicos</strong>, su comisión se incrementa en <strong>${FIL_TIERS[0].extra} puntos porcentuales</strong>; con <strong>${FIL_TIERS[1].pts} puntos</strong>, en <strong>${FIL_TIERS[1].extra} puntos porcentuales</strong>; con <strong>${FIL_TIERS[2].pts} puntos</strong>, en <strong>${FIL_TIERS[2].extra} puntos porcentuales</strong>. El incremento aplica exclusivamente sobre la <strong>comisión directa por ventas nuevas cerradas en ese mismo mes natural</strong> (no aplica a comisiones recurrentes de meses anteriores ni al override de red). Cada acción cuenta al mes en que se realizó siempre que se reporte dentro de los <strong>5 días naturales</strong> siguientes; reportada después, cuenta al mes del reporte. SACS valida cada evidencia en un máximo de <strong>48 horas hábiles</strong>; si una evidencia es rechazada, el Partner podrá complementarla dentro de los <strong>7 días naturales</strong> siguientes a la notificación. Los niveles no son acumulables entre sí (aplica el más alto alcanzado), los puntos no se trasladan a meses posteriores y la no participación no genera penalización, baja ni pérdida de beneficio alguno.`,
+    en: `<strong>Philanthropic incentive (optional).</strong> The Partner <strong>has no obligation to earn monthly points</strong>. Entirely voluntarily, they may perform philanthropic activities from the public catalog, reporting them from their portal (with no report, no points are credited). If in a calendar month they credit <strong>${FIL_TIERS[0].pts} philanthropic points</strong>, their commission increases by <strong>${FIL_TIERS[0].extra} percentage points</strong>; with <strong>${FIL_TIERS[1].pts} points</strong>, by <strong>${FIL_TIERS[1].extra} percentage points</strong>; with <strong>${FIL_TIERS[2].pts} points</strong>, by <strong>${FIL_TIERS[2].extra} percentage points</strong>. The increase applies exclusively to the <strong>direct commission on new sales closed within that same calendar month</strong> (it does not apply to recurring commissions from prior months nor to the network override). Each action counts toward the month it was performed provided it is reported within the following <strong>5 natural days</strong>; reported later, it counts toward the reporting month. SACS validates each piece of evidence within a maximum of <strong>48 business hours</strong>; if evidence is rejected, the Partner may supplement it within <strong>7 natural days</strong> of notice. Tiers do not stack (the highest reached applies), points do not carry into later months, and non-participation triggers no penalty, removal or loss of any benefit.`,
+    fr: `<strong>Incitation philanthropique (optionnelle).</strong> Le Partenaire <strong>n'a aucune obligation de cumuler des points mensuels</strong>. De manière totalement volontaire, il pourra réaliser des activités philanthropiques du catalogue public, en les déclarant depuis son portail (sans déclaration, aucun point n'est crédité). Si dans un mois civil il crédite <strong>${FIL_TIERS[0].pts} points philanthropiques</strong>, sa commission augmente de <strong>${FIL_TIERS[0].extra} points de pourcentage</strong> ; avec <strong>${FIL_TIERS[1].pts} points</strong>, de <strong>${FIL_TIERS[1].extra} points de pourcentage</strong> ; avec <strong>${FIL_TIERS[2].pts} points</strong>, de <strong>${FIL_TIERS[2].extra} points de pourcentage</strong>. L'augmentation s'applique exclusivement à la <strong>commission directe sur les ventes nouvelles conclues dans ce même mois civil</strong> (elle ne s'applique ni aux commissions récurrentes des mois antérieurs ni à l'override de réseau). Chaque action compte pour le mois où elle a été réalisée à condition d'être déclarée dans les <strong>5 jours calendaires</strong> suivants ; déclarée plus tard, elle compte pour le mois de la déclaration. SACS valide chaque preuve sous un maximum de <strong>48 heures ouvrées</strong> ; si une preuve est rejetée, le Partenaire pourra la compléter dans les <strong>7 jours calendaires</strong> suivant la notification. Les paliers ne se cumulent pas (le plus haut atteint s'applique), les points ne se reportent pas aux mois suivants et la non-participation n'entraîne aucune pénalité, exclusion ni perte d'avantage.`,
+    it: `<strong>Incentivo filantropico (opzionale).</strong> Il Partner <strong>non ha alcun obbligo di accumulare punti mensili</strong>. In modo totalmente volontario potrà svolgere attività filantropiche del catalogo pubblico, segnalandole dal suo portale (senza segnalazione non si accreditano punti). Se in un mese solare accredita <strong>${FIL_TIERS[0].pts} punti filantropici</strong>, la sua commissione aumenta di <strong>${FIL_TIERS[0].extra} punti percentuali</strong>; con <strong>${FIL_TIERS[1].pts} punti</strong>, di <strong>${FIL_TIERS[1].extra} punti percentuali</strong>; con <strong>${FIL_TIERS[2].pts} punti</strong>, di <strong>${FIL_TIERS[2].extra} punti percentuali</strong>. L'aumento si applica esclusivamente alla <strong>commissione diretta sulle vendite nuove chiuse in quello stesso mese solare</strong> (non si applica alle commissioni ricorrenti di mesi precedenti né all'override di rete). Ogni azione conta per il mese in cui è stata realizzata purché venga segnalata entro i <strong>5 giorni naturali</strong> successivi; segnalata dopo, conta per il mese della segnalazione. SACS valida ogni evidenza entro un massimo di <strong>48 ore lavorative</strong>; se un'evidenza viene respinta, il Partner potrà integrarla entro <strong>7 giorni naturali</strong> dalla notifica. I livelli non sono cumulabili (si applica il più alto raggiunto), i punti non si trasferiscono ai mesi successivi e la mancata partecipazione non genera penalità, rimozione né perdita di alcun beneficio.`,
+    pt: `<strong>Incentivo filantrópico (opcional).</strong> O Parceiro <strong>não tem obrigação de acumular pontos mensais</strong>. De forma totalmente voluntária poderá realizar atividades filantrópicas do catálogo público, reportando-as do seu portal (sem reporte não há pontos creditados). Se em um mês corrido creditar <strong>${FIL_TIERS[0].pts} pontos filantrópicos</strong>, sua comissão aumenta em <strong>${FIL_TIERS[0].extra} pontos percentuais</strong>; com <strong>${FIL_TIERS[1].pts} pontos</strong>, em <strong>${FIL_TIERS[1].extra} pontos percentuais</strong>; com <strong>${FIL_TIERS[2].pts} pontos</strong>, em <strong>${FIL_TIERS[2].extra} pontos percentuais</strong>. O aumento aplica exclusivamente sobre a <strong>comissão direta por vendas novas fechadas nesse mesmo mês corrido</strong> (não aplica a comissões recorrentes de meses anteriores nem ao override de rede). Cada ação conta para o mês em que foi realizada desde que reportada nos <strong>5 dias corridos</strong> seguintes; reportada depois, conta para o mês do reporte. A SACS valida cada evidência em no máximo <strong>48 horas úteis</strong>; se uma evidência for rejeitada, o Parceiro poderá complementá-la nos <strong>7 dias corridos</strong> seguintes à notificação. Os níveis não são cumulativos (aplica-se o mais alto alcançado), os pontos não passam a meses posteriores e a não participação não gera penalização, baixa nem perda de benefício algum.`,
   };
   I18N['ct.p6.c1'] = {
     es: '<strong>Actividad mínima:</strong> al ser un Partner con inversión única, <strong>no le aplica</strong> ninguna causal de baja por puntos mensuales. Las actividades filantrópicas de la cláusula 5.4 son un incentivo opcional y su omisión no constituye incumplimiento.',
@@ -1263,7 +1272,7 @@ const FIL_COMMIT: Record<string, any> = {
 if (esDeCobro) {
   for (let i = 0; i < compromisos.length; i++) {
     const t = String((compromisos[i] && compromisos[i].title) || '');
-    if (t.includes('100 punto')) compromisos[i] = { ...FIL_COMMIT[lang] };
+    if (t.includes('100 punto') || t.includes('100 point')) compromisos[i] = { ...FIL_COMMIT[lang] };
   }
 }
 const tabulador: any = invitation.tabulador && typeof invitation.tabulador === 'object' ? invitation.tabulador : {};
@@ -1478,6 +1487,11 @@ const tabsDef = [
   { id: 'compromisos',  label: tt('tab.compromisos'),   show: compromisos.length > 0, minutes: 3 },
   // Partner DE COBRO: el tab de contenido/puntos obligatorios se sustituye por
   // el de filantropía OPCIONAL (rachas que suben la comisión).
+  // DECISIÓN: la filantropía aplica a TODO partner de cobro, incluido el modo
+  // escalonado (paquete de licencias) — el extra opera sobre la comisión
+  // directa cuando exista. Si el CRM combina costo_unico>0 + escalonado, los
+  // textos de COSTO los gobierna escalonado (corre después) y los de
+  // filantropía este bloque; no se contradicen entre sí.
   { id: 'contenido',    label: tt('tab.contenido'),     show: tipo === 'embajador' && !esDeCobro, minutes: 4 },
   { id: 'filantropia',  label: tt('tab.filantropia'),   show: esDeCobro, minutes: 3 },
   { id: 'compensacion', label: tt('tab.compensacion'),  show: comisionPct > 0 || Object.keys(tabulador).length > 0, minutes: 6 },
@@ -3360,6 +3374,30 @@ const partnerLandingUrl = invitation.slug_landing
                 </div>
 
                 <div class="pp-h1">Mi participación</div>
+                {esDeCobro ? (
+                <>
+                <div class="pp-lead">Noviembre 2026 · racha filantrópica opcional.</div>
+
+                {/* Status grande — RACHA (demo para partner de cobro: sin meta) */}
+                <div class="pp-part-status">
+                  <div class="pp-part-status-head">
+                    <div>
+                      <div class="pp-part-status-eyebrow">Tu racha filantrópica este mes</div>
+                      <div class="pp-part-status-num"><strong>120</strong> <span>pts filantrópicos</span></div>
+                    </div>
+                    <div class="pp-part-status-meta">
+                      <div><strong>+{FIL_TIERS[0].extra}% de comisión extra asegurado</strong></div>
+                      <div class="pp-cell-meta">a {FIL_TIERS[1].pts - 120} pts del siguiente nivel (+{FIL_TIERS[1].extra}%)</div>
+                    </div>
+                  </div>
+                  <div class="pp-part-bar">
+                    <div class="pp-part-bar-fill" style={`width:${Math.round(120 / FIL_TIERS[FIL_TIERS.length - 1].pts * 100)}%`}></div>
+                  </div>
+                  <div class="pp-part-status-foot">2 acciones documentadas · 100% opcional — sin meta ni evaluación</div>
+                </div>
+                </>
+                ) : (
+                <>
                 <div class="pp-lead">Noviembre 2026 · evaluación cierra el 1 dic 2026.</div>
 
                 {/* Status grande */}
@@ -3380,6 +3418,8 @@ const partnerLandingUrl = invitation.slug_landing
                   </div>
                   <div class="pp-part-status-foot">4 piezas publicadas · 22 días restantes en el mes · próxima evaluación 1 dic</div>
                 </div>
+                </>
+                )}
 
                 <h2 class="pp-h2">Cuánto vale cada tipo de contenido</h2>
                 <div class="pp-puntos-grid">
@@ -3418,9 +3458,15 @@ const partnerLandingUrl = invitation.slug_landing
                   <div class="pp-trow" style="grid-template-columns: 1fr 1fr 1fr 1fr"><span>Mayo 2026</span><span><strong>92 pts</strong></span><span>4 piezas</span><span><em class="pp-tag pp-tag--amber">92% · aceptado</em></span></div>
                 </div>
 
+                {esDeCobro ? (
+                <div class="pp-foot-stats">
+                  <strong>Filantropía opcional:</strong> los meses con racha suman comisión extra — los meses sin ella no restan nada. 🕊️
+                </div>
+                ) : (
                 <div class="pp-foot-stats">
                   <strong>Promedio últimos 6 meses:</strong> 102 pts/mes · <strong>Cumpliendo el acuerdo</strong> ✓
                 </div>
+                )}
               </section>
 
               {/* ─────────── TAB: ACTUALIZACIONES ─────────── */}
@@ -4026,22 +4072,17 @@ const partnerLandingUrl = invitation.slug_landing
           <div class="p-commit-strikes-eyebrow">{tt('fil.eyebrow')}</div>
           <h3 class="p-commit-strikes-title">{tt('fil.racha.t')}</h3>
           <p class="p-commit-strikes-lead" set:html={tt('fil.racha.d')}></p>
+          <!-- Badges desde FIL_TIERS (misma fuente que los textos): hardcodear
+               100/300/500 aquí dejaba la tarjeta con dos verdades si los
+               umbrales cambian en data/filantropia.ts -->
           <div class="p-commit-strikes-flow">
-            <div class="p-commit-strikes-step">
-              <div class="p-commit-strikes-num">100</div>
-              <div class="p-commit-strikes-step-title">{tt('fil.t1.t')}</div>
-              <div class="p-commit-strikes-step-detail">{tt('fil.t1.d')}</div>
-            </div>
-            <div class="p-commit-strikes-step p-commit-strikes-step--mid">
-              <div class="p-commit-strikes-num">300</div>
-              <div class="p-commit-strikes-step-title">{tt('fil.t2.t')}</div>
-              <div class="p-commit-strikes-step-detail">{tt('fil.t2.d')}</div>
-            </div>
-            <div class="p-commit-strikes-step">
-              <div class="p-commit-strikes-num">500</div>
-              <div class="p-commit-strikes-step-title">{tt('fil.t3.t')}</div>
-              <div class="p-commit-strikes-step-detail">{tt('fil.t3.d')}</div>
-            </div>
+            {FIL_TIERS.map((t, i) => (
+              <div class={`p-commit-strikes-step${i === 1 ? ' p-commit-strikes-step--mid' : ''}`}>
+                <div class="p-commit-strikes-num">{t.pts}</div>
+                <div class="p-commit-strikes-step-title">{tt(`fil.t${i + 1}.t`)}</div>
+                <div class="p-commit-strikes-step-detail">{tt(`fil.t${i + 1}.d`)}</div>
+              </div>
+            ))}
           </div>
           <div class="p-commit-strikes-payment">
             <div class="p-commit-strikes-payment-title">{tt('fil.how.t')}</div>
@@ -4062,7 +4103,50 @@ const partnerLandingUrl = invitation.slug_landing
                 <div class="p-commit-strikes-step-detail">{tt('fil.how.3.d')}</div>
               </div>
             </div>
-            <p style="margin-top:14px;">{tt('fil.note')}</p>
+            <p style="margin-top:14px;" set:html={tt('fil.note')}></p>
+          </div>
+        </div>
+
+        <!-- Ejemplo con PESOS (los porcentajes se leen; los pesos se sienten).
+             Base de ejemplo: $80,000 MXN de ventas del mes con la comisión real
+             de esta invitación. Extra = ventas × pp extra. Gateado con
+             comisionPct > 0 (una invitación con 0% mostraría "$0 (0%)"). -->
+        {comisionPct > 0 && (
+        <div class="p-commit-strikes" style="margin-top:24px;">
+          <div class="p-commit-strikes-eyebrow">{tt('fil.eyebrow')}</div>
+          <h3 class="p-commit-strikes-title">{tt('fil.ej.t')}</h3>
+          <p class="p-commit-strikes-lead">
+            {tt('fil.ej.lead')} <strong>{fmtLocalMoney(80000)}</strong> — {tt('fil.ej.base')} <strong>{fmtLocalMoney(80000 * comisionPct / 100)}</strong> ({comisionPct}%).
+          </p>
+          <div class="p-commit-strikes-flow">
+            {FIL_TIERS.map((t) => (
+              <div class="p-commit-strikes-step">
+                <div class="p-commit-strikes-num">{t.pts}</div>
+                <div class="p-commit-strikes-step-title">+{fmtLocalMoney(80000 * t.extra / 100)}</div>
+                <div class="p-commit-strikes-step-detail">{t.pts} {tt('fil.ej.pts')} → +{t.extra}% · {tt('fil.ej.extra')}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        )}
+
+        <!-- Catálogo filantrópico CON puntaje: sin esto el partner no sabe
+             cuánto vale cada acción ni cómo planear su racha. -->
+        <div class="p-commit-strikes" style="margin-top:24px;">
+          <div class="p-commit-strikes-eyebrow">{tt('cat.filantropia.l')}</div>
+          <h3 class="p-commit-strikes-title">{tt('fil.cat.t')}</h3>
+          <p class="p-commit-strikes-lead">{tt('fil.cat.lead')}</p>
+          <div class="p-commits" style="margin-top:14px;">
+            {CONTENT_TYPES.filter((c: any) => c.categoria === 'filantropia').map((c: any, i: number) => (
+              <div class="p-commit-row">
+                <div class="p-commit-num">+{c.puntos}</div>
+                <div class="p-commit-content">
+                  <div class="p-commit-title">{CT_I18N[lang]?.[c.id]?.nombre || c.nombre}</div>
+                  <div class="p-commit-detail">{CT_I18N[lang]?.[c.id]?.descripcion || c.descripcion}</div>
+                  {c.duracion && <div class="p-commit-frequency">{c.duracion}</div>}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -4207,12 +4291,35 @@ const partnerLandingUrl = invitation.slug_landing
             </label>
           </div>
 
+          {esDeCobro && (
+            <label class="p-calc-input" style="margin-top:12px; display:block;">
+              <div class="p-calc-input-head">
+                <span class="p-calc-input-label">🕊️ {tt('fil.eyebrow')}</span>
+                <span class="p-calc-input-value" data-calc-out="fil-label">—</span>
+              </div>
+              <select class="p-calc-select" data-calc-input="fil">
+                <option value="0" selected>—</option>
+                {FIL_TIERS.map((t) => (
+                  <option value={t.extra}>{t.pts} pts → +{t.extra}%</option>
+                ))}
+              </select>
+              <div class="p-calc-input-hint">{tt('fil.opt.t')}</div>
+            </label>
+          )}
+
           <div class="p-calc-out">
             <div class="p-calc-out-card p-calc-out-card--featured">
               <div class="p-calc-out-label">{tt('calc.out.ventas')}</div>
               <div class="p-calc-out-amount" data-calc-out="ventas-anual">—</div>
               <div class="p-calc-out-period">{tt('calc.per.recurrente')}</div>
             </div>
+            {esDeCobro && (
+              <div class="p-calc-out-card" data-calc-fil-card style="display:none;">
+                <div class="p-calc-out-label">🕊️ {tt('fil.eyebrow')}</div>
+                <div class="p-calc-out-amount" data-calc-out="fil-anual">—</div>
+                <div class="p-calc-out-period">{tt('calc.per.year')}</div>
+              </div>
+            )}
             <div class="p-calc-out-card p-calc-out-card--total">
               <div class="p-calc-out-label">{tt('calc.out.total')}</div>
               <div class="p-calc-out-amount" data-calc-out="total-anual">—</div>
@@ -13552,7 +13659,17 @@ const partnerLandingUrl = invitation.slug_landing
 
       const bonosAnual   = (pruebas * BONUS_PRUEBA + demos * BONUS_DEMO) * 12;
       const ventasAnual  = clientes * plan.annualTotal * RATE;
-      const total        = bonosAnual + ventasAnual;
+
+      // Racha filantrópica (solo invitaciones de cobro): pp extra sobre las
+      // VENTAS del año proyectado (el select trae el extra del tier elegido).
+      const filPct   = read('fil');
+      const filAnual = clientes * plan.annualTotal * (filPct / 100);
+      const filCard  = calc.querySelector('[data-calc-fil-card]');
+      if (filCard) filCard.style.display = filPct > 0 ? '' : 'none';
+      setOut('fil-label', filPct > 0 ? ('+' + filPct + '%') : '—');
+      setOut('fil-anual', fmt(filAnual));
+
+      const total = bonosAnual + ventasAnual + filAnual;
 
       setOut('pruebas', pruebas);
       setOut('demos', demos);

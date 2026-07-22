@@ -3,6 +3,7 @@ import { fmt, fmtNum, fmtRel, isDemoMode, apiGet, STAGE_LABELS, copyToClipboard,
 import { SS, C } from './styles';
 import { Icon } from './icons';
 import { ensurePushSubscription, checkPushStatus, sendTestPush } from './PWAManager';
+import { FIL_TIERS, extraPorPuntos } from '../../../data/filantropia';
 import {
   demoSummary, demoLeads, demoLinkStats, demoContent, demoActivity, demoProfile, demoLevel,
 } from '../../../data/partner-portal-demo';
@@ -104,6 +105,11 @@ export default function HomeTab({ user, go }: Props) {
   const puntos = content?.summary?.puntos_mes ?? 0;
   const puntosMeta = content?.summary?.meta ?? 100;
   const puntosPct = content?.summary?.progreso_pct ?? 0;
+  // Partner de cobro: sin meta — la card muestra la racha filantrópica
+  const esDeCobro = !!content?.summary?.es_de_cobro;
+  const filPts = content?.summary?.filantropia_mes ?? 0;
+  const filExtra = extraPorPuntos(filPts);
+  const filTope = FIL_TIERS[FIL_TIERS.length - 1].pts;
   const diasRestantes = content?.summary?.days_remaining ?? 0;
 
   // Recent activity
@@ -175,15 +181,27 @@ export default function HomeTab({ user, go }: Props) {
           ctaLabel="Ver progreso →"
           onCta={() => go('nivel')}
         />
-        <StatCard
-          label="Puntos del mes"
-          value={`${puntos} / ${puntosMeta}`}
-          hint={diasRestantes > 0 ? `${diasRestantes} días restantes` : 'Cierre del mes'}
-          accent={C.purple}
-          ctaLabel="Reportar actividad →"
-          onCta={() => go('nivel')}
-          progress={Math.min(100, puntosPct)}
-        />
+        {esDeCobro ? (
+          <StatCard
+            label="🕊️ Racha filantrópica"
+            value={filExtra > 0 ? `${filPts} pts · +${filExtra}%` : `${filPts} pts`}
+            hint={filExtra > 0 ? 'comisión extra este mes · opcional' : 'opcional — sube tu comisión'}
+            accent={C.green}
+            ctaLabel="Ver mi racha →"
+            onCta={() => go('nivel')}
+            progress={Math.min(100, Math.round((filPts / filTope) * 100))}
+          />
+        ) : (
+          <StatCard
+            label="Puntos del mes"
+            value={`${puntos} / ${puntosMeta}`}
+            hint={diasRestantes > 0 ? `${diasRestantes} días restantes` : 'Cierre del mes'}
+            accent={C.purple}
+            ctaLabel="Reportar actividad →"
+            onCta={() => go('nivel')}
+            progress={Math.min(100, puntosPct)}
+          />
+        )}
       </div>
 
       {/* Card promocional · Activa notificaciones (solo si no están activas) */}

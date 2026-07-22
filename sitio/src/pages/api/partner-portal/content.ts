@@ -142,6 +142,19 @@ export const GET: APIRoute = async ({ request }) => {
     .eq('id', user.id)
     .maybeSingle();
 
+  // Partner DE COBRO (invitación con costo_unico > 0): NO tiene meta mensual
+  // obligatoria ni strikes — su filantropía es un incentivo opcional por
+  // rachas (data/filantropia.ts). El flag gobierna la evaluación de strikes
+  // (que NO debe correr para él) y la UI del portal.
+  const { data: invPago } = await supabase
+    .from('partner_invitations')
+    .select('id, costo_unico')
+    .eq('team_member_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const esDeCobro = Number(invPago?.costo_unico || 0) > 0;
+
   const all = rows || [];
   const ym = currentYM();
   const now = new Date();
@@ -173,8 +186,27 @@ export const GET: APIRoute = async ({ request }) => {
     if (mes < ym) acumulado += Math.max(0, data.puntos - META_PUNTOS_MES);
   }
 
-  // Run evaluation logic (writes back if a month rolled over)
-  const evalRes = await evaluatePeriods(user.id, member?.last_period_evaluated || null, approved);
+  // Run evaluation logic (writes back if a month rolled over).
+  // Partner de cobro: SIN evaluación de strikes — no tiene meta obligatoria;
+  // evaluarlo lo marcaría "failed months"/suspendido por una meta que no firmó.
+  let evalRes;
+  if (esDeCobro) {
+    evalRes = { consecutive_failed_months: 0, suspended: false, evaluated_to: member?.last_period_evaluated || null };
+    // Saneo del pasado: si ANTES lo marcó la evaluación por meta (strikes o
+    // suspensión automática), se limpia — esa meta ya no le aplica. También
+    // se AVANZA last_period_evaluated: si algún día vuelve a ser gratuito, la
+    // retro-evaluación no debe castigarlo por meses en los que no tenía meta.
+    try {
+      const upd: Record<string, any> = {};
+      if ((member?.consecutive_failed_months ?? 0) > 0) upd.consecutive_failed_months = 0;
+      if (member?.suspended_at) { upd.suspended_at = null; upd.suspension_reason = null; upd.activo = true; }
+      const prevM = prevYM(ym);
+      if (member && member.last_period_evaluated !== prevM) upd.last_period_evaluated = prevM;
+      if (Object.keys(upd).length) await supabase.from('team_members').update(upd).eq('id', user.id);
+    } catch { /* best-effort */ }
+  } else {
+    evalRes = await evaluatePeriods(user.id, member?.last_period_evaluated || null, approved);
+  }
 
   // Compute carryover deficit for current month
   const prevMonth = prevYM(ym);
@@ -238,6 +270,10 @@ export const GET: APIRoute = async ({ request }) => {
       suspended: evalRes.suspended,
       suspension_reason: member?.suspension_reason || null,
       historico,
+      // Racha filantrópica (partner de cobro): puntos de filantropía del mes
+      // en curso — el front pinta la barra 100/300/500 y el extra logrado.
+      es_de_cobro: esDeCobro,
+      filantropia_mes: byMes[ym]?.categoria?.filantropia || 0,
     },
     tipos: CONTENT_TYPES,
   });
@@ -256,14 +292,8 @@ export const POST: APIRoute = async ({ request }) => {
     const descripcion = (body.descripcion || '').trim().slice(0, 500) || null;
     const plataforma = (body.plataforma || '').trim().toLowerCase().slice(0, 30) || null;
 
-    if (!url || !url.startsWith('http')) {
-      return j({ error: 'URL válida requerida (debe empezar con http:// o https://)' }, 400);
-    }
     if (!ALLOWED_TIPOS.includes(tipo)) {
       return j({ error: 'Tipo de contenido inválido' }, 400);
-    }
-    if (plataforma && !ALLOWED_PLATAFORMAS.includes(plataforma)) {
-      return j({ error: 'Plataforma inválida' }, 400);
     }
 
     // Detectar categoría desde el catálogo (contenido | apoyo | filantropia)
@@ -272,16 +302,37 @@ export const POST: APIRoute = async ({ request }) => {
       tipoMeta?.categoria === 'filantropia' ? 'filantropia' :
       tipoMeta?.categoria === 'apoyo' ? 'apoyo' : 'contenido';
 
-    // Insert (UNIQUE constraint en (partner_id, url) evita duplicados)
+    // FILANTROPÍA: la evidencia es foto/video documentado — muchas acciones no
+    // viven en una red social. Se acepta URL (Drive/red) O una descripción con
+    // sustancia; exigir URL http bloqueaba el core del incentivo del partner
+    // de cobro. Contenido/apoyo siguen exigiendo URL pública.
+    if (categoria === 'filantropia') {
+      if ((!url || !url.startsWith('http')) && (!descripcion || descripcion.length < 20)) {
+        return j({ error: 'Comparte el link de tu evidencia (foto/video) o describe la acción (mínimo 20 caracteres).' }, 400);
+      }
+    } else if (!url || !url.startsWith('http')) {
+      return j({ error: 'URL válida requerida (debe empezar con http:// o https://)' }, 400);
+    }
+    // plataforma no aplica a filantropía (el default del form era 'instagram'
+    // → datos basura tipo "voluntariado_animales · instagram")
+    const plataformaFinal = categoria === 'filantropia' ? null : plataforma;
+    if (plataformaFinal && !ALLOWED_PLATAFORMAS.includes(plataformaFinal)) {
+      return j({ error: 'Plataforma inválida' }, 400);
+    }
+
+    // Insert (UNIQUE constraint en (partner_id, url) evita duplicados).
+    // Filantropía sin URL: placeholder ÚNICO — un '' repetido chocaría con el
+    // UNIQUE y el 2º reporte sin link daría "ya enviaste este link antes".
+    const urlFinal = url || `filantropia-evidencia:${Date.now()}`;
     const { data, error } = await supabase
       .from('partner_content_submissions')
       .insert({
         partner_id: user.id,
-        url,
+        url: urlFinal,
         tipo,
         categoria,
         descripcion,
-        plataforma,
+        plataforma: plataformaFinal,
         estado: 'pending_review',
         puntos: 0,
       })
@@ -297,7 +348,7 @@ export const POST: APIRoute = async ({ request }) => {
         const { data: retryData, error: retryErr } = await supabase
           .from('partner_content_submissions')
           .insert({
-            partner_id: user.id, url, tipo, descripcion, plataforma,
+            partner_id: user.id, url: urlFinal, tipo, descripcion, plataforma: plataformaFinal,
             estado: 'pending_review', puntos: 0,
           })
           .select()
