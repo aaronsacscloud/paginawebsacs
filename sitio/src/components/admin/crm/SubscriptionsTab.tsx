@@ -765,6 +765,9 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
   const [qc, setQc] = useState('');
   const [resC, setResC] = useState<any[]>([]);
   const [linkLabel, setLinkLabel] = useState<string | null>(null);
+  const [crearNuevo, setCrearNuevo] = useState(false);
+  const [nc, setNc] = useState<any>({ nombre: '', email: '', whatsapp: '' });
+  const [creandoC, setCreandoC] = useState(false);
   const nombreLimpio = (...xs: any[]) => xs.filter(x => x && x !== 'null' && x !== 'undefined').join(' ').trim();
 
   useEffect(() => {
@@ -777,7 +780,22 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
   function elegirContacto(c: any) {
     setForm((f: any) => ({ ...f, contact_id: c.id, company_id: c.company_id || f.company_id }));
     setLinkLabel(nombreLimpio(c.nombre, c.apellido) + (c.companies?.nombre ? ' · ' + c.companies.nombre : ''));
-    setReasignar(false); setQc(''); setResC([]);
+    setReasignar(false); setQc(''); setResC([]); setCrearNuevo(false);
+  }
+  // Crear un contacto nuevo ligado a la MISMA empresa de la suscripción.
+  async function crearContactoRapido() {
+    if (!nc.nombre.trim()) return;
+    setCreandoC(true);
+    try {
+      const r = await fetch('/api/crm/contacts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre: nc.nombre.trim(), email: nc.email.trim() || null, whatsapp: nc.whatsapp.trim() || null, company_id: sub.company_id, tipo: 'cliente' }) });
+      const j = await r.json();
+      const nuevo = j.contact || j.data || j;
+      if (!r.ok || j.error || !nuevo?.id) throw new Error(j.error || 'No se pudo crear el contacto');
+      setForm((f: any) => ({ ...f, contact_id: nuevo.id, company_id: sub.company_id }));
+      setLinkLabel(nc.nombre.trim() + (sub.companies?.nombre ? ' · ' + sub.companies.nombre : ''));
+      setReasignar(false); setCrearNuevo(false); setNc({ nombre: '', email: '', whatsapp: '' });
+    } catch (e: any) { setErr(e?.message || 'No se pudo crear el contacto'); }
+    setCreandoC(false);
   }
 
   useEffect(() => { fetch('/api/crm/arr/plans').then(r => r.json()).then(j => setPlans(j.data || [])).catch(() => {}); }, []);
@@ -880,20 +898,36 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
           </div>
           {reasignar && (
             <div style={{ marginTop: 8 }}>
-              <input autoFocus value={qc} onChange={e => setQc(e.target.value)} placeholder="Buscar contacto por nombre o email…" style={{ ...S.input, width: '100%' }} />
-              {resC.length > 0 && (
-                <div style={{ border: '1px solid #eee', borderRadius: 8, marginTop: 6, maxHeight: 190, overflowY: 'auto', background: '#fff' }}>
-                  {resC.map((c: any) => (
-                    <div key={c.id} onClick={() => elegirContacto(c)} style={{ padding: '7px 10px', cursor: 'pointer', borderBottom: '1px solid #f4f4f4', fontSize: '0.8rem' }}>
-                      <b>{nombreLimpio(c.nombre, c.apellido) || c.email || '(sin nombre)'}</b>
-                      {c.companies?.nombre ? <span style={{ color: '#999' }}> · {c.companies.nombre}</span> : <span style={{ color: '#c62828' }}> · sin empresa</span>}
-                      {c.email ? <span style={{ color: '#bbb' }}> · {c.email}</span> : null}
-                    </div>
-                  ))}
+              <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                <button type="button" onClick={() => setCrearNuevo(false)} style={{ ...S.btnSmall, flex: 1, background: !crearNuevo ? '#1a1a1a' : '#fff', color: !crearNuevo ? '#fff' : '#333' }}>Buscar existente</button>
+                <button type="button" onClick={() => setCrearNuevo(true)} style={{ ...S.btnSmall, flex: 1, background: crearNuevo ? '#1a1a1a' : '#fff', color: crearNuevo ? '#fff' : '#333' }}>+ Crear nuevo</button>
+              </div>
+              {!crearNuevo ? (<>
+                <input autoFocus value={qc} onChange={e => setQc(e.target.value)} placeholder="Buscar contacto por nombre o email…" style={{ ...S.input, width: '100%' }} />
+                {resC.length > 0 && (
+                  <div style={{ border: '1px solid #eee', borderRadius: 8, marginTop: 6, maxHeight: 190, overflowY: 'auto', background: '#fff' }}>
+                    {resC.map((c: any) => (
+                      <div key={c.id} onClick={() => elegirContacto(c)} style={{ padding: '7px 10px', cursor: 'pointer', borderBottom: '1px solid #f4f4f4', fontSize: '0.8rem' }}>
+                        <b>{nombreLimpio(c.nombre, c.apellido) || c.email || '(sin nombre)'}</b>
+                        {c.companies?.nombre ? <span style={{ color: '#999' }}> · {c.companies.nombre}</span> : <span style={{ color: '#c62828' }}> · sin empresa</span>}
+                        {c.email ? <span style={{ color: '#bbb' }}> · {c.email}</span> : null}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {qc.trim().length >= 2 && resC.length === 0 && <div style={{ fontSize: '0.75rem', color: '#999', marginTop: 6 }}>Sin resultados con "{qc}". Prueba <b onClick={() => setCrearNuevo(true)} style={{ cursor: 'pointer', color: '#2563eb' }}>+ Crear nuevo</b>.</div>}
+                <div style={{ fontSize: '0.7rem', color: '#aaa', marginTop: 6 }}>Al elegir, la suscripción se mueve a ese contacto y su empresa; el ARR se recalcula en ambas.</div>
+              </>) : (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <div style={{ gridColumn: '1 / -1' }}><label style={S.label}>Nombre *</label><input autoFocus value={nc.nombre} onChange={e => setNc({ ...nc, nombre: e.target.value })} style={{ ...S.input, width: '100%' }} placeholder="Nombre del contacto" /></div>
+                  <div><label style={S.label}>Email</label><input value={nc.email} onChange={e => setNc({ ...nc, email: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
+                  <div><label style={S.label}>WhatsApp</label><input value={nc.whatsapp} onChange={e => setNc({ ...nc, whatsapp: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <button type="button" onClick={crearContactoRapido} disabled={creandoC || !nc.nombre.trim()} style={{ ...S.btn, width: '100%', background: '#1A8F7A', color: '#fff', opacity: creandoC || !nc.nombre.trim() ? 0.6 : 1 }}>{creandoC ? 'Creando…' : 'Crear y ligar a ' + (sub.companies?.sacs_account || sub.companies?.nombre || 'esta cuenta')}</button>
+                    <div style={{ fontSize: '0.7rem', color: '#aaa', marginTop: 6 }}>Se crea el contacto en la empresa <b>{sub.companies?.nombre || sub.companies?.sacs_account || '—'}</b> y se liga a esta suscripción.</div>
+                  </div>
                 </div>
               )}
-              {qc.trim().length >= 2 && resC.length === 0 && <div style={{ fontSize: '0.75rem', color: '#999', marginTop: 6 }}>Sin resultados con "{qc}".</div>}
-              <div style={{ fontSize: '0.7rem', color: '#aaa', marginTop: 6 }}>Al elegir, la suscripción se mueve a ese contacto y su empresa; el ARR se recalcula en ambas.</div>
             </div>
           )}
         </div>
