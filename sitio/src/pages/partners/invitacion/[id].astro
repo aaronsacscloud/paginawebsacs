@@ -4130,21 +4130,40 @@ const partnerLandingUrl = invitation.slug_landing
         </div>
         )}
 
-        <!-- Catálogo filantrópico CON puntaje: sin esto el partner no sabe
-             cuánto vale cada acción ni cómo planear su racha. -->
-        <div class="p-commit-strikes" style="margin-top:24px;">
-          <div class="p-commit-strikes-eyebrow">{tt('cat.filantropia.l')}</div>
-          <h3 class="p-commit-strikes-title">{tt('fil.cat.t')}</h3>
-          <p class="p-commit-strikes-lead">{tt('fil.cat.lead')}</p>
-          <div class="p-commits" style="margin-top:14px;">
-            {CONTENT_TYPES.filter((c: any) => c.categoria === 'filantropia').map((c: any, i: number) => (
-              <div class="p-commit-row">
-                <div class="p-commit-num">+{c.puntos}</div>
-                <div class="p-commit-content">
-                  <div class="p-commit-title">{CT_I18N[lang]?.[c.id]?.nombre || c.nombre}</div>
-                  <div class="p-commit-detail">{CT_I18N[lang]?.[c.id]?.descripcion || c.descripcion}</div>
-                  {c.duracion && <div class="p-commit-frequency">{c.duracion}</div>}
+        <!-- Catálogo filantrópico COMPLETO — mismas tarjetas ricas del tab de
+             contenido de la invitación gratuita (imagen, puntos, duración/
+             esfuerzo, descripción, ideas). El partner ve exactamente qué
+             hacer y cuánto vale cada acción para planear su racha. -->
+        <div class="p-content-cat" style="margin-top:24px;">
+          <div class="p-section-head">
+            <div class="p-section-eyebrow">{tt('cat.filantropia.l')}</div>
+            <h3 class="p-section-title">{tt('fil.cat.t')}</h3>
+            <p class="p-section-lead">{tt('fil.cat.lead')}</p>
+          </div>
+          <div class="p-content-types-grid">
+            {CONTENT_TYPES.filter((c: any) => c.categoria === 'filantropia').map((c: any) => (
+              <div class="p-content-type-card">
+                {c.ejemploImage && (
+                  <div class="p-content-type-img-wrap">
+                    <img src={c.ejemploImage} alt={`Ejemplo: ${(CT_I18N[lang]?.[c.id]?.nombre || c.nombre)}`} loading="lazy" class="p-content-type-img" />
+                  </div>
+                )}
+                <div class="p-content-type-head">
+                  <div>
+                    <div class="p-content-type-name">{CT_I18N[lang]?.[c.id]?.nombre || c.nombre}</div>
+                    <div class="p-content-type-meta">{c.duracion} · {tt('card.effort')} {c.esfuerzo}</div>
+                  </div>
+                  <div class="p-content-type-pts">{c.puntos}<span> pts</span></div>
                 </div>
+                <p class="p-content-type-desc">{CT_I18N[lang]?.[c.id]?.descripcion || c.descripcion}</p>
+                {((CT_I18N[lang]?.[c.id]?.ideas || c.ideasContenido) || []).length > 0 && (
+                  <div class="p-content-type-ideas">
+                    <div class="p-content-type-ideas-label">{tt('card.examples')}</div>
+                    <ul>
+                      {(CT_I18N[lang]?.[c.id]?.ideas || c.ideasContenido).slice(0, 3).map((idea: string) => <li>{idea}</li>)}
+                    </ul>
+                  </div>
+                )}
               </div>
             ))}
           </div>

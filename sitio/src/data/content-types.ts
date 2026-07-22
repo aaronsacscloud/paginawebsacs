@@ -375,6 +375,7 @@ const FILANTROPIA_TYPES: ContentType[] = [
   {
     id: 'voluntariado_animales', nombre: 'Voluntariado en refugio de animales',
     puntos: 40, duracion: '4 horas', esfuerzo: 'medio', categoria: 'filantropia',
+    ejemploImage: '/images/content-examples/voluntariado-animales.webp',
     descripcion: 'Donar mínimo 4 horas en un refugio canino, felino, equino o de fauna en riesgo. Limpiar, alimentar, pasear, ayudar en consultas. Documentar con foto.',
     ideasContenido: [
       'Jornada en refugio canino',
@@ -386,6 +387,7 @@ const FILANTROPIA_TYPES: ContentType[] = [
   {
     id: 'jornada_adopcion', nombre: 'Jornada de adopción o esterilización',
     puntos: 60, duracion: '6-8 horas', esfuerzo: 'alto', categoria: 'filantropia',
+    ejemploImage: '/images/content-examples/jornada-adopcion.webp',
     descripcion: 'Organizar o apoyar logísticamente una jornada de adopción o esterilización gratuita de animales. Documentar con foto + cantidad de adopciones/esterilizaciones.',
     ideasContenido: [
       'Jornada de adopción en parque público',
@@ -397,6 +399,7 @@ const FILANTROPIA_TYPES: ContentType[] = [
   {
     id: 'banco_alimentos', nombre: 'Voluntariado en banco de alimentos',
     puntos: 40, duracion: '4 horas', esfuerzo: 'medio', categoria: 'filantropia',
+    ejemploImage: '/images/content-examples/banco-alimentos.webp',
     descripcion: 'Donar mínimo 4 horas a un banco de alimentos: selección, empaque, distribución, logística. Documentar con foto + nombre del banco.',
     ideasContenido: [
       'Empaque de despensas en banco local',
@@ -408,6 +411,7 @@ const FILANTROPIA_TYPES: ContentType[] = [
   {
     id: 'comedor_comunitario', nombre: 'Apoyo en comedor comunitario',
     puntos: 50, duracion: '4-6 horas', esfuerzo: 'medio', categoria: 'filantropia',
+    ejemploImage: '/images/content-examples/comedor-comunitario.webp',
     descripcion: 'Cocinar, servir o donar insumos en un comedor comunitario para personas en situación vulnerable. Mín. medio día de jornada.',
     ideasContenido: [
       'Servir comida en comedor del DIF',
@@ -419,6 +423,7 @@ const FILANTROPIA_TYPES: ContentType[] = [
   {
     id: 'distribucion_despensas', nombre: 'Distribución de despensas a personas vulnerables',
     puntos: 50, duracion: '4-8 horas', esfuerzo: 'medio-alto', categoria: 'filantropia',
+    ejemploImage: '/images/content-examples/distribucion-despensas.webp',
     descripcion: 'Organizar o participar en una jornada de entrega de despensas, agua, ropa o medicamentos a familias en situación vulnerable. Documentar con foto + zona.',
     ideasContenido: [
       'Entrega de despensas en comunidad rural',
@@ -430,6 +435,7 @@ const FILANTROPIA_TYPES: ContentType[] = [
   {
     id: 'albergue_personas', nombre: 'Voluntariado en albergue de personas',
     puntos: 60, duracion: '4-6 horas', esfuerzo: 'medio-alto', categoria: 'filantropia',
+    ejemploImage: '/images/content-examples/albergue-personas.webp',
     descripcion: 'Apoyar en albergue de personas en situación de calle, casa hogar de niñas/os, asilo de adultos mayores o albergue de migrantes. Mín. medio día.',
     ideasContenido: [
       'Tarde con adultos mayores en asilo',
@@ -441,6 +447,7 @@ const FILANTROPIA_TYPES: ContentType[] = [
   {
     id: 'limpieza_publica', nombre: 'Limpieza de espacio público / playa / parque',
     puntos: 30, duracion: '3-4 horas', esfuerzo: 'medio', categoria: 'filantropia',
+    ejemploImage: '/images/content-examples/limpieza-publica.webp',
     descripcion: 'Jornada de limpieza grupal en parque, playa, río o reserva natural. Mín. 3 horas y grupo de 5+ personas. Documentar con foto antes/después.',
     ideasContenido: [
       'Limpieza de playa en grupo',
@@ -452,6 +459,7 @@ const FILANTROPIA_TYPES: ContentType[] = [
   {
     id: 'mentoria_emprendedor', nombre: 'Mentoría 1:1 a emprendedor de bajos recursos',
     puntos: 30, duracion: '1 hora', esfuerzo: 'bajo', categoria: 'filantropia',
+    ejemploImage: '/images/content-examples/mentoria-emprendedor.webp',
     descripcion: 'Sesión 1:1 gratuita a un emprendedor de microempresa familiar o de comunidad vulnerable. Documentar con foto + descripción del caso.',
     ideasContenido: [
       'Asesorar a vendedora de mercado popular',
@@ -463,6 +471,7 @@ const FILANTROPIA_TYPES: ContentType[] = [
   {
     id: 'conferencia_escuela', nombre: 'Conferencia gratuita en escuela pública',
     puntos: 50, duracion: '1-2 horas', esfuerzo: 'medio-alto', categoria: 'filantropia',
+    ejemploImage: '/images/content-examples/conferencia-escuela.webp',
     descripcion: 'Charla gratuita en preparatoria pública, CECyT, CONALEP o universidad de zona vulnerable sobre emprendimiento o tecnología.',
     ideasContenido: [
       'Charla de emprendimiento en CONALEP',
@@ -474,6 +483,7 @@ const FILANTROPIA_TYPES: ContentType[] = [
   {
     id: 'beca_patrocinio', nombre: 'Beca o patrocinio a una persona',
     puntos: 60, duracion: 'mensual', esfuerzo: 'alto', categoria: 'filantropia',
+    ejemploImage: '/images/content-examples/beca-patrocinio.webp',
     descripcion: 'Patrocinar un curso, kit, herramienta o servicio para alguien que no podría costearlo. Cuenta una vez al mes mientras se mantenga el patrocinio.',
     ideasContenido: [
       'Beca de curso técnico a joven sin acceso',
