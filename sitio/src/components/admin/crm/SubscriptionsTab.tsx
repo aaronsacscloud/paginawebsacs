@@ -769,6 +769,11 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
   const [nc, setNc] = useState<any>({ nombre: '', email: '', whatsapp: '' });
   const [creandoC, setCreandoC] = useState(false);
   const nombreLimpio = (...xs: any[]) => xs.filter(x => x && x !== 'null' && x !== 'undefined').join(' ').trim();
+  // Ligar cuenta SACS + traer su historial (contexto del cliente).
+  const [sacsInput, setSacsInput] = useState((sub.companies as any)?.sacs_account || '');
+  const [ligandoSacs, setLigandoSacs] = useState(false);
+  const [sacsCtx, setSacsCtx] = useState<any>(null);
+  const [sacsMsg, setSacsMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!reasignar || qc.trim().length < 2) { setResC([]); return; }
@@ -796,6 +801,24 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
       setReasignar(false); setCrearNuevo(false); setNc({ nombre: '', email: '', whatsapp: '' });
     } catch (e: any) { setErr(e?.message || 'No se pudo crear el contacto'); }
     setCreandoC(false);
+  }
+  // Liga la cuenta SACS a la empresa y jala su actividad/historial al instante.
+  async function ligarYSync() {
+    const cuenta = String(sacsInput || '').trim().toLowerCase();
+    if (!cuenta) { setSacsMsg('Escribe el subdominio de la cuenta.'); return; }
+    if (!sub.company_id) { setSacsMsg('La suscripción no tiene empresa.'); return; }
+    setLigandoSacs(true); setSacsMsg(null); setSacsCtx(null);
+    try {
+      const rl = await fetch('/api/crm/arr/link-suggestions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ company_id: sub.company_id, sacs_account: cuenta }) });
+      const jl = await rl.json();
+      if (!rl.ok || jl.error) throw new Error(jl.error || 'No se pudo ligar la cuenta');
+      const rs = await fetch('/api/crm/arr/sync-cuenta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ company_id: sub.company_id }) });
+      const js = await rs.json();
+      if (!rs.ok || js.error) throw new Error(js.error || 'Ligada, pero no se pudo traer el historial');
+      if (js.sin_datos) setSacsMsg('Cuenta ligada ✓ — SACS aún no devuelve actividad de "' + cuenta + '".');
+      else { setSacsCtx({ ...js.actividad, dias_sin_venta: js.dias_sin_venta, health_score: js.health_score }); setSacsMsg('Ligada y sincronizada ✓'); }
+    } catch (e: any) { setSacsMsg(e?.message || 'Error al ligar'); }
+    setLigandoSacs(false);
   }
 
   useEffect(() => { fetch('/api/crm/arr/plans').then(r => r.json()).then(j => setPlans(j.data || [])).catch(() => {}); }, []);
@@ -931,6 +954,31 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
             </div>
           )}
         </div>
+
+        {/* Cuenta SACS — ligar + traer historial (contexto del cliente) */}
+        <div style={{ background: '#fafafa', border: '1px solid #eee', borderRadius: 8, padding: 10, marginBottom: 12 }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 160 }}>
+              <label style={S.label}>Cuenta SACS (subdominio){(sub.companies as any)?.sacs_account ? <span style={{ color: '#1A8F7A' }}> · ligada</span> : <span style={{ color: '#c62828' }}> · sin ligar</span>}</label>
+              <input value={sacsInput} onChange={e => setSacsInput(e.target.value)} placeholder="ej. esculturadressmx" style={{ ...S.input, width: '100%' }} />
+            </div>
+            <button type="button" onClick={ligarYSync} disabled={ligandoSacs} style={{ ...S.btn, background: '#4B7BE5', color: '#fff', opacity: ligandoSacs ? 0.6 : 1 }}>{ligandoSacs ? 'Trayendo…' : ((sub.companies as any)?.sacs_account ? '↻ Actualizar historial' : 'Ligar y traer historial')}</button>
+          </div>
+          {sacsMsg && <div style={{ fontSize: '0.75rem', marginTop: 6, color: sacsMsg.includes('✓') ? '#1A8F7A' : '#b93333' }}>{sacsMsg}</div>}
+          {sacsCtx && (
+            <div style={{ marginTop: 8, background: '#fff', border: '1px solid #eee', borderRadius: 8, padding: 10, fontSize: '0.78rem' }}>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 6 }}>
+                <span>Última venta: <b>{fmtDate(sacsCtx.ultima_venta)}</b>{sacsCtx.dias_sin_venta != null ? <span style={{ color: sacsCtx.dias_sin_venta > 15 ? '#b93333' : sacsCtx.dias_sin_venta >= 3 ? '#a06600' : '#1A8F7A' }}> ({sacsCtx.dias_sin_venta}d)</span> : null}</span>
+                <span>Ventas 30d: <b>{sacsCtx.ventas_30d ?? '—'}</b> ({fmt(sacsCtx.total_30d)})</span>
+                <span>Usuarios: <b>{sacsCtx.usuarios ?? '—'}</b></span>
+                <span>Sucursales: <b>{sacsCtx.sucursales ?? '—'}</b></span>
+                <span>Salud: <b style={{ color: (sacsCtx.health_score || 0) >= 70 ? '#1A8F7A' : (sacsCtx.health_score || 0) >= 40 ? '#a06600' : '#b93333' }}>{sacsCtx.health_score}</b></span>
+              </div>
+              {(sacsCtx.modulos || []).length > 0 && <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>{sacsCtx.modulos.map((m: string) => <span key={m} style={{ ...S.badge, background: 'rgba(75,123,229,0.10)', color: '#3764c4' }}>{m}</span>)}</div>}
+            </div>
+          )}
+        </div>
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           {/* Plan desde catálogo */}
           <div style={{ gridColumn: '1 / -1' }}>
