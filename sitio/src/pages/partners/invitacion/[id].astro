@@ -1279,6 +1279,15 @@ const flowEarn = (escalonadoOn && escBest)
 
 const isAccepted = invitation.estado === 'accepted';
 const isDeclined = invitation.estado === 'declined' || invitation.estado === 'cancelled';
+const isCancelled = invitation.estado === 'cancelled';
+const CANCEL_T: Record<string, { eyebrow: string; title: string; sub: string }> = {
+  es: { eyebrow: 'Cancelada', title: 'Esta invitación fue cancelada y ya no está vigente.', sub: 'Si crees que es un error o todavía te interesa el programa, contáctanos.' },
+  en: { eyebrow: 'Cancelled', title: 'This invitation was cancelled and is no longer valid.', sub: "If you think this is a mistake or you're still interested, contact us." },
+  fr: { eyebrow: 'Annulée', title: "Cette invitation a été annulée et n'est plus valide.", sub: "Si vous pensez qu'il s'agit d'une erreur ou si le programme vous intéresse toujours, contactez-nous." },
+  it: { eyebrow: 'Annullata', title: 'Questo invito è stato annullato e non è più valido.', sub: 'Se pensi sia un errore o sei ancora interessato, contattaci.' },
+  pt: { eyebrow: 'Cancelada', title: 'Este convite foi cancelado e não está mais vigente.', sub: 'Se você acha que é um erro ou ainda tem interesse, entre em contato.' },
+};
+const cancelT = CANCEL_T[lang] || CANCEL_T.es;
 const isSubmitted = invitation.estado === 'submitted_for_review';
 const isClosed = isAccepted || isDeclined || isSubmitted;
 
@@ -4538,11 +4547,16 @@ const partnerLandingUrl = invitation.slug_landing
           </div>
         ) : isDeclined ? (
           <div class="p-signed p-signed--declined">
-            <div class="p-signed-eyebrow">{tt('sign.declined.eyebrow')}</div>
-            <div class="p-signed-title">{tt('sign.declined.title')}</div>
-            <div class="p-signed-sub">{tt('sign.declined.sub')}</div>
-            {invitation.decline_motivo && (
+            <div class="p-signed-eyebrow">{isCancelled ? cancelT.eyebrow : tt('sign.declined.eyebrow')}</div>
+            <div class="p-signed-title">{isCancelled ? cancelT.title : tt('sign.declined.title')}</div>
+            <div class="p-signed-sub">{isCancelled ? cancelT.sub : tt('sign.declined.sub')}</div>
+            {!isCancelled && invitation.decline_motivo && (
               <div class="p-signed-meta">Motivo: <strong>{invitation.decline_motivo}</strong>{invitation.decline_detalle ? ` · ${invitation.decline_detalle}` : ''}</div>
+            )}
+            {isCancelled && (
+              <div class="p-signed-cta-row">
+                <a class="p-signed-cta" href={`https://wa.me/5215536634392?text=${encodeURIComponent(`Hola, mi invitación de partner ${invitation.numero || ''} aparece cancelada. ¿Podemos revisarla?`)}`} target="_blank" rel="noopener">Contactar a SACS</a>
+              </div>
             )}
           </div>
         ) : isExpired ? (
