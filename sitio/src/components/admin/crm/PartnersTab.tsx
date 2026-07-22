@@ -1202,7 +1202,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
         beneficios: [
           { icon: 'percent', title: '30% comisión recurrente', detail: 'Sobre el MRR del cliente mientras esté activo.' },
           { icon: 'academy', title: 'Certificación oficial', detail: 'Academia + examen + directorio de partners.' },
-          { icon: 'leads', title: 'Leads asignados', detail: 'Oportunidades calificadas por zona o vertical.' },
+          { icon: 'leads', title: 'Leads asignados (opcional)', detail: 'No es un compromiso de SACS. Según tu desempeño y tu expertise en un giro, SACS puede empezar a enviarte oportunidades calificadas para que las atiendas y las sumes a tu cartera.', value_label: 'Según desempeño' },
         ],
         compromisos: [
           { title: 'Vender', detail: 'Mínimo 2 nuevos clientes por trimestre.', frequency: 'Trimestral' },

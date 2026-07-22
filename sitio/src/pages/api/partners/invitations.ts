@@ -114,7 +114,7 @@ const DEFAULT_TEMPLATES: Record<string, any> = {
     beneficios: [
       { icon: 'percent', title: '30% de comisión recurrente', detail: 'Sobre el MRR de cada cliente que cierres mientras siga activo.' },
       { icon: 'academy', title: 'Certificación oficial SACS', detail: 'Academia + examen para aparecer en el directorio de partners.' },
-      { icon: 'leads', title: 'Leads asignados', detail: 'Recibe oportunidades calificadas de tu zona o vertical.' },
+      { icon: 'leads', title: 'Leads asignados (opcional)', detail: 'No es un compromiso de SACS. Según tu desempeño y tu expertise en un giro, SACS puede empezar a enviarte oportunidades calificadas para que las atiendas y las sumes a tu cartera.', value_label: 'Según desempeño' },
     ],
     compromisos: [
       { title: 'Vender', detail: 'Mínimo 2 nuevos clientes por trimestre.', frequency: 'Trimestral' },
