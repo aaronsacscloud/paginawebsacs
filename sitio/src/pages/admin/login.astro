@@ -1,0 +1,81 @@
+---
+// Login de ADMINISTRADOR (founder/cs) del CRM. Reusa /api/auth/login.
+// Si ya hay sesión de admin, salta directo a donde iba (?next) o al CRM.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getSessionFromRequest } from '../../lib/auth/session';
+
+export const prerender = false;
+
+const user = await getSessionFromRequest(Astro.request);
+const nextParam = Astro.url.searchParams.get('next') || '';
+const safeNext = nextParam.startsWith('/admin') ? nextParam : '/admin/crm';
+if (user) {
+  // partner no entra al admin; el equipo interno sí
+  return Astro.redirect(user.role === 'partner' ? '/partner/portal' : safeNext);
+}
+---
+<BaseLayout title="Acceso administrador — SACS" description="Panel interno de SACS" noindex={true} bareLayout={true}>
+  <div class="auth-wrap">
+    <form id="login-form" class="auth-card">
+      <div class="auth-eyebrow">Panel interno</div>
+      <h1 class="auth-title">Acceso administrador</h1>
+      <p class="auth-sub">Solo el equipo de SACS. Los partners entran en <a href="/partner/login">su portal</a>.</p>
+
+      <label class="auth-label" for="email">Correo</label>
+      <input id="email" type="email" autocomplete="username" required class="auth-input" placeholder="tu@correo.com" />
+
+      <label class="auth-label" for="password">Contraseña</label>
+      <input id="password" type="password" autocomplete="current-password" required class="auth-input" placeholder="••••••••" />
+
+      <div id="error-msg" class="auth-error" role="alert" hidden></div>
+
+      <button id="submit-btn" type="submit" class="auth-btn">Entrar</button>
+      <div class="auth-foot"><a href="/partner/forgot-password">¿Olvidaste tu contraseña?</a></div>
+    </form>
+  </div>
+
+  <style>
+    .auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #0f1115; padding: 24px; }
+    .auth-card { width: 100%; max-width: 380px; background: #fff; border-radius: 16px; padding: 32px 30px; box-shadow: 0 24px 60px rgba(0,0,0,.35); font-family: 'DM Sans', system-ui, sans-serif; }
+    .auth-eyebrow { font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: #2563EB; }
+    .auth-title { font-size: 24px; font-weight: 800; letter-spacing: -.02em; margin: 6px 0 4px; color: #0F172A; }
+    .auth-sub { font-size: 13px; color: #64748B; margin: 0 0 22px; line-height: 1.5; }
+    .auth-sub a { color: #2563EB; text-decoration: none; }
+    .auth-label { display: block; font-size: 12px; font-weight: 700; color: #374151; margin: 14px 0 6px; }
+    .auth-input { width: 100%; box-sizing: border-box; padding: 11px 13px; font-size: 14px; border: 1px solid #E2E5EA; border-radius: 10px; background: #fafafa; outline: none; font-family: inherit; }
+    .auth-input:focus { border-color: #2563EB; background: #fff; }
+    .auth-error { margin-top: 12px; padding: 10px 13px; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; font-size: 13px; color: #B91C1C; }
+    .auth-btn { width: 100%; margin-top: 20px; padding: 12px; font-size: 14px; font-weight: 700; color: #fff; background: #0F172A; border: none; border-radius: 10px; cursor: pointer; font-family: inherit; }
+    .auth-btn:disabled { opacity: .6; cursor: default; }
+    .auth-foot { text-align: center; margin-top: 16px; font-size: 13px; }
+    .auth-foot a { color: #64748B; text-decoration: none; }
+  </style>
+
+  <script define:vars={{ safeNext }}>
+    const form = document.getElementById('login-form');
+    const btn = document.getElementById('submit-btn');
+    const err = document.getElementById('error-msg');
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      err.hidden = true;
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      btn.disabled = true; btn.textContent = 'Verificando…';
+      try {
+        const res = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+        const data = await res.json();
+        if (!res.ok) {
+          err.textContent = data.error || 'No se pudo iniciar sesión';
+          err.hidden = false; btn.disabled = false; btn.textContent = 'Entrar';
+          return;
+        }
+        // partner no debe caer en admin
+        if (data.role === 'partner') { window.location.href = '/partner/portal'; return; }
+        window.location.href = safeNext || data.redirect || '/admin/crm';
+      } catch (e) {
+        err.textContent = 'Error de conexión. Intenta de nuevo.';
+        err.hidden = false; btn.disabled = false; btn.textContent = 'Entrar';
+      }
+    });
+  </script>
+</BaseLayout>

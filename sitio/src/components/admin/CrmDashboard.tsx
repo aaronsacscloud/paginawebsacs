@@ -310,9 +310,15 @@ export default function CrmDashboard() {
         {!sidebarCollapsed && (
           <div style={{
             padding: '12px 20px', borderTop: '1px solid #f0f0f0',
-            fontSize: '0.625rem', color: '#ccc',
+            fontSize: '0.6875rem', color: '#aaa', display: 'flex', flexDirection: 'column', gap: 6,
           }}>
-            <a href="/" style={{ color: '#aaa', textDecoration: 'none', fontSize: '0.6875rem' }}>← Volver al sitio</a>
+            <a href="/admin/cambiar-password" style={{ color: '#888', textDecoration: 'none' }}>🔑 Cambiar contraseña</a>
+            <button
+              onClick={async () => { try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {} window.location.href = '/admin/login'; }}
+              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#888', fontSize: '0.6875rem', fontFamily: 'inherit', textAlign: 'left' }}>
+              ⎋ Cerrar sesión
+            </button>
+            <a href="/" style={{ color: '#aaa', textDecoration: 'none' }}>← Volver al sitio</a>
           </div>
         )}
       </div>

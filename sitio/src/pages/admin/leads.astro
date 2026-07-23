@@ -1,5 +1,11 @@
 ---
-// Redirect to unified CRM
+// Redirect to unified CRM — pero primero el gate de admin (si no, un no-admin
+// vería el meta-refresh y rebotaría hacia /admin/crm que ya lo bloquea; mejor
+// cortar aquí directo).
+import { requireFounder } from '../../lib/auth/requireFounder';
+export const prerender = false;
+const gate = await requireFounder(Astro);
+if (gate) return gate;
 ---
 <html>
 <head>

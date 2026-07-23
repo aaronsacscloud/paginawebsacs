@@ -1,8 +1,12 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { supabase } from '../../../lib/supabase';
+import { requireFounder } from '../../../lib/auth/requireFounder';
 
 export const prerender = false;
+
+const gate = await requireFounder(Astro);
+if (gate) return gate;
 
 const { runId } = Astro.params;
 

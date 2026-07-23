@@ -1,8 +1,12 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { supabase } from '../../../lib/supabase';
+import { requireFounder } from '../../../lib/auth/requireFounder';
 
 export const prerender = false;
+
+const gate = await requireFounder(Astro);
+if (gate) return gate;
 
 const { data: configs } = await supabase.from('agent_configs').select('*').order('agent_name');
 const { data: recentRuns } = await supabase

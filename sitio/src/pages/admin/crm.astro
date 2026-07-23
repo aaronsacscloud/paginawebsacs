@@ -1,6 +1,13 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import CrmDashboard from '../../components/admin/CrmDashboard';
+import { requireFounder } from '../../lib/auth/requireFounder';
+
+export const prerender = false;
+
+// Solo equipo interno (founder/cs). Partner o anónimo → login/portal.
+const gate = await requireFounder(Astro);
+if (gate) return gate;
 ---
 
 <BaseLayout title="CRM — Sacs" description="CRM interno de Sacs" noindex={true}>
