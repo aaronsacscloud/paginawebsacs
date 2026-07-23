@@ -11,7 +11,13 @@ const fmtDate = (d: string | null) => {
   return `${date.getDate()}/${date.toLocaleDateString('es-MX', { month: 'short' }).replace('.', '')}`;
 };
 const money = (n: number) => '$' + Math.round(n || 0).toLocaleString('es-MX');
-const diasAtraso = (d: string) => Math.floor((Date.now() - new Date(d + 'T12:00:00').getTime()) / 86400000);
+// Diferencia en días de CALENDARIO (ambos anclados a mediodía → entero exacto,
+// sin drift por hora del día ni DST). Mínimo 1 para un seguimiento ya vencido.
+const diasAtraso = (d: string) => {
+  const hoy = new Date(new Date().toISOString().slice(0, 10) + 'T12:00:00').getTime();
+  const fu = new Date(d + 'T12:00:00').getTime();
+  return Math.max(1, Math.round((hoy - fu) / 86400000));
+};
 
 export default function AgendaHoy({ onOpenContact, onGoDeals }: { onOpenContact: (id: string) => void; onGoDeals: () => void }) {
   const [loading, setLoading] = useState(true);
