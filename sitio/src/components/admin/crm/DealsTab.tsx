@@ -92,7 +92,7 @@ const input: React.CSSProperties = { width: '100%', padding: '10px 12px', fontSi
 const td: React.CSSProperties = { padding: '10px 14px', color: '#555' };
 
 // ─── Main Component ───
-export default function DealsTab() {
+export default function DealsTab({ onConfig }: { onConfig?: () => void } = {}) {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<'kanban' | 'table'>('kanban');
@@ -165,6 +165,7 @@ export default function DealsTab() {
           <button onClick={() => setView(view === 'kanban' ? 'table' : 'kanban')} style={{ ...btn, background: '#f5f5f5', color: '#555' }}>
             {view === 'kanban' ? '☰ Tabla' : '▦ Kanban'}
           </button>
+          <button onClick={() => onConfig?.()} title="Configurar etapas del pipeline de Oportunidades" style={{ ...btn, background: '#f5f5f5', color: '#555' }}>⚙️ Etapas</button>
           <button onClick={load} style={{ ...btn, background: '#f5f5f5', color: '#555' }}>↻</button>
         </div>
       </div>

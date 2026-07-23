@@ -47,12 +47,16 @@ const fmtDate = (d: string | null) => {
   return `${date.getDate()}/${date.toLocaleDateString('es-MX', { month: 'short' }).replace('.', '')}/${date.getFullYear()}`;
 };
 
-export default function PipelineTab() {
+export default function PipelineTab({ onConfig }: { onConfig?: () => void } = {}) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'pipeline' | 'lead' | 'table'>('pipeline');
+  // Vista Leads: por defecto el kanban del pipeline de LEADS configurable.
+  const [view, setView] = useState<'lead' | 'table'>('lead');
   const [leadStages, setLeadStages] = useState<{ key: string; label: string; color: string }[]>([]);
-  const [filterTipo, setFilterTipo] = useState('all');
+  // Segmento Leads: siempre tipo='lead' (los clientes viven en Clientes, las
+  // oportunidades en Oportunidades). 'churned' opcional vía el toggle.
+  const [verChurned, setVerChurned] = useState(false);
+  const filterTipo = verChurned ? 'churned' : 'lead';
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Contact | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -69,7 +73,7 @@ export default function PipelineTab() {
   const load = async () => {
     setLoading(true);
     const params = new URLSearchParams({ limit: '500' });
-    if (filterTipo !== 'all') params.set('tipo', filterTipo);
+    params.set('tipo', filterTipo);   // 'lead' (o 'churned' con el toggle)
     if (search) params.set('search', search);
     const res = await fetch(`/api/crm/contacts?${params}`);
     const data = await res.json();
@@ -151,29 +155,11 @@ export default function PipelineTab() {
     setSaving(false);
   };
 
-  const moveStage = async (contact: Contact, newStage: string) => {
-    await fetch('/api/crm/contacts', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: contact.id,
-        lifecycle_stage: newStage,
-        tipo: newStage === 'cliente' ? 'cliente' : newStage === 'churned' ? 'churned' : 'lead',
-      }),
-    });
-    load();
-  };
-
   const doSearch = () => { load(); };
 
-  // Stats
-  const leads = contacts.filter(c => c.tipo === 'lead');
-  const clients = contacts.filter(c => c.tipo === 'cliente');
+  // Stats del segmento Leads
   const mql = contacts.filter(c => c.lifecycle_stage === 'lead_calificado');
-  const opp = contacts.filter(c => c.lifecycle_stage === 'oportunidad');
-
-  // Pipeline stages for the kanban
-  const pipelineStages = LIFECYCLE_STAGES.filter(s => !['evangelista'].includes(s.id));
+  const sinSeguimiento = contacts.filter(c => !c.next_followup);
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -181,11 +167,9 @@ export default function PipelineTab() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 24px', background: '#fff', borderBottom: '1px solid #f0f0f0', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', overflowX: 'auto' }}>
           {[
-            { l: 'Contactos', v: contacts.length, c: '#4B7BE5' },
-            { l: 'Leads', v: leads.length, c: '#6C5CE7' },
+            { l: verChurned ? 'Churned' : 'Leads', v: contacts.length, c: '#6C5CE7' },
             { l: 'MQL', v: mql.length, c: '#4B7BE5' },
-            { l: 'Oportunidades', v: opp.length, c: '#F39C12' },
-            { l: 'Clientes', v: clients.length, c: '#2AB5A0' },
+            { l: 'Sin seguimiento', v: sinSeguimiento.length, c: '#E54B4B' },
           ].map(s => (
             <div key={s.l} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ fontSize: '1rem', fontWeight: 800, color: s.c }}>{s.v}</span>
@@ -202,23 +186,20 @@ export default function PipelineTab() {
             placeholder="Buscar..."
             style={{ padding: '6px 12px', fontSize: '0.8125rem', border: '1px solid #e0e0e0', borderRadius: 8, outline: 'none', fontFamily: 'inherit', width: 180 }}
           />
-          {/* Type filter */}
-          <div style={{ display: 'flex', gap: 4 }}>
-            {TIPOS.map(t => (
-              <button key={t.id} onClick={() => setFilterTipo(t.id)} style={{
-                padding: '4px 10px', borderRadius: 20, fontSize: '0.6875rem', fontWeight: 600,
-                border: filterTipo === t.id ? '1.5px solid #1a1a1a' : '1px solid #e0e0e0',
-                background: filterTipo === t.id ? '#1a1a1a' : '#fff',
-                color: filterTipo === t.id ? '#fff' : '#666',
-                cursor: 'pointer', fontFamily: 'inherit',
-              }}>{t.label}</button>
-            ))}
-          </div>
+          {/* Toggle: leads activos / churned */}
+          <button onClick={() => setVerChurned(v => !v)} title="Ver leads perdidos" style={{
+            padding: '4px 10px', borderRadius: 20, fontSize: '0.6875rem', fontWeight: 600,
+            border: verChurned ? '1.5px solid #1a1a1a' : '1px solid #e0e0e0',
+            background: verChurned ? '#1a1a1a' : '#fff', color: verChurned ? '#fff' : '#666',
+            cursor: 'pointer', fontFamily: 'inherit',
+          }}>{verChurned ? '← Leads activos' : 'Ver churned'}</button>
           <div style={{ display: 'flex', border: '1px solid #e5e5e5', borderRadius: 8, overflow: 'hidden' }}>
-            {([['pipeline', '▦ Ciclo'], ['lead', '⚑ Pipeline'], ['table', '☰ Tabla']] as const).map(([v, l]) => (
+            {([['lead', '⚑ Pipeline'], ['table', '☰ Tabla']] as const).map(([v, l]) => (
               <button key={v} onClick={() => setView(v)} style={{ ...btn, borderRadius: 0, background: view === v ? '#1a1a1a' : '#fff', color: view === v ? '#fff' : '#555' }}>{l}</button>
             ))}
           </div>
+          {/* Configurar las etapas del pipeline de Leads directamente */}
+          <button onClick={() => onConfig?.()} title="Configurar etapas del pipeline de Leads" style={{ ...btn, background: '#f5f5f5', color: '#555' }}>⚙️ Etapas</button>
           <button onClick={load} style={{ ...btn, background: '#f5f5f5', color: '#555' }}>↻</button>
           <a href="/api/crm/contacts/export" style={{ ...btn, background: '#f5f5f5', color: '#555', textDecoration: 'none' }}>📥 Exportar</a>
           <button onClick={() => setShowImport(true)} style={{ ...btn, background: '#f5f5f5', color: '#555' }}>📤 Importar</button>
@@ -228,10 +209,9 @@ export default function PipelineTab() {
       {/* Content */}
       <div style={{ flex: 1, padding: '16px 24px', overflow: 'auto' }}>
         {loading ? <div style={{ textAlign: 'center', padding: 48, color: '#bbb' }}>Cargando...</div> :
-          view === 'pipeline' ? <PipelineView contacts={contacts} stages={pipelineStages} onSelect={openDetail} onMove={moveStage} /> :
           view === 'lead' ? (
             leadStages.length === 0
-              ? <div style={{ textAlign: 'center', padding: 48, color: '#999' }}>Configura las etapas del pipeline de Leads en <b>Configuración → Pipelines</b>.</div>
+              ? <div style={{ textAlign: 'center', padding: 48, color: '#999' }}>Aún no hay etapas de Leads. <button onClick={() => onConfig?.()} style={{ background: 'none', border: 'none', color: '#4B7BE5', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>Configúralas aquí →</button></div>
               : <PipelineKanban
                   stages={leadStages}
                   items={contacts}
@@ -440,50 +420,6 @@ function activityLabel(tipo: string): string {
 }
 
 // ─── Sub-components ───
-function PipelineView({ contacts, stages, onSelect, onMove }: { contacts: Contact[]; stages: typeof LIFECYCLE_STAGES; onSelect: (c: Contact) => void; onMove: (c: Contact, s: string) => void }) {
-  return (
-    <div style={{ display: 'flex', gap: 12, overflowX: 'auto', minHeight: 400, paddingBottom: 16 }}>
-      {stages.map(stage => {
-        const items = contacts.filter(c => c.lifecycle_stage === stage.id);
-        return (
-          <div key={stage.id} style={{ minWidth: 200, flex: '1 0 200px', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: stage.color }} />
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#555', textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}>{stage.label}</span>
-                <span style={{ fontSize: '0.6875rem', color: '#bbb', fontWeight: 600 }}>{items.length}</span>
-              </div>
-            </div>
-            <div style={{ flex: 1, background: '#f0f1f3', borderRadius: 10, padding: 6, display: 'flex', flexDirection: 'column', gap: 6, minHeight: 80 }}>
-              {items.map(contact => (
-                <div key={contact.id} onClick={() => onSelect(contact)} style={{ background: '#fff', borderRadius: 8, padding: '10px 12px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', fontSize: '0.8125rem' }}>
-                  <div style={{ fontWeight: 700, color: '#1a1a1a', marginBottom: 2 }}>{contact.nombre}</div>
-                  <div style={{ fontSize: '0.6875rem', color: '#999' }}>{contact.companies?.nombre || contact.email || ''}</div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
-                    <span style={{ fontSize: '0.625rem', fontWeight: 600, color: contact.lead_score >= 70 ? '#2e7d32' : contact.lead_score >= 40 ? '#E8A838' : '#ccc' }}>
-                      {contact.lead_score > 0 ? `${contact.lead_score}pts` : ''}
-                    </span>
-                    {contact.companies?.mrr ? <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#2AB5A0' }}>{fmt(contact.companies.mrr)}/mes</span> : null}
-                  </div>
-                  {/* Quick move */}
-                  <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' as const }}>
-                    {stages.filter(s => s.id !== contact.lifecycle_stage).slice(0, 3).map(s => (
-                      <button key={s.id} onClick={e => { e.stopPropagation(); onMove(contact, s.id); }}
-                        style={{ fontSize: '0.5rem', padding: '2px 5px', borderRadius: 4, border: '1px solid #e0e0e0', background: '#fafafa', color: '#888', cursor: 'pointer' }}>
-                        → {s.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 function TableView({ contacts, onSelect }: { contacts: Contact[]; onSelect: (c: Contact) => void }) {
   return (
     <div style={{ background: '#fff', borderRadius: 10, border: '1px solid #f0f0f0', overflow: 'hidden' }}>

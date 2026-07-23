@@ -18,7 +18,7 @@ const PLAN_BADGE: Record<string, { bg: string; color: string; label: string }> =
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const fmtDate = (d?: string | null) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '—';
 
-export default function ClientesTab() {
+export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}) {
   const [data, setData] = useState<any[]>([]);
   const [tot, setTot] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -96,7 +96,8 @@ export default function ClientesTab() {
             <option value="pendientes">Con pendientes de pago</option>
             <option value="riesgo">En riesgo (≥3 días sin vender)</option>
           </select>
-          <div style={{ display: 'flex', gap: 0, marginLeft: 'auto', border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden' }}>
+          <button onClick={() => onConfig?.()} title="Configurar etapas del pipeline de Clientes" style={{ ...S.btnSmall, marginLeft: 'auto' }}>⚙️ Etapas</button>
+          <div style={{ display: 'flex', gap: 0, border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden' }}>
             {(['tabla', 'kanban'] as const).map(v => (
               <button key={v} onClick={() => setVista(v)} style={{ ...S.btnSmall, border: 'none', borderRadius: 0, background: vista === v ? '#1a1a1a' : '#fff', color: vista === v ? '#fff' : '#555', textTransform: 'capitalize' }}>{v === 'kanban' ? 'Kanban' : 'Tabla'}</button>
             ))}

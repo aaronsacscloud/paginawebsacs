@@ -51,7 +51,7 @@ const NAV_SECTIONS = [
     label: 'Principal',
     items: [
       { id: 'dashboard' as Tab, label: 'Dashboard', icon: 'dashboard' },
-      { id: 'pipeline' as Tab, label: 'Contactos', icon: 'pipeline' },
+      { id: 'pipeline' as Tab, label: 'Leads', icon: 'pipeline' },
       { id: 'deals' as Tab, label: 'Oportunidades', icon: 'deals' },
       { id: 'clientes' as Tab, label: 'Clientes', icon: 'clientes' },
     ],
@@ -107,6 +107,10 @@ function getInitialTab(): Tab {
 
 export default function CrmDashboard() {
   const [tab, setTab] = useState<Tab>(getInitialTab);
+  // Pipeline preseleccionado al abrir la config de etapas desde un segmento
+  // (Leads / Oportunidades / Clientes → "⚙️ Configurar etapas").
+  const [pipelineTipo, setPipelineTipo] = useState<string>('lead');
+  const goConfigPipeline = (tipo: string) => { setPipelineTipo(tipo); setTab('pipelines'); };
   const [profileContactId, setProfileContactId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -329,9 +333,9 @@ export default function CrmDashboard() {
         {tab === 'dashboard' ? (
           <ErrorBoundary><DashboardTab /></ErrorBoundary>
         ) : tab === 'pipeline' ? (
-          <PipelineTab />
+          <PipelineTab onConfig={() => goConfigPipeline('lead')} />
         ) : tab === 'deals' ? (
-          <DealsTab />
+          <DealsTab onConfig={() => goConfigPipeline('oportunidad')} />
         ) : tab === 'suscripciones' ? (
           <ErrorBoundary><SubscriptionsTab /></ErrorBoundary>
         ) : tab === 'agenda' ? (
@@ -385,9 +389,9 @@ export default function CrmDashboard() {
         ) : tab === 'pagos' ? (
           <ErrorBoundary><PagosTab /></ErrorBoundary>
         ) : tab === 'clientes' ? (
-          <ClientesTab />
+          <ClientesTab onConfig={() => goConfigPipeline('cliente')} />
         ) : tab === 'pipelines' ? (
-          <ErrorBoundary><PipelinesConfig /></ErrorBoundary>
+          <ErrorBoundary><PipelinesConfig initialTipo={pipelineTipo} /></ErrorBoundary>
         ) : (
           <RevenueHub _initialTab={revenueTab as any} _hideNav={true} />
         )}

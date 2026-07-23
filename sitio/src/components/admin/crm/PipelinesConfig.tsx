@@ -22,9 +22,9 @@ const S = {
   btnSmall: { padding: '4px 9px', border: '1px solid #ddd', background: '#fff', borderRadius: 6, fontSize: '0.75rem', cursor: 'pointer' } as const,
 };
 
-export default function PipelinesConfig() {
+export default function PipelinesConfig({ initialTipo }: { initialTipo?: string } = {}) {
   const [pipes, setPipes] = useState<Record<string, Pipeline>>({});
-  const [tipo, setTipo] = useState('lead');
+  const [tipo, setTipo] = useState(initialTipo && ['lead', 'oportunidad', 'cliente'].includes(initialTipo) ? initialTipo : 'lead');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
