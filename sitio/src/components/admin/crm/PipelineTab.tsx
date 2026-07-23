@@ -273,7 +273,9 @@ export default function PipelineTab({ onConfig }: { onConfig?: () => void } = {}
                   stages={leadStages}
                   items={visibleContacts}
                   getId={(c: any) => c.id}
-                  getStage={(c: any) => c.pipeline_stage}
+                  // Los leads sin etapa asignada (pipeline_stage NULL) caen en la
+                  // PRIMERA etapa, no en un cubo "Sin etapa" escondido.
+                  getStage={(c: any) => c.pipeline_stage || leadStages[0]?.key}
                   onMove={(id, key) => setPipelineStage(id, key)}
                   renderCard={(c: any) => (
                     <div onClick={() => openDetail(c)} style={{ cursor: 'pointer' }}>

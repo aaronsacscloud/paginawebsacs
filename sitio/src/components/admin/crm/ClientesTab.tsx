@@ -118,7 +118,8 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
               stages={stages}
               items={filtered}
               getId={(c: any) => c.id}
-              getStage={(c: any) => c.pipeline_stage}
+              // Clientes sin etapa (pipeline_stage NULL) caen en la primera etapa.
+              getStage={(c: any) => c.pipeline_stage || stages[0]?.key}
               colValue={(its: any[]) => money(its.reduce((s, c) => s + Number(c.arr || 0), 0)) + ' ARR'}
               onMove={(id, key) => setStage(id, key)}
               renderCard={(c: any) => (
