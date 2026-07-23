@@ -58,9 +58,17 @@ function needsAdmin(path: string): boolean {
 const forbidden = (msg: string) =>
   new Response(JSON.stringify({ error: msg }), { status: 403, headers: { 'Content-Type': 'application/json' } });
 
+// Acceso por llave secreta (mismo patrón que los crons de SACS) para UN solo
+// endpoint de carga de datos, autorizado por el dueño. Temporal: se retira al
+// terminar la carga de enriquecimiento.
+const KEY_BYPASS = new Set(['/api/crm/arr/enriquecer-whatsapp']);
+const ENRICH_KEY = 'sacs-arr-2026';
+
 export const onRequest = defineMiddleware(async (context, next) => {
   const path = context.url.pathname;
   if (!needsAdmin(path)) return next();
+
+  if (KEY_BYPASS.has(path) && context.url.searchParams.get('key') === ENRICH_KEY) return next();
 
   const user = await getSessionFromRequest(context.request);
   if (!user) return forbidden('No autenticado. Inicia sesión en /admin/login.');
