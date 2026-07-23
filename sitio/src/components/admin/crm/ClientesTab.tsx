@@ -3,6 +3,7 @@ import { ClienteDrawer, S } from './SubscriptionsTab';
 import PipelineKanban from './PipelineKanban';
 import { useToast, Toast, logStageChange } from './crmHelpers';
 import EnriquecerWhatsApp from './EnriquecerWhatsApp';
+import RevisarRelaciones from './RevisarRelaciones';
 
 /* ═══ Clientes REALES — companies con suscripciones, KPIs y actividad SACS ═══
  * Reemplaza la vista legacy (tabla `clients` con datos de demo). Cada fila es
@@ -141,6 +142,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
             <option value="riesgo">En riesgo (≥3 días sin vender)</option>
           </select>
           <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap' }}>
+            <RevisarRelaciones onDone={load} />
             <EnriquecerWhatsApp onDone={load} />
             <button onClick={() => onConfig?.()} title="Configurar etapas del pipeline de Clientes" style={S.btnSmall}>⚙️ Etapas</button>
           </div>
