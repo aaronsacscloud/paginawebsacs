@@ -9,6 +9,10 @@ export const prerender = false;
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
+// El KPI de ARR se consulta justo después de guardar una suscripción: nunca
+// debe servirse cacheado (ni por el navegador ni por el edge de Vercel).
+const NOCACHE = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store, max-age=0' };
+
 export const GET: APIRoute = async () => {
   const hoy = new Date();
   const hoyStr = hoy.toISOString().slice(0, 10);
@@ -122,5 +126,5 @@ export const GET: APIRoute = async () => {
   const sync = (compRes.data || []).map(c => c.actividad_sync_at).filter(Boolean).sort().pop() || null;
 
   return new Response(JSON.stringify({ kpis, meta, riesgo, meses, vencidas, actividad_sync_at: sync }, null, 2),
-    { status: 200, headers: { 'Content-Type': 'application/json' } });
+    { status: 200, headers: NOCACHE });
 };

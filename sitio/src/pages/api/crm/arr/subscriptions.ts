@@ -46,7 +46,8 @@ export const GET: APIRoute = async ({ url }) => {
   if (companyId) q = q.eq('company_id', companyId);
   const { data, error } = await q.limit(1000);
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-  return new Response(JSON.stringify({ data }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  // Fresco siempre: la lista y el KPI se leen juntos tras guardar.
+  return new Response(JSON.stringify({ data }), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store, max-age=0' } });
 };
 
 // Columnas agregadas en SQL-4 (plan_id, precio_lista, cancela_al_vencer,

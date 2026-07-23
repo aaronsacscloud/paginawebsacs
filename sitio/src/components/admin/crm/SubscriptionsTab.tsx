@@ -94,10 +94,13 @@ export default function SubscriptionsTab() {
   async function load() {
     setLoading(true); setError(null);
     try {
+      // no-store: el KPI de ARR debe reflejar el estado FRESCO justo tras
+      // guardar una suscripción. Sin esto, el navegador podía servir el summary
+      // cacheado y el total no "se movía" aunque la fila ya estuviera creada.
       const [sRes, sumRes, pRes] = await Promise.all([
-        fetch('/api/crm/arr/subscriptions').then(r => r.json()),
-        fetch('/api/crm/arr/summary').then(r => r.json()),
-        fetch('/api/crm/arr/plans').then(r => r.json()).catch(() => ({ data: [] })),
+        fetch('/api/crm/arr/subscriptions', { cache: 'no-store' }).then(r => r.json()),
+        fetch('/api/crm/arr/summary', { cache: 'no-store' }).then(r => r.json()),
+        fetch('/api/crm/arr/plans', { cache: 'no-store' }).then(r => r.json()).catch(() => ({ data: [] })),
       ]);
       if (sRes.error) throw new Error(sRes.error);
       setSubs(sRes.data || []);
