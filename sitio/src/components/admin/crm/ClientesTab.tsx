@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ClienteDrawer, S } from './SubscriptionsTab';
 import PipelineKanban from './PipelineKanban';
 import { useToast, Toast, logStageChange } from './crmHelpers';
+import EnriquecerWhatsApp from './EnriquecerWhatsApp';
 
 /* ═══ Clientes REALES — companies con suscripciones, KPIs y actividad SACS ═══
  * Reemplaza la vista legacy (tabla `clients` con datos de demo). Cada fila es
@@ -102,7 +103,10 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
             <option value="pendientes">Con pendientes de pago</option>
             <option value="riesgo">En riesgo (≥3 días sin vender)</option>
           </select>
-          <button onClick={() => onConfig?.()} title="Configurar etapas del pipeline de Clientes" style={{ ...S.btnSmall, marginLeft: 'auto' }}>⚙️ Etapas</button>
+          <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap' }}>
+            <EnriquecerWhatsApp onDone={load} />
+            <button onClick={() => onConfig?.()} title="Configurar etapas del pipeline de Clientes" style={S.btnSmall}>⚙️ Etapas</button>
+          </div>
           <div style={{ display: 'flex', gap: 0, border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden' }}>
             {(['tabla', 'kanban'] as const).map(v => (
               <button key={v} onClick={() => setVista(v)} style={{ ...S.btnSmall, border: 'none', borderRadius: 0, background: vista === v ? '#1a1a1a' : '#fff', color: vista === v ? '#fff' : '#555', textTransform: 'capitalize' }}>{v === 'kanban' ? 'Kanban' : 'Tabla'}</button>
