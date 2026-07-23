@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useToast, Toast, logStageChange, SlaBadge, ActivityChips } from './crmHelpers';
 
 // ─── Types ───
 interface Deal {
@@ -90,6 +91,7 @@ function activityLabel(tipo: string): string {
 const btn: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.8125rem', fontWeight: 600, padding: '8px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit' };
 const input: React.CSSProperties = { width: '100%', padding: '10px 12px', fontSize: '0.8125rem', border: '1px solid #e0e0e0', borderRadius: 8, outline: 'none', fontFamily: 'inherit', marginBottom: 8, boxSizing: 'border-box' as const };
 const td: React.CSSProperties = { padding: '10px 14px', color: '#555' };
+const dealBulkBtn: React.CSSProperties = { fontSize: '0.72rem', fontWeight: 700, padding: '5px 10px', borderRadius: 7, border: 'none', background: '#b93333', color: '#fff', cursor: 'pointer', fontFamily: 'inherit' };
 
 // ─── Main Component ───
 export default function DealsTab({ onConfig }: { onConfig?: () => void } = {}) {
@@ -99,6 +101,7 @@ export default function DealsTab({ onConfig }: { onConfig?: () => void } = {}) {
   const [showCreate, setShowCreate] = useState(false);
   const [selected, setSelected] = useState<Deal | null>(null);
   const [, forceRender] = useState(0);
+  const { toast, show } = useToast();
 
   // Reemplaza STAGES con el pipeline "oportunidad" configurable (si existe).
   useEffect(() => {
@@ -122,17 +125,32 @@ export default function DealsTab({ onConfig }: { onConfig?: () => void } = {}) {
   useEffect(() => { load(); }, []);
 
   const moveStage = async (deal: Deal, newStage: string) => {
+    if (deal.stage === newStage) return;
     const prob = STAGES.find(s => s.id === newStage)?.prob ?? deal.probabilidad;
     const updates: Record<string, any> = { id: deal.id, stage: newStage, probabilidad: prob };
     if (isClosedKey(newStage)) {
       updates.closed_at = new Date().toISOString();
     }
+    // Optimista: refleja el movimiento de inmediato en el kanban.
+    setDeals(ds => ds.map(d => d.id === deal.id ? { ...d, stage: newStage, probabilidad: prob } : d));
     await fetch('/api/crm/deals', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates),
     });
+    const toLabel = stageLabel(newStage);
+    logStageChange({ deal_id: deal.id, contact_id: deal.contact_id, company_id: deal.company_id, fromLabel: stageLabel(deal.stage), toLabel });
+    show(isWonKey(newStage) ? '🎉 Oportunidad ganada — convertida en cliente' : `Movida a ${toLabel}`);
     load();
+  };
+
+  // Acciones en lote sobre oportunidades seleccionadas en la tabla.
+  const bulkUpdate = async (ids: string[], patch: Record<string, any>, msg: string) => {
+    await Promise.all(ids.map(id => fetch('/api/crm/deals', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...patch }),
+    })));
+    await load();
+    show(msg);
   };
 
   // Stats
@@ -177,7 +195,7 @@ export default function DealsTab({ onConfig }: { onConfig?: () => void } = {}) {
         ) : view === 'kanban' ? (
           <KanbanView deals={deals} onSelect={setSelected} onMove={moveStage} />
         ) : (
-          <TableView deals={deals} onSelect={setSelected} />
+          <TableView deals={deals} onSelect={setSelected} onBulk={bulkUpdate} />
         )}
       </div>
 
@@ -198,6 +216,8 @@ export default function DealsTab({ onConfig }: { onConfig?: () => void } = {}) {
           }}
         />
       )}
+
+      <Toast toast={toast} />
     </div>
   );
 }
@@ -206,6 +226,9 @@ export default function DealsTab({ onConfig }: { onConfig?: () => void } = {}) {
 function KanbanView({ deals, onSelect, onMove }: { deals: Deal[]; onSelect: (d: Deal) => void; onMove: (d: Deal, s: string) => void }) {
   const openStages = STAGES.filter(s => !isClosedKey(s.id));
   const closedStages = STAGES.filter(s => isClosedKey(s.id));
+  const [drag, setDrag] = useState<string | null>(null);
+  const [over, setOver] = useState<string | null>(null);
+  const drop = (stageId: string) => { if (drag) { const d = deals.find(x => x.id === drag); if (d) onMove(d, stageId); } setDrag(null); setOver(null); };
 
   return (
     <div>
@@ -214,7 +237,10 @@ function KanbanView({ deals, onSelect, onMove }: { deals: Deal[]; onSelect: (d: 
           const items = deals.filter(d => d.stage === stage.id);
           const stageTotal = items.reduce((s, d) => s + d.valor_total, 0);
           return (
-            <div key={stage.id} style={{ minWidth: 220, flex: '1 0 220px', display: 'flex', flexDirection: 'column' }}>
+            <div key={stage.id} style={{ minWidth: 220, flex: '1 0 220px', display: 'flex', flexDirection: 'column' }}
+              onDragOver={e => { e.preventDefault(); setOver(stage.id); }}
+              onDragLeave={() => setOver(o => o === stage.id ? null : o)}
+              onDrop={() => drop(stage.id)}>
               <div style={{ padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: stage.color }} />
@@ -223,9 +249,10 @@ function KanbanView({ deals, onSelect, onMove }: { deals: Deal[]; onSelect: (d: 
                 </div>
                 {stageTotal > 0 && <span style={{ fontSize: '0.6875rem', fontWeight: 700, color: stage.color }}>{fmt(stageTotal)}</span>}
               </div>
-              <div style={{ flex: 1, background: '#f0f1f3', borderRadius: 10, padding: 6, display: 'flex', flexDirection: 'column', gap: 6, minHeight: 80 }}>
+              <div style={{ flex: 1, background: over === stage.id ? '#eef4ff' : '#f0f1f3', borderRadius: 10, padding: 6, display: 'flex', flexDirection: 'column', gap: 6, minHeight: 80, border: over === stage.id ? '1px solid #c3d7ff' : '1px solid transparent', transition: 'background 0.12s' }}>
                 {items.map(deal => (
-                  <DealCard key={deal.id} deal={deal} onSelect={onSelect} onMove={onMove} />
+                  <DealCard key={deal.id} deal={deal} onSelect={onSelect} onMove={onMove}
+                    dragging={drag === deal.id} onDragStart={() => setDrag(deal.id)} onDragEnd={() => { setDrag(null); setOver(null); }} />
                 ))}
               </div>
             </div>
@@ -264,13 +291,19 @@ function KanbanView({ deals, onSelect, onMove }: { deals: Deal[]; onSelect: (d: 
   );
 }
 
-function DealCard({ deal, onSelect, onMove }: { deal: Deal; onSelect: (d: Deal) => void; onMove: (d: Deal, s: string) => void }) {
+function DealCard({ deal, onSelect, onMove, dragging, onDragStart, onDragEnd }: { deal: Deal; onSelect: (d: Deal) => void; onMove: (d: Deal, s: string) => void; dragging?: boolean; onDragStart?: () => void; onDragEnd?: () => void }) {
   const currentIdx = STAGES.findIndex(s => s.id === deal.stage);
   const nextStages = STAGES.filter((s, i) => s.id !== deal.stage && i >= currentIdx - 1 && i <= currentIdx + 2 && !isLostKey(s.id)).slice(0, 3);
+  // SLA: días en la etapa actual (o en el pipeline si no hay marca de etapa).
+  const since = deal.stage_changed_at || deal.created_at;
 
   return (
-    <div onClick={() => onSelect(deal)} style={{ background: '#fff', borderRadius: 8, padding: '10px 12px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.06)', fontSize: '0.8125rem' }}>
-      <div style={{ fontWeight: 700, color: '#1a1a1a', marginBottom: 2 }}>{deal.nombre}</div>
+    <div draggable onDragStart={onDragStart} onDragEnd={onDragEnd}
+      onClick={() => onSelect(deal)} style={{ background: '#fff', borderRadius: 8, padding: '10px 12px', cursor: 'grab', boxShadow: dragging ? '0 4px 14px rgba(0,0,0,0.14)' : '0 1px 3px rgba(0,0,0,0.06)', fontSize: '0.8125rem', opacity: dragging ? 0.5 : 1 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ fontWeight: 700, color: '#1a1a1a', marginBottom: 2, flex: 1, minWidth: 0 }}>{deal.nombre}</div>
+        <SlaBadge since={since} umbralAmbar={10} umbralRojo={30} label="en etapa" />
+      </div>
       <div style={{ fontSize: '0.6875rem', color: '#999' }}>
         {deal.companies?.nombre || ''}{deal.contacts?.nombre ? ` · ${deal.contacts.nombre}` : ''}
       </div>
@@ -280,7 +313,7 @@ function DealCard({ deal, onSelect, onMove }: { deal: Deal; onSelect: (d: Deal) 
           {deal.probabilidad}%
         </span>
       </div>
-      {/* Quick move buttons */}
+      {/* Quick move buttons (además del drag & drop) */}
       <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' as const }}>
         {nextStages.map(s => (
           <button key={s.id} onClick={e => { e.stopPropagation(); onMove(deal, s.id); }}
@@ -294,9 +327,14 @@ function DealCard({ deal, onSelect, onMove }: { deal: Deal; onSelect: (d: Deal) 
 }
 
 // ─── Table View ───
-function TableView({ deals, onSelect }: { deals: Deal[]; onSelect: (d: Deal) => void }) {
+function TableView({ deals, onSelect, onBulk }: { deals: Deal[]; onSelect: (d: Deal) => void; onBulk?: (ids: string[], patch: Record<string, any>, msg: string) => void | Promise<void> }) {
   const [sortCol, setSortCol] = useState<string>('created_at');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const toggle = (id: string) => setSel(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const ids = [...sel];
+  const lostStage = STAGES.find(s => isLostKey(s.id))?.id;
+  const runBulk = async (patch: Record<string, any>, msg: string) => { if (onBulk) await onBulk(ids, patch, msg); setSel(new Set()); };
 
   const toggleSort = (col: string) => {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -329,12 +367,23 @@ function TableView({ deals, onSelect }: { deals: Deal[]; onSelect: (d: Deal) => 
     { key: 'probabilidad', label: 'Prob.' },
   ];
 
+  const allChecked = sorted.length > 0 && sorted.every(d => sel.has(d.id));
+
   return (
     <div style={{ background: '#fff', borderRadius: 10, border: '1px solid #f0f0f0', overflow: 'hidden' }}>
+      {ids.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#1a1a1a', color: '#fff', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.8125rem', fontWeight: 700 }}>{ids.length} seleccionados</span>
+          {lostStage && <button onClick={() => { if (confirm(`¿Marcar ${ids.length} como perdidas?`)) runBulk({ stage: lostStage, probabilidad: 0, closed_at: new Date().toISOString() }, `${ids.length} marcadas perdidas`); }} style={dealBulkBtn}>✕ Marcar perdidas</button>}
+          <button onClick={() => setSel(new Set())} style={{ ...dealBulkBtn, background: 'transparent', border: '1px solid #555' }}>Cancelar</button>
+        </div>
+      )}
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
           <thead>
-            <tr>{cols.map(h =>
+            <tr>
+              <th style={{ padding: '10px 8px 10px 14px', background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}><input type="checkbox" checked={allChecked} onChange={() => setSel(allChecked ? new Set() : new Set(sorted.map(d => d.id)))} /></th>
+              {cols.map(h =>
               <th key={h.key} onClick={() => toggleSort(h.key)} style={{ padding: '10px 14px', textAlign: 'left', fontSize: '0.625rem', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.06em', color: sortCol === h.key ? '#1a1a1a' : '#aaa', background: '#fafafa', borderBottom: '1px solid #f0f0f0', whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none' }}>
                 {h.label} {sortCol === h.key ? (sortDir === 'asc' ? '↑' : '↓') : ''}
               </th>
@@ -342,7 +391,8 @@ function TableView({ deals, onSelect }: { deals: Deal[]; onSelect: (d: Deal) => 
           </thead>
           <tbody>
             {sorted.map(d => (
-              <tr key={d.id} onClick={() => onSelect(d)} style={{ cursor: 'pointer', borderBottom: '1px solid #f8f8f8' }}>
+              <tr key={d.id} onClick={() => onSelect(d)} style={{ cursor: 'pointer', borderBottom: '1px solid #f8f8f8', background: sel.has(d.id) ? '#f5f8ff' : undefined }}>
+                <td style={{ ...td, cursor: 'default' }} onClick={e => e.stopPropagation()}><input type="checkbox" checked={sel.has(d.id)} onChange={() => toggle(d.id)} /></td>
                 <td style={td}>{fmtDate(d.created_at)}</td>
                 <td style={{ ...td, fontWeight: 700, color: '#1a1a1a' }}>{d.nombre}</td>
                 <td style={td}>{d.companies?.nombre || '—'}</td>
@@ -587,6 +637,15 @@ function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose
     setSaving(false);
   };
 
+  // Registro rápido de actividad (chips) ligado a esta oportunidad.
+  const logQuick = async (tipo: string, label: string) => {
+    await fetch('/api/crm/activities', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contact_id: deal.contact_id, company_id: deal.company_id, deal_id: deal.id, tipo, titulo: label }),
+    });
+    await loadActivities();
+  };
+
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', justifyContent: 'flex-end' }}>
       <div onClick={onClose} style={{ flex: 1, background: 'rgba(0,0,0,0.3)' }} />
@@ -686,8 +745,12 @@ function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose
             </div>
           )}
 
+          {/* Registro rápido de actividad */}
+          <Label style={{ marginTop: 20 }}>Registrar actividad</Label>
+          <ActivityChips onLog={logQuick} disabled={saving} />
+
           {/* Add note */}
-          <Label style={{ marginTop: 20 }}>Agregar nota</Label>
+          <Label>Agregar nota</Label>
           <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
             <input value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Escribir nota..." style={{ ...input, flex: 1, marginBottom: 0 }}
               onKeyDown={e => { if (e.key === 'Enter') addNote(); }} />

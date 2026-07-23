@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ClienteDrawer, S } from './SubscriptionsTab';
 import PipelineKanban from './PipelineKanban';
+import { useToast, Toast, logStageChange } from './crmHelpers';
 
 /* ═══ Clientes REALES — companies con suscripciones, KPIs y actividad SACS ═══
  * Reemplaza la vista legacy (tabla `clients` con datos de demo). Cada fila es
@@ -29,6 +30,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   const [detailId, setDetailId] = useState<string | null>(null);
   const [vista, setVista] = useState<'tabla' | 'kanban'>('tabla');
   const [stages, setStages] = useState<{ key: string; label: string; color: string }[]>([]);
+  const { toast, show } = useToast();
 
   async function load() {
     setLoading(true); setError(null);
@@ -49,10 +51,14 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   const stageBy = useMemo(() => { const m: Record<string, any> = {}; stages.forEach(s => m[s.key] = s); return m; }, [stages]);
   // Cambia la etapa del cliente (optimista) y persiste en companies.pipeline_stage.
   async function setStage(id: string, key: string) {
+    const prev = data.find(c => c.id === id);
     setData(d => d.map(c => c.id === id ? { ...c, pipeline_stage: key } : c));
     try {
       const r = await fetch('/api/crm/companies', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, pipeline_stage: key }) });
-      if (!r.ok) { const j = await r.json().catch(() => ({})); if (j.error) { alert(j.error + '\n¿Corriste migration-2026-07-pipelines.sql?'); load(); } }
+      if (!r.ok) { const j = await r.json().catch(() => ({})); if (j.error) { alert(j.error + '\n¿Corriste migration-2026-07-pipelines.sql?'); load(); return; } }
+      const toLabel = stageBy[key]?.label || key;
+      logStageChange({ company_id: id, contact_id: prev?.contacto?.id || null, fromLabel: prev?.pipeline_stage ? stageBy[prev.pipeline_stage]?.label : undefined, toLabel });
+      show(`Cliente movido a ${toLabel}`);
     } catch { load(); }
   }
 
@@ -113,6 +119,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
               items={filtered}
               getId={(c: any) => c.id}
               getStage={(c: any) => c.pipeline_stage}
+              colValue={(its: any[]) => money(its.reduce((s, c) => s + Number(c.arr || 0), 0)) + ' ARR'}
               onMove={(id, key) => setStage(id, key)}
               renderCard={(c: any) => (
                 <div onClick={() => setDetailId(c.id)} style={{ cursor: 'pointer' }}>
@@ -171,6 +178,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       </div>
 
       {detailId && <ClienteDrawer companyId={detailId} onClose={() => setDetailId(null)} onChanged={load} />}
+      <Toast toast={toast} />
     </div>
   );
 }

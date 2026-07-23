@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import PipelineKanban from './PipelineKanban';
+import { useToast, Toast, logStageChange, SlaBadge, ActivityChips } from './crmHelpers';
 
 interface Company {
   id: string; nombre: string; plan: string | null; sucursales: number; estado_cuenta: string; mrr: number;
@@ -69,6 +70,8 @@ export default function PipelineTab({ onConfig }: { onConfig?: () => void } = {}
   const [csvText, setCsvText] = useState('');
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<any>(null);
+  const [converting, setConverting] = useState(false);
+  const { toast, show } = useToast();
 
   const load = async () => {
     setLoading(true);
@@ -91,11 +94,52 @@ export default function PipelineTab({ onConfig }: { onConfig?: () => void } = {}
 
   // Etapa del pipeline configurable (lead) — optimista + persiste en contacts.pipeline_stage.
   const setPipelineStage = async (id: string, key: string) => {
+    const prev = contacts.find(c => c.id === id);
     setContacts(cs => cs.map(c => c.id === id ? { ...c, pipeline_stage: key } : c));
     try {
       const r = await fetch('/api/crm/contacts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, pipeline_stage: key }) });
-      if (!r.ok) { const j = await r.json().catch(() => ({})); if (j.error) { alert(j.error + '\n¿Corriste migration-2026-07-pipelines.sql?'); load(); } }
+      if (!r.ok) { const j = await r.json().catch(() => ({})); if (j.error) { alert(j.error + '\n¿Corriste migration-2026-07-pipelines.sql?'); load(); return; } }
+      const toLabel = leadStages.find(s => s.key === key)?.label || key;
+      logStageChange({ contact_id: id, company_id: prev?.company_id || null, fromLabel: prev?.pipeline_stage ? leadStages.find(s => s.key === prev.pipeline_stage)?.label : undefined, toLabel });
+      show(`Lead movido a ${toLabel}`);
     } catch { load(); }
+  };
+
+  // Convierte un lead en oportunidad: crea un deal ligado al contacto y marca
+  // el contacto como 'oportunidad' (así sale del embudo de Leads y vive en
+  // Oportunidades). El timeline del contacto conserva el registro.
+  const convertirEnOportunidad = async (c: Contact) => {
+    if (converting) return;
+    setConverting(true);
+    try {
+      const nombre = (c.companies?.nombre || [c.nombre, c.apellido].filter(Boolean).join(' ') || c.email || 'Oportunidad') + ' – Oportunidad';
+      const r = await fetch('/api/crm/deals', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, contact_id: c.id, company_id: c.company_id, plan: c.plan_interes || null }),
+      });
+      if (!r.ok) throw new Error('No se pudo crear la oportunidad');
+      await fetch('/api/crm/contacts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: c.id, lifecycle_stage: 'oportunidad' }) });
+      await logStageChange({ contact_id: c.id, company_id: c.company_id, toLabel: 'Oportunidad', fromLabel: 'Lead' });
+      show('Convertido en oportunidad ✓ — ábrelo en la pestaña Oportunidades', 'ok');
+      setSelected(null);
+      load();
+    } catch (e: any) {
+      show(e?.message || 'Error al convertir', 'error');
+    }
+    setConverting(false);
+  };
+
+  // Registro rápido de actividad desde el detalle (chips llamada/correo/tarea).
+  const logQuick = async (tipo: string, label: string) => {
+    if (!selected) return;
+    await fetch('/api/crm/activities', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contact_id: selected.id, company_id: selected.company_id, tipo, titulo: label }),
+    });
+    const res = await fetch(`/api/crm/activities?contact_id=${selected.id}&limit=30`);
+    const acts = await res.json();
+    setActivities(Array.isArray(acts) ? acts : []);
+    show(`${label} registrada`);
   };
 
   const openDetail = async (contact: Contact) => {
@@ -155,11 +199,24 @@ export default function PipelineTab({ onConfig }: { onConfig?: () => void } = {}
     setSaving(false);
   };
 
+  // Acciones en lote sobre varios leads seleccionados en la tabla.
+  const bulkUpdate = async (ids: string[], patch: Record<string, any>, msg: string) => {
+    await Promise.all(ids.map(id => fetch('/api/crm/contacts', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...patch }),
+    })));
+    await load();
+    show(msg);
+  };
+
   const doSearch = () => { load(); };
 
+  // Leads que ya graduaron (oportunidad/cliente) salen del embudo salvo en
+  // la vista churned.
+  const visibleContacts = verChurned ? contacts : contacts.filter(c => !['oportunidad', 'cliente'].includes(c.lifecycle_stage));
+
   // Stats del segmento Leads
-  const mql = contacts.filter(c => c.lifecycle_stage === 'lead_calificado');
-  const sinSeguimiento = contacts.filter(c => !c.next_followup);
+  const mql = visibleContacts.filter(c => c.lifecycle_stage === 'lead_calificado');
+  const sinSeguimiento = visibleContacts.filter(c => !c.next_followup);
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -167,7 +224,7 @@ export default function PipelineTab({ onConfig }: { onConfig?: () => void } = {}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 24px', background: '#fff', borderBottom: '1px solid #f0f0f0', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', overflowX: 'auto' }}>
           {[
-            { l: verChurned ? 'Churned' : 'Leads', v: contacts.length, c: '#6C5CE7' },
+            { l: verChurned ? 'Churned' : 'Leads', v: visibleContacts.length, c: '#6C5CE7' },
             { l: 'MQL', v: mql.length, c: '#4B7BE5' },
             { l: 'Sin seguimiento', v: sinSeguimiento.length, c: '#E54B4B' },
           ].map(s => (
@@ -214,20 +271,26 @@ export default function PipelineTab({ onConfig }: { onConfig?: () => void } = {}
               ? <div style={{ textAlign: 'center', padding: 48, color: '#999' }}>Aún no hay etapas de Leads. <button onClick={() => onConfig?.()} style={{ background: 'none', border: 'none', color: '#4B7BE5', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>Configúralas aquí →</button></div>
               : <PipelineKanban
                   stages={leadStages}
-                  items={contacts}
+                  items={visibleContacts}
                   getId={(c: any) => c.id}
                   getStage={(c: any) => c.pipeline_stage}
                   onMove={(id, key) => setPipelineStage(id, key)}
                   renderCard={(c: any) => (
                     <div onClick={() => openDetail(c)} style={{ cursor: 'pointer' }}>
-                      <div style={{ fontWeight: 700, fontSize: '0.82rem' }}>{[c.nombre, c.apellido].filter(Boolean).join(' ') || c.email || '—'}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.82rem', flex: 1, minWidth: 0 }}>{[c.nombre, c.apellido].filter(Boolean).join(' ') || c.email || '—'}</div>
+                        <SlaBadge since={c.last_contact_at || c.created_at} label="sin contacto" />
+                      </div>
                       {c.companies?.nombre ? <div style={{ fontSize: '0.72rem', color: '#999' }}>{c.companies.nombre}</div> : null}
-                      <div style={{ fontSize: '0.7rem', color: '#aaa', marginTop: 4 }}>{c.email || c.whatsapp || ''}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                        <div style={{ fontSize: '0.7rem', color: '#aaa', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email || c.whatsapp || ''}</div>
+                        {c.lead_score > 0 && <span style={{ fontSize: '0.6rem', fontWeight: 700, color: c.lead_score >= 70 ? '#2e7d32' : c.lead_score >= 40 ? '#a06600' : '#bbb' }}>{c.lead_score}pts</span>}
+                      </div>
                     </div>
                   )}
                 />
           ) :
-          <TableView contacts={contacts} onSelect={openDetail} />
+          <TableView contacts={visibleContacts} onSelect={openDetail} onBulk={bulkUpdate} />
         }
       </div>
 
@@ -252,10 +315,20 @@ export default function PipelineTab({ onConfig }: { onConfig?: () => void } = {}
 
             <div style={{ padding: '20px 24px' }}>
               {/* Quick actions */}
-              <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
                 {selected.whatsapp && <a href={`https://wa.me/${selected.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener" style={{ ...btn, background: '#e8f5e9', color: '#2e7d32', flex: 1, textAlign: 'center' as const, textDecoration: 'none', justifyContent: 'center' }}>WhatsApp</a>}
                 {selected.email && <a href={`mailto:${selected.email}`} style={{ ...btn, background: '#e3f2fd', color: '#1565c0', flex: 1, textAlign: 'center' as const, textDecoration: 'none', justifyContent: 'center' }}>Email</a>}
               </div>
+
+              {/* Registro rápido de actividad */}
+              <ActivityChips onLog={logQuick} disabled={saving} />
+
+              {/* Convertir en oportunidad */}
+              {!['oportunidad', 'cliente'].includes(selected.lifecycle_stage) && (
+                <button onClick={() => convertirEnOportunidad(selected)} disabled={converting} style={{ ...btn, background: '#E8A838', color: '#fff', width: '100%', justifyContent: 'center', marginBottom: 16 }}>
+                  {converting ? 'Convirtiendo...' : '⚡ Convertir en oportunidad'}
+                </button>
+              )}
 
               {/* Lifecycle Stage */}
               <Label>Etapa de ciclo de vida</Label>
@@ -392,6 +465,8 @@ export default function PipelineTab({ onConfig }: { onConfig?: () => void } = {}
           </div>
         </div>
       )}
+
+      <Toast toast={toast} />
     </div>
   );
 }
@@ -420,13 +495,31 @@ function activityLabel(tipo: string): string {
 }
 
 // ─── Sub-components ───
-function TableView({ contacts, onSelect }: { contacts: Contact[]; onSelect: (c: Contact) => void }) {
+function TableView({ contacts, onSelect, onBulk }: { contacts: Contact[]; onSelect: (c: Contact) => void; onBulk?: (ids: string[], patch: Record<string, any>, msg: string) => void | Promise<void> }) {
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const toggle = (id: string) => setSel(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const allChecked = contacts.length > 0 && contacts.every(c => sel.has(c.id));
+  const toggleAll = () => setSel(allChecked ? new Set() : new Set(contacts.map(c => c.id)));
+  const ids = [...sel];
+  const runBulk = async (patch: Record<string, any>, msg: string) => { if (onBulk) await onBulk(ids, patch, msg); setSel(new Set()); };
+
   return (
     <div style={{ background: '#fff', borderRadius: 10, border: '1px solid #f0f0f0', overflow: 'hidden' }}>
+      {ids.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#1a1a1a', color: '#fff', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.8125rem', fontWeight: 700 }}>{ids.length} seleccionados</span>
+          <button onClick={() => runBulk({ next_followup: new Date().toISOString().slice(0, 10) }, `${ids.length} agendados para hoy`)} style={{ ...bulkBtn }}>📅 Seguir hoy</button>
+          <button onClick={() => runBulk({ lifecycle_stage: 'lead_calificado' }, `${ids.length} marcados MQL`)} style={{ ...bulkBtn }}>⭐ Marcar MQL</button>
+          <button onClick={() => { if (confirm(`¿Marcar ${ids.length} como churned?`)) runBulk({ tipo: 'churned', lifecycle_stage: 'churned' }, `${ids.length} marcados churned`); }} style={{ ...bulkBtn, background: '#b93333' }}>✕ Churned</button>
+          <button onClick={() => setSel(new Set())} style={{ ...bulkBtn, background: 'transparent', border: '1px solid #555' }}>Cancelar</button>
+        </div>
+      )}
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
           <thead>
-            <tr>{['Fecha', 'Nombre', 'Empresa', 'Giro', 'WhatsApp', 'Email', 'Etapa', 'Tipo', 'Plan', 'Score'].map(h =>
+            <tr>
+              <th style={{ padding: '10px 8px 10px 14px', background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}><input type="checkbox" checked={allChecked} onChange={toggleAll} /></th>
+              {['Fecha', 'Nombre', 'Empresa', 'Giro', 'WhatsApp', 'Email', 'Etapa', 'Tipo', 'Plan', 'Score'].map(h =>
               <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: '0.625rem', fontWeight: 600, textTransform: 'uppercase' as const, letterSpacing: '0.06em', color: '#aaa', background: '#fafafa', borderBottom: '1px solid #f0f0f0', whiteSpace: 'nowrap' }}>{h}</th>
             )}</tr>
           </thead>
@@ -434,7 +527,8 @@ function TableView({ contacts, onSelect }: { contacts: Contact[]; onSelect: (c: 
             {contacts.map(c => {
               const stageInfo = LIFECYCLE_STAGES.find(s => s.id === c.lifecycle_stage);
               return (
-                <tr key={c.id} onClick={() => onSelect(c)} style={{ cursor: 'pointer', borderBottom: '1px solid #f8f8f8' }}>
+                <tr key={c.id} onClick={() => onSelect(c)} style={{ cursor: 'pointer', borderBottom: '1px solid #f8f8f8', background: sel.has(c.id) ? '#f5f8ff' : undefined }}>
+                  <td style={{ ...td, cursor: 'default' }} onClick={e => e.stopPropagation()}><input type="checkbox" checked={sel.has(c.id)} onChange={() => toggle(c.id)} /></td>
                   <td style={td}>{fmtDate(c.created_at)}</td>
                   <td style={{ ...td, fontWeight: 700, color: '#1a1a1a' }}>{c.nombre}</td>
                   <td style={td}>{c.companies?.nombre || '—'}</td>
@@ -472,3 +566,4 @@ function Label({ children, style }: { children: React.ReactNode; style?: React.C
 const btn: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.8125rem', fontWeight: 600, padding: '8px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit' };
 const input: React.CSSProperties = { width: '100%', padding: '10px 12px', fontSize: '0.8125rem', border: '1px solid #e0e0e0', borderRadius: 8, outline: 'none', fontFamily: 'inherit', marginBottom: 8, boxSizing: 'border-box' as const };
 const td: React.CSSProperties = { padding: '10px 14px', color: '#555' };
+const bulkBtn: React.CSSProperties = { fontSize: '0.72rem', fontWeight: 700, padding: '5px 10px', borderRadius: 7, border: 'none', background: '#333', color: '#fff', cursor: 'pointer', fontFamily: 'inherit' };
