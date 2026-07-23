@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useToast, Toast, logStageChange, SlaBadge, ActivityChips } from './crmHelpers';
+import { useToast, Toast, logStageChange, SlaBadge, ActivityChips, KanbanSkeleton } from './crmHelpers';
 
 // ─── Types ───
 interface Deal {
@@ -191,7 +191,7 @@ export default function DealsTab({ onConfig }: { onConfig?: () => void } = {}) {
       {/* Content */}
       <div style={{ flex: 1, padding: '16px 24px', overflow: 'auto' }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 48, color: '#bbb' }}>Cargando...</div>
+          <KanbanSkeleton cols={5} />
         ) : view === 'kanban' ? (
           <KanbanView deals={deals} onSelect={setSelected} onMove={moveStage} />
         ) : (

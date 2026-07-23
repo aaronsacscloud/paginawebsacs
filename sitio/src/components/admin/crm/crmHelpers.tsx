@@ -72,6 +72,25 @@ export async function logStageChange(opts: {
   } catch { /* no bloquea el movimiento */ }
 }
 
+// ─── Skeleton de carga para vistas kanban ───
+export function KanbanSkeleton({ cols = 4 }: { cols?: number }) {
+  return (
+    <div style={{ display: 'flex', gap: 12, overflow: 'hidden' }}>
+      {Array.from({ length: cols }).map((_, i) => (
+        <div key={i} style={{ minWidth: 244, flex: '1 0 244px', background: '#f7f8fa', borderRadius: 10, padding: 8, border: '1px solid #eee' }}>
+          <div style={{ height: 14, width: '55%', background: '#ececec', borderRadius: 6, margin: '4px 6px 12px' }} />
+          {Array.from({ length: 3 - (i % 2) }).map((__, j) => (
+            <div key={j} style={{ background: '#fff', border: '1px solid #eee', borderRadius: 8, padding: 10, marginBottom: 8 }}>
+              <div style={{ height: 11, width: '70%', background: '#eee', borderRadius: 5, marginBottom: 7 }} />
+              <div style={{ height: 9, width: '45%', background: '#f2f2f2', borderRadius: 5 }} />
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Chips de registro rápido de actividad ───
 const CHIPS: { tipo: string; label: string; icon: string; color: string }[] = [
   { tipo: 'llamada', label: 'Llamada', icon: '📞', color: '#6C5CE7' },

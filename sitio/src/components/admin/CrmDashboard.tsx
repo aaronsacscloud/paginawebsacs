@@ -1,4 +1,4 @@
-import { useState, useEffect, Component } from 'react';
+import { useState, useEffect, useRef, Component } from 'react';
 import type { ReactNode } from 'react';
 import PipelineTab from './crm/PipelineTab';
 import DealsTab from './crm/DealsTab';
@@ -15,6 +15,7 @@ import ReunionesTab from './crm/ReunionesTab';
 import SubscriptionsTab from './crm/SubscriptionsTab';
 import PagosTab from './crm/PagosTab';
 import PipelinesConfig from './crm/PipelinesConfig';
+import AgendaHoy from './crm/AgendaHoy';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
   state = { error: null as string | null };
@@ -30,7 +31,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'dashboard' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review';
+type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review';
 
 // SVG icons (Squarespace-style, clean strokes)
 const ICONS: Record<string, string> = {
@@ -44,6 +45,7 @@ const ICONS: Record<string, string> = {
   automations: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
   config: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>',
   partners: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11l-3 3-1.5-1.5"/></svg>',
+  hoy: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>',
 };
 
 const NAV_SECTIONS = [
@@ -51,6 +53,7 @@ const NAV_SECTIONS = [
     label: 'Principal',
     items: [
       { id: 'dashboard' as Tab, label: 'Dashboard', icon: 'dashboard' },
+      { id: 'hoy' as Tab, label: 'Hoy', icon: 'hoy' },
       { id: 'pipeline' as Tab, label: 'Leads', icon: 'pipeline' },
       { id: 'deals' as Tab, label: 'Oportunidades', icon: 'deals' },
       { id: 'clientes' as Tab, label: 'Clientes', icon: 'clientes' },
@@ -110,13 +113,28 @@ export default function CrmDashboard() {
   // Pipeline preseleccionado al abrir la config de etapas desde un segmento
   // (Leads / Oportunidades / Clientes → "⚙️ Configurar etapas").
   const [pipelineTipo, setPipelineTipo] = useState<string>('lead');
-  const goConfigPipeline = (tipo: string) => { setPipelineTipo(tipo); setTab('pipelines'); };
+  const goConfigPipeline = (tipo: string) => { setPipelineTipo(tipo); switchTab('pipelines'); };
   const [profileContactId, setProfileContactId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearch, setShowSearch] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // Cmd/Ctrl+K → enfoca la búsqueda global (abre el sidebar si está colapsado).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSidebarCollapsed(false);
+        setTimeout(() => searchRef.current?.focus(), 60);
+      }
+      if (e.key === 'Escape') setShowSearch(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   useEffect(() => {
     const close = (e: MouseEvent) => {
@@ -216,6 +234,7 @@ export default function CrmDashboard() {
           <div style={{ padding: '12px 16px' }}>
             <div className="crm-search-wrapper" style={{ position: 'relative' }}>
               <input
+                ref={searchRef}
                 value={searchQuery}
                 onChange={async (e) => {
                   setSearchQuery(e.target.value);
@@ -227,7 +246,7 @@ export default function CrmDashboard() {
                   } else { setShowSearch(false); }
                 }}
                 onFocus={() => { if (searchResults.length) setShowSearch(true); }}
-                placeholder="Buscar..."
+                placeholder="Buscar…  (⌘K)"
                 style={{
                   width: '100%', padding: '8px 10px 8px 30px', fontSize: '0.75rem',
                   border: '1px solid #e8e8e8', borderRadius: 8,
@@ -249,7 +268,13 @@ export default function CrmDashboard() {
                     const icons: Record<string, string> = { contact: '👤', company: '🏢', deal: '💰', quote: '📄' };
                     const colors: Record<string, string> = { contact: '#4B7BE5', company: '#6C5CE7', deal: '#2AB5A0', quote: '#F39C12' };
                     return (
-                      <div key={i} onClick={() => { if (r.type === 'contact') setProfileContactId(r.id); setShowSearch(false); setSearchQuery(''); }}
+                      <div key={i} onClick={() => {
+                          if (r.type === 'contact') setProfileContactId(r.id);
+                          else if (r.type === 'deal') switchTab('deals');
+                          else if (r.type === 'company') switchTab('clientes');
+                          else if (r.type === 'quote') switchTab('cotizaciones');
+                          setShowSearch(false); setSearchQuery('');
+                        }}
                         style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid #f5f5f5', display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.75rem' }}
                         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f8f9fb'; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#fff'; }}
@@ -332,6 +357,8 @@ export default function CrmDashboard() {
         {/* Content */}
         {tab === 'dashboard' ? (
           <ErrorBoundary><DashboardTab /></ErrorBoundary>
+        ) : tab === 'hoy' ? (
+          <ErrorBoundary><AgendaHoy onOpenContact={(id) => setProfileContactId(id)} onGoDeals={() => switchTab('deals')} /></ErrorBoundary>
         ) : tab === 'pipeline' ? (
           <PipelineTab onConfig={() => goConfigPipeline('lead')} />
         ) : tab === 'deals' ? (

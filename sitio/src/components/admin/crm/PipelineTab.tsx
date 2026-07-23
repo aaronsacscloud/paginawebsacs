@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import PipelineKanban from './PipelineKanban';
-import { useToast, Toast, logStageChange, SlaBadge, ActivityChips } from './crmHelpers';
+import { useToast, Toast, logStageChange, SlaBadge, ActivityChips, KanbanSkeleton } from './crmHelpers';
 
 interface Company {
   id: string; nombre: string; plan: string | null; sucursales: number; estado_cuenta: string; mrr: number;
@@ -265,7 +265,7 @@ export default function PipelineTab({ onConfig }: { onConfig?: () => void } = {}
 
       {/* Content */}
       <div style={{ flex: 1, padding: '16px 24px', overflow: 'auto' }}>
-        {loading ? <div style={{ textAlign: 'center', padding: 48, color: '#bbb' }}>Cargando...</div> :
+        {loading ? <KanbanSkeleton /> :
           view === 'lead' ? (
             leadStages.length === 0
               ? <div style={{ textAlign: 'center', padding: 48, color: '#999' }}>Aún no hay etapas de Leads. <button onClick={() => onConfig?.()} style={{ background: 'none', border: 'none', color: '#4B7BE5', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>Configúralas aquí →</button></div>
