@@ -9,7 +9,7 @@ export const prerender = false;
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 export const GET: APIRoute = async () => {
-  const baseSel = 'id, nombre, sacs_account, plan, tipo_cuenta, estado_cuenta, sucursales, mrr, arr, fecha_renovacion, health_score, ultima_venta_at, dias_sin_venta, actividad, contacts(id, nombre, email, whatsapp), subscriptions(id, estado, ciclo, arr, nombre_plan, proxima_factura, pagos_realizados, total_pagado)';
+  const baseSel = 'id, nombre, sacs_account, plan, tipo_cuenta, estado_cuenta, sucursales, mrr, arr, fecha_renovacion, health_score, ultima_venta_at, dias_sin_venta, actividad, contacts(id, nombre, email, whatsapp, telefono), subscriptions(id, estado, ciclo, arr, nombre_plan, proxima_factura, pagos_realizados, total_pagado, contact_id)';
   // pipeline_stage puede no existir aún (SQL pendiente) → reintentar sin él.
   let res = await supabase.from('companies').select('pipeline_stage, ' + baseSel).is('archived_at', null);
   if (res.error && /pipeline_stage|column|schema cache/i.test(res.error.message || '')) {
@@ -26,12 +26,17 @@ export const GET: APIRoute = async () => {
       const activas = subs.filter((s: any) => s.estado === 'activa');
       const pend = subs.filter((s: any) => s.estado === 'pendiente_pago' || s.estado === 'programada');
       const contacto = (c.contacts || [])[0] || null;
+      // Si la empresa no tiene contacto ligado pero una suscripción SÍ referencia
+      // un contact_id, lo señalamos (relación que vive en subscriptions, no en la
+      // empresa) para poder repararla.
+      const subContactId = subs.map((s: any) => s.contact_id).filter(Boolean)[0] || null;
       return {
         id: c.id, nombre: c.nombre, sacs_account: c.sacs_account,
         plan: c.plan, tipo_cuenta: c.tipo_cuenta, estado_cuenta: c.estado_cuenta,
         pipeline_stage: c.pipeline_stage ?? null,
         sucursales: c.sucursales,
-        contacto: contacto ? { nombre: contacto.nombre, email: contacto.email, whatsapp: contacto.whatsapp } : null,
+        contacto: contacto ? { id: contacto.id, nombre: contacto.nombre, email: contacto.email, whatsapp: contacto.whatsapp, telefono: contacto.telefono } : null,
+        sub_contact_id: subContactId,
         subs_total: subs.length, subs_activas: activas.length, subs_pendientes: pend.length,
         mrr: r2(activas.reduce((a: number, s: any) => a + Number(s.arr || 0) / 12, 0)),
         arr: r2(activas.reduce((a: number, s: any) => a + Number(s.arr || 0), 0)),

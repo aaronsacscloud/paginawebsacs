@@ -32,6 +32,43 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   const [vista, setVista] = useState<'tabla' | 'kanban'>('tabla');
   const [stages, setStages] = useState<{ key: string; label: string; color: string }[]>([]);
   const { toast, show } = useToast();
+  // Edición inline de correo/WhatsApp del contacto.
+  const [editId, setEditId] = useState<string | null>(null);
+  const [eEmail, setEEmail] = useState('');
+  const [eWa, setEWa] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  // Formato WhatsApp Meta (+52…, sin el "1" de móvil), igual que lib/kapso.ts.
+  function metaWa(p: string): string {
+    let c = String(p || '').replace(/[^\d+]/g, '');
+    if (!c) return '';
+    if (!c.startsWith('+')) c = c.startsWith('52') ? '+' + c : '+52' + c;
+    if (c.startsWith('+521') && c.length === 14) c = '+52' + c.slice(4);
+    return c;
+  }
+  function startEdit(c: any) {
+    setEditId(c.id);
+    setEEmail(c.contacto?.email || '');
+    setEWa(c.contacto?.whatsapp || c.contacto?.telefono || '');
+  }
+  async function saveEdit(c: any) {
+    setSaving(true);
+    const email = eEmail.trim() || null;
+    const whatsapp = eWa.trim() ? metaWa(eWa.trim()) : null;
+    try {
+      let r: Response;
+      if (c.contacto?.id) {
+        r = await fetch('/api/crm/contacts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: c.contacto.id, email, whatsapp }) });
+      } else {
+        // Cliente sin contacto → crea uno ligado a la empresa.
+        r = await fetch('/api/crm/contacts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ company_id: c.id, nombre: c.contacto?.nombre || c.nombre || 'Contacto', email, whatsapp, tipo: 'cliente', lifecycle_stage: 'cliente' }) });
+      }
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || j.error) { alert(j.error || 'No se pudo guardar.'); }
+      else { setEditId(null); show('Contacto actualizado'); load(); }
+    } catch (e: any) { alert('Error: ' + (e?.message || e)); }
+    setSaving(false);
+  }
 
   async function load() {
     setLoading(true); setError(null);
@@ -143,7 +180,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead><tr>
-              {['Cliente', 'Contacto', 'Plan', 'Etapa', 'Subs', 'ARR', 'Pagos', 'Total pagado', 'Próx. factura', 'Últ. venta SACS', 'Salud'].map(h => <th key={h} style={S.th}>{h}</th>)}
+              {['Cliente', 'Correo', 'Teléfono / WhatsApp', 'Plan', 'Etapa', 'Subs', 'ARR', 'Pagos', 'Total pagado', 'Próx. factura', 'Últ. venta SACS', 'Salud'].map(h => <th key={h} style={S.th}>{h}</th>)}
             </tr></thead>
             <tbody>
               {filtered.map(c => {
@@ -152,7 +189,31 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
                 return (
                   <tr key={c.id} style={{ cursor: 'pointer' }} onClick={() => setDetailId(c.id)}>
                     <td style={{ ...S.td, fontWeight: 700 }}>{c.contacto?.nombre || c.nombre}{(() => { const cuenta = c.sacs_account || c.nombre; return cuenta && cuenta !== (c.contacto?.nombre || c.nombre) ? <div style={{ color: '#aaa', fontWeight: 400, fontSize: '0.72rem' }}>{cuenta}</div> : null; })()}</td>
-                    <td style={S.td}>{c.contacto ? (c.contacto.email || c.contacto.whatsapp || '—') : <span style={{ color: '#c62828' }}>sin contacto</span>}</td>
+                    {/* Correo (editable) */}
+                    <td style={S.td} onClick={e => e.stopPropagation()}>
+                      {editId === c.id
+                        ? <input value={eEmail} onChange={e => setEEmail(e.target.value)} placeholder="correo@…" style={{ ...S.input, padding: '4px 6px', fontSize: '0.75rem', width: 170 }} />
+                        : (c.contacto?.email
+                            ? c.contacto.email
+                            : (c.contacto ? <span style={{ color: '#bbb' }}>—</span> : <span style={{ color: '#c62828' }}>sin contacto</span>))}
+                    </td>
+                    {/* Teléfono / WhatsApp (editable) + lápiz */}
+                    <td style={S.td} onClick={e => e.stopPropagation()}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {editId === c.id ? (
+                          <>
+                            <input value={eWa} onChange={e => setEWa(e.target.value)} placeholder="+52…" style={{ ...S.input, padding: '4px 6px', fontSize: '0.75rem', width: 140 }} />
+                            <button title="Guardar" disabled={saving} onClick={() => saveEdit(c)} style={{ ...S.btnSmall, padding: '3px 8px', color: '#1A8F7A', fontWeight: 800 }}>{saving ? '…' : '✓'}</button>
+                            <button title="Cancelar" onClick={() => setEditId(null)} style={{ ...S.btnSmall, padding: '3px 8px' }}>✕</button>
+                          </>
+                        ) : (
+                          <>
+                            <span>{c.contacto?.whatsapp || c.contacto?.telefono || <span style={{ color: '#bbb' }}>—</span>}</span>
+                            <button title={c.contacto ? 'Editar correo/WhatsApp' : 'Agregar contacto'} onClick={() => startEdit(c)} style={{ ...S.btnSmall, padding: '2px 7px', marginLeft: 'auto', opacity: 0.55 }}>✏️</button>
+                          </>
+                        )}
+                      </div>
+                    </td>
                     <td style={S.td}>{b ? <span style={{ ...S.badge, background: b.bg, color: b.color }}>{b.label}</span> : <span style={{ color: '#bbb' }}>—</span>}</td>
                     <td style={S.td} onClick={e => e.stopPropagation()}>
                       {stages.length === 0 ? <span style={{ color: '#bbb' }}>—</span> : (
