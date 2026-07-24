@@ -9,11 +9,21 @@ export const prerender = false;
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 export const GET: APIRoute = async () => {
-  const baseSel = 'id, nombre, sacs_account, plan, tipo_cuenta, estado_cuenta, sucursales, mrr, arr, fecha_renovacion, health_score, ultima_venta_at, dias_sin_venta, actividad, contacts(id, nombre, email, whatsapp, telefono), subscriptions(id, estado, ciclo, arr, nombre_plan, proxima_factura, pagos_realizados, total_pagado, contact_id)';
-  // pipeline_stage puede no existir aún (SQL pendiente) → reintentar sin él.
-  let res = await supabase.from('companies').select('pipeline_stage, ' + baseSel).is('archived_at', null);
-  if (res.error && /pipeline_stage|column|schema cache/i.test(res.error.message || '')) {
-    res = await supabase.from('companies').select(baseSel).is('archived_at', null);
+  const mkSel = (contactsSel: string) => 'id, nombre, sacs_account, plan, tipo_cuenta, estado_cuenta, sucursales, mrr, arr, fecha_renovacion, health_score, ultima_venta_at, dias_sin_venta, actividad, ' + contactsSel + ', subscriptions(id, estado, ciclo, arr, nombre_plan, proxima_factura, pagos_realizados, total_pagado, contact_id)';
+  const CONTACTS_NEW = 'contacts(id, nombre, email, whatsapp, telefono, rol, es_principal)';
+  const CONTACTS_OLD = 'contacts(id, nombre, email, whatsapp, telefono)';
+  // pipeline_stage y rol/es_principal pueden no existir aún (SQL pendiente) →
+  // cadena de reintentos quitando primero los campos nuevos que fallen.
+  const intentos = [
+    'pipeline_stage, ' + mkSel(CONTACTS_NEW),
+    'pipeline_stage, ' + mkSel(CONTACTS_OLD),
+    mkSel(CONTACTS_NEW),
+    mkSel(CONTACTS_OLD),
+  ];
+  let res: any = null;
+  for (const sel of intentos) {
+    res = await supabase.from('companies').select(sel).is('archived_at', null);
+    if (!res.error || !/pipeline_stage|rol|es_principal|column|schema cache/i.test(res.error.message || '')) break;
   }
   const { data: companies, error } = res;
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
@@ -25,7 +35,8 @@ export const GET: APIRoute = async () => {
       const subs = c.subscriptions || [];
       const activas = subs.filter((s: any) => s.estado === 'activa');
       const pend = subs.filter((s: any) => s.estado === 'pendiente_pago' || s.estado === 'programada');
-      const contacto = (c.contacts || [])[0] || null;
+      // Principal si existe la marca; si no, el primero (comportamiento previo).
+      const contacto = (c.contacts || []).find((x: any) => x.es_principal) || (c.contacts || [])[0] || null;
       // Si la empresa no tiene contacto ligado pero una suscripción SÍ referencia
       // un contact_id, lo señalamos (relación que vive en subscriptions, no en la
       // empresa) para poder repararla.

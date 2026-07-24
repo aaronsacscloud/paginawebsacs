@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ClienteDrawer } from './SubscriptionsTab';
+import ClienteDrawer360 from './ClienteDrawer360';
 
 /* ═══ Reuniones (VENTAS) — listado operativo de TODAS las reuniones ═══
  * Las del founder y las de partners, segmentadas y ligadas al CRM real:
@@ -282,7 +282,7 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
         <CalendarioMes mes={calMes} setMes={setCalMes} bookings={data.filter(b => b.estado !== 'cancelada' && b.estado !== 'reagendada')} hoy={hoy} onOpen={abrirInvitado} />
       )}
 
-      {drawerCompanyId && <ClienteDrawer companyId={drawerCompanyId} onClose={() => setDrawerCompanyId(null)} onChanged={load} />}
+      {drawerCompanyId && <ClienteDrawer360 companyId={drawerCompanyId} onClose={() => setDrawerCompanyId(null)} onChanged={load} />}
       {reagendar && <ReagendarModal booking={reagendar} onClose={() => setReagendar(null)} onDone={() => { setReagendar(null); avisar('Reunión reagendada ✓'); load(); }} onError={(m) => avisar('Error: ' + m)} />}
 
       {toast && (

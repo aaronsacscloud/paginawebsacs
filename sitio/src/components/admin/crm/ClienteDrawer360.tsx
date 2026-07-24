@@ -1,0 +1,572 @@
+import { useEffect, useState } from 'react';
+
+/* ═══ Cliente 360 — drawer ancho con pestañas, TODO editable ═══
+ * Pestañas: Resumen · Cliente & SACS · Contactos · Suscripciones · Actividad.
+ * Reemplaza al ClienteDrawer angosto/solo-lectura. Autocontenido (estilos y
+ * badges propios) para no crear ciclos de import con SubscriptionsTab. */
+
+const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
+const fmtDate = (d?: string | null) => d ? new Date(d + (String(d).length === 10 ? 'T12:00:00' : '')).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '—';
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+// Formato WhatsApp Meta (+52…, sin el "1" de móvil) — igual que lib/kapso.ts.
+function metaWa(p: string): string {
+  let c = String(p || '').replace(/[^\d+]/g, '');
+  if (!c) return '';
+  if (!c.startsWith('+')) c = c.startsWith('52') ? '+' + c : '+52' + c;
+  if (c.startsWith('+521') && c.length === 14) c = '+52' + c.slice(4);
+  return c;
+}
+const waLink = (p?: string | null) => p ? 'https://wa.me/' + String(metaWa(p)).replace(/\D/g, '') : '';
+
+const D = {
+  overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.42)', zIndex: 900 } as const,
+  panel: { position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(940px, 97vw)', background: '#fafafa', zIndex: 901, overflowY: 'auto' as const, boxShadow: '-12px 0 40px rgba(0,0,0,.18)' },
+  head: { position: 'sticky' as const, top: 0, zIndex: 5, background: '#fff', borderBottom: '1px solid #ececec', padding: '16px 22px 0' },
+  tabbar: { display: 'flex', gap: 2, marginTop: 12, flexWrap: 'wrap' as const },
+  tab: (act: boolean) => ({ padding: '9px 14px', border: 'none', borderBottom: act ? '2.5px solid #1a1a1a' : '2.5px solid transparent', background: 'none', cursor: 'pointer', fontWeight: act ? 800 : 600, fontSize: '0.83rem', color: act ? '#1a1a1a' : '#777' }) as const,
+  body: { padding: 22 } as const,
+  card: { background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: 16, marginBottom: 14 } as const,
+  h: { fontSize: '0.72rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: 10 },
+  kpi: { background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '12px 14px', minWidth: 130, flex: 1 } as const,
+  kl: { fontSize: '0.68rem', color: '#999', fontWeight: 700, textTransform: 'uppercase' as const },
+  kv: { fontSize: '1.05rem', fontWeight: 800, color: '#1a1a1a', marginTop: 2 } as const,
+  input: { padding: '7px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.83rem', outline: 'none', width: '100%', boxSizing: 'border-box' as const },
+  lbl: { fontSize: '0.7rem', fontWeight: 700, color: '#888', marginBottom: 3, display: 'block' } as const,
+  btn: { padding: '8px 14px', border: 'none', borderRadius: 8, fontSize: '0.83rem', fontWeight: 700, cursor: 'pointer', background: '#1a1a1a', color: '#fff' } as const,
+  btnG: { padding: '7px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', background: '#fff', color: '#333' } as const,
+  badge: { display: 'inline-block', padding: '2px 9px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap' as const } as const,
+  th: { textAlign: 'left' as const, padding: '7px 9px', fontSize: '0.66rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, borderBottom: '1px solid #eee' },
+  td: { padding: '8px 9px', fontSize: '0.8rem', color: '#333', borderBottom: '1px solid #f4f4f4', fontVariantNumeric: 'tabular-nums' as const },
+};
+
+function EstadoBadge({ e }: { e: string }) {
+  const map: Record<string, [string, string]> = {
+    activa: ['rgba(42,181,160,.15)', '#1A8F7A'], programada: ['rgba(75,123,229,.12)', '#3764c4'],
+    pendiente_pago: ['rgba(232,168,56,.16)', '#a06600'], cancelada: ['rgba(229,75,75,.1)', '#b93333'],
+    pausada: ['rgba(26,26,26,.08)', '#555'],
+  };
+  const [bg, color] = map[e] || ['#f3f4f6', '#555'];
+  return <span style={{ ...D.badge, background: bg, color }}>{e || '—'}</span>;
+}
+
+const CICLOS = ['anual', 'mensual', 'vitalicia'];
+const ESTADOS_SUB = ['activa', 'programada', 'pendiente_pago', 'pausada', 'cancelada'];
+const ROLES = ['Dueño', 'Gerente', 'Facturación', 'Sistemas', 'Compras', 'Otro'];
+
+export default function ClienteDrawer360({ companyId, onClose, onChanged }: { companyId: string; onClose: () => void; onChanged: () => void }) {
+  const [data, setData] = useState<any>(null);
+  const [err, setErr] = useState('');
+  const [tab, setTab] = useState<'resumen' | 'sacs' | 'contactos' | 'subs' | 'act'>('resumen');
+  const [msg, setMsg] = useState('');
+
+  async function load() {
+    setErr('');
+    try {
+      const r = await fetch('/api/crm/arr/company360?id=' + companyId);
+      const j = await r.json();
+      if (j.error) setErr(j.error); else setData(j);
+    } catch (e: any) { setErr(e?.message || 'No se pudo cargar'); }
+  }
+  useEffect(() => { setData(null); setTab('resumen'); load(); }, [companyId]);
+
+  function flash(t: string) { setMsg(t); setTimeout(() => setMsg(''), 2600); }
+
+  const co = data?.company;
+  const contactos: any[] = data?.contacts || [];
+  const principal = contactos.find(c => c.es_principal) || contactos[0] || null;
+  const subs: any[] = data?.subscriptions || [];
+  const res = data?.resumen || {};
+  const act = co?.actividad || null;
+
+  return (
+    <>
+      <div style={D.overlay} onClick={onClose} />
+      <div style={D.panel}>
+        {!data && !err && <div style={{ padding: 48, textAlign: 'center', color: '#999' }}>Cargando cliente…</div>}
+        {err && <div style={{ padding: 48, textAlign: 'center', color: '#E54B4B' }}>{err} <button style={D.btnG} onClick={load}>Reintentar</button></div>}
+        {data && co && (
+          <>
+            <div style={D.head}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 800 }}>{co.nombre}</div>
+                  <div style={{ fontSize: '0.78rem', color: '#888', marginTop: 2 }}>
+                    {co.sacs_account ? <>Cuenta SACS: <b>{co.sacs_account}</b></> : <span style={{ color: '#c62828' }}>Sin cuenta SACS ligada</span>}
+                    {principal ? <> · {principal.nombre}{principal.email ? ` · ${principal.email}` : ''}</> : null}
+                  </div>
+                </div>
+                {principal?.whatsapp && (
+                  <a href={waLink(principal.whatsapp)} target="_blank" rel="noreferrer" style={{ ...D.btnG, textDecoration: 'none', color: '#1A8F7A', borderColor: '#bfe8df', fontWeight: 700 }}>💬 WhatsApp</a>
+                )}
+                <button style={{ ...D.btnG, border: 'none', fontSize: '1rem' }} onClick={onClose}>✕</button>
+              </div>
+              <div style={D.tabbar}>
+                <button style={D.tab(tab === 'resumen')} onClick={() => setTab('resumen')}>📊 Resumen</button>
+                <button style={D.tab(tab === 'sacs')} onClick={() => setTab('sacs')}>🏢 Cliente & SACS</button>
+                <button style={D.tab(tab === 'contactos')} onClick={() => setTab('contactos')}>👤 Contactos ({contactos.length})</button>
+                <button style={D.tab(tab === 'subs')} onClick={() => setTab('subs')}>📋 Suscripciones ({subs.length})</button>
+                <button style={D.tab(tab === 'act')} onClick={() => setTab('act')}>🕓 Actividad</button>
+              </div>
+            </div>
+            <div style={D.body}>
+              {msg && <div style={{ background: '#e8f5e9', color: '#1b5e20', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: '0.8rem', fontWeight: 700 }}>{msg}</div>}
+              {tab === 'resumen' && <TabResumen res={res} co={co} act={act} subs={subs} />}
+              {tab === 'sacs' && <TabSacs co={co} act={act} reload={() => { load(); onChanged(); }} flash={flash} />}
+              {tab === 'contactos' && <TabContactos companyId={companyId} contactos={contactos} reload={() => { load(); onChanged(); }} flash={flash} />}
+              {tab === 'subs' && <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} />}
+              {tab === 'act' && <TabActividad companyId={companyId} data={data} reload={() => { load(); onChanged(); }} />}
+            </div>
+          </>
+        )}
+      </div>
+    </>
+  );
+}
+
+/* ─────────── 📊 Resumen ─────────── */
+function TabResumen({ res, co, act, subs }: any) {
+  const dias = co?.dias_sin_venta;
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+        {[['Subs activas', res.subs_activas ?? 0], ['ARR', money(res.arr)], ['MRR', money(res.mrr)],
+          ['Próx. factura', fmtDate(res.proxima_factura)], ['Pagos', res.pagos_totales ?? 0], ['Total pagado', money(res.total_pagado)]].map(([l, v]) => (
+          <div key={String(l)} style={D.kpi}><div style={D.kl}>{l}</div><div style={D.kv}>{v}</div></div>
+        ))}
+      </div>
+      <div style={D.card}>
+        <div style={D.h}>Salud y actividad en SACS</div>
+        {act ? (
+          <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: '0.83rem' }}>
+            <span>Última venta: <b style={{ color: dias != null && dias > 15 ? '#b93333' : dias != null && dias >= 3 ? '#a06600' : '#1A8F7A' }}>{fmtDate(co.ultima_venta_at)}{dias != null ? ` (hace ${dias}d)` : ''}</b></span>
+            {act.ventas_7d != null && <span>Ventas 7d: <b>{act.ventas_7d}</b></span>}
+            {act.ventas_30d != null && <span>Ventas 30d: <b>{act.ventas_30d}</b></span>}
+            {act.total_30d != null && <span>Monto 30d: <b>{money(act.total_30d)}</b></span>}
+            {act.usuarios != null && <span>Usuarios: <b>{act.usuarios}</b></span>}
+            {act.sucursales != null && <span>Sucursales: <b>{act.sucursales}</b></span>}
+            {co.health_score != null && <span>Salud: <b style={{ color: co.health_score >= 70 ? '#1A8F7A' : co.health_score >= 40 ? '#a06600' : '#b93333' }}>{co.health_score}</b></span>}
+          </div>
+        ) : <div style={{ color: '#999', fontSize: '0.82rem' }}>{co?.sacs_account ? 'Sin datos sincronizados aún — usa "Sincronizar" en la pestaña Cliente & SACS.' : 'Liga la cuenta SACS en la pestaña Cliente & SACS para ver su actividad real.'}</div>}
+      </div>
+      <div style={D.card}>
+        <div style={D.h}>Suscripciones</div>
+        {subs.length === 0 && <div style={{ color: '#999', fontSize: '0.82rem' }}>Sin suscripciones — agrégala en la pestaña Suscripciones.</div>}
+        {subs.map((s: any) => (
+          <div key={s.id} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #f4f4f4', fontSize: '0.83rem' }}>
+            <b style={{ minWidth: 150 }}>{s.nombre_plan}</b><span style={{ color: '#888' }}>{s.ciclo}</span>
+            <span style={{ fontWeight: 700 }}>{money(s.arr)} ARR</span>
+            <span style={{ color: '#888' }}>próx: {fmtDate(s.proxima_factura)}</span>
+            <span style={{ marginLeft: 'auto' }}><EstadoBadge e={s.estado} /></span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────── 🏢 Cliente & SACS (empresa editable + ligar cuenta) ─────────── */
+function TabSacs({ co, act, reload, flash }: any) {
+  const [f, setF] = useState<any>({ nombre: co.nombre || '', rfc: co.rfc || '', razon_social: co.razon_social || '', giro: co.giro || '', sitio_web: co.sitio_web || '', ciudad: co.ciudad || '', estado_geo: co.estado_geo || '', sucursales: co.sucursales || 1, estado_cuenta: co.estado_cuenta || 'activo' });
+  const [saving, setSaving] = useState(false);
+  const [cuenta, setCuenta] = useState(co.sacs_account || '');
+  const [linking, setLinking] = useState(false);
+
+  async function guardar() {
+    if (!f.nombre.trim()) { alert('El nombre es obligatorio.'); return; }
+    setSaving(true);
+    const r = await fetch('/api/crm/companies', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: co.id, ...f, sucursales: parseInt(f.sucursales) || 1 }) });
+    const j = await r.json().catch(() => ({}));
+    setSaving(false);
+    if (!r.ok || j.error) alert(j.error || 'No se pudo guardar.'); else { flash('Datos del cliente guardados'); reload(); }
+  }
+  async function ligarYSync() {
+    const acct = cuenta.trim().toLowerCase();
+    if (!acct) { alert('Escribe el subdominio de la cuenta SACS (ej. dibujotecnico).'); return; }
+    setLinking(true);
+    try {
+      const r1 = await fetch('/api/crm/arr/link-suggestions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ company_id: co.id, sacs_account: acct }) });
+      const j1 = await r1.json().catch(() => ({}));
+      if (!r1.ok || j1.error) { alert(j1.error || 'No se pudo ligar.'); setLinking(false); return; }
+      await fetch('/api/crm/arr/sync-cuenta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ company_id: co.id }) });
+      flash('Cuenta ligada y sincronizada');
+      reload();
+    } catch (e: any) { alert('Error: ' + (e?.message || e)); }
+    setLinking(false);
+  }
+  async function syncAhora() {
+    setLinking(true);
+    const r = await fetch('/api/crm/arr/sync-cuenta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ company_id: co.id }) });
+    const j = await r.json().catch(() => ({}));
+    setLinking(false);
+    if (j.error) alert(j.error); else { flash('Actividad sincronizada'); reload(); }
+  }
+
+  const campo = (label: string, k: string, ph = '') => (
+    <div style={{ flex: '1 1 200px' }}>
+      <label style={D.lbl}>{label}</label>
+      <input value={f[k]} onChange={e => setF({ ...f, [k]: e.target.value })} placeholder={ph} style={D.input} />
+    </div>
+  );
+
+  return (
+    <div>
+      <div style={D.card}>
+        <div style={D.h}>Cuenta SACS</div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 220px' }}>
+            <label style={D.lbl}>Subdominio (ej. dibujotecnico)</label>
+            <input value={cuenta} onChange={e => setCuenta(e.target.value)} placeholder="cuenta" style={D.input} />
+          </div>
+          <button style={D.btn} disabled={linking} onClick={ligarYSync}>{linking ? '…' : (co.sacs_account ? 'Cambiar y sincronizar' : 'Ligar y sincronizar')}</button>
+          {co.sacs_account && <button style={D.btnG} disabled={linking} onClick={syncAhora}>🔄 Sincronizar ahora</button>}
+        </div>
+        {co.actividad_sync_at && <div style={{ fontSize: '0.72rem', color: '#999', marginTop: 8 }}>Última sincronización: {new Date(co.actividad_sync_at).toLocaleString('es-MX')}</div>}
+        {act?.modulos?.length ? (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+            {act.modulos.map((m: string) => <span key={m} style={{ ...D.badge, background: '#eef2ff', color: '#3730a3' }}>{m}</span>)}
+          </div>
+        ) : null}
+      </div>
+
+      <div style={D.card}>
+        <div style={D.h}>Datos del cliente (editables)</div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+          {campo('Nombre *', 'nombre')}
+          {campo('Razón social', 'razon_social')}
+          {campo('RFC', 'rfc')}
+        </div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+          {campo('Giro', 'giro', 'boutique, papelería…')}
+          {campo('Sitio web', 'sitio_web', 'https://…')}
+          {campo('Ciudad', 'ciudad')}
+          {campo('Estado', 'estado_geo')}
+        </div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div style={{ width: 120 }}>
+            <label style={D.lbl}>Sucursales</label>
+            <input type="number" min={1} value={f.sucursales} onChange={e => setF({ ...f, sucursales: e.target.value })} style={D.input} />
+          </div>
+          <div style={{ width: 180 }}>
+            <label style={D.lbl}>Estado de la cuenta</label>
+            <select value={f.estado_cuenta} onChange={e => setF({ ...f, estado_cuenta: e.target.value })} style={D.input}>
+              {['activo', 'prospecto', 'pausado', 'churned'].map(x => <option key={x} value={x}>{x}</option>)}
+            </select>
+          </div>
+          <button style={{ ...D.btn, marginLeft: 'auto' }} disabled={saving} onClick={guardar}>{saving ? 'Guardando…' : '💾 Guardar cambios'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────── 👤 Contactos (multi-contacto: lista + alta + principal) ─────────── */
+function TabContactos({ companyId, contactos, reload, flash }: any) {
+  const [editId, setEditId] = useState<string | null>(null);
+  const [f, setF] = useState<any>({});
+  const [adding, setAdding] = useState(false);
+  const [nf, setNf] = useState<any>({ nombre: '', email: '', whatsapp: '', telefono: '', rol: '' });
+  const [busy, setBusy] = useState(false);
+  const sinMigracion = contactos.length > 0 && contactos[0].es_principal === undefined;
+
+  function validar(x: any): string | null {
+    if (x.email && !EMAIL_RE.test(x.email.trim())) return 'El correo no se ve válido.';
+    if (x.whatsapp && metaWa(x.whatsapp).replace(/\D/g, '').length < 12) return 'El WhatsApp debe tener 10 dígitos (se guarda como +52…).';
+    return null;
+  }
+
+  async function guardarEdit(c: any) {
+    const v = validar(f); if (v) { alert(v); return; }
+    setBusy(true);
+    const upd: any = { id: c.id, nombre: f.nombre, email: f.email.trim() || null, whatsapp: f.whatsapp ? metaWa(f.whatsapp) : null, telefono: f.telefono.trim() || null };
+    if (!sinMigracion) upd.rol = f.rol || null;
+    const r = await fetch('/api/crm/contacts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(upd) });
+    const j = await r.json().catch(() => ({}));
+    setBusy(false);
+    if (!r.ok || j.error) alert(j.error || 'No se pudo guardar.'); else { setEditId(null); flash('Contacto guardado'); reload(); }
+  }
+
+  async function agregar() {
+    if (!nf.nombre.trim()) { alert('El nombre es obligatorio.'); return; }
+    const v = validar(nf); if (v) { alert(v); return; }
+    setBusy(true);
+    try {
+      // Dedupe/reasignación: si ya existe un contacto con ese email, se LIGA a esta
+      // empresa en lugar de duplicarlo (un contacto puede cambiar de empresa).
+      if (nf.email.trim()) {
+        const rs = await fetch('/api/crm/contacts?search=' + encodeURIComponent(nf.email.trim()));
+        const js = await rs.json().catch(() => ({}));
+        const exacto = (js.data || js.contacts || []).find((x: any) => (x.email || '').toLowerCase() === nf.email.trim().toLowerCase());
+        if (exacto) {
+          const r2 = await fetch('/api/crm/contacts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: exacto.id, company_id: companyId, whatsapp: nf.whatsapp ? metaWa(nf.whatsapp) : undefined }) });
+          const j2 = await r2.json().catch(() => ({}));
+          setBusy(false);
+          if (!r2.ok || j2.error) { alert(j2.error || 'No se pudo ligar.'); return; }
+          setAdding(false); setNf({ nombre: '', email: '', whatsapp: '', telefono: '', rol: '' });
+          flash('Ese contacto ya existía — se ligó a este cliente'); reload(); return;
+        }
+      }
+      const body: any = { nombre: nf.nombre.trim(), email: nf.email.trim() || null, whatsapp: nf.whatsapp ? metaWa(nf.whatsapp) : null, telefono: nf.telefono.trim() || null, company_id: companyId, tipo: 'cliente', lifecycle_stage: 'cliente' };
+      const r = await fetch('/api/crm/contacts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const j = await r.json().catch(() => ({}));
+      setBusy(false);
+      if (!r.ok || j.error) { alert(j.error || 'No se pudo crear.'); return; }
+      // El POST tiene lista fija de campos (ignora rol) → se guarda con un PUT aparte.
+      if (!sinMigracion && nf.rol && j.id) {
+        await fetch('/api/crm/contacts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: j.id, rol: nf.rol }) }).catch(() => {});
+      }
+      setAdding(false); setNf({ nombre: '', email: '', whatsapp: '', telefono: '', rol: '' });
+      flash('Contacto agregado'); reload();
+    } catch (e: any) { setBusy(false); alert('Error: ' + (e?.message || e)); }
+  }
+
+  async function marcarPrincipal(c: any) {
+    const r = await fetch('/api/crm/contacts/principal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contact_id: c.id, company_id: companyId }) });
+    const j = await r.json().catch(() => ({}));
+    if (j.error) alert(j.error); else { flash('Contacto principal actualizado'); reload(); }
+  }
+  async function quitar(c: any) {
+    if (!confirmar('¿Quitar a "' + c.nombre + '" de este cliente? (el contacto no se borra, solo se desliga)')) return;
+    const r = await fetch('/api/crm/contacts', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: c.id, company_id: null, es_principal: false }) });
+    const j = await r.json().catch(() => ({}));
+    if (j.error) alert(j.error); else { flash('Contacto desligado'); reload(); }
+  }
+  // confirm nativo está bien aquí (panel interno admin, no es sacs3).
+  function confirmar(m: string) { return window.confirm(m); }
+
+  return (
+    <div>
+      {sinMigracion && (
+        <div style={{ background: '#fff3e0', color: '#a06600', borderRadius: 10, padding: '10px 14px', marginBottom: 12, fontSize: '0.78rem' }}>
+          ⚠ Para roles y contacto principal, corre <code>scripts/migration-2026-07-contactos-rol.sql</code> en Supabase (una vez).
+        </div>
+      )}
+      <div style={D.card}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
+          <div style={D.h}>Contactos de este cliente</div>
+          <button style={{ ...D.btnG, marginLeft: 'auto' }} onClick={() => setAdding(!adding)}>{adding ? '✕ Cancelar' : '+ Agregar contacto'}</button>
+        </div>
+
+        {adding && (
+          <div style={{ background: '#fafafa', border: '1px dashed #ddd', borderRadius: 10, padding: 12, marginBottom: 12 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+              <input value={nf.nombre} onChange={e => setNf({ ...nf, nombre: e.target.value })} placeholder="Nombre *" style={{ ...D.input, flex: '1 1 160px' }} />
+              <input value={nf.email} onChange={e => setNf({ ...nf, email: e.target.value })} placeholder="correo@…" style={{ ...D.input, flex: '1 1 180px' }} />
+              <input value={nf.whatsapp} onChange={e => setNf({ ...nf, whatsapp: e.target.value })} placeholder="WhatsApp (+52…)" style={{ ...D.input, flex: '1 1 140px' }} />
+              <input value={nf.telefono} onChange={e => setNf({ ...nf, telefono: e.target.value })} placeholder="Tel. fijo (opcional)" style={{ ...D.input, flex: '1 1 130px' }} />
+              {!sinMigracion && (
+                <select value={nf.rol} onChange={e => setNf({ ...nf, rol: e.target.value })} style={{ ...D.input, flex: '0 1 140px' }}>
+                  <option value="">— rol —</option>
+                  {ROLES.map(x => <option key={x} value={x}>{x}</option>)}
+                </select>
+              )}
+            </div>
+            <button style={D.btn} disabled={busy} onClick={agregar}>{busy ? '…' : 'Guardar contacto'}</button>
+            <span style={{ fontSize: '0.72rem', color: '#999', marginLeft: 10 }}>Si el correo ya existe en el CRM, se liga aquí en lugar de duplicarse.</span>
+          </div>
+        )}
+
+        {contactos.length === 0 && !adding && <div style={{ color: '#999', fontSize: '0.82rem' }}>Este cliente no tiene contactos — agrégale al menos uno.</div>}
+
+        {contactos.map((c: any) => (
+          <div key={c.id} style={{ borderBottom: '1px solid #f2f2f2', padding: '10px 0' }}>
+            {editId === c.id ? (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <input value={f.nombre} onChange={e => setF({ ...f, nombre: e.target.value })} style={{ ...D.input, flex: '1 1 150px' }} />
+                <input value={f.email} onChange={e => setF({ ...f, email: e.target.value })} placeholder="correo" style={{ ...D.input, flex: '1 1 180px' }} />
+                <input value={f.whatsapp} onChange={e => setF({ ...f, whatsapp: e.target.value })} placeholder="+52…" style={{ ...D.input, flex: '1 1 130px' }} />
+                <input value={f.telefono} onChange={e => setF({ ...f, telefono: e.target.value })} placeholder="tel fijo" style={{ ...D.input, flex: '1 1 120px' }} />
+                {!sinMigracion && (
+                  <select value={f.rol} onChange={e => setF({ ...f, rol: e.target.value })} style={{ ...D.input, flex: '0 1 130px' }}>
+                    <option value="">— rol —</option>
+                    {ROLES.map(x => <option key={x} value={x}>{x}</option>)}
+                  </select>
+                )}
+                <button style={{ ...D.btnG, color: '#1A8F7A', fontWeight: 800 }} disabled={busy} onClick={() => guardarEdit(c)}>{busy ? '…' : '✓ Guardar'}</button>
+                <button style={D.btnG} onClick={() => setEditId(null)}>✕</button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ flex: '1 1 200px' }}>
+                  <b>{c.nombre}{c.apellido ? ' ' + c.apellido : ''}</b>
+                  {c.es_principal && <span style={{ ...D.badge, background: '#fff8e1', color: '#a06600', marginLeft: 8 }}>★ principal</span>}
+                  {c.rol && <span style={{ ...D.badge, background: '#f3f4f6', color: '#555', marginLeft: 6 }}>{c.rol}</span>}
+                  <div style={{ fontSize: '0.76rem', color: '#888' }}>{c.email || 'sin correo'} · {c.whatsapp || c.telefono || 'sin teléfono'}</div>
+                </div>
+                {c.whatsapp && <a href={waLink(c.whatsapp)} target="_blank" rel="noreferrer" style={{ ...D.btnG, textDecoration: 'none', color: '#1A8F7A' }}>💬</a>}
+                <button style={D.btnG} onClick={() => { setEditId(c.id); setF({ nombre: c.nombre || '', email: c.email || '', whatsapp: c.whatsapp || '', telefono: c.telefono || '', rol: c.rol || '' }); }}>✏️ Editar</button>
+                {!c.es_principal && !sinMigracion && <button style={D.btnG} onClick={() => marcarPrincipal(c)}>★ Hacer principal</button>}
+                {contactos.length > 1 && <button style={{ ...D.btnG, color: '#b93333' }} onClick={() => quitar(c)}>Quitar</button>}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────── 📋 Suscripciones (lista editable + alta) ─────────── */
+function TabSubs({ companyId, subs, reload, flash }: any) {
+  const [planes, setPlanes] = useState<any[]>([]);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [f, setF] = useState<any>({});
+  const [adding, setAdding] = useState(false);
+  const [nf, setNf] = useState<any>({ plan_slug: '', nombre_plan: '', ciclo: 'anual', precio: '', proxima_factura: '', estado: 'programada' });
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => { fetch('/api/crm/arr/plans').then(r => r.json()).then(j => setPlanes(j.data || j.plans || [])).catch(() => {}); }, []);
+
+  function pickPlan(slug: string) {
+    const p = planes.find((x: any) => x.slug === slug);
+    const precio = p ? (nf.ciclo === 'mensual' ? p.precio_mensual : p.precio_anual) : '';
+    setNf({ ...nf, plan_slug: slug, nombre_plan: p?.nombre || slug, precio: precio ?? '' });
+  }
+
+  async function crear() {
+    if (!nf.nombre_plan) { alert('Elige un plan.'); return; }
+    setBusy(true);
+    const body: any = { company_id: companyId, nombre_plan: nf.nombre_plan, plan_id: nf.plan_slug || null, ciclo: nf.ciclo, precio: parseFloat(nf.precio) || 0, estado: nf.estado };
+    if (nf.proxima_factura) body.proxima_factura = nf.proxima_factura;
+    const r = await fetch('/api/crm/arr/subscriptions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    setBusy(false);
+    if (!r.ok || j.error) alert(j.error || 'No se pudo crear.'); else { setAdding(false); setNf({ plan_slug: '', nombre_plan: '', ciclo: 'anual', precio: '', proxima_factura: '', estado: 'programada' }); flash('Suscripción creada'); reload(); }
+  }
+  async function guardar(s: any) {
+    setBusy(true);
+    const body: any = { id: s.id, estado: f.estado, ciclo: f.ciclo, nombre_plan: f.nombre_plan, precio: parseFloat(f.precio) || 0 };
+    if (f.proxima_factura) body.proxima_factura = f.proxima_factura;
+    const r = await fetch('/api/crm/arr/subscriptions', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    setBusy(false);
+    if (!r.ok || j.error) alert(j.error || 'No se pudo guardar.'); else { setEditId(null); flash('Suscripción actualizada'); reload(); }
+  }
+
+  return (
+    <div>
+      <div style={D.card}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
+          <div style={D.h}>Suscripciones del cliente</div>
+          <button style={{ ...D.btnG, marginLeft: 'auto' }} onClick={() => setAdding(!adding)}>{adding ? '✕ Cancelar' : '+ Agregar suscripción'}</button>
+        </div>
+
+        {adding && (
+          <div style={{ background: '#fafafa', border: '1px dashed #ddd', borderRadius: 10, padding: 12, marginBottom: 12 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+              <select value={nf.plan_slug} onChange={e => pickPlan(e.target.value)} style={{ ...D.input, flex: '1 1 200px' }}>
+                <option value="">— elegir plan —</option>
+                {planes.map((p: any) => <option key={p.slug} value={p.slug}>{p.nombre}{p.precio_anual ? ` ($${p.precio_anual}/año)` : ''}</option>)}
+              </select>
+              <select value={nf.ciclo} onChange={e => { const c = e.target.value; const p = planes.find((x: any) => x.slug === nf.plan_slug); setNf({ ...nf, ciclo: c, precio: p ? ((c === 'mensual' ? p.precio_mensual : p.precio_anual) ?? nf.precio) : nf.precio }); }} style={{ ...D.input, flex: '0 1 120px' }}>
+                {CICLOS.map(x => <option key={x} value={x}>{x}</option>)}
+              </select>
+              <input type="number" value={nf.precio} onChange={e => setNf({ ...nf, precio: e.target.value })} placeholder="Precio" style={{ ...D.input, flex: '0 1 110px' }} />
+              <input type="date" value={nf.proxima_factura} onChange={e => setNf({ ...nf, proxima_factura: e.target.value })} style={{ ...D.input, flex: '0 1 150px' }} title="Próxima factura" />
+              <select value={nf.estado} onChange={e => setNf({ ...nf, estado: e.target.value })} style={{ ...D.input, flex: '0 1 150px' }}>
+                {ESTADOS_SUB.map(x => <option key={x} value={x}>{x}</option>)}
+              </select>
+            </div>
+            <button style={D.btn} disabled={busy} onClick={crear}>{busy ? '…' : 'Crear suscripción'}</button>
+          </div>
+        )}
+
+        {subs.length === 0 && !adding && <div style={{ color: '#999', fontSize: '0.82rem' }}>Sin suscripciones registradas.</div>}
+
+        <div style={{ overflowX: 'auto' }}>
+          {subs.length > 0 && (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr>{['Plan', 'Ciclo', 'Estado', 'Precio/ARR', 'Próx. factura', 'Pagos', 'Acumulado', ''].map(h => <th key={h} style={D.th}>{h}</th>)}</tr></thead>
+              <tbody>
+                {subs.map((s: any) => (
+                  editId === s.id ? (
+                    <tr key={s.id}>
+                      <td style={D.td}><input value={f.nombre_plan} onChange={e => setF({ ...f, nombre_plan: e.target.value })} style={{ ...D.input, minWidth: 140 }} /></td>
+                      <td style={D.td}><select value={f.ciclo} onChange={e => setF({ ...f, ciclo: e.target.value })} style={D.input}>{CICLOS.map(x => <option key={x} value={x}>{x}</option>)}</select></td>
+                      <td style={D.td}><select value={f.estado} onChange={e => setF({ ...f, estado: e.target.value })} style={D.input}>{ESTADOS_SUB.map(x => <option key={x} value={x}>{x}</option>)}</select></td>
+                      <td style={D.td}><input type="number" value={f.precio} onChange={e => setF({ ...f, precio: e.target.value })} style={{ ...D.input, width: 100 }} /></td>
+                      <td style={D.td}><input type="date" value={f.proxima_factura} onChange={e => setF({ ...f, proxima_factura: e.target.value })} style={D.input} /></td>
+                      <td style={D.td} colSpan={2}></td>
+                      <td style={D.td}>
+                        <button style={{ ...D.btnG, color: '#1A8F7A', fontWeight: 800 }} disabled={busy} onClick={() => guardar(s)}>✓</button>{' '}
+                        <button style={D.btnG} onClick={() => setEditId(null)}>✕</button>
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr key={s.id}>
+                      <td style={{ ...D.td, fontWeight: 700 }}>{s.nombre_plan}</td>
+                      <td style={D.td}>{s.ciclo}</td>
+                      <td style={D.td}><EstadoBadge e={s.estado} /></td>
+                      <td style={D.td}>{money(s.precio || s.arr)}</td>
+                      <td style={D.td}>{fmtDate(s.proxima_factura)}</td>
+                      <td style={D.td}>{s.pagos_realizados || 0}</td>
+                      <td style={D.td}>{money(s.total_pagado)}</td>
+                      <td style={D.td}><button style={D.btnG} onClick={() => { setEditId(s.id); setF({ nombre_plan: s.nombre_plan || '', ciclo: s.ciclo || 'anual', estado: s.estado || 'activa', precio: s.precio ?? s.arr ?? '', proxima_factura: s.proxima_factura || '' }); }}>✏️</button></td>
+                    </tr>
+                  )
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────── 🕓 Actividad (pagos + notas + timeline) ─────────── */
+function TabActividad({ companyId, data, reload }: any) {
+  const [nota, setNota] = useState('');
+  const [saving, setSaving] = useState(false);
+  async function agregarNota() {
+    if (!nota.trim()) return;
+    setSaving(true);
+    await fetch('/api/crm/activities', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tipo: 'nota', titulo: nota.trim().slice(0, 140), descripcion: nota.trim(), company_id: companyId }) });
+    setNota(''); setSaving(false); reload();
+  }
+  return (
+    <div>
+      <div style={D.card}>
+        <div style={D.h}>Pagos ({(data.payments || []).length})</div>
+        <div style={{ maxHeight: 260, overflowY: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead><tr>{['Fecha', 'Método', 'Monto', ''].map(h => <th key={h} style={D.th}>{h}</th>)}</tr></thead>
+            <tbody>
+              {(data.payments || []).map((p: any) => {
+                const negativo = Number(p.monto) < 0;
+                return (
+                  <tr key={p.id} style={{ opacity: p.reembolsado ? 0.5 : 1 }}>
+                    <td style={D.td}>{fmtDate(p.fecha)}</td>
+                    <td style={{ ...D.td, fontSize: '0.75rem' }}>{p.metodo}{p.migrado ? ' · histórico' : ''}{p.reembolsado ? ' · reembolsado' : ''}{negativo ? ' · ajuste' : ''}</td>
+                    <td style={{ ...D.td, fontWeight: 700, color: negativo ? '#b93333' : '#333' }}>{money(p.monto)}</td>
+                    <td style={D.td}>
+                      {!p.reembolsado && !negativo && !p.migrado && (
+                        <button style={{ ...D.btnG, fontSize: '0.7rem' }} onClick={async () => { const m = window.prompt('Motivo del reembolso (opcional):', ''); if (m === null) return; const r = await fetch('/api/crm/arr/refund', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ payment_id: p.id, motivo: m }) }); const j = await r.json(); if (j.error) alert(j.error); else reload(); }}>Reembolsar</button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {!(data.payments || []).length && <div style={{ color: '#999', fontSize: '0.8rem', padding: 8 }}>Sin pagos registrados.</div>}
+        </div>
+      </div>
+      <div style={D.card}>
+        <div style={D.h}>Notas y timeline</div>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          <input value={nota} onChange={e => setNota(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') agregarNota(); }} placeholder="Escribe una nota de lo hablado con el cliente…" style={{ ...D.input, flex: 1 }} />
+          <button style={{ ...D.btn, opacity: saving || !nota.trim() ? 0.5 : 1 }} onClick={agregarNota} disabled={saving || !nota.trim()}>{saving ? '…' : 'Agregar'}</button>
+        </div>
+        {(data.activities || []).map((a: any) => (
+          <div key={a.id} style={{ padding: '8px 0', borderBottom: '1px solid #f4f4f4' }}>
+            <div style={{ fontSize: '0.72rem', color: '#999' }}>{new Date(a.created_at).toLocaleString('es-MX')} · {a.tipo}</div>
+            <div style={{ fontSize: '0.83rem', fontWeight: 600 }}>{a.titulo}</div>
+            {a.descripcion && a.descripcion !== a.titulo && <div style={{ fontSize: '0.76rem', color: '#666' }}>{a.descripcion}</div>}
+          </div>
+        ))}
+        {!(data.activities || []).length && <div style={{ color: '#999', fontSize: '0.8rem' }}>Sin notas todavía — la primera conversación se registra aquí.</div>}
+      </div>
+    </div>
+  );
+}

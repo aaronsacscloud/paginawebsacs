@@ -5,7 +5,8 @@
 //  2) Historial de pagos (de /api/crm/arr/payments): por contacto, con TIPO y CONCEPTO,
 //     filtros por tipo/referencia y resumen por método.
 import { useState, useEffect } from 'react';
-import { S, RegistrarPagoModal, ClienteDrawer } from './SubscriptionsTab';
+import { S, RegistrarPagoModal } from './SubscriptionsTab';
+import ClienteDrawer360 from './ClienteDrawer360';
 
 const fmt = (n: number) => '$' + (Number(n) || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = (d: string | null) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -282,7 +283,7 @@ export default function PagosTab() {
       })() : null}
 
       {showPago && <RegistrarPagoModal subs={subs as any} prefill={pagoPrefill} onClose={() => { setShowPago(false); setPagoPrefill(null); }} onDone={() => { setShowPago(false); setPagoPrefill(null); loadAll(); }} />}
-      {drawerCompany && <ClienteDrawer companyId={drawerCompany} onClose={() => setDrawerCompany(null)} onChanged={loadAll} />}
+      {drawerCompany && <ClienteDrawer360 companyId={drawerCompany} onClose={() => setDrawerCompany(null)} onChanged={loadAll} />}
       {toast && <div style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: '#fff', padding: '10px 18px', borderRadius: 10, fontSize: 13, zIndex: 200, boxShadow: '0 8px 24px rgba(0,0,0,0.25)' }}>{toast}</div>}
     </div>
   );

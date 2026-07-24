@@ -16,13 +16,14 @@ export const GET: APIRoute = async ({ url }) => {
   // ?todos=1 incluye también empresas sin suscripción (leads/prospectos).
   const todos = url.searchParams.get('todos') === '1';
 
-  const sel = 'id, nombre, sacs_account, plan, estado_cuenta, arr, ' +
-    'contacts(id, nombre, apellido, email, telefono, whatsapp, created_at), ' +
-    'subscriptions(id)';
-  const { data: companies, error } = await supabase
-    .from('companies')
-    .select(sel)
-    .is('archived_at', null);
+  const mkSel = (c: string) => 'id, nombre, sacs_account, plan, estado_cuenta, arr, ' + c + ', subscriptions(id)';
+  const C_NEW = 'contacts(id, nombre, apellido, email, telefono, whatsapp, es_principal, created_at)';
+  const C_OLD = 'contacts(id, nombre, apellido, email, telefono, whatsapp, created_at)';
+  let res = await supabase.from('companies').select(mkSel(C_NEW)).is('archived_at', null);
+  if (res.error && /es_principal|column|schema cache/i.test(res.error.message || '')) {
+    res = await supabase.from('companies').select(mkSel(C_OLD)).is('archived_at', null);
+  }
+  const { data: companies, error } = res;
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 
   const header = ['company_id', 'contact_id', 'cuenta_sacs', 'empresa', 'contacto_nombre',
@@ -32,10 +33,11 @@ export const GET: APIRoute = async ({ url }) => {
     .filter((c: any) => todos || (c.subscriptions || []).length > 0)
     .sort((a: any, b: any) => Number(b.arr || 0) - Number(a.arr || 0))
     .map((c: any) => {
-      // Contacto principal = el más antiguo (created_at asc); estable entre exports.
-      const contacto = (c.contacts || [])
-        .slice()
-        .sort((x: any, y: any) => String(x.created_at || '').localeCompare(String(y.created_at || '')))[0] || null;
+      // Contacto principal = el marcado es_principal; fallback: el más antiguo.
+      const contacto = (c.contacts || []).find((x: any) => x.es_principal)
+        || (c.contacts || [])
+          .slice()
+          .sort((x: any, y: any) => String(x.created_at || '').localeCompare(String(y.created_at || '')))[0] || null;
       const nombre = contacto ? [contacto.nombre, contacto.apellido].filter(Boolean).join(' ') : '';
       return [
         c.id, contacto?.id || '', c.sacs_account || '', c.nombre || '', nombre,

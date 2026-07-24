@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ClienteDrawer, S } from './SubscriptionsTab';
+import { S } from './SubscriptionsTab';
+import ClienteDrawer360 from './ClienteDrawer360';
+import NuevoClienteModal from './NuevoClienteModal';
 import PipelineKanban from './PipelineKanban';
 import { useToast, Toast, logStageChange } from './crmHelpers';
 import EnriquecerWhatsApp from './EnriquecerWhatsApp';
@@ -30,6 +32,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   const [fPlan, setFPlan] = useState('');
   const [fEstado, setFEstado] = useState('');
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [showNuevo, setShowNuevo] = useState(false);
   const [vista, setVista] = useState<'tabla' | 'kanban'>('tabla');
   const [stages, setStages] = useState<{ key: string; label: string; color: string }[]>([]);
   const { toast, show } = useToast();
@@ -142,6 +145,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
             <option value="riesgo">En riesgo (≥3 días sin vender)</option>
           </select>
           <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap' }}>
+            <button onClick={() => setShowNuevo(true)} title="Alta completa: cliente + contacto + cuenta SACS + suscripción" style={{ ...S.btnSmall, background: '#1a1a1a', color: '#fff', border: 'none', fontWeight: 700 }}>+ Nuevo cliente</button>
             <RevisarRelaciones onDone={load} />
             <EnriquecerWhatsApp onDone={load} />
             <button onClick={() => onConfig?.()} title="Configurar etapas del pipeline de Clientes" style={S.btnSmall}>⚙️ Etapas</button>
@@ -245,7 +249,8 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
         )}
       </div>
 
-      {detailId && <ClienteDrawer companyId={detailId} onClose={() => setDetailId(null)} onChanged={load} />}
+      {detailId && <ClienteDrawer360 companyId={detailId} onClose={() => setDetailId(null)} onChanged={load} />}
+      {showNuevo && <NuevoClienteModal onClose={() => setShowNuevo(false)} onCreated={(id) => { setShowNuevo(false); load(); if (id) setDetailId(id); }} />}
       <Toast toast={toast} />
     </div>
   );

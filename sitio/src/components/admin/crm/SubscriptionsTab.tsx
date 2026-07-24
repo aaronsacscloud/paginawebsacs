@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import InteligenciaView from './InteligenciaView';
+import ClienteDrawer360 from './ClienteDrawer360';
 
 /* ═══════════════ Suscripciones & ARR — hub del negocio recurrente ═══════════════
  * KPIs + meta · lista de suscripciones (mensual/anual separados) · riesgo por
@@ -448,7 +449,7 @@ export default function SubscriptionsTab() {
       {showPago && <RegistrarPagoModal subs={subs} prefill={pagoPrefill} onClose={() => { setShowPago(false); setPagoPrefill(null); }} onDone={() => { setShowPago(false); setPagoPrefill(null); load(); }} />}
       {editSub && <EditarSubModal sub={editSub} onClose={() => setEditSub(null)} onDone={() => { setEditSub(null); load(); }} />}
       {showMeta && <MetaModal meta={meta} onClose={() => setShowMeta(false)} onDone={() => { setShowMeta(false); load(); }} />}
-      {detailId && <ClienteDrawer companyId={detailId} onClose={() => setDetailId(null)} onChanged={load} />}
+      {detailId && <ClienteDrawer360 companyId={detailId} onClose={() => setDetailId(null)} onChanged={load} />}
     </div>
   );
 }
