@@ -8,6 +8,7 @@ import TablaEnterprise, { type ColDef, type QuickDef, type VistaDef } from './Ta
 import { useToast, Toast, logStageChange } from './crmHelpers';
 import EnriquecerWhatsApp from './EnriquecerWhatsApp';
 import RevisarRelaciones from './RevisarRelaciones';
+import { SENAL_LABEL } from '../../../lib/crm/senales';
 
 /* ═══ Clientes REALES — primer datatable sobre el estándar TablaEnterprise ═══
  * (proyecto "Datatables Enterprise", estilo HubSpot: filtros → buscador → tabs
@@ -265,7 +266,22 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
         </td>
       ); },
     },
+    {
+      key: 'senal', label: 'Señal', width: 132, ftype: 'select',
+      options: Object.keys(SENAL_LABEL).map(t => ({ v: t, l: SENAL_LABEL[t] })),
+      val: c => c.senal_peso || 0,     // ordena por urgencia/valor
+      render: c => (
+        <td style={T.td}>
+          {c.senal_tipo ? (
+            <span title={c.senal_titulo || ''} style={{ ...T.badge, display: 'inline-flex', alignItems: 'center', gap: 4, background: c.senal_nivel === 'riesgo' ? '#fdecea' : '#e6f6f2', color: c.senal_nivel === 'riesgo' ? '#b93333' : '#1A8F7A', maxWidth: '100%', overflow: 'hidden' }}>
+              {c.senal_nivel === 'riesgo' ? '⚠️' : '📈'} <span style={{ ...T.ell }}>{SENAL_LABEL[c.senal_tipo] || c.senal_tipo}</span>
+            </span>
+          ) : <span style={{ color: '#c4c8cf' }}>—</span>}
+        </td>
+      ),
+    },
     /* Campos SOLO para "Más filtros" (sin columna visible). */
+    { key: 'senal_nivel', label: 'Señal (nivel)', ftype: 'select', options: [{ v: 'oportunidad', l: 'Oportunidad' }, { v: 'riesgo', l: 'Riesgo' }, { v: '', l: 'Sin señal' }], val: c => c.senal_nivel || '' },
     { key: 'cuenta', label: 'Cuenta SACS', ftype: 'text', val: c => c.sacs_account || '' },
     { key: 'correo', label: 'Correo', ftype: 'text', val: c => c.contacto?.email || '' },
     { key: 'telefono', label: 'Teléfono/WhatsApp', ftype: 'text', val: c => c.contacto?.whatsapp || c.contacto?.telefono || '' },
@@ -286,6 +302,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       ],
       apply: (c, v) => v === 'activos' ? c.subs_activas > 0 : v === 'pendientes' ? c.subs_pendientes > 0 : (c.dias_sin_venta != null && c.dias_sin_venta >= 3 && c.subs_activas > 0),
     },
+    { key: 'senal', label: 'Cualquier señal', options: [{ v: 'oportunidad', l: '📈 Con oportunidad' }, { v: 'riesgo', l: '⚠️ En riesgo' }], apply: (c, v) => c.senal_nivel === v },
   ];
 
   const vistasBase: VistaDef[] = [
@@ -295,6 +312,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
     { key: 'riesgo', nombre: 'En riesgo', config: { conds: [{ campo: 'dias_sin_venta', op: 'mayor', v1: '2' }, { campo: 'subs_activas', op: 'mayor', v1: '0' }], sort: { key: 'salud', dir: 1 } } },
     { key: 'sin_contacto', nombre: 'Sin contacto', config: { conds: [{ campo: 'sin_contacto', op: 'es', v1: 'si' }] } },
     { key: 'vencidas', nombre: 'Renovación vencida', config: { conds: [{ campo: 'renovacion', op: 'antes_hoy' }], sort: { key: 'renovacion', dir: 1 } } },
+    { key: 'oportunidad', nombre: '📈 Con oportunidad', config: { conds: [{ campo: 'senal_nivel', op: 'es', v1: 'oportunidad' }], sort: { key: 'senal', dir: -1 } } },
   ];
 
   if (loading) return <div style={{ padding: 48, textAlign: 'center', color: '#999' }}>Cargando clientes reales…</div>;
@@ -329,6 +347,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           vistasBase={vistasBase}
           searchText={c => [c.nombre, c.sacs_account, c.contacto?.nombre, c.contacto?.email, c.contacto?.whatsapp].filter(Boolean).join(' ')}
           searchPlaceholder="Buscar cliente, cuenta o contacto…"
+          minWidth={1210}
           onRowClick={c => setDetailId(c.id)}
           customBody={modo === 'kanban' ? ((rows: any[]) => (
             stages.length === 0

@@ -3,6 +3,7 @@
 // Reemplaza a la tabla legacy `clients` (que tenía datos de demo).
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
+import { computarSenales } from '../../../../lib/crm/senales';
 
 export const prerender = false;
 
@@ -41,6 +42,9 @@ export const GET: APIRoute = async () => {
       // un contact_id, lo señalamos (relación que vive en subscriptions, no en la
       // empresa) para poder repararla.
       const subContactId = subs.map((s: any) => s.contact_id).filter(Boolean)[0] || null;
+      // Señal de venta/riesgo (misma lógica que Oportunidades) para la columna/filtro.
+      const senales = computarSenales(c, activas[0]);
+      const top = senales[0] || null;
       return {
         id: c.id, nombre: c.nombre, sacs_account: c.sacs_account,
         plan: c.plan, tipo_cuenta: c.tipo_cuenta, estado_cuenta: c.estado_cuenta,
@@ -59,6 +63,14 @@ export const GET: APIRoute = async () => {
         health_score: c.health_score,
         ultima_venta_at: c.ultima_venta_at, dias_sin_venta: c.dias_sin_venta,
         ventas_30d: c.actividad?.ventas_30d ?? null,
+        // Señal principal + conteos (para columna/filtro/orden en la tabla).
+        senal_nivel: top?.nivel ?? null,
+        senal_tipo: top?.tipo ?? null,
+        senal_titulo: top?.titulo ?? null,
+        senal_accion: top?.accion ?? null,
+        senal_peso: top?.peso ?? 0,
+        n_oportunidades: senales.filter((s) => s.nivel === 'oportunidad').length,
+        n_riesgos: senales.filter((s) => s.nivel === 'riesgo').length,
       };
     })
     .sort((a: any, b: any) => (b.arr - a.arr) || (b.arr_pendiente - a.arr_pendiente));
