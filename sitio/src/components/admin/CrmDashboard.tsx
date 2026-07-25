@@ -61,7 +61,7 @@ const NAV_SECTIONS = [
       { id: 'pipeline' as Tab, label: 'Leads', icon: 'pipeline' },
       { id: 'deals' as Tab, label: 'Oportunidades', icon: 'deals' },
       { id: 'clientes' as Tab, label: 'Clientes', icon: 'clientes' },
-      { id: 'oportunidades' as Tab, label: 'Oportunidades', icon: 'oportunidades' },
+      { id: 'oportunidades' as Tab, label: 'Radar de ventas', icon: 'oportunidades' },
     ],
   },
   {

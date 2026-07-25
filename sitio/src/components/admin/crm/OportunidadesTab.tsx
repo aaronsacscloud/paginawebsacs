@@ -98,7 +98,7 @@ export default function OportunidadesTab() {
     <div style={{ padding: '4px 12px 28px' }}>
       <style>{`.ct360 tbody tr:hover td { background: #f7f9fc; }`}</style>
       <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#16181d' }}>Oportunidades</div>
+        <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#16181d' }}>Radar de ventas</div>
         <div style={{ fontSize: '0.8rem', color: '#8a8f98' }}>Clientes con una señal real de venta (upsell/cross-sell) o de riesgo — para saber a quién ofrecerle qué.</div>
       </div>
 
