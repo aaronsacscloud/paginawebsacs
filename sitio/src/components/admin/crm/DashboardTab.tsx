@@ -229,6 +229,9 @@ export default function DashboardTab() {
         />
       </div>
 
+      {/* ─── Meta del mes ─── */}
+      <MetaDelMes meta={dash.meta} onSaved={load} />
+
       {/* ─── Section 2: Revenue & Pipeline ─── */}
       <div className="dash-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
         {/* Left: Revenue by Plan */}
@@ -639,4 +642,64 @@ if (typeof document !== 'undefined' && !document.getElementById('dash-spin-keyfr
   style.id = 'dash-spin-keyframes';
   style.textContent = '@keyframes dashSpin { to { transform: rotate(360deg); } }';
   document.head.appendChild(style);
+}
+
+// ─── Meta del mes (crm_goals tipo new_arr_mensual; fallback ARR anual/12) ───
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+function MetaDelMes({ meta, onSaved }: { meta: any; onSaved: () => void }) {
+  const [editando, setEditando] = useState(false);
+  const [monto, setMonto] = useState('');
+  const [saving, setSaving] = useState(false);
+  if (!meta) return null;
+
+  async function guardar() {
+    setSaving(true);
+    const r = await fetch('/api/crm/arr/goals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tipo: 'new_arr_mensual', anio: meta.anio, mes: meta.mes, monto: parseFloat(monto) || 0 }) });
+    setSaving(false);
+    if (r.ok) { setEditando(false); onSaved(); }
+  }
+
+  const vendido = meta.vendido || 0;
+  const objetivo = meta.monto || 0;
+  const pct = objetivo > 0 ? Math.min(100, Math.round((vendido / objetivo) * 100)) : 0;
+  const alcanza = objetivo > 0 && (vendido + (meta.pipeline_abierto || 0)) >= objetivo;
+  const color = pct >= 100 ? '#2e7d32' : pct >= 60 ? '#2AB5A0' : pct >= 30 ? '#E8A838' : '#E54B4B';
+
+  return (
+    <div style={{ ...cardStyle, marginBottom: 28 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+        <h3 style={{ ...cardTitleStyle, margin: 0 }}>Meta de ventas · {MESES[(meta.mes || 1) - 1]} {meta.anio}</h3>
+        {!editando ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: '0.8125rem', color: '#999' }}>Meta: <b style={{ color: '#1a1a1a' }}>{objetivo > 0 ? fmt(objetivo) : 'sin definir'}</b> ARR nuevo</span>
+            <button onClick={() => { setMonto(String(objetivo || '')); setEditando(true); }} style={{ ...btnBase, background: '#f5f5f5', color: '#555', fontSize: '0.6875rem', padding: '4px 10px' }}>Editar</button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <input type="number" value={monto} onChange={e => setMonto(e.target.value)} placeholder="Meta del mes ($ ARR)" style={{ padding: '5px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: '0.8rem', width: 150 }} />
+            <button onClick={guardar} disabled={saving} style={{ ...btnBase, background: '#1a1a1a', color: '#fff', fontSize: '0.6875rem', padding: '5px 12px' }}>{saving ? '…' : 'Guardar'}</button>
+            <button onClick={() => setEditando(false)} style={{ ...btnBase, background: '#f5f5f5', color: '#555', fontSize: '0.6875rem', padding: '5px 10px' }}>Cancelar</button>
+          </div>
+        )}
+      </div>
+      {objetivo > 0 ? (
+        <>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+            <span style={{ fontSize: '1.25rem', fontWeight: 800, color }}>{fmt(vendido)} <span style={{ fontSize: '0.75rem', color: '#999', fontWeight: 600 }}>vendido</span></span>
+            <span style={{ fontSize: '0.8125rem', fontWeight: 800, color }}>{pct}%</span>
+          </div>
+          <div style={{ height: 10, background: '#f0f1f3', borderRadius: 5, overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${Math.max(pct, 2)}%`, background: color, borderRadius: 5, transition: 'width 0.5s ease' }} />
+          </div>
+          <div style={{ display: 'flex', gap: 18, marginTop: 10, fontSize: '0.75rem', color: '#777', flexWrap: 'wrap' }}>
+            <span>Faltan: <b style={{ color: '#1a1a1a' }}>{fmt(meta.faltante)}</b></span>
+            <span>Pipeline abierto: <b style={{ color: '#1a1a1a' }}>{fmt(meta.pipeline_abierto)}</b></span>
+            <span style={{ color: alcanza ? '#2e7d32' : '#E54B4B', fontWeight: 700 }}>{pct >= 100 ? '🎉 Meta cumplida' : alcanza ? 'El pipeline alcanza para llegar' : 'El pipeline NO alcanza — generar más oportunidades'}</span>
+          </div>
+        </>
+      ) : (
+        <div style={{ fontSize: '0.8125rem', color: '#999' }}>Define la meta de ARR nuevo del mes para medir el avance (botón Editar).</div>
+      )}
+    </div>
+  );
 }

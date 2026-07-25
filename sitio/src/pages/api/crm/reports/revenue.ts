@@ -122,6 +122,21 @@ export const GET: APIRoute = async () => {
   const cotVivas = (quotesRows || []).filter((q: any) => ['draft', 'sent', 'accepted'].includes(q.estado));
   const cotizacionesMonto = cotVivas.reduce((s: number, q: any) => s + Number(q.total || 0), 0);
 
+  // ── META del mes: crm_goals new_arr_mensual (fallback: meta ARR anual / 12) ──
+  const anio = now.getFullYear(); const mesN = now.getMonth() + 1;
+  const { data: goals } = await supabase.from('crm_goals').select('tipo, anio, mes, monto');
+  const metaMes = (goals || []).find((g: any) => g.tipo === 'new_arr_mensual' && g.anio === anio && g.mes === mesN)
+    || (goals || []).find((g: any) => g.tipo === 'new_arr_mensual' && g.anio === anio && g.mes == null);
+  const metaAnual = (goals || []).find((g: any) => g.tipo === 'arr' && g.anio === anio);
+  const metaMonto = Number(metaMes?.monto || 0) || (metaAnual ? Math.round(Number(metaAnual.monto || 0) / 12) : 0);
+  // ARR nuevo VENDIDO este mes: subs creadas en el mes (activa/programada, sin vitalicias)
+  const { data: subsMes } = await supabase.from('subscriptions')
+    .select('arr, estado, ciclo, nombre_plan, created_at')
+    .gte('created_at', thisMonth + '-01T00:00:00');
+  const vendidoMes = (subsMes || [])
+    .filter((s: any) => ['activa', 'programada'].includes(s.estado) && !esVital(s))
+    .reduce((a: number, s: any) => a + Number(s.arr || 0), 0);
+
   // ── Reuniones de HOY (con quién) ──
   const { data: reunionesRaw } = await supabase
     .from('bookings')
@@ -196,6 +211,14 @@ export const GET: APIRoute = async () => {
       radar,
       riesgo,
       reuniones_hoy: reunionesHoy,
+      meta: {
+        monto: metaMonto,
+        vendido: Math.round(vendidoMes),
+        pct: metaMonto > 0 ? Math.round((vendidoMes / metaMonto) * 100) : null,
+        faltante: Math.max(0, Math.round(metaMonto - vendidoMes)),
+        pipeline_abierto: Math.round(pipelineValue),
+        anio, mes: mesN,
+      },
     },
   }));
 };
