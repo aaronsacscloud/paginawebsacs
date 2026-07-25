@@ -62,7 +62,6 @@ const NAV_SECTIONS = [
       { id: 'deals' as Tab, label: 'Oportunidades', icon: 'deals' },
       { id: 'clientes' as Tab, label: 'Clientes', icon: 'clientes' },
       { id: 'oportunidades' as Tab, label: 'Oportunidades', icon: 'oportunidades' },
-      { id: 'sacs' as Tab, label: 'SACS', icon: 'sacs' },
     ],
   },
   {
