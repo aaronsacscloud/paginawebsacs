@@ -273,7 +273,9 @@ function Panorama360({ account, co }: { account: string; co?: any }) {
   const lbl: any = { fontSize: '0.68rem', color: '#999', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '4px 0 6px' };
   const ell: any = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' };
   const usa = (b: boolean, txt: string, extra = '') => (
-    <span style={{ ...D.badge, background: b ? '#e6f6f2' : '#f3f4f6', color: b ? '#1A8F7A' : '#9aa0a8' }}>{b ? '✓' : '—'} {txt}{b && extra ? ` · ${extra}` : ''}</span>
+    <span style={{ ...D.badge, background: b ? '#e6f6f2' : '#fafafa', color: b ? '#1A8F7A' : '#9aa0a8', border: '1px solid ' + (b ? '#bfe8df' : '#e8e8ea') }}>
+      <b>{txt}</b>{b ? <> · <b style={{ color: '#1A8F7A' }}>SÍ lo usa</b>{extra ? ` (${extra})` : ''}</> : <> · no lo usa</>}
+    </span>
   );
   const le = uso?.lealtad, adm = uso?.administracion, fac = uso?.facturacion, tg = uso?.tarjetas_regalo, tr = uso?.transferencias;
   return (
@@ -354,7 +356,7 @@ function Panorama360({ account, co }: { account: string; co?: any }) {
       <div style={D.h}>Programas y herramientas</div>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
         {le?.activo
-          ? <span style={{ ...D.badge, background: '#e6f6f2', color: '#1A8F7A' }}>✓ Lealtad {le.tipo === 'completo' ? 'COMPLETO' : le.tipo === 'basico' ? 'BÁSICO' : ''} · {Number(le.inscritos || 0).toLocaleString()} inscritos{Number(le.nuevos_7d || 0) > 0 ? ` · +${le.nuevos_7d} en 7d` : ''}</span>
+          ? <span style={{ ...D.badge, background: '#e6f6f2', color: '#1A8F7A', border: '1px solid #bfe8df' }}><b>Lealtad {le.tipo === 'completo' ? 'COMPLETO' : le.tipo === 'basico' ? 'BÁSICO' : ''}</b> · <b>SÍ lo usa</b> ({Number(le.inscritos || 0).toLocaleString()} inscritos{Number(le.nuevos_7d || 0) > 0 ? `, +${le.nuevos_7d} en 7d` : ''})</span>
           : usa(false, 'Programa de lealtad')}
         {usa(!!fac?.configurada, 'Facturación electrónica', fac?.timbradas_7d ? `${fac.timbradas_7d} en 7d` : '')}
         {usa(!!tg?.usa, 'Tarjetas de regalo', tg?.activas ? `${tg.activas} activas` : '')}
