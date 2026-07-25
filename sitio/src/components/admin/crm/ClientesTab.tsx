@@ -30,6 +30,7 @@ const T = {
   th: { textAlign: 'left' as const, padding: '10px 14px', fontSize: '0.63rem', fontWeight: 700, color: '#8a8f98', textTransform: 'uppercase' as const, letterSpacing: '0.06em', borderBottom: '1px solid #e8eaee', whiteSpace: 'nowrap' as const, background: '#fafbfc', position: 'sticky' as const, top: 0, zIndex: 1 },
   td: { padding: '12px 14px', fontSize: '0.79rem', color: '#333', borderBottom: '1px solid #f1f2f5', whiteSpace: 'nowrap' as const, verticalAlign: 'middle' as const },
   num: { textAlign: 'right' as const, fontVariantNumeric: 'tabular-nums' as const },
+  ell: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const } as const,
   sub: { fontSize: '0.67rem', color: '#a7abb3', fontWeight: 400, marginTop: 2 } as const,
   muted: { fontSize: '0.74rem', color: '#6b7078' } as const,
   badge: { display: 'inline-block', padding: '2px 9px', borderRadius: 99, fontSize: '0.66rem', fontWeight: 700, whiteSpace: 'nowrap' as const } as const,
@@ -206,67 +207,78 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
             />
           )
         ) : (
-        <div className="ct360" style={{ overflowX: 'auto', margin: '0 -6px' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="ct360" style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', minWidth: 1080, borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+            <colgroup>
+              <col style={{ width: '19%' }} /><col style={{ width: '20%' }} /><col style={{ width: 112 }} />
+              <col style={{ width: 120 }} /><col style={{ width: 118 }} /><col style={{ width: 112 }} />
+              <col style={{ width: 118 }} /><col style={{ width: 128 }} />
+            </colgroup>
             <thead><tr>
-              {([['Cliente', false], ['Correo', false], ['Teléfono / WhatsApp', false], ['Plan', false], ['Etapa', false],
-                ['Subs', true], ['ARR', true], ['Pagos', true], ['Pagado', true], ['Próx. factura', false], ['Últ. venta', false], ['Salud', true]] as [string, boolean][])
+              {([['Cliente', false], ['Contacto', false], ['Plan', false], ['Etapa', false],
+                ['ARR', true], ['Pagado', true], ['Renovación', false], ['Actividad', false]] as [string, boolean][])
                 .map(([h, num]) => <th key={h} style={{ ...T.th, ...(num ? T.num : {}) }}>{h}</th>)}
             </tr></thead>
             <tbody>
               {filtered.map(c => {
                 const b = PLAN_BADGE[c.plan] || null;
                 const dias = c.dias_sin_venta;
+                const venc = c.proxima_factura && c.proxima_factura < new Date().toISOString().slice(0, 10);
                 return (
                   <tr key={c.id} style={{ cursor: 'pointer' }} onClick={() => setDetailId(c.id)}>
-                    <td style={{ ...T.td, fontWeight: 700, maxWidth: 210, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <td style={{ ...T.td, ...T.ell, fontWeight: 700 }}>
                       {c.contacto?.nombre || c.nombre}
-                      {(() => { const cuenta = c.sacs_account || c.nombre; return cuenta && cuenta !== (c.contacto?.nombre || c.nombre) ? <div style={T.sub}>{cuenta}</div> : null; })()}
+                      {(() => { const cuenta = c.sacs_account || c.nombre; return cuenta && cuenta !== (c.contacto?.nombre || c.nombre) ? <div style={{ ...T.sub, ...T.ell }}>{cuenta}</div> : null; })()}
                     </td>
-                    {/* Correo (editable) */}
-                    <td style={{ ...T.td, color: '#555', maxWidth: 210, overflow: 'hidden', textOverflow: 'ellipsis' }} onClick={e => e.stopPropagation()}>
-                      {editId === c.id
-                        ? <input value={eEmail} onChange={e => setEEmail(e.target.value)} placeholder="correo@…" style={{ ...S.input, padding: '4px 6px', fontSize: '0.75rem', width: 170 }} />
-                        : (c.contacto?.email
-                            ? c.contacto.email
-                            : (c.contacto ? <span style={{ color: '#c4c8cf' }}>—</span> : <span style={{ color: '#c62828' }}>sin contacto</span>))}
+                    <td style={T.td} onClick={e => e.stopPropagation()}>
+                      {editId === c.id ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          <input value={eEmail} onChange={e => setEEmail(e.target.value)} placeholder="correo@…" style={{ ...S.input, padding: '4px 6px', fontSize: '0.74rem' }} />
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            <input value={eWa} onChange={e => setEWa(e.target.value)} placeholder="+52…" style={{ ...S.input, padding: '4px 6px', fontSize: '0.74rem', flex: 1, minWidth: 0 }} />
+                            <button title="Guardar" disabled={saving} onClick={() => saveEdit(c)} style={{ ...S.btnSmall, padding: '3px 7px', color: '#1A8F7A', fontWeight: 800 }}>{saving ? '…' : '✓'}</button>
+                            <button title="Cancelar" onClick={() => setEditId(null)} style={{ ...S.btnSmall, padding: '3px 7px' }}>✕</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ ...T.ell, color: c.contacto?.email ? '#444' : (c.contacto ? '#c4c8cf' : '#c62828'), fontSize: '0.78rem' }}>
+                              {c.contacto?.email || (c.contacto ? '—' : 'sin contacto')}
+                            </div>
+                            <div style={{ ...T.ell, ...T.sub, marginTop: 1 }}>{c.contacto?.whatsapp || c.contacto?.telefono || ''}</div>
+                          </div>
+                          <button className="ct-pencil" title={c.contacto ? 'Editar correo/WhatsApp' : 'Agregar contacto'} onClick={() => startEdit(c)} style={{ ...S.btnSmall, padding: '2px 7px', border: 'none', background: 'none', flexShrink: 0 }}>✏️</button>
+                        </div>
+                      )}
                     </td>
-                    {/* Teléfono / WhatsApp (editable) — lápiz aparece al pasar el mouse */}
-                    <td style={{ ...T.td, color: '#555' }} onClick={e => e.stopPropagation()}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        {editId === c.id ? (
-                          <>
-                            <input value={eWa} onChange={e => setEWa(e.target.value)} placeholder="+52…" style={{ ...S.input, padding: '4px 6px', fontSize: '0.75rem', width: 140 }} />
-                            <button title="Guardar" disabled={saving} onClick={() => saveEdit(c)} style={{ ...S.btnSmall, padding: '3px 8px', color: '#1A8F7A', fontWeight: 800 }}>{saving ? '…' : '✓'}</button>
-                            <button title="Cancelar" onClick={() => setEditId(null)} style={{ ...S.btnSmall, padding: '3px 8px' }}>✕</button>
-                          </>
-                        ) : (
-                          <>
-                            <span>{c.contacto?.whatsapp || c.contacto?.telefono || <span style={{ color: '#c4c8cf' }}>—</span>}</span>
-                            <button className="ct-pencil" title={c.contacto ? 'Editar correo/WhatsApp' : 'Agregar contacto'} onClick={() => startEdit(c)} style={{ ...S.btnSmall, padding: '2px 7px', marginLeft: 'auto', border: 'none', background: 'none' }}>✏️</button>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                    <td style={T.td}>{b ? <span style={{ ...T.badge, background: b.bg, color: b.color }}>{b.label}</span> : <span style={{ color: '#c4c8cf' }}>—</span>}</td>
+                    <td style={{ ...T.td, ...T.ell }}>{b ? <span style={{ ...T.badge, background: b.bg, color: b.color }}>{b.label}</span> : <span style={{ color: '#c4c8cf' }}>—</span>}</td>
                     <td style={T.td} onClick={e => e.stopPropagation()}>
                       {stages.length === 0 ? <span style={{ color: '#c4c8cf' }}>—</span> : (
                         <select value={c.pipeline_stage || ''} onChange={e => setStage(c.id, e.target.value)}
-                          style={{ ...S.input, padding: '3px 6px', fontSize: '0.72rem', maxWidth: 118, borderColor: c.pipeline_stage && stageBy[c.pipeline_stage] ? stageBy[c.pipeline_stage].color : '#e3e5e9', color: c.pipeline_stage && stageBy[c.pipeline_stage] ? stageBy[c.pipeline_stage].color : '#999', fontWeight: 700 }}>
+                          style={{ ...S.input, padding: '3px 6px', fontSize: '0.72rem', width: '100%', borderColor: c.pipeline_stage && stageBy[c.pipeline_stage] ? stageBy[c.pipeline_stage].color : '#e3e5e9', color: c.pipeline_stage && stageBy[c.pipeline_stage] ? stageBy[c.pipeline_stage].color : '#999', fontWeight: 700 }}>
                           <option value="">— etapa —</option>
                           {stages.map(s => <option key={s.key} value={s.key} style={{ color: '#333' }}>{s.label}</option>)}
                         </select>
                       )}
                     </td>
-                    <td style={{ ...T.td, ...T.num }}>{c.subs_activas}{c.subs_pendientes ? <span style={{ color: '#a06600' }}> +{c.subs_pendientes}⏳</span> : ''}</td>
-                    <td style={{ ...T.td, ...T.num, fontWeight: 800 }}>{money(c.arr)}{c.arr_pendiente > 0 ? <div style={{ fontSize: '0.66rem', color: '#a06600', fontWeight: 600 }}>+{money(c.arr_pendiente)} pend.</div> : null}</td>
-                    <td style={{ ...T.td, ...T.num }}>{c.pagos_realizados}</td>
-                    <td style={{ ...T.td, ...T.num }}>{money(c.total_pagado)}</td>
-                    <td style={{ ...T.td, ...T.muted, color: c.proxima_factura && c.proxima_factura < new Date().toISOString().slice(0, 10) ? '#b93333' : T.muted.color }}>{fmtDate(c.proxima_factura)}</td>
-                    <td style={{ ...T.td, ...T.muted, color: dias != null && dias > 15 ? '#b93333' : dias != null && dias >= 3 ? '#a06600' : T.muted.color }}>
-                      {c.ultima_venta_at ? <>{fmtDate(c.ultima_venta_at)}{dias != null ? <span style={{ opacity: 0.75 }}> ({dias}d)</span> : null}</> : (c.sacs_account ? 'sin datos aún' : 'sin cuenta')}
+                    <td style={{ ...T.td, ...T.num, fontWeight: 800 }}>
+                      {money(c.arr)}
+                      <div style={{ ...T.sub, fontWeight: 600 }}>{c.subs_activas} sub{c.subs_activas === 1 ? '' : 's'}{c.arr_pendiente > 0 ? <span style={{ color: '#a06600' }}> +{money(c.arr_pendiente)}</span> : ''}</div>
                     </td>
-                    <td style={{ ...T.td, ...T.num }}>{c.health_score == null ? <span style={{ color: '#c4c8cf' }}>—</span> : <span style={{ fontWeight: 800, color: c.health_score >= 70 ? '#1A8F7A' : c.health_score >= 40 ? '#a06600' : '#b93333' }}>{c.health_score}</span>}</td>
+                    <td style={{ ...T.td, ...T.num }}>
+                      <span style={{ fontWeight: 700 }}>{money(c.total_pagado)}</span>
+                      <div style={{ ...T.sub, fontWeight: 600 }}>{c.pagos_realizados} pago{c.pagos_realizados === 1 ? '' : 's'}</div>
+                    </td>
+                    <td style={{ ...T.td, ...T.muted, color: venc ? '#b93333' : T.muted.color, fontWeight: venc ? 700 : 400 }}>{fmtDate(c.proxima_factura)}</td>
+                    <td style={T.td}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                        {c.health_score != null && <span style={{ ...T.badge, background: c.health_score >= 70 ? '#e6f6f2' : c.health_score >= 40 ? '#fdf3e0' : '#fdecea', color: c.health_score >= 70 ? '#1A8F7A' : c.health_score >= 40 ? '#a06600' : '#b93333' }}>{c.health_score}</span>}
+                        <span style={{ ...T.ell, ...T.muted, fontSize: '0.72rem', color: dias != null && dias > 15 ? '#b93333' : dias != null && dias >= 3 ? '#a06600' : '#9aa0a8' }}>
+                          {c.ultima_venta_at ? <>{fmtDate(c.ultima_venta_at)}{dias != null ? ` · ${dias}d` : ''}</> : (c.sacs_account ? 'sin datos' : 'sin cuenta')}
+                        </span>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
