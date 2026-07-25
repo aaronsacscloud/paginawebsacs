@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { computarSenales } from '../../../lib/crm/senales';
 import { CreateDealModal } from './DealsTab';
 
@@ -59,7 +59,7 @@ const ROLES = ['Dueño', 'Gerente', 'Facturación', 'Sistemas', 'Compras', 'Otro
 export default function ClienteDrawer360({ companyId, onClose, onChanged }: { companyId: string; onClose: () => void; onChanged: () => void }) {
   const [data, setData] = useState<any>(null);
   const [err, setErr] = useState('');
-  const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'oport' | 'act'>('resumen');
+  const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'oport' | 'reuniones' | 'notas' | 'act'>('resumen');
   const [msg, setMsg] = useState('');
 
   async function load() {
@@ -110,6 +110,8 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                 <button style={D.tab(tab === 'contactos')} onClick={() => setTab('contactos')}>Contactos ({contactos.length})</button>
                 <button style={D.tab(tab === 'subs')} onClick={() => setTab('subs')}>Suscripciones ({subs.length})</button>
                 <button style={D.tab(tab === 'oport')} onClick={() => setTab('oport')}>Oportunidades</button>
+                <button style={D.tab(tab === 'reuniones')} onClick={() => setTab('reuniones')}>Reuniones</button>
+                <button style={D.tab(tab === 'notas')} onClick={() => setTab('notas')}>Notas</button>
                 <button style={D.tab(tab === 'act')} onClick={() => setTab('act')}>Actividad</button>
               </div>
             </div>
@@ -121,6 +123,8 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
               {tab === 'contactos' && <TabContactos companyId={companyId} contactos={contactos} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'subs' && <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'oport' && <TabOportunidades companyId={companyId} co={co} principal={principal} flash={flash} reload={() => { load(); onChanged(); }} />}
+              {tab === 'reuniones' && <TabReuniones companyId={companyId} principal={principal} flash={flash} />}
+              {tab === 'notas' && <TabNotas companyId={companyId} />}
               {tab === 'act' && <TabActividad companyId={companyId} data={data} reload={() => { load(); onChanged(); }} />}
             </div>
           </>
@@ -857,6 +861,251 @@ function TabSubs({ companyId, subs, reload, flash }: any) {
 }
 
 /* ─────────── 🕓 Actividad (pagos + notas + timeline) ─────────── */
+/* ─────────── 📅 Reuniones del cliente (bookings) ─────────── */
+const ESTADO_REUNION: Record<string, { bg: string; color: string }> = {
+  pendiente: { bg: '#fff8e1', color: '#a06600' },
+  confirmada: { bg: '#e6f6f2', color: '#1A8F7A' },
+  realizada: { bg: '#eef2ff', color: '#3730a3' },
+  no_show: { bg: '#fdf2f2', color: '#b93333' },
+  cancelada: { bg: '#f3f4f6', color: '#9aa0a8' },
+  reagendada: { bg: '#f3f4f6', color: '#9aa0a8' },
+};
+function TabReuniones({ companyId, principal, flash }: any) {
+  const [rows, setRows] = useState<any[] | null>(null);
+  const [tipos, setTipos] = useState<any[]>([]);
+  useEffect(() => {
+    let alive = true; setRows(null);
+    fetch('/api/scheduling/reuniones?company_id=' + companyId)
+      .then(r => r.json()).then(j => { if (alive) setRows(j.data || []); }).catch(() => { if (alive) setRows([]); });
+    fetch('/api/scheduling/event-types?activo=true')
+      .then(r => r.json()).then(j => { if (alive) setTipos(j.data || j.event_types || []); }).catch(() => {});
+    return () => { alive = false; };
+  }, [companyId]);
+
+  function linkAgendar(slug: string) {
+    const base = window.location.origin + '/agendar/' + slug;
+    const params = new URLSearchParams();
+    if (principal?.email) params.set('email', principal.email);
+    if (principal?.nombre) params.set('nombre', principal.nombre);
+    return params.toString() ? `${base}?${params.toString()}` : base;
+  }
+  async function copiar(slug: string) {
+    const url = linkAgendar(slug);
+    try { await navigator.clipboard.writeText(url); flash('Link de agendado copiado'); } catch { /* clipboard bloqueado */ }
+    window.open(url, '_blank', 'noopener');
+  }
+
+  if (rows === null) return <div style={{ ...D.card, color: '#999', fontSize: '0.82rem' }}>Cargando reuniones…</div>;
+
+  const hoy = new Date().toISOString().slice(0, 10);
+  const proxima = rows.find(r => r.fecha >= hoy && !['cancelada', 'reagendada', 'no_show'].includes(r.estado));
+  const realizadas = rows.filter(r => r.estado === 'realizada').length;
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
+        <div style={D.kpi}><div style={D.kl}>Próxima reunión</div><div style={{ ...D.kv, fontSize: '1rem' }}>{proxima ? `${fmtDate(proxima.fecha)} · ${String(proxima.hora_inicio || '').slice(0, 5)}` : '—'}</div></div>
+        <div style={D.kpi}><div style={D.kl}>Realizadas</div><div style={D.kv}>{realizadas}</div></div>
+        <div style={D.kpi}><div style={D.kl}>Total</div><div style={D.kv}>{rows.length}</div></div>
+      </div>
+
+      <div style={D.card}>
+        <div style={D.h}>Agendar una reunión</div>
+        {tipos.length === 0 ? <div style={{ color: '#999', fontSize: '0.8rem' }}>Sin tipos de reunión activos (Configúralos en Reuniones → Config).</div> : (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {tipos.map((t: any) => (
+              <button key={t.id} style={D.btnG} onClick={() => copiar(t.slug)}>
+                📅 {t.nombre} ({t.duracion_minutos} min) · copiar link
+              </button>
+            ))}
+          </div>
+        )}
+        <div style={{ fontSize: '0.72rem', color: '#999', marginTop: 8 }}>Copia el link y mándaselo al cliente{principal?.email ? ` (se pre-llena con ${principal.email})` : ''}.</div>
+      </div>
+
+      <div style={D.card}>
+        <div style={D.h}>Historial ({rows.length})</div>
+        {rows.length === 0 && <div style={{ color: '#999', fontSize: '0.85rem' }}>Este cliente aún no tiene reuniones agendadas.</div>}
+        {rows.slice().reverse().map((r: any) => {
+          const st = ESTADO_REUNION[r.estado] || ESTADO_REUNION.pendiente;
+          return (
+            <div key={r.id} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #f4f4f4', fontSize: '0.83rem' }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontWeight: 700 }}>{r.event_types?.nombre || 'Reunión'} · {fmtDate(r.fecha)} {String(r.hora_inicio || '').slice(0, 5)}</div>
+                <div style={{ color: '#888', fontSize: '0.76rem' }}>{r.invitee_nombre || ''}{r.host_nombre ? ` · con ${r.host_nombre}` : ''}</div>
+              </div>
+              {r.google_meet_link && <a href={r.google_meet_link} target="_blank" rel="noreferrer" style={{ ...D.badge, background: '#e6f6f2', color: '#1A8F7A', textDecoration: 'none' }}>Meet</a>}
+              <span style={{ ...D.badge, background: st.bg, color: st.color }}>{r.estado}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────── 🗒️ Notas — lienzo tipo Milanote (tarjetas arrastrables) ─────────── */
+const IDEA_COLORES = ['#fff3bf', '#d3f9d8', '#d0ebff', '#ffe3e3', '#f3e8ff'];
+function TabNotas({ companyId }: any) {
+  const [nodes, setNodes] = useState<any[] | null>(null);
+  const [subiendo, setSubiendo] = useState(false);
+  const [delId, setDelId] = useState('');           // confirmación de borrado en 2 toques
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const fileTipo = useRef<'imagen' | 'pdf'>('imagen');
+  const lienzoRef = useRef<HTMLDivElement | null>(null);
+  const drag = useRef<any>(null);                    // { id, dx, dy }
+  const saveTimers = useRef<Record<string, any>>({});
+
+  useEffect(() => {
+    let alive = true; setNodes(null);
+    fetch('/api/crm/notas?company_id=' + companyId)
+      .then(r => r.json()).then(j => { if (alive) setNodes(j.data || []); }).catch(() => { if (alive) setNodes([]); });
+    return () => { alive = false; };
+  }, [companyId]);
+
+  const upNode = (id: string, patch: any) => setNodes(ns => (ns || []).map(n => n.id === id ? { ...n, ...patch } : n));
+
+  async function crear(tipo: string, extra: any = {}) {
+    // posición: en cascada para no encimar
+    const n = (nodes || []).length;
+    const body = { company_id: companyId, tipo, pos_x: 30 + (n % 5) * 60, pos_y: 30 + (n % 8) * 44, width: tipo === 'idea' ? 200 : 250, color: tipo === 'idea' ? IDEA_COLORES[n % IDEA_COLORES.length] : null, ...extra };
+    const r = await fetch('/api/crm/notas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (j.data) setNodes(ns => [...(ns || []), j.data]);
+  }
+  function guardar(id: string, patch: any, debounceMs = 600) {
+    upNode(id, patch);
+    clearTimeout(saveTimers.current[id]);
+    saveTimers.current[id] = setTimeout(() => {
+      fetch('/api/crm/notas', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...patch }) }).catch(() => {});
+    }, debounceMs);
+  }
+  async function eliminar(id: string) {
+    if (delId !== id) { setDelId(id); setTimeout(() => setDelId(d => d === id ? '' : d), 2500); return; }
+    setDelId('');
+    setNodes(ns => (ns || []).filter(n => n.id !== id));
+    fetch('/api/crm/notas?id=' + id, { method: 'DELETE' }).catch(() => {});
+  }
+
+  // ── drag con pointer events (sin librerías) ──
+  function onDown(e: any, node: any) {
+    if (e.target.closest('textarea, input, a, button, select')) return; // no arrastrar desde campos
+    const rect = lienzoRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    drag.current = { id: node.id, dx: e.clientX - rect.left - Number(node.pos_x), dy: e.clientY - rect.top - Number(node.pos_y) };
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+  }
+  function onMove(e: any) {
+    if (!drag.current) return;
+    const rect = lienzoRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = Math.max(0, e.clientX - rect.left - drag.current.dx);
+    const y = Math.max(0, e.clientY - rect.top - drag.current.dy);
+    upNode(drag.current.id, { pos_x: x, pos_y: y });
+  }
+  function onUp() {
+    if (!drag.current) return;
+    const n = (nodes || []).find(x => x.id === drag.current.id);
+    drag.current = null;
+    if (n) fetch('/api/crm/notas', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: n.id, pos_x: n.pos_x, pos_y: n.pos_y }) }).catch(() => {});
+  }
+
+  async function subirArchivo(f: File) {
+    setSubiendo(true);
+    const fd = new FormData(); fd.append('file', f);
+    const r = await fetch('/api/crm/notas/upload', { method: 'POST', body: fd });
+    const j = await r.json().catch(() => ({}));
+    setSubiendo(false);
+    if (!r.ok || !j.url) { alert(j.error || 'No se pudo subir el archivo.'); return; }
+    await crear(j.es_pdf ? 'pdf' : 'imagen', { archivo_url: j.url, titulo: j.name });
+  }
+
+  if (nodes === null) return <div style={{ ...D.card, color: '#999', fontSize: '0.82rem' }}>Cargando lienzo…</div>;
+
+  const minH = Math.max(560, ...nodes.map(n => Number(n.pos_y) + 260));
+  const inputMini: any = { border: 'none', outline: 'none', background: 'transparent', width: '100%', fontFamily: 'inherit' };
+
+  return (
+    <div>
+      {/* Toolbar */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 10 }}>
+        <button style={D.btnG} onClick={() => crear('nota', { titulo: '', contenido: '' })}>📝 Nota</button>
+        <button style={D.btnG} onClick={() => crear('minuta', { titulo: 'Minuta ' + new Date().toLocaleDateString('es-MX'), metadata: { asistentes: '', acuerdos: '', pendientes: '' } })}>📋 Minuta</button>
+        <button style={D.btnG} onClick={() => crear('idea', { contenido: '' })}>💡 Idea</button>
+        <button style={D.btnG} disabled={subiendo} onClick={() => { fileTipo.current = 'imagen'; fileRef.current?.click(); }}>{subiendo ? 'Subiendo…' : '🖼 Imagen'}</button>
+        <button style={D.btnG} disabled={subiendo} onClick={() => { fileTipo.current = 'pdf'; fileRef.current?.click(); }}>📄 PDF</button>
+        <span style={{ fontSize: '0.72rem', color: '#999', marginLeft: 'auto' }}>Arrastra las tarjetas desde su borde · se guarda solo</span>
+        <input ref={fileRef} type="file" accept="application/pdf,image/png,image/jpeg,image/webp,image/gif" style={{ display: 'none' }}
+          onChange={e => { const f = e.target.files?.[0]; if (f) subirArchivo(f); e.target.value = ''; }} />
+      </div>
+
+      {/* Lienzo */}
+      <div ref={lienzoRef} onPointerMove={onMove} onPointerUp={onUp}
+        style={{ position: 'relative', minHeight: minH, background: '#fbfbfd', backgroundImage: 'radial-gradient(#e4e6ec 1px, transparent 1px)', backgroundSize: '22px 22px', border: '1px solid #ececf1', borderRadius: 14, overflow: 'hidden' }}>
+        {nodes.length === 0 && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#b8bcc4', fontSize: '0.9rem', textAlign: 'center', padding: 30 }}>
+            Lluvia de ideas del cliente: agrega notas, la minuta de la última llamada,<br />sube su propuesta en PDF o pega capturas — y acomódalas como en un pizarrón.
+          </div>
+        )}
+        {nodes.map((n: any) => (
+          <div key={n.id} onPointerDown={e => onDown(e, n)}
+            style={{ position: 'absolute', left: Number(n.pos_x), top: Number(n.pos_y), width: Number(n.width) || 250, background: n.color || (n.tipo === 'minuta' ? '#fff' : '#fff'), border: '1px solid ' + (n.tipo === 'minuta' ? '#d8dcf0' : '#e6e8ee'), borderRadius: 10, boxShadow: '0 2px 8px rgba(16,24,40,0.08)', cursor: 'grab', userSelect: drag.current ? 'none' : 'auto' }}>
+            {/* header de la tarjeta */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 9px', borderBottom: n.tipo === 'idea' ? 'none' : '1px solid #f0f1f5', fontSize: '0.68rem', color: '#9aa0a8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {n.tipo === 'nota' ? '📝 Nota' : n.tipo === 'minuta' ? '📋 Minuta' : n.tipo === 'idea' ? '💡 Idea' : n.tipo === 'imagen' ? '🖼 Imagen' : '📄 PDF'}
+              <span style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
+                {n.tipo === 'idea' && IDEA_COLORES.map(c => (
+                  <span key={c} onClick={() => guardar(n.id, { color: c }, 0)} style={{ width: 12, height: 12, borderRadius: 99, background: c, border: n.color === c ? '2px solid #666' : '1px solid #ddd', cursor: 'pointer' }} />
+                ))}
+                <button onClick={() => eliminar(n.id)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: delId === n.id ? '#b93333' : '#c4c8cf', fontWeight: 800, fontSize: '0.72rem' }}>{delId === n.id ? '¿Seguro?' : '✕'}</button>
+              </span>
+            </div>
+            {/* cuerpo por tipo */}
+            {(n.tipo === 'nota') && (
+              <div style={{ padding: '8px 10px' }}>
+                <input value={n.titulo || ''} placeholder="Título" onChange={e => guardar(n.id, { titulo: e.target.value })} style={{ ...inputMini, fontWeight: 800, fontSize: '0.85rem', marginBottom: 4 }} />
+                <textarea value={n.contenido || ''} placeholder="Escribe aquí…" onChange={e => guardar(n.id, { contenido: e.target.value })} rows={4} style={{ ...inputMini, fontSize: '0.8rem', resize: 'vertical', minHeight: 60 }} />
+              </div>
+            )}
+            {(n.tipo === 'idea') && (
+              <div style={{ padding: '4px 10px 10px' }}>
+                <textarea value={n.contenido || ''} placeholder="Idea: ¿qué ofrecerle?" onChange={e => guardar(n.id, { contenido: e.target.value })} rows={3} style={{ ...inputMini, fontSize: '0.86rem', fontWeight: 600, resize: 'vertical', minHeight: 48 }} />
+              </div>
+            )}
+            {(n.tipo === 'minuta') && (
+              <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <input value={n.titulo || ''} placeholder="Minuta · fecha" onChange={e => guardar(n.id, { titulo: e.target.value })} style={{ ...inputMini, fontWeight: 800, fontSize: '0.85rem' }} />
+                {(['asistentes', 'acuerdos', 'pendientes'] as const).map(k => (
+                  <div key={k}>
+                    <div style={{ fontSize: '0.64rem', color: '#8a8f98', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{k}</div>
+                    <textarea value={n.metadata?.[k] || ''} rows={k === 'asistentes' ? 1 : 2}
+                      onChange={e => guardar(n.id, { metadata: { ...(n.metadata || {}), [k]: e.target.value } })}
+                      style={{ ...inputMini, fontSize: '0.78rem', resize: 'vertical', borderBottom: '1px dashed #eceef2' }} />
+                  </div>
+                ))}
+              </div>
+            )}
+            {(n.tipo === 'imagen') && (
+              <div>
+                <img src={n.archivo_url} alt={n.titulo || 'imagen'} style={{ display: 'block', width: '100%', borderRadius: '0 0 10px 10px' }} draggable={false} />
+              </div>
+            )}
+            {(n.tipo === 'pdf') && (
+              <div style={{ padding: '12px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: '1.4rem' }}>📄</span>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.8rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.titulo || 'Documento.pdf'}</div>
+                  <a href={n.archivo_url} target="_blank" rel="noreferrer" style={{ fontSize: '0.74rem', color: '#1A8F7A', fontWeight: 700 }}>Abrir PDF →</a>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ─────────── 🎯 Oportunidades del cliente (deals) ─────────── */
 function TabOportunidades({ companyId, co, principal, flash, reload }: any) {
   const [deals, setDeals] = useState<any[] | null>(null);

@@ -21,6 +21,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   const host = url.searchParams.get('host'); // 'mias' | 'partners' | <team_member_id>
   const from = url.searchParams.get('from');
   const to = url.searchParams.get('to');
+  const companyId = url.searchParams.get('company_id'); // reuniones de UN cliente (drawer)
 
   let query = supabase
     .from('bookings')
@@ -31,9 +32,26 @@ export const GET: APIRoute = async ({ request, url }) => {
   if (from) query = query.gte('fecha', from);
   if (to) query = query.lte('fecha', to);
 
+  // Filtro por cliente: bookings de sus contactos (por contact_id) o por email
+  // de sus contactos (bookings viejos sin contact_id ligado).
+  let companyContactIds: string[] = [];
+  let companyEmails: string[] = [];
+  if (companyId) {
+    const { data: cts } = await supabase.from('contacts').select('id, email').eq('company_id', companyId).is('archived_at', null);
+    companyContactIds = (cts || []).map((c: any) => c.id);
+    companyEmails = (cts || []).map((c: any) => String(c.email || '').trim().toLowerCase()).filter(Boolean);
+    if (!companyContactIds.length && !companyEmails.length) {
+      return new Response(JSON.stringify({ data: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+  }
+
   const { data: bookings, error } = await query;
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   let rows = bookings || [];
+  if (companyId) {
+    rows = rows.filter((b: any) => (b.contact_id && companyContactIds.includes(b.contact_id))
+      || (b.invitee_email && companyEmails.includes(String(b.invitee_email).trim().toLowerCase())));
+  }
 
   // ── hosts y partners que refirieron (una sola consulta a team_members) ──
   const memberIds = Array.from(new Set(rows.flatMap((b: any) => [b.host_id, b.referrer_partner_id].filter(Boolean))));
