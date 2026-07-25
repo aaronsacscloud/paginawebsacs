@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Users, TrendingUp, Wallet, AlertTriangle, Plus, ChevronDown, Link2, MessageCircle, Download, Settings2, LayoutGrid, Table2 } from 'lucide-react';
+import { Users, TrendingUp, Wallet, AlertTriangle, Plus, ChevronDown, Link2, MessageCircle, Download, Settings2, LayoutGrid, Table2, Infinity as InfinityIcon } from 'lucide-react';
 import { S } from './SubscriptionsTab';
 import ClienteDrawer360 from './ClienteDrawer360';
 import NuevoClienteModal from './NuevoClienteModal';
@@ -331,6 +331,8 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           duals={[{ dot: '#6C5CE7', num: kpis.pagos, lbl: 'pagos' }, { dot: '#c6cad2', num: money(kpis.promedio), lbl: 'promedio' }]} />
         <KpiCard icon={<AlertTriangle size={18} strokeWidth={2} color="#d9534a" />} chipBg="#fdf0ee" label="Atención" value={kpis.riesgo}
           duals={[{ dot: '#d9534a', num: kpis.riesgo, lbl: '≥3 días sin vender' }, { dot: '#E8A838', num: kpis.vencidas, lbl: 'renov. vencida' }]} />
+        <KpiCard icon={<InfinityIcon size={18} strokeWidth={2} color="#6C5CE7" />} chipBg="#f1effd" label="Licencias vitalicias" value={tot?.vitalicias ?? 0}
+          duals={[{ dot: '#6C5CE7', num: money(tot?.vitalicias_pagado), lbl: 'pagado (ingreso único)' }, { dot: '#c6cad2', num: 'fuera del ARR', lbl: 'no recurrente' }]} />
       </div>
 
       <div style={{ ...S.card, padding: '20px 22px', borderRadius: 14, border: '1px solid #e9eaee', boxShadow: '0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)' }}>

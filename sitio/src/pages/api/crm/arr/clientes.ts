@@ -34,10 +34,14 @@ export const GET: APIRoute = async () => {
     .filter((c: any) => (c.subscriptions || []).length > 0)
     .map((c: any) => {
       const subs = c.subscriptions || [];
-      const activas = subs.filter((s: any) => s.estado === 'activa');
-      const pend = subs.filter((s: any) => s.estado === 'pendiente_pago' || s.estado === 'programada');
       // Licencia VITALICIA: ciclo 'vitalicia' o plan "Licencia Vitalicia…".
-      const vitalicia = subs.some((s: any) => s.ciclo === 'vitalicia' || /vitalic/i.test(String(s.nombre_plan || '')));
+      // Es pago ÚNICO de por vida → NO es ingreso recurrente, se EXCLUYE del ARR
+      // (venía inflando el "pendiente" con ARR=precio×12 en estado programada).
+      const esVital = (s: any) => s.ciclo === 'vitalicia' || /vitalic/i.test(String(s.nombre_plan || ''));
+      const vitalicia = subs.some(esVital);
+      // Recurrentes (sin vitalicias) para el ARR:
+      const activas = subs.filter((s: any) => s.estado === 'activa' && !esVital(s));
+      const pend = subs.filter((s: any) => (s.estado === 'pendiente_pago' || s.estado === 'programada') && !esVital(s));
       // Principal si existe la marca; si no, el primero (comportamiento previo).
       const contacto = (c.contacts || []).find((x: any) => x.es_principal) || (c.contacts || [])[0] || null;
       // Si la empresa no tiene contacto ligado pero una suscripción SÍ referencia
@@ -56,6 +60,7 @@ export const GET: APIRoute = async () => {
         sub_contact_id: subContactId,
         subs_total: subs.length, subs_activas: activas.length, subs_pendientes: pend.length,
         vitalicia,
+        vitalicia_pagado: r2(subs.filter(esVital).reduce((a: number, s: any) => a + Number(s.total_pagado || 0), 0)),
         mrr: r2(activas.reduce((a: number, s: any) => a + Number(s.arr || 0) / 12, 0)),
         arr: r2(activas.reduce((a: number, s: any) => a + Number(s.arr || 0), 0)),
         arr_pendiente: r2(pend.reduce((a: number, s: any) => a + Number(s.arr || 0), 0)),
@@ -82,6 +87,9 @@ export const GET: APIRoute = async () => {
     clientes: data.length,
     activos: data.filter((c: any) => c.subs_activas > 0).length,
     arr: r2(data.reduce((a: number, c: any) => a + c.arr, 0)),
+    // Vitalicias (ingreso ÚNICO, fuera del ARR): clientes y total pagado de por vida.
+    vitalicias: data.filter((c: any) => c.vitalicia).length,
+    vitalicias_pagado: r2(data.reduce((a: number, c: any) => a + Number(c.vitalicia_pagado || 0), 0)),
   };
   return new Response(JSON.stringify({ tot, data }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 };
