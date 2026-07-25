@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { computarSenales } from '../../../lib/crm/senales';
 
 /* ═══ Cliente 360 — drawer ancho con pestañas, TODO editable ═══
  * Pestañas: Resumen · Cliente & SACS · Contactos · Suscripciones · Actividad.
@@ -127,6 +128,10 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
 /* ─────────── 📊 Resumen ─────────── */
 function TabResumen({ res, co, act, subs }: any) {
   const dias = co?.dias_sin_venta;
+  const senales = computarSenales(co, (subs || []).find((s: any) => s.estado === 'activa'));
+  const tend = act && act.tendencia_pct;
+  const sucPlan = Number(co.sucursales || 0);
+  const sucReales = act ? Number(act.sucursales || 0) : 0;
   return (
     <div>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
@@ -135,17 +140,49 @@ function TabResumen({ res, co, act, subs }: any) {
           <div key={String(l)} style={D.kpi}><div style={D.kl}>{l}</div><div style={D.kv}>{v}</div></div>
         ))}
       </div>
+
+      {/* ── Qué venderle (señales reales) ── */}
+      {senales.length > 0 && (
+        <div style={D.card}>
+          <div style={D.h}>💡 Qué venderle / atender</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {senales.map((s, i) => (
+              <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 10px', borderRadius: 10, background: s.nivel === 'riesgo' ? '#fdf2f2' : '#f0f7f4', border: '1px solid ' + (s.nivel === 'riesgo' ? '#f7d7d7' : '#d6ebe2') }}>
+                <span style={{ fontSize: '1rem', lineHeight: 1.2 }}>{s.nivel === 'riesgo' ? '⚠️' : '📈'}</span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '0.83rem', fontWeight: 700, color: s.nivel === 'riesgo' ? '#b93333' : '#1A8F7A' }}>{s.titulo}</div>
+                  <div style={{ fontSize: '0.78rem', color: '#555', marginTop: 1 }}>{s.detalle}</div>
+                  <div style={{ fontSize: '0.78rem', color: '#16181d', marginTop: 3 }}><b>Acción:</b> {s.accion}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Qué está usando (actividad real de SACS) ── */}
       <div style={D.card}>
-        <div style={D.h}>Salud y actividad en SACS</div>
+        <div style={D.h}>Qué está usando en SACS</div>
         {act ? (
-          <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: '0.83rem' }}>
-            <span>Última venta: <b style={{ color: dias != null && dias > 15 ? '#b93333' : dias != null && dias >= 3 ? '#a06600' : '#1A8F7A' }}>{fmtDate(co.ultima_venta_at)}{dias != null ? ` (hace ${dias}d)` : ''}</b></span>
-            {act.ventas_7d != null && <span>Ventas 7d: <b>{act.ventas_7d}</b></span>}
-            {act.ventas_30d != null && <span>Ventas 30d: <b>{act.ventas_30d}</b></span>}
-            {act.total_30d != null && <span>Monto 30d: <b>{money(act.total_30d)}</b></span>}
-            {act.usuarios != null && <span>Usuarios: <b>{act.usuarios}</b></span>}
-            {act.sucursales != null && <span>Sucursales: <b>{act.sucursales}</b></span>}
-            {co.health_score != null && <span>Salud: <b style={{ color: co.health_score >= 70 ? '#1A8F7A' : co.health_score >= 40 ? '#a06600' : '#b93333' }}>{co.health_score}</b></span>}
+          <div>
+            <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: '0.83rem' }}>
+              <span>Última venta: <b style={{ color: dias != null && dias > 15 ? '#b93333' : dias != null && dias >= 3 ? '#a06600' : '#1A8F7A' }}>{fmtDate(co.ultima_venta_at)}{dias != null ? ` (hace ${dias}d)` : ''}</b></span>
+              {act.ventas_7d != null && <span>Ventas 7d: <b>{act.ventas_7d}</b></span>}
+              {act.ventas_30d != null && <span>Ventas 30d: <b>{act.ventas_30d}</b></span>}
+              {act.total_30d != null && <span>Monto 30d: <b>{money(act.total_30d)}</b></span>}
+              {tend != null && <span>Tendencia: <b style={{ color: tend >= 0 ? '#1A8F7A' : '#b93333' }}>{tend >= 0 ? '+' : ''}{tend}%</b></span>}
+              {act.usuarios != null && <span>Usuarios: <b>{act.usuarios}</b>{act.usuarios_operando != null ? ` (${act.usuarios_operando} operando)` : ''}</span>}
+              {(sucReales > 0 || sucPlan > 0) && <span>Sucursales: <b style={{ color: sucReales > sucPlan && sucPlan > 0 ? '#a06600' : '#16181d' }}>{sucReales || sucPlan}{sucPlan > 0 && sucReales > sucPlan ? ` (plan: ${sucPlan})` : ''}</b></span>}
+              {co.health_score != null && <span>Salud: <b style={{ color: co.health_score >= 70 ? '#1A8F7A' : co.health_score >= 40 ? '#a06600' : '#b93333' }}>{co.health_score}</b></span>}
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontSize: '0.7rem', color: '#999', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Módulos que usa ({(act.modulos || []).length})</div>
+              {(act.modulos || []).length ? (
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {act.modulos.map((m: string) => <span key={m} style={{ ...D.badge, background: '#eef2ff', color: '#3730a3' }}>{m}</span>)}
+                </div>
+              ) : <span style={{ color: '#999', fontSize: '0.8rem' }}>Sin módulos con actividad reciente.</span>}
+            </div>
           </div>
         ) : <div style={{ color: '#999', fontSize: '0.82rem' }}>{co?.sacs_account ? 'Sin datos sincronizados aún — usa "Sincronizar" en la pestaña Cliente & SACS.' : 'Liga la cuenta SACS en la pestaña Cliente & SACS para ver su actividad real.'}</div>}
       </div>
