@@ -20,18 +20,25 @@ export async function enqueueOnboarding(companyId: string | null, contactId: str
     .contains('metadata', { category: 'onboarding' }).limit(1).maybeSingle();
   if (previa) return false;
 
+  // Un solo insert batch: minimiza la ventana del race si "ganar el deal" y
+  // "aceptar la cotización" llegan casi simultáneos (check-then-insert sin
+  // constraint único en BD). Re-check inmediato antes de insertar.
+  const { data: previa2 } = await supabase.from('activities').select('id')
+    .eq('company_id', companyId).eq('tipo', 'tarea')
+    .contains('metadata', { category: 'onboarding' }).limit(1).maybeSingle();
+  if (previa2) return false;
+
   const now = Date.now();
-  for (const t of TASKS) {
-    await supabase.from('activities').insert({
-      contact_id: contactId, company_id: companyId, deal_id: dealId,
-      tipo: 'tarea', titulo: t.titulo, automatico: true,
-      metadata: {
-        task: true, category: 'onboarding', step: t.step, done: false,
-        due_in_hours: t.due_in_hours,
-        due_at: new Date(now + t.due_in_hours * 3600000).toISOString(),
-        ...(t.auto ? { auto: true } : {}),
-      },
-    });
-  }
+  const { error } = await supabase.from('activities').insert(TASKS.map(t => ({
+    contact_id: contactId, company_id: companyId, deal_id: dealId,
+    tipo: 'tarea', titulo: t.titulo, automatico: true,
+    metadata: {
+      task: true, category: 'onboarding', step: t.step, done: false,
+      due_in_hours: t.due_in_hours,
+      due_at: new Date(now + t.due_in_hours * 3600000).toISOString(),
+      ...(t.auto ? { auto: true } : {}),
+    },
+  })));
+  if (error) { console.warn('[onboarding] insert falló:', error.message); return false; }
   return true;
 }

@@ -128,13 +128,16 @@ export const GET: APIRoute = async () => {
   const metaMes = (goals || []).find((g: any) => g.tipo === 'new_arr_mensual' && g.anio === anio && g.mes === mesN)
     || (goals || []).find((g: any) => g.tipo === 'new_arr_mensual' && g.anio === anio && g.mes == null);
   const metaAnual = (goals || []).find((g: any) => g.tipo === 'arr' && g.anio === anio);
-  const metaMonto = Number(metaMes?.monto || 0) || (metaAnual ? Math.round(Number(metaAnual.monto || 0) / 12) : 0);
-  // ARR nuevo VENDIDO este mes: subs creadas en el mes (activa/programada, sin vitalicias)
+  // Meta explícita gana aunque sea $0; sin meta mensual → anual/12.
+  const metaMonto = metaMes ? Number(metaMes.monto || 0) : (metaAnual ? Math.round(Number(metaAnual.monto || 0) / 12) : 0);
+  // ARR nuevo VENDIDO este mes: subs creadas en el mes (activa/programada, sin
+  // vitalicias) de companies NO archivadas (companiesArr ya viene filtrado).
+  const companiasVivas = new Set((companiesArr || []).map((c: any) => c.id));
   const { data: subsMes } = await supabase.from('subscriptions')
-    .select('arr, estado, ciclo, nombre_plan, created_at')
+    .select('arr, estado, ciclo, nombre_plan, created_at, company_id')
     .gte('created_at', thisMonth + '-01T00:00:00');
   const vendidoMes = (subsMes || [])
-    .filter((s: any) => ['activa', 'programada'].includes(s.estado) && !esVital(s))
+    .filter((s: any) => ['activa', 'programada'].includes(s.estado) && !esVital(s) && (!s.company_id || companiasVivas.has(s.company_id)))
     .reduce((a: number, s: any) => a + Number(s.arr || 0), 0);
 
   // ── Reuniones de HOY (con quién) ──

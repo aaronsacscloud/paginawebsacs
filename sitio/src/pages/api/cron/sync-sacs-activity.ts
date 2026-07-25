@@ -104,7 +104,7 @@ export const GET: APIRoute = async ({ url }) => {
         // Snapshot ligero del día (histórico de ventas/salud; el cron de uso
         // completa el resto de campos). Upsert → no duplica por día.
         try {
-          await supabase.from('uso_snapshots').upsert({
+          const { error: se } = await supabase.from('uso_snapshots').upsert({
             company_id: co.id,
             fecha: new Date().toISOString().slice(0, 10),
             ventas_30d: a.ventas_30d ?? null,
@@ -114,6 +114,7 @@ export const GET: APIRoute = async ({ url }) => {
             health_score: score,
             usuarios_operando: a.usuarios_operando ?? null,
           }, { onConflict: 'company_id,fecha' });
+          if (se) console.warn('[sync-sacs-activity] snapshot:', acct, se.message);
         } catch { /* nunca bloquea el sync */ }
 
         // ── alertas ──

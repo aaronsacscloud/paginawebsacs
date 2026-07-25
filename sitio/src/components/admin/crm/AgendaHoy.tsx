@@ -25,6 +25,7 @@ export default function AgendaHoy({ onOpenContact, onGoDeals }: { onOpenContact:
   const [contacts, setContacts] = useState<any[]>([]);
   const [deals, setDeals] = useState<any[]>([]);
   const [tareas, setTareas] = useState<any[]>([]);
+  const [confirmTareaId, setConfirmTareaId] = useState('');
 
   const load = async () => {
     setLoading(true); setError(null);
@@ -103,11 +104,19 @@ export default function AgendaHoy({ onOpenContact, onGoDeals }: { onOpenContact:
           {tareasOrdenadas.map(t => {
             const due = t.metadata?.due_at ? new Date(t.metadata.due_at) : null;
             const vencida = due && due.getTime() < Date.now();
+            const confirmando = confirmTareaId === t.id;
             return (
-              <Row key={t.id} onClick={() => { /* palomear */ fetch('/api/crm/activities', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: t.id, done: true }) }).then(load); }}
-                nombre={t.titulo} sub={'click para marcar hecha'}
-                right={<span style={{ color: vencida ? '#b93333' : '#888', fontWeight: 700, fontSize: '0.72rem' }}>{due ? (vencida ? 'vencida' : 'para ' + fmtDate(due.toISOString().slice(0, 10))) : ''}</span>}
-                badge={t.metadata?.category === 'onboarding' ? 'Onboarding' : 'Tarea'} badgeColor="#6C5CE7" />
+              <Row key={t.id}
+                onClick={() => {
+                  // Confirmación de 2 toques: el 1º arma, el 2º ejecuta (evita
+                  // palomear por un click accidental — la fila entera es clickeable).
+                  if (!confirmando) { setConfirmTareaId(t.id); setTimeout(() => setConfirmTareaId(c => c === t.id ? '' : c), 2600); return; }
+                  setConfirmTareaId('');
+                  fetch('/api/crm/activities', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: t.id, done: true }) }).then(load).catch(() => load());
+                }}
+                nombre={t.titulo} sub={confirmando ? '¿Marcar como hecha? click de nuevo para confirmar' : 'click para marcar hecha'}
+                right={<span style={{ color: vencida ? '#b93333' : '#888', fontWeight: 700, fontSize: '0.72rem' }}>{due ? (vencida ? 'vencida' : 'para ' + due.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })) : ''}</span>}
+                badge={confirmando ? '¿Seguro?' : (t.metadata?.category === 'onboarding' ? 'Onboarding' : 'Tarea')} badgeColor={confirmando ? '#b93333' : '#6C5CE7'} />
             );
           })}
         </Section>

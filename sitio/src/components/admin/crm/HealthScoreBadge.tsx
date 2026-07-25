@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { HEALTH_FACTOR_LABELS as FACTOR_LABELS, HEALTH_FACTOR_MAX as FACTOR_MAX } from '../../../lib/crm/health';
+import { HEALTH_FACTOR_LABELS, HEALTH_FACTOR_MAX } from '../../../lib/crm/health';
+
+// Formato LEGACY (fórmula v1, aún guardado en companies no re-sincronizadas):
+// claves recencia/tendencia/modulos/equipo con máximos 40/25/20/15. Se detecta
+// por la presencia de 'modulos' y se muestra con SUS máximos para no mentir.
+const LEGACY_LABELS: Record<string, string> = { recencia: 'Ventas recientes', tendencia: 'Tendencia 30d', modulos: 'Módulos activos', equipo: 'Equipo operando' };
+const LEGACY_MAX: Record<string, number> = { recencia: 40, tendencia: 25, modulos: 20, equipo: 15 };
 
 interface Props {
   score: number | null | undefined;
@@ -54,7 +60,13 @@ export default function HealthScoreBadge({ score, factors, computed_at, size = '
           fontSize: '0.75rem',
         }}>
           <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8, fontWeight: 600 }}>Desglose</div>
-          {Object.keys(FACTOR_LABELS).map(key => {
+          {(() => {
+            const legacy = 'modulos' in (factors || {});
+            const LBL = legacy ? LEGACY_LABELS : HEALTH_FACTOR_LABELS;
+            const MAXES = legacy ? LEGACY_MAX : HEALTH_FACTOR_MAX;
+            return Object.keys(LBL).map(key => ({ key, LBL, MAXES }));
+          })().map(({ key, LBL, MAXES }) => {
+            const FACTOR_LABELS = LBL, FACTOR_MAX = MAXES;
             const v = factors[key] || 0;
             const max = FACTOR_MAX[key] || 10;
             const pct = Math.min(100, (v / max) * 100);

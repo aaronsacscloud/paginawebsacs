@@ -146,6 +146,16 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
     await fetch('/api/crm/activities', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: t.id, done: !(t.metadata?.done) }) }).catch(() => {});
     setTogMsg(''); reload?.();
   }
+  // Auto-palomeo PERSISTIDO: si la cuenta SACS ya está ligada, "activar_cuenta"
+  // se marca hecha en BD (si solo fuera visual, AgendaHoy la mostraría pendiente
+  // para siempre). Corre una vez por apertura, best-effort.
+  useEffect(() => {
+    const t = onboarding.find((x: any) => x.metadata?.step === 'activar_cuenta' && !x.metadata?.done);
+    if (t && co?.sacs_account) {
+      fetch('/api/crm/activities', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: t.id, done: true }) }).catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [co?.id]);
   const tend = act && act.tendencia_pct;
   const sucPlan = Number(co.sucursales || 0);
   const sucReales = act ? Number(act.sucursales || 0) : 0;

@@ -60,18 +60,14 @@ export const GET: APIRoute = async ({ url }) => {
         out.actualizadas++;
 
         // ── HISTÓRICO: snapshot del día (upsert por company+fecha, no duplica) ──
-        // Da la serie temporal que companies.uso_sacs (sobrescrito) no tiene.
+        // SOLO campos de USO: los de ventas/salud (ventas_30d, health, etc.) los
+        // escribe el cron de actividad con datos FRESCOS — si los mandáramos aquí
+        // (leídos de companies al inicio de la corrida) pisaríamos el snapshot
+        // fresco con valores viejos. El upsert deja intactas las columnas que no van.
         try {
-          const a = (co as any).actividad || {};
-          await supabase.from('uso_snapshots').upsert({
+          const { error: se } = await supabase.from('uso_snapshots').upsert({
             company_id: co.id,
             fecha: new Date().toISOString().slice(0, 10),
-            ventas_30d: a.ventas_30d ?? null,
-            total_30d: a.total_30d ?? null,
-            tendencia_pct: a.tendencia_pct ?? null,
-            dias_sin_venta: (co as any).dias_sin_venta ?? null,
-            health_score: (co as any).health_score ?? null,
-            usuarios_operando: a.usuarios_operando ?? null,
             clientes_total: uso.clientes?.total ?? null,
             lealtad_inscritos: uso.lealtad?.inscritos ?? null,
             conteos_7d: uso.conteos?.total_7d ?? null,
@@ -80,6 +76,7 @@ export const GET: APIRoute = async ({ url }) => {
             clientes_nuevos_7d: uso.clientes?.nuevos_7d ?? null,
             uso,
           }, { onConflict: 'company_id,fecha' });
+          if (se) console.warn('[sync-sacs-uso] snapshot:', acct, se.message);
         } catch { /* el snapshot nunca bloquea el sync */ }
       }
     } catch (e: any) {

@@ -27,7 +27,7 @@ export const GET: APIRoute = async ({ url }) => {
     supabase.from('payments').select('*').eq('company_id', id).order('fecha', { ascending: false }).limit(100),
     supabase.from('activities').select('*').eq('company_id', id).order('created_at', { ascending: false }).limit(100),
     fetchContacts(),
-    supabase.from('quotes').select('id, numero, total, estado, created_at').eq('company_id', id).neq('estado', 'deleted').order('created_at', { ascending: false }).limit(30),
+    supabase.from('quotes').select('id, numero, total, estado, created_at').eq('company_id', id).not('estado', 'in', '(deleted,plantilla)').order('created_at', { ascending: false }).limit(30),
   ]);
   if (co.error) return new Response(JSON.stringify({ error: co.error.message }), { status: 404 });
 
@@ -55,21 +55,28 @@ export const GET: APIRoute = async ({ url }) => {
     stage_change: '📈', demo_agendada: '📅', demo_realizada: '📅', demo_no_show: '📅',
     sistema: '⚙️', llamada: '📞', whatsapp_enviado: '💬', email_enviado: '✉️', lead_created: '✨',
   };
+  // Anti-duplicados: las reuniones vienen de `bookings` (fila más rica, con
+  // estado y Meet) y las cotizaciones de `quotes` → se OMITEN las activities
+  // espejo (demo_* y tipo 'cotizacion') para no mostrar el mismo evento 2 veces.
+  const DUPES = new Set(['demo_agendada', 'demo_realizada', 'demo_no_show', 'demo_cancelada', 'cotizacion']);
+  // Fechas "naive" (pagos/reuniones) son hora de México → fijarlas a -06:00 para
+  // que el orden no se invierta contra los created_at UTC de activities.
+  const TZ = '-06:00';
   for (const a of (acts.data || [])) {
-    if (a.tipo === 'page_visit') continue; // ruido
+    if (a.tipo === 'page_visit' || DUPES.has(a.tipo)) continue; // ruido/duplicados
     timeline.push({ fecha: a.created_at, icono: (a.metadata?.alerta ? '⚠️' : ICONO[a.tipo] || '⚙️'), tipo: a.tipo, titulo: a.titulo, detalle: a.descripcion || '', id: 'a' + a.id, meta: a.metadata || null });
   }
   for (const p of (pays.data || [])) {
-    timeline.push({ fecha: (p.fecha?.length === 10 ? p.fecha + 'T12:00:00' : p.fecha) || p.created_at, icono: '💰', tipo: 'pago', titulo: `Pago recibido · $${Math.round(p.monto || 0).toLocaleString()}`, detalle: p.metodo || '', id: 'p' + p.id });
+    timeline.push({ fecha: (p.fecha?.length === 10 ? p.fecha + 'T12:00:00' + TZ : p.fecha) || p.created_at, icono: '💰', tipo: 'pago', titulo: `Pago recibido · $${Math.round(p.monto || 0).toLocaleString()}`, detalle: p.metodo || '', id: 'p' + p.id });
   }
   for (const q of (quotes.data || [])) {
     timeline.push({ fecha: q.created_at, icono: '📋', tipo: 'cotizacion', titulo: `Cotización ${q.numero || ''} · $${Math.round(q.total || 0).toLocaleString()} · ${q.estado}`, detalle: '', id: 'q' + q.id, link: `/cotizacion/${q.id}` });
   }
   for (const b of bookings) {
     const ev: any = Array.isArray(b.event_types) ? b.event_types[0] : b.event_types;
-    timeline.push({ fecha: b.fecha + 'T' + (b.hora_inicio || '12:00:00'), icono: '📅', tipo: 'reunion', titulo: `${ev?.nombre || 'Reunión'} · ${b.estado}`, detalle: b.invitee_nombre || '', id: 'b' + b.id, link: b.google_meet_link || null });
+    timeline.push({ fecha: b.fecha + 'T' + (b.hora_inicio || '12:00:00') + TZ, icono: '📅', tipo: 'reunion', titulo: `${ev?.nombre || 'Reunión'} · ${b.estado}`, detalle: b.invitee_nombre || '', id: 'b' + b.id, link: b.google_meet_link || null });
   }
-  timeline.sort((x, y) => String(y.fecha).localeCompare(String(x.fecha)));
+  timeline.sort((x, y) => (Date.parse(y.fecha) || 0) - (Date.parse(x.fecha) || 0));
 
   const activas = (subs.data || []).filter(s => s.estado === 'activa');
   const resumen = {
