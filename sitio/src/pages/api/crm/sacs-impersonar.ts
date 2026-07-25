@@ -15,8 +15,8 @@ const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, h
 export const POST: APIRoute = async ({ request }) => {
   const body = await request.json().catch(() => ({} as any));
   const account = String(body.account || '').trim().toLowerCase();
-  const uid = String(body.uid || '').trim();
-  if (!account || !uid) return json({ error: 'account y uid requeridos' }, 400);
+  const uid = String(body.uid || '').trim(); // opcional: sin uid entra como Super Admin
+  if (!account) return json({ error: 'account requerido' }, 400);
 
   // Identidad del founder (para el claim del token). No bloquea si falta.
   let founder = 'crm';

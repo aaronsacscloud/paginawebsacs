@@ -285,6 +285,21 @@ function Panorama360({ account, co }: { account: string; co?: any }) {
     </span>
   );
   const le = uso?.lealtad, adm = uso?.administracion, fac = uso?.facturacion, tg = uso?.tarjetas_regalo, tr = uso?.transferencias;
+  // Matriz integral de módulos agrupada por familia.
+  const familias: any[] = [];
+  (uso?.modulos || []).forEach((m: any) => {
+    let f = familias.find(x => x.nombre === m.familia);
+    if (!f) { f = { nombre: m.familia, items: [] }; familias.push(f); }
+    f.items.push(m);
+  });
+  const nUsa = (uso?.modulos || []).filter((m: any) => m.usa).length;
+  const chipMod = (m: any) => (
+    <span key={m.modulo} style={{ ...D.badge, background: m.usa ? '#e6f6f2' : '#fafafa', color: m.usa ? '#1A8F7A' : '#9aa0a8', border: '1px solid ' + (m.usa ? '#bfe8df' : '#e8e8ea') }}>
+      <b>{m.modulo}</b>{m.usa
+        ? <> · <b style={{ color: '#1A8F7A' }}>SÍ</b>{m.docs_7d ? ` · ${m.docs_7d} en 7d` : m.docs_30d ? ` · ${m.docs_30d} en 30d` : ''}{m.total ? ` · ${Number(m.total).toLocaleString()} total` : ''}</>
+        : <> · no lo usa</>}
+    </span>
+  );
   return (
     <>
     {d && <div style={D.card}>
@@ -359,41 +374,42 @@ function Panorama360({ account, co }: { account: string; co?: any }) {
       {uso.conteos?.ultimo && <div style={{ fontSize: '0.78rem', color: '#666' }}>Último conteo: <b>{fmtDate(uso.conteos.ultimo.fecha)}</b> · {uso.conteos.ultimo.status}</div>}
     </div>}
 
-    {uso && <div style={D.card}>
-      <div style={D.h}>Programas y herramientas</div>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-        {le?.activo
-          ? <span style={{ ...D.badge, background: '#e6f6f2', color: '#1A8F7A', border: '1px solid #bfe8df' }}><b>Lealtad {le.tipo === 'completo' ? 'COMPLETO' : le.tipo === 'basico' ? 'BÁSICO' : ''}</b> · <b>SÍ lo usa</b> ({Number(le.inscritos || 0).toLocaleString()} inscritos{Number(le.nuevos_7d || 0) > 0 ? `, +${le.nuevos_7d} en 7d` : ''})</span>
-          : usa(false, 'Programa de lealtad')}
-        {usa(!!fac?.configurada, 'Facturación electrónica', fac?.timbradas_7d ? `${fac.timbradas_7d} en 7d` : '')}
-        {usa(!!tg?.usa, 'Tarjetas de regalo', tg?.activas ? `${tg.activas} activas` : '')}
-      </div>
-      {uso.promociones?.activas?.length ? (
-        <div style={{ marginBottom: 10 }}>
-          <div style={lbl}>Promociones activas ahora</div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {uso.promociones.activas.map((p: any, i: number) => <span key={i} style={{ ...D.badge, background: '#fff8e1', color: '#a06600' }}>{p.nombre}{p.origen === 'pos' ? ' · POS' : ''}</span>)}
-          </div>
-        </div>
-      ) : null}
-      <div>
-        <div style={lbl}>Administración</div>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {usa(Number(adm?.gastos_30d || 0) > 0, 'Gastos', adm?.gastos_30d ? `${adm.gastos_30d} en 30d` : '')}
-          {usa(Number(adm?.cxp_pendientes || 0) > 0, 'Cuentas por pagar', adm?.cxp_pendientes ? `${adm.cxp_pendientes} pendientes` : '')}
-          {usa(!!adm?.bancos, 'Cuentas de efectivo / bancos')}
-          {usa(Number(adm?.proveedores || 0) > 0, 'Proveedores', adm?.proveedores ? String(adm.proveedores) : '')}
-        </div>
-      </div>
-    </div>}
-
-    {uso?.modulos_nunca?.length ? (
+    {/* ── Matriz INTEGRAL: TODOS los módulos por familia, uso real ── */}
+    {familias.length > 0 && (
       <div style={D.card}>
-        <div style={D.h}>Módulos que nunca ha activado</div>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {uso.modulos_nunca.map((m: string) => <span key={m} style={{ ...D.badge, background: '#f3f4f6', color: '#9aa0a8' }}>{m}</span>)}
+        <div style={D.h}>Uso de módulos ({nUsa}/{uso.modulos.length})</div>
+        <div style={{ fontSize: '0.74rem', color: '#999', marginTop: -6, marginBottom: 12 }}>
+          <span style={{ color: '#1A8F7A', fontWeight: 700 }}>Verde = lo usa</span> · <span style={{ color: '#9aa0a8', fontWeight: 700 }}>gris = oportunidad de venta</span>
         </div>
-        <div style={{ fontSize: '0.72rem', color: '#999', marginTop: 8 }}>Cada módulo sin activar es una conversación de venta pendiente.</div>
+        {familias.map((fam: any) => (
+          <div key={fam.nombre} style={{ marginBottom: 12 }}>
+            <div style={lbl}>{fam.nombre}</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {fam.items.map((m: any) => chipMod(m))}
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+
+    {/* ── Detalle de programas (lo que la matriz no cabe: tipo, inscritos, promos) ── */}
+    {uso && (le?.activo || fac?.configurada || tg?.usa || uso.promociones?.activas?.length || Number(adm?.cxp_pendientes || 0) > 0) ? (
+      <div style={D.card}>
+        <div style={D.h}>Detalle de programas y administración</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.82rem' }}>
+          {le?.activo && <div>💎 <b>Lealtad {le.tipo === 'completo' ? 'COMPLETO' : le.tipo === 'basico' ? 'BÁSICO' : ''}</b> — {Number(le.inscritos || 0).toLocaleString()} inscritos{Number(le.nuevos_7d || 0) > 0 ? `, +${le.nuevos_7d} en 7d` : ''}</div>}
+          {fac?.configurada && <div>🧾 <b>Facturación configurada</b>{fac.timbradas_7d ? ` — ${fac.timbradas_7d} timbradas en 7d` : ''}</div>}
+          {tg?.usa && <div>🎁 <b>Tarjetas de regalo</b>{tg.activas ? ` — ${tg.activas} activas` : ''}</div>}
+          {Number(adm?.cxp_pendientes || 0) > 0 && <div>📌 <b>Cuentas por pagar</b> — {adm.cxp_pendientes} pendientes</div>}
+        </div>
+        {uso.promociones?.activas?.length ? (
+          <div style={{ marginTop: 10 }}>
+            <div style={lbl}>Promociones activas ahora</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {uso.promociones.activas.map((p: any, i: number) => <span key={i} style={{ ...D.badge, background: '#fff8e1', color: '#a06600' }}>{p.nombre}{p.origen === 'pos' ? ' · POS' : ''}</span>)}
+            </div>
+          </div>
+        ) : null}
       </div>
     ) : null}
     </>
@@ -440,17 +456,92 @@ function TabSacs({ co, act, reload, flash }: any) {
           {co.sacs_account && <button style={D.btnG} disabled={linking} onClick={syncAhora}>🔄 Sincronizar ahora</button>}
         </div>
         {co.actividad_sync_at && <div style={{ fontSize: '0.72rem', color: '#999', marginTop: 8 }}>Última sincronización: {new Date(co.actividad_sync_at).toLocaleString('es-MX')}</div>}
-        {act?.modulos?.length ? (
-          <div style={{ marginTop: 10 }}>
-            <div style={{ fontSize: '0.68rem', color: '#999', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Módulos que usa</div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {act.modulos.map((m: string) => <span key={m} style={{ ...D.badge, background: '#eef2ff', color: '#3730a3' }}>{m}</span>)}
-            </div>
-          </div>
-        ) : null}
+        {co.sacs_account && <AccederCuenta account={co.sacs_account} />}
       </div>
 
       {co.sacs_account && <Panorama360 account={co.sacs_account} co={co} />}
+      {co.sacs_account && <UsuariosSacs account={co.sacs_account} />}
+    </div>
+  );
+}
+
+/* Botón "Acceder a la cuenta como Super Admin" — pide a sacs_api un custom token
+ * (account-level, sin uid) y abre la página puente en app.sacscloud.com que canjea
+ * la sesión Firebase y entra al panel de la cuenta. */
+function AccederCuenta({ account, uid, label }: { account: string; uid?: string; label?: string }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  async function acceder() {
+    setBusy(true); setErr('');
+    try {
+      const r = await fetch('/api/crm/sacs-impersonar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(uid ? { account, uid } : { account }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j.url) { setErr(j.error || 'No se pudo generar el acceso.'); setBusy(false); return; }
+      window.open(j.url, '_blank', 'noopener');
+      setBusy(false);
+    } catch (e: any) { setErr(e?.message || 'Error'); setBusy(false); }
+  }
+  return (
+    <div style={{ marginTop: 12 }}>
+      <button style={{ ...D.btn, background: '#6D28D9' }} disabled={busy} onClick={acceder}>
+        {busy ? 'Generando acceso…' : (label || '🔓 Acceder a la cuenta como Super Admin')}
+      </button>
+      {err && <div style={{ color: '#b93333', fontSize: '0.76rem', marginTop: 6 }}>{err}</div>}
+    </div>
+  );
+}
+
+/* Usuarios de la cuenta SACS agrupados por sucursal, con su grupo y último login.
+ * Carga on-demand desde /api/crm/sacs-usuarios?account= */
+function UsuariosSacs({ account }: { account: string }) {
+  const [d, setD] = useState<any>(null);
+  const [err, setErr] = useState('');
+  useEffect(() => {
+    let alive = true; setD(null); setErr('');
+    fetch('/api/crm/sacs-usuarios?account=' + encodeURIComponent(account))
+      .then(r => r.json()).then(j => { if (!alive) return; if (j.error) setErr(j.error); else setD(j); })
+      .catch(() => { if (alive) setErr('x'); });
+    return () => { alive = false; };
+  }, [account]);
+
+  if (err) return null;
+  if (!d) return <div style={{ ...D.card, color: '#999', fontSize: '0.82rem' }}>Cargando usuarios…</div>;
+
+  const usuarios: any[] = d.usuarios || [];
+  // Agrupar por sucursal (un usuario puede estar en varias; "Sin sucursal" si ninguna).
+  const grupos: any[] = [];
+  const add = (suc: string, u: any) => { let g = grupos.find(x => x.suc === suc); if (!g) { g = { suc, users: [] }; grupos.push(g); } g.users.push(u); };
+  usuarios.forEach(u => {
+    const sucs = (u.sucursales_nombres && u.sucursales_nombres.length) ? u.sucursales_nombres : ['(sin sucursal asignada)'];
+    sucs.forEach((s: string) => add(s, u));
+  });
+  grupos.sort((a, b) => b.users.length - a.users.length);
+  const lbl: any = { fontSize: '0.68rem', color: '#999', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '4px 0 6px' };
+
+  return (
+    <div style={D.card}>
+      <div style={D.h}>Usuarios por sucursal ({usuarios.length})</div>
+      {grupos.map((g: any, gi: number) => (
+        <div key={gi} style={{ marginBottom: 12 }}>
+          <div style={lbl}>🏬 {g.suc} · {g.users.length}</div>
+          {g.users.map((u: any, i: number) => (
+            <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #f4f4f4', fontSize: '0.82rem' }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {u.nombre}{u.es_super ? <span style={{ ...D.badge, background: '#EDE9FE', color: '#6D28D9', marginLeft: 6 }}>Super Admin</span> : null}{u.activo === false ? <span style={{ ...D.badge, background: '#fdf2f2', color: '#b93333', marginLeft: 6 }}>inactivo</span> : null}
+                </div>
+                <div style={{ color: '#888', fontSize: '0.76rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {u.grupo_nombre || '(sin grupo)'}{u.email ? ` · ${u.email}` : ''}
+                </div>
+              </div>
+              <div style={{ color: '#999', fontSize: '0.72rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                {u.ultimo_login ? <>último acceso<br /><b style={{ color: '#666' }}>{fmtDate(u.ultimo_login)}</b></> : 'sin registro'}
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+      <div style={{ fontSize: '0.72rem', color: '#999', marginTop: 4 }}>El acceso a la cuenta entra como el Super Admin (botón arriba).</div>
     </div>
   );
 }
