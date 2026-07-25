@@ -491,13 +491,14 @@ function AccederCuenta({ account, uid, label }: { account: string; uid?: string;
   );
 }
 
-/* Usuarios de la cuenta SACS agrupados por sucursal, con su grupo y último login.
- * Carga on-demand desde /api/crm/sacs-usuarios?account= */
+/* Usuarios de la cuenta SACS, con filtro por sucursal y orden por último acceso
+ * (más reciente primero). Carga on-demand desde /api/crm/sacs-usuarios?account= */
 function UsuariosSacs({ account }: { account: string }) {
   const [d, setD] = useState<any>(null);
   const [err, setErr] = useState('');
+  const [filtroSuc, setFiltroSuc] = useState('__todas');
   useEffect(() => {
-    let alive = true; setD(null); setErr('');
+    let alive = true; setD(null); setErr(''); setFiltroSuc('__todas');
     fetch('/api/crm/sacs-usuarios?account=' + encodeURIComponent(account))
       .then(r => r.json()).then(j => { if (!alive) return; if (j.error) setErr(j.error); else setD(j); })
       .catch(() => { if (alive) setErr('x'); });
@@ -508,40 +509,50 @@ function UsuariosSacs({ account }: { account: string }) {
   if (!d) return <div style={{ ...D.card, color: '#999', fontSize: '0.82rem' }}>Cargando usuarios…</div>;
 
   const usuarios: any[] = d.usuarios || [];
-  // Agrupar por sucursal (un usuario puede estar en varias; "Sin sucursal" si ninguna).
-  const grupos: any[] = [];
-  const add = (suc: string, u: any) => { let g = grupos.find(x => x.suc === suc); if (!g) { g = { suc, users: [] }; grupos.push(g); } g.users.push(u); };
+  // Catálogo de sucursales presente en los usuarios (+ opción "sin sucursal").
+  const sucsSet = new Set<string>();
+  let haySinSuc = false;
   usuarios.forEach(u => {
-    const sucs = (u.sucursales_nombres && u.sucursales_nombres.length) ? u.sucursales_nombres : ['(sin sucursal asignada)'];
-    sucs.forEach((s: string) => add(s, u));
+    const s = u.sucursales_nombres || [];
+    if (s.length) s.forEach((x: string) => sucsSet.add(x)); else haySinSuc = true;
   });
-  grupos.sort((a, b) => b.users.length - a.users.length);
-  const lbl: any = { fontSize: '0.68rem', color: '#999', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '4px 0 6px' };
+  const sucOpciones = Array.from(sucsSet).sort((a, b) => a.localeCompare(b));
+
+  // Filtrar por sucursal seleccionada.
+  const ms = (u: any) => { const t = Date.parse(u.ultimo_login || ''); return isNaN(t) ? -1 : t; };
+  const filtrados = usuarios.filter(u => {
+    if (filtroSuc === '__todas') return true;
+    if (filtroSuc === '__sin') return !(u.sucursales_nombres && u.sucursales_nombres.length);
+    return (u.sucursales_nombres || []).indexOf(filtroSuc) >= 0;
+  }).sort((a, b) => ms(b) - ms(a)); // más reciente primero
 
   return (
     <div style={D.card}>
-      <div style={D.h}>Usuarios por sucursal ({usuarios.length})</div>
-      {grupos.map((g: any, gi: number) => (
-        <div key={gi} style={{ marginBottom: 12 }}>
-          <div style={lbl}>🏬 {g.suc} · {g.users.length}</div>
-          {g.users.map((u: any, i: number) => (
-            <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #f4f4f4', fontSize: '0.82rem' }}>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {u.nombre}{u.es_super ? <span style={{ ...D.badge, background: '#EDE9FE', color: '#6D28D9', marginLeft: 6 }}>Super Admin</span> : null}{u.activo === false ? <span style={{ ...D.badge, background: '#fdf2f2', color: '#b93333', marginLeft: 6 }}>inactivo</span> : null}
-                </div>
-                <div style={{ color: '#888', fontSize: '0.76rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {u.grupo_nombre || '(sin grupo)'}{u.email ? ` · ${u.email}` : ''}
-                </div>
-              </div>
-              <div style={{ color: '#999', fontSize: '0.72rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                {u.ultimo_login ? <>último acceso<br /><b style={{ color: '#666' }}>{fmtDate(u.ultimo_login)}</b></> : 'sin registro'}
-              </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+        <div style={{ ...D.h, margin: 0 }}>Usuarios ({filtrados.length}{filtroSuc !== '__todas' ? ` de ${usuarios.length}` : ''})</div>
+        <select value={filtroSuc} onChange={e => setFiltroSuc(e.target.value)} style={{ ...D.input, width: 'auto', marginLeft: 'auto', padding: '6px 10px', fontSize: '0.82rem' }}>
+          <option value="__todas">Todas las sucursales</option>
+          {sucOpciones.map(s => <option key={s} value={s}>{s}</option>)}
+          {haySinSuc && <option value="__sin">(sin sucursal asignada)</option>}
+        </select>
+      </div>
+      {filtrados.map((u: any, i: number) => (
+        <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #f4f4f4', fontSize: '0.82rem' }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {u.nombre}{u.es_super ? <span style={{ ...D.badge, background: '#EDE9FE', color: '#6D28D9', marginLeft: 6 }}>Super Admin</span> : null}{u.activo === false ? <span style={{ ...D.badge, background: '#fdf2f2', color: '#b93333', marginLeft: 6 }}>inactivo</span> : null}
             </div>
-          ))}
+            <div style={{ color: '#888', fontSize: '0.76rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {u.grupo_nombre || '(sin grupo)'}{(u.sucursales_nombres && u.sucursales_nombres.length) ? ` · 🏬 ${u.sucursales_nombres.join(', ')}` : ''}{u.email ? ` · ${u.email}` : ''}
+            </div>
+          </div>
+          <div style={{ color: '#999', fontSize: '0.72rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
+            {u.ultimo_login ? <>último acceso<br /><b style={{ color: '#666' }}>{fmtDate(u.ultimo_login)}</b></> : 'sin registro'}
+          </div>
         </div>
       ))}
-      <div style={{ fontSize: '0.72rem', color: '#999', marginTop: 4 }}>El acceso a la cuenta entra como el Super Admin (botón arriba).</div>
+      {!filtrados.length && <div style={{ color: '#999', fontSize: '0.82rem' }}>Sin usuarios en esta sucursal.</div>}
+      <div style={{ fontSize: '0.72rem', color: '#999', marginTop: 8 }}>Ordenados por último acceso (más reciente primero). El acceso a la cuenta entra como Super Admin (botón arriba).</div>
     </div>
   );
 }
