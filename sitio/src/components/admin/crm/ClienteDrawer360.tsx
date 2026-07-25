@@ -103,12 +103,12 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                 <button style={{ ...D.btnG, border: 'none', fontSize: '1rem' }} onClick={onClose}>✕</button>
               </div>
               <div style={D.tabbar}>
-                <button style={D.tab(tab === 'resumen')} onClick={() => setTab('resumen')}>📊 Resumen</button>
-                <button style={D.tab(tab === 'info')} onClick={() => setTab('info')}>📇 Info general</button>
-                <button style={D.tab(tab === 'sacs')} onClick={() => setTab('sacs')}>🏢 Actividad en SACS</button>
-                <button style={D.tab(tab === 'contactos')} onClick={() => setTab('contactos')}>👤 Contactos ({contactos.length})</button>
-                <button style={D.tab(tab === 'subs')} onClick={() => setTab('subs')}>📋 Suscripciones ({subs.length})</button>
-                <button style={D.tab(tab === 'act')} onClick={() => setTab('act')}>🕓 Actividad</button>
+                <button style={D.tab(tab === 'resumen')} onClick={() => setTab('resumen')}>Resumen</button>
+                <button style={D.tab(tab === 'info')} onClick={() => setTab('info')}>Info general</button>
+                <button style={D.tab(tab === 'sacs')} onClick={() => setTab('sacs')}>Actividad en SACS</button>
+                <button style={D.tab(tab === 'contactos')} onClick={() => setTab('contactos')}>Contactos ({contactos.length})</button>
+                <button style={D.tab(tab === 'subs')} onClick={() => setTab('subs')}>Suscripciones ({subs.length})</button>
+                <button style={D.tab(tab === 'act')} onClick={() => setTab('act')}>Actividad</button>
               </div>
             </div>
             <div style={D.body}>
@@ -204,6 +204,47 @@ function TabResumen({ res, co, act, subs }: any) {
   );
 }
 
+/* Selector de ETAPA del pipeline de clientes (se movió aquí desde la tabla).
+ * Carga el catálogo de etapas de /api/crm/pipelines y guarda pipeline_stage. */
+function EtapaSelector({ co, reload, flash }: any) {
+  const [stages, setStages] = useState<any[]>([]);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/crm/pipelines').then(r => r.json()).then(pj => {
+      if (!alive) return;
+      const cli = (pj.data || []).find((p: any) => p.tipo === 'cliente');
+      setStages(cli?.stages || []);
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  async function cambiar(key: string) {
+    setSaving(true);
+    const r = await fetch('/api/crm/companies', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: co.id, pipeline_stage: key || null }) });
+    const j = await r.json().catch(() => ({}));
+    setSaving(false);
+    if (!r.ok || j.error) alert(j.error || 'No se pudo cambiar la etapa.'); else { flash('Etapa actualizada'); reload(); }
+  }
+  const actual = stages.find(s => s.key === co.pipeline_stage);
+  return (
+    <div style={D.card}>
+      <div style={D.h}>Etapa del cliente</div>
+      {stages.length === 0 ? (
+        <div style={{ color: '#999', fontSize: '0.82rem' }}>Configura las etapas en Configuración → Pipelines.</div>
+      ) : (
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <select value={co.pipeline_stage || ''} disabled={saving} onChange={e => cambiar(e.target.value)}
+            style={{ ...D.input, width: 'auto', minWidth: 200, fontWeight: 700, color: actual ? actual.color : '#666', borderColor: actual ? actual.color : '#e3e5e9' }}>
+            <option value="">— sin etapa —</option>
+            {stages.map(s => <option key={s.key} value={s.key} style={{ color: '#333' }}>{s.label}</option>)}
+          </select>
+          {saving && <span style={{ color: '#999', fontSize: '0.8rem' }}>guardando…</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─────────── 📇 Info general (datos editables del cliente) ─────────── */
 function TabInfoGeneral({ co, reload, flash }: any) {
   const [f, setF] = useState<any>({ nombre: co.nombre || '', rfc: co.rfc || '', razon_social: co.razon_social || '', giro: co.giro || '', sitio_web: co.sitio_web || '', ciudad: co.ciudad || '', estado_geo: co.estado_geo || '', sucursales: co.sucursales || 1, estado_cuenta: co.estado_cuenta || 'activo' });
@@ -224,6 +265,7 @@ function TabInfoGeneral({ co, reload, flash }: any) {
   );
   return (
     <div>
+      <EtapaSelector co={co} reload={reload} flash={flash} />
       <div style={D.card}>
         <div style={D.h}>Datos del cliente (editables)</div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>

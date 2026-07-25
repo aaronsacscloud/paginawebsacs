@@ -172,7 +172,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   /* ── Definición del datatable estándar ── */
   const cols: ColDef[] = [
     {
-      key: 'cliente', label: 'Cliente', width: '19%', ftype: 'text',
+      key: 'cliente', label: 'Cliente', width: '17%', ftype: 'text',
       val: c => (c.contacto?.nombre || c.nombre || '').toLowerCase(),
       render: c => (
         <td style={{ ...T.td, ...T.ell, fontWeight: 700 }}>
@@ -182,7 +182,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       ),
     },
     {
-      key: 'contacto', label: 'Contacto', width: '20%', ftype: 'text',
+      key: 'contacto', label: 'Contacto', width: '18%', ftype: 'text',
       val: c => [c.contacto?.email, c.contacto?.whatsapp, c.contacto?.telefono].filter(Boolean).join(' '),
       render: c => (
         <td style={T.td} onClick={e => e.stopPropagation()}>
@@ -210,29 +210,13 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       ),
     },
     {
-      key: 'plan', label: 'Plan', width: 112, ftype: 'select',
+      key: 'plan', label: 'Plan', width: 104, ftype: 'select',
       options: Object.entries(PLAN_BADGE).map(([v, b]) => ({ v, l: b.label })),
       val: c => c.plan || '',
       render: c => { const b = PLAN_BADGE[c.plan] || null; return <td style={{ ...T.td, ...T.ell }}>{b ? <span style={{ ...T.badge, background: b.bg, color: b.color }}>{b.label}</span> : <span style={{ color: '#c4c8cf' }}>—</span>}</td>; },
     },
     {
-      key: 'etapa', label: 'Etapa', width: 120, ftype: 'select',
-      options: stages.map(s => ({ v: s.key, l: s.label })),
-      val: c => c.pipeline_stage || '',
-      render: c => (
-        <td style={T.td} onClick={e => e.stopPropagation()}>
-          {stages.length === 0 ? <span style={{ color: '#c4c8cf' }}>—</span> : (
-            <select value={c.pipeline_stage || ''} onChange={e => setStage(c.id, e.target.value)}
-              style={{ ...S.input, padding: '3px 6px', fontSize: '0.72rem', width: '100%', borderColor: c.pipeline_stage && stageBy[c.pipeline_stage] ? stageBy[c.pipeline_stage].color : '#e3e5e9', color: c.pipeline_stage && stageBy[c.pipeline_stage] ? stageBy[c.pipeline_stage].color : '#999', fontWeight: 700 }}>
-              <option value="">— etapa —</option>
-              {stages.map(s => <option key={s.key} value={s.key} style={{ color: '#333' }}>{s.label}</option>)}
-            </select>
-          )}
-        </td>
-      ),
-    },
-    {
-      key: 'arr', label: 'ARR', width: 118, num: true, ftype: 'number', val: c => Number(c.arr || 0),
+      key: 'arr', label: 'ARR', width: 112, num: true, ftype: 'number', val: c => Number(c.arr || 0),
       render: c => (
         <td style={{ ...T.td, ...T.num, fontWeight: 800 }}>
           {money(c.arr)}
@@ -241,7 +225,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       ),
     },
     {
-      key: 'pagado', label: 'Pagado', width: 112, num: true, ftype: 'number', val: c => Number(c.total_pagado || 0),
+      key: 'pagado', label: 'Pagado', width: 104, num: true, ftype: 'number', val: c => Number(c.total_pagado || 0),
       render: c => (
         <td style={{ ...T.td, ...T.num }}>
           <span style={{ fontWeight: 700 }}>{money(c.total_pagado)}</span>
@@ -250,12 +234,12 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       ),
     },
     {
-      key: 'renovacion', label: 'Renovación', width: 118, ftype: 'date', val: c => c.proxima_factura || '',
+      key: 'renovacion', label: 'Renovación', width: 108, ftype: 'date', val: c => c.proxima_factura || '',
       render: c => { const venc = c.proxima_factura && c.proxima_factura < new Date().toISOString().slice(0, 10); return <td style={{ ...T.td, ...T.muted, color: venc ? '#b93333' : T.muted.color, fontWeight: venc ? 700 : 400 }}>{fmtDate(c.proxima_factura)}</td>; },
     },
     {
-      key: 'salud', label: 'Actividad', width: 128, ftype: 'number', val: c => c.health_score == null ? null : Number(c.health_score),
-      render: c => { const dias = c.dias_sin_venta; return (
+      key: 'salud', label: 'Actividad', width: 138, ftype: 'number', val: c => c.health_score == null ? null : Number(c.health_score),
+      render: c => { const dias = c.dias_sin_venta; const st = c.pipeline_stage && stageBy[c.pipeline_stage]; return (
         <td style={T.td}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
             {c.health_score != null && <span style={{ ...T.badge, background: c.health_score >= 70 ? '#e6f6f2' : c.health_score >= 40 ? '#fdf3e0' : '#fdecea', color: c.health_score >= 70 ? '#1A8F7A' : c.health_score >= 40 ? '#a06600' : '#b93333' }}>{c.health_score}</span>}
@@ -263,24 +247,28 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
               {c.ultima_venta_at ? <>{fmtDate(c.ultima_venta_at)}{dias != null ? ` · ${dias}d` : ''}</> : (c.sacs_account ? 'sin datos' : 'sin cuenta')}
             </span>
           </div>
+          <div style={{ ...T.sub, marginTop: 3, ...T.ell, color: st ? st.color : '#c4c8cf', fontWeight: st ? 700 : 400 }}>
+            {st ? st.label : 'sin etapa'}
+          </div>
         </td>
       ); },
     },
     {
-      key: 'senal', label: 'Señal', width: 132, ftype: 'select',
+      key: 'senal', label: 'Señal', width: 118, ftype: 'select',
       options: Object.keys(SENAL_LABEL).map(t => ({ v: t, l: SENAL_LABEL[t] })),
       val: c => c.senal_peso || 0,     // ordena por urgencia/valor
       render: c => (
         <td style={T.td}>
           {c.senal_tipo ? (
-            <span title={c.senal_titulo || ''} style={{ ...T.badge, display: 'inline-flex', alignItems: 'center', gap: 4, background: c.senal_nivel === 'riesgo' ? '#fdecea' : '#e6f6f2', color: c.senal_nivel === 'riesgo' ? '#b93333' : '#1A8F7A', maxWidth: '100%', overflow: 'hidden' }}>
-              {c.senal_nivel === 'riesgo' ? '⚠️' : '📈'} <span style={{ ...T.ell }}>{SENAL_LABEL[c.senal_tipo] || c.senal_tipo}</span>
+            <span title={c.senal_titulo || ''} style={{ ...T.badge, display: 'inline-flex', alignItems: 'center', background: c.senal_nivel === 'riesgo' ? '#fdecea' : '#e6f6f2', color: c.senal_nivel === 'riesgo' ? '#b93333' : '#1A8F7A', maxWidth: '100%', overflow: 'hidden' }}>
+              <span style={{ ...T.ell }}>{SENAL_LABEL[c.senal_tipo] || c.senal_tipo}</span>
             </span>
           ) : <span style={{ color: '#c4c8cf' }}>—</span>}
         </td>
       ),
     },
     /* Campos SOLO para "Más filtros" (sin columna visible). */
+    { key: 'etapa', label: 'Etapa', ftype: 'select', options: stages.map(s => ({ v: s.key, l: s.label })), val: c => c.pipeline_stage || '' },
     { key: 'senal_nivel', label: 'Señal (nivel)', ftype: 'select', options: [{ v: 'oportunidad', l: 'Oportunidad' }, { v: 'riesgo', l: 'Riesgo' }, { v: '', l: 'Sin señal' }], val: c => c.senal_nivel || '' },
     { key: 'cuenta', label: 'Cuenta SACS', ftype: 'text', val: c => c.sacs_account || '' },
     { key: 'correo', label: 'Correo', ftype: 'text', val: c => c.contacto?.email || '' },
@@ -302,7 +290,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       ],
       apply: (c, v) => v === 'activos' ? c.subs_activas > 0 : v === 'pendientes' ? c.subs_pendientes > 0 : (c.dias_sin_venta != null && c.dias_sin_venta >= 3 && c.subs_activas > 0),
     },
-    { key: 'senal', label: 'Cualquier señal', options: [{ v: 'oportunidad', l: '📈 Con oportunidad' }, { v: 'riesgo', l: '⚠️ En riesgo' }], apply: (c, v) => c.senal_nivel === v },
+    { key: 'senal', label: 'Cualquier señal', options: [{ v: 'oportunidad', l: 'Con oportunidad' }, { v: 'riesgo', l: 'En riesgo' }], apply: (c, v) => c.senal_nivel === v },
   ];
 
   const vistasBase: VistaDef[] = [
@@ -312,7 +300,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
     { key: 'riesgo', nombre: 'En riesgo', config: { conds: [{ campo: 'dias_sin_venta', op: 'mayor', v1: '2' }, { campo: 'subs_activas', op: 'mayor', v1: '0' }], sort: { key: 'salud', dir: 1 } } },
     { key: 'sin_contacto', nombre: 'Sin contacto', config: { conds: [{ campo: 'sin_contacto', op: 'es', v1: 'si' }] } },
     { key: 'vencidas', nombre: 'Renovación vencida', config: { conds: [{ campo: 'renovacion', op: 'antes_hoy' }], sort: { key: 'renovacion', dir: 1 } } },
-    { key: 'oportunidad', nombre: '📈 Con oportunidad', config: { conds: [{ campo: 'senal_nivel', op: 'es', v1: 'oportunidad' }], sort: { key: 'senal', dir: -1 } } },
+    { key: 'oportunidad', nombre: 'Con oportunidad', config: { conds: [{ campo: 'senal_nivel', op: 'es', v1: 'oportunidad' }], sort: { key: 'senal', dir: -1 } } },
   ];
 
   if (loading) return <div style={{ padding: 48, textAlign: 'center', color: '#999' }}>Cargando clientes reales…</div>;
@@ -347,7 +335,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           vistasBase={vistasBase}
           searchText={c => [c.nombre, c.sacs_account, c.contacto?.nombre, c.contacto?.email, c.contacto?.whatsapp].filter(Boolean).join(' ')}
           searchPlaceholder="Buscar cliente, cuenta o contacto…"
-          minWidth={1210}
+          minWidth={980}
           onRowClick={c => setDetailId(c.id)}
           customBody={modo === 'kanban' ? ((rows: any[]) => (
             stages.length === 0
