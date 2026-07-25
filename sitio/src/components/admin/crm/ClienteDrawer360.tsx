@@ -202,6 +202,76 @@ function TabResumen({ res, co, act, subs }: any) {
   );
 }
 
+/* Panorama 360 de la cuenta en SACS (usuarios/sucursales/transacciones/promos).
+ * Carga on-demand desde /api/crm/sacs-cuenta-360 al abrir el tab. */
+function Panorama360({ account }: { account: string }) {
+  const [d, setD] = useState<any>(null);
+  const [err, setErr] = useState('');
+  useEffect(() => {
+    let alive = true; setD(null); setErr('');
+    fetch('/api/crm/sacs-cuenta-360?account=' + encodeURIComponent(account))
+      .then(r => r.json()).then(j => { if (!alive) return; if (j.error) setErr(j.error); else setD(j); })
+      .catch(() => { if (alive) setErr('x'); });
+    return () => { alive = false; };
+  }, [account]);
+
+  if (err) return null;
+  if (!d) return <div style={{ ...D.card, color: '#999', fontSize: '0.82rem' }}>Cargando panorama de SACS…</div>;
+
+  const u = d.usuarios || {}, suc = d.sucursales || {}, tx = d.ultimas_transacciones || [], pr = d.promociones || {};
+  const lbl: any = { fontSize: '0.68rem', color: '#999', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '4px 0 6px' };
+  const ell: any = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' };
+  return (
+    <div style={D.card}>
+      <div style={D.h}>Panorama en SACS</div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+        <div style={D.kpi}><div style={D.kl}>Usuarios</div><div style={D.kv}>{u.total ?? 0}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{u.activos ?? 0} activos</div></div>
+        <div style={D.kpi}><div style={D.kl}>Sucursales</div><div style={D.kv}>{suc.total ?? 0}</div></div>
+        <div style={D.kpi}><div style={D.kl}>Promociones</div><div style={D.kv}>{pr.total ?? 0}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{pr.activas ?? 0} activas</div></div>
+      </div>
+
+      {u.por_grupo?.length ? (
+        <div style={{ marginBottom: 12 }}>
+          <div style={lbl}>Usuarios por grupo</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {u.por_grupo.map((g: any, i: number) => <span key={i} style={{ ...D.badge, background: '#f3f4f6', color: '#475569' }}>{g.grupo}: {g.n}</span>)}
+          </div>
+        </div>
+      ) : null}
+
+      {suc.nombres?.length ? (
+        <div style={{ marginBottom: 12 }}>
+          <div style={lbl}>Sucursales</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {suc.nombres.map((n: string, i: number) => <span key={i} style={{ ...D.badge, background: '#e6f6f2', color: '#1A8F7A' }}>{n}</span>)}
+          </div>
+        </div>
+      ) : null}
+
+      <div style={{ marginBottom: pr.ultimas?.length ? 12 : 0 }}>
+        <div style={lbl}>Últimas transacciones</div>
+        {tx.length ? tx.map((t: any, i: number) => (
+          <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f4f4f4', fontSize: '0.8rem' }}>
+            <b>#{t.folio}</b>
+            <span style={{ color: '#888' }}>{fmtDate(t.fecha)}</span>
+            {t.sucursal ? <span style={{ color: '#888', ...ell, maxWidth: 120 }}>{t.sucursal}</span> : null}
+            <span style={{ marginLeft: 'auto', fontWeight: 700 }}>{money(t.total)}</span>
+          </div>
+        )) : <div style={{ color: '#999', fontSize: '0.8rem' }}>Sin ventas recientes.</div>}
+      </div>
+
+      {pr.ultimas?.length ? (
+        <div>
+          <div style={lbl}>Últimas promociones</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {pr.ultimas.map((p: any, i: number) => <span key={i} style={{ ...D.badge, background: p.activa ? '#fff8e1' : '#f3f4f6', color: p.activa ? '#a06600' : '#777' }}>{p.nombre}{p.activa ? ' · activa' : ''}</span>)}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /* ─────────── 🏢 Cliente & SACS (empresa editable + ligar cuenta) ─────────── */
 function TabSacs({ co, act, reload, flash }: any) {
   const [f, setF] = useState<any>({ nombre: co.nombre || '', rfc: co.rfc || '', razon_social: co.razon_social || '', giro: co.giro || '', sitio_web: co.sitio_web || '', ciudad: co.ciudad || '', estado_geo: co.estado_geo || '', sucursales: co.sucursales || 1, estado_cuenta: co.estado_cuenta || 'activo' });
@@ -260,11 +330,16 @@ function TabSacs({ co, act, reload, flash }: any) {
         </div>
         {co.actividad_sync_at && <div style={{ fontSize: '0.72rem', color: '#999', marginTop: 8 }}>Última sincronización: {new Date(co.actividad_sync_at).toLocaleString('es-MX')}</div>}
         {act?.modulos?.length ? (
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
-            {act.modulos.map((m: string) => <span key={m} style={{ ...D.badge, background: '#eef2ff', color: '#3730a3' }}>{m}</span>)}
+          <div style={{ marginTop: 10 }}>
+            <div style={{ fontSize: '0.68rem', color: '#999', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Módulos que usa</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {act.modulos.map((m: string) => <span key={m} style={{ ...D.badge, background: '#eef2ff', color: '#3730a3' }}>{m}</span>)}
+            </div>
           </div>
         ) : null}
       </div>
+
+      {co.sacs_account && <Panorama360 account={co.sacs_account} />}
 
       <div style={D.card}>
         <div style={D.h}>Datos del cliente (editables)</div>
