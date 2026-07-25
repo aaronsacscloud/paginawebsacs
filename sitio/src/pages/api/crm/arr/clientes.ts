@@ -10,7 +10,7 @@ export const prerender = false;
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 export const GET: APIRoute = async () => {
-  const mkSel = (contactsSel: string) => 'id, nombre, sacs_account, plan, tipo_cuenta, estado_cuenta, sucursales, mrr, arr, fecha_renovacion, health_score, ultima_venta_at, dias_sin_venta, actividad, ' + contactsSel + ', subscriptions(id, estado, ciclo, arr, nombre_plan, proxima_factura, pagos_realizados, total_pagado, contact_id)';
+  const mkSel = (contactsSel: string) => 'id, nombre, sacs_account, plan, tipo_cuenta, estado_cuenta, sucursales, mrr, arr, fecha_renovacion, health_score, ultima_venta_at, dias_sin_venta, actividad, uso_sacs, ' + contactsSel + ', subscriptions(id, estado, ciclo, arr, nombre_plan, proxima_factura, pagos_realizados, total_pagado, contact_id)';
   const CONTACTS_NEW = 'contacts(id, nombre, email, whatsapp, telefono, rol, es_principal)';
   const CONTACTS_OLD = 'contacts(id, nombre, email, whatsapp, telefono)';
   // pipeline_stage y rol/es_principal pueden no existir aún (SQL pendiente) →

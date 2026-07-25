@@ -18,6 +18,10 @@
       "schedule": "0 */6 * * *"
     },
     {
+      "path": "/api/cron/sync-sacs-uso?key=sacs-cron-2026",
+      "schedule": "7 9 * * *"
+    },
+    {
       "path": "/api/cron/arr-reminders?key=sacs-cron-2026",
       "schedule": "0 15 * * *"
     },

@@ -112,7 +112,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
             </div>
             <div style={D.body}>
               {msg && <div style={{ background: '#e8f5e9', color: '#1b5e20', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: '0.8rem', fontWeight: 700 }}>{msg}</div>}
-              {tab === 'resumen' && <TabResumen res={res} co={co} act={act} subs={subs} />}
+              {tab === 'resumen' && <TabResumen res={res} co={co} act={act} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'sacs' && <TabSacs co={co} act={act} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'contactos' && <TabContactos companyId={companyId} contactos={contactos} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'subs' && <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} />}
@@ -125,10 +125,28 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
   );
 }
 
-/* ─────────── 📊 Resumen ─────────── */
-function TabResumen({ res, co, act, subs }: any) {
+/* ─────────── 📊 Resumen (información general del cliente) ─────────── */
+function TabResumen({ res, co, act, subs, reload, flash }: any) {
   const dias = co?.dias_sin_venta;
   const senales = computarSenales(co, (subs || []).find((s: any) => s.estado === 'activa'));
+  // Datos editables del cliente (viven aquí, en la información general — el tab
+  // Cliente & SACS es SOLO información de SACS).
+  const [f, setF] = useState<any>({ nombre: co.nombre || '', rfc: co.rfc || '', razon_social: co.razon_social || '', giro: co.giro || '', sitio_web: co.sitio_web || '', ciudad: co.ciudad || '', estado_geo: co.estado_geo || '', sucursales: co.sucursales || 1, estado_cuenta: co.estado_cuenta || 'activo' });
+  const [saving, setSaving] = useState(false);
+  async function guardar() {
+    if (!f.nombre.trim()) { alert('El nombre es obligatorio.'); return; }
+    setSaving(true);
+    const r = await fetch('/api/crm/companies', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: co.id, ...f, sucursales: parseInt(f.sucursales) || 1 }) });
+    const j = await r.json().catch(() => ({}));
+    setSaving(false);
+    if (!r.ok || j.error) alert(j.error || 'No se pudo guardar.'); else { flash('Datos del cliente guardados'); reload(); }
+  }
+  const campo = (label: string, k: string, ph = '') => (
+    <div style={{ flex: '1 1 200px' }}>
+      <label style={D.lbl}>{label}</label>
+      <input value={f[k]} onChange={e => setF({ ...f, [k]: e.target.value })} placeholder={ph} style={D.input} />
+    </div>
+  );
   const tend = act && act.tendencia_pct;
   const sucPlan = Number(co.sucursales || 0);
   const sucReales = act ? Number(act.sucursales || 0) : 0;
@@ -198,13 +216,43 @@ function TabResumen({ res, co, act, subs }: any) {
           </div>
         ))}
       </div>
+
+      <div style={D.card}>
+        <div style={D.h}>Datos del cliente (editables)</div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+          {campo('Nombre *', 'nombre')}
+          {campo('Razón social', 'razon_social')}
+          {campo('RFC', 'rfc')}
+        </div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+          {campo('Giro', 'giro', 'boutique, papelería…')}
+          {campo('Sitio web', 'sitio_web', 'https://…')}
+          {campo('Ciudad', 'ciudad')}
+          {campo('Estado', 'estado_geo')}
+        </div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div style={{ width: 120 }}>
+            <label style={D.lbl}>Sucursales</label>
+            <input type="number" min={1} value={f.sucursales} onChange={e => setF({ ...f, sucursales: e.target.value })} style={D.input} />
+          </div>
+          <div style={{ width: 180 }}>
+            <label style={D.lbl}>Estado de la cuenta</label>
+            <select value={f.estado_cuenta} onChange={e => setF({ ...f, estado_cuenta: e.target.value })} style={D.input}>
+              {['activo', 'prospecto', 'pausado', 'churned'].map(x => <option key={x} value={x}>{x}</option>)}
+            </select>
+          </div>
+          <button style={{ ...D.btn, marginLeft: 'auto' }} disabled={saving} onClick={guardar}>{saving ? 'Guardando…' : '💾 Guardar cambios'}</button>
+        </div>
+      </div>
     </div>
   );
 }
 
-/* Panorama 360 de la cuenta en SACS (usuarios/sucursales/transacciones/promos).
- * Carga on-demand desde /api/crm/sacs-cuenta-360 al abrir el tab. */
-function Panorama360({ account }: { account: string }) {
+/* Panorama 360 de la cuenta en SACS (usuarios/sucursales/transacciones/promos +
+ * uso profundo: 7 días, programas, administración, módulos nunca activados).
+ * Carga on-demand desde /api/crm/sacs-cuenta-360; mientras llega, pinta el uso
+ * persistido por el cron (co.uso_sacs). */
+function Panorama360({ account, co }: { account: string; co?: any }) {
   const [d, setD] = useState<any>(null);
   const [err, setErr] = useState('');
   useEffect(() => {
@@ -215,14 +263,22 @@ function Panorama360({ account }: { account: string }) {
     return () => { alive = false; };
   }, [account]);
 
-  if (err) return null;
-  if (!d) return <div style={{ ...D.card, color: '#999', fontSize: '0.82rem' }}>Cargando panorama de SACS…</div>;
+  // uso: preferimos lo recién traído; si aún no llega (o falló), el caché del cron
+  const uso = (d && d.uso) || co?.uso_sacs || null;
 
-  const u = d.usuarios || {}, suc = d.sucursales || {}, tx = d.ultimas_transacciones || [], pr = d.promociones || {};
+  if (err && !uso) return null;
+  if (!d && !uso) return <div style={{ ...D.card, color: '#999', fontSize: '0.82rem' }}>Cargando panorama de SACS…</div>;
+
+  const u = d?.usuarios || {}, suc = d?.sucursales || {}, tx = d?.ultimas_transacciones || [], pr = d?.promociones || {};
   const lbl: any = { fontSize: '0.68rem', color: '#999', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '4px 0 6px' };
   const ell: any = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' };
+  const usa = (b: boolean, txt: string, extra = '') => (
+    <span style={{ ...D.badge, background: b ? '#e6f6f2' : '#f3f4f6', color: b ? '#1A8F7A' : '#9aa0a8' }}>{b ? '✓' : '—'} {txt}{b && extra ? ` · ${extra}` : ''}</span>
+  );
+  const le = uso?.lealtad, adm = uso?.administracion, fac = uso?.facturacion, tg = uso?.tarjetas_regalo, tr = uso?.transferencias;
   return (
-    <div style={D.card}>
+    <>
+    {d && <div style={D.card}>
       <div style={D.h}>Panorama en SACS</div>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
         <div style={D.kpi}><div style={D.kl}>Usuarios</div><div style={D.kv}>{u.total ?? 0}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{u.activos ?? 0} activos</div></div>
@@ -268,25 +324,78 @@ function Panorama360({ account }: { account: string }) {
           </div>
         </div>
       ) : null}
-    </div>
+    </div>}
+
+    {uso && <div style={D.card}>
+      <div style={D.h}>Uso últimos 7 días</div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: (tr?.ultimas?.length || uso.conteos?.ultimo) ? 12 : 0 }}>
+        <div style={D.kpi}><div style={D.kl}>Transferencias</div><div style={D.kv}>{tr?.total_7d ?? 0}</div></div>
+        <div style={D.kpi}><div style={D.kl}>Conteos físicos</div><div style={D.kv}>{uso.conteos?.total_7d ?? 0}</div></div>
+        <div style={D.kpi}><div style={D.kl}>Clientes nuevos</div><div style={D.kv}>{uso.clientes?.nuevos_7d ?? 0}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{Number(uso.clientes?.total || 0).toLocaleString()} en total</div></div>
+        <div style={D.kpi}><div style={D.kl}>Facturas timbradas</div><div style={D.kv}>{fac?.timbradas_7d ?? 0}</div></div>
+        <div style={D.kpi}><div style={D.kl}>Promos creadas</div><div style={D.kv}>{uso.promociones?.creadas_7d ?? 0}</div></div>
+      </div>
+      {tr?.ultimas?.length ? (
+        <div style={{ marginBottom: uso.conteos?.ultimo ? 10 : 0 }}>
+          <div style={lbl}>Últimas transferencias</div>
+          {tr.ultimas.map((t: any, i: number) => (
+            <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f4f4f4', fontSize: '0.8rem' }}>
+              <span style={{ color: '#888' }}>{fmtDate(t.fecha)}</span>
+              <span style={{ ...ell, maxWidth: 260 }}><b>{t.origen || '—'}</b> → <b>{t.destino || '—'}</b></span>
+              <span style={{ marginLeft: 'auto', ...D.badge, background: /Recibida/.test(t.status) ? '#e6f6f2' : t.status === 'Cancelada' ? '#fdf2f2' : '#fff8e1', color: /Recibida/.test(t.status) ? '#1A8F7A' : t.status === 'Cancelada' ? '#b93333' : '#a06600' }}>{t.status || '—'}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {uso.conteos?.ultimo && <div style={{ fontSize: '0.78rem', color: '#666' }}>Último conteo: <b>{fmtDate(uso.conteos.ultimo.fecha)}</b> · {uso.conteos.ultimo.status}</div>}
+    </div>}
+
+    {uso && <div style={D.card}>
+      <div style={D.h}>Programas y herramientas</div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+        {le?.activo
+          ? <span style={{ ...D.badge, background: '#e6f6f2', color: '#1A8F7A' }}>✓ Lealtad {le.tipo === 'completo' ? 'COMPLETO' : le.tipo === 'basico' ? 'BÁSICO' : ''} · {Number(le.inscritos || 0).toLocaleString()} inscritos{Number(le.nuevos_7d || 0) > 0 ? ` · +${le.nuevos_7d} en 7d` : ''}</span>
+          : usa(false, 'Programa de lealtad')}
+        {usa(!!fac?.configurada, 'Facturación electrónica', fac?.timbradas_7d ? `${fac.timbradas_7d} en 7d` : '')}
+        {usa(!!tg?.usa, 'Tarjetas de regalo', tg?.activas ? `${tg.activas} activas` : '')}
+      </div>
+      {uso.promociones?.activas?.length ? (
+        <div style={{ marginBottom: 10 }}>
+          <div style={lbl}>Promociones activas ahora</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {uso.promociones.activas.map((p: any, i: number) => <span key={i} style={{ ...D.badge, background: '#fff8e1', color: '#a06600' }}>{p.nombre}{p.origen === 'pos' ? ' · POS' : ''}</span>)}
+          </div>
+        </div>
+      ) : null}
+      <div>
+        <div style={lbl}>Administración</div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {usa(Number(adm?.gastos_30d || 0) > 0, 'Gastos', adm?.gastos_30d ? `${adm.gastos_30d} en 30d` : '')}
+          {usa(Number(adm?.cxp_pendientes || 0) > 0, 'Cuentas por pagar', adm?.cxp_pendientes ? `${adm.cxp_pendientes} pendientes` : '')}
+          {usa(!!adm?.bancos, 'Cuentas de efectivo / bancos')}
+          {usa(Number(adm?.proveedores || 0) > 0, 'Proveedores', adm?.proveedores ? String(adm.proveedores) : '')}
+        </div>
+      </div>
+    </div>}
+
+    {uso?.modulos_nunca?.length ? (
+      <div style={D.card}>
+        <div style={D.h}>Módulos que nunca ha activado</div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {uso.modulos_nunca.map((m: string) => <span key={m} style={{ ...D.badge, background: '#f3f4f6', color: '#9aa0a8' }}>{m}</span>)}
+        </div>
+        <div style={{ fontSize: '0.72rem', color: '#999', marginTop: 8 }}>Cada módulo sin activar es una conversación de venta pendiente.</div>
+      </div>
+    ) : null}
+    </>
   );
 }
 
-/* ─────────── 🏢 Cliente & SACS (empresa editable + ligar cuenta) ─────────── */
+/* ─────────── 🏢 SACS (solo información de SACS: ligar cuenta + panorama) ─────────── */
 function TabSacs({ co, act, reload, flash }: any) {
-  const [f, setF] = useState<any>({ nombre: co.nombre || '', rfc: co.rfc || '', razon_social: co.razon_social || '', giro: co.giro || '', sitio_web: co.sitio_web || '', ciudad: co.ciudad || '', estado_geo: co.estado_geo || '', sucursales: co.sucursales || 1, estado_cuenta: co.estado_cuenta || 'activo' });
-  const [saving, setSaving] = useState(false);
   const [cuenta, setCuenta] = useState(co.sacs_account || '');
   const [linking, setLinking] = useState(false);
 
-  async function guardar() {
-    if (!f.nombre.trim()) { alert('El nombre es obligatorio.'); return; }
-    setSaving(true);
-    const r = await fetch('/api/crm/companies', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: co.id, ...f, sucursales: parseInt(f.sucursales) || 1 }) });
-    const j = await r.json().catch(() => ({}));
-    setSaving(false);
-    if (!r.ok || j.error) alert(j.error || 'No se pudo guardar.'); else { flash('Datos del cliente guardados'); reload(); }
-  }
   async function ligarYSync() {
     const acct = cuenta.trim().toLowerCase();
     if (!acct) { alert('Escribe el subdominio de la cuenta SACS (ej. dibujotecnico).'); return; }
@@ -308,13 +417,6 @@ function TabSacs({ co, act, reload, flash }: any) {
     setLinking(false);
     if (j.error) alert(j.error); else { flash('Actividad sincronizada'); reload(); }
   }
-
-  const campo = (label: string, k: string, ph = '') => (
-    <div style={{ flex: '1 1 200px' }}>
-      <label style={D.lbl}>{label}</label>
-      <input value={f[k]} onChange={e => setF({ ...f, [k]: e.target.value })} placeholder={ph} style={D.input} />
-    </div>
-  );
 
   return (
     <div>
@@ -339,35 +441,7 @@ function TabSacs({ co, act, reload, flash }: any) {
         ) : null}
       </div>
 
-      {co.sacs_account && <Panorama360 account={co.sacs_account} />}
-
-      <div style={D.card}>
-        <div style={D.h}>Datos del cliente (editables)</div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
-          {campo('Nombre *', 'nombre')}
-          {campo('Razón social', 'razon_social')}
-          {campo('RFC', 'rfc')}
-        </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
-          {campo('Giro', 'giro', 'boutique, papelería…')}
-          {campo('Sitio web', 'sitio_web', 'https://…')}
-          {campo('Ciudad', 'ciudad')}
-          {campo('Estado', 'estado_geo')}
-        </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <div style={{ width: 120 }}>
-            <label style={D.lbl}>Sucursales</label>
-            <input type="number" min={1} value={f.sucursales} onChange={e => setF({ ...f, sucursales: e.target.value })} style={D.input} />
-          </div>
-          <div style={{ width: 180 }}>
-            <label style={D.lbl}>Estado de la cuenta</label>
-            <select value={f.estado_cuenta} onChange={e => setF({ ...f, estado_cuenta: e.target.value })} style={D.input}>
-              {['activo', 'prospecto', 'pausado', 'churned'].map(x => <option key={x} value={x}>{x}</option>)}
-            </select>
-          </div>
-          <button style={{ ...D.btn, marginLeft: 'auto' }} disabled={saving} onClick={guardar}>{saving ? 'Guardando…' : '💾 Guardar cambios'}</button>
-        </div>
-      </div>
+      {co.sacs_account && <Panorama360 account={co.sacs_account} co={co} />}
     </div>
   );
 }

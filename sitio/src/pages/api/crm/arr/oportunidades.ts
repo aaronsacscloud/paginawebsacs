@@ -11,12 +11,14 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 export const GET: APIRoute = async () => {
   const { data: companies, error } = await supabase
     .from('companies')
-    .select('id, nombre, sacs_account, plan, sucursales, mrr, arr, estado_cuenta, health_score, dias_sin_venta, ultima_venta_at, actividad, subscriptions(estado, proxima_factura, arr, mrr)')
+    .select('id, nombre, sacs_account, plan, sucursales, mrr, arr, estado_cuenta, health_score, dias_sin_venta, ultima_venta_at, actividad, uso_sacs, subscriptions(estado, proxima_factura, arr, mrr)')
     .is('archived_at', null).range(0, 9999);
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 
   const data = (companies || [])
-    .filter((c: any) => (c.subscriptions || []).length > 0)   // clientes reales
+    // Solo clientes con suscripción ACTIVA: uno ya cancelado no es candidato a
+    // upsell (ej. auraactivewear salía con "Ampliar sucursales" y MRR $0).
+    .filter((c: any) => (c.subscriptions || []).some((s: any) => s.estado === 'activa'))
     .map((c: any) => {
       const activas = (c.subscriptions || []).filter((s: any) => s.estado === 'activa');
       const senales = computarSenales(c, activas[0]);

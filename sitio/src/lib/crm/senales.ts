@@ -17,9 +17,14 @@ const PLANES_BASICOS = ['vende', 'controla'];
 const PLANES_CON_MODULOS = ['controla', 'fideliza', 'automatiza'];
 
 // co: fila de companies con { plan, sucursales, mrr, arr, health_score,
-//     dias_sin_venta, estado_cuenta, actividad{...} }. subActiva: suscripción activa (opcional).
+//     dias_sin_venta, estado_cuenta, actividad{...}, uso_sacs{...} }.
+// subActiva: suscripción ACTIVA. Sin suscripción activa NO hay análisis: un
+// cliente ya cancelado no es candidato a upsell ni a alertas comerciales aquí
+// (el caso "cancelada pero sigue usando" lo cubre el cron de alertas).
 export function computarSenales(co: any, subActiva?: any): Senal[] {
+  if (!subActiva) return [];
   const a = (co && co.actividad) || {};
+  const uso = (co && co.uso_sacs) || null;
   const out: Senal[] = [];
   const dias = co.dias_sin_venta;
   const sucReales = Number(a.sucursales || 0);
@@ -75,6 +80,36 @@ export function computarSenales(co: any, subActiva?: any): Senal[] {
       accion: 'Capacitación para activar más módulos (más valor = menos churn).' });
   }
 
+  // ── OPORTUNIDADES desde el USO PROFUNDO (uso_sacs, cron de madrugada) ──
+  if (uso) {
+    const clientes = Number(uso.clientes?.total || 0);
+    if (uso.lealtad && !uso.lealtad.activo && clientes >= 50) {
+      out.push({ tipo: 'lealtad', nivel: 'oportunidad', peso: 50,
+        titulo: `Tiene ${clientes.toLocaleString()} clientes y no usa lealtad`,
+        detalle: 'La base de clientes ya existe — el programa de lealtad la convierte en recompra.',
+        accion: 'Ofrécele activar el programa de lealtad.' });
+    }
+    if (uso.lealtad && uso.lealtad.activo && uso.lealtad.tipo === 'basico' && Number(uso.lealtad.inscritos || 0) >= 100) {
+      out.push({ tipo: 'lealtad_upgrade', nivel: 'oportunidad', peso: 48,
+        titulo: `Lealtad básico con ${Number(uso.lealtad.inscritos).toLocaleString()} inscritos`,
+        detalle: 'El programa ya prendió — el completo (niveles y puntos) multiplica la recompra.',
+        accion: 'Súbelo a lealtad completo.' });
+    }
+    if (uso.facturacion && !uso.facturacion.configurada && Number(a.ventas_30d || 0) > 0) {
+      out.push({ tipo: 'facturacion', nivel: 'oportunidad', peso: 42,
+        titulo: 'Vende pero no tiene facturación electrónica configurada',
+        detalle: 'Facturar desde SACS le ahorra el doble capturado y lo amarra al sistema.',
+        accion: 'Ofrécele configurar la facturación electrónica.' });
+    }
+    const adm = uso.administracion || {};
+    if (Number(adm.gastos_30d || 0) === 0 && Number(adm.proveedores || 0) === 0 && !adm.bancos && Number(a.ventas_30d || 0) > 0) {
+      out.push({ tipo: 'administracion', nivel: 'oportunidad', peso: 40,
+        titulo: 'No usa los módulos de administración',
+        detalle: 'Gastos, cuentas por pagar y proveedores viven fuera de SACS → menos valor percibido.',
+        accion: 'Ofrécele el módulo de administración (gastos, CxP, proveedores).' });
+    }
+  }
+
   return out.sort((x, y) => y.peso - x.peso);
 }
 
@@ -87,4 +122,8 @@ export const SENAL_LABEL: Record<string, string> = {
   creciendo: 'Creciendo',
   equipo: 'Equipo grande',
   modulos: 'Activar módulos',
+  lealtad: 'Ofrecer lealtad',
+  lealtad_upgrade: 'Subir a lealtad completo',
+  facturacion: 'Ofrecer facturación',
+  administracion: 'Ofrecer administración',
 };
