@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Server, RefreshCw, ShieldCheck, User } from 'lucide-react';
+import { Server, RefreshCw, ShieldCheck, User, LogIn } from 'lucide-react';
 import TablaEnterprise, { type ColDef, type QuickDef, type VistaDef } from './TablaEnterprise';
 
 /* ═══ Sección SACS — usuarios reales de cada cuenta SACS ═══
@@ -58,6 +58,18 @@ export default function SacsUsuariosTab() {
   }
   useEffect(() => { if (account) cargar(account); }, [account]);
 
+  const [entrando, setEntrando] = useState('');
+  async function entrar(u: any) {
+    if (!confirm(`Vas a ENTRAR a SACS como "${u.nombre}" (cuenta ${account}).\nSe abrirá en una pestaña nueva con acceso completo. ¿Continuar?`)) return;
+    setEntrando(u.uid);
+    try {
+      const j = await fetch('/api/crm/sacs-impersonar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ account, uid: u.uid }) }).then(r => r.json());
+      if (j.error) alert(j.error);
+      else window.open(j.url, '_blank', 'noopener');
+    } catch (e: any) { alert('Error: ' + (e?.message || e)); }
+    setEntrando('');
+  }
+
   const activos = usuarios.filter(u => u.activo).length;
   const conLogin = usuarios.filter(u => u.ultimo_login).length;
 
@@ -104,8 +116,20 @@ export default function SacsUsuariosTab() {
       ); },
     },
     {
-      key: 'sucursales', label: 'Sucursales', width: 100, num: true, ftype: 'number', val: u => Number(u.sucursales || 0),
+      key: 'sucursales', label: 'Sucursales', width: 90, num: true, ftype: 'number', val: u => Number(u.sucursales || 0),
       render: u => <td style={{ ...td, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{u.sucursales || 0}</td>,
+    },
+    {
+      key: 'acceso', label: 'Acceso', width: 118, sortable: false,
+      render: u => (
+        <td style={td} onClick={e => e.stopPropagation()}>
+          <button onClick={() => entrar(u)} disabled={entrando === u.uid || !u.activo}
+            title={u.activo ? 'Entrar a SACS como este usuario (acceso administrado)' : 'Usuario inactivo'}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 30, padding: '0 11px', border: '1px solid #d7dbe6', borderRadius: 8, background: u.activo ? '#fff' : '#f6f7f9', color: u.activo ? '#1a1a1a' : '#b9bcc2', fontSize: '0.74rem', fontWeight: 700, cursor: u.activo ? 'pointer' : 'not-allowed' }}>
+            <LogIn size={13} strokeWidth={2.4} /> {entrando === u.uid ? '…' : 'Entrar'}
+          </button>
+        </td>
+      ),
     },
   ];
 
@@ -172,7 +196,7 @@ export default function SacsUsuariosTab() {
             vistasBase={vistasBase}
             searchText={u => [u.nombre, u.email, u.grupo_nombre].filter(Boolean).join(' ')}
             searchPlaceholder="Buscar usuario, correo o grupo…"
-            minWidth={860}
+            minWidth={980}
             emptyMsg={account ? 'Esta cuenta no tiene usuarios (o SACS no respondió).' : 'Elige una cuenta.'}
           />
         )}
