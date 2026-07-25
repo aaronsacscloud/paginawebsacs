@@ -23,6 +23,21 @@ const PLAN_BADGE: Record<string, { bg: string; color: string; label: string }> =
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const fmtDate = (d?: string | null) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '—';
 
+/* Densidad "enterprise" del datatable: tipografía compacta, filas de ~44px,
+ * números tabulares alineados a la derecha, cabecera sticky y hover sutil.
+ * (Estilos propios — no tocar S, que es compartido con otros tabs.) */
+const T = {
+  th: { textAlign: 'left' as const, padding: '10px 14px', fontSize: '0.63rem', fontWeight: 700, color: '#8a8f98', textTransform: 'uppercase' as const, letterSpacing: '0.06em', borderBottom: '1px solid #e8eaee', whiteSpace: 'nowrap' as const, background: '#fafbfc', position: 'sticky' as const, top: 0, zIndex: 1 },
+  td: { padding: '12px 14px', fontSize: '0.79rem', color: '#333', borderBottom: '1px solid #f1f2f5', whiteSpace: 'nowrap' as const, verticalAlign: 'middle' as const },
+  num: { textAlign: 'right' as const, fontVariantNumeric: 'tabular-nums' as const },
+  sub: { fontSize: '0.67rem', color: '#a7abb3', fontWeight: 400, marginTop: 2 } as const,
+  muted: { fontSize: '0.74rem', color: '#6b7078' } as const,
+  badge: { display: 'inline-block', padding: '2px 9px', borderRadius: 99, fontSize: '0.66rem', fontWeight: 700, whiteSpace: 'nowrap' as const } as const,
+  kpi: { background: '#fff', border: '1px solid #ececf0', borderRadius: 12, padding: '14px 22px', flex: '0 1 220px', minWidth: 170 } as const,
+  kLabel: { fontSize: '0.63rem', fontWeight: 700, color: '#8a8f98', textTransform: 'uppercase' as const, letterSpacing: '0.06em' } as const,
+  kValue: { fontSize: '1.3rem', fontWeight: 800, color: '#16181d', marginTop: 4, fontVariantNumeric: 'tabular-nums' as const } as const,
+};
+
 export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}) {
   const [data, setData] = useState<any[]>([]);
   const [tot, setTot] = useState<any>(null);
@@ -121,18 +136,26 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   if (error) return <div style={{ padding: 48, textAlign: 'center', color: '#E54B4B' }}>{error} <button style={S.btnSmall} onClick={load}>Reintentar</button></div>;
 
   return (
-    <div>
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+    <div style={{ padding: '4px 12px 28px' }}>
+      {/* Hover sutil de filas + lápiz visible solo al pasar el mouse (aire visual). */}
+      <style>{`
+        .ct360 tbody tr { transition: background .12s ease; }
+        .ct360 tbody tr:hover td { background: #f7f9fc; }
+        .ct360 .ct-pencil { opacity: 0; transition: opacity .15s ease; }
+        .ct360 tbody tr:hover .ct-pencil, .ct360 .ct-pencil:focus { opacity: .65; }
+      `}</style>
+
+      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 18 }}>
         {[['Clientes', tot?.clientes], ['Con ARR activo', tot?.activos], ['ARR total', money(tot?.arr)]].map(([l, v]) => (
-          <div key={String(l)} style={S.kpi}>
-            <div style={S.kLabel}>{l}</div>
-            <div style={S.kValue}>{v ?? '—'}</div>
+          <div key={String(l)} style={T.kpi}>
+            <div style={T.kLabel}>{l}</div>
+            <div style={T.kValue}>{v ?? '—'}</div>
           </div>
         ))}
       </div>
 
-      <div style={S.card}>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+      <div style={{ ...S.card, padding: '20px 22px' }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente, cuenta o contacto…" style={{ ...S.input, flex: 1, minWidth: 220 }} />
           <select value={fPlan} onChange={e => setFPlan(e.target.value)} style={S.input}>
             <option value="">Todos los planes</option>
@@ -183,10 +206,12 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
             />
           )
         ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <div className="ct360" style={{ overflowX: 'auto', margin: '0 -6px' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead><tr>
-              {['Cliente', 'Correo', 'Teléfono / WhatsApp', 'Plan', 'Etapa', 'Subs', 'ARR', 'Pagos', 'Total pagado', 'Próx. factura', 'Últ. venta SACS', 'Salud'].map(h => <th key={h} style={S.th}>{h}</th>)}
+              {([['Cliente', false], ['Correo', false], ['Teléfono / WhatsApp', false], ['Plan', false], ['Etapa', false],
+                ['Subs', true], ['ARR', true], ['Pagos', true], ['Pagado', true], ['Próx. factura', false], ['Últ. venta', false], ['Salud', true]] as [string, boolean][])
+                .map(([h, num]) => <th key={h} style={{ ...T.th, ...(num ? T.num : {}) }}>{h}</th>)}
             </tr></thead>
             <tbody>
               {filtered.map(c => {
@@ -194,17 +219,20 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
                 const dias = c.dias_sin_venta;
                 return (
                   <tr key={c.id} style={{ cursor: 'pointer' }} onClick={() => setDetailId(c.id)}>
-                    <td style={{ ...S.td, fontWeight: 700 }}>{c.contacto?.nombre || c.nombre}{(() => { const cuenta = c.sacs_account || c.nombre; return cuenta && cuenta !== (c.contacto?.nombre || c.nombre) ? <div style={{ color: '#aaa', fontWeight: 400, fontSize: '0.72rem' }}>{cuenta}</div> : null; })()}</td>
+                    <td style={{ ...T.td, fontWeight: 700, maxWidth: 210, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {c.contacto?.nombre || c.nombre}
+                      {(() => { const cuenta = c.sacs_account || c.nombre; return cuenta && cuenta !== (c.contacto?.nombre || c.nombre) ? <div style={T.sub}>{cuenta}</div> : null; })()}
+                    </td>
                     {/* Correo (editable) */}
-                    <td style={S.td} onClick={e => e.stopPropagation()}>
+                    <td style={{ ...T.td, color: '#555', maxWidth: 210, overflow: 'hidden', textOverflow: 'ellipsis' }} onClick={e => e.stopPropagation()}>
                       {editId === c.id
                         ? <input value={eEmail} onChange={e => setEEmail(e.target.value)} placeholder="correo@…" style={{ ...S.input, padding: '4px 6px', fontSize: '0.75rem', width: 170 }} />
                         : (c.contacto?.email
                             ? c.contacto.email
-                            : (c.contacto ? <span style={{ color: '#bbb' }}>—</span> : <span style={{ color: '#c62828' }}>sin contacto</span>))}
+                            : (c.contacto ? <span style={{ color: '#c4c8cf' }}>—</span> : <span style={{ color: '#c62828' }}>sin contacto</span>))}
                     </td>
-                    {/* Teléfono / WhatsApp (editable) + lápiz */}
-                    <td style={S.td} onClick={e => e.stopPropagation()}>
+                    {/* Teléfono / WhatsApp (editable) — lápiz aparece al pasar el mouse */}
+                    <td style={{ ...T.td, color: '#555' }} onClick={e => e.stopPropagation()}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         {editId === c.id ? (
                           <>
@@ -214,37 +242,37 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
                           </>
                         ) : (
                           <>
-                            <span>{c.contacto?.whatsapp || c.contacto?.telefono || <span style={{ color: '#bbb' }}>—</span>}</span>
-                            <button title={c.contacto ? 'Editar correo/WhatsApp' : 'Agregar contacto'} onClick={() => startEdit(c)} style={{ ...S.btnSmall, padding: '2px 7px', marginLeft: 'auto', opacity: 0.55 }}>✏️</button>
+                            <span>{c.contacto?.whatsapp || c.contacto?.telefono || <span style={{ color: '#c4c8cf' }}>—</span>}</span>
+                            <button className="ct-pencil" title={c.contacto ? 'Editar correo/WhatsApp' : 'Agregar contacto'} onClick={() => startEdit(c)} style={{ ...S.btnSmall, padding: '2px 7px', marginLeft: 'auto', border: 'none', background: 'none' }}>✏️</button>
                           </>
                         )}
                       </div>
                     </td>
-                    <td style={S.td}>{b ? <span style={{ ...S.badge, background: b.bg, color: b.color }}>{b.label}</span> : <span style={{ color: '#bbb' }}>—</span>}</td>
-                    <td style={S.td} onClick={e => e.stopPropagation()}>
-                      {stages.length === 0 ? <span style={{ color: '#bbb' }}>—</span> : (
+                    <td style={T.td}>{b ? <span style={{ ...T.badge, background: b.bg, color: b.color }}>{b.label}</span> : <span style={{ color: '#c4c8cf' }}>—</span>}</td>
+                    <td style={T.td} onClick={e => e.stopPropagation()}>
+                      {stages.length === 0 ? <span style={{ color: '#c4c8cf' }}>—</span> : (
                         <select value={c.pipeline_stage || ''} onChange={e => setStage(c.id, e.target.value)}
-                          style={{ ...S.input, padding: '3px 6px', fontSize: '0.75rem', maxWidth: 130, borderColor: c.pipeline_stage && stageBy[c.pipeline_stage] ? stageBy[c.pipeline_stage].color : '#ddd', color: c.pipeline_stage && stageBy[c.pipeline_stage] ? stageBy[c.pipeline_stage].color : '#999', fontWeight: 700 }}>
+                          style={{ ...S.input, padding: '3px 6px', fontSize: '0.72rem', maxWidth: 118, borderColor: c.pipeline_stage && stageBy[c.pipeline_stage] ? stageBy[c.pipeline_stage].color : '#e3e5e9', color: c.pipeline_stage && stageBy[c.pipeline_stage] ? stageBy[c.pipeline_stage].color : '#999', fontWeight: 700 }}>
                           <option value="">— etapa —</option>
                           {stages.map(s => <option key={s.key} value={s.key} style={{ color: '#333' }}>{s.label}</option>)}
                         </select>
                       )}
                     </td>
-                    <td style={S.td}>{c.subs_activas}{c.subs_pendientes ? <span style={{ color: '#a06600' }}> +{c.subs_pendientes}⏳</span> : ''}</td>
-                    <td style={{ ...S.td, fontWeight: 800 }}>{money(c.arr)}{c.arr_pendiente > 0 ? <div style={{ fontSize: '0.68rem', color: '#a06600' }}>+{money(c.arr_pendiente)} pend.</div> : null}</td>
-                    <td style={S.td}>{c.pagos_realizados}</td>
-                    <td style={S.td}>{money(c.total_pagado)}</td>
-                    <td style={{ ...S.td, color: c.proxima_factura && c.proxima_factura < new Date().toISOString().slice(0, 10) ? '#b93333' : '#333' }}>{fmtDate(c.proxima_factura)}</td>
-                    <td style={{ ...S.td, color: dias != null && dias > 15 ? '#b93333' : dias != null && dias >= 3 ? '#a06600' : '#333' }}>
-                      {c.ultima_venta_at ? fmtDate(c.ultima_venta_at) + (dias != null ? ` (${dias}d)` : '') : (c.sacs_account ? 'sin datos aún' : 'sin cuenta ligada')}
+                    <td style={{ ...T.td, ...T.num }}>{c.subs_activas}{c.subs_pendientes ? <span style={{ color: '#a06600' }}> +{c.subs_pendientes}⏳</span> : ''}</td>
+                    <td style={{ ...T.td, ...T.num, fontWeight: 800 }}>{money(c.arr)}{c.arr_pendiente > 0 ? <div style={{ fontSize: '0.66rem', color: '#a06600', fontWeight: 600 }}>+{money(c.arr_pendiente)} pend.</div> : null}</td>
+                    <td style={{ ...T.td, ...T.num }}>{c.pagos_realizados}</td>
+                    <td style={{ ...T.td, ...T.num }}>{money(c.total_pagado)}</td>
+                    <td style={{ ...T.td, ...T.muted, color: c.proxima_factura && c.proxima_factura < new Date().toISOString().slice(0, 10) ? '#b93333' : T.muted.color }}>{fmtDate(c.proxima_factura)}</td>
+                    <td style={{ ...T.td, ...T.muted, color: dias != null && dias > 15 ? '#b93333' : dias != null && dias >= 3 ? '#a06600' : T.muted.color }}>
+                      {c.ultima_venta_at ? <>{fmtDate(c.ultima_venta_at)}{dias != null ? <span style={{ opacity: 0.75 }}> ({dias}d)</span> : null}</> : (c.sacs_account ? 'sin datos aún' : 'sin cuenta')}
                     </td>
-                    <td style={S.td}>{c.health_score == null ? '—' : <span style={{ fontWeight: 800, color: c.health_score >= 70 ? '#1A8F7A' : c.health_score >= 40 ? '#a06600' : '#b93333' }}>{c.health_score}</span>}</td>
+                    <td style={{ ...T.td, ...T.num }}>{c.health_score == null ? <span style={{ color: '#c4c8cf' }}>—</span> : <span style={{ fontWeight: 800, color: c.health_score >= 70 ? '#1A8F7A' : c.health_score >= 40 ? '#a06600' : '#b93333' }}>{c.health_score}</span>}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-          {!filtered.length && <div style={{ padding: 28, textAlign: 'center', color: '#999' }}>Sin clientes con esos filtros.</div>}
+          {!filtered.length && <div style={{ padding: 32, textAlign: 'center', color: '#999' }}>Sin clientes con esos filtros.</div>}
         </div>
         )}
       </div>
