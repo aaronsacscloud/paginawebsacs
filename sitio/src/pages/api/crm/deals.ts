@@ -135,6 +135,15 @@ export const PUT: APIRoute = async ({ request }) => {
       console.warn('[crm/deals.PUT] ensureSubscriptionFromDeal failed:', e);
     }
 
+    // Encolar ONBOARDING del cliente nuevo (idempotente — no duplica si ya
+    // se encoló al aceptar la cotización).
+    try {
+      const { enqueueOnboarding } = await import('../../../lib/crm/onboarding');
+      await enqueueOnboarding(data.company_id || null, data.contact_id || null, id);
+    } catch (e) {
+      console.warn('[crm/deals.PUT] enqueueOnboarding failed:', e);
+    }
+
     // Activity log para que partner lo vea como movimiento
     await supabase.from('activities').insert({
       contact_id: data.contact_id,

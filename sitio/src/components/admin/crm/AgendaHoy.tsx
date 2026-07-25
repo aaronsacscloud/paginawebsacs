@@ -24,16 +24,19 @@ export default function AgendaHoy({ onOpenContact, onGoDeals }: { onOpenContact:
   const [error, setError] = useState<string | null>(null);
   const [contacts, setContacts] = useState<any[]>([]);
   const [deals, setDeals] = useState<any[]>([]);
+  const [tareas, setTareas] = useState<any[]>([]);
 
   const load = async () => {
     setLoading(true); setError(null);
     try {
-      const [cj, dj] = await Promise.all([
+      const [cj, dj, tj] = await Promise.all([
         fetch('/api/crm/contacts?limit=500').then(r => r.json()),
         fetch('/api/crm/deals').then(r => r.json()).catch(() => []),
+        fetch('/api/crm/activities?tipo=tarea&limit=200').then(r => r.json()).catch(() => []),
       ]);
       setContacts(cj.contacts || []);
       setDeals(Array.isArray(dj) ? dj : []);
+      setTareas((Array.isArray(tj) ? tj : []).filter((t: any) => t.metadata?.task && t.metadata?.done !== true));
     } catch (e: any) { setError(e?.message || 'No se pudo cargar'); }
     setLoading(false);
   };
@@ -51,8 +54,9 @@ export default function AgendaHoy({ onOpenContact, onGoDeals }: { onOpenContact:
   if (loading) return <div style={{ padding: 24 }}><SkeletonList /></div>;
   if (error) return <div style={{ padding: 48, textAlign: 'center', color: '#E54B4B' }}>{error} <button onClick={load} style={miniBtn}>Reintentar</button></div>;
 
+  const tareasOrdenadas = tareas.slice().sort((a, b) => String(a.metadata?.due_at || '9999').localeCompare(String(b.metadata?.due_at || '9999')));
   const total = vencidos.length + paraHoy.length;
-  const nada = total === 0 && cierresProximos.length === 0;
+  const nada = total === 0 && cierresProximos.length === 0 && tareasOrdenadas.length === 0;
 
   return (
     <div style={{ padding: 24, maxWidth: 900, margin: '0 auto' }}>
@@ -61,7 +65,7 @@ export default function AgendaHoy({ onOpenContact, onGoDeals }: { onOpenContact:
         <button onClick={load} style={miniBtn}>↻ Actualizar</button>
       </div>
       <div style={{ color: '#888', fontSize: 13, marginBottom: 20 }}>
-        {nada ? 'Todo al día. Sin seguimientos pendientes.' : `${vencidos.length} vencidos · ${paraHoy.length} para hoy · ${cierresProximos.length} cierres próximos`}
+        {nada ? 'Todo al día. Sin seguimientos pendientes.' : `${vencidos.length} vencidos · ${paraHoy.length} para hoy · ${cierresProximos.length} cierres próximos · ${tareasOrdenadas.length} tareas`}
       </div>
 
       {nada && (
@@ -91,6 +95,21 @@ export default function AgendaHoy({ onOpenContact, onGoDeals }: { onOpenContact:
               right={c.whatsapp ? <a href={`https://wa.me/${c.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener" onClick={e => e.stopPropagation()} style={{ color: '#2e7d32', fontWeight: 700, fontSize: '0.72rem', textDecoration: 'none' }}>WhatsApp</a> : null}
               badge="Hoy" badgeColor="#a06600" />
           ))}
+        </Section>
+      )}
+
+      {tareasOrdenadas.length > 0 && (
+        <Section title="✅ Tareas pendientes (onboarding)" color="#6C5CE7" count={tareasOrdenadas.length}>
+          {tareasOrdenadas.map(t => {
+            const due = t.metadata?.due_at ? new Date(t.metadata.due_at) : null;
+            const vencida = due && due.getTime() < Date.now();
+            return (
+              <Row key={t.id} onClick={() => { /* palomear */ fetch('/api/crm/activities', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: t.id, done: true }) }).then(load); }}
+                nombre={t.titulo} sub={'click para marcar hecha'}
+                right={<span style={{ color: vencida ? '#b93333' : '#888', fontWeight: 700, fontSize: '0.72rem' }}>{due ? (vencida ? 'vencida' : 'para ' + fmtDate(due.toISOString().slice(0, 10))) : ''}</span>}
+                badge={t.metadata?.category === 'onboarding' ? 'Onboarding' : 'Tarea'} badgeColor="#6C5CE7" />
+            );
+          })}
         </Section>
       )}
 

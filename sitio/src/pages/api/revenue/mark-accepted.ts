@@ -27,22 +27,10 @@ function generateSignatureSVG(name: string): string {
 }
 
 async function enqueueOnboardingTasks(quote: any, dealId: string | null, contactId: string | null) {
-  const tasks = [
-    { titulo: 'Activar cuenta del cliente', tipo: 'tarea', metadata: { task: true, due_in_hours: 24, category: 'onboarding', step: 'activar_cuenta' } },
-    { titulo: 'Enviar email de bienvenida', tipo: 'tarea', metadata: { task: true, due_in_hours: 2, category: 'onboarding', step: 'email_bienvenida', auto: true } },
-    { titulo: 'Agendar llamada de onboarding', tipo: 'tarea', metadata: { task: true, due_in_hours: 72, category: 'onboarding', step: 'onboarding_call' } },
-  ];
-  for (const t of tasks) {
-    await supabase.from('activities').insert({
-      contact_id: contactId,
-      company_id: quote.company_id || null,
-      deal_id: dealId,
-      tipo: t.tipo,
-      titulo: t.titulo,
-      metadata: t.metadata,
-      automatico: true,
-    });
-  }
+  // Delegado al helper compartido (idempotente, con due_at real). Lo dispara
+  // también ganar la oportunidad en deals.ts.
+  const { enqueueOnboarding } = await import('../../../lib/crm/onboarding');
+  await enqueueOnboarding(quote.company_id || null, contactId, dealId);
 }
 
 export const POST: APIRoute = async ({ request, url }) => {

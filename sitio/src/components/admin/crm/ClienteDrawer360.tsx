@@ -117,7 +117,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
             </div>
             <div style={D.body}>
               {msg && <div style={{ background: '#e8f5e9', color: '#1b5e20', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: '0.8rem', fontWeight: 700 }}>{msg}</div>}
-              {tab === 'resumen' && <TabResumen res={res} co={co} act={act} subs={subs} />}
+              {tab === 'resumen' && <TabResumen res={res} co={co} act={act} subs={subs} acts={data?.activities || []} reload={() => { load(); onChanged(); }} />}
               {tab === 'info' && <TabInfoGeneral co={co} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'sacs' && <TabSacs co={co} act={act} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'contactos' && <TabContactos companyId={companyId} contactos={contactos} reload={() => { load(); onChanged(); }} flash={flash} />}
@@ -135,9 +135,17 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
 }
 
 /* ─────────── 📊 Resumen ─────────── */
-function TabResumen({ res, co, act, subs }: any) {
+function TabResumen({ res, co, act, subs, acts, reload }: any) {
   const dias = co?.dias_sin_venta;
   const senales = computarSenales(co, (subs || []).find((s: any) => s.estado === 'activa'));
+  // Tareas de onboarding del cliente (activities tipo 'tarea' category onboarding).
+  const onboarding = (acts || []).filter((a: any) => a.tipo === 'tarea' && a.metadata?.category === 'onboarding');
+  const [togMsg, setTogMsg] = useState('');
+  async function toggleTarea(t: any) {
+    setTogMsg(t.id);
+    await fetch('/api/crm/activities', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: t.id, done: !(t.metadata?.done) }) }).catch(() => {});
+    setTogMsg(''); reload?.();
+  }
   const tend = act && act.tendencia_pct;
   const sucPlan = Number(co.sucursales || 0);
   const sucReales = act ? Number(act.sucursales || 0) : 0;
@@ -166,6 +174,28 @@ function TabResumen({ res, co, act, subs }: any) {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ── Onboarding del cliente nuevo (checklist accionable) ── */}
+      {onboarding.length > 0 && (
+        <div style={D.card}>
+          <div style={D.h}>Onboarding ({onboarding.filter((t: any) => t.metadata?.done || (t.metadata?.step === 'activar_cuenta' && co.sacs_account)).length}/{onboarding.length})</div>
+          {onboarding.map((t: any) => {
+            const autoOk = t.metadata?.step === 'activar_cuenta' && !!co.sacs_account; // se auto-palomea si la cuenta ya está ligada
+            const done = t.metadata?.done || autoOk;
+            const due = t.metadata?.due_at ? new Date(t.metadata.due_at) : null;
+            const vencida = !done && due && due.getTime() < Date.now();
+            return (
+              <div key={t.id} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #f4f4f4', fontSize: '0.83rem' }}>
+                <input type="checkbox" checked={!!done} disabled={autoOk || togMsg === t.id} onChange={() => toggleTarea(t)} style={{ width: 16, height: 16, cursor: 'pointer' }} />
+                <div style={{ flex: 1, minWidth: 0, textDecoration: done ? 'line-through' : 'none', color: done ? '#9aa0a8' : '#16181d', fontWeight: 600 }}>
+                  {t.titulo}{autoOk ? ' (auto: cuenta ligada)' : ''}
+                </div>
+                {due && !done && <span style={{ ...D.badge, background: vencida ? '#fdf2f2' : '#fff8e1', color: vencida ? '#b93333' : '#a06600' }}>{vencida ? 'vencida' : 'para ' + due.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })}</span>}
+              </div>
+            );
+          })}
         </div>
       )}
 
