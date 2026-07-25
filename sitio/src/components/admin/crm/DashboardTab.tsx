@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import ClienteDrawer360 from './ClienteDrawer360';
 
 // ─── Types ───
 interface RevenueByPlan {
@@ -125,6 +126,7 @@ export default function DashboardTab() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [drawerCompanyId, setDrawerCompanyId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -166,7 +168,11 @@ export default function DashboardTab() {
     );
   }
 
-  const { revenue, cobranza, pipeline, contacts, activity } = data;
+  const { revenue, cobranza, pipeline } = data;
+  const dash: any = (data as any).dashboard || {};
+  const radar: any[] = dash.radar || [];
+  const riesgo: any[] = dash.riesgo || [];
+  const reunionesHoy: any[] = dash.reuniones_hoy || [];
 
   // Compute max MRR for bar chart scale
   const planEntries = Object.entries(revenue.by_plan || {});
@@ -195,60 +201,31 @@ export default function DashboardTab() {
         </button>
       </div>
 
-      {/* ─── Section 1: KPI Cards ─── */}
-      <div className="dash-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 14 }}>
-        <KpiCard
-          label="MRR"
-          value={fmt(revenue.mrr)}
-          color="#4B7BE5"
-          subtitle="Ingreso mensual recurrente"
-        />
+      {/* ─── KPIs (4): ARR · Clientes activos · Oportunidades $ · Cotizaciones $ ─── */}
+      <div className="dash-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }}>
         <KpiCard
           label="ARR"
-          value={fmtK(revenue.arr)}
+          value={fmtK(dash.arr_real ?? revenue.arr)}
           color="#2AB5A0"
           subtitle="Ingreso anual recurrente"
         />
         <KpiCard
           label="Clientes activos"
-          value={String(revenue.active_clients)}
+          value={String(dash.clientes_activos ?? revenue.active_clients)}
           color="#6C5CE7"
-          subtitle={`${revenue.cancelled_clients} cancelados`}
+          subtitle="con suscripción activa"
         />
         <KpiCard
-          label="Churn Rate"
-          value={fmtPct(revenue.churn_rate)}
-          color={revenue.churn_rate > 5 ? '#E54B4B' : revenue.churn_rate < 3 ? '#2e7d32' : '#E8A838'}
-          subtitle={revenue.churn_rate > 5 ? 'Por encima del objetivo' : revenue.churn_rate < 3 ? 'Excelente retencion' : 'En rango aceptable'}
-          trend={revenue.churn_rate > 5 ? 'bad' : revenue.churn_rate < 3 ? 'good' : 'neutral'}
-        />
-      </div>
-      <div className="dash-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }}>
-        <KpiCard
-          label="Pipeline (ponderado)"
-          value={fmtK(pipeline.weighted_value)}
+          label="Oportunidades"
+          value={fmtK(dash.oportunidades_monto ?? pipeline.total_value)}
           color="#E8A838"
-          subtitle={`${pipeline.open_deals} deals abiertos`}
+          subtitle={`${dash.oportunidades_abiertas ?? pipeline.open_deals} abiertas`}
         />
         <KpiCard
-          label="Win Rate"
-          value={fmtPct(pipeline.win_rate)}
-          color="#2e7d32"
-          subtitle={`${pipeline.won} ganados / ${pipeline.lost} perdidos`}
-        />
-        <KpiCard
-          label="Leads este mes"
-          value={String(contacts.leads_this_month)}
+          label="Cotizaciones"
+          value={fmtK(dash.cotizaciones_monto ?? 0)}
           color="#4B7BE5"
-          subtitle={`vs ${contacts.leads_last_month} mes pasado`}
-          trend={contacts.lead_growth > 0 ? 'good' : contacts.lead_growth < 0 ? 'bad' : 'neutral'}
-          trendValue={contacts.lead_growth > 0 ? `+${contacts.lead_growth}%` : `${contacts.lead_growth}%`}
-        />
-        <KpiCard
-          label="Cobros este mes"
-          value={fmt(revenue.payments_this_month)}
-          color="#2AB5A0"
-          subtitle="Pagos recibidos"
+          subtitle={`${dash.cotizaciones_n ?? 0} vivas`}
         />
       </div>
 
@@ -287,45 +264,30 @@ export default function DashboardTab() {
           </div>
         </div>
 
-        {/* Right: Pipeline Funnel */}
+        {/* Right: Reuniones de hoy */}
         <div style={cardStyle}>
-          <h3 style={cardTitleStyle}>Pipeline por etapa</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16 }}>
-            {funnelStages.map((stage, idx) => {
-              const color = STAGE_COLORS[stage.stage] || '#ccc';
-              const label = STAGE_LABELS[stage.stage] || stage.stage;
-              const widthPct = maxFunnelCount > 0 ? (stage.count / maxFunnelCount) * 100 : 0;
-              // Conversion rate to next stage
-              const nextStage = funnelStages[idx + 1];
-              const convRate = stage.count > 0 && nextStage ? ((nextStage.count / stage.count) * 100) : null;
-              return (
-                <div key={stage.stage}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block', flexShrink: 0 }} />
-                      <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#1a1a1a' }}>{label}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: '0.8125rem', fontWeight: 800, color }}>{stage.count}</span>
-                      <span style={{ fontSize: '0.75rem', color: '#999', fontWeight: 500, minWidth: 60, textAlign: 'right' as const }}>{fmtK(stage.value)}</span>
-                    </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 style={{ ...cardTitleStyle, margin: 0 }}>Reuniones de hoy</h3>
+            {reunionesHoy.length > 0 && (
+              <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#2AB5A0', background: 'rgba(42,181,160,0.1)', padding: '4px 10px', borderRadius: 6 }}>{reunionesHoy.length}</span>
+            )}
+          </div>
+          {reunionesHoy.length === 0 ? (
+            <div style={{ padding: '24px 0', textAlign: 'center', color: '#ccc', fontSize: '0.8125rem' }}>No hay reuniones agendadas para hoy</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {reunionesHoy.map((m) => (
+                <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 10px', borderRadius: 8, background: '#fafbfc' }}>
+                  <div style={{ fontWeight: 800, color: '#1a1a1a', fontSize: '0.875rem', minWidth: 52 }}>{String(m.hora_inicio || '').slice(0, 5)}</div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.quien}{m.empresa ? ` · ${m.empresa}` : ''}</div>
+                    <div style={{ fontSize: '0.7rem', color: '#999' }}>{m.tipo}{m.host ? ` · con ${m.host}` : ''}</div>
                   </div>
-                  <div style={{ height: 6, background: '#f0f1f3', borderRadius: 3, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${Math.max(widthPct, 3)}%`, background: color, borderRadius: 3, transition: 'width 0.5s ease' }} />
-                  </div>
-                  {convRate !== null && idx < funnelStages.length - 1 && (
-                    <div style={{ textAlign: 'center', marginTop: 2 }}>
-                      <span style={{ fontSize: '0.5625rem', color: '#bbb', fontWeight: 600 }}>{convRate.toFixed(0)}% conv.</span>
-                    </div>
-                  )}
+                  {m.meet && <a href={m.meet} target="_blank" rel="noreferrer" style={{ ...btnBase, fontSize: '0.68rem', padding: '4px 10px', background: '#e6f6f2', color: '#1A8F7A', textDecoration: 'none' }}>Meet</a>}
                 </div>
-              );
-            })}
-          </div>
-          <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.75rem', color: '#999', fontWeight: 600 }}>Valor total pipeline</span>
-            <span style={{ fontSize: '1rem', fontWeight: 800, color: '#1a1a1a' }}>{fmtK(pipeline.total_value)}</span>
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -452,44 +414,53 @@ export default function DashboardTab() {
         </div>
       </div>
 
-      {/* ─── Section 4: Activity & Leads Summary ─── */}
-      <div style={cardStyle}>
-        <h3 style={{ ...cardTitleStyle, marginBottom: 16 }}>Resumen de actividad y leads</h3>
-        <div className="dash-five-col" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16 }}>
-          {/* Leads comparison */}
-          <SummaryMetric
-            label="Leads este mes"
-            value={String(contacts.leads_this_month)}
-            detail={`vs ${contacts.leads_last_month} anterior`}
-            badge={contacts.lead_growth > 0 ? `+${contacts.lead_growth}%` : `${contacts.lead_growth}%`}
-            badgeColor={contacts.lead_growth > 0 ? '#2e7d32' : contacts.lead_growth < 0 ? '#E54B4B' : '#999'}
-          />
-          {/* Activities */}
-          <SummaryMetric
-            label="Actividades"
-            value={String(activity.total_this_month)}
-            detail="Este mes"
-          />
-          {/* Avg LTV */}
-          <SummaryMetric
-            label="LTV promedio"
-            value={fmtK(revenue.avg_ltv)}
-            detail="Lifetime value"
-          />
-          {/* Avg deal size */}
-          <SummaryMetric
-            label="Ticket promedio"
-            value={fmtK(pipeline.avg_deal_size)}
-            detail="Valor promedio deal"
-          />
-          {/* Avg days to close */}
-          <SummaryMetric
-            label="Dias al cierre"
-            value={`${pipeline.avg_days_to_close}d`}
-            detail="Promedio"
-          />
+      {/* ─── Oportunidades de venta (Radar) · Cuentas en riesgo ─── */}
+      <div className="dash-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
+        {/* Oportunidades de venta */}
+        <div style={cardStyle}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 style={{ ...cardTitleStyle, margin: 0 }}>Oportunidades de venta</h3>
+            {radar.length > 0 && <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1A8F7A', background: 'rgba(42,181,160,0.1)', padding: '4px 10px', borderRadius: 6 }}>{radar.length}</span>}
+          </div>
+          {radar.length === 0 ? (
+            <div style={{ padding: '24px 0', textAlign: 'center', color: '#ccc', fontSize: '0.8125rem' }}>Sin señales de venta ahora</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {radar.slice(0, 8).map((o) => (
+                <div key={o.company_id} onClick={() => setDrawerCompanyId(o.company_id)} style={{ padding: '9px 11px', borderRadius: 8, background: '#f0f7f4', border: '1px solid #d6ebe2', cursor: 'pointer' }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#1A8F7A' }}>{o.cuenta || o.nombre} · {o.titulo}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#555', marginTop: 2 }}>{o.accion}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Cuentas en riesgo (≥5 días sin vender) */}
+        <div style={cardStyle}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 style={{ ...cardTitleStyle, margin: 0 }}>Cuentas en riesgo</h3>
+            {riesgo.length > 0 && <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#E54B4B', background: 'rgba(229,75,75,0.08)', padding: '4px 10px', borderRadius: 6 }}>{riesgo.length}</span>}
+          </div>
+          {riesgo.length === 0 ? (
+            <div style={{ padding: '24px 0', textAlign: 'center', color: '#ccc', fontSize: '0.8125rem' }}>Sin cuentas en riesgo</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {riesgo.slice(0, 10).map((r) => (
+                <div key={r.id} onClick={() => setDrawerCompanyId(r.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, background: '#fafbfc', cursor: 'pointer' }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.cuenta || r.nombre}</div>
+                    <div style={{ fontSize: '0.7rem', color: '#999' }}>última venta: {r.ultima_venta_at ? fmtDate(r.ultima_venta_at) : '—'}</div>
+                  </div>
+                  <span style={{ fontWeight: 800, fontSize: '0.8rem', color: r.dias_sin_venta > 15 ? '#E54B4B' : '#E8A838' }}>{r.dias_sin_venta}d</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
+
+      {drawerCompanyId && <ClienteDrawer360 companyId={drawerCompanyId} onClose={() => setDrawerCompanyId(null)} onChanged={load} />}
 
       {/* Responsive overrides */}
       <style>{`

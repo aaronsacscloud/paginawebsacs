@@ -1,7 +1,11 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
+import { computarSenales } from '../../../../lib/crm/senales';
 
 export const prerender = false;
+
+// Licencia vitalicia = pago único, se excluye del ARR recurrente.
+const esVital = (s: any) => s.ciclo === 'vitalicia' || /vitalic/i.test(String(s.nombre_plan || ''));
 
 export const GET: APIRoute = async () => {
   const now = new Date();
@@ -79,6 +83,67 @@ export const GET: APIRoute = async () => {
   // Activities this month
   const { count: activitiesThisMonth } = await supabase.from('activities').select('*', { count: 'exact', head: true }).gte('created_at', thisMonth + '-01T00:00:00');
 
+  // ── ARR/clientes REALES (subs activas, sin vitalicias) + riesgo + radar ──
+  // Consistente con la lista de Clientes (/api/crm/arr/clientes), no con companies.*.
+  const { data: companiesArr } = await supabase
+    .from('companies')
+    .select('id, nombre, sacs_account, plan, sucursales, dias_sin_venta, ultima_venta_at, health_score, actividad, uso_sacs, subscriptions(estado, ciclo, nombre_plan, arr, mrr, proxima_factura)')
+    .is('archived_at', null);
+
+  let arrReal = 0;
+  let clientesActivos = 0;
+  const riesgo: any[] = [];
+  const radar: any[] = [];
+  for (const c of (companiesArr || [])) {
+    const subs = (c as any).subscriptions || [];
+    if (!subs.length) continue; // cliente real = tiene suscripción
+    const activas = subs.filter((s: any) => s.estado === 'activa' && !esVital(s));
+    const arrC = activas.reduce((a: number, s: any) => a + Number(s.arr || 0), 0);
+    arrReal += arrC;
+    if (activas.length > 0) clientesActivos++;
+    // Cuentas en riesgo: sin venta ≥5 días.
+    if (c.dias_sin_venta != null && c.dias_sin_venta >= 5) {
+      riesgo.push({ id: c.id, nombre: c.nombre, cuenta: (c as any).sacs_account || c.nombre, dias_sin_venta: c.dias_sin_venta, ultima_venta_at: (c as any).ultima_venta_at, arr: Math.round(arrC) });
+    }
+    // Radar: oportunidades de venta (solo con sub activa).
+    if (activas.length > 0) {
+      const senales = computarSenales(c, activas[0]).filter((s: any) => s.nivel === 'oportunidad');
+      if (senales.length) {
+        const t = senales[0];
+        radar.push({ company_id: c.id, nombre: c.nombre, cuenta: (c as any).sacs_account || c.nombre, titulo: t.titulo, accion: t.accion, tipo: t.tipo, peso: t.peso, mrr: Math.round(activas.reduce((a: number, s: any) => a + Number(s.mrr || 0), 0)) });
+      }
+    }
+  }
+  riesgo.sort((a, b) => b.dias_sin_venta - a.dias_sin_venta);
+  radar.sort((a, b) => (b.peso || 0) - (a.peso || 0) || (b.mrr || 0) - (a.mrr || 0));
+
+  // ── Cotizaciones VIVAS en dinero (draft + sent + accepted) ──
+  const { data: quotesRows } = await supabase.from('quotes').select('total, estado');
+  const cotVivas = (quotesRows || []).filter((q: any) => ['draft', 'sent', 'accepted'].includes(q.estado));
+  const cotizacionesMonto = cotVivas.reduce((s: number, q: any) => s + Number(q.total || 0), 0);
+
+  // ── Reuniones de HOY (con quién) ──
+  const { data: reunionesRaw } = await supabase
+    .from('bookings')
+    .select('id, hora_inicio, hora_fin, estado, google_meet_link, invitee_nombre, invitee_empresa, host_id, contact_id, event_types(nombre)')
+    .eq('fecha', today)
+    .not('estado', 'in', '(cancelada,reagendada)')
+    .order('hora_inicio', { ascending: true });
+  const hostIds = Array.from(new Set((reunionesRaw || []).map((b: any) => b.host_id).filter(Boolean)));
+  const hostMap: Record<string, string> = {};
+  if (hostIds.length) {
+    const { data: hs } = await supabase.from('team_members').select('id, nombre').in('id', hostIds as string[]);
+    (hs || []).forEach((h: any) => { hostMap[h.id] = h.nombre; });
+  }
+  const reunionesHoy = (reunionesRaw || []).map((b: any) => ({
+    id: b.id, hora_inicio: b.hora_inicio, hora_fin: b.hora_fin, estado: b.estado,
+    meet: b.google_meet_link || null,
+    quien: b.invitee_nombre || 'Invitado', empresa: b.invitee_empresa || '',
+    tipo: (Array.isArray(b.event_types) ? b.event_types[0]?.nombre : b.event_types?.nombre) || 'Reunión',
+    host: b.host_id ? (hostMap[b.host_id] || '') : '',
+    contact_id: b.contact_id || null,
+  }));
+
   // Deals by stage
   const stages = ['calificacion', 'demo_agendada', 'demo_realizada', 'cotizacion_enviada', 'negociacion'];
   const dealsByStage = stages.map(s => {
@@ -119,6 +184,18 @@ export const GET: APIRoute = async () => {
     },
     activity: {
       total_this_month: activitiesThisMonth || 0,
+    },
+    // ── Bloques del dashboard enfocado ──
+    dashboard: {
+      arr_real: Math.round(arrReal),
+      clientes_activos: clientesActivos,
+      oportunidades_monto: Math.round(pipelineValue),
+      oportunidades_abiertas: openDeals.length,
+      cotizaciones_monto: Math.round(cotizacionesMonto),
+      cotizaciones_n: cotVivas.length,
+      radar,
+      riesgo,
+      reuniones_hoy: reunionesHoy,
     },
   }));
 };
