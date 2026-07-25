@@ -11,7 +11,7 @@ const btn: React.CSSProperties = { padding: '8px 14px', borderRadius: 8, border:
 const btnDark: React.CSSProperties = { ...btn, background: '#1a1a1a', color: '#fff', border: 'none' };
 const pill = (bg: string, color: string): React.CSSProperties => ({ background: bg, color, borderRadius: 8, padding: '10px 12px', minWidth: 100, textAlign: 'center' });
 
-export default function RevisarRelaciones({ onDone }: { onDone?: () => void }) {
+export default function RevisarRelaciones({ onDone, trigger }: { onDone?: () => void; trigger?: (open: () => void) => any }) {
   const [open, setOpen] = useState(false);
   const [rep, setRep] = useState<any>(null);
   const [loading, setLoading] = useState<'' | 'load' | 'fix'>('');
@@ -40,7 +40,7 @@ export default function RevisarRelaciones({ onDone }: { onDone?: () => void }) {
   const s = rep?.resumen || {};
   return (
     <>
-      <button style={btn} title="Encuentra clientes con suscripción pero sin contacto ligado y repara la relación" onClick={openModal}>🔗 Revisar relaciones</button>
+      {trigger ? trigger(openModal) : <button style={btn} title="Encuentra clientes con suscripción pero sin contacto ligado y repara la relación" onClick={openModal}>🔗 Revisar relaciones</button>}
       {open && (
         <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '5vh 16px', overflow: 'auto' }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 12, padding: 22, width: 'min(720px, 100%)' }}>

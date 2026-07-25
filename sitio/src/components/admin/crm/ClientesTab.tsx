@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Users, TrendingUp, Wallet, AlertTriangle, Plus, ChevronDown, Link2, MessageCircle, Download, Settings2, LayoutGrid, Table2 } from 'lucide-react';
 import { S } from './SubscriptionsTab';
 import ClienteDrawer360 from './ClienteDrawer360';
 import NuevoClienteModal from './NuevoClienteModal';
@@ -32,10 +33,38 @@ const T = {
   sub: { fontSize: '0.67rem', color: '#a7abb3', fontWeight: 400, marginTop: 2 } as const,
   muted: { fontSize: '0.74rem', color: '#6b7078' } as const,
   badge: { display: 'inline-block', padding: '2px 9px', borderRadius: 99, fontSize: '0.66rem', fontWeight: 700, whiteSpace: 'nowrap' as const } as const,
-  kpi: { background: '#fff', border: '1px solid #ececf0', borderRadius: 12, padding: '14px 22px', flex: '0 1 220px', minWidth: 170 } as const,
-  kLabel: { fontSize: '0.63rem', fontWeight: 700, color: '#8a8f98', textTransform: 'uppercase' as const, letterSpacing: '0.06em' } as const,
-  kValue: { fontSize: '1.3rem', fontWeight: 800, color: '#16181d', marginTop: 4, fontVariantNumeric: 'tabular-nums' as const } as const,
+  /* Stat-cards del spec UI/UX: chip de icono pastel + valor grande + dual-value con dots. */
+  kpiCard: { background: '#fff', border: '1px solid #e9eaee', borderRadius: 14, padding: '16px 18px', boxShadow: '0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)', display: 'flex', flexDirection: 'column' as const, gap: 10 } as const,
+  kpiChip: (bg: string) => ({ width: 36, height: 36, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }) as const,
+  kLabel: { fontSize: '0.68rem', fontWeight: 700, color: '#8a8f98', textTransform: 'uppercase' as const, letterSpacing: '0.07em' } as const,
+  kValue: { fontSize: '1.55rem', fontWeight: 800, color: '#16181d', letterSpacing: '-0.02em', lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' as const } as const,
+  dot: (c: string) => ({ width: 7, height: 7, borderRadius: 99, background: c, flexShrink: 0 }) as const,
+  dualNum: { fontSize: '0.82rem', fontWeight: 700, color: '#16181d', fontVariantNumeric: 'tabular-nums' as const } as const,
+  dualLbl: { fontSize: '0.62rem', fontWeight: 600, color: '#9aa0a8', textTransform: 'uppercase' as const, letterSpacing: '0.05em' } as const,
+  menuItem: { display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 10px', border: 'none', borderRadius: 8, background: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 500, color: '#333', textAlign: 'left' as const, textDecoration: 'none', boxSizing: 'border-box' as const } as const,
 };
+
+/* Tarjeta KPI reutilizable (fila: chip+label · valor · dual-value). */
+function KpiCard({ icon, chipBg, label, value, duals }: { icon: any; chipBg: string; label: string; value: any; duals: { dot: string; num: any; lbl: string }[] }) {
+  return (
+    <div style={T.kpiCard}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={T.kpiChip(chipBg)}>{icon}</div>
+        <span style={T.kLabel}>{label}</span>
+      </div>
+      <div style={T.kValue}>{value}</div>
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+        {duals.map((d, i) => (
+          <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <span style={T.dot(d.dot)} />
+            <span style={T.dualNum}>{d.num}</span>
+            <span style={T.dualLbl}>{d.lbl}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}) {
   const [data, setData] = useState<any[]>([]);
@@ -46,7 +75,33 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   const [showNuevo, setShowNuevo] = useState(false);
   const [modo, setModo] = useState<'tabla' | 'kanban'>('tabla');
   const [stages, setStages] = useState<{ key: string; label: string; color: string }[]>([]);
+  const [menuOpen, setMenuOpen] = useState(false);
   const { toast, show } = useToast();
+
+  // Cierra "Más acciones" con click fuera o Escape.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false); };
+    const onClick = () => setMenuOpen(false);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('click', onClick);
+    return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('click', onClick); };
+  }, [menuOpen]);
+
+  // KPIs con dual-value (spec UI/UX): riesgo/vencidas/pagado se derivan de data.
+  const kpis = useMemo(() => {
+    const hoy = new Date().toISOString().slice(0, 10);
+    const pagado = data.reduce((a, c) => a + Number(c.total_pagado || 0), 0);
+    const pagos = data.reduce((a, c) => a + Number(c.pagos_realizados || 0), 0);
+    const arrPend = data.reduce((a, c) => a + Number(c.arr_pendiente || 0), 0);
+    return {
+      pagado, pagos,
+      promedio: pagos > 0 ? pagado / pagos : 0,
+      arrPend,
+      riesgo: data.filter(c => c.dias_sin_venta != null && c.dias_sin_venta >= 3 && c.subs_activas > 0).length,
+      vencidas: data.filter(c => c.proxima_factura && c.proxima_factura < hoy).length,
+    };
+  }, [data]);
   // Edición inline de correo/WhatsApp del contacto.
   const [editId, setEditId] = useState<string | null>(null);
   const [eEmail, setEEmail] = useState('');
@@ -254,16 +309,18 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
         .ct360 tbody tr:hover .ct-pencil, .ct360 .ct-pencil:focus { opacity: .65; }
       `}</style>
 
-      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 18 }}>
-        {[['Clientes', tot?.clientes], ['Con ARR activo', tot?.activos], ['ARR total', money(tot?.arr)]].map(([l, v]) => (
-          <div key={String(l)} style={T.kpi}>
-            <div style={T.kLabel}>{l}</div>
-            <div style={T.kValue}>{v ?? '—'}</div>
-          </div>
-        ))}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 14, marginBottom: 18 }}>
+        <KpiCard icon={<Users size={18} strokeWidth={2} color="#4B7BE5" />} chipBg="#eef2fe" label="Clientes" value={tot?.clientes ?? '—'}
+          duals={[{ dot: '#1A8F7A', num: tot?.activos ?? 0, lbl: 'con ARR activo' }, { dot: '#c6cad2', num: Math.max(0, (tot?.clientes || 0) - (tot?.activos || 0)), lbl: 'sin ARR' }]} />
+        <KpiCard icon={<TrendingUp size={18} strokeWidth={2} color="#1A8F7A" />} chipBg="#e6f6f2" label="ARR" value={money(tot?.arr)}
+          duals={[{ dot: '#1A8F7A', num: money(tot?.arr), lbl: 'activo' }, { dot: '#E8A838', num: money(kpis.arrPend), lbl: 'pendiente' }]} />
+        <KpiCard icon={<Wallet size={18} strokeWidth={2} color="#6C5CE7" />} chipBg="#f1effd" label="Pagado histórico" value={money(kpis.pagado)}
+          duals={[{ dot: '#6C5CE7', num: kpis.pagos, lbl: 'pagos' }, { dot: '#c6cad2', num: money(kpis.promedio), lbl: 'promedio' }]} />
+        <KpiCard icon={<AlertTriangle size={18} strokeWidth={2} color="#d9534a" />} chipBg="#fdf0ee" label="Atención" value={kpis.riesgo}
+          duals={[{ dot: '#d9534a', num: kpis.riesgo, lbl: '≥3 días sin vender' }, { dot: '#E8A838', num: kpis.vencidas, lbl: 'renov. vencida' }]} />
       </div>
 
-      <div style={{ ...S.card, padding: '20px 22px' }}>
+      <div style={{ ...S.card, padding: '20px 22px', borderRadius: 14, border: '1px solid #e9eaee', boxShadow: '0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)' }}>
         <TablaEnterprise
           tabla="clientes"
           data={data}
@@ -296,14 +353,33 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
                 />
           )) : null}
           actions={<>
-            <button onClick={() => setShowNuevo(true)} title="Alta completa: cliente + contacto + cuenta SACS + suscripción" style={{ ...S.btnSmall, background: '#1a1a1a', color: '#fff', border: 'none', fontWeight: 700 }}>+ Nuevo cliente</button>
-            <RevisarRelaciones onDone={load} />
-            <EnriquecerWhatsApp onDone={load} />
-            <button onClick={() => onConfig?.()} title="Configurar etapas del pipeline de Clientes" style={S.btnSmall}>⚙️ Etapas</button>
-            <div style={{ display: 'flex', gap: 0, border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden' }}>
-              {(['tabla', 'kanban'] as const).map(v => (
-                <button key={v} onClick={() => setModo(v)} style={{ ...S.btnSmall, border: 'none', borderRadius: 0, background: modo === v ? '#1a1a1a' : '#fff', color: modo === v ? '#fff' : '#555', textTransform: 'capitalize' }}>{v === 'kanban' ? 'Kanban' : 'Tabla'}</button>
-              ))}
+            <button onClick={() => setShowNuevo(true)} title="Alta completa: cliente + contacto + cuenta SACS + suscripción"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 36, padding: '0 16px', border: 'none', borderRadius: 10, background: '#1a1a1a', color: '#fff', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 1px 2px rgba(16,24,40,0.18)' }}>
+              <Plus size={15} strokeWidth={2.5} /> Nuevo cliente
+            </button>
+            <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
+              <button onClick={() => setMenuOpen(o => !o)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 36, padding: '0 14px', border: '1px solid #e2e4e9', borderRadius: 10, background: menuOpen ? '#f7f8fa' : '#fff', color: '#333', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>
+                Más acciones <ChevronDown size={14} strokeWidth={2} style={{ transform: menuOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
+              </button>
+              {menuOpen && (
+                <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', width: 236, background: '#fff', border: '1px solid #e9eaee', borderRadius: 14, boxShadow: '0 4px 6px -2px rgba(16,24,40,0.05), 0 12px 24px -4px rgba(16,24,40,0.12)', padding: 6, zIndex: 50 }}>
+                  <RevisarRelaciones onDone={load} trigger={open => (
+                    <button className="te-item" style={T.menuItem} onClick={() => { setMenuOpen(false); open(); }}><Link2 size={15} color="#8a8f98" /> Revisar relaciones</button>
+                  )} />
+                  <EnriquecerWhatsApp onDone={load} trigger={open => (
+                    <button className="te-item" style={T.menuItem} onClick={() => { setMenuOpen(false); open(); }}><MessageCircle size={15} color="#8a8f98" /> Enriquecer WhatsApp</button>
+                  )} />
+                  <div style={{ height: 1, background: '#f1f2f5', margin: '6px 4px' }} />
+                  <a className="te-item" style={T.menuItem} href="/api/crm/arr/export-clientes" onClick={() => setMenuOpen(false)}><Download size={15} color="#8a8f98" /> Exportar clientes</a>
+                  <div style={{ height: 1, background: '#f1f2f5', margin: '6px 4px' }} />
+                  <button className="te-item" style={T.menuItem} onClick={() => { setMenuOpen(false); onConfig?.(); }}><Settings2 size={15} color="#8a8f98" /> Configurar etapas</button>
+                  <button className="te-item" style={T.menuItem} onClick={() => { setMenuOpen(false); setModo(m => m === 'tabla' ? 'kanban' : 'tabla'); }}>
+                    {modo === 'tabla' ? <LayoutGrid size={15} color="#8a8f98" /> : <Table2 size={15} color="#8a8f98" />}
+                    {modo === 'tabla' ? 'Ver como Kanban' : 'Ver como Tabla'}
+                  </button>
+                </div>
+              )}
             </div>
           </>}
         />

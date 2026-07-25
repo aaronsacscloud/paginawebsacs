@@ -13,7 +13,7 @@ const btn: React.CSSProperties = { padding: '8px 14px', borderRadius: 8, border:
 const btnDark: React.CSSProperties = { ...btn, background: '#1a1a1a', color: '#fff', border: 'none' };
 const pill = (bg: string, color: string): React.CSSProperties => ({ background: bg, color, borderRadius: 8, padding: '10px 12px', minWidth: 92, textAlign: 'center' });
 
-export default function EnriquecerWhatsApp({ onDone }: { onDone?: () => void }) {
+export default function EnriquecerWhatsApp({ onDone, trigger }: { onDone?: () => void; trigger?: (open: () => void) => any }) {
   const [open, setOpen] = useState(false);
   const [csv, setCsv] = useState('');
   const [fileName, setFileName] = useState('');
@@ -49,8 +49,12 @@ export default function EnriquecerWhatsApp({ onDone }: { onDone?: () => void }) 
 
   return (
     <>
-      <button style={btn} title="Subir un CSV (respond.io/HubSpot) y llenar el WhatsApp de los contactos" onClick={() => setOpen(true)}>📲 Enriquecer WhatsApp</button>
-      <a href="/api/crm/arr/export-clientes" style={{ ...btn, textDecoration: 'none', color: '#333', display: 'inline-block' }} title="Descargar clientes con su contacto (CSV para Excel)">📥 Exportar clientes</a>
+      {trigger ? trigger(() => setOpen(true)) : (
+        <>
+          <button style={btn} title="Subir un CSV (respond.io/HubSpot) y llenar el WhatsApp de los contactos" onClick={() => setOpen(true)}>📲 Enriquecer WhatsApp</button>
+          <a href="/api/crm/arr/export-clientes" style={{ ...btn, textDecoration: 'none', color: '#333', display: 'inline-block' }} title="Descargar clientes con su contacto (CSV para Excel)">📥 Exportar clientes</a>
+        </>
+      )}
 
       {open && (
         <div onClick={close} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '5vh 16px', overflow: 'auto' }}>

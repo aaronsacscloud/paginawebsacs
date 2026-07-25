@@ -1,4 +1,5 @@
 import { cloneElement, useEffect, useMemo, useState } from 'react';
+import { Search, SlidersHorizontal } from 'lucide-react';
 
 /* ═══ TablaEnterprise — el datatable ESTÁNDAR del CRM (estilo HubSpot) ═══
  * Layout: filtros principales arriba (+acciones) → buscador → tabs de VISTAS
@@ -79,14 +80,15 @@ function evalCond(col: ColDef, row: any, c: Cond): boolean {
   return true;
 }
 
-/* Estilos del estándar (compactos, enterprise). */
+/* Estilos del estándar (tokens del spec UI/UX: bordes #e2e4e9, radios 10,
+ * sombras suaves, primario negro #1a1a1a, acento azul #4B7BE5 solo en focus). */
 const E = {
-  input: { padding: '8px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.83rem', outline: 'none', background: '#fff' } as const,
-  btn: { padding: '7px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.79rem', fontWeight: 600, cursor: 'pointer', background: '#fff', color: '#333' } as const,
-  btnDark: { padding: '7px 12px', border: 'none', borderRadius: 8, fontSize: '0.79rem', fontWeight: 700, cursor: 'pointer', background: '#1a1a1a', color: '#fff' } as const,
-  th: { textAlign: 'left' as const, padding: '10px 14px', fontSize: '0.63rem', fontWeight: 700, color: '#8a8f98', textTransform: 'uppercase' as const, letterSpacing: '0.06em', borderBottom: '1px solid #e8eaee', whiteSpace: 'nowrap' as const, background: '#fafbfc', position: 'sticky' as const, top: 0, zIndex: 1, cursor: 'default' },
-  chip: { display: 'inline-flex', alignItems: 'center', gap: 5, background: '#eef2ff', color: '#3730a3', borderRadius: 99, padding: '3px 10px', fontSize: '0.7rem', fontWeight: 700 } as const,
-  tab: (act: boolean) => ({ padding: '8px 13px', border: 'none', borderBottom: act ? '2.5px solid #1a1a1a' : '2.5px solid transparent', background: 'none', cursor: 'pointer', fontWeight: act ? 800 : 600, fontSize: '0.8rem', color: act ? '#1a1a1a' : '#777', whiteSpace: 'nowrap' as const, display: 'inline-flex', alignItems: 'center', gap: 6 }) as const,
+  input: { padding: '8px 12px', border: '1px solid #e2e4e9', borderRadius: 10, fontSize: '0.8rem', fontWeight: 600, outline: 'none', background: '#fff', color: '#333', height: 36, boxSizing: 'border-box' as const } as const,
+  btn: { display: 'inline-flex', alignItems: 'center', gap: 7, padding: '0 14px', height: 36, border: '1px solid #e2e4e9', borderRadius: 10, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', background: '#fff', color: '#333' } as const,
+  btnDark: { display: 'inline-flex', alignItems: 'center', gap: 7, padding: '0 16px', height: 36, border: 'none', borderRadius: 10, fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', background: '#1a1a1a', color: '#fff', boxShadow: '0 1px 2px rgba(16,24,40,0.18)' } as const,
+  th: { textAlign: 'left' as const, padding: '10px 14px', fontSize: '0.64rem', fontWeight: 700, color: '#8a8f98', textTransform: 'uppercase' as const, letterSpacing: '0.06em', borderBottom: '1px solid #e9eaee', whiteSpace: 'nowrap' as const, background: '#f9fafb', position: 'sticky' as const, top: 0, zIndex: 1, cursor: 'default' },
+  chip: { display: 'inline-flex', alignItems: 'center', gap: 5, background: '#eef2fe', color: '#3764c4', borderRadius: 99, padding: '3px 10px', fontSize: '0.7rem', fontWeight: 700 } as const,
+  tab: (act: boolean) => ({ padding: '9px 13px', border: 'none', borderBottom: act ? '2px solid #1a1a1a' : '2px solid transparent', background: 'none', cursor: 'pointer', fontWeight: act ? 700 : 600, fontSize: '0.8rem', color: act ? '#16181d' : '#6b7078', whiteSpace: 'nowrap' as const, display: 'inline-flex', alignItems: 'center', gap: 6 }) as const,
 };
 
 export default function TablaEnterprise({
@@ -218,8 +220,10 @@ export default function TablaEnterprise({
             {qd.options.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
           </select>
         ))}
-        <button style={{ ...E.btn, fontWeight: 700, borderColor: conds.length ? '#1a1a1a' : '#ddd' }} onClick={() => setShowFiltros(!showFiltros)}>
-          ⚙ Más filtros{conds.length ? ` (${conds.length})` : ''}
+        <button style={{ ...E.btn, fontWeight: 700, borderColor: conds.length ? '#1a1a1a' : '#e2e4e9' }} onClick={() => setShowFiltros(!showFiltros)}>
+          <SlidersHorizontal size={15} strokeWidth={2} />
+          Más filtros
+          {conds.length > 0 && <span style={{ background: '#1a1a1a', color: '#fff', borderRadius: 99, padding: '0 7px', fontSize: '0.68rem', fontWeight: 800, lineHeight: '17px' }}>{conds.length}</span>}
         </button>
         <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap' }}>{actions}</div>
       </div>
@@ -259,9 +263,16 @@ export default function TablaEnterprise({
         </div>
       )}
 
-      {/* ② BUSCADOR */}
-      <input value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} placeholder={searchPlaceholder}
-        style={{ ...E.input, width: '100%', boxSizing: 'border-box', marginBottom: 12, padding: '10px 14px' }} />
+      {/* ② BUSCADOR (icono + focus ring vía clase te-search) */}
+      <style>{`
+        .te-search:focus { border-color: #4B7BE5 !important; box-shadow: 0 0 0 3px rgba(75,123,229,0.12); }
+        .te-item:hover { background: #f4f6f9 !important; }
+      `}</style>
+      <div style={{ position: 'relative', marginBottom: 12 }}>
+        <Search size={16} strokeWidth={2} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9aa0a8', pointerEvents: 'none' }} />
+        <input className="te-search" value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} placeholder={searchPlaceholder}
+          style={{ ...E.input, width: '100%', height: 40, fontWeight: 500, padding: '0 14px 0 38px' }} />
+      </div>
 
       {/* ③ TABS DE VISTAS + guardar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #e8eaee', marginBottom: 0, overflowX: 'auto', flexWrap: 'nowrap' }}>
@@ -329,9 +340,9 @@ export default function TablaEnterprise({
           {filtrados.length > pageSize && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 2px 0', fontSize: '0.78rem', color: '#666' }}>
               <span>{page * pageSize + 1}–{Math.min((page + 1) * pageSize, filtrados.length)} de {filtrados.length}</span>
-              <button style={{ ...E.btn, padding: '4px 10px' }} disabled={page === 0} onClick={() => setPage(p => p - 1)}>‹</button>
-              <button style={{ ...E.btn, padding: '4px 10px' }} disabled={page >= totalPag - 1} onClick={() => setPage(p => p + 1)}>›</button>
-              <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(0); }} style={{ ...E.input, padding: '4px 8px', marginLeft: 'auto' }}>
+              <button style={{ ...E.btn, width: 30, height: 30, padding: 0, borderRadius: 8, justifyContent: 'center' }} disabled={page === 0} onClick={() => setPage(p => p - 1)}>‹</button>
+              <button style={{ ...E.btn, width: 30, height: 30, padding: 0, borderRadius: 8, justifyContent: 'center' }} disabled={page >= totalPag - 1} onClick={() => setPage(p => p + 1)}>›</button>
+              <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(0); }} style={{ ...E.input, height: 30, padding: '0 8px', marginLeft: 'auto' }}>
                 {[25, 50, 100].map(n => <option key={n} value={n}>{n} por página</option>)}
               </select>
             </div>
