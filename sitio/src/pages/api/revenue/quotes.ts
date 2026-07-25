@@ -15,6 +15,8 @@ const QUOTE_FIELDS = [
   'aceptado_por', 'aceptado_fecha',
   // Partner authorship
   'partner_id', 'created_via',
+  // Ligado a CRM (match cliente/contacto desde el alta de cliente)
+  'company_id', 'contact_id',
 ];
 
 function pick(obj: Record<string, any>, fields: string[]): Record<string, any> {

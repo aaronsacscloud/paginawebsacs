@@ -37,12 +37,22 @@ export default function NuevoClienteModal({ onClose, onCreated }: { onClose: () 
     sacs: '',
     // sub
     conSub: false, plan_slug: '', nombre_plan: '', ciclo: 'anual', precio: '', proxima_factura: '', sub_estado: 'programada',
+    // cotización a ligar (match)
+    cotizacion_id: '',
   });
   const [planes, setPlanes] = useState<any[]>([]);
+  const [cotizaciones, setCotizaciones] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
   const [pasos, setPasos] = useState<string[]>([]);
 
   useEffect(() => { fetch('/api/crm/arr/plans').then(r => r.json()).then(j => setPlanes(j.data || j.plans || [])).catch(() => {}); }, []);
+  // Cotizaciones SIN cliente ligado (para poder hacer el match desde aquí).
+  useEffect(() => {
+    fetch('/api/revenue/quotes').then(r => r.json()).then((rows: any) => {
+      const list = Array.isArray(rows) ? rows : (rows?.data || []);
+      setCotizaciones(list.filter((q: any) => !q.company_id && q.estado !== 'deleted' && q.estado !== 'plantilla'));
+    }).catch(() => {});
+  }, []);
 
   const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
   function pickPlan(slug: string) {
@@ -105,6 +115,15 @@ export default function NuevoClienteModal({ onClose, onCreated }: { onClose: () 
         const jS = await rS.json().catch(() => ({}));
         if (!rS.ok || jS.error) hechos.push('⚠ Suscripción: ' + (jS.error || 'no se pudo crear'));
         else hechos.push('Suscripción creada');
+        setPasos([...hechos]);
+      }
+
+      // 5) Ligar cotización (match del cliente/contacto con una cotización existente)
+      if (f.cotizacion_id) {
+        const rQ = await fetch('/api/revenue/quotes', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: f.cotizacion_id, company_id: companyId, contact_id: contactId || null }) });
+        const jQ = await rQ.json().catch(() => ({}));
+        if (!rQ.ok || jQ.error) hechos.push('⚠ Cotización: ' + (jQ.error || 'no se pudo ligar'));
+        else hechos.push('Cotización ligada');
         setPasos([...hechos]);
       }
 
@@ -187,6 +206,24 @@ export default function NuevoClienteModal({ onClose, onCreated }: { onClose: () 
             </div>
           </div>
         )}
+
+        <div style={M.h}>5 · Cotización (opcional)</div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 100%' }}>
+            <label style={M.lbl}>Ligar una cotización existente (match)</label>
+            <select value={f.cotizacion_id} onChange={e => set('cotizacion_id', e.target.value)} style={M.input}>
+              <option value="">— sin cotización —</option>
+              {cotizaciones.map((q: any) => (
+                <option key={q.id} value={q.id}>
+                  {(q.numero || 'COT')} · {q.empresa || q.contacto || 's/empresa'}{q.total ? ` · $${Number(q.total).toLocaleString()}` : ''}{q.estado ? ` · ${q.estado}` : ''}
+                </option>
+              ))}
+            </select>
+            <div style={{ fontSize: '0.74rem', color: '#999', marginTop: 4 }}>
+              {cotizaciones.length ? 'Se ligará esta cotización a este cliente/contacto (solo aparecen las que aún no tienen cliente).' : 'No hay cotizaciones sin cliente para ligar.'}
+            </div>
+          </div>
+        </div>
 
         {pasos.length > 0 && (
           <div style={{ background: '#f8fafc', borderRadius: 8, padding: 10, margin: '14px 0 0', fontSize: '0.78rem' }}>
