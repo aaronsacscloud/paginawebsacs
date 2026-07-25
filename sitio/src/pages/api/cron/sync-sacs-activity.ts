@@ -10,6 +10,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { sendWhatsApp } from '../../../lib/kapso';
+import { healthScoreV2 } from '../../../lib/crm/health';
 
 export const prerender = false;
 
@@ -19,18 +20,6 @@ const SYNC_SECRET = import.meta.env.CRM_SYNC_SECRET || 'sacs-crm-sync-2026';
 const ADMIN_WHATSAPP = (import.meta.env.CRM_ADMIN_WHATSAPP || '').trim();
 
 const r0 = (n: number) => Math.round(n);
-
-/** Health 0-100: recencia de venta (40) + tendencia (25) + amplitud de módulos (20) + equipo operando (15). */
-function healthScore(a: any): { score: number; factors: Record<string, number> } {
-  const dias = a.ultima_venta ? Math.max(0, Math.floor((Date.now() - new Date(a.ultima_venta + 'T12:00:00Z').getTime()) / 86400000)) : 99;
-  const fRecencia = dias <= 1 ? 40 : dias <= 3 ? 32 : dias <= 7 ? 24 : dias <= 15 ? 12 : 0;
-  const t = a.tendencia_pct;
-  const fTendencia = t == null ? 12 : t >= 0 ? 25 : t >= -25 ? 18 : t >= -50 ? 8 : 0;
-  const fModulos = Math.min(20, (a.modulos?.length || 0) * 5);
-  const ops = a.usuarios_operando || 0;
-  const fEquipo = ops >= 3 ? 15 : ops === 2 ? 10 : ops === 1 ? 5 : 0;
-  return { score: fRecencia + fTendencia + fModulos + fEquipo, factors: { recencia: fRecencia, tendencia: fTendencia, modulos: fModulos, equipo: fEquipo } };
-}
 
 /** Alerta con dedup: no repite la misma alerta para la misma company en 7 días. */
 async function alertar(companyId: string, clave: string, titulo: string, metadata: any, avisos: string[]) {
@@ -55,7 +44,7 @@ export const GET: APIRoute = async ({ url }) => {
   // 6 h rota hasta cubrir todas (4 corridas/día × lote ≥ total).
   const limit = Math.min(60, Number(url.searchParams.get('limit')) || 45);
   const { data: companies, error } = await supabase.from('companies')
-    .select('id, nombre, sacs_account, sucursales, dias_sin_venta, actividad_sync_at')
+    .select('id, nombre, sacs_account, sucursales, dias_sin_venta, actividad_sync_at, uso_sacs')
     .not('sacs_account', 'is', null).is('archived_at', null)
     .order('actividad_sync_at', { ascending: true, nullsFirst: true })
     .limit(limit);
@@ -98,7 +87,7 @@ export const GET: APIRoute = async ({ url }) => {
           ? Math.max(0, Math.floor((hoy.getTime() - new Date(a.ultima_venta + 'T12:00:00Z').getTime()) / 86400000))
           : null;
         const diasPrev = co.dias_sin_venta;
-        const { score, factors } = healthScore(a);
+        const { score, factors } = healthScoreV2(a, (co as any).uso_sacs);
 
         const { error: ue } = await supabase.from('companies').update({
           actividad: a,

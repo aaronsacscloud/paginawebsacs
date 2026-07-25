@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { HEALTH_FACTOR_LABELS as FACTOR_LABELS, HEALTH_FACTOR_MAX as FACTOR_MAX } from '../../../lib/crm/health';
 
 interface Props {
   score: number | null | undefined;
@@ -6,24 +7,6 @@ interface Props {
   computed_at?: string | null;
   size?: 'sm' | 'md' | 'lg';
 }
-
-const FACTOR_LABELS: Record<string, string> = {
-  pagos: 'Pagos al día',
-  actividad: 'Actividad reciente (30d)',
-  email_engagement: 'Engagement email (90d)',
-  respuesta: 'Respuesta canales (60d)',
-  nps: 'NPS',
-  antiguedad: 'Antigüedad',
-};
-
-const FACTOR_MAX: Record<string, number> = {
-  pagos: 30,
-  actividad: 25,
-  email_engagement: 15,
-  respuesta: 10,
-  nps: 10,
-  antiguedad: 10,
-};
 
 export default function HealthScoreBadge({ score, factors, computed_at, size = 'md' }: Props) {
   const [showTooltip, setShowTooltip] = useState(false);
