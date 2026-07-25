@@ -8,6 +8,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   const user = await getCurrentUser(request);
   const stage = url.searchParams.get('stage');
   const contact_id = url.searchParams.get('contact_id');
+  const company_id = url.searchParams.get('company_id');
 
   let query = supabase
     .from('deals')
@@ -17,6 +18,7 @@ export const GET: APIRoute = async ({ request, url }) => {
 
   if (stage) query = query.eq('stage', stage);
   if (contact_id) query = query.eq('contact_id', contact_id);
+  if (company_id) query = query.eq('company_id', company_id);
 
   // Partner scope: only show deals owned by the user (founder sees all)
   query = applyPartnerScope(query, user, 'owner_id');

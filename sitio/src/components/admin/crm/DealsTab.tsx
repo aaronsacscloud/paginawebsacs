@@ -415,7 +415,7 @@ function TableView({ deals, onSelect, onBulk }: { deals: Deal[]; onSelect: (d: D
 // ─── Nueva oportunidad Modal ───
 // preset: preselecciona contacto/empresa (para crear desde el detalle del cliente).
 const money0 = (n: number) => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
-function CreateDealModal({ onClose, onCreated, preset }: { onClose: () => void; onCreated: () => void; preset?: { contact: ContactOption } }) {
+export function CreateDealModal({ onClose, onCreated, preset }: { onClose: () => void; onCreated: () => void; preset?: { contact: ContactOption } }) {
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [contactSearch, setContactSearch] = useState(preset?.contact?.nombre || '');

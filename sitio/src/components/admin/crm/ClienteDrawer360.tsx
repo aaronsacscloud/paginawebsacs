@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { computarSenales } from '../../../lib/crm/senales';
+import { CreateDealModal } from './DealsTab';
 
 /* ═══ Cliente 360 — drawer ancho con pestañas, TODO editable ═══
  * Pestañas: Resumen · Cliente & SACS · Contactos · Suscripciones · Actividad.
@@ -58,7 +59,7 @@ const ROLES = ['Dueño', 'Gerente', 'Facturación', 'Sistemas', 'Compras', 'Otro
 export default function ClienteDrawer360({ companyId, onClose, onChanged }: { companyId: string; onClose: () => void; onChanged: () => void }) {
   const [data, setData] = useState<any>(null);
   const [err, setErr] = useState('');
-  const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'act'>('resumen');
+  const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'oport' | 'act'>('resumen');
   const [msg, setMsg] = useState('');
 
   async function load() {
@@ -108,6 +109,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                 <button style={D.tab(tab === 'sacs')} onClick={() => setTab('sacs')}>Actividad en SACS</button>
                 <button style={D.tab(tab === 'contactos')} onClick={() => setTab('contactos')}>Contactos ({contactos.length})</button>
                 <button style={D.tab(tab === 'subs')} onClick={() => setTab('subs')}>Suscripciones ({subs.length})</button>
+                <button style={D.tab(tab === 'oport')} onClick={() => setTab('oport')}>Oportunidades</button>
                 <button style={D.tab(tab === 'act')} onClick={() => setTab('act')}>Actividad</button>
               </div>
             </div>
@@ -118,6 +120,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
               {tab === 'sacs' && <TabSacs co={co} act={act} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'contactos' && <TabContactos companyId={companyId} contactos={contactos} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'subs' && <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} />}
+              {tab === 'oport' && <TabOportunidades companyId={companyId} co={co} principal={principal} flash={flash} reload={() => { load(); onChanged(); }} />}
               {tab === 'act' && <TabActividad companyId={companyId} data={data} reload={() => { load(); onChanged(); }} />}
             </div>
           </>
@@ -854,6 +857,106 @@ function TabSubs({ companyId, subs, reload, flash }: any) {
 }
 
 /* ─────────── 🕓 Actividad (pagos + notas + timeline) ─────────── */
+/* ─────────── 🎯 Oportunidades del cliente (deals) ─────────── */
+function TabOportunidades({ companyId, co, principal, flash, reload }: any) {
+  const [deals, setDeals] = useState<any[] | null>(null);
+  const [stages, setStages] = useState<any[]>([]);
+  const [busyId, setBusyId] = useState('');
+  const [showNew, setShowNew] = useState(false);
+
+  function cargar() {
+    fetch('/api/crm/deals?company_id=' + companyId).then(r => r.json())
+      .then(j => setDeals(Array.isArray(j) ? j : (j.deals || j.data || []))).catch(() => setDeals([]));
+    fetch('/api/crm/pipelines').then(r => r.json())
+      .then(pj => { const o = (pj.data || []).find((p: any) => p.tipo === 'oportunidad'); setStages(o?.stages || []); }).catch(() => {});
+  }
+  useEffect(() => { setDeals(null); cargar(); }, [companyId]);
+
+  const stageBy: Record<string, any> = {}; stages.forEach(s => stageBy[s.key] = s);
+  const isWon = (k: string) => /ganad/i.test(k || '');
+  const isLost = (k: string) => /perdid/i.test(k || '');
+
+  async function cambiarStage(d: any, stage: string) {
+    if (!stage || stage === d.stage) return;
+    setBusyId(d.id);
+    const r = await fetch('/api/crm/deals', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: d.id, stage }) });
+    const j = await r.json().catch(() => ({}));
+    setBusyId('');
+    if (!r.ok || j.error) { alert(j.error || 'No se pudo mover la oportunidad.'); return; }
+    flash(isWon(stage) ? 'Oportunidad ganada · suscripción generada' : 'Etapa actualizada'); cargar(); reload?.();
+  }
+  async function convertir(d: any) {
+    setBusyId(d.id);
+    const r = await fetch('/api/crm/deals/convertir-cotizacion', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ deal_id: d.id }) });
+    const j = await r.json().catch(() => ({}));
+    setBusyId('');
+    if (!r.ok || !j.url) { alert(j.error || 'No se pudo convertir a cotización.'); return; }
+    flash('Cotización creada'); window.open(j.url, '_blank', 'noopener'); cargar(); reload?.();
+  }
+
+  if (deals === null) return <div style={{ ...D.card, color: '#999', fontSize: '0.82rem' }}>Cargando oportunidades…</div>;
+
+  const abiertas = deals.filter(d => !isWon(d.stage) && !isLost(d.stage));
+  const pipeline = abiertas.reduce((a, d) => a + Number(d.valor_total || 0), 0);
+  const ponderado = abiertas.reduce((a, d) => a + Number(d.valor_total || 0) * (Number(d.probabilidad || 0) / 100), 0);
+  const ganadas = deals.filter(d => isWon(d.stage));
+  const mrrGanado = ganadas.reduce((a, d) => a + Number(d.valor_mensual || 0), 0);
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
+        <div style={D.kpi}><div style={D.kl}>En pipeline</div><div style={D.kv}>{money(pipeline)}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{abiertas.length} abierta{abiertas.length === 1 ? '' : 's'}</div></div>
+        <div style={D.kpi}><div style={D.kl}>Ponderado</div><div style={D.kv}>{money(ponderado)}</div></div>
+        <div style={D.kpi}><div style={D.kl}>Ganadas</div><div style={D.kv}>{ganadas.length}</div></div>
+        <div style={D.kpi}><div style={D.kl}>MRR / ARR ganado</div><div style={D.kv}>{money(mrrGanado)}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{money(mrrGanado * 12)} ARR</div></div>
+        <button style={{ ...D.btn, marginLeft: 'auto', alignSelf: 'center' }} disabled={!principal} onClick={() => setShowNew(true)}>+ Nueva oportunidad</button>
+      </div>
+      {!principal && <div style={{ fontSize: '0.76rem', color: '#a06600', marginBottom: 10 }}>Agrega un contacto principal (tab Contactos) para poder crear oportunidades.</div>}
+
+      {deals.length === 0 ? (
+        <div style={{ ...D.card, color: '#999', fontSize: '0.85rem' }}>Este cliente aún no tiene oportunidades.</div>
+      ) : deals.map((d: any) => {
+        const st = stageBy[d.stage];
+        const won = isWon(d.stage), lost = isLost(d.stage);
+        return (
+          <div key={d.id} style={D.card}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{d.nombre}</div>
+                {d.descripcion && <div style={{ fontSize: '0.8rem', color: '#666', marginTop: 2 }}>{d.descripcion}</div>}
+                <div style={{ fontSize: '0.8rem', color: '#16181d', marginTop: 4 }}>
+                  MRR <b>{money(d.valor_mensual)}</b> · ARR <b>{money(Number(d.valor_mensual || 0) * 12)}</b>
+                  {d.billing_period === 'unico' ? <span style={{ color: '#6C5CE7' }}> · pago único {money(d.valor_total)}</span> : null}
+                </div>
+              </div>
+              <span style={{ ...D.badge, background: won ? '#e6f6f2' : lost ? '#fdf2f2' : '#eef2ff', color: won ? '#1A8F7A' : lost ? '#b93333' : (st?.color || '#3730a3') }}>
+                {st?.label || d.stage}
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 10 }}>
+              <select value={d.stage} disabled={busyId === d.id} onChange={e => cambiarStage(d, e.target.value)} style={{ ...D.input, width: 'auto', padding: '5px 8px', fontSize: '0.78rem' }}>
+                {stages.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+              </select>
+              {d.quote_id
+                ? <a href={`/cotizacion/${d.quote_id}`} target="_blank" rel="noreferrer" style={{ ...D.btnG, textDecoration: 'none', fontSize: '0.78rem' }}>Ver cotización →</a>
+                : <button style={{ ...D.btnG, fontSize: '0.78rem' }} disabled={busyId === d.id} onClick={() => convertir(d)}>{busyId === d.id ? '…' : 'Convertir a cotización'}</button>}
+              {!won && !lost && <button style={{ ...D.btn, background: '#1A8F7A', fontSize: '0.78rem' }} disabled={busyId === d.id} onClick={() => { const g = stages.find(s => isWon(s.key)); if (g) cambiarStage(d, g.key); }}>Marcar ganada</button>}
+            </div>
+          </div>
+        );
+      })}
+
+      {showNew && principal && (
+        <CreateDealModal
+          onClose={() => setShowNew(false)}
+          onCreated={() => { setShowNew(false); cargar(); reload?.(); }}
+          preset={{ contact: { id: principal.id, nombre: principal.nombre, email: principal.email, company_id: companyId, companies: { nombre: co.nombre } } as any }}
+        />
+      )}
+    </div>
+  );
+}
+
 function TabActividad({ companyId, data, reload }: any) {
   const [nota, setNota] = useState('');
   const [saving, setSaving] = useState(false);
