@@ -327,8 +327,6 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           duals={[{ dot: '#1A8F7A', num: tot?.activos ?? 0, lbl: 'con ARR activo' }, { dot: '#c6cad2', num: Math.max(0, (tot?.clientes || 0) - (tot?.activos || 0)), lbl: 'sin ARR' }]} />
         <KpiCard icon={<TrendingUp size={18} strokeWidth={2} color="#1A8F7A" />} chipBg="#e6f6f2" label="ARR" value={money(tot?.arr)}
           duals={[{ dot: '#1A8F7A', num: money(tot?.arr), lbl: 'activo' }, { dot: '#E8A838', num: money(kpis.arrPend), lbl: 'pendiente' }]} />
-        <KpiCard icon={<Wallet size={18} strokeWidth={2} color="#6C5CE7" />} chipBg="#f1effd" label="Pagado histórico" value={money(kpis.pagado)}
-          duals={[{ dot: '#6C5CE7', num: kpis.pagos, lbl: 'pagos' }, { dot: '#c6cad2', num: money(kpis.promedio), lbl: 'promedio' }]} />
         <KpiCard icon={<AlertTriangle size={18} strokeWidth={2} color="#d9534a" />} chipBg="#fdf0ee" label="Atención" value={kpis.riesgo}
           duals={[{ dot: '#d9534a', num: kpis.riesgo, lbl: '≥3 días sin vender' }, { dot: '#E8A838', num: kpis.vencidas, lbl: 'renov. vencida' }]} />
         <KpiCard icon={<InfinityIcon size={18} strokeWidth={2} color="#6C5CE7" />} chipBg="#f1effd" label="Licencias vitalicias" value={tot?.vitalicias ?? 0}
