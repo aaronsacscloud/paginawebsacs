@@ -36,6 +36,8 @@ export const GET: APIRoute = async () => {
       const subs = c.subscriptions || [];
       const activas = subs.filter((s: any) => s.estado === 'activa');
       const pend = subs.filter((s: any) => s.estado === 'pendiente_pago' || s.estado === 'programada');
+      // Licencia VITALICIA: ciclo 'vitalicia' o plan "Licencia Vitalicia…".
+      const vitalicia = subs.some((s: any) => s.ciclo === 'vitalicia' || /vitalic/i.test(String(s.nombre_plan || '')));
       // Principal si existe la marca; si no, el primero (comportamiento previo).
       const contacto = (c.contacts || []).find((x: any) => x.es_principal) || (c.contacts || [])[0] || null;
       // Si la empresa no tiene contacto ligado pero una suscripción SÍ referencia
@@ -53,6 +55,7 @@ export const GET: APIRoute = async () => {
         contacto: contacto ? { id: contacto.id, nombre: contacto.nombre, email: contacto.email, whatsapp: contacto.whatsapp, telefono: contacto.telefono } : null,
         sub_contact_id: subContactId,
         subs_total: subs.length, subs_activas: activas.length, subs_pendientes: pend.length,
+        vitalicia,
         mrr: r2(activas.reduce((a: number, s: any) => a + Number(s.arr || 0) / 12, 0)),
         arr: r2(activas.reduce((a: number, s: any) => a + Number(s.arr || 0), 0)),
         arr_pendiente: r2(pend.reduce((a: number, s: any) => a + Number(s.arr || 0), 0)),

@@ -220,7 +220,11 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       render: c => (
         <td style={{ ...T.td, ...T.num, fontWeight: 800 }}>
           {money(c.arr)}
-          <div style={{ ...T.sub, fontWeight: 600 }}>{c.subs_activas} sub{c.subs_activas === 1 ? '' : 's'}{c.arr_pendiente > 0 ? <span style={{ color: '#a06600' }}> +{money(c.arr_pendiente)}</span> : ''}</div>
+          <div style={{ ...T.sub, fontWeight: 600 }}>
+            {c.vitalicia
+              ? <span style={{ ...T.badge, background: '#f1effd', color: '#6C5CE7', fontWeight: 700 }}>Vitalicia</span>
+              : <>{c.subs_activas} sub{c.subs_activas === 1 ? '' : 's'}{c.arr_pendiente > 0 ? <span style={{ color: '#a06600' }}> +{money(c.arr_pendiente)}</span> : ''}</>}
+          </div>
         </td>
       ),
     },
@@ -269,6 +273,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
     },
     /* Campos SOLO para "Más filtros" (sin columna visible). */
     { key: 'etapa', label: 'Etapa', ftype: 'select', options: stages.map(s => ({ v: s.key, l: s.label })), val: c => c.pipeline_stage || '' },
+    { key: 'vitalicia', label: 'Licencia', ftype: 'select', options: [{ v: 'si', l: 'Vitalicia' }, { v: 'no', l: 'Recurrente' }], val: c => c.vitalicia ? 'si' : 'no' },
     { key: 'senal_nivel', label: 'Señal (nivel)', ftype: 'select', options: [{ v: 'oportunidad', l: 'Oportunidad' }, { v: 'riesgo', l: 'Riesgo' }, { v: '', l: 'Sin señal' }], val: c => c.senal_nivel || '' },
     { key: 'cuenta', label: 'Cuenta SACS', ftype: 'text', val: c => c.sacs_account || '' },
     { key: 'correo', label: 'Correo', ftype: 'text', val: c => c.contacto?.email || '' },
@@ -291,6 +296,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       apply: (c, v) => v === 'activos' ? c.subs_activas > 0 : v === 'pendientes' ? c.subs_pendientes > 0 : (c.dias_sin_venta != null && c.dias_sin_venta >= 3 && c.subs_activas > 0),
     },
     { key: 'senal', label: 'Cualquier señal', options: [{ v: 'oportunidad', l: 'Con oportunidad' }, { v: 'riesgo', l: 'En riesgo' }], apply: (c, v) => c.senal_nivel === v },
+    { key: 'licencia', label: 'Tipo de licencia', options: [{ v: 'si', l: 'Vitalicia' }, { v: 'no', l: 'Recurrente' }], apply: (c, v) => (v === 'si') === !!c.vitalicia },
   ];
 
   const vistasBase: VistaDef[] = [
@@ -301,6 +307,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
     { key: 'sin_contacto', nombre: 'Sin contacto', config: { conds: [{ campo: 'sin_contacto', op: 'es', v1: 'si' }] } },
     { key: 'vencidas', nombre: 'Renovación vencida', config: { conds: [{ campo: 'renovacion', op: 'antes_hoy' }], sort: { key: 'renovacion', dir: 1 } } },
     { key: 'oportunidad', nombre: 'Con oportunidad', config: { conds: [{ campo: 'senal_nivel', op: 'es', v1: 'oportunidad' }], sort: { key: 'senal', dir: -1 } } },
+    { key: 'vitalicias', nombre: 'Licencias vitalicias', config: { conds: [{ campo: 'vitalicia', op: 'es', v1: 'si' }], sort: { key: 'pagado', dir: -1 } } },
   ];
 
   if (loading) return <div style={{ padding: 48, textAlign: 'center', color: '#999' }}>Cargando clientes reales…</div>;
