@@ -509,7 +509,63 @@ function TabSacs({ co, act, reload, flash }: any) {
       </div>
 
       {co.sacs_account && <Panorama360 account={co.sacs_account} co={co} />}
+      {co.sacs_account && <Evolucion companyId={co.id} />}
       {co.sacs_account && <UsuariosSacs account={co.sacs_account} />}
+    </div>
+  );
+}
+
+/* Evolución del uso: compara el snapshot más reciente vs el más viejo dentro de
+ * ~30 días (histórico en uso_snapshots que llenan los crons). */
+function Evolucion({ companyId }: any) {
+  const [rows, setRows] = useState<any[] | null>(null);
+  useEffect(() => {
+    let alive = true; setRows(null);
+    fetch('/api/crm/uso-historia?company_id=' + companyId + '&dias=45')
+      .then(r => r.json()).then(j => { if (alive) setRows(j.data || []); }).catch(() => { if (alive) setRows([]); });
+    return () => { alive = false; };
+  }, [companyId]);
+
+  if (rows === null || rows.length < 2) return null; // sin historia suficiente aún
+
+  const prev = rows[0], last = rows[rows.length - 1];
+  const METS: { k: string; l: string }[] = [
+    { k: 'total_30d', l: 'Venta 30d' },
+    { k: 'ventas_30d', l: '# ventas 30d' },
+    { k: 'clientes_total', l: 'Clientes' },
+    { k: 'lealtad_inscritos', l: 'Lealtad' },
+    { k: 'conteos_7d', l: 'Conteos 7d' },
+    { k: 'facturas_7d', l: 'Facturas 7d' },
+    { k: 'health_score', l: 'Salud' },
+  ];
+  const deltas = METS.map(m => {
+    const a = prev[m.k], b = last[m.k];
+    if (a == null || b == null) return null;
+    const d = Number(b) - Number(a);
+    const pct = Number(a) !== 0 ? Math.round((d / Number(a)) * 1000) / 10 : null;
+    return { ...m, a: Number(a), b: Number(b), d, pct };
+  }).filter(Boolean) as any[];
+  if (!deltas.length) return null;
+
+  return (
+    <div style={D.card}>
+      <div style={D.h}>Evolución (últimos {Math.max(1, Math.round((Date.parse(last.fecha) - Date.parse(prev.fecha)) / 86400000))} días)</div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {deltas.map((x: any) => {
+          const sube = x.d > 0, baja = x.d < 0;
+          const esMoney = x.k === 'total_30d';
+          return (
+            <div key={x.k} style={{ ...D.kpi, minWidth: 118 }}>
+              <div style={D.kl}>{x.l}</div>
+              <div style={{ ...D.kv, fontSize: '1rem' }}>{esMoney ? money(x.b) : Number(x.b).toLocaleString()}</div>
+              <div style={{ fontSize: '0.7rem', fontWeight: 800, color: sube ? '#1A8F7A' : baja ? '#b93333' : '#9aa0a8' }}>
+                {sube ? '▲' : baja ? '▼' : '—'} {x.pct != null ? `${Math.abs(x.pct)}%` : (esMoney ? money(Math.abs(x.d)) : Math.abs(x.d))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ fontSize: '0.7rem', color: '#999', marginTop: 8 }}>vs snapshot del {fmtDate(prev.fecha)} · el histórico se acumula solo (cron diario).</div>
     </div>
   );
 }

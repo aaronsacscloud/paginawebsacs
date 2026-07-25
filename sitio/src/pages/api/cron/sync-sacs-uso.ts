@@ -23,7 +23,7 @@ export const GET: APIRoute = async ({ url }) => {
   // Companies con cuenta SACS y AL MENOS una suscripción activa, las más
   // desactualizadas primero (cursor progresivo).
   const { data: companies, error } = await supabase.from('companies')
-    .select('id, nombre, sacs_account, uso_sync_at, subscriptions!inner(estado)')
+    .select('id, nombre, sacs_account, uso_sync_at, actividad, dias_sin_venta, health_score, subscriptions!inner(estado)')
     .not('sacs_account', 'is', null).is('archived_at', null)
     .eq('subscriptions.estado', 'activa')
     .order('uso_sync_at', { ascending: true, nullsFirst: true })
@@ -58,6 +58,29 @@ export const GET: APIRoute = async ({ url }) => {
         }).eq('id', co.id);
         if (ue) { out.errores.push(acct + ': ' + ue.message); continue; }
         out.actualizadas++;
+
+        // ── HISTÓRICO: snapshot del día (upsert por company+fecha, no duplica) ──
+        // Da la serie temporal que companies.uso_sacs (sobrescrito) no tiene.
+        try {
+          const a = (co as any).actividad || {};
+          await supabase.from('uso_snapshots').upsert({
+            company_id: co.id,
+            fecha: new Date().toISOString().slice(0, 10),
+            ventas_30d: a.ventas_30d ?? null,
+            total_30d: a.total_30d ?? null,
+            tendencia_pct: a.tendencia_pct ?? null,
+            dias_sin_venta: (co as any).dias_sin_venta ?? null,
+            health_score: (co as any).health_score ?? null,
+            usuarios_operando: a.usuarios_operando ?? null,
+            clientes_total: uso.clientes?.total ?? null,
+            lealtad_inscritos: uso.lealtad?.inscritos ?? null,
+            conteos_7d: uso.conteos?.total_7d ?? null,
+            transferencias_7d: uso.transferencias?.total_7d ?? null,
+            facturas_7d: uso.facturacion?.timbradas_7d ?? null,
+            clientes_nuevos_7d: uso.clientes?.nuevos_7d ?? null,
+            uso,
+          }, { onConflict: 'company_id,fecha' });
+        } catch { /* el snapshot nunca bloquea el sync */ }
       }
     } catch (e: any) {
       out.errores.push('lote ' + i + ': ' + (e?.message || String(e)));

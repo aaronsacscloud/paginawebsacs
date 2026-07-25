@@ -112,6 +112,21 @@ export const GET: APIRoute = async ({ url }) => {
         if (ue) { out.errores.push(acct + ': ' + ue.message); continue; }
         out.actualizadas++;
 
+        // Snapshot ligero del día (histórico de ventas/salud; el cron de uso
+        // completa el resto de campos). Upsert → no duplica por día.
+        try {
+          await supabase.from('uso_snapshots').upsert({
+            company_id: co.id,
+            fecha: new Date().toISOString().slice(0, 10),
+            ventas_30d: a.ventas_30d ?? null,
+            total_30d: a.total_30d ?? null,
+            tendencia_pct: a.tendencia_pct ?? null,
+            dias_sin_venta: dias,
+            health_score: score,
+            usuarios_operando: a.usuarios_operando ?? null,
+          }, { onConflict: 'company_id,fecha' });
+        } catch { /* nunca bloquea el sync */ }
+
         // ── alertas ──
         const subInfo = porCompany[co.id] || { activas: 0, canceladas: 0, arr: 0 };
         if (a.tendencia_pct != null && a.tendencia_pct <= -50 && subInfo.activas > 0) {
