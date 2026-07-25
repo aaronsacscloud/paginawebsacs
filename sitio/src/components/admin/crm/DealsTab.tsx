@@ -179,7 +179,7 @@ export default function DealsTab({ onConfig }: { onConfig?: () => void } = {}) {
           ))}
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <button onClick={() => setShowCreate(true)} style={{ ...btn, background: '#1a1a1a', color: '#fff' }}>+ Nuevo deal</button>
+          <button onClick={() => setShowCreate(true)} style={{ ...btn, background: '#1a1a1a', color: '#fff' }}>+ Nueva oportunidad</button>
           <button onClick={() => setView(view === 'kanban' ? 'table' : 'kanban')} style={{ ...btn, background: '#f5f5f5', color: '#555' }}>
             {view === 'kanban' ? '☰ Tabla' : '▦ Kanban'}
           </button>
@@ -412,30 +412,50 @@ function TableView({ deals, onSelect, onBulk }: { deals: Deal[]; onSelect: (d: D
   );
 }
 
-// ─── Create Deal Modal ───
-function CreateDealModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+// ─── Nueva oportunidad Modal ───
+// preset: preselecciona contacto/empresa (para crear desde el detalle del cliente).
+const money0 = (n: number) => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
+function CreateDealModal({ onClose, onCreated, preset }: { onClose: () => void; onCreated: () => void; preset?: { contact: ContactOption } }) {
   const [nombre, setNombre] = useState('');
-  const [contactSearch, setContactSearch] = useState('');
+  const [descripcion, setDescripcion] = useState('');
+  const [contactSearch, setContactSearch] = useState(preset?.contact?.nombre || '');
   const [contactResults, setContactResults] = useState<ContactOption[]>([]);
-  const [selectedContact, setSelectedContact] = useState<ContactOption | null>(null);
+  const [selectedContact, setSelectedContact] = useState<ContactOption | null>(preset?.contact || null);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [planes, setPlanes] = useState<any[]>([]);
   const [plan, setPlan] = useState('');
   const [sucursales, setSucursales] = useState(1);
-  const [billingPeriod, setBillingPeriod] = useState('mensual');
-  const [valorMensual, setValorMensual] = useState(0);
-  const [valorTotal, setValorTotal] = useState(0);
+  // tipoValor: cómo interpretar el monto → deriva MRR/ARR/total.
+  const [tipoValor, setTipoValor] = useState<'mrr' | 'arr' | 'unico'>('mrr');
+  const [monto, setMonto] = useState(0);
   const [fechaCierre, setFechaCierre] = useState('');
   const [saving, setSaving] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Auto-calc prices
+  useEffect(() => { fetch('/api/crm/arr/plans').then(r => r.json()).then(j => setPlanes(j.data || j.plans || [])).catch(() => {}); }, []);
+  useEffect(() => { if (preset?.contact && !nombre) setNombre(preset.contact.companies?.nombre ? `${preset.contact.companies.nombre} – Oportunidad` : `${preset.contact.nombre} – Oportunidad`); }, []);
+
+  // Al elegir plan: prellena el monto según el tipo de valor y sucursales.
+  function pickPlan(slug: string) {
+    setPlan(slug);
+    const p = planes.find((x: any) => x.slug === slug);
+    if (!p) return;
+    const base = tipoValor === 'arr' ? (p.precio_anual || (p.precio_mensual || 0) * 12) : (p.precio_mensual || 0);
+    setMonto(base * sucursales);
+  }
   useEffect(() => {
-    if (plan && PLAN_PRICES[plan]) {
-      const vm = PLAN_PRICES[plan] * sucursales;
-      setValorMensual(vm);
-      setValorTotal(billingPeriod === 'anual' ? vm * 10 : vm);
-    }
-  }, [plan, sucursales, billingPeriod]);
+    const p = planes.find((x: any) => x.slug === plan);
+    if (!p) return;
+    const base = tipoValor === 'arr' ? (p.precio_anual || (p.precio_mensual || 0) * 12) : (p.precio_mensual || 0);
+    setMonto(base * sucursales);
+  }, [sucursales, tipoValor]);
+
+  // Derivar MRR / ARR / valores a guardar desde (tipoValor, monto).
+  const mrr = tipoValor === 'mrr' ? monto : tipoValor === 'arr' ? monto / 12 : 0;
+  const arr = tipoValor === 'unico' ? 0 : mrr * 12;
+  const valorMensual = Math.round(mrr);
+  const valorTotal = tipoValor === 'unico' ? Math.round(monto) : Math.round(arr);
+  const billingPeriod = tipoValor === 'arr' ? 'anual' : tipoValor === 'unico' ? 'unico' : 'mensual';
 
   const searchContacts = (q: string) => {
     setContactSearch(q);
@@ -454,7 +474,7 @@ function CreateDealModal({ onClose, onCreated }: { onClose: () => void; onCreate
     setSelectedContact(c);
     setContactSearch(c.nombre);
     setShowDropdown(false);
-    if (!nombre) setNombre(c.companies?.nombre ? `${c.companies.nombre} – Deal` : `${c.nombre} – Deal`);
+    if (!nombre) setNombre(c.companies?.nombre ? `${c.companies.nombre} – Oportunidad` : `${c.nombre} – Oportunidad`);
   };
 
   const submit = async () => {
@@ -465,6 +485,7 @@ function CreateDealModal({ onClose, onCreated }: { onClose: () => void; onCreate
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         nombre,
+        descripcion: descripcion.trim() || null,
         contact_id: selectedContact.id,
         company_id: selectedContact.company_id,
         plan: plan || null,
@@ -479,47 +500,57 @@ function CreateDealModal({ onClose, onCreated }: { onClose: () => void; onCreate
     onCreated();
   };
 
+  const clienteNombre = selectedContact?.companies?.nombre || selectedContact?.nombre || '';
+
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 250, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.3)' }} />
-      <div style={{ position: 'relative', background: '#fff', borderRadius: 12, padding: 28, width: 480, maxWidth: '90vw', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 8px 30px rgba(0,0,0,0.12)' }}>
+      <div style={{ position: 'relative', background: '#fff', borderRadius: 12, padding: 28, width: 500, maxWidth: '90vw', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 8px 30px rgba(0,0,0,0.12)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <span style={{ fontSize: '1.125rem', fontWeight: 800, color: '#1a1a1a' }}>Nuevo Deal</span>
+          <span style={{ fontSize: '1.125rem', fontWeight: 800, color: '#1a1a1a' }}>Nueva oportunidad</span>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#999' }}>✕</button>
         </div>
 
-        <Label>Nombre del deal</Label>
+        <Label>Nombre de la oportunidad</Label>
         <input value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Restaurante Oaxaca – Fideliza" style={input} />
 
-        <Label>Contacto</Label>
-        <div style={{ position: 'relative' }}>
-          <input value={contactSearch} onChange={e => searchContacts(e.target.value)} placeholder="Buscar contacto por nombre, email..." style={input} />
-          {showDropdown && contactResults.length > 0 && (
-            <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 10, maxHeight: 200, overflowY: 'auto' }}>
-              {contactResults.map(c => (
-                <div key={c.id} onClick={() => pickContact(c)} style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '0.8125rem', borderBottom: '1px solid #f5f5f5' }}>
-                  <div style={{ fontWeight: 600, color: '#1a1a1a' }}>{c.nombre}</div>
-                  <div style={{ fontSize: '0.6875rem', color: '#999' }}>{c.email || ''}{c.companies?.nombre ? ` · ${c.companies.nombre}` : ''}</div>
+        <Label>Descripción</Label>
+        <textarea value={descripcion} onChange={e => setDescripcion(e.target.value)} placeholder="¿Qué se le va a ofrecer y por qué? (contexto para el equipo)" rows={2} style={{ ...input, resize: 'vertical' as const, fontFamily: 'inherit' }} />
+
+        {preset?.contact ? (
+          <div style={{ background: '#f6f7f9', borderRadius: 8, padding: '8px 10px', fontSize: '0.78rem', color: '#555', margin: '4px 0 8px' }}>
+            Cliente: <b>{clienteNombre}</b>{selectedContact?.nombre ? ` · ${selectedContact.nombre}` : ''}
+          </div>
+        ) : (
+          <>
+            <Label>Contacto / cliente</Label>
+            <div style={{ position: 'relative' }}>
+              <input value={contactSearch} onChange={e => searchContacts(e.target.value)} placeholder="Buscar contacto por nombre, email..." style={input} />
+              {showDropdown && contactResults.length > 0 && (
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 10, maxHeight: 200, overflowY: 'auto' }}>
+                  {contactResults.map(c => (
+                    <div key={c.id} onClick={() => pickContact(c)} style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '0.8125rem', borderBottom: '1px solid #f5f5f5' }}>
+                      <div style={{ fontWeight: 600, color: '#1a1a1a' }}>{c.nombre}</div>
+                      <div style={{ fontSize: '0.6875rem', color: '#999' }}>{c.email || ''}{c.companies?.nombre ? ` · ${c.companies.nombre}` : ''}</div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
+              {selectedContact && (
+                <div style={{ fontSize: '0.6875rem', color: '#2AB5A0', fontWeight: 600, marginTop: -4, marginBottom: 8 }}>
+                  Cliente: {clienteNombre}
+                </div>
+              )}
             </div>
-          )}
-          {selectedContact && (
-            <div style={{ fontSize: '0.6875rem', color: '#2AB5A0', fontWeight: 600, marginTop: -4, marginBottom: 8 }}>
-              Contacto seleccionado: {selectedContact.nombre}
-            </div>
-          )}
-        </div>
+          </>
+        )}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           <div>
             <Label>Plan</Label>
-            <select value={plan} onChange={e => setPlan(e.target.value)} style={input}>
+            <select value={plan} onChange={e => pickPlan(e.target.value)} style={input}>
               <option value="">Sin plan</option>
-              <option value="vende">Vende ($600)</option>
-              <option value="controla">Controla ($900)</option>
-              <option value="fideliza">Fideliza ($1,400)</option>
-              <option value="automatiza">Automatiza ($5,900)</option>
+              {planes.map((p: any) => <option key={p.slug} value={p.slug}>{p.nombre}{p.precio_mensual ? ` ($${p.precio_mensual}/mes)` : ''}</option>)}
             </select>
           </div>
           <div>
@@ -530,31 +561,31 @@ function CreateDealModal({ onClose, onCreated }: { onClose: () => void; onCreate
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           <div>
-            <Label>Periodo de facturación</Label>
-            <select value={billingPeriod} onChange={e => setBillingPeriod(e.target.value)} style={input}>
-              <option value="mensual">Mensual</option>
-              <option value="anual">Anual (10 meses)</option>
+            <Label>Tipo de valor</Label>
+            <select value={tipoValor} onChange={e => setTipoValor(e.target.value as any)} style={input}>
+              <option value="mrr">Mensual (MRR)</option>
+              <option value="arr">Anual (ARR)</option>
+              <option value="unico">Pago único</option>
             </select>
           </div>
           <div>
-            <Label>Fecha cierre esperada</Label>
-            <input type="date" value={fechaCierre} onChange={e => setFechaCierre(e.target.value)} style={input} />
+            <Label>{tipoValor === 'mrr' ? 'Monto mensual' : tipoValor === 'arr' ? 'Monto anual' : 'Monto único'}</Label>
+            <input type="number" value={monto} onChange={e => setMonto(parseFloat(e.target.value) || 0)} style={input} />
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 4 }}>
-          <div>
-            <Label>Valor mensual</Label>
-            <input type="number" value={valorMensual} onChange={e => { const v = parseFloat(e.target.value) || 0; setValorMensual(v); setValorTotal(billingPeriod === 'anual' ? v * 10 : v); }} style={input} />
-          </div>
-          <div>
-            <Label>Valor total</Label>
-            <input type="number" value={valorTotal} onChange={e => setValorTotal(parseFloat(e.target.value) || 0)} style={input} />
-          </div>
+        {/* Derivados claros */}
+        <div style={{ background: '#f0f7f4', border: '1px solid #d6ebe2', borderRadius: 8, padding: '8px 12px', margin: '6px 0 4px', fontSize: '0.82rem', color: '#1A8F7A', fontWeight: 700 }}>
+          {tipoValor === 'unico'
+            ? <>Pago único: {money0(monto)} <span style={{ color: '#999', fontWeight: 400 }}>· no cuenta como ARR recurrente</span></>
+            : <>MRR {money0(mrr)} · ARR {money0(arr)}</>}
         </div>
+
+        <Label>Fecha cierre esperada</Label>
+        <input type="date" value={fechaCierre} onChange={e => setFechaCierre(e.target.value)} style={input} />
 
         <button onClick={submit} disabled={saving || !nombre || !selectedContact} style={{ ...btn, background: '#1a1a1a', color: '#fff', width: '100%', marginTop: 16, justifyContent: 'center', opacity: (!nombre || !selectedContact) ? 0.5 : 1 }}>
-          {saving ? 'Creando...' : 'Crear deal'}
+          {saving ? 'Creando...' : 'Crear oportunidad'}
         </button>
       </div>
     </div>

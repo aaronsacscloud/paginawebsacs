@@ -33,6 +33,7 @@ export const POST: APIRoute = async ({ request }) => {
     .from('deals')
     .insert({
       nombre: body.nombre,
+      descripcion: body.descripcion || null,
       contact_id: body.contact_id,
       company_id: body.company_id || null,
       plan: body.plan || null,

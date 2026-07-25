@@ -71,6 +71,7 @@ export const GET: APIRoute = async () => {
         health_score: c.health_score,
         ultima_venta_at: c.ultima_venta_at, dias_sin_venta: c.dias_sin_venta,
         ventas_30d: c.actividad?.ventas_30d ?? null,
+        total_30d: c.actividad?.total_30d ?? null,
         // Señal principal + conteos (para columna/filtro/orden en la tabla).
         senal_nivel: top?.nivel ?? null,
         senal_tipo: top?.tipo ?? null,

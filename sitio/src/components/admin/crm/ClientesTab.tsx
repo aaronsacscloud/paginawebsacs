@@ -258,6 +258,19 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       ); },
     },
     {
+      key: 'ventas30', label: 'Ventas 30d', width: 116, num: true, ftype: 'number', val: c => Number(c.total_30d || 0),
+      render: c => (
+        <td style={{ ...T.td, ...T.num }}>
+          {c.total_30d != null || c.ventas_30d != null ? (
+            <>
+              <span style={{ fontWeight: 700 }}>{money(c.total_30d || 0)}</span>
+              <div style={{ ...T.sub, fontWeight: 600 }}>{c.ventas_30d || 0} venta{c.ventas_30d === 1 ? '' : 's'}</div>
+            </>
+          ) : <span style={{ color: '#c4c8cf' }}>—</span>}
+        </td>
+      ),
+    },
+    {
       key: 'senal', label: 'Señal', width: 118, ftype: 'select',
       options: Object.keys(SENAL_LABEL).map(t => ({ v: t, l: SENAL_LABEL[t] })),
       val: c => c.senal_peso || 0,     // ordena por urgencia/valor
@@ -342,7 +355,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           vistasBase={vistasBase}
           searchText={c => [c.nombre, c.sacs_account, c.contacto?.nombre, c.contacto?.email, c.contacto?.whatsapp].filter(Boolean).join(' ')}
           searchPlaceholder="Buscar cliente, cuenta o contacto…"
-          minWidth={980}
+          minWidth={1100}
           onRowClick={c => setDetailId(c.id)}
           customBody={modo === 'kanban' ? ((rows: any[]) => (
             stages.length === 0
