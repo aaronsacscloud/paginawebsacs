@@ -58,7 +58,7 @@ const ROLES = ['Dueño', 'Gerente', 'Facturación', 'Sistemas', 'Compras', 'Otro
 export default function ClienteDrawer360({ companyId, onClose, onChanged }: { companyId: string; onClose: () => void; onChanged: () => void }) {
   const [data, setData] = useState<any>(null);
   const [err, setErr] = useState('');
-  const [tab, setTab] = useState<'resumen' | 'sacs' | 'contactos' | 'subs' | 'act'>('resumen');
+  const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'act'>('resumen');
   const [msg, setMsg] = useState('');
 
   async function load() {
@@ -104,7 +104,8 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
               </div>
               <div style={D.tabbar}>
                 <button style={D.tab(tab === 'resumen')} onClick={() => setTab('resumen')}>📊 Resumen</button>
-                <button style={D.tab(tab === 'sacs')} onClick={() => setTab('sacs')}>🏢 Cliente & SACS</button>
+                <button style={D.tab(tab === 'info')} onClick={() => setTab('info')}>📇 Info general</button>
+                <button style={D.tab(tab === 'sacs')} onClick={() => setTab('sacs')}>🏢 Actividad en SACS</button>
                 <button style={D.tab(tab === 'contactos')} onClick={() => setTab('contactos')}>👤 Contactos ({contactos.length})</button>
                 <button style={D.tab(tab === 'subs')} onClick={() => setTab('subs')}>📋 Suscripciones ({subs.length})</button>
                 <button style={D.tab(tab === 'act')} onClick={() => setTab('act')}>🕓 Actividad</button>
@@ -112,7 +113,8 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
             </div>
             <div style={D.body}>
               {msg && <div style={{ background: '#e8f5e9', color: '#1b5e20', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: '0.8rem', fontWeight: 700 }}>{msg}</div>}
-              {tab === 'resumen' && <TabResumen res={res} co={co} act={act} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} />}
+              {tab === 'resumen' && <TabResumen res={res} co={co} act={act} subs={subs} />}
+              {tab === 'info' && <TabInfoGeneral co={co} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'sacs' && <TabSacs co={co} act={act} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'contactos' && <TabContactos companyId={companyId} contactos={contactos} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'subs' && <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} />}
@@ -125,28 +127,10 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
   );
 }
 
-/* ─────────── 📊 Resumen (información general del cliente) ─────────── */
-function TabResumen({ res, co, act, subs, reload, flash }: any) {
+/* ─────────── 📊 Resumen ─────────── */
+function TabResumen({ res, co, act, subs }: any) {
   const dias = co?.dias_sin_venta;
   const senales = computarSenales(co, (subs || []).find((s: any) => s.estado === 'activa'));
-  // Datos editables del cliente (viven aquí, en la información general — el tab
-  // Cliente & SACS es SOLO información de SACS).
-  const [f, setF] = useState<any>({ nombre: co.nombre || '', rfc: co.rfc || '', razon_social: co.razon_social || '', giro: co.giro || '', sitio_web: co.sitio_web || '', ciudad: co.ciudad || '', estado_geo: co.estado_geo || '', sucursales: co.sucursales || 1, estado_cuenta: co.estado_cuenta || 'activo' });
-  const [saving, setSaving] = useState(false);
-  async function guardar() {
-    if (!f.nombre.trim()) { alert('El nombre es obligatorio.'); return; }
-    setSaving(true);
-    const r = await fetch('/api/crm/companies', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: co.id, ...f, sucursales: parseInt(f.sucursales) || 1 }) });
-    const j = await r.json().catch(() => ({}));
-    setSaving(false);
-    if (!r.ok || j.error) alert(j.error || 'No se pudo guardar.'); else { flash('Datos del cliente guardados'); reload(); }
-  }
-  const campo = (label: string, k: string, ph = '') => (
-    <div style={{ flex: '1 1 200px' }}>
-      <label style={D.lbl}>{label}</label>
-      <input value={f[k]} onChange={e => setF({ ...f, [k]: e.target.value })} placeholder={ph} style={D.input} />
-    </div>
-  );
   const tend = act && act.tendencia_pct;
   const sucPlan = Number(co.sucursales || 0);
   const sucReales = act ? Number(act.sucursales || 0) : 0;
@@ -216,7 +200,30 @@ function TabResumen({ res, co, act, subs, reload, flash }: any) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
 
+/* ─────────── 📇 Info general (datos editables del cliente) ─────────── */
+function TabInfoGeneral({ co, reload, flash }: any) {
+  const [f, setF] = useState<any>({ nombre: co.nombre || '', rfc: co.rfc || '', razon_social: co.razon_social || '', giro: co.giro || '', sitio_web: co.sitio_web || '', ciudad: co.ciudad || '', estado_geo: co.estado_geo || '', sucursales: co.sucursales || 1, estado_cuenta: co.estado_cuenta || 'activo' });
+  const [saving, setSaving] = useState(false);
+  async function guardar() {
+    if (!f.nombre.trim()) { alert('El nombre es obligatorio.'); return; }
+    setSaving(true);
+    const r = await fetch('/api/crm/companies', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: co.id, ...f, sucursales: parseInt(f.sucursales) || 1 }) });
+    const j = await r.json().catch(() => ({}));
+    setSaving(false);
+    if (!r.ok || j.error) alert(j.error || 'No se pudo guardar.'); else { flash('Datos del cliente guardados'); reload(); }
+  }
+  const campo = (label: string, k: string, ph = '') => (
+    <div style={{ flex: '1 1 200px' }}>
+      <label style={D.lbl}>{label}</label>
+      <input value={f[k]} onChange={e => setF({ ...f, [k]: e.target.value })} placeholder={ph} style={D.input} />
+    </div>
+  );
+  return (
+    <div>
       <div style={D.card}>
         <div style={D.h}>Datos del cliente (editables)</div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
