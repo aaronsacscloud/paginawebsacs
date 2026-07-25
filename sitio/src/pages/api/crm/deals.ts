@@ -122,14 +122,25 @@ export const PUT: APIRoute = async ({ request }) => {
       await supabase.from('deals').update({ closed_at: new Date().toISOString() }).eq('id', id);
     }
 
+    // Ganar la oportunidad GENERA la suscripción (idempotente, estado 'programada';
+    // se activa al primer pago). Cierra la asimetría con la cotización aceptada.
+    let subGenerada = false;
+    try {
+      const { ensureSubscriptionFromDeal } = await import('../../../lib/crm/deal-to-subscription');
+      const r = await ensureSubscriptionFromDeal(data, { estado: 'programada' });
+      subGenerada = r.created;
+    } catch (e) {
+      console.warn('[crm/deals.PUT] ensureSubscriptionFromDeal failed:', e);
+    }
+
     // Activity log para que partner lo vea como movimiento
     await supabase.from('activities').insert({
       contact_id: data.contact_id,
       company_id: data.company_id,
       deal_id: id,
       tipo: 'deal_ganado',
-      titulo: `Deal cerrado: ${data.nombre}`,
-      metadata: { valor: data.valor_total, plan: data.plan, referrer_partner_id: data.referrer_partner_id },
+      titulo: `Oportunidad ganada: ${data.nombre}${subGenerada ? ' · suscripción generada' : ''}`,
+      metadata: { valor: data.valor_total, plan: data.plan, referrer_partner_id: data.referrer_partner_id, suscripcion_generada: subGenerada },
       automatico: true,
     });
 
