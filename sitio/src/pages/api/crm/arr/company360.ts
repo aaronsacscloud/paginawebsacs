@@ -21,14 +21,55 @@ export const GET: APIRoute = async ({ url }) => {
     return r;
   };
 
-  const [co, subs, pays, acts, contacts] = await Promise.all([
+  const [co, subs, pays, acts, contacts, quotes] = await Promise.all([
     supabase.from('companies').select('*').eq('id', id).single(),
     supabase.from('subscriptions').select('*').eq('company_id', id).order('created_at'),
     supabase.from('payments').select('*').eq('company_id', id).order('fecha', { ascending: false }).limit(100),
     supabase.from('activities').select('*').eq('company_id', id).order('created_at', { ascending: false }).limit(100),
     fetchContacts(),
+    supabase.from('quotes').select('id, numero, total, estado, created_at').eq('company_id', id).neq('estado', 'deleted').order('created_at', { ascending: false }).limit(30),
   ]);
   if (co.error) return new Response(JSON.stringify({ error: co.error.message }), { status: 404 });
+
+  // Bookings del cliente (por sus contactos: contact_id o email)
+  let bookings: any[] = [];
+  try {
+    const cts = contacts.data || [];
+    const ctIds = cts.map((c: any) => c.id);
+    const ctEmails = cts.map((c: any) => String(c.email || '').trim().toLowerCase()).filter(Boolean);
+    if (ctIds.length || ctEmails.length) {
+      const ors: string[] = [];
+      if (ctIds.length) ors.push(`contact_id.in.(${ctIds.join(',')})`);
+      if (ctEmails.length) ors.push(`invitee_email.in.(${ctEmails.map(e => `"${e}"`).join(',')})`);
+      const { data: bks } = await supabase.from('bookings')
+        .select('id, fecha, hora_inicio, estado, google_meet_link, invitee_nombre, event_types(nombre)')
+        .or(ors.join(',')).order('fecha', { ascending: false }).limit(30);
+      bookings = bks || [];
+    }
+  } catch { /* bookings opcionales en el 360 */ }
+
+  // ── TIMELINE unificado: activities + pagos + cotizaciones + reuniones ──
+  const timeline: any[] = [];
+  const ICONO: Record<string, string> = {
+    nota: '📝', tarea: '✅', cotizacion: '📋', pago_recibido: '💰', deal_ganado: '🏆',
+    stage_change: '📈', demo_agendada: '📅', demo_realizada: '📅', demo_no_show: '📅',
+    sistema: '⚙️', llamada: '📞', whatsapp_enviado: '💬', email_enviado: '✉️', lead_created: '✨',
+  };
+  for (const a of (acts.data || [])) {
+    if (a.tipo === 'page_visit') continue; // ruido
+    timeline.push({ fecha: a.created_at, icono: (a.metadata?.alerta ? '⚠️' : ICONO[a.tipo] || '⚙️'), tipo: a.tipo, titulo: a.titulo, detalle: a.descripcion || '', id: 'a' + a.id, meta: a.metadata || null });
+  }
+  for (const p of (pays.data || [])) {
+    timeline.push({ fecha: (p.fecha?.length === 10 ? p.fecha + 'T12:00:00' : p.fecha) || p.created_at, icono: '💰', tipo: 'pago', titulo: `Pago recibido · $${Math.round(p.monto || 0).toLocaleString()}`, detalle: p.metodo || '', id: 'p' + p.id });
+  }
+  for (const q of (quotes.data || [])) {
+    timeline.push({ fecha: q.created_at, icono: '📋', tipo: 'cotizacion', titulo: `Cotización ${q.numero || ''} · $${Math.round(q.total || 0).toLocaleString()} · ${q.estado}`, detalle: '', id: 'q' + q.id, link: `/cotizacion/${q.id}` });
+  }
+  for (const b of bookings) {
+    const ev: any = Array.isArray(b.event_types) ? b.event_types[0] : b.event_types;
+    timeline.push({ fecha: b.fecha + 'T' + (b.hora_inicio || '12:00:00'), icono: '📅', tipo: 'reunion', titulo: `${ev?.nombre || 'Reunión'} · ${b.estado}`, detalle: b.invitee_nombre || '', id: 'b' + b.id, link: b.google_meet_link || null });
+  }
+  timeline.sort((x, y) => String(y.fecha).localeCompare(String(x.fecha)));
 
   const activas = (subs.data || []).filter(s => s.estado === 'activa');
   const resumen = {
@@ -46,6 +87,9 @@ export const GET: APIRoute = async ({ url }) => {
     subscriptions: subs.data || [],
     payments: pays.data || [],
     activities: acts.data || [],
+    quotes: quotes.data || [],
+    bookings,
+    timeline: timeline.slice(0, 80),
     // Principal primero (si la columna existe), luego por antigüedad.
     contacts: (contacts.data || []).slice().sort((a: any, b: any) => Number(b.es_principal || 0) - Number(a.es_principal || 0)),
   }), { status: 200, headers: { 'Content-Type': 'application/json' } });

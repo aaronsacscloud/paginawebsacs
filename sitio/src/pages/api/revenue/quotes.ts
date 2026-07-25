@@ -270,6 +270,16 @@ export const PUT: APIRoute = async ({ request }) => {
     // Draft → sent transition: advance deal to cotizacion_enviada
     const transitionedToSent = prev && prev.estado !== 'sent' && data?.estado === 'sent';
     if (transitionedToSent) {
+      // Timeline: registrar "cotización enviada" (antes no quedaba huella en activities)
+      try {
+        await supabase.from('activities').insert({
+          company_id: data.company_id || null, contact_id: data.contact_id || null,
+          deal_id: data.deal_id || null, quote_id: id,
+          tipo: 'cotizacion', titulo: `Cotización ${data.numero || ''} enviada · $${Math.round(data.total || 0).toLocaleString()}`,
+          metadata: { event: 'cotizacion_enviada', quote_id: id, total: data.total },
+          automatico: true,
+        });
+      } catch { /* nunca bloquea el envío */ }
       if (data?.deal_id) {
         await advanceDealStage(data.deal_id, 'cotizacion_enviada', {
           valor_total: valorTotal, valor_mensual: valorMensual, trigger: 'quote_sent',

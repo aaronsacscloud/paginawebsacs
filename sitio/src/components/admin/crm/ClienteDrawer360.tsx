@@ -1300,20 +1300,48 @@ function TabActividad({ companyId, data, reload }: any) {
         </div>
       </div>
       <div style={D.card}>
-        <div style={D.h}>Notas y timeline</div>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        <div style={D.h}>Timeline comercial</div>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
           <input value={nota} onChange={e => setNota(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') agregarNota(); }} placeholder="Escribe una nota de lo hablado con el cliente…" style={{ ...D.input, flex: 1 }} />
           <button style={{ ...D.btn, opacity: saving || !nota.trim() ? 0.5 : 1 }} onClick={agregarNota} disabled={saving || !nota.trim()}>{saving ? '…' : 'Agregar'}</button>
         </div>
-        {(data.activities || []).map((a: any) => (
-          <div key={a.id} style={{ padding: '8px 0', borderBottom: '1px solid #f4f4f4' }}>
-            <div style={{ fontSize: '0.72rem', color: '#999' }}>{new Date(a.created_at).toLocaleString('es-MX')} · {a.tipo}</div>
-            <div style={{ fontSize: '0.83rem', fontWeight: 600 }}>{a.titulo}</div>
-            {a.descripcion && a.descripcion !== a.titulo && <div style={{ fontSize: '0.76rem', color: '#666' }}>{a.descripcion}</div>}
-          </div>
-        ))}
-        {!(data.activities || []).length && <div style={{ color: '#999', fontSize: '0.8rem' }}>Sin notas todavía — la primera conversación se registra aquí.</div>}
+        <TimelineUnificado data={data} />
       </div>
+    </div>
+  );
+}
+
+/* Timeline unificado: activities + pagos + cotizaciones + reuniones (lo arma
+ * company360 server-side en data.timeline). Chips para filtrar por tipo. */
+const TL_FILTROS = [
+  { v: '', l: 'Todo' }, { v: 'nota', l: 'Notas' }, { v: 'pago', l: 'Pagos' },
+  { v: 'cotizacion', l: 'Cotizaciones' }, { v: 'reunion', l: 'Reuniones' }, { v: 'tarea', l: 'Tareas' },
+];
+function TimelineUnificado({ data }: any) {
+  const [filtro, setFiltro] = useState('');
+  const items: any[] = data.timeline || [];
+  const vis = filtro ? items.filter(x => x.tipo === filtro || (filtro === 'reunion' && /^demo/.test(x.tipo))) : items;
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+        {TL_FILTROS.map(f => (
+          <button key={f.v} onClick={() => setFiltro(f.v)}
+            style={{ ...D.badge, cursor: 'pointer', border: '1px solid ' + (filtro === f.v ? '#1a1a1a' : '#e6e8ee'), background: filtro === f.v ? '#1a1a1a' : '#fff', color: filtro === f.v ? '#fff' : '#555' }}>
+            {f.l}
+          </button>
+        ))}
+      </div>
+      {vis.map((t: any) => (
+        <div key={t.id} style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: '1px solid #f4f4f4', alignItems: 'flex-start' }}>
+          <span style={{ fontSize: '0.95rem', lineHeight: 1.3 }}>{t.icono}</span>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: '0.83rem', fontWeight: 600 }}>{t.titulo}{t.link ? <> · <a href={t.link} target="_blank" rel="noreferrer" style={{ color: '#1A8F7A', fontWeight: 700 }}>abrir →</a></> : null}</div>
+            {t.detalle && t.detalle !== t.titulo && <div style={{ fontSize: '0.76rem', color: '#666' }}>{t.detalle}</div>}
+            <div style={{ fontSize: '0.7rem', color: '#a7abb3', marginTop: 1 }}>{new Date(t.fecha).toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</div>
+          </div>
+        </div>
+      ))}
+      {!vis.length && <div style={{ color: '#999', fontSize: '0.8rem' }}>Sin eventos{filtro ? ' de este tipo' : ' todavía — la primera conversación se registra aquí'}.</div>}
     </div>
   );
 }
