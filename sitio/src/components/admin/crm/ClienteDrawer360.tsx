@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { computarSenales } from '../../../lib/crm/senales';
 import { CreateDealModal } from './DealsTab';
+import { useIsMobile, useDrawerHistory } from '../../../lib/ui/mobile';
 
 /* ═══ Cliente 360 — drawer ancho con pestañas, TODO editable ═══
  * Pestañas: Resumen · Cliente & SACS · Contactos · Suscripciones · Actividad.
@@ -25,8 +26,10 @@ const D = {
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,.42)', zIndex: 900 } as const,
   panel: { position: 'fixed', top: 0, right: 0, bottom: 0, width: 'min(940px, 97vw)', background: '#fafafa', zIndex: 901, overflowY: 'auto' as const, boxShadow: '-12px 0 40px rgba(0,0,0,.18)' },
   head: { position: 'sticky' as const, top: 0, zIndex: 5, background: '#fff', borderBottom: '1px solid #ececec', padding: '16px 22px 0' },
-  tabbar: { display: 'flex', gap: 2, marginTop: 12, flexWrap: 'wrap' as const },
-  tab: (act: boolean) => ({ padding: '9px 14px', border: 'none', borderBottom: act ? '2.5px solid #1a1a1a' : '2.5px solid transparent', background: 'none', cursor: 'pointer', fontWeight: act ? 800 : 600, fontSize: '0.83rem', color: act ? '#1a1a1a' : '#777' }) as const,
+  // Una sola fila con scroll horizontal (9 pestañas). En desktop (940px) caben
+  // igual; nowrap no cambia nada visible y arregla el wrap en mobile.
+  tabbar: { display: 'flex', gap: 2, marginTop: 12, flexWrap: 'nowrap' as const, overflowX: 'auto' as const, WebkitOverflowScrolling: 'touch' as const },
+  tab: (act: boolean) => ({ flexShrink: 0, minHeight: 44, padding: '9px 14px', border: 'none', borderBottom: act ? '2.5px solid #1a1a1a' : '2.5px solid transparent', background: 'none', cursor: 'pointer', fontWeight: act ? 800 : 600, fontSize: '0.83rem', color: act ? '#1a1a1a' : '#777', whiteSpace: 'nowrap' as const }) as const,
   body: { padding: 22 } as const,
   card: { background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: 16, marginBottom: 14 } as const,
   h: { fontSize: '0.72rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: 10 },
@@ -61,6 +64,8 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
   const [err, setErr] = useState('');
   const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'oport' | 'reuniones' | 'notas' | 'act'>('resumen');
   const [msg, setMsg] = useState('');
+  const isMobile = useIsMobile();
+  useDrawerHistory(true, onClose); // atrás cierra el drawer + scroll-lock del body
 
   async function load() {
     setErr('');
@@ -84,7 +89,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
   return (
     <>
       <div style={D.overlay} onClick={onClose} />
-      <div style={D.panel}>
+      <div style={isMobile ? { ...D.panel, width: '100%', height: '100dvh' } : D.panel}>
         {!data && !err && <div style={{ padding: 48, textAlign: 'center', color: '#999' }}>Cargando cliente…</div>}
         {err && <div style={{ padding: 48, textAlign: 'center', color: '#E54B4B' }}>{err} <button style={D.btnG} onClick={load}>Reintentar</button></div>}
         {data && co && (
@@ -101,7 +106,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                 {principal?.whatsapp && (
                   <a href={waLink(principal.whatsapp)} target="_blank" rel="noreferrer" style={{ ...D.btnG, textDecoration: 'none', color: '#1A8F7A', borderColor: '#bfe8df', fontWeight: 700 }}>💬 WhatsApp</a>
                 )}
-                <button style={{ ...D.btnG, border: 'none', fontSize: '1rem' }} onClick={onClose}>✕</button>
+                <button aria-label={isMobile ? 'Atrás' : 'Cerrar'} onClick={onClose} style={{ ...D.btnG, border: 'none', fontSize: '1.15rem', minWidth: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{isMobile ? '←' : '✕'}</button>
               </div>
               <div style={D.tabbar}>
                 <button style={D.tab(tab === 'resumen')} onClick={() => setTab('resumen')}>Resumen</button>
@@ -136,6 +141,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
 
 /* ─────────── 📊 Resumen ─────────── */
 function TabResumen({ res, co, act, subs, acts, reload }: any) {
+  const isMobile = useIsMobile();
   const dias = co?.dias_sin_venta;
   const senales = computarSenales(co, (subs || []).find((s: any) => s.estado === 'activa'));
   // Tareas de onboarding del cliente (activities tipo 'tarea' category onboarding).
@@ -239,8 +245,8 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
         <div style={D.h}>Suscripciones</div>
         {subs.length === 0 && <div style={{ color: '#999', fontSize: '0.82rem' }}>Sin suscripciones — agrégala en la pestaña Suscripciones.</div>}
         {subs.map((s: any) => (
-          <div key={s.id} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #f4f4f4', fontSize: '0.83rem' }}>
-            <b style={{ minWidth: 150 }}>{s.nombre_plan}</b><span style={{ color: '#888' }}>{s.ciclo}</span>
+          <div key={s.id} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #f4f4f4', fontSize: '0.83rem', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+            <b style={{ minWidth: isMobile ? 0 : 150 }}>{s.nombre_plan}</b><span style={{ color: '#888' }}>{s.ciclo}</span>
             <span style={{ fontWeight: 700 }}>{money(s.arr)} ARR</span>
             <span style={{ color: '#888' }}>próx: {fmtDate(s.proxima_factura)}</span>
             <span style={{ marginLeft: 'auto' }}><EstadoBadge e={s.estado} /></span>
@@ -349,6 +355,7 @@ function TabInfoGeneral({ co, reload, flash }: any) {
  * Carga on-demand desde /api/crm/sacs-cuenta-360; mientras llega, pinta el uso
  * persistido por el cron (co.uso_sacs). */
 function Panorama360({ account, co }: { account: string; co?: any }) {
+  const isMobile = useIsMobile();
   const [d, setD] = useState<any>(null);
   const [err, setErr] = useState('');
   useEffect(() => {
@@ -423,7 +430,7 @@ function Panorama360({ account, co }: { account: string; co?: any }) {
           <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f4f4f4', fontSize: '0.8rem' }}>
             <b>#{t.folio}</b>
             <span style={{ color: '#888' }}>{fmtDate(t.fecha)}</span>
-            {t.sucursal ? <span style={{ color: '#888', ...ell, maxWidth: 120 }}>{t.sucursal}</span> : null}
+            {t.sucursal ? <span style={{ color: '#888', ...ell, maxWidth: isMobile ? '60vw' : 120 }}>{t.sucursal}</span> : null}
             <span style={{ marginLeft: 'auto', fontWeight: 700 }}>{money(t.total)}</span>
           </div>
         )) : <div style={{ color: '#999', fontSize: '0.8rem' }}>Sin ventas recientes.</div>}
@@ -454,7 +461,7 @@ function Panorama360({ account, co }: { account: string; co?: any }) {
           {tr.ultimas.map((t: any, i: number) => (
             <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f4f4f4', fontSize: '0.8rem' }}>
               <span style={{ color: '#888' }}>{fmtDate(t.fecha)}</span>
-              <span style={{ ...ell, maxWidth: 260 }}><b>{t.origen || '—'}</b> → <b>{t.destino || '—'}</b></span>
+              <span style={{ ...ell, maxWidth: isMobile ? '70vw' : 260 }}><b>{t.origen || '—'}</b> → <b>{t.destino || '—'}</b></span>
               <span style={{ marginLeft: 'auto', ...D.badge, background: /Recibida/.test(t.status) ? '#e6f6f2' : t.status === 'Cancelada' ? '#fdf2f2' : '#fff8e1', color: /Recibida/.test(t.status) ? '#1A8F7A' : t.status === 'Cancelada' ? '#b93333' : '#a06600' }}>{t.status || '—'}</span>
             </div>
           ))}
@@ -915,9 +922,9 @@ function TabSubs({ companyId, subs, reload, flash }: any) {
 
         {subs.length === 0 && !adding && <div style={{ color: '#999', fontSize: '0.82rem' }}>Sin suscripciones registradas.</div>}
 
-        <div style={{ overflowX: 'auto' }}>
+        <div className="crm-scroll-x">
           {subs.length > 0 && (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 560 }}>
               <thead><tr>{['Plan', 'Ciclo', 'Estado', 'Precio/ARR', 'Próx. factura', 'Pagos', 'Acumulado', ''].map(h => <th key={h} style={D.th}>{h}</th>)}</tr></thead>
               <tbody>
                 {subs.map((s: any) => (
