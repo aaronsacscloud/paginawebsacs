@@ -1,5 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { getCurrentUser } from '../../../lib/auth/scope';
+import { isPartner } from '../../../lib/scheduling/scope';
 
 export const prerender = false;
 
@@ -85,7 +87,13 @@ export const POST: APIRoute = async ({ request }) => {
   }
 };
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, request }) => {
+  // La lista de espera contiene PII (nombre/email/whatsapp). Solo admin la lee;
+  // el POST sigue público para que los clientes se anoten.
+  const user = await getCurrentUser(request);
+  if (!user || isPartner(user)) {
+    return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+  }
   try {
     const fecha = url.searchParams.get('fecha');
 

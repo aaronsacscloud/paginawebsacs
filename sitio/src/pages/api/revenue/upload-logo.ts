@@ -1,9 +1,16 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { getCurrentUser } from '../../../lib/auth/scope';
 
 export const prerender = false;
 
 export const POST: APIRoute = async ({ request }) => {
+  // Requiere sesión (cualquier rol: partner sube su logo desde el portal;
+  // founder/cs desde el admin). Antes NO tenía auth → subida anónima a bucket
+  // público (abuso de hosting/almacenamiento).
+  const user = await getCurrentUser(request);
+  if (!user) return new Response(JSON.stringify({ error: 'No autenticado.' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+
   const formData = await request.formData();
   const file = formData.get('file') as File | null;
   if (!file) return new Response(JSON.stringify({ error: 'No file' }), { status: 400, headers: { 'Content-Type': 'application/json' } });

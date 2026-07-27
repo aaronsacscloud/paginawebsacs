@@ -4,7 +4,6 @@ import { supabase } from '../../../lib/supabase';
 import { createCalendarEvent } from '../../../lib/google-calendar';
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 import { escapeHtml } from '../../../lib/scheduling/email-utils';
-import { sendEmail } from '../../../lib/email';
 import { sendWhatsApp } from '../../../lib/kapso';
 
 export const prerender = false;
@@ -560,13 +559,14 @@ export const POST: APIRoute = async ({ request }) => {
   </td></tr>
 </table>`;
 
-      // Envío interno de correo IN-PROCESS (ya no vía el endpoint HTTP público).
+      // Envío interno de correo IN-PROCESS (usa la función local sendEmail, ya
+      // no el endpoint HTTP público que ahora exige sesión).
       try {
-        await sendEmail({
-          to: hostEmail,
-          subject: `Nueva demo agendada: ${String(nombre || '').replace(/[\r\n]/g, ' ').slice(0, 80)} - ${String(empresa || '').replace(/[\r\n]/g, ' ').slice(0, 80)}`,
-          html: emailHtml,
-        });
+        await sendEmail(
+          hostEmail,
+          `Nueva demo agendada: ${String(nombre || '').replace(/[\r\n]/g, ' ').slice(0, 80)} - ${String(empresa || '').replace(/[\r\n]/g, ' ').slice(0, 80)}`,
+          emailHtml,
+        );
       } catch (emailFetchErr) {
         console.error('Failed to send host notification email:', emailFetchErr);
       }

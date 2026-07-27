@@ -18,6 +18,7 @@ import { getSessionFromRequest } from './lib/auth/session';
 const ADMIN_PREFIXES = [
   '/api/crm/',        // contactos, deals, empresas, ARR, reportes, búsqueda, pipelines…
   '/api/agents/',     // agentes IA (config/runs/trigger)
+  '/api/automations/',// automatizaciones (listar/crear/editar/enroll) — solo admin, sin auth propia
 ];
 
 // Rutas admin SUELTAS (fuera de los prefijos): partner-management y los
@@ -50,6 +51,13 @@ const SESSION_PREFIXES = [
   '/api/partner-portal/',
 ];
 
+// Rutas exactas que exigen sesión de CUALQUIER rol (el partner sube su logo
+// desde el portal, el admin desde el CRM) — NO deben caer en el gate admin de
+// /api/revenue/* que rechaza a partners.
+const SESSION_EXACT = new Set([
+  '/api/revenue/upload-logo',
+]);
+
 // /api/revenue/* es admin (RevenueHub) SALVO estas rutas públicas (el CLIENTE
 // las usa desde una cotización pública, o Stripe desde su webhook).
 const REVENUE_PUBLIC = new Set([
@@ -62,6 +70,7 @@ const REVENUE_PUBLIC = new Set([
 ]);
 
 function needsAdmin(path: string): boolean {
+  if (SESSION_EXACT.has(path)) return false; // sesión cualquier-rol, no admin
   if (ADMIN_PREFIXES.some(p => path.startsWith(p))) return true;
   if (ADMIN_EXACT.has(path)) return true;
   if (path.startsWith('/api/revenue/') && !REVENUE_PUBLIC.has(path)) return true;
@@ -72,7 +81,7 @@ const forbidden = (msg: string) =>
   new Response(JSON.stringify({ error: msg }), { status: 403, headers: { 'Content-Type': 'application/json' } });
 
 function needsSession(path: string): boolean {
-  return SESSION_PREFIXES.some(p => path.startsWith(p));
+  return SESSION_PREFIXES.some(p => path.startsWith(p)) || SESSION_EXACT.has(path);
 }
 
 export const onRequest = defineMiddleware(async (context, next) => {
