@@ -50,51 +50,25 @@ export class AccessDenied extends Error {
 /**
  * Resolve current user from request.
  *
- * Resolution order:
- *   1. cookie `sacs_session` → partner_sessions table (real auth, used by /partner/portal)
- *   2. header `X-User-Id` → fallback for admin UI tools that set it directly
+ * Identidad SOLO por cookie de sesión real (`sacs_session` → partner_sessions).
+ *
+ * ⚠️ SEGURIDAD: antes existía un fallback que confiaba en el header `x-user-id`
+ * ("x-user-id: founder" resolvía al primer founder SIN credencial; "x-user-id:
+ * <uuid>" suplantaba a cualquier partner). El middleware bloqueaba ese header en
+ * /api/crm/* pero NO en /api/partner-portal/*, /api/scheduling/* ni varios
+ * /api/partners/*, así que cualquiera podía leer cartera/PII/finanzas de otro
+ * partner y hasta cambiar su cuenta de payout, o disparar recover-access como
+ * "founder". Se ELIMINÓ el fallback: el header ya no otorga identidad. El admin
+ * real se autentica por su cookie de sesión (misma que exige el middleware para
+ * /api/crm/*), así que ninguna herramienta legítima se rompe.
  */
 export async function getCurrentUser(request: Request): Promise<CurrentUser | null> {
-  // 1. Cookie-based session (preferred)
   try {
     const { getSessionFromRequest } = await import('./session');
     const sessionUser = await getSessionFromRequest(request);
     if (sessionUser) return sessionUser as CurrentUser;
   } catch {
-    // session module not available or error — fall through to header path
+    // módulo de sesión no disponible / error transitorio → sin identidad
   }
-
-  // 2. Header fallback (admin tools)
-  const userId = request.headers.get('x-user-id');
-  if (!userId) return null;
-  const { supabase } = await import('../supabase');
-
-  // Special case: admin UI manda 'x-user-id: founder' (rol literal, no UUID).
-  // Resolvemos al primer team_member activo con ese rol.
-  let data: any = null;
-  if (userId === 'founder' || userId === 'cs') {
-    const res = await supabase
-      .from('team_members')
-      .select('id, rol, email, nombre, default_commission_pct')
-      .eq('rol', userId)
-      .eq('activo', true)
-      .limit(1)
-      .maybeSingle();
-    data = res.data;
-  } else {
-    const res = await supabase
-      .from('team_members')
-      .select('id, rol, email, nombre, default_commission_pct')
-      .eq('id', userId)
-      .maybeSingle();
-    data = res.data;
-  }
-  if (!data) return null;
-  return {
-    id: data.id,
-    role: ((data as any).rol || 'partner') as CurrentUser['role'],
-    email: data.email,
-    nombre: data.nombre,
-    default_commission_pct: data.default_commission_pct ?? 20,
-  };
+  return null;
 }
