@@ -57,6 +57,13 @@ export const POST: APIRoute = async ({ request }) => {
       return json({ error: 'partner no encontrado' }, 404);
     }
 
+    // Este endpoint es SOLO para contraseñas de PARTNER. Prohibido fijar la de
+    // un founder/cs (evita que una sesión cs comprometida tome la cuenta del
+    // founder por escalada horizontal/vertical).
+    if (member.rol !== 'partner') {
+      return json({ error: 'Solo se puede fijar la contraseña de un partner.' }, 403);
+    }
+
     // Hash + update
     const password_hash = await hashPassword(new_password);
     const { error: updateErr } = await supabase

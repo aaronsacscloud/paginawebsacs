@@ -32,10 +32,23 @@ const ADMIN_EXACT = new Set([
   '/api/partners/provision-fideliza',
   '/api/partners/rachas-filantropia',
   '/api/partners/content-review',
+  // Endpoints SOLO-founder/cs de gestión de partners (defensa en profundidad
+  // sobre la auth propia del handler): fijar contraseña, recuperar acceso y
+  // onboarding crean/toman cuentas de partner → nunca anónimos ni partners.
+  '/api/partners/set-password',
+  '/api/partners/recover-access',
+  '/api/partners/onboarding',
   '/api/get-leads',
   '/api/update-lead',
   '/api/add-note',
 ]);
+
+// Rutas que exigen una SESIÓN REAL (cualquier rol: founder/cs/partner) — el
+// portal del partner. Sin gatearlas, dependían solo de getCurrentUser; ahora el
+// middleware rechaza también a cualquier anónimo, en profundidad.
+const SESSION_PREFIXES = [
+  '/api/partner-portal/',
+];
 
 // /api/revenue/* es admin (RevenueHub) SALVO estas rutas públicas (el CLIENTE
 // las usa desde una cotización pública, o Stripe desde su webhook).
@@ -58,13 +71,20 @@ function needsAdmin(path: string): boolean {
 const forbidden = (msg: string) =>
   new Response(JSON.stringify({ error: msg }), { status: 403, headers: { 'Content-Type': 'application/json' } });
 
+function needsSession(path: string): boolean {
+  return SESSION_PREFIXES.some(p => path.startsWith(p));
+}
+
 export const onRequest = defineMiddleware(async (context, next) => {
   const path = context.url.pathname;
-  if (!needsAdmin(path)) return next();
+  const admin = needsAdmin(path);
+  const session = needsSession(path);
+  if (!admin && !session) return next();
 
   const user = await getSessionFromRequest(context.request);
   if (!user) return forbidden('No autenticado. Inicia sesión en /admin/login.');
-  if (user.role === 'partner') return forbidden('No autorizado (solo administradores).');
-  // founder / cs → pasa
+  // Rutas admin: rechazan a partners. Rutas de sesión (portal): cualquier rol
+  // autenticado pasa (el endpoint ya scopea por user.id de la sesión).
+  if (admin && user.role === 'partner') return forbidden('No autorizado (solo administradores).');
   return next();
 });

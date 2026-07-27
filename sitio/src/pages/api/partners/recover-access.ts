@@ -105,12 +105,18 @@ export const POST: APIRoute = async ({ request }) => {
     // Fetch member
     const { data: member, error: fetchErr } = await supabase
       .from('team_members')
-      .select('id, nombre, email, activo, password_hash')
+      .select('id, nombre, email, activo, password_hash, rol')
       .eq('id', team_member_id!)
       .maybeSingle();
 
     if (fetchErr || !member) {
       return json({ error: 'partner no encontrado' }, 404);
+    }
+
+    // Solo recuperación de PARTNER — nunca generar reset ni reasignar email de
+    // un founder/cs (evita que una sesión cs comprometida tome esas cuentas).
+    if (member.rol !== 'partner') {
+      return json({ error: 'Solo se puede recuperar el acceso de un partner.' }, 403);
     }
 
     let finalEmail = member.email;
