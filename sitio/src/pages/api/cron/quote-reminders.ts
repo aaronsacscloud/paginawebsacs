@@ -3,6 +3,7 @@ import { supabase } from '../../../lib/supabase';
 import { parseMeta, serializeMeta } from '../../../lib/quotes/meta';
 import { notify } from '../../../lib/notify';
 import { getPartnerProfile } from '../../../lib/partners/profile';
+import { isAuthorizedCron } from '../../../lib/auth/cron';
 
 export const prerender = false;
 
@@ -14,7 +15,6 @@ export const prerender = false;
 // Cada etapa se manda una sola vez (meta.reminders_sent[]). El correo usa la
 // plantilla quote_reminder_client firmada por el partner (reply-to al partner).
 
-const CRON_KEY = 'sacs-cron-2026'; // mismo key-por-query que el cron de scheduling
 const MAX_SENDS_PER_RUN = 50;
 
 const DAY = 86400000;
@@ -55,8 +55,8 @@ function stageFor(q: any, meta: Record<string, any>): { stage: string; cta: stri
   return null;
 }
 
-export const GET: APIRoute = async ({ url }) => {
-  if (url.searchParams.get('key') !== CRON_KEY) {
+export const GET: APIRoute = async ({ request }) => {
+  if (!isAuthorizedCron(request)) {
     return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401 });
   }
 
@@ -71,7 +71,7 @@ export const GET: APIRoute = async ({ url }) => {
 
   const partnerCache = new Map<string, any>();
   let sent = 0;
-  const details: any[] = [];
+  let errors = 0;
 
   for (const q of quotes || []) {
     if (sent >= MAX_SENDS_PER_RUN) break;
@@ -105,8 +105,8 @@ export const GET: APIRoute = async ({ url }) => {
           partner,
         },
       });
-    } catch (e: any) {
-      details.push({ id: q.id, stage: hit.stage, error: String(e?.message || e) });
+    } catch {
+      errors++;
       continue;
     }
 
@@ -118,10 +118,9 @@ export const GET: APIRoute = async ({ url }) => {
     await supabase.from('quotes').update({ notas: serializeMeta(text, meta) }).eq('id', q.id);
 
     sent++;
-    details.push({ id: q.id, numero: q.numero, stage: hit.stage });
   }
 
-  return new Response(JSON.stringify({ ok: true, checked: (quotes || []).length, sent, details }), {
+  return new Response(JSON.stringify({ ok: true, checked: (quotes || []).length, sent, errors }), {
     status: 200, headers: { 'Content-Type': 'application/json' },
   });
 };

@@ -6,13 +6,13 @@
 // Dedup por hito vía activities.metadata { booking_recordatorio, booking_id }
 // (sin DDL: no necesitamos columnas nuevas).
 import type { APIRoute } from 'astro';
+import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { supabase } from '../../../lib/supabase';
 import { notify } from '../../../lib/notify';
 import { sendWhatsApp } from '../../../lib/kapso';
 
 export const prerender = false;
 
-const CRON_KEY = import.meta.env.CRM_CRON_KEY || 'sacs-cron-2026';
 const BASE = 'https://www.sacscloud.com';
 // México abolió el horario de verano: CDMX es UTC-6 fijo.
 const MX_OFFSET_MS = 6 * 3600000;
@@ -47,8 +47,8 @@ async function marcarAvisado(b: any, hito: string, canal: string) {
   }).select().maybeSingle();
 }
 
-export const GET: APIRoute = async ({ url }) => {
-  if (url.searchParams.get('key') !== CRON_KEY) return new Response('Forbidden', { status: 403 });
+export const GET: APIRoute = async ({ url, request }) => {
+  if (!isAuthorizedCron(request)) return new Response('Forbidden', { status: 403 });
 
   const now = Date.now();
   const hoyMx = new Date(now - MX_OFFSET_MS).toISOString().slice(0, 10);

@@ -7,16 +7,16 @@
 // que la base completa se refresca cada ~N días sin saturar al servidor de SACS.
 // Solo cuentas con suscripción ACTIVA: un cliente cancelado no gasta barrido.
 import type { APIRoute } from 'astro';
+import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { supabase } from '../../../lib/supabase';
 
 export const prerender = false;
 
-const CRON_KEY = import.meta.env.CRM_CRON_KEY || 'sacs-cron-2026';
 const SACS_API = import.meta.env.SACS_API_URL || 'https://sacs-api-819604817289.us-central1.run.app/v1';
-const SYNC_SECRET = import.meta.env.CRM_SYNC_SECRET || 'sacs-crm-sync-2026';
+const SYNC_SECRET = (import.meta.env.CRM_SYNC_SECRET || '').trim();
 
-export const GET: APIRoute = async ({ url }) => {
-  if (url.searchParams.get('key') !== CRON_KEY) return new Response('Forbidden', { status: 403 });
+export const GET: APIRoute = async ({ url, request }) => {
+  if (!isAuthorizedCron(request)) return new Response('Forbidden', { status: 403 });
 
   const limit = Math.min(60, Number(url.searchParams.get('limit')) || 30);
 

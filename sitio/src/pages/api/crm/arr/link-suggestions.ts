@@ -7,7 +7,7 @@ import { supabase } from '../../../../lib/supabase';
 export const prerender = false;
 
 const SACS_API = import.meta.env.SACS_API_URL || 'https://sacs-api-819604817289.us-central1.run.app/v1';
-const SYNC_SECRET = import.meta.env.CRM_SYNC_SECRET || 'sacs-crm-sync-2026';
+const SYNC_SECRET = (import.meta.env.CRM_SYNC_SECRET || '').trim();
 
 export const GET: APIRoute = async () => {
   const { data: subs, error } = await supabase.from('subscriptions')

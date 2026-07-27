@@ -8,15 +8,15 @@
 //  - sucursales_excedidas: sucursales reales > contratadas (subcobro/upsell)
 //  - entro_a_riesgo: cruzó los 15 días sin vender (churn probable)
 import type { APIRoute } from 'astro';
+import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { supabase } from '../../../lib/supabase';
 import { sendWhatsApp } from '../../../lib/kapso';
 import { healthScoreV2 } from '../../../lib/crm/health';
 
 export const prerender = false;
 
-const CRON_KEY = import.meta.env.CRM_CRON_KEY || 'sacs-cron-2026';
 const SACS_API = import.meta.env.SACS_API_URL || 'https://sacs-api-819604817289.us-central1.run.app/v1';
-const SYNC_SECRET = import.meta.env.CRM_SYNC_SECRET || 'sacs-crm-sync-2026';
+const SYNC_SECRET = (import.meta.env.CRM_SYNC_SECRET || '').trim();
 const ADMIN_WHATSAPP = (import.meta.env.CRM_ADMIN_WHATSAPP || '').trim();
 
 const r0 = (n: number) => Math.round(n);
@@ -36,8 +36,8 @@ async function alertar(companyId: string, clave: string, titulo: string, metadat
   avisos.push(titulo);
 }
 
-export const GET: APIRoute = async ({ url }) => {
-  if (url.searchParams.get('key') !== CRON_KEY) return new Response('Forbidden', { status: 403 });
+export const GET: APIRoute = async ({ url, request }) => {
+  if (!isAuthorizedCron(request)) return new Response('Forbidden', { status: 403 });
 
   // Lote por corrida: las MÁS desactualizadas primero (nulls al frente). Evita
   // exceder el timeout de Vercel al crecer el número de cuentas; el cron cada

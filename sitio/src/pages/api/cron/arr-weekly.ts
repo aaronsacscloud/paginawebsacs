@@ -2,18 +2,18 @@
 // email al inbox de ventas + WhatsApp al admin: ARR vs meta, cobros de la
 // semana pasada, vencidas, riesgo y alertas activas.
 import type { APIRoute } from 'astro';
+import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { supabase } from '../../../lib/supabase';
 import { notify, getSalesInbox } from '../../../lib/notify';
 import { sendWhatsApp } from '../../../lib/kapso';
 
 export const prerender = false;
 
-const CRON_KEY = import.meta.env.CRM_CRON_KEY || 'sacs-cron-2026';
 const ADMIN_WHATSAPP = (import.meta.env.CRM_ADMIN_WHATSAPP || '').trim();
 const SITE = 'https://www.sacscloud.com';
 
-export const GET: APIRoute = async ({ url }) => {
-  if (url.searchParams.get('key') !== CRON_KEY) return new Response('Forbidden', { status: 403 });
+export const GET: APIRoute = async ({ url, request }) => {
+  if (!isAuthorizedCron(request)) return new Response('Forbidden', { status: 403 });
 
   const sum = await fetch(SITE + '/api/crm/arr/summary').then(r => r.json()).catch(() => null);
   if (!sum?.kpis) return new Response(JSON.stringify({ error: 'summary no disponible' }), { status: 500 });

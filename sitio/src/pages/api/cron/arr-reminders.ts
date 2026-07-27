@@ -4,6 +4,7 @@
 // 2) DUNNING de vencidas: día 1 email, día 3 WhatsApp al cliente, día 7 tarea
 //    (activity) — y la suscripción activa pasa a pendiente_pago.
 import type { APIRoute } from 'astro';
+import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { supabase } from '../../../lib/supabase';
 import { notify } from '../../../lib/notify';
 import { sendWhatsApp } from '../../../lib/kapso';
@@ -11,7 +12,6 @@ import { recordMovement } from '../../../lib/crm/mrr-ledger';
 
 export const prerender = false;
 
-const CRON_KEY = import.meta.env.CRM_CRON_KEY || 'sacs-cron-2026';
 
 const fmtD = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' });
 
@@ -27,8 +27,8 @@ async function marcarAviso(sub: any, hito: string, titulo: string) {
   }).select().maybeSingle();
 }
 
-export const GET: APIRoute = async ({ url }) => {
-  if (url.searchParams.get('key') !== CRON_KEY) return new Response('Forbidden', { status: 403 });
+export const GET: APIRoute = async ({ url, request }) => {
+  if (!isAuthorizedCron(request)) return new Response('Forbidden', { status: 403 });
   const hoy = new Date().toISOString().slice(0, 10);
   const out = { recordatorios: 0, dunning_email: 0, dunning_wa: 0, tareas: 0, a_pendiente: 0, errores: [] as string[] };
 

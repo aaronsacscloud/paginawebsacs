@@ -2,12 +2,12 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { getAuthenticatedClient } from '../../../../lib/google-calendar';
 import { google } from 'googleapis';
+import { isAuthorizedCron } from '../../../../lib/auth/cron';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ url }) => {
-  const key = url.searchParams.get('key');
-  if (key !== 'sacs-cron-2026') {
+export const GET: APIRoute = async ({ request }) => {
+  if (!isAuthorizedCron(request)) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
   }
 
