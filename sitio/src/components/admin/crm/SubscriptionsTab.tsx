@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import InteligenciaView from './InteligenciaView';
 import ClienteDrawer360 from './ClienteDrawer360';
+import { useIsMobile } from '../../../lib/ui/mobile';
 
 /* ═══════════════ Suscripciones & ARR — hub del negocio recurrente ═══════════════
  * KPIs + meta · lista de suscripciones (mensual/anual separados) · riesgo por
@@ -73,6 +74,7 @@ export function Estado({ e }: { e: string }) {
 }
 
 export default function SubscriptionsTab() {
+  const isMobile = useIsMobile();
   const [subs, setSubs] = useState<Sub[]>([]);
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -236,7 +238,7 @@ export default function SubscriptionsTab() {
             </div>
           )}
           <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente, cuenta o plan…" style={{ ...S.input, flex: 1, minWidth: 180 }} />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente, cuenta o plan…" style={{ ...S.input, flex: 1, minWidth: 180, ...(isMobile ? { flex: '1 1 100%', minWidth: 0 } : {}) }} />
             <select value={fCliente} onChange={e => setFCliente(e.target.value)} style={{ ...S.input, maxWidth: 200 }} title="Ver todas las suscripciones de un cliente">
               <option value="">Todos los clientes</option>
               {clientesOpts.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
@@ -260,8 +262,41 @@ export default function SubscriptionsTab() {
               <button onClick={() => { setFCliente(''); setFPlan(''); setFCiclo(''); setFEstado(''); setSearch(''); setFStale(false); }} style={{ ...S.btnSmall, alignSelf: 'center' }} title="Limpiar filtros">✕ Limpiar</button>
             )}
           </div>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          {isMobile ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {filtered.map(s => {
+                const cuenta = s.companies?.sacs_account || s.companies?.nombre || '—';
+                const cliente = s.contacts?.nombre || (s.companies?.nombre && s.companies.nombre !== s.companies?.sacs_account ? s.companies.nombre : '');
+                const cat = (s as any).plan_id ? planById.get((s as any).plan_id) : null;
+                const planLabel = cat ? String(cat.nombre).replace(/^Plan /, '') : (s.nombre_plan || '—');
+                const h = (s.companies as any)?.health_score;
+                return (
+                  <div key={s.id} onClick={() => s.company_id && setDetailId(s.company_id)} style={{ border: '1px solid #ececec', borderRadius: 12, padding: 14, background: '#fff', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, color: '#1a1a1a' }}>{cuenta}</div>
+                        {cliente && cliente !== cuenta ? <div style={{ fontSize: '0.75rem', color: '#999' }}>{cliente}</div> : null}
+                      </div>
+                      <Estado e={s.estado} />
+                    </div>
+                    <div style={{ fontSize: '0.82rem', color: '#555' }}>{planLabel} · <span style={{ textTransform: 'capitalize' }}>{s.ciclo}</span></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                      <div style={{ fontVariantNumeric: 'tabular-nums' }}>
+                        <span style={{ fontWeight: 800, fontSize: '1.02rem' }}>{s.ciclo === 'vitalicia' ? fmt(s.precio) : fmt(s.arr)}</span>
+                        <span style={{ color: '#999', fontSize: '0.72rem', marginLeft: 4 }}>{s.ciclo === 'vitalicia' ? 'pago único' : 'ARR'}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        {h != null && <span style={{ fontWeight: 800, color: h >= 70 ? '#1A8F7A' : h >= 40 ? '#a06600' : '#b93333', fontSize: '0.82rem' }} title="Salud">♥ {h}</span>}
+                        <button style={{ ...S.btnSmall, minHeight: 44, padding: '0 16px' }} onClick={e => { e.stopPropagation(); setEditSub(s); }}>Editar</button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="crm-scroll-x">
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
               <thead><tr>
                 {['Cliente', 'Plan', 'Ciclo', 'Estado', 'Precio', 'ARR', 'Próx. factura', 'Pagos', 'Total pagado', 'Últ. venta SACS', 'Salud', ''].map(h => <th key={h} style={S.th}>{h}</th>)}
               </tr></thead>
@@ -327,8 +362,9 @@ export default function SubscriptionsTab() {
                 </tfoot>
               )}
             </table>
+            </div>
+          )}
             {!filtered.length && <div style={{ padding: 28, textAlign: 'center', color: '#999' }}>Sin suscripciones con esos filtros.</div>}
-          </div>
         </div>
         </>
       )}
@@ -341,7 +377,7 @@ export default function SubscriptionsTab() {
             <div key={sec.titulo} style={S.card}>
               <div style={{ fontWeight: 800, marginBottom: 10 }}>{sec.titulo} <span style={{ color: '#999', fontWeight: 400 }}>· {sec.items.length} cliente(s) · {fmt(sec.items.reduce((a: number, x: any) => a + x.arr, 0))} ARR</span></div>
               {sec.items.length ? (
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <div className="crm-scroll-x"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead><tr>{['Cliente', 'Cuenta SACS', 'Última venta', 'Días sin vender', 'ARR en juego', ''].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
                   <tbody>{sec.items.map((x: any) => (
                     <tr key={x.company_id}>
@@ -353,7 +389,7 @@ export default function SubscriptionsTab() {
                       <td style={S.td}><button style={S.btnSmall} onClick={() => setDetailId(x.company_id)}>Ver cliente</button></td>
                     </tr>
                   ))}</tbody>
-                </table>
+                </table></div>
               ) : <div style={{ color: '#1A8F7A', fontSize: '0.85rem' }}>Nadie en esta banda. 🎉</div>}
             </div>
           ))}
@@ -367,7 +403,7 @@ export default function SubscriptionsTab() {
           {vencidas.length > 0 && (
             <div style={{ ...S.card, borderLeft: '4px solid #E54B4B' }}>
               <div style={{ fontWeight: 800, marginBottom: 10 }}>⚠️ Facturas vencidas <span style={{ color: '#999', fontWeight: 400 }}>· {vencidas.length} · {fmt(vencidas.reduce((a: number, v: any) => a + v.monto, 0))}</span></div>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <div className="crm-scroll-x"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr>{['Cliente', 'Plan', 'Ciclo', 'Vencida desde', 'Días', 'Monto', 'Acciones'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
                 <tbody>{vencidas.map((v: any) => (
                   <tr key={v.subscription_id}>
@@ -384,7 +420,7 @@ export default function SubscriptionsTab() {
                     </td>
                   </tr>
                 ))}</tbody>
-              </table>
+              </table></div>
             </div>
           )}
 
@@ -403,7 +439,7 @@ export default function SubscriptionsTab() {
             <div style={{ display: 'flex', gap: 6 }}>
               {meses.map((m: any) => <div key={m.mes} style={{ flex: 1, textAlign: 'center', fontSize: '0.65rem', color: mesAbierto === m.mes ? '#1a1a1a' : '#999', fontWeight: mesAbierto === m.mes ? 800 : 400 }}>{fmtMes(m.mes)}</div>)}
             </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 14 }}>
+            <div className="crm-scroll-x"><table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 14 }}>
               <thead><tr>{['Mes', 'Contratado', 'Pendiente/programado', 'De clientes en riesgo', 'Total posible'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
               <tbody>{meses.map((m: any) => (
                 <tr key={m.mes} onClick={() => setMesAbierto(mesAbierto === m.mes ? null : m.mes)} style={{ cursor: 'pointer', background: mesAbierto === m.mes ? '#fafafa' : undefined }}>
@@ -414,7 +450,7 @@ export default function SubscriptionsTab() {
                   <td style={{ ...S.td, fontWeight: 800 }}>{fmt(m.contratado + m.pendiente)}</td>
                 </tr>
               ))}</tbody>
-            </table>
+            </table></div>
           </div>
 
           {mesAbierto && (() => {
@@ -423,7 +459,7 @@ export default function SubscriptionsTab() {
             return (
               <div style={S.card}>
                 <div style={{ fontWeight: 800, marginBottom: 10 }}>Cobros de {fmtMes(m.mes)} <span style={{ color: '#999', fontWeight: 400 }}>· {m.cobros.length} cobro(s)</span></div>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <div className="crm-scroll-x"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead><tr>{['Fecha', 'Cliente', 'Plan', 'Ciclo', 'Estado', 'Monto'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
                   <tbody>{m.cobros.map((c: any, i: number) => (
                     <tr key={i}>
@@ -435,7 +471,7 @@ export default function SubscriptionsTab() {
                       <td style={{ ...S.td, fontWeight: 700 }}>{fmt(c.monto)}</td>
                     </tr>
                   ))}</tbody>
-                </table>
+                </table></div>
               </div>
             );
           })()}
@@ -509,7 +545,7 @@ export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: S
             {sel && <div style={{ fontSize: '0.75rem', color: '#999', marginTop: 4 }}>{sel.ciclo === 'vitalicia' ? 'Al registrar: pasa a ACTIVA (pago único, sin renovación; no cuenta como ARR).' : `Al registrar: pasa a ACTIVA y su próxima factura se recorre un ${sufCiclo(sel.ciclo)}.`}</div>}
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+          <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
             <div><label style={S.label}>Empresa *</label><input value={form.empresa || ''} onChange={e => setForm({ ...form, empresa: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
             <div><label style={S.label}>Cuenta SACS (subdominio)</label><input value={form.sacs_account || ''} onChange={e => setForm({ ...form, sacs_account: e.target.value })} style={{ ...S.input, width: '100%' }} placeholder="ej. capstown" /></div>
             <div><label style={S.label}>Contacto</label><input value={form.contacto_nombre || ''} onChange={e => setForm({ ...form, contacto_nombre: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
@@ -520,7 +556,7 @@ export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: S
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div><label style={S.label}>Monto pagado (MXN) *</label><input type="number" value={form.monto || ''} onChange={e => setForm({ ...form, monto: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
           <div><label style={S.label}>Fecha</label><input type="date" value={form.fecha} onChange={e => setForm({ ...form, fecha: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
           <div><label style={S.label}>Método</label><select value={form.metodo} onChange={e => setForm({ ...form, metodo: e.target.value })} style={{ ...S.input, width: '100%' }}><option value="transferencia">Transferencia</option><option value="tarjeta">Tarjeta / Stripe</option><option value="oxxo">OXXO</option><option value="otro">Otro</option></select></div>
@@ -563,7 +599,7 @@ function MetaModal({ meta, onClose, onDone }: { meta: any; onClose: () => void; 
           <h3 style={{ margin: 0, fontWeight: 800 }}>Meta de ARR</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10 }}>
+        <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10 }}>
           <div><label style={S.label}>Año</label><input type="number" value={anio} onChange={e => setAnio(Number(e.target.value))} style={{ ...S.input, width: '100%' }} /></div>
           <div><label style={S.label}>Meta ARR (MXN)</label><input type="number" value={monto} onChange={e => setMonto(e.target.value)} style={{ ...S.input, width: '100%' }} placeholder="3000000" /></div>
         </div>
@@ -577,6 +613,7 @@ function MetaModal({ meta, onClose, onDone }: { meta: any; onClose: () => void; 
 
 /* ═══════════════ Drawer: cliente 360 ═══════════════ */
 export function ClienteDrawer({ companyId, onClose, onChanged }: { companyId: string; onClose: () => void; onChanged: () => void }) {
+  const isMobile = useIsMobile();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -611,7 +648,7 @@ export function ClienteDrawer({ companyId, onClose, onChanged }: { companyId: st
   return (
     <>
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.25)', zIndex: 94 }} onClick={onClose} />
-      <div style={S.drawer}>
+      <div style={{ ...S.drawer, ...(isMobile ? { width: '100%', maxWidth: '100%', padding: '14px 14px calc(20px + env(safe-area-inset-bottom))' } : {}) }}>
         {loading ? <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Cargando cliente…</div> :
         err ? <div style={{ padding: 40, textAlign: 'center', color: '#E54B4B' }}>{err} <button style={S.btnSmall} onClick={load}>Reintentar</button></div> : (
           <>
@@ -622,11 +659,11 @@ export function ClienteDrawer({ companyId, onClose, onChanged }: { companyId: st
                   {co?.sacs_account ? 'Cuenta SACS: ' + co.sacs_account : (co?.nombre && co.nombre !== data?.contacts?.[0]?.nombre ? co.nombre : 'Sin cuenta SACS ligada')}
                 </div>
               </div>
-              <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
+              <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', ...(isMobile ? { minWidth: 44, minHeight: 44 } : {}) }}>✕</button>
             </div>
 
             {/* Resumen */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, margin: '12px 0' }}>
+            <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, margin: '12px 0' }}>
               {[['Suscripciones activas', String(data.resumen.subs_activas)],
                 ['ARR del cliente', fmt(data.resumen.arr)],
                 ['Próxima factura', fmtDate(data.resumen.proxima_factura)],
@@ -667,7 +704,7 @@ export function ClienteDrawer({ companyId, onClose, onChanged }: { companyId: st
 
             {/* Pagos */}
             <div style={{ fontWeight: 800, fontSize: '0.9rem', margin: '14px 0 6px' }}>Pagos ({(data.payments || []).length})</div>
-            <div style={{ maxHeight: 180, overflowY: 'auto', border: '1px solid #f0f0f0', borderRadius: 10 }}>
+            <div className="crm-scroll-x" style={{ maxHeight: 180, overflowY: 'auto', border: '1px solid #f0f0f0', borderRadius: 10 }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <tbody>{(data.payments || []).map((p: any) => {
                   const negativo = Number(p.monto) < 0 || p.es_ajuste;
@@ -968,7 +1005,7 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
                 {qc.trim().length >= 2 && resC.length === 0 && <div style={{ fontSize: '0.75rem', color: '#999', marginTop: 6 }}>Sin resultados con "{qc}". Prueba <b onClick={() => setCrearNuevo(true)} style={{ cursor: 'pointer', color: '#2563eb' }}>+ Crear nuevo</b>.</div>}
                 <div style={{ fontSize: '0.7rem', color: '#aaa', marginTop: 6 }}>Al elegir, la suscripción se mueve a ese contacto y su empresa; el ARR se recalcula en ambas.</div>
               </>) : (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   <div style={{ gridColumn: '1 / -1' }}><label style={S.label}>Nombre *</label><input autoFocus value={nc.nombre} onChange={e => setNc({ ...nc, nombre: e.target.value })} style={{ ...S.input, width: '100%' }} placeholder="Nombre del contacto" /></div>
                   <div><label style={S.label}>Email</label><input value={nc.email} onChange={e => setNc({ ...nc, email: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
                   <div><label style={S.label}>WhatsApp</label><input value={nc.whatsapp} onChange={e => setNc({ ...nc, whatsapp: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
@@ -1006,7 +1043,7 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
           )}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           {/* Plan desde catálogo */}
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={S.label}>Plan</label>
@@ -1214,7 +1251,7 @@ function ConciliacionView({ onChanged }: { onChanged: () => void }) {
         <div style={{ ...S.card, borderLeft: '4px solid #E8A838' }}>
           <div style={{ fontWeight: 800, marginBottom: 4 }}>🔗 Suscripciones sin cuenta SACS ligada <span style={{ color: '#999', fontWeight: 400 }}>· {ciegas.ciegas} · {fmt(ciegas.arr_ciego)} ARR sin monitoreo</span></div>
           <div style={{ fontSize: '0.75rem', color: '#999', marginBottom: 10 }}>Sin la liga no podemos ver su actividad ni avisarte si dejan de usar el sistema. Sugerencias por el email del contacto.</div>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="crm-scroll-x"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead><tr>{['Cliente', 'Plan', 'ARR', 'Contacto', 'Sugerencia', 'Ligar'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
             <tbody>{ciegas.data.map((c: any) => (
               <tr key={c.subscription_id}>
@@ -1232,7 +1269,7 @@ function ConciliacionView({ onChanged }: { onChanged: () => void }) {
                 </td>
               </tr>
             ))}</tbody>
-          </table>
+          </table></div>
         </div>
       )}
 
@@ -1247,7 +1284,7 @@ function ConciliacionView({ onChanged }: { onChanged: () => void }) {
             <button onClick={() => setSel(new Set())} style={S.btnSmall}>Limpiar selección</button>
           </div>
         )}
-        <div style={{ overflowX: 'auto', maxHeight: 480, overflowY: 'auto' }}>
+        <div className="crm-scroll-x" style={{ overflowX: 'auto', maxHeight: 480, overflowY: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead><tr>
               <th style={S.th}><input type="checkbox" checked={data.data.length > 0 && sel.size === data.data.length} onChange={e => setSel(e.target.checked ? new Set(data.data.map((c: any) => c.cuenta)) : new Set())} /></th>
@@ -1325,7 +1362,7 @@ function BulkCrearSubModal({ cuentas, onClose, onDone }: { cuentas: any[]; onClo
         </div>
         <div style={{ fontSize: '0.75rem', color: '#999', marginBottom: 10 }}>Mismo plan, ciclo y {esVit ? 'monto único' : 'precio'} para todas. {esVit ? 'Vitalicia: pago único, fuera de ARR.' : 'Quedan PROGRAMADAS hasta su primer pago.'}</div>
         <div style={{ maxHeight: 90, overflowY: 'auto', background: '#fafafa', border: '1px solid #eee', borderRadius: 8, padding: 8, marginBottom: 10, fontSize: '0.72rem', color: '#666' }}>{cuentas.map(c => c.cuenta).join(' · ')}</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={S.label}>Plan *</label>
             <select value={form.plan_id} onChange={e => elegirPlan(e.target.value)} style={{ ...S.input, width: '100%' }}>
@@ -1378,7 +1415,7 @@ function CrearSubModal({ cuenta, onClose, onDone }: { cuenta: any; onClose: () =
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
         </div>
         <div style={{ fontSize: '0.78rem', color: '#999', marginBottom: 10 }}>Vende {fmt(cuenta.total_30d)}/30d en SACS. Queda PROGRAMADA; al registrar su primer pago se activa.</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={S.label}>Plan *</label>
             <select value={form.plan_id} onChange={e => elegirPlan(e.target.value)} style={{ ...S.input, width: '100%' }}>

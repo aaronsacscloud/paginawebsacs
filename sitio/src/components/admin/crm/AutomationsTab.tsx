@@ -1130,7 +1130,7 @@ function TemplatesView() {
           <div style={{ fontSize: '0.875rem' }}>No hay templates. Crea el primero.</div>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))', gap: 12 }}>
           {templates.map(t => {
             const tipoInfo = TEMPLATE_TYPES[t.tipo] || { label: t.tipo, color: '#999' };
             return (

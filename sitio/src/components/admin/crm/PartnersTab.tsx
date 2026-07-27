@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { ESPECIALIDADES } from '../../../data/partner-especialidades';
 import { FIL_TIERS } from '../../../data/filantropia';
+import { useIsMobile } from '../../../lib/ui/mobile';
+import ActionSheet, { type ActionItem } from './ui/ActionSheet';
 
 interface Invitation {
   id: string;
@@ -120,6 +122,7 @@ const fmtRelative = (d?: string | null) => {
 };
 
 export default function PartnersTab() {
+  const isMobile = useIsMobile();
   const [list, setList] = useState<Invitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -434,13 +437,13 @@ export default function PartnersTab() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Buscar por nombre, email, folio..."
-          style={{ flex: 1, minWidth: 200, padding: '10px 14px', fontSize: '0.8125rem', border: '1px solid #e5e5e5', borderRadius: 10, background: '#fff', outline: 'none' }}
+          style={{ flex: 1, minWidth: 200, padding: '10px 14px', fontSize: '0.8125rem', border: '1px solid #e5e5e5', borderRadius: 10, background: '#fff', outline: 'none', ...(isMobile ? { flex: '1 1 100%', minWidth: 0, width: '100%' } : {}) }}
         />
-        <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} style={selectStyle}>
+        <select value={filterEstado} onChange={e => setFilterEstado(e.target.value)} style={{ ...selectStyle, ...(isMobile ? { flex: '1 1 100%', width: '100%' } : {}) }}>
           <option value="">Todos los estados</option>
           {Object.entries(ESTADO_LABELS).map(([v, info]) => <option key={v} value={v}>{info.label}</option>)}
         </select>
-        <select value={filterTipo} onChange={e => setFilterTipo(e.target.value)} style={selectStyle}>
+        <select value={filterTipo} onChange={e => setFilterTipo(e.target.value)} style={{ ...selectStyle, ...(isMobile ? { flex: '1 1 100%', width: '100%' } : {}) }}>
           <option value="">Todos los tipos</option>
           {Object.entries(TIPO_LABELS).map(([v, info]) => <option key={v} value={v}>{info.label}</option>)}
         </select>
@@ -458,8 +461,45 @@ export default function PartnersTab() {
           <div style={{ padding: 60, textAlign: 'center', color: '#999', fontSize: '0.875rem' }}>Cargando invitaciones...</div>
         ) : filtered.length === 0 ? (
           <EmptyState onCreate={() => setShowCreate(true)} />
+        ) : isMobile ? (
+          /* Mobile: cards en vez de tabla ancha (sin overflow-x a 390px) */
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {filtered.map(it => {
+              const tipoInfo = TIPO_LABELS[it.tipo] || { label: it.tipo, color: '#999', tagline: '' };
+              const estadoInfo = ESTADO_LABELS[it.estado] || ESTADO_LABELS.draft;
+              const tmid = (it as any).team_member_id;
+              return (
+                <div
+                  key={it.id}
+                  onClick={() => { if (tmid) setDetailPartnerId(tmid); else setOpenMenu({ id: it.id, right: 0 }); }}
+                  style={{ padding: '14px 16px', borderBottom: '1px solid #f0f0f0', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 8, minHeight: 44 }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'flex-start' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, color: '#1a1a1a' }}>{it.nombre}</div>
+                      <div style={{ fontSize: '0.6875rem', color: '#999', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {[it.numero, it.email, it.empresa].filter(Boolean).join(' · ')}
+                      </div>
+                    </div>
+                    <button
+                      data-row-actions-trigger
+                      onClick={(e) => { e.stopPropagation(); setOpenMenu(openMenu?.id === it.id ? null : { id: it.id, right: 0 }); }}
+                      title="Acciones"
+                      style={{ flexShrink: 0, width: 44, height: 44, padding: 0, background: '#fff', color: '#666', border: '1px solid #e0e0e0', borderRadius: 8, cursor: 'pointer', fontSize: '1.1rem', fontWeight: 700, lineHeight: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+                    >⋯</button>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', background: estadoInfo.bg, color: estadoInfo.color, borderRadius: 999, fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{estadoInfo.label}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', padding: '4px 10px', background: tipoInfo.color + '15', color: tipoInfo.color, borderRadius: 999, fontSize: '0.625rem', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{tipoInfo.label}</span>
+                    <span style={{ fontSize: '0.75rem', color: '#555', fontWeight: 600 }}>{Number(it.comision_pct ?? 0)}% comisión</span>
+                    <span style={{ fontSize: '0.75rem', color: '#999' }}>· vence {fmtDate(it.vigencia)}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         ) : (
-          <div style={{ overflowX: 'auto', overflowY: 'visible', WebkitOverflowScrolling: 'touch', borderRadius: 14 }}>
+          <div className="crm-scroll-x" style={{ overflowY: 'visible', WebkitOverflowScrolling: 'touch', borderRadius: 14 }}>
           <table style={{ width: '100%', minWidth: 1400, borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
             <thead>
               <tr style={{ background: '#fafafa', borderBottom: '1px solid #e5e5e5' }}>
@@ -680,6 +720,24 @@ export default function PartnersTab() {
         }
         // Eliminar siempre disponible (al final, en rojo)
         items.push({ label: '🗑 Eliminar invitación', onClick: () => deleteInvitation(it), color: '#c94a2c' });
+        // Mobile: bottom-sheet táctil (sin getBoundingClientRect, no se desancla al hacer scroll)
+        if (isMobile) {
+          const sheetItems: ActionItem[] = items.map(item => ({
+            label: item.label,
+            danger: item.color === '#c94a2c',
+            onClick: item.href
+              ? () => { window.open(item.href!, '_blank', 'noopener'); }
+              : item.onClick,
+          }));
+          return (
+            <ActionSheet
+              open={true}
+              onClose={() => setOpenMenu(null)}
+              title={it.nombre}
+              items={sheetItems}
+            />
+          );
+        }
         return (
           <div
             data-row-actions-menu
@@ -799,6 +857,7 @@ export default function PartnersTab() {
 
 // ─── Partner Detail Drawer ──────────────────────────────────────
 function PartnerDetailDrawer({ partnerId, onClose }: { partnerId: string; onClose: () => void }) {
+  const isMobile = useIsMobile();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -830,10 +889,11 @@ function PartnerDetailDrawer({ partnerId, onClose }: { partnerId: string; onClos
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 999, display: 'flex', justifyContent: 'flex-end' }}>
       <div onClick={e => e.stopPropagation()} style={{
         width: '100%', maxWidth: 720,
-        height: '100vh', overflowY: 'auto',
+        height: '100dvh', overflowY: 'auto',
         background: '#f5f6f8',
         boxShadow: '-12px 0 40px -12px rgba(0,0,0,0.18)',
         animation: 'slideInRight 0.25s ease-out',
+        ...(isMobile ? { maxWidth: '100%' } : {}),
       }}>
         <div style={{ position: 'sticky', top: 0, background: '#fff', borderBottom: '1px solid #ececec', padding: '18px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 2 }}>
           <div>
@@ -842,7 +902,7 @@ function PartnerDetailDrawer({ partnerId, onClose }: { partnerId: string; onClos
               {data?.member?.nombre || 'Cargando…'}
             </div>
           </div>
-          <button onClick={onClose} style={{ background: 'transparent', border: '1px solid #ddd', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', color: '#666', fontSize: 16 }}>✕</button>
+          <button onClick={onClose} style={{ background: 'transparent', border: '1px solid #ddd', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', color: '#666', fontSize: 16, ...(isMobile ? { width: 44, height: 44, fontSize: 20 } : {}) }}>✕</button>
         </div>
 
         <div style={{ padding: 24 }}>
@@ -877,7 +937,7 @@ function PartnerDetailDrawer({ partnerId, onClose }: { partnerId: string; onClos
                       <span style={{ width: 7, height: 7, borderRadius: '50%', background: stateColor }} />
                       {stateLabel}
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+                    <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
                       <HeroStat label="Login portal" value={hasLogin ? fmtRelative(data.member.last_login_at) : 'Nunca'} accent={hasLogin ? '#0a6b3d' : '#a06600'} />
                       <HeroStat label="Leads" value={String(leads)} accent="#3764c4" />
                       <HeroStat label="Demos" value={`${demosAg + demosRe}`} sub={`${demosAg} ag · ${demosRe} real`} accent="#5b21b6" />
@@ -925,7 +985,7 @@ function PartnerDetailDrawer({ partnerId, onClose }: { partnerId: string; onClos
               {/* Commissions summary */}
               <section style={dCard}>
                 <h3 style={dCardTitle}>Comisiones</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 14 }}>
+                <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 14 }}>
                   <DetailKpi label="Pending" value={_fmt(data.summary.pending)} accent="#E8A838" />
                   <DetailKpi label="Earned" value={_fmt(data.summary.earned)} accent="#4B7BE5" />
                   <DetailKpi label="Paid" value={_fmt(data.summary.paid)} accent="#2AB5A0" />
@@ -1463,7 +1523,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
 
           {/* Enfoque: genérico vs especialista de nicho */}
           <Section title="Enfoque de la invitación">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <button
                 type="button"
                 onClick={() => set('especialidad', { ...(form.especialidad || {}), enabled: false })}
@@ -1706,7 +1766,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
 
           {/* Tabulador */}
           <Section title="Tabulador de recompensas">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <Field label="Venta directa (%)" type="number" value={form.tabulador?.venta_directa_pct ?? 0} onChange={v => setTab('venta_directa_pct', Number(v) || 0)} hint="50% es el valor estándar del programa Embajador. Se cobra sobre la primera factura de cada cliente cerrado por su link." />
               <div style={{
                 display: 'flex', flexDirection: 'column', gap: 4,
@@ -1739,7 +1799,7 @@ function CreateDrawer({ editing, onClose, onSaved }: DrawerProps) {
 
           {/* Visual */}
           <Section title="Diseño visual">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+            <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
               {(['modern', 'dark', 'classic'] as const).map(t => (
                 <button
                   key={t}
@@ -1932,10 +1992,10 @@ function Section({ title, actions, children }: { title: string; actions?: React.
 }
 
 function Grid2({ children }: { children: React.ReactNode }) {
-  return <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>{children}</div>;
+  return <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>{children}</div>;
 }
 function Grid3({ children }: { children: React.ReactNode }) {
-  return <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 10 }}>{children}</div>;
+  return <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 10 }}>{children}</div>;
 }
 
 function Field({ label, value, onChange, placeholder, type = 'text', hint }: { label: string; value: any; onChange: (v: string) => void; placeholder?: string; type?: string; hint?: string }) {

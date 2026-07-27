@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react';
 import { S, RegistrarPagoModal } from './SubscriptionsTab';
 import ClienteDrawer360 from './ClienteDrawer360';
+import { useIsMobile } from '../../../lib/ui/mobile';
 
 const fmt = (n: number) => '$' + (Number(n) || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = (d: string | null) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -23,6 +24,7 @@ function moraBadge(dias: number) {
 }
 
 export default function PagosTab() {
+  const isMobile = useIsMobile();
   const [summary, setSummary] = useState<any>(null);
   const [subs, setSubs] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
@@ -135,7 +137,39 @@ export default function PagosTab() {
         </div>
         {(vencidas.length === 0 && proximos.length === 0) ? (
           <div style={{ color: '#16a34a', fontSize: 14 }}>✓ No hay cobros pendientes ni vencidos.</div>
+        ) : isMobile ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {vencidas.map((v) => (
+              <div key={'v' + v.subscription_id} style={{ border: '1px solid #f0e0e0', borderRadius: 10, padding: 12, background: '#fffafa' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <span style={moraBadge(v.dias_vencida)}>Vencido {v.dias_vencida}d</span>
+                  <span style={{ marginLeft: 'auto', fontWeight: 800, fontSize: '1rem' }}>{fmt(v.monto)}</span>
+                </div>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{v.empresa}</div>
+                <div style={{ fontSize: '0.75rem', color: '#999' }}>{v.plan} · {v.ciclo}{v.cuenta && v.cuenta !== v.empresa ? ` · ${v.cuenta}` : ''} · vence {fmtDate(v.vencida_desde)}</div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                  <button onClick={() => abonar(v.subscription_id)} style={{ ...S.btnSmall, flex: 1, minHeight: 44, background: '#2AB5A0', color: '#fff', border: 'none' }}>Abonar</button>
+                  <button onClick={() => linkPago(v.subscription_id, v.monto)} style={{ ...S.btnSmall, minHeight: 44, padding: '0 16px' }} title="Generar link de pago Stripe">🔗 Link</button>
+                </div>
+              </div>
+            ))}
+            {proximos.map((c) => (
+              <div key={'p' + c.subscription_id} style={{ border: '1px solid #eef0f4', borderRadius: 10, padding: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <span style={{ background: '#eef4ff', color: '#2563eb', padding: '2px 8px', borderRadius: 6, fontWeight: 700, fontSize: 11 }}>Próximo</span>
+                  <span style={{ marginLeft: 'auto', fontWeight: 800, fontSize: '1rem' }}>{fmt(c.monto)}</span>
+                </div>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{c.empresa}</div>
+                <div style={{ fontSize: '0.75rem', color: '#999' }}>{c.plan} · {c.ciclo}{c.cuenta && c.cuenta !== c.empresa ? ` · ${c.cuenta}` : ''} · {fmtDate(c.fecha)}</div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                  <button onClick={() => abonar(c.subscription_id)} style={{ ...S.btnSmall, flex: 1, minHeight: 44, background: '#eef7f5', color: '#2AB5A0', border: '1px solid #cdeae4' }}>Abonar</button>
+                  <button onClick={() => linkPago(c.subscription_id, c.monto)} style={{ ...S.btnSmall, minHeight: 44, padding: '0 16px' }} title="Generar link de pago Stripe">🔗 Link</button>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
+          <div className="crm-scroll-x">
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead><tr>{['Estado', 'Empresa', 'Concepto', 'Vence', 'Monto', ''].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
             <tbody>
@@ -167,6 +201,7 @@ export default function PagosTab() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
@@ -174,9 +209,9 @@ export default function PagosTab() {
       <div style={S.card}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, gap: 10, flexWrap: 'wrap' }}>
           <div style={{ fontWeight: 800 }}>Historial de pagos <span style={{ color: '#999', fontWeight: 400, fontSize: 13 }}>· {total}</span></div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input placeholder="Buscar referencia…" value={fQ} onChange={e => setFQ(e.target.value)} style={{ ...S.input, width: 170 }} />
-            <select value={fMetodo} onChange={e => setFMetodo(e.target.value)} style={S.input}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', ...(isMobile ? { width: '100%' } : {}) }}>
+            <input placeholder="Buscar referencia…" value={fQ} onChange={e => setFQ(e.target.value)} style={{ ...S.input, ...(isMobile ? { flex: '1 1 100%', width: '100%' } : { width: 170 }) }} />
+            <select value={fMetodo} onChange={e => setFMetodo(e.target.value)} style={{ ...S.input, ...(isMobile ? { flex: 1 } : {}) }}>
               <option value="">Todos los tipos</option>
               {METODOS.map(m => <option key={m} value={m}>{METODO_LABEL[m]}</option>)}
             </select>
@@ -195,6 +230,34 @@ export default function PagosTab() {
           </div>
         )}
 
+        {isMobile ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {payments.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#999', padding: 24 }}>Sin pagos con estos filtros.</div>
+            ) : payments.map((p) => {
+              const contacto = p.contacts ? `${p.contacts.nombre || ''} ${p.contacts.apellido || ''}`.trim() : '';
+              const empresa = p.companies?.nombre || '';
+              const compId = p.companies?.id;
+              return (
+                <div key={p.id} onClick={() => compId && setDrawerCompany(compId)} style={{ border: '1px solid #f0f0f0', borderRadius: 10, padding: 12, cursor: compId ? 'pointer' : 'default' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: '0.78rem', color: '#666' }}>{fmtDate(p.fecha)}</span>
+                    <span style={{ color: METODO_COLOR[p.metodo] || '#374151', fontWeight: 700, fontSize: 12 }}>{METODO_LABEL[p.metodo] || p.metodo}</span>
+                    <span style={{ marginLeft: 'auto', fontWeight: 800, fontSize: '0.95rem' }}>{fmt(p.monto)}</span>
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: '0.86rem', marginTop: 4 }}>{contacto || empresa || '—'}{contacto && empresa ? <span style={{ color: '#999', fontWeight: 400 }}> · {empresa}</span> : null}</div>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 4, fontSize: '0.75rem', color: '#888' }}>
+                    <span>{p.subscriptions?.nombre_plan || '—'}{p.subscriptions?.ciclo ? ` · ${p.subscriptions.ciclo}` : ''}</span>
+                    <span style={{ marginLeft: 'auto' }}>{p.numero_acuse
+                      ? <a href={`/acuse/${p.id}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#2563eb', textDecoration: 'none' }} title="Ver / imprimir recibo">🧾 {p.numero_acuse}</a>
+                      : <span>Ref: {p.referencia || '—'}</span>}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+        <div className="crm-scroll-x">
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead><tr>{['Fecha', 'Contacto / Empresa', 'Tipo', 'Concepto', 'Referencia', 'Monto'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
           <tbody>
@@ -219,6 +282,8 @@ export default function PagosTab() {
             })}
           </tbody>
         </table>
+        </div>
+        )}
       </div>
 
       {/* ── Conciliación (proveniencia: manual vs Stripe + huérfanos) ── */}
@@ -284,7 +349,7 @@ export default function PagosTab() {
 
       {showPago && <RegistrarPagoModal subs={subs as any} prefill={pagoPrefill} onClose={() => { setShowPago(false); setPagoPrefill(null); }} onDone={() => { setShowPago(false); setPagoPrefill(null); loadAll(); }} />}
       {drawerCompany && <ClienteDrawer360 companyId={drawerCompany} onClose={() => setDrawerCompany(null)} onChanged={loadAll} />}
-      {toast && <div style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: '#fff', padding: '10px 18px', borderRadius: 10, fontSize: 13, zIndex: 200, boxShadow: '0 8px 24px rgba(0,0,0,0.25)' }}>{toast}</div>}
+      {toast && <div className="crm-toast-bottom" style={{ position: 'fixed', bottom: 20, left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: '#fff', padding: '10px 18px', borderRadius: 10, fontSize: 13, zIndex: 600, boxShadow: '0 8px 24px rgba(0,0,0,0.25)', maxWidth: '90vw', textAlign: 'center' }}>{toast}</div>}
     </div>
   );
 }
