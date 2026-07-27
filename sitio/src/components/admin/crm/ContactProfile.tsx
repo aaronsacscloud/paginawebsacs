@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useIsMobile } from '../../../lib/ui/mobile';
 import HealthScoreBadge from './HealthScoreBadge';
 import ExpansionSignalsBanner from './ExpansionSignalsBanner';
 
@@ -214,7 +215,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
   const [c360, setC360] = useState<any>(null); // pagos/suscripciones del cliente (company360)
   const [edoCuenta, setEdoCuenta] = useState<any>(null); // estado de cuenta (ledger)
   const [loading, setLoading] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile(); // breakpoint único del sistema (BP.mobile=900)
   const [mobileTab, setMobileTab] = useState<'properties' | 'timeline'>('timeline');
 
   // Editable fields
@@ -250,14 +251,6 @@ export default function ContactProfile({ contactId, onClose }: Props) {
 
   const sidebarRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
-
-  // Check mobile
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener('resize', check, { passive: true });
-    return () => window.removeEventListener('resize', check);
-  }, []);
 
   // Load contact
   const loadContact = async () => {

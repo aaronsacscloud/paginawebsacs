@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, Component } from 'react';
 import type { ReactNode } from 'react';
+import { useIsMobile } from '../../lib/ui/mobile';
 import PipelineTab from './crm/PipelineTab';
 import DealsTab from './crm/DealsTab';
 import AutomationsTab from './crm/AutomationsTab';
@@ -124,8 +125,11 @@ export default function CrmDashboard() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearch, setShowSearch] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile();
   const searchRef = useRef<HTMLInputElement>(null);
+
+  // Auto-colapsar el sidebar al entrar a layout mobile.
+  useEffect(() => { if (isMobile) setSidebarCollapsed(true); }, [isMobile]);
 
   // Cmd/Ctrl+K → enfoca la búsqueda global (abre el sidebar si está colapsado).
   useEffect(() => {
@@ -146,19 +150,8 @@ export default function CrmDashboard() {
       if (!(e.target as HTMLElement)?.closest?.('.crm-search-wrapper')) setShowSearch(false);
     };
     document.addEventListener('click', close);
-
-    // Detectar mobile y auto-colapsar
-    const checkMobile = () => {
-      const mobile = window.innerWidth < 900;
-      setIsMobile(mobile);
-      if (mobile) setSidebarCollapsed(true);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-
     return () => {
       document.removeEventListener('click', close);
-      window.removeEventListener('resize', checkMobile);
     };
   }, []);
 
@@ -441,8 +434,27 @@ export default function CrmDashboard() {
   );
 }
 
+/* HOJA MOBILE CENTRAL del CRM. Los estilos de los tabs son objetos JS inline
+ * (ganan en especificidad normal) → aquí se usan !important dentro de media
+ * queries: desktop NUNCA entra a estas reglas, así que no cambia nada ≥900px. */
 const CRM_MOBILE_CSS = `
-  @media (max-width: 900px) {
+  @media (max-width: 899px) {
     body { overflow-x: hidden; }
+    /* iOS hace auto-zoom al enfocar inputs con font-size < 16px. Un solo golpe
+       para los ~20 tabs sin tocar los objetos E/D/S/M. */
+    input, select, textarea { font-size: 16px !important; }
+    /* Toasts y bottom-fixed respetando el notch/home-indicator */
+    .crm-toast-bottom { bottom: calc(16px + env(safe-area-inset-bottom)) !important; }
+  }
+  /* Grids de 2 columnas (opt-in): colapsan a 1 col en teléfonos angostos */
+  @media (max-width: 560px) {
+    .crm-2col { grid-template-columns: 1fr !important; }
+  }
+  /* Wrapper estándar para tablas anchas: scroll interno, nunca corta columnas */
+  .crm-scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+  /* Touch: revelar controles que en desktop dependen de hover + feedback táctil */
+  @media (hover: none) {
+    .ct360 .ct-pencil { opacity: 0.65 !important; }
+    .te-item:active, .crm-row:active { background: #eef1f6 !important; }
   }
 `;

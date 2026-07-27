@@ -19,7 +19,7 @@ export function Toast({ toast }: { toast: { msg: string; kind: ToastKind } | nul
   if (!toast) return null;
   const bg = toast.kind === 'error' ? '#b93333' : toast.kind === 'info' ? '#1a1a1a' : '#1A8F7A';
   return (
-    <div style={{
+    <div className="crm-toast-bottom" style={{
       position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 500,
       background: bg, color: '#fff', padding: '10px 18px', borderRadius: 10, fontSize: '0.8125rem',
       fontWeight: 600, boxShadow: '0 6px 24px rgba(0,0,0,0.22)', maxWidth: '90vw',

@@ -11,6 +11,14 @@ if (gate) return gate;
 ---
 
 <BaseLayout title="CRM — Sacs" description="CRM interno de Sacs" noindex={true}>
+<script is:inline>
+// viewport-fit=cover SOLO en el CRM: habilita env(safe-area-inset-*) en iPhone
+// con notch (los toasts/bottom-nav lo usan). BaseLayout queda intacto.
+(function () {
+  var v = document.querySelector('meta[name="viewport"]');
+  if (v) v.setAttribute('content', 'width=device-width, initial-scale=1, viewport-fit=cover');
+})();
+</script>
 <CrmDashboard client:only="react" />
 </BaseLayout>
 
