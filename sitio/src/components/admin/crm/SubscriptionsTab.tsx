@@ -82,6 +82,15 @@ export default function SubscriptionsTab() {
   const [vista, setVista] = useState<'subs' | 'riesgo' | 'cobranza' | 'conciliacion' | 'inteligencia'>('subs');
   const [editSub, setEditSub] = useState<Sub | null>(null);
   const [pagoPrefill, setPagoPrefill] = useState<{ subscription_id?: string; fecha?: string } | null>(null);
+
+  // Link formal para el cliente: estado de su suscripción (plan, monto, próxima
+  // fecha) + PDF. La llave del link es el id (UUID) de la suscripción. Abrimos la
+  // página (que trae "Descargar PDF") y copiamos el link para enviarlo rápido.
+  function linkCliente(s: Sub) {
+    const url = `${window.location.origin}/estado-cuenta/${s.id}`;
+    window.open(url, '_blank', 'noopener'); // sync dentro del click (iOS)
+    try { navigator.clipboard?.writeText(url); } catch { /* clipboard puede fallar sin https */ }
+  }
   const [fCiclo, setFCiclo] = useState('');
   const [fEstado, setFEstado] = useState('');
   const [fPlan, setFPlan] = useState('');
@@ -285,9 +294,10 @@ export default function SubscriptionsTab() {
                         <span style={{ fontWeight: 800, fontSize: '1.02rem' }}>{s.ciclo === 'vitalicia' ? fmt(s.precio) : fmt(s.arr)}</span>
                         <span style={{ color: '#999', fontSize: '0.72rem', marginLeft: 4 }}>{s.ciclo === 'vitalicia' ? 'pago único' : 'ARR'}</span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {h != null && <span style={{ fontWeight: 800, color: h >= 70 ? '#1A8F7A' : h >= 40 ? '#a06600' : '#b93333', fontSize: '0.82rem' }} title="Salud">♥ {h}</span>}
-                        <button style={{ ...S.btnSmall, minHeight: 44, padding: '0 16px' }} onClick={e => { e.stopPropagation(); setEditSub(s); }}>Editar</button>
+                        <button style={{ ...S.btnSmall, minHeight: 44, padding: '0 12px' }} title="Genera un link formal para el cliente (plan, monto y próxima fecha) + PDF" onClick={e => { e.stopPropagation(); linkCliente(s); }}>🔗 Link</button>
+                        <button style={{ ...S.btnSmall, minHeight: 44, padding: '0 14px' }} onClick={e => { e.stopPropagation(); setEditSub(s); }}>Editar</button>
                       </div>
                     </div>
                   </div>
@@ -343,6 +353,7 @@ export default function SubscriptionsTab() {
                       </td>
                       <td style={S.td}>{(() => { const h = (s.companies as any)?.health_score; if (h == null) return '—'; const c = h >= 70 ? '#1A8F7A' : h >= 40 ? '#a06600' : '#b93333'; return <span style={{ fontWeight: 800, color: c }}>{h}</span>; })()}</td>
                       <td style={S.td} onClick={e => e.stopPropagation()}>
+                        <button style={{ ...S.btnSmall, marginRight: 4 }} title="Genera un link formal para el cliente (plan, monto y próxima fecha) + PDF" onClick={() => linkCliente(s)}>🔗 Link</button>
                         <button style={S.btnSmall} onClick={() => setEditSub(s)}>Editar</button>
                       </td>
                     </tr>

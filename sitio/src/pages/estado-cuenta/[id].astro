@@ -1,0 +1,270 @@
+---
+// Página PÚBLICA y formal del estado de suscripción del cliente.
+// Llave = id (UUID) de la suscripción (no adivinable), mismo patrón que la
+// cotización pública. Solo expone datos del propio cliente (plan, monto, próxima
+// fecha, historial de pagos) — nada interno (ARR, salud, notas, otras cuentas).
+import { supabase } from '../../lib/supabase';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+
+const { data: sub } = await supabase
+  .from('subscriptions')
+  .select('id, nombre_plan, ciclo, precio, monto_proximo, fecha_inicio, proxima_factura, estado, company_id, contact_id')
+  .eq('id', id)
+  .single();
+
+if (!sub) return Astro.redirect('/404');
+
+const { data: company } = sub.company_id
+  ? await supabase.from('companies').select('nombre, sacs_account').eq('id', sub.company_id).single()
+  : { data: null };
+const { data: contact } = sub.contact_id
+  ? await supabase.from('contacts').select('nombre, apellido, email').eq('id', sub.contact_id).single()
+  : { data: null };
+
+const { data: paysRaw } = await supabase
+  .from('payments')
+  .select('fecha, monto, metodo, referencia, numero_acuse')
+  .eq('subscription_id', id)
+  .order('fecha', { ascending: false })
+  .limit(12);
+const pays = paysRaw || [];
+
+// ── formato ──
+const money = (n: number | null | undefined) =>
+  '$' + Math.round(Number(n || 0)).toLocaleString('es-MX') + '.00';
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+function fmtFecha(d?: string | null) {
+  if (!d) return '—';
+  const [y, m, day] = String(d).slice(0, 10).split('-').map(Number);
+  if (!y) return '—';
+  return `${day} de ${MESES[(m || 1) - 1]} de ${y}`;
+}
+function fmtFechaCorta(d?: string | null) {
+  if (!d) return '—';
+  const [y, m, day] = String(d).slice(0, 10).split('-').map(Number);
+  if (!y) return '—';
+  return `${String(day).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
+}
+
+const CICLO: Record<string, string> = { mensual: 'Mensual', anual: 'Anual', vitalicia: 'Pago único' };
+const METODO: Record<string, string> = { transferencia: 'Transferencia', tarjeta: 'Tarjeta', stripe: 'Tarjeta', efectivo: 'Efectivo', oxxo: 'OXXO', otro: 'Otro' };
+const cicloLabel = CICLO[sub.ciclo] || 'Mensual';
+const periodicidad = sub.ciclo === 'anual' ? 'cada año' : sub.ciclo === 'vitalicia' ? '' : 'cada mes';
+
+const montoPagar = Number(sub.monto_proximo ?? sub.precio) || 0;
+const esRecurrente = sub.ciclo !== 'vitalicia';
+const vencida = !!(sub.proxima_factura && String(sub.proxima_factura).slice(0, 10) < new Date().toISOString().slice(0, 10) && sub.estado !== 'cancelada');
+
+const ESTADO: Record<string, { label: string; bg: string; color: string }> = {
+  activa: { label: 'Activa', bg: '#e6f6f2', color: '#1A8F7A' },
+  pendiente_pago: { label: 'Pago pendiente', bg: '#fff4e0', color: '#a06600' },
+  programada: { label: 'Programada', bg: '#eef2fe', color: '#4B7BE5' },
+  pausada: { label: 'Pausada', bg: '#f3f4f6', color: '#6b7280' },
+  cancelada: { label: 'Cancelada', bg: '#fdecea', color: '#b93333' },
+};
+const estadoInfo = ESTADO[sub.estado] || ESTADO.activa;
+
+const clienteNombre = [contact?.nombre, contact?.apellido].filter(Boolean).join(' ').trim() || company?.nombre || 'Cliente';
+const empresaNombre = company?.nombre || '';
+const hoy = new Date();
+const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
+---
+
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Estado de cuenta · {empresaNombre || clienteNombre} · SACS</title>
+  <style>
+    :root {
+      --ink: #16181d; --muted: #6b7280; --faint: #9aa0a8;
+      --accent: #1A8F7A; --line: #e7e9ee; --paper: #ffffff; --bg: #eef0f3;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased; line-height: 1.5;
+      padding: 28px 16px 64px;
+    }
+    .num { font-variant-numeric: tabular-nums; }
+    .toolbar {
+      max-width: 720px; margin: 0 auto 16px; display: flex; gap: 10px; justify-content: flex-end;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px; height: 42px; padding: 0 18px;
+      border-radius: 10px; font-size: 0.85rem; font-weight: 700; cursor: pointer;
+      font-family: inherit; border: 1px solid var(--line); background: #fff; color: var(--ink);
+      text-decoration: none;
+    }
+    .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .doc {
+      max-width: 720px; margin: 0 auto; background: var(--paper);
+      border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
+      box-shadow: 0 1px 3px rgba(16,24,40,0.06), 0 8px 32px rgba(16,24,40,0.06);
+    }
+    .doc-head {
+      padding: 34px 40px 26px; border-bottom: 1px solid var(--line);
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 20px;
+    }
+    .doc-head img { height: 30px; }
+    .doc-head .meta { text-align: right; font-size: 0.72rem; color: var(--muted); line-height: 1.7; }
+    .doc-head .meta b { color: var(--ink); }
+    .eyebrow { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+    .h1 { font-size: 1.5rem; font-weight: 800; margin: 6px 0 0; letter-spacing: -0.01em; }
+    .section { padding: 26px 40px; border-bottom: 1px solid var(--line); }
+    .section:last-child { border-bottom: none; }
+    .label { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); margin-bottom: 4px; }
+    .para-quien { font-size: 1.05rem; font-weight: 700; }
+    .para-quien .sub { font-size: 0.82rem; font-weight: 400; color: var(--muted); margin-top: 2px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px 32px; }
+    .kv .label { margin-bottom: 3px; }
+    .kv .val { font-size: 0.95rem; font-weight: 700; }
+    .pill { display: inline-block; padding: 3px 11px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+    /* Bloque destacado del próximo pago */
+    .highlight {
+      background: linear-gradient(180deg, #f6fbfa 0%, #eef8f5 100%);
+      border: 1px solid #cfe9e2; border-radius: 14px; padding: 22px 24px;
+      display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap;
+    }
+    .highlight .amount { font-size: 2.15rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+    .highlight .per { font-size: 0.9rem; color: var(--muted); font-weight: 600; }
+    .highlight .when { text-align: right; }
+    .highlight .when .d { font-size: 1.05rem; font-weight: 800; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: 0.64rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); padding: 0 0 8px; border-bottom: 1px solid var(--line); }
+    td { padding: 11px 0; font-size: 0.86rem; border-bottom: 1px solid #f2f3f6; }
+    tr:last-child td { border-bottom: none; }
+    .right { text-align: right; }
+    .foot { padding: 22px 40px 30px; color: var(--muted); font-size: 0.76rem; line-height: 1.7; }
+    .foot .brand { color: var(--ink); font-weight: 800; }
+    .note { font-size: 0.8rem; color: var(--muted); margin-top: 12px; }
+    @media (max-width: 560px) {
+      .doc-head, .section, .foot { padding-left: 22px; padding-right: 22px; }
+      .grid2 { grid-template-columns: 1fr; gap: 16px; }
+      .highlight { flex-direction: column; align-items: flex-start; }
+      .highlight .when { text-align: left; }
+      .h1 { font-size: 1.28rem; }
+    }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .toolbar { display: none !important; }
+      .doc { box-shadow: none; border: none; border-radius: 0; max-width: none; }
+      .section, .doc-head { border-color: #e7e9ee; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button class="btn" id="copy-link">🔗 Copiar link</button>
+    <button class="btn btn-primary" id="download-pdf">⬇ Descargar PDF</button>
+  </div>
+
+  <div class="doc">
+    <div class="doc-head">
+      <img src="/brand/sacs-wordmark-dark.svg" alt="SACS" />
+      <div class="meta">
+        <div class="eyebrow">Estado de cuenta</div>
+        <div style="margin-top:6px"><b>Folio</b> {folio}</div>
+        <div><b>Emitido</b> {fmtFechaCorta(hoy.toISOString())}</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="label">Para</div>
+      <div class="para-quien">
+        {clienteNombre}
+        {empresaNombre && empresaNombre !== clienteNombre && <div class="sub">{empresaNombre}</div>}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="grid2">
+        <div class="kv">
+          <div class="label">Plan contratado</div>
+          <div class="val">{sub.nombre_plan}</div>
+        </div>
+        <div class="kv">
+          <div class="label">Periodicidad</div>
+          <div class="val">{cicloLabel}</div>
+        </div>
+        <div class="kv">
+          <div class="label">Estado</div>
+          <div><span class="pill" style={`background:${estadoInfo.bg};color:${estadoInfo.color}`}>{estadoInfo.label}</span></div>
+        </div>
+        <div class="kv">
+          <div class="label">Cliente desde</div>
+          <div class="val">{fmtFecha(sub.fecha_inicio)}</div>
+        </div>
+      </div>
+    </div>
+
+    {esRecurrente && (
+      <div class="section">
+        <div class="label" style="margin-bottom:12px">Tu próximo pago</div>
+        <div class="highlight">
+          <div>
+            <div class="amount num">{money(montoPagar)}</div>
+            <div class="per">{periodicidad ? `${cicloLabel} · se cobra ${periodicidad}` : cicloLabel}</div>
+          </div>
+          <div class="when">
+            <div class="label">{vencida ? 'Fecha de pago (vencida)' : 'Fecha del próximo pago'}</div>
+            <div class="d" style={vencida ? 'color:#b93333' : ''}>{fmtFecha(sub.proxima_factura)}</div>
+          </div>
+        </div>
+        {vencida && <div class="note" style="color:#b93333">Este pago está vencido. Realiza tu pago para mantener tu servicio activo sin interrupciones.</div>}
+      </div>
+    )}
+
+    {pays.length > 0 && (
+      <div class="section">
+        <div class="label" style="margin-bottom:6px">Historial de pagos</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Método</th>
+              <th>Referencia</th>
+              <th class="right">Monto</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pays.map((p: any) => (
+              <tr>
+                <td class="num">{fmtFechaCorta(p.fecha)}</td>
+                <td>{METODO[p.metodo] || p.metodo || '—'}</td>
+                <td style="color:var(--muted)">{p.numero_acuse || p.referencia || '—'}</td>
+                <td class="right num" style="font-weight:700">{money(p.monto)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+
+    <div class="foot">
+      Este documento es un resumen informativo de tu suscripción con <span class="brand">SACS</span>.
+      Para cualquier aclaración sobre tu plan o tus pagos, escríbenos a <b>hola@sacscloud.com</b>.
+      <div style="margin-top:8px">SACS · www.sacscloud.com</div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('download-pdf')?.addEventListener('click', () => window.print());
+    document.getElementById('copy-link')?.addEventListener('click', async (e) => {
+      const btn = e.currentTarget as HTMLButtonElement;
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        const prev = btn.textContent; btn.textContent = '✓ Link copiado';
+        setTimeout(() => { btn.textContent = prev; }, 1800);
+      } catch { /* clipboard puede fallar sin https */ }
+    });
+  </script>
+</body>
+</html>
