@@ -1,5 +1,7 @@
 import { cloneElement, useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Search, SlidersHorizontal } from 'lucide-react';
+import { useIsMobile } from '../../../lib/ui/mobile';
 
 /* ═══ TablaEnterprise — el datatable ESTÁNDAR del CRM (estilo HubSpot) ═══
  * Layout: filtros principales arriba (+acciones) → buscador → tabs de VISTAS
@@ -93,7 +95,7 @@ const E = {
 
 export default function TablaEnterprise({
   tabla, data, cols, quick = [], vistasBase, searchText, searchPlaceholder = 'Buscar…',
-  actions, onRowClick, rowKey = (r: any) => r.id, customBody, minWidth = 1080, emptyMsg = 'Sin resultados con esos filtros.',
+  actions, onRowClick, rowKey = (r: any) => r.id, customBody, mobileCard, minWidth = 1080, emptyMsg = 'Sin resultados con esos filtros.',
 }: {
   tabla: string;
   data: any[];
@@ -106,9 +108,11 @@ export default function TablaEnterprise({
   onRowClick?: (row: any) => void;
   rowKey?: (row: any) => string;
   customBody?: ((rows: any[]) => any) | null;   // p.ej. kanban: reemplaza la tabla pero respeta filtros
+  mobileCard?: ((row: any) => ReactNode) | null; // en mobile: renderiza la fila como card (mismo pipeline)
   minWidth?: number;
   emptyMsg?: string;
 }) {
+  const isMobile = useIsMobile();
   const [vistaKey, setVistaKey] = useState(vistasBase[0]?.key || 'todos');
   const [vistasCustom, setVistasCustom] = useState<VistaDef[]>([]);
   const [sinMigracion, setSinMigracion] = useState(false);
@@ -167,9 +171,13 @@ export default function TablaEnterprise({
     await loadVistas();
     if (j.data?.id) setVistaKey('v_' + j.data.id);
   }
+  // Borrado con confirmación de 2 toques (sin window.confirm, malo en touch):
+  // 1er tap arma (la ✕ se vuelve "✕?"), 2º tap dentro de 2.6s ejecuta.
+  const [confirmVista, setConfirmVista] = useState<string | null>(null);
   async function borrarVista(v: VistaDef, e: any) {
     e.stopPropagation();
-    if (!window.confirm(`¿Eliminar la vista "${v.nombre}"?`)) return;
+    if (confirmVista !== v.key) { setConfirmVista(v.key); setTimeout(() => setConfirmVista(c => c === v.key ? null : c), 2600); return; }
+    setConfirmVista(null);
     await fetch('/api/crm/vistas', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: v.id }) });
     if (vistaKey === v.key) aplicarVista(vistas[0]);
     loadVistas();
@@ -279,10 +287,12 @@ export default function TablaEnterprise({
         {vistas.map(v => (
           <button key={v.key} style={E.tab(v.key === vistaKey)} onClick={() => aplicarVista(v)} title={v.fija ? 'Vista predefinida' : 'Vista guardada'}>
             {v.nombre}
-            {!v.fija && v.key === vistaKey && <span onClick={e => borrarVista(v, e)} title="Eliminar vista" style={{ color: '#b93333', fontWeight: 800, marginLeft: 2 }}>✕</span>}
+            {!v.fija && v.key === vistaKey && <span onClick={e => borrarVista(v, e)} title="Eliminar vista" style={{ color: '#b93333', fontWeight: 800, marginLeft: 4, padding: isMobile ? '10px 10px' : '2px 6px', minWidth: isMobile ? 40 : 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{confirmVista === v.key ? '✕?' : '✕'}</span>}
           </button>
         ))}
-        {dirty && (
+        {/* En DESKTOP los controles de guardar viven en la tira; en mobile bajan
+            a una píldora full-width (criterio: alcanzables sin scroll horizontal). */}
+        {dirty && !isMobile && (
           <span style={{ display: 'inline-flex', gap: 6, marginLeft: 10, alignItems: 'center', flexShrink: 0 }}>
             {vistaActiva && !vistaActiva.fija && <button style={{ ...E.btn, padding: '4px 10px', fontSize: '0.72rem' }} disabled={savingVista} onClick={() => guardarVista(false)}>💾 Guardar cambios</button>}
             <button style={{ ...E.btnDark, padding: '4px 10px', fontSize: '0.72rem' }} onClick={() => setShowGuardar(true)}>+ Guardar como vista</button>
@@ -290,6 +300,13 @@ export default function TablaEnterprise({
         )}
         <span style={{ marginLeft: 'auto', flexShrink: 0, fontSize: '0.72rem', color: '#9aa0a8', padding: '0 6px' }}>{filtrados.length} resultado{filtrados.length === 1 ? '' : 's'}</span>
       </div>
+      {dirty && isMobile && (
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '10px 0 0' }}>
+          <span style={{ fontSize: '0.78rem', color: '#a06600', fontWeight: 700, flex: 1 }}>Vista modificada</span>
+          {vistaActiva && !vistaActiva.fija && <button style={{ ...E.btn, padding: '8px 12px' }} disabled={savingVista} onClick={() => guardarVista(false)}>💾 Guardar</button>}
+          <button style={{ ...E.btnDark, padding: '8px 12px' }} onClick={() => setShowGuardar(true)}>+ Guardar como vista</button>
+        </div>
+      )}
 
       {/* Chips de condiciones activas */}
       {conds.length > 0 && (
@@ -310,9 +327,32 @@ export default function TablaEnterprise({
         </div>
       )}
 
-      {/* ④ TABLA (o cuerpo custom p.ej. kanban, respetando los filtros) */}
+      {/* ④ TABLA · CARDS (mobile) · o cuerpo custom (kanban) — todos respetan los filtros */}
       {customBody ? (
         <div style={{ paddingTop: 14 }}>{customBody(filtrados)}</div>
+      ) : (isMobile && mobileCard) ? (
+        <>
+          {/* MOBILE: lista de cards con la MISMA página filtrada/ordenada/paginada */}
+          <div style={{ paddingTop: 12 }}>
+            {pagina.map(r => (
+              <div key={rowKey(r)} className="crm-row" onClick={() => onRowClick?.(r)}
+                style={{ padding: '14px 4px', borderBottom: '1px solid #f0f1f5', cursor: onRowClick ? 'pointer' : 'default' }}>
+                {mobileCard(r)}
+              </div>
+            ))}
+            {!filtrados.length && <div style={{ padding: 32, textAlign: 'center', color: '#999' }}>{emptyMsg}</div>}
+          </div>
+          {filtrados.length > pageSize && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 2px 0', fontSize: '0.82rem', color: '#666' }}>
+              <span>{page * pageSize + 1}–{Math.min((page + 1) * pageSize, filtrados.length)} de {filtrados.length}</span>
+              <button style={{ ...E.btn, width: 40, height: 40, padding: 0, borderRadius: 10, justifyContent: 'center' }} disabled={page === 0} onClick={() => setPage(p => p - 1)}>‹</button>
+              <button style={{ ...E.btn, width: 40, height: 40, padding: 0, borderRadius: 10, justifyContent: 'center' }} disabled={page >= totalPag - 1} onClick={() => setPage(p => p + 1)}>›</button>
+              <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(0); }} style={{ ...E.input, height: 40, padding: '0 8px', marginLeft: 'auto' }}>
+                {[25, 50, 100].map(n => <option key={n} value={n}>{n}/pág</option>)}
+              </select>
+            </div>
+          )}
+        </>
       ) : (
         <>
           <div className="ct360" style={{ overflowX: 'auto' }}>
