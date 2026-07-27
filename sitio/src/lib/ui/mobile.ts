@@ -37,7 +37,16 @@ export function isTouchDevice(): boolean {
  * - pushState al abrir → el botón ATRÁS del teléfono cierra el overlay en vez
  *   de salir del CRM (popstate → onClose).
  * - bloquea el scroll del body mientras está abierto y lo restaura al cerrar.
+ *
+ * Pop FANTASMA: al cerrar con ✕/backdrop hacemos history.back() para consumir
+ * la entrada que pusimos. Ese back() es ASÍNCRONO y su popstate llegaría al
+ * overlay de abajo (o a uno recién abierto) cerrándolo también — p.ej. cerrar
+ * un ActionSheet sobre un drawer cerraba el drawer. `phantomPopUntil` (module-
+ * level, compartido entre instancias) marca una ventana corta en la que el
+ * próximo popstate se ignora; se autoexpira para no comerse un back legítimo.
  */
+let phantomPopUntil = 0;
+
 export function useDrawerHistory(open: boolean, onClose: () => void) {
   const closedByPop = useRef(false);
   const pushed = useRef(false);
@@ -53,14 +62,19 @@ export function useDrawerHistory(open: boolean, onClose: () => void) {
     closedByPop.current = false;
     pushed.current = true;
     try { window.history.pushState({ crmOverlay: true }, ''); } catch { pushed.current = false; }
-    const onPop = () => { closedByPop.current = true; onCloseRef.current(); };
+    const onPop = () => {
+      if (Date.now() < phantomPopUntil) { phantomPopUntil = 0; return; } // pop fantasma de nuestro back()
+      closedByPop.current = true;
+      onCloseRef.current();
+    };
     window.addEventListener('popstate', onPop);
     return () => {
       window.removeEventListener('popstate', onPop);
       document.body.style.overflow = prevOverflow;
       // si se cerró con ✕/backdrop (no con atrás), consumir la entrada fantasma
       if (pushed.current && !closedByPop.current) {
-        try { window.history.back(); } catch { /* noop */ }
+        phantomPopUntil = Date.now() + 400;
+        try { window.history.back(); } catch { phantomPopUntil = 0; }
       }
     };
   }, [open]);
