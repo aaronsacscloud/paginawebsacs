@@ -25,19 +25,24 @@ export default function AgendaHoy({ onOpenContact, onGoDeals }: { onOpenContact:
   const [contacts, setContacts] = useState<any[]>([]);
   const [deals, setDeals] = useState<any[]>([]);
   const [tareas, setTareas] = useState<any[]>([]);
+  const [reuniones, setReuniones] = useState<any[]>([]);
   const [confirmTareaId, setConfirmTareaId] = useState('');
 
   const load = async () => {
     setLoading(true); setError(null);
     try {
-      const [cj, dj, tj] = await Promise.all([
+      const h = HOY();
+      const [cj, dj, tj, rj] = await Promise.all([
         fetch('/api/crm/contacts?limit=500').then(r => r.json()),
         fetch('/api/crm/deals').then(r => r.json()).catch(() => []),
         fetch('/api/crm/activities?tipo=tarea&limit=200').then(r => r.json()).catch(() => []),
+        fetch(`/api/scheduling/reuniones?from=${h}&to=${h}`).then(r => r.json()).catch(() => ({})),
       ]);
       setContacts(cj.contacts || []);
       setDeals(Array.isArray(dj) ? dj : []);
       setTareas((Array.isArray(tj) ? tj : []).filter((t: any) => t.metadata?.task && t.metadata?.done !== true));
+      setReuniones((rj.data || []).filter((b: any) => !['cancelada', 'reagendada'].includes(b.estado))
+        .sort((a: any, b: any) => String(a.hora_inicio || '').localeCompare(String(b.hora_inicio || ''))));
     } catch (e: any) { setError(e?.message || 'No se pudo cargar'); }
     setLoading(false);
   };
@@ -57,7 +62,7 @@ export default function AgendaHoy({ onOpenContact, onGoDeals }: { onOpenContact:
 
   const tareasOrdenadas = tareas.slice().sort((a, b) => String(a.metadata?.due_at || '9999').localeCompare(String(b.metadata?.due_at || '9999')));
   const total = vencidos.length + paraHoy.length;
-  const nada = total === 0 && cierresProximos.length === 0 && tareasOrdenadas.length === 0;
+  const nada = total === 0 && cierresProximos.length === 0 && tareasOrdenadas.length === 0 && reuniones.length === 0;
 
   return (
     <div style={{ padding: 24, maxWidth: 900, margin: '0 auto' }}>
@@ -66,8 +71,28 @@ export default function AgendaHoy({ onOpenContact, onGoDeals }: { onOpenContact:
         <button onClick={load} style={miniBtn}>↻ Actualizar</button>
       </div>
       <div style={{ color: '#888', fontSize: 13, marginBottom: 20 }}>
-        {nada ? 'Todo al día. Sin seguimientos pendientes.' : `${vencidos.length} vencidos · ${paraHoy.length} para hoy · ${cierresProximos.length} cierres próximos · ${tareasOrdenadas.length} tareas`}
+        {nada ? 'Todo al día. Sin seguimientos pendientes.' : `${reuniones.length} reuniones · ${vencidos.length} vencidos · ${paraHoy.length} para hoy · ${cierresProximos.length} cierres · ${tareasOrdenadas.length} tareas`}
       </div>
+      <style>{`@media (hover: hover) { .ah-row:hover { background: #f8f9fb; } }`}</style>
+
+      {reuniones.length > 0 && (
+        <Section title="📹 Reuniones de hoy" color="#2AB5A0" count={reuniones.length}>
+          {reuniones.map(b => {
+            const ev = Array.isArray(b.event_types) ? b.event_types[0] : b.event_types;
+            const hasContact = !!b.invitado_contact_id;
+            const goDetalle = () => { if (hasContact) onOpenContact(b.invitado_contact_id); };
+            return (
+              <Row key={b.id} onClick={goDetalle} clickable={hasContact}
+                nombre={b.invitee_nombre || 'Invitado'}
+                sub={`${ev?.nombre || 'Reunión'}${b.invitee_empresa ? ' · ' + b.invitee_empresa : ''}${b.host_nombre ? ' · con ' + b.host_nombre : ''}`}
+                right={b.google_meet_link
+                  ? <a href={b.google_meet_link} target="_blank" rel="noopener" onClick={e => e.stopPropagation()} style={{ display: 'inline-flex', alignItems: 'center', minHeight: 44, padding: '0 12px', color: '#1A8F7A', fontWeight: 700, fontSize: '0.74rem', textDecoration: 'none' }}>Meet</a>
+                  : null}
+                badge={String(b.hora_inicio || '').slice(0, 5)} badgeColor="#2AB5A0" />
+            );
+          })}
+        </Section>
+      )}
 
       {nada && (
         <div style={{ padding: 48, textAlign: 'center', color: '#aaa', background: '#fff', borderRadius: 14, border: '1px solid #eee' }}>
@@ -93,7 +118,7 @@ export default function AgendaHoy({ onOpenContact, onGoDeals }: { onOpenContact:
           {paraHoy.map(c => (
             <Row key={c.id} onClick={() => onOpenContact(c.id)}
               nombre={nombreDe(c)} sub={c.companies?.nombre || c.email || c.whatsapp || ''}
-              right={c.whatsapp ? <a href={`https://wa.me/${c.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener" onClick={e => e.stopPropagation()} style={{ color: '#2e7d32', fontWeight: 700, fontSize: '0.72rem', textDecoration: 'none' }}>WhatsApp</a> : null}
+              right={c.whatsapp ? <a href={`https://wa.me/${c.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noopener" onClick={e => e.stopPropagation()} style={{ display: 'inline-flex', alignItems: 'center', minHeight: 44, padding: '0 12px', color: '#2e7d32', fontWeight: 700, fontSize: '0.72rem', textDecoration: 'none' }}>WhatsApp</a> : null}
               badge="Hoy" badgeColor="#a06600" />
           ))}
         </Section>
@@ -151,10 +176,11 @@ function Section({ title, color, count, children }: { title: string; color: stri
   );
 }
 
-function Row({ nombre, sub, right, badge, badgeColor, onClick }: { nombre: string; sub: string; right: React.ReactNode; badge: string; badgeColor: string; onClick: () => void }) {
+function Row({ nombre, sub, right, badge, badgeColor, onClick, clickable = true }: { nombre: string; sub: string; right: React.ReactNode; badge: string; badgeColor: string; onClick: () => void; clickable?: boolean }) {
+  // hover por CSS (@media hover:hover en el <style> del componente) + :active
+  // táctil por la clase global .crm-row — evita el hover pegajoso en touch.
   return (
-    <div onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px', borderBottom: '1px solid #f5f5f5', cursor: 'pointer' }}
-      onMouseEnter={e => (e.currentTarget.style.background = '#f8f9fb')} onMouseLeave={e => (e.currentTarget.style.background = '#fff')}>
+    <div onClick={clickable ? onClick : undefined} className={clickable ? 'ah-row crm-row' : ''} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px', minHeight: 56, borderBottom: '1px solid #f5f5f5', cursor: clickable ? 'pointer' : 'default' }}>
       <span style={{ fontSize: '0.62rem', fontWeight: 700, color: badgeColor, background: badgeColor + '15', padding: '2px 8px', borderRadius: 8, minWidth: 46, textAlign: 'center' }}>{badge}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 700, color: '#1a1a1a', fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nombre}</div>
