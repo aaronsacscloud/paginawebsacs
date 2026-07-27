@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import ClienteDrawer360 from './ClienteDrawer360';
+import { useIsMobile } from '../../../lib/ui/mobile';
 
 // ─── Types ───
 interface RevenueByPlan {
@@ -127,6 +128,7 @@ export default function DashboardTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [drawerCompanyId, setDrawerCompanyId] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   const load = async () => {
     setLoading(true);
@@ -201,40 +203,118 @@ export default function DashboardTab() {
         </button>
       </div>
 
-      {/* ─── KPIs (4): ARR · Clientes activos · Oportunidades $ · Cotizaciones $ ─── */}
-      <div className="dash-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }}>
-        <KpiCard
-          label="ARR"
-          value={fmtK(dash.arr_real ?? revenue.arr)}
-          color="#2AB5A0"
-          subtitle="Ingreso anual recurrente"
-        />
-        <KpiCard
-          label="Clientes activos"
-          value={String(dash.clientes_activos ?? revenue.active_clients)}
-          color="#6C5CE7"
-          subtitle="con suscripción activa"
-        />
-        <KpiCard
-          label="Oportunidades"
-          value={fmtK(dash.oportunidades_monto ?? pipeline.total_value)}
-          color="#E8A838"
-          subtitle={`${dash.oportunidades_abiertas ?? pipeline.open_deals} abiertas`}
-        />
-        <KpiCard
-          label="Cotizaciones"
-          value={fmtK(dash.cotizaciones_monto ?? 0)}
-          color="#4B7BE5"
-          subtitle={`${dash.cotizaciones_n ?? 0} vivas`}
-        />
-      </div>
+      {(() => {
+      /* Bloques reutilizables: mismo contenido, distinto ORDEN en mobile vs
+         desktop (mobile-first: primero lo accionable, KPIs/Meta al final). */
+      const kpisBlock = (
+        <div className="dash-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }}>
+        <KpiCard label="ARR" value={fmtK(dash.arr_real ?? revenue.arr)} color="#2AB5A0" subtitle="Ingreso anual recurrente" />
+        <KpiCard label="Clientes activos" value={String(dash.clientes_activos ?? revenue.active_clients)} color="#6C5CE7" subtitle="con suscripción activa" />
+        <KpiCard label="Oportunidades" value={fmtK(dash.oportunidades_monto ?? pipeline.total_value)} color="#E8A838" subtitle={`${dash.oportunidades_abiertas ?? pipeline.open_deals} abiertas`} />
+        <KpiCard label="Cotizaciones" value={fmtK(dash.cotizaciones_monto ?? 0)} color="#4B7BE5" subtitle={`${dash.cotizaciones_n ?? 0} vivas`} />
+        </div>
+      );
+      const metaBlock = <MetaDelMes meta={dash.meta} onSaved={load} />;
 
-      {/* ─── Meta del mes ─── */}
-      <MetaDelMes meta={dash.meta} onSaved={load} />
+      // Cuentas vencidas: tabla en desktop, lista tap→drawer en mobile.
+      const deudoresBlock = (
+        <div style={cardStyle}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 style={{ ...cardTitleStyle, margin: 0 }}>Cuentas vencidas</h3>
+            {cobranza.monto_deuda > 0 && (
+              <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#E54B4B', background: 'rgba(229,75,75,0.08)', padding: '4px 10px', borderRadius: 6 }}>Deuda: {fmt(cobranza.monto_deuda)}</span>
+            )}
+          </div>
+          {cobranza.deudores.length === 0 ? (
+            <div style={{ padding: '24px 0', textAlign: 'center', color: '#ccc', fontSize: '0.8125rem' }}>Sin cuentas vencidas</div>
+          ) : isMobile ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {cobranza.deudores.map(d => (
+                <div key={d.id} onClick={() => setDrawerCompanyId(d.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px', borderRadius: 8, background: d.days_overdue > 30 ? 'rgba(229,75,75,0.05)' : '#fafbfc', cursor: 'pointer' }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: d.days_overdue > 30 ? '#E54B4B' : '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.nombre}</div>
+                    <div style={{ fontSize: '0.72rem', color: '#999' }}>{PLAN_LABELS[d.plan] || d.plan} · {fmt(d.mrr)}</div>
+                  </div>
+                  <span style={{ fontWeight: 800, fontSize: '0.82rem', color: d.days_overdue > 30 ? '#E54B4B' : d.days_overdue > 15 ? '#E8A838' : '#555' }}>{d.days_overdue}d</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="crm-scroll-x">
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+                <thead><tr>{['Empresa', 'Plan', 'MRR', 'Dias vencido', ''].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {cobranza.deudores.map((d, i) => {
+                    const isOverdue30 = d.days_overdue > 30;
+                    return (
+                      <tr key={d.id} onClick={() => setDrawerCompanyId(d.id)} style={{ cursor: 'pointer', background: isOverdue30 ? 'rgba(229,75,75,0.04)' : i % 2 === 0 ? '#fff' : '#fafbfc' }}>
+                        <td style={{ ...tdStyle, fontWeight: 700, color: isOverdue30 ? '#E54B4B' : '#1a1a1a' }}>{d.nombre}</td>
+                        <td style={tdStyle}><span style={{ fontSize: '0.6875rem', fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: (PLAN_COLORS[d.plan] || '#ccc') + '14', color: PLAN_COLORS[d.plan] || '#888' }}>{PLAN_LABELS[d.plan] || d.plan}</span></td>
+                        <td style={{ ...tdStyle, fontWeight: 700, color: '#1a1a1a' }}>{fmt(d.mrr)}</td>
+                        <td style={tdStyle}><span style={{ fontWeight: 700, color: isOverdue30 ? '#E54B4B' : d.days_overdue > 15 ? '#E8A838' : '#555' }}>{d.days_overdue}d</span></td>
+                        <td style={tdStyle}><button disabled style={{ ...btnBase, fontSize: '0.6875rem', padding: '4px 10px', background: '#f0f0f0', color: '#bbb', cursor: 'not-allowed' }}>Enviar cobro</button></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      );
 
-      {/* ─── Section 2: Revenue & Pipeline ─── */}
-      <div className="dash-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
-        {/* Left: Revenue by Plan */}
+      // Próximas renovaciones: tabla en desktop, lista tap→drawer en mobile.
+      const renovacionesBlock = (
+        <div style={cardStyle}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 style={{ ...cardTitleStyle, margin: 0 }}>Proximas renovaciones</h3>
+            {cobranza.renovaciones_proximas.length > 0 && (
+              <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#E8A838', background: 'rgba(232,168,56,0.08)', padding: '4px 10px', borderRadius: 6 }}>{cobranza.renovaciones_proximas.length} proximas</span>
+            )}
+          </div>
+          {cobranza.renovaciones_proximas.length === 0 ? (
+            <div style={{ padding: '24px 0', textAlign: 'center', color: '#ccc', fontSize: '0.8125rem' }}>Sin renovaciones proximas</div>
+          ) : isMobile ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {cobranza.renovaciones_proximas.map(r => (
+                <div key={r.id} onClick={() => setDrawerCompanyId(r.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px', borderRadius: 8, background: '#fafbfc', cursor: 'pointer' }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.nombre}</div>
+                    <div style={{ fontSize: '0.72rem', color: '#999' }}>{PLAN_LABELS[r.plan] || r.plan} · {fmt(r.mrr)} · {fmtDate(r.fecha_renovacion)}</div>
+                  </div>
+                  <span style={{ fontWeight: 700, fontSize: '0.8rem', color: r.days_remaining < 7 ? '#E8A838' : r.days_remaining > 15 ? '#2e7d32' : '#555' }}>{r.days_remaining}d</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="crm-scroll-x">
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+                <thead><tr>{['Empresa', 'Plan', 'MRR', 'Fecha', 'Dias'].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {cobranza.renovaciones_proximas.map((r, i) => {
+                    const urgent = r.days_remaining < 7; const ok = r.days_remaining > 15;
+                    return (
+                      <tr key={r.id} onClick={() => setDrawerCompanyId(r.id)} style={{ cursor: 'pointer', background: urgent ? 'rgba(232,168,56,0.04)' : i % 2 === 0 ? '#fff' : '#fafbfc' }}>
+                        <td style={{ ...tdStyle, fontWeight: 700, color: '#1a1a1a' }}>{r.nombre}</td>
+                        <td style={tdStyle}><span style={{ fontSize: '0.6875rem', fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: (PLAN_COLORS[r.plan] || '#ccc') + '14', color: PLAN_COLORS[r.plan] || '#888' }}>{PLAN_LABELS[r.plan] || r.plan}</span></td>
+                        <td style={{ ...tdStyle, fontWeight: 700 }}>{fmt(r.mrr)}</td>
+                        <td style={tdStyle}>{fmtDate(r.fecha_renovacion)}</td>
+                        <td style={tdStyle}><span style={{ fontWeight: 700, color: urgent ? '#E8A838' : ok ? '#2e7d32' : '#555', background: urgent ? 'rgba(232,168,56,0.1)' : ok ? 'rgba(46,125,50,0.08)' : 'transparent', padding: '2px 6px', borderRadius: 4 }}>{r.days_remaining}d</span></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.75rem', color: '#999', fontWeight: 600 }}>MRR en riesgo</span>
+                <span style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#E8A838' }}>{fmt(cobranza.renovaciones_proximas.reduce((sum, r) => sum + r.mrr, 0))}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+
+      const ingresosBlock = (
         <div style={cardStyle}>
           <h3 style={cardTitleStyle}>Ingresos por plan</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 16 }}>
@@ -266,8 +346,9 @@ export default function DashboardTab() {
             <span style={{ fontSize: '1rem', fontWeight: 800, color: '#1a1a1a' }}>{fmt(revenue.mrr)}</span>
           </div>
         </div>
+      );
 
-        {/* Right: Reuniones de hoy */}
+      const reunionesBlock = (
         <div style={cardStyle}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h3 style={{ ...cardTitleStyle, margin: 0 }}>Reuniones de hoy</h3>
@@ -292,134 +373,9 @@ export default function DashboardTab() {
             </div>
           )}
         </div>
-      </div>
+      );
 
-      {/* ─── Section 3: Cobranza & Renovaciones ─── */}
-      <div className="dash-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
-        {/* Left: Deudores */}
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ ...cardTitleStyle, margin: 0 }}>Cuentas vencidas</h3>
-            {cobranza.monto_deuda > 0 && (
-              <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#E54B4B', background: 'rgba(229,75,75,0.08)', padding: '4px 10px', borderRadius: 6 }}>
-                Deuda: {fmt(cobranza.monto_deuda)}
-              </span>
-            )}
-          </div>
-          {cobranza.deudores.length === 0 ? (
-            <div style={{ padding: '24px 0', textAlign: 'center', color: '#ccc', fontSize: '0.8125rem' }}>
-              Sin cuentas vencidas
-            </div>
-          ) : (
-            <div style={{ overflow: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
-                <thead>
-                  <tr>
-                    {['Empresa', 'Plan', 'MRR', 'Dias vencido', ''].map(h => (
-                      <th key={h} style={thStyle}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {cobranza.deudores.map((d, i) => {
-                    const isOverdue30 = d.days_overdue > 30;
-                    return (
-                      <tr key={d.id} style={{ background: isOverdue30 ? 'rgba(229,75,75,0.04)' : i % 2 === 0 ? '#fff' : '#fafbfc' }}>
-                        <td style={{ ...tdStyle, fontWeight: 700, color: isOverdue30 ? '#E54B4B' : '#1a1a1a' }}>{d.nombre}</td>
-                        <td style={tdStyle}>
-                          <span style={{ fontSize: '0.6875rem', fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: (PLAN_COLORS[d.plan] || '#ccc') + '14', color: PLAN_COLORS[d.plan] || '#888' }}>
-                            {PLAN_LABELS[d.plan] || d.plan}
-                          </span>
-                        </td>
-                        <td style={{ ...tdStyle, fontWeight: 700, color: '#1a1a1a' }}>{fmt(d.mrr)}</td>
-                        <td style={tdStyle}>
-                          <span style={{ fontWeight: 700, color: isOverdue30 ? '#E54B4B' : d.days_overdue > 15 ? '#E8A838' : '#555' }}>
-                            {d.days_overdue}d
-                          </span>
-                        </td>
-                        <td style={tdStyle}>
-                          <button disabled style={{ ...btnBase, fontSize: '0.6875rem', padding: '4px 10px', background: '#f0f0f0', color: '#bbb', cursor: 'not-allowed' }}>
-                            Enviar cobro
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Right: Proximas Renovaciones */}
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ ...cardTitleStyle, margin: 0 }}>Proximas renovaciones</h3>
-            {cobranza.renovaciones_proximas.length > 0 && (
-              <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#E8A838', background: 'rgba(232,168,56,0.08)', padding: '4px 10px', borderRadius: 6 }}>
-                {cobranza.renovaciones_proximas.length} proximas
-              </span>
-            )}
-          </div>
-          {cobranza.renovaciones_proximas.length === 0 ? (
-            <div style={{ padding: '24px 0', textAlign: 'center', color: '#ccc', fontSize: '0.8125rem' }}>
-              Sin renovaciones proximas
-            </div>
-          ) : (
-            <div style={{ overflow: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
-                <thead>
-                  <tr>
-                    {['Empresa', 'Plan', 'MRR', 'Fecha', 'Dias'].map(h => (
-                      <th key={h} style={thStyle}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {cobranza.renovaciones_proximas.map((r, i) => {
-                    const urgent = r.days_remaining < 7;
-                    const ok = r.days_remaining > 15;
-                    return (
-                      <tr key={r.id} style={{ background: urgent ? 'rgba(232,168,56,0.04)' : i % 2 === 0 ? '#fff' : '#fafbfc' }}>
-                        <td style={{ ...tdStyle, fontWeight: 700, color: '#1a1a1a' }}>{r.nombre}</td>
-                        <td style={tdStyle}>
-                          <span style={{ fontSize: '0.6875rem', fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: (PLAN_COLORS[r.plan] || '#ccc') + '14', color: PLAN_COLORS[r.plan] || '#888' }}>
-                            {PLAN_LABELS[r.plan] || r.plan}
-                          </span>
-                        </td>
-                        <td style={{ ...tdStyle, fontWeight: 700 }}>{fmt(r.mrr)}</td>
-                        <td style={tdStyle}>{fmtDate(r.fecha_renovacion)}</td>
-                        <td style={tdStyle}>
-                          <span style={{
-                            fontWeight: 700,
-                            color: urgent ? '#E8A838' : ok ? '#2e7d32' : '#555',
-                            background: urgent ? 'rgba(232,168,56,0.1)' : ok ? 'rgba(46,125,50,0.08)' : 'transparent',
-                            padding: '2px 6px',
-                            borderRadius: 4,
-                          }}>
-                            {r.days_remaining}d
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {/* Total MRR at risk */}
-              <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.75rem', color: '#999', fontWeight: 600 }}>MRR en riesgo</span>
-                <span style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#E8A838' }}>
-                  {fmt(cobranza.renovaciones_proximas.reduce((sum, r) => sum + r.mrr, 0))}
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ─── Oportunidades de venta (Radar) · Cuentas en riesgo ─── */}
-      <div className="dash-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
-        {/* Oportunidades de venta */}
+      const radarBlock = (
         <div style={cardStyle}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h3 style={{ ...cardTitleStyle, margin: 0 }}>Oportunidades de venta</h3>
@@ -438,8 +394,9 @@ export default function DashboardTab() {
             </div>
           )}
         </div>
+      );
 
-        {/* Cuentas en riesgo (≥5 días sin vender) */}
+      const riesgoBlock = (
         <div style={cardStyle}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h3 style={{ ...cardTitleStyle, margin: 0 }}>Cuentas en riesgo</h3>
@@ -461,8 +418,51 @@ export default function DashboardTab() {
             </div>
           )}
         </div>
-      </div>
+      );
 
+      const radarRiesgo = (
+        <div className="dash-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
+          {radarBlock}
+          {riesgoBlock}
+        </div>
+      );
+
+      if (isMobile) {
+        // Orden mobile: primero lo accionable (reuniones, cobranza, radar/riesgo),
+        // KPIs + Meta al final.
+        return (
+          <>
+            {reunionesBlock}
+            <div style={{ marginTop: 20 }} />
+            {deudoresBlock}
+            <div style={{ marginTop: 20 }} />
+            {renovacionesBlock}
+            <div style={{ marginTop: 20 }} />
+            {radarRiesgo}
+            {ingresosBlock}
+            <div style={{ marginTop: 20 }} />
+            {kpisBlock}
+            {metaBlock}
+          </>
+        );
+      }
+      // Desktop: orden original.
+      return (
+        <>
+          {kpisBlock}
+          {metaBlock}
+          <div className="dash-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
+            {ingresosBlock}
+            {reunionesBlock}
+          </div>
+          <div className="dash-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
+            {deudoresBlock}
+            {renovacionesBlock}
+          </div>
+          {radarRiesgo}
+        </>
+      );
+      })()}
       {drawerCompanyId && <ClienteDrawer360 companyId={drawerCompanyId} onClose={() => setDrawerCompanyId(null)} onChanged={load} />}
 
       {/* Responsive overrides */}
@@ -470,11 +470,9 @@ export default function DashboardTab() {
         @media (max-width: 900px) {
           .dash-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .dash-two-col { grid-template-columns: 1fr !important; }
-          .dash-five-col { grid-template-columns: repeat(2, 1fr) !important; }
         }
         @media (max-width: 560px) {
           .dash-kpi-grid { grid-template-columns: 1fr !important; }
-          .dash-five-col { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>
