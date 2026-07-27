@@ -4,6 +4,7 @@ import { deleteCalendarEvent, createCalendarEvent } from '../../../lib/google-ca
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 import { getCurrentUser } from '../../../lib/auth/scope';
 import { canActOnSchedulingOwner } from '../../../lib/scheduling/scope';
+import { sendWhatsApp } from '../../../lib/kapso';
 
 export const prerender = false;
 
@@ -230,15 +231,10 @@ export const POST: APIRoute = async ({ request }) => {
   // Send WhatsApp notification
   if (oldBooking.invitee_whatsapp) {
     try {
-      const baseUrl = import.meta.env.SITE || 'https://www.sacscloud.com';
-      await fetch(`${baseUrl}/api/kapso/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: oldBooking.invitee_whatsapp,
-          message: `Tu reunión con SACS ha sido reagendada.\n\nNueva fecha: ${nueva_fecha}\nNueva hora: ${nueva_hora}\n${newBooking.google_meet_link ? 'Link: ' + newBooking.google_meet_link : ''}`,
-        }),
-      });
+      await sendWhatsApp(
+        oldBooking.invitee_whatsapp,
+        `Tu reunión con SACS ha sido reagendada.\n\nNueva fecha: ${nueva_fecha}\nNueva hora: ${nueva_hora}\n${newBooking.google_meet_link ? 'Link: ' + newBooking.google_meet_link : ''}`,
+      );
     } catch {}
   }
 

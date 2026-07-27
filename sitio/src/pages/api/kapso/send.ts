@@ -1,11 +1,20 @@
+// POST /api/kapso/send — envío de WhatsApp. AHORA REQUIERE sesión admin (founder/cs).
+// Antes estaba SIN auth → relay abierto (cualquiera mandaba WhatsApp a nombre de
+// SACS). Los llamadores internos (scheduling) usan sendWhatsApp() de lib/kapso.ts.
 import type { APIRoute } from 'astro';
+import { getCurrentUser } from '../../../lib/auth/scope';
 
 export const prerender = false;
 
 const KAPSO_API_KEY = (import.meta.env.KAPSO_API_KEY || '').trim();
 
 export const POST: APIRoute = async ({ request }) => {
-  const { to, message, template_name, template_params } = await request.json();
+  const user = await getCurrentUser(request);
+  if (!user || (user.role !== 'founder' && user.role !== 'cs')) {
+    return new Response(JSON.stringify({ error: 'No autorizado.' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+  }
+
+  const { to, message, template_name, template_params } = await request.json().catch(() => ({} as any));
 
   if (!to || (!message && !template_name)) {
     return new Response(JSON.stringify({ error: 'to and (message or template_name) required' }), { status: 400 });

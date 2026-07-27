@@ -4,6 +4,7 @@ import { deleteCalendarEvent } from '../../../lib/google-calendar';
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 import { getCurrentUser } from '../../../lib/auth/scope';
 import { canActOnSchedulingOwner } from '../../../lib/scheduling/scope';
+import { sendWhatsApp } from '../../../lib/kapso';
 
 export const prerender = false;
 
@@ -224,15 +225,7 @@ export const POST: APIRoute = async ({ request }) => {
         suggestionsText,
       ].join('\n');
 
-      await fetch(`${baseUrl}/api/kapso/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: booking.invitee_whatsapp,
-          message: smsMessage,
-          channel: 'whatsapp',
-        }),
-      });
+      await sendWhatsApp(booking.invitee_whatsapp, smsMessage);
     } catch { /* SMS is non-critical */ }
   }
 

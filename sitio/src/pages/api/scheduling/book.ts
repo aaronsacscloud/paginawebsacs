@@ -4,6 +4,8 @@ import { supabase } from '../../../lib/supabase';
 import { createCalendarEvent } from '../../../lib/google-calendar';
 import { fireSchedulingWebhooks } from '../../../lib/scheduling-webhooks';
 import { escapeHtml } from '../../../lib/scheduling/email-utils';
+import { sendEmail } from '../../../lib/email';
+import { sendWhatsApp } from '../../../lib/kapso';
 
 export const prerender = false;
 
@@ -558,17 +560,12 @@ export const POST: APIRoute = async ({ request }) => {
   </td></tr>
 </table>`;
 
-      // Fire-and-forget internal email send
+      // Envío interno de correo IN-PROCESS (ya no vía el endpoint HTTP público).
       try {
-        const baseUrl = import.meta.env.SITE || 'https://www.sacscloud.com';
-        await fetch(`${baseUrl}/api/email/send`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: hostEmail,
-            subject: `Nueva demo agendada: ${String(nombre || '').replace(/[\r\n]/g, ' ').slice(0, 80)} - ${String(empresa || '').replace(/[\r\n]/g, ' ').slice(0, 80)}`,
-            html: emailHtml,
-          }),
+        await sendEmail({
+          to: hostEmail,
+          subject: `Nueva demo agendada: ${String(nombre || '').replace(/[\r\n]/g, ' ').slice(0, 80)} - ${String(empresa || '').replace(/[\r\n]/g, ' ').slice(0, 80)}`,
+          html: emailHtml,
         });
       } catch (emailFetchErr) {
         console.error('Failed to send host notification email:', emailFetchErr);
@@ -721,12 +718,7 @@ export const POST: APIRoute = async ({ request }) => {
         `https://www.sacscloud.com/agendar/cancelar?token=${booking.token_cancelar}`,
       ].filter(Boolean).join('\n');
 
-      const baseUrl = import.meta.env.SITE || 'https://www.sacscloud.com';
-      await fetch(`${baseUrl}/api/kapso/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: whatsapp, message: smsMessage, channel: 'whatsapp' }),
-      });
+      await sendWhatsApp(whatsapp, smsMessage);
     } catch { /* WhatsApp confirmation is non-critical */ }
   }
 
