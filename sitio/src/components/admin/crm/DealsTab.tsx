@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useToast, Toast, logStageChange, SlaBadge, ActivityChips, KanbanSkeleton } from './crmHelpers';
-import { useIsMobile } from '../../../lib/ui/mobile';
+import { useIsMobile, useDrawerHistory } from '../../../lib/ui/mobile';
 import ActionSheet from './ui/ActionSheet';
 
 // ─── Types ───
@@ -363,6 +363,7 @@ function TableView({ deals, onSelect, onBulk }: { deals: Deal[]; onSelect: (d: D
   const [sortCol, setSortCol] = useState<string>('created_at');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [sel, setSel] = useState<Set<string>>(new Set());
+  const [confirmLost, setConfirmLost] = useState(false);
   const toggle = (id: string) => setSel(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const ids = [...sel];
   const lostStage = STAGES.find(s => isLostKey(s.id))?.id;
@@ -406,12 +407,16 @@ function TableView({ deals, onSelect, onBulk }: { deals: Deal[]; onSelect: (d: D
       {ids.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: '#1a1a1a', color: '#fff', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '0.8125rem', fontWeight: 700 }}>{ids.length} seleccionados</span>
-          {lostStage && <button onClick={() => { if (confirm(`¿Marcar ${ids.length} como perdidas?`)) runBulk({ stage: lostStage, probabilidad: 0, closed_at: new Date().toISOString() }, `${ids.length} marcadas perdidas`); }} style={dealBulkBtn}>✕ Marcar perdidas</button>}
+          {lostStage && <button onClick={() => {
+            if (!confirmLost) { setConfirmLost(true); setTimeout(() => setConfirmLost(false), 2600); return; }
+            setConfirmLost(false);
+            runBulk({ stage: lostStage, probabilidad: 0, closed_at: new Date().toISOString() }, `${ids.length} marcadas perdidas`);
+          }} style={dealBulkBtn}>{confirmLost ? `¿Seguro? marcar ${ids.length} perdidas` : '✕ Marcar perdidas'}</button>}
           <button onClick={() => setSel(new Set())} style={{ ...dealBulkBtn, background: 'transparent', border: '1px solid #555' }}>Cancelar</button>
         </div>
       )}
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+      <div className="crm-scroll-x">
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem', minWidth: 720 }}>
           <thead>
             <tr>
               <th style={{ padding: '10px 8px 10px 14px', background: '#fafafa', borderBottom: '1px solid #f0f0f0' }}><input type="checkbox" checked={allChecked} onChange={() => setSel(allChecked ? new Set() : new Set(sorted.map(d => d.id)))} /></th>
@@ -448,6 +453,8 @@ function TableView({ deals, onSelect, onBulk }: { deals: Deal[]; onSelect: (d: D
 // preset: preselecciona contacto/empresa (para crear desde el detalle del cliente).
 const money0 = (n: number) => '$' + Math.round(Number(n) || 0).toLocaleString('es-MX');
 export function CreateDealModal({ onClose, onCreated, preset }: { onClose: () => void; onCreated: () => void; preset?: { contact: ContactOption } }) {
+  const isMobile = useIsMobile();
+  useDrawerHistory(true, onClose); // atrás cierra el modal
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [contactSearch, setContactSearch] = useState(preset?.contact?.nombre || '');
@@ -535,9 +542,11 @@ export function CreateDealModal({ onClose, onCreated, preset }: { onClose: () =>
   const clienteNombre = selectedContact?.companies?.nombre || selectedContact?.nombre || '';
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 950, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.3)' }} />
-      <div style={{ position: 'relative', background: '#fff', borderRadius: 12, padding: 28, width: 500, maxWidth: '90vw', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 8px 30px rgba(0,0,0,0.12)' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 950, display: 'flex', alignItems: isMobile ? 'stretch' : 'center', justifyContent: 'center', overflow: 'auto' }}>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)' }} />
+      <div style={isMobile
+        ? { position: 'relative', background: '#fff', padding: '18px 16px calc(24px + env(safe-area-inset-bottom))', width: '100%', minHeight: '100dvh', boxSizing: 'border-box' }
+        : { position: 'relative', background: '#fff', borderRadius: 12, padding: 28, width: 500, maxWidth: '90vw', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 8px 30px rgba(0,0,0,0.12)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <span style={{ fontSize: '1.125rem', fontWeight: 800, color: '#1a1a1a' }}>Nueva oportunidad</span>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#999' }}>✕</button>
@@ -577,7 +586,7 @@ export function CreateDealModal({ onClose, onCreated, preset }: { onClose: () =>
           </>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           <div>
             <Label>Plan</Label>
             <select value={plan} onChange={e => pickPlan(e.target.value)} style={input}>
@@ -591,7 +600,7 @@ export function CreateDealModal({ onClose, onCreated, preset }: { onClose: () =>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           <div>
             <Label>Tipo de valor</Label>
             <select value={tipoValor} onChange={e => setTipoValor(e.target.value as any)} style={input}>
@@ -626,6 +635,8 @@ export function CreateDealModal({ onClose, onCreated, preset }: { onClose: () =>
 
 // ─── Deal Drawer ───
 function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose: () => void; onSaved: () => void; onRefresh: (id: string) => void }) {
+  const isMobile = useIsMobile();
+  useDrawerHistory(true, onClose); // atrás cierra el drawer del deal
   const [editStage, setEditStage] = useState(deal.stage);
   const [editPlan, setEditPlan] = useState(deal.plan || '');
   const [editValorMensual, setEditValorMensual] = useState(deal.valor_mensual);
@@ -711,16 +722,19 @@ function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', justifyContent: 'flex-end' }}>
-      <div onClick={onClose} style={{ flex: 1, background: 'rgba(0,0,0,0.3)' }} />
-      <div style={{ width: 500, maxWidth: '90vw', background: '#fff', overflowY: 'auto', boxShadow: '-4px 0 20px rgba(0,0,0,0.1)' }}>
+      {!isMobile && <div onClick={onClose} style={{ flex: 1, background: 'rgba(0,0,0,0.3)' }} />}
+      <div style={isMobile
+        ? { width: '100%', height: '100dvh', background: '#fff', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }
+        : { width: 500, maxWidth: '90vw', background: '#fff', overflowY: 'auto', boxShadow: '-4px 0 20px rgba(0,0,0,0.1)' }}>
         {/* Header */}
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
+        <div style={{ padding: isMobile ? '12px 16px' : '20px 24px', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+          {isMobile && <button aria-label="Atrás" onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem', minWidth: 44, height: 44, flexShrink: 0 }}>←</button>}
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#1a1a1a' }}>{deal.nombre}</div>
-            <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-              <span style={{ fontSize: '0.5625rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: stageColor(deal.stage) + '18', color: stageColor(deal.stage) }}>{stageLabel(deal.stage)}</span>
-              <span style={{ fontSize: '0.5625rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: '#f5f5f5', color: '#888' }}>{deal.probabilidad}%</span>
-              {deal.days_in_pipeline != null && <span style={{ fontSize: '0.5625rem', fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: '#f5f5f5', color: '#aaa' }}>{deal.days_in_pipeline}d en pipeline</span>}
+            <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: stageColor(deal.stage) + '18', color: stageColor(deal.stage) }}>{stageLabel(deal.stage)}</span>
+              <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: '#f5f5f5', color: '#888' }}>{deal.probabilidad}%</span>
+              {deal.days_in_pipeline != null && <span style={{ fontSize: '0.6875rem', fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: '#f5f5f5', color: '#aaa' }}>{deal.days_in_pipeline}d en pipeline</span>}
             </div>
           </div>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#999' }}>✕</button>
@@ -740,7 +754,7 @@ function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose
             </>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <div>
               <Label>Plan</Label>
               <select value={editPlan} onChange={e => setEditPlan(e.target.value)} style={input}>
@@ -757,7 +771,7 @@ function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             <div>
               <Label>Valor mensual</Label>
               <input type="number" value={editValorMensual} onChange={e => setEditValorMensual(parseFloat(e.target.value) || 0)} style={input} />

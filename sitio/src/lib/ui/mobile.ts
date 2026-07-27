@@ -46,10 +46,16 @@ export function isTouchDevice(): boolean {
  * próximo popstate se ignora; se autoexpira para no comerse un back legítimo.
  */
 let phantomPopUntil = 0;
+// Stack de overlays con history activo. Un solo botón atrás dispara UN popstate
+// que llega a TODOS los listeners: sin coordinación, cerraría todos los overlays
+// anidados (drawer + modal). Con el stack, solo el overlay SUPERIOR responde.
+let overlayStack: number[] = [];
+let overlaySeq = 0;
 
 export function useDrawerHistory(open: boolean, onClose: () => void) {
   const closedByPop = useRef(false);
   const pushed = useRef(false);
+  const idRef = useRef(0);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
@@ -58,12 +64,17 @@ export function useDrawerHistory(open: boolean, onClose: () => void) {
     // scroll-lock
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    // history
+    // history + registro en el stack
     closedByPop.current = false;
     pushed.current = true;
+    const myId = ++overlaySeq;
+    idRef.current = myId;
+    overlayStack.push(myId);
     try { window.history.pushState({ crmOverlay: true }, ''); } catch { pushed.current = false; }
     const onPop = () => {
       if (Date.now() < phantomPopUntil) { phantomPopUntil = 0; return; } // pop fantasma de nuestro back()
+      if (overlayStack[overlayStack.length - 1] !== myId) return;        // no soy el overlay superior
+      overlayStack.pop();
       closedByPop.current = true;
       onCloseRef.current();
     };
@@ -71,6 +82,7 @@ export function useDrawerHistory(open: boolean, onClose: () => void) {
     return () => {
       window.removeEventListener('popstate', onPop);
       document.body.style.overflow = prevOverflow;
+      overlayStack = overlayStack.filter(x => x !== myId);
       // si se cerró con ✕/backdrop (no con atrás), consumir la entrada fantasma
       if (pushed.current && !closedByPop.current) {
         phantomPopUntil = Date.now() + 400;
