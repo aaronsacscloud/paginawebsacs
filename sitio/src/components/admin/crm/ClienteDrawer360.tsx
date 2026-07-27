@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { computarSenales } from '../../../lib/crm/senales';
 import { CreateDealModal } from './DealsTab';
-import { useIsMobile, useDrawerHistory } from '../../../lib/ui/mobile';
+import { useIsMobile, useDrawerHistory, BP } from '../../../lib/ui/mobile';
 
 /* ═══ Cliente 360 — drawer ancho con pestañas, TODO editable ═══
  * Pestañas: Resumen · Cliente & SACS · Contactos · Suscripciones · Actividad.
@@ -625,13 +625,16 @@ function AccederCuenta({ account, uid, label }: { account: string; uid?: string;
   const [err, setErr] = useState('');
   async function acceder() {
     setBusy(true); setErr('');
+    // Abrir la pestaña SÍNCRONAMENTE dentro del gesto (iOS bloquea window.open
+    // tras un await); luego se le asigna la URL o se cierra si falla.
+    const w = window.open('', '_blank');
     try {
       const r = await fetch('/api/crm/sacs-impersonar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(uid ? { account, uid } : { account }) });
       const j = await r.json().catch(() => ({}));
-      if (!r.ok || !j.url) { setErr(j.error || 'No se pudo generar el acceso.'); setBusy(false); return; }
-      window.open(j.url, '_blank', 'noopener');
+      if (!r.ok || !j.url) { setErr(j.error || 'No se pudo generar el acceso.'); setBusy(false); if (w) w.close(); return; }
+      if (w) w.location.href = j.url; else window.location.href = j.url;
       setBusy(false);
-    } catch (e: any) { setErr(e?.message || 'Error'); setBusy(false); }
+    } catch (e: any) { setErr(e?.message || 'Error'); setBusy(false); if (w) w.close(); }
   }
   return (
     <div style={{ marginTop: 12 }}>
@@ -992,10 +995,11 @@ function TabReuniones({ companyId, principal, flash }: any) {
     if (principal?.nombre) params.set('nombre', principal.nombre);
     return params.toString() ? `${base}?${params.toString()}` : base;
   }
-  async function copiar(slug: string) {
+  function copiar(slug: string) {
     const url = linkAgendar(slug);
-    try { await navigator.clipboard.writeText(url); flash('Link de agendado copiado'); } catch { /* clipboard bloqueado */ }
+    // Abrir ANTES del await del clipboard para no perder el gesto (iOS).
     window.open(url, '_blank', 'noopener');
+    navigator.clipboard?.writeText(url).then(() => flash('Link copiado y abierto')).catch(() => flash('Link abierto'));
   }
 
   if (rows === null) return <div style={{ ...D.card, color: '#999', fontSize: '0.82rem' }}>Cargando reuniones…</div>;
@@ -1050,6 +1054,7 @@ function TabReuniones({ companyId, principal, flash }: any) {
 /* ─────────── 🗒️ Notas — lienzo tipo Milanote (tarjetas arrastrables) ─────────── */
 const IDEA_COLORES = ['#fff3bf', '#d3f9d8', '#d0ebff', '#ffe3e3', '#f3e8ff'];
 function TabNotas({ companyId }: any) {
+  const tight = useIsMobile(BP.tight); // <560px: lista apilada en vez de lienzo
   const [nodes, setNodes] = useState<any[] | null>(null);
   const [subiendo, setSubiendo] = useState(false);
   const [delId, setDelId] = useState('');           // confirmación de borrado en 2 toques
@@ -1137,30 +1142,37 @@ function TabNotas({ companyId }: any) {
         <button style={D.btnG} onClick={() => crear('idea', { contenido: '' })}>💡 Idea</button>
         <button style={D.btnG} disabled={subiendo} onClick={() => { fileTipo.current = 'imagen'; fileRef.current?.click(); }}>{subiendo ? 'Subiendo…' : '🖼 Imagen'}</button>
         <button style={D.btnG} disabled={subiendo} onClick={() => { fileTipo.current = 'pdf'; fileRef.current?.click(); }}>📄 PDF</button>
-        <span style={{ fontSize: '0.72rem', color: '#999', marginLeft: 'auto' }}>Arrastra las tarjetas desde su borde · se guarda solo</span>
+        <span style={{ fontSize: '0.72rem', color: '#999', marginLeft: 'auto' }}>{tight ? 'Se guarda solo' : 'Arrastra las tarjetas desde su encabezado · se guarda solo'}</span>
         <input ref={fileRef} type="file" accept="application/pdf,image/png,image/jpeg,image/webp,image/gif" style={{ display: 'none' }}
           onChange={e => { const f = e.target.files?.[0]; if (f) subirArchivo(f); e.target.value = ''; }} />
       </div>
 
-      {/* Lienzo */}
-      <div ref={lienzoRef} onPointerMove={onMove} onPointerUp={onUp}
-        style={{ position: 'relative', minHeight: minH, background: '#fbfbfd', backgroundImage: 'radial-gradient(#e4e6ec 1px, transparent 1px)', backgroundSize: '22px 22px', border: '1px solid #ececf1', borderRadius: 14, overflow: 'hidden' }}>
+      {/* Lienzo (canvas con drag) o LISTA apilada bajo 560px (sin drag) */}
+      <div ref={lienzoRef} onPointerMove={tight ? undefined : onMove} onPointerUp={tight ? undefined : onUp}
+        style={tight
+          ? { display: 'flex', flexDirection: 'column', gap: 12 }
+          : { position: 'relative', minHeight: minH, background: '#fbfbfd', backgroundImage: 'radial-gradient(#e4e6ec 1px, transparent 1px)', backgroundSize: '22px 22px', border: '1px solid #ececf1', borderRadius: 14, overflow: 'hidden' }}>
         {nodes.length === 0 && (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#b8bcc4', fontSize: '0.9rem', textAlign: 'center', padding: 30 }}>
-            Lluvia de ideas del cliente: agrega notas, la minuta de la última llamada,<br />sube su propuesta en PDF o pega capturas — y acomódalas como en un pizarrón.
+          <div style={tight
+            ? { color: '#b8bcc4', fontSize: '0.88rem', textAlign: 'center', padding: 30 }
+            : { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#b8bcc4', fontSize: '0.9rem', textAlign: 'center', padding: 30 }}>
+            Lluvia de ideas del cliente: agrega notas, la minuta de la última llamada, sube su propuesta en PDF o pega capturas.
           </div>
         )}
-        {nodes.map((n: any) => (
-          <div key={n.id} onPointerDown={e => onDown(e, n)}
-            style={{ position: 'absolute', left: Number(n.pos_x), top: Number(n.pos_y), width: Number(n.width) || 250, background: n.color || (n.tipo === 'minuta' ? '#fff' : '#fff'), border: '1px solid ' + (n.tipo === 'minuta' ? '#d8dcf0' : '#e6e8ee'), borderRadius: 10, boxShadow: '0 2px 8px rgba(16,24,40,0.08)', cursor: 'grab', userSelect: drag.current ? 'none' : 'auto' }}>
-            {/* header de la tarjeta */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 9px', borderBottom: n.tipo === 'idea' ? 'none' : '1px solid #f0f1f5', fontSize: '0.68rem', color: '#9aa0a8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        {(tight ? nodes.slice().sort((a: any, b: any) => Number(a.pos_y) - Number(b.pos_y)) : nodes).map((n: any) => (
+          <div key={n.id}
+            style={tight
+              ? { position: 'relative', width: '100%', background: n.color || '#fff', border: '1px solid ' + (n.tipo === 'minuta' ? '#d8dcf0' : '#e6e8ee'), borderRadius: 10, boxShadow: '0 1px 3px rgba(16,24,40,0.08)' }
+              : { position: 'absolute', left: Number(n.pos_x), top: Number(n.pos_y), width: Number(n.width) || 250, background: n.color || (n.tipo === 'minuta' ? '#fff' : '#fff'), border: '1px solid ' + (n.tipo === 'minuta' ? '#d8dcf0' : '#e6e8ee'), borderRadius: 10, boxShadow: '0 2px 8px rgba(16,24,40,0.08)', userSelect: drag.current ? 'none' : 'auto' }}>
+            {/* header = HANDLE de arrastre (solo aquí touch-action:none; el cuerpo scrollea) */}
+            <div onPointerDown={tight ? undefined : (e => onDown(e, n))}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 9px', borderBottom: n.tipo === 'idea' ? 'none' : '1px solid #f0f1f5', fontSize: '0.68rem', color: '#9aa0a8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', cursor: tight ? 'default' : 'grab', touchAction: tight ? 'auto' : 'none' }}>
               {n.tipo === 'nota' ? '📝 Nota' : n.tipo === 'minuta' ? '📋 Minuta' : n.tipo === 'idea' ? '💡 Idea' : n.tipo === 'imagen' ? '🖼 Imagen' : '📄 PDF'}
-              <span style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
+              <span style={{ marginLeft: 'auto', display: 'flex', gap: 2, alignItems: 'center' }} onPointerDown={e => e.stopPropagation()}>
                 {n.tipo === 'idea' && IDEA_COLORES.map(c => (
-                  <span key={c} onClick={() => guardar(n.id, { color: c }, 0)} style={{ width: 12, height: 12, borderRadius: 99, background: c, border: n.color === c ? '2px solid #666' : '1px solid #ddd', cursor: 'pointer' }} />
+                  <span key={c} onClick={() => guardar(n.id, { color: c }, 0)} style={{ width: 28, height: 28, borderRadius: 99, background: c, border: n.color === c ? '2px solid #666' : '1px solid #ddd', cursor: 'pointer', boxSizing: 'border-box', display: 'inline-block' }} />
                 ))}
-                <button onClick={() => eliminar(n.id)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: delId === n.id ? '#b93333' : '#c4c8cf', fontWeight: 800, fontSize: '0.72rem' }}>{delId === n.id ? '¿Seguro?' : '✕'}</button>
+                <button onClick={() => eliminar(n.id)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: delId === n.id ? '#b93333' : '#c4c8cf', fontWeight: 800, fontSize: '0.85rem', minWidth: 40, height: 40 }}>{delId === n.id ? '¿Seguro?' : '✕'}</button>
               </span>
             </div>
             {/* cuerpo por tipo */}
@@ -1239,11 +1251,13 @@ function TabOportunidades({ companyId, co, principal, flash, reload }: any) {
   }
   async function convertir(d: any) {
     setBusyId(d.id);
+    const w = window.open('', '_blank'); // síncrono en el gesto (iOS)
     const r = await fetch('/api/crm/deals/convertir-cotizacion', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ deal_id: d.id }) });
     const j = await r.json().catch(() => ({}));
     setBusyId('');
-    if (!r.ok || !j.url) { alert(j.error || 'No se pudo convertir a cotización.'); return; }
-    flash('Cotización creada'); window.open(j.url, '_blank', 'noopener'); cargar(); reload?.();
+    if (!r.ok || !j.url) { if (w) w.close(); flash(j.error || 'No se pudo convertir a cotización.'); return; }
+    if (w) w.location.href = j.url; else window.location.href = j.url;
+    flash('Cotización creada'); cargar(); reload?.();
   }
 
   if (deals === null) return <div style={{ ...D.card, color: '#999', fontSize: '0.82rem' }}>Cargando oportunidades…</div>;

@@ -518,7 +518,7 @@ export function CreateDealModal({ onClose, onCreated, preset }: { onClose: () =>
   const clienteNombre = selectedContact?.companies?.nombre || selectedContact?.nombre || '';
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 250, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 950, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.3)' }} />
       <div style={{ position: 'relative', background: '#fff', borderRadius: 12, padding: 28, width: 500, maxWidth: '90vw', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 8px 30px rgba(0,0,0,0.12)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
