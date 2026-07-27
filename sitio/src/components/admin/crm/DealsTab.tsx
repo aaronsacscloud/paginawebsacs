@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useToast, Toast, logStageChange, SlaBadge, ActivityChips, KanbanSkeleton } from './crmHelpers';
+import { useIsMobile } from '../../../lib/ui/mobile';
+import ActionSheet from './ui/ActionSheet';
 
 // ─── Types ───
 interface Deal {
@@ -241,18 +243,19 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
 function KanbanView({ deals, onSelect, onMove }: { deals: Deal[]; onSelect: (d: Deal) => void; onMove: (d: Deal, s: string) => void }) {
   const openStages = STAGES.filter(s => !isClosedKey(s.id));
   const closedStages = STAGES.filter(s => isClosedKey(s.id));
+  const isMobile = useIsMobile();
   const [drag, setDrag] = useState<string | null>(null);
   const [over, setOver] = useState<string | null>(null);
   const drop = (stageId: string) => { if (drag) { const d = deals.find(x => x.id === drag); if (d) onMove(d, stageId); } setDrag(null); setOver(null); };
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', minHeight: 400, paddingBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', minHeight: 400, paddingBottom: 16, scrollSnapType: isMobile ? 'x mandatory' : undefined, WebkitOverflowScrolling: 'touch' }}>
         {openStages.map(stage => {
           const items = deals.filter(d => d.stage === stage.id);
           const stageTotal = items.reduce((s, d) => s + d.valor_total, 0);
           return (
-            <div key={stage.id} style={{ minWidth: 220, flex: '1 0 220px', display: 'flex', flexDirection: 'column' }}
+            <div key={stage.id} style={{ minWidth: isMobile ? '85vw' : 220, width: isMobile ? '85vw' : undefined, flex: isMobile ? '0 0 85vw' : '1 0 220px', scrollSnapAlign: isMobile ? 'start' : undefined, display: 'flex', flexDirection: 'column' }}
               onDragOver={e => { e.preventDefault(); setOver(stage.id); }}
               onDragLeave={() => setOver(o => o === stage.id ? null : o)}
               onDrop={() => drop(stage.id)}>
@@ -276,7 +279,7 @@ function KanbanView({ deals, onSelect, onMove }: { deals: Deal[]; onSelect: (d: 
       </div>
 
       {/* Closed deals row */}
-      <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+      <div style={{ display: 'flex', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
         {closedStages.map(stage => {
           const items = deals.filter(d => d.stage === stage.id);
           return (
@@ -307,14 +310,16 @@ function KanbanView({ deals, onSelect, onMove }: { deals: Deal[]; onSelect: (d: 
 }
 
 function DealCard({ deal, onSelect, onMove, dragging, onDragStart, onDragEnd }: { deal: Deal; onSelect: (d: Deal) => void; onMove: (d: Deal, s: string) => void; dragging?: boolean; onDragStart?: () => void; onDragEnd?: () => void }) {
+  const isMobile = useIsMobile();
+  const [moveOpen, setMoveOpen] = useState(false);
   const currentIdx = STAGES.findIndex(s => s.id === deal.stage);
   const nextStages = STAGES.filter((s, i) => s.id !== deal.stage && i >= currentIdx - 1 && i <= currentIdx + 2 && !isLostKey(s.id)).slice(0, 3);
   // SLA: días en la etapa actual (o en el pipeline si no hay marca de etapa).
   const since = deal.stage_changed_at || deal.created_at;
 
   return (
-    <div draggable onDragStart={onDragStart} onDragEnd={onDragEnd}
-      onClick={() => onSelect(deal)} style={{ background: '#fff', borderRadius: 8, padding: '10px 12px', cursor: 'grab', boxShadow: dragging ? '0 4px 14px rgba(0,0,0,0.14)' : '0 1px 3px rgba(0,0,0,0.06)', fontSize: '0.8125rem', opacity: dragging ? 0.5 : 1 }}>
+    <div draggable={!isMobile} onDragStart={onDragStart} onDragEnd={onDragEnd}
+      onClick={() => onSelect(deal)} style={{ background: '#fff', borderRadius: 8, padding: '10px 12px', cursor: isMobile ? 'default' : 'grab', boxShadow: dragging ? '0 4px 14px rgba(0,0,0,0.14)' : '0 1px 3px rgba(0,0,0,0.06)', fontSize: '0.8125rem', opacity: dragging ? 0.5 : 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <div style={{ fontWeight: 700, color: '#1a1a1a', marginBottom: 2, flex: 1, minWidth: 0 }}>{deal.nombre}</div>
         <SlaBadge since={since} umbralAmbar={10} umbralRojo={30} label="en etapa" />
@@ -324,19 +329,31 @@ function DealCard({ deal, onSelect, onMove, dragging, onDragStart, onDragEnd }: 
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
         <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1a1a1a' }}>{fmt(deal.valor_total)}</span>
-        <span style={{ fontSize: '0.5625rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: stageColor(deal.stage) + '18', color: stageColor(deal.stage) }}>
+        <span style={{ fontSize: '0.6875rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: stageColor(deal.stage) + '18', color: stageColor(deal.stage) }}>
           {deal.probabilidad}%
         </span>
       </div>
-      {/* Quick move buttons (además del drag & drop) */}
-      <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' as const }}>
-        {nextStages.map(s => (
+      {/* Mover: botón principal (ActionSheet con TODAS las etapas — funciona en
+          touch donde el drag no) + quick-moves de atajo (≥12px, ≥32px). */}
+      <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' as const, alignItems: 'center' }}>
+        <button onClick={e => { e.stopPropagation(); setMoveOpen(true); }}
+          style={{ minHeight: 32, padding: '4px 10px', borderRadius: 8, border: '1px solid #e0e0e0', background: '#fbfbfd', color: '#555', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.74rem', fontWeight: 700 }}>
+          ⇄ Mover
+        </button>
+        {!isMobile && nextStages.map(s => (
           <button key={s.id} onClick={e => { e.stopPropagation(); onMove(deal, s.id); }}
-            style={{ fontSize: '0.5rem', padding: '2px 5px', borderRadius: 4, border: '1px solid #e0e0e0', background: '#fafafa', color: '#888', cursor: 'pointer', fontFamily: 'inherit' }}>
+            style={{ fontSize: '0.75rem', minHeight: 32, padding: '4px 8px', borderRadius: 6, border: '1px solid #e0e0e0', background: '#fafafa', color: '#777', cursor: 'pointer', fontFamily: 'inherit' }}>
             → {s.label}
           </button>
         ))}
       </div>
+      <ActionSheet open={moveOpen} onClose={() => setMoveOpen(false)} title="Mover a…"
+        items={STAGES.map(s => ({
+          label: s.label,
+          icon: <span style={{ width: 10, height: 10, borderRadius: 3, background: s.color, display: 'inline-block' }} />,
+          active: s.id === deal.stage,
+          onClick: () => onMove(deal, s.id),
+        }))} />
     </div>
   );
 }

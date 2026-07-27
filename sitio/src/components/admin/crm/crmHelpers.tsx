@@ -3,6 +3,7 @@
 // etapa. Se usan en Leads / Oportunidades / Clientes para que las 3 vistas se
 // comporten igual.
 import { useState, useCallback } from 'react';
+import { useIsMobile } from '../../../lib/ui/mobile';
 
 // ─── Toast propio del componente (no depende de nada global) ───
 export type ToastKind = 'ok' | 'error' | 'info';
@@ -74,10 +75,11 @@ export async function logStageChange(opts: {
 
 // ─── Skeleton de carga para vistas kanban ───
 export function KanbanSkeleton({ cols = 4 }: { cols?: number }) {
+  const isMobile = useIsMobile();
   return (
     <div style={{ display: 'flex', gap: 12, overflow: 'hidden' }}>
       {Array.from({ length: cols }).map((_, i) => (
-        <div key={i} style={{ minWidth: 244, flex: '1 0 244px', background: '#f7f8fa', borderRadius: 10, padding: 8, border: '1px solid #eee' }}>
+        <div key={i} style={{ minWidth: isMobile ? '85vw' : 244, flex: isMobile ? '0 0 85vw' : '1 0 244px', background: '#f7f8fa', borderRadius: 10, padding: 8, border: '1px solid #eee' }}>
           <div style={{ height: 14, width: '55%', background: '#ececec', borderRadius: 6, margin: '4px 6px 12px' }} />
           {Array.from({ length: 3 - (i % 2) }).map((__, j) => (
             <div key={j} style={{ background: '#fff', border: '1px solid #eee', borderRadius: 8, padding: 10, marginBottom: 8 }}>
