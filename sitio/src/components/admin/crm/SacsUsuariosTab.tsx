@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Server, RefreshCw, ShieldCheck, User, LogIn } from 'lucide-react';
 import TablaEnterprise, { type ColDef, type QuickDef, type VistaDef } from './TablaEnterprise';
+import { useIsMobile } from '../../../lib/ui/mobile';
 
 /* ═══ Sección SACS — usuarios reales de cada cuenta SACS ═══
  * Correo, nombre, grupo de usuario y último acceso (día + hora), sobre el
@@ -34,6 +35,7 @@ function haceCuanto(ms: number): string {
 }
 
 export default function SacsUsuariosTab() {
+  const isMobile = useIsMobile();
   const [cuentas, setCuentas] = useState<{ sacs_account: string; nombre: string }[]>([]);
   const [account, setAccount] = useState('');
   const [usuarios, setUsuarios] = useState<any[]>([]);
@@ -145,7 +147,7 @@ export default function SacsUsuariosTab() {
 
   return (
     <div style={{ padding: '4px 12px 28px' }}>
-      <style>{`.ct360 tbody tr:hover td { background: #f7f9fc; } .spin { animation: sacsspin 0.8s linear infinite; } @keyframes sacsspin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`.ct360 tbody tr:hover td { background: #f7f9fc; } @media (hover: none) { .ct360 tbody tr:active td { background: #f7f9fc; } } .spin { animation: sacsspin 0.8s linear infinite; } @keyframes sacsspin { to { transform: rotate(360deg); } }`}</style>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <div style={{ width: 40, height: 40, borderRadius: 12, background: '#eef2fe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -156,7 +158,7 @@ export default function SacsUsuariosTab() {
           <div style={{ fontSize: '0.8rem', color: '#8a8f98' }}>Las personas con acceso a cada cuenta SACS, su grupo y último acceso.</div>
         </div>
         <select value={account} onChange={e => setAccount(e.target.value)}
-          style={{ height: 40, padding: '0 12px', border: '1px solid #e2e4e9', borderRadius: 10, fontSize: '0.85rem', fontWeight: 700, minWidth: 220, background: '#fff' }}>
+          style={{ height: isMobile ? 44 : 40, padding: '0 12px', border: '1px solid #e2e4e9', borderRadius: 10, fontSize: '0.85rem', fontWeight: 700, minWidth: 220, background: '#fff', ...(isMobile ? { width: '100%', flex: '1 1 100%', order: 3 } : {}) }}>
           {!cuentas.length && <option value="">Cargando cuentas…</option>}
           {cuentas.map(c => <option key={c.sacs_account} value={c.sacs_account}>{c.sacs_account}{c.nombre && c.nombre !== c.sacs_account ? ` — ${c.nombre}` : ''}</option>)}
         </select>
@@ -197,6 +199,34 @@ export default function SacsUsuariosTab() {
             searchText={u => [u.nombre, u.email, u.grupo_nombre].filter(Boolean).join(' ')}
             searchPlaceholder="Buscar usuario, correo o grupo…"
             minWidth={980}
+            mobileCard={(u: any) => { const f = fmtLogin(u.ultimo_login); const dias = f.ms ? Math.floor((Date.now() - f.ms) / 86400000) : 999; return (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ width: 36, height: 36, borderRadius: 99, background: '#eef2fe', color: '#4B7BE5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 800, fontSize: '0.85rem' }}>
+                    {(u.nombre || u.email || '?').trim().charAt(0).toUpperCase()}
+                  </span>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {u.nombre || u.email}{u.es_admin ? <span style={{ ...badge, background: '#f1effd', color: '#6C5CE7', marginLeft: 6 }}>admin</span> : null}
+                    </div>
+                    <div style={{ fontSize: '0.74rem', color: '#8a8f98', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email || 'sin correo'} · <span style={{ color: '#9aa0a8' }}>{account}</span></div>
+                  </div>
+                  {u.activo ? <span style={{ ...badge, background: '#e6f6f2', color: '#1A8F7A' }}>Activo</span> : <span style={{ ...badge, background: '#f3f4f6', color: '#98999c' }}>Inactivo</span>}
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 8 }}>
+                  {u.grupo_nombre && <span style={{ ...badge, background: '#eef2f7', color: '#475569' }}>{u.grupo_nombre}</span>}
+                  <span style={{ fontSize: '0.74rem', color: f.dia ? (dias > 30 ? '#b93333' : dias > 7 ? '#a06600' : '#9aa0a8') : '#c4c8cf' }}>
+                    {f.dia ? `${f.dia} · ${haceCuanto(f.ms)}` : 'sin acceso registrado'}
+                  </span>
+                  <span onClick={e => e.stopPropagation()} style={{ marginLeft: 'auto' }}>
+                    <button onClick={() => entrar(u)} disabled={entrando === u.uid || !u.activo}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44, padding: '0 16px', border: '1px solid #d7dbe6', borderRadius: 10, background: u.activo ? '#fff' : '#f6f7f9', color: u.activo ? '#1a1a1a' : '#b9bcc2', fontSize: '0.8rem', fontWeight: 700, cursor: u.activo ? 'pointer' : 'not-allowed' }}>
+                      <LogIn size={14} strokeWidth={2.4} /> {entrando === u.uid ? '…' : 'Entrar'}
+                    </button>
+                  </span>
+                </div>
+              </div>
+            ); }}
             emptyMsg={account ? 'Esta cuenta no tiene usuarios (o SACS no respondió).' : 'Elige una cuenta.'}
           />
         )}

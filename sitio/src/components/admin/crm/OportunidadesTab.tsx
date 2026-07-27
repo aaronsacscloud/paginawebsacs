@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { TrendingUp, AlertTriangle, Target, DollarSign } from 'lucide-react';
 import TablaEnterprise, { type ColDef, type QuickDef, type VistaDef } from './TablaEnterprise';
 import ClienteDrawer360 from './ClienteDrawer360';
+import HealthScoreBadge from './HealthScoreBadge';
 import { SENAL_LABEL } from '../../../lib/crm/senales';
 
 /* ═══ Oportunidades — todos los clientes con una señal de venta o riesgo ═══
@@ -96,7 +97,7 @@ export default function OportunidadesTab() {
 
   return (
     <div style={{ padding: '4px 12px 28px' }}>
-      <style>{`.ct360 tbody tr:hover td { background: #f7f9fc; }`}</style>
+      <style>{`.ct360 tbody tr:hover td { background: #f7f9fc; } @media (hover: none) { .ct360 tbody tr:active td { background: #f7f9fc; } }`}</style>
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#16181d' }}>Radar de ventas</div>
         <div style={{ fontSize: '0.8rem', color: '#8a8f98' }}>Clientes con una señal real de venta (upsell/cross-sell) o de riesgo — para saber a quién ofrecerle qué.</div>
@@ -129,6 +130,30 @@ export default function OportunidadesTab() {
             searchPlaceholder="Buscar cliente o señal…"
             onRowClick={c => setDetailId(c.company_id)}
             minWidth={980}
+            mobileCard={(c: any) => (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.92rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nombre}</div>
+                    {c.sacs_account && c.sacs_account !== c.nombre && <div style={{ fontSize: '0.74rem', color: '#8a8f98', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.sacs_account}</div>}
+                  </div>
+                  {c.health_score != null && <HealthScoreBadge score={c.health_score} factors={c.health_factors} size="sm" />}
+                  <span style={{ color: '#c4c8cf', fontSize: '1.1rem' }}>›</span>
+                </div>
+                {/* Señal principal: la columna clave — texto COMPLETO, sin truncar */}
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginTop: 10, padding: '10px 12px', borderRadius: 10, background: c.top_nivel === 'riesgo' ? '#fdf0ee' : '#eefaf6' }}>
+                  <span style={{ fontSize: '1rem', lineHeight: 1.2, flexShrink: 0 }}>{c.top_nivel === 'riesgo' ? '⚠️' : '📈'}</span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: c.top_nivel === 'riesgo' ? '#b93333' : '#1A8F7A', whiteSpace: 'normal' }}>{c.top_titulo}</div>
+                    {c.top_accion && <div style={{ fontSize: '0.76rem', color: '#5b616e', whiteSpace: 'normal', marginTop: 2 }}>{c.top_accion}</div>}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 8 }}>
+                  <span style={{ ...T.badge, background: c.top_nivel === 'riesgo' ? '#fdecea' : '#e6f6f2', color: c.top_nivel === 'riesgo' ? '#b93333' : '#1A8F7A' }}>{SENAL_LABEL[c.top_tipo] || c.top_tipo}</span>
+                  <span style={{ fontWeight: 800, fontSize: '0.9rem', marginLeft: 'auto' }}>{money(c.mrr)} <span style={{ fontSize: '0.7rem', color: '#9aa0a8', fontWeight: 600 }}>MRR</span></span>
+                </div>
+              </div>
+            )}
             emptyMsg="Sin señales por ahora — o falta sincronizar la actividad de SACS."
           />
         )}

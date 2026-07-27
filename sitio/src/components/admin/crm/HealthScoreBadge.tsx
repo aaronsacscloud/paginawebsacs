@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { HEALTH_FACTOR_LABELS, HEALTH_FACTOR_MAX } from '../../../lib/crm/health';
 
 // Formato LEGACY (fórmula v1, aún guardado en companies no re-sincronizadas):
@@ -16,7 +16,36 @@ interface Props {
 
 export default function HealthScoreBadge({ score, factors, computed_at, size = 'md' }: Props) {
   const [showTooltip, setShowTooltip] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
   const s = typeof score === 'number' ? score : null;
+
+  // Cerrar al tocar fuera (móvil: no hay mouseleave). Solo mientras está abierto.
+  useEffect(() => {
+    if (!showTooltip) return;
+    const onDoc = (e: Event) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setShowTooltip(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('touchstart', onDoc);
+    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('touchstart', onDoc); };
+  }, [showTooltip]);
+
+  // Clamp del popover al viewport: si se sale por la derecha (card pegada al
+  // borde) lo corremos a la izquierda; si entonces se sale por la izquierda, lo
+  // pineamos al margen. Imperativo para no re-renderizar en bucle.
+  useLayoutEffect(() => {
+    const pop = popRef.current;
+    if (!showTooltip || !pop) return;
+    const margin = 8;
+    pop.style.left = '0px'; pop.style.right = 'auto';
+    let rect = pop.getBoundingClientRect();
+    if (rect.right > window.innerWidth - margin) {
+      pop.style.left = `${-(rect.right - (window.innerWidth - margin))}px`;
+      rect = pop.getBoundingClientRect();
+    }
+    if (rect.left < margin) pop.style.left = `${parseFloat(pop.style.left || '0') + (margin - rect.left)}px`;
+  }, [showTooltip]);
   const dim = size === 'lg' ? 56 : size === 'sm' ? 32 : 44;
   const fontSize = size === 'lg' ? '1.125rem' : size === 'sm' ? '0.75rem' : '0.9375rem';
 
@@ -34,15 +63,19 @@ export default function HealthScoreBadge({ score, factors, computed_at, size = '
   const label = s >= 70 ? 'Saludable' : s >= 40 ? 'Atención' : 'En riesgo';
 
   return (
-    <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 8 }} onMouseEnter={() => setShowTooltip(true)} onMouseLeave={() => setShowTooltip(false)}>
-      <div style={{
-        width: dim, height: dim, borderRadius: '50%',
-        background: bg,
-        border: `2px solid ${color}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color, fontSize, fontWeight: 800,
-        cursor: 'help',
-      }}>
+    <div ref={wrapRef} style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+      onPointerEnter={e => { if (e.pointerType === 'mouse') setShowTooltip(true); }}
+      onPointerLeave={e => { if (e.pointerType === 'mouse') setShowTooltip(false); }}>
+      <div
+        onClick={(e) => { e.stopPropagation(); setShowTooltip(v => !v); }}
+        style={{
+          width: dim, height: dim, borderRadius: '50%',
+          background: bg,
+          border: `2px solid ${color}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color, fontSize, fontWeight: 800,
+          cursor: 'pointer', flexShrink: 0,
+        }}>
         {s}
       </div>
       <div>
@@ -51,12 +84,12 @@ export default function HealthScoreBadge({ score, factors, computed_at, size = '
       </div>
 
       {showTooltip && factors && (
-        <div style={{
+        <div ref={popRef} onClick={(e) => e.stopPropagation()} style={{
           position: 'absolute', top: dim + 8, left: 0,
           background: '#1a1a1a', color: '#fff',
-          borderRadius: 8, padding: 12, minWidth: 260,
+          borderRadius: 8, padding: 12, width: 260, maxWidth: 'calc(100vw - 16px)',
           boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-          zIndex: 100,
+          zIndex: 600,
           fontSize: '0.75rem',
         }}>
           <div style={{ fontSize: '0.6875rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8, fontWeight: 600 }}>Desglose</div>
