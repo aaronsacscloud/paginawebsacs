@@ -551,6 +551,8 @@ const CRM_MOBILE_CSS = `
     input, select, textarea { font-size: 16px !important; }
     /* Toasts y bottom-fixed respetando el notch/home-indicator */
     .crm-toast-bottom { bottom: calc(16px + env(safe-area-inset-bottom)) !important; }
+    /* Filas de menús/dropdowns con target táctil en mobile */
+    .te-item { min-height: 48px !important; }
   }
   /* Grids de 2 columnas (opt-in): colapsan a 1 col en teléfonos angostos */
   @media (max-width: 560px) {

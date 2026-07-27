@@ -9,6 +9,8 @@ import { useToast, Toast, logStageChange } from './crmHelpers';
 import EnriquecerWhatsApp from './EnriquecerWhatsApp';
 import RevisarRelaciones from './RevisarRelaciones';
 import { SENAL_LABEL } from '../../../lib/crm/senales';
+import { useIsMobile } from '../../../lib/ui/mobile';
+import HealthScoreBadge from './HealthScoreBadge';
 
 /* ═══ Clientes REALES — primer datatable sobre el estándar TablaEnterprise ═══
  * (proyecto "Datatables Enterprise", estilo HubSpot: filtros → buscador → tabs
@@ -77,6 +79,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   const [modo, setModo] = useState<'tabla' | 'kanban'>('tabla');
   const [stages, setStages] = useState<{ key: string; label: string; color: string }[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
   const { toast, show } = useToast();
 
   // Cierra "Más acciones" con click fuera o Escape.
@@ -356,7 +359,45 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           searchText={c => [c.nombre, c.sacs_account, c.contacto?.nombre, c.contacto?.email, c.contacto?.whatsapp].filter(Boolean).join(' ')}
           searchPlaceholder="Buscar cliente, cuenta o contacto…"
           minWidth={1100}
-          onRowClick={c => setDetailId(c.id)}
+          onRowClick={c => { if (editId !== c.id) setDetailId(c.id); }}
+          mobileCard={(c: any) => (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.92rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.contacto?.nombre || c.nombre}</div>
+                  {(c.sacs_account || c.nombre) && <div style={{ fontSize: '0.74rem', color: '#8a8f98', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.sacs_account || c.nombre}</div>}
+                </div>
+                {c.health_score != null && <HealthScoreBadge score={c.health_score} factors={c.health_factors} size="sm" />}
+                <span style={{ color: '#c4c8cf', fontSize: '1.1rem' }}>›</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 8 }}>
+                <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>{c.vitalicia ? <span style={{ ...T.badge, background: '#f1effd', color: '#6C5CE7' }}>Vitalicia</span> : `${money(c.arr)} ARR`}</span>
+                {c.plan && PLAN_BADGE[c.plan] && <span style={{ ...T.badge, background: PLAN_BADGE[c.plan].bg, color: PLAN_BADGE[c.plan].color }}>{PLAN_BADGE[c.plan].label}</span>}
+                {c.proxima_factura && <span style={{ fontSize: '0.72rem', color: c.proxima_factura < new Date().toISOString().slice(0, 10) ? '#b93333' : '#9aa0a8' }}>renov {fmtDate(c.proxima_factura)}</span>}
+                {c.senal_tipo && <span style={{ ...T.badge, background: c.senal_nivel === 'riesgo' ? '#fdecea' : '#e6f6f2', color: c.senal_nivel === 'riesgo' ? '#b93333' : '#1A8F7A' }}>{SENAL_LABEL[c.senal_tipo] || c.senal_tipo}</span>}
+              </div>
+              {/* Contacto + edición inline (targets ≥44px) */}
+              <div onClick={e => e.stopPropagation()} style={{ marginTop: 8 }}>
+                {editId === c.id ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <input value={eEmail} onChange={e => setEEmail(e.target.value)} placeholder="correo@…" style={{ ...S.input, height: 44 }} />
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <input value={eWa} onChange={e => setEWa(e.target.value)} placeholder="+52…" style={{ ...S.input, height: 44, flex: 1, minWidth: 0 }} />
+                      <button disabled={saving} onClick={() => saveEdit(c)} style={{ ...S.btnSmall, minWidth: 44, height: 44, color: '#1A8F7A', fontWeight: 800 }}>{saving ? '…' : '✓'}</button>
+                      <button onClick={() => setEditId(null)} style={{ ...S.btnSmall, minWidth: 44, height: 44 }}>✕</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: '0.76rem', color: c.contacto?.email ? '#666' : '#c62828', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {c.contacto?.email || c.contacto?.whatsapp || (c.contacto ? '—' : 'sin contacto')}
+                    </span>
+                    <button onClick={() => startEdit(c)} style={{ ...S.btnSmall, minWidth: 44, height: 44, border: 'none', background: 'none' }}>✏️</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           customBody={modo === 'kanban' ? ((rows: any[]) => (
             stages.length === 0
               ? <div style={{ padding: 28, textAlign: 'center', color: '#999' }}>Configura las etapas del pipeline de Clientes en <b>Configuración → Pipelines</b>.</div>
@@ -389,13 +430,16 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 36, padding: '0 14px', border: '1px solid #e2e4e9', borderRadius: 10, background: menuOpen ? '#f7f8fa' : '#fff', color: '#333', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>
                 Más acciones <ChevronDown size={14} strokeWidth={2} style={{ transform: menuOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
               </button>
+              {menuOpen && isMobile && <div onClick={() => setMenuOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.42)', zIndex: 949 }} />}
               {menuOpen && (
-                <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', width: 236, background: '#fff', border: '1px solid #e9eaee', borderRadius: 14, boxShadow: '0 4px 6px -2px rgba(16,24,40,0.05), 0 12px 24px -4px rgba(16,24,40,0.12)', padding: 6, zIndex: 50 }}>
-                  <RevisarRelaciones onDone={load} trigger={open => (
-                    <button className="te-item" style={T.menuItem} onClick={() => { setMenuOpen(false); open(); }}><Link2 size={15} color="#8a8f98" /> Revisar relaciones</button>
+                <div style={isMobile
+                  ? { position: 'fixed', left: 0, right: 0, bottom: 0, background: '#fff', borderRadius: '16px 16px 0 0', boxShadow: '0 -8px 30px rgba(0,0,0,0.18)', padding: '8px 8px calc(12px + env(safe-area-inset-bottom))', zIndex: 950 }
+                  : { position: 'absolute', right: 0, top: 'calc(100% + 6px)', width: 236, background: '#fff', border: '1px solid #e9eaee', borderRadius: 14, boxShadow: '0 4px 6px -2px rgba(16,24,40,0.05), 0 12px 24px -4px rgba(16,24,40,0.12)', padding: 6, zIndex: 50 }}>
+                  <RevisarRelaciones onDone={() => { setMenuOpen(false); load(); }} trigger={open => (
+                    <button className="te-item" style={T.menuItem} onClick={open}><Link2 size={15} color="#8a8f98" /> Revisar relaciones</button>
                   )} />
-                  <EnriquecerWhatsApp onDone={load} trigger={open => (
-                    <button className="te-item" style={T.menuItem} onClick={() => { setMenuOpen(false); open(); }}><MessageCircle size={15} color="#8a8f98" /> Enriquecer WhatsApp</button>
+                  <EnriquecerWhatsApp onDone={() => { setMenuOpen(false); load(); }} trigger={open => (
+                    <button className="te-item" style={T.menuItem} onClick={open}><MessageCircle size={15} color="#8a8f98" /> Enriquecer WhatsApp</button>
                   )} />
                   <div style={{ height: 1, background: '#f1f2f5', margin: '6px 4px' }} />
                   <a className="te-item" style={T.menuItem} href="/api/crm/arr/export-clientes" onClick={() => setMenuOpen(false)}><Download size={15} color="#8a8f98" /> Exportar clientes</a>
