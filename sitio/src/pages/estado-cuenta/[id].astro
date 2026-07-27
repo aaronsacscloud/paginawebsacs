@@ -11,7 +11,7 @@ const { id } = Astro.params;
 
 const { data: sub } = await supabase
   .from('subscriptions')
-  .select('id, nombre_plan, ciclo, precio, monto_proximo, fecha_inicio, proxima_factura, estado, company_id, contact_id')
+  .select('id, nombre_plan, ciclo, precio, monto_proximo, fecha_inicio, proxima_factura, estado, company_id, contact_id, pp_monto, pp_pct, pp_expira_at')
   .eq('id', id)
   .single();
 
@@ -57,6 +57,13 @@ const periodicidad = sub.ciclo === 'anual' ? 'cada año' : sub.ciclo === 'vitali
 const montoPagar = Number(sub.monto_proximo ?? sub.precio) || 0;
 const esRecurrente = sub.ciclo !== 'vitalicia';
 const vencida = !!(sub.proxima_factura && String(sub.proxima_factura).slice(0, 10) < new Date().toISOString().slice(0, 10) && sub.estado !== 'cancelada');
+
+// Oferta de PRONTO PAGO (persistida en la sub, no manipulable por el cliente).
+const ppExpiraMs = sub.pp_expira_at ? new Date(sub.pp_expira_at).getTime() : 0;
+const ofertaValida = esRecurrente && sub.pp_monto != null && ppExpiraMs > Date.now();
+const ppMonto = Number(sub.pp_monto) || 0;
+const ppPct = Number(sub.pp_pct) || 0;
+const ahorro = Math.max(0, montoPagar - ppMonto);
 
 const ESTADO: Record<string, { label: string; bg: string; color: string }> = {
   activa: { label: 'Activa', bg: '#e6f6f2', color: '#1A8F7A' },
@@ -145,6 +152,23 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
     .foot { padding: 22px 40px 30px; color: var(--muted); font-size: 0.76rem; line-height: 1.7; }
     .foot .brand { color: var(--ink); font-weight: 800; }
     .note { font-size: 0.8rem; color: var(--muted); margin-top: 12px; }
+    /* Oferta de pronto pago — destacada, acento ámbar de urgencia */
+    .oferta { background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border: 1px solid #fdba74; border-radius: 14px; padding: 20px 22px; }
+    .oferta-tag { display: inline-block; background: #b45309; color: #fff; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.04em; padding: 5px 12px; border-radius: 999px; margin-bottom: 14px; }
+    .oferta-grid { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+    .oferta-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #9a6a2e; margin-bottom: 5px; }
+    .oferta-amount { display: flex; align-items: baseline; gap: 12px; }
+    .pp-now { font-size: 2.4rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1; color: #7c2d12; }
+    .pp-orig { font-size: 1.1rem; color: #b0836a; text-decoration: line-through; font-weight: 600; }
+    .pp-ahorro { margin-top: 7px; font-size: 0.9rem; font-weight: 800; color: #15803d; }
+    .pp-timer-wrap { text-align: right; }
+    .pp-timer { font-size: 1.55rem; font-weight: 800; color: #9a3412; letter-spacing: 0.01em; }
+    .pp-timer-sub { font-size: 0.72rem; color: #9a6a2e; margin-top: 3px; }
+    @media (max-width: 560px) {
+      .oferta-grid { flex-direction: column; align-items: flex-start; }
+      .pp-timer-wrap { text-align: left; }
+      .pp-now { font-size: 2rem; }
+    }
     @media (max-width: 560px) {
       .doc-head, .section, .foot { padding-left: 22px; padding-right: 22px; }
       .grid2 { grid-template-columns: 1fr; gap: 16px; }
@@ -207,18 +231,44 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
 
     {esRecurrente && (
       <div class="section">
-        <div class="label" style="margin-bottom:12px">Tu próximo pago</div>
-        <div class="highlight">
-          <div>
-            <div class="amount num">{money(montoPagar)}</div>
-            <div class="per">{periodicidad ? `${cicloLabel} · se cobra ${periodicidad}` : cicloLabel}</div>
+        {ofertaValida && (
+          <div id="pp-oferta">
+            <div class="oferta">
+              <div class="oferta-tag">🎉 Descuento por pronto pago · ahorra {ppPct}%</div>
+              <div class="oferta-grid">
+                <div>
+                  <div class="oferta-label">Paga ahora y tu {cicloLabel.toLowerCase()} baja a</div>
+                  <div class="oferta-amount">
+                    <span class="num pp-now">{money(ppMonto)}</span>
+                    <span class="num pp-orig">{money(montoPagar)}</span>
+                  </div>
+                  <div class="pp-ahorro num">Ahorras {money(ahorro)}</div>
+                </div>
+                <div class="pp-timer-wrap">
+                  <div class="oferta-label" style="color:#8a3b00">Esta oferta termina en</div>
+                  <div class="pp-timer num" id="pp-timer" data-exp={String(ppExpiraMs)}>—</div>
+                  <div class="pp-timer-sub">Después vuelve a {money(montoPagar)}</div>
+                </div>
+              </div>
+            </div>
+            <div class="note">Tu fecha de pago programada es el <b>{fmtFecha(sub.proxima_factura)}</b>. Aprovecha el descuento pagando antes de que termine el contador.</div>
           </div>
-          <div class="when">
-            <div class="label">{vencida ? 'Fecha de pago (vencida)' : 'Fecha del próximo pago'}</div>
-            <div class="d" style={vencida ? 'color:#b93333' : ''}>{fmtFecha(sub.proxima_factura)}</div>
+        )}
+
+        <div id="pp-regular" style={ofertaValida ? 'display:none' : ''}>
+          <div class="label" style="margin-bottom:12px">Tu próximo pago</div>
+          <div class="highlight">
+            <div>
+              <div class="amount num">{money(montoPagar)}</div>
+              <div class="per">{periodicidad ? `${cicloLabel} · se cobra ${periodicidad}` : cicloLabel}</div>
+            </div>
+            <div class="when">
+              <div class="label">{vencida ? 'Fecha de pago (vencida)' : 'Fecha del próximo pago'}</div>
+              <div class="d" style={vencida ? 'color:#b93333' : ''}>{fmtFecha(sub.proxima_factura)}</div>
+            </div>
           </div>
+          {vencida && <div class="note" style="color:#b93333">Este pago está vencido. Realiza tu pago para mantener tu servicio activo sin interrupciones.</div>}
         </div>
-        {vencida && <div class="note" style="color:#b93333">Este pago está vencido. Realiza tu pago para mantener tu servicio activo sin interrupciones.</div>}
       </div>
     )}
 
@@ -256,6 +306,28 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
   </div>
 
   <script>
+    // Countdown de la oferta pronto pago. Al llegar a 0, oculta la oferta y
+    // revela el precio regular (el precio con descuento NUNCA se cobra tarde).
+    (function () {
+      var el = document.getElementById('pp-timer');
+      if (!el) return;
+      var exp = Number(el.getAttribute('data-exp'));
+      function two(n) { return String(n).padStart(2, '0'); }
+      function tick() {
+        var ms = exp - Date.now();
+        if (ms <= 0) {
+          var of = document.getElementById('pp-oferta'); if (of) of.style.display = 'none';
+          var reg = document.getElementById('pp-regular'); if (reg) reg.style.display = '';
+          return;
+        }
+        var s = Math.floor(ms / 1000);
+        var d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+        el.textContent = (d > 0 ? d + 'd ' : '') + two(h) + 'h ' + two(m) + 'm ' + two(ss) + 's';
+        setTimeout(tick, 1000);
+      }
+      tick();
+    })();
+
     document.getElementById('download-pdf')?.addEventListener('click', () => window.print());
     document.getElementById('copy-link')?.addEventListener('click', async (e) => {
       const btn = e.currentTarget as HTMLButtonElement;

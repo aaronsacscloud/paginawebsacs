@@ -83,14 +83,9 @@ export default function SubscriptionsTab() {
   const [editSub, setEditSub] = useState<Sub | null>(null);
   const [pagoPrefill, setPagoPrefill] = useState<{ subscription_id?: string; fecha?: string } | null>(null);
 
-  // Link formal para el cliente: estado de su suscripción (plan, monto, próxima
-  // fecha) + PDF. La llave del link es el id (UUID) de la suscripción. Abrimos la
-  // página (que trae "Descargar PDF") y copiamos el link para enviarlo rápido.
-  function linkCliente(s: Sub) {
-    const url = `${window.location.origin}/estado-cuenta/${s.id}`;
-    window.open(url, '_blank', 'noopener'); // sync dentro del click (iOS)
-    try { navigator.clipboard?.writeText(url); } catch { /* clipboard puede fallar sin https */ }
-  }
+  // Link formal para el cliente (estado de suscripción + PDF), con opción de
+  // descuento pronto pago con timer. El modal maneja copiar/abrir y la oferta.
+  const [linkSub, setLinkSub] = useState<Sub | null>(null);
   const [fCiclo, setFCiclo] = useState('');
   const [fEstado, setFEstado] = useState('');
   const [fPlan, setFPlan] = useState('');
@@ -296,7 +291,7 @@ export default function SubscriptionsTab() {
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {h != null && <span style={{ fontWeight: 800, color: h >= 70 ? '#1A8F7A' : h >= 40 ? '#a06600' : '#b93333', fontSize: '0.82rem' }} title="Salud">♥ {h}</span>}
-                        <button style={{ ...S.btnSmall, minHeight: 44, padding: '0 12px' }} title="Genera un link formal para el cliente (plan, monto y próxima fecha) + PDF" onClick={e => { e.stopPropagation(); linkCliente(s); }}>🔗 Link</button>
+                        <button style={{ ...S.btnSmall, minHeight: 44, padding: '0 12px' }} title="Genera un link formal para el cliente (plan, monto y próxima fecha) + PDF" onClick={e => { e.stopPropagation(); setLinkSub(s); }}>🔗 Link</button>
                         <button style={{ ...S.btnSmall, minHeight: 44, padding: '0 14px' }} onClick={e => { e.stopPropagation(); setEditSub(s); }}>Editar</button>
                       </div>
                     </div>
@@ -353,7 +348,7 @@ export default function SubscriptionsTab() {
                       </td>
                       <td style={S.td}>{(() => { const h = (s.companies as any)?.health_score; if (h == null) return '—'; const c = h >= 70 ? '#1A8F7A' : h >= 40 ? '#a06600' : '#b93333'; return <span style={{ fontWeight: 800, color: c }}>{h}</span>; })()}</td>
                       <td style={S.td} onClick={e => e.stopPropagation()}>
-                        <button style={{ ...S.btnSmall, marginRight: 4 }} title="Genera un link formal para el cliente (plan, monto y próxima fecha) + PDF" onClick={() => linkCliente(s)}>🔗 Link</button>
+                        <button style={{ ...S.btnSmall, marginRight: 4 }} title="Genera un link formal para el cliente (plan, monto y próxima fecha) + PDF, con opción de descuento pronto pago" onClick={() => setLinkSub(s)}>🔗 Link</button>
                         <button style={S.btnSmall} onClick={() => setEditSub(s)}>Editar</button>
                       </td>
                     </tr>
@@ -495,6 +490,7 @@ export default function SubscriptionsTab() {
 
       {showPago && <RegistrarPagoModal subs={subs} prefill={pagoPrefill} onClose={() => { setShowPago(false); setPagoPrefill(null); }} onDone={() => { setShowPago(false); setPagoPrefill(null); load(); }} />}
       {editSub && <EditarSubModal sub={editSub} onClose={() => setEditSub(null)} onDone={() => { setEditSub(null); load(); }} />}
+      {linkSub && <LinkClienteModal sub={linkSub} onClose={() => setLinkSub(null)} />}
       {showMeta && <MetaModal meta={meta} onClose={() => setShowMeta(false)} onDone={() => { setShowMeta(false); load(); }} />}
       {detailId && <ClienteDrawer360 companyId={detailId} onClose={() => setDetailId(null)} onChanged={load} />}
     </div>
@@ -502,6 +498,98 @@ export default function SubscriptionsTab() {
 }
 
 /* ═══════════════ Modal: registrar pago (activa el ARR) ═══════════════ */
+// ── Modal "Link para el cliente": copia/abre el estado de cuenta público y
+// permite configurar un descuento de PRONTO PAGO (con timer) que vence antes de
+// la fecha de pago. El descuento se persiste en la sub (no viaja en la URL). ──
+function LinkClienteModal({ sub, onClose }: { sub: Sub; onClose: () => void }) {
+  const url = typeof window !== 'undefined' ? `${window.location.origin}/estado-cuenta/${sub.id}` : `/estado-cuenta/${sub.id}`;
+  const base = Number(sub.monto_proximo ?? sub.precio) || 0;
+  const esVitalicia = sub.ciclo === 'vitalicia';
+  const proximaMs = sub.proxima_factura ? new Date(String(sub.proxima_factura).slice(0, 10) + 'T00:00:00-06:00').getTime() : 0;
+  const puedeOferta = !esVitalicia && proximaMs > Date.now();
+
+  const [pct, setPct] = useState(10);
+  const [cantidad, setCantidad] = useState(48);
+  const [unidad, setUnidad] = useState<'horas' | 'dias'>('horas');
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<{ t: 'ok' | 'err'; x: string } | null>(null);
+  const ppExpira = (sub as any).pp_expira_at ? new Date((sub as any).pp_expira_at).getTime() : 0;
+  const [ofertaActiva, setOfertaActiva] = useState<boolean>((sub as any).pp_monto != null && ppExpira > Date.now());
+
+  const horas = unidad === 'dias' ? cantidad * 24 : cantidad;
+  const previewMs = Math.min(Date.now() + horas * 3600000, proximaMs || Infinity);
+  const clamped = puedeOferta && (Date.now() + horas * 3600000) > proximaMs;
+  const ppMonto = Math.round(base * (1 - pct / 100));
+
+  async function post(payload: any, okMsg: string, activa: boolean) {
+    setSaving(true); setMsg(null);
+    try {
+      const r = await fetch('/api/crm/arr/estado-cuenta-oferta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subscription_id: sub.id, ...payload }) });
+      const j = await r.json();
+      if (!r.ok || j.error) throw new Error(j.error || 'Error');
+      setOfertaActiva(activa);
+      setMsg({ t: 'ok', x: (payload.action !== 'clear' && j.clamped) ? 'Descuento aplicado (vigencia ajustada para vencer antes de la fecha de pago). Link listo y copiado.' : okMsg });
+      if (payload.action !== 'clear') { try { await navigator.clipboard?.writeText(url); } catch { /* */ } }
+    } catch (e: any) { setMsg({ t: 'err', x: e?.message || 'No se pudo' }); }
+    setSaving(false);
+  }
+
+  return (
+    <div style={S.overlay} onClick={onClose}>
+      <div style={{ ...S.modal, maxWidth: 480 }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <h3 style={{ margin: 0, fontWeight: 800 }}>Link para el cliente</h3>
+          <button style={S.btnSmall} onClick={onClose}>✕</button>
+        </div>
+        <div style={{ fontSize: '0.8rem', color: '#888', marginBottom: 14 }}>{sub.nombre_plan} · {sub.companies?.nombre || 'Cliente'}</div>
+
+        <input readOnly value={url} onFocus={e => e.currentTarget.select()} style={{ ...S.input, width: '100%', marginBottom: 8 }} />
+        <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+          <button style={{ ...S.btn, background: '#1A8F7A', color: '#fff', flex: 1 }} onClick={() => { try { navigator.clipboard?.writeText(url); setMsg({ t: 'ok', x: 'Link copiado' }); setTimeout(() => setMsg(null), 1500); } catch { /* */ } }}>Copiar link</button>
+          <button style={{ ...S.btn, border: '1px solid #ddd', background: '#fff' }} onClick={() => window.open(url, '_blank', 'noopener')}>Abrir / PDF</button>
+        </div>
+
+        <div style={{ borderTop: '1px solid #eee', paddingTop: 16 }}>
+          <div style={{ fontWeight: 800, fontSize: '0.9rem', marginBottom: 6 }}>🎉 Descuento pronto pago (opcional)</div>
+          {!puedeOferta ? (
+            <div style={{ fontSize: '0.8rem', color: '#a06600', background: '#fff4e0', padding: '8px 12px', borderRadius: 8 }}>
+              {esVitalicia ? 'Las vitalicias (pago único) no tienen mensualidad para ofrecer pronto pago.' : 'No hay una fecha de próximo pago futura para ofrecer un descuento.'}
+            </div>
+          ) : (<>
+            <div style={{ fontSize: '0.78rem', color: '#888', marginBottom: 10 }}>Se muestra en grande con un contador y vence automáticamente antes de la fecha de pago ({fmtDate(sub.proxima_factura)}).</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+              <div>
+                <label style={S.label}>Descuento %</label>
+                <input type="number" min={1} max={90} value={pct} onChange={e => setPct(Math.max(1, Math.min(90, Number(e.target.value) || 0)))} style={{ ...S.input, width: '100%' }} />
+              </div>
+              <div>
+                <label style={S.label}>Vigencia</label>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <input type="number" min={1} value={cantidad} onChange={e => setCantidad(Math.max(1, Number(e.target.value) || 1))} style={{ ...S.input, width: 68 }} />
+                  <select value={unidad} onChange={e => setUnidad(e.target.value as any)} style={{ ...S.input, flex: 1 }}>
+                    <option value="horas">horas</option>
+                    <option value="dias">días</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div style={{ background: '#f6fbfa', border: '1px solid #cfe9e2', borderRadius: 10, padding: '10px 14px', marginBottom: 12 }}>
+              <div style={{ fontSize: '0.82rem' }}>El cliente pagaría <b style={{ fontSize: '1.05rem' }}>{fmt(ppMonto)}</b> <span style={{ textDecoration: 'line-through', color: '#999' }}>{fmt(base)}</span> · ahorra <b>{fmt(base - ppMonto)}</b></div>
+              <div style={{ fontSize: '0.72rem', color: '#888', marginTop: 3 }}>Vence: {fmtDate(new Date(previewMs).toISOString())}{clamped ? ' (ajustado a antes de la fecha de pago)' : ''}</div>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button disabled={saving} style={{ ...S.btn, background: '#b45309', color: '#fff', flex: 1, opacity: saving ? 0.6 : 1 }} onClick={() => post({ pct, vigencia_horas: horas }, 'Descuento aplicado. Link listo y copiado.', true)}>{ofertaActiva ? 'Actualizar descuento' : 'Aplicar descuento al link'}</button>
+              {ofertaActiva && <button disabled={saving} style={{ ...S.btn, border: '1px solid #ddd', background: '#fff' }} onClick={() => post({ action: 'clear' }, 'Descuento quitado.', false)}>Quitar</button>}
+            </div>
+          </>)}
+        </div>
+
+        {msg && <div style={{ marginTop: 12, fontSize: '0.8rem', fontWeight: 600, color: msg.t === 'ok' ? '#1A8F7A' : '#b93333' }}>{msg.x}</div>}
+      </div>
+    </div>
+  );
+}
+
 export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: Sub[]; prefill?: { subscription_id?: string } | null; onClose: () => void; onDone: () => void }) {
   const [modo, setModo] = useState<'existente' | 'nuevo'>('existente');
   const [subId, setSubId] = useState(prefill?.subscription_id || '');
