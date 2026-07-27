@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import ClienteDrawer360 from './ClienteDrawer360';
+import { useIsMobile } from '../../../lib/ui/mobile';
 
 /* ═══ Reuniones (VENTAS) — listado operativo de TODAS las reuniones ═══
  * Las del founder y las de partners, segmentadas y ligadas al CRM real:
@@ -65,6 +66,7 @@ function adminFetch(input: string, init?: RequestInit) {
 }
 
 export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: string) => void }) {
+  const isMobile = useIsMobile();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -182,18 +184,19 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
 
   const filaAcciones = (b: any) => {
     const activa = b.estado === 'confirmada' || b.estado === 'pendiente';
+    const bs = isMobile ? { ...S.btnSmall, minHeight: 44, padding: '10px 14px', fontSize: '0.8rem' } : S.btnSmall;
     return (
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: isMobile ? 8 : 6, flexWrap: 'wrap' }}>
         {activa && <>
-          <button disabled={busyId === b.id} style={{ ...S.btnSmall, color: '#065F46', borderColor: '#A7F3D0' }} onClick={() => marcar(b, 'realizada')}>Asistió</button>
-          <button disabled={busyId === b.id} style={{ ...S.btnSmall, color: '#B91C1C', borderColor: '#FECACA' }} onClick={() => marcar(b, 'no_show')}>No asistió</button>
-          <button disabled={busyId === b.id} style={S.btnSmall} onClick={() => setReagendar(b)}>Reagendar</button>
-          <button disabled={busyId === b.id} style={{ ...S.btnSmall, color: cancelArmed === b.id ? '#fff' : '#999', background: cancelArmed === b.id ? '#B91C1C' : '#fff' }} onClick={() => cancelar(b)}>
+          <button disabled={busyId === b.id} style={{ ...bs, color: '#065F46', borderColor: '#A7F3D0' }} onClick={() => marcar(b, 'realizada')}>Asistió</button>
+          <button disabled={busyId === b.id} style={{ ...bs, color: '#B91C1C', borderColor: '#FECACA' }} onClick={() => marcar(b, 'no_show')}>No asistió</button>
+          <button disabled={busyId === b.id} style={bs} onClick={() => setReagendar(b)}>Reagendar</button>
+          <button disabled={busyId === b.id} style={{ ...bs, color: cancelArmed === b.id ? '#fff' : '#999', background: cancelArmed === b.id ? '#B91C1C' : '#fff' }} onClick={() => cancelar(b)}>
             {cancelArmed === b.id ? '¿Confirmar?' : 'Cancelar'}
           </button>
         </>}
         {b.google_meet_link && (
-          <button style={{ ...S.btnSmall, color: '#3764c4' }} onClick={() => { navigator.clipboard?.writeText(b.google_meet_link); avisar('Link de Meet copiado'); }}>Meet ⧉</button>
+          <button style={{ ...bs, color: '#3764c4' }} onClick={() => { navigator.clipboard?.writeText(b.google_meet_link); avisar('Link de Meet copiado'); }}>Meet ⧉</button>
         )}
       </div>
     );
@@ -243,7 +246,36 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
         </select>
       </div>
 
-      {vista === 'lista' ? (
+      {vista === 'lista' && isMobile ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {filtered.map(b => {
+            const est = ESTADOS[b.estado] || ESTADOS.pendiente;
+            const ti = b.invitado_tipo ? TIPO_INVITADO[b.invitado_tipo] : null;
+            const clickable = !!(b.invitado_company_id || b.invitado_contact_id);
+            return (
+              <div key={b.id} style={{ ...S.card, padding: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+                  <span style={{ fontWeight: 800, fontSize: '0.86rem' }}>{fmtDate(b.fecha)}{b.fecha === hoy ? ' · hoy' : ''}</span>
+                  <span style={{ fontSize: '0.82rem', color: '#555', fontWeight: 600 }}>{fmtTime(b.hora_inicio)}</span>
+                  <span style={{ ...S.badge, background: est.bg, color: est.color, marginLeft: 'auto' }}>{est.label}</span>
+                </div>
+                <div onClick={() => clickable && abrirInvitado(b)} style={{ cursor: clickable ? 'pointer' : 'default', minHeight: 44, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.92rem', color: clickable ? '#1D4ED8' : '#333' }}>{b.invitee_nombre || '—'}{clickable ? ' ›' : ''}</span>
+                  <span style={{ fontSize: '0.75rem', color: '#999' }}>{b.invitado_company_nombre || b.invitee_empresa || b.invitee_email || ''}</span>
+                </div>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 6 }}>
+                  {ti && <span style={{ ...S.badge, background: ti.bg, color: ti.color }}>{ti.label}</span>}
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.75rem', color: '#555' }}><span style={{ width: 8, height: 8, borderRadius: 99, background: b.event_types?.color || '#999' }} />{b.event_types?.nombre || '—'}</span>
+                  <span style={{ fontSize: '0.72rem', color: '#999', marginLeft: 'auto' }}>{b.host_es_mio ? 'Tú' : (b.host_nombre || '—')}{b.host_es_partner ? ' · partner' : ''}</span>
+                </div>
+                {b.referrer_nombre ? <div style={{ fontSize: '0.68rem', color: '#a06600', marginTop: 4 }}>ref: {b.referrer_nombre}</div> : null}
+                <div style={{ marginTop: 10 }}>{filaAcciones(b)}</div>
+              </div>
+            );
+          })}
+          {!filtered.length && <div style={{ ...S.card, padding: 28, textAlign: 'center', color: '#999' }}>Sin reuniones en este segmento. Ajusta filtros o cambia de segmento.</div>}
+        </div>
+      ) : vista === 'lista' ? (
         <div style={S.card}>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 860 }}>
@@ -279,21 +311,21 @@ export default function ReunionesTab({ onOpenContact }: { onOpenContact?: (id: s
           </div>
         </div>
       ) : (
-        <CalendarioMes mes={calMes} setMes={setCalMes} bookings={data.filter(b => b.estado !== 'cancelada' && b.estado !== 'reagendada')} hoy={hoy} onOpen={abrirInvitado} />
+        <CalendarioMes mes={calMes} setMes={setCalMes} bookings={data.filter(b => b.estado !== 'cancelada' && b.estado !== 'reagendada')} hoy={hoy} onOpen={abrirInvitado} isMobile={isMobile} />
       )}
 
       {drawerCompanyId && <ClienteDrawer360 companyId={drawerCompanyId} onClose={() => setDrawerCompanyId(null)} onChanged={load} />}
       {reagendar && <ReagendarModal booking={reagendar} onClose={() => setReagendar(null)} onDone={() => { setReagendar(null); avisar('Reunión reagendada ✓'); load(); }} onError={(m) => avisar('Error: ' + m)} />}
 
       {toast && (
-        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: '#fff', padding: '10px 20px', borderRadius: 10, fontSize: '0.8125rem', zIndex: 3000, boxShadow: '0 8px 24px rgba(0,0,0,0.25)' }}>{toast}</div>
+        <div className="crm-toast-bottom" style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: '#fff', padding: '10px 20px', borderRadius: 10, fontSize: '0.8125rem', zIndex: 3000, boxShadow: '0 8px 24px rgba(0,0,0,0.25)', maxWidth: '90vw', textAlign: 'center' }}>{toast}</div>
       )}
     </div>
   );
 }
 
-/* ── Vista calendario mensual ── */
-function CalendarioMes({ mes, setMes, bookings, hoy, onOpen }: { mes: string; setMes: (m: string) => void; bookings: any[]; hoy: string; onOpen: (b: any) => void }) {
+/* ── Vista calendario mensual (desktop) / agenda de día (mobile) ── */
+function CalendarioMes({ mes, setMes, bookings, hoy, onOpen, isMobile }: { mes: string; setMes: (m: string) => void; bookings: any[]; hoy: string; onOpen: (b: any) => void; isMobile?: boolean }) {
   const [y, m] = mes.split('-').map(Number);
   const primerDia = new Date(Date.UTC(y, m - 1, 1));
   const diasEnMes = new Date(Date.UTC(y, m, 0)).getUTCDate();
@@ -308,6 +340,61 @@ function CalendarioMes({ mes, setMes, bookings, hoy, onOpen }: { mes: string; se
     setMes(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`);
   };
   const MES_LARGO = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  const DIA_SEM = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  const navBtn = { minWidth: 44, minHeight: 44, border: '1px solid #ddd', borderRadius: 10, background: '#fff', fontSize: '1.1rem', fontWeight: 700, cursor: 'pointer' } as const;
+
+  // ── MOBILE: agenda vertical (mismos eventos del mes, agrupados por día) ──
+  if (isMobile) {
+    const diasConEventos = Object.keys(porDia).sort();
+    const totalEv = diasConEventos.reduce((s, f) => s + porDia[f].length, 0);
+    return (
+      <div style={{ ...S.card, padding: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 8 }}>
+          <button style={navBtn} onClick={() => nav(-1)} aria-label="Mes anterior">‹</button>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>{MES_LARGO[m - 1]} {y}</div>
+            <div style={{ fontSize: '0.7rem', color: '#999' }}>{totalEv} {totalEv === 1 ? 'reunión' : 'reuniones'}</div>
+          </div>
+          <button style={navBtn} onClick={() => nav(1)} aria-label="Mes siguiente">›</button>
+        </div>
+        {!diasConEventos.length ? (
+          <div style={{ padding: 28, textAlign: 'center', color: '#999' }}>Sin reuniones en {MES_LARGO[m - 1]}.</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {diasConEventos.map(f => {
+              const d = new Date(f + 'T12:00:00');
+              const esHoy = f === hoy;
+              return (
+                <div key={f}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6, position: 'sticky', top: 0, background: '#fff', zIndex: 1, padding: '2px 0' }}>
+                    <span style={{ fontWeight: 800, fontSize: '0.82rem', color: esHoy ? '#92400E' : '#333' }}>{DIA_SEM[d.getDay()]} {Number(f.slice(-2))} {MESES[m - 1]}</span>
+                    {esHoy && <span style={{ ...S.badge, background: '#FEF3C7', color: '#92400E' }}>hoy</span>}
+                    <span style={{ fontSize: '0.7rem', color: '#bbb', marginLeft: 'auto' }}>{porDia[f].length}</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {porDia[f].sort((a, b) => (a.hora_inicio || '').localeCompare(b.hora_inicio || '')).map(b => {
+                      const est = ESTADOS[b.estado] || ESTADOS.pendiente;
+                      return (
+                        <div key={b.id} onClick={() => onOpen(b)} style={{ display: 'flex', gap: 10, alignItems: 'center', minHeight: 44, padding: '8px 12px', borderRadius: 10, border: '1px solid #f0f0f0', background: '#fff', cursor: 'pointer', borderLeft: `3px solid ${b.event_types?.color || '#999'}` }}>
+                          <span style={{ fontWeight: 700, fontSize: '0.8rem', color: '#333', whiteSpace: 'nowrap', minWidth: 62 }}>{fmtTime(b.hora_inicio)}</span>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ fontWeight: 700, fontSize: '0.86rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.invitee_nombre || '—'}</div>
+                            <div style={{ fontSize: '0.72rem', color: '#999', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.event_types?.nombre || ''}{b.invitado_company_nombre ? ` · ${b.invitado_company_nombre}` : ''}</div>
+                          </div>
+                          <span style={{ ...S.badge, background: est.bg, color: est.color, flexShrink: 0 }}>{est.label}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div style={S.card}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -345,6 +432,7 @@ function CalendarioMes({ mes, setMes, bookings, hoy, onOpen }: { mes: string; se
 
 /* ── Modal de reagendar con slots reales ── */
 function ReagendarModal({ booking, onClose, onDone, onError }: { booking: any; onClose: () => void; onDone: () => void; onError: (m: string) => void }) {
+  const isMobile = useIsMobile();
   const [slots, setSlots] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [dia, setDia] = useState<string | null>(null);
@@ -386,11 +474,11 @@ function ReagendarModal({ booking, onClose, onDone, onError }: { booking: any; o
 
   const dias = Object.keys(slots).sort();
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2500, padding: 16 }} onClick={onClose}>
-      <div style={{ background: '#fff', borderRadius: 14, maxWidth: 520, width: '100%', maxHeight: '85vh', overflowY: 'auto', padding: 24 }} onClick={e => e.stopPropagation()}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'center', zIndex: 2500, padding: isMobile ? '16px 12px' : 16, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }} onClick={onClose}>
+      <div style={{ background: '#fff', borderRadius: 14, maxWidth: 520, width: '100%', maxHeight: isMobile ? 'none' : '85vh', overflowY: isMobile ? 'visible' : 'auto', padding: isMobile ? '20px 18px calc(24px + env(safe-area-inset-bottom))' : 24 }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
           <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800 }}>Reagendar reunión</h3>
-          <button style={S.btnSmall} onClick={onClose}>✕</button>
+          <button style={isMobile ? { ...S.btnSmall, minWidth: 44, minHeight: 44, fontSize: '1rem' } : S.btnSmall} onClick={onClose}>✕</button>
         </div>
         <p style={{ margin: '4px 0 16px', fontSize: '0.78rem', color: '#888' }}>
           {booking.invitee_nombre} · {booking.event_types?.nombre} · hoy: {fmtDate(booking.fecha)} {fmtTime(booking.hora_inicio)}
@@ -398,15 +486,15 @@ function ReagendarModal({ booking, onClose, onDone, onError }: { booking: any; o
         {loading ? <div style={{ padding: 24, textAlign: 'center', color: '#999' }}>Buscando horarios disponibles…</div> : !dias.length ? (
           <div style={{ padding: 24, textAlign: 'center', color: '#999' }}>Sin horarios disponibles en los próximos 14 días. Revisa la disponibilidad en Sistema → Agenda.</div>
         ) : <>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+          <div style={{ display: 'flex', gap: isMobile ? 8 : 6, flexWrap: 'wrap', marginBottom: 14 }}>
             {dias.map(f => (
-              <button key={f} style={S.seg(dia === f)} onClick={() => setDia(f)}>{fmtDate(f)}</button>
+              <button key={f} style={isMobile ? { ...S.seg(dia === f), minHeight: 44, padding: '10px 16px' } : S.seg(dia === f)} onClick={() => setDia(f)}>{fmtDate(f)}</button>
             ))}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(auto-fill, minmax(96px, 1fr))' : 'repeat(auto-fill, minmax(90px, 1fr))', gap: 8 }}>
             {(slots[dia || ''] || []).map(h => (
               <button key={h} disabled={saving} onClick={() => elegir(h)}
-                style={{ padding: '9px 6px', border: '1px solid #ddd', borderRadius: 8, background: '#fff', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer' }}>
+                style={{ minHeight: isMobile ? 48 : undefined, padding: isMobile ? '12px 6px' : '9px 6px', border: '1px solid #ddd', borderRadius: 8, background: '#fff', fontSize: isMobile ? '0.9rem' : '0.8125rem', fontWeight: 600, cursor: 'pointer' }}>
                 {fmtTime(h)}
               </button>
             ))}
