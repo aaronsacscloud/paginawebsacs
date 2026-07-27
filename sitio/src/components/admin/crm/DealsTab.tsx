@@ -94,12 +94,27 @@ const td: React.CSSProperties = { padding: '10px 14px', color: '#555' };
 const dealBulkBtn: React.CSSProperties = { fontSize: '0.72rem', fontWeight: 700, padding: '5px 10px', borderRadius: 7, border: 'none', background: '#b93333', color: '#fff', cursor: 'pointer', fontFamily: 'inherit' };
 
 // ─── Main Component ───
-export default function DealsTab({ onConfig }: { onConfig?: () => void } = {}) {
+export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { onConfig?: () => void; initialDealId?: string | null; onDealConsumed?: () => void } = {}) {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<'kanban' | 'table'>('kanban');
   const [showCreate, setShowCreate] = useState(false);
   const [selected, setSelected] = useState<Deal | null>(null);
+  const consumedDealRef = useRef<string | null>(null);
+
+  // Abrir directo el drawer de un deal (ej. desde la búsqueda global mobile).
+  // Se consume UNA sola vez por id: al abrirlo se limpia arriba (onDealConsumed)
+  // para que navegar fuera/volver o cambiar deals.length NO lo reabra.
+  useEffect(() => {
+    if (!initialDealId) { consumedDealRef.current = null; return; } // reset → permite re-buscar el mismo deal
+    if (initialDealId !== consumedDealRef.current && deals.length) {
+      const d = deals.find(x => x.id === initialDealId);
+      consumedDealRef.current = initialDealId;
+      if (d) setSelected(d);
+      onDealConsumed?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialDealId, deals.length]);
   const [, forceRender] = useState(0);
   const { toast, show } = useToast();
 
@@ -678,7 +693,7 @@ function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', justifyContent: 'flex-end' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 500, display: 'flex', justifyContent: 'flex-end' }}>
       <div onClick={onClose} style={{ flex: 1, background: 'rgba(0,0,0,0.3)' }} />
       <div style={{ width: 500, maxWidth: '90vw', background: '#fff', overflowY: 'auto', boxShadow: '-4px 0 20px rgba(0,0,0,0.1)' }}>
         {/* Header */}

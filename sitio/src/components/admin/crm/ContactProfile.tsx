@@ -400,7 +400,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
   if (loading || !contact) {
     return (
       <div style={{
-        position: 'fixed', inset: 0, zIndex: 300, background: '#f5f6f8',
+        position: 'fixed', inset: 0, zIndex: 500, background: '#f5f6f8',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontFamily: "'Plus Jakarta Sans', sans-serif",
       }}>
@@ -428,7 +428,7 @@ export default function ContactProfile({ contactId, onClose }: Props) {
   // ─── Render ───
   return (
     <div style={{
-      position: 'fixed', inset: 0, zIndex: 300, background: '#f5f6f8',
+      position: 'fixed', inset: 0, zIndex: 500, background: '#f5f6f8',
       display: 'flex', flexDirection: 'column',
       fontFamily: "'Plus Jakarta Sans', sans-serif",
     }}>

@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, Component } from 'react';
 import type { ReactNode } from 'react';
-import { useIsMobile } from '../../lib/ui/mobile';
+import { useIsMobile, isTouchDevice } from '../../lib/ui/mobile';
+import BottomNav from './crm/ui/BottomNav';
+import ActionSheet from './crm/ui/ActionSheet';
+import Sheet from './crm/ui/Sheet';
 import PipelineTab from './crm/PipelineTab';
 import DealsTab from './crm/DealsTab';
 import AutomationsTab from './crm/AutomationsTab';
@@ -111,8 +114,13 @@ function getInitialTab(): Tab {
   const t = params.get('tab') as Tab | null;
   const allIds = NAV_SECTIONS.flatMap(s => s.items.map(i => i.id));
   if (t && allIds.includes(t)) return t;
+  // Mobile aterriza en "Hoy" (inbox diario); desktop en Dashboard.
+  if (window.matchMedia('(max-width: 899px)').matches) return 'hoy';
   return 'dashboard';
 }
+
+// Destinos del BottomNav mobile (el resto vive en "Más").
+const BOTTOM_IDS: Tab[] = ['hoy', 'dashboard', 'clientes', 'deals'];
 
 export default function CrmDashboard() {
   const [tab, setTab] = useState<Tab>(getInitialTab);
@@ -127,9 +135,15 @@ export default function CrmDashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const isMobile = useIsMobile();
   const searchRef = useRef<HTMLInputElement>(null);
+  // Shell mobile: sheet "Más", búsqueda fullscreen y deal a abrir directo.
+  const [masOpen, setMasOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [initialDealId, setInitialDealId] = useState<string | null>(null);
+  const mobileSearchRef = useRef<HTMLInputElement>(null);
 
   // Auto-colapsar el sidebar al entrar a layout mobile.
   useEffect(() => { if (isMobile) setSidebarCollapsed(true); }, [isMobile]);
+  useEffect(() => { if (mobileSearchOpen) setTimeout(() => mobileSearchRef.current?.focus(), 120); }, [mobileSearchOpen]);
 
   // Cmd/Ctrl+K → enfoca la búsqueda global (abre el sidebar si está colapsado).
   useEffect(() => {
@@ -181,7 +195,7 @@ export default function CrmDashboard() {
       {/* Hamburger button mobile (visible solo cuando sidebar colapsado) */}
       {isMobile && sidebarCollapsed && (
         <button onClick={() => setSidebarCollapsed(false)} style={{
-          position: 'fixed', top: 12, left: 12, zIndex: 108, width: 40, height: 40,
+          position: 'fixed', top: 12, left: 12, zIndex: 108, width: 44, height: 44,
           background: '#fff', border: '1px solid #e8e8e8', borderRadius: 10,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
@@ -190,6 +204,19 @@ export default function CrmDashboard() {
             <line x1="4" y1="7" x2="20" y2="7"/>
             <line x1="4" y1="12" x2="20" y2="12"/>
             <line x1="4" y1="17" x2="20" y2="17"/>
+          </svg>
+        </button>
+      )}
+      {/* Lupa mobile: búsqueda global a 2 taps sin abrir el sidebar */}
+      {isMobile && sidebarCollapsed && (
+        <button onClick={() => setMobileSearchOpen(true)} style={{
+          position: 'fixed', top: 12, left: 64, zIndex: 108, width: 44, height: 44,
+          background: '#fff', border: '1px solid #e8e8e8', borderRadius: 10,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        }} aria-label="Buscar">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.8" strokeLinecap="round">
+            <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/>
           </svg>
         </button>
       )}
@@ -220,9 +247,12 @@ export default function CrmDashboard() {
           )}
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            aria-label={sidebarCollapsed ? 'Expandir menú' : 'Colapsar menú'}
             style={{
               background: 'none', border: 'none', color: '#ccc',
-              cursor: 'pointer', fontSize: '1rem', padding: 4,
+              cursor: 'pointer', fontSize: '1rem',
+              width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: -10, // compensa para no mover el layout desktop
             }}
           >{sidebarCollapsed ? '→' : '←'}</button>
         </div>
@@ -244,7 +274,7 @@ export default function CrmDashboard() {
                   } else { setShowSearch(false); }
                 }}
                 onFocus={() => { if (searchResults.length) setShowSearch(true); }}
-                placeholder="Buscar…  (⌘K)"
+                placeholder={isTouchDevice() ? 'Buscar…' : 'Buscar…  (⌘K)'}
                 style={{
                   width: '100%', padding: '8px 10px 8px 30px', fontSize: '0.75rem',
                   border: '1px solid #e8e8e8', borderRadius: 8,
@@ -268,7 +298,7 @@ export default function CrmDashboard() {
                     return (
                       <div key={i} onClick={() => {
                           if (r.type === 'contact') setProfileContactId(r.id);
-                          else if (r.type === 'deal') switchTab('deals');
+                          else if (r.type === 'deal') { setInitialDealId(r.id); switchTab('deals'); }
                           else if (r.type === 'company') switchTab('clientes');
                           else if (r.type === 'quote') switchTab('cotizaciones');
                           setShowSearch(false); setSearchQuery('');
@@ -314,6 +344,7 @@ export default function CrmDashboard() {
                       gap: sidebarCollapsed ? 0 : 10,
                       justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
                       padding: sidebarCollapsed ? '10px 0' : '8px 20px',
+                      minHeight: 44,
                       background: isActive ? '#f5f5f5' : 'transparent',
                       color: isActive ? '#1a1a1a' : '#888',
                       border: 'none', cursor: 'pointer', fontFamily: 'inherit',
@@ -351,7 +382,7 @@ export default function CrmDashboard() {
       </div>
 
       {/* ─── Main Content ─── */}
-      <div style={{ flex: 1, marginLeft: mainMarginLeft, transition: 'margin-left 0.2s ease', display: 'flex', flexDirection: 'column', minHeight: '100vh', paddingTop: isMobile ? 60 : 0 }}>
+      <div style={{ flex: 1, marginLeft: mainMarginLeft, transition: 'margin-left 0.2s ease', display: 'flex', flexDirection: 'column', minHeight: '100vh', paddingTop: isMobile ? 64 : 0, paddingBottom: isMobile ? 'var(--crm-bottomnav-h, 64px)' : 0 }}>
         {/* Content */}
         {tab === 'dashboard' ? (
           <ErrorBoundary><DashboardTab /></ErrorBoundary>
@@ -360,7 +391,7 @@ export default function CrmDashboard() {
         ) : tab === 'pipeline' ? (
           <PipelineTab onConfig={() => goConfigPipeline('lead')} />
         ) : tab === 'deals' ? (
-          <DealsTab onConfig={() => goConfigPipeline('oportunidad')} />
+          <DealsTab onConfig={() => goConfigPipeline('oportunidad')} initialDealId={initialDealId} onDealConsumed={() => setInitialDealId(null)} />
         ) : tab === 'suscripciones' ? (
           <ErrorBoundary><SubscriptionsTab /></ErrorBoundary>
         ) : tab === 'agenda' ? (
@@ -430,6 +461,81 @@ export default function CrmDashboard() {
       {profileContactId && (
         <ContactProfile contactId={profileContactId} onClose={() => setProfileContactId(null)} />
       )}
+
+      {/* ─── Shell MOBILE: BottomNav + "Más" + búsqueda fullscreen ─── */}
+      {isMobile && !mobileExpanded && (
+        <BottomNav
+          activeId={BOTTOM_IDS.includes(tab) ? tab : '__mas'}
+          onSelect={(id) => { if (id === '__mas') setMasOpen(true); else switchTab(id as Tab); }}
+          items={[
+            ...BOTTOM_IDS.map(id => {
+              const item = NAV_SECTIONS.flatMap(s => s.items).find(i => i.id === id)!;
+              return { id, label: id === 'deals' ? 'Oportun.' : item.label, icon: ICONS[item.icon] || '' };
+            }),
+            { id: '__mas', label: 'Más', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>' },
+          ]}
+        />
+      )}
+      <ActionSheet
+        open={masOpen}
+        onClose={() => setMasOpen(false)}
+        title="Más secciones"
+        items={[
+          ...NAV_SECTIONS.flatMap(section =>
+            section.items
+              .filter(i => !BOTTOM_IDS.includes(i.id))
+              .map(i => ({
+                label: `${section.label} · ${i.label}`,
+                icon: <span style={{ display: 'flex', width: 20, color: '#8a8f98' }} dangerouslySetInnerHTML={{ __html: ICONS[i.icon] || '' }} />,
+                active: tab === i.id,
+                onClick: () => switchTab(i.id),
+              }))
+          ),
+          { label: '🔑 Cambiar contraseña', onClick: () => { window.location.href = '/admin/cambiar-password'; } },
+          { label: '⎋ Cerrar sesión', danger: true, onClick: async () => { try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* noop */ } window.location.href = '/admin/login'; } },
+        ]}
+      />
+      <Sheet open={mobileSearchOpen} onClose={() => { setMobileSearchOpen(false); setSearchQuery(''); setSearchResults([]); }} title="Buscar" zIndex={920}>
+        <input
+          ref={mobileSearchRef}
+          value={searchQuery}
+          onChange={async (e) => {
+            setSearchQuery(e.target.value);
+            if (e.target.value.length >= 2) {
+              try {
+                const res = await fetch(`/api/crm/search?q=${encodeURIComponent(e.target.value)}`);
+                const data = await res.json();
+                setSearchResults(data.results || []);
+              } catch { /* red */ }
+            } else setSearchResults([]);
+          }}
+          placeholder="Cliente, contacto, cotización…"
+          style={{ width: '100%', padding: '12px 14px', fontSize: 16, border: '1px solid #e3e5e9', borderRadius: 10, outline: 'none', boxSizing: 'border-box', marginBottom: 10 }}
+        />
+        {searchResults.map((r: any, i: number) => {
+          const icons: Record<string, string> = { contact: '👤', company: '🏢', deal: '💰', quote: '📄' };
+          return (
+            <button key={i}
+              onClick={() => {
+                setMobileSearchOpen(false); setSearchQuery(''); setSearchResults([]);
+                if (r.type === 'contact') setProfileContactId(r.id);
+                else if (r.type === 'deal') { setInitialDealId(r.id); switchTab('deals'); }
+                else if (r.type === 'company') switchTab('clientes');
+                else if (r.type === 'quote') switchTab('cotizaciones');
+              }}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', minHeight: 48, padding: '10px 6px', border: 'none', borderBottom: '1px solid #f4f5f8', background: 'none', cursor: 'pointer', textAlign: 'left' }}>
+              <span style={{ fontSize: '1.05rem' }}>{icons[r.type] || '📎'}</span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontWeight: 700, fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.nombre || r.numero || r.empresa}</span>
+                <span style={{ display: 'block', fontSize: '0.75rem', color: '#999' }}>{r.email || r.plan || r.stage || r.type}</span>
+              </span>
+            </button>
+          );
+        })}
+        {searchQuery.length >= 2 && !searchResults.length && (
+          <div style={{ color: '#999', fontSize: '0.85rem', padding: 12 }}>Sin resultados para “{searchQuery}”.</div>
+        )}
+      </Sheet>
     </div>
   );
 }
