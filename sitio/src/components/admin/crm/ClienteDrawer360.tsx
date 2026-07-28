@@ -126,7 +126,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
               {tab === 'info' && <TabInfoGeneral co={co} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'sacs' && <TabSacs co={co} act={act} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'contactos' && <TabContactos companyId={companyId} contactos={contactos} reload={() => { load(); onChanged(); }} flash={flash} />}
-              {tab === 'subs' && <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} />}
+              {tab === 'subs' && <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />}
               {tab === 'oport' && <TabOportunidades companyId={companyId} co={co} principal={principal} flash={flash} reload={() => { load(); onChanged(); }} />}
               {tab === 'reuniones' && <TabReuniones companyId={companyId} principal={principal} flash={flash} />}
               {tab === 'notas' && <TabNotas companyId={companyId} />}
@@ -859,7 +859,19 @@ function TabContactos({ companyId, contactos, reload, flash }: any) {
 }
 
 /* ─────────── 📋 Suscripciones (lista editable + alta) ─────────── */
-function TabSubs({ companyId, subs, reload, flash }: any) {
+function TabSubs({ companyId, subs, reload, flash, principal }: any) {
+  // Estado de cuenta CONSOLIDADO del cliente (todas sus subs + próximo a pagar).
+  const ecUrl = typeof window !== 'undefined' ? `${window.location.origin}/estado-cuenta/cliente/${companyId}` : '';
+  function abrirEstadoCuenta() {
+    window.open(ecUrl, '_blank', 'noopener'); // sync (iOS) — trae "Descargar PDF"
+    try { navigator.clipboard?.writeText(ecUrl); } catch { /* */ }
+    flash?.('Estado de cuenta abierto · link copiado');
+  }
+  function enviarWhatsApp() {
+    const num = String(principal?.whatsapp || '').replace(/\D/g, '');
+    const msg = `Hola 👋 Te comparto tu estado de cuenta SACS con tus próximos pagos:\n${ecUrl}`;
+    window.open((num ? `https://wa.me/${num}` : 'https://wa.me/') + `?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+  }
   const [planes, setPlanes] = useState<any[]>([]);
   const [editId, setEditId] = useState<string | null>(null);
   const [f, setF] = useState<any>({});
@@ -898,9 +910,13 @@ function TabSubs({ companyId, subs, reload, flash }: any) {
   return (
     <div>
       <div style={D.card}>
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
           <div style={D.h}>Suscripciones del cliente</div>
-          <button style={{ ...D.btnG, marginLeft: 'auto' }} onClick={() => setAdding(!adding)}>{adding ? '✕ Cancelar' : '+ Agregar suscripción'}</button>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <button style={{ ...D.btnG, background: '#1A8F7A', color: '#fff', borderColor: '#1A8F7A' }} title="Estado de cuenta con TODO lo próximo a pagar — 1 clic a PDF" onClick={abrirEstadoCuenta}>📄 Estado de cuenta</button>
+            {principal?.whatsapp && <button style={{ ...D.btnG, color: '#1A8F7A', borderColor: '#bfe8df', fontWeight: 700 }} title="Enviar el link del estado de cuenta por WhatsApp" onClick={enviarWhatsApp}>💬 Enviar</button>}
+            <button style={D.btnG} onClick={() => setAdding(!adding)}>{adding ? '✕ Cancelar' : '+ Agregar'}</button>
+          </div>
         </div>
 
         {adding && (
