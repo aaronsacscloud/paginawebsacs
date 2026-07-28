@@ -30,6 +30,44 @@ function fmtDateEs(d: string | null | undefined): string {
   return `${day}/${month}/${year}`;
 }
 
+// Recibo de un pago de suscripción (renovación) — sin cotización.
+async function sendSubscriptionReceipt(payment: any): Promise<{ ok: boolean; reason?: string; id?: string }> {
+  const { data: sub } = await supabase
+    .from('subscriptions')
+    .select('id, nombre_plan, ciclo, proxima_factura, company_id, contact_id')
+    .eq('id', payment.subscription_id).single();
+
+  let recipient = ''; let contactoNom = '';
+  const cid = payment.contact_id || sub?.contact_id;
+  if (cid) {
+    const { data: ct } = await supabase.from('contacts').select('nombre, apellido, email').eq('id', cid).single();
+    recipient = (ct?.email || '').trim();
+    contactoNom = [ct?.nombre, ct?.apellido].filter(Boolean).join(' ').trim();
+  }
+  if (!recipient) return { ok: false, reason: 'sin_email_del_cliente' };
+
+  const CICLO: Record<string, string> = { mensual: 'Mensual', anual: 'Anual', vitalicia: 'Pago único' };
+  const acuseUrl = `https://www.sacscloud.com/acuse/${payment.id}`;
+  return await notify({
+    channel: 'email',
+    to: recipient,
+    template: 'payment_receipt_client',
+    data: {
+      numero_acuse: payment.numero_acuse,
+      monto: Number(payment.monto || 0),
+      metodo: payment.metodo,
+      fecha: fmtDateEs(payment.fecha),
+      referencia: payment.referencia,
+      contacto: contactoNom,
+      // `concepto` hace que la plantilla hable de la suscripción (no de una cotización).
+      concepto: `tu suscripción ${sub?.nombre_plan || ''}`.trim(),
+      items: [{ label: `${sub?.nombre_plan || 'Suscripción'} (${CICLO[sub?.ciclo] || sub?.ciclo || ''})`, monto: Number(payment.monto || 0) }],
+      saldoRestante: 0,
+      acuseUrl,
+    },
+  });
+}
+
 export async function sendAcuseEmail(paymentId: string): Promise<{ ok: boolean; reason?: string; id?: string }> {
   if (!paymentId) return { ok: false, reason: 'missing_payment_id' };
 
@@ -41,7 +79,9 @@ export async function sendAcuseEmail(paymentId: string): Promise<{ ok: boolean; 
 
   if (pErr || !payment) return { ok: false, reason: 'payment_not_found' };
 
+  // Pago de SUSCRIPCIÓN (renovación) — recibo al cliente sin cotización.
   if (!payment.quote_id) {
+    if (payment.subscription_id) return await sendSubscriptionReceipt(payment);
     return { ok: false, reason: 'payment_has_no_quote' };
   }
 

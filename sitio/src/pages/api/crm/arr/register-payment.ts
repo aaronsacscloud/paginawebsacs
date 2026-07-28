@@ -9,6 +9,7 @@
 // Efectos: crea payment → sub pasa a 'activa' → recorre proxima_factura un ciclo
 // → suma pagos_realizados/total_pagado → recalcula agregados de la company.
 import type { APIRoute } from 'astro';
+import { randomBytes } from 'node:crypto';
 import { supabase } from '../../../../lib/supabase';
 import { recalcCompany } from './subscriptions';
 import { recordDelta } from '../../../../lib/crm/mrr-ledger';
@@ -16,6 +17,8 @@ import { recordDelta } from '../../../../lib/crm/mrr-ledger';
 export const prerender = false;
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
+// Número de acuse formal: AC-YYMMDD-XXXX (XXXX aleatorio) — recibo del pago.
+const genAcuse = (fecha: string) => 'AC-' + fecha.slice(2).replace(/-/g, '') + '-' + randomBytes(2).toString('hex').toUpperCase();
 
 function addCiclo(fecha: string, ciclo: 'mensual' | 'anual'): string {
   const d = new Date(fecha + 'T12:00:00Z');
@@ -133,12 +136,13 @@ export const POST: APIRoute = async ({ request }) => {
       metodo: normMetodo(body.metodo),
       referencia: body.referencia || null,
       notas: body.notas || null,
+      numero_acuse: genAcuse(fecha), // recibo formal del pago
       company_id: sub.company_id, contact_id: sub.contact_id,
       subscription_id: sub.id, periodo_cubierto: periodo,
       // Fase 4 — atribución RR: solo si hay partner (body o sub), para no romper el
       // insert mientras la columna partner_id no exista.
       ...((body.partner_id || sub.partner_id) ? { partner_id: body.partner_id || sub.partner_id } : {}),
-    }).select('id').single();
+    }).select('id, numero_acuse').single();
     if (pe) throw new Error('payment: ' + pe.message);
 
     // ── 3 · Activar y recorrer la suscripción ──
@@ -148,10 +152,15 @@ export const POST: APIRoute = async ({ request }) => {
     const precioEfectivo = sub.precio_siguiente != null ? Number(sub.precio_siguiente) : Number(sub.precio);
     const promoverCiclo = cicloEfectivo !== sub.ciclo || precioEfectivo !== Number(sub.precio);
     const base = (sub.proxima_factura && sub.proxima_factura >= fecha) ? sub.proxima_factura : fecha;
+    // La próxima fecha se calcula automática (+1 ciclo), pero el admin puede
+    // DECIDIRLA al registrar el pago (nueva_proxima_factura, YYYY-MM-DD > fecha).
+    const overrideProxima = (typeof body.nueva_proxima_factura === 'string'
+      && /^\d{4}-\d{2}-\d{2}$/.test(body.nueva_proxima_factura)
+      && body.nueva_proxima_factura > fecha) ? body.nueva_proxima_factura : null;
     const updSub: any = {
       estado: 'activa',
       // Vitalicia = pago único: se activa pero NO tiene próxima factura (no renueva).
-      proxima_factura: sub.ciclo === 'vitalicia' ? null : addCiclo(base, cicloEfectivo),
+      proxima_factura: sub.ciclo === 'vitalicia' ? null : (overrideProxima || addCiclo(base, cicloEfectivo)),
       pagos_realizados: Number(sub.pagos_realizados || 0) + 1,
       total_pagado: r2(Number(sub.total_pagado || 0) + monto),
       // Pagar renueva: si tenía cancelación "al vencer" pendiente, el pago la
@@ -223,7 +232,7 @@ export const POST: APIRoute = async ({ request }) => {
       } catch (e) { /* la comisión nunca bloquea el registro del pago */ }
     }
 
-    return new Response(JSON.stringify({ ok: true, payment_id: pago.id, subscription: subUpd, comision, ...(esParcial ? { advertencia: `pago parcial: $${r2(monto)} de $${r2(esperado)} esperados` } : {}) }, null, 2),
+    return new Response(JSON.stringify({ ok: true, payment_id: pago.id, numero_acuse: pago.numero_acuse, acuse_url: `/acuse/${pago.id}`, subscription: subUpd, comision, ...(esParcial ? { advertencia: `pago parcial: $${r2(monto)} de $${r2(esperado)} esperados` } : {}) }, null, 2),
       { status: 200, headers: { 'Content-Type': 'application/json' } });
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e?.message || String(e) }), { status: 500 });

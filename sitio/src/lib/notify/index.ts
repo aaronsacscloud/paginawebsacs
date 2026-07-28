@@ -174,7 +174,7 @@ const templates: Record<string, Template> = {
             <div style="display:inline-block;margin-top:10px;padding:4px 12px;background:#2AB5A0;color:#fff;font-size:0.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;border-radius:4px">Pago confirmado</div>
           </div>
           <p style="color:#555;line-height:1.6;margin:20px 0 12px">Hola ${d.contacto || ''},</p>
-          <p style="color:#555;line-height:1.6;margin:0 0 16px">Confirmamos la recepción de tu pago por <strong>${fmt(d.monto)}</strong> correspondiente a la cotización <strong>${d.quote_numero || ''}</strong>.</p>
+          <p style="color:#555;line-height:1.6;margin:0 0 16px">Confirmamos la recepción de tu pago por <strong>${fmt(d.monto)}</strong> ${d.concepto ? `correspondiente a ${d.concepto}` : `correspondiente a la cotización <strong>${d.quote_numero || ''}</strong>`}.</p>
           <div style="background:#fff;border:1px solid #e5e5e5;padding:18px;border-radius:8px;margin:16px 0">
             <table style="width:100%;font-size:0.875rem;color:#333;border-collapse:collapse">
               <tr><td style="padding:6px 0;width:120px;color:#999;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em">Método</td><td style="padding:6px 0;font-weight:600">${metodo}</td></tr>
@@ -184,7 +184,7 @@ const templates: Record<string, Template> = {
             </table>
           </div>
           ${itemsHtml}
-          ${d.saldoRestante > 0 ? `<div style="margin:16px 0;padding:14px;background:#fff8e1;border-left:3px solid #E8A838;font-size:0.875rem;color:#5a4a1f"><strong>Saldo restante:</strong> ${fmt(d.saldoRestante)} de ${fmt(d.totalCotizacion)}</div>` : `<div style="margin:16px 0;padding:14px;background:#e8f7f3;border-left:3px solid #2AB5A0;font-size:0.875rem;color:#1a5a4f"><strong>✓ Cotización pagada en su totalidad.</strong></div>`}
+          ${d.saldoRestante > 0 ? `<div style="margin:16px 0;padding:14px;background:#fff8e1;border-left:3px solid #E8A838;font-size:0.875rem;color:#5a4a1f"><strong>Saldo restante:</strong> ${fmt(d.saldoRestante)} de ${fmt(d.totalCotizacion)}</div>` : `<div style="margin:16px 0;padding:14px;background:#e8f7f3;border-left:3px solid #2AB5A0;font-size:0.875rem;color:#1a5a4f"><strong>✓ ${d.concepto ? 'Pago recibido. Tu servicio queda al corriente.' : 'Cotización pagada en su totalidad.'}</strong></div>`}
           <div style="text-align:center;margin:24px 0">
             <a href="${d.acuseUrl}" style="display:inline-block;background:#1a1a1a;color:#fff;padding:14px 28px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.875rem">Ver acuse completo</a>
           </div>

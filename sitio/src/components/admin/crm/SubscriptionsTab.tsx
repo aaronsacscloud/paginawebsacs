@@ -32,6 +32,13 @@ const sufCiclo = (c?: string) => c === 'anual' ? 'año' : c === 'vitalicia' ? 'p
 const fmtDate = (d?: string | null) => d ? new Date(d + (d.length === 10 ? 'T12:00:00' : '')).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '—';
 const MES_NOM = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const fmtMes = (m: string) => { const [y, mm] = m.split('-'); return MES_NOM[Number(mm) - 1] + ' ' + y.slice(2); };
+// Recorre una fecha un ciclo (para sugerir la próxima factura al registrar pago).
+function addCicloDate(fecha: string, ciclo: string): string {
+  const d = new Date(fecha + 'T12:00:00Z');
+  if (ciclo === 'anual') d.setUTCFullYear(d.getUTCFullYear() + 1);
+  else d.setUTCMonth(d.getUTCMonth() + 1);
+  return d.toISOString().slice(0, 10);
+}
 
 export const S = {
   card: { background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: 18, marginBottom: 16 } as const,
@@ -291,6 +298,7 @@ export default function SubscriptionsTab() {
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {h != null && <span style={{ fontWeight: 800, color: h >= 70 ? '#1A8F7A' : h >= 40 ? '#a06600' : '#b93333', fontSize: '0.82rem' }} title="Salud">♥ {h}</span>}
+                        <button style={{ ...S.btnSmall, minHeight: 44, padding: '0 12px', background: '#1A8F7A', color: '#fff', border: 'none' }} title="Registrar pago: genera comprobante y actualiza el ARR + próxima fecha" onClick={e => { e.stopPropagation(); setPagoPrefill({ subscription_id: s.id }); setShowPago(true); }}>💰 Pago</button>
                         <button style={{ ...S.btnSmall, minHeight: 44, padding: '0 12px' }} title="Genera un link formal para el cliente (plan, monto y próxima fecha) + PDF" onClick={e => { e.stopPropagation(); setLinkSub(s); }}>🔗 Link</button>
                         <button style={{ ...S.btnSmall, minHeight: 44, padding: '0 14px' }} onClick={e => { e.stopPropagation(); setEditSub(s); }}>Editar</button>
                       </div>
@@ -348,6 +356,7 @@ export default function SubscriptionsTab() {
                       </td>
                       <td style={S.td}>{(() => { const h = (s.companies as any)?.health_score; if (h == null) return '—'; const c = h >= 70 ? '#1A8F7A' : h >= 40 ? '#a06600' : '#b93333'; return <span style={{ fontWeight: 800, color: c }}>{h}</span>; })()}</td>
                       <td style={S.td} onClick={e => e.stopPropagation()}>
+                        <button style={{ ...S.btnSmall, marginRight: 4, background: '#1A8F7A', color: '#fff', border: 'none' }} title="Registrar pago: genera comprobante y actualiza el ARR + próxima fecha" onClick={() => { setPagoPrefill({ subscription_id: s.id }); setShowPago(true); }}>💰 Pago</button>
                         <button style={{ ...S.btnSmall, marginRight: 4 }} title="Genera un link formal para el cliente (plan, monto y próxima fecha) + PDF, con opción de descuento pronto pago" onClick={() => setLinkSub(s)}>🔗 Link</button>
                         <button style={S.btnSmall} onClick={() => setEditSub(s)}>Editar</button>
                       </td>
@@ -596,9 +605,22 @@ export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: S
   const [form, setForm] = useState<any>({ ciclo: 'anual', metodo: 'transferencia', fecha: new Date().toISOString().slice(0, 10) });
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // Panel de éxito: comprobante generado (ver/copiar/enviar).
+  const [done, setDone] = useState<{ payment_id: string; numero_acuse: string; acuse_url: string } | null>(null);
+  const [sending, setSending] = useState(false);
+  const [sendMsg, setSendMsg] = useState('');
 
   const cobrables = subs.filter(s => s.estado !== 'cancelada');
   const sel = cobrables.find(s => s.id === subId);
+
+  // Próxima factura por defecto (editable): recorre un ciclo desde la actual o la fecha del pago.
+  function proximaSugerida(s: Sub | undefined, fecha: string): string {
+    if (!s || s.ciclo === 'vitalicia') return '';
+    const base = (s.proxima_factura && s.proxima_factura >= fecha) ? s.proxima_factura : fecha;
+    return addCicloDate(base, s.ciclo);
+  }
+  // Prefill de la próxima fecha al abrir con una sub ya elegida.
+  useEffect(() => { if (sel && form.nueva_proxima_factura === undefined) setForm((f: any) => ({ ...f, monto: f.monto ?? (sel.monto_proximo ?? sel.precio), nueva_proxima_factura: proximaSugerida(sel, f.fecha) })); }, [sel]);
 
   async function guardar() {
     setErr(null);
@@ -609,7 +631,7 @@ export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: S
     setSaving(true);
     try {
       const body: any = { monto, fecha: form.fecha, metodo: form.metodo, referencia: form.referencia || null, notas: form.notas || null };
-      if (modo === 'existente') body.subscription_id = subId;
+      if (modo === 'existente') { body.subscription_id = subId; if (form.nueva_proxima_factura) body.nueva_proxima_factura = form.nueva_proxima_factura; }
       else Object.assign(body, {
         empresa: form.empresa, sacs_account: form.sacs_account || null,
         contacto_nombre: form.contacto_nombre || null, email: form.email || null,
@@ -618,9 +640,45 @@ export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: S
       const res = await fetch('/api/crm/arr/register-payment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const j = await res.json();
       if (!res.ok || j.error) throw new Error(j.error || 'No se pudo registrar');
-      onDone();
+      // Éxito: mostramos el comprobante en vez de cerrar. La lista se recarga
+      // al pulsar "Cerrar" (onDone). El ARR/fecha ya se actualizaron en el server.
+      setDone({ payment_id: j.payment_id, numero_acuse: j.numero_acuse || '', acuse_url: j.acuse_url || `/acuse/${j.payment_id}` });
+      setSaving(false);
     } catch (e: any) { setErr(e?.message || String(e)); setSaving(false); }
   }
+
+  const acuseUrl = done ? (typeof window !== 'undefined' ? window.location.origin : '') + done.acuse_url : '';
+  async function enviarComprobante() {
+    if (!done) return;
+    setSending(true); setSendMsg('');
+    try {
+      const r = await fetch(`/api/revenue/payments/${done.payment_id}/send-acuse`, { method: 'POST' });
+      const j = await r.json();
+      setSendMsg(j.ok ? '✓ Comprobante enviado al cliente.' : ('No se pudo enviar: ' + (j.reason === 'sin_email_del_cliente' ? 'el cliente no tiene email registrado.' : (j.reason || 'error'))));
+    } catch { setSendMsg('Error de red al enviar.'); }
+    setSending(false);
+  }
+
+  // ── Panel de éxito con el comprobante ──
+  if (done) return (
+    <div style={S.overlay} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={{ ...S.modal, maxWidth: 460 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+          <h3 style={{ margin: 0, fontWeight: 800 }}>✓ Pago registrado</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
+        </div>
+        <div style={{ fontSize: '0.84rem', color: '#555', marginBottom: 12 }}>Comprobante <b>{done.numero_acuse}</b> generado. El ARR y la próxima fecha se actualizaron.</div>
+        <input readOnly value={acuseUrl} onFocus={e => e.currentTarget.select()} style={{ ...S.input, width: '100%', marginBottom: 8 }} />
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button style={{ ...S.btn, background: '#1A8F7A', color: '#fff', flex: 1 }} onClick={() => window.open(done.acuse_url, '_blank', 'noopener')}>Ver / PDF</button>
+          <button style={{ ...S.btn, border: '1px solid #ddd', background: '#fff' }} onClick={() => { try { navigator.clipboard?.writeText(acuseUrl); setSendMsg('Link copiado.'); setTimeout(() => setSendMsg(''), 1500); } catch { /* */ } }}>Copiar link</button>
+          <button disabled={sending} style={{ ...S.btn, background: '#4B7BE5', color: '#fff', opacity: sending ? 0.6 : 1 }} onClick={enviarComprobante}>{sending ? 'Enviando…' : 'Enviar por correo'}</button>
+        </div>
+        {sendMsg && <div style={{ marginTop: 10, fontSize: '0.8rem', fontWeight: 600, color: sendMsg.startsWith('✓') || sendMsg === 'Link copiado.' ? '#1A8F7A' : '#b93333' }}>{sendMsg}</div>}
+        <button onClick={onDone} style={{ ...S.btn, width: '100%', marginTop: 14, background: '#f2f2f2', color: '#555' }}>Cerrar</button>
+      </div>
+    </div>
+  );
 
   return (
     <div style={S.overlay} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
@@ -641,7 +699,14 @@ export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: S
               <option value="">— elegir —</option>
               {cobrables.map(s => <option key={s.id} value={s.id}>{(s.companies?.nombre || '—') + ' · ' + s.nombre_plan + ' (' + s.ciclo + ') · próx ' + (s.proxima_factura || 's/f')}</option>)}
             </select>
-            {sel && <div style={{ fontSize: '0.75rem', color: '#999', marginTop: 4 }}>{sel.ciclo === 'vitalicia' ? 'Al registrar: pasa a ACTIVA (pago único, sin renovación; no cuenta como ARR).' : `Al registrar: pasa a ACTIVA y su próxima factura se recorre un ${sufCiclo(sel.ciclo)}.`}</div>}
+            {sel && <div style={{ fontSize: '0.75rem', color: '#999', marginTop: 4 }}>{sel.ciclo === 'vitalicia' ? 'Al registrar: pasa a ACTIVA (pago único, sin renovación; no cuenta como ARR).' : 'Al registrar: pasa a ACTIVA, se genera el comprobante y el ARR se actualiza.'}</div>}
+            {sel && sel.ciclo !== 'vitalicia' && (
+              <div style={{ marginTop: 10 }}>
+                <label style={S.label}>Nueva fecha de próxima factura</label>
+                <input type="date" value={form.nueva_proxima_factura ?? proximaSugerida(sel, form.fecha)} onChange={e => setForm({ ...form, nueva_proxima_factura: e.target.value })} style={{ ...S.input, width: '100%' }} />
+                <div style={{ fontSize: '0.72rem', color: '#999', marginTop: 3 }}>Sugerida: un {sufCiclo(sel.ciclo)} después ({fmtDate(proximaSugerida(sel, form.fecha))}). Puedes cambiarla.</div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>

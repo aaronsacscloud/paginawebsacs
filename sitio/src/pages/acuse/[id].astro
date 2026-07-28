@@ -19,6 +19,21 @@ if (payment.quote_id) {
   allPayments = pgs || [];
 }
 
+// Pago de SUSCRIPCIÓN (renovación), sin cotización: armamos el recibo desde la
+// sub + empresa + contacto.
+let sub: any = null; let company: any = null; let contact: any = null;
+if (!payment.quote_id && payment.subscription_id) {
+  const { data: s } = await supabase.from('subscriptions').select('id, nombre_plan, ciclo, proxima_factura, company_id, contact_id').eq('id', payment.subscription_id).single();
+  sub = s || null;
+  if (sub?.company_id) { const { data: c } = await supabase.from('companies').select('nombre, sacs_account').eq('id', sub.company_id).single(); company = c || null; }
+  const cid = payment.contact_id || sub?.contact_id;
+  if (cid) { const { data: ct } = await supabase.from('contacts').select('nombre, apellido, email').eq('id', cid).single(); contact = ct || null; }
+}
+const pagadoPor = quote?.empresa || company?.nombre || '—';
+const contactoNom = quote?.contacto || [contact?.nombre, contact?.apellido].filter(Boolean).join(' ').trim() || '';
+const emailCli = quote?.email || contact?.email || '';
+const CICLO_LBL: Record<string, string> = { mensual: 'Mensual', anual: 'Anual', vitalicia: 'Pago único' };
+
 const fmt = (n: number) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const fmtDecimal = (n: number) => Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtDate = (d: string | null) => {
@@ -72,7 +87,7 @@ const cotizacionUrl = quote ? `/cotizacion/${quote.id}` : null;
 
 <BaseLayout
   title={`Acuse de pago ${payment.numero_acuse} — SACS`}
-  description={`Confirmación de pago por ${fmt(monto)} de ${quote?.empresa || 'cliente SACS'}`}
+  description={`Confirmación de pago por ${fmt(monto)} de ${pagadoPor}`}
   noindex={true}
   bareLayout={true}
 >
@@ -123,9 +138,9 @@ const cotizacionUrl = quote ? `/cotizacion/${quote.id}` : null;
     <section class="acuse-block acuse-parties">
       <div class="acuse-party">
         <div class="acuse-party-label">Pagado por</div>
-        <div class="acuse-party-name">{quote?.empresa || '—'}</div>
-        {quote?.contacto && <div class="acuse-party-detail">{quote.contacto}</div>}
-        {quote?.email && <div class="acuse-party-detail acuse-party-detail--mono">{quote.email}</div>}
+        <div class="acuse-party-name">{pagadoPor}</div>
+        {contactoNom && <div class="acuse-party-detail">{contactoNom}</div>}
+        {emailCli && <div class="acuse-party-detail acuse-party-detail--mono">{emailCli}</div>}
       </div>
       {quote && (
         <div class="acuse-party">
@@ -135,6 +150,14 @@ const cotizacionUrl = quote ? `/cotizacion/${quote.id}` : null;
           <div class="acuse-party-detail acuse-party-detail--mono">
             <a href={`/cotizacion/${quote.id}`}>www.sacscloud.com/cotizacion/{quote.id.slice(0, 8)}…</a>
           </div>
+        </div>
+      )}
+      {!quote && sub && (
+        <div class="acuse-party">
+          <div class="acuse-party-label">Suscripción</div>
+          <div class="acuse-party-name">{sub.nombre_plan}</div>
+          <div class="acuse-party-detail">{CICLO_LBL[sub.ciclo] || sub.ciclo}{payment.periodo_cubierto ? ` · periodo ${payment.periodo_cubierto}` : ''}</div>
+          {sub.proxima_factura && <div class="acuse-party-detail">Próxima renovación: {fmtDate(sub.proxima_factura)}</div>}
         </div>
       )}
     </section>
@@ -147,7 +170,7 @@ const cotizacionUrl = quote ? `/cotizacion/${quote.id}` : null;
           <tr><td>Método de pago</td><td><strong>{metodoTexto}</strong></td></tr>
           <tr><td>Fecha</td><td>{fmtDate(payment.fecha)}</td></tr>
           {payment.referencia && <tr><td>Referencia</td><td class="acuse-mono">{payment.referencia}</td></tr>}
-          <tr><td>Pago</td><td>{numeroPago} de {totalPagos}</td></tr>
+          {totalPagos > 0 && <tr><td>Pago</td><td>{numeroPago} de {totalPagos}</td></tr>}
         </tbody>
       </table>
 
@@ -188,6 +211,24 @@ const cotizacionUrl = quote ? `/cotizacion/${quote.id}` : null;
                 </tr>
               );
             })}
+          </tbody>
+        </table>
+      </section>
+    )}
+
+    {/* ─── Concepto (pago de suscripción, sin cotización) ─── */}
+    {!quote && sub && (
+      <section class="acuse-block">
+        <div class="acuse-section-title">Concepto</div>
+        <table class="acuse-table acuse-table--items">
+          <tbody>
+            <tr>
+              <td>
+                <div class="acuse-item-name">{sub.nombre_plan}</div>
+                <div class="acuse-item-sub">{CICLO_LBL[sub.ciclo] || sub.ciclo}{payment.periodo_cubierto ? ` · periodo ${payment.periodo_cubierto}` : ''}{sub.proxima_factura ? ` · vigente hasta ${fmtDate(sub.proxima_factura)}` : ''}</div>
+              </td>
+              <td class="acuse-item-amount">{fmt(monto)}</td>
+            </tr>
           </tbody>
         </table>
       </section>
