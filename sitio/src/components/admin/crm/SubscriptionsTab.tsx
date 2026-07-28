@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import InteligenciaView from './InteligenciaView';
 import ClienteDrawer360 from './ClienteDrawer360';
 import { useIsMobile } from '../../../lib/ui/mobile';
+import Sheet from './ui/Sheet';
 
 /* ═══════════════ Suscripciones & ARR — hub del negocio recurrente ═══════════════
  * KPIs + meta · lista de suscripciones (mensual/anual separados) · riesgo por
@@ -87,6 +88,7 @@ export default function SubscriptionsTab() {
     ? { display: 'flex', gap: 12, overflowX: 'auto' as const, scrollSnapType: 'x mandatory' as const, WebkitOverflowScrolling: 'touch' as const, marginBottom: 12, paddingBottom: 4 }
     : { display: 'flex', gap: 12, flexWrap: 'wrap' as const, marginBottom: 12 };
   const kpiCard: any = isMobile ? { ...S.kpi, flex: '0 0 78vw', minWidth: 0, scrollSnapAlign: 'start' } : S.kpi;
+  const [showFiltrosSheet, setShowFiltrosSheet] = useState(false); // móvil: hoja de filtros
   const [subs, setSubs] = useState<Sub[]>([]);
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -178,6 +180,32 @@ export default function SubscriptionsTab() {
   if (loading) return <div style={{ padding: 48, textAlign: 'center', color: '#999' }}>Cargando suscripciones…</div>;
   if (error) return <div style={{ padding: 48, textAlign: 'center', color: '#E54B4B' }}>{error} <button style={S.btnSmall} onClick={load}>Reintentar</button></div>;
 
+  // Filtros (cliente/plan/ciclo/estado + limpiar): inline en desktop, en un Sheet
+  // en móvil. Se definen una vez y se reutilizan en ambos lugares.
+  const activeFiltros = [fCliente, fPlan, fCiclo, fEstado].filter(Boolean).length;
+  const selW = isMobile ? { width: '100%' } : {};
+  const filtrosSelects = (<>
+    <select value={fCliente} onChange={e => setFCliente(e.target.value)} style={{ ...S.input, ...(isMobile ? selW : { maxWidth: 200 }) }} title="Ver todas las suscripciones de un cliente">
+      <option value="">Todos los clientes</option>
+      {clientesOpts.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+    </select>
+    <select value={fPlan} onChange={e => setFPlan(e.target.value)} style={{ ...S.input, ...selW }} title="Filtra por plan del catálogo">
+      <option value="">Todos los planes</option>
+      {plans.filter(p => p.id).map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+      {nSinPlan > 0 && <option value="__none__">Sin plan de catálogo ({nSinPlan})</option>}
+    </select>
+    <select value={fCiclo} onChange={e => setFCiclo(e.target.value)} style={{ ...S.input, ...selW }}>
+      <option value="">Todos los ciclos</option><option value="anual">Anuales</option><option value="mensual">Mensuales</option><option value="vitalicia">Vitalicias</option>
+    </select>
+    <select value={fEstado} onChange={e => setFEstado(e.target.value)} style={{ ...S.input, ...selW }}>
+      <option value="">Todos los estados</option>
+      {Object.entries(ESTADOS).map(([v, c]) => <option key={v} value={v}>{c.label}</option>)}
+    </select>
+    {(fCliente || fPlan || fCiclo || fEstado || search || fStale) && (
+      <button onClick={() => { setFCliente(''); setFPlan(''); setFCiclo(''); setFEstado(''); setSearch(''); setFStale(false); }} style={{ ...S.btnSmall, ...(isMobile ? { height: 44, width: '100%' } : { alignSelf: 'center' }) }} title="Limpiar filtros">✕ Limpiar</button>
+    )}
+  </>);
+
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
       {/* ── KPIs + meta ── */}
@@ -218,16 +246,18 @@ export default function SubscriptionsTab() {
       </div>
 
       {/* ── Barra de acciones + sub-vistas ── */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
+      <div style={isMobile
+        ? { display: 'flex', gap: 8, overflowX: 'auto', scrollSnapType: 'x proximity', WebkitOverflowScrolling: 'touch', marginBottom: 10, paddingBottom: 4 }
+        : { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
         {(['subs', 'riesgo', 'cobranza', 'conciliacion', 'inteligencia'] as const).map(v => (
           <button key={v} onClick={() => setVista(v)}
-            style={{ ...S.btn, background: vista === v ? '#1a1a1a' : '#f2f2f2', color: vista === v ? '#fff' : '#555' }}>
+            style={{ ...S.btn, ...(isMobile ? { flexShrink: 0, height: 44, scrollSnapAlign: 'start' } : {}), background: vista === v ? '#1a1a1a' : '#f2f2f2', color: vista === v ? '#fff' : '#555' }}>
             {v === 'subs' ? 'Suscripciones' : v === 'riesgo' ? `Riesgo (${(riesgo?.banda_3_15?.length || 0) + (riesgo?.banda_15_mas?.length || 0)})` : v === 'cobranza' ? 'Cobranza y proyección' : v === 'conciliacion' ? 'Conciliación' : '★ Inteligencia ARR'}
           </button>
         ))}
-        <div style={{ flex: 1 }} />
-        <button style={{ ...S.btn, background: '#1A8F7A', color: '#fff' }} onClick={() => setShowPago(true)}>+ Registrar pago</button>
+        {!isMobile && <><div style={{ flex: 1 }} /><button style={{ ...S.btn, background: '#1A8F7A', color: '#fff' }} onClick={() => setShowPago(true)}>+ Registrar pago</button></>}
       </div>
+      {isMobile && <button style={{ ...S.btn, width: '100%', height: 44, background: '#1A8F7A', color: '#fff', marginBottom: 14 }} onClick={() => setShowPago(true)}>+ Registrar pago</button>}
 
       {/* ═══ VISTA SUSCRIPCIONES ═══ */}
       {vista === 'subs' && (
@@ -253,31 +283,20 @@ export default function SubscriptionsTab() {
               <button onClick={() => setFStale(!fStale)} style={{ ...S.btnSmall, background: fStale ? '#1a1a1a' : '#fff', color: fStale ? '#fff' : '#333' }}>{fStale ? 'Ver todas' : 'Ver solo esas'}</button>
             </div>
           )}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente, cuenta o plan…" style={{ ...S.input, flex: 1, minWidth: 180, ...(isMobile ? { flex: '1 1 100%', minWidth: 0 } : {}) }} />
-            <select value={fCliente} onChange={e => setFCliente(e.target.value)} style={{ ...S.input, maxWidth: 200 }} title="Ver todas las suscripciones de un cliente">
-              <option value="">Todos los clientes</option>
-              {clientesOpts.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
-            </select>
-            <select value={fPlan} onChange={e => setFPlan(e.target.value)} style={S.input} title="Filtra por plan del catálogo">
-              <option value="">Todos los planes</option>
-              {/* El filtro opera por plan_id: solo entradas con id real (las
-                  suscripciones de plugin/a-la-medida guardan plan_id='' y se
-                  distinguen por nombre_plan, no filtrables por id). */}
-              {plans.filter(p => p.id).map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-              {nSinPlan > 0 && <option value="__none__">Sin plan de catálogo ({nSinPlan})</option>}
-            </select>
-            <select value={fCiclo} onChange={e => setFCiclo(e.target.value)} style={S.input}>
-              <option value="">Todos los ciclos</option><option value="anual">Anuales</option><option value="mensual">Mensuales</option><option value="vitalicia">Vitalicias</option>
-            </select>
-            <select value={fEstado} onChange={e => setFEstado(e.target.value)} style={S.input}>
-              <option value="">Todos los estados</option>
-              {Object.entries(ESTADOS).map(([v, c]) => <option key={v} value={v}>{c.label}</option>)}
-            </select>
-            {(fCliente || fPlan || fCiclo || fEstado || search || fStale) && (
-              <button onClick={() => { setFCliente(''); setFPlan(''); setFCiclo(''); setFEstado(''); setSearch(''); setFStale(false); }} style={{ ...S.btnSmall, alignSelf: 'center' }} title="Limpiar filtros">✕ Limpiar</button>
-            )}
+            {isMobile
+              ? <button style={{ ...S.btn, height: 44, background: '#fff', border: '1px solid ' + (activeFiltros ? '#1a1a1a' : '#ddd'), color: '#333', display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => setShowFiltrosSheet(true)}>⚙ Filtros{activeFiltros ? ` (${activeFiltros})` : ''}</button>
+              : filtrosSelects}
           </div>
+          {isMobile && (
+            <Sheet open={showFiltrosSheet} onClose={() => setShowFiltrosSheet(false)} title="Filtros">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {filtrosSelects}
+                <button style={{ ...S.btn, background: '#1a1a1a', color: '#fff', height: 48, justifyContent: 'center', marginTop: 4 }} onClick={() => setShowFiltrosSheet(false)}>Ver {filtered.length} suscripci{filtered.length === 1 ? 'ón' : 'ones'}</button>
+              </div>
+            </Sheet>
+          )}
           {isMobile ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {filtered.map(s => {
