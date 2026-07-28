@@ -82,6 +82,11 @@ export function Estado({ e }: { e: string }) {
 
 export default function SubscriptionsTab() {
   const isMobile = useIsMobile();
+  // KPI en carrusel scroll-snap en móvil (no apilar); grid/flex en desktop.
+  const kpiCarril = isMobile
+    ? { display: 'flex', gap: 12, overflowX: 'auto' as const, scrollSnapType: 'x mandatory' as const, WebkitOverflowScrolling: 'touch' as const, marginBottom: 12, paddingBottom: 4 }
+    : { display: 'flex', gap: 12, flexWrap: 'wrap' as const, marginBottom: 12 };
+  const kpiCard: any = isMobile ? { ...S.kpi, flex: '0 0 78vw', minWidth: 0, scrollSnapAlign: 'start' } : S.kpi;
   const [subs, setSubs] = useState<Sub[]>([]);
   const [summary, setSummary] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -176,28 +181,28 @@ export default function SubscriptionsTab() {
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
       {/* ── KPIs + meta ── */}
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
-        <div style={S.kpi}>
+      <div style={kpiCarril}>
+        <div style={kpiCard}>
           <div style={S.kLabel}>ARR activo</div>
           <div style={S.kValue}>{fmt(k?.arr_activo)}</div>
           <div style={S.kSub}>{k?.subs_activas || 0} suscripciones · {k?.clientes_activos || 0} clientes</div>
         </div>
-        <div style={S.kpi}>
+        <div style={kpiCard}>
           <div style={S.kLabel}>Anuales</div>
           <div style={S.kValue}>{fmt(k?.anuales?.arr)}</div>
           <div style={S.kSub}>{k?.anuales?.n || 0} suscripciones · renuevan cada año</div>
         </div>
-        <div style={S.kpi}>
+        <div style={kpiCard}>
           <div style={S.kLabel}>Mensuales</div>
           <div style={S.kValue}>{fmt(k?.mensuales?.arr)}</div>
           <div style={S.kSub}>{k?.mensuales?.n || 0} suscripciones · cobran cada mes</div>
         </div>
-        <div style={S.kpi}>
+        <div style={kpiCard}>
           <div style={S.kLabel}>ARR en riesgo</div>
           <div style={{ ...S.kValue, color: (riesgo?.arr_en_riesgo || 0) > 0 ? '#b93333' : '#1A8F7A' }}>{fmt(riesgo?.arr_en_riesgo)}</div>
           <div style={S.kSub}>{(riesgo?.banda_3_15?.length || 0) + (riesgo?.banda_15_mas?.length || 0)} clientes sin vender ≥3 días</div>
         </div>
-        <div style={{ ...S.kpi, minWidth: 220 }}>
+        <div style={kpiCard}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={S.kLabel}>Meta ARR {meta?.anio}</span>
             <button style={{ ...S.btnSmall, padding: '1px 8px' }} onClick={() => setShowMeta(true)}>⚙</button>
@@ -233,11 +238,11 @@ export default function SubscriptionsTab() {
               <div style={{ fontWeight: 800 }}>♾️ Vitalicias legacy <span style={{ color: '#999', fontWeight: 400, fontSize: 13 }}>· pago único, fuera de ARR — oportunidad de recurrencia</span></div>
               <button onClick={() => { setFCiclo(fCiclo === 'vitalicia' ? '' : 'vitalicia'); }} style={{ ...S.btnSmall, background: fCiclo === 'vitalicia' ? '#1a1a1a' : '#fff', color: fCiclo === 'vitalicia' ? '#fff' : '#333' }}>{fCiclo === 'vitalicia' ? 'Ver todas' : `Ver los ${vitStats.total} →`}</button>
             </div>
-            <div style={{ display: 'flex', gap: 12, marginTop: 12, flexWrap: 'wrap' }}>
-              <div style={S.kpi}><div style={S.kLabel}>Clientes vitalicios</div><div style={S.kValue}>{vitStats.total}</div><div style={S.kSub}>{vitStats.activas} activos</div></div>
-              <div style={S.kpi}><div style={S.kLabel}>Cobrado (pago único)</div><div style={S.kValue}>{fmt(vitStats.cobrado)}</div><div style={S.kSub}>ingreso reconocido, no ARR</div></div>
-              <div style={S.kpi}><div style={S.kLabel}>Usando SACS (≤30d)</div><div style={{ ...S.kValue, color: '#1A8F7A' }}>{vitStats.usando}</div><div style={S.kSub}>upsell caliente</div></div>
-              <div style={S.kpi}><div style={S.kLabel}>Sin uso reciente</div><div style={{ ...S.kValue, color: (vitStats.total - vitStats.usando) > 0 ? '#a06600' : '#999' }}>{vitStats.total - vitStats.usando}</div><div style={S.kSub}>reactivar / recuperar</div></div>
+            <div style={{ ...kpiCarril, marginTop: 12, marginBottom: 0 }}>
+              <div style={kpiCard}><div style={S.kLabel}>Clientes vitalicios</div><div style={S.kValue}>{vitStats.total}</div><div style={S.kSub}>{vitStats.activas} activos</div></div>
+              <div style={kpiCard}><div style={S.kLabel}>Cobrado (pago único)</div><div style={S.kValue}>{fmt(vitStats.cobrado)}</div><div style={S.kSub}>ingreso reconocido, no ARR</div></div>
+              <div style={kpiCard}><div style={S.kLabel}>Usando SACS (≤30d)</div><div style={{ ...S.kValue, color: '#1A8F7A' }}>{vitStats.usando}</div><div style={S.kSub}>upsell caliente</div></div>
+              <div style={kpiCard}><div style={S.kLabel}>Sin uso reciente</div><div style={{ ...S.kValue, color: (vitStats.total - vitStats.usando) > 0 ? '#a06600' : '#999' }}>{vitStats.total - vitStats.usando}</div><div style={S.kSub}>reactivar / recuperar</div></div>
             </div>
           </div>
         )}

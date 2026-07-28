@@ -4,6 +4,7 @@ import TablaEnterprise, { type ColDef, type QuickDef, type VistaDef } from './Ta
 import ClienteDrawer360 from './ClienteDrawer360';
 import HealthScoreBadge from './HealthScoreBadge';
 import { SENAL_LABEL } from '../../../lib/crm/senales';
+import { useIsMobile } from '../../../lib/ui/mobile';
 
 /* ═══ Oportunidades — todos los clientes con una señal de venta o riesgo ═══
  * (datos reales de SACS vía companies.actividad; qué venderle / a quién atender). */
@@ -18,6 +19,7 @@ const T = {
 };
 
 export default function OportunidadesTab() {
+  const isMobile = useIsMobile();
   const [data, setData] = useState<any[]>([]);
   const [res, setRes] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -103,9 +105,11 @@ export default function OportunidadesTab() {
         <div style={{ fontSize: '0.8rem', color: '#8a8f98' }}>Clientes con una señal real de venta (upsell/cross-sell) o de riesgo — para saber a quién ofrecerle qué.</div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 18 }}>
+      <div style={isMobile
+        ? { display: 'flex', gap: 12, overflowX: 'auto', scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch', marginBottom: 16, paddingBottom: 4, marginLeft: -2, marginRight: -2, paddingLeft: 2, paddingRight: 2 }
+        : { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 18 }}>
         {kpis.map(k => (
-          <div key={k.label} style={{ background: '#fff', border: '1px solid #e9eaee', borderRadius: 14, padding: '16px 18px', boxShadow: '0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div key={k.label} style={{ background: '#fff', border: '1px solid #e9eaee', borderRadius: 14, padding: '16px 18px', boxShadow: '0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)', display: 'flex', alignItems: 'center', gap: 12, ...(isMobile ? { minWidth: '72vw', scrollSnapAlign: 'start' as const, flexShrink: 0 } : {}) }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: k.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{k.icon}</div>
             <div>
               <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#8a8f98', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{k.label}</div>
