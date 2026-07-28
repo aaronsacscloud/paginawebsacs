@@ -265,12 +265,12 @@ export default function TablaEnterprise({
     <div>
       {/* ① FILTROS PRINCIPALES + acciones */}
       {isMobile ? (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-          <button style={{ ...E.btn, height: 44, fontWeight: 700, borderColor: activeFiltros ? '#1a1a1a' : '#e2e4e9' }} onClick={() => setShowFiltrosSheet(true)}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
+          <button style={{ ...E.btn, height: 44, flexShrink: 0, fontWeight: 700, borderColor: activeFiltros ? '#1a1a1a' : '#e2e4e9' }} onClick={() => setShowFiltrosSheet(true)}>
             <SlidersHorizontal size={16} strokeWidth={2} /> Filtros
             {activeFiltros > 0 && <span style={{ background: '#1a1a1a', color: '#fff', borderRadius: 99, padding: '0 7px', fontSize: '0.68rem', fontWeight: 800, lineHeight: '18px' }}>{activeFiltros}</span>}
           </button>
-          <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap' }}>{actions}</div>
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: 8, justifyContent: 'flex-end', alignItems: 'center' }}>{actions}</div>
         </div>
       ) : (
         <>

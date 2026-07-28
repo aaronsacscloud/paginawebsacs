@@ -436,13 +436,13 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           )) : null}
           actions={<>
             <button onClick={() => setShowNuevo(true)} title="Alta completa: cliente + contacto + cuenta SACS + suscripción"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 36, padding: '0 16px', border: 'none', borderRadius: 10, background: '#1a1a1a', color: '#fff', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 1px 2px rgba(16,24,40,0.18)' }}>
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, height: isMobile ? 44 : 36, flex: isMobile ? 1 : undefined, minWidth: 0, padding: '0 16px', border: 'none', borderRadius: 10, background: '#1a1a1a', color: '#fff', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 1px 2px rgba(16,24,40,0.18)', whiteSpace: 'nowrap' }}>
               <Plus size={15} strokeWidth={2.5} /> Nuevo cliente
             </button>
-            <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
+            <div style={{ position: 'relative', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
               <button onClick={() => setMenuOpen(o => !o)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 36, padding: '0 14px', border: '1px solid #e2e4e9', borderRadius: 10, background: menuOpen ? '#f7f8fa' : '#fff', color: '#333', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer' }}>
-                Más acciones <ChevronDown size={14} strokeWidth={2} style={{ transform: menuOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: isMobile ? 44 : 36, padding: isMobile ? '0 12px' : '0 14px', border: '1px solid #e2e4e9', borderRadius: 10, background: menuOpen ? '#f7f8fa' : '#fff', color: '#333', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                {isMobile ? 'Más' : 'Más acciones'} <ChevronDown size={14} strokeWidth={2} style={{ transform: menuOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
               </button>
               {menuOpen && isMobile && <div onClick={() => setMenuOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.42)', zIndex: 949 }} />}
               {menuOpen && (
