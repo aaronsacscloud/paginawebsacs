@@ -338,7 +338,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
         .ct360 tbody tr:hover .ct-pencil, .ct360 .ct-pencil:focus { opacity: .65; }
       `}</style>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 14, marginBottom: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 230px), 1fr))', gap: 14, marginBottom: 18 }}>
         <KpiCard icon={<Users size={18} strokeWidth={2} color="#4B7BE5" />} chipBg="#eef2fe" label="Clientes" value={tot?.clientes ?? '—'}
           duals={[{ dot: '#1A8F7A', num: tot?.activos ?? 0, lbl: 'con ARR activo' }, { dot: '#c6cad2', num: Math.max(0, (tot?.clientes || 0) - (tot?.activos || 0)), lbl: 'sin ARR' }]} />
         <KpiCard icon={<TrendingUp size={18} strokeWidth={2} color="#1A8F7A" />} chipBg="#e6f6f2" label="ARR" value={money(tot?.arr)}

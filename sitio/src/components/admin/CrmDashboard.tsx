@@ -382,7 +382,7 @@ export default function CrmDashboard() {
       </div>
 
       {/* ─── Main Content ─── */}
-      <div style={{ flex: 1, marginLeft: mainMarginLeft, transition: 'margin-left 0.2s ease', display: 'flex', flexDirection: 'column', minHeight: '100vh', paddingTop: isMobile ? 64 : 0, paddingBottom: isMobile ? 'var(--crm-bottomnav-h, 64px)' : 0 }}>
+      <div style={{ flex: 1, minWidth: 0, maxWidth: '100%', marginLeft: mainMarginLeft, transition: 'margin-left 0.2s ease', display: 'flex', flexDirection: 'column', minHeight: '100vh', paddingTop: isMobile ? 64 : 0, paddingBottom: isMobile ? 'var(--crm-bottomnav-h, 64px)' : 0 }}>
         {/* Content */}
         {tab === 'dashboard' ? (
           <ErrorBoundary><DashboardTab /></ErrorBoundary>
