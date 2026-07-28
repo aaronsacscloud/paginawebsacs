@@ -48,9 +48,9 @@ const T = {
 };
 
 /* Tarjeta KPI reutilizable (fila: chip+label · valor · dual-value). */
-function KpiCard({ icon, chipBg, label, value, duals }: { icon: any; chipBg: string; label: string; value: any; duals: { dot: string; num: any; lbl: string }[] }) {
+function KpiCard({ icon, chipBg, label, value, duals, style }: { icon: any; chipBg: string; label: string; value: any; duals: { dot: string; num: any; lbl: string }[]; style?: any }) {
   return (
-    <div style={T.kpiCard}>
+    <div style={{ ...T.kpiCard, ...style }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={T.kpiChip(chipBg)}>{icon}</div>
         <span style={T.kLabel}>{label}</span>
@@ -338,15 +338,21 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
         .ct360 tbody tr:hover .ct-pencil, .ct360 .ct-pencil:focus { opacity: .65; }
       `}</style>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 230px), 1fr))', gap: 14, marginBottom: 18 }}>
-        <KpiCard icon={<Users size={18} strokeWidth={2} color="#4B7BE5" />} chipBg="#eef2fe" label="Clientes" value={tot?.clientes ?? '—'}
+      {/* KPIs: en móvil carrusel scroll-snap (1 visible + peek → no gasta pantalla
+          y se ve claro que se desliza); en desktop, grid multi-columna. */}
+      <div style={isMobile
+        ? { display: 'flex', gap: 12, overflowX: 'auto', scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch', marginBottom: 16, paddingBottom: 4, marginLeft: -2, marginRight: -2, paddingLeft: 2, paddingRight: 2 }
+        : { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 230px), 1fr))', gap: 14, marginBottom: 18 }}>
+        {(() => { const kStyle = isMobile ? { minWidth: '82vw', scrollSnapAlign: 'start' as const, flexShrink: 0 } : undefined; return (<>
+        <KpiCard style={kStyle} icon={<Users size={18} strokeWidth={2} color="#4B7BE5" />} chipBg="#eef2fe" label="Clientes" value={tot?.clientes ?? '—'}
           duals={[{ dot: '#1A8F7A', num: tot?.activos ?? 0, lbl: 'con ARR activo' }, { dot: '#c6cad2', num: Math.max(0, (tot?.clientes || 0) - (tot?.activos || 0)), lbl: 'sin ARR' }]} />
-        <KpiCard icon={<TrendingUp size={18} strokeWidth={2} color="#1A8F7A" />} chipBg="#e6f6f2" label="ARR" value={money(tot?.arr)}
+        <KpiCard style={kStyle} icon={<TrendingUp size={18} strokeWidth={2} color="#1A8F7A" />} chipBg="#e6f6f2" label="ARR" value={money(tot?.arr)}
           duals={[{ dot: '#1A8F7A', num: money(tot?.arr), lbl: 'activo' }, { dot: '#E8A838', num: money(kpis.arrPend), lbl: 'pendiente' }]} />
-        <KpiCard icon={<AlertTriangle size={18} strokeWidth={2} color="#d9534a" />} chipBg="#fdf0ee" label="Atención" value={kpis.riesgo}
+        <KpiCard style={kStyle} icon={<AlertTriangle size={18} strokeWidth={2} color="#d9534a" />} chipBg="#fdf0ee" label="Atención" value={kpis.riesgo}
           duals={[{ dot: '#d9534a', num: kpis.riesgo, lbl: '≥3 días sin vender' }, { dot: '#E8A838', num: kpis.vencidas, lbl: 'renov. vencida' }]} />
-        <KpiCard icon={<InfinityIcon size={18} strokeWidth={2} color="#6C5CE7" />} chipBg="#f1effd" label="Licencias vitalicias" value={tot?.vitalicias ?? 0}
+        <KpiCard style={kStyle} icon={<InfinityIcon size={18} strokeWidth={2} color="#6C5CE7" />} chipBg="#f1effd" label="Licencias vitalicias" value={tot?.vitalicias ?? 0}
           duals={[{ dot: '#6C5CE7', num: money(tot?.vitalicias_pagado), lbl: 'pagado (ingreso único)' }, { dot: '#c6cad2', num: 'fuera del ARR', lbl: 'no recurrente' }]} />
+        </>); })()}
       </div>
 
       <div style={{ ...S.card, padding: '20px 22px', borderRadius: 14, border: '1px solid #e9eaee', boxShadow: '0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)' }}>
