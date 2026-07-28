@@ -2,6 +2,7 @@ import { cloneElement, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import { useIsMobile } from '../../../lib/ui/mobile';
+import Sheet from './ui/Sheet';
 
 /* ═══ TablaEnterprise — el datatable ESTÁNDAR del CRM (estilo HubSpot) ═══
  * Layout: filtros principales arriba (+acciones) → buscador → tabs de VISTAS
@@ -123,6 +124,7 @@ export default function TablaEnterprise({
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const [showFiltros, setShowFiltros] = useState(false);
+  const [showFiltrosSheet, setShowFiltrosSheet] = useState(false); // móvil: hoja de filtros
   const [savingVista, setSavingVista] = useState(false);
   const [nombreVista, setNombreVista] = useState('');
   const [showGuardar, setShowGuardar] = useState(false);
@@ -218,57 +220,84 @@ export default function TablaEnterprise({
     return `${col.label} ${op}${val ? ` "${val}"` : ''}${c.op === 'entre' && c.v2 ? ` y "${c.v2}"` : ''}`;
   };
 
+  const activeFiltros = conds.length + Object.values(quickVals).filter(Boolean).length;
+  const quickSelects = quick.map(qd => (
+    <select key={qd.key} value={quickVals[qd.key] || ''} onChange={e => setQuickV(qd.key, e.target.value)} style={isMobile ? { ...E.input, width: '100%', height: 44 } : E.input}>
+      <option value="">{qd.label}</option>
+      {qd.options.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+    </select>
+  ));
+  const condsPanel = (
+    <div style={{ background: '#fafbfd', border: '1px solid #e8eaee', borderRadius: 10, padding: 14 }}>
+      {conds.map((c, i) => {
+        const col = colBy[c.campo];
+        const t = col?.ftype || 'text';
+        const ops = OPS[t] || OPS.text;
+        const needsVal = !['vacio', 'no_vacio', 'antes_hoy'].includes(c.op);
+        const needsV2 = c.op === 'entre';
+        return (
+          <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
+            <select value={c.campo} onChange={e => { const campo = e.target.value; const nt = colBy[campo]?.ftype || 'text'; setConds(cs => cs.map((x, j) => j === i ? { campo, op: OPS[nt][0].v, v1: '', v2: '' } : x)); }} style={{ ...E.input, minWidth: 150 }}>
+              {filtrables.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
+            </select>
+            <select value={c.op} onChange={e => setConds(cs => cs.map((x, j) => j === i ? { ...x, op: e.target.value } : x))} style={E.input}>
+              {ops.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+            </select>
+            {needsVal && (t === 'select'
+              ? <select value={c.v1 || ''} onChange={e => setConds(cs => cs.map((x, j) => j === i ? { ...x, v1: e.target.value } : x))} style={{ ...E.input, minWidth: 140 }}>
+                  <option value="">— valor —</option>
+                  {(col?.options || []).map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+                </select>
+              : <input type={t === 'number' ? 'number' : t === 'date' ? 'date' : 'text'} value={c.v1 || ''} onChange={e => setConds(cs => cs.map((x, j) => j === i ? { ...x, v1: e.target.value } : x))} style={{ ...E.input, width: t === 'text' ? 180 : 140 }} />)}
+            {needsVal && needsV2 && <input type={t === 'number' ? 'number' : 'date'} value={c.v2 || ''} onChange={e => setConds(cs => cs.map((x, j) => j === i ? { ...x, v2: e.target.value } : x))} style={{ ...E.input, width: 140 }} />}
+            <button style={{ ...E.btn, color: '#b93333', border: 'none', background: 'none' }} onClick={() => setConds(cs => cs.filter((_, j) => j !== i))}>✕</button>
+          </div>
+        );
+      })}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button style={E.btn} onClick={() => setConds(cs => [...cs, { campo: filtrables[0]?.key || '', op: OPS[filtrables[0]?.ftype || 'text'][0].v, v1: '' }])}>+ Agregar condición</button>
+        {conds.length > 0 && <button style={{ ...E.btn, color: '#b93333' }} onClick={() => setConds([])}>Limpiar todo</button>}
+      </div>
+    </div>
+  );
+
   return (
     <div>
       {/* ① FILTROS PRINCIPALES + acciones */}
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
-        {quick.map(qd => (
-          <select key={qd.key} value={quickVals[qd.key] || ''} onChange={e => setQuickV(qd.key, e.target.value)} style={E.input}>
-            <option value="">{qd.label}</option>
-            {qd.options.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
-          </select>
-        ))}
-        <button style={{ ...E.btn, fontWeight: 700, borderColor: conds.length ? '#1a1a1a' : '#e2e4e9' }} onClick={() => setShowFiltros(!showFiltros)}>
-          <SlidersHorizontal size={15} strokeWidth={2} />
-          Más filtros
-          {conds.length > 0 && <span style={{ background: '#1a1a1a', color: '#fff', borderRadius: 99, padding: '0 7px', fontSize: '0.68rem', fontWeight: 800, lineHeight: '17px' }}>{conds.length}</span>}
-        </button>
-        <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap' }}>{actions}</div>
-      </div>
-
-      {/* Panel de condiciones avanzadas */}
-      {showFiltros && (
-        <div style={{ background: '#fafbfd', border: '1px solid #e8eaee', borderRadius: 10, padding: 14, marginBottom: 12 }}>
-          {conds.map((c, i) => {
-            const col = colBy[c.campo];
-            const t = col?.ftype || 'text';
-            const ops = OPS[t] || OPS.text;
-            const needsVal = !['vacio', 'no_vacio', 'antes_hoy'].includes(c.op);
-            const needsV2 = c.op === 'entre';
-            return (
-              <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
-                <select value={c.campo} onChange={e => { const campo = e.target.value; const nt = colBy[campo]?.ftype || 'text'; setConds(cs => cs.map((x, j) => j === i ? { campo, op: OPS[nt][0].v, v1: '', v2: '' } : x)); }} style={{ ...E.input, minWidth: 150 }}>
-                  {filtrables.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
-                </select>
-                <select value={c.op} onChange={e => setConds(cs => cs.map((x, j) => j === i ? { ...x, op: e.target.value } : x))} style={E.input}>
-                  {ops.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
-                </select>
-                {needsVal && (t === 'select'
-                  ? <select value={c.v1 || ''} onChange={e => setConds(cs => cs.map((x, j) => j === i ? { ...x, v1: e.target.value } : x))} style={{ ...E.input, minWidth: 140 }}>
-                      <option value="">— valor —</option>
-                      {(col?.options || []).map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
-                    </select>
-                  : <input type={t === 'number' ? 'number' : t === 'date' ? 'date' : 'text'} value={c.v1 || ''} onChange={e => setConds(cs => cs.map((x, j) => j === i ? { ...x, v1: e.target.value } : x))} style={{ ...E.input, width: t === 'text' ? 180 : 140 }} />)}
-                {needsVal && needsV2 && <input type={t === 'number' ? 'number' : 'date'} value={c.v2 || ''} onChange={e => setConds(cs => cs.map((x, j) => j === i ? { ...x, v2: e.target.value } : x))} style={{ ...E.input, width: 140 }} />}
-                <button style={{ ...E.btn, color: '#b93333', border: 'none', background: 'none' }} onClick={() => setConds(cs => cs.filter((_, j) => j !== i))}>✕</button>
-              </div>
-            );
-          })}
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button style={E.btn} onClick={() => setConds(cs => [...cs, { campo: filtrables[0]?.key || '', op: OPS[filtrables[0]?.ftype || 'text'][0].v, v1: '' }])}>+ Agregar condición</button>
-            {conds.length > 0 && <button style={{ ...E.btn, color: '#b93333' }} onClick={() => setConds([])}>Limpiar todo</button>}
-          </div>
+      {isMobile ? (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+          <button style={{ ...E.btn, height: 44, fontWeight: 700, borderColor: activeFiltros ? '#1a1a1a' : '#e2e4e9' }} onClick={() => setShowFiltrosSheet(true)}>
+            <SlidersHorizontal size={16} strokeWidth={2} /> Filtros
+            {activeFiltros > 0 && <span style={{ background: '#1a1a1a', color: '#fff', borderRadius: 99, padding: '0 7px', fontSize: '0.68rem', fontWeight: 800, lineHeight: '18px' }}>{activeFiltros}</span>}
+          </button>
+          <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap' }}>{actions}</div>
         </div>
+      ) : (
+        <>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
+            {quickSelects}
+            <button style={{ ...E.btn, fontWeight: 700, borderColor: conds.length ? '#1a1a1a' : '#e2e4e9' }} onClick={() => setShowFiltros(!showFiltros)}>
+              <SlidersHorizontal size={15} strokeWidth={2} />
+              Más filtros
+              {conds.length > 0 && <span style={{ background: '#1a1a1a', color: '#fff', borderRadius: 99, padding: '0 7px', fontSize: '0.68rem', fontWeight: 800, lineHeight: '17px' }}>{conds.length}</span>}
+            </button>
+            <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap' }}>{actions}</div>
+          </div>
+          {showFiltros && <div style={{ marginBottom: 12 }}>{condsPanel}</div>}
+        </>
+      )}
+
+      {/* Hoja de filtros (móvil): quick selects + condiciones avanzadas en un Sheet */}
+      {isMobile && (
+        <Sheet open={showFiltrosSheet} onClose={() => setShowFiltrosSheet(false)} title="Filtros"
+          headerActions={activeFiltros > 0 ? <button style={{ ...E.btn, height: 36 }} onClick={() => { setQuickVals({}); setConds([]); setPage(0); }}>Limpiar</button> : undefined}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {quickSelects}
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#8a8f98', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 4 }}>Condiciones avanzadas</div>
+            {condsPanel}
+            <button style={{ ...E.btnDark, height: 48, justifyContent: 'center', marginTop: 4 }} onClick={() => setShowFiltrosSheet(false)}>Ver {filtrados.length} resultado{filtrados.length === 1 ? '' : 's'}</button>
+          </div>
+        </Sheet>
       )}
 
       {/* ② BUSCADOR (icono + focus ring vía clase te-search) */}
