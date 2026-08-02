@@ -12,7 +12,7 @@ import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { supabase } from '../../../lib/supabase';
 import { sendWhatsApp } from '../../../lib/kapso';
 import { healthScoreV2 } from '../../../lib/crm/health';
-import { cuentasPorEmpresa, agregarActividad, guardarPorCuenta, normCuenta } from '../../../lib/crm/sacs-cuentas';
+import { cuentasPorEmpresa, agregarActividad, guardarPorCuenta, normCuenta, errorSacs } from '../../../lib/crm/sacs-cuentas';
 
 export const prerender = false;
 
@@ -86,7 +86,7 @@ export const GET: APIRoute = async ({ url, request }) => {
         headers: { 'Content-Type': 'application/json', 'x-crm-sync-secret': SYNC_SECRET },
         body: JSON.stringify({ accounts: lote }),
       });
-      if (!res.ok) { out.errores.push('lote ' + i + ': HTTP ' + res.status); continue; }
+      if (!res.ok) { out.errores.push('lote ' + i + ': ' + errorSacs(res.status)); continue; }
       const j = await res.json();
       Object.assign(porCuenta, j.data || {});
     } catch (e: any) {

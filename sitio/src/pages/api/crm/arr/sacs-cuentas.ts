@@ -6,7 +6,7 @@
 // Cualquier cambio re-sincroniza al cliente para que el agregado quede al día.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
-import { normCuenta } from '../../../../lib/crm/sacs-cuentas';
+import { normCuenta, errorSacs } from '../../../../lib/crm/sacs-cuentas';
 import { sincronizarEmpresa } from '../../../../lib/crm/sync-empresa';
 
 export const prerender = false;
@@ -48,7 +48,7 @@ export const POST: APIRoute = async ({ request }) => {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'x-crm-sync-secret': SYNC_SECRET },
       body: JSON.stringify({ accounts: [cuenta] }),
     });
-    if (!res.ok) return json({ error: 'La API de SACS respondió ' + res.status + ' — no se pudo verificar la cuenta.' }, 502);
+    if (!res.ok) return json({ error: errorSacs(res.status) + ' No se pudo verificar la cuenta.' }, 502);
     const j = await res.json();
     if (!(j.data || {})[cuenta]) return json({ error: `SACS no conoce la cuenta "${cuenta}". Revisa el subdominio.` }, 404);
   } catch (e: any) {

@@ -3,7 +3,7 @@
 // y el alta/baja de cuentas, para que no haya dos versiones de la misma lógica.
 import { supabase } from '../supabase';
 import { healthScoreV2 } from './health';
-import { cuentasDe, agregarActividad, guardarPorCuenta, type Actividad } from './sacs-cuentas';
+import { cuentasDe, agregarActividad, guardarPorCuenta, errorSacs, type Actividad } from './sacs-cuentas';
 
 const SACS_API = import.meta.env.SACS_API_URL || 'https://sacs-api-819604817289.us-central1.run.app/v1';
 const SYNC_SECRET = (import.meta.env.CRM_SYNC_SECRET || '').trim();
@@ -15,7 +15,7 @@ export async function traerActividad(cuentas: string[]): Promise<Record<string, 
     headers: { 'Content-Type': 'application/json', 'x-crm-sync-secret': SYNC_SECRET },
     body: JSON.stringify({ accounts: cuentas }),
   });
-  if (!res.ok) throw new Error('La API de SACS respondió ' + res.status);
+  if (!res.ok) throw new Error(errorSacs(res.status));
   const j = await res.json();
   return (j.data || {}) as Record<string, Actividad>;
 }

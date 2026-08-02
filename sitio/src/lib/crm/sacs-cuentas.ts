@@ -22,6 +22,21 @@ export type Actividad = {
 
 export const normCuenta = (s: any) => String(s || '').trim().toLowerCase();
 
+/**
+ * Traduce los errores del puente con SACS a algo accionable.
+ *
+ * "La API de SACS respondió 403" no le dice a nadie qué hacer, y los dos códigos
+ * que salen aquí tienen UNA sola causa cada uno — vale la pena nombrarla:
+ *   · 403 → el handler de sacs_api comparó `x-crm-sync-secret` y no cuadró.
+ *   · 401 → ni siquiera llegó al handler: el candado JWT de sacs_api lo frenó
+ *           antes (la ruta se salió de middleware/rutas-publicas.js).
+ */
+export function errorSacs(status: number): string {
+  if (status === 403) return 'SACS rechazó la petición (403): el secreto CRM_SYNC_SECRET del CRM no coincide con el de sacs_api. Revísalo en las variables de entorno de Vercel — si está vacío, el CRM manda un secreto en blanco.';
+  if (status === 401) return 'SACS pidió sesión (401): las rutas /interno/crm/* se salieron de la lista de rutas públicas de sacs_api (middleware/rutas-publicas.js).';
+  return 'La API de SACS respondió ' + status + '.';
+}
+
 /** Cuentas SACS de una empresa. Cae a companies.sacs_account si la tabla nueva
  *  todavía no existe (migración sin correr) o si la empresa no tiene filas. */
 export async function cuentasDe(companyId: string, principal?: string | null): Promise<string[]> {
