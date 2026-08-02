@@ -42,10 +42,23 @@ function conPlugins(base: any[]): any[] {
   return [...base, ...extra];
 }
 
+// La tabla `plans` de producción todavía NO tiene la columna `categoria`, así
+// que pedirla hacía fallar el select ENTERO y el catálogo caía siempre al
+// FALLBACK — que no trae `id`. Sin `id` no hay uuid que mandar en
+// subscriptions.plan_id (columna uuid) y el plan quedaba sin ligar. Reintento
+// sin la columna, mismo patrón que company360 con los campos de contacts.
+const COLS = 'id, slug, nombre, precio_mensual, precio_anual, a_la_medida, activo, orden, categoria';
+const COLS_SIN_CAT = 'id, slug, nombre, precio_mensual, precio_anual, a_la_medida, activo, orden';
+
 export const GET: APIRoute = async () => {
-  const { data, error } = await supabase.from('plans')
-    .select('id, slug, nombre, precio_mensual, precio_anual, a_la_medida, activo, orden, categoria')
-    .eq('activo', true).order('orden', { ascending: true });
+  let r = await supabase.from('plans')
+    .select(COLS).eq('activo', true).order('orden', { ascending: true });
+  if (r.error && /categoria|column|schema cache/i.test(r.error.message || '')) {
+    r = await supabase.from('plans')
+      .select(COLS_SIN_CAT).eq('activo', true).order('orden', { ascending: true }) as any;
+  }
+  const data: any[] | null = r.data as any;
+  const error = r.error;
 
   if (error || !data || !data.length) {
     // tabla aún no creada (SQL-4 pendiente) → fallback, sin id

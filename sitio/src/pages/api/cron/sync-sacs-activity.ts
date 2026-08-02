@@ -12,6 +12,7 @@ import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { supabase } from '../../../lib/supabase';
 import { sendWhatsApp } from '../../../lib/kapso';
 import { healthScoreV2 } from '../../../lib/crm/health';
+import { cuentasPorEmpresa, agregarActividad, guardarPorCuenta, normCuenta } from '../../../lib/crm/sacs-cuentas';
 
 export const prerender = false;
 
@@ -19,7 +20,7 @@ const SACS_API = import.meta.env.SACS_API_URL || 'https://sacs-api-819604817289.
 const SYNC_SECRET = (import.meta.env.CRM_SYNC_SECRET || '').trim();
 const ADMIN_WHATSAPP = (import.meta.env.CRM_ADMIN_WHATSAPP || '').trim();
 
-const r0 = (n: number) => Math.round(n);
+const r0 = (n?: number | null) => Math.round(Number(n || 0));
 
 /** Alerta con dedup: no repite la misma alerta para la misma company en 7 días. */
 async function alertar(companyId: string, clave: string, titulo: string, metadata: any, avisos: string[]) {
@@ -60,11 +61,23 @@ export const GET: APIRoute = async ({ url, request }) => {
     if (s.estado === 'cancelada') e.canceladas++;
   });
 
-  const cuentas = Array.from(new Set((companies || []).map(c => String(c.sacs_account).trim().toLowerCase()).filter(Boolean)));
-  const out = { cuentas: cuentas.length, actualizadas: 0, sin_datos: 0, alertas: 0, errores: [] as string[] };
+  // Un cliente puede operar VARIAS cuentas de SACS: se traen todas y se agregan
+  // en una sola foto (ver lib/crm/sacs-cuentas.ts). Con una sola cuenta el
+  // resultado es idéntico al de antes.
+  const mapa = await cuentasPorEmpresa((companies || []).map(c => c.id));
+  const cuentasDeEmpresa = (co: any): string[] => {
+    const ls = mapa[co.id];
+    return (ls && ls.length ? ls : [normCuenta(co.sacs_account)]).filter(Boolean);
+  };
+  const cuentas = Array.from(new Set((companies || []).flatMap(cuentasDeEmpresa)));
+  const out = { empresas: (companies || []).length, cuentas: cuentas.length, actualizadas: 0, sin_datos: 0, alertas: 0, errores: [] as string[] };
   const avisos: string[] = [];
   const hoy = new Date();
 
+  // 1) Traer la actividad de TODAS las cuentas y acumularla en un solo mapa. No
+  //    se puede agregar lote por lote: las cuentas de una misma empresa pueden
+  //    caer en lotes distintos y el cliente quedaría con la mitad de su realidad.
+  const porCuenta: Record<string, any> = {};
   for (let i = 0; i < cuentas.length; i += 25) {
     const lote = cuentas.slice(i, i + 25);
     try {
@@ -75,13 +88,22 @@ export const GET: APIRoute = async ({ url, request }) => {
       });
       if (!res.ok) { out.errores.push('lote ' + i + ': HTTP ' + res.status); continue; }
       const j = await res.json();
-      const porCuenta: Record<string, any> = j.data || {};
+      Object.assign(porCuenta, j.data || {});
+    } catch (e: any) {
+      out.errores.push('lote ' + i + ': ' + (e?.message || String(e)));
+    }
+  }
 
-      for (const co of (companies || [])) {
-        const acct = String(co.sacs_account || '').trim().toLowerCase();
-        if (!lote.includes(acct)) continue;
-        const a = porCuenta[acct];
+  // 2) Agregar por empresa y escribir.
+  for (const co of (companies || [])) {
+    try {
+        const misCuentas = cuentasDeEmpresa(co);
+        const acct = misCuentas.join(' + ') || '(sin cuenta)';
+        const suyas: Record<string, any> = {};
+        for (const c of misCuentas) if (porCuenta[c]) suyas[c] = porCuenta[c];
+        const a = agregarActividad(suyas);
         if (!a) { out.sin_datos++; continue; }
+        await guardarPorCuenta(co.id, suyas);
 
         const dias = a.ultima_venta
           ? Math.max(0, Math.floor((hoy.getTime() - new Date(a.ultima_venta + 'T12:00:00Z').getTime()) / 86400000))
@@ -149,9 +171,8 @@ export const GET: APIRoute = async ({ url, request }) => {
             `🔴 ${co.nombre} (${acct}) cruzó 15 días sin vender — churn probable, $${r0(subInfo.arr).toLocaleString()} ARR en riesgo`,
             { dias_sin_venta: dias, cuenta: acct }, avisos);
         }
-      }
     } catch (e: any) {
-      out.errores.push('lote ' + i + ': ' + (e?.message || String(e)));
+      out.errores.push(co.nombre + ': ' + (e?.message || String(e)));
     }
   }
 

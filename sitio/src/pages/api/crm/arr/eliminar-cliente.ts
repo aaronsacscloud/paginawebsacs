@@ -43,6 +43,7 @@ const PASOS: Paso[] = [
   { tabla: 'email_unsubscribes',     label: 'Bajas de correo',          keys: ['contact_id'] },
   { tabla: 'client_board_nodes',     label: 'Notas y archivos',         keys: ['company_id'] },
   { tabla: 'uso_snapshots',          label: 'Snapshots de uso',         keys: ['company_id'] },
+  { tabla: 'company_sacs_accounts',  label: 'Cuentas de SACS ligadas',  keys: ['company_id'] },
   { tabla: 'subscriptions',          label: 'Suscripciones',            keys: ['company_id', 'contact_id'] },
   { tabla: 'quotes',                 label: 'Cotizaciones',             keys: ['company_id', 'contact_id', 'deal_id'] },
   { tabla: 'deals',                  label: 'Oportunidades',            keys: ['company_id', 'contact_id'] },

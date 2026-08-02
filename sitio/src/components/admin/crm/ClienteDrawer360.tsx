@@ -336,6 +336,14 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
             igual y se leen como si fueran de hoy (pasó 6 días en jul-2026).
             Con más de 24 h sin sincronizar, dilo en la cara. */}
         <DatosDesactualizados syncAt={co.actividad_sync_at} />
+        {/* Si el cliente opera varias cuentas, dilo: un "$639k en 30d" sin
+            contexto se lee como una sola cuenta y no cuadra con lo que se ve
+            dentro de SACS. */}
+        {act?.cuentas?.length > 1 && (
+          <div style={{ fontSize: '0.76rem', color: '#3764c4', background: '#f2f6ff', border: '1px solid #d9e3fb', borderRadius: 10, padding: '8px 12px', marginBottom: 10 }}>
+            🔗 Suma de <b>{act.cuentas.length} cuentas de SACS</b>: {act.cuentas.join(' · ')}
+          </div>
+        )}
         {act ? (
           <div>
             <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: '0.83rem' }}>
@@ -632,50 +640,120 @@ function Panorama360({ account, co }: { account: string; co?: any }) {
 
 /* ─────────── 🏢 SACS (solo información de SACS: ligar cuenta + panorama) ─────────── */
 function TabSacs({ co, act, reload, flash }: any) {
-  const [cuenta, setCuenta] = useState(co.sacs_account || '');
-  const [linking, setLinking] = useState(false);
+  // Un cliente puede operar VARIAS cuentas de SACS (el dueño de `boomfitness`
+  // también es dueño de `urban`). Los números de arriba son la SUMA de todas;
+  // aquí se ven una por una y se agregan/quitan.
+  const [cuentas, setCuentas] = useState<any[] | null>(null);
+  const [nueva, setNueva] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [ver, setVer] = useState<string>(co.sacs_account || '');
 
-  async function ligarYSync() {
-    const acct = cuenta.trim().toLowerCase();
-    if (!acct) { alert('Escribe el subdominio de la cuenta SACS (ej. dibujotecnico).'); return; }
-    setLinking(true);
+  async function cargar() {
     try {
-      const r1 = await fetch('/api/crm/arr/link-suggestions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ company_id: co.id, sacs_account: acct }) });
-      const j1 = await r1.json().catch(() => ({}));
-      if (!r1.ok || j1.error) { alert(j1.error || 'No se pudo ligar.'); setLinking(false); return; }
-      await fetch('/api/crm/arr/sync-cuenta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ company_id: co.id }) });
-      flash('Cuenta ligada y sincronizada');
-      reload();
-    } catch (e: any) { alert('Error: ' + (e?.message || e)); }
-    setLinking(false);
+      const j = await fetch('/api/crm/arr/sacs-cuentas?company_id=' + co.id).then(r => r.json());
+      const ls = j.data || [];
+      // Migración sin correr → al menos la principal, para no dejar la pestaña vacía.
+      setCuentas(ls.length || !co.sacs_account ? ls : [{ id: null, cuenta: co.sacs_account, es_principal: true, sync_at: co.actividad_sync_at }]);
+    } catch { setCuentas([]); }
   }
-  async function syncAhora() {
-    setLinking(true);
-    const r = await fetch('/api/crm/arr/sync-cuenta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ company_id: co.id }) });
-    const j = await r.json().catch(() => ({}));
-    setLinking(false);
-    if (j.error) alert(j.error); else { flash('Actividad sincronizada'); reload(); }
+  useEffect(() => { cargar(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [co.id]);
+  useEffect(() => { if (!ver && co.sacs_account) setVer(co.sacs_account); }, [co.sacs_account]);
+
+  async function pedir(init: RequestInit, url: string, okMsg: string) {
+    setBusy(true);
+    try {
+      const j = await fetch(url, init).then(r => r.json()).catch(() => ({ error: 'Respuesta inválida' }));
+      if (j?.error) { alert(j.error); return false; }
+      flash(okMsg); await cargar(); reload(); return true;
+    } finally { setBusy(false); }
   }
+  const agregar = async () => {
+    const c = nueva.trim().toLowerCase();
+    if (!c) { alert('Escribe el subdominio de la cuenta (ej. dibujotecnico).'); return; }
+    if (await pedir({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ company_id: co.id, cuenta: c }) }, '/api/crm/arr/sacs-cuentas', 'Cuenta agregada y sincronizada')) setNueva('');
+  };
+  const quitar = (c: any) => {
+    if (!c.id) { alert('Esta cuenta viene del registro viejo; sincroniza una vez para poder administrarla.'); return; }
+    if (!confirm(`¿Desligar la cuenta "${c.cuenta}" de este cliente?\n\nNo se borra nada en SACS: solo deja de contar en sus métricas del CRM.`)) return;
+    pedir({ method: 'DELETE' }, '/api/crm/arr/sacs-cuentas?id=' + c.id, 'Cuenta desligada');
+  };
+  const hacerPrincipal = (c: any) => c.id && pedir({ method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: c.id }) }, '/api/crm/arr/sacs-cuentas', 'Cuenta principal actualizada');
+  const syncAhora = () => pedir({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ company_id: co.id }) }, '/api/crm/arr/sync-cuenta', 'Actividad sincronizada');
+
+  const lista = cuentas || [];
+  const varias = lista.length > 1;
 
   return (
     <div>
       <div style={D.card}>
-        <div style={D.h}>Cuenta SACS</div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div style={{ flex: '1 1 220px' }}>
-            <label style={D.lbl}>Subdominio (ej. dibujotecnico)</label>
-            <input value={cuenta} onChange={e => setCuenta(e.target.value)} placeholder="cuenta" style={D.input} />
-          </div>
-          <button style={D.btn} disabled={linking} onClick={ligarYSync}>{linking ? '…' : (co.sacs_account ? 'Cambiar y sincronizar' : 'Ligar y sincronizar')}</button>
-          {co.sacs_account && <button style={D.btnG} disabled={linking} onClick={syncAhora}>🔄 Sincronizar ahora</button>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+          <div style={D.h}>Cuentas de SACS {lista.length ? `(${lista.length})` : ''}</div>
+          {lista.length > 0 && <button style={{ ...D.btnG, marginLeft: 'auto' }} disabled={busy} onClick={syncAhora}>🔄 Sincronizar {varias ? 'todas' : 'ahora'}</button>}
         </div>
-        {co.actividad_sync_at && <div style={{ fontSize: '0.72rem', color: '#999', marginTop: 8 }}>Última sincronización: {new Date(co.actividad_sync_at).toLocaleString('es-MX')}</div>}
-        {co.sacs_account && <AccederCuenta account={co.sacs_account} />}
+
+        {cuentas === null && <div style={{ color: '#999', fontSize: '0.82rem' }}>Cargando cuentas…</div>}
+        {cuentas !== null && lista.length === 0 && (
+          <div style={{ color: '#c62828', fontSize: '0.82rem', marginBottom: 10 }}>Este cliente no tiene ninguna cuenta de SACS ligada.</div>
+        )}
+
+        {lista.map((c: any) => {
+          const a = c.actividad || null;
+          return (
+            <div key={c.cuenta} style={{ border: '1px solid #ececec', borderRadius: 10, padding: '10px 12px', marginBottom: 8, background: c.es_principal ? '#f7fbfa' : '#fff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <b style={{ fontSize: '0.88rem' }}>{c.cuenta}</b>
+                {c.es_principal && <span style={{ ...D.badge, background: 'rgba(42,181,160,.15)', color: '#1A8F7A' }}>principal</span>}
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                  {!c.es_principal && c.id && <button style={D.btnG} disabled={busy} onClick={() => hacerPrincipal(c)}>Hacer principal</button>}
+                  <button style={{ ...D.btnG, color: '#c0392b', borderColor: '#f0c4bd' }} disabled={busy} onClick={() => quitar(c)}>Quitar</button>
+                </div>
+              </div>
+              {a && (
+                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: '0.78rem', color: '#555', marginTop: 6 }}>
+                  <span>Última venta: <b>{fmtDate(a.ultima_venta)}</b></span>
+                  <span>30d: <b>{a.ventas_30d ?? 0}</b> ventas · <b>{money(a.total_30d)}</b></span>
+                  {a.usuarios != null && <span>Usuarios: <b>{a.usuarios}</b></span>}
+                  {a.sucursales != null && <span>Sucursales: <b>{a.sucursales}</b></span>}
+                </div>
+              )}
+              {c.sync_at && <div style={{ fontSize: '0.7rem', color: '#aaa', marginTop: 4 }}>Sincronizada: {new Date(c.sync_at).toLocaleString('es-MX')}</div>}
+              <AccederCuenta account={c.cuenta} />
+            </div>
+          );
+        })}
+
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap', marginTop: 10 }}>
+          <div style={{ flex: '1 1 220px' }}>
+            <label style={D.lbl}>Agregar otra cuenta (subdominio, ej. urban)</label>
+            <input value={nueva} onChange={e => setNueva(e.target.value)} placeholder="cuenta" style={D.input}
+              onKeyDown={e => { if (e.key === 'Enter') agregar(); }} />
+          </div>
+          <button style={D.btn} disabled={busy} onClick={agregar}>{busy ? '…' : '+ Agregar cuenta'}</button>
+        </div>
+        {varias && (
+          <div style={{ marginTop: 10, fontSize: '0.78rem', color: '#666', background: '#f6f8fa', border: '1px solid #e9eaee', borderRadius: 10, padding: '9px 12px' }}>
+            ℹ️ Las métricas del cliente (ventas, salud, usuarios, sucursales) son la <b>suma de las {lista.length} cuentas</b>. La tendencia se recalcula sobre los montos totales, no es un promedio de porcentajes.
+          </div>
+        )}
       </div>
 
-      {co.sacs_account && <Panorama360 account={co.sacs_account} co={co} />}
-      {co.sacs_account && <Evolucion companyId={co.id} />}
-      {co.sacs_account && <UsuariosSacs account={co.sacs_account} />}
+      {varias && (
+        <div style={{ ...D.card, paddingBottom: 10 }}>
+          <div style={D.h}>Ver el detalle de una cuenta</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {lista.map((c: any) => (
+              <button key={c.cuenta} onClick={() => setVer(c.cuenta)}
+                style={{ ...D.btnG, fontWeight: ver === c.cuenta ? 800 : 600, borderColor: ver === c.cuenta ? '#1A8F7A' : '#ddd', color: ver === c.cuenta ? '#1A8F7A' : '#333' }}>
+                {c.cuenta}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {ver && <Panorama360 account={ver} co={co} />}
+      {lista.length > 0 && <Evolucion companyId={co.id} />}
+      {ver && <UsuariosSacs account={ver} />}
     </div>
   );
 }
@@ -994,7 +1072,7 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
   const [editId, setEditId] = useState<string | null>(null);
   const [f, setF] = useState<any>({});
   const [adding, setAdding] = useState(false);
-  const [nf, setNf] = useState<any>({ plan_slug: '', nombre_plan: '', ciclo: 'anual', precio: '', proxima_factura: '', estado: 'programada' });
+  const [nf, setNf] = useState<any>({ plan_slug: '', plan_id: '', nombre_plan: '', ciclo: 'anual', precio: '', proxima_factura: '', estado: 'programada' });
   const [busy, setBusy] = useState(false);
   const [picker, setPicker] = useState<null | 'nuevo' | 'edit'>(null);
 
@@ -1002,29 +1080,34 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
 
   // Elegir del catálogo llena nombre + precio del ciclo actual. Si el plan es "a
   // la medida" no pisa el precio ya capturado (no hay tarifa que aplicar).
+  //
+  // OJO con las dos llaves: `plan_slug` es el texto del catálogo ('personalizada')
+  // y solo sirve para buscar tarifas aquí; `plan_id` es el UUID de la tabla plans
+  // y es lo ÚNICO que puede viajar a subscriptions.plan_id (columna uuid). Los
+  // planes del fallback y los plugins no tienen uuid → van sin plan_id.
   function aplicarPlan(p: any, destino: 'nuevo' | 'edit') {
     const set = destino === 'nuevo' ? setNf : setF;
     const cur: any = destino === 'nuevo' ? nf : f;
     const tarifa = cur.ciclo === 'mensual' ? p.precio_mensual : p.precio_anual;
-    set({ ...cur, plan_slug: p.slug || '', nombre_plan: p.nombre, precio: tarifa ?? cur.precio ?? '' });
+    set({ ...cur, plan_slug: p.slug || '', plan_id: p.id || '', nombre_plan: p.nombre, precio: tarifa ?? cur.precio ?? '' });
     setPicker(null);
   }
 
   async function crear() {
     if (!nf.nombre_plan) { alert('Elige un plan.'); return; }
     setBusy(true);
-    const body: any = { company_id: companyId, nombre_plan: nf.nombre_plan, plan_id: nf.plan_slug || null, ciclo: nf.ciclo, precio: parseFloat(nf.precio) || 0, estado: nf.estado };
+    const body: any = { company_id: companyId, nombre_plan: nf.nombre_plan, plan_id: nf.plan_id || null, ciclo: nf.ciclo, precio: parseFloat(nf.precio) || 0, estado: nf.estado };
     if (nf.proxima_factura) body.proxima_factura = nf.proxima_factura;
     const r = await fetch('/api/crm/arr/subscriptions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json().catch(() => ({}));
     setBusy(false);
-    if (!r.ok || j.error) alert(j.error || 'No se pudo crear.'); else { setAdding(false); setNf({ plan_slug: '', nombre_plan: '', ciclo: 'anual', precio: '', proxima_factura: '', estado: 'programada' }); flash('Suscripción creada'); reload(); }
+    if (!r.ok || j.error) alert(j.error || 'No se pudo crear.'); else { setAdding(false); setNf({ plan_slug: '', plan_id: '', nombre_plan: '', ciclo: 'anual', precio: '', proxima_factura: '', estado: 'programada' }); flash('Suscripción creada'); reload(); }
   }
   async function guardar(s: any) {
     setBusy(true);
     const body: any = { id: s.id, estado: f.estado, ciclo: f.ciclo, nombre_plan: f.nombre_plan, precio: parseFloat(f.precio) || 0 };
     if (f.proxima_factura) body.proxima_factura = f.proxima_factura;
-    if (f.plan_slug) body.plan_id = f.plan_slug; // solo si se eligió del catálogo
+    body.plan_id = f.plan_id || null; // uuid o nada: si cambió a un plan sin uuid, se limpia el viejo
     const r = await fetch('/api/crm/arr/subscriptions', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json().catch(() => ({}));
     setBusy(false);
@@ -1100,7 +1183,7 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                       <td style={D.td}>{fmtDate(s.proxima_factura)}</td>
                       <td style={D.td}>{s.pagos_realizados || 0}</td>
                       <td style={D.td}>{money(s.total_pagado)}</td>
-                      <td style={D.td}><button style={D.btnG} onClick={() => { setEditId(s.id); setF({ nombre_plan: s.nombre_plan || '', plan_slug: s.plan_id || '', ciclo: s.ciclo || 'anual', estado: s.estado || 'activa', precio: s.precio ?? s.arr ?? '', proxima_factura: s.proxima_factura || '' }); }}>✏️</button></td>
+                      <td style={D.td}><button style={D.btnG} onClick={() => { setEditId(s.id); setF({ nombre_plan: s.nombre_plan || '', plan_id: s.plan_id || '', plan_slug: (planes.find((p: any) => p.id && p.id === s.plan_id) || {}).slug || '', ciclo: s.ciclo || 'anual', estado: s.estado || 'activa', precio: s.precio ?? s.arr ?? '', proxima_factura: s.proxima_factura || '' }); }}>✏️</button></td>
                     </tr>
                   )
                 ))}

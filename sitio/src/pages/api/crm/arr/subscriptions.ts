@@ -92,8 +92,11 @@ function normalizar(body: any) {
     stripe_subscription_id: body.stripe_subscription_id ? String(body.stripe_subscription_id).trim() : null,
     updated_at: new Date().toISOString(),
   };
-  // catálogo (SQL-4)
-  if (body.plan_id !== undefined) out.plan_id = body.plan_id || null;
+  // catálogo (SQL-4). plan_id es una columna UUID: si llega un slug ('personalizada')
+  // Postgres tira 22P02 y el front enseña el error crudo al usuario. Se ignora en
+  // silencio lo que no sea uuid — el plan real lo lleva `nombre_plan`.
+  const ES_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (body.plan_id !== undefined) out.plan_id = ES_UUID.test(String(body.plan_id || '')) ? body.plan_id : null;
   if (body.precio_lista !== undefined) out.precio_lista = Number(body.precio_lista) || null;
   // trials y multi-año (SQL-5)
   if (body.es_trial !== undefined) out.es_trial = !!body.es_trial;
