@@ -104,6 +104,60 @@ export function agregarActividad(porCuenta: Record<string, Actividad | null | un
   };
 }
 
+/* ── Uso profundo (companies.uso_sacs) ──
+ * Estructura anidada y heterogénea (números, banderas, fechas, `modulos` como
+ * arreglo de objetos), así que la unión es recursiva y por tipo. */
+
+// Claves que NO se suman: son constantes de la consulta, no medidas del cliente.
+const NO_SUMABLES = new Set(['ventana_dias']);
+
+function unirArrays(clave: string, a: any[], b: any[]): any[] {
+  // `modulos` viene como [{modulo, familia, usa, total, docs_7d, docs_30d, ultimo}]:
+  // se une POR MÓDULO (si lo usa en cualquiera de sus cuentas, lo usa).
+  if (clave === 'modulos') {
+    const porNombre = new Map<string, any>();
+    for (const it of [...a, ...b]) {
+      const k = it?.modulo;
+      if (!k) continue;
+      porNombre.set(k, porNombre.has(k) ? unirObjetos(porNombre.get(k), it) : { ...it });
+    }
+    return [...porNombre.values()];
+  }
+  return [...a, ...b].slice(0, 12); // listas de ejemplo (promos activas, últimas transferencias)
+}
+
+function unirObjetos(a: any, b: any): any {
+  // {fecha, ...}: no se mezcla campo por campo — gana el registro más reciente,
+  // si no saldría la fecha de un conteo con el status de otro.
+  if (a && b && typeof a.fecha === 'string' && typeof b.fecha === 'string') {
+    return a.fecha >= b.fecha ? a : b;
+  }
+  const out: any = { ...a };
+  for (const [k, v] of Object.entries(b || {})) out[k] = unirValor(k, out[k], v);
+  return out;
+}
+
+function unirValor(clave: string, a: any, b: any): any {
+  if (a === undefined || a === null) return b;
+  if (b === undefined || b === null) return a;
+  if (typeof a === 'boolean' || typeof b === 'boolean') return !!a || !!b;   // lo usa en alguna cuenta
+  if (typeof a === 'number' && typeof b === 'number') return NO_SUMABLES.has(clave) ? Math.max(a, b) : a + b;
+  if (Array.isArray(a) && Array.isArray(b)) return unirArrays(clave, a, b);
+  if (typeof a === 'object' && typeof b === 'object') return unirObjetos(a, b);
+  if (typeof a === 'string' && typeof b === 'string') return a >= b ? a : b; // fechas ISO: la más reciente
+  return a;
+}
+
+/** Une el uso profundo de N cuentas en una sola foto del cliente. */
+export function agregarUso(porCuenta: Record<string, any>): any | null {
+  const cuentas = Object.keys(porCuenta).filter(c => porCuenta[c]);
+  if (!cuentas.length) return null;
+  if (cuentas.length === 1) return { ...porCuenta[cuentas[0]], cuentas };
+  let acc: any = porCuenta[cuentas[0]];
+  for (const c of cuentas.slice(1)) acc = unirObjetos(acc, porCuenta[c]);
+  return { ...acc, cuentas };
+}
+
 /** Guarda la actividad individual de cada cuenta (para el desglose del CRM). */
 export async function guardarPorCuenta(companyId: string, porCuenta: Record<string, Actividad | null | undefined>) {
   const ahora = new Date().toISOString();
@@ -112,6 +166,19 @@ export async function guardarPorCuenta(companyId: string, porCuenta: Record<stri
     try {
       await supabase.from('company_sacs_accounts')
         .update({ actividad: act, sync_at: ahora })
+        .eq('company_id', companyId).eq('cuenta', cuenta);
+    } catch { /* el desglose nunca bloquea el sync principal */ }
+  }
+}
+
+/** Igual, para el uso profundo. */
+export async function guardarUsoPorCuenta(companyId: string, porCuenta: Record<string, any>) {
+  const ahora = new Date().toISOString();
+  for (const [cuenta, uso] of Object.entries(porCuenta)) {
+    if (!uso) continue;
+    try {
+      await supabase.from('company_sacs_accounts')
+        .update({ uso_sacs: uso, uso_sync_at: ahora })
         .eq('company_id', companyId).eq('cuenta', cuenta);
     } catch { /* el desglose nunca bloquea el sync principal */ }
   }

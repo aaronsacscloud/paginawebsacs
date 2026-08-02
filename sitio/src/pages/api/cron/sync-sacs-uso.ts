@@ -9,6 +9,7 @@
 import type { APIRoute } from 'astro';
 import { isAuthorizedCron } from '../../../lib/auth/cron';
 import { supabase } from '../../../lib/supabase';
+import { cuentasPorEmpresa, agregarUso, guardarUsoPorCuenta, normCuenta } from '../../../lib/crm/sacs-cuentas';
 
 export const prerender = false;
 
@@ -30,11 +31,21 @@ export const GET: APIRoute = async ({ url, request }) => {
     .limit(limit);
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 
-  const cuentas = Array.from(new Set((companies || []).map(c => String(c.sacs_account).trim().toLowerCase()).filter(Boolean)));
-  const out = { cuentas: cuentas.length, actualizadas: 0, sin_datos: 0, errores: [] as string[] };
+  // Igual que el cron de actividad: un cliente puede operar varias cuentas y el
+  // uso se une en una sola foto (ver lib/crm/sacs-cuentas.ts).
+  const mapa = await cuentasPorEmpresa((companies || []).map(c => c.id));
+  const cuentasDeEmpresa = (co: any): string[] => {
+    const ls = mapa[co.id];
+    return (ls && ls.length ? ls : [normCuenta(co.sacs_account)]).filter(Boolean);
+  };
+  const cuentas = Array.from(new Set((companies || []).flatMap(cuentasDeEmpresa)));
+  const out = { empresas: (companies || []).length, cuentas: cuentas.length, actualizadas: 0, sin_datos: 0, errores: [] as string[] };
 
-  // Lotes de 15 — el endpoint de sacs_api procesa cada lote SECUENCIALMENTE
-  // (una cuenta a la vez) para no golpear Mongo.
+  // 1) Traer el uso de TODAS las cuentas. Lotes de 15 — el endpoint de sacs_api
+  //    procesa cada lote SECUENCIALMENTE (una cuenta a la vez) para no golpear
+  //    Mongo. Se acumula en un solo mapa: las cuentas de una misma empresa
+  //    pueden caer en lotes distintos.
+  const porCuenta: Record<string, any> = {};
   for (let i = 0; i < cuentas.length; i += 15) {
     const lote = cuentas.slice(i, i + 15);
     try {
@@ -45,13 +56,23 @@ export const GET: APIRoute = async ({ url, request }) => {
       });
       if (!res.ok) { out.errores.push('lote ' + i + ': HTTP ' + res.status); continue; }
       const j = await res.json();
-      const porCuenta: Record<string, any> = j.data || {};
+      Object.assign(porCuenta, j.data || {});
+    } catch (e: any) {
+      out.errores.push('lote ' + i + ': ' + (e?.message || String(e)));
+    }
+  }
 
-      for (const co of (companies || [])) {
-        const acct = String(co.sacs_account || '').trim().toLowerCase();
-        if (!lote.includes(acct)) continue;
-        const uso = porCuenta[acct];
-        if (!uso) { out.sin_datos++; continue; }
+  // 2) Unir por empresa y escribir.
+  for (const co of (companies || [])) {
+    try {
+      const misCuentas = cuentasDeEmpresa(co);
+      const acct = misCuentas.join(' + ') || '(sin cuenta)';
+      const suyas: Record<string, any> = {};
+      for (const c of misCuentas) if (porCuenta[c]) suyas[c] = porCuenta[c];
+      const uso = agregarUso(suyas);
+      if (!uso) { out.sin_datos++; continue; }
+      await guardarUsoPorCuenta(co.id, suyas);
+      {
         const { error: ue } = await supabase.from('companies').update({
           uso_sacs: uso,
           uso_sync_at: new Date().toISOString(),
@@ -80,7 +101,7 @@ export const GET: APIRoute = async ({ url, request }) => {
         } catch { /* el snapshot nunca bloquea el sync */ }
       }
     } catch (e: any) {
-      out.errores.push('lote ' + i + ': ' + (e?.message || String(e)));
+      out.errores.push(co.nombre + ': ' + (e?.message || String(e)));
     }
   }
 
