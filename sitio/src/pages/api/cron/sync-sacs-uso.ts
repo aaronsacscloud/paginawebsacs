@@ -84,5 +84,9 @@ export const GET: APIRoute = async ({ url, request }) => {
     }
   }
 
-  return new Response(JSON.stringify(out, null, 2), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  // Fallar RUIDOSO (mismo criterio que sync-sacs-activity): si había cuentas y
+  // ninguna se pudo actualizar, la corrida falló — que se vea en Vercel en vez
+  // de dejar el uso congelado pasando por dato fresco.
+  const fracaso = cuentas.length > 0 && out.actualizadas === 0;
+  return new Response(JSON.stringify(out, null, 2), { status: fracaso ? 500 : 200, headers: { 'Content-Type': 'application/json' } });
 };

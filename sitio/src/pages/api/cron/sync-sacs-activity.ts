@@ -163,5 +163,12 @@ export const GET: APIRoute = async ({ url, request }) => {
     } catch { /* el resumen queda en activities de todos modos */ }
   }
 
-  return new Response(JSON.stringify(out, null, 2), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  // Fallar RUIDOSO. Antes esto siempre devolvía 200 aunque los errores llenaran
+  // out.errores: para Vercel la corrida era un éxito, nadie miraba el body, y el
+  // CRM siguió mostrando la última venta y la salud viejas COMO SI FUERAN DE HOY.
+  // Así estuvo 6 días en jul-2026 (sacs_api contestaba 401 a /interno/crm/*).
+  // Cero cuentas actualizadas teniendo cuentas que sincronizar no es una corrida
+  // buena: es el puente caído, y tiene que verse en el log de crons.
+  const fracaso = cuentas.length > 0 && out.actualizadas === 0;
+  return new Response(JSON.stringify(out, null, 2), { status: fracaso ? 500 : 200, headers: { 'Content-Type': 'application/json' } });
 };

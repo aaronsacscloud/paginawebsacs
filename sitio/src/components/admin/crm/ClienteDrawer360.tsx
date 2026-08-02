@@ -238,6 +238,21 @@ function EliminarClienteModal({ companyId, co, onCancel, onDeleted }: { companyI
   );
 }
 
+/* Aviso de datos viejos: el cron de actividad corre cada 6 h, así que pasar de
+ * 24 h sin sincronizar significa que el puente con SACS está caído y lo que se
+ * ve en pantalla ya no es la realidad del cliente. */
+function DatosDesactualizados({ syncAt }: { syncAt?: string | null }) {
+  if (!syncAt) return null;
+  const horas = Math.floor((Date.now() - new Date(syncAt).getTime()) / 3600000);
+  if (!(horas >= 24)) return null;
+  const cuanto = horas >= 48 ? `${Math.floor(horas / 24)} días` : `${horas} horas`;
+  return (
+    <div style={{ background: '#fff6f4', border: '1px solid #f0c4bd', borderRadius: 10, padding: '8px 12px', marginBottom: 10, fontSize: '0.78rem', color: '#a03323', fontWeight: 600 }}>
+      ⚠️ Datos de hace <b>{cuanto}</b>: la sincronización con SACS no está corriendo. Lo de abajo es la última foto, no el estado de hoy.
+    </div>
+  );
+}
+
 /* ─────────── 📊 Resumen ─────────── */
 function TabResumen({ res, co, act, subs, acts, reload }: any) {
   const isMobile = useIsMobile();
@@ -317,6 +332,10 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
       {/* ── Qué está usando (actividad real de SACS) ── */}
       <div style={D.card}>
         <div style={D.h}>Qué está usando en SACS</div>
+        {/* Estos números vienen del cron; si el cron se cae, siguen pintándose
+            igual y se leen como si fueran de hoy (pasó 6 días en jul-2026).
+            Con más de 24 h sin sincronizar, dilo en la cara. */}
+        <DatosDesactualizados syncAt={co.actividad_sync_at} />
         {act ? (
           <div>
             <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: '0.83rem' }}>
