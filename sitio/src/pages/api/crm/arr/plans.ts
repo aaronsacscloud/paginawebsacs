@@ -31,6 +31,8 @@ const PLUGINS = [
   { slug: 'plugin_nivelacion', nombre: 'Nivelación de inventario', precio_mensual: null, precio_anual: null, a_la_medida: true, categoria: 'plugin', orden: 106 },
   { slug: 'plugin_ecommerce', nombre: 'Tienda en línea', precio_mensual: null, precio_anual: null, a_la_medida: true, categoria: 'plugin', orden: 107 },
   { slug: 'plugin_facturacion', nombre: 'Facturación', precio_mensual: null, precio_anual: null, a_la_medida: true, categoria: 'plugin', orden: 108 },
+  // RH: expediente de empleados + asistencia + actas administrativas.
+  { slug: 'plugin_empleados', nombre: 'Empleados (RH)', precio_mensual: null, precio_anual: null, a_la_medida: true, categoria: 'plugin', orden: 109 },
 ];
 
 // Une catálogo base + plugins, deduplicando por slug (lo de la BD manda).

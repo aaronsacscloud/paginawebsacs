@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { computarSenales } from '../../../lib/crm/senales';
 import { CreateDealModal } from './DealsTab';
 import { useIsMobile, useDrawerHistory, BP } from '../../../lib/ui/mobile';
@@ -64,6 +64,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
   const [err, setErr] = useState('');
   const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'oport' | 'reuniones' | 'notas' | 'act'>('resumen');
   const [msg, setMsg] = useState('');
+  const [borrar, setBorrar] = useState(false);
   const isMobile = useIsMobile();
   useDrawerHistory(true, onClose); // atrás cierra el drawer + scroll-lock del body
 
@@ -106,6 +107,13 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                 {principal?.whatsapp && (
                   <a href={waLink(principal.whatsapp)} target="_blank" rel="noreferrer" style={{ ...D.btnG, textDecoration: 'none', color: '#1A8F7A', borderColor: '#bfe8df', fontWeight: 700 }}>💬 WhatsApp</a>
                 )}
+                {/* Eliminar cliente: visible en todas las pestañas (no escondido en
+                    un menú), pero en rojo "outline" para que no compita con las
+                    acciones normales. El modal es el que exige la confirmación. */}
+                <button onClick={() => setBorrar(true)} title="Eliminar este cliente y todo su historial"
+                  style={{ ...D.btnG, color: '#c0392b', borderColor: '#f0c4bd', background: '#fff6f4', fontWeight: 700, minHeight: 44, flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  🗑{isMobile ? '' : ' Eliminar'}
+                </button>
                 <button aria-label={isMobile ? 'Atrás' : 'Cerrar'} onClick={onClose} style={{ ...D.btnG, border: 'none', fontSize: '1.15rem', minWidth: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{isMobile ? '←' : '✕'}</button>
               </div>
               <div style={D.tabbar}>
@@ -135,7 +143,98 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
           </>
         )}
       </div>
+      {borrar && co && (
+        <EliminarClienteModal companyId={companyId} co={co} onCancel={() => setBorrar(false)}
+          onDeleted={() => { setBorrar(false); onChanged(); onClose(); }} />
+      )}
     </>
+  );
+}
+
+/* ═══ Eliminar cliente (cascada) ═══
+ * Doble candado: (1) muestra el inventario REAL de lo que se va a borrar —lo
+ * calcula el endpoint en dry_run, no una lista adivinada— y (2) exige escribir
+ * el nombre del cliente. Ojo: es irreversible y no toca la cuenta de SACS. */
+function EliminarClienteModal({ companyId, co, onCancel, onDeleted }: { companyId: string; co: any; onCancel: () => void; onDeleted: () => void }) {
+  const [inv, setInv] = useState<any>(null);
+  const [err, setErr] = useState('');
+  const [texto, setTexto] = useState('');
+  const [borrando, setBorrando] = useState(false);
+  const etiqueta = co.sacs_account || co.nombre || '';
+  const validos = [co.nombre, co.sacs_account].filter(Boolean).map((s: string) => String(s).trim().toLowerCase());
+  const ok = validos.includes(texto.trim().toLowerCase());
+
+  async function pedir(body: any) {
+    const r = await fetch('/api/crm/arr/eliminar-cliente', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ company_id: companyId, ...body }) });
+    return r.json().catch(() => ({ error: 'Respuesta inválida del servidor' }));
+  }
+  useEffect(() => {
+    let vivo = true;
+    pedir({ dry_run: true }).then(j => { if (!vivo) return; if (j.error) setErr(j.error); else setInv(j); }).catch(e => vivo && setErr(String(e)));
+    return () => { vivo = false; };
+  }, [companyId]);
+
+  async function eliminar() {
+    if (!ok || borrando) return;
+    setBorrando(true); setErr('');
+    const j = await pedir({ confirmar: texto.trim() });
+    if (j?.error) { setErr(j.error); setBorrando(false); return; }
+    onDeleted();
+  }
+
+  const wrap = { position: 'fixed' as const, inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, background: 'rgba(0,0,0,.5)' };
+  const box = { background: '#fff', borderRadius: 16, width: 'min(560px, 100%)', maxHeight: '90vh', overflowY: 'auto' as const, boxShadow: '0 24px 60px rgba(0,0,0,.3)' };
+
+  return (
+    <div style={wrap} onClick={onCancel}>
+      <div style={box} onClick={e => e.stopPropagation()}>
+        <div style={{ padding: '20px 22px 0' }}>
+          <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#c0392b' }}>Eliminar cliente definitivamente</div>
+          <div style={{ fontSize: '0.84rem', color: '#555', marginTop: 6, lineHeight: 1.5 }}>
+            Vas a borrar <b>{etiqueta}</b> y <b>todo</b> lo que representa su relación con nosotros.
+            Esta acción <b>no se puede deshacer</b> y el ARR/histórico de este cliente desaparece de los reportes.
+          </div>
+        </div>
+        <div style={{ padding: '14px 22px 0' }}>
+          {!inv && !err && <div style={{ padding: 18, textAlign: 'center', color: '#999', fontSize: '0.85rem' }}>Calculando qué se va a borrar…</div>}
+          {inv && (
+            <div style={{ border: '1px solid #f0dcd8', background: '#fffaf9', borderRadius: 12, padding: 14 }}>
+              <div style={{ ...D.h, color: '#c0392b', marginBottom: 8 }}>Se eliminarán {inv.total} registros</div>
+              {inv.detalle?.length ? (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', rowGap: 5, columnGap: 12, fontSize: '0.8rem' }}>
+                  {inv.detalle.map((d: any) => (
+                    <Fragment key={d.tabla}>
+                      <span style={{ color: '#444' }}>{d.label}</span>
+                      <span style={{ fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{d.n}</span>
+                    </Fragment>
+                  ))}
+                  <span style={{ color: '#444' }}>Cliente (empresa)</span><span style={{ fontWeight: 800 }}>1</span>
+                </div>
+              ) : <div style={{ fontSize: '0.82rem', color: '#666' }}>Este cliente no tiene datos ligados: solo se borra la ficha.</div>}
+            </div>
+          )}
+          {co.sacs_account && (
+            <div style={{ marginTop: 10, fontSize: '0.78rem', color: '#666', background: '#f6f8fa', border: '1px solid #e9eaee', borderRadius: 10, padding: '9px 12px' }}>
+              ℹ️ La cuenta de SACS <b>{co.sacs_account}</b> <b>no</b> se toca: el cliente sigue operando su sistema. Esto solo borra el CRM.
+            </div>
+          )}
+          {err && <div style={{ marginTop: 10, fontSize: '0.82rem', color: '#b93333', fontWeight: 700 }}>{err}</div>}
+          <div style={{ marginTop: 14 }}>
+            <label style={D.lbl}>Para confirmar, escribe <b style={{ color: '#c0392b' }}>{etiqueta}</b></label>
+            <input value={texto} onChange={e => setTexto(e.target.value)} autoFocus placeholder={etiqueta}
+              onKeyDown={e => { if (e.key === 'Enter' && ok) eliminar(); }}
+              style={{ ...D.input, borderColor: texto && !ok ? '#e5a9a0' : '#ddd', height: 44 }} />
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', padding: '16px 22px 20px' }}>
+          <button onClick={onCancel} style={{ ...D.btnG, minHeight: 44, padding: '0 16px' }}>Cancelar</button>
+          <button onClick={eliminar} disabled={!ok || borrando}
+            style={{ ...D.btn, minHeight: 44, padding: '0 18px', background: ok && !borrando ? '#c0392b' : '#e8b8b0', cursor: ok && !borrando ? 'pointer' : 'not-allowed' }}>
+            {borrando ? 'Eliminando…' : 'Eliminar definitivamente'}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -878,13 +977,18 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
   const [adding, setAdding] = useState(false);
   const [nf, setNf] = useState<any>({ plan_slug: '', nombre_plan: '', ciclo: 'anual', precio: '', proxima_factura: '', estado: 'programada' });
   const [busy, setBusy] = useState(false);
+  const [picker, setPicker] = useState<null | 'nuevo' | 'edit'>(null);
 
   useEffect(() => { fetch('/api/crm/arr/plans').then(r => r.json()).then(j => setPlanes(j.data || j.plans || [])).catch(() => {}); }, []);
 
-  function pickPlan(slug: string) {
-    const p = planes.find((x: any) => x.slug === slug);
-    const precio = p ? (nf.ciclo === 'mensual' ? p.precio_mensual : p.precio_anual) : '';
-    setNf({ ...nf, plan_slug: slug, nombre_plan: p?.nombre || slug, precio: precio ?? '' });
+  // Elegir del catálogo llena nombre + precio del ciclo actual. Si el plan es "a
+  // la medida" no pisa el precio ya capturado (no hay tarifa que aplicar).
+  function aplicarPlan(p: any, destino: 'nuevo' | 'edit') {
+    const set = destino === 'nuevo' ? setNf : setF;
+    const cur: any = destino === 'nuevo' ? nf : f;
+    const tarifa = cur.ciclo === 'mensual' ? p.precio_mensual : p.precio_anual;
+    set({ ...cur, plan_slug: p.slug || '', nombre_plan: p.nombre, precio: tarifa ?? cur.precio ?? '' });
+    setPicker(null);
   }
 
   async function crear() {
@@ -901,6 +1005,7 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
     setBusy(true);
     const body: any = { id: s.id, estado: f.estado, ciclo: f.ciclo, nombre_plan: f.nombre_plan, precio: parseFloat(f.precio) || 0 };
     if (f.proxima_factura) body.proxima_factura = f.proxima_factura;
+    if (f.plan_slug) body.plan_id = f.plan_slug; // solo si se eligió del catálogo
     const r = await fetch('/api/crm/arr/subscriptions', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json().catch(() => ({}));
     setBusy(false);
@@ -922,10 +1027,11 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
         {adding && (
           <div style={{ background: '#fafafa', border: '1px dashed #ddd', borderRadius: 10, padding: 12, marginBottom: 12 }}>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-              <select value={nf.plan_slug} onChange={e => pickPlan(e.target.value)} style={{ ...D.input, flex: '1 1 200px' }}>
-                <option value="">— elegir plan —</option>
-                {planes.map((p: any) => <option key={p.slug} value={p.slug}>{p.nombre}{p.precio_anual ? ` ($${p.precio_anual}/año)` : ''}</option>)}
-              </select>
+              <button onClick={() => setPicker('nuevo')} title="Abrir el catálogo completo de planes y plugins"
+                style={{ ...D.input, flex: '1 1 200px', minHeight: 44, textAlign: 'left', cursor: 'pointer', background: '#fff', display: 'flex', alignItems: 'center', gap: 8, fontWeight: nf.nombre_plan ? 700 : 400, color: nf.nombre_plan ? '#1a1a1a' : '#999' }}>
+                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nf.nombre_plan || '— elegir plan —'}</span>
+                <span style={{ color: '#999' }}>▾</span>
+              </button>
               <select value={nf.ciclo} onChange={e => { const c = e.target.value; const p = planes.find((x: any) => x.slug === nf.plan_slug); setNf({ ...nf, ciclo: c, precio: p ? ((c === 'mensual' ? p.precio_mensual : p.precio_anual) ?? nf.precio) : nf.precio }); }} style={{ ...D.input, flex: '0 1 120px' }}>
                 {CICLOS.map(x => <option key={x} value={x}>{x}</option>)}
               </select>
@@ -949,8 +1055,14 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                 {subs.map((s: any) => (
                   editId === s.id ? (
                     <tr key={s.id}>
-                      <td style={D.td}><input value={f.nombre_plan} onChange={e => setF({ ...f, nombre_plan: e.target.value })} style={{ ...D.input, minWidth: 140 }} /></td>
-                      <td style={D.td}><select value={f.ciclo} onChange={e => setF({ ...f, ciclo: e.target.value })} style={D.input}>{CICLOS.map(x => <option key={x} value={x}>{x}</option>)}</select></td>
+                      <td style={D.td}>
+                        <button onClick={() => setPicker('edit')} title="Elegir del catálogo de planes y plugins"
+                          style={{ ...D.input, minWidth: 150, minHeight: 40, textAlign: 'left', cursor: 'pointer', background: '#fff', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700 }}>
+                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.nombre_plan || '— elegir plan —'}</span>
+                          <span style={{ color: '#999', fontWeight: 400 }}>▾</span>
+                        </button>
+                      </td>
+                      <td style={D.td}><select value={f.ciclo} onChange={e => { const c = e.target.value; const p = planes.find((x: any) => x.slug && x.slug === f.plan_slug); setF({ ...f, ciclo: c, precio: p ? ((c === 'mensual' ? p.precio_mensual : p.precio_anual) ?? f.precio) : f.precio }); }} style={D.input}>{CICLOS.map(x => <option key={x} value={x}>{x}</option>)}</select></td>
                       <td style={D.td}><select value={f.estado} onChange={e => setF({ ...f, estado: e.target.value })} style={D.input}>{ESTADOS_SUB.map(x => <option key={x} value={x}>{x}</option>)}</select></td>
                       <td style={D.td}><input type="number" value={f.precio} onChange={e => setF({ ...f, precio: e.target.value })} style={{ ...D.input, width: 100 }} /></td>
                       <td style={D.td}><input type="date" value={f.proxima_factura} onChange={e => setF({ ...f, proxima_factura: e.target.value })} style={D.input} /></td>
@@ -969,13 +1081,95 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                       <td style={D.td}>{fmtDate(s.proxima_factura)}</td>
                       <td style={D.td}>{s.pagos_realizados || 0}</td>
                       <td style={D.td}>{money(s.total_pagado)}</td>
-                      <td style={D.td}><button style={D.btnG} onClick={() => { setEditId(s.id); setF({ nombre_plan: s.nombre_plan || '', ciclo: s.ciclo || 'anual', estado: s.estado || 'activa', precio: s.precio ?? s.arr ?? '', proxima_factura: s.proxima_factura || '' }); }}>✏️</button></td>
+                      <td style={D.td}><button style={D.btnG} onClick={() => { setEditId(s.id); setF({ nombre_plan: s.nombre_plan || '', plan_slug: s.plan_id || '', ciclo: s.ciclo || 'anual', estado: s.estado || 'activa', precio: s.precio ?? s.arr ?? '', proxima_factura: s.proxima_factura || '' }); }}>✏️</button></td>
                     </tr>
                   )
                 ))}
               </tbody>
             </table>
           )}
+        </div>
+      </div>
+      {picker && (
+        <PlanPickerModal
+          planes={planes}
+          ciclo={(picker === 'nuevo' ? nf.ciclo : f.ciclo) || 'anual'}
+          actual={picker === 'nuevo' ? nf.nombre_plan : f.nombre_plan}
+          onPick={p => aplicarPlan(p, picker)}
+          onClose={() => setPicker(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ═══ Catálogo de planes en modal ═══
+ * Antes el plan se elegía en un <select> angosto al dar de alta, y al EDITAR ni
+ * siquiera había catálogo: era un campo de texto libre (de ahí los planes
+ * escritos a mano que no cuadran con nada). Aquí se ve el catálogo completo,
+ * separado en Planes vs Plugins, con el precio del ciclo elegido; el texto libre
+ * sigue disponible abajo, pero como excepción explícita. */
+function PlanPickerModal({ planes, ciclo, actual, onPick, onClose }: { planes: any[]; ciclo: string; actual?: string; onPick: (p: any) => void; onClose: () => void }) {
+  const [q, setQ] = useState('');
+  const [custom, setCustom] = useState('');
+  const norm = (s: any) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const lista = planes.filter(p => !q.trim() || norm(p.nombre).includes(norm(q)) || norm(p.slug).includes(norm(q)));
+  const grupos: [string, any[]][] = [
+    ['Planes y licencias', lista.filter(p => (p.categoria || 'plan') === 'plan')],
+    ['Plugins y módulos', lista.filter(p => p.categoria === 'plugin')],
+    ['Otros', lista.filter(p => p.categoria && p.categoria !== 'plan' && p.categoria !== 'plugin')],
+  ];
+  const precio = (p: any) => (ciclo === 'mensual' ? p.precio_mensual : p.precio_anual);
+  const sufijo = ciclo === 'mensual' ? '/mes' : ciclo === 'anual' ? '/año' : '';
+
+  const wrap = { position: 'fixed' as const, inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, background: 'rgba(0,0,0,.5)' };
+  const box = { background: '#fff', borderRadius: 16, width: 'min(680px, 100%)', maxHeight: '88vh', display: 'flex', flexDirection: 'column' as const, boxShadow: '0 24px 60px rgba(0,0,0,.3)' };
+
+  return (
+    <div style={wrap} onClick={onClose}>
+      <div style={box} onClick={e => e.stopPropagation()}>
+        <div style={{ padding: '18px 20px 12px', borderBottom: '1px solid #f0f1f4' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '1.02rem', fontWeight: 800 }}>Catálogo de planes</div>
+              <div style={{ fontSize: '0.78rem', color: '#888', marginTop: 2 }}>Precios mostrados por ciclo <b>{ciclo}</b>. Al elegir se llena nombre y precio.</div>
+            </div>
+            <button onClick={onClose} style={{ ...D.btnG, border: 'none', fontSize: '1.1rem', minWidth: 44, height: 44 }}>✕</button>
+          </div>
+          <input value={q} onChange={e => setQ(e.target.value)} autoFocus placeholder="Buscar plan o plugin…" style={{ ...D.input, marginTop: 10, height: 42 }} />
+        </div>
+        <div style={{ padding: '14px 20px', overflowY: 'auto', flex: 1 }}>
+          {grupos.every(([, gs]) => !gs.length) && <div style={{ padding: 24, textAlign: 'center', color: '#999', fontSize: '0.85rem' }}>Ningún plan coincide con “{q}”.</div>}
+          {grupos.map(([titulo, items]) => items.length ? (
+            <div key={titulo} style={{ marginBottom: 16 }}>
+              <div style={D.h}>{titulo} ({items.length})</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 200px), 1fr))', gap: 8 }}>
+                {items.map((p: any) => {
+                  const sel = actual && (norm(actual) === norm(p.nombre) || actual === p.slug);
+                  const pr = precio(p);
+                  return (
+                    <button key={p.slug || p.nombre} onClick={() => onPick(p)}
+                      style={{ textAlign: 'left', padding: '10px 12px', minHeight: 62, borderRadius: 11, cursor: 'pointer',
+                        border: sel ? '1.5px solid #1A8F7A' : '1px solid #e6e7eb', background: sel ? '#f2fbf8' : '#fff' }}>
+                      <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1a1a1a' }}>{p.nombre}</div>
+                      <div style={{ fontSize: '0.75rem', marginTop: 3, color: pr ? '#1A8F7A' : '#a06600', fontWeight: 700 }}>
+                        {pr ? money(pr) + sufijo : 'A la medida'}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null)}
+        </div>
+        <div style={{ borderTop: '1px solid #f0f1f4', padding: '12px 20px 16px' }}>
+          <label style={D.lbl}>¿No está en el catálogo? Nombre personalizado</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input value={custom} onChange={e => setCustom(e.target.value)} placeholder="Ej. Licencia especial 2026" style={{ ...D.input, flex: 1, height: 44 }}
+              onKeyDown={e => { if (e.key === 'Enter' && custom.trim()) onPick({ slug: '', nombre: custom.trim(), precio_mensual: null, precio_anual: null, a_la_medida: true }); }} />
+            <button disabled={!custom.trim()} onClick={() => onPick({ slug: '', nombre: custom.trim(), precio_mensual: null, precio_anual: null, a_la_medida: true })}
+              style={{ ...D.btn, minHeight: 44, padding: '0 16px', background: custom.trim() ? '#1a1a1a' : '#ccc', cursor: custom.trim() ? 'pointer' : 'not-allowed' }}>Usar</button>
+          </div>
         </div>
       </div>
     </div>
