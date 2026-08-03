@@ -56,6 +56,9 @@ export const GET: APIRoute = async () => {
       // Recurrentes (sin vitalicias) para el ARR:
       const activas = subs.filter((s: any) => s.estado === 'activa' && !esVital(s));
       const pend = subs.filter((s: any) => (s.estado === 'pendiente_pago' || s.estado === 'programada') && !esVital(s));
+      // Pausadas: NO suman ARR (no están en `activas`) pero tampoco son un
+      // cliente muerto — la licencia ya está pagada y hay que poder verlas.
+      const pausadas = subs.filter((s: any) => s.estado === 'pausada');
       // Principal si existe la marca; si no, el primero (comportamiento previo).
       const contacto = (c.contacts || []).find((x: any) => x.es_principal) || (c.contacts || [])[0] || null;
       // Si la empresa no tiene contacto ligado pero una suscripción SÍ referencia
@@ -74,6 +77,8 @@ export const GET: APIRoute = async () => {
         contacto: contacto ? { id: contacto.id, nombre: contacto.nombre, email: contacto.email, whatsapp: contacto.whatsapp, telefono: contacto.telefono } : null,
         sub_contact_id: subContactId,
         subs_total: subs.length, subs_activas: activas.length, subs_pendientes: pend.length,
+        subs_pausadas: pausadas.length,
+        arr_pausado: r2(pausadas.reduce((a: number, s: any) => a + Number(s.arr || 0), 0)),
         vitalicia,
         vitalicia_pagado: r2(subs.filter(esVital).reduce((a: number, s: any) => a + Number(s.total_pagado || 0), 0)),
         mrr: r2(activas.reduce((a: number, s: any) => a + Number(s.arr || 0) / 12, 0)),

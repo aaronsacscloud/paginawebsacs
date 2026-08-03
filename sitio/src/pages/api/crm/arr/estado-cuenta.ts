@@ -40,7 +40,7 @@ export const GET: APIRoute = async ({ url }) => {
 
   try {
     let subsQ = supabase.from('subscriptions')
-      .select('id, nombre_plan, ciclo, precio, monto_proximo, fecha_inicio, proxima_factura, estado, total_pagado, pagos_realizados');
+      .select('id, nombre_plan, ciclo, precio, monto_proximo, fecha_inicio, proxima_factura, estado, total_pagado, pagos_realizados, pausada_at, razon_pausa');
     subsQ = subId ? subsQ.eq('id', subId) : subsQ.eq('company_id', companyId);
     const { data: subs, error } = await subsQ;
     if (error) throw error;
@@ -61,7 +61,13 @@ export const GET: APIRoute = async ({ url }) => {
         pagadoPorPeriodo[k] = (pagadoPorPeriodo[k] || 0) + (Number(p.monto) || 0);
       });
       const precio = Number(s.precio) || 0;
-      const per = periodos(s.fecha_inicio, s.ciclo, hoy);
+      // Una licencia PAUSADA deja de devengar: los periodos se cortan el día que
+      // se pausó. Si no, el estado de cuenta que se le manda al cliente le sigue
+      // sumando meses de una licencia que acordamos congelar — le estaríamos
+      // cobrando justo lo que le dijimos que no.
+      const pausada = s.estado === 'pausada';
+      const corte = pausada && s.pausada_at ? new Date(s.pausada_at) : hoy;
+      const per = periodos(s.fecha_inicio, s.ciclo, corte);
       let totalEsp = 0;
       const detalle = per.map(k => {
         const esperado = precio;
@@ -72,10 +78,14 @@ export const GET: APIRoute = async ({ url }) => {
       });
       const totalPag = Number(s.total_pagado) || 0; // autoritativo (incluye migrados)
       const saldo = r2(totalEsp - totalPag);
-      const vencida = !!(s.proxima_factura && s.proxima_factura < hoyStr && s.estado !== 'cancelada' && s.estado !== 'liberada');
+      // Pausada nunca está vencida: no hay fecha de cobro corriendo. Sin esto,
+      // la próxima factura vieja que quedó al pausar la marcaba como deuda.
+      const vencida = !!(s.proxima_factura && s.proxima_factura < hoyStr && !pausada && s.estado !== 'cancelada' && s.estado !== 'liberada');
       return {
         subscription_id: s.id, nombre_plan: s.nombre_plan, ciclo: s.ciclo, estado: s.estado,
-        proxima_factura: s.proxima_factura, monto_proximo: s.monto_proximo,
+        pausada, razon_pausa: s.razon_pausa || null,
+        // Mientras está pausada no hay próxima factura ni monto que cobrar.
+        proxima_factura: pausada ? null : s.proxima_factura, monto_proximo: pausada ? null : s.monto_proximo,
         pagos_realizados: s.pagos_realizados,
         total_esperado: r2(totalEsp), total_pagado: r2(totalPag), saldo,
         al_dia: saldo <= 0.01 && !vencida, vencida, detalle,

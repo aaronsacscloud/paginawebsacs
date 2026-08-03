@@ -1201,7 +1201,7 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                       <td style={D.td}>{s.ciclo}</td>
                       <td style={D.td}><EstadoBadge e={s.estado} /></td>
                       <td style={D.td}>{money(s.precio || s.arr)}</td>
-                      <td style={D.td}>{fmtDate(s.proxima_factura)}</td>
+                      <td style={D.td}>{s.estado === 'pausada' ? <span style={{ color: '#a06600' }}>en pausa</span> : fmtDate(s.proxima_factura)}</td>
                       <td style={D.td}>{s.pagos_realizados || 0}</td>
                       <td style={D.td}>{money(s.total_pagado)}</td>
                       <td style={D.td}>

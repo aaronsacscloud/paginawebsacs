@@ -372,7 +372,10 @@ export default function SubscriptionsTab() {
                         return null;
                       })()}</td>
                       <td style={{ ...S.td, fontWeight: 700 }}>{s.ciclo === 'vitalicia' ? <span style={{ color: '#bbb', fontWeight: 400 }} title="Pago único — no cuenta como ARR">— (único)</span> : fmt(s.arr)}</td>
-                      <td style={{ ...S.td, color: s.proxima_factura && s.proxima_factura < new Date().toISOString().slice(0, 10) && (s.estado === 'activa' || s.estado === 'pendiente_pago') ? '#b93333' : '#333' }}>{fmtDate(s.proxima_factura)}</td>
+                      {/* Pausada: no hay fecha de cobro corriendo, así que no se
+                          enseña una fecha vieja (menos aún en rojo de vencida). */}
+                      <td style={{ ...S.td, color: s.proxima_factura && s.proxima_factura < new Date().toISOString().slice(0, 10) && (s.estado === 'activa' || s.estado === 'pendiente_pago') ? '#b93333' : '#333' }}>
+                        {s.estado === 'pausada' ? <span style={{ color: '#a06600' }}>en pausa</span> : fmtDate(s.proxima_factura)}</td>
                       <td style={S.td}>{s.pagos_realizados}</td>
                       <td style={S.td}>{fmt(s.total_pagado)}</td>
                       <td style={{ ...S.td, color: dias != null && dias > 15 ? '#b93333' : dias != null && dias >= 3 ? '#a06600' : '#333' }}>

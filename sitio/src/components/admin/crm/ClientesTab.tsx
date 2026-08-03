@@ -30,6 +30,7 @@ const PLAN_BADGE: Record<string, { bg: string; color: string; label: string }> =
  * ver como muerto a un cliente vivo. */
 const ESTADO_SUB = (c: any): { label: string; bg: string; color: string } => {
   if (c.subs_activas > 0) return { label: 'activa', bg: 'rgba(42,181,160,0.15)', color: '#1A8F7A' };
+  if (c.subs_pausadas > 0) return { label: 'pausada', bg: 'rgba(232,168,56,0.16)', color: '#a06600' };
   if (c.subs_pendientes > 0) return { label: 'pendiente', bg: 'rgba(232,168,56,0.16)', color: '#a06600' };
   if (c.vitalicia) return { label: 'vitalicia', bg: 'rgba(108,92,231,0.12)', color: '#6C5CE7' };
   return { label: 'sin activa', bg: '#f3f4f6', color: '#9aa0a8' };
