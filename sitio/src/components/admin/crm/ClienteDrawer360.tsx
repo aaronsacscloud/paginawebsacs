@@ -1096,7 +1096,11 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
   async function crear() {
     if (!nf.nombre_plan) { alert('Elige un plan.'); return; }
     setBusy(true);
-    const body: any = { company_id: companyId, nombre_plan: nf.nombre_plan, plan_id: nf.plan_id || null, ciclo: nf.ciclo, precio: parseFloat(nf.precio) || 0, estado: nf.estado };
+    // contact_id: el drawer no lo mandaba y `normalizar()` lo deja en null, así
+    // que las subs dadas de alta desde aquí nacían SIN contacto —a diferencia de
+    // las que se crean en la sección de Suscripciones, que sí lo llevan—. De ahí
+    // cuelgan el estado de cuenta, los recordatorios y la cobranza.
+    const body: any = { company_id: companyId, contact_id: principal?.id || null, nombre_plan: nf.nombre_plan, plan_id: nf.plan_id || null, ciclo: nf.ciclo, precio: parseFloat(nf.precio) || 0, estado: nf.estado };
     if (nf.proxima_factura) body.proxima_factura = nf.proxima_factura;
     const r = await fetch('/api/crm/arr/subscriptions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json().catch(() => ({}));
