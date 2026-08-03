@@ -15,7 +15,10 @@ export type Actividad = {
   ventas_30d_prev?: number; total_30d_prev?: number; tendencia_pct?: number | null;
   modulos?: string[];
   usuarios?: number; usuarios_operando?: number; ultimo_usuario_at?: string | null;
-  sucursales?: number;
+  sucursales?: number;                   // las que OPERAN (venta en 30d)
+  sucursales_totales?: number;           // las registradas en el catálogo
+  sucursales_permitidas?: number;        // asignadas a un superadmin activo
+  sucursales_detalle?: any[];            // desglose: cuál vendió cuánto
   cuentas?: string[];                    // qué cuentas entraron en el agregado
   por_cuenta?: Record<string, Actividad>; // desglose, para pintarlo en el CRM
 };
@@ -114,6 +117,15 @@ export function agregarActividad(porCuenta: Record<string, Actividad | null | un
     usuarios_operando: suma(partes, 'usuarios_operando'),
     ultimo_usuario_at: maxFecha(partes, 'ultimo_usuario_at'),
     sucursales: suma(partes, 'sucursales'),
+    sucursales_totales: suma(partes, 'sucursales_totales'),
+    sucursales_permitidas: suma(partes, 'sucursales_permitidas'),
+    // El desglose se CONCATENA (cada sucursal pertenece a una sola cuenta) y se
+    // reordena por facturación. Sin esto, un cliente con 2 cuentas de SACS perdía
+    // el detalle: `agregarActividad` arma un objeto con campos nombrados y este
+    // se quedaba fuera.
+    sucursales_detalle: partes
+      .flatMap((p, i) => (p.sucursales_detalle || []).map(d => ({ ...d, cuenta: cuentas[i] })))
+      .sort((a: any, b: any) => (b.total_30d || 0) - (a.total_30d || 0)),
     cuentas,
     por_cuenta: Object.fromEntries(cuentas.map(c => [c, porCuenta[c] as Actividad])),
   };
