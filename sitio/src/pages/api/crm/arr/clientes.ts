@@ -29,6 +29,20 @@ export const GET: APIRoute = async () => {
   const { data: companies, error } = res;
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 
+  // Cuentas SACS por empresa: un cliente puede operar varias (boomfitness+urban
+  // del mismo dueño) y en la lista hay que verlas TODAS, si no el renglón no se
+  // entiende. Tolerante a que la migración no haya corrido → cae a la principal.
+  const cuentasPorEmpresa: Record<string, string[]> = {};
+  try {
+    const { data: cs } = await supabase.from('company_sacs_accounts')
+      .select('company_id, cuenta, es_principal')
+      .order('es_principal', { ascending: false }).range(0, 9999);
+    for (const r of cs || []) {
+      const k = String(r.company_id);
+      (cuentasPorEmpresa[k] = cuentasPorEmpresa[k] || []).push(String(r.cuenta));
+    }
+  } catch { /* tabla ausente → fallback abajo */ }
+
   const data = (companies || [])
     // cliente real = tiene al menos una suscripción registrada
     .filter((c: any) => (c.subscriptions || []).length > 0)
@@ -53,6 +67,7 @@ export const GET: APIRoute = async () => {
       const top = senales[0] || null;
       return {
         id: c.id, nombre: c.nombre, sacs_account: c.sacs_account,
+        cuentas: cuentasPorEmpresa[c.id]?.length ? cuentasPorEmpresa[c.id] : (c.sacs_account ? [String(c.sacs_account)] : []),
         plan: c.plan, tipo_cuenta: c.tipo_cuenta, estado_cuenta: c.estado_cuenta,
         pipeline_stage: c.pipeline_stage ?? null,
         sucursales: c.sucursales,

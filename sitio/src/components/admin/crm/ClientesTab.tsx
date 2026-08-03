@@ -25,6 +25,16 @@ const PLAN_BADGE: Record<string, { bg: string; color: string; label: string }> =
   soporte_premium: { bg: 'rgba(229,75,75,0.10)',   color: '#b93333', label: 'Soporte premium' },
 };
 
+/* Estado de la relación, de un vistazo. Una vitalicia NO es "sin suscripción":
+ * pagó de por vida, solo que no es recurrente — marcarla como inactiva haría
+ * ver como muerto a un cliente vivo. */
+const ESTADO_SUB = (c: any): { label: string; bg: string; color: string } => {
+  if (c.subs_activas > 0) return { label: 'activa', bg: 'rgba(42,181,160,0.15)', color: '#1A8F7A' };
+  if (c.subs_pendientes > 0) return { label: 'pendiente', bg: 'rgba(232,168,56,0.16)', color: '#a06600' };
+  if (c.vitalicia) return { label: 'vitalicia', bg: 'rgba(108,92,231,0.12)', color: '#6C5CE7' };
+  return { label: 'sin activa', bg: '#f3f4f6', color: '#9aa0a8' };
+};
+
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const fmtDate = (d?: string | null) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '—';
 
@@ -177,12 +187,24 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
     {
       key: 'cliente', label: 'Cliente', width: '17%', ftype: 'text',
       val: c => (c.contacto?.nombre || c.nombre || '').toLowerCase(),
-      render: c => (
-        <td style={{ ...T.td, ...T.ell, fontWeight: 700 }}>
-          {c.contacto?.nombre || c.nombre}
-          {(() => { const cuenta = c.sacs_account || c.nombre; return cuenta && cuenta !== (c.contacto?.nombre || c.nombre) ? <div style={{ ...T.sub, ...T.ell }}>{cuenta}</div> : null; })()}
-        </td>
-      ),
+      render: c => {
+        const titulo = c.contacto?.nombre || c.nombre;
+        const cuentas: string[] = c.cuentas?.length ? c.cuentas : (c.sacs_account ? [c.sacs_account] : []);
+        return (
+          <td style={{ ...T.td, ...T.ell, fontWeight: 700 }}>
+            {titulo}
+            {/* Con varias cuentas de SACS hay que enseñarlas TODAS: si solo se ve
+                una, el renglón parece de otro cliente (y los montos, que son la
+                suma de ambas, no cuadran con lo que se ve dentro de esa cuenta). */}
+            {cuentas.length > 1 ? (
+              <div style={{ ...T.sub, whiteSpace: 'normal', lineHeight: 1.35 }} title={cuentas.join(' · ')}>
+                <span style={{ ...T.badge, background: '#eef2fe', color: '#3764c4', fontSize: '0.58rem', marginRight: 5, verticalAlign: 'middle' }}>{cuentas.length} cuentas</span>
+                {cuentas.join(' · ')}
+              </div>
+            ) : (cuentas[0] && cuentas[0] !== titulo ? <div style={{ ...T.sub, ...T.ell }}>{cuentas[0]}</div> : null)}
+          </td>
+        );
+      },
     },
     {
       key: 'contacto', label: 'Contacto', width: '18%', ftype: 'text',
@@ -213,10 +235,21 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       ),
     },
     {
-      key: 'plan', label: 'Plan', width: 104, ftype: 'select',
+      key: 'plan', label: 'Plan', width: 124, ftype: 'select',
       options: Object.entries(PLAN_BADGE).map(([v, b]) => ({ v, l: b.label })),
       val: c => c.plan || '',
-      render: c => { const b = PLAN_BADGE[c.plan] || null; return <td style={{ ...T.td, ...T.ell }}>{b ? <span style={{ ...T.badge, background: b.bg, color: b.color }}>{b.label}</span> : <span style={{ color: '#c4c8cf' }}>—</span>}</td>; },
+      render: c => {
+        const b = PLAN_BADGE[c.plan] || null;
+        const e = ESTADO_SUB(c);
+        return (
+          <td style={{ ...T.td, ...T.ell }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}>
+              {b ? <span style={{ ...T.badge, background: b.bg, color: b.color }}>{b.label}</span> : <span style={{ color: '#c4c8cf' }}>—</span>}
+              <span style={{ ...T.badge, background: e.bg, color: e.color, fontSize: '0.62rem' }}>{e.label}</span>
+            </div>
+          </td>
+        );
+      },
     },
     {
       key: 'arr', label: 'ARR', width: 112, num: true, ftype: 'number', val: c => Number(c.arr || 0),
@@ -291,7 +324,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
     { key: 'etapa', label: 'Etapa', ftype: 'select', options: stages.map(s => ({ v: s.key, l: s.label })), val: c => c.pipeline_stage || '' },
     { key: 'vitalicia', label: 'Licencia', ftype: 'select', options: [{ v: 'si', l: 'Vitalicia' }, { v: 'no', l: 'Recurrente' }], val: c => c.vitalicia ? 'si' : 'no' },
     { key: 'senal_nivel', label: 'Señal (nivel)', ftype: 'select', options: [{ v: 'oportunidad', l: 'Oportunidad' }, { v: 'riesgo', l: 'Riesgo' }, { v: '', l: 'Sin señal' }], val: c => c.senal_nivel || '' },
-    { key: 'cuenta', label: 'Cuenta SACS', ftype: 'text', val: c => c.sacs_account || '' },
+    { key: 'cuenta', label: 'Cuenta SACS', ftype: 'text', val: c => (c.cuentas?.length ? c.cuentas.join(' ') : (c.sacs_account || '')) },
     { key: 'correo', label: 'Correo', ftype: 'text', val: c => c.contacto?.email || '' },
     { key: 'telefono', label: 'Teléfono/WhatsApp', ftype: 'text', val: c => c.contacto?.whatsapp || c.contacto?.telefono || '' },
     { key: 'sin_contacto', label: 'Sin contacto', ftype: 'select', options: [{ v: 'si', l: 'Sí' }, { v: 'no', l: 'No' }], val: c => c.contacto ? 'no' : 'si' },
@@ -366,7 +399,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           cols={cols}
           quick={quick}
           vistasBase={vistasBase}
-          searchText={c => [c.nombre, c.sacs_account, c.contacto?.nombre, c.contacto?.email, c.contacto?.whatsapp].filter(Boolean).join(' ')}
+          searchText={c => [c.nombre, ...(c.cuentas || [c.sacs_account]), c.contacto?.nombre, c.contacto?.email, c.contacto?.whatsapp].filter(Boolean).join(' ')}
           searchPlaceholder="Buscar cliente, cuenta o contacto…"
           minWidth={1100}
           onRowClick={c => { if (editId !== c.id) setDetailId(c.id); }}
@@ -375,7 +408,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontWeight: 800, fontSize: '0.92rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.contacto?.nombre || c.nombre}</div>
-                  {(c.sacs_account || c.nombre) && <div style={{ fontSize: '0.74rem', color: '#8a8f98', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.sacs_account || c.nombre}</div>}
+                  {(() => { const cs: string[] = c.cuentas?.length ? c.cuentas : (c.sacs_account ? [c.sacs_account] : []); return cs.length ? <div style={{ fontSize: '0.74rem', color: '#8a8f98', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cs.join(' · ')}{cs.length > 1 ? ` (${cs.length} cuentas)` : ''}</div> : null; })()}
                 </div>
                 {c.health_score != null && <HealthScoreBadge score={c.health_score} factors={c.health_factors} size="sm" />}
                 <span style={{ color: '#c4c8cf', fontSize: '1.1rem' }}>›</span>
@@ -383,6 +416,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 8 }}>
                 <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>{c.vitalicia ? <span style={{ ...T.badge, background: '#f1effd', color: '#6C5CE7' }}>Vitalicia</span> : `${money(c.arr)} ARR`}</span>
                 {c.plan && PLAN_BADGE[c.plan] && <span style={{ ...T.badge, background: PLAN_BADGE[c.plan].bg, color: PLAN_BADGE[c.plan].color }}>{PLAN_BADGE[c.plan].label}</span>}
+                {(() => { const e = ESTADO_SUB(c); return <span style={{ ...T.badge, background: e.bg, color: e.color }}>{e.label}</span>; })()}
                 {c.proxima_factura && <span style={{ fontSize: '0.72rem', color: c.proxima_factura < new Date().toISOString().slice(0, 10) ? '#b93333' : '#9aa0a8' }}>renov {fmtDate(c.proxima_factura)}</span>}
                 {c.senal_tipo && <span style={{ ...T.badge, background: c.senal_nivel === 'riesgo' ? '#fdecea' : '#e6f6f2', color: c.senal_nivel === 'riesgo' ? '#b93333' : '#1A8F7A' }}>{SENAL_LABEL[c.senal_tipo] || c.senal_tipo}</span>}
               </div>
