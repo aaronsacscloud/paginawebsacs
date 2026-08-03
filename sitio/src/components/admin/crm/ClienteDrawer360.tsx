@@ -353,7 +353,15 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
               {act.total_30d != null && <span>Monto 30d: <b>{money(act.total_30d)}</b></span>}
               {tend != null && <span>Tendencia: <b style={{ color: tend >= 0 ? '#1A8F7A' : '#b93333' }}>{tend >= 0 ? '+' : ''}{tend}%</b></span>}
               {act.usuarios != null && <span>Usuarios: <b>{act.usuarios}</b>{act.usuarios_operando != null ? ` (${act.usuarios_operando} operando)` : ''}</span>}
-              {(sucReales > 0 || sucPlan > 0) && <span>Sucursales: <b style={{ color: sucReales > sucPlan && sucPlan > 0 ? '#a06600' : '#16181d' }}>{sucReales || sucPlan}{sucPlan > 0 && sucReales > sucPlan ? ` (plan: ${sucPlan})` : ''}</b></span>}
+              {/* "Sucursales" es las que OPERAN (vendieron en 30d), no las
+                  registradas: hay cuentas con 145 dadas de alta y 8 vivas. Si
+                  difieren, se dice, porque si no el número parece un error. */}
+              {(sucReales > 0 || sucPlan > 0) && (
+                <span title={act?.sucursales_totales ? `${act.sucursales_totales} registradas en total · ${act.sucursales_permitidas ?? '—'} asignadas a superadmin` : undefined}>
+                  Sucursales operando: <b style={{ color: sucReales > sucPlan && sucPlan > 0 ? '#a06600' : '#16181d' }}>{sucReales || sucPlan}{sucPlan > 0 && sucReales > sucPlan ? ` (plan: ${sucPlan})` : ''}</b>
+                  {act?.sucursales_totales > sucReales ? <span style={{ color: '#9aa0a8' }}> · {act.sucursales_totales} registradas</span> : null}
+                </span>
+              )}
               {co.health_score != null && <span>Salud: <b style={{ color: co.health_score >= 70 ? '#1A8F7A' : co.health_score >= 40 ? '#a06600' : '#b93333' }}>{co.health_score}</b></span>}
             </div>
             <div style={{ marginTop: 10 }}>
