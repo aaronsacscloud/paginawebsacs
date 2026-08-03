@@ -55,7 +55,9 @@ export const GET: APIRoute = async ({ url }) => {
 // aún no existen, se reintenta sin ellas (deploy puede ir antes que el SQL).
 const COLS_SQL4 = ['plan_id', 'precio_lista', 'cancela_al_vencer', 'pausada_hasta', 'ciclo_siguiente', 'precio_siguiente',
   // SQL-5: trials y contrato multi-año
-  'es_trial', 'trial_fin', 'plazo_meses', 'incremento_anual_pct'];
+  'es_trial', 'trial_fin', 'plazo_meses', 'incremento_anual_pct',
+  // SQL-6: contexto de la licencia pausada
+  'razon_pausa', 'pausa_espera', 'pausada_at'];
 
 async function updateSubTolerante(id: string, upd: any) {
   let res = await supabase.from('subscriptions').update(upd).eq('id', id).select().single();
@@ -98,6 +100,8 @@ function normalizar(body: any) {
   const ES_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (body.plan_id !== undefined) out.plan_id = ES_UUID.test(String(body.plan_id || '')) ? body.plan_id : null;
   if (body.precio_lista !== undefined) out.precio_lista = Number(body.precio_lista) || null;
+  if (body.razon_pausa !== undefined) out.razon_pausa = body.razon_pausa || null;
+  if (body.pausa_espera !== undefined) out.pausa_espera = body.pausa_espera || null;
   // trials y multi-año (SQL-5)
   if (body.es_trial !== undefined) out.es_trial = !!body.es_trial;
   if (body.trial_fin !== undefined) out.trial_fin = body.trial_fin || null;
@@ -156,9 +160,23 @@ export const PUT: APIRoute = async ({ request }) => {
   if (esCancelacionNueva && !body.razon_cancelacion) {
     return new Response(JSON.stringify({ error: 'razon_cancelacion requerida para cancelar' }), { status: 400 });
   }
-  // pausar exige fecha de reanudación (si no, es un cancelado disfrazado)
-  if (nuevoEstado === 'pausada' && prev.estado !== 'pausada' && body.pausada_hasta === undefined && !prev.pausada_hasta) {
-    return new Response(JSON.stringify({ error: 'pausada_hasta requerida al pausar (fecha de reanudación)' }), { status: 400 });
+  // Pausar exige MOTIVO, no fecha. Antes se pedía `pausada_hasta` para que una
+  // pausa no fuera "un cancelado disfrazado", pero el caso real es justo el que
+  // no tiene fecha: el cliente ya pagó y congela porque no abrió su plaza —
+  // nadie sabe cuándo. Obligar una fecha solo producía fechas inventadas. Lo que
+  // de verdad permite gestionarla es POR QUÉ está pausada y QUÉ se espera de él;
+  // la fecha estimada queda opcional.
+  const esPausaNueva = nuevoEstado === 'pausada' && prev.estado !== 'pausada';
+  if (esPausaNueva && !String(body.razon_pausa || '').trim() && !prev.razon_pausa) {
+    return new Response(JSON.stringify({ error: 'razon_pausa requerida al pausar (por qué se congela la licencia)' }), { status: 400 });
+  }
+  // Reactivar una pausada: hay que decir DESDE CUÁNDO quedó activa y CUÁNDO se
+  // le cobra. Sin eso la sub vuelve al ARR con una próxima factura vieja (o
+  // vacía) y se le cobra mal o no se le cobra.
+  const esReactivacionPausa = prev.estado === 'pausada' && nuevoEstado === 'activa';
+  if (esReactivacionPausa) {
+    if (!body.fecha_inicio) return new Response(JSON.stringify({ error: 'Al reactivar indica desde cuándo quedó activa (fecha_inicio).' }), { status: 400 });
+    if (!body.proxima_factura) return new Response(JSON.stringify({ error: 'Al reactivar indica la fecha en que se le va a cobrar (proxima_factura).' }), { status: 400 });
   }
 
   const upd: any = normalizar(body);
@@ -194,8 +212,15 @@ export const PUT: APIRoute = async ({ request }) => {
   // Pausa / reanudación
   if (nuevoEstado === 'pausada') {
     if (body.pausada_hasta !== undefined) upd.pausada_hasta = body.pausada_hasta || null;
-  } else if (prev.estado === 'pausada' && nuevoEstado === 'activa') {
-    upd.pausada_hasta = null; // reanudada
+    if (esPausaNueva) upd.pausada_at = new Date().toISOString();
+  } else if (prev.estado === 'pausada') {
+    // Al salir de la pausa se limpia TODO su contexto: si se quedara, un cliente
+    // activo seguiría mostrando "pausado porque…". El histórico queda en la
+    // activity que se registra abajo.
+    upd.pausada_hasta = null;
+    upd.pausada_at = null;
+    upd.razon_pausa = null;
+    upd.pausa_espera = null;
   }
 
   // ── Cambio de ciclo: "al renovar" escribe *_siguiente, "ahora" aplica ya ──
@@ -234,7 +259,10 @@ export const PUT: APIRoute = async ({ request }) => {
   if (cancelarAlVencer) cambios.push('cancela al vencer');
   if (cambios.length) {
     await supabase.from('activities').insert({
-      tipo: 'sistema', titulo: `Suscripción editada (${data.nombre_plan}): ${cambios.join(' · ')}` + (esCancelacionNueva ? ` · razón: ${body.razon_cancelacion}` : ''),
+      tipo: 'sistema', titulo: `Suscripción editada (${data.nombre_plan}): ${cambios.join(' · ')}`
+        + (esCancelacionNueva ? ` · razón: ${body.razon_cancelacion}` : '')
+        + (esPausaNueva ? ` · pausa: ${body.razon_pausa || prev.razon_pausa}${body.pausa_espera ? ` · esperando: ${body.pausa_espera}` : ''}` : '')
+        + (esReactivacionPausa ? ` · reactivada (estuvo pausada por: ${prev.razon_pausa || '—'}) · activa desde ${body.fecha_inicio} · cobra el ${body.proxima_factura}` : ''),
       company_id: data.company_id, automatico: true, metadata: { audit: 'sub_update', subscription_id: data.id, cambios, actor: body.actor || null },
     }).select().maybeSingle();
   }

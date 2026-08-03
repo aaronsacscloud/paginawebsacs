@@ -975,7 +975,7 @@ const ESTADO_INFO: Record<string, string> = {
   programada: 'Cerrada pero aún no paga su primer cobro. Se activa sola al registrar el pago.',
   activa: 'Al corriente. Suma al ARR y se le recuerda su renovación.',
   pendiente_pago: 'Su factura venció y no ha pagado. Dunning corriendo (email/WhatsApp/tarea). No suma ARR hasta pagar.',
-  pausada: 'Congelada de común acuerdo. No se le cobra ni se le manda dunning, no suma ARR. Requiere fecha de reanudación.',
+  pausada: 'Licencia congelada de común acuerdo (ya pagada). No suma ARR, no se le cobra ni se le manda dunning. Pide motivo y qué se espera del cliente; la fecha de reanudación es opcional.',
   cancelada: 'Terminó la relación. Guarda la razón para atacar el churn.',
 };
 // Transiciones permitidas desde cada estado (refleja el guard del servidor).
@@ -997,6 +997,7 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
     stripe_subscription_id: (sub as any).stripe_subscription_id || '',
     aplicar_ciclo: 'al_renovar', cancela_al_vencer: true, cancelar_stripe: !!(sub as any).stripe_subscription_id, detalle_cancel: '',
     pausada_hasta: (sub as any).pausada_hasta || '',
+    razon_pausa: (sub as any).razon_pausa || '', pausa_espera: (sub as any).pausa_espera || '',
     es_trial: !!(sub as any).es_trial, trial_fin: (sub as any).trial_fin || '',
     plazo_meses: (sub as any).plazo_meses || '', incremento_anual_pct: (sub as any).incremento_anual_pct || '',
     reten_pct: 20, reten_meses: 3,
@@ -1112,6 +1113,7 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
   const estadoCambio = form.estado !== sub.estado;
   const esCancelar = form.estado === 'cancelada' && sub.estado !== 'cancelada';
   const esPausar = form.estado === 'pausada' && sub.estado !== 'pausada';
+  const esReactivar = sub.estado === 'pausada' && form.estado === 'activa';
   const descuento = precioLista && Number(form.precio) > 0 && Number(form.precio) < precioLista
     ? Math.round((1 - Number(form.precio) / precioLista) * 100) : 0;
 
@@ -1137,7 +1139,12 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
   async function guardar() {
     if (esCancelar && !form.razon_cancelacion) { setErr('Elige la razón de cancelación — sirve para atacar la causa del churn.'); return; }
     if (esCancelar && (form.razon_cancelacion === 'otro' || form.razon_cancelacion === 'competencia') && !form.detalle_cancel.trim()) { setErr('Agrega el detalle de la cancelación.'); return; }
-    if (esPausar && !form.pausada_hasta) { setErr('Elige hasta cuándo se pausa (fecha de reanudación).'); return; }
+    // Al pausar lo obligatorio es el MOTIVO, no la fecha: el caso real (el
+    // cliente ya pagó pero no abrió su plaza) no tiene fecha conocida, y pedirla
+    // solo producía fechas inventadas.
+    if (esPausar && !form.razon_pausa.trim()) { setErr('Escribe por qué se pausa la licencia — es lo que permite darle seguimiento.'); return; }
+    if (esReactivar && !form.fecha_inicio) { setErr('Indica desde cuándo quedó activa.'); return; }
+    if (esReactivar && !form.proxima_factura) { setErr('Indica la fecha en que se le va a cobrar.'); return; }
     setSaving(true); setErr(null);
     try {
       const payload = { ...form, razon_cancelacion: esCancelar ? form.razon_cancelacion : (form.estado === 'cancelada' ? form.razon_cancelacion : undefined),
@@ -1320,12 +1327,44 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
           </div>
         )}
 
-        {/* Panel: pausa */}
+        {/* Panel: pausa. La licencia YA está pagada — no es un churn: se congela
+            y hay que poder darle seguimiento, por eso el motivo y el "qué
+            esperamos" pesan más que una fecha. */}
         {esPausar && (
           <div style={{ marginTop: 12, padding: 12, borderRadius: 8, background: '#FAFAFA', border: '1px solid #E5E5E5' }}>
-            <div style={{ fontWeight: 700, fontSize: '0.82rem', marginBottom: 6 }}>Pausar — sin cobro ni dunning mientras esté pausada</div>
-            <label style={S.label}>Reanudar el *</label>
+            <div style={{ fontWeight: 700, fontSize: '0.82rem', marginBottom: 6 }}>Pausar — no suma ARR, no se le cobra ni se le manda dunning</div>
+            <label style={S.label}>¿Por qué se pausa? *</label>
+            <input value={form.razon_pausa} onChange={e => setForm({ ...form, razon_pausa: e.target.value })}
+              placeholder="Ej. Compró la licencia pero no ha abierto su plaza" style={{ ...S.input, width: '100%' }} />
+            <label style={{ ...S.label, marginTop: 8 }}>¿Qué esperamos del cliente para reactivar?</label>
+            <input value={form.pausa_espera} onChange={e => setForm({ ...form, pausa_espera: e.target.value })}
+              placeholder="Ej. Que confirme fecha de apertura del local" style={{ ...S.input, width: '100%' }} />
+            <label style={{ ...S.label, marginTop: 8 }}>Fecha estimada de reanudación (opcional)</label>
             <input type="date" value={form.pausada_hasta} onChange={e => setForm({ ...form, pausada_hasta: e.target.value })} style={{ ...S.input, width: '100%' }} />
+          </div>
+        )}
+
+        {/* Panel: reactivar una pausada — las dos fechas son obligatorias, si no
+            vuelve al ARR con una próxima factura vieja y se le cobra mal. */}
+        {esReactivar && (
+          <div style={{ marginTop: 12, padding: 12, borderRadius: 8, background: '#F2FBF8', border: '1px solid #bfe8df' }}>
+            <div style={{ fontWeight: 700, fontSize: '0.82rem', marginBottom: 6, color: '#1A8F7A' }}>Reactivar — vuelve a sumar ARR</div>
+            {(sub as any).razon_pausa && (
+              <div style={{ fontSize: '0.76rem', color: '#666', marginBottom: 8 }}>Estuvo pausada por: <b>{(sub as any).razon_pausa}</b></div>
+            )}
+            <label style={S.label}>Activa desde *</label>
+            <input type="date" value={form.fecha_inicio || ''} onChange={e => setForm({ ...form, fecha_inicio: e.target.value })} style={{ ...S.input, width: '100%' }} />
+            <label style={{ ...S.label, marginTop: 8 }}>Se le va a cobrar el *</label>
+            <input type="date" value={form.proxima_factura || ''} onChange={e => setForm({ ...form, proxima_factura: e.target.value })} style={{ ...S.input, width: '100%' }} />
+          </div>
+        )}
+
+        {/* Contexto siempre visible mientras siga pausada */}
+        {sub.estado === 'pausada' && !esReactivar && (sub as any).razon_pausa && (
+          <div style={{ marginTop: 12, padding: 12, borderRadius: 8, background: '#fff8ec', border: '1px solid #f5e2b8', fontSize: '0.8rem' }}>
+            ⏸ <b>Pausada:</b> {(sub as any).razon_pausa}
+            {(sub as any).pausa_espera ? <div style={{ marginTop: 4 }}>Esperando del cliente: <b>{(sub as any).pausa_espera}</b></div> : null}
+            {(sub as any).pausada_hasta ? <div style={{ marginTop: 4, color: '#666' }}>Reanudación estimada: {(sub as any).pausada_hasta}</div> : null}
           </div>
         )}
 

@@ -49,7 +49,7 @@ function EstadoBadge({ e }: { e: string }) {
   const map: Record<string, [string, string]> = {
     activa: ['rgba(42,181,160,.15)', '#1A8F7A'], programada: ['rgba(75,123,229,.12)', '#3764c4'],
     pendiente_pago: ['rgba(232,168,56,.16)', '#a06600'], cancelada: ['rgba(229,75,75,.1)', '#b93333'],
-    pausada: ['rgba(26,26,26,.08)', '#555'],
+    pausada: ['rgba(232,168,56,.16)', '#a06600'],
   };
   const [bg, color] = map[e] || ['#f3f4f6', '#555'];
   return <span style={{ ...D.badge, background: bg, color }}>{e || '—'}</span>;
@@ -1083,6 +1083,7 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
   const [nf, setNf] = useState<any>({ plan_slug: '', plan_id: '', nombre_plan: '', ciclo: 'anual', precio: '', proxima_factura: '', estado: 'programada' });
   const [busy, setBusy] = useState(false);
   const [picker, setPicker] = useState<null | 'nuevo' | 'edit'>(null);
+  const [pausaSub, setPausaSub] = useState<any>(null);
 
   useEffect(() => { fetch('/api/crm/arr/plans').then(r => r.json()).then(j => setPlanes(j.data || j.plans || [])).catch(() => {}); }, []);
 
@@ -1177,7 +1178,7 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                         </button>
                       </td>
                       <td style={D.td}><select value={f.ciclo} onChange={e => { const c = e.target.value; const p = planes.find((x: any) => x.slug && x.slug === f.plan_slug); setF({ ...f, ciclo: c, precio: p ? ((c === 'mensual' ? p.precio_mensual : p.precio_anual) ?? f.precio) : f.precio }); }} style={D.input}>{CICLOS.map(x => <option key={x} value={x}>{x}</option>)}</select></td>
-                      <td style={D.td}><select value={f.estado} onChange={e => setF({ ...f, estado: e.target.value })} style={D.input}>{ESTADOS_SUB.map(x => <option key={x} value={x}>{x}</option>)}</select></td>
+                      <td style={D.td}><select value={f.estado} onChange={e => setF({ ...f, estado: e.target.value })} style={D.input}>{ESTADOS_SUB.filter(x => x !== 'pausada' || f.estado === 'pausada').map(x => <option key={x} value={x}>{x}</option>)}</select></td>
                       <td style={D.td}><input type="number" value={f.precio} onChange={e => setF({ ...f, precio: e.target.value })} style={{ ...D.input, width: 100 }} /></td>
                       <td style={D.td}><input type="date" value={f.proxima_factura} onChange={e => setF({ ...f, proxima_factura: e.target.value })} style={D.input} /></td>
                       <td style={D.td} colSpan={2}></td>
@@ -1188,14 +1189,26 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                     </tr>
                   ) : (
                     <tr key={s.id}>
-                      <td style={{ ...D.td, fontWeight: 700 }}>{s.nombre_plan}</td>
+                      <td style={{ ...D.td, fontWeight: 700 }}>
+                        {s.nombre_plan}
+                        {s.estado === 'pausada' && s.razon_pausa && (
+                          <div style={{ fontSize: '0.68rem', fontWeight: 400, color: '#a06600', whiteSpace: 'normal', marginTop: 3 }}
+                            title={s.pausa_espera ? 'Esperando: ' + s.pausa_espera : undefined}>
+                            ⏸ {s.razon_pausa}{s.pausa_espera ? ' · esperando: ' + s.pausa_espera : ''}
+                          </div>
+                        )}
+                      </td>
                       <td style={D.td}>{s.ciclo}</td>
                       <td style={D.td}><EstadoBadge e={s.estado} /></td>
                       <td style={D.td}>{money(s.precio || s.arr)}</td>
                       <td style={D.td}>{fmtDate(s.proxima_factura)}</td>
                       <td style={D.td}>{s.pagos_realizados || 0}</td>
                       <td style={D.td}>{money(s.total_pagado)}</td>
-                      <td style={D.td}><button style={D.btnG} onClick={() => { setEditId(s.id); setF({ nombre_plan: s.nombre_plan || '', plan_id: s.plan_id || '', plan_slug: (planes.find((p: any) => p.id && p.id === s.plan_id) || {}).slug || '', ciclo: s.ciclo || 'anual', estado: s.estado || 'activa', precio: s.precio ?? s.arr ?? '', proxima_factura: s.proxima_factura || '' }); }}>✏️</button></td>
+                      <td style={D.td}>
+                        <button style={{ ...D.btnG, marginRight: 4, color: s.estado === 'pausada' ? '#1A8F7A' : '#a06600', borderColor: s.estado === 'pausada' ? '#bfe8df' : '#f0dcb8' }}
+                          title={s.estado === 'pausada' ? 'Reactivar: pide desde cuándo quedó activa y cuándo se le cobra' : 'Pausar: deja de sumar ARR; pide el motivo y qué esperamos del cliente'}
+                          onClick={() => setPausaSub(s)}>{s.estado === 'pausada' ? '▶' : '⏸'}</button>
+                        <button style={D.btnG} onClick={() => { setEditId(s.id); setF({ nombre_plan: s.nombre_plan || '', plan_id: s.plan_id || '', plan_slug: (planes.find((p: any) => p.id && p.id === s.plan_id) || {}).slug || '', ciclo: s.ciclo || 'anual', estado: s.estado || 'activa', precio: s.precio ?? s.arr ?? '', proxima_factura: s.proxima_factura || '' }); }}>✏️</button></td>
                     </tr>
                   )
                 ))}
@@ -1204,6 +1217,10 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
           )}
         </div>
       </div>
+      {pausaSub && (
+        <PausaModal sub={pausaSub} onCancel={() => setPausaSub(null)}
+          onDone={() => { setPausaSub(null); flash(pausaSub.estado === 'pausada' ? 'Licencia reactivada' : 'Licencia pausada'); reload(); }} />
+      )}
       {picker && (
         <PlanPickerModal
           planes={planes}
@@ -1213,6 +1230,84 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
           onClose={() => setPicker(null)}
         />
       )}
+    </div>
+  );
+}
+
+/* ═══ Pausar / reactivar una licencia ═══
+ * El cliente YA compró y pagó, solo congela (p.ej. no abrió su plaza). No es un
+ * churn: la relación sigue viva, solo deja de sumar ARR mientras esté pausada.
+ * Por eso lo obligatorio al pausar es el MOTIVO y el "qué esperamos de él" —no
+ * una fecha inventada— y al reactivar, las dos fechas que definen el cobro. */
+function PausaModal({ sub, onCancel, onDone }: { sub: any; onCancel: () => void; onDone: () => void }) {
+  const reactivando = sub.estado === 'pausada';
+  const [f, setF] = useState<any>({
+    razon_pausa: sub.razon_pausa || '', pausa_espera: sub.pausa_espera || '', pausada_hasta: sub.pausada_hasta || '',
+    fecha_inicio: sub.fecha_inicio || new Date().toISOString().slice(0, 10),
+    proxima_factura: sub.proxima_factura || '',
+  });
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function guardar() {
+    if (!reactivando && !f.razon_pausa.trim()) { setErr('Escribe por qué se pausa — es lo que permite darle seguimiento.'); return; }
+    if (reactivando && (!f.fecha_inicio || !f.proxima_factura)) { setErr('Indica desde cuándo quedó activa y cuándo se le cobra.'); return; }
+    setBusy(true); setErr('');
+    const body: any = reactivando
+      ? { id: sub.id, estado: 'activa', fecha_inicio: f.fecha_inicio, proxima_factura: f.proxima_factura }
+      : { id: sub.id, estado: 'pausada', razon_pausa: f.razon_pausa.trim(), pausa_espera: f.pausa_espera.trim() || null, pausada_hasta: f.pausada_hasta || null };
+    const j = await fetch('/api/crm/arr/subscriptions', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      .then(r => r.json()).catch(() => ({ error: 'Respuesta inválida' }));
+    if (j?.error) { setErr(j.error); setBusy(false); return; }
+    onDone();
+  }
+
+  const wrap = { position: 'fixed' as const, inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, background: 'rgba(0,0,0,.5)' };
+  const box = { background: '#fff', borderRadius: 16, width: 'min(520px, 100%)', maxHeight: '90vh', overflowY: 'auto' as const, boxShadow: '0 24px 60px rgba(0,0,0,.3)' };
+
+  return (
+    <div style={wrap} onClick={onCancel}>
+      <div style={box} onClick={e => e.stopPropagation()}>
+        <div style={{ padding: '20px 22px 0' }}>
+          <div style={{ fontSize: '1.02rem', fontWeight: 800, color: reactivando ? '#1A8F7A' : '#a06600' }}>
+            {reactivando ? '▶ Reactivar licencia' : '⏸ Pausar licencia'}
+          </div>
+          <div style={{ fontSize: '0.82rem', color: '#666', marginTop: 5 }}>
+            {sub.nombre_plan} · {money(sub.precio || sub.arr)}
+            {reactivando ? ' — vuelve a sumar al ARR.' : ' — deja de sumar al ARR y no se le cobra ni se le manda dunning. La licencia sigue siendo suya.'}
+          </div>
+        </div>
+        <div style={{ padding: '14px 22px 0' }}>
+          {reactivando ? (
+            <>
+              {sub.razon_pausa && <div style={{ fontSize: '0.78rem', color: '#666', background: '#fff8ec', border: '1px solid #f5e2b8', borderRadius: 10, padding: '8px 12px', marginBottom: 12 }}>Estuvo pausada por: <b>{sub.razon_pausa}</b>{sub.pausa_espera ? <> · esperábamos: <b>{sub.pausa_espera}</b></> : null}</div>}
+              <label style={D.lbl}>Activa desde *</label>
+              <input type="date" value={f.fecha_inicio} onChange={e => setF({ ...f, fecha_inicio: e.target.value })} style={{ ...D.input, height: 44 }} />
+              <label style={{ ...D.lbl, marginTop: 10 }}>Se le va a cobrar el *</label>
+              <input type="date" value={f.proxima_factura} onChange={e => setF({ ...f, proxima_factura: e.target.value })} style={{ ...D.input, height: 44 }} />
+            </>
+          ) : (
+            <>
+              <label style={D.lbl}>¿Por qué se pausa? *</label>
+              <input value={f.razon_pausa} onChange={e => setF({ ...f, razon_pausa: e.target.value })} autoFocus
+                placeholder="Ej. Compró la licencia pero no ha abierto su plaza" style={{ ...D.input, height: 44 }} />
+              <label style={{ ...D.lbl, marginTop: 10 }}>¿Qué esperamos del cliente para reactivar?</label>
+              <input value={f.pausa_espera} onChange={e => setF({ ...f, pausa_espera: e.target.value })}
+                placeholder="Ej. Que confirme la fecha de apertura" style={{ ...D.input, height: 44 }} />
+              <label style={{ ...D.lbl, marginTop: 10 }}>Fecha estimada de reanudación (opcional)</label>
+              <input type="date" value={f.pausada_hasta} onChange={e => setF({ ...f, pausada_hasta: e.target.value })} style={{ ...D.input, height: 44 }} />
+            </>
+          )}
+          {err && <div style={{ marginTop: 10, fontSize: '0.82rem', color: '#b93333', fontWeight: 700 }}>{err}</div>}
+        </div>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', padding: '16px 22px 20px' }}>
+          <button onClick={onCancel} style={{ ...D.btnG, minHeight: 44, padding: '0 16px' }}>Cancelar</button>
+          <button onClick={guardar} disabled={busy}
+            style={{ ...D.btn, minHeight: 44, padding: '0 18px', background: reactivando ? '#1A8F7A' : '#a06600' }}>
+            {busy ? '…' : (reactivando ? 'Reactivar' : 'Pausar licencia')}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
