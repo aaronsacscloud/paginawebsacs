@@ -114,12 +114,18 @@ export default function TablaEnterprise({
   emptyMsg?: string;
 }) {
   const isMobile = useIsMobile();
+  // La tabla ABRE en vistasBase[0], así que el estado inicial tiene que salir
+  // COMPLETO de esa vista — no solo la pestaña y el orden. Antes `conds`,
+  // `search` y `quick` arrancaban vacíos: si la vista por defecto filtraba algo,
+  // la pestaña se veía seleccionada pero la tabla mostraba TODO (y encima se
+  // marcaba como "modificada", ofreciendo guardar un cambio que nadie hizo).
+  // No se notaba porque la primera vista de todas las tablas no filtraba nada.
   const [vistaKey, setVistaKey] = useState(vistasBase[0]?.key || 'todos');
   const [vistasCustom, setVistasCustom] = useState<VistaDef[]>([]);
   const [sinMigracion, setSinMigracion] = useState(false);
-  const [search, setSearch] = useState('');
-  const [quickVals, setQuickVals] = useState<Record<string, string>>({});
-  const [conds, setConds] = useState<Cond[]>([]);
+  const [search, setSearch] = useState(vistasBase[0]?.config.search || '');
+  const [quickVals, setQuickVals] = useState<Record<string, string>>(vistasBase[0]?.config.quick || {});
+  const [conds, setConds] = useState<Cond[]>(vistasBase[0]?.config.conds || []);
   const [sort, setSort] = useState<{ key: string; dir: 1 | -1 } | null>(vistasBase[0]?.config.sort || null);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);

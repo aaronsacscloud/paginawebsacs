@@ -315,9 +315,13 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
     { key: 'licencia', label: 'Tipo de licencia', options: [{ v: 'si', l: 'Vitalicia' }, { v: 'no', l: 'Recurrente' }], apply: (c, v) => (v === 'si') === !!c.vitalicia },
   ];
 
+  /* El ORDEN importa: TablaEnterprise abre siempre en vistasBase[0] (vista y
+   * orden). "Con ARR activo" va primero a propósito — al entrar a Clientes lo
+   * que se quiere ver es el negocio recurrente vivo, de mayor a menor ARR, no
+   * el padrón completo con los 68 clientes sin ARR encima. */
   const vistasBase: VistaDef[] = [
-    { key: 'todos', nombre: 'Todos', config: { sort: { key: 'arr', dir: -1 } } },
     { key: 'arr_activo', nombre: 'Con ARR activo', config: { conds: [{ campo: 'subs_activas', op: 'mayor', v1: '0' }], sort: { key: 'arr', dir: -1 } } },
+    { key: 'todos', nombre: 'Todos', config: { sort: { key: 'arr', dir: -1 } } },
     { key: 'pendientes', nombre: 'Pendientes de pago', config: { conds: [{ campo: 'subs_pendientes', op: 'mayor', v1: '0' }], sort: { key: 'arr', dir: -1 } } },
     { key: 'riesgo', nombre: 'En riesgo', config: { conds: [{ campo: 'dias_sin_venta', op: 'mayor', v1: '2' }, { campo: 'subs_activas', op: 'mayor', v1: '0' }], sort: { key: 'salud', dir: 1 } } },
     { key: 'sin_contacto', nombre: 'Sin contacto', config: { conds: [{ campo: 'sin_contacto', op: 'es', v1: 'si' }] } },
