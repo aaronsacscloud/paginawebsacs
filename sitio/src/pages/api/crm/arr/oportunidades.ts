@@ -4,6 +4,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { computarSenales } from '../../../../lib/crm/senales';
+import { cargarCatalogo } from '../../../../lib/crm/plan-modulos-db';
 
 export const prerender = false;
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -11,9 +12,12 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 export const GET: APIRoute = async () => {
   const { data: companies, error } = await supabase
     .from('companies')
-    .select('id, nombre, sacs_account, plan, sucursales, mrr, arr, estado_cuenta, health_score, dias_sin_venta, ultima_venta_at, actividad, uso_sacs, subscriptions(estado, proxima_factura, arr, mrr)')
+    .select('id, nombre, sacs_account, plan, sucursales, mrr, arr, estado_cuenta, health_score, dias_sin_venta, ultima_venta_at, actividad, uso_sacs, subscriptions(estado, proxima_factura, arr, mrr, nombre_plan, ciclo)')
     .is('archived_at', null).range(0, 9999);
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+
+  // Una sola carga del catálogo plan→módulos para todas las empresas.
+  const catalogo = await cargarCatalogo();
 
   const data = (companies || [])
     // Solo clientes con suscripción ACTIVA: uno ya cancelado no es candidato a
@@ -21,7 +25,7 @@ export const GET: APIRoute = async () => {
     .filter((c: any) => (c.subscriptions || []).some((s: any) => s.estado === 'activa'))
     .map((c: any) => {
       const activas = (c.subscriptions || []).filter((s: any) => s.estado === 'activa');
-      const senales = computarSenales(c, activas[0]);
+      const senales = computarSenales(c, activas[0], { catalogo, subsActivas: activas });
       if (!senales.length) return null;
       const top = senales[0];
       return {

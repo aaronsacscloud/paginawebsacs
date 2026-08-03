@@ -3,6 +3,8 @@
 // drawer 360 (panel "Qué venderle"), la sección Oportunidades y, después, el
 // portal del partner. Función PURA → corre igual en server y cliente.
 
+import { planBase, pluginsContratados, modulosFueraDePlan, planQueLoCubre, ARR_PLAN } from './plan-modulos';
+
 export type Nivel = 'oportunidad' | 'riesgo';
 export type Senal = {
   tipo: string;
@@ -13,6 +15,13 @@ export type Senal = {
   peso: number;        // para ordenar (mayor = más urgente/valioso)
 };
 
+// Contexto extra que el llamador PUEDE dar. Va como objeto opcional para no
+// romper a quien ya llama con dos argumentos (el drawer, el portal del partner).
+export type SenalesOpts = {
+  catalogo?: any;        // CatalogoPlanes de lib/crm/plan-modulos (lo carga el server)
+  subsActivas?: any[];   // todas las subs activas, para derivar plan y plugins
+};
+
 const PLANES_BASICOS = ['vende', 'controla'];
 const PLANES_CON_MODULOS = ['controla', 'fideliza', 'automatiza'];
 
@@ -21,7 +30,7 @@ const PLANES_CON_MODULOS = ['controla', 'fideliza', 'automatiza'];
 // subActiva: suscripción ACTIVA. Sin suscripción activa NO hay análisis: un
 // cliente ya cancelado no es candidato a upsell ni a alertas comerciales aquí
 // (el caso "cancelada pero sigue usando" lo cubre el cron de alertas).
-export function computarSenales(co: any, subActiva?: any): Senal[] {
+export function computarSenales(co: any, subActiva?: any, opts?: SenalesOpts): Senal[] {
   if (!subActiva) return [];
   const a = (co && co.actividad) || {};
   const uso = (co && co.uso_sacs) || null;
@@ -101,6 +110,34 @@ export function computarSenales(co: any, subActiva?: any): Senal[] {
         detalle: 'Facturar desde SACS le ahorra el doble capturado y lo amarra al sistema.',
         accion: 'Ofrécele configurar la facturación electrónica.' });
     }
+    // ── Usa módulos que su plan NO cubre → upsell con número ──
+    // Se apoya en el catálogo (tabla crm_plan_modulos); si el llamador no lo
+    // pasó, la señal no opina en vez de adivinar.
+    if (opts?.catalogo) {
+      try {
+        const subs = opts.subsActivas && opts.subsActivas.length ? opts.subsActivas : [subActiva];
+        const planReal = planBase(subs);
+        const fuera = modulosFueraDePlan(planReal, uso.modulos, pluginsContratados(subs), opts.catalogo);
+        if (planReal && fuera.length) {
+          const nombres = fuera.map((f: any) => f.modulo);
+          const destino = planQueLoCubre(fuera, opts.catalogo);
+          const delta = destino && ARR_PLAN[destino] && ARR_PLAN[planReal]
+            ? ARR_PLAN[destino] - ARR_PLAN[planReal] : 0;
+          const dudoso = fuera.some((f: any) => f.por_confirmar);
+          out.push({
+            tipo: 'modulo_fuera_de_plan', nivel: 'oportunidad', peso: dudoso ? 58 : 75,
+            titulo: `Usa ${nombres.length} módulo(s) que su plan ${planReal} no cubre: ${nombres.join(', ')}`,
+            detalle: destino
+              ? `Ya opera como cliente ${destino}: lo está usando este mes, solo que sin pagarlo.`
+              : 'Está operando módulos fuera de lo que contrató.',
+            accion: destino
+              ? `Súbelo a ${destino}${delta > 0 ? ` (+$${delta.toLocaleString('es-MX')}/año)` : ''}.`
+              : 'Revisa qué plan o plugin corresponde.',
+          });
+        }
+      } catch { /* el catálogo nunca tumba el resto de las señales */ }
+    }
+
     const adm = uso.administracion || {};
     if (Number(adm.gastos_30d || 0) === 0 && Number(adm.proveedores || 0) === 0 && !adm.bancos && Number(a.ventas_30d || 0) > 0) {
       out.push({ tipo: 'administracion', nivel: 'oportunidad', peso: 40,

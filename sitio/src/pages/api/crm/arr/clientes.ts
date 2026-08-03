@@ -4,6 +4,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { computarSenales } from '../../../../lib/crm/senales';
+import { cargarCatalogo } from '../../../../lib/crm/plan-modulos-db';
 
 export const prerender = false;
 
@@ -43,6 +44,10 @@ export const GET: APIRoute = async () => {
     }
   } catch { /* tabla ausente → fallback abajo */ }
 
+  // Catálogo plan→módulos: se carga UNA vez para las ~220 empresas (cacheado 5
+  // min en el módulo), no una por cliente.
+  const catalogo = await cargarCatalogo();
+
   const data = (companies || [])
     // cliente real = tiene al menos una suscripción registrada
     .filter((c: any) => (c.subscriptions || []).length > 0)
@@ -66,7 +71,7 @@ export const GET: APIRoute = async () => {
       // empresa) para poder repararla.
       const subContactId = subs.map((s: any) => s.contact_id).filter(Boolean)[0] || null;
       // Señal de venta/riesgo (misma lógica que Oportunidades) para la columna/filtro.
-      const senales = computarSenales(c, activas[0]);
+      const senales = computarSenales(c, activas[0], { catalogo, subsActivas: subs.filter((s: any) => s.estado === 'activa') });
       const top = senales[0] || null;
       return {
         id: c.id, nombre: c.nombre, sacs_account: c.sacs_account,

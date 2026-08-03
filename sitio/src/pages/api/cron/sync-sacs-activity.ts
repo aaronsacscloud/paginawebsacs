@@ -13,6 +13,8 @@ import { supabase } from '../../../lib/supabase';
 import { sendWhatsApp } from '../../../lib/kapso';
 import { healthScoreV2 } from '../../../lib/crm/health';
 import { cuentasPorEmpresa, agregarActividad, guardarPorCuenta, normCuenta, errorSacs } from '../../../lib/crm/sacs-cuentas';
+import { cargarCatalogo } from '../../../lib/crm/plan-modulos-db';
+import { planBase, pluginsContratados, modulosFueraDePlan, planQueLoCubre, ARR_PLAN } from '../../../lib/crm/plan-modulos';
 
 export const prerender = false;
 
@@ -52,12 +54,12 @@ export const GET: APIRoute = async ({ url, request }) => {
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 
   // suscripciones para las alertas de "cancelada pero usando"
-  const { data: subsAll } = await supabase.from('subscriptions').select('company_id, estado, arr, nombre_plan');
-  const porCompany: Record<string, { activas: number; canceladas: number; arr: number; planes: string[] }> = {};
+  const { data: subsAll } = await supabase.from('subscriptions').select('company_id, estado, arr, nombre_plan, ciclo');
+  const porCompany: Record<string, { activas: number; canceladas: number; arr: number; planes: string[]; subsActivas: any[] }> = {};
   (subsAll || []).forEach((s: any) => {
     if (!s.company_id) return;
-    const e = (porCompany[s.company_id] = porCompany[s.company_id] || { activas: 0, canceladas: 0, arr: 0, planes: [] });
-    if (s.estado === 'activa') { e.activas++; e.arr += Number(s.arr || 0); e.planes.push(String(s.nombre_plan || '')); }
+    const e = (porCompany[s.company_id] = porCompany[s.company_id] || { activas: 0, canceladas: 0, arr: 0, planes: [], subsActivas: [] });
+    if (s.estado === 'activa') { e.activas++; e.arr += Number(s.arr || 0); e.planes.push(String(s.nombre_plan || '')); e.subsActivas.push(s); }
     if (s.estado === 'cancelada') e.canceladas++;
   });
 
@@ -73,6 +75,7 @@ export const GET: APIRoute = async ({ url, request }) => {
   const out = { empresas: (companies || []).length, cuentas: cuentas.length, actualizadas: 0, sin_datos: 0, alertas: 0, errores: [] as string[] };
   const avisos: string[] = [];
   const hoy = new Date();
+  const catalogo = await cargarCatalogo();
 
   // 1) Traer la actividad de TODAS las cuentas y acumularla en un solo mapa. No
   //    se puede agregar lote por lote: las cuentas de una misma empresa pueden
@@ -165,6 +168,25 @@ export const GET: APIRoute = async ({ url, request }) => {
           await alertar(co.id, 'plan_sin_uso',
             `📦 ${co.nombre}: paga plan con INVENTARIO (${(subInfo.planes || []).filter(pl => /controla|automatiza/i.test(pl)).join(', ')}) pero en 30 días no usó órdenes de compra ni transferencias — no le está viendo valor: capacitar o riesgo de downgrade`,
             { planes: subInfo.planes, modulos: a.modulos, cuenta: acct }, avisos);
+        }
+        // Usa módulos que su plan no cubre → upsell con número. El uso viene de
+        // `uso_sacs` (cron de madrugada); si esa cuenta aún no se ha barrido, no
+        // hay nada que comparar y la alerta simplemente no sale.
+        if (catalogo && subInfo.activas > 0) {
+          const subsAct = (subInfo as any).subsActivas || [];
+          const planReal = planBase(subsAct);
+          const fuera = modulosFueraDePlan(planReal, (co as any).uso_sacs?.modulos, pluginsContratados(subsAct), catalogo);
+          // Los `por_confirmar` no alertan: son los módulos cuyo tier todavía no
+          // valida un humano y no vale la pena quemar la señal con dudosos.
+          const firmes = fuera.filter(f => !f.por_confirmar);
+          if (planReal && firmes.length) {
+            const destino = planQueLoCubre(firmes, catalogo);
+            const delta = destino && ARR_PLAN[destino] && ARR_PLAN[planReal] ? ARR_PLAN[destino] - ARR_PLAN[planReal] : 0;
+            await alertar(co.id, 'modulo_fuera_de_plan',
+              `💡 ${co.nombre} (${acct}): usa ${firmes.map(f => f.modulo).join(', ')} — su plan ${planReal} no lo cubre` +
+              (destino ? ` → súbelo a ${destino}${delta > 0 ? ` (+$${delta.toLocaleString('es-MX')}/año)` : ''}` : ''),
+              { plan: planReal, destino, modulos: firmes.map(f => f.modulo), cuenta: acct }, avisos);
+          }
         }
         if (dias != null && dias > 15 && (diasPrev == null || diasPrev <= 15) && subInfo.activas > 0) {
           await alertar(co.id, 'entro_a_riesgo',
