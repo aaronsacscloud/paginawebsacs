@@ -310,6 +310,12 @@ export default function TablaEnterprise({
       <style>{`
         .te-search:focus { border-color: #4B7BE5 !important; box-shadow: 0 0 0 3px rgba(75,123,229,0.12); }
         .te-item:hover { background: #f4f6f9 !important; }
+        /* Indicador de ordenamiento: tenue en reposo (se ve que SE PUEDE, sin
+           gritar), marcado al pasar el mouse y a color cuando está ordenando. */
+        .te-sort { margin-left: 5px; font-size: 0.85em; color: #c6cad2; transition: color .12s ease; }
+        .te-th-sort:hover .te-sort { color: #6b7078; }
+        .te-sort-on { color: #1a1a1a !important; font-size: 0.95em; }
+        .te-th-sort:hover { background: #f4f6f9; }
       `}</style>
       <div style={{ position: 'relative', marginBottom: 12 }}>
         <Search size={16} strokeWidth={2} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9aa0a8', pointerEvents: 'none' }} />
@@ -394,12 +400,27 @@ export default function TablaEnterprise({
             <table style={{ width: '100%', minWidth, borderCollapse: 'collapse', tableLayout: 'fixed' }}>
               <colgroup>{visibles.map(c => <col key={c.key} style={{ width: c.width }} />)}</colgroup>
               <thead><tr>
-                {visibles.map(c => (
+                {visibles.map(c => {
+                  // Antes SOLO la columna ordenada mostraba flecha, así que no
+                  // había forma de saber que las demás se podían ordenar sin ir
+                  // clic por clic. Ahora toda columna ordenable trae un ⇅ tenue
+                  // que se marca al pasar el mouse y se vuelve ▾/▴ al ordenar.
+                  const ordenable = !!c.val && c.sortable !== false;
+                  const activa = sort?.key === c.key;
+                  return (
                   <th key={c.key} onClick={() => toggleSort(c)}
-                    style={{ ...E.th, ...(c.num ? { textAlign: 'right' as const } : {}), cursor: c.val && c.sortable !== false ? 'pointer' : 'default' }}>
-                    {c.label}{sort?.key === c.key ? (sort.dir === -1 ? ' ▾' : ' ▴') : ''}
+                    className={ordenable ? 'te-th-sort' : undefined}
+                    title={ordenable ? (activa && sort?.dir === -1 ? 'Ordenado de mayor a menor — clic para invertir' : activa ? 'Ordenado de menor a mayor — clic para invertir' : 'Clic para ordenar por ' + c.label) : undefined}
+                    style={{ ...E.th, ...(c.num ? { textAlign: 'right' as const } : {}), cursor: ordenable ? 'pointer' : 'default', userSelect: 'none' }}>
+                    {c.label}
+                    {ordenable && (
+                      <span className={activa ? 'te-sort te-sort-on' : 'te-sort'} aria-hidden="true">
+                        {activa ? (sort!.dir === -1 ? '▾' : '▴') : '⇅'}
+                      </span>
+                    )}
                   </th>
-                ))}
+                  );
+                })}
               </tr></thead>
               <tbody>
                 {pagina.map(r => (
