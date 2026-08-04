@@ -25,16 +25,23 @@ const ADMIN_WHATSAPP = (import.meta.env.CRM_ADMIN_WHATSAPP || '').trim();
 
 const r0 = (n?: number | null) => Math.round(Number(n || 0));
 
+// Contador de la bandeja por corrida: si el registro falla, se ve en la respuesta
+// del cron en vez de quedar como una bandeja misteriosamente vacía.
+const OPORT = { creadas: 0, reconfirmadas: 0, errores: 0 };
+
 /** Alerta con dedup: no repite la misma alerta para la misma company en 7 días. */
 async function alertar(companyId: string, clave: string, titulo: string, metadata: any, avisos: string[], oportunidad?: { detalle?: string; accion?: string; valor?: number | null; peso?: number }) {
   // La bandeja tiene su propio ciclo de vida (se reconfirma, se silencia si
   // alguien la cerró), independiente del dedup de 7 días del timeline.
   if (oportunidad) {
-    await registrarOportunidad({
+    const r = await registrarOportunidad({
       company_id: companyId, tipo: clave, titulo,
       detalle: oportunidad.detalle, accion: oportunidad.accion,
       valor: oportunidad.valor ?? null, peso: oportunidad.peso ?? null, metadata,
     });
+    if (r === 'creada') OPORT.creadas++;
+    else if (r === 'reconfirmada') OPORT.reconfirmadas++;
+    else if (r === 'error') OPORT.errores++;
   }
   const hace7d = new Date(Date.now() - 7 * 86400000).toISOString();
   const { data: previa } = await supabase.from('activities').select('id')
@@ -82,7 +89,8 @@ export const GET: APIRoute = async ({ url, request }) => {
     return (ls && ls.length ? ls : [normCuenta(co.sacs_account)]).filter(Boolean);
   };
   const cuentas = Array.from(new Set((companies || []).flatMap(cuentasDeEmpresa)));
-  const out = { empresas: (companies || []).length, cuentas: cuentas.length, actualizadas: 0, sin_datos: 0, alertas: 0, errores: [] as string[] };
+  OPORT.creadas = 0; OPORT.reconfirmadas = 0; OPORT.errores = 0;
+  const out = { empresas: (companies || []).length, cuentas: cuentas.length, actualizadas: 0, sin_datos: 0, alertas: 0, oportunidades: OPORT, errores: [] as string[] };
   const avisos: string[] = [];
   const hoy = new Date();
   const catalogo = await cargarCatalogo();

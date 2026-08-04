@@ -59,6 +59,10 @@ export async function registrarOportunidad(o: NuevaOportunidad): Promise<'creada
       metadata: o.metadata ?? null,
       estado: 'nueva', detected_at: ahora, visto_at: ahora, updated_at: ahora,
     });
-    return error ? 'error' : 'creada';
-  } catch { return 'error'; }
+    if (error) { console.error('[oportunidades] no se pudo registrar', o.tipo, '→', error.message); return 'error'; }
+    return 'creada';
+  } catch (e: any) {
+    console.error('[oportunidades] excepción al registrar', o.tipo, '→', e?.message || e);
+    return 'error';
+  }
 }
