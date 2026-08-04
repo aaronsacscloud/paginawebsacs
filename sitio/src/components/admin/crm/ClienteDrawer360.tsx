@@ -536,7 +536,11 @@ function Panorama360({ account, co }: { account: string; co?: any }) {
       <div style={D.h}>Panorama en SACS</div>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
         <div style={D.kpi}><div style={D.kl}>Usuarios</div><div style={D.kv}>{u.total ?? 0}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{u.activos ?? 0} activos</div></div>
-        <div style={D.kpi}><div style={D.kl}>Sucursales</div><div style={D.kv}>{suc.total ?? 0}</div></div>
+        <div style={D.kpi}>
+          <div style={D.kl}>Sucursales operando</div>
+          <div style={D.kv}>{suc.activas ?? '—'}</div>
+          <div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>de {suc.total ?? 0} registradas</div>
+        </div>
         <div style={D.kpi}><div style={D.kl}>Promociones</div><div style={D.kv}>{pr.total ?? 0}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{pr.activas ?? 0} activas</div></div>
       </div>
 
@@ -549,11 +553,41 @@ function Panorama360({ account, co }: { account: string; co?: any }) {
         </div>
       ) : null}
 
-      {suc.nombres?.length ? (
+      {/* Activas e inactivas por separado. Antes salían las 145 en verde por
+          igual, y con eso no se puede decidir nada: en liveshows solo 8
+          vendieron este mes y las otras 137 son pop-ups de conciertos que ya
+          terminaron. "Activa" = vendió algo en los últimos 30 días. */}
+      {suc.detalle?.length ? (() => {
+        const act = suc.detalle.filter((x: any) => x.activa);
+        const ina = suc.detalle.filter((x: any) => !x.activa);
+        return (
+          <div style={{ marginBottom: 12 }}>
+            {act.length > 0 && (<>
+              <div style={lbl}>Sucursales operando ({act.length}) · vendieron en 30 días</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: ina.length ? 10 : 0 }}>
+                {act.map((x: any, i: number) => (
+                  <span key={i} style={{ ...D.badge, background: '#e6f6f2', color: '#1A8F7A', border: '1px solid #bfe8df' }}>
+                    <b>{x.nombre}</b> · {money(x.total_30d)}{x.ventas_30d ? ` · ${Number(x.ventas_30d).toLocaleString()} ventas` : ''}
+                    {x.en_catalogo === false ? ' · fuera del catálogo' : ''}
+                  </span>
+                ))}
+              </div>
+            </>)}
+            {ina.length > 0 && (<>
+              <div style={lbl}>Sin ventas en 30 días ({ina.length})</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {ina.map((x: any, i: number) => (
+                  <span key={i} style={{ ...D.badge, background: '#fafafa', color: '#9aa0a8', border: '1px solid #e8e8ea' }}>{x.nombre}</span>
+                ))}
+              </div>
+            </>)}
+          </div>
+        );
+      })() : suc.nombres?.length ? (
         <div style={{ marginBottom: 12 }}>
           <div style={lbl}>Sucursales</div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {suc.nombres.map((n: string, i: number) => <span key={i} style={{ ...D.badge, background: '#e6f6f2', color: '#1A8F7A' }}>{n}</span>)}
+            {suc.nombres.map((n: string, i: number) => <span key={i} style={{ ...D.badge, background: '#f3f4f6', color: '#475569' }}>{n}</span>)}
           </div>
         </div>
       ) : null}
@@ -721,7 +755,12 @@ function TabSacs({ co, act, reload, flash }: any) {
                   <span>Última venta: <b>{fmtDate(a.ultima_venta)}</b></span>
                   <span>30d: <b>{a.ventas_30d ?? 0}</b> ventas · <b>{money(a.total_30d)}</b></span>
                   {a.usuarios != null && <span>Usuarios: <b>{a.usuarios}</b></span>}
-                  {a.sucursales != null && <span>Sucursales: <b>{a.sucursales}</b></span>}
+                  {a.sucursales != null && (
+                    <span title="Operando = vendió algo en los últimos 30 días">
+                      Sucursales: <b>{a.sucursales}</b> operando
+                      {a.sucursales_totales > a.sucursales ? <span style={{ color: '#9aa0a8' }}> de {a.sucursales_totales}</span> : null}
+                    </span>
+                  )}
                 </div>
               )}
               {c.sync_at && <div style={{ fontSize: '0.7rem', color: '#aaa', marginTop: 4 }}>Sincronizada: {new Date(c.sync_at).toLocaleString('es-MX')}</div>}
