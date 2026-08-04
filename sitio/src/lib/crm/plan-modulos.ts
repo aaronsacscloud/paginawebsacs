@@ -65,9 +65,10 @@ export function pluginsContratados(subsActivas: any[]): Set<string> {
     const n = String(s?.nombre_plan || '').toLowerCase();
     if (/evento|salon/.test(n)) out.add('plugin_eventos');
     if (/reparacion|taller|orden(es)? de servicio/.test(n)) out.add('plugin_ordenes_servicio');
+    if (/administraci[oó]n avanzada|bancos?|efectivo|tesorer/.test(n)) out.add('plugin_admin_avanzada');
     // Un "plugin VIP"/"plugins & add ons" no dice cuál: se trata como comodín y
     // silencia el aviso de plugins, que es preferible a inventar un upsell.
-    if (/plugin/.test(n)) { out.add('plugin_eventos'); out.add('plugin_ordenes_servicio'); }
+    if (/plugin/.test(n)) { out.add('plugin_eventos'); out.add('plugin_ordenes_servicio'); out.add('plugin_admin_avanzada'); }
   }
   return out;
 }

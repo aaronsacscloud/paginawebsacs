@@ -33,6 +33,8 @@ const PLUGINS = [
   { slug: 'plugin_facturacion', nombre: 'Facturación', precio_mensual: null, precio_anual: null, a_la_medida: true, categoria: 'plugin', orden: 108 },
   // RH: expediente de empleados + asistencia + actas administrativas.
   { slug: 'plugin_empleados', nombre: 'Empleados (RH)', precio_mensual: null, precio_anual: null, a_la_medida: true, categoria: 'plugin', orden: 109 },
+  // Cuentas de efectivo / bancos: no viene en ningún plan, solo con este plugin.
+  { slug: 'plugin_admin_avanzada', nombre: 'Administración avanzada (bancos y efectivo)', precio_mensual: null, precio_anual: null, a_la_medida: true, categoria: 'plugin', orden: 110 },
 ];
 
 // Une catálogo base + plugins, deduplicando por slug (lo de la BD manda).
