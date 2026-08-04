@@ -5,6 +5,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { computarSenales } from '../../../../lib/crm/senales';
 import { cargarCatalogo } from '../../../../lib/crm/plan-modulos-db';
+import { fotosPorEmpresa } from '../../../../lib/crm/snapshots';
 
 export const prerender = false;
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -18,6 +19,8 @@ export const GET: APIRoute = async () => {
 
   // Una sola carga del catálogo plan→módulos para todas las empresas.
   const catalogo = await cargarCatalogo();
+  // Fotos de uso para las señales de MOMENTO (una query para todas).
+  const fotos = await fotosPorEmpresa();
 
   const data = (companies || [])
     // Solo clientes con suscripción ACTIVA: uno ya cancelado no es candidato a
@@ -25,7 +28,7 @@ export const GET: APIRoute = async () => {
     .filter((c: any) => (c.subscriptions || []).some((s: any) => s.estado === 'activa'))
     .map((c: any) => {
       const activas = (c.subscriptions || []).filter((s: any) => s.estado === 'activa');
-      const senales = computarSenales(c, activas[0], { catalogo, subsActivas: activas });
+      const senales = computarSenales(c, activas[0], { catalogo, subsActivas: activas, snapHoy: fotos[c.id]?.hoy, snapAntes: fotos[c.id]?.antes });
       if (!senales.length) return null;
       const top = senales[0];
       return {

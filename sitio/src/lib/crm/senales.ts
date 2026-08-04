@@ -4,6 +4,7 @@
 // portal del partner. Función PURA → corre igual en server y cliente.
 
 import { planBase, pluginsContratados, modulosFueraDePlan, planQueLoCubre, ARR_PLAN } from './plan-modulos';
+import { senalesDeMomento } from './momento';
 
 export type Nivel = 'oportunidad' | 'riesgo';
 export type Senal = {
@@ -20,6 +21,8 @@ export type Senal = {
 export type SenalesOpts = {
   catalogo?: any;        // CatalogoPlanes de lib/crm/plan-modulos (lo carga el server)
   subsActivas?: any[];   // todas las subs activas, para derivar plan y plugins
+  snapHoy?: any;         // foto más reciente de uso_snapshots
+  snapAntes?: any;       // foto más vieja dentro de la ventana (para el delta)
 };
 
 const PLANES_BASICOS = ['vende', 'controla'];
@@ -89,6 +92,13 @@ export function computarSenales(co: any, subActiva?: any, opts?: SenalesOpts): S
       accion: 'Capacitación para activar más módulos (más valor = menos churn).' });
   }
 
+  // ── MOMENTO: qué CAMBIÓ vs. la foto de hace días (uso_snapshots) ──
+  // Va antes que las señales de estado a propósito: pesan más porque dicen
+  // CUÁNDO llamar, no solo qué ofrecer.
+  if (opts?.snapHoy && opts?.snapAntes) {
+    try { out.push(...senalesDeMomento(opts.snapHoy, opts.snapAntes)); } catch { /* nunca tumba el resto */ }
+  }
+
   // ── OPORTUNIDADES desde el USO PROFUNDO (uso_sacs, cron de madrugada) ──
   if (uso) {
     const clientes = Number(uso.clientes?.total || 0);
@@ -136,6 +146,32 @@ export function computarSenales(co: any, subActiva?: any, opts?: SenalesOpts): S
           });
         }
       } catch { /* el catálogo nunca tumba el resto de las señales */ }
+    }
+
+    // ── INTENSIDAD: usarlo MUCHO es la mejor pista de qué venderle ──
+    // No es lo mismo "tiene el módulo" que "vive en el módulo". Quien mueve
+    // volumen en un área ya sufre sus límites, y eso es lo que se compra.
+    const admI = uso.administracion || {};
+    if (Number(admI.proveedores || 0) >= 20 && Number(admI.cxp_pendientes || 0) > 0) {
+      out.push({ tipo: 'compras_intensas', nivel: 'oportunidad', peso: 64,
+        titulo: `${admI.proveedores} proveedores y ${admI.cxp_pendientes} cuentas por pagar abiertas`,
+        detalle: 'Su operación de compras ya es pesada: ahí es donde se les va el dinero sin control.',
+        accion: 'Ofrécele el plugin de Administración avanzada (bancos, efectivo y tesorería).' });
+    }
+    if (Number(uso.transferencias?.total_7d || 0) >= 20) {
+      out.push({ tipo: 'traspasos_intensos', nivel: 'oportunidad', peso: 63,
+        titulo: `${uso.transferencias.total_7d} traspasos entre sucursales en 7 días`,
+        detalle: 'Está moviendo mercancía a mano todas las semanas — eso es exactamente lo que automatiza la nivelación.',
+        accion: 'Ofrécele el plugin de Nivelación de inventario (mínimos y máximos automáticos).' });
+    }
+    // Base grande sin lealtad: ya existe la señal `lealtad` desde 50 clientes;
+    // a partir de 200 el caso deja de ser sugerencia y se vuelve prioridad.
+    const nCli = Number(uso.clientes?.total || 0);
+    if (nCli >= 200 && uso.lealtad && !uso.lealtad.activo) {
+      out.push({ tipo: 'base_grande_sin_lealtad', nivel: 'oportunidad', peso: 72,
+        titulo: `${nCli.toLocaleString()} clientes capturados y sin programa de lealtad`,
+        detalle: 'La base ya está construida y no se está monetizando: cada visita repetida se está dejando al azar.',
+        accion: 'Fideliza — el programa de lealtad convierte esa base en recompra.' });
     }
 
     const adm = uso.administracion || {};

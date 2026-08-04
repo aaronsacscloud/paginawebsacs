@@ -5,6 +5,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { computarSenales } from '../../../../lib/crm/senales';
 import { cargarCatalogo } from '../../../../lib/crm/plan-modulos-db';
+import { fotosPorEmpresa } from '../../../../lib/crm/snapshots';
 
 export const prerender = false;
 
@@ -47,6 +48,8 @@ export const GET: APIRoute = async () => {
   // Catálogo plan→módulos: se carga UNA vez para las ~220 empresas (cacheado 5
   // min en el módulo), no una por cliente.
   const catalogo = await cargarCatalogo();
+  // Fotos de uso para las señales de MOMENTO (una query para todas).
+  const fotos = await fotosPorEmpresa();
 
   const data = (companies || [])
     // cliente real = tiene al menos una suscripción registrada
@@ -71,7 +74,7 @@ export const GET: APIRoute = async () => {
       // empresa) para poder repararla.
       const subContactId = subs.map((s: any) => s.contact_id).filter(Boolean)[0] || null;
       // Señal de venta/riesgo (misma lógica que Oportunidades) para la columna/filtro.
-      const senales = computarSenales(c, activas[0], { catalogo, subsActivas: subs.filter((s: any) => s.estado === 'activa') });
+      const senales = computarSenales(c, activas[0], { catalogo, subsActivas: subs.filter((s: any) => s.estado === 'activa'), snapHoy: fotos[c.id]?.hoy, snapAntes: fotos[c.id]?.antes });
       const top = senales[0] || null;
       return {
         id: c.id, nombre: c.nombre, sacs_account: c.sacs_account,
