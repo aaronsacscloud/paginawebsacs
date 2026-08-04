@@ -181,6 +181,117 @@ export default function InteligenciaView() {
           </table>
         </div>
       </div>
+
+      {/* 7 · Precio vs. valor entregado */}
+      <Repricing />
+
+      {/* 8 · Giro del cliente (IA) */}
+      <Giros />
+    </div>
+  );
+}
+
+/* ── Precio vs. valor entregado ────────────────────────────────────────────
+ * Por cada $10,000 que el cliente transacciona en SACS, ¿cuánto nos paga? Entre
+ * clientes hay diferencias de 3× por el mismo producto, y eso no se arregla
+ * vendiendo un módulo: se arregla en la renovación. */
+function Repricing() {
+  const [d, setD] = useState<any>(null);
+  const [abierto, setAbierto] = useState(false);
+  useEffect(() => { if (abierto && !d) fetch('/api/crm/arr/repricing').then(r => r.json()).then(setD).catch(() => setD({ error: 'No se pudo cargar' })); }, [abierto]);
+  return (
+    <div style={S.card}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 220 }}>
+          <h3 style={S.h}>Precio vs. valor entregado</h3>
+          <p style={{ ...S.sub, margin: 0 }}>Cuánto nos paga al año por cada $10,000 que mueve en SACS. Los de hasta arriba están subvaluados.</p>
+        </div>
+        <button style={S.btn} onClick={() => setAbierto(!abierto)}>{abierto ? 'Ocultar' : 'Ver ranking'}</button>
+      </div>
+      {abierto && !d && <div style={{ padding: 16, color: '#999', fontSize: '0.8rem' }}>Calculando…</div>}
+      {abierto && d?.error && <div style={{ padding: 16, color: '#b93333', fontSize: '0.8rem' }}>{d.error}</div>}
+      {abierto && d?.data && (
+        <>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', margin: '12px 0' }}>
+            <div style={S.kpi}><div style={S.kLabel}>Mediana</div><div style={S.kVal}>${d.mediana_pesos_por_10k}</div><div style={{ fontSize: '0.66rem', color: '#999' }}>por cada $10k movidos</div></div>
+            <div style={S.kpi}><div style={S.kLabel}>Clientes medidos</div><div style={S.kVal}>{d.clientes}</div></div>
+            <div style={S.kpi}><div style={S.kLabel}>Brecha total a la mediana</div><div style={{ ...S.kVal, color: '#1A8F7A' }}>{money(d.oportunidad_total)}</div><div style={{ fontSize: '0.66rem', color: '#999' }}>referencia para negociar, no precio</div></div>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr>{['Cuenta', 'Plan', 'ARR', 'Transacciona 30d', 'Suc.', '$ por cada $10k', 'Brecha'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+              <tbody>{d.data.slice(0, 20).map((f: any) => (
+                <tr key={f.company_id}>
+                  <td style={{ ...S.td, fontWeight: 700 }}>{f.sacs_account || f.nombre}</td>
+                  <td style={S.td}>{f.plan || '—'}</td>
+                  <td style={S.td}>{money(f.arr)}</td>
+                  <td style={S.td}>{money(f.transacciona_30d)}<div style={{ fontSize: '0.66rem', color: '#aaa' }}>{f.ventas_30d.toLocaleString()} ventas</div></td>
+                  <td style={S.td}>{f.sucursales || '—'}</td>
+                  <td style={{ ...S.td, fontWeight: 800, color: d.mediana_pesos_por_10k && f.pesos_por_10k < d.mediana_pesos_por_10k * 0.6 ? '#b93333' : '#333' }}>${f.pesos_por_10k}</td>
+                  <td style={{ ...S.td, color: '#1A8F7A', fontWeight: 700 }}>{f.arr_a_la_mediana > 0 ? '+' + money(f.arr_a_la_mediana) : '—'}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ── Giro del cliente, deducido con IA ─────────────────────────────────────
+ * Sin giro no se puede comparar contra pares, que es el argumento de venta más
+ * persuasivo. Se PROPONE primero: nada se guarda hasta que se aprueba. */
+function Giros() {
+  const [d, setD] = useState<any>(null);
+  const [cargando, setCargando] = useState(false);
+  const [err, setErr] = useState('');
+  async function correr(aplicar: boolean) {
+    setCargando(true); setErr('');
+    try {
+      const j = await fetch('/api/crm/arr/clasificar-giro', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ limite: 15, aplicar }),
+      }).then(r => r.json());
+      if (j.error) setErr(j.error); else setD(j);
+    } catch (e: any) { setErr(e?.message || String(e)); }
+    setCargando(false);
+  }
+  return (
+    <div style={S.card}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 240 }}>
+          <h3 style={S.h}>Giro del cliente · deducido con IA 🤖</h3>
+          <p style={{ ...S.sub, margin: 0 }}>Lee el catálogo real de cada cuenta y deduce a qué se dedica. Sirve para comparar contra pares del mismo giro, que es lo que convence al vender.</p>
+        </div>
+        <button style={S.btn} disabled={cargando} onClick={() => correr(false)}>{cargando ? 'Analizando…' : 'Proponer (no guarda)'}</button>
+        {d?.data?.length > 0 && <button style={{ ...S.btn, background: '#1a1a1a', color: '#fff', borderColor: '#1a1a1a' }} disabled={cargando} onClick={() => correr(true)}>Guardar los propuestos</button>}
+      </div>
+      {err && <div style={{ marginTop: 10, color: '#b93333', fontSize: '0.8rem', fontWeight: 600 }}>{err}</div>}
+      {d?.data && (
+        <>
+          <div style={{ fontSize: '0.72rem', color: '#999', margin: '10px 0' }}>
+            {d.clasificadas} clasificadas · {d.alta_confianza} con confianza alta{d.costo_usd != null ? ` · costó $${d.costo_usd.toFixed(4)} USD` : ''}
+            {d.aplicado ? ' · GUARDADO' : ' · solo propuesta'}
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr>{['Cuenta', 'Giro propuesto', 'Confianza', 'Por qué'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+              <tbody>{d.data.map((f: any) => (
+                <tr key={f.company_id}>
+                  <td style={{ ...S.td, fontWeight: 700 }}>{f.cuenta}</td>
+                  <td style={S.td}>{f.giro}</td>
+                  <td style={S.td}>
+                    <span style={{ fontWeight: 800, color: f.confianza >= 0.85 ? '#1A8F7A' : f.confianza >= 0.7 ? '#a06600' : '#b93333' }}>{Math.round(f.confianza * 100)}%</span>
+                    {f.confianza < 0.85 && <span style={{ fontSize: '0.66rem', color: '#a06600' }}> · revisar</span>}
+                  </td>
+                  <td style={{ ...S.td, color: '#666' }}>{f.evidencia}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </>
+      )}
     </div>
   );
 }
