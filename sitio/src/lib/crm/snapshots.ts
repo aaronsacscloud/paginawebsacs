@@ -3,7 +3,7 @@
 import { supabase } from '../supabase';
 import type { Snap } from './momento';
 
-const CAMPOS = 'company_id, fecha, ventas_30d, total_30d, usuarios_operando, clientes_total, lealtad_inscritos, conteos_7d, transferencias_7d, facturas_7d';
+const CAMPOS = 'company_id, fecha, ventas_30d, total_30d, usuarios_operando, clientes_total, lealtad_inscritos, conteos_7d, transferencias_7d, facturas_7d, health_score';
 
 /**
  * Para cada empresa: su foto más reciente y la más VIEJA dentro de la ventana.

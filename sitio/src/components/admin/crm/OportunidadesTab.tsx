@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { TrendingUp, AlertTriangle, Target, DollarSign } from 'lucide-react';
 import TablaEnterprise, { type ColDef, type QuickDef, type VistaDef } from './TablaEnterprise';
 import ClienteDrawer360 from './ClienteDrawer360';
+import BandejaOportunidades from './BandejaOportunidades';
 import HealthScoreBadge from './HealthScoreBadge';
 import { SENAL_LABEL } from '../../../lib/crm/senales';
 import { useIsMobile } from '../../../lib/ui/mobile';
@@ -25,6 +26,9 @@ export default function OportunidadesTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [detailId, setDetailId] = useState<string | null>(null);
+  // El radar CALCULA señales al vuelo; la bandeja son las que hay que TRABAJAR,
+  // con estado y dueño. Van juntas porque son la misma pregunta en dos tiempos.
+  const [vista, setVista] = useState<'radar' | 'bandeja'>('bandeja');
 
   async function load() {
     setLoading(true); setError('');
@@ -97,12 +101,32 @@ export default function OportunidadesTab() {
     { icon: <DollarSign size={18} color="#a06600" />, bg: '#fdf6e8', label: 'ARR en riesgo', v: money(res?.arr_en_riesgo) },
   ];
 
+  if (vista === 'bandeja') {
+    return (
+      <div>
+        <div style={{ padding: '4px 12px 0' }}>
+          <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#16181d' }}>Oportunidades por trabajar</div>
+          <div style={{ fontSize: '0.8rem', color: '#8a8f98', marginBottom: 10 }}>
+            Lo que el sistema detectó y alguien tiene que atender. Márcalas conforme avances —
+            de ahí sale qué señal vende y cuál es ruido.
+            <button onClick={() => setVista('radar')} style={{ marginLeft: 8, border: 'none', background: 'none', color: '#3764c4', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}>Ver el radar completo →</button>
+          </div>
+        </div>
+        <BandejaOportunidades onOpenCliente={(id) => setDetailId(id)} />
+        {detailId && <ClienteDrawer360 companyId={detailId} onClose={() => setDetailId(null)} onChanged={load} />}
+      </div>
+    );
+  }
+
   return (
     <div style={{ padding: '4px 12px 28px' }}>
       <style>{`.ct360 tbody tr:hover td { background: #f7f9fc; } @media (hover: none) { .ct360 tbody tr:active td { background: #f7f9fc; } }`}</style>
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#16181d' }}>Radar de ventas</div>
-        <div style={{ fontSize: '0.8rem', color: '#8a8f98' }}>Clientes con una señal real de venta (upsell/cross-sell) o de riesgo — para saber a quién ofrecerle qué.</div>
+        <div style={{ fontSize: '0.8rem', color: '#8a8f98' }}>
+          Clientes con una señal real de venta (upsell/cross-sell) o de riesgo — para saber a quién ofrecerle qué.
+          <button onClick={() => setVista('bandeja')} style={{ marginLeft: 8, border: 'none', background: 'none', color: '#3764c4', fontWeight: 700, cursor: 'pointer', fontSize: '0.8rem' }}>← Ir a la bandeja</button>
+        </div>
       </div>
 
       <div style={isMobile

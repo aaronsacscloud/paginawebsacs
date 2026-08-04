@@ -19,7 +19,13 @@ const SYNC_SECRET = (import.meta.env.CRM_SYNC_SECRET || '').trim();
 export const GET: APIRoute = async ({ url, request }) => {
   if (!isAuthorizedCron(request)) return new Response('Forbidden', { status: 403 });
 
-  const limit = Math.min(60, Number(url.searchParams.get('limit')) || 30);
+  // Lote por corrida. Estaba en 30 con tope 60, así que tardaba 3 días en dar
+  // la vuelta y el detector de módulos opinaba sobre datos de hasta 72 h antes.
+  // Medido contra producción: las 60 cuentas elegibles (las que tienen
+  // suscripción activa) se barren completas en 48 s, así que con 80 cabe todo en
+  // UNA corrida y el uso queda fresco cada día. El tope de 150 es el freno por si
+  // la cartera crece: mejor quedarse corto que colgar la corrida.
+  const limit = Math.min(150, Number(url.searchParams.get('limit')) || 80);
 
   // Companies con cuenta SACS y AL MENOS una suscripción activa, las más
   // desactualizadas primero (cursor progresivo).

@@ -14,6 +14,7 @@ import { sendWhatsApp } from '../../../lib/kapso';
 import { healthScoreV2 } from '../../../lib/crm/health';
 import { cuentasPorEmpresa, agregarActividad, guardarPorCuenta, normCuenta, errorSacs } from '../../../lib/crm/sacs-cuentas';
 import { cargarCatalogo } from '../../../lib/crm/plan-modulos-db';
+import { registrarOportunidad } from '../../../lib/crm/oportunidades';
 import { planBase, pluginsContratados, modulosFueraDePlan, planQueLoCubre, ARR_PLAN } from '../../../lib/crm/plan-modulos';
 
 export const prerender = false;
@@ -25,7 +26,16 @@ const ADMIN_WHATSAPP = (import.meta.env.CRM_ADMIN_WHATSAPP || '').trim();
 const r0 = (n?: number | null) => Math.round(Number(n || 0));
 
 /** Alerta con dedup: no repite la misma alerta para la misma company en 7 días. */
-async function alertar(companyId: string, clave: string, titulo: string, metadata: any, avisos: string[]) {
+async function alertar(companyId: string, clave: string, titulo: string, metadata: any, avisos: string[], oportunidad?: { detalle?: string; accion?: string; valor?: number | null; peso?: number }) {
+  // La bandeja tiene su propio ciclo de vida (se reconfirma, se silencia si
+  // alguien la cerró), independiente del dedup de 7 días del timeline.
+  if (oportunidad) {
+    await registrarOportunidad({
+      company_id: companyId, tipo: clave, titulo,
+      detalle: oportunidad.detalle, accion: oportunidad.accion,
+      valor: oportunidad.valor ?? null, peso: oportunidad.peso ?? null, metadata,
+    });
+  }
   const hace7d = new Date(Date.now() - 7 * 86400000).toISOString();
   const { data: previa } = await supabase.from('activities').select('id')
     .eq('company_id', companyId).eq('automatico', true)
@@ -147,17 +157,23 @@ export const GET: APIRoute = async ({ url, request }) => {
         if (a.tendencia_pct != null && a.tendencia_pct <= -50 && subInfo.activas > 0) {
           await alertar(co.id, 'caida_ventas',
             `📉 ${co.nombre}: ventas cayeron ${r0(Math.abs(a.tendencia_pct))}% vs los 30 días previos ($${r0(a.total_30d).toLocaleString()} vs $${r0(a.total_30d_prev).toLocaleString()}) — ${'$' + r0(subInfo.arr).toLocaleString()} ARR en juego`,
-            { tendencia_pct: a.tendencia_pct, cuenta: acct }, avisos);
+            { tendencia_pct: a.tendencia_pct, cuenta: acct }, avisos,
+            { detalle: 'Una caída así sostenida termina en cancelación.', accion: 'Llamada de diagnóstico: qué cambió en su operación.', valor: subInfo.arr, peso: 90 });
         }
         if (subInfo.activas === 0 && subInfo.canceladas > 0 && (a.ventas_30d || 0) > 0) {
           await alertar(co.id, 'cancelada_pero_usando',
             `🚨 ${co.nombre} (${acct}): canceló su suscripción pero SIGUE USANDO SACS (${a.ventas_30d} ventas / $${r0(a.total_30d).toLocaleString()} en 30d) — uso sin pagar`,
-            { ventas_30d: a.ventas_30d, cuenta: acct }, avisos);
+            { ventas_30d: a.ventas_30d, cuenta: acct }, avisos,
+            { detalle: `Está transaccionando $${r0(a.total_30d).toLocaleString('es-MX')} al mes sin pagar suscripción.`,
+              accion: 'Decidir política: reactivar con cobro, cobrar retroactivo o cortar el acceso.',
+              valor: null, peso: 100 });
         }
         if (co.sucursales && a.sucursales && a.sucursales > co.sucursales && subInfo.activas > 0) {
           await alertar(co.id, 'sucursales_excedidas',
             `🏢 ${co.nombre}: usa ${a.sucursales} sucursales pero contrató ${co.sucursales} — posible subcobro / oportunidad de upsell`,
-            { reales: a.sucursales, contratadas: co.sucursales, cuenta: acct }, avisos);
+            { reales: a.sucursales, contratadas: co.sucursales, cuenta: acct }, avisos,
+            { detalle: `Opera ${a.sucursales} sucursales y su plan cubre ${co.sucursales}.`,
+              accion: `Ampliar el plan a ${a.sucursales} sucursales.`, peso: 70 });
         }
         // Paga un plan con inventario (Controla/Automatiza) pero en 30 días no usó
         // NINGÚN módulo de inventario → no le ve valor a lo que paga = churn en
@@ -167,7 +183,9 @@ export const GET: APIRoute = async ({ url, request }) => {
         if (pagaInventario && !usaInventario && (a.ventas_30d || 0) > 0) {
           await alertar(co.id, 'plan_sin_uso',
             `📦 ${co.nombre}: paga plan con INVENTARIO (${(subInfo.planes || []).filter(pl => /controla|automatiza/i.test(pl)).join(', ')}) pero en 30 días no usó órdenes de compra ni transferencias — no le está viendo valor: capacitar o riesgo de downgrade`,
-            { planes: subInfo.planes, modulos: a.modulos, cuenta: acct }, avisos);
+            { planes: subInfo.planes, modulos: a.modulos, cuenta: acct }, avisos,
+            { detalle: 'Paga por inventario y no lo usa: no le ve valor a lo que paga.',
+              accion: 'Capacitación para activarlo, o bajarlo de plan antes de que cancele.', valor: subInfo.arr, peso: 55 });
         }
         // Usa módulos que su plan no cubre → upsell con número. El uso viene de
         // `uso_sacs` (cron de madrugada); si esa cuenta aún no se ha barrido, no
@@ -185,13 +203,17 @@ export const GET: APIRoute = async ({ url, request }) => {
             await alertar(co.id, 'modulo_fuera_de_plan',
               `💡 ${co.nombre} (${acct}): usa ${firmes.map(f => f.modulo).join(', ')} — su plan ${planReal} no lo cubre` +
               (destino ? ` → súbelo a ${destino}${delta > 0 ? ` (+$${delta.toLocaleString('es-MX')}/año)` : ''}` : ''),
-              { plan: planReal, destino, modulos: firmes.map(f => f.modulo), cuenta: acct }, avisos);
+              { plan: planReal, destino, modulos: firmes.map(f => f.modulo), cuenta: acct }, avisos,
+              { detalle: `Usa ${firmes.map(f => f.modulo).join(', ')} sin que su plan lo cubra.`,
+                accion: destino ? `Súbelo a ${destino}.` : 'Revisa qué plan o plugin corresponde.',
+                valor: delta || null, peso: 75 });
           }
         }
         if (dias != null && dias > 15 && (diasPrev == null || diasPrev <= 15) && subInfo.activas > 0) {
           await alertar(co.id, 'entro_a_riesgo',
             `🔴 ${co.nombre} (${acct}) cruzó 15 días sin vender — churn probable, $${r0(subInfo.arr).toLocaleString()} ARR en riesgo`,
-            { dias_sin_venta: dias, cuenta: acct }, avisos);
+            { dias_sin_venta: dias, cuenta: acct }, avisos,
+            { detalle: `Lleva ${dias} días sin registrar una venta.`, accion: 'Contacto inmediato: entender si dejó de operar o se fue a otro sistema.', valor: subInfo.arr, peso: 95 });
         }
     } catch (e: any) {
       out.errores.push(co.nombre + ': ' + (e?.message || String(e)));

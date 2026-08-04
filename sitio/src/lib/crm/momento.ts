@@ -14,6 +14,7 @@ import type { Senal } from './senales';
 
 export type Snap = {
   fecha: string;
+  health_score?: number | null;
   ventas_30d?: number | null; total_30d?: number | null;
   usuarios_operando?: number | null; clientes_total?: number | null;
   lealtad_inscritos?: number | null; conteos_7d?: number | null;
@@ -81,6 +82,19 @@ export function senalesDeMomento(hoy?: Snap | null, antes?: Snap | null): Senal[
       titulo: `Su equipo pasó de ${uAnt} a ${uAct} personas operando en ${d} días`,
       detalle: 'Está contratando: más manos en el sistema es cuando duelen los permisos, las metas y la auditoría.',
       accion: 'Propón el plan con permisos por usuario y comisiones por vendedor.' });
+  }
+
+  // ── DEFENSA: la salud cayendo ──
+  // El ARR que ya se tiene vale más que el que se puede agregar: perder tres
+  // clientes medianos borra todo el upsell detectado. Un cliente que va de 89 a
+  // 60 en un mes se está yendo aunque hoy siga pagando, y es la señal más
+  // temprana que existe — mucho antes de que deje de pagar o de vender.
+  const hAnt = n(antes.health_score), hAct = n(hoy.health_score);
+  if (hAnt >= 50 && hAct <= hAnt - 15) {
+    out.push({ tipo: 'salud_cayendo', nivel: 'riesgo', peso: 92,
+      titulo: `Su salud cayó de ${hAnt} a ${hAct} en ${d} días`,
+      detalle: 'Sigue pagando, pero está usando el sistema cada vez menos. Es el aviso más temprano de una cancelación.',
+      accion: 'Llámale ahora: a esta altura todavía se recupera; cuando deje de pagar, ya no.' });
   }
 
   // ── Salto de volumen: creció el negocio, no solo el mes ──
