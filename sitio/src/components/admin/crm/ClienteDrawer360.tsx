@@ -1123,6 +1123,25 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
   const [busy, setBusy] = useState(false);
   const [picker, setPicker] = useState<null | 'nuevo' | 'edit'>(null);
   const [pausaSub, setPausaSub] = useState<any>(null);
+  const [cobrando, setCobrando] = useState<string | null>(null);
+
+  // Genera (o reusa) el link de cobro del periodo y lo deja listo para mandar.
+  async function cobrarMP(s: any) {
+    setCobrando(s.id);
+    const j = await fetch('/api/crm/arr/cobrar-mercadopago', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription_id: s.id }),
+    }).then(r => r.json()).catch(() => ({ error: 'No se pudo generar el link' }));
+    setCobrando(null);
+    if (j?.error) { alert(j.error); return; }
+    const wa = String(principal?.whatsapp || '').replace(/\D/g, '');
+    const texto = `Hola 👋 Te comparto el link para pagar tu ${s.nombre_plan} (${money(j.monto)}):\n${j.link}\n\nPuedes pagar con tarjeta, en OXXO o por transferencia.`;
+    try { navigator.clipboard?.writeText(j.link); } catch { /* el link igual se abre abajo */ }
+    // Se abre síncrono por el bloqueo de ventanas emergentes de iOS.
+    window.open((wa ? 'https://wa.me/' + wa : 'https://wa.me/') + '?text=' + encodeURIComponent(texto), '_blank', 'noopener');
+    flash(j.reusado ? 'Link vigente reusado · copiado' : `Link generado${j.modo === 'prueba' ? ' (MODO PRUEBA)' : ''} · copiado`);
+    reload();
+  }
 
   useEffect(() => { fetch('/api/crm/arr/plans').then(r => r.json()).then(j => setPlanes(j.data || j.plans || [])).catch(() => {}); }, []);
 
@@ -1244,6 +1263,11 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                       <td style={D.td}>{s.pagos_realizados || 0}</td>
                       <td style={D.td}>{money(s.total_pagado)}</td>
                       <td style={D.td}>
+                        {s.estado !== 'cancelada' && s.estado !== 'pausada' && (
+                          <button style={{ ...D.btnG, marginRight: 4, color: '#009ee3', borderColor: '#b9e4f7', fontWeight: 700 }}
+                            title="Genera el link de pago del periodo y lo deja listo para WhatsApp"
+                            disabled={cobrando === s.id} onClick={() => cobrarMP(s)}>{cobrando === s.id ? '…' : '💳'}</button>
+                        )}
                         <button style={{ ...D.btnG, marginRight: 4, color: s.estado === 'pausada' ? '#1A8F7A' : '#a06600', borderColor: s.estado === 'pausada' ? '#bfe8df' : '#f0dcb8' }}
                           title={s.estado === 'pausada' ? 'Reactivar: pide desde cuándo quedó activa y cuándo se le cobra' : 'Pausar: deja de sumar ARR; pide el motivo y qué esperamos del cliente'}
                           onClick={() => setPausaSub(s)}>{s.estado === 'pausada' ? '▶' : '⏸'}</button>

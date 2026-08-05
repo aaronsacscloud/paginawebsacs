@@ -110,6 +110,22 @@ export default function SubscriptionsTab() {
   const [mesAbierto, setMesAbierto] = useState<string | null>(null);
   const [showPago, setShowPago] = useState(false);
   const [showMeta, setShowMeta] = useState(false);
+  const [cobrandoMP, setCobrandoMP] = useState<string | null>(null);
+
+  async function cobrarMP(s: any) {
+    setCobrandoMP(s.id);
+    const j = await fetch('/api/crm/arr/cobrar-mercadopago', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription_id: s.id }),
+    }).then(r => r.json()).catch(() => ({ error: 'No se pudo generar el link' }));
+    setCobrandoMP(null);
+    if (j?.error) { alert(j.error); return; }
+    const wa = String(s.contacts?.whatsapp || '').replace(/\D/g, '');
+    const texto = `Hola 👋 Te comparto el link para pagar tu ${s.nombre_plan} (${fmt(j.monto)}):\n${j.link}\n\nPuedes pagar con tarjeta, en OXXO o por transferencia.`;
+    try { navigator.clipboard?.writeText(j.link); } catch { /* el link igual se abre abajo */ }
+    window.open((wa ? 'https://wa.me/' + wa : 'https://wa.me/') + '?text=' + encodeURIComponent(texto), '_blank', 'noopener');
+    load();
+  }
   const [detailId, setDetailId] = useState<string | null>(null);
 
   async function load() {
@@ -384,6 +400,11 @@ export default function SubscriptionsTab() {
                       <td style={S.td}>{(() => { const h = (s.companies as any)?.health_score; if (h == null) return '—'; const c = h >= 70 ? '#1A8F7A' : h >= 40 ? '#a06600' : '#b93333'; return <span style={{ fontWeight: 800, color: c }}>{h}</span>; })()}</td>
                       <td style={S.td} onClick={e => e.stopPropagation()}>
                         <button style={{ ...S.btnSmall, marginRight: 4, background: '#1A8F7A', color: '#fff', border: 'none' }} title="Registrar pago: genera comprobante y actualiza el ARR + próxima fecha" onClick={() => { setPagoPrefill({ subscription_id: s.id }); setShowPago(true); }}>💰 Pago</button>
+                        {s.estado !== 'cancelada' && s.estado !== 'pausada' && (
+                          <button style={{ ...S.btnSmall, marginRight: 4, color: '#009ee3', borderColor: '#b9e4f7', fontWeight: 700 }}
+                            title="Genera el link de cobro del periodo (tarjeta, OXXO o transferencia) y lo deja listo para WhatsApp"
+                            disabled={cobrandoMP === s.id} onClick={() => cobrarMP(s)}>{cobrandoMP === s.id ? '…' : '💳 Cobrar'}</button>
+                        )}
                         <button style={{ ...S.btnSmall, marginRight: 4 }} title="Genera un link formal para el cliente (plan, monto y próxima fecha) + PDF, con opción de descuento pronto pago" onClick={() => setLinkSub(s)}>🔗 Link</button>
                         <button style={S.btnSmall} onClick={() => setEditSub(s)}>Editar</button>
                       </td>
