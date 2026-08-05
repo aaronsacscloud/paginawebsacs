@@ -139,13 +139,23 @@ export default function PasarelaMercadoPago() {
       <div style={card}>
         <div style={{ fontWeight: 800, marginBottom: 6 }}>Configura esto en Mercado Pago</div>
         <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: 8 }}>
-          En tu aplicación → <b>Webhooks</b>, pega esta URL y activa el evento <b>Pagos</b>:
+          En tu aplicación → <b>Webhooks</b>, pega esta URL y activa <b>Pagos</b> y <b>Suscripciones</b>:
         </div>
         <code style={{ display: 'block', padding: '10px 12px', background: '#f6f8fa', borderRadius: 8, fontSize: '0.78rem', wordBreak: 'break-all' }}>{urlWebhook}</code>
         <div style={{ fontSize: '0.76rem', color: '#a06600', marginTop: 8, background: '#fff8ec', border: '1px solid #f5e2b8', borderRadius: 8, padding: '8px 10px' }}>
           Usa la sección <b>Webhooks</b>, no <b>IPN</b>. El IPN es el formato viejo de Mercado Pago y
           la protección contra falsificación del CRM lo rechaza antes de procesarlo — los avisos se
           perderían sin dejar rastro.
+        </div>
+        <div style={{ fontSize: '0.76rem', color: '#666', marginTop: 8, background: '#f6f8fa', border: '1px solid #e9eaee', borderRadius: 8, padding: '8px 10px' }}>
+          <b>La aplicación va creada como “Suscripciones”</b>, no como Checkout Pro: Checkout Pro solo
+          hace cobros únicos. El token sirve para las dos APIs, pero el producto define qué eventos
+          te deja activar aquí. Si no te aparece <b>Suscripciones</b> en la lista de eventos, la
+          aplicación quedó mal y hay que rehacerla.
+          <div style={{ marginTop: 6 }}>
+            Y ojo: las suscripciones domiciliadas de Mercado Pago <b>solo funcionan con tarjeta</b>.
+            Quien pague por OXXO o transferencia va por link de pago — por eso el CRM maneja los dos.
+          </div>
         </div>
       </div>
     </div>
