@@ -58,7 +58,7 @@ const DERIVA_MAX_S = 5 * 60;   // 5 min: frena reenvíos de un aviso capturado
  *   "id:<data.id>;request-id:<x-request-id>;ts:<ts>;"
  * El header `x-signature` trae `ts=...,v1=<hex>`.
  */
-function firmaValida(headers: Headers, dataId: string, secreto: string): { ok: boolean; motivo?: string } {
+function firmaValida(headers: Headers, dataId: string | null, secreto: string): { ok: boolean; motivo?: string } {
   const sig = headers.get('x-signature') || '';
   const reqId = headers.get('x-request-id') || '';
   if (!sig) return { ok: false, motivo: 'sin x-signature' };
@@ -72,9 +72,19 @@ function firmaValida(headers: Headers, dataId: string, secreto: string): { ok: b
   const deriva = Math.abs(Math.floor(Date.now() / 1000) - Number(ts));
   if (!Number.isFinite(deriva) || deriva > DERIVA_MAX_S) return { ok: false, motivo: 'timestamp fuera de rango' };
 
+  // La plantilla de MP es `id:<data.id>;request-id:<x-request-id>;ts:<ts>;` y la
+  // regla es que EL VALOR QUE NO VENGA se quita de la plantilla, no se rellena.
+  //
+  // Esto no era teoría: el aviso `?id=…&topic=merchant_order` del formato viejo
+  // NO trae `data.id`, y aquí se estaba usando el `id` del query como si lo
+  // fuera. La firma calculada llevaba un segmento que MP nunca firmó, así que
+  // todos esos avisos se rechazaban con 401 — y peor, encendían la alarma de
+  // "Mercado Pago está avisando y lo estamos rechazando", que es la que avisa de
+  // pagos perdidos. Una alarma que suena sola deja de leerse.
+  //
   // MP especifica el id en MINÚSCULAS cuando es alfanumérico. Con id numérico da
   // igual, pero los de suscripción no lo son y la firma fallaría.
-  const manifiesto = `id:${String(dataId).toLowerCase()};request-id:${reqId};ts:${ts};`;
+  const manifiesto = (dataId ? `id:${String(dataId).toLowerCase()};` : '') + `request-id:${reqId};ts:${ts};`;
   const esperado = createHmac('sha256', secreto).update(manifiesto).digest('hex');
   const a = Buffer.from(esperado, 'utf8'), b = Buffer.from(v1, 'utf8');
   // Comparación de tiempo constante: si no, la latencia filtra byte por byte.
@@ -90,7 +100,12 @@ export const POST: APIRoute = async ({ request, url }) => {
   try { body = await request.json(); } catch { body = null; }
 
   const topic = String(url.searchParams.get('type') || url.searchParams.get('topic') || body?.type || body?.topic || '');
-  const dataId = String(url.searchParams.get('data.id') || url.searchParams.get('id') || body?.data?.id || body?.id || '');
+  // Se separan a propósito: para la FIRMA solo cuenta `data.id` (es lo único que
+  // MP mete en la plantilla), mientras que para saber DE QUÉ habla el aviso
+  // sirve igual el `id` suelto del formato viejo. Confundirlos hacía que se
+  // firmara un manifiesto que MP nunca firmó.
+  const firmaId = url.searchParams.get('data.id') || body?.data?.id || null;
+  const dataId = String(firmaId || url.searchParams.get('id') || body?.id || '');
   const accion = String(body?.action || '');
   const reqId = request.headers.get('x-request-id') || '';
   if (!dataId) return ok({ ignorado: 'aviso sin id' });
@@ -113,7 +128,7 @@ export const POST: APIRoute = async ({ request, url }) => {
   // URL puede marcar suscripciones como pagadas.
   let firmado = false;
   if (cx.webhookSecret) {
-    const v = firmaValida(request.headers, dataId, cx.webhookSecret);
+    const v = firmaValida(request.headers, firmaId ? String(firmaId) : null, cx.webhookSecret);
     if (!v.ok) {
       // El rechazo se ANOTA. Antes solo se devolvía 401: MP reintentaba unas
       // horas, se rendía, y el pago nunca se registraba sin que nadie se
@@ -127,7 +142,13 @@ export const POST: APIRoute = async ({ request, url }) => {
         pasarela: 'mercadopago', evento_id: `rechazo:${topic}:${dataId}`, topic,
         procesado_at: new Date().toISOString(), resultado: 'rechazado',
         detalle: 'firma inválida: ' + v.motivo + ' (modo ' + cx.modo + ')',
-        payload: { query: Object.fromEntries(url.searchParams), request_id: reqId },
+        // Se guarda la firma que MANDÓ MP (es un MAC, no un secreto): sin ella,
+        // diagnosticar el siguiente rechazo obliga a esperar a que se repita.
+        payload: {
+          query: Object.fromEntries(url.searchParams), request_id: reqId,
+          x_signature: request.headers.get('x-signature') || null,
+          traia_data_id: !!firmaId,
+        },
       });
       return no('firma inválida: ' + v.motivo);
     }

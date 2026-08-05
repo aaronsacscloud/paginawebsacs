@@ -25,9 +25,14 @@ export const GET: APIRoute = async () => {
   // solo "hay token", sino "los avisos están entrando".
   const desde = new Date(Date.now() - 7 * 86400000).toISOString();
   const { data: ev } = await supabase.from('crm_webhook_eventos')
-    .select('resultado, detalle, recibido_at').eq('pasarela', 'mercadopago')
+    .select('resultado, detalle, topic, recibido_at').eq('pasarela', 'mercadopago')
     .gte('recibido_at', desde).order('recibido_at', { ascending: false }).limit(200);
   const rechazados = (ev || []).filter(e => e.resultado === 'rechazado');
+  // El letrero rojo solo se enciende con avisos que MUEVEN DINERO. Mercado Pago
+  // manda también `merchant_order` y otros que aquí se ignoran: si esos
+  // encendieran la alarma, estaría prendida siempre y nadie la volvería a leer
+  // el día que sí signifique pagos perdiéndose.
+  const rechazadosDinero = rechazados.filter(e => /^(payment|subscription_)/.test(String(e.topic || '')));
   const modoActual = data.modo === 'produccion' ? 'produccion' : 'prueba';
 
   // Nunca se devuelve el token: solo si existe y su cola, para reconocerlo.
@@ -46,9 +51,10 @@ export const GET: APIRoute = async () => {
     secreto_heredado: !(modoActual === 'produccion' ? data.webhook_secret_produccion : data.webhook_secret_prueba) && !!data.webhook_secret,
     webhook: {
       recibidos_7d: (ev || []).length,
-      rechazados_7d: rechazados.length,
+      rechazados_7d: rechazadosDinero.length,
+      rechazados_otros_7d: rechazados.length - rechazadosDinero.length,
       ultimo_at: ev?.[0]?.recibido_at || null,
-      ultimo_rechazo: rechazados[0] ? { at: rechazados[0].recibido_at, motivo: rechazados[0].detalle } : null,
+      ultimo_rechazo: rechazadosDinero[0] ? { at: rechazadosDinero[0].recibido_at, motivo: rechazadosDinero[0].detalle } : null,
     },
     token_visible: enmascarar(descifrar(data.modo === 'produccion' ? data.token_produccion : data.token_prueba)),
     mp_nickname: data.mp_nickname, mp_email: data.mp_email, mp_user_id: data.mp_user_id,
