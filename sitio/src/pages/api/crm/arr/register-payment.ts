@@ -142,6 +142,13 @@ export const POST: APIRoute = async ({ request }) => {
       // Fase 4 — atribución RR: solo si hay partner (body o sub), para no romper el
       // insert mientras la columna partner_id no exista.
       ...((body.partner_id || sub.partner_id) ? { partner_id: body.partner_id || sub.partner_id } : {}),
+      // Pasarela: se guarda el BRUTO en `monto` y la comisión aparte. Registrar el
+      // neto haría que el ARR reportara de menos justo por lo que cobra la
+      // pasarela. Condicional para no romper si el SQL aún no corrió.
+      ...(body.pasarela ? { pasarela: body.pasarela } : {}),
+      ...(body.mp_payment_id ? { mp_payment_id: String(body.mp_payment_id) } : {}),
+      ...(body.comision != null ? { comision: r2(Number(body.comision) || 0) } : {}),
+      ...(body.neto != null ? { neto: r2(Number(body.neto) || 0) } : {}),
     }).select('id, numero_acuse').single();
     if (pe) throw new Error('payment: ' + pe.message);
 

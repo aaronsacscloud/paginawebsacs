@@ -66,6 +66,10 @@ const REVENUE_PUBLIC = new Set([
   '/api/revenue/request-reactivation',
   '/api/revenue/payment-comprobante',
   '/api/revenue/stripe-webhook',
+  // Mercado Pago avisa desde sus servidores, sin sesión. Su candado es la firma
+  // HMAC que valida el propio handler (y el índice único que impide duplicar el
+  // pago si el aviso llega dos veces), no esta lista.
+  '/api/revenue/mercadopago-webhook',
   '/api/revenue/create-payment-link',
 ]);
 

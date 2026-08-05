@@ -8,6 +8,7 @@ import PipelineTab from './crm/PipelineTab';
 import DealsTab from './crm/DealsTab';
 import AutomationsTab from './crm/AutomationsTab';
 import SchedulingTab from './crm/SchedulingTab';
+import PasarelaMercadoPago from './crm/PasarelaMercadoPago';
 import ContactProfile from './crm/ContactProfile';
 import DashboardTab from './crm/DashboardTab';
 import PartnersTab from './crm/PartnersTab';
@@ -37,7 +38,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades';
+type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros';
 
 // SVG icons (Squarespace-style, clean strokes)
 const ICONS: Record<string, string> = {
@@ -103,6 +104,7 @@ const NAV_SECTIONS = [
     items: [
       { id: 'agenda' as Tab, label: 'Agenda', icon: 'agenda' },
       { id: 'pipelines' as Tab, label: 'Pipelines', icon: 'pipeline' },
+      { id: 'cobros' as Tab, label: 'Cobro con Mercado Pago', icon: 'pagos' },
       { id: 'config' as Tab, label: 'Configuración', icon: 'config' },
     ],
   },
@@ -394,6 +396,8 @@ export default function CrmDashboard() {
           <DealsTab onConfig={() => goConfigPipeline('oportunidad')} initialDealId={initialDealId} onDealConsumed={() => setInitialDealId(null)} />
         ) : tab === 'suscripciones' ? (
           <ErrorBoundary><SubscriptionsTab /></ErrorBoundary>
+        ) : tab === 'cobros' ? (
+          <ErrorBoundary><div style={{ padding: '4px 12px 28px' }}><PasarelaMercadoPago /></div></ErrorBoundary>
         ) : tab === 'agenda' ? (
           <SchedulingTab />
         ) : tab === 'automations' ? (
