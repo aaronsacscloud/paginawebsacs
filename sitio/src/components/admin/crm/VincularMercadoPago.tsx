@@ -42,6 +42,29 @@ export default function VincularMercadoPago() {
     if (j?.error) alert(j.error); else cargar();
   }
 
+  /* Los empates de 100 puntos —correo idéntico— no merecen un clic cada uno.
+     Solo entran esos: bajar el umbral aquí convertiría un atajo en una forma
+     rápida de mandar los cobros de un cliente a la suscripción de otro. */
+  const seguras = (d?.data || []).filter((m: any) => !m.vinculada && m.candidatos?.[0]?.puntos >= 100
+    && (m.candidatos.length === 1 || m.candidatos[1].puntos < 100));
+
+  async function vincularLote() {
+    const lista = seguras.map((m: any) => ({
+      subscription_id: m.candidatos[0].subscription_id, mp_preapproval_id: m.mp_id,
+      payer_email: m.correo_pagador, cliente: m.candidatos[0].cliente,
+    }));
+    if (!confirm(`¿Vincular ${lista.length} suscripciones de un golpe?\n\n${lista.map((l: any) => '· ' + l.cliente).join('\n')}\n\nSolo van las que empatan por correo idéntico.`)) return;
+    setTrabajando('lote');
+    const j = await fetch('/api/crm/arr/mp-suscripciones', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lote: lista }),
+    }).then(r => r.json()).catch(() => ({ error: 'No se pudo' }));
+    setTrabajando(null);
+    if (j?.error) alert(j.error);
+    else if (j.fallidas?.length) alert(`Se vincularon ${j.vinculadas}.\n\nNo se pudo con ${j.fallidas.length}:\n${j.fallidas.map((f: any) => '· ' + (f.cliente || f.mp_preapproval_id) + ': ' + f.error).join('\n')}`);
+    cargar();
+  }
+
   async function crear(mp: any, companyId: string, nombrePlan: string) {
     if (!companyId) { alert('Elige el cliente.'); return; }
     const cliente = (d?.empresas || []).find((e: any) => e.id === companyId)?.nombre || 'ese cliente';
@@ -74,6 +97,12 @@ export default function VincularMercadoPago() {
             Vincúlalas con su cliente del CRM y sus cobros se registrarán solos, sin capturar nada.
           </div>
         </div>
+        {seguras.length > 1 && (
+          <button style={{ ...S.btnSmall, minHeight: 38, borderRadius: 50, background: '#4B7BE5', color: '#fff', border: 'none', fontWeight: 700 }}
+            disabled={trabajando === 'lote'} onClick={vincularLote}>
+            {trabajando === 'lote' ? '…' : `Vincular ${seguras.length} seguras`}
+          </button>
+        )}
         <button style={{ ...S.btnSmall, minHeight: 38 }} disabled={cargando} onClick={() => { const t = !todas; setTodas(t); cargar(t); }}>
           {todas ? 'Solo las activas' : 'Ver también canceladas'}
         </button>

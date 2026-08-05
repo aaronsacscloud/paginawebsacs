@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { S } from './SubscriptionsTab';
 import VincularMercadoPago from './VincularMercadoPago';
+import CobrosSinIdentificar from './CobrosSinIdentificar';
 
 /* ═══ Conectar Mercado Pago ═══
  * La cuenta PROPIA que recibe el dinero — no el OAuth de marketplace que usa
@@ -174,6 +175,7 @@ export default function PasarelaMercadoPago() {
       </div>
 
       {e?.conectada && <VincularMercadoPago />}
+      {e?.conectada && <CobrosSinIdentificar />}
 
       {/* Lo que hay que pegar en Mercado Pago */}
       <div style={card}>

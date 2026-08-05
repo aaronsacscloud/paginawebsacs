@@ -42,6 +42,8 @@ import { conexionActiva, obtenerPago, mpFetch } from '../../../lib/pagos/mercado
 // registrarse. La segunda es que así hay UNA sola implementación del cobro —
 // duplicar la lógica aquí sería peor que el bug.
 import { POST as registrarPago } from '../crm/arr/register-payment';
+import { anotarCobro, avisarCobroFallido } from '../../../lib/pagos/cobros-mp';
+import { registrarOportunidad } from '../../../lib/crm/oportunidades';
 
 export const prerender = false;
 // A MP siempre se le contesta 200 salvo que la firma falle: un 500 lo hace
@@ -180,13 +182,37 @@ export const POST: APIRoute = async ({ request, url }) => {
       // el timeline; cambiar el estado en el CRM automáticamente es decisión de
       // negocio y no se toma sola.
       const pre = await mpFetch('/preapproval/' + dataId, {}, cx);
-      const { data: sv } = await supabase.from('subscriptions').select('id, company_id, nombre_plan').eq('mp_preapproval_id', String(dataId)).maybeSingle();
+      const { data: sv } = await supabase.from('subscriptions').select('id, company_id, nombre_plan, precio, ciclo, estado').eq('mp_preapproval_id', String(dataId)).maybeSingle();
       if (sv) {
         await supabase.from('activities').insert({
           tipo: 'sistema', company_id: sv.company_id, automatico: true,
           titulo: `Mercado Pago: la suscripción ${sv.nombre_plan} cambió a "${pre?.status}"`,
           metadata: { audit: 'mp_preapproval', subscription_id: sv.id, estado_mp: pre?.status },
         }).select().maybeSingle();
+
+        // Dejó de cobrarse allá y aquí sigue contando en el ARR. El estado del
+        // CRM NO se cambia solo —cancelar una suscripción es decisión de
+        // negocio, y una cancelación en MP a veces es un cambio de tarjeta—
+        // pero sí se abre la alerta: mientras nadie decida, el ARR está
+        // reportando dinero que ya no va a entrar.
+        if ((pre?.status === 'cancelled' || pre?.status === 'paused')
+            && (sv.estado === 'activa' || sv.estado === 'pendiente_pago')) {
+          const cancelada = pre.status === 'cancelled';
+          const mensual = sv.ciclo === 'anual' ? Number(sv.precio || 0) / 12 : Number(sv.precio || 0);
+          await registrarOportunidad({
+            company_id: sv.company_id, tipo: cancelada ? 'mp_cancelada' : 'mp_pausada',
+            titulo: cancelada
+              ? `Canceló su suscripción en Mercado Pago (${sv.nombre_plan})`
+              : `Pausó su suscripción en Mercado Pago (${sv.nombre_plan})`,
+            detalle: `En el CRM sigue como "${sv.estado}" y sumando $${Math.round(mensual).toLocaleString('es-MX')} al mes de ARR. Mientras nadie decida, ese ingreso está reportado y no va a entrar.`,
+            accion: cancelada
+              ? 'Llámale antes de darla de baja: muchas cancelaciones en MP son un cambio de tarjeta, no una salida.'
+              : 'Confirma si es una pausa acordada; si lo es, pásala a pausada aquí para que deje de contar.',
+            peso: cancelada ? 95 : 78,
+            valor: Math.round(mensual * 12),
+            metadata: { subscription_id: sv.id, estado_mp: pre?.status },
+          });
+        }
       }
       await cerrar('ok', 'preapproval ' + dataId + ' → ' + pre?.status);
       return ok({ ok: true, preapproval: pre?.status });
@@ -196,7 +222,53 @@ export const POST: APIRoute = async ({ request, url }) => {
 
     const pago = await obtenerPago(pagoIdReal, cx);
     const estado = String(pago?.status || '');
-    if (estado !== 'approved') { await cerrar('ignorado', 'estado ' + estado); return ok({ ignorado: estado }); }
+
+    // ── El cobro NO pasó ──
+    // Antes esto se ignoraba en una línea. Es la señal más temprana que existe
+    // de que un cliente que paga se va a caer este mes: llega el día del rebote,
+    // no cuando alguien nota que no entró el dinero.
+    if (estado !== 'approved') {
+      // Solo interesan los rechazos definitivos: `in_process`/`pending` todavía
+      // pueden aprobarse y avisar de ellos sería una falsa alarma diaria.
+      if (estado === 'rejected' || estado === 'cancelled') {
+        let sub: any = null;
+        if (subPorPreapproval) {
+          const { data } = await supabase.from('subscriptions').select('id, company_id, nombre_plan, precio').eq('id', subPorPreapproval).maybeSingle();
+          sub = data;
+        } else {
+          const mr = String(pago?.external_reference || '').match(/^sub:([0-9a-f-]{36})/i);
+          if (mr) {
+            const { data } = await supabase.from('subscriptions').select('id, company_id, nombre_plan, precio').eq('id', mr[1]).maybeSingle();
+            sub = data;
+          }
+        }
+        const nuevo = await anotarCobro({
+          mp_payment_id: String(pago.id), preapproval_id: subPorPreapproval ? String(dataId) : null,
+          subscription_id: sub?.id || null, company_id: sub?.company_id || null,
+          payer_email: pago?.payer?.email || null, monto: Number(pago?.transaction_amount || 0),
+          moneda: pago?.currency_id, estado, detalle_estado: pago?.status_detail || null,
+          metodo: pago?.payment_method_id || null,
+          fecha: pago?.date_created || pago?.date_last_updated || null,
+          external_reference: pago?.external_reference || null,
+        });
+        // Solo se avisa la PRIMERA vez que se ve este cobro: MP reintenta el
+        // aviso y tres alertas del mismo rebote no son tres problemas.
+        if (nuevo && sub?.company_id) {
+          const { count } = await supabase.from('crm_cobros_mp')
+            .select('id', { count: 'exact', head: true })
+            .eq('subscription_id', sub.id).eq('estado', 'rejected')
+            .gte('fecha', new Date(Date.now() - 45 * 86400000).toISOString());
+          await avisarCobroFallido({
+            company_id: sub.company_id, subscription_id: sub.id, nombre_plan: sub.nombre_plan,
+            monto: Number(pago?.transaction_amount || 0), detalle_estado: pago?.status_detail || null,
+            payer_email: pago?.payer?.email || null, intentos: count || 1,
+          });
+        }
+        await cerrar('ok', 'cobro rechazado (' + (pago?.status_detail || estado) + ')' + (sub ? ' · sub ' + sub.id : ' · sin identificar'));
+        return ok({ rechazado: true, motivo: pago?.status_detail || estado });
+      }
+      await cerrar('ignorado', 'estado ' + estado); return ok({ ignorado: estado });
+    }
 
     // ── 2ª defensa: el pago ──
     const { data: yaEsta } = await supabase.from('payments').select('id').eq('mp_payment_id', String(pago.id)).maybeSingle();
@@ -210,8 +282,19 @@ export const POST: APIRoute = async ({ request, url }) => {
     // Dos vías para saber de quién es el pago: la referencia (links creados por
     // el CRM) o el vínculo con la suscripción de MP (las que ya existían allá).
     if (!m && !subPorPreapproval) {
-      await cerrar('ok', 'pago sin referencia de suscripción — queda por identificar');
-      return ok({ registrado: false, motivo: 'sin external_reference reconocible' });
+      // Alguien PAGÓ y no sabemos a quién acreditárselo. Antes se contestaba 200
+      // y ahí moría: el dinero entraba a la cuenta de MP y el cliente seguía
+      // apareciendo como moroso. Ahora cae en la bandeja para que una persona lo
+      // asigne, que es lo único que puede resolverlo.
+      await anotarCobro({
+        mp_payment_id: String(pago.id), payer_email: pago?.payer?.email || null,
+        monto: Number(pago?.transaction_amount || 0), moneda: pago?.currency_id,
+        estado: 'approved', metodo: pago?.payment_method_id || null,
+        fecha: pago?.date_approved || pago?.date_created || null,
+        external_reference: pago?.external_reference || null,
+      });
+      await cerrar('ok', 'pago sin referencia de suscripción — a la bandeja de sin identificar');
+      return ok({ registrado: false, motivo: 'sin external_reference reconocible', a_bandeja: true });
     }
 
     const subId = subPorPreapproval || m![1];
@@ -247,6 +330,38 @@ export const POST: APIRoute = async ({ request, url }) => {
     // CRM (importado, o generado a mano en MP) la sub se quedaba sin bandera y
     // luego nadie sabe por dónde le cobra a ese cliente.
     try { await supabase.from('subscriptions').update({ pasarela_cobro: 'mercadopago' }).eq('id', subId).is('pasarela_cobro', null); } catch { /* no bloquea */ }
+
+    // ── Desfase de precio ──
+    // Lo que MP cobra y lo que la suscripción dice pueden separarse: se subió el
+    // plan y nadie lo actualizó allá, o al revés. El ARR reportado queda falso y
+    // no lo delata nada. Se anota en la suscripción para poder señalarlo donde
+    // se ve, y en el timeline para saber desde cuándo.
+    try {
+      const { data: sub } = await supabase.from('subscriptions')
+        .select('id, company_id, nombre_plan, precio, mp_monto_cobrado').eq('id', subId).maybeSingle();
+      if (sub) {
+        const esperado = Number(sub.precio || 0);
+        // Un peso de diferencia es redondeo, no un desfase: se tolera 1%.
+        const desfasado = esperado > 0 && Math.abs(bruto - esperado) > Math.max(1, esperado * 0.01);
+        await supabase.from('subscriptions').update({
+          mp_monto_cobrado: bruto,
+          mp_desfase_at: desfasado ? new Date().toISOString() : null,
+        }).eq('id', subId);
+        // Solo se avisa cuando CAMBIA, no en cada cobro mensual del mismo desfase.
+        if (desfasado && Number(sub.mp_monto_cobrado || 0) !== bruto) {
+          const dif = bruto - esperado;
+          await supabase.from('activities').insert({
+            tipo: 'sistema', company_id: sub.company_id, automatico: true,
+            titulo: `⚠️ Mercado Pago cobró $${bruto.toLocaleString('es-MX')} y la suscripción dice $${esperado.toLocaleString('es-MX')} (${dif > 0 ? '+' : ''}$${dif.toLocaleString('es-MX')})`,
+            descripcion: dif < 0
+              ? 'Se está cobrando de MENOS: el ARR reportado está inflado por esa diferencia.'
+              : 'Se está cobrando de MÁS de lo que dice el CRM. Revisa cuál de los dos está mal antes de que el cliente lo note.',
+            metadata: { audit: 'mp_desfase_precio', subscription_id: subId, cobrado: bruto, esperado },
+          }).select().maybeSingle();
+        }
+      }
+    } catch (e: any) { console.error('[mp-webhook] desfase de precio:', e?.message || e); }
+
     await cerrar('ok', `pago ${pago.id} → sub ${subId}`);
     return ok({ registrado: true, payment_id: pago.id });
   } catch (e: any) {

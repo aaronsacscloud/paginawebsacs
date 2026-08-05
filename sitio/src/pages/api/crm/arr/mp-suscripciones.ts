@@ -41,6 +41,10 @@ export const GET: APIRoute = async ({ url }) => {
   if (!cx) return json({ error: 'Conecta tu cuenta de Mercado Pago primero.' }, 400);
 
   const soloActivas = url.searchParams.get('todas') !== '1';
+  // Buscar desde el detalle de UN cliente: mismo motor, pero solo sus
+  // suscripciones como candidatas. Sin esto había que salir a la pantalla
+  // general y encontrarlo entre 38.
+  const soloEmpresa = url.searchParams.get('company_id') || null;
   let mpSubs: any[] = [];
   try {
     const r = await mpFetch('/preapproval/search?limit=100&sort=date_created:desc', {}, cx);
@@ -83,7 +87,7 @@ export const GET: APIRoute = async ({ url }) => {
     // Puntaje: el correo manda porque es identidad; el monto y el plan solo
     // acompañan. Nunca se vincula solo, se propone.
     const candidatos = (subs || [])
-      .filter((s: any) => !s.mp_preapproval_id)
+      .filter((s: any) => !s.mp_preapproval_id && (!soloEmpresa || s.company_id === soloEmpresa))
       .map((s: any) => {
         const ct: any = Array.isArray(s.contacts) ? s.contacts[0] : s.contacts;
         let pts = 0; const porque: string[] = [];
@@ -100,9 +104,12 @@ export const GET: APIRoute = async ({ url }) => {
         const co: any = Array.isArray(s.companies) ? s.companies[0] : s.companies;
         return { subscription_id: s.id, cliente: co?.sacs_account || co?.nombre, nombre_plan: s.nombre_plan, ciclo: s.ciclo, precio: Number(s.precio), correo: ct?.email || null, puntos: pts, porque };
       })
-      .filter(c => c.puntos >= 40)
+      // Desde el detalle de un cliente el umbral baja: ya acotaste tú a quién
+      // pertenece, así que un parecido flojo sigue siendo útil. En la lista
+      // general 40 filtra el ruido de 130 suscripciones.
+      .filter(c => c.puntos >= (soloEmpresa ? 10 : 40))
       .sort((a, b) => b.puntos - a.puntos)
-      .slice(0, 4);
+      .slice(0, soloEmpresa ? 8 : 4);
 
     const coL: any = ligada && (Array.isArray(ligada.companies) ? ligada.companies[0] : ligada.companies);
     // Empresa sugerida para dar de alta la que falta: primero por el correo del
@@ -125,7 +132,9 @@ export const GET: APIRoute = async ({ url }) => {
       vinculada: ligada ? { subscription_id: ligada.id, cliente: coL?.sacs_account || coL?.nombre, nombre_plan: ligada.nombre_plan } : null,
       candidatos,
     };
-  }).sort((a, b) => (a.vinculada ? 1 : 0) - (b.vinculada ? 1 : 0) || (b.candidatos[0]?.puntos || 0) - (a.candidatos[0]?.puntos || 0));
+  }).sort((a, b) => (a.vinculada ? 1 : 0) - (b.vinculada ? 1 : 0) || (b.candidatos[0]?.puntos || 0) - (a.candidatos[0]?.puntos || 0))
+    // Buscando desde un cliente, lo que no tiene nada que ver con él es ruido.
+    .filter((s: any) => !soloEmpresa || (!s.vinculada && (s.candidatos.length || s.empresa_sugerida?.company_id === soloEmpresa)));
 
   return json({
     modo: cx.modo, total: salida.length,
@@ -154,8 +163,41 @@ async function yaOcupada(mpId: string, exceptoSubId?: string) {
   return co?.sacs_account || co?.nombre || 'otro cliente';
 }
 
+/** Vincula una sola. Devuelve el error en texto en vez de lanzar, para que el
+ *  lote pueda reportar cuáles sí y cuáles no en vez de morirse en la primera. */
+async function vincularUna(subscriptionId: string, mpId: string, payerEmail?: string | null): Promise<string | null> {
+  const ocupada = await yaOcupada(mpId, subscriptionId);
+  if (ocupada) return `ya está vinculada a ${ocupada}`;
+  const { data, error } = await supabase.from('subscriptions').update({
+    mp_preapproval_id: mpId, mp_payer_email: payerEmail || null,
+    pasarela_cobro: 'mercadopago', updated_at: new Date().toISOString(),
+  }).eq('id', subscriptionId).select('id, company_id, nombre_plan').single();
+  if (error) return error.message;
+  await supabase.from('activities').insert({
+    tipo: 'sistema', company_id: data.company_id, automatico: true,
+    titulo: `Suscripción vinculada a Mercado Pago (${data.nombre_plan}) · ${mpId}`,
+    metadata: { audit: 'mp_vinculo', subscription_id: data.id, mp_preapproval_id: mpId },
+  }).select().maybeSingle();
+  return null;
+}
+
 export const POST: APIRoute = async ({ request }) => {
   const b = await request.json().catch(() => ({} as any));
+
+  // ── Vincular varias de un golpe ──
+  // Los empates de 100 puntos (correo idéntico) no merecen un clic cada uno. Se
+  // hacen EN SERIE a propósito: en paralelo, dos que apunten a la misma
+  // suscripción de MP pasarían las dos el candado de "ya ocupada".
+  if (Array.isArray(b?.lote)) {
+    const hechas: string[] = []; const fallidas: any[] = [];
+    for (const it of b.lote.slice(0, 50)) {
+      if (!it?.subscription_id || !it?.mp_preapproval_id) { fallidas.push({ ...it, error: 'faltan datos' }); continue; }
+      const err = await vincularUna(String(it.subscription_id), String(it.mp_preapproval_id), it.payer_email);
+      if (err) fallidas.push({ mp_preapproval_id: it.mp_preapproval_id, cliente: it.cliente, error: err });
+      else hechas.push(String(it.mp_preapproval_id));
+    }
+    return json({ ok: true, vinculadas: hechas.length, fallidas });
+  }
 
   // ── Alta de la suscripción que se cobra en MP y el CRM no tenía ──
   if (b?.crear) {
@@ -240,20 +282,7 @@ export const POST: APIRoute = async ({ request }) => {
   const mpId = String(b?.mp_preapproval_id || '').trim();
   if (!mpId) return json({ error: 'mp_preapproval_id requerido' }, 400);
 
-  const ocupada = await yaOcupada(mpId, b.subscription_id);
-  if (ocupada) return json({ error: `Esa suscripción de Mercado Pago ya está vinculada a ${ocupada}. Desvincúlala de allá primero.` }, 409);
-
-  const { data, error } = await supabase.from('subscriptions').update({
-    mp_preapproval_id: mpId, mp_payer_email: b?.payer_email || null,
-    pasarela_cobro: 'mercadopago', updated_at: new Date().toISOString(),
-  }).eq('id', b.subscription_id).select('id, company_id, nombre_plan').single();
-  if (error) return json({ error: error.message }, 500);
-
-  await supabase.from('activities').insert({
-    tipo: 'sistema', company_id: data.company_id, automatico: true,
-    titulo: `Suscripción vinculada a Mercado Pago (${data.nombre_plan}) · ${mpId}`,
-    metadata: { audit: 'mp_vinculo', subscription_id: data.id, mp_preapproval_id: mpId },
-  }).select().maybeSingle();
-
+  const err = await vincularUna(String(b.subscription_id), mpId, b?.payer_email);
+  if (err) return json({ error: err.startsWith('ya está vinculada') ? `Esa suscripción de Mercado Pago ${err}. Desvincúlala de allá primero.` : err }, err.startsWith('ya está') ? 409 : 500);
   return json({ ok: true, vinculada: true });
 };

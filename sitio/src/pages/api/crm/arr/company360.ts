@@ -29,6 +29,19 @@ export const GET: APIRoute = async ({ url }) => {
     fetchContacts(),
     supabase.from('quotes').select('id, numero, total, estado, created_at').eq('company_id', id).not('estado', 'in', '(deleted,plantilla)').order('created_at', { ascending: false }).limit(30),
   ]);
+
+  // Cobros de Mercado Pago que NO terminaron en un pago: los rechazos. Van
+  // aparte de `payments` a propósito — un cobro rebotado no es un pago, y
+  // mezclarlos inflaría el historial de lo que este cliente ha pagado.
+  // La tabla puede no existir todavía en un entorno sin migrar: si falla, el
+  // 360 completo no se cae por una sección secundaria.
+  let cobrosMp: any[] = [];
+  try {
+    const { data } = await supabase.from('crm_cobros_mp')
+      .select('id, mp_payment_id, monto, estado, motivo, detalle_estado, metodo, fecha, payer_email, subscription_id, resolucion')
+      .eq('company_id', id).order('fecha', { ascending: false }).limit(50);
+    cobrosMp = data || [];
+  } catch { /* sección secundaria */ }
   if (co.error) return new Response(JSON.stringify({ error: co.error.message }), { status: 404 });
 
   // Bookings del cliente (por sus contactos: contact_id o email)
@@ -93,6 +106,7 @@ export const GET: APIRoute = async ({ url }) => {
     resumen,
     subscriptions: subs.data || [],
     payments: pays.data || [],
+    cobros_mp: cobrosMp,
     activities: acts.data || [],
     quotes: quotes.data || [],
     bookings,

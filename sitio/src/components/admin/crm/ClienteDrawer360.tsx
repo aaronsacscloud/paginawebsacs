@@ -1143,6 +1143,52 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
     reload();
   }
 
+  // ── Domiciliar: que se le cobre solo cada mes ──
+  // Distinto del link de arriba: aquel cobra UN periodo, este deja el cargo
+  // recurrente autorizado. Creada desde aquí lleva la referencia `sub:<id>`
+  // desde el primer cobro, así que nunca hay que venir a vincularla a mano.
+  async function domiciliarMP(s: any) {
+    const correo = principal?.email || '';
+    const dest = prompt(`¿Con qué correo paga en Mercado Pago?\n\nSe le va a cobrar ${money(s.precio)} cada ${s.ciclo === 'anual' ? 'año' : 'mes'} en automático, en cuanto él lo autorice.`, correo);
+    if (!dest) return;
+    setCobrando(s.id);
+    const j = await fetch('/api/crm/arr/mp-domiciliar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription_id: s.id, payer_email: dest }),
+    }).then(r => r.json()).catch(() => ({ error: 'No se pudo crear la domiciliación' }));
+    setCobrando(null);
+    if (j?.error) { alert(j.error); return; }
+    const wa = String(principal?.whatsapp || '').replace(/\D/g, '');
+    const texto = `Hola 👋 Para que ya no tengas que pagar manual cada ${s.ciclo === 'anual' ? 'año' : 'mes'}, aquí puedes autorizar el cargo automático de tu ${s.nombre_plan} (${money(j.monto)}):\n${j.link}`;
+    try { navigator.clipboard?.writeText(j.link); } catch { /* el link igual se abre abajo */ }
+    window.open((wa ? 'https://wa.me/' + wa : 'https://wa.me/') + '?text=' + encodeURIComponent(texto), '_blank', 'noopener');
+    flash(j.reusado ? 'Link de domiciliación vigente reusado · copiado' : 'Domiciliación creada · falta que él la autorice');
+    reload();
+  }
+
+  // ── Buscar su suscripción en Mercado Pago ──
+  // Antes había que salir a la pantalla general y encontrarlo entre 38.
+  const [buscandoMP, setBuscandoMP] = useState(false);
+  const [mpHallado, setMpHallado] = useState<any[] | null>(null);
+  async function buscarEnMP() {
+    setBuscandoMP(true);
+    const j = await fetch('/api/crm/arr/mp-suscripciones?company_id=' + companyId)
+      .then(r => r.json()).catch(() => ({ error: 'No se pudo consultar Mercado Pago' }));
+    setBuscandoMP(false);
+    if (j?.error) { alert(j.error); return; }
+    setMpHallado(j.data || []);
+  }
+  async function vincularMP(mp: any, cand: any) {
+    if (!confirm(`¿Vincular "${mp.concepto}" (${money(mp.monto)}) con ${cand.nombre_plan}?\n\nSus cobros se van a registrar solos en esa suscripción.`)) return;
+    const j = await fetch('/api/crm/arr/mp-suscripciones', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription_id: cand.subscription_id, mp_preapproval_id: mp.mp_id, payer_email: mp.correo_pagador }),
+    }).then(r => r.json()).catch(() => ({ error: 'No se pudo vincular' }));
+    if (j?.error) { alert(j.error); return; }
+    flash('Vinculada con Mercado Pago');
+    setMpHallado(null); reload();
+  }
+
   useEffect(() => { fetch('/api/crm/arr/plans').then(r => r.json()).then(j => setPlanes(j.data || j.plans || [])).catch(() => {}); }, []);
 
   // Elegir del catálogo llena nombre + precio del ciclo actual. Si el plan es "a
@@ -1193,9 +1239,43 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             <button style={{ ...D.btnG, background: '#1A8F7A', color: '#fff', borderColor: '#1A8F7A' }} title="Estado de cuenta con TODO lo próximo a pagar — 1 clic a PDF" onClick={abrirEstadoCuenta}>📄 Estado de cuenta</button>
             {principal?.whatsapp && <button style={{ ...D.btnG, color: '#1A8F7A', borderColor: '#bfe8df', fontWeight: 700 }} title="Enviar el link del estado de cuenta por WhatsApp" onClick={enviarWhatsApp}>💬 Enviar</button>}
+            <button style={{ ...D.btnG, color: '#009ee3', borderColor: '#b9e4f7', fontWeight: 700 }}
+              title="Busca si a este cliente ya le estás cobrando algo en Mercado Pago que no esté vinculado aquí"
+              disabled={buscandoMP} onClick={buscarEnMP}>{buscandoMP ? '…' : '🔎 Buscar en Mercado Pago'}</button>
             <button style={D.btnG} onClick={() => setAdding(!adding)}>{adding ? '✕ Cancelar' : '+ Agregar'}</button>
           </div>
         </div>
+
+        {mpHallado && (
+          <div style={{ background: '#FAFAF8', border: '1px solid #e6e3dc', borderRadius: 10, padding: 12, marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <b style={{ fontSize: '0.85rem' }}>Cobrándose en Mercado Pago sin vincular</b>
+              <button style={{ ...D.btnG, marginLeft: 'auto' }} onClick={() => setMpHallado(null)}>✕</button>
+            </div>
+            {mpHallado.length ? mpHallado.map((mp: any) => (
+              <div key={mp.mp_id} style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 9, padding: 10, marginBottom: 7 }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>
+                  {mp.concepto || '(sin concepto)'} · {money(mp.monto)}<span style={{ color: '#999', fontWeight: 400 }}>/{mp.ciclo === 'anual' ? 'año' : 'mes'}</span>
+                </div>
+                <div style={{ fontSize: '0.73rem', color: '#8C8C8C', marginBottom: 6 }}>
+                  {mp.correo_pagador ? 'paga ' + mp.correo_pagador + ' · ' : ''}
+                  {mp.cobros_hechos != null ? mp.cobros_hechos + ' cobros · ' : ''}
+                  {mp.proximo_cobro ? 'próximo ' + mp.proximo_cobro : 'sin próximo cobro'}
+                </div>
+                {mp.candidatos?.length ? mp.candidatos.map((c: any) => (
+                  <div key={c.subscription_id} style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 4 }}>
+                    <div style={{ flex: 1, minWidth: 180, fontSize: '0.79rem' }}>
+                      {c.nombre_plan} · {money(c.precio)}
+                      <div style={{ fontSize: '0.7rem', color: '#8C8C8C' }}>{c.porque.join(' · ') || 'sin coincidencias claras'}</div>
+                    </div>
+                    <button style={{ ...D.btnG, fontWeight: 700, background: c.puntos >= 100 ? '#4B7BE5' : '#fff', color: c.puntos >= 100 ? '#fff' : '#333', borderColor: c.puntos >= 100 ? '#4B7BE5' : '#ddd' }}
+                      onClick={() => vincularMP(mp, c)}>Vincular</button>
+                  </div>
+                )) : <div style={{ fontSize: '0.76rem', color: '#a06600' }}>Este cliente no tiene una suscripción que se le parezca. Dala de alta desde Sistema → Cobro con Mercado Pago.</div>}
+              </div>
+            )) : <div style={{ fontSize: '0.8rem', color: '#8C8C8C' }}>No encontré nada de este cliente sin vincular en Mercado Pago.</div>}
+          </div>
+        )}
 
         {adding && (
           <div style={{ background: '#fafafa', border: '1px dashed #ddd', borderRadius: 10, padding: 12, marginBottom: 12 }}>
@@ -1249,6 +1329,19 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                     <tr key={s.id}>
                       <td style={{ ...D.td, fontWeight: 700 }}>
                         {s.nombre_plan}
+                        {s.mp_preapproval_id && (
+                          <span title={'Se le cobra solo por Mercado Pago' + (s.mp_payer_email ? ' · ' + s.mp_payer_email : '')}
+                            style={{ marginLeft: 6, fontSize: '0.62rem', fontWeight: 700, padding: '1px 6px', borderRadius: 99, background: 'rgba(42,181,160,.15)', color: '#1A8F7A', whiteSpace: 'nowrap' }}>auto</span>
+                        )}
+                        {/* Desfase: lo que MP cobra dejó de coincidir con lo que
+                            dice la suscripción, así que el ARR reportado es falso.
+                            Se enseña donde se ve el precio, no en un reporte aparte. */}
+                        {s.mp_desfase_at && s.mp_monto_cobrado != null && (
+                          <div style={{ fontSize: '0.68rem', fontWeight: 600, color: '#E54B4B', whiteSpace: 'normal', marginTop: 3 }}
+                            title="Mercado Pago está cobrando un monto distinto al de esta suscripción. Mientras no coincidan, el ARR reportado está mal.">
+                            ⚠ MP cobra {money(s.mp_monto_cobrado)}, aquí dice {money(s.precio)}
+                          </div>
+                        )}
                         {s.estado === 'pausada' && s.razon_pausa && (
                           <div style={{ fontSize: '0.68rem', fontWeight: 400, color: '#a06600', whiteSpace: 'normal', marginTop: 3 }}
                             title={s.pausa_espera ? 'Esperando: ' + s.pausa_espera : undefined}>
@@ -1267,6 +1360,11 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                           <button style={{ ...D.btnG, marginRight: 4, color: '#009ee3', borderColor: '#b9e4f7', fontWeight: 700 }}
                             title="Genera el link de pago del periodo y lo deja listo para WhatsApp"
                             disabled={cobrando === s.id} onClick={() => cobrarMP(s)}>{cobrando === s.id ? '…' : '💳'}</button>
+                        )}
+                        {s.estado !== 'cancelada' && s.estado !== 'pausada' && s.ciclo !== 'vitalicia' && !s.mp_preapproval_id && (
+                          <button style={{ ...D.btnG, marginRight: 4, color: '#4B7BE5', borderColor: '#c9d8f7', fontWeight: 700 }}
+                            title="Domiciliar: crea el cargo recurrente en Mercado Pago para que se le cobre solo cada periodo"
+                            disabled={cobrando === s.id} onClick={() => domiciliarMP(s)}>🔁</button>
                         )}
                         <button style={{ ...D.btnG, marginRight: 4, color: s.estado === 'pausada' ? '#1A8F7A' : '#a06600', borderColor: s.estado === 'pausada' ? '#bfe8df' : '#f0dcb8' }}
                           title={s.estado === 'pausada' ? 'Reactivar: pide desde cuándo quedó activa y cuándo se le cobra' : 'Pausar: deja de sumar ARR; pide el motivo y qué esperamos del cliente'}
@@ -1842,6 +1940,37 @@ function TabActividad({ companyId, data, reload }: any) {
           {!(data.payments || []).length && <div style={{ color: '#999', fontSize: '0.8rem', padding: 8 }}>Sin pagos registrados.</div>}
         </div>
       </div>
+
+      {/* ── Cobros que rebotaron ──
+          Van SEPARADOS de los pagos a propósito: un cobro rechazado no es un
+          pago, y mezclarlos inflaría el historial de lo que este cliente ha
+          pagado. Pero tienen que verse aquí — es donde alguien mira antes de
+          llamarle, y llegar sabiendo que se le rebotó la tarjeta dos veces
+          cambia por completo esa llamada. */}
+      {!!(data.cobros_mp || []).filter((c: any) => c.estado !== 'approved').length && (
+        <div style={{ ...D.card, borderColor: '#f0c4bd' }}>
+          <div style={{ ...D.h, color: '#E54B4B' }}>
+            Cobros rechazados ({(data.cobros_mp || []).filter((c: any) => c.estado !== 'approved').length})
+          </div>
+          <div style={{ maxHeight: 220, overflowY: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead><tr>{['Fecha', 'Motivo', 'Monto'].map(h => <th key={h} style={D.th}>{h}</th>)}</tr></thead>
+              <tbody>
+                {(data.cobros_mp || []).filter((c: any) => c.estado !== 'approved').map((c: any) => (
+                  <tr key={c.id}>
+                    <td style={D.td}>{fmtDate(c.fecha)}</td>
+                    <td style={{ ...D.td, fontSize: '0.75rem', color: '#E54B4B', fontWeight: 600 }}>
+                      {c.motivo || c.detalle_estado || 'rechazado'}
+                      {c.metodo ? <span style={{ color: '#999', fontWeight: 400 }}> · {c.metodo}</span> : null}
+                    </td>
+                    <td style={{ ...D.td, fontWeight: 700 }}>{money(c.monto)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
       <div style={D.card}>
         <div style={D.h}>Timeline comercial</div>
         <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
