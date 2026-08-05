@@ -112,7 +112,23 @@ export const POST: APIRoute = async ({ request, url }) => {
   let firmado = false;
   if (cx.webhookSecret) {
     const v = firmaValida(request.headers, dataId, cx.webhookSecret);
-    if (!v.ok) return no('firma inválida: ' + v.motivo);
+    if (!v.ok) {
+      // El rechazo se ANOTA. Antes solo se devolvía 401: MP reintentaba unas
+      // horas, se rendía, y el pago nunca se registraba sin que nadie se
+      // enterara — la falla más cara posible, porque se ve igual que "no ha
+      // pagado". La causa típica es la clave equivocada tras cambiar de modo, y
+      // con este rastro la pantalla de conexión lo puede gritar.
+      // La llave lleva `rechazo:` para no bloquear el reproceso del mismo aviso
+      // si después llega bien firmado, y para que los reintentos no inflen la
+      // tabla (chocan contra el índice único).
+      await supabase.from('crm_webhook_eventos').insert({
+        pasarela: 'mercadopago', evento_id: `rechazo:${topic}:${dataId}`, topic,
+        procesado_at: new Date().toISOString(), resultado: 'rechazado',
+        detalle: 'firma inválida: ' + v.motivo + ' (modo ' + cx.modo + ')',
+        payload: { query: Object.fromEntries(url.searchParams), request_id: reqId },
+      });
+      return no('firma inválida: ' + v.motivo);
+    }
     firmado = true;
   }
 

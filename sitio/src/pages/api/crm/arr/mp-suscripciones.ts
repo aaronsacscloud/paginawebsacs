@@ -1,14 +1,23 @@
 // GET  /api/crm/arr/mp-suscripciones → suscripciones que ya viven en Mercado Pago,
 //      con el cliente del CRM que probablemente les corresponde.
-// POST /api/crm/arr/mp-suscripciones { subscription_id, mp_preapproval_id, payer_email? }
-//      → las vincula.  { subscription_id, desvincular:true } → las separa.
+// POST /api/crm/arr/mp-suscripciones
+//      { subscription_id, mp_preapproval_id, payer_email? }  → vincula
+//      { subscription_id, desvincular:true }                 → separa
+//      { crear:true, company_id, mp_preapproval_id, ... }    → CREA la que falta y la vincula
 //
 // Por qué NO se vinculan solas: emparejar mal manda los cobros de un cliente a la
 // suscripción de otro, y eso se descubre semanas después cuando a uno le cobran
 // de más y al otro no. Se proponen candidatos con su razón y decide una persona.
+//
+// Y por qué existe `crear`: Mercado Pago es la verdad de lo que SE ESTÁ COBRANDO,
+// el CRM solo de lo que alguien capturó. Cuando cobras algo que nunca se dio de
+// alta, no hay con qué vincular — y sin esta salida esa suscripción queda fuera
+// del ARR para siempre aunque el dinero esté entrando cada mes.
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { conexionActiva, mpFetch } from '../../../../lib/pagos/mercadopago';
+import { recalcCompany } from './subscriptions';
+import { recordDelta } from '../../../../lib/crm/mrr-ledger';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -53,6 +62,18 @@ export const GET: APIRoute = async ({ url }) => {
   const lote = pendientes.slice(0, 25);
   await Promise.all(lote.map(async p => correos.set(String(p.id), await correoDelPagador(String(p.id), cx))));
 
+  // Para poder CREAR la que falta hace falta saber a qué empresa. El correo del
+  // pagador identifica a la empresa aunque ninguna de sus suscripciones cuadre:
+  // es justo el caso de un cliente al que se le cobra algo que nunca se capturó.
+  const { data: empresas } = await supabase.from('companies')
+    .select('id, nombre, sacs_account, contacts(email)').is('archived_at', null).range(0, 1999);
+  const empresaPorCorreo = new Map<string, any>();
+  for (const e of empresas || []) {
+    for (const c of (Array.isArray(e.contacts) ? e.contacts : e.contacts ? [e.contacts] : []) as any[]) {
+      if (c?.email) empresaPorCorreo.set(norm(c.email), e);
+    }
+  }
+
   const salida = mpSubs.map((p: any) => {
     const monto = Number(p.auto_recurring?.transaction_amount || 0);
     const ciclo = p.auto_recurring?.frequency_type === 'years' || p.auto_recurring?.frequency === 12 ? 'anual' : 'mensual';
@@ -84,9 +105,19 @@ export const GET: APIRoute = async ({ url }) => {
       .slice(0, 4);
 
     const coL: any = ligada && (Array.isArray(ligada.companies) ? ligada.companies[0] : ligada.companies);
+    // Empresa sugerida para dar de alta la que falta: primero por el correo del
+    // pagador (identidad), si no la del mejor candidato (ya está emparejado).
+    const eC = correo ? empresaPorCorreo.get(norm(correo)) : null;
+    const mejor: any = candidatos[0];
+    const sug = eC
+      ? { company_id: eC.id, cliente: eC.sacs_account || eC.nombre, porque: 'es el cliente de ese correo' }
+      : (mejor ? { company_id: (subs || []).find((s: any) => s.id === mejor.subscription_id)?.company_id, cliente: mejor.cliente, porque: mejor.porque.join(', ') } : null);
+
     return {
       mp_id: p.id, estado_mp: p.status, concepto: p.reason, monto, ciclo,
       correo_pagador: correo,
+      desde: p.date_created ? String(p.date_created).slice(0, 10) : null,
+      empresa_sugerida: sug?.company_id ? sug : null,
       proximo_cobro: p.next_payment_date ? String(p.next_payment_date).slice(0, 10) : null,
       cobros_hechos: p.summarized?.charged_quantity ?? null,
       total_cobrado: p.summarized?.charged_amount ?? null,
@@ -100,12 +131,103 @@ export const GET: APIRoute = async ({ url }) => {
     modo: cx.modo, total: salida.length,
     vinculadas: salida.filter(s => s.vinculada).length,
     sin_vincular: salida.filter(s => !s.vinculada).length,
+    // Lo que se está cobrando en MP y el CRM no tiene: es ARR real que no se
+    // está reportando.
+    arr_no_capturado: Math.round(salida
+      .filter(s => !s.vinculada && s.estado_mp === 'authorized')
+      .reduce((a, s) => a + (s.ciclo === 'anual' ? s.monto : s.monto * 12), 0)),
+    empresas: (empresas || []).map((e: any) => ({ id: e.id, nombre: e.sacs_account || e.nombre }))
+      .sort((a, b) => String(a.nombre).localeCompare(String(b.nombre))),
     data: salida,
   });
 };
 
+/** ¿Esa suscripción de MP ya está ligada a otra? Una sola no puede alimentar a
+ *  dos clientes: sus cobros se registrarían en el que se ligó primero y el otro
+ *  seguiría apareciendo como moroso. */
+async function yaOcupada(mpId: string, exceptoSubId?: string) {
+  let q = supabase.from('subscriptions').select('id, companies(nombre, sacs_account)').eq('mp_preapproval_id', mpId);
+  if (exceptoSubId) q = q.neq('id', exceptoSubId);
+  const { data } = await q.maybeSingle();
+  if (!data) return null;
+  const co: any = Array.isArray(data.companies) ? data.companies[0] : data.companies;
+  return co?.sacs_account || co?.nombre || 'otro cliente';
+}
+
 export const POST: APIRoute = async ({ request }) => {
   const b = await request.json().catch(() => ({} as any));
+
+  // ── Alta de la suscripción que se cobra en MP y el CRM no tenía ──
+  if (b?.crear) {
+    const mpId = String(b?.mp_preapproval_id || '').trim();
+    if (!mpId || !b?.company_id) return json({ error: 'mp_preapproval_id y company_id requeridos' }, 400);
+    const ocupada = await yaOcupada(mpId);
+    if (ocupada) return json({ error: `Esa suscripción de Mercado Pago ya está vinculada a ${ocupada}.` }, 409);
+
+    // Los datos NO se toman del navegador: se releen de Mercado Pago. El front
+    // solo dice CUÁL y DE QUIÉN es — el monto y el ciclo los pone quien cobra,
+    // que es la única fuente que no puede estar desactualizada.
+    let pre: any;
+    let cx;
+    try {
+      cx = await conexionActiva();
+      if (!cx) return json({ error: 'Conecta tu cuenta de Mercado Pago primero.' }, 400);
+      pre = await mpFetch('/preapproval/' + mpId, {}, cx);
+    } catch (e: any) { return json({ error: 'No se pudo leer esa suscripción en Mercado Pago: ' + (e?.message || e) }, 502); }
+    if (!pre?.id) return json({ error: 'Mercado Pago no encontró esa suscripción.' }, 404);
+
+    const precio = Number(pre.auto_recurring?.transaction_amount || 0);
+    if (!(precio > 0)) return json({ error: 'Esa suscripción de Mercado Pago no tiene monto: no se puede dar de alta.' }, 400);
+    const ciclo = pre.auto_recurring?.frequency_type === 'years' || pre.auto_recurring?.frequency === 12 ? 'anual' : 'mensual';
+    const mrr = ciclo === 'anual' ? precio / 12 : precio;
+    // El estado sale del de MP: `authorized` es dinero entrando hoy, y ponerla
+    // en cualquier otro estado dejaría fuera del ARR algo que sí se está cobrando.
+    const estado = pre.status === 'authorized' ? 'activa' : pre.status === 'paused' ? 'pausada' : 'programada';
+
+    const correo = b?.payer_email || await correoDelPagador(mpId, cx);
+    // Se liga al contacto de ese correo si ya existe en el cliente; si no, el
+    // correo queda en la suscripción y no se inventa un contacto.
+    let contactId: string | null = null;
+    if (correo) {
+      const { data: ct } = await supabase.from('contacts').select('id')
+        .eq('company_id', b.company_id).ilike('email', correo).limit(1).maybeSingle();
+      contactId = ct?.id || null;
+    }
+
+    const cobros = pre.summarized?.charged_quantity ?? null;
+    const cobrado = pre.summarized?.charged_amount ?? null;
+    const { data: sub, error } = await supabase.from('subscriptions').insert({
+      company_id: b.company_id, contact_id: contactId,
+      nombre_plan: String(b?.nombre_plan || pre.reason || 'Suscripción Mercado Pago').slice(0, 160),
+      ciclo, estado, precio,
+      mrr: Math.round(mrr * 100) / 100, arr: Math.round(mrr * 12 * 100) / 100,
+      monto_proximo: precio,
+      fecha_inicio: pre.date_created ? String(pre.date_created).slice(0, 10) : null,
+      proxima_factura: pre.next_payment_date ? String(pre.next_payment_date).slice(0, 10) : null,
+      pasarela_cobro: 'mercadopago', mp_preapproval_id: mpId, mp_payer_email: correo || null,
+      // El historial se deja ESCRITO pero no se cargan pagos falsos: importar
+      // los cobros viejos es otra cosa (conciliación), y unos contadores
+      // inflados aquí no cuadrarían nunca contra la tabla de pagos.
+      notas: `Alta desde Mercado Pago (${mpId}). Ya se venía cobrando allá${pre.date_created ? ' desde ' + String(pre.date_created).slice(0, 10) : ''}`
+        + (cobros ? `: ${cobros} cobros por $${Number(cobrado || 0).toLocaleString('es-MX')}` : '') + '.',
+    }).select('id, company_id, nombre_plan, estado, mrr, precio, ciclo').single();
+    if (error) return json({ error: error.message }, 500);
+
+    await recalcCompany(sub.company_id);
+    await recordDelta({
+      subscription_id: sub.id, company_id: sub.company_id,
+      mrr_anterior: 0, mrr_nuevo: sub.estado === 'activa' || sub.estado === 'pendiente_pago' ? Number(sub.mrr || 0) : 0,
+      motivo: 'alta desde Mercado Pago (ya se cobraba)', actor: 'admin',
+    });
+    await supabase.from('activities').insert({
+      tipo: 'sistema', company_id: sub.company_id, automatico: true,
+      titulo: `Suscripción dada de alta desde Mercado Pago: ${sub.nombre_plan} · $${precio.toLocaleString('es-MX')}/${ciclo === 'anual' ? 'año' : 'mes'}`,
+      metadata: { audit: 'mp_alta', subscription_id: sub.id, mp_preapproval_id: mpId },
+    }).select().maybeSingle();
+
+    return json({ ok: true, creada: true, subscription_id: sub.id, estado: sub.estado, precio, ciclo });
+  }
+
   if (!b?.subscription_id) return json({ error: 'subscription_id requerido' }, 400);
 
   if (b.desvincular) {
@@ -118,15 +240,8 @@ export const POST: APIRoute = async ({ request }) => {
   const mpId = String(b?.mp_preapproval_id || '').trim();
   if (!mpId) return json({ error: 'mp_preapproval_id requerido' }, 400);
 
-  // Una suscripción de MP no puede alimentar a dos clientes: si no, sus cobros
-  // se registrarían en el que se ligó primero y el otro seguiría apareciendo
-  // como moroso.
-  const { data: ocupada } = await supabase.from('subscriptions')
-    .select('id, companies(nombre, sacs_account)').eq('mp_preapproval_id', mpId).neq('id', b.subscription_id).maybeSingle();
-  if (ocupada) {
-    const co: any = Array.isArray(ocupada.companies) ? ocupada.companies[0] : ocupada.companies;
-    return json({ error: `Esa suscripción de Mercado Pago ya está vinculada a ${co?.sacs_account || co?.nombre}. Desvincúlala de allá primero.` }, 409);
-  }
+  const ocupada = await yaOcupada(mpId, b.subscription_id);
+  if (ocupada) return json({ error: `Esa suscripción de Mercado Pago ya está vinculada a ${ocupada}. Desvincúlala de allá primero.` }, 409);
 
   const { data, error } = await supabase.from('subscriptions').update({
     mp_preapproval_id: mpId, mp_payer_email: b?.payer_email || null,

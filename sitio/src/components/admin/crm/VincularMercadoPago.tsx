@@ -20,6 +20,8 @@ export default function VincularMercadoPago() {
   const [cargando, setCargando] = useState(false);
   const [todas, setTodas] = useState(false);
   const [trabajando, setTrabajando] = useState<string | null>(null);
+  // Alta abierta: { mp_id, company_id, nombre_plan }
+  const [alta, setAlta] = useState<any>(null);
 
   async function cargar(t = todas) {
     setCargando(true);
@@ -38,6 +40,19 @@ export default function VincularMercadoPago() {
     }).then(r => r.json()).catch(() => ({ error: 'No se pudo vincular' }));
     setTrabajando(null);
     if (j?.error) alert(j.error); else cargar();
+  }
+
+  async function crear(mp: any, companyId: string, nombrePlan: string) {
+    if (!companyId) { alert('Elige el cliente.'); return; }
+    const cliente = (d?.empresas || []).find((e: any) => e.id === companyId)?.nombre || 'ese cliente';
+    if (!confirm(`¿Dar de alta "${nombrePlan}" (${money(mp.monto)}/${mp.ciclo === 'anual' ? 'año' : 'mes'}) en ${cliente}?\n\nSe crea la suscripción con los datos de Mercado Pago y queda vinculada: sus cobros se van a registrar solos.`)) return;
+    setTrabajando(mp.mp_id);
+    const j = await fetch('/api/crm/arr/mp-suscripciones', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ crear: true, company_id: companyId, mp_preapproval_id: mp.mp_id, nombre_plan: nombrePlan, payer_email: mp.correo_pagador }),
+    }).then(r => r.json()).catch(() => ({ error: 'No se pudo dar de alta' }));
+    setTrabajando(null);
+    if (j?.error) alert(j.error); else { setAlta(null); cargar(); }
   }
 
   async function desvincular(mp: any) {
@@ -71,6 +86,12 @@ export default function VincularMercadoPago() {
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12, fontSize: '0.78rem' }}>
           <span style={{ padding: '4px 11px', borderRadius: 99, background: '#e6f6f2', color: '#1A8F7A', fontWeight: 700 }}>{d.vinculadas} vinculadas</span>
           <span style={{ padding: '4px 11px', borderRadius: 99, background: '#fff5e6', color: '#a06600', fontWeight: 700 }}>{d.sin_vincular} sin vincular</span>
+          {d.arr_no_capturado > 0 && (
+            <span style={{ padding: '4px 11px', borderRadius: 99, background: 'rgba(229,75,75,.12)', color: '#E54B4B', fontWeight: 700 }}
+              title="Anualizado de lo que Mercado Pago está cobrando hoy sin vincular a ninguna suscripción del CRM. Parte puede estar capturada y solo faltarle el vínculo; el resto no está en el ARR.">
+              {money(d.arr_no_capturado)}/año cobrándose sin vincular
+            </span>
+          )}
           {d.modo === 'prueba' && (
             <span style={{ padding: '4px 11px', borderRadius: 99, background: 'rgba(232,168,56,.18)', color: '#a06600', fontWeight: 700 }}>
               ⚠️ estás en MODO PRUEBA: aquí no salen tus suscripciones reales
@@ -130,8 +151,54 @@ export default function VincularMercadoPago() {
                   </>
                 ) : (
                   <div style={{ fontSize: '0.78rem', color: '#a06600' }}>
-                    No encontré un cliente que se le parezca. Puede ser una suscripción de alguien que no está
-                    en el CRM, o que su monto y plan no coincidan con ninguno.
+                    No encontré una suscripción que se le parezca. Lo más probable es que se esté cobrando
+                    algo que nunca se dio de alta en el CRM.
+                  </div>
+                )}
+
+                {/* Cobrar algo que el CRM no tiene es ARR real que no se está
+                    reportando. Sin esta salida, la única opción era vincularlo a
+                    una suscripción equivocada o dejarlo fuera para siempre. */}
+                {alta?.mp_id === mp.mp_id ? (
+                  <div style={{ marginTop: 10, background: '#FAFAF8', border: '1px solid #ececec', borderRadius: 10, padding: 12 }}>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#8C8C8C', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>
+                      Dar de alta en el CRM
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                      <label style={{ flex: 1, minWidth: 200, fontSize: '0.75rem', color: '#4A4A4A' }}>Cliente
+                        <select value={alta.company_id} onChange={e => setAlta({ ...alta, company_id: e.target.value })}
+                          style={{ width: '100%', marginTop: 3, padding: '8px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: '0.85rem', background: '#fff' }}>
+                          <option value="">— elige el cliente —</option>
+                          {(d?.empresas || []).map((e: any) => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+                        </select>
+                      </label>
+                      <label style={{ flex: 1, minWidth: 200, fontSize: '0.75rem', color: '#4A4A4A' }}>Nombre del plan
+                        <input value={alta.nombre_plan} onChange={e => setAlta({ ...alta, nombre_plan: e.target.value })}
+                          style={{ width: '100%', marginTop: 3, padding: '8px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: '0.85rem' }} />
+                      </label>
+                      <button style={{ ...S.btnSmall, minHeight: 38, background: '#4B7BE5', color: '#fff', border: 'none', fontWeight: 700, borderRadius: 50, padding: '10px 20px' }}
+                        disabled={trabajando === mp.mp_id} onClick={() => crear(mp, alta.company_id, alta.nombre_plan)}>
+                        {trabajando === mp.mp_id ? '…' : 'Dar de alta y vincular'}
+                      </button>
+                      <button style={{ ...S.btnSmall, minHeight: 38, borderRadius: 50 }} onClick={() => setAlta(null)}>Cancelar</button>
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: '#8C8C8C', marginTop: 8 }}>
+                      El monto ({money(mp.monto)}/{mp.ciclo === 'anual' ? 'año' : 'mes'}), el ciclo y la próxima
+                      factura se toman de Mercado Pago, no de esta pantalla.
+                      {mp.desde ? ` Se viene cobrando desde ${mp.desde}.` : ''}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ marginTop: 8 }}>
+                    <button style={{ ...S.btnSmall, minHeight: 34, borderRadius: 50 }}
+                      onClick={() => setAlta({ mp_id: mp.mp_id, company_id: mp.empresa_sugerida?.company_id || '', nombre_plan: mp.concepto || '' })}>
+                      {mp.candidatos?.length ? 'No es ninguna · dar de alta en el CRM' : 'Dar de alta en el CRM'}
+                    </button>
+                    {mp.empresa_sugerida && (
+                      <span style={{ fontSize: '0.73rem', color: '#8C8C8C', marginLeft: 8 }}>
+                        sugerido: <b style={{ color: '#4A4A4A' }}>{mp.empresa_sugerida.cliente}</b> — {mp.empresa_sugerida.porque}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>

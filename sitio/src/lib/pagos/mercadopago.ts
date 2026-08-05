@@ -27,10 +27,17 @@ export async function conexionActiva(): Promise<Conexion | null> {
   const modo = data.modo === 'produccion' ? 'produccion' : 'prueba';
   const guardado = modo === 'produccion' ? data.token_produccion : data.token_prueba;
   if (!guardado) return null;
+  // El secreto de firma es POR ENTORNO: la clave de prueba no valida los avisos
+  // de producción. Guardarlo en una sola columna hacía que al cambiar de modo se
+  // siguiera validando con la clave anterior y CADA pago real se rechazara con
+  // 401 sin dejar rastro. `webhook_secret` se conserva como respaldo para las
+  // instalaciones que solo tenían esa.
+  const secretoGuardado = (modo === 'produccion' ? data.webhook_secret_produccion : data.webhook_secret_prueba)
+    ?? data.webhook_secret;
   let token: string | null, webhookSecret: string | null;
   try {
     token = descifrar(guardado);
-    webhookSecret = descifrar(data.webhook_secret);
+    webhookSecret = descifrar(secretoGuardado);
   } catch (e: any) {
     throw new Error('Hay credenciales de Mercado Pago guardadas pero no se pudieron descifrar (¿cambió SECRETS_ENCRYPTION_KEY?): ' + (e?.message || e));
   }

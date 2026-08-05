@@ -82,9 +82,15 @@ export default function PasarelaMercadoPago() {
             </div>
             <div>
               <div style={lbl}>Firma del webhook</div>
-              <span style={{ fontSize: '0.8rem', color: e.tiene_webhook_secret ? '#1A8F7A' : '#b93333', fontWeight: 700 }}>
-                {e.tiene_webhook_secret ? 'configurada' : 'FALTA'}
+              <span style={{ fontSize: '0.8rem', color: e.tiene_webhook_secret && !e.secreto_heredado ? '#1A8F7A' : '#E54B4B', fontWeight: 700 }}>
+                {!e.tiene_webhook_secret ? 'FALTA' : e.secreto_heredado ? 'la del otro modo' : 'configurada'}
               </span>
+              {e.webhook && (
+                <div style={{ fontSize: '0.72rem', color: e.webhook.rechazados_7d ? '#E54B4B' : '#8C8C8C', marginTop: 2 }}>
+                  {e.webhook.recibidos_7d} avisos en 7 días
+                  {e.webhook.rechazados_7d ? ` · ${e.webhook.rechazados_7d} RECHAZADOS` : ''}
+                </div>
+              )}
             </div>
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
               <button style={{ ...S.btnSmall, minHeight: 38 }} disabled={busy || !e.tiene_prueba} onClick={() => cambiarModo('prueba')}>Usar prueba</button>
@@ -93,6 +99,37 @@ export default function PasarelaMercadoPago() {
           </div>
         )}
       </div>
+
+      {/* La falla más cara de toda la integración: la clave de firma es POR
+          ENTORNO, así que al pasar a producción con la de prueba Mercado Pago
+          sigue avisando y el CRM rechaza cada aviso con 401. Se ve idéntico a
+          "el cliente no ha pagado" — se le reclama a quien ya pagó y no se cobra
+          el mes de quien sí debe. Por eso grita en vez de quedarse callado. */}
+      {e?.conectada && e?.webhook?.rechazados_7d > 0 && (
+        <div style={{ ...card, background: '#fdecea', borderColor: '#f0c4bd' }}>
+          <div style={{ fontWeight: 800, color: '#E54B4B', fontSize: '0.85rem' }}>
+            Mercado Pago está avisando y el CRM está rechazando sus avisos ({e.webhook.rechazados_7d} en 7 días)
+          </div>
+          <div style={{ fontSize: '0.8rem', color: '#7a3a33', marginTop: 4 }}>
+            {e.webhook.ultimo_rechazo?.motivo || 'firma inválida'}. Esos pagos NO se están registrando: los
+            clientes aparecen como que no pagaron aunque sí. Casi siempre es que la clave secreta guardada es
+            la del otro modo — en Mercado Pago cada entorno tiene la suya. Copia la de <b>{e.modo}</b> y
+            vuelve a guardar la conexión abajo.
+          </div>
+        </div>
+      )}
+
+      {e?.conectada && e?.secreto_heredado && !e?.webhook?.rechazados_7d && (
+        <div style={{ ...card, background: '#fff7e8', borderColor: '#f0dcb8' }}>
+          <div style={{ fontWeight: 800, color: '#a06600', fontSize: '0.85rem' }}>
+            La clave del webhook de {e.modo} nunca se capturó
+          </div>
+          <div style={{ fontSize: '0.8rem', color: '#7a5a1a', marginTop: 4 }}>
+            Se está usando la que guardaste antes. Si es de otro entorno, Mercado Pago va a avisar de cada
+            pago y el CRM lo va a rechazar sin registrarlo. Captura la clave de <b>{e.modo}</b> abajo.
+          </div>
+        </div>
+      )}
 
       {!e?.tiene_webhook_secret && e?.conectada && (
         <div style={{ ...card, background: '#fdecea', borderColor: '#f0c4bd' }}>

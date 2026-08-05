@@ -17,13 +17,39 @@ const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, h
 export const GET: APIRoute = async () => {
   const { data } = await supabase.from('crm_pasarelas').select('*').eq('pasarela', 'mercadopago').maybeSingle();
   if (!data) return json({ conectada: false });
+
+  // ── Salud del webhook ──
+  // Un aviso rechazado por firma se ve EXACTAMENTE igual que "el cliente no ha
+  // pagado", y esa confusión cuesta dinero: se le reclama a quien ya pagó y no
+  // se cobra el mes de quien sí debe. Por eso el estado de la conexión no es
+  // solo "hay token", sino "los avisos están entrando".
+  const desde = new Date(Date.now() - 7 * 86400000).toISOString();
+  const { data: ev } = await supabase.from('crm_webhook_eventos')
+    .select('resultado, detalle, recibido_at').eq('pasarela', 'mercadopago')
+    .gte('recibido_at', desde).order('recibido_at', { ascending: false }).limit(200);
+  const rechazados = (ev || []).filter(e => e.resultado === 'rechazado');
+  const modoActual = data.modo === 'produccion' ? 'produccion' : 'prueba';
+
   // Nunca se devuelve el token: solo si existe y su cola, para reconocerlo.
   return json({
     conectada: !!(data.token_prueba || data.token_produccion),
     modo: data.modo,
     tiene_prueba: !!data.token_prueba,
     tiene_produccion: !!data.token_produccion,
-    tiene_webhook_secret: !!data.webhook_secret,
+    // El secreto es por entorno. Lo que importa no es "hay alguno", sino "hay
+    // uno para el modo en el que estás cobrando".
+    tiene_webhook_secret: !!((modoActual === 'produccion' ? data.webhook_secret_produccion : data.webhook_secret_prueba) ?? data.webhook_secret),
+    secreto_prueba: !!(data.webhook_secret_prueba ?? data.webhook_secret),
+    secreto_produccion: !!(data.webhook_secret_produccion ?? data.webhook_secret),
+    // Verdadero cuando el secreto en uso NUNCA se capturó para este modo, sino
+    // que se heredó del otro: es el caso que rechaza todos los cobros.
+    secreto_heredado: !(modoActual === 'produccion' ? data.webhook_secret_produccion : data.webhook_secret_prueba) && !!data.webhook_secret,
+    webhook: {
+      recibidos_7d: (ev || []).length,
+      rechazados_7d: rechazados.length,
+      ultimo_at: ev?.[0]?.recibido_at || null,
+      ultimo_rechazo: rechazados[0] ? { at: rechazados[0].recibido_at, motivo: rechazados[0].detalle } : null,
+    },
     token_visible: enmascarar(descifrar(data.modo === 'produccion' ? data.token_produccion : data.token_prueba)),
     mp_nickname: data.mp_nickname, mp_email: data.mp_email, mp_user_id: data.mp_user_id,
     token_es_produccion: data.token_es_produccion,
@@ -61,7 +87,13 @@ export const POST: APIRoute = async ({ request }) => {
     updated_at: new Date().toISOString(),
   };
   fila[modo === 'produccion' ? 'token_produccion' : 'token_prueba'] = cifrar(token);
-  if (b?.webhook_secret) fila.webhook_secret = cifrar(String(b.webhook_secret).trim());
+  // El secreto se guarda EN LA COLUMNA DE SU MODO. Mercado Pago da una clave de
+  // firma distinta por entorno, y compartir columna hacía que capturar la de
+  // prueba pisara la de producción (y viceversa): a partir de ahí todos los
+  // avisos reales se rechazaban con 401 y ningún pago se registraba.
+  if (b?.webhook_secret) {
+    fila[modo === 'produccion' ? 'webhook_secret_produccion' : 'webhook_secret_prueba'] = cifrar(String(b.webhook_secret).trim());
+  }
 
   const { error } = await supabase.from('crm_pasarelas').upsert(fila, { onConflict: 'pasarela' });
   if (error) return json({ error: error.message }, 500);
