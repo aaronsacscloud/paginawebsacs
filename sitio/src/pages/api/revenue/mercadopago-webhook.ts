@@ -242,6 +242,20 @@ export const POST: APIRoute = async ({ request, url }) => {
     }
 
     const pago = await obtenerPago(pagoIdReal, cx);
+
+    // ── ¿Este pago es un COBRO nuestro, o un gasto propio? ──
+    // La misma cuenta de Mercado Pago se usa para cobrarle a los clientes y para
+    // pagar cosas: en julio, 26 de 40 movimientos eran gastos (Oxxo, Petco,
+    // anuncios, mensualidades de Mercado Crédito). Sin este filtro, el súper del
+    // sábado terminaría en la bandeja de "pagos por identificar" y la volvería
+    // inservible — que es justo como se muere una bandeja de pendientes.
+    const { data: px } = await supabase.from('crm_pasarelas').select('mp_user_id').eq('pasarela', 'mercadopago').maybeSingle();
+    const nuestro = String(px?.mp_user_id || '');
+    if (nuestro && pago?.collector_id != null && String(pago.collector_id) !== nuestro) {
+      await cerrar('ignorado', 'no es un cobro nuestro (cobrador ' + pago.collector_id + ')');
+      return ok({ ignorado: 'movimiento propio, no un cobro a un cliente' });
+    }
+
     const estado = String(pago?.status || '');
 
     // ── El cobro NO pasó ──
