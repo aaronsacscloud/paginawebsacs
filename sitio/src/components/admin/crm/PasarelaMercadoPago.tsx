@@ -142,6 +142,11 @@ export default function PasarelaMercadoPago() {
           En tu aplicación → <b>Webhooks</b>, pega esta URL y activa el evento <b>Pagos</b>:
         </div>
         <code style={{ display: 'block', padding: '10px 12px', background: '#f6f8fa', borderRadius: 8, fontSize: '0.78rem', wordBreak: 'break-all' }}>{urlWebhook}</code>
+        <div style={{ fontSize: '0.76rem', color: '#a06600', marginTop: 8, background: '#fff8ec', border: '1px solid #f5e2b8', borderRadius: 8, padding: '8px 10px' }}>
+          Usa la sección <b>Webhooks</b>, no <b>IPN</b>. El IPN es el formato viejo de Mercado Pago y
+          la protección contra falsificación del CRM lo rechaza antes de procesarlo — los avisos se
+          perderían sin dejar rastro.
+        </div>
       </div>
     </div>
   );

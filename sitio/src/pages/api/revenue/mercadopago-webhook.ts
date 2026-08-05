@@ -11,6 +11,21 @@
 //   2ª defensa · el pago: índice único en payments.mp_payment_id. Aunque el
 //      evento llegue por otra vía (conciliación), el mismo pago no se duplica.
 //
+// ═══ Configúralo como WEBHOOK, no como IPN ═══
+//
+// Astro trae protección CSRF (`checkOrigin`) y rechaza los POST con
+// `content-type` de formulario que vengan de otro origen — ANTES de llegar aquí,
+// así que ni siquiera se puede registrar el intento. Comprobado en producción:
+//
+//   Content-Type: application/json         → pasa (incluye el id en el query)
+//   Content-Type: x-www-form-urlencoded    → "Cross-site POST form submissions are forbidden"
+//   sin content-type                       → 403
+//
+// El formato ACTUAL de Mercado Pago (panel → Webhooks) manda JSON y funciona. El
+// IPN clásico manda formulario y quedaría bloqueado. No se apaga `checkOrigin`
+// para acomodarlo: ese guardia protege los formularios de todo el CRM, y el IPN
+// es un formato que MP ya no recomienda. La pantalla de conexión lo dice.
+//
 // ═══ Sobre "responder y luego procesar" ═══
 //
 // La integración de tiendas responde 200 y procesa después. Aquí NO se puede: en
