@@ -1,0 +1,144 @@
+import { useEffect, useState } from 'react';
+import { S } from './SubscriptionsTab';
+
+/* ═══ Vincular las suscripciones que ya viven en Mercado Pago ═══
+ * NO se vinculan solas: emparejar mal manda los cobros de un cliente a la
+ * suscripción de otro, y eso se descubre semanas después cuando a uno le cobran
+ * de más y al otro no. Se proponen candidatos con su razón y decide una persona. */
+
+const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
+const card = { background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: 16, marginBottom: 10 } as const;
+const ESTADO: Record<string, { t: string; bg: string; c: string }> = {
+  authorized: { t: 'cobrando', bg: 'rgba(42,181,160,.15)', c: '#1A8F7A' },
+  paused: { t: 'pausada', bg: 'rgba(232,168,56,.18)', c: '#a06600' },
+  pending: { t: 'pendiente', bg: 'rgba(232,168,56,.18)', c: '#a06600' },
+  cancelled: { t: 'cancelada', bg: '#f3f4f6', c: '#9aa0a8' },
+};
+
+export default function VincularMercadoPago() {
+  const [d, setD] = useState<any>(null);
+  const [cargando, setCargando] = useState(false);
+  const [todas, setTodas] = useState(false);
+  const [trabajando, setTrabajando] = useState<string | null>(null);
+
+  async function cargar(t = todas) {
+    setCargando(true);
+    try { setD(await fetch('/api/crm/arr/mp-suscripciones' + (t ? '?todas=1' : '')).then(r => r.json())); }
+    catch { setD({ error: 'No se pudo cargar' }); }
+    setCargando(false);
+  }
+  useEffect(() => { cargar(false); }, []);
+
+  async function vincular(mp: any, cand: any) {
+    if (!confirm(`¿Vincular la suscripción de Mercado Pago "${mp.concepto}" (${money(mp.monto)}) con ${cand.cliente}?\n\nA partir de ahora sus cobros se van a registrar solos en esa suscripción.`)) return;
+    setTrabajando(mp.mp_id);
+    const j = await fetch('/api/crm/arr/mp-suscripciones', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription_id: cand.subscription_id, mp_preapproval_id: mp.mp_id, payer_email: mp.correo_pagador }),
+    }).then(r => r.json()).catch(() => ({ error: 'No se pudo vincular' }));
+    setTrabajando(null);
+    if (j?.error) alert(j.error); else cargar();
+  }
+
+  async function desvincular(mp: any) {
+    if (!confirm(`¿Separar esta suscripción de ${mp.vinculada.cliente}?\n\nSus próximos cobros dejarán de registrarse solos.`)) return;
+    setTrabajando(mp.mp_id);
+    await fetch('/api/crm/arr/mp-suscripciones', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription_id: mp.vinculada.subscription_id, desvincular: true }),
+    }).catch(() => { });
+    setTrabajando(null); cargar();
+  }
+
+  return (
+    <div style={{ marginTop: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+        <div style={{ flex: 1, minWidth: 240 }}>
+          <div style={{ fontSize: '1.05rem', fontWeight: 800 }}>Suscripciones que ya cobras en Mercado Pago</div>
+          <div style={{ fontSize: '0.79rem', color: '#8a8f98' }}>
+            Vincúlalas con su cliente del CRM y sus cobros se registrarán solos, sin capturar nada.
+          </div>
+        </div>
+        <button style={{ ...S.btnSmall, minHeight: 38 }} disabled={cargando} onClick={() => { const t = !todas; setTodas(t); cargar(t); }}>
+          {todas ? 'Solo las activas' : 'Ver también canceladas'}
+        </button>
+        <button style={{ ...S.btnSmall, minHeight: 38 }} disabled={cargando} onClick={() => cargar()}>{cargando ? '…' : '↻ Actualizar'}</button>
+      </div>
+
+      {d?.error && <div style={{ ...card, background: '#fdecea', borderColor: '#f0c4bd', color: '#b93333', fontWeight: 600 }}>{d.error}</div>}
+
+      {d?.data && (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12, fontSize: '0.78rem' }}>
+          <span style={{ padding: '4px 11px', borderRadius: 99, background: '#e6f6f2', color: '#1A8F7A', fontWeight: 700 }}>{d.vinculadas} vinculadas</span>
+          <span style={{ padding: '4px 11px', borderRadius: 99, background: '#fff5e6', color: '#a06600', fontWeight: 700 }}>{d.sin_vincular} sin vincular</span>
+          {d.modo === 'prueba' && (
+            <span style={{ padding: '4px 11px', borderRadius: 99, background: 'rgba(232,168,56,.18)', color: '#a06600', fontWeight: 700 }}>
+              ⚠️ estás en MODO PRUEBA: aquí no salen tus suscripciones reales
+            </span>
+          )}
+        </div>
+      )}
+
+      {cargando && !d && <div style={{ padding: 24, color: '#999' }}>Consultando Mercado Pago…</div>}
+
+      {(d?.data || []).map((mp: any) => {
+        const e = ESTADO[mp.estado_mp] || { t: mp.estado_mp, bg: '#f3f4f6', c: '#666' };
+        return (
+          <div key={mp.mp_id} style={{ ...card, borderLeft: '4px solid ' + (mp.vinculada ? '#1A8F7A' : '#E8A838') }}>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+              <div style={{ flex: 1, minWidth: 250 }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <b style={{ fontSize: '0.92rem' }}>{mp.concepto || '(sin concepto)'}</b>
+                  <span style={{ padding: '2px 9px', borderRadius: 99, fontSize: '0.68rem', fontWeight: 700, background: e.bg, color: e.c }}>{e.t}</span>
+                  <b style={{ fontSize: '0.88rem' }}>{money(mp.monto)}<span style={{ color: '#999', fontWeight: 400 }}>/{mp.ciclo === 'anual' ? 'año' : 'mes'}</span></b>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#8a8f98', marginTop: 4 }}>
+                  {mp.correo_pagador ? <>paga <b style={{ color: '#555' }}>{mp.correo_pagador}</b> · </> : null}
+                  {mp.cobros_hechos != null ? <>{mp.cobros_hechos} cobros · {money(mp.total_cobrado)} acumulado · </> : null}
+                  {mp.proximo_cobro ? <>próximo {mp.proximo_cobro}</> : 'sin próximo cobro'}
+                </div>
+              </div>
+              {mp.vinculada && (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ fontSize: '0.8rem' }}>→ <b>{mp.vinculada.cliente}</b>
+                    <div style={{ fontSize: '0.72rem', color: '#999' }}>{mp.vinculada.nombre_plan}</div>
+                  </div>
+                  <button style={{ ...S.btnSmall, minHeight: 34, color: '#b93333', borderColor: '#f0c4bd' }}
+                    disabled={trabajando === mp.mp_id} onClick={() => desvincular(mp)}>Separar</button>
+                </div>
+              )}
+            </div>
+
+            {!mp.vinculada && (
+              <div style={{ marginTop: 10, borderTop: '1px solid #f4f4f4', paddingTop: 10 }}>
+                {mp.candidatos?.length ? (
+                  <>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', marginBottom: 6 }}>¿Con cuál cliente es?</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {mp.candidatos.map((c: any) => (
+                        <div key={c.subscription_id} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', background: '#fafbfc', borderRadius: 8, padding: '8px 10px' }}>
+                          <div style={{ flex: 1, minWidth: 200 }}>
+                            <b style={{ fontSize: '0.83rem' }}>{c.cliente}</b>
+                            <span style={{ fontSize: '0.76rem', color: '#777' }}> · {c.nombre_plan} · {money(c.precio)}/{c.ciclo === 'anual' ? 'año' : 'mes'}</span>
+                            <div style={{ fontSize: '0.71rem', color: '#8a8f98' }}>{c.porque.join(' · ')}{c.correo ? ' · ' + c.correo : ''}</div>
+                          </div>
+                          <button style={{ ...S.btnSmall, minHeight: 34, background: c.puntos >= 100 ? '#1A8F7A' : '#fff', color: c.puntos >= 100 ? '#fff' : '#333', border: c.puntos >= 100 ? 'none' : '1px solid #ddd', fontWeight: 700 }}
+                            disabled={trabajando === mp.mp_id} onClick={() => vincular(mp, c)}>Vincular</button>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: '0.78rem', color: '#a06600' }}>
+                    No encontré un cliente que se le parezca. Puede ser una suscripción de alguien que no está
+                    en el CRM, o que su monto y plan no coincidan con ninguno.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}

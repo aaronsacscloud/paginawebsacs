@@ -35,7 +35,7 @@
 import type { APIRoute } from 'astro';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { supabase } from '../../../lib/supabase';
-import { conexionActiva, obtenerPago } from '../../../lib/pagos/mercadopago';
+import { conexionActiva, obtenerPago, mpFetch } from '../../../lib/pagos/mercadopago';
 // Se importa el HANDLER, no se le pega por HTTP. Dos razones, y la primera es
 // que el webhook simplemente NO FUNCIONABA: /api/crm/* está detrás del
 // middleware de sesión, así que la llamada salía con 403 y ningún pago llegaba a
@@ -137,11 +137,48 @@ export const POST: APIRoute = async ({ request, url }) => {
   };
 
   try {
-    // Por ahora solo interesan los pagos. Los avisos de suscripción domiciliada
-    // llegan en la Fase 4; se registran y se ignoran para no perderlos.
-    if (topic !== 'payment') { await cerrar('ignorado', 'topic ' + topic); return ok({ ignorado: topic }); }
+    // ── Cobro recurrente de una suscripción vinculada ──
+    // Estos NO traen `external_reference` cuando la suscripción se creó en
+    // Mercado Pago (que es el caso de las 38 que ya existían): el vínculo es el
+    // preapproval_id guardado en la sub. Se resuelve el pago real y se sigue por
+    // el mismo camino de abajo.
+    let pagoIdReal = dataId;
+    let subPorPreapproval: string | null = null;
+    if (topic === 'subscription_authorized_payment') {
+      const ap = await mpFetch('/authorized_payments/' + dataId, {}, cx);
+      const pid = ap?.payment?.id || ap?.payment_id;
+      const pre = ap?.preapproval_id;
+      if (!pid) { await cerrar('ignorado', 'cobro sin pago asociado'); return ok({ ignorado: 'sin pago' }); }
+      pagoIdReal = String(pid);
+      if (pre) {
+        const { data: sv } = await supabase.from('subscriptions').select('id').eq('mp_preapproval_id', String(pre)).maybeSingle();
+        subPorPreapproval = sv?.id || null;
+        if (!subPorPreapproval) {
+          // Se cobró en MP pero nadie la ha vinculado: no se adivina de quién es.
+          await cerrar('ok', 'cobro de una suscripción de MP sin vincular (' + pre + ')');
+          return ok({ registrado: false, motivo: 'suscripción de MP sin vincular', preapproval_id: pre });
+        }
+      }
+    } else if (topic === 'subscription_preapproval') {
+      // Cambió el estado de la suscripción allá (cancelada, pausada). Se anota en
+      // el timeline; cambiar el estado en el CRM automáticamente es decisión de
+      // negocio y no se toma sola.
+      const pre = await mpFetch('/preapproval/' + dataId, {}, cx);
+      const { data: sv } = await supabase.from('subscriptions').select('id, company_id, nombre_plan').eq('mp_preapproval_id', String(dataId)).maybeSingle();
+      if (sv) {
+        await supabase.from('activities').insert({
+          tipo: 'sistema', company_id: sv.company_id, automatico: true,
+          titulo: `Mercado Pago: la suscripción ${sv.nombre_plan} cambió a "${pre?.status}"`,
+          metadata: { audit: 'mp_preapproval', subscription_id: sv.id, estado_mp: pre?.status },
+        }).select().maybeSingle();
+      }
+      await cerrar('ok', 'preapproval ' + dataId + ' → ' + pre?.status);
+      return ok({ ok: true, preapproval: pre?.status });
+    } else if (topic !== 'payment') {
+      await cerrar('ignorado', 'topic ' + topic); return ok({ ignorado: topic });
+    }
 
-    const pago = await obtenerPago(dataId, cx);
+    const pago = await obtenerPago(pagoIdReal, cx);
     const estado = String(pago?.status || '');
     if (estado !== 'approved') { await cerrar('ignorado', 'estado ' + estado); return ok({ ignorado: estado }); }
 
@@ -154,13 +191,15 @@ export const POST: APIRoute = async ({ request, url }) => {
     // como sin identificar y alguien lo asigna (eso es la Fase 6).
     const ref = String(pago?.external_reference || '');
     const m = ref.match(/^sub:([0-9a-f-]{36})(?::(.+))?$/i);
-    if (!m) {
+    // Dos vías para saber de quién es el pago: la referencia (links creados por
+    // el CRM) o el vínculo con la suscripción de MP (las que ya existían allá).
+    if (!m && !subPorPreapproval) {
       await cerrar('ok', 'pago sin referencia de suscripción — queda por identificar');
       return ok({ registrado: false, motivo: 'sin external_reference reconocible' });
     }
 
-    const subId = m[1];
-    const periodo = m[2] || null;
+    const subId = subPorPreapproval || m![1];
+    const periodo = m ? (m[2] || null) : null;
     const bruto = Number(pago?.transaction_amount || 0);
     // El pago se guarda BRUTO y la comisión aparte: si se guardara el neto, el
     // ARR reportaría de menos justo por lo que cobra Mercado Pago.
