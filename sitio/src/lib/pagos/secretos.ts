@@ -30,16 +30,23 @@ export function cifrar(texto: string): string {
   return PREFIJO + iv.toString('hex') + ':' + c.getAuthTag().toString('hex') + ':' + enc.toString('hex');
 }
 
+/**
+ * Descifra, y si NO PUEDE lo dice.
+ *
+ * Antes devolvía null en silencio, y eso tenía una consecuencia cara: si algún
+ * día se rota SECRETS_ENCRYPTION_KEY, el CRM habría reportado "no hay cuenta de
+ * Mercado Pago conectada" y habría dejado de registrar cobros —contestándole 200
+ * a MP, así que ni siquiera reintenta— sin una sola pista de qué pasó. Un fallo
+ * de llave y un "no configurado" son cosas muy distintas y tienen que verse
+ * distintas.
+ */
 export function descifrar(valor?: string | null): string | null {
   if (!valor) return null;
-  // Tolerante con texto plano: permite migrar filas viejas sin un paso previo.
-  if (!estaCifrado(valor)) return valor;
-  try {
-    const [, ivHex, tagHex, datoHex] = valor.split(':');
-    const d = createDecipheriv(ALGO, llave(), Buffer.from(ivHex, 'hex'));
-    d.setAuthTag(Buffer.from(tagHex, 'hex'));
-    return Buffer.concat([d.update(Buffer.from(datoHex, 'hex')), d.final()]).toString('utf8');
-  } catch { return null; }
+  if (!estaCifrado(valor)) return valor;   // tolera texto plano de una migración
+  const [, ivHex, tagHex, datoHex] = valor.split(':');
+  const d = createDecipheriv(ALGO, llave(), Buffer.from(ivHex, 'hex'));
+  d.setAuthTag(Buffer.from(tagHex, 'hex'));
+  return Buffer.concat([d.update(Buffer.from(datoHex, 'hex')), d.final()]).toString('utf8');
 }
 
 /** Para enseñar en pantalla sin revelar: APP_USR-1234…9f2c */

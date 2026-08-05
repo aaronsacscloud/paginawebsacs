@@ -16,27 +16,44 @@ export type Conexion = {
   mp_nickname?: string | null;
 };
 
-/** Credencial activa según el modo guardado. Devuelve null si no hay conexión. */
+/**
+ * Credencial activa. `null` significa NO CONFIGURADA; si hay credencial pero no
+ * se puede descifrar, LANZA — son dos problemas distintos y confundirlos hacía
+ * que una llave rotada se viera como "nunca conectaste tu cuenta".
+ */
 export async function conexionActiva(): Promise<Conexion | null> {
   const { data, error } = await supabase.from('crm_pasarelas').select('*').eq('pasarela', 'mercadopago').maybeSingle();
   if (error || !data) return null;
   const modo = data.modo === 'produccion' ? 'produccion' : 'prueba';
-  const token = descifrar(modo === 'produccion' ? data.token_produccion : data.token_prueba);
+  const guardado = modo === 'produccion' ? data.token_produccion : data.token_prueba;
+  if (!guardado) return null;
+  let token: string | null, webhookSecret: string | null;
+  try {
+    token = descifrar(guardado);
+    webhookSecret = descifrar(data.webhook_secret);
+  } catch (e: any) {
+    throw new Error('Hay credenciales de Mercado Pago guardadas pero no se pudieron descifrar (¿cambió SECRETS_ENCRYPTION_KEY?): ' + (e?.message || e));
+  }
   if (!token) return null;
-  return { modo, token, webhookSecret: descifrar(data.webhook_secret), mp_nickname: data.mp_nickname };
+  return { modo, token, webhookSecret, mp_nickname: data.mp_nickname };
 }
 
 /**
- * ¿Este token es de producción?
+ * Verifica el token contra Mercado Pago y dice de quién es.
  *
- * NO se decide por lo que diga el formulario. En la integración de tiendas
- * alguien conectó con la casilla de "modo prueba" marcada usando una credencial
- * real, la pantalla decía prueba y Mercado Pago cobró de verdad — confirmado con
- * un cargo real. Aquí se pregunta a MP quién es el dueño del token y se guarda lo
- * que ÉL contesta, no lo que se tecleó.
+ * PRECISIÓN SOBRE QUÉ GARANTIZA CADA COSA, porque la diferencia importa:
+ *  · Que el token SIRVE y a qué cuenta pertenece → lo confirma MP en /users/me.
+ *  · Que es de producción o de prueba → se deduce del PREFIJO (`TEST-` vs
+ *    `APP_USR-`), que es como MP los distingue. `/users/me` no devuelve el
+ *    entorno, así que no hay forma de confirmarlo por ahí.
  *
- * El prefijo (`TEST-` vs `APP_USR-`) es una pista, no una prueba: se usa solo
- * como respaldo si MP no informa el entorno.
+ * Lo digo explícito porque el comentario anterior afirmaba que MP confirmaba el
+ * entorno, y no es cierto. Una nota que promete una garantía que el código no da
+ * es peor que no tener nota: el siguiente que lea confía en ella.
+ *
+ * Aun así, el prefijo alcanza para el candado que importa —impedir que una
+ * credencial real quede guardada como si fuera de prueba—, que es justo el
+ * accidente que en la integración de tiendas terminó en un cargo real.
  */
 export async function identificarToken(token: string): Promise<
   { ok: true; user_id: string; nickname: string | null; email: string | null; es_produccion: boolean }
