@@ -33,10 +33,13 @@ function normMetodo(m: any): string {
   const s = String(m || 'transferencia').toLowerCase().trim();
   if (s === 'card' || s.includes('tarjeta')) return 'tarjeta';
   if (s.includes('stripe')) return 'stripe';
+  // Mercado Pago caía en 'otro' y desaparecía de los reportes por método, justo
+  // cuando es la pasarela principal. Va como su propio método, igual que Stripe.
+  if (s.includes('mercado')) return 'mercadopago';
   if (s.includes('transfer') || s === 'spei') return 'transferencia';
   if (s === 'cash' || s.includes('efectivo')) return 'efectivo';
   if (s.includes('oxxo')) return 'oxxo';
-  return ['transferencia', 'tarjeta', 'stripe', 'efectivo', 'oxxo', 'otro'].includes(s) ? s : 'otro';
+  return ['transferencia', 'tarjeta', 'stripe', 'mercadopago', 'efectivo', 'oxxo', 'otro'].includes(s) ? s : 'otro';
 }
 
 export const POST: APIRoute = async ({ request }) => {

@@ -188,6 +188,10 @@ export const POST: APIRoute = async ({ request, url }) => {
     if (r.status === 409 && j?.duplicado) { await cerrar('ignorado', 'ya estaba registrado (' + j.payment_id + ')'); return ok({ duplicado: true }); }
     if (!r.ok || j?.error) { await cerrar('error', j?.error || ('HTTP ' + r.status)); return ok({ registrado: false, error: j?.error }); }
 
+    // Dejar marcado con qué pasarela se cobra: si el pago no vino del link del
+    // CRM (importado, o generado a mano en MP) la sub se quedaba sin bandera y
+    // luego nadie sabe por dónde le cobra a ese cliente.
+    try { await supabase.from('subscriptions').update({ pasarela_cobro: 'mercadopago' }).eq('id', subId).is('pasarela_cobro', null); } catch { /* no bloquea */ }
     await cerrar('ok', `pago ${pago.id} → sub ${subId}`);
     return ok({ registrado: true, payment_id: pago.id });
   } catch (e: any) {
