@@ -10,14 +10,76 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { POST as registrarPago } from './register-payment';
+import { conexionActiva, mpFetch } from '../../../../lib/pagos/mercadopago';
+import { anotarCobro } from '../../../../lib/pagos/cobros-mp';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 const norm = (s: any) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
 
+/**
+ * Rastrea en Mercado Pago los cobros que el CRM nunca vio y los mete a la
+ * bandeja. El webhook solo se entera de lo que pasa a partir de hoy; todo lo
+ * cobrado ANTES de conectar la pasarela es invisible, y ahí es justo donde
+ * están los pagos sueltos de clientes viejos.
+ */
+async function escanear(dias: number): Promise<{ revisados: number; nuevos: number; propios: number; error?: string }> {
+  let cx;
+  try { cx = await conexionActiva(); } catch (e: any) { return { revisados: 0, nuevos: 0, propios: 0, error: e?.message }; }
+  if (!cx) return { revisados: 0, nuevos: 0, propios: 0, error: 'Conecta tu cuenta de Mercado Pago primero.' };
+
+  const { data: px } = await supabase.from('crm_pasarelas').select('mp_user_id').eq('pasarela', 'mercadopago').maybeSingle();
+  const nuestro = String(px?.mp_user_id || '');
+  const desde = new Date(Date.now() - dias * 86400000).toISOString();
+
+  let pagos: any[] = [];
+  try {
+    for (let offset = 0; offset < 1000; offset += 50) {
+      const r = await mpFetch(`/v1/payments/search?sort=date_created&criteria=desc&limit=50&offset=${offset}`
+        + `&range=date_created&begin_date=${encodeURIComponent(desde)}&end_date=NOW`, {}, cx);
+      const rs = r.results || [];
+      pagos = pagos.concat(rs);
+      if (rs.length < 50 || pagos.length >= (r.paging?.total || 0)) break;
+    }
+  } catch (e: any) { return { revisados: 0, nuevos: 0, propios: 0, error: 'Mercado Pago: ' + (e?.message || e) }; }
+
+  // Solo los COBROS. La misma cuenta se usa para pagar cosas, y meter el súper
+  // en la bandeja de pendientes la vuelve inservible.
+  const cobros = pagos.filter(p => p.status === 'approved'
+    && (!nuestro || p.collector_id == null || String(p.collector_id) === nuestro));
+  const propios = pagos.length - cobros.length;
+
+  // Lo que ya está registrado o ya se anotó no se vuelve a meter.
+  const ids = cobros.map(p => String(p.id));
+  const [{ data: yaPagos }, { data: yaBitacora }] = await Promise.all([
+    supabase.from('payments').select('mp_payment_id').in('mp_payment_id', ids),
+    supabase.from('crm_cobros_mp').select('mp_payment_id').in('mp_payment_id', ids),
+  ]);
+  const vistos = new Set([...(yaPagos || []), ...(yaBitacora || [])].map((r: any) => String(r.mp_payment_id)));
+
+  let nuevos = 0;
+  for (const p of cobros) {
+    if (vistos.has(String(p.id))) continue;
+    const ok = await anotarCobro({
+      mp_payment_id: String(p.id), payer_email: p.payer?.email || null,
+      monto: Number(p.transaction_amount || 0), moneda: p.currency_id,
+      estado: 'approved', metodo: p.payment_method_id || null,
+      fecha: p.date_approved || p.date_created || null,
+      external_reference: p.external_reference || null,
+    });
+    if (ok) nuevos++;
+  }
+  return { revisados: cobros.length, nuevos, propios };
+}
+
 export const GET: APIRoute = async ({ url }) => {
   const dias = Math.min(365, Number(url.searchParams.get('dias')) || 90);
   const desde = new Date(Date.now() - dias * 86400000).toISOString();
+
+  // ?escanear=1 → primero se sale a buscar a Mercado Pago, y luego se responde
+  // la bandeja ya con lo encontrado.
+  let barrido = null;
+  if (url.searchParams.get('escanear') === '1') barrido = await escanear(dias);
 
   const [{ data: cobros }, { data: subs }] = await Promise.all([
     supabase.from('crm_cobros_mp')
@@ -54,6 +116,7 @@ export const GET: APIRoute = async ({ url }) => {
   const rechazos = (cobros || []).filter(c => c.estado === 'rejected' || c.estado === 'cancelled');
 
   return json({
+    barrido,
     sin_identificar: sinIdentificar,
     total_sin_identificar: sinIdentificar.reduce((a, c) => a + Number(c.monto || 0), 0),
     rechazos,

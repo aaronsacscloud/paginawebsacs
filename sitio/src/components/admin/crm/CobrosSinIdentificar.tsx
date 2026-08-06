@@ -50,6 +50,20 @@ export default function CobrosSinIdentificar() {
             Pagos que entraron sin saber de quién son, y cobros que rebotaron.
           </div>
         </div>
+        {/* El webhook solo se entera de lo que pasa a partir de hoy. Todo lo
+            cobrado ANTES de conectar la pasarela es invisible, y ahí están los
+            pagos sueltos de clientes viejos que nadie acreditó. */}
+        <button style={{ ...S.btnSmall, minHeight: 38, borderRadius: 50 }} disabled={cargando}
+          title="Sale a Mercado Pago por los cobros de los últimos meses que el CRM nunca vio"
+          onClick={async () => {
+            if (!confirm('¿Buscar en Mercado Pago los cobros de los últimos 12 meses que el CRM no tenga?\n\nSolo los lista para que los acredites: no registra nada solo.')) return;
+            setCargando(true);
+            const j = await fetch('/api/crm/arr/mp-cobros?escanear=1&dias=365').then(r => r.json()).catch(() => ({ error: 'No se pudo' }));
+            setCargando(false);
+            setD(j);
+            if (j?.barrido?.error) alert(j.barrido.error);
+            else if (j?.barrido) alert(`Revisé ${j.barrido.revisados} cobros.\n\nNuevos por identificar: ${j.barrido.nuevos}\nMovimientos propios ignorados: ${j.barrido.propios}`);
+          }}>{cargando ? '…' : '🔎 Buscar cobros pasados'}</button>
         <button style={{ ...S.btnSmall, minHeight: 38, borderRadius: 50 }} disabled={cargando} onClick={cargar}>{cargando ? '…' : '↻ Actualizar'}</button>
       </div>
 

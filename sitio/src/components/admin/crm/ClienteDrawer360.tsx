@@ -1166,6 +1166,54 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
     reload();
   }
 
+  // ── Traer los cobros que ya le hizo Mercado Pago ──
+  // Primero se simula: importar a ciegas 11 meses de pagos viejos es de las
+  // cosas que nadie quiere descubrir después.
+  async function importarHistorial(s: any) {
+    setCobrando(s.id);
+    const sim = await fetch('/api/crm/arr/mp-importar-historial', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription_id: s.id }),
+    }).then(r => r.json()).catch(() => ({ error: 'No se pudo consultar el historial' }));
+    setCobrando(null);
+    if (sim?.error) { alert(sim.error); return; }
+    if (!sim.por_importar) { alert(`No hay cobros nuevos que importar.\n\nEn Mercado Pago hay ${sim.cobros_en_mp} y ya están los ${sim.ya_registrados} que aplican.`); return; }
+    if (!confirm(`Traer ${sim.por_importar} cobros de Mercado Pago (${money(sim.monto_total)}), de ${sim.desde} a ${sim.hasta}.\n\nSe agregan al historial de pagos de ${s.nombre_plan}. La próxima factura NO se mueve.\n\n¿Los importo?`)) return;
+    setCobrando(s.id);
+    const j = await fetch('/api/crm/arr/mp-importar-historial', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription_id: s.id, aplicar: true }),
+    }).then(r => r.json()).catch(() => ({ error: 'No se pudo importar' }));
+    setCobrando(null);
+    if (j?.error) { alert(j.error); return; }
+    flash(`${j.importados} cobros importados · ${money(j.monto_total)}`);
+    reload();
+  }
+
+  // ── Dejar de cobrarle en Mercado Pago ──
+  async function cancelarMP(s: any) {
+    const q = prompt(`¿Qué quieres hacer con el cobro automático de "${s.nombre_plan}" en Mercado Pago?\n\n`
+      + `  cancelar  — deja de cobrarle. OJO: en Mercado Pago esto NO se deshace.\n`
+      + `  pausar    — detiene el cobro y se puede reanudar.\n`
+      + `  reanudar  — vuelve a cobrarle.\n\nEscribe una:`, 'pausar');
+    if (!q) return;
+    const accion = String(q).trim().toLowerCase();
+    if (!['cancelar', 'pausar', 'reanudar'].includes(accion)) { alert('Escribe cancelar, pausar o reanudar.'); return; }
+    // Detener el cargo y dar de baja al cliente no son lo mismo: se pregunta
+    // aparte para no borrar ARR por querer parar una tarjeta.
+    const tambien = accion === 'reanudar' ? false
+      : confirm(`¿También quieres poner la suscripción como ${accion === 'cancelar' ? 'CANCELADA' : 'PAUSADA'} en el CRM?\n\nAceptar = sí, deja de contar en el ARR.\nCancelar = solo detengo el cobro en Mercado Pago y aquí la dejo igual.`);
+    setCobrando(s.id);
+    const j = await fetch('/api/crm/arr/mp-cancelar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription_id: s.id, accion, tambien_crm: tambien }),
+    }).then(r => r.json()).catch(() => ({ error: 'No se pudo' }));
+    setCobrando(null);
+    if (j?.error) { alert(j.error); return; }
+    flash(`Mercado Pago: ${j.estado_mp}${j.crm ? ' · en el CRM: ' + j.crm : ''}`);
+    reload();
+  }
+
   // ── Buscar su suscripción en Mercado Pago ──
   // Antes había que salir a la pantalla general y encontrarlo entre 38.
   const [buscandoMP, setBuscandoMP] = useState(false);
@@ -1365,6 +1413,16 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                           <button style={{ ...D.btnG, marginRight: 4, color: '#4B7BE5', borderColor: '#c9d8f7', fontWeight: 700 }}
                             title="Domiciliar: crea el cargo recurrente en Mercado Pago para que se le cobre solo cada periodo"
                             disabled={cobrando === s.id} onClick={() => domiciliarMP(s)}>🔁</button>
+                        )}
+                        {s.mp_preapproval_id && (
+                          <>
+                            <button style={{ ...D.btnG, marginRight: 4, color: '#1A8F7A', borderColor: '#bfe8df', fontWeight: 700 }}
+                              title="Traer al historial los cobros que Mercado Pago ya le hizo antes de vincularlo"
+                              disabled={cobrando === s.id} onClick={() => importarHistorial(s)}>⬇</button>
+                            <button style={{ ...D.btnG, marginRight: 4, color: '#E54B4B', borderColor: '#f0c4bd', fontWeight: 700 }}
+                              title="Dejar de cobrarle en Mercado Pago (cancelar, pausar o reanudar)"
+                              disabled={cobrando === s.id} onClick={() => cancelarMP(s)}>⏹</button>
+                          </>
                         )}
                         <button style={{ ...D.btnG, marginRight: 4, color: s.estado === 'pausada' ? '#1A8F7A' : '#a06600', borderColor: s.estado === 'pausada' ? '#bfe8df' : '#f0dcb8' }}
                           title={s.estado === 'pausada' ? 'Reactivar: pide desde cuándo quedó activa y cuándo se le cobra' : 'Pausar: deja de sumar ARR; pide el motivo y qué esperamos del cliente'}
