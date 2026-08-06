@@ -44,6 +44,7 @@ import { conexionActiva, obtenerPago, mpFetch } from '../../../lib/pagos/mercado
 import { POST as registrarPago } from '../crm/arr/register-payment';
 import { anotarCobro, avisarCobroFallido } from '../../../lib/pagos/cobros-mp';
 import { registrarOportunidad } from '../../../lib/crm/oportunidades';
+import { notificar } from '../../../lib/crm/notificaciones';
 
 export const prerender = false;
 // A MP siempre se le contesta 200 salvo que la firma falle: un 500 lo hace
@@ -233,6 +234,17 @@ export const POST: APIRoute = async ({ request, url }) => {
             valor: Math.round(mensual * 12),
             metadata: { subscription_id: sv.id, estado_mp: pre?.status },
           });
+          await notificar({
+            clave: `mp_preapproval:${dataId}:${pre?.status}`,
+            tipo: 'mp_preapproval', nivel: 'urgente',
+            titulo: cancelada
+              ? `🔕 Canceló su domiciliación de Mercado Pago (${sv.nombre_plan})`
+              : `⏸ Pausó su domiciliación de Mercado Pago (${sv.nombre_plan})`,
+            detalle: `En el CRM sigue como "${sv.estado}" y sumando al ARR. Muchas cancelaciones en MP son un cambio de tarjeta: confirma antes de darla de baja.`,
+            monto: Number(sv.precio || 0),
+            company_id: sv.company_id, subscription_id: sv.id,
+            metadata: { estado_mp: pre?.status },
+          });
         }
       }
       await cerrar('ok', 'preapproval ' + dataId + ' → ' + pre?.status);
@@ -297,6 +309,7 @@ export const POST: APIRoute = async ({ request, url }) => {
             company_id: sub.company_id, subscription_id: sub.id, nombre_plan: sub.nombre_plan,
             monto: Number(pago?.transaction_amount || 0), detalle_estado: pago?.status_detail || null,
             payer_email: pago?.payer?.email || null, intentos: count || 1,
+            mp_payment_id: String(pago.id),
           });
         }
         await cerrar('ok', 'cobro rechazado (' + (pago?.status_detail || estado) + ')' + (sub ? ' · sub ' + sub.id : ' · sin identificar'));
@@ -338,6 +351,16 @@ export const POST: APIRoute = async ({ request, url }) => {
         estado: 'approved', metodo: pago?.payment_method_id || null,
         fecha: pago?.date_approved || pago?.date_created || null,
         external_reference: pago?.external_reference || null,
+      });
+      // Dinero que YA está en la cuenta y que nadie sabe de quién es: mientras
+      // no se asigne, ese cliente sigue apareciendo como moroso.
+      await notificar({
+        clave: `pago_sin_dueno:${pago.id}`,
+        tipo: 'pago_sin_identificar', nivel: 'alerta',
+        titulo: `❓ Entró un pago de $${Number(pago?.transaction_amount || 0).toLocaleString('es-MX')} y no sé de quién es`,
+        detalle: `${pago?.payer?.email || 'sin correo del pagador'} · asígnalo en Cobro con Mercado Pago para que deje de verse como moroso.`,
+        monto: Number(pago?.transaction_amount || 0),
+        destino: 'cobros', metadata: { mp_payment_id: String(pago.id) },
       });
       await cerrar('ok', 'pago sin referencia de suscripción — a la bandeja de sin identificar');
       return ok({ registrado: false, motivo: 'sin external_reference reconocible', a_bandeja: true });
@@ -382,6 +405,31 @@ export const POST: APIRoute = async ({ request, url }) => {
     // plan y nadie lo actualizó allá, o al revés. El ARR reportado queda falso y
     // no lo delata nada. Se anota en la suscripción para poder señalarlo donde
     // se ve, y en el timeline para saber desde cuándo.
+    // ── La campana ──
+    // Un cargo domiciliado entra de madrugada, se registra y la próxima factura
+    // avanza sin que nadie toque nada. Es justo lo que hace que nadie se entere
+    // de que ese cliente ya pagó — ni de cuánto entró este mes.
+    try {
+      const { data: sv } = await supabase.from('subscriptions')
+        .select('nombre_plan, ciclo, proxima_factura, company_id, companies(nombre)').eq('id', subId).maybeSingle();
+      const emp: any = Array.isArray(sv?.companies) ? sv?.companies[0] : sv?.companies;
+      // Domiciliado (se cobró solo) vs link que alguien mandó: para quien lee la
+      // campana no es lo mismo "ya se cobró otra vez" que "por fin pagó".
+      const automatico = !!(subPorPreapproval || pago?.metadata?.preapproval_id);
+      await notificar({
+        clave: `pago_mp:${pago.id}`,
+        tipo: automatico ? 'pago_mp_automatico' : 'pago_mp', nivel: 'info',
+        titulo: `${automatico ? '🔁 Se cobró solo' : '💚 Pagó por Mercado Pago'}: ${emp?.nombre || 'un cliente'} · $${bruto.toLocaleString('es-MX')}`,
+        detalle: `${sv?.nombre_plan || 'Suscripción'}${sv?.ciclo ? ' · ' + sv.ciclo : ''}`
+          + (sv?.proxima_factura ? ` · siguiente cobro ${sv.proxima_factura}` : '')
+          + (comision > 0 ? ` · comisión $${Math.round(comision).toLocaleString('es-MX')}` : ''),
+        monto: bruto,
+        company_id: sv?.company_id || null, subscription_id: subId,
+        payment_id: j?.payment_id || null, destino: 'pagos',
+        metadata: { mp_payment_id: String(pago.id), automatico, comision },
+      });
+    } catch (e: any) { console.error('[mp-webhook] aviso de pago:', e?.message || e); }
+
     try {
       const { data: sub } = await supabase.from('subscriptions')
         .select('id, company_id, nombre_plan, precio, mp_monto_cobrado').eq('id', subId).maybeSingle();
@@ -404,6 +452,16 @@ export const POST: APIRoute = async ({ request, url }) => {
               : 'Se está cobrando de MÁS de lo que dice el CRM. Revisa cuál de los dos está mal antes de que el cliente lo note.',
             metadata: { audit: 'mp_desfase_precio', subscription_id: subId, cobrado: bruto, esperado },
           }).select().maybeSingle();
+          await notificar({
+            clave: `mp_desfase:${subId}:${bruto}`,
+            tipo: 'mp_desfase_precio', nivel: 'alerta',
+            titulo: `⚠️ Mercado Pago cobró $${bruto.toLocaleString('es-MX')} y la suscripción dice $${esperado.toLocaleString('es-MX')}`,
+            detalle: dif < 0
+              ? 'Se está cobrando de MENOS: el ARR reportado está inflado por esa diferencia.'
+              : 'Se está cobrando de MÁS de lo que dice el CRM. Revisa cuál de los dos está mal antes de que el cliente lo note.',
+            monto: bruto, company_id: sub.company_id, subscription_id: subId,
+            metadata: { cobrado: bruto, esperado },
+          });
         }
       }
     } catch (e: any) { console.error('[mp-webhook] desfase de precio:', e?.message || e); }

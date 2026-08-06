@@ -87,10 +87,23 @@ export async function anotarCobro(c: CobroMP): Promise<boolean> {
 export async function avisarCobroFallido(opts: {
   company_id?: string | null; subscription_id?: string | null;
   nombre_plan?: string | null; monto: number; detalle_estado?: string | null;
-  payer_email?: string | null; intentos?: number;
+  payer_email?: string | null; intentos?: number; mp_payment_id?: string | null;
 }) {
   const m = motivoDe(opts.detalle_estado);
   const monto = '$' + Number(opts.monto || 0).toLocaleString('es-MX');
+
+  // La campana: un rebote es la señal más temprana de que ese ingreso se cae
+  // este mes, y llega de madrugada sin que nadie esté mirando el timeline.
+  const { notificar } = await import('../crm/notificaciones');
+  await notificar({
+    clave: opts.mp_payment_id ? `cobro_rechazado:${opts.mp_payment_id}` : null,
+    tipo: 'cobro_rechazado', nivel: 'urgente',
+    titulo: `❌ Se rechazó el cobro de ${monto}${opts.nombre_plan ? ' · ' + opts.nombre_plan : ''}`,
+    detalle: `${m.texto}. ${m.accion}` + (opts.intentos && opts.intentos > 1 ? ` Van ${opts.intentos} intentos.` : ''),
+    monto: Number(opts.monto || 0),
+    company_id: opts.company_id || null, subscription_id: opts.subscription_id || null,
+    destino: 'pagos', metadata: { detalle_estado: opts.detalle_estado, payer_email: opts.payer_email },
+  });
   if (opts.company_id) {
     await supabase.from('activities').insert({
       tipo: 'sistema', company_id: opts.company_id, automatico: true,

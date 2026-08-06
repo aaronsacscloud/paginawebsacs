@@ -9,6 +9,7 @@ import DealsTab from './crm/DealsTab';
 import AutomationsTab from './crm/AutomationsTab';
 import SchedulingTab from './crm/SchedulingTab';
 import PasarelaMercadoPago from './crm/PasarelaMercadoPago';
+import CampanaNotificaciones from './crm/CampanaNotificaciones';
 import ContactProfile from './crm/ContactProfile';
 import DashboardTab from './crm/DashboardTab';
 import PartnersTab from './crm/PartnersTab';
@@ -209,6 +210,9 @@ export default function CrmDashboard() {
           </svg>
         </button>
       )}
+      {/* Campana: lo que pasó solo (cobros automáticos, rebotes, dinero sin
+          dueño) tiene que verse sin ir a buscarlo, esté donde esté el usuario. */}
+      <CampanaNotificaciones onIrA={(t) => switchTab(t as Tab)} />
       {/* Lupa mobile: búsqueda global a 2 taps sin abrir el sidebar */}
       {isMobile && sidebarCollapsed && (
         <button onClick={() => setMobileSearchOpen(true)} style={{

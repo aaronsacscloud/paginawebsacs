@@ -13,9 +13,12 @@ const fmt = (n: number) => '$' + (Number(n) || 0).toLocaleString('es-MX', { mini
 const fmtDate = (d: string | null) => d ? new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 const today = () => new Date().toISOString().slice(0, 10);
 
-const METODOS = ['transferencia', 'tarjeta', 'stripe', 'efectivo', 'oxxo', 'otro'];
-const METODO_LABEL: Record<string, string> = { transferencia: 'Transferencia', tarjeta: 'Tarjeta', stripe: 'Stripe', efectivo: 'Efectivo', oxxo: 'OXXO', otro: 'Otro' };
-const METODO_COLOR: Record<string, string> = { transferencia: '#2563eb', tarjeta: '#7c3aed', stripe: '#635bff', efectivo: '#16a34a', oxxo: '#dc2626', otro: '#6b7280' };
+// `mercadopago` es el método con el que el webhook registra los cobros: sin él
+// en estas tablas, el tipo salía crudo y sin filtro propio justo para los pagos
+// que más entran solos.
+const METODOS = ['mercadopago', 'transferencia', 'tarjeta', 'stripe', 'efectivo', 'oxxo', 'otro'];
+const METODO_LABEL: Record<string, string> = { mercadopago: 'Mercado Pago', transferencia: 'Transferencia', tarjeta: 'Tarjeta', stripe: 'Stripe', efectivo: 'Efectivo', oxxo: 'OXXO', otro: 'Otro' };
+const METODO_COLOR: Record<string, string> = { mercadopago: '#009ee3', transferencia: '#2563eb', tarjeta: '#7c3aed', stripe: '#635bff', efectivo: '#16a34a', oxxo: '#dc2626', otro: '#6b7280' };
 
 // Semáforo de mora: 1-7 días ámbar, 8-30 naranja, +30 rojo.
 function moraBadge(dias: number) {
@@ -31,6 +34,9 @@ export default function PagosTab() {
   const [porTipo, setPorTipo] = useState<Record<string, { count: number; monto: number }>>({});
   const [total, setTotal] = useState(0);
   const [recon, setRecon] = useState<any>(null);
+  // Cobros de Mercado Pago que NO terminaron en un pago: rebotes y dinero sin
+  // dueño. Viven en su propia bitácora, así que aquí no se ven si no se piden.
+  const [mp, setMp] = useState<any>(null);
   const [mrrMov, setMrrMov] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showPago, setShowPago] = useState(false);
@@ -83,6 +89,8 @@ export default function PagosTab() {
       fetch('/api/crm/arr/summary').then(r => r.json()).then(setSummary).catch(() => {}),
       fetch('/api/crm/arr/subscriptions').then(r => r.json()).then(d => setSubs(d.data || [])).catch(() => {}),
       fetch('/api/crm/arr/reconciliacion').then(r => r.json()).then(setRecon).catch(() => {}),
+      // Sin escanear=1: lectura barata de la bitácora, no una salida a MP.
+      fetch('/api/crm/arr/mp-cobros?dias=90').then(r => r.json()).then(setMp).catch(() => {}),
       fetch('/api/crm/arr/mrr-movimiento?meses=6').then(r => r.json()).then(setMrrMov).catch(() => {}),
       loadPayments(),
     ]).finally(() => setLoading(false));
@@ -94,6 +102,16 @@ export default function PagosTab() {
   const vencidas: any[] = summary?.vencidas || [];
   const proximos: any[] = (summary?.meses?.[0]?.cobros || []).filter((c: any) => c.fecha >= today());
   const totalPorCobrar = [...vencidas, ...proximos].reduce((a, v) => a + (Number(v.monto) || 0), 0);
+
+  // Por qué está vencida. Una suscripción domiciliada que aparece vencida casi
+  // siempre es una tarjeta que rebotó, no un cliente que no quiso pagar: sin el
+  // motivo aquí, se le persigue por teléfono cuando lo que hay que hacer es
+  // pedirle otra tarjeta. Se toma el rebote más reciente de esa suscripción.
+  const rechazos: any[] = mp?.rechazos || [];
+  const rechazoDe = (subscription_id: string) => rechazos
+    .filter(r => r.subscription_id === subscription_id)
+    .sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)))[0] || null;
+  const sinIdentificar: any[] = mp?.sin_identificar || [];
 
   const abonar = (subscription_id: string) => { setPagoPrefill({ subscription_id }); setShowPago(true); };
 
@@ -147,6 +165,9 @@ export default function PagosTab() {
                 </div>
                 <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{v.empresa}</div>
                 <div style={{ fontSize: '0.75rem', color: '#999' }}>{v.plan} · {v.ciclo}{v.cuenta && v.cuenta !== v.empresa ? ` · ${v.cuenta}` : ''} · vence {fmtDate(v.vencida_desde)}</div>
+                {(() => { const r = rechazoDe(v.subscription_id); return r ? (
+                  <div style={{ fontSize: '0.72rem', color: '#b93333', marginTop: 4 }}>🔁 Mercado Pago no pudo cobrarle: {r.motivo || 'tarjeta rechazada'}</div>
+                ) : null; })()}
                 <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                   <button onClick={() => abonar(v.subscription_id)} style={{ ...S.btnSmall, flex: 1, minHeight: 44, background: '#2AB5A0', color: '#fff', border: 'none' }}>Abonar</button>
                   <button onClick={() => linkPago(v.subscription_id, v.monto)} style={{ ...S.btnSmall, minHeight: 44, padding: '0 16px' }} title="Generar link de pago Stripe">🔗 Link</button>
@@ -177,7 +198,11 @@ export default function PagosTab() {
                 <tr key={'v' + v.subscription_id}>
                   <td style={S.td}><span style={moraBadge(v.dias_vencida)}>Vencido {v.dias_vencida}d</span></td>
                   <td style={S.td}>{v.empresa}{v.cuenta && v.cuenta !== v.empresa ? <div style={{ fontSize: '0.7rem', color: '#999' }}>{v.cuenta}</div> : null}</td>
-                  <td style={S.td}>{v.plan} <span style={{ color: '#999' }}>· {v.ciclo}</span></td>
+                  <td style={S.td}>{v.plan} <span style={{ color: '#999' }}>· {v.ciclo}</span>
+                    {(() => { const r = rechazoDe(v.subscription_id); return r ? (
+                      <div style={{ fontSize: '0.7rem', color: '#b93333' }} title={r.detalle_estado || ''}>🔁 MP no pudo cobrarle: {r.motivo || 'tarjeta rechazada'}</div>
+                    ) : null; })()}
+                  </td>
                   <td style={{ ...S.td, color: '#b93333' }}>{fmtDate(v.vencida_desde)}</td>
                   <td style={{ ...S.td, fontWeight: 700 }}>{fmt(v.monto)}</td>
                   <td style={S.td}><div style={{ display: 'flex', gap: 6 }}>
@@ -204,6 +229,47 @@ export default function PagosTab() {
           </div>
         )}
       </div>
+
+      {/* ── Cobros de Mercado Pago que NO entraron ──
+          Un rebote no aparece en el historial (no hubo pago) ni en "por cobrar"
+          hasta que la fecha se pasa. Ese hueco es donde se pierden: el cargo
+          falló hoy y nadie se entera hasta que alguien cuadra el mes. */}
+      {(rechazos.length > 0 || sinIdentificar.length > 0) && (
+        <div style={{ ...S.card, borderLeft: '4px solid #b93333' }}>
+          <div style={{ fontWeight: 800, marginBottom: 4 }}>Cobros de Mercado Pago que no entraron
+            <span style={{ color: '#999', fontWeight: 400, fontSize: 13 }}> · últimos 90 días</span>
+          </div>
+          <div style={{ color: '#888', fontSize: 12.5, marginBottom: 12 }}>
+            Lo que la pasarela intentó y falló, más el dinero que llegó sin dueño. Se resuelve en Cobro con Mercado Pago.
+          </div>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+            <div style={S.kpi}><div style={S.kLabel}>Rebotado</div><div style={{ ...S.kValue, color: rechazos.length ? '#b93333' : '#999' }}>{fmt(mp?.total_rechazado || 0)}</div><div style={S.kSub}>{rechazos.length} intento(s) · {mp?.clientes_con_rechazo || 0} cliente(s)</div></div>
+            <div style={S.kpi}><div style={S.kLabel}>Cobrado sin dueño</div><div style={{ ...S.kValue, color: sinIdentificar.length ? '#c2410c' : '#999' }}>{fmt(mp?.total_sin_identificar || 0)}</div><div style={S.kSub}>{sinIdentificar.length} pago(s) por asignar</div></div>
+          </div>
+          {rechazos.slice(0, 8).map((r: any) => (
+            <div key={r.id} onClick={() => r.company_id && setDrawerCompany(r.company_id)}
+              style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', padding: '7px 0', borderTop: '1px solid #f4f4f4', cursor: r.company_id ? 'pointer' : 'default' }}>
+              <span style={{ background: '#fde8e8', color: '#b93333', padding: '2px 8px', borderRadius: 6, fontWeight: 700, fontSize: 11 }}>Rebotó</span>
+              <span style={{ fontSize: 13, fontWeight: 700 }}>{r.companies?.nombre || r.payer_email || 'sin identificar'}</span>
+              <span style={{ fontSize: 12.5, color: '#888' }}>{r.subscriptions?.nombre_plan || '—'} · {r.motivo || 'rechazado'}</span>
+              <span style={{ marginLeft: 'auto', fontWeight: 700, fontSize: 13 }}>{fmt(r.monto)}</span>
+              <span style={{ fontSize: 12, color: '#aaa', width: 74, textAlign: 'right' }}>{fmtDate(String(r.fecha || '').slice(0, 10))}</span>
+            </div>
+          ))}
+          {sinIdentificar.slice(0, 6).map((c: any) => (
+            <div key={c.id} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', padding: '7px 0', borderTop: '1px solid #f4f4f4' }}>
+              <span style={{ background: '#ffedd5', color: '#c2410c', padding: '2px 8px', borderRadius: 6, fontWeight: 700, fontSize: 11 }}>Sin dueño</span>
+              <span style={{ fontSize: 13, fontWeight: 700 }}>{c.payer_email || 'sin correo del pagador'}</span>
+              <span style={{ fontSize: 12.5, color: '#888' }}>{c.candidatos?.length ? `${c.candidatos.length} candidato(s)` : 'sin candidatos claros'}</span>
+              <span style={{ marginLeft: 'auto', fontWeight: 700, fontSize: 13 }}>{fmt(c.monto)}</span>
+              <span style={{ fontSize: 12, color: '#aaa', width: 74, textAlign: 'right' }}>{fmtDate(String(c.fecha || '').slice(0, 10))}</span>
+            </div>
+          ))}
+          {(rechazos.length > 8 || sinIdentificar.length > 6) && (
+            <div style={{ fontSize: 12, color: '#999', marginTop: 8 }}>Se muestran los más recientes · el resto está en Cobro con Mercado Pago.</div>
+          )}
+        </div>
+      )}
 
       {/* ── Historial de pagos ── */}
       <div style={S.card}>
@@ -243,6 +309,9 @@ export default function PagosTab() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: '0.78rem', color: '#666' }}>{fmtDate(p.fecha)}</span>
                     <span style={{ color: METODO_COLOR[p.metodo] || '#374151', fontWeight: 700, fontSize: 12 }}>{METODO_LABEL[p.metodo] || p.metodo}</span>
+                    {p.metodo === 'mercadopago' && p.subscriptions?.mp_preapproval_id && (
+                      <span style={{ background: 'rgba(0,158,227,0.10)', color: '#0284c7', padding: '1px 6px', borderRadius: 5, fontSize: 10.5, fontWeight: 700 }}>🔁 auto</span>
+                    )}
                     <span style={{ marginLeft: 'auto', fontWeight: 800, fontSize: '0.95rem' }}>{fmt(p.monto)}</span>
                   </div>
                   <div style={{ fontWeight: 700, fontSize: '0.86rem', marginTop: 4 }}>{contacto || empresa || '—'}{contacto && empresa ? <span style={{ color: '#999', fontWeight: 400 }}> · {empresa}</span> : null}</div>
@@ -271,7 +340,13 @@ export default function PagosTab() {
                 <tr key={p.id} onClick={() => compId && setDrawerCompany(compId)} style={{ cursor: compId ? 'pointer' : 'default' }}>
                   <td style={S.td}>{fmtDate(p.fecha)}</td>
                   <td style={S.td}>{contacto || empresa || '—'}{contacto && empresa ? <span style={{ color: '#999' }}> · {empresa}</span> : null}</td>
-                  <td style={S.td}><span style={{ color: METODO_COLOR[p.metodo] || '#374151', fontWeight: 700, fontSize: 12 }}>{METODO_LABEL[p.metodo] || p.metodo}</span></td>
+                  <td style={S.td}>
+                    <span style={{ color: METODO_COLOR[p.metodo] || '#374151', fontWeight: 700, fontSize: 12 }}>{METODO_LABEL[p.metodo] || p.metodo}</span>
+                    {/* Se cobró solo: la sub está domiciliada, nadie mandó un link. */}
+                    {p.metodo === 'mercadopago' && p.subscriptions?.mp_preapproval_id && (
+                      <span style={{ marginLeft: 6, background: 'rgba(0,158,227,0.10)', color: '#0284c7', padding: '1px 6px', borderRadius: 5, fontSize: 10.5, fontWeight: 700 }} title="Cargo automático: el cliente autorizó la domiciliación">🔁 auto</span>
+                    )}
+                  </td>
                   <td style={S.td}>{p.subscriptions?.nombre_plan || '—'}{p.subscriptions?.ciclo ? <span style={{ color: '#999' }}> · {p.subscriptions.ciclo}</span> : null}</td>
                   <td style={S.td}>{p.numero_acuse
                     ? <a href={`/acuse/${p.id}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ color: '#2563eb', textDecoration: 'none' }} title="Ver / imprimir recibo">🧾 {p.numero_acuse}</a>
