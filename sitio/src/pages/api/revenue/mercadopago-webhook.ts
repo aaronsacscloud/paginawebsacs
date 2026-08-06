@@ -314,6 +314,17 @@ export const POST: APIRoute = async ({ request, url }) => {
     // como sin identificar y alguien lo asigna (eso es la Fase 6).
     const ref = String(pago?.external_reference || '');
     const m = ref.match(/^sub:([0-9a-f-]{36})(?::(.+))?$/i);
+
+    // TERCERA vía, y la que resuelve los cobros de verdad: los cargos
+    // recurrentes llegan con topic `payment` —no `subscription_authorized_payment`—
+    // y sin referencia. Lo único que dice de qué suscripción salieron es
+    // `metadata.preapproval_id`. Sin leerlo, cada mensualidad de una suscripción
+    // ya vinculada caía en la bandeja como si nadie supiera de quién era.
+    if (!m && !subPorPreapproval && pago?.metadata?.preapproval_id) {
+      const { data: sv } = await supabase.from('subscriptions').select('id')
+        .eq('mp_preapproval_id', String(pago.metadata.preapproval_id)).maybeSingle();
+      if (sv) subPorPreapproval = sv.id;
+    }
     // Dos vías para saber de quién es el pago: la referencia (links creados por
     // el CRM) o el vínculo con la suscripción de MP (las que ya existían allá).
     if (!m && !subPorPreapproval) {
