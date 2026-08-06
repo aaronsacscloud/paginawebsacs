@@ -1102,6 +1102,11 @@ function TabContactos({ companyId, contactos, reload, flash }: any) {
 }
 
 /* ─────────── 📋 Suscripciones (lista editable + alta) ─────────── */
+// `cobro` no es columna de subscriptions: solo decide si, además de dar de alta
+// la licencia, se crea la domiciliación en Mercado Pago en el mismo paso.
+const NF_VACIO = { plan_slug: '', plan_id: '', nombre_plan: '', ciclo: 'anual', precio: '', proxima_factura: '', estado: 'programada', cobro: 'manual', payer_email: '' };
+const ES_CORREO = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
 function TabSubs({ companyId, subs, reload, flash, principal }: any) {
   // Estado de cuenta CONSOLIDADO del cliente (todas sus subs + próximo a pagar).
   const ecUrl = typeof window !== 'undefined' ? `${window.location.origin}/estado-cuenta/cliente/${companyId}` : '';
@@ -1119,11 +1124,14 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
   const [editId, setEditId] = useState<string | null>(null);
   const [f, setF] = useState<any>({});
   const [adding, setAdding] = useState(false);
-  const [nf, setNf] = useState<any>({ plan_slug: '', plan_id: '', nombre_plan: '', ciclo: 'anual', precio: '', proxima_factura: '', estado: 'programada' });
+  const [nf, setNf] = useState<any>({ ...NF_VACIO });
   const [busy, setBusy] = useState(false);
   const [picker, setPicker] = useState<null | 'nuevo' | 'edit'>(null);
   const [pausaSub, setPausaSub] = useState<any>(null);
   const [cobrando, setCobrando] = useState<string | null>(null);
+  // Link de domiciliación recién creado en el alta: se queda a la vista hasta
+  // que lo mandas, porque el link es TODO el trámite (sin él no pasa nada).
+  const [nuevoLink, setNuevoLink] = useState<any>(null);
 
   // Genera (o reusa) el link de cobro del periodo y lo deja listo para mandar.
   async function cobrarMP(s: any) {
@@ -1159,7 +1167,7 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
     setCobrando(null);
     if (j?.error) { alert(j.error); return; }
     const wa = String(principal?.whatsapp || '').replace(/\D/g, '');
-    const texto = `Hola 👋 Para que ya no tengas que pagar manual cada ${s.ciclo === 'anual' ? 'año' : 'mes'}, aquí puedes autorizar el cargo automático de tu ${s.nombre_plan} (${money(j.monto)}):\n${j.link}`;
+    const texto = textoDomiciliacion(j.link, j.monto ?? s.precio, s.ciclo, s.nombre_plan);
     try { navigator.clipboard?.writeText(j.link); } catch { /* el link igual se abre abajo */ }
     window.open((wa ? 'https://wa.me/' + wa : 'https://wa.me/') + '?text=' + encodeURIComponent(texto), '_blank', 'noopener');
     flash(j.reusado ? 'Link de domiciliación vigente reusado · copiado' : 'Domiciliación creada · falta que él la autorice');
@@ -1254,8 +1262,23 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
     setPicker(null);
   }
 
+  // Mensaje con el que se le manda el link de autorización. Igual desde el alta
+  // que desde el 🔁: para el cliente es el mismo trámite.
+  const textoDomiciliacion = (link: string, monto: number, ciclo: string, plan: string) =>
+    `Hola 👋 Para que ya no tengas que pagar manual cada ${ciclo === 'anual' ? 'año' : 'mes'}, aquí puedes autorizar el cargo automático de tu ${plan} (${money(monto)}):\n${link}`;
+
   async function crear() {
     if (!nf.nombre_plan) { alert('Elige un plan.'); return; }
+    const conMP = nf.cobro === 'mp';
+    const correoMP = String(nf.payer_email || principal?.email || '').trim();
+    // Se valida ANTES de insertar: si la domiciliación se cayera después, la sub
+    // ya nació y habría que acordarse de volver por el 🔁 de su fila.
+    if (conMP) {
+      if (nf.ciclo === 'vitalicia') { alert('Una licencia vitalicia es un pago único: no se domicilia.'); return; }
+      if (nf.estado === 'cancelada' || nf.estado === 'pausada') { alert('No se puede domiciliar una suscripción que nace cancelada o pausada.'); return; }
+      if (!(parseFloat(nf.precio) > 0)) { alert('Para domiciliar hace falta el precio que se le va a cobrar cada periodo.'); return; }
+      if (!ES_CORREO.test(correoMP)) { alert('Escribe el correo con el que el cliente paga en Mercado Pago.'); return; }
+    }
     setBusy(true);
     // contact_id: el drawer no lo mandaba y `normalizar()` lo deja en null, así
     // que las subs dadas de alta desde aquí nacían SIN contacto —a diferencia de
@@ -1265,8 +1288,31 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
     if (nf.proxima_factura) body.proxima_factura = nf.proxima_factura;
     const r = await fetch('/api/crm/arr/subscriptions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const j = await r.json().catch(() => ({}));
+    if (!r.ok || j.error) { setBusy(false); alert(j.error || 'No se pudo crear.'); return; }
+
+    if (conMP && j?.data?.id) {
+      // Creada desde aquí lleva `external_reference: sub:<id>` desde el primer
+      // cobro; la que se crea en el panel de Mercado Pago nace huérfana y hay
+      // que venir a vincularla a mano.
+      const d = await fetch('/api/crm/arr/mp-domiciliar', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription_id: j.data.id, payer_email: correoMP }),
+      }).then(x => x.json()).catch(() => ({ error: 'No se pudo crear la domiciliación' }));
+      setBusy(false);
+      setAdding(false); setNf({ ...NF_VACIO });
+      reload();
+      if (d?.error) {
+        // La licencia SÍ quedó: decirlo, o se da de alta otra creyendo que falló todo.
+        alert(`La suscripción se creó, pero la domiciliación no:\n\n${d.error}\n\nPuedes reintentarla con el botón 🔁 de su fila.`);
+        return;
+      }
+      try { navigator.clipboard?.writeText(d.link); } catch { /* el link queda a la vista abajo */ }
+      setNuevoLink({ ...d, nombre_plan: body.nombre_plan, monto: d.monto ?? body.precio, ciclo: d.ciclo || body.ciclo, correo: d.correo || correoMP });
+      flash('Suscripción creada · link de domiciliación copiado');
+      return;
+    }
     setBusy(false);
-    if (!r.ok || j.error) alert(j.error || 'No se pudo crear.'); else { setAdding(false); setNf({ plan_slug: '', plan_id: '', nombre_plan: '', ciclo: 'anual', precio: '', proxima_factura: '', estado: 'programada' }); flash('Suscripción creada'); reload(); }
+    setAdding(false); setNf({ ...NF_VACIO }); flash('Suscripción creada'); reload();
   }
   async function guardar(s: any) {
     setBusy(true);
@@ -1333,7 +1379,7 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                 <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nf.nombre_plan || '— elegir plan —'}</span>
                 <span style={{ color: '#999' }}>▾</span>
               </button>
-              <select value={nf.ciclo} onChange={e => { const c = e.target.value; const p = planes.find((x: any) => x.slug === nf.plan_slug); setNf({ ...nf, ciclo: c, precio: p ? ((c === 'mensual' ? p.precio_mensual : p.precio_anual) ?? nf.precio) : nf.precio }); }} style={{ ...D.input, flex: '0 1 120px' }}>
+              <select value={nf.ciclo} onChange={e => { const c = e.target.value; const p = planes.find((x: any) => x.slug === nf.plan_slug); setNf({ ...nf, ciclo: c, precio: p ? ((c === 'mensual' ? p.precio_mensual : p.precio_anual) ?? nf.precio) : nf.precio, cobro: c === 'vitalicia' ? 'manual' : nf.cobro }); }} style={{ ...D.input, flex: '0 1 120px' }}>
                 {CICLOS.map(x => <option key={x} value={x}>{x}</option>)}
               </select>
               <input type="number" value={nf.precio} onChange={e => setNf({ ...nf, precio: e.target.value })} placeholder="Precio" style={{ ...D.input, flex: '0 1 110px' }} />
@@ -1342,7 +1388,54 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                 {ESTADOS_SUB.map(x => <option key={x} value={x}>{x}</option>)}
               </select>
             </div>
-            <button style={D.btn} disabled={busy} onClick={crear}>{busy ? '…' : 'Crear suscripción'}</button>
+
+            {/* ── Cómo se le va a cobrar ──
+                Manual = le mandas el link cada periodo (💳). Automático = se crea
+                la domiciliación aquí mismo y ya no hay que volver a acordarse. */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+              <select value={nf.cobro} disabled={nf.ciclo === 'vitalicia'}
+                onChange={e => setNf({ ...nf, cobro: e.target.value, payer_email: e.target.value === 'mp' && !nf.payer_email ? (principal?.email || '') : nf.payer_email })}
+                title={nf.ciclo === 'vitalicia' ? 'Una vitalicia es un pago único: no se domicilia.' : 'Cómo se le va a cobrar cada periodo'}
+                style={{ ...D.input, flex: '1 1 240px', opacity: nf.ciclo === 'vitalicia' ? 0.55 : 1 }}>
+                <option value="manual">💳 Cobro manual — le mandas el link cada periodo</option>
+                <option value="mp">🔁 Automático con Mercado Pago — se le cobra solo</option>
+              </select>
+              {nf.cobro === 'mp' && (
+                <input type="email" value={nf.payer_email} onChange={e => setNf({ ...nf, payer_email: e.target.value })}
+                  placeholder="correo con el que paga en Mercado Pago" style={{ ...D.input, flex: '1 1 240px' }} />
+              )}
+            </div>
+            {nf.cobro === 'mp' && (
+              <div style={{ fontSize: '0.72rem', color: '#8C8C8C', marginBottom: 8, lineHeight: 1.5 }}>
+                Al crearla se genera el link de autorización y se copia listo para mandárselo. No se le cobra nada
+                hasta que él lo autorice con su cuenta de Mercado Pago{nf.proxima_factura ? `, y el primer cargo sale hasta el ${fmtDate(nf.proxima_factura)}` : ''}. Solo funciona con tarjeta.
+              </div>
+            )}
+            <button style={D.btn} disabled={busy} onClick={crear}>{busy ? '…' : (nf.cobro === 'mp' ? 'Crear y generar liga de domiciliación' : 'Crear suscripción')}</button>
+          </div>
+        )}
+
+        {nuevoLink && (
+          <div style={{ background: '#f2fbf8', border: '1px solid #bfe8df', borderRadius: 10, padding: 12, marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <b style={{ fontSize: '0.85rem' }}>🔁 Domiciliación creada{nuevoLink.modo === 'prueba' ? ' · MODO PRUEBA' : ''}</b>
+              <button style={{ ...D.btnG, marginLeft: 'auto' }} onClick={() => setNuevoLink(null)}>✕</button>
+            </div>
+            <div style={{ fontSize: '0.76rem', color: '#555', marginBottom: 8, lineHeight: 1.5 }}>
+              {money(nuevoLink.monto)} cada {nuevoLink.ciclo === 'anual' ? 'año' : 'mes'} a <b>{nuevoLink.correo}</b>
+              {nuevoLink.arranca && nuevoLink.arranca !== 'al autorizar' ? ` · arranca el ${fmtDate(nuevoLink.arranca)}` : ' · arranca al autorizar'}.
+              Falta que él la autorice: hasta entonces no se le cobra nada.
+            </div>
+            <div style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 8, padding: '7px 9px', fontSize: '0.72rem', color: '#4B7BE5', wordBreak: 'break-all', marginBottom: 8 }}>{nuevoLink.link}</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              <button style={D.btnG} onClick={() => { try { navigator.clipboard?.writeText(nuevoLink.link); flash('Link copiado'); } catch { /* ya está a la vista */ } }}>📋 Copiar link</button>
+              <button style={{ ...D.btnG, color: '#1A8F7A', borderColor: '#bfe8df', fontWeight: 700 }}
+                onClick={() => {
+                  const wa = String(principal?.whatsapp || '').replace(/\D/g, '');
+                  const texto = textoDomiciliacion(nuevoLink.link, nuevoLink.monto, nuevoLink.ciclo, nuevoLink.nombre_plan);
+                  window.open((wa ? 'https://wa.me/' + wa : 'https://wa.me/') + '?text=' + encodeURIComponent(texto), '_blank', 'noopener');
+                }}>💬 Enviar por WhatsApp</button>
+            </div>
           </div>
         )}
 

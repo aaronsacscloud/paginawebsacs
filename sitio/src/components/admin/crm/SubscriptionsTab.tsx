@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import InteligenciaView from './InteligenciaView';
 import ClienteDrawer360 from './ClienteDrawer360';
+import NuevaSuscripcionModal from './NuevaSuscripcionModal';
 import { useIsMobile } from '../../../lib/ui/mobile';
 import Sheet from './ui/Sheet';
 
@@ -109,6 +110,7 @@ export default function SubscriptionsTab() {
   const [search, setSearch] = useState('');
   const [mesAbierto, setMesAbierto] = useState<string | null>(null);
   const [showPago, setShowPago] = useState(false);
+  const [showNueva, setShowNueva] = useState(false);
   const [showMeta, setShowMeta] = useState(false);
   const [cobrandoMP, setCobrandoMP] = useState<string | null>(null);
 
@@ -284,9 +286,22 @@ export default function SubscriptionsTab() {
             {v === 'subs' ? 'Suscripciones' : v === 'riesgo' ? `Riesgo (${(riesgo?.banda_3_15?.length || 0) + (riesgo?.banda_15_mas?.length || 0)})` : v === 'cobranza' ? 'Cobranza y proyección' : v === 'conciliacion' ? 'Conciliación' : '★ Inteligencia ARR'}
           </button>
         ))}
-        {!isMobile && <><div style={{ flex: 1 }} /><button style={{ ...S.btn, background: '#1A8F7A', color: '#fff' }} onClick={() => setShowPago(true)}>+ Registrar pago</button></>}
+        {/* La acción principal del hub es dar de alta lo que se acaba de vender.
+            Registrar un pago es el paso de DESPUÉS (exige que la sub ya exista),
+            así que queda como acción secundaria — el 💰 de cada fila y el de
+            facturas vencidas siguen siendo la vía corta. */}
+        {!isMobile && <>
+          <div style={{ flex: 1 }} />
+          <button style={{ ...S.btn, background: '#fff', border: '1px solid #ddd', color: '#333' }} onClick={() => setShowPago(true)}>💰 Registrar pago</button>
+          <button style={{ ...S.btn, background: '#1A8F7A', color: '#fff' }} onClick={() => setShowNueva(true)}>+ Nueva suscripción</button>
+        </>}
       </div>
-      {isMobile && <button style={{ ...S.btn, width: '100%', height: 44, background: '#1A8F7A', color: '#fff', marginBottom: 14 }} onClick={() => setShowPago(true)}>+ Registrar pago</button>}
+      {isMobile && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+          <button style={{ ...S.btn, flex: 1, height: 44, background: '#1A8F7A', color: '#fff' }} onClick={() => setShowNueva(true)}>+ Nueva suscripción</button>
+          <button style={{ ...S.btn, flex: '0 0 auto', height: 44, background: '#fff', border: '1px solid #ddd', color: '#333' }} onClick={() => setShowPago(true)}>💰 Pago</button>
+        </div>
+      )}
 
       {/* ═══ VISTA SUSCRIPCIONES ═══ */}
       {vista === 'subs' && (
@@ -580,6 +595,9 @@ export default function SubscriptionsTab() {
       {vista === 'inteligencia' && <InteligenciaView />}
 
       {showPago && <RegistrarPagoModal subs={subs} prefill={pagoPrefill} onClose={() => { setShowPago(false); setPagoPrefill(null); }} onDone={() => { setShowPago(false); setPagoPrefill(null); load(); }} />}
+      {/* onCreated recarga sin cerrar: si hubo domiciliación, el modal se queda
+          enseñando el link (mandarlo es parte del alta, no un extra). */}
+      {showNueva && <NuevaSuscripcionModal onClose={() => setShowNueva(false)} onCreated={() => load()} />}
       {editSub && <EditarSubModal sub={editSub} onClose={() => setEditSub(null)} onDone={() => { setEditSub(null); load(); }} />}
       {linkSub && <LinkClienteModal sub={linkSub} onClose={() => setLinkSub(null)} />}
       {showMeta && <MetaModal meta={meta} onClose={() => setShowMeta(false)} onDone={() => { setShowMeta(false); load(); }} />}

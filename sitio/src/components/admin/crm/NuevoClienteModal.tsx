@@ -37,6 +37,8 @@ export default function NuevoClienteModal({ onClose, onCreated }: { onClose: () 
     sacs: '',
     // sub
     conSub: false, plan_slug: '', nombre_plan: '', ciclo: 'anual', precio: '', proxima_factura: '', sub_estado: 'programada',
+    // cómo se le cobra esa primera suscripción
+    cobro: 'manual', payer_email: '',
     // cotización a ligar (match)
     cotizacion_id: '',
   });
@@ -44,6 +46,9 @@ export default function NuevoClienteModal({ onClose, onCreated }: { onClose: () 
   const [cotizaciones, setCotizaciones] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
   const [pasos, setPasos] = useState<string[]>([]);
+  // Domiciliación creada al vuelo: el modal se queda enseñando el link hasta
+  // que lo mandas, porque sin ese link no se le cobra nunca.
+  const [hecho, setHecho] = useState<any>(null);
 
   useEffect(() => { fetch('/api/crm/arr/plans').then(r => r.json()).then(j => setPlanes(j.data || j.plans || [])).catch(() => {}); }, []);
   // Cotizaciones SIN cliente ligado (para poder hacer el match desde aquí).
@@ -68,6 +73,16 @@ export default function NuevoClienteModal({ onClose, onCreated }: { onClose: () 
     if (f.c_email && !EMAIL_RE.test(f.c_email.trim())) { alert('El correo del contacto no se ve válido.'); return; }
     if (f.c_whatsapp && metaWa(f.c_whatsapp).replace(/\D/g, '').length < 12) { alert('El WhatsApp debe tener 10 dígitos.'); return; }
     if (f.conSub && !f.nombre_plan) { alert('Elige el plan de la suscripción (o desmarca "Agregar suscripción").'); return; }
+    // Lo de Mercado Pago se valida ANTES de crear nada: si la domiciliación se
+    // cayera al final, el cliente y la licencia ya nacieron y habría que
+    // acordarse de volver por el 🔁 de su fila.
+    const conMP = f.conSub && f.cobro === 'mp';
+    const correoMP = String(f.payer_email || f.c_email || '').trim();
+    if (conMP) {
+      if (f.ciclo === 'vitalicia') { alert('Una licencia vitalicia es un pago único: no se domicilia.'); return; }
+      if (!(parseFloat(f.precio) > 0)) { alert('Para domiciliar hace falta el monto que se le va a cobrar cada periodo.'); return; }
+      if (!EMAIL_RE.test(correoMP)) { alert('Escribe el correo con el que el cliente paga en Mercado Pago.'); return; }
+    }
 
     setBusy(true);
     const hechos: string[] = [];
@@ -108,13 +123,33 @@ export default function NuevoClienteModal({ onClose, onCreated }: { onClose: () 
       }
 
       // 4) Primera suscripción (opcional)
+      let subId: string | null = null;
       if (f.conSub) {
-        const bodyS: any = { company_id: companyId, contact_id: contactId || null, nombre_plan: f.nombre_plan, plan_id: f.plan_slug || null, ciclo: f.ciclo, precio: parseFloat(f.precio) || 0, estado: f.sub_estado };
+        // plan_id es columna uuid: mandarle el slug ('personalizada') lo dejaba
+        // siempre en null y la sub nacía sin plan del catálogo ligado.
+        const p = planes.find((x: any) => x.slug === f.plan_slug);
+        const bodyS: any = { company_id: companyId, contact_id: contactId || null, nombre_plan: f.nombre_plan, plan_id: p?.id || null, ciclo: f.ciclo, precio: parseFloat(f.precio) || 0, estado: f.sub_estado };
         if (f.proxima_factura) bodyS.proxima_factura = f.proxima_factura;
         const rS = await fetch('/api/crm/arr/subscriptions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyS) });
         const jS = await rS.json().catch(() => ({}));
         if (!rS.ok || jS.error) hechos.push('⚠ Suscripción: ' + (jS.error || 'no se pudo crear'));
-        else hechos.push('Suscripción creada');
+        else { subId = jS?.data?.id || null; hechos.push('Suscripción creada'); }
+        setPasos([...hechos]);
+      }
+
+      // 4b) Domiciliación en Mercado Pago (si se pidió cobro automático)
+      let link: any = null;
+      if (conMP && subId) {
+        const d = await fetch('/api/crm/arr/mp-domiciliar', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subscription_id: subId, payer_email: correoMP }),
+        }).then(x => x.json()).catch(() => ({ error: 'No se pudo crear la domiciliación' }));
+        if (d?.error) hechos.push('⚠ Domiciliación: ' + d.error + ' — reintenta con el 🔁 del cliente');
+        else {
+          hechos.push('Domiciliación creada en Mercado Pago');
+          try { navigator.clipboard?.writeText(d.link); } catch { /* el link queda a la vista */ }
+          link = { ...d, monto: d.monto ?? (parseFloat(f.precio) || 0), ciclo: d.ciclo || f.ciclo, correo: d.correo || correoMP, companyId };
+        }
         setPasos([...hechos]);
       }
 
@@ -127,6 +162,9 @@ export default function NuevoClienteModal({ onClose, onCreated }: { onClose: () 
         setPasos([...hechos]);
       }
 
+      // Con link de domiciliación el modal NO se cierra: mandarlo es parte del
+      // alta. El botón "Listo" es el que sigue al cliente recién creado.
+      if (link) { setHecho(link); setBusy(false); return; }
       onCreated(companyId);
     } catch (e: any) { alert('Error: ' + (e?.message || e)); }
     setBusy(false);
@@ -138,6 +176,41 @@ export default function NuevoClienteModal({ onClose, onCreated }: { onClose: () 
       <input type={type} value={f[k]} onChange={e => set(k, e.target.value)} placeholder={ph} style={M.input} />
     </div>
   );
+
+  // ── Pantalla final: el link de domiciliación recién creado ──
+  if (hecho) {
+    const wa = String(f.c_whatsapp || '').replace(/\D/g, '');
+    const money = (n: number) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
+    const texto = `Hola 👋 Para que ya no tengas que pagar manual cada ${hecho.ciclo === 'anual' ? 'año' : 'mes'}, aquí puedes autorizar el cargo automático de tu ${f.nombre_plan} (${money(hecho.monto)}):\n${hecho.link}`;
+    const cerrar = () => onCreated(hecho.companyId);
+    return (
+      <div style={M.overlay} onClick={cerrar}>
+        <div style={{ ...M.modal, width: 'min(560px, 100%)' }} onClick={e => e.stopPropagation()}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ margin: 0, fontSize: '1.05rem' }}>🔁 Cliente creado y domiciliado{hecho.modo === 'prueba' ? ' · MODO PRUEBA' : ''}</h3>
+            <button style={{ ...M.btnG, border: 'none' }} onClick={cerrar}>✕</button>
+          </div>
+          <div style={{ fontSize: '0.78rem', color: '#555', lineHeight: 1.55, margin: '10px 0 12px' }}>
+            <b>{money(hecho.monto)}</b> cada {hecho.ciclo === 'anual' ? 'año' : 'mes'} a <b>{hecho.correo}</b>.
+            <br />Falta que él la autorice desde su cuenta de Mercado Pago: hasta entonces no se le cobra nada.
+          </div>
+          <div style={{ background: '#f7f9fc', border: '1px solid #e6ebf2', borderRadius: 8, padding: '9px 11px', fontSize: '0.74rem', color: '#4B7BE5', wordBreak: 'break-all', marginBottom: 12 }}>{hecho.link}</div>
+          {pasos.length > 0 && (
+            <div style={{ background: '#f8fafc', borderRadius: 8, padding: 10, marginBottom: 12, fontSize: '0.78rem' }}>
+              {pasos.map((p, i) => <div key={i}>{p.startsWith('⚠') ? p : '✅ ' + p}</div>)}
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button style={M.btnG} onClick={() => { try { navigator.clipboard?.writeText(hecho.link); } catch { /* está a la vista */ } }}>📋 Copiar link</button>
+            <button style={{ ...M.btnG, color: '#1A8F7A', borderColor: '#bfe8df', fontWeight: 700 }}
+              onClick={() => window.open((wa ? 'https://wa.me/' + wa : 'https://wa.me/') + '?text=' + encodeURIComponent(texto), '_blank', 'noopener')}>💬 Enviar por WhatsApp</button>
+            <div style={{ flex: 1 }} />
+            <button style={M.btn} onClick={cerrar}>Listo</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={M.overlay} onClick={onClose}>
@@ -192,7 +265,7 @@ export default function NuevoClienteModal({ onClose, onCreated }: { onClose: () 
             </div>
             <div style={{ flex: '0 1 120px' }}>
               <label style={M.lbl}>Ciclo</label>
-              <select value={f.ciclo} onChange={e => { const c = e.target.value; const p = planes.find((x: any) => x.slug === f.plan_slug); setF((prev: any) => ({ ...prev, ciclo: c, precio: p ? ((c === 'mensual' ? p.precio_mensual : p.precio_anual) ?? prev.precio) : prev.precio })); }} style={M.input}>
+              <select value={f.ciclo} onChange={e => { const c = e.target.value; const p = planes.find((x: any) => x.slug === f.plan_slug); setF((prev: any) => ({ ...prev, ciclo: c, precio: p ? ((c === 'mensual' ? p.precio_mensual : p.precio_anual) ?? prev.precio) : prev.precio, cobro: c === 'vitalicia' ? 'manual' : prev.cobro })); }} style={M.input}>
                 {CICLOS.map(x => <option key={x} value={x}>{x}</option>)}
               </select>
             </div>
@@ -204,6 +277,31 @@ export default function NuevoClienteModal({ onClose, onCreated }: { onClose: () 
                 {['programada', 'activa', 'pendiente_pago'].map(x => <option key={x} value={x}>{x}</option>)}
               </select>
             </div>
+
+            {/* Cómo se le va a cobrar: manual (le mandas el link cada periodo)
+                o domiciliado (autoriza una vez y Mercado Pago cobra solo). */}
+            <div style={{ flex: '1 1 280px' }}>
+              <label style={M.lbl}>Cómo se le cobra</label>
+              <select value={f.cobro} disabled={f.ciclo === 'vitalicia'}
+                onChange={e => setF((prev: any) => ({ ...prev, cobro: e.target.value, payer_email: e.target.value === 'mp' && !prev.payer_email ? prev.c_email : prev.payer_email }))}
+                title={f.ciclo === 'vitalicia' ? 'Una vitalicia es un pago único: no se domicilia.' : ''}
+                style={{ ...M.input, opacity: f.ciclo === 'vitalicia' ? 0.55 : 1 }}>
+                <option value="manual">💳 Cobro manual — le mandas el link cada periodo</option>
+                <option value="mp">🔁 Automático con Mercado Pago — se le cobra solo</option>
+              </select>
+            </div>
+            {f.cobro === 'mp' && f.ciclo !== 'vitalicia' && (
+              <>
+                <div style={{ flex: '1 1 220px' }}>
+                  <label style={M.lbl}>Correo con el que paga en Mercado Pago</label>
+                  <input type="email" value={f.payer_email} onChange={e => set('payer_email', e.target.value)} placeholder={f.c_email || 'correo@…'} style={M.input} />
+                </div>
+                <div style={{ flex: '1 1 100%', fontSize: '0.74rem', color: '#8C8C8C', lineHeight: 1.5, background: '#f7fbfd', border: '1px solid #d9edf7', borderRadius: 8, padding: 10 }}>
+                  Al crear el cliente se genera el link de autorización de <b>${Number(f.precio || 0).toLocaleString('es-MX')} cada {f.ciclo === 'anual' ? 'año' : 'mes'}</b> y se copia listo para mandárselo.
+                  No se le cobra nada hasta que él lo autorice. Solo funciona con tarjeta.
+                </div>
+              </>
+            )}
           </div>
         )}
 
