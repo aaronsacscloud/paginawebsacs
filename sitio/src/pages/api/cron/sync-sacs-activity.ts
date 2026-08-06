@@ -1,9 +1,9 @@
 // GET /api/cron/sync-sacs-activity?key=... — liga el CRM con la realidad y
 // detecta señales de churn/sospecha.
 //
-// ⏰ HORARIO: SOLO de MADRUGADA, en 3 turnos (3:00, 3:12 y 3:24 am CDMX = 9:00,
-//    9:12 y 9:24 UTC; Vercel programa en UTC y México ya no cambia de horario,
-//    así que el desfase es fijo de 6 h todo el año).
+// ⏰ HORARIO: UNA SOLA corrida al día, a las 3:00 am CDMX (= 9:00 UTC; Vercel
+//    programa en UTC y México ya no cambia de horario, así que el desfase es
+//    fijo de 6 h todo el año). Fuera de esa hora este cron NO toca Mongo.
 //
 //    Antes corría cada 6 horas = 00:00, 06:00, 12:00 y 18:00 UTC, o sea
 //    **mediodía y 6 pm hora de México**: 8 agregaciones simultáneas sobre las
@@ -12,10 +12,17 @@
 //    de trabajo de Mongo por corrida con la caché caliente, y varios minutos en
 //    frío. El CRM no necesita ese dato al minuto — se mueve a la madrugada.
 //
-//    Se parte en 3 turnos en vez de una corrida grande porque el cursor va por
-//    `actividad_sync_at` (las más viejas primero): 3 × 50 = 150 cubre las ~140
-//    cuentas cada noche, y si un turno se cuelga en frío, el siguiente retoma
-//    justo donde se quedó en vez de perderse la noche entera.
+// ⏱️ PRESUPUESTO DE TIEMPO: como ahora es una sola corrida, tiene que caber
+//    TODA la cartera (~140 cuentas) en una invocación. Warm son ~35 s, pero en
+//    frío una cuenta grande sola puede tardar 50 s y la corrida se pasaría del
+//    límite de Vercel, que mata la función a media escritura.
+//
+//    Por eso no se confía en que quepa: antes de pedir cada lote se mira el
+//    reloj y, si ya se gastó el presupuesto, la corrida se detiene sola y
+//    reporta cuántas quedaron pendientes. Como el cursor va por
+//    `actividad_sync_at` (las más desactualizadas primero), lo que no alcanzó
+//    hoy es exactamente lo primero que se sincroniza mañana. Nunca se pierde
+//    una cuenta: se retrasa un día.
 //
 // v2: además de guardar la actividad, calcula HEALTH SCORE (0-100) con factores
 // y dispara ALERTAS (activities con dedup 7 días + WhatsApp al admin):
@@ -75,24 +82,20 @@ async function alertar(companyId: string, clave: string, titulo: string, metadat
 export const GET: APIRoute = async ({ url, request }) => {
   if (!isAuthorizedCron(request)) return new Response('Forbidden', { status: 403 });
 
-  // Lote por corrida: las MÁS desactualizadas primero (nulls al frente). Evita
-  // exceder el timeout de Vercel al crecer el número de cuentas; los 3 turnos de
-  // la madrugada rotan hasta cubrir todas (3 corridas × lote ≥ total).
-  const limit = Math.min(60, Number(url.searchParams.get('limit')) || 50);
+  // Las MÁS desactualizadas primero (nulls al frente), que es lo que hace segura
+  // cualquier corrida incompleta: lo que no alcanzó encabeza la fila mañana.
+  // El tope es la cartera completa: la corrida de las 3 am intenta cubrir TODAS
+  // las cuentas. Quien frena de verdad no es este número sino el presupuesto de
+  // tiempo de abajo, que sabe cuánto está tardando de verdad.
+  const limit = Math.min(300, Number(url.searchParams.get('limit')) || 200);
 
-  // Los 3 turnos comparten el mismo path (Vercel lo permite) y se distinguen por
-  // el header `x-vercel-cron-schedule`, que trae la expresión cron que disparó
-  // la corrida. Se usa el header y no un `?lote=1` porque la documentación de
-  // Vercel no garantiza query strings en el `path` de un cron, pero sí documenta
-  // este header exactamente para este caso.
-  const cronSchedule = (request.headers.get('x-vercel-cron-schedule') || '').trim();
-  // Turnos que NO avisan: los dos primeros. Se listan los que callan, no el que
-  // habla, para fallar del lado ruidoso: si algún día Vercel cambia el formato
-  // del header, llegan WhatsApps de más (molesto pero evidente) en vez de que el
-  // aviso desaparezca en silencio.
-  const TURNOS_QUE_NO_AVISAN = ['0 9 * * *', '12 9 * * *'];
-  const enviarResumen = TURNOS_QUE_NO_AVISAN.indexOf(cronSchedule) === -1;
-  const turno = cronSchedule || 'manual';
+  // Presupuesto de la corrida. 50 s es conservador a propósito: el cron hermano
+  // (`sync-sacs-uso`) lleva tiempo corriendo 48 s sin que Vercel lo mate, así
+  // que es un techo ya probado en este proyecto. Se puede subir con `?ms=` para
+  // una corrida manual de recuperación.
+  const presupuestoMs = Math.min(240000, Number(url.searchParams.get('ms')) || 50000);
+  const arranque = Date.now();
+  const transcurrido = () => Date.now() - arranque;
   const { data: companies, error } = await supabase.from('companies')
     .select('id, nombre, sacs_account, sucursales, dias_sin_venta, actividad_sync_at, uso_sacs')
     .not('sacs_account', 'is', null).is('archived_at', null)
@@ -120,7 +123,7 @@ export const GET: APIRoute = async ({ url, request }) => {
   };
   const cuentas = Array.from(new Set((companies || []).flatMap(cuentasDeEmpresa)));
   OPORT.creadas = 0; OPORT.reconfirmadas = 0; OPORT.errores = 0;
-  const out = { turno: turno, empresas: (companies || []).length, cuentas: cuentas.length, actualizadas: 0, sin_datos: 0, alertas: 0, oportunidades: OPORT, errores: [] as string[] };
+  const out = { empresas: (companies || []).length, cuentas: cuentas.length, actualizadas: 0, sin_datos: 0, alertas: 0, pendientes: 0, ms: 0, oportunidades: OPORT, errores: [] as string[] };
   const avisos: string[] = [];
   const hoy = new Date();
   const catalogo = await cargarCatalogo();
@@ -131,6 +134,15 @@ export const GET: APIRoute = async ({ url, request }) => {
   const porCuenta: Record<string, any> = {};
   for (let i = 0; i < cuentas.length; i += 25) {
     const lote = cuentas.slice(i, i + 25);
+    // Freno por reloj: si ya no queda presupuesto, se corta ANTES de pedir el
+    // lote. Lo ya traído se escribe igual en el paso 2 (no se tira trabajo), y
+    // las cuentas que no alcanzaron conservan su `actividad_sync_at` viejo, así
+    // que mañana son las primeras de la fila.
+    if (transcurrido() > presupuestoMs) {
+      out.pendientes = cuentas.length - i;
+      out.errores.push('presupuesto agotado (' + Math.round(transcurrido() / 1000) + ' s): quedaron ' + out.pendientes + ' cuentas para la corrida de mañana');
+      break;
+    }
     try {
       const res = await fetch(SACS_API + '/interno/crm/actividad', {
         method: 'POST',
@@ -260,32 +272,15 @@ export const GET: APIRoute = async ({ url, request }) => {
 
   out.alertas = avisos.length;
 
-  // ── WhatsApp al admin: UN SOLO resumen por noche ──────────────────────────
-  //
-  // La noche son 3 turnos. Si cada uno mandara su propio WhatsApp serían 3
-  // mensajes; y si solo lo mandara el último, las alertas nacidas en los turnos
-  // 1 y 2 NUNCA se avisarían: ya quedaron insertadas en `activities` y el dedup
-  // de 7 días impide que el turno 3 las vuelva a levantar.
-  //
-  // Por eso el turno que avisa (el último) no arma el resumen con lo que él
-  // encontró, sino con TODAS las alertas automáticas de las últimas 6 horas —
-  // es decir, las de los tres turnos. Una corrida a mano (sin header de cron)
-  // sigue avisando de lo suyo, como siempre.
-  if (enviarResumen && ADMIN_WHATSAPP) {
-    let titulos = avisos;
-    if (cronSchedule) {
-      const hace6h = new Date(Date.now() - 6 * 3600000).toISOString();
-      const { data: recientes } = await supabase.from('activities')
-        .select('titulo').eq('automatico', true).eq('tipo', 'sistema')
-        .gte('created_at', hace6h).order('created_at', { ascending: false }).limit(100);
-      titulos = (recientes || []).map((a: any) => String(a.titulo || '')).filter(Boolean);
-    }
-    if (titulos.length) {
-      try {
-        await sendWhatsApp(ADMIN_WHATSAPP, '⚠️ CRM SACS — ' + titulos.length + ' alerta(s) nueva(s):\n\n' + titulos.slice(0, 8).join('\n\n') + (titulos.length > 8 ? '\n\n…y ' + (titulos.length - 8) + ' más en el CRM.' : ''));
-      } catch { /* el resumen queda en activities de todos modos */ }
-    }
+  // WhatsApp al admin con el resumen de alertas nuevas (best-effort). Al ser una
+  // sola corrida diaria, este mensaje es el parte del día completo — llega de
+  // madrugada, junto con el barrido.
+  if (avisos.length && ADMIN_WHATSAPP) {
+    try {
+      await sendWhatsApp(ADMIN_WHATSAPP, '⚠️ CRM SACS — ' + avisos.length + ' alerta(s) nueva(s):\n\n' + avisos.slice(0, 8).join('\n\n') + (avisos.length > 8 ? '\n\n…y ' + (avisos.length - 8) + ' más en el CRM.' : ''));
+    } catch { /* el resumen queda en activities de todos modos */ }
   }
+  out.ms = transcurrido();
 
   // Fallar RUIDOSO. Antes esto siempre devolvía 200 aunque los errores llenaran
   // out.errores: para Vercel la corrida era un éxito, nadie miraba el body, y el

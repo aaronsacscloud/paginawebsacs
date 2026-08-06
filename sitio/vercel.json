@@ -18,16 +18,8 @@
       "schedule": "0 9 * * *"
     },
     {
-      "path": "/api/cron/sync-sacs-activity",
-      "schedule": "12 9 * * *"
-    },
-    {
-      "path": "/api/cron/sync-sacs-activity",
-      "schedule": "24 9 * * *"
-    },
-    {
       "path": "/api/cron/sync-sacs-uso",
-      "schedule": "40 9 * * *"
+      "schedule": "30 9 * * *"
     },
     {
       "path": "/api/cron/arr-reminders",
