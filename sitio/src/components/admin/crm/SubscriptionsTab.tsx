@@ -226,24 +226,33 @@ export default function SubscriptionsTab() {
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
       {/* ── KPIs + meta ── */}
       <div style={kpiCarril}>
-        <div style={kpiCard}>
+        {/* ARR activo con su desglose ADENTRO.
+            Anuales y Mensuales no son tres cifras que compiten: son las dos
+            mitades de la primera. En tres tarjetas iguales se leían como tres
+            KPIs distintos y había que sumarlos mentalmente para saber cuál era
+            el número de verdad. Aquí el grande es el ARR y lo de abajo explica
+            de dónde sale. */}
+        <div style={{ ...kpiCard, ...(isMobile ? {} : { flex: '1 1 380px', minWidth: 320 }) }}>
           <div style={S.kLabel}>ARR activo</div>
           <div style={S.kValue}>{fmt(k?.arr_activo)}</div>
           <div style={S.kSub}>{k?.subs_activas || 0} suscripciones · {k?.clientes_activos || 0} clientes</div>
-        </div>
-        <div style={kpiCard}>
-          <div style={S.kLabel}>Anuales</div>
-          <div style={S.kValue}>{fmt(k?.anuales?.arr)}</div>
-          <div style={S.kSub}>{k?.anuales?.n || 0} suscripciones · renuevan cada año</div>
-        </div>
-        <div style={kpiCard}>
-          <div style={S.kLabel}>Mensuales</div>
-          {/* Los dos números son ARR (anualizado), pero puestos lado a lado
-              "Mensuales $152,400" se lee como "cobro eso cada mes". Se enseña
-              el cargo real arriba y el anualizado abajo: la comparación con
-              Anuales sigue siendo válida y ya no engaña. */}
-          <div style={S.kValue}>{fmt((k?.mensuales?.arr || 0) / 12)}<span style={{ fontSize: '0.55em', color: '#999', fontWeight: 600 }}>/mes</span></div>
-          <div style={S.kSub}>{k?.mensuales?.n || 0} suscripciones · {fmt(k?.mensuales?.arr)} al año</div>
+          <div style={{ display: 'flex', gap: 10, marginTop: 12, paddingTop: 10, borderTop: '1px solid #f0f0f0' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '0.63rem', fontWeight: 700, color: '#9aa0a8', textTransform: 'uppercase', letterSpacing: '.05em' }}>Anuales</div>
+              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1a1a1a', whiteSpace: 'nowrap' }}>{fmt(k?.anuales?.arr)}</div>
+              <div style={{ fontSize: '0.68rem', color: '#9aa0a8' }}>{k?.anuales?.n || 0} suscripciones</div>
+            </div>
+            <div style={{ width: 1, background: '#f0f0f0' }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '0.63rem', fontWeight: 700, color: '#9aa0a8', textTransform: 'uppercase', letterSpacing: '.05em' }}>Mensuales</div>
+              {/* El cargo REAL arriba: junto a los anuales, "$152,400" se leía
+                  como si se cobrara eso cada mes (12 veces la realidad). */}
+              <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#1a1a1a', whiteSpace: 'nowrap' }}>
+                {fmt((k?.mensuales?.arr || 0) / 12)}<span style={{ fontSize: '0.72em', color: '#9aa0a8', fontWeight: 600 }}>/mes</span>
+              </div>
+              <div style={{ fontSize: '0.68rem', color: '#9aa0a8', whiteSpace: 'nowrap' }}>{k?.mensuales?.n || 0} subs · {fmt(k?.mensuales?.arr)} al año</div>
+            </div>
+          </div>
         </div>
         <div style={kpiCard}>
           <div style={S.kLabel}>ARR en riesgo</div>
