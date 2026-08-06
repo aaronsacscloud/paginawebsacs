@@ -12,7 +12,7 @@ export const prerender = false;
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 export const GET: APIRoute = async () => {
-  const mkSel = (contactsSel: string) => 'id, nombre, sacs_account, plan, tipo_cuenta, estado_cuenta, sucursales, mrr, arr, fecha_renovacion, health_score, ultima_venta_at, dias_sin_venta, actividad, uso_sacs, ' + contactsSel + ', subscriptions(id, estado, ciclo, arr, nombre_plan, proxima_factura, pagos_realizados, total_pagado, contact_id)';
+  const mkSel = (contactsSel: string) => 'id, nombre, sacs_account, plan, tipo_cuenta, estado_cuenta, sucursales, mrr, arr, fecha_renovacion, health_score, ultima_venta_at, dias_sin_venta, actividad, uso_sacs, ' + contactsSel + ', subscriptions(id, estado, ciclo, arr, precio, nombre_plan, proxima_factura, pagos_realizados, total_pagado, contact_id, mp_preapproval_id, mp_payer_email, mp_desfase_at, mp_monto_cobrado)';
   const CONTACTS_NEW = 'contacts(id, nombre, email, whatsapp, telefono, rol, es_principal)';
   const CONTACTS_OLD = 'contacts(id, nombre, email, whatsapp, telefono)';
   // pipeline_stage y rol/es_principal pueden no existir aún (SQL pendiente) →
@@ -44,6 +44,24 @@ export const GET: APIRoute = async () => {
       (cuentasPorEmpresa[k] = cuentasPorEmpresa[k] || []).push(String(r.cuenta));
     }
   } catch { /* tabla ausente → fallback abajo */ }
+
+  // Cobros rebotados por cliente. Va en la LISTA y no solo en el detalle porque
+  // es lo que cambia a quién llamas hoy: un cliente al que se le rebotó la
+  // tarjeta se ve igual de sano que cualquier otro hasta que abres su ficha.
+  const rechazosPorEmpresa: Record<string, { n: number; monto: number; ultimo: string | null }> = {};
+  try {
+    const desde = new Date(Date.now() - 60 * 86400000).toISOString();
+    const { data: rs } = await supabase.from('crm_cobros_mp')
+      .select('company_id, monto, fecha').eq('estado', 'rejected').gte('fecha', desde).range(0, 999);
+    for (const r of rs || []) {
+      if (!r.company_id) continue;
+      const k = String(r.company_id);
+      const a = rechazosPorEmpresa[k] || { n: 0, monto: 0, ultimo: null };
+      a.n++; a.monto += Number(r.monto || 0);
+      if (!a.ultimo || String(r.fecha) > a.ultimo) a.ultimo = String(r.fecha);
+      rechazosPorEmpresa[k] = a;
+    }
+  } catch { /* la bitácora puede no existir en un entorno sin migrar */ }
 
   // Catálogo plan→módulos: se carga UNA vez para las ~220 empresas (cacheado 5
   // min en el módulo), no una por cliente.
@@ -84,6 +102,19 @@ export const GET: APIRoute = async () => {
         sucursales: c.sucursales,
         contacto: contacto ? { id: contacto.id, nombre: contacto.nombre, email: contacto.email, whatsapp: contacto.whatsapp, telefono: contacto.telefono } : null,
         sub_contact_id: subContactId,
+        // Cómo se le cobra a este cliente, resumido para la lista.
+        mp: (() => {
+          const vivas = subs.filter((s: any) => s.estado !== 'cancelada');
+          const auto = vivas.filter((s: any) => s.mp_preapproval_id);
+          const rz = rechazosPorEmpresa[c.id] || null;
+          return {
+            domiciliadas: auto.length,
+            manuales: vivas.length - auto.length,
+            correo: auto.find((s: any) => s.mp_payer_email)?.mp_payer_email || null,
+            desfase: auto.some((s: any) => s.mp_desfase_at),
+            rechazos: rz?.n || 0, rechazo_monto: r2(rz?.monto || 0), rechazo_ultimo: rz?.ultimo || null,
+          };
+        })(),
         subs_total: subs.length, subs_activas: activas.length, subs_pendientes: pend.length,
         subs_pausadas: pausadas.length,
         arr_pausado: r2(pausadas.reduce((a: number, s: any) => a + Number(s.arr || 0), 0)),

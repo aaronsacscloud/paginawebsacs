@@ -273,10 +273,24 @@ export const POST: APIRoute = async ({ request }) => {
   if (!b?.subscription_id) return json({ error: 'subscription_id requerido' }, 400);
 
   if (b.desvincular) {
+    // Se lee ANTES de borrar el vínculo: después ya no se sabe cuál era, y una
+    // separación sin rastro es justo la que nadie puede explicar tres meses
+    // después, cuando los cobros de ese cliente dejaron de registrarse.
+    const { data: antes } = await supabase.from('subscriptions')
+      .select('company_id, nombre_plan, mp_preapproval_id, mp_payer_email').eq('id', b.subscription_id).maybeSingle();
     const { error } = await supabase.from('subscriptions')
       .update({ mp_preapproval_id: null, mp_payer_email: null, updated_at: new Date().toISOString() })
       .eq('id', b.subscription_id);
-    return error ? json({ error: error.message }, 500) : json({ ok: true, desvinculada: true });
+    if (error) return json({ error: error.message }, 500);
+    if (antes?.company_id) {
+      await supabase.from('activities').insert({
+        tipo: 'sistema', company_id: antes.company_id, automatico: true,
+        titulo: `Suscripción separada de Mercado Pago: ${antes.nombre_plan}`,
+        descripcion: `Sus próximos cobros ya no se van a registrar solos.${antes.mp_payer_email ? ' Pagaba ' + antes.mp_payer_email + '.' : ''}`,
+        metadata: { audit: 'mp_desvinculo', subscription_id: b.subscription_id, mp_preapproval_id: antes.mp_preapproval_id },
+      }).select().maybeSingle();
+    }
+    return json({ ok: true, desvinculada: true });
   }
 
   const mpId = String(b?.mp_preapproval_id || '').trim();

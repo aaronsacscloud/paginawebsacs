@@ -238,8 +238,12 @@ export default function SubscriptionsTab() {
         </div>
         <div style={kpiCard}>
           <div style={S.kLabel}>Mensuales</div>
-          <div style={S.kValue}>{fmt(k?.mensuales?.arr)}</div>
-          <div style={S.kSub}>{k?.mensuales?.n || 0} suscripciones · cobran cada mes</div>
+          {/* Los dos números son ARR (anualizado), pero puestos lado a lado
+              "Mensuales $152,400" se lee como "cobro eso cada mes". Se enseña
+              el cargo real arriba y el anualizado abajo: la comparación con
+              Anuales sigue siendo válida y ya no engaña. */}
+          <div style={S.kValue}>{fmt((k?.mensuales?.arr || 0) / 12)}<span style={{ fontSize: '0.55em', color: '#999', fontWeight: 600 }}>/mes</span></div>
+          <div style={S.kSub}>{k?.mensuales?.n || 0} suscripciones · {fmt(k?.mensuales?.arr)} al año</div>
         </div>
         <div style={kpiCard}>
           <div style={S.kLabel}>ARR en riesgo</div>
@@ -286,7 +290,12 @@ export default function SubscriptionsTab() {
             </div>
             <div style={{ ...kpiCarril, marginTop: 12, marginBottom: 0 }}>
               <div style={kpiCard}><div style={S.kLabel}>Clientes vitalicios</div><div style={S.kValue}>{vitStats.total}</div><div style={S.kSub}>{vitStats.activas} activos</div></div>
-              <div style={kpiCard}><div style={S.kLabel}>Cobrado (pago único)</div><div style={S.kValue}>{fmt(vitStats.cobrado)}</div><div style={S.kSub}>ingreso reconocido, no ARR</div></div>
+              <div style={kpiCard}><div style={S.kLabel}>Cobrado (pago único)</div><div style={S.kValue}>{fmt(vitStats.cobrado)}</div>
+              {/* $0 con licencias vendidas no es que no hayan pagado: es que sus
+                  pagos nunca se capturaron. Decir "sin pagos capturados" evita
+                  que alguien concluya que ese dinero no entró. */}
+              <div style={S.kSub}>{vitStats.cobrado > 0 ? 'ingreso reconocido, no ARR'
+                : (vitStats.total > 0 ? `sin pagos capturados en ${vitStats.total} licencias` : 'ingreso reconocido, no ARR')}</div></div>
               <div style={kpiCard}><div style={S.kLabel}>Usando SACS (≤30d)</div><div style={{ ...S.kValue, color: '#1A8F7A' }}>{vitStats.usando}</div><div style={S.kSub}>upsell caliente</div></div>
               <div style={kpiCard}><div style={S.kLabel}>Sin uso reciente</div><div style={{ ...S.kValue, color: (vitStats.total - vitStats.usando) > 0 ? '#a06600' : '#999' }}>{vitStats.total - vitStats.usando}</div><div style={S.kSub}>reactivar / recuperar</div></div>
             </div>
@@ -351,7 +360,7 @@ export default function SubscriptionsTab() {
             <div className="crm-scroll-x">
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
               <thead><tr>
-                {['Cliente', 'Plan', 'Ciclo', 'Estado', 'Precio', 'ARR', 'Próx. factura', 'Pagos', 'Total pagado', 'Últ. venta SACS', 'Salud', ''].map(h => <th key={h} style={S.th}>{h}</th>)}
+                {['Cliente', 'Plan', 'Ciclo', 'Estado', 'Cobro', 'Precio', 'ARR', 'Próx. factura', 'Pagos', 'Total pagado', 'Últ. venta SACS', 'Salud', ''].map(h => <th key={h} style={S.th}>{h}</th>)}
               </tr></thead>
               <tbody>
                 {filtered.map(s => {
@@ -381,6 +390,22 @@ export default function SubscriptionsTab() {
                       })()}</td>
                       <td style={S.td}><span style={{ ...S.badge, background: s.ciclo === 'vitalicia' ? 'rgba(160,102,0,0.12)' : s.ciclo === 'anual' ? 'rgba(108,92,231,0.12)' : 'rgba(75,123,229,0.12)', color: s.ciclo === 'vitalicia' ? '#a06600' : s.ciclo === 'anual' ? '#6C5CE7' : '#3764c4' }}>{s.ciclo}</span></td>
                       <td style={S.td}><Estado e={s.estado} /></td>
+                      {/* Cómo se le cobra. Que se vea en la tabla y no solo al
+                          abrir al cliente es lo que permite contestar de un
+                          vistazo "¿a cuántos les cobro yo a mano?" — que es la
+                          pregunta que decide a quién domiciliar primero. */}
+                      <td style={S.td}>{(s as any).mp_preapproval_id ? (<>
+                        <span style={{ ...S.badge, background: 'rgba(42,181,160,.15)', color: '#1A8F7A' }}
+                          title={'Se le cobra solo por Mercado Pago' + ((s as any).mp_payer_email ? ' · paga ' + (s as any).mp_payer_email : '')}>auto</span>
+                        {(s as any).mp_desfase_at && (s as any).mp_monto_cobrado != null ? (
+                          <div style={{ fontSize: '0.65rem', color: '#E54B4B', fontWeight: 700, whiteSpace: 'nowrap', marginTop: 2 }}
+                            title={`Mercado Pago está cobrando ${fmt((s as any).mp_monto_cobrado)} y aquí dice ${fmt(s.precio)}. Mientras no coincidan, el ARR reportado está mal.`}>
+                            ⚠ cobra {fmt((s as any).mp_monto_cobrado)}
+                          </div>
+                        ) : null}
+                      </>) : (
+                        <span style={{ fontSize: '0.7rem', color: '#bbb', whiteSpace: 'nowrap' }} title="No está domiciliada: se le cobra a mano">manual</span>
+                      )}</td>
                       <td style={S.td}>{fmt(s.precio)}<span style={{ color: '#aaa' }}>{s.ciclo === 'vitalicia' ? ' único' : '/' + sufCiclo(s.ciclo)}</span>{(() => {
                         if (s.ciclo === 'vitalicia') return null;
                         const pl = Number((s as any).precio_lista) || 0, pr = Number(s.precio) || 0;

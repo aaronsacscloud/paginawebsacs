@@ -138,6 +138,17 @@ export const POST: APIRoute = async ({ request }) => {
       resolucion: 'descartado', resuelto_at: new Date().toISOString(),
       resuelto_por: 'admin', nota: b?.nota || null,
     }).eq('id', b.id);
+    // Descartar es decir "este dinero no es de nadie": si el cobro ya tenía
+    // cliente, tiene que quedar escrito en su expediente quién lo descartó y
+    // por qué. Un pago que desaparece sin explicación es el peor pendiente.
+    if (cobro.company_id) {
+      await supabase.from('activities').insert({
+        tipo: 'sistema', company_id: cobro.company_id, automatico: true,
+        titulo: `Cobro de Mercado Pago descartado: $${Number(cobro.monto || 0).toLocaleString('es-MX')}`,
+        descripcion: (b?.nota ? 'Motivo: ' + b.nota + '. ' : '') + 'Se sacó de la bandeja sin acreditarlo a ninguna suscripción.',
+        metadata: { audit: 'mp_cobro_descartado', mp_payment_id: cobro.mp_payment_id },
+      }).select().maybeSingle();
+    }
     return json({ ok: true, descartado: true });
   }
 
