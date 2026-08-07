@@ -1494,7 +1494,11 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                           </div>
                         )}
                       </td>
-                      <td style={D.td}>{s.ciclo}</td>
+                      <td style={D.td}>{s.ciclo}
+                        {/* La suscripción se etiqueta por sí misma ("piloto",
+                            "precio especial"), no solo por su cliente. */}
+                        <div style={{ marginTop: 4 }}><Etiquetas entidad="subscription" id={s.id} compacto /></div>
+                      </td>
                       <td style={D.td}><EstadoBadge e={s.estado} /></td>
                       <td style={D.td}>{money(s.precio || s.arr)}</td>
                       <td style={D.td}>{s.estado === 'pausada' ? <span style={{ color: '#a06600' }}>en pausa</span> : fmtDate(s.proxima_factura)}</td>

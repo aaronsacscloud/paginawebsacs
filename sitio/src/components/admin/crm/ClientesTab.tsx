@@ -217,6 +217,12 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
                 {cuentas.join(' · ')}
               </div>
             ) : (cuentas[0] && cuentas[0] !== titulo ? <div style={{ ...T.sub, ...T.ell }}>{cuentas[0]}</div> : null)}
+            {/* Las etiquetas se ven en la LISTA, no solo dentro del cliente: si
+                hay que abrir cada uno para saber cómo está categorizado, la
+                categorización no sirve para leer la cartera de un vistazo. */}
+            {etiquetasCliente[c.id]?.length ? (
+              <div style={{ marginTop: 3 }}><ChipsEtiquetas etiquetas={etiquetasCliente[c.id]} max={3} /></div>
+            ) : null}
           </td>
         );
       },
