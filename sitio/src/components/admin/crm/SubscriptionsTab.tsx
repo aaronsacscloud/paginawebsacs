@@ -1504,6 +1504,17 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
 
 /* ═══════════════ Vista: Conciliación (cuentas activas sin suscripción) ═══════════════ */
 const TIPOS_CUENTA: Record<string, string> = { cliente: 'Cliente', cortesia: 'Cortesía', prueba: 'Prueba', interna: 'Interna', socio: 'Socio', sin_clasificar: 'Sin clasificar' };
+
+/** "hace un momento" / "hace 7 min" — de cuándo es el barrido de las bases. */
+function textoEdad(iso?: string | null): string {
+  if (!iso) return 'ahora';
+  const min = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (!isFinite(min) || min < 1) return 'hace un momento';
+  if (min === 1) return 'hace 1 minuto';
+  if (min < 60) return 'hace ' + min + ' minutos';
+  const h = Math.floor(min / 60);
+  return 'hace ' + h + (h === 1 ? ' hora' : ' horas');
+}
 function ConciliacionView({ onChanged }: { onChanged: () => void }) {
   const [data, setData] = useState<any>(null);
   const [ciegas, setCiegas] = useState<any>(null);
@@ -1515,12 +1526,17 @@ function ConciliacionView({ onChanged }: { onChanged: () => void }) {
   const [bulkOpen, setBulkOpen] = useState(false);
   const toggleSel = (cuenta: string) => setSel(s => { const n = new Set(s); n.has(cuenta) ? n.delete(cuenta) : n.add(cuenta); return n; });
 
-  async function load() {
+  // `refrescar` = rehacer de verdad el barrido de las ~539 bases de SACS (botón
+  // "Actualizar"). Sin él, el servidor sirve el barrido guardado hasta 10 min y
+  // solo relee del CRM las clasificaciones y suscripciones, que sí son del
+  // momento — que es lo que uno quiere después de clasificar.
+  async function load(refrescar = false) {
     setLoading(true); setErr(null);
+    const q = refrescar ? '?refrescar=1' : '';
     try {
       const [c, l] = await Promise.all([
-        fetch('/api/crm/arr/conciliacion').then(r => r.json()),
-        fetch('/api/crm/arr/link-suggestions').then(r => r.json()),
+        fetch('/api/crm/arr/conciliacion' + q).then(r => r.json()),
+        fetch('/api/crm/arr/link-suggestions' + q).then(r => r.json()),
       ]);
       if (c.error) throw new Error(c.error);
       setData(c); setCiegas(l.error ? null : l);
@@ -1534,7 +1550,16 @@ function ConciliacionView({ onChanged }: { onChanged: () => void }) {
     const res = await fetch('/api/crm/arr/conciliacion', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cuenta, accion: 'clasificar', tipo }) });
     const j = await res.json();
     if (j.error) alert(j.error);
-    setBusyCuenta(null); load();
+    setBusyCuenta(null);
+    // Clasificar solo mueve una etiqueta del CRM: NO cambia qué cuentas de SACS
+    // están vendiendo ni a quién pertenece cada correo. Por eso se relee sola la
+    // conciliación (barata: el barrido viene de caché) y NO las sugerencias de
+    // liga, que no tienen nada que ver con la clasificación. Antes esto rehacía
+    // los dos barridos completos en cada clic.
+    try {
+      const c = await fetch('/api/crm/arr/conciliacion').then(r => r.json());
+      if (!c.error) setData(c);
+    } catch { /* la fila queda como estaba; el siguiente Actualizar la corrige */ }
   }
 
   async function ligar(companyId: string, cuenta: string) {
@@ -1544,11 +1569,18 @@ function ConciliacionView({ onChanged }: { onChanged: () => void }) {
     load(); onChanged();
   }
 
-  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Cruzando cuentas SACS contra suscripciones… (tarda ~1 min)</div>;
-  if (err) return <div style={{ padding: 40, textAlign: 'center', color: '#E54B4B' }}>{err} <button style={S.btnSmall} onClick={load}>Reintentar</button></div>;
+  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>Cruzando cuentas SACS contra suscripciones… (la primera vez tarda ~1 min)</div>;
+  if (err) return <div style={{ padding: 40, textAlign: 'center', color: '#E54B4B' }}>{err} <button style={S.btnSmall} onClick={() => load()}>Reintentar</button></div>;
 
   return (
     <div>
+      {/* De cuándo es la foto de SACS. Se dice explícito porque el barrido de las
+          bases se guarda unos minutos: sin esta línea, "actualicé y sigue igual"
+          parecería un bug en vez de la caché haciendo su trabajo. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', margin: '0 0 10px', fontSize: '0.72rem', color: '#999' }}>
+        <span>Cuentas de SACS leídas {textoEdad(data?.barrido?.calculado_en)}. Las clasificaciones y suscripciones son del momento.</span>
+        <button style={{ ...S.btnSmall, padding: '3px 10px' }} onClick={() => load(true)}>Actualizar cuentas de SACS</button>
+      </div>
       {/* subs ciegas: ligar cuenta */}
       {ciegas && ciegas.ciegas > 0 && (
         <div style={{ ...S.card, borderLeft: '4px solid #E8A838' }}>

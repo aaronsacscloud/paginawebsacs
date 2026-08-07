@@ -7,6 +7,7 @@
 // metadata en actividad (degradación honesta hasta aplicar el SQL 2).
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
+import { conCache, pidioRefrescar, TTL_BARRIDO } from '../../../../lib/crm/sacs-cache';
 
 export const prerender = false;
 
@@ -14,14 +15,24 @@ const SACS_API = import.meta.env.SACS_API_URL || 'https://sacs-api-819604817289.
 const SYNC_SECRET = (import.meta.env.CRM_SYNC_SECRET || '').trim();
 const TIPOS = ['cliente', 'cortesia', 'prueba', 'interna', 'socio', 'sin_clasificar'];
 
-export const GET: APIRoute = async () => {
-  // 1 · cuentas activas reales desde sacs_api
-  const res = await fetch(SACS_API + '/interno/crm/cuentas-activas', {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'x-crm-sync-secret': SYNC_SECRET }, body: '{}',
-  });
-  if (!res.ok) return new Response(JSON.stringify({ error: 'sacs_api HTTP ' + res.status }), { status: 502 });
-  const j = await res.json();
-  const activas: any[] = j.data || [];
+export const GET: APIRoute = async ({ url }) => {
+  // 1 · cuentas activas reales desde sacs_api. Éste es EL barrido caro: abre las
+  //     ~539 bases de la plataforma. Va con caché de 10 min porque la respuesta
+  //     ("quién vendió en 30 días") no cambia de un clic a otro; el botón
+  //     "Actualizar" de la pantalla manda `?refrescar=1` y lo rehace de verdad.
+  let barrido;
+  try {
+    barrido = await conCache<any[]>('crm:cuentas-activas', TTL_BARRIDO, async () => {
+      const res = await fetch(SACS_API + '/interno/crm/cuentas-activas', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-crm-sync-secret': SYNC_SECRET }, body: '{}',
+      });
+      if (!res.ok) throw new Error('sacs_api HTTP ' + res.status);
+      return (await res.json()).data || [];
+    }, pidioRefrescar(url));
+  } catch (e: any) {
+    return new Response(JSON.stringify({ error: e?.message || 'sacs_api no respondió' }), { status: 502 });
+  }
+  const activas: any[] = barrido.valor;
 
   // 2 · cuentas ya ligadas a una suscripción NO cancelada
   const { data: subs } = await supabase.from('subscriptions')
@@ -45,6 +56,9 @@ export const GET: APIRoute = async () => {
     con_suscripcion: activas.length - sinSub.length,
     sin_suscripcion: sinSub.length,
     sin_clasificar: pendientes.length,
+    // De cuándo es el barrido de las bases de SACS. Los datos del CRM
+    // (clasificaciones, suscripciones) siempre son del momento.
+    barrido: { de_cache: barrido.deCache, calculado_en: new Date(barrido.calculadoEn).toISOString() },
     data: sinSub,
   }), { status: 200, headers: { 'Content-Type': 'application/json' } });
 };
