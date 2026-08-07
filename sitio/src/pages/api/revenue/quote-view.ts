@@ -31,7 +31,7 @@ export const POST: APIRoute = async ({ request }) => {
   if (!id) return new Response(JSON.stringify({ error: 'Missing id' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
 
   const { data: quote, error } = await supabase.from('quotes')
-    .select('notas, estado, partner_id, numero, empresa, contacto, total, moneda')
+    .select('notas, estado, partner_id, numero, empresa, contacto, total, moneda, company_id, contact_id, deal_id')
     .eq('id', id).single();
   if (error || !quote) return new Response(JSON.stringify({ error: 'Not found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
 
@@ -62,6 +62,56 @@ export const POST: APIRoute = async ({ request }) => {
     .eq('id', id);
 
   if (updateError) return new Response(JSON.stringify({ error: updateError.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+
+  // ── Que quede en la actividad del cliente / lead ──
+  // Que la cotización se esté viendo es el dato más accionable que hay: es el
+  // momento en que el cliente está pensando en comprar. Vivía enterrado en el
+  // JSON de `notas` y no aparecía en el timeline de nadie.
+  //
+  // Con freno de 6 horas: recargar la página no puede llenar el timeline de
+  // "vista" repetidas — un timeline con ruido se deja de leer, y entonces se
+  // pierde también la señal buena.
+  try {
+    if (quote.company_id || quote.contact_id) {
+      const hace6h = new Date(Date.now() - 6 * 3600000).toISOString();
+      let qA = supabase.from('activities').select('id')
+        .eq('tipo', 'cotizacion_vista').gte('created_at', hace6h).limit(1);
+      qA = quote.company_id ? qA.eq('company_id', quote.company_id) : qA.eq('contact_id', quote.contact_id);
+      const { data: reciente } = await qA.maybeSingle();
+      if (!reciente) {
+        const hora = new Date(now).toLocaleString('es-MX', { timeZone: 'America/Mexico_City', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+        await supabase.from('activities').insert({
+          tipo: 'cotizacion_vista', automatico: true,
+          company_id: quote.company_id || null, contact_id: quote.contact_id || null,
+          deal_id: quote.deal_id || null,
+          titulo: (`👀 Vio la cotización ${quote.numero || ''}`).trim() + (meta.views > 1 ? ` (${meta.views}ª vez)` : ''),
+          descripcion: (`${hora} · ${quote.empresa || quote.contacto || ''}`).trim(),
+          metadata: { audit: 'quote_view', quote_id: id, views: meta.views, at: now },
+        }).select().maybeSingle();
+      }
+    }
+  } catch (e) { console.error('[quote-view] actividad:', e); }
+
+  // La campana: la primera vista y la cotización "caliente" son los dos momentos
+  // en los que hablarle al cliente cambia el resultado.
+  try {
+    if (meta.views === 1 || meta.views === 4) {
+      const { notificar } = await import('../../../lib/crm/notificaciones');
+      await notificar({
+        clave: `quote_view:${id}:${meta.views}`,
+        tipo: 'cotizacion_vista', nivel: meta.views >= 4 ? 'alerta' : 'info',
+        titulo: meta.views >= 4
+          ? `🔥 ${quote.empresa || quote.contacto || 'Un cliente'} ya vio la cotización ${meta.views} veces`
+          : (`👀 ${quote.empresa || quote.contacto || 'Un cliente'} está viendo tu cotización ${quote.numero || ''}`).trim(),
+        detalle: meta.views >= 4
+          ? 'La está estudiando y no la ha aceptado: es el momento de llamarle.'
+          : 'Acaba de abrirla. Es el minuto de máximo interés.',
+        monto: Number(quote.total || 0),
+        company_id: quote.company_id || null,
+        destino: 'cotizaciones', metadata: { quote_id: id, views: meta.views },
+      });
+    }
+  } catch (e) { console.error('[quote-view] campana:', e); }
 
   // Envío fire-and-forget: un fallo de email jamás debe romper el tracking de vistas.
   if (notifyFirstView || notifyHot) {

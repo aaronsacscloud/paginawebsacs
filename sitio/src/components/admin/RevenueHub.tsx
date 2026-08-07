@@ -2,6 +2,41 @@ import { useState, useEffect } from 'react';
 import { plans as plansData } from '../../data/plans';
 import { PLANS, PLAN_PRICES, IMPL_PRICES, METODOS, fmt, fmtDate } from '../../lib/quotes/constants';
 import { parseMeta, serializeMeta, addTimelineEvent } from '../../lib/quotes/meta';
+
+// ── Cuándo la vieron ──
+// El número de vistas dice que hay interés; CUÁNDO fue la última dice si el
+// interés es de ahora o de la semana pasada — que es lo que decide si vale la
+// pena llamar hoy. Se arma el detalle completo para el hover y un "hace X"
+// visible sin tener que pasar el mouse.
+const fechaHora = (iso: string) => new Date(iso).toLocaleString('es-MX', {
+  timeZone: 'America/Mexico_City', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+});
+function haceTexto(iso?: string | null): string {
+  if (!iso) return '';
+  const s = Math.max(0, Math.floor((Date.now() - Date.parse(iso)) / 1000));
+  if (s < 60) return 'hace segundos';
+  const m = Math.floor(s / 60); if (m < 60) return `hace ${m} min`;
+  const h = Math.floor(m / 60); if (h < 24) return `hace ${h} h`;
+  const d = Math.floor(h / 24); return d === 1 ? 'ayer' : `hace ${d} d`;
+}
+function detalleVistas(meta: any): string {
+  const n = meta?.views || 0;
+  if (!n) return 'Nadie la ha abierto todavía.';
+  const eventos = (meta.timeline || []).filter((t: any) => t.event === 'viewed' && t.at).map((t: any) => t.at).reverse();
+  const lineas = [
+    `${n} ${n === 1 ? 'vista' : 'vistas'}`,
+    meta.first_viewed_at ? `Primera: ${fechaHora(meta.first_viewed_at)}` : '',
+    meta.last_viewed_at ? `Última: ${fechaHora(meta.last_viewed_at)} (${haceTexto(meta.last_viewed_at)})` : '',
+  ].filter(Boolean);
+  if (eventos.length > 1) {
+    lineas.push('', 'Cada vez que la abrió:');
+    // Las 10 más recientes: el histórico completo de una cotización muy vista
+    // no cabe en un tooltip y tampoco se lee.
+    for (const at of eventos.slice(0, 10)) lineas.push('· ' + fechaHora(at));
+    if (eventos.length > 10) lineas.push(`… y ${eventos.length - 10} más`);
+  }
+  return lineas.join('\n');
+}
 import { calcQuoteTotals } from '../../lib/quotes/totals';
 
 interface Client {
@@ -1034,12 +1069,16 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                         </div>
                       </td>}
                       {qVisibleCols.has('views') && <td style={{ ...S.td, padding: rowPad }}>
-                        {views > 0 ? (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', fontWeight: 700, color: views >= 5 ? '#6C5CE7' : '#666' }}>
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" strokeWidth="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/></svg>
-                            {views}
-                          </span>
-                        ) : <span style={{ color: '#ddd', fontSize: '0.75rem' }}>—</span>}
+                        {(() => {
+                          const mv = parseMeta(q.notas).meta;
+                          return views > 0 ? (
+                            <span title={detalleVistas(mv)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', fontWeight: 700, color: views >= 5 ? '#6C5CE7' : '#666', cursor: 'help' }}>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" strokeWidth="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/></svg>
+                              {views}
+                              {mv.last_viewed_at && <span style={{ fontWeight: 500, color: '#999', fontSize: '0.68rem' }}>· {haceTexto(mv.last_viewed_at)}</span>}
+                            </span>
+                          ) : <span title="Nadie la ha abierto todavía." style={{ color: '#ddd', fontSize: '0.75rem', cursor: 'help' }}>—</span>;
+                        })()}
                       </td>}
                       {qVisibleCols.has('actions') && <td style={{ ...S.td, padding: rowPad, textAlign: 'right' as const, whiteSpace: 'nowrap' as const, position: 'relative' as const }}>
                         <a href={`/cotizacion/${q.id}?admin=1`} target="_blank" rel="noopener" style={{ ...S.btnSmall, textDecoration: 'none', display: 'inline-flex', marginRight: 4 }}>Ver</a>

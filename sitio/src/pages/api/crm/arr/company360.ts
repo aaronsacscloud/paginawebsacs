@@ -67,6 +67,9 @@ export const GET: APIRoute = async ({ url }) => {
     nota: '📝', tarea: '✅', cotizacion: '📋', pago_recibido: '💰', deal_ganado: '🏆',
     stage_change: '📈', demo_agendada: '📅', demo_realizada: '📅', demo_no_show: '📅',
     sistema: '⚙️', llamada: '📞', whatsapp_enviado: '💬', email_enviado: '✉️', lead_created: '✨',
+    // Que el cliente ABRA la cotización es la señal más accionable del timeline:
+    // merece su propio ícono y no quedarse como un engrane más.
+    cotizacion_vista: '👀',
   };
   // Anti-duplicados: las reuniones vienen de `bookings` (fila más rica, con
   // estado y Meet) y las cotizaciones de `quotes` → se OMITEN las activities
@@ -77,7 +80,10 @@ export const GET: APIRoute = async ({ url }) => {
   const TZ = '-06:00';
   for (const a of (acts.data || [])) {
     if (a.tipo === 'page_visit' || DUPES.has(a.tipo)) continue; // ruido/duplicados
-    timeline.push({ fecha: a.created_at, icono: (a.metadata?.alerta ? '⚠️' : ICONO[a.tipo] || '⚙️'), tipo: a.tipo, titulo: a.titulo, detalle: a.descripcion || '', id: 'a' + a.id, meta: a.metadata || null });
+    timeline.push({ fecha: a.created_at, icono: (a.metadata?.alerta ? '⚠️' : ICONO[a.tipo] || '⚙️'), tipo: a.tipo, titulo: a.titulo, detalle: a.descripcion || '', id: 'a' + a.id, meta: a.metadata || null,
+      // La vista lleva a la cotización que se vio: desde el timeline se llega a
+      // lo que el cliente estaba mirando, sin ir a buscarlo.
+      ...(a.metadata?.quote_id ? { link: `/cotizacion/${a.metadata.quote_id}?admin=1` } : {}) });
   }
   for (const p of (pays.data || [])) {
     timeline.push({ fecha: (p.fecha?.length === 10 ? p.fecha + 'T12:00:00' + TZ : p.fecha) || p.created_at, icono: '💰', tipo: 'pago', titulo: `Pago recibido · $${Math.round(p.monto || 0).toLocaleString()}`, detalle: p.metodo || '', id: 'p' + p.id });
