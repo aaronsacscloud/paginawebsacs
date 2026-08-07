@@ -19,7 +19,7 @@ export const POST: APIRoute = async ({ request }) => {
   // Deal + contacto + empresa.
   const { data: deal, error } = await supabase
     .from('deals')
-    .select('id, nombre, descripcion, plan, sucursales, billing_period, valor_mensual, valor_total, quote_id, company_id, contact_id, contacts(nombre, email, whatsapp, telefono), companies(nombre)')
+    .select('id, nombre, descripcion, plan, sucursales, billing_period, valor_mensual, valor_total, items, descuento_pct, quote_id, company_id, contact_id, contacts(nombre, email, whatsapp, telefono), companies(nombre)')
     .eq('id', dealId).maybeSingle();
   if (error) return json({ error: error.message }, 500);
   if (!deal) return json({ error: 'oportunidad no encontrada' }, 404);
@@ -33,7 +33,52 @@ export const POST: APIRoute = async ({ request }) => {
   const sucursales = Number(deal.sucursales || 1);
   const importe = anual ? Number(deal.valor_total || 0) : Number(deal.valor_mensual || 0);
 
-  // Un ítem "plan" con el importe del deal (mensual o anual).
+  // ── Las LÍNEAS de la oportunidad viajan a la cotización ──
+  // Es la columna vertebral del modelo de HubSpot: los line items pasan intactos
+  // de la oportunidad a la cotización (y de ahí a la suscripción). Recapturar a
+  // mano es donde se pierden los descuentos pactados y donde el cliente recibe
+  // un precio que no es el que se le dijo.
+  const lineas: any[] = Array.isArray((deal as any).items) ? (deal as any).items : [];
+  if (lineas.length) {
+    const descGlobal = Number((deal as any).descuento_pct || 0);
+    const itemsQ = lineas.map((it: any) => {
+      const cant = Number(it.cantidad || 1) || 1;
+      const descLinea = Math.min(100, Math.max(0, Number(it.descuento_pct || 0)));
+      // El descuento va aplicado en el precio, no como línea negativa: la
+      // cotización que ve el cliente enseña el precio pactado, no la resta.
+      const unit = Number(it.precio_unitario || 0) * (1 - descLinea / 100) * (1 - Math.min(100, Math.max(0, descGlobal)) / 100);
+      return {
+        tipo: it.ciclo === 'unico' ? 'unico' : (it.tipo === 'plugin' ? 'plugin' : 'plan'),
+        nombre: it.nombre,
+        descripcion: descLinea ? `Incluye ${descLinea}% de descuento` : '',
+        periodo: it.ciclo === 'anual' ? 'anual' : it.ciclo === 'unico' ? 'unico' : 'mensual',
+        cantidad: cant,
+        subtotal: Math.round(unit * cant),
+      };
+    });
+    const tQ = calcQuoteTotals({ items: itemsQ, iva_mode: 'sin' });
+    const cuerpoQ: any = {
+      empresa: empresa?.nombre || deal.nombre || '',
+      contacto: contacto?.nombre || '',
+      email: contacto?.email || '',
+      whatsapp: contacto?.whatsapp || contacto?.telefono || '',
+      items: itemsQ, iva_incluido: false, moneda: 'MXN', estado: 'draft',
+      subtotal: Math.round(tQ.itemsSubtotal), iva_monto: 0, total: Math.round(tQ.grandTotal),
+      company_id: deal.company_id || null, contact_id: deal.contact_id || null, created_via: 'admin',
+    };
+    const baseQ = new URL(request.url).origin;
+    const rr = await fetch(baseQ + '/api/revenue/quotes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', cookie: request.headers.get('cookie') || '' },
+      body: JSON.stringify(cuerpoQ),
+    });
+    const jj = await rr.json().catch(() => ({}));
+    if (!rr.ok || !jj?.id) return json({ error: jj?.error || 'No se pudo crear la cotización' }, 502);
+    await supabase.from('deals').update({ quote_id: jj.id }).eq('id', dealId);
+    await supabase.from('quotes').update({ deal_id: dealId }).eq('id', jj.id);
+    return json({ quote_id: jj.id, numero: jj.numero, url: `/cotizacion/${jj.id}`, lineas: itemsQ.length }, 201);
+  }
+
+  // Sin líneas capturadas (tratos viejos): un ítem con el importe suelto.
   const items = [{
     tipo: 'plan',
     nombre: `${deal.plan ? deal.plan.charAt(0).toUpperCase() + deal.plan.slice(1) : 'Licencia SACS'}${sucursales > 1 ? ` · ${sucursales} sucursales` : ''}`,

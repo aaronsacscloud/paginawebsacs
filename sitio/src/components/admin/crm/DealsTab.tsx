@@ -4,6 +4,7 @@ import { useIsMobile, useDrawerHistory } from '../../../lib/ui/mobile';
 import ActionSheet from './ui/ActionSheet';
 import NuevaOportunidadModal from './NuevaOportunidadModal';
 import SugerenciasOportunidad from './SugerenciasOportunidad';
+import Etiquetas, { ChipsEtiquetas, FiltroEtiquetas, useCatalogoEtiquetas, useMapaEtiquetas } from './Etiquetas';
 
 // ─── Types ───
 interface Deal {
@@ -15,6 +16,10 @@ interface Deal {
   motivo_perdida: string | null; competidor: string | null;
   fecha_cierre_esperada: string | null; closed_at: string | null;
   days_in_pipeline: number | null; quote_id: string | null;
+  // v2/v3/v4: líneas, tipo de dinero, categoría y siguiente paso.
+  items?: any[] | null; mrr?: number | null; valor_unico?: number | null; descuento_pct?: number | null;
+  tipo_ingreso?: string | null; categoria?: string | null; origen?: string | null; es_sugerencia?: boolean | null;
+  proximo_paso?: string | null; proximo_paso_at?: string | null; referrer_partner_id?: string | null;
   owner_id: string | null; archived_at: string | null;
   contacts: { id: string; nombre: string; email: string | null; whatsapp: string | null } | null;
   companies: { id: string; nombre: string; plan: string | null } | null;
@@ -75,8 +80,13 @@ function probFor(key: string, arr: { key: string }[]): number {
 // último movimiento REAL (cambio de etapa o edición), y el umbral crece con la
 // etapa: una recién calificada aguanta más sin noticias que una en negociación,
 // donde 10 días de silencio ya son una señal.
+// Umbral por etapa. Se lee de la configuración del pipeline (stages[].rot_dias,
+// como el rotting configurable de Pipedrive); si esa etapa no lo define, cae a
+// estos valores, que salen de lo que ya se sabía del ciclo de venta.
+let ROT_POR_ETAPA: Record<string, number> = {};
 const DIAS_ESTANCADA: Record<string, number> = { negociacion: 10, cotizacion_enviada: 14, demo_realizada: 14 };
 const DIAS_ESTANCADA_DEFAULT = 21;
+const umbralRot = (stage: string) => ROT_POR_ETAPA[stage] ?? DIAS_ESTANCADA[stage] ?? DIAS_ESTANCADA_DEFAULT;
 function diasSinMover(d: any): number {
   const t = Math.max(Date.parse(d.stage_changed_at || 0) || 0, Date.parse(d.updated_at || 0) || 0, Date.parse(d.created_at || 0) || 0);
   if (!t) return 0;
@@ -84,7 +94,30 @@ function diasSinMover(d: any): number {
 }
 function estaEstancada(d: any): boolean {
   if (isClosedKey(d.stage)) return false;
-  return diasSinMover(d) >= (DIAS_ESTANCADA[d.stage] ?? DIAS_ESTANCADA_DEFAULT);
+  return diasSinMover(d) >= umbralRot(d.stage);
+}
+
+// ── Salud del trato (idea 10) ──
+// Un semáforo dice dónde meter la hora que queda del día mejor que una lista
+// ordenada por monto: el trato más grande puede estar muerto y el mediano a un
+// llamada de cerrarse. Cuatro señales, todas accionables:
+//   · lleva días sin moverse        → se está enfriando
+//   · no tiene próximo paso         → nadie lo va a mover
+//   · el cierre esperado ya pasó    → la fecha era humo o nadie la actualizó
+//   · descuento grande pedido       → hay presión de precio sin cerrar
+function saludDeal(d: any): { score: number; color: string; label: string; por: string[] } {
+  if (isClosedKey(d.stage)) return { score: 100, color: '#999', label: 'cerrada', por: [] };
+  let score = 100; const por: string[] = [];
+  const dias = diasSinMover(d), umbral = umbralRot(d.stage);
+  if (dias >= umbral) { score -= 35; por.push(`${dias} días sin moverse`); }
+  else if (dias >= umbral * 0.6) { score -= 15; por.push(`${dias} días sin noticias`); }
+  if (!d.proximo_paso) { score -= 25; por.push('sin próximo paso'); }
+  else if (d.proximo_paso_at && d.proximo_paso_at < new Date().toISOString().slice(0, 10)) { score -= 20; por.push('el próximo paso ya venció'); }
+  if (d.fecha_cierre_esperada && d.fecha_cierre_esperada < new Date().toISOString().slice(0, 10)) { score -= 20; por.push('el cierre esperado ya pasó'); }
+  if (Number(d.descuento_pct || 0) >= 20) { score -= 10; por.push(`${d.descuento_pct}% de descuento pedido`); }
+  score = Math.max(0, score);
+  const color = score >= 70 ? '#1A8F7A' : score >= 40 ? '#E8A838' : '#b93333';
+  return { score, color, label: score >= 70 ? 'sana' : score >= 40 ? 'atención' : 'en riesgo', por };
 }
 
 // Lo que se gana si se cierra. Un pipeline enseña el valor para la empresa; lo
@@ -166,6 +199,8 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
       const op = (j.data || []).find((p: any) => p.tipo === 'oportunidad');
       if (op?.stages?.length) {
         STAGES = op.stages.map((s: any) => ({ id: s.key, label: s.label, color: s.color, prob: probFor(s.key, op.stages) }));
+        // rot_dias por etapa: configurable donde se configuran las etapas.
+        ROT_POR_ETAPA = Object.fromEntries(op.stages.filter((s: any) => Number(s.rot_dias) > 0).map((s: any) => [s.key, Number(s.rot_dias)]));
         forceRender(x => x + 1);
       }
     }).catch(() => {});
@@ -258,14 +293,22 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
   // MRR nuevo vs expansión: si todo el crecimiento viene de upsell, el motor de
   // adquisición está apagado aunque el ARR suba. Son dos problemas distintos.
   const kMrrNuevo = suma(won.filter((d: any) => (d.categoria || 'nuevo') === 'nuevo'), mrrDe);
+  const kMrrCartera = suma(openDeals.filter((d: any) => d.categoria === 'renovacion' || d.categoria === 'retencion'), mrrDe);
   const kMrrExp = kMrrGanado - kMrrNuevo;
 
   // Filtro por estado: primero se ven todas, pero la pregunta diaria es "¿qué
   // tengo vivo?" y la de fin de mes "¿qué gané?".
   const [filtro, setFiltro] = useState<'todas' | 'abiertas' | 'ganadas' | 'perdidas'>('todas');
   const [filtroTipo, setFiltroTipo] = useState<'' | 'recurrente' | 'unico' | 'mixto'>('');
-  const [filtroCat, setFiltroCat] = useState<'' | 'nuevo' | 'upsell' | 'renovacion'>('');
+  const [filtroCat, setFiltroCat] = useState<'' | 'nuevo' | 'upsell' | 'renovacion' | 'retencion'>('');
+  // Tablero: venta nueva vs cartera (renovación + retención). HubSpot lo
+  // recomienda explícito — renovar tiene otras etapas y otros tiempos, y
+  // mezclarlo ensucia las tasas de conversión de los dos.
+  const [tablero, setTablero] = useState<'venta' | 'cartera'>('venta');
   const [soloEstancadas, setSoloEstancadas] = useState(false);
+  const { cat: catEtiquetas } = useCatalogoEtiquetas();
+  const { mapa: etiquetasDeal, recargar: recargarEtiquetas } = useMapaEtiquetas('deal');
+  const [selEtiquetas, setSelEtiquetas] = useState<string[]>([]);
   const estancadas = openDeals.filter(estaEstancada);
   const dealsVista = deals.filter(d => {
     if (filtro === 'abiertas' && isClosedKey(d.stage)) return false;
@@ -275,8 +318,17 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
       const tipo = (d as any).tipo_ingreso || (mrrDe(d) > 0 && unicoDe(d) > 0 ? 'mixto' : mrrDe(d) > 0 ? 'recurrente' : unicoDe(d) > 0 ? 'unico' : null);
       if (tipo !== filtroTipo) return false;
     }
-    if (filtroCat && ((d as any).categoria || 'nuevo') !== filtroCat) return false;
+    const cat = (d as any).categoria || 'nuevo';
+    const esCartera = cat === 'renovacion' || cat === 'retencion';
+    if (tablero === 'venta' ? esCartera : !esCartera) return false;
+    if (filtroCat && cat !== filtroCat) return false;
     if (soloEstancadas && !estaEstancada(d)) return false;
+    // Y implícita: elegir dos etiquetas deja lo que tiene LAS DOS. Con O el
+    // filtro ampliaría, y filtrar es para acotar.
+    if (selEtiquetas.length) {
+      const ids = (etiquetasDeal[d.id] || []).map((e: any) => e.id);
+      if (!selEtiquetas.every(x => ids.includes(x))) return false;
+    }
     return true;
   });
 
@@ -292,6 +344,7 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
             { l: `MRR en juego · ${openDeals.length} abiertas`, v: fmt(kMrrAbierto), c: '#4B7BE5', t: 'Recurrente mensual de lo que sigue vivo en el pipeline.' },
             { l: 'Único en juego', v: fmt(kUnicoAbierto), c: '#6C5CE7', t: 'Pagos únicos de las oportunidades abiertas.' },
             { l: 'Ponderado 1er año', v: fmt(weightedValue), c: '#2AB5A0', t: 'Valor del primer año (ARR + único) por la probabilidad de cada etapa.' },
+            { l: 'MRR en cartera', v: fmt(kMrrCartera), c: '#E8A838', t: 'Recurrente que se está renovando o reteniendo. No es venta nueva: conservarlo no hace crecer, pero perderlo sí encoge.' },
             { l: 'Estancadas', v: String(estancadas.length), c: estancadas.length ? '#b93333' : '#999', t: 'Abiertas sin movimiento: 10 días en negociación, 14 tras demo/cotización, 21 en el resto. No se pierden — se enfrían.' },
             { l: `Ganadas / perdidas`, v: `${won.length}/${lost.length}`, c: '#999', t: `Pipeline abierto a valor de primer año: ${fmt(totalPipeline)}` },
           ].map(s => (
@@ -318,6 +371,12 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
       {/* Filtros: la lista completa sigue siendo el default (ver todo antes de
           filtrar), pero "qué tengo vivo" y "qué gané" son dos clics distintos. */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', padding: '10px 24px 0' }}>
+        {([['venta', '🆕 Venta nueva'], ['cartera', '🔄 Cartera (renovación y retención)']] as const).map(([k, l]) => (
+          <button key={k} onClick={() => { setTablero(k as any); setFiltroCat(''); }}
+            title={k === 'venta' ? 'Clientes nuevos y upsell' : 'Renovaciones que vienen y clientes a retener: otras etapas, otros tiempos'}
+            style={{ ...btn, background: tablero === k ? '#1a1a1a' : '#f5f5f5', color: tablero === k ? '#fff' : '#555' }}>{l}</button>
+        ))}
+        <span style={{ width: 1, height: 20, background: '#eee' }} />
         {([['todas', `Todas (${deals.length})`], ['abiertas', `Abiertas (${openDeals.length})`], ['ganadas', `Ganadas (${won.length})`], ['perdidas', `Perdidas (${lost.length})`]] as const).map(([k, l]) => (
           <button key={k} onClick={() => setFiltro(k as any)}
             style={{ ...btn, background: filtro === k ? '#1a1a1a' : '#f5f5f5', color: filtro === k ? '#fff' : '#555' }}>{l}</button>
@@ -335,10 +394,12 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
         <span style={{ width: 1, height: 20, background: '#eee' }} />
         {/* Cliente nuevo vs ampliarle a quien ya te compra: cuestan distinto y
             solo una es crecimiento nuevo. Es el "deal type" de HubSpot. */}
-        {([['', 'Todas'], ['nuevo', '✨ Nuevos'], ['upsell', '⬆ Upsell'], ['renovacion', '🔄 Renovación']] as const).map(([k, l]) => (
+        {([['', 'Todas'], ['nuevo', '✨ Nuevos'], ['upsell', '⬆ Upsell'], ['renovacion', '🔄 Renovación'], ['retencion', '🛟 Retención']] as const).map(([k, l]) => (
           <button key={'c' + (k || 'all')} onClick={() => setFiltroCat(k as any)}
             style={{ ...btn, background: filtroCat === k ? '#6C5CE7' : '#f5f5f5', color: filtroCat === k ? '#fff' : '#555' }}>{l}</button>
         ))}
+        {catEtiquetas.length > 0 && <span style={{ width: 1, height: 20, background: '#eee' }} />}
+        <FiltroEtiquetas cat={catEtiquetas} sel={selEtiquetas} onChange={setSelEtiquetas} />
       </div>
 
       {/* Content */}
@@ -348,7 +409,7 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
         ) : view === 'kanban' ? (
           <KanbanView deals={dealsVista} onSelect={setSelected} onMove={moveStage} />
         ) : (
-          <TableView deals={dealsVista} onSelect={setSelected} onBulk={bulkUpdate} onDelete={bulkDelete} />
+          <TableView deals={dealsVista} onSelect={setSelected} onBulk={bulkUpdate} onDelete={bulkDelete} etiquetasFila={etiquetasDeal} />
         )}
       </div>
 
@@ -498,7 +559,7 @@ function DealCard({ deal, onSelect, onMove, dragging, onDragStart, onDragEnd }: 
 }
 
 // ─── Table View ───
-function TableView({ deals, onSelect, onBulk, onDelete }: { deals: Deal[]; onSelect: (d: Deal) => void; onBulk?: (ids: string[], patch: Record<string, any>, msg: string) => void | Promise<void>; onDelete?: (ids: string[]) => void | Promise<void> }) {
+function TableView({ deals, onSelect, onBulk, onDelete, etiquetasFila }: { deals: Deal[]; onSelect: (d: Deal) => void; onBulk?: (ids: string[], patch: Record<string, any>, msg: string) => void | Promise<void>; onDelete?: (ids: string[]) => void | Promise<void>; etiquetasFila?: Record<string, any[]> }) {
   const [sortCol, setSortCol] = useState<string>('created_at');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [sel, setSel] = useState<Set<string>>(new Set());
@@ -537,6 +598,7 @@ function TableView({ deals, onSelect, onBulk, onDelete }: { deals: Deal[]; onSel
     { key: 'plan', label: 'Plan' },
     { key: 'valor_total', label: 'Valor' },
     { key: 'stage', label: 'Etapa' },
+    { key: 'salud', label: 'Salud' },
     { key: 'probabilidad', label: 'Prob.' },
   ];
 
@@ -590,6 +652,7 @@ function TableView({ deals, onSelect, onBulk, onDelete }: { deals: Deal[]; onSel
                   })()}
                   {estaEstancada(d) && <span title={`${diasSinMover(d)} días sin moverse`} style={{ marginLeft: 6, fontSize: '0.6rem', fontWeight: 700, color: '#b93333' }}>🥶 {diasSinMover(d)}d</span>}
                   {comisionDe(d) > 0 && <span title={`Comisión estimada al socio referido (${COMISION_PCT_DEFAULT}% del primer año)`} style={{ marginLeft: 6, fontSize: '0.6rem', fontWeight: 700, color: '#a06600' }}>💰 {fmt(comisionDe(d))}</span>}
+                  {etiquetasFila?.[d.id]?.length ? <span style={{ marginLeft: 6 }}><ChipsEtiquetas etiquetas={etiquetasFila[d.id]} max={3} /></span> : null}
                 </td>
                 <td style={td}>{d.companies?.nombre || '—'}</td>
                 <td style={td}>{d.contacts?.nombre || '—'}</td>
@@ -608,6 +671,20 @@ function TableView({ deals, onSelect, onBulk, onDelete }: { deals: Deal[]; onSel
                 </td>
                 <td style={td}>
                   <span style={{ fontSize: '0.625rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: stageColor(d.stage) + '18', color: stageColor(d.stage) }}>{stageLabel(d.stage)}</span>
+                </td>
+                <td style={td}>
+                  {(() => {
+                    const h = saludDeal(d);
+                    return (
+                      <span title={h.por.length ? h.por.join(' · ') : 'Sin señales de riesgo'} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: 99, background: h.color }} />
+                        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: h.color }}>{h.score}</span>
+                        {d.proximo_paso
+                          ? <span style={{ fontSize: '0.62rem', color: '#999', maxWidth: 130, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={d.proximo_paso}>→ {d.proximo_paso}</span>
+                          : <span style={{ fontSize: '0.62rem', color: '#b93333' }}>sin próximo paso</span>}
+                      </span>
+                    );
+                  })()}
                 </td>
                 <td style={td}><span style={{ fontWeight: 600, color: stageColor(d.stage) }}>{d.probabilidad}%</span></td>
               </tr>
@@ -808,6 +885,11 @@ function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose
   const isMobile = useIsMobile();
   useDrawerHistory(true, onClose); // atrás cierra el drawer del deal
   const [editStage, setEditStage] = useState(deal.stage);
+  const [editPaso, setEditPaso] = useState<string>((deal as any).proximo_paso || '');
+  const [editPasoAt, setEditPasoAt] = useState<string>((deal as any).proximo_paso_at || '');
+  const [notasIA, setNotasIA] = useState('');
+  const [analizando, setAnalizando] = useState(false);
+  const [propuesta, setPropuesta] = useState<any>(null);
   const [editPlan, setEditPlan] = useState(deal.plan || '');
   const [editValorMensual, setEditValorMensual] = useState(deal.valor_mensual);
   const [editValorTotal, setEditValorTotal] = useState(deal.valor_total);
@@ -842,6 +924,8 @@ function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose
       valor_mensual: editValorMensual,
       valor_total: editValorTotal,
       fecha_cierre_esperada: editFechaCierre || null,
+      proximo_paso: editPaso || null,
+      proximo_paso_at: editPasoAt || null,
       probabilidad: STAGES.find(s => s.id === editStage)?.prob ?? deal.probabilidad,
     };
     if (isLostKey(editStage)) {
@@ -851,14 +935,40 @@ function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose
     if (isWonKey(editStage)) {
       updates.closed_at = deal.closed_at || new Date().toISOString();
     }
-    await fetch('/api/crm/deals', {
+    const j = await fetch('/api/crm/deals', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates),
-    });
+    }).then(r => r.json()).catch(() => ({}));
     setSaving(false);
+    if (j?.error) { alert(j.error); return; }
+    if (j?.cierre) alert(resumenCierre(j));
     onSaved();
     onRefresh(deal.id);
+  };
+
+  // Idea 9 · pegar las notas de la llamada y que proponga la actualización.
+  // NO guarda nada solo: propone y una persona acepta. Un CRM que se mueve
+  // solo con lo que entendió de una nota deja de ser confiable.
+  const analizarNotas = async () => {
+    if (notasIA.trim().length < 30) { alert('Pega las notas de la llamada (al menos un par de frases).'); return; }
+    setAnalizando(true);
+    const j = await fetch('/api/crm/deals/analizar-notas', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deal_id: deal.id, notas: notasIA }),
+    }).then(r => r.json()).catch(() => ({ error: 'No se pudo analizar' }));
+    setAnalizando(false);
+    if (j?.error) { alert(j.error); return; }
+    setPropuesta(j);
+  };
+  const aplicarPropuesta = () => {
+    if (!propuesta) return;
+    if (propuesta.stage && STAGES.some(s => s.id === propuesta.stage)) setEditStage(propuesta.stage);
+    if (propuesta.proximo_paso) setEditPaso(propuesta.proximo_paso);
+    if (propuesta.proximo_paso_at) setEditPasoAt(propuesta.proximo_paso_at);
+    if (propuesta.fecha_cierre_esperada) setEditFechaCierre(propuesta.fecha_cierre_esperada);
+    if (propuesta.motivo_perdida) setEditMotivoPerdida(propuesta.motivo_perdida);
+    setPropuesta(null);
   };
 
   const addNote = async () => {
@@ -919,9 +1029,52 @@ function DealDrawer({ deal, onClose, onSaved, onRefresh }: { deal: Deal; onClose
 
           {isLostKey(editStage) && (
             <>
-              <Label>Motivo de pérdida</Label>
-              <input value={editMotivoPerdida} onChange={e => setEditMotivoPerdida(e.target.value)} placeholder="¿Por qué se perdió?" style={input} />
+              <Label>Motivo de pérdida *</Label>
+              <input value={editMotivoPerdida} onChange={e => setEditMotivoPerdida(e.target.value)} placeholder="precio · competidor · no era el momento · falta una función · no contestó" style={input} />
             </>
+          )}
+
+          {/* Próximo paso: un trato sin siguiente paso agendado es un trato
+              muerto. Por eso se pide aquí y pesa en el score de salud. */}
+          <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 8 }}>
+            <div>
+              <Label>Próximo paso</Label>
+              <input value={editPaso} onChange={e => setEditPaso(e.target.value)} placeholder="llamarle para cerrar precio…" style={input} />
+            </div>
+            <div>
+              <Label>¿Cuándo?</Label>
+              <input type="date" value={editPasoAt} onChange={e => setEditPasoAt(e.target.value)} style={input} />
+            </div>
+          </div>
+
+          <Label>Etiquetas</Label>
+          <div style={{ marginBottom: 10 }}><Etiquetas entidad="deal" id={deal.id} /></div>
+
+          {/* Notas de la llamada → propuesta de actualización (idea 9) */}
+          <Label>Notas de la llamada / demo</Label>
+          <textarea value={notasIA} onChange={e => setNotasIA(e.target.value)} rows={3}
+            placeholder="Pega aquí lo que se habló y te propongo etapa, próximo paso y fecha de cierre."
+            style={{ ...input, minHeight: 70, resize: 'vertical' as const }} />
+          <button onClick={analizarNotas} disabled={analizando} style={{ ...btn, background: '#6C5CE7', color: '#fff', marginBottom: 10 }}>
+            {analizando ? 'Leyendo…' : '✨ Proponer actualización'}
+          </button>
+          {propuesta && (
+            <div style={{ background: '#f7f6ff', border: '1px solid #e2ddf9', borderRadius: 10, padding: 12, marginBottom: 12, fontSize: '0.8rem' }}>
+              <b>Propuesta</b>
+              {propuesta.resumen && <div style={{ color: '#555', margin: '4px 0' }}>{propuesta.resumen}</div>}
+              <ul style={{ margin: '6px 0 8px 18px', color: '#555' }}>
+                {propuesta.stage && <li>Etapa → <b>{stageLabel(propuesta.stage)}</b></li>}
+                {propuesta.proximo_paso && <li>Próximo paso: <b>{propuesta.proximo_paso}</b>{propuesta.proximo_paso_at ? ` (${propuesta.proximo_paso_at})` : ''}</li>}
+                {propuesta.fecha_cierre_esperada && <li>Cierre esperado: <b>{propuesta.fecha_cierre_esperada}</b></li>}
+                {propuesta.motivo_perdida && <li>Motivo de pérdida: <b>{propuesta.motivo_perdida}</b></li>}
+                {propuesta.objeciones?.length ? <li>Objeciones: {propuesta.objeciones.join(' · ')}</li> : null}
+              </ul>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={aplicarPropuesta} style={{ ...btn, background: '#1a1a1a', color: '#fff' }}>Aplicar a los campos</button>
+                <button onClick={() => setPropuesta(null)} style={{ ...btn, background: '#f5f5f5', color: '#555' }}>Descartar</button>
+              </div>
+              <div style={{ fontSize: '0.7rem', color: '#999', marginTop: 6 }}>Nada se guarda hasta que le des a Guardar: la propuesta solo llena los campos.</div>
+            </div>
           )}
 
           <div className="crm-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>

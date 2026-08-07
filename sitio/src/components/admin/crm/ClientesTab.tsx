@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { ChipsEtiquetas, FiltroEtiquetas, useCatalogoEtiquetas, useMapaEtiquetas } from './Etiquetas';
 import { Users, TrendingUp, Wallet, AlertTriangle, Plus, ChevronDown, Link2, MessageCircle, Download, Settings2, LayoutGrid, Table2, Infinity as InfinityIcon } from 'lucide-react';
 import { S } from './SubscriptionsTab';
 import ClienteDrawer360 from './ClienteDrawer360';
@@ -82,6 +83,11 @@ function KpiCard({ icon, chipBg, label, value, duals, style }: { icon: any; chip
 
 export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}) {
   const [data, setData] = useState<any[]>([]);
+  // Etiquetas: el mismo catálogo que oportunidades y suscripciones, así el
+  // filtro significa lo mismo en las tres secciones.
+  const { cat: catEtiquetas } = useCatalogoEtiquetas();
+  const { mapa: etiquetasCliente } = useMapaEtiquetas('company');
+  const [selEtiquetas, setSelEtiquetas] = useState<string[]>([]);
   const [tot, setTot] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -184,6 +190,14 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   }
 
   /* ── Definición del datatable estándar ── */
+  // Y implícita: dos etiquetas dejan los clientes que tienen LAS DOS.
+  const dataEtiquetada = selEtiquetas.length
+    ? data.filter((c: any) => {
+        const ids = (etiquetasCliente[c.id] || []).map((e: any) => e.id);
+        return selEtiquetas.every(x => ids.includes(x));
+      })
+    : data;
+
   const cols: ColDef[] = [
     {
       key: 'cliente', label: 'Cliente', width: '17%', ftype: 'text',
@@ -425,10 +439,16 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
         </>); })()}
       </div>
 
+      {catEtiquetas.length > 0 && (
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', margin: '0 0 12px' }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#999' }}>ETIQUETAS</span>
+          <FiltroEtiquetas cat={catEtiquetas} sel={selEtiquetas} onChange={setSelEtiquetas} />
+        </div>
+      )}
       <div style={{ ...S.card, padding: '20px 22px', borderRadius: 14, border: '1px solid #e9eaee', boxShadow: '0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)' }}>
         <TablaEnterprise
           tabla="clientes"
-          data={data}
+          data={dataEtiquetada}
           cols={cols}
           quick={quick}
           vistasBase={vistasBase}

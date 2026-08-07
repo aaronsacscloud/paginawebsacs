@@ -17,6 +17,7 @@ const fmtDate = (d?: string | null) => d ? new Date(String(d).length === 10 ? d 
 const CAT: Record<string, { label: string; bg: string; color: string }> = {
   renovacion: { label: '🔄 Renovación', bg: 'rgba(42,181,160,0.14)', color: '#1A8F7A' },
   upsell:     { label: '⬆ Upsell',      bg: 'rgba(108,92,231,0.12)', color: '#6C5CE7' },
+  retencion:  { label: '🛟 Retención',   bg: 'rgba(185,51,51,0.10)',  color: '#b93333' },
   nuevo:      { label: '✨ Nuevo',       bg: 'rgba(75,123,229,0.12)', color: '#3764c4' },
 };
 
@@ -44,7 +45,7 @@ export default function SugerenciasOportunidad({ onCambio }: { onCambio?: () => 
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ generar: true, dias: 60 }),
     }).then(r => r.json()).catch(() => ({ error: 'No se pudo' }));
     setGenerando(false);
-    setMsg(j.error ? j.error : `${j.renovaciones} renovación(es) y ${j.upsells} upsell(s) nuevos por revisar.`);
+    setMsg(j.error ? j.error : `${j.renovaciones} renovación(es), ${j.upsells} upsell(s) y ${j.retencion || 0} de retención por revisar.`);
     setTimeout(() => setMsg(''), 5000);
     cargar();
   }
@@ -83,7 +84,9 @@ export default function SugerenciasOportunidad({ onCambio }: { onCambio?: () => 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', flexWrap: 'wrap' }}>
         <b style={{ fontSize: '0.85rem' }}>💡 Sugerencias del sistema</b>
         {resumen && <span style={{ fontSize: '0.73rem', color: '#777' }}>
-          {resumen.renovaciones} renovación(es) · {resumen.upsells} upsell(s) · {money(resumen.mrr_sugerido)} MRR potencial
+          {resumen.renovaciones} renovación(es) · {resumen.upsells} upsell(s)
+          {resumen.retencion ? ` · ${resumen.retencion} retención` : ''} · {money(resumen.mrr_sugerido)} MRR potencial
+          {resumen.mrr_en_riesgo ? <span style={{ color: '#b93333' }}> · {money(resumen.mrr_en_riesgo)} MRR en riesgo</span> : null}
         </span>}
         {/* Se dice explícito: si alguien cree que ya está en el pipeline, el
             pronóstico se lee doble. */}

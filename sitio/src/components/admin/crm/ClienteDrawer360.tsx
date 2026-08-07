@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { computarSenales } from '../../../lib/crm/senales';
 import NuevaOportunidadModal from './NuevaOportunidadModal';
+import Etiquetas from './Etiquetas';
 import { useIsMobile, useDrawerHistory, BP } from '../../../lib/ui/mobile';
 
 /* ═══ Cliente 360 — drawer ancho con pestañas, TODO editable ═══
@@ -103,6 +104,9 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                     {co.sacs_account ? <>Cuenta SACS: <b>{co.sacs_account}</b></> : <span style={{ color: '#c62828' }}>Sin cuenta SACS ligada</span>}
                     {principal ? <> · {principal.nombre}{principal.email ? ` · ${principal.email}` : ''}</> : null}
                   </div>
+                  {/* Etiquetas del cliente: mismo catálogo que oportunidades y
+                      suscripciones, para que el filtro cruce las tres. */}
+                  <div style={{ marginTop: 6 }}><Etiquetas entidad="company" id={companyId} /></div>
                 </div>
                 {principal?.whatsapp && (
                   <a href={waLink(principal.whatsapp)} target="_blank" rel="noreferrer" style={{ ...D.btnG, textDecoration: 'none', color: '#1A8F7A', borderColor: '#bfe8df', fontWeight: 700 }}>💬 WhatsApp</a>
