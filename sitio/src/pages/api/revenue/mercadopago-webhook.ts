@@ -42,7 +42,7 @@ import { conexionActiva, obtenerPago, mpFetch } from '../../../lib/pagos/mercado
 // registrarse. La segunda es que así hay UNA sola implementación del cobro —
 // duplicar la lógica aquí sería peor que el bug.
 import { POST as registrarPago } from '../crm/arr/register-payment';
-import { anotarCobro, avisarCobroFallido } from '../../../lib/pagos/cobros-mp';
+import { anotarCobro, avisarCobroFallido, identidadDePago } from '../../../lib/pagos/cobros-mp';
 import { registrarOportunidad } from '../../../lib/crm/oportunidades';
 import { notificar } from '../../../lib/crm/notificaciones';
 
@@ -278,6 +278,7 @@ export const POST: APIRoute = async ({ request, url }) => {
       // Solo interesan los rechazos definitivos: `in_process`/`pending` todavía
       // pueden aprobarse y avisar de ellos sería una falsa alarma diaria.
       if (estado === 'rejected' || estado === 'cancelled') {
+        const ident = identidadDePago(pago);
         let sub: any = null;
         if (subPorPreapproval) {
           const { data } = await supabase.from('subscriptions').select('id, company_id, nombre_plan, precio').eq('id', subPorPreapproval).maybeSingle();
@@ -288,15 +289,28 @@ export const POST: APIRoute = async ({ request, url }) => {
             const { data } = await supabase.from('subscriptions').select('id, company_id, nombre_plan, precio').eq('id', mr[1]).maybeSingle();
             sub = data;
           }
+          // TERCERA vía, la que faltaba: el rebote de una domiciliación llega
+          // como topic `payment`, sin referencia, y lo único que dice de qué
+          // suscripción salió es `metadata.preapproval_id`. Sin leerlo, TODOS
+          // los rebotes de las domiciliadas caían como "sin identificar" —y sin
+          // company_id no se avisaba a nadie, que es justo el caso que importa.
+          if (!sub && ident.preapproval_id) {
+            const { data } = await supabase.from('subscriptions')
+              .select('id, company_id, nombre_plan, precio').eq('mp_preapproval_id', ident.preapproval_id).maybeSingle();
+            sub = data;
+          }
         }
         const nuevo = await anotarCobro({
-          mp_payment_id: String(pago.id), preapproval_id: subPorPreapproval ? String(dataId) : null,
+          mp_payment_id: String(pago.id),
+          preapproval_id: subPorPreapproval ? String(dataId) : (ident.preapproval_id || null),
           subscription_id: sub?.id || null, company_id: sub?.company_id || null,
-          payer_email: pago?.payer?.email || null, monto: Number(pago?.transaction_amount || 0),
+          payer_email: ident.payer_email, monto: Number(pago?.transaction_amount || 0),
           moneda: pago?.currency_id, estado, detalle_estado: pago?.status_detail || null,
           metodo: pago?.payment_method_id || null,
           fecha: pago?.date_created || pago?.date_last_updated || null,
           external_reference: pago?.external_reference || null,
+          payer_nombre: ident.payer_nombre, payer_id: ident.payer_id,
+          tarjeta: ident.tarjeta, descripcion: ident.descripcion,
         });
         // Solo se avisa la PRIMERA vez que se ve este cobro: MP reintenta el
         // aviso y tres alertas del mismo rebote no son tres problemas.

@@ -113,6 +113,29 @@ export default function PagosTab() {
     .sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)))[0] || null;
   const sinIdentificar: any[] = mp?.sin_identificar || [];
 
+  // Quién es, con lo mejor que haya: el cliente ligado, si no el titular de la
+  // tarjeta, si no el correo, si no lo que diga el cobro en Mercado Pago.
+  // "sin identificar" solo cuando de verdad no hay NADA.
+  const quienEs = (c: any) => c.companies?.nombre || c.payer_nombre || c.payer_email || c.descripcion || 'sin identificar';
+
+  // Le pregunta a Mercado Pago por los cobros anónimos: correo del pagador,
+  // titular, últimos 4 y de qué suscripción salió.
+  const [identificando, setIdentificando] = useState(false);
+  const identificarEnMP = async () => {
+    setIdentificando(true);
+    try {
+      const d = await fetch('/api/crm/arr/mp-cobros', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enriquecer: true, dias: 90 }),
+      }).then(r => r.json());
+      setToast(d.error ? d.error
+        : `Revisé ${d.revisados} cobro(s) · ${d.con_datos} con datos del pagador · ${d.ligados} ligado(s) a su suscripción.`);
+      loadAll();
+    } catch { setToast('No se pudo consultar Mercado Pago.'); }
+    setIdentificando(false);
+    setTimeout(() => setToast(''), 6000);
+  };
+
   const abonar = (subscription_id: string) => { setPagoPrefill({ subscription_id }); setShowPago(true); };
 
   if (loading && !summary) return <div style={{ padding: 40, color: '#888' }}>Cargando pagos…</div>;
@@ -239,29 +262,66 @@ export default function PagosTab() {
           <div style={{ fontWeight: 800, marginBottom: 4 }}>Cobros de Mercado Pago que no entraron
             <span style={{ color: '#999', fontWeight: 400, fontSize: 13 }}> · últimos 90 días</span>
           </div>
-          <div style={{ color: '#888', fontSize: 12.5, marginBottom: 12 }}>
-            Lo que la pasarela intentó y falló, más el dinero que llegó sin dueño. Se resuelve en Cobro con Mercado Pago.
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
+            <div style={{ color: '#888', fontSize: 12.5, flex: '1 1 320px' }}>
+              Lo que la pasarela intentó y falló, más el dinero que llegó sin dueño. Se resuelve en Cobro con Mercado Pago.
+            </div>
+            {/* Un rebote que no dice de quién es no se puede cobrar. Esto le
+                pregunta a Mercado Pago por el titular, la tarjeta y de qué
+                suscripción salió — el aviso del webhook trae menos que el pago. */}
+            <button onClick={identificarEnMP} disabled={identificando}
+              style={{ ...S.btnSmall, background: '#009ee3', color: '#fff', border: 'none', padding: '7px 12px' }}
+              title="Va a Mercado Pago por el correo, el titular, los últimos 4 y la suscripción de cada cobro anónimo">
+              {identificando ? 'Preguntando a Mercado Pago…' : '🔎 Identificar en Mercado Pago'}
+            </button>
           </div>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
-            <div style={S.kpi}><div style={S.kLabel}>Rebotado</div><div style={{ ...S.kValue, color: rechazos.length ? '#b93333' : '#999' }}>{fmt(mp?.total_rechazado || 0)}</div><div style={S.kSub}>{rechazos.length} intento(s) · {mp?.clientes_con_rechazo || 0} cliente(s)</div></div>
+            <div style={S.kpi}><div style={S.kLabel}>Rebotado</div><div style={{ ...S.kValue, color: rechazos.length ? '#b93333' : '#999' }}>{fmt(mp?.total_rechazado || 0)}</div>
+              <div style={S.kSub}>{rechazos.length} intento(s) · {mp?.clientes_con_rechazo || 0} cliente(s) identificado(s)
+                {mp?.rechazos_sin_dueno ? <span style={{ color: '#c2410c' }}> · {mp.rechazos_sin_dueno} sin dueño</span> : null}</div>
+            </div>
             <div style={S.kpi}><div style={S.kLabel}>Cobrado sin dueño</div><div style={{ ...S.kValue, color: sinIdentificar.length ? '#c2410c' : '#999' }}>{fmt(mp?.total_sin_identificar || 0)}</div><div style={S.kSub}>{sinIdentificar.length} pago(s) por asignar</div></div>
           </div>
           {rechazos.slice(0, 8).map((r: any) => (
             <div key={r.id} onClick={() => r.company_id && setDrawerCompany(r.company_id)}
-              style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', padding: '7px 0', borderTop: '1px solid #f4f4f4', cursor: r.company_id ? 'pointer' : 'default' }}>
-              <span style={{ background: '#fde8e8', color: '#b93333', padding: '2px 8px', borderRadius: 6, fontWeight: 700, fontSize: 11 }}>Rebotó</span>
-              <span style={{ fontSize: 13, fontWeight: 700 }}>{r.companies?.nombre || r.payer_email || 'sin identificar'}</span>
-              <span style={{ fontSize: 12.5, color: '#888' }}>{r.subscriptions?.nombre_plan || '—'} · {r.motivo || 'rechazado'}</span>
-              <span style={{ marginLeft: 'auto', fontWeight: 700, fontSize: 13 }}>{fmt(r.monto)}</span>
+              style={{ display: 'flex', gap: 10, alignItems: 'flex-start', flexWrap: 'wrap', padding: '9px 0', borderTop: '1px solid #f4f4f4', cursor: r.company_id ? 'pointer' : 'default' }}>
+              <span style={{ background: '#fde8e8', color: '#b93333', padding: '2px 8px', borderRadius: 6, fontWeight: 700, fontSize: 11, marginTop: 1 }}>Rebotó</span>
+              <div style={{ flex: '1 1 260px', minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>{quienEs(r)}</div>
+                <div style={{ fontSize: 12.5, color: '#888' }}>
+                  {r.subscriptions?.nombre_plan || r.descripcion || 'sin plan ligado'} · {r.motivo || 'rechazado'}
+                  {r.tarjeta ? ` · ${r.tarjeta}` : ''}
+                </div>
+                {/* Contacto: lo único que convierte "rebotó $8,500" en algo que
+                    se puede trabajar hoy. */}
+                {(r.payer_email || r.payer_nombre) && (
+                  <div style={{ fontSize: 12, color: '#666' }}>{[r.payer_nombre, r.payer_email].filter(Boolean).join(' · ')}</div>
+                )}
+                {!r.company_id && r.candidatos?.length > 0 && (
+                  <div style={{ fontSize: 12, color: '#c2410c' }}>Probablemente {r.candidatos[0].cliente} ({r.candidatos[0].porque.join(', ')})</div>
+                )}
+                {!r.company_id && !r.candidatos?.length && !r.payer_email && !r.payer_nombre && (
+                  <div style={{ fontSize: 12, color: '#999' }}>Sin datos del pagador — dale a “Identificar en Mercado Pago”.</div>
+                )}
+              </div>
+              <span style={{ fontWeight: 700, fontSize: 13, marginLeft: 'auto' }}>{fmt(r.monto)}</span>
               <span style={{ fontSize: 12, color: '#aaa', width: 74, textAlign: 'right' }}>{fmtDate(String(r.fecha || '').slice(0, 10))}</span>
             </div>
           ))}
           {sinIdentificar.slice(0, 6).map((c: any) => (
-            <div key={c.id} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', padding: '7px 0', borderTop: '1px solid #f4f4f4' }}>
-              <span style={{ background: '#ffedd5', color: '#c2410c', padding: '2px 8px', borderRadius: 6, fontWeight: 700, fontSize: 11 }}>Sin dueño</span>
-              <span style={{ fontSize: 13, fontWeight: 700 }}>{c.payer_email || 'sin correo del pagador'}</span>
-              <span style={{ fontSize: 12.5, color: '#888' }}>{c.candidatos?.length ? `${c.candidatos.length} candidato(s)` : 'sin candidatos claros'}</span>
-              <span style={{ marginLeft: 'auto', fontWeight: 700, fontSize: 13 }}>{fmt(c.monto)}</span>
+            <div key={c.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', flexWrap: 'wrap', padding: '9px 0', borderTop: '1px solid #f4f4f4' }}>
+              <span style={{ background: '#ffedd5', color: '#c2410c', padding: '2px 8px', borderRadius: 6, fontWeight: 700, fontSize: 11, marginTop: 1 }}>Sin dueño</span>
+              <div style={{ flex: '1 1 260px', minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>{quienEs(c)}</div>
+                <div style={{ fontSize: 12.5, color: '#888' }}>
+                  {c.descripcion || 'sin descripción'}{c.tarjeta ? ` · ${c.tarjeta}` : ''}
+                  {c.candidatos?.length ? ` · ${c.candidatos.length} candidato(s)` : ''}
+                </div>
+                {c.candidatos?.length > 0 && (
+                  <div style={{ fontSize: 12, color: '#c2410c' }}>Probablemente {c.candidatos[0].cliente} ({c.candidatos[0].porque.join(', ')})</div>
+                )}
+              </div>
+              <span style={{ fontWeight: 700, fontSize: 13, marginLeft: 'auto' }}>{fmt(c.monto)}</span>
               <span style={{ fontSize: 12, color: '#aaa', width: 74, textAlign: 'right' }}>{fmtDate(String(c.fecha || '').slice(0, 10))}</span>
             </div>
           ))}

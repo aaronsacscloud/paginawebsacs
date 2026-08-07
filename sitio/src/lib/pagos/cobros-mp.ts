@@ -50,7 +50,36 @@ export type CobroMP = {
   metodo?: string | null;
   fecha?: string | null;
   external_reference?: string | null;
+  // Quién fue. Sin esto un rebote se lee "sin identificar", que es lo mismo que
+  // no tenerlo: no se le puede llamar a nadie.
+  payer_nombre?: string | null;
+  payer_id?: string | null;
+  tarjeta?: string | null;
+  descripcion?: string | null;
 };
+
+/**
+ * Saca del pago de Mercado Pago todo lo que dice DE QUIÉN es.
+ *
+ * `payer.email` viene vacío seguido en los cargos recurrentes, así que no puede
+ * ser el único dato: el nombre del titular, los últimos 4 y la descripción del
+ * cobro identifican igual de bien —en las domiciliaciones creadas desde el CRM
+ * la descripción es literalmente "<plan> · <cuenta del cliente>"—.
+ */
+export function identidadDePago(p: any): Pick<CobroMP, 'payer_email' | 'payer_nombre' | 'payer_id' | 'tarjeta' | 'descripcion' | 'external_reference'> & { preapproval_id: string | null } {
+  const nombre = [p?.payer?.first_name, p?.payer?.last_name].filter(Boolean).join(' ').trim()
+    || String(p?.card?.cardholder?.name || '').trim();
+  const u4 = p?.card?.last_four_digits;
+  return {
+    payer_email: p?.payer?.email || null,
+    payer_nombre: nombre || null,
+    payer_id: p?.payer?.id != null ? String(p.payer.id) : null,
+    tarjeta: u4 ? `${p?.payment_method_id || 'tarjeta'} ••••${u4}` : null,
+    descripcion: p?.description || p?.statement_descriptor || null,
+    external_reference: p?.external_reference || null,
+    preapproval_id: p?.metadata?.preapproval_id ? String(p.metadata.preapproval_id) : null,
+  };
+}
 
 /**
  * Anota el cobro. Idempotente por `mp_payment_id`: el webhook reintenta y la
@@ -61,7 +90,7 @@ export type CobroMP = {
  */
 export async function anotarCobro(c: CobroMP): Promise<boolean> {
   const motivo = c.estado === 'approved' ? null : motivoDe(c.detalle_estado).texto;
-  const { error } = await supabase.from('crm_cobros_mp').insert({
+  const base: any = {
     mp_payment_id: String(c.mp_payment_id),
     preapproval_id: c.preapproval_id || null,
     subscription_id: c.subscription_id || null,
@@ -71,7 +100,19 @@ export async function anotarCobro(c: CobroMP): Promise<boolean> {
     estado: c.estado, detalle_estado: c.detalle_estado || null, motivo,
     metodo: c.metodo || null, fecha: c.fecha || new Date().toISOString(),
     external_reference: c.external_reference || null,
-  });
+  };
+  // Columnas de identidad (migración de ago-2026). El deploy puede ir antes que
+  // el SQL: si no existen, se reintenta sin ellas — perder el nombre del titular
+  // es aceptable, perder el cobro entero no.
+  const conIdentidad = {
+    ...base,
+    payer_nombre: c.payer_nombre || null, payer_id: c.payer_id || null,
+    tarjeta: c.tarjeta || null, descripcion: c.descripcion || null,
+  };
+  let { error } = await supabase.from('crm_cobros_mp').insert(conIdentidad);
+  if (error && /column .* does not exist|schema cache|could not find/i.test(error.message || '')) {
+    ({ error } = await supabase.from('crm_cobros_mp').insert(base));
+  }
   if (!error) return true;
   if (/duplicate key|23505/i.test(error.message || '')) return false;   // ya estaba
   console.error('[cobros-mp] no se pudo anotar', c.mp_payment_id, '→', error.message);

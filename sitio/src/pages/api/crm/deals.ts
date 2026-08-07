@@ -59,7 +59,7 @@ export const POST: APIRoute = async ({ request }) => {
     company_id: body.company_id || null,
     deal_id: data.id,
     tipo: 'sistema',
-    titulo: `Deal creado: ${body.nombre}`,
+    titulo: `Oportunidad creada: ${body.nombre}`,
     metadata: { plan: body.plan, valor: body.valor_total, stage: body.stage || 'calificacion' },
     automatico: true,
   });
@@ -174,11 +174,71 @@ export const PUT: APIRoute = async ({ request }) => {
   if (prev?.stage === 'cerrada_ganada' && updates.stage && updates.stage !== 'cerrada_ganada') {
     try {
       const { cancelCommission } = await import('../../../lib/commissions/calculate');
-      await cancelCommission(id, `Deal reabierto a ${updates.stage}`);
+      await cancelCommission(id, `Oportunidad reabierta a ${updates.stage}`);
     } catch (e) {
       console.warn('[crm/deals.PUT] cancelCommission failed:', e);
     }
   }
 
   return new Response(JSON.stringify(data));
+};
+
+// DELETE /api/crm/deals  { ids: [...] }  — borrar oportunidades de verdad.
+//
+// Existe por la basura de antes del proceso: decenas de "Deal — Fulano" que
+// nadie trabajó nunca y que ensucian el pipeline, el ponderado y la lectura de
+// lo que sí está vivo. Marcarlas perdidas no sirve para eso — una perdida es
+// información (se compitió y no se ganó); esto es ruido que no debió existir.
+//
+// Tres tablas apuntan a deals con NO ACTION (borrar sin soltarlas falla), así
+// que primero se sueltan:
+//   · quotes    → la cotización es un documento real, sobrevive sin su deal
+//   · bookings  → la reunión pasó, no se borra por limpiar el pipeline
+//   · activities→ el rastro se queda en el timeline del cliente
+//
+// Y una cuarta apunta con CASCADE: partner_commissions. Por eso NO se borra una
+// oportunidad con comisión PAGADA — el borrado se llevaría el registro del pago
+// a un socio, que es justo lo que jamás se debe perder por una limpieza.
+export const DELETE: APIRoute = async ({ request }) => {
+  const body = await request.json().catch(() => ({} as any));
+  const ids: string[] = Array.isArray(body?.ids) ? body.ids.filter(Boolean) : (body?.id ? [body.id] : []);
+  if (!ids.length) return new Response(JSON.stringify({ error: 'ids requerido' }), { status: 400 });
+  if (ids.length > 200) return new Response(JSON.stringify({ error: 'Máximo 200 por vez.' }), { status: 400 });
+
+  const { data: deals } = await supabase.from('deals').select('id, nombre, company_id, contact_id, stage, valor_total').in('id', ids);
+  if (!deals?.length) return new Response(JSON.stringify({ error: 'No encontré esas oportunidades.' }), { status: 404 });
+
+  // Comisiones pagadas → intocables. Se dice CUÁLES, o el usuario cree que se
+  // borraron todas y no vuelve a revisar.
+  const { data: comis } = await supabase.from('partner_commissions')
+    .select('deal_id, status, paid_at').in('deal_id', ids);
+  const protegidas = new Set((comis || [])
+    .filter((c: any) => c.paid_at || c.status === 'pagada' || c.status === 'paid')
+    .map((c: any) => c.deal_id));
+
+  const borrables = deals.filter(d => !protegidas.has(d.id)).map(d => d.id);
+  const omitidas = deals.filter(d => protegidas.has(d.id)).map(d => ({ id: d.id, nombre: d.nombre, motivo: 'tiene una comisión pagada a un socio' }));
+  if (!borrables.length) {
+    return new Response(JSON.stringify({ error: 'Ninguna se puede borrar: todas tienen comisión pagada.', omitidas }), { status: 409 });
+  }
+
+  // Soltar las hijas ANTES del delete (NO ACTION = el borrado falla si no).
+  await supabase.from('quotes').update({ deal_id: null }).in('deal_id', borrables);
+  await supabase.from('bookings').update({ deal_id: null }).in('deal_id', borrables);
+  await supabase.from('activities').update({ deal_id: null }).in('deal_id', borrables);
+
+  const { error } = await supabase.from('deals').delete().in('id', borrables);
+  if (error) return new Response(JSON.stringify({ error: error.message, omitidas }), { status: 500 });
+
+  // Rastro de la limpieza: sin esto, mañana nadie sabe por qué se vació el
+  // pipeline de abril.
+  const filas = deals.filter(d => borrables.includes(d.id)).map(d => ({
+    tipo: 'sistema', automatico: true, company_id: d.company_id || null,
+    titulo: `Oportunidad eliminada: ${d.nombre}`,
+    descripcion: `Estaba en "${d.stage}" por $${Number(d.valor_total || 0).toLocaleString('es-MX')}. Se borró en una limpieza del pipeline.`,
+    metadata: { audit: 'deal_delete', deal_id: d.id, stage: d.stage, valor_total: d.valor_total },
+  })).filter(f => f.company_id);
+  if (filas.length) await supabase.from('activities').insert(filas);
+
+  return new Response(JSON.stringify({ ok: true, borradas: borrables.length, omitidas }), { status: 200 });
 };

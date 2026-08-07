@@ -10,8 +10,8 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../../lib/supabase';
 import { POST as registrarPago } from './register-payment';
-import { conexionActiva, mpFetch } from '../../../../lib/pagos/mercadopago';
-import { anotarCobro } from '../../../../lib/pagos/cobros-mp';
+import { conexionActiva, mpFetch, obtenerPago } from '../../../../lib/pagos/mercadopago';
+import { anotarCobro, identidadDePago } from '../../../../lib/pagos/cobros-mp';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -60,16 +60,84 @@ async function escanear(dias: number): Promise<{ revisados: number; nuevos: numb
   let nuevos = 0;
   for (const p of cobros) {
     if (vistos.has(String(p.id))) continue;
+    // La búsqueda ya trae el pago completo: se guarda TODO lo que dice de quién
+    // es, no solo el correo (que en los recurrentes viene vacío).
+    const id = identidadDePago(p);
     const ok = await anotarCobro({
-      mp_payment_id: String(p.id), payer_email: p.payer?.email || null,
+      mp_payment_id: String(p.id),
       monto: Number(p.transaction_amount || 0), moneda: p.currency_id,
       estado: 'approved', metodo: p.payment_method_id || null,
       fecha: p.date_approved || p.date_created || null,
-      external_reference: p.external_reference || null,
+      preapproval_id: id.preapproval_id,
+      payer_email: id.payer_email, payer_nombre: id.payer_nombre, payer_id: id.payer_id,
+      tarjeta: id.tarjeta, descripcion: id.descripcion,
+      external_reference: id.external_reference,
     });
     if (ok) nuevos++;
   }
   return { revisados: cobros.length, nuevos, propios };
+}
+
+/**
+ * Le pregunta a Mercado Pago QUIÉN fue cada cobro que aquí no dice de quién es.
+ *
+ * El aviso del webhook trae poco: en los cargos recurrentes `payer.email` viene
+ * vacío seguido, y así un rebote de $8,500 se queda como "sin identificar" —que
+ * es lo mismo que no tenerlo, porque no se le puede llamar a nadie—. El pago
+ * completo sí trae el titular, los últimos 4 y la descripción, y en las
+ * domiciliadas también el `metadata.preapproval_id`, que ES el vínculo con la
+ * suscripción. Con eso, la mayoría deja de ser anónima.
+ */
+async function enriquecer(dias: number): Promise<{ revisados: number; con_datos: number; ligados: number; error?: string }> {
+  let cx;
+  try { cx = await conexionActiva(); } catch (e: any) { return { revisados: 0, con_datos: 0, ligados: 0, error: e?.message }; }
+  if (!cx) return { revisados: 0, con_datos: 0, ligados: 0, error: 'Conecta tu cuenta de Mercado Pago primero.' };
+
+  const desde = new Date(Date.now() - dias * 86400000).toISOString();
+  const { data: filas } = await supabase.from('crm_cobros_mp')
+    .select('id, mp_payment_id, subscription_id, company_id, payer_email, payer_nombre')
+    .gte('fecha', desde)
+    .or('subscription_id.is.null,payer_email.is.null,payer_nombre.is.null')
+    .order('fecha', { ascending: false }).limit(120);
+
+  let revisados = 0, con_datos = 0, ligados = 0;
+  for (const f of filas || []) {
+    let pago: any;
+    try { pago = await obtenerPago(String(f.mp_payment_id), cx); } catch { continue; }
+    revisados++;
+    const id = identidadDePago(pago);
+    const upd: any = { enriquecido_at: new Date().toISOString() };
+    // Solo se RELLENA lo que falta: lo que ya se corrigió a mano no se pisa.
+    if (!f.payer_email && id.payer_email) upd.payer_email = id.payer_email;
+    if (!f.payer_nombre && id.payer_nombre) upd.payer_nombre = id.payer_nombre;
+    if (id.payer_id) upd.payer_id = id.payer_id;
+    if (id.tarjeta) upd.tarjeta = id.tarjeta;
+    if (id.descripcion) upd.descripcion = id.descripcion;
+    if (id.external_reference) upd.external_reference = id.external_reference;
+    if (id.preapproval_id) upd.preapproval_id = id.preapproval_id;
+    if (upd.payer_email || upd.payer_nombre || upd.tarjeta || upd.descripcion) con_datos++;
+
+    // Ligar SOLO con lo que es certeza: el preapproval o la referencia que puso
+    // el CRM. Adivinar por correo parecido no liga nada — para eso están los
+    // candidatos, que los decide una persona.
+    if (!f.subscription_id) {
+      let sub: any = null;
+      if (id.preapproval_id) {
+        const { data } = await supabase.from('subscriptions').select('id, company_id').eq('mp_preapproval_id', id.preapproval_id).maybeSingle();
+        sub = data;
+      }
+      if (!sub) {
+        const m = String(id.external_reference || '').match(/^sub:([0-9a-f-]{36})/i);
+        if (m) {
+          const { data } = await supabase.from('subscriptions').select('id, company_id').eq('id', m[1]).maybeSingle();
+          sub = data;
+        }
+      }
+      if (sub) { upd.subscription_id = sub.id; upd.company_id = sub.company_id; ligados++; }
+    }
+    await supabase.from('crm_cobros_mp').update(upd).eq('id', f.id);
+  }
+  return { revisados, con_datos, ligados };
 }
 
 export const GET: APIRoute = async ({ url }) => {
@@ -90,30 +158,43 @@ export const GET: APIRoute = async ({ url }) => {
       .in('estado', ['activa', 'pendiente_pago', 'programada', 'pausada']).range(0, 999),
   ]);
 
-  // Sin identificar: entró el dinero y no se sabe de quién. Se proponen
-  // candidatos con la misma lógica del vínculo — correo primero, monto después.
+  // Quién puede ser: correo primero, monto después, fecha de cobro al final.
+  // También sirve para los REBOTES: un rebote que no dice de quién es no se
+  // puede cobrar, y "sin identificar · $8,500" no es información, es un susto.
+  const candidatosPara = (c: any) => (subs || []).map((s: any) => {
+    const ct: any = Array.isArray(s.contacts) ? s.contacts[0] : s.contacts;
+    const co: any = Array.isArray(s.companies) ? s.companies[0] : s.companies;
+    let pts = 0; const porque: string[] = [];
+    if (c.payer_email && ct?.email && norm(ct.email) === norm(c.payer_email)) { pts += 100; porque.push('mismo correo'); }
+    if (Number(c.monto) > 0 && Number(s.precio) === Number(c.monto)) { pts += 55; porque.push('mismo monto'); }
+    if (s.proxima_factura && c.fecha) {
+      const d = Math.abs((Date.parse(s.proxima_factura) - Date.parse(String(c.fecha).slice(0, 10))) / 86400000);
+      if (d <= 10) { pts += 20; porque.push('le tocaba pagar esos días'); }
+    }
+    // La descripción del cobro en MP suele traer el plan y la cuenta del cliente
+    // ("Plan Controla · urbanshoes"): cuando el correo viene vacío —que en los
+    // cargos recurrentes es lo normal— esto es lo único que queda.
+    const desc = norm(c.descripcion);
+    if (desc && co?.sacs_account && desc.includes(norm(co.sacs_account))) { pts += 90; porque.push('la descripción trae su cuenta'); }
+    else if (desc && co?.nombre && norm(co.nombre).length > 3 && desc.includes(norm(co.nombre))) { pts += 70; porque.push('la descripción trae su nombre'); }
+    if (desc && s.nombre_plan && desc.includes(norm(s.nombre_plan))) { pts += 25; porque.push('mismo plan en la descripción'); }
+    return { subscription_id: s.id, cliente: co?.sacs_account || co?.nombre, nombre_plan: s.nombre_plan, precio: Number(s.precio), puntos: pts, porque };
+  }).filter((x: any) => x.puntos >= 40).sort((a: any, b: any) => b.puntos - a.puntos).slice(0, 4);
+
+  // Sin identificar: entró el dinero y no se sabe de quién.
   const sinIdentificar = (cobros || [])
     .filter(c => c.estado === 'approved' && !c.subscription_id && !c.resolucion)
-    .map(c => {
-      const candidatos = (subs || []).map((s: any) => {
-        const ct: any = Array.isArray(s.contacts) ? s.contacts[0] : s.contacts;
-        let pts = 0; const porque: string[] = [];
-        if (c.payer_email && ct?.email && norm(ct.email) === norm(c.payer_email)) { pts += 100; porque.push('mismo correo'); }
-        if (Number(c.monto) > 0 && Number(s.precio) === Number(c.monto)) { pts += 55; porque.push('mismo monto'); }
-        if (s.proxima_factura && c.fecha) {
-          const d = Math.abs((Date.parse(s.proxima_factura) - Date.parse(String(c.fecha).slice(0, 10))) / 86400000);
-          if (d <= 10) { pts += 20; porque.push('le tocaba pagar esos días'); }
-        }
-        const co: any = Array.isArray(s.companies) ? s.companies[0] : s.companies;
-        return { subscription_id: s.id, cliente: co?.sacs_account || co?.nombre, nombre_plan: s.nombre_plan, precio: Number(s.precio), puntos: pts, porque };
-      }).filter(x => x.puntos >= 40).sort((a, b) => b.puntos - a.puntos).slice(0, 4);
-      return { ...c, candidatos };
-    });
+    .map(c => ({ ...c, candidatos: candidatosPara(c) }));
 
   // Rechazos: no son un pendiente que se resuelve aquí, son cobranza. Se listan
   // para poder llamar, y se agrupan por cliente porque tres rebotes del mismo
   // son un problema, no tres.
-  const rechazos = (cobros || []).filter(c => c.estado === 'rejected' || c.estado === 'cancelled');
+  const rechazos = (cobros || [])
+    .filter(c => c.estado === 'rejected' || c.estado === 'cancelled')
+    .map(c => (c.subscription_id ? { ...c, candidatos: [] } : { ...c, candidatos: candidatosPara(c) }));
+  // Cuántos rebotes siguen sin poder atribuirse a nadie: es el número que dice
+  // si esta lista sirve para llamar o solo para asustarse.
+  const rechazosSinDueno = rechazos.filter((r: any) => !r.company_id && !r.subscription_id).length;
 
   return json({
     barrido,
@@ -121,12 +202,23 @@ export const GET: APIRoute = async ({ url }) => {
     total_sin_identificar: sinIdentificar.reduce((a, c) => a + Number(c.monto || 0), 0),
     rechazos,
     total_rechazado: rechazos.reduce((a, c) => a + Number(c.monto || 0), 0),
-    clientes_con_rechazo: new Set(rechazos.map(r => r.company_id).filter(Boolean)).size,
+    clientes_con_rechazo: new Set(rechazos.map((r: any) => r.company_id).filter(Boolean)).size,
+    rechazos_sin_dueno: rechazosSinDueno,
   });
 };
 
 export const POST: APIRoute = async ({ request }) => {
   const b = await request.json().catch(() => ({} as any));
+
+  // { enriquecer: true } → sale a Mercado Pago a preguntar quién fue cada cobro
+  // anónimo. Va aparte del barrido: aquel BUSCA cobros nuevos, este identifica
+  // los que ya están.
+  if (b?.enriquecer) {
+    const r = await enriquecer(Math.min(365, Number(b.dias) || 90));
+    if (r.error) return json({ error: r.error }, 400);
+    return json({ ok: true, ...r });
+  }
+
   if (!b?.id) return json({ error: 'id requerido' }, 400);
 
   const { data: cobro } = await supabase.from('crm_cobros_mp').select('*').eq('id', b.id).maybeSingle();

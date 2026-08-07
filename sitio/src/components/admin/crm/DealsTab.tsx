@@ -170,6 +170,20 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
     show(msg);
   };
 
+  // Borrar de verdad: para la basura de antes del proceso. Distinto de
+  // "perdida", que es información real (se compitió y no se ganó).
+  const bulkDelete = async (ids: string[]) => {
+    const r = await fetch('/api/crm/deals', {
+      method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }),
+    });
+    const j = await r.json().catch(() => ({}));
+    await load();
+    if (!r.ok || j.error) { show(j.error || 'No se pudieron eliminar.'); return; }
+    // Las omitidas se dicen SIEMPRE: si se borran 8 de 10 en silencio, el
+    // usuario cree que quedó limpio y nunca vuelve a mirar.
+    show(`${j.borradas} eliminada(s)` + (j.omitidas?.length ? ` · ${j.omitidas.length} no se pudo: ${j.omitidas[0].motivo}` : ''));
+  };
+
   // Stats
   const openDeals = deals.filter(d => !isClosedKey(d.stage));
   const totalPipeline = openDeals.reduce((s, d) => s + d.valor_total, 0);
@@ -212,7 +226,7 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
         ) : view === 'kanban' ? (
           <KanbanView deals={deals} onSelect={setSelected} onMove={moveStage} />
         ) : (
-          <TableView deals={deals} onSelect={setSelected} onBulk={bulkUpdate} />
+          <TableView deals={deals} onSelect={setSelected} onBulk={bulkUpdate} onDelete={bulkDelete} />
         )}
       </div>
 
@@ -359,11 +373,12 @@ function DealCard({ deal, onSelect, onMove, dragging, onDragStart, onDragEnd }: 
 }
 
 // ─── Table View ───
-function TableView({ deals, onSelect, onBulk }: { deals: Deal[]; onSelect: (d: Deal) => void; onBulk?: (ids: string[], patch: Record<string, any>, msg: string) => void | Promise<void> }) {
+function TableView({ deals, onSelect, onBulk, onDelete }: { deals: Deal[]; onSelect: (d: Deal) => void; onBulk?: (ids: string[], patch: Record<string, any>, msg: string) => void | Promise<void>; onDelete?: (ids: string[]) => void | Promise<void> }) {
   const [sortCol, setSortCol] = useState<string>('created_at');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [confirmLost, setConfirmLost] = useState(false);
+  const [confirmDel, setConfirmDel] = useState(false);
   const toggle = (id: string) => setSel(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const ids = [...sel];
   const lostStage = STAGES.find(s => isLostKey(s.id))?.id;
@@ -391,12 +406,12 @@ function TableView({ deals, onSelect, onBulk }: { deals: Deal[]; onSelect: (d: D
 
   const cols = [
     { key: 'created_at', label: 'Fecha' },
-    { key: 'nombre', label: 'Deal' },
+    { key: 'nombre', label: 'Oportunidad' },
     { key: 'empresa', label: 'Empresa' },
     { key: 'contacto', label: 'Contacto' },
     { key: 'plan', label: 'Plan' },
     { key: 'valor_total', label: 'Valor' },
-    { key: 'stage', label: 'Stage' },
+    { key: 'stage', label: 'Etapa' },
     { key: 'probabilidad', label: 'Prob.' },
   ];
 
@@ -412,6 +427,16 @@ function TableView({ deals, onSelect, onBulk }: { deals: Deal[]; onSelect: (d: D
             setConfirmLost(false);
             runBulk({ stage: lostStage, probabilidad: 0, closed_at: new Date().toISOString() }, `${ids.length} marcadas perdidas`);
           }} style={dealBulkBtn}>{confirmLost ? `¿Seguro? marcar ${ids.length} perdidas` : '✕ Marcar perdidas'}</button>}
+          {onDelete && (
+            <button onClick={async () => {
+              // Dos pasos, como "marcar perdidas": esto no se deshace.
+              if (!confirmDel) { setConfirmDel(true); setTimeout(() => setConfirmDel(false), 3000); return; }
+              setConfirmDel(false);
+              await onDelete(ids); setSel(new Set());
+            }} style={{ ...dealBulkBtn, background: confirmDel ? '#7f1d1d' : 'transparent', border: '1px solid #b93333', color: '#fff' }}>
+              {confirmDel ? `¿Seguro? borrar ${ids.length} para siempre` : `🗑 Eliminar ${ids.length}`}
+            </button>
+          )}
           <button onClick={() => setSel(new Set())} style={{ ...dealBulkBtn, background: 'transparent', border: '1px solid #555' }}>Cancelar</button>
         </div>
       )}

@@ -173,7 +173,7 @@ export async function advanceDealStage(dealId: string, targetStage: DealStage, c
     company_id: deal.company_id,
     deal_id: dealId,
     tipo: 'sistema',
-    titulo: `Deal avanzó a ${targetStage}`,
+    titulo: `La oportunidad avanzó a ${targetStage}`,
     metadata: { from: currentStage, to: targetStage, trigger: ctx.trigger || 'system' },
     automatico: true,
   });
@@ -213,7 +213,7 @@ export async function createDealFromQuote(quote: any, targetStage: DealStage, ct
     .single();
 
   const insertPayload: any = {
-    nombre: `Deal — ${quote.empresa || quote.contacto || 'Cliente'}`,
+    nombre: `Oportunidad — ${quote.empresa || quote.contacto || 'Cliente'}`,
     contact_id: contactId,
     company_id: contact?.company_id || null,
     plan,
@@ -268,7 +268,7 @@ export async function createDealFromQuote(quote: any, targetStage: DealStage, ct
     company_id: insertPayload.company_id,
     deal_id: deal.id,
     tipo: 'sistema',
-    titulo: `Deal creado automáticamente: ${targetStage}`,
+    titulo: `Oportunidad creada automáticamente: ${targetStage}`,
     metadata: { trigger: ctx.trigger || 'quote_sync', quote_id: quote.id, stage: targetStage },
     automatico: true,
   });
