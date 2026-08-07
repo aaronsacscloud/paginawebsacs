@@ -27,8 +27,19 @@ function derivarMontos(body: any): Record<string, any> {
 // Columnas de la migración de ago-2026. El deploy puede ir antes que el SQL:
 // si faltan, se reintenta sin ellas — perder el desglose es aceptable, perder
 // la oportunidad no.
-const COLS_V2 = ['items', 'mrr', 'valor_unico', 'descuento_pct', 'tipo_ingreso', 'subscription_id'];
+const COLS_V2 = ['items', 'mrr', 'valor_unico', 'descuento_pct', 'tipo_ingreso', 'subscription_id', 'categoria', 'origen', 'es_sugerencia'];
 const sinColumna = (m?: string) => /column .* does not exist|schema cache|could not find/i.test(m || '');
+// Cliente NUEVO o UPSELL: la propiedad "deal type" de HubSpot (net new vs
+// repeat business). No es cosmética — vender por primera vez y ampliarle a
+// quien ya te compra cuestan distinto, tardan distinto y solo una es
+// crecimiento nuevo. Se deduce de si esa empresa ya tenía suscripción.
+async function categoriaAuto(companyId?: string | null): Promise<string> {
+  if (!companyId) return 'nuevo';
+  const { data } = await supabase.from('subscriptions').select('id')
+    .eq('company_id', companyId).in('estado', ['activa', 'pendiente_pago', 'pausada', 'programada']).limit(1).maybeSingle();
+  return data ? 'upsell' : 'nuevo';
+}
+
 function sinV2(o: Record<string, any>) {
   const c = { ...o };
   for (const k of COLS_V2) delete c[k];
@@ -46,6 +57,15 @@ export const GET: APIRoute = async ({ request, url }) => {
     .select('*, contacts(id, nombre, email, whatsapp), companies(id, nombre, plan)')
     .is('archived_at', null)
     .order('created_at', { ascending: false });
+
+  // Las SUGERENCIAS (renovaciones y señales que generó el sistema) no son
+  // pipeline: nadie ha ido a buscar ese dinero todavía. Si contaran aquí, el
+  // pronóstico se inflaría solo y dejaría de creerse. Viven en su propia
+  // bandeja (/api/crm/deals/sugerencias) hasta que alguien las acepta.
+  if (url.searchParams.get('incluir_sugerencias') !== '1') query = query.or('es_sugerencia.is.null,es_sugerencia.eq.false');
+  query = query.is('descartada_at', null);
+  const categoria = url.searchParams.get('categoria');
+  if (categoria) query = query.eq('categoria', categoria);
 
   if (stage) query = query.eq('stage', stage);
   if (contact_id) query = query.eq('contact_id', contact_id);
@@ -76,6 +96,8 @@ export const POST: APIRoute = async ({ request }) => {
     fecha_cierre_esperada: body.fecha_cierre_esperada || null,
     quote_id: body.quote_id || null,
     owner_id: body.owner_id || null,
+    origen: body.origen || 'manual',
+    categoria: body.categoria || (await categoriaAuto(body.company_id)),
     ...derivarMontos(body),
   };
 
@@ -115,9 +137,24 @@ export const PUT: APIRoute = async ({ request }) => {
   // Cargar deal previo para detectar transición de stage
   const { data: prev } = await supabase
     .from('deals')
-    .select('stage, referrer_partner_id, valor_total, contact_id')
+    .select('stage, referrer_partner_id, valor_total, contact_id, motivo_perdida')
     .eq('id', id)
     .maybeSingle();
+
+  // ── Perder SIN decir por qué es lo que impide mejorar ──
+  // La columna existía desde el principio y estaba vacía en las 8 perdidas: sin
+  // el motivo, en tres meses nadie sabe si se pierde por precio, por función o
+  // por no dar seguimiento — y sin eso no hay nada que corregir. Es el "loss
+  // reason" obligatorio de Pipedrive. Se valida en el SERVIDOR porque la UI se
+  // puede saltar (curl, automatizaciones, el kanban al arrastrar).
+  const pasaAPerdida = typeof updates.stage === 'string' && /perdid/i.test(updates.stage) && !/perdid/i.test(String(prev?.stage || ''));
+  if (pasaAPerdida && !String(updates.motivo_perdida || prev?.motivo_perdida || '').trim()) {
+    return new Response(JSON.stringify({
+      error: 'Escribe por qué se perdió: es lo único que después permite corregir precio, producto o seguimiento.',
+      requiere: 'motivo_perdida',
+    }), { status: 400 });
+  }
+  if (pasaAPerdida) updates.closed_at = updates.closed_at || new Date().toISOString();
 
   let { data, error } = await supabase.from('deals').update(updates).eq('id', id).select().single();
   if (error && sinColumna(error.message)) ({ data, error } = await supabase.from('deals').update(sinV2(updates)).eq('id', id).select().single());

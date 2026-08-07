@@ -1973,12 +1973,25 @@ function TabOportunidades({ companyId, co, principal, flash, reload }: any) {
 
   async function cambiarStage(d: any, stage: string) {
     if (!stage || stage === d.stage) return;
+    // Perder exige motivo (lo valida el servidor): se pregunta antes para no
+    // chocar contra un 400 y perder el clic.
+    let motivo: string | undefined;
+    if (isLost(stage)) {
+      const m = prompt(`¿Por qué se perdió "${d.nombre}"?\n\nSugeridos: precio · se fue con competidor · no era el momento · falta una función · no contestó · presupuesto`, '');
+      if (m === null) return;
+      if (!m.trim()) { alert('Sin motivo no se puede marcar perdida.'); return; }
+      motivo = m.trim();
+    }
     setBusyId(d.id);
-    const r = await fetch('/api/crm/deals', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: d.id, stage }) });
+    const r = await fetch('/api/crm/deals', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: d.id, stage, ...(motivo ? { motivo_perdida: motivo } : {}) }) });
     const j = await r.json().catch(() => ({}));
     setBusyId('');
     if (!r.ok || j.error) { alert(j.error || 'No se pudo mover la oportunidad.'); return; }
-    flash(isWon(stage) ? 'Oportunidad ganada · suscripción generada' : 'Etapa actualizada'); cargar(); reload?.();
+    // Se dice lo que de verdad quedó creado, no lo que se supone que pasa.
+    const c = j?.cierre;
+    const hechos = [c?.cliente_creado && 'cliente creado', c?.sub_creada && 'suscripción generada', c?.unico_creado && 'pago único registrado'].filter(Boolean).join(' · ');
+    flash(isWon(stage) ? (hechos ? 'Ganada · ' + hechos : 'Oportunidad ganada') + (c?.avisos?.length ? ' · ⚠ ' + c.avisos[0] : '') : 'Etapa actualizada');
+    cargar(); reload?.();
   }
   async function convertir(d: any) {
     setBusyId(d.id);

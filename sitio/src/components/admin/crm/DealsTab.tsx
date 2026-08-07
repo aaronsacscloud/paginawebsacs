@@ -3,6 +3,7 @@ import { useToast, Toast, logStageChange, SlaBadge, ActivityChips, KanbanSkeleto
 import { useIsMobile, useDrawerHistory } from '../../../lib/ui/mobile';
 import ActionSheet from './ui/ActionSheet';
 import NuevaOportunidadModal from './NuevaOportunidadModal';
+import SugerenciasOportunidad from './SugerenciasOportunidad';
 
 // ─── Types ───
 interface Deal {
@@ -68,6 +69,30 @@ function probFor(key: string, arr: { key: string }[]): number {
   const pos = opens.findIndex(s => s.key === key);
   return pos >= 0 ? Math.min(95, Math.round((pos + 1) / (opens.length + 1) * 100)) : 50;
 }
+
+// ── Estancamiento (el "rotting" de Pipedrive) ──
+// La mayoría de las oportunidades no se pierden: se enfrían. Se mide desde el
+// último movimiento REAL (cambio de etapa o edición), y el umbral crece con la
+// etapa: una recién calificada aguanta más sin noticias que una en negociación,
+// donde 10 días de silencio ya son una señal.
+const DIAS_ESTANCADA: Record<string, number> = { negociacion: 10, cotizacion_enviada: 14, demo_realizada: 14 };
+const DIAS_ESTANCADA_DEFAULT = 21;
+function diasSinMover(d: any): number {
+  const t = Math.max(Date.parse(d.stage_changed_at || 0) || 0, Date.parse(d.updated_at || 0) || 0, Date.parse(d.created_at || 0) || 0);
+  if (!t) return 0;
+  return Math.floor((Date.now() - t) / 86400000);
+}
+function estaEstancada(d: any): boolean {
+  if (isClosedKey(d.stage)) return false;
+  return diasSinMover(d) >= (DIAS_ESTANCADA[d.stage] ?? DIAS_ESTANCADA_DEFAULT);
+}
+
+// Lo que se gana si se cierra. Un pipeline enseña el valor para la empresa; lo
+// que mueve a quien vende es su parte. Se calcula con el mismo 20% por defecto
+// que usa createCommissionForDeal, y solo se muestra cuando hay socio referido
+// (que es cuando esa comisión existe de verdad).
+const COMISION_PCT_DEFAULT = 20;
+const comisionDe = (d: any) => d?.referrer_partner_id ? Math.round(Number(d.valor_total || 0) * COMISION_PCT_DEFAULT / 100) : 0;
 
 // Qué dejó el cierre, dicho en el momento. Un "ganada ✓" a secas es lo que
 // permitió que una venta de $44,505 quedara ganada sin cliente y sin cobro:
@@ -163,6 +188,17 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
     if (isClosedKey(newStage)) {
       updates.closed_at = new Date().toISOString();
     }
+    // Perder sin decir por qué es lo que impide corregir precio, producto o
+    // seguimiento. El servidor lo exige; aquí se pregunta antes para no chocar
+    // contra un 400. (Los motivos sugeridos son los que sí se pueden accionar.)
+    if (isLostKey(newStage)) {
+      const motivo = prompt(
+        `¿Por qué se perdió "${deal.nombre}"?\n\nSugeridos: precio · se fue con competidor · no era el momento · falta una función · no contestó · presupuesto`,
+        '');
+      if (motivo === null) return;                 // cancelar = no mover
+      if (!motivo.trim()) { show('Sin motivo no se puede marcar perdida.'); return; }
+      updates.motivo_perdida = motivo.trim();
+    }
     // Optimista: refleja el movimiento de inmediato en el kanban.
     setDeals(ds => ds.map(d => d.id === deal.id ? { ...d, stage: newStage, probabilidad: prob } : d));
     const j = await fetch('/api/crm/deals', {
@@ -172,6 +208,7 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
     }).then(r => r.json()).catch(() => ({}));
     const toLabel = stageLabel(newStage);
     logStageChange({ deal_id: deal.id, contact_id: deal.contact_id, company_id: deal.company_id, fromLabel: stageLabel(deal.stage), toLabel });
+    if (j?.error) { show(j.error); load(); return; }
     show(isWonKey(newStage) ? resumenCierre(j) : `Movida a ${toLabel}`);
     load();
   };
@@ -218,11 +255,18 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
   const kUnicoAbierto = suma(openDeals, unicoDe);
   const kMrrGanado = suma(won, mrrDe);
   const kUnicoGanado = suma(won, unicoDe);
+  // MRR nuevo vs expansión: si todo el crecimiento viene de upsell, el motor de
+  // adquisición está apagado aunque el ARR suba. Son dos problemas distintos.
+  const kMrrNuevo = suma(won.filter((d: any) => (d.categoria || 'nuevo') === 'nuevo'), mrrDe);
+  const kMrrExp = kMrrGanado - kMrrNuevo;
 
   // Filtro por estado: primero se ven todas, pero la pregunta diaria es "¿qué
   // tengo vivo?" y la de fin de mes "¿qué gané?".
   const [filtro, setFiltro] = useState<'todas' | 'abiertas' | 'ganadas' | 'perdidas'>('todas');
   const [filtroTipo, setFiltroTipo] = useState<'' | 'recurrente' | 'unico' | 'mixto'>('');
+  const [filtroCat, setFiltroCat] = useState<'' | 'nuevo' | 'upsell' | 'renovacion'>('');
+  const [soloEstancadas, setSoloEstancadas] = useState(false);
+  const estancadas = openDeals.filter(estaEstancada);
   const dealsVista = deals.filter(d => {
     if (filtro === 'abiertas' && isClosedKey(d.stage)) return false;
     if (filtro === 'ganadas' && !isWonKey(d.stage)) return false;
@@ -231,6 +275,8 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
       const tipo = (d as any).tipo_ingreso || (mrrDe(d) > 0 && unicoDe(d) > 0 ? 'mixto' : mrrDe(d) > 0 ? 'recurrente' : unicoDe(d) > 0 ? 'unico' : null);
       if (tipo !== filtroTipo) return false;
     }
+    if (filtroCat && ((d as any).categoria || 'nuevo') !== filtroCat) return false;
+    if (soloEstancadas && !estaEstancada(d)) return false;
     return true;
   });
 
@@ -240,11 +286,13 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 24px', background: '#fff', borderBottom: '1px solid #f0f0f0', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: 16, alignItems: 'center', overflowX: 'auto' }}>
           {[
-            { l: `MRR ganado · ARR ${fmt(kMrrGanado * 12)}`, v: fmt(kMrrGanado), c: '#1A8F7A', t: 'Recurrente mensual de las oportunidades GANADAS. ARR = ×12.' },
+            { l: `MRR ganado · ARR ${fmt(kMrrGanado * 12)}`, v: fmt(kMrrGanado), c: '#1A8F7A', t: `Recurrente mensual de las oportunidades GANADAS. ARR = ×12. De ahí, ${fmt(kMrrNuevo)} es de clientes nuevos y ${fmt(kMrrExp)} de expansión.` },
+            { l: 'nuevo / expansión', v: `${fmt(kMrrNuevo)} · ${fmt(kMrrExp)}`, c: '#6C5CE7', t: 'MRR de clientes NUEVOS vs de ampliarle a quien ya te compra. Si todo viene de expansión, la adquisición está apagada aunque el ARR suba.' },
             { l: 'Único ganado', v: fmt(kUnicoGanado), c: '#a06600', t: 'Implementaciones, hardware y demás cobros de una sola vez ya ganados. No es ARR.' },
             { l: `MRR en juego · ${openDeals.length} abiertas`, v: fmt(kMrrAbierto), c: '#4B7BE5', t: 'Recurrente mensual de lo que sigue vivo en el pipeline.' },
             { l: 'Único en juego', v: fmt(kUnicoAbierto), c: '#6C5CE7', t: 'Pagos únicos de las oportunidades abiertas.' },
             { l: 'Ponderado 1er año', v: fmt(weightedValue), c: '#2AB5A0', t: 'Valor del primer año (ARR + único) por la probabilidad de cada etapa.' },
+            { l: 'Estancadas', v: String(estancadas.length), c: estancadas.length ? '#b93333' : '#999', t: 'Abiertas sin movimiento: 10 días en negociación, 14 tras demo/cotización, 21 en el resto. No se pierden — se enfrían.' },
             { l: `Ganadas / perdidas`, v: `${won.length}/${lost.length}`, c: '#999', t: `Pipeline abierto a valor de primer año: ${fmt(totalPipeline)}` },
           ].map(s => (
             <div key={s.l} title={s.t} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -263,6 +311,10 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
         </div>
       </div>
 
+      {/* Lo que el sistema propone solo, en su propia bandeja: aceptar lo mete
+          al pipeline, descartar lo quita. Hasta entonces no cuenta en nada. */}
+      <SugerenciasOportunidad onCambio={load} />
+
       {/* Filtros: la lista completa sigue siendo el default (ver todo antes de
           filtrar), pero "qué tengo vivo" y "qué gané" son dos clics distintos. */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', padding: '10px 24px 0' }}>
@@ -274,6 +326,18 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
         {([['', 'Todo tipo'], ['recurrente', '🔁 Recurrente'], ['unico', '💵 Pago único'], ['mixto', '⚡ Mixto']] as const).map(([k, l]) => (
           <button key={k || 'all'} onClick={() => setFiltroTipo(k as any)}
             style={{ ...btn, background: filtroTipo === k ? '#4B7BE5' : '#f5f5f5', color: filtroTipo === k ? '#fff' : '#555' }}>{l}</button>
+        ))}
+        <button onClick={() => setSoloEstancadas(v => !v)}
+          title="Abiertas sin movimiento — el 'rotting' de Pipedrive"
+          style={{ ...btn, background: soloEstancadas ? '#b93333' : '#f5f5f5', color: soloEstancadas ? '#fff' : '#555' }}>
+          🥶 Estancadas ({estancadas.length})
+        </button>
+        <span style={{ width: 1, height: 20, background: '#eee' }} />
+        {/* Cliente nuevo vs ampliarle a quien ya te compra: cuestan distinto y
+            solo una es crecimiento nuevo. Es el "deal type" de HubSpot. */}
+        {([['', 'Todas'], ['nuevo', '✨ Nuevos'], ['upsell', '⬆ Upsell'], ['renovacion', '🔄 Renovación']] as const).map(([k, l]) => (
+          <button key={'c' + (k || 'all')} onClick={() => setFiltroCat(k as any)}
+            style={{ ...btn, background: filtroCat === k ? '#6C5CE7' : '#f5f5f5', color: filtroCat === k ? '#fff' : '#555' }}>{l}</button>
         ))}
       </div>
 
@@ -517,7 +581,16 @@ function TableView({ deals, onSelect, onBulk, onDelete }: { deals: Deal[]; onSel
               <tr key={d.id} onClick={() => onSelect(d)} style={{ cursor: 'pointer', borderBottom: '1px solid #f8f8f8', background: sel.has(d.id) ? '#f5f8ff' : undefined }}>
                 <td style={{ ...td, cursor: 'default' }} onClick={e => e.stopPropagation()}><input type="checkbox" checked={sel.has(d.id)} onChange={() => toggle(d.id)} /></td>
                 <td style={td}>{fmtDate(d.created_at)}</td>
-                <td style={{ ...td, fontWeight: 700, color: '#1a1a1a' }}>{d.nombre}</td>
+                <td style={{ ...td, fontWeight: 700, color: '#1a1a1a' }}>
+                  {d.nombre}
+                  {(() => {
+                    const cat = (d as any).categoria;
+                    const c = cat === 'renovacion' ? ['🔄 Renovación', '#1A8F7A'] : cat === 'upsell' ? ['⬆ Upsell', '#6C5CE7'] : null;
+                    return c ? <span style={{ marginLeft: 6, fontSize: '0.6rem', fontWeight: 700, color: c[1] }}>{c[0]}</span> : null;
+                  })()}
+                  {estaEstancada(d) && <span title={`${diasSinMover(d)} días sin moverse`} style={{ marginLeft: 6, fontSize: '0.6rem', fontWeight: 700, color: '#b93333' }}>🥶 {diasSinMover(d)}d</span>}
+                  {comisionDe(d) > 0 && <span title={`Comisión estimada al socio referido (${COMISION_PCT_DEFAULT}% del primer año)`} style={{ marginLeft: 6, fontSize: '0.6rem', fontWeight: 700, color: '#a06600' }}>💰 {fmt(comisionDe(d))}</span>}
+                </td>
                 <td style={td}>{d.companies?.nombre || '—'}</td>
                 <td style={td}>{d.contacts?.nombre || '—'}</td>
                 <td style={td}><span style={{ textTransform: 'capitalize' as const }}>{d.plan || '—'}</span></td>
