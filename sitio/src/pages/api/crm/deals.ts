@@ -1,8 +1,39 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { getCurrentUser, applyPartnerScope } from '../../../lib/auth/scope';
+import { calcularTotales } from '../../../lib/crm/deal-items';
 
 export const prerender = false;
+
+// El dinero de una oportunidad SIEMPRE se deriva de sus líneas, nunca se confía
+// de lo que mande el front: si el modal y el servidor calcularan por separado,
+// tarde o temprano el pipeline diría una cosa y la suscripción otra.
+// valor_mensual se conserva sincronizado con mrr porque de ahí cuelgan las
+// comisiones a socios y el código viejo.
+function derivarMontos(body: any): Record<string, any> {
+  if (!Array.isArray(body?.items)) return {};
+  const t = calcularTotales(body.items, body.descuento_pct);
+  return {
+    items: body.items,
+    descuento_pct: body.descuento_pct ?? null,
+    mrr: t.mrr, valor_mensual: t.mrr,
+    valor_unico: t.valor_unico,
+    valor_total: t.valor_total,
+    tipo_ingreso: t.tipo_ingreso,
+    billing_period: t.billing_period,
+  };
+}
+
+// Columnas de la migración de ago-2026. El deploy puede ir antes que el SQL:
+// si faltan, se reintenta sin ellas — perder el desglose es aceptable, perder
+// la oportunidad no.
+const COLS_V2 = ['items', 'mrr', 'valor_unico', 'descuento_pct', 'tipo_ingreso', 'subscription_id'];
+const sinColumna = (m?: string) => /column .* does not exist|schema cache|could not find/i.test(m || '');
+function sinV2(o: Record<string, any>) {
+  const c = { ...o };
+  for (const k of COLS_V2) delete c[k];
+  return c;
+}
 
 export const GET: APIRoute = async ({ request, url }) => {
   const user = await getCurrentUser(request);
@@ -31,31 +62,30 @@ export const GET: APIRoute = async ({ request, url }) => {
 export const POST: APIRoute = async ({ request }) => {
   const body = await request.json();
 
-  const { data, error } = await supabase
-    .from('deals')
-    .insert({
-      nombre: body.nombre,
-      descripcion: body.descripcion || null,
-      contact_id: body.contact_id,
-      company_id: body.company_id || null,
-      plan: body.plan || null,
-      sucursales: body.sucursales || 1,
-      billing_period: body.billing_period || null,
-      valor_mensual: body.valor_mensual || 0,
-      valor_total: body.valor_total || 0,
-      stage: body.stage || 'calificacion',
-      fecha_cierre_esperada: body.fecha_cierre_esperada || null,
-      quote_id: body.quote_id || null,
-      owner_id: body.owner_id || null,
-    })
-    .select()
-    .single();
+  const fila: any = {
+    nombre: body.nombre,
+    descripcion: body.descripcion || null,
+    contact_id: body.contact_id || null,
+    company_id: body.company_id || null,
+    plan: body.plan || null,
+    sucursales: body.sucursales || 1,
+    billing_period: body.billing_period || null,
+    valor_mensual: body.valor_mensual || 0,
+    valor_total: body.valor_total || 0,
+    stage: body.stage || 'calificacion',
+    fecha_cierre_esperada: body.fecha_cierre_esperada || null,
+    quote_id: body.quote_id || null,
+    owner_id: body.owner_id || null,
+    ...derivarMontos(body),
+  };
 
+  let { data, error } = await supabase.from('deals').insert(fila).select().single();
+  if (error && sinColumna(error.message)) ({ data, error } = await supabase.from('deals').insert(sinV2(fila)).select().single());
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 
   // Log activity
   await supabase.from('activities').insert({
-    contact_id: body.contact_id,
+    contact_id: body.contact_id || null,
     company_id: body.company_id || null,
     deal_id: data.id,
     tipo: 'sistema',
@@ -65,7 +95,7 @@ export const POST: APIRoute = async ({ request }) => {
   });
 
   // Update contact lifecycle if needed
-  if (body.stage && body.stage !== 'cerrada_perdida') {
+  if (body.contact_id && body.stage && body.stage !== 'cerrada_perdida') {
     await supabase
       .from('contacts')
       .update({ lifecycle_stage: 'oportunidad' })
@@ -78,8 +108,9 @@ export const POST: APIRoute = async ({ request }) => {
 
 export const PUT: APIRoute = async ({ request }) => {
   const body = await request.json();
-  const { id, ...updates } = body;
+  const { id, ...rest } = body;
   if (!id) return new Response(JSON.stringify({ error: 'id required' }), { status: 400 });
+  const updates: any = { ...rest, ...derivarMontos(body) };
 
   // Cargar deal previo para detectar transición de stage
   const { data: prev } = await supabase
@@ -88,52 +119,52 @@ export const PUT: APIRoute = async ({ request }) => {
     .eq('id', id)
     .maybeSingle();
 
-  const { data, error } = await supabase
-    .from('deals')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .single();
-
+  let { data, error } = await supabase.from('deals').update(updates).eq('id', id).select().single();
+  if (error && sinColumna(error.message)) ({ data, error } = await supabase.from('deals').update(sinV2(updates)).eq('id', id).select().single());
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+
+  // Lo que el cierre dejó, para poder decírselo al vendedor en el momento.
+  let cierre: any = null;
 
   // If deal closed won, update contact and company
   if (updates.stage === 'cerrada_ganada' && data) {
-    await supabase
-      .from('contacts')
-      .update({ tipo: 'cliente', lifecycle_stage: 'cliente' })
-      .eq('id', data.contact_id);
+    // Ganar TIENE que dejar algo: cliente + suscripción + pago único. Antes esto
+    // solo corría si la oportunidad ya traía empresa, y la que no la traía se
+    // quedaba ganada sin cliente y sin cobro — ganada de mentiras.
+    try {
+      const { materializarDealGanado } = await import('../../../lib/crm/deal-cierre');
+      cierre = await materializarDealGanado(data);
+      if (cierre.company_id) data.company_id = cierre.company_id;
+    } catch (e: any) {
+      console.warn('[crm/deals.PUT] materializarDealGanado failed:', e);
+      cierre = { avisos: ['No se pudo generar la suscripción: ' + (e?.message || e)] };
+    }
+
+    if (data.contact_id) {
+      await supabase.from('contacts').update({ tipo: 'cliente', lifecycle_stage: 'cliente' }).eq('id', data.contact_id);
+    }
 
     if (data.company_id) {
-      await supabase
-        .from('companies')
-        .update({
-          estado_cuenta: 'activo',
-          plan: data.plan,
-          sucursales: data.sucursales,
-          precio_por_sucursal: data.valor_mensual / (data.sucursales || 1),
-          mrr: data.valor_mensual,
-          arr: data.valor_mensual * 12,
-          fecha_inicio: new Date().toISOString().slice(0, 10),
-        })
-        .eq('id', data.company_id);
+      // companies.mrr/arr los recalcula recalcCompany desde las suscripciones
+      // vivas: escribirlos aquí a mano los separaba del ARR real en cuanto la
+      // sub cambiaba de precio.
+      await supabase.from('companies').update({
+        estado_cuenta: 'activo',
+        ...(data.plan ? { plan: data.plan } : {}),
+        ...(data.sucursales ? { sucursales: data.sucursales } : {}),
+        fecha_inicio: new Date().toISOString().slice(0, 10),
+      }).eq('id', data.company_id);
+      try {
+        const { recalcCompany } = await import('./arr/subscriptions');
+        await recalcCompany(data.company_id);
+      } catch { /* best-effort */ }
     }
 
     // Sellar closed_at si no estaba
     if (!data.closed_at) {
       await supabase.from('deals').update({ closed_at: new Date().toISOString() }).eq('id', id);
     }
-
-    // Ganar la oportunidad GENERA la suscripción (idempotente, estado 'programada';
-    // se activa al primer pago). Cierra la asimetría con la cotización aceptada.
-    let subGenerada = false;
-    try {
-      const { ensureSubscriptionFromDeal } = await import('../../../lib/crm/deal-to-subscription');
-      const r = await ensureSubscriptionFromDeal(data, { estado: 'programada' });
-      subGenerada = r.created;
-    } catch (e) {
-      console.warn('[crm/deals.PUT] ensureSubscriptionFromDeal failed:', e);
-    }
+    const subGenerada = !!cierre?.sub_creada || !!cierre?.unico_creado;
 
     // Encolar ONBOARDING del cliente nuevo (idempotente — no duplica si ya
     // se encoló al aceptar la cotización).
@@ -146,8 +177,8 @@ export const PUT: APIRoute = async ({ request }) => {
 
     // Activity log para que partner lo vea como movimiento
     await supabase.from('activities').insert({
-      contact_id: data.contact_id,
-      company_id: data.company_id,
+      contact_id: data.contact_id || null,
+      company_id: data.company_id || null,
       deal_id: id,
       tipo: 'deal_ganado',
       titulo: `Oportunidad ganada: ${data.nombre}${subGenerada ? ' · suscripción generada' : ''}`,
@@ -180,7 +211,10 @@ export const PUT: APIRoute = async ({ request }) => {
     }
   }
 
-  return new Response(JSON.stringify(data));
+  // `cierre` viaja de vuelta para poder decirle al vendedor QUÉ quedó creado.
+  // Un "ganada ✓" sin decir si nació la suscripción es exactamente el silencio
+  // que dejó una venta de $44,505 sin cliente y sin cobro.
+  return new Response(JSON.stringify(cierre ? { ...data, cierre } : data));
 };
 
 // DELETE /api/crm/deals  { ids: [...] }  — borrar oportunidades de verdad.

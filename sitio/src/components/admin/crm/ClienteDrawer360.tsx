@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { computarSenales } from '../../../lib/crm/senales';
-import { CreateDealModal } from './DealsTab';
+import NuevaOportunidadModal from './NuevaOportunidadModal';
 import { useIsMobile, useDrawerHistory, BP } from '../../../lib/ui/mobile';
 
 /* ═══ Cliente 360 — drawer ancho con pestañas, TODO editable ═══
@@ -1997,7 +1997,12 @@ function TabOportunidades({ companyId, co, principal, flash, reload }: any) {
   const pipeline = abiertas.reduce((a, d) => a + Number(d.valor_total || 0), 0);
   const ponderado = abiertas.reduce((a, d) => a + Number(d.valor_total || 0) * (Number(d.probabilidad || 0) / 100), 0);
   const ganadas = deals.filter(d => isWon(d.stage));
-  const mrrGanado = ganadas.reduce((a, d) => a + Number(d.valor_mensual || 0), 0);
+  // Un pago único no es MRR. Sumarlos juntos hacía que una implementación de
+  // $80,000 se leyera como recurrencia que no existe.
+  const mrrDe = (d: any) => Number(d.mrr ?? d.valor_mensual ?? 0);
+  const unicoDe = (d: any) => Number(d.valor_unico ?? (d.billing_period === 'unico' ? d.valor_total : 0) ?? 0);
+  const mrrGanado = ganadas.reduce((a, d) => a + mrrDe(d), 0);
+  const unicoGanado = ganadas.reduce((a, d) => a + unicoDe(d), 0);
 
   return (
     <div>
@@ -2006,9 +2011,9 @@ function TabOportunidades({ companyId, co, principal, flash, reload }: any) {
         <div style={D.kpi}><div style={D.kl}>Ponderado</div><div style={D.kv}>{money(ponderado)}</div></div>
         <div style={D.kpi}><div style={D.kl}>Ganadas</div><div style={D.kv}>{ganadas.length}</div></div>
         <div style={D.kpi}><div style={D.kl}>MRR / ARR ganado</div><div style={D.kv}>{money(mrrGanado)}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{money(mrrGanado * 12)} ARR</div></div>
-        <button style={{ ...D.btn, marginLeft: 'auto', alignSelf: 'center' }} disabled={!principal} onClick={() => setShowNew(true)}>+ Nueva oportunidad</button>
+        <div style={D.kpi}><div style={D.kl}>Pago único ganado</div><div style={D.kv}>{money(unicoGanado)}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>no suma al ARR</div></div>
+        <button style={{ ...D.btn, marginLeft: 'auto', alignSelf: 'center' }} onClick={() => setShowNew(true)}>+ Nueva oportunidad</button>
       </div>
-      {!principal && <div style={{ fontSize: '0.76rem', color: '#a06600', marginBottom: 10 }}>Agrega un contacto principal (tab Contactos) para poder crear oportunidades.</div>}
 
       {deals.length === 0 ? (
         <div style={{ ...D.card, color: '#999', fontSize: '0.85rem' }}>Este cliente aún no tiene oportunidades.</div>
@@ -2022,8 +2027,8 @@ function TabOportunidades({ companyId, co, principal, flash, reload }: any) {
                 <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{d.nombre}</div>
                 {d.descripcion && <div style={{ fontSize: '0.8rem', color: '#666', marginTop: 2 }}>{d.descripcion}</div>}
                 <div style={{ fontSize: '0.8rem', color: '#16181d', marginTop: 4 }}>
-                  MRR <b>{money(d.valor_mensual)}</b> · ARR <b>{money(Number(d.valor_mensual || 0) * 12)}</b>
-                  {d.billing_period === 'unico' ? <span style={{ color: '#6C5CE7' }}> · pago único {money(d.valor_total)}</span> : null}
+                  MRR <b>{money(mrrDe(d))}</b> · ARR <b>{money(mrrDe(d) * 12)}</b>
+                  {unicoDe(d) > 0 ? <span style={{ color: '#6C5CE7' }}> · pago único {money(unicoDe(d))}</span> : null}
                 </div>
               </div>
               <span style={{ ...D.badge, background: won ? '#e6f6f2' : lost ? '#fdf2f2' : '#eef2ff', color: won ? '#1A8F7A' : lost ? '#b93333' : (st?.color || '#3730a3') }}>
@@ -2043,11 +2048,13 @@ function TabOportunidades({ companyId, co, principal, flash, reload }: any) {
         );
       })}
 
-      {showNew && principal && (
-        <CreateDealModal
+      {/* El alta completa (catálogo, personalizado, descuentos, MRR/único) ya
+          cuelga del cliente: por eso no hace falta contacto principal. */}
+      {showNew && (
+        <NuevaOportunidadModal
+          companyIdInicial={companyId}
           onClose={() => setShowNew(false)}
           onCreated={() => { setShowNew(false); cargar(); reload?.(); }}
-          preset={{ contact: { id: principal.id, nombre: principal.nombre, email: principal.email, company_id: companyId, companies: { nombre: co.nombre } } as any }}
         />
       )}
     </div>

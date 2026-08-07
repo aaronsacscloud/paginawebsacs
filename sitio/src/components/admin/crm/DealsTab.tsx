@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useToast, Toast, logStageChange, SlaBadge, ActivityChips, KanbanSkeleton } from './crmHelpers';
 import { useIsMobile, useDrawerHistory } from '../../../lib/ui/mobile';
 import ActionSheet from './ui/ActionSheet';
+import NuevaOportunidadModal from './NuevaOportunidadModal';
 
 // ─── Types ───
 interface Deal {
@@ -66,6 +67,20 @@ function probFor(key: string, arr: { key: string }[]): number {
   const opens = arr.filter(s => !isClosedKey(s.key));
   const pos = opens.findIndex(s => s.key === key);
   return pos >= 0 ? Math.min(95, Math.round((pos + 1) / (opens.length + 1) * 100)) : 50;
+}
+
+// Qué dejó el cierre, dicho en el momento. Un "ganada ✓" a secas es lo que
+// permitió que una venta de $44,505 quedara ganada sin cliente y sin cobro:
+// nadie se entera de lo que NO pasó.
+function resumenCierre(j: any): string {
+  const c = j?.cierre;
+  if (!c) return '🎉 Oportunidad ganada';
+  const hechos: string[] = [];
+  if (c.cliente_creado) hechos.push('cliente creado');
+  if (c.sub_creada) hechos.push('suscripción generada');
+  if (c.unico_creado) hechos.push('pago único registrado');
+  const base = hechos.length ? `🎉 Ganada · ${hechos.join(' · ')}` : '🎉 Oportunidad ganada';
+  return c.avisos?.length ? `${base} · ⚠ ${c.avisos[0]}` : base;
 }
 
 // ─── Activity helpers ───
@@ -150,14 +165,14 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
     }
     // Optimista: refleja el movimiento de inmediato en el kanban.
     setDeals(ds => ds.map(d => d.id === deal.id ? { ...d, stage: newStage, probabilidad: prob } : d));
-    await fetch('/api/crm/deals', {
+    const j = await fetch('/api/crm/deals', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates),
-    });
+    }).then(r => r.json()).catch(() => ({}));
     const toLabel = stageLabel(newStage);
     logStageChange({ deal_id: deal.id, contact_id: deal.contact_id, company_id: deal.company_id, fromLabel: stageLabel(deal.stage), toLabel });
-    show(isWonKey(newStage) ? '🎉 Oportunidad ganada — convertida en cliente' : `Movida a ${toLabel}`);
+    show(isWonKey(newStage) ? resumenCierre(j) : `Movida a ${toLabel}`);
     load();
   };
 
@@ -191,19 +206,48 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
   const won = deals.filter(d => isWonKey(d.stage));
   const lost = deals.filter(d => isLostKey(d.stage));
 
+  // ── Lo que mueve al vendedor ──
+  // Sumar en la misma bolsa una licencia de $900/mes y una implementación única
+  // de $80,000 no dice nada: ni valen lo mismo ni se pronostican igual. Los tres
+  // números se separan, y el foco es lo GANADO — el pipeline es promesa, lo
+  // ganado es lo que ya se logró.
+  const mrrDe = (d: any) => Number(d.mrr ?? d.valor_mensual ?? 0);
+  const unicoDe = (d: any) => Number(d.valor_unico ?? (d.billing_period === 'unico' ? d.valor_total : 0) ?? 0);
+  const suma = (ds: any[], f: (d: any) => number) => ds.reduce((s, d) => s + f(d), 0);
+  const kMrrAbierto = suma(openDeals, mrrDe);
+  const kUnicoAbierto = suma(openDeals, unicoDe);
+  const kMrrGanado = suma(won, mrrDe);
+  const kUnicoGanado = suma(won, unicoDe);
+
+  // Filtro por estado: primero se ven todas, pero la pregunta diaria es "¿qué
+  // tengo vivo?" y la de fin de mes "¿qué gané?".
+  const [filtro, setFiltro] = useState<'todas' | 'abiertas' | 'ganadas' | 'perdidas'>('todas');
+  const [filtroTipo, setFiltroTipo] = useState<'' | 'recurrente' | 'unico' | 'mixto'>('');
+  const dealsVista = deals.filter(d => {
+    if (filtro === 'abiertas' && isClosedKey(d.stage)) return false;
+    if (filtro === 'ganadas' && !isWonKey(d.stage)) return false;
+    if (filtro === 'perdidas' && !isLostKey(d.stage)) return false;
+    if (filtroTipo) {
+      const tipo = (d as any).tipo_ingreso || (mrrDe(d) > 0 && unicoDe(d) > 0 ? 'mixto' : mrrDe(d) > 0 ? 'recurrente' : unicoDe(d) > 0 ? 'unico' : null);
+      if (tipo !== filtroTipo) return false;
+    }
+    return true;
+  });
+
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       {/* Top stats bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 24px', background: '#fff', borderBottom: '1px solid #f0f0f0', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: 16, alignItems: 'center', overflowX: 'auto' }}>
           {[
-            { l: 'Abiertos', v: String(openDeals.length), c: '#4B7BE5' },
-            { l: 'Pipeline', v: fmt(totalPipeline), c: '#6C5CE7' },
-            { l: 'Ponderado', v: fmt(weightedValue), c: '#2AB5A0' },
-            { l: 'Ganados', v: String(won.length), c: '#2e7d32' },
-            { l: 'Perdidos', v: String(lost.length), c: '#999' },
+            { l: `MRR ganado · ARR ${fmt(kMrrGanado * 12)}`, v: fmt(kMrrGanado), c: '#1A8F7A', t: 'Recurrente mensual de las oportunidades GANADAS. ARR = ×12.' },
+            { l: 'Único ganado', v: fmt(kUnicoGanado), c: '#a06600', t: 'Implementaciones, hardware y demás cobros de una sola vez ya ganados. No es ARR.' },
+            { l: `MRR en juego · ${openDeals.length} abiertas`, v: fmt(kMrrAbierto), c: '#4B7BE5', t: 'Recurrente mensual de lo que sigue vivo en el pipeline.' },
+            { l: 'Único en juego', v: fmt(kUnicoAbierto), c: '#6C5CE7', t: 'Pagos únicos de las oportunidades abiertas.' },
+            { l: 'Ponderado 1er año', v: fmt(weightedValue), c: '#2AB5A0', t: 'Valor del primer año (ARR + único) por la probabilidad de cada etapa.' },
+            { l: `Ganadas / perdidas`, v: `${won.length}/${lost.length}`, c: '#999', t: `Pipeline abierto a valor de primer año: ${fmt(totalPipeline)}` },
           ].map(s => (
-            <div key={s.l} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div key={s.l} title={s.t} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ fontSize: '1rem', fontWeight: 800, color: s.c }}>{s.v}</span>
               <span style={{ fontSize: '0.625rem', color: '#999', fontWeight: 500 }}>{s.l}</span>
             </div>
@@ -219,19 +263,36 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
         </div>
       </div>
 
+      {/* Filtros: la lista completa sigue siendo el default (ver todo antes de
+          filtrar), pero "qué tengo vivo" y "qué gané" son dos clics distintos. */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', padding: '10px 24px 0' }}>
+        {([['todas', `Todas (${deals.length})`], ['abiertas', `Abiertas (${openDeals.length})`], ['ganadas', `Ganadas (${won.length})`], ['perdidas', `Perdidas (${lost.length})`]] as const).map(([k, l]) => (
+          <button key={k} onClick={() => setFiltro(k as any)}
+            style={{ ...btn, background: filtro === k ? '#1a1a1a' : '#f5f5f5', color: filtro === k ? '#fff' : '#555' }}>{l}</button>
+        ))}
+        <span style={{ width: 1, height: 20, background: '#eee' }} />
+        {([['', 'Todo tipo'], ['recurrente', '🔁 Recurrente'], ['unico', '💵 Pago único'], ['mixto', '⚡ Mixto']] as const).map(([k, l]) => (
+          <button key={k || 'all'} onClick={() => setFiltroTipo(k as any)}
+            style={{ ...btn, background: filtroTipo === k ? '#4B7BE5' : '#f5f5f5', color: filtroTipo === k ? '#fff' : '#555' }}>{l}</button>
+        ))}
+      </div>
+
       {/* Content */}
       <div style={{ flex: 1, padding: '16px 24px', overflow: 'auto' }}>
         {loading ? (
           <KanbanSkeleton cols={5} />
         ) : view === 'kanban' ? (
-          <KanbanView deals={deals} onSelect={setSelected} onMove={moveStage} />
+          <KanbanView deals={dealsVista} onSelect={setSelected} onMove={moveStage} />
         ) : (
-          <TableView deals={deals} onSelect={setSelected} onBulk={bulkUpdate} onDelete={bulkDelete} />
+          <TableView deals={dealsVista} onSelect={setSelected} onBulk={bulkUpdate} onDelete={bulkDelete} />
         )}
       </div>
 
       {/* Create Modal */}
-      {showCreate && <CreateDealModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load(); }} />}
+      {/* CreateDealModal (una línea, un monto) se queda para el alta rápida desde
+          el contacto; el alta completa —catálogo, personalizado, descuentos y
+          tipo de dinero— vive aquí. */}
+      {showCreate && <NuevaOportunidadModal onClose={() => setShowCreate(false)} onCreated={() => { setShowCreate(false); load(); }} />}
 
       {/* Detail Drawer */}
       {selected && (
@@ -460,7 +521,18 @@ function TableView({ deals, onSelect, onBulk, onDelete }: { deals: Deal[]; onSel
                 <td style={td}>{d.companies?.nombre || '—'}</td>
                 <td style={td}>{d.contacts?.nombre || '—'}</td>
                 <td style={td}><span style={{ textTransform: 'capitalize' as const }}>{d.plan || '—'}</span></td>
-                <td style={{ ...td, fontWeight: 700 }}>{fmt(d.valor_total)}</td>
+                {/* Valor del primer año, y debajo de qué está hecho: sin eso,
+                    $80,000 de implementación y $80,000 de ARR se ven igual. */}
+                <td style={{ ...td, fontWeight: 700 }}>{fmt(d.valor_total)}
+                  {(() => {
+                    const mrr = Number((d as any).mrr ?? d.valor_mensual ?? 0);
+                    const uni = Number((d as any).valor_unico ?? (d.billing_period === 'unico' ? d.valor_total : 0) ?? 0);
+                    if (!mrr && !uni) return null;
+                    return <div style={{ fontSize: '0.65rem', fontWeight: 500, color: '#999' }}>
+                      {mrr ? `${fmt(mrr)}/mes` : ''}{mrr && uni ? ' + ' : ''}{uni ? `${fmt(uni)} único` : ''}
+                    </div>;
+                  })()}
+                </td>
                 <td style={td}>
                   <span style={{ fontSize: '0.625rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: stageColor(d.stage) + '18', color: stageColor(d.stage) }}>{stageLabel(d.stage)}</span>
                 </td>
