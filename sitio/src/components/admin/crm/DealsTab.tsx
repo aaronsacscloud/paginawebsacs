@@ -216,8 +216,28 @@ export default function DealsTab({ onConfig, initialDealId, onDealConsumed }: { 
 
   useEffect(() => { load(); }, []);
 
+  // Antes de GANAR: enseñar qué va a pasar. Son dos cierres distintos y hasta
+  // ahora se veían igual — si el cliente ya existe solo se le agrega lo vendido,
+  // pero si viene de un lead se CREA un registro nuevo con nombre heredado del
+  // trato, y eso no puede pasar en silencio.
+  const confirmarCierre = async (deal: Deal): Promise<boolean> => {
+    let p: any = null;
+    try { p = await fetch(`/api/crm/deals/cierre-preview?deal_id=${deal.id}`).then(r => r.json()); } catch { /* si falla, se sigue */ }
+    if (!p || p.error) return true;   // nunca bloquear el cierre por el preview
+    // Cliente ya registrado: se agrega y ya, sin interrumpir.
+    if (!p.convierte_lead) return true;
+    const texto = [
+      `“${p.cliente}” todavía no es cliente: al ganar esta oportunidad se va a CONVERTIR.`,
+      '', 'Esto es lo que va a pasar:',
+      ...(p.pasos || []).map((x: string) => '· ' + x),
+      '', '¿Confirmas?',
+    ].join('\n');
+    return confirm(texto);
+  };
+
   const moveStage = async (deal: Deal, newStage: string) => {
     if (deal.stage === newStage) return;
+    if (isWonKey(newStage) && !(await confirmarCierre(deal))) return;
     const prob = STAGES.find(s => s.id === newStage)?.prob ?? deal.probabilidad;
     const updates: Record<string, any> = { id: deal.id, stage: newStage, probabilidad: prob };
     if (isClosedKey(newStage)) {

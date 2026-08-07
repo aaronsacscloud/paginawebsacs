@@ -19,12 +19,35 @@ import { calcularTotales, nombrePlanDeItems, type DealItem } from './deal-items'
 export type ResultadoCierre = {
   company_id: string | null;
   cliente_creado: boolean;
+  /** true = venía de un lead y se acaba de convertir; false = ya era cliente. */
+  convirtio_lead?: boolean;
   subscription_id?: string | null;
   sub_creada: boolean;
   unico_id?: string | null;
   unico_creado: boolean;
   avisos: string[];
 };
+
+/**
+ * Cada paso del cierre deja su propia línea en la Actividad del cliente.
+ *
+ * Antes todo el cierre cabía en una sola línea ("Oportunidad ganada"), y lo que
+ * de verdad pasó —que un lead se volvió cliente, que nació una suscripción de
+ * $9,000 al año, que quedó un pago único por cobrar— no se veía en ningún lado.
+ * Cuando alguien abre el perfil tres meses después, el timeline es la única
+ * fuente de por qué ese cliente existe y qué se le prometió.
+ */
+async function actividad(companyId: string | null, dealId: string, contactId: string | null, tipo: string, titulo: string, descripcion?: string, metadata?: any) {
+  if (!companyId && !contactId) return;
+  try {
+    await supabase.from('activities').insert({
+      tipo, automatico: true,
+      company_id: companyId || null, contact_id: contactId || null, deal_id: dealId || null,
+      titulo: titulo.slice(0, 240), descripcion: descripcion || null,
+      metadata: { audit: 'deal_cierre', ...(metadata || {}) },
+    }).select().maybeSingle();
+  } catch (e: any) { console.error('[deal-cierre] actividad:', e?.message || e); }
+}
 
 /** El cliente al que se le va a cobrar. Sin esto no hay nada que crear. */
 async function asegurarCliente(deal: any): Promise<{ company_id: string | null; creado: boolean; aviso?: string }> {
@@ -48,6 +71,12 @@ async function asegurarCliente(deal: any): Promise<{ company_id: string | null; 
     if (error || !co) return { company_id: null, creado: false, aviso: 'No se pudo crear el cliente: ' + (error?.message || '') };
     await supabase.from('contacts').update({ company_id: co.id, tipo: 'cliente', lifecycle_stage: 'cliente' }).eq('id', ct?.id || deal.contact_id);
     await supabase.from('deals').update({ company_id: co.id }).eq('id', deal.id);
+    // El momento exacto en que dejó de ser un lead. Es el hito del que cuelga
+    // todo lo demás del cliente, y hasta ahora no quedaba escrito en ningún lado.
+    await actividad(co.id, deal.id, ct?.id || deal.contact_id, 'cliente_convertido',
+      `✨ ${[ct?.nombre, ct?.apellido].filter(Boolean).join(' ') || nombre} pasó de lead a CLIENTE`,
+      `Se creó el cliente "${nombre}" al ganar la oportunidad "${deal.nombre}".`,
+      { company_id: co.id, deal_nombre: deal.nombre, desde: 'lead' });
     return { company_id: co.id, creado: true };
   }
   return { company_id: null, creado: false, aviso: 'La oportunidad no tiene ni cliente ni contacto: no hay a quién cobrarle.' };
@@ -121,7 +150,13 @@ export async function materializarDealGanado(deal: any): Promise<ResultadoCierre
         ...(deal.referrer_partner_id ? { partner_id: deal.referrer_partner_id } : {}),
       });
       if (error) avisos.push('Suscripción: ' + error);
-      else { out.subscription_id = id; out.sub_creada = true; }
+      else {
+        out.subscription_id = id; out.sub_creada = true;
+        await actividad(cli.company_id, deal.id, contactId, 'suscripcion_creada',
+          `📄 Suscripción creada: ${nombrePlanDeItems(items, deal.plan || 'Licencia SACS')} · $${precio.toLocaleString('es-MX')}/${ciclo === 'anual' ? 'año' : 'mes'}`,
+          `Nace PROGRAMADA (aceptada, sin pagar): pasa a activa con el primer pago. Aporta $${Math.round(t.mrr).toLocaleString('es-MX')} de MRR.`,
+          { subscription_id: id, ciclo, precio, mrr: t.mrr });
+      }
     }
   }
 
@@ -142,7 +177,13 @@ export async function materializarDealGanado(deal: any): Promise<ResultadoCierre
         ...(deal.quote_id ? { quote_id: deal.quote_id } : {}),
       });
       if (error) avisos.push('Pago único: ' + error);
-      else { out.unico_id = id; out.unico_creado = true; }
+      else {
+        out.unico_id = id; out.unico_creado = true;
+        await actividad(cli.company_id, deal.id, contactId, 'pago_unico_creado',
+          `💵 Pago único por cobrar: ${nombre} · $${Math.round(t.valor_unico).toLocaleString('es-MX')}`,
+          'Queda como licencia vitalicia en su cuenta: se le puede cobrar y NO suma al ARR.',
+          { subscription_id: id, monto: t.valor_unico });
+      }
     }
   }
 
@@ -154,6 +195,38 @@ export async function materializarDealGanado(deal: any): Promise<ResultadoCierre
   await supabase.from('companies').update({ estado_cuenta: 'activo' }).eq('id', cli.company_id).neq('estado_cuenta', 'activo');
   if (contactId) await supabase.from('contacts').update({ tipo: 'cliente', lifecycle_stage: 'cliente' }).eq('id', contactId);
   if (out.subscription_id) await supabase.from('deals').update({ subscription_id: out.subscription_id }).eq('id', deal.id).then(() => {}, () => {});
+
+  out.convirtio_lead = cli.creado;
+
+  // La campana: convertir un lead en cliente es EL evento del embudo. Que pase
+  // en silencio es lo que hace que nadie dé la bienvenida ni arranque el
+  // onboarding el mismo día.
+  if (cli.creado) {
+    try {
+      const { notificar } = await import('./notificaciones');
+      const { data: co } = await supabase.from('companies').select('nombre').eq('id', cli.company_id).maybeSingle();
+      await notificar({
+        clave: `lead_convertido:${deal.id}`,
+        tipo: 'cliente_convertido', nivel: 'info',
+        titulo: `🎉 ${co?.nombre || 'Un lead'} ya es CLIENTE`,
+        detalle: [
+          out.sub_creada ? 'Su suscripción quedó creada (programada).' : '',
+          out.unico_creado ? 'Tiene un pago único por cobrar.' : '',
+          'Todo el detalle está en su Actividad.',
+        ].filter(Boolean).join(' '),
+        monto: Number(deal.valor_total || 0),
+        company_id: cli.company_id, subscription_id: out.subscription_id || null,
+        destino: 'clientes', metadata: { deal_id: deal.id },
+      });
+    } catch (e: any) { console.error('[deal-cierre] campana:', e?.message || e); }
+  }
+
+  // Si algo NO se pudo hacer, también se escribe: un cierre a medias que no
+  // deja rastro es el que se descubre cuando el cliente reclama.
+  if (avisos.length) {
+    await actividad(cli.company_id, deal.id, contactId, 'sistema',
+      '⚠️ El cierre quedó incompleto', avisos.join(' · '), { avisos });
+  }
 
   return out;
 }

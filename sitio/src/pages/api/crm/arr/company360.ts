@@ -70,6 +70,8 @@ export const GET: APIRoute = async ({ url }) => {
     // Que el cliente ABRA la cotización es la señal más accionable del timeline:
     // merece su propio ícono y no quedarse como un engrane más.
     cotizacion_vista: '👀',
+    // El cierre ya no es una sola línea: cada paso se ve con su propio ícono.
+    cliente_convertido: '✨', suscripcion_creada: '📄', pago_unico_creado: '💵',
   };
   // Anti-duplicados: las reuniones vienen de `bookings` (fila más rica, con
   // estado y Meet) y las cotizaciones de `quotes` → se OMITEN las activities

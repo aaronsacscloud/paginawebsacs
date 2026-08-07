@@ -1981,6 +1981,17 @@ function TabOportunidades({ companyId, co, principal, flash, reload }: any) {
 
   async function cambiarStage(d: any, stage: string) {
     if (!stage || stage === d.stage) return;
+    // Ganar desde aquí también avisa si el registro todavía no es cliente: el
+    // cierre crea un cliente nuevo, y eso se confirma, no se descubre después.
+    if (isWon(stage)) {
+      try {
+        const p = await fetch(`/api/crm/deals/cierre-preview?deal_id=${d.id}`).then(r => r.json());
+        if (p && !p.error && p.convierte_lead) {
+          const ok = confirm([`“${p.cliente}” todavía no es cliente: al ganar esta oportunidad se va a CONVERTIR.`, '', 'Esto es lo que va a pasar:', ...(p.pasos || []).map((x: string) => '· ' + x), '', '¿Confirmas?'].join('\n'));
+          if (!ok) return;
+        }
+      } catch { /* si el preview falla, no se bloquea el cierre */ }
+    }
     // Perder exige motivo (lo valida el servidor): se pregunta antes para no
     // chocar contra un 400 y perder el clic.
     let motivo: string | undefined;

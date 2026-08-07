@@ -207,7 +207,16 @@ export const PUT: APIRoute = async ({ request }) => {
     // se encoló al aceptar la cotización).
     try {
       const { enqueueOnboarding } = await import('../../../lib/crm/onboarding');
-      await enqueueOnboarding(data.company_id || null, data.contact_id || null, id);
+      const r = await enqueueOnboarding(data.company_id || null, data.contact_id || null, id);
+      // También el onboarding deja rastro: si no, nadie sabe si al cliente se le
+      // dio la bienvenida o se quedó esperando.
+      if (data.company_id && (r as any) !== false) {
+        await supabase.from('activities').insert({
+          tipo: 'sistema', automatico: true, company_id: data.company_id, contact_id: data.contact_id || null, deal_id: id,
+          titulo: '🚀 Onboarding encolado', descripcion: 'Arranca la bienvenida y los primeros pasos del cliente nuevo.',
+          metadata: { audit: 'deal_cierre_onboarding' },
+        }).select().maybeSingle();
+      }
     } catch (e) {
       console.warn('[crm/deals.PUT] enqueueOnboarding failed:', e);
     }
@@ -218,7 +227,9 @@ export const PUT: APIRoute = async ({ request }) => {
       company_id: data.company_id || null,
       deal_id: id,
       tipo: 'deal_ganado',
-      titulo: `Oportunidad ganada: ${data.nombre}${subGenerada ? ' · suscripción generada' : ''}`,
+      titulo: `🏆 Oportunidad ganada: ${data.nombre}`
+        + (cierre?.convirtio_lead ? ' · lead convertido en cliente' : '')
+        + (subGenerada ? ' · cobro generado' : ''),
       metadata: { valor: data.valor_total, plan: data.plan, referrer_partner_id: data.referrer_partner_id, suscripcion_generada: subGenerada },
       automatico: true,
     });
@@ -232,6 +243,14 @@ export const PUT: APIRoute = async ({ request }) => {
           partner_id: data.referrer_partner_id,
           deal_value: Number(data.valor_total || 0),
         });
+        // La comisión al socio, en el timeline del cliente: es dinero que sale
+        // por esta venta y hasta ahora solo vivía en la tabla de comisiones.
+        await supabase.from('activities').insert({
+          tipo: 'sistema', automatico: true, company_id: data.company_id || null, deal_id: id,
+          titulo: '🤝 Comisión generada para el socio referido',
+          descripcion: `Sobre el valor del primer año ($${Number(data.valor_total || 0).toLocaleString('es-MX')}).`,
+          metadata: { audit: 'deal_cierre_comision', partner_id: data.referrer_partner_id },
+        }).select().maybeSingle();
       } catch (e) {
         console.warn('[crm/deals.PUT] createCommissionForDeal failed:', e);
       }
