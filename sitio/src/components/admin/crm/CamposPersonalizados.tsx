@@ -17,6 +17,8 @@ export type Prop = {
   opciones?: { v: string; l: string }[] | null;
   depende_de?: string | null; opciones_por_padre?: Record<string, { v: string; l: string }[]> | null;
   obligatorio: boolean; importante: boolean; orden: number; archivada_at?: string | null; uso?: number;
+  /** Valores guardados que ya no corresponden a ninguna opción de la lista. */
+  huerfanos?: { v: string; n: number }[];
 };
 
 const TIPOS: { v: string; l: string; ayuda: string }[] = [
@@ -94,6 +96,20 @@ export default function CamposConfig({ entidad = 'company' }: { entidad?: 'compa
     setBusy(false);
     if (j?.error) { alert(j.error); return; }
     setEditando(null); recargar();
+  }
+
+  /** Adopta un valor huérfano como opción, sin tocar el dato de nadie: la clave
+   *  se conserva tal cual está guardada — reescribirla sería perder el vínculo
+   *  con los clientes que ya la tienen. */
+  async function adoptar(p: Prop, valor: string) {
+    const etiqueta = prompt(`¿Con qué nombre quieres que aparezca “${valor}” en la lista?`, valor.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()));
+    if (!etiqueta) return;
+    const opciones = [...(p.opciones || []), { v: valor, l: etiqueta.trim() }];
+    const j = await fetch('/api/crm/propiedades', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: p.id, opciones }),
+    }).then(r => r.json());
+    if (j?.error) { alert(j.error); return; }
+    recargar();
   }
 
   async function archivar(p: Prop) {
@@ -195,6 +211,20 @@ export default function CamposConfig({ entidad = 'company' }: { entidad?: 'compa
                   <div style={{ fontSize: '0.75rem', color: p.uso ? '#1A8F7A' : '#bbb', minWidth: 90, textAlign: 'right' }}>
                     {p.uso ? `${p.uso} con dato` : 'nadie lo llena'}
                   </div>
+                  {p.huerfanos?.length ? (
+                    <div style={{ flex: '1 1 100%', fontSize: '0.74rem', color: '#a06600', background: '#fff8ec', border: '1px solid #f5e2b8', borderRadius: 8, padding: '7px 10px', marginTop: 6 }}>
+                      ⚑ Hay valores guardados que no están en la lista — esos clientes no se pueden filtrar por este campo:
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                        {p.huerfanos.map(h => (
+                          <button key={h.v} onClick={() => adoptar(p, h.v)}
+                            title="Agregarlo como opción de la lista, conservando el dato de esos clientes"
+                            style={{ ...E.btnG, padding: '3px 9px', fontSize: '0.72rem' }}>
+                            + “{h.v}” ({h.n})
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                   <button style={E.btnG} onClick={() => { setEditando(p.id); setF({ etiqueta: p.etiqueta, grupo: p.grupo || 'General', descripcion: p.descripcion || '', orden: p.orden, obligatorio: p.obligatorio, importante: p.importante, opciones_txt: (p.opciones || []).map(o => o.l).join('\n') }); }}>Editar</button>
                   <button style={{ ...E.btnG, color: '#b93333' }} onClick={() => archivar(p)}>Archivar</button>
                 </div>

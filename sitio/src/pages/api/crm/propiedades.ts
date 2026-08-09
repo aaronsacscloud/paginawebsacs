@@ -97,17 +97,41 @@ export const GET: APIRoute = async ({ url }) => {
 
   // Cuántos registros tienen cada campo lleno: un campo que nadie llena sobra, y
   // sin el número nadie se entera de que sobra.
+  //
+  // Y de paso los HUÉRFANOS: valores guardados que ya no corresponden a ninguna
+  // opción de la lista. Pasa al importar datos viejos o al quitar una opción que
+  // alguien ya había usado. Sin detectarlos, ese cliente se queda con un dato
+  // que no se puede filtrar y nadie se entera — el dato sigue ahí, invisible.
   const uso: Record<string, number> = {};
+  const huerfanos: Record<string, Record<string, number>> = {};
   const tabla = TABLA[entidad];
+  const porKey = new Map((data || []).map(p => [p.key, p]));
   if (tabla && (data || []).length) {
     const { data: filas } = await supabase.from(tabla).select('propiedades').limit(5000);
     for (const f of filas || []) {
       for (const [k, v] of Object.entries((f as any).propiedades || {})) {
-        if (v !== null && v !== '' && !(Array.isArray(v) && !v.length)) uso[k] = (uso[k] || 0) + 1;
+        if (v === null || v === '' || (Array.isArray(v) && !v.length)) continue;
+        uso[k] = (uso[k] || 0) + 1;
+        const prop: any = porKey.get(k);
+        if (!prop || !['select', 'multiselect'].includes(prop.tipo)) continue;
+        const validas = prop.depende_de
+          ? Object.values(prop.opciones_por_padre || {}).flat().map((o: any) => o.v)
+          : (prop.opciones || []).map((o: any) => o.v);
+        if (!validas.length) continue;
+        for (const x of (Array.isArray(v) ? v : [v]).map(String)) {
+          if (validas.includes(x)) continue;
+          huerfanos[k] = huerfanos[k] || {};
+          huerfanos[k][x] = (huerfanos[k][x] || 0) + 1;
+        }
       }
     }
   }
-  return json({ data: (data || []).map(p => ({ ...p, uso: uso[p.key] || 0 })) });
+  return json({
+    data: (data || []).map(p => ({
+      ...p, uso: uso[p.key] || 0,
+      huerfanos: Object.entries(huerfanos[p.key] || {}).map(([v, n]) => ({ v, n })).sort((a, b) => b.n - a.n),
+    })),
+  });
 };
 
 export const POST: APIRoute = async ({ request }) => {
