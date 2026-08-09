@@ -12,7 +12,10 @@ export const prerender = false;
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
 export const GET: APIRoute = async () => {
-  const mkSel = (contactsSel: string) => 'id, nombre, sacs_account, plan, tipo_cuenta, estado_cuenta, sucursales, mrr, arr, fecha_renovacion, health_score, ultima_venta_at, dias_sin_venta, actividad, uso_sacs, ' + contactsSel + ', subscriptions(id, estado, ciclo, arr, precio, nombre_plan, proxima_factura, pagos_realizados, total_pagado, contact_id, mp_preapproval_id, mp_payer_email, mp_desfase_at, mp_monto_cobrado)';
+  // `propiedades` (campos personalizados) viaja con cada cliente: es lo que
+  // permite que la lista los ofrezca como columnas filtrables sin una consulta
+  // por campo. Va en la cadena de reintentos por si el SQL aún no corrió.
+  const mkSel = (contactsSel: string) => 'id, nombre, sacs_account, plan, tipo_cuenta, estado_cuenta, sucursales, mrr, arr, fecha_renovacion, health_score, ultima_venta_at, dias_sin_venta, actividad, uso_sacs, propiedades, ' + contactsSel + ', subscriptions(id, estado, ciclo, arr, precio, nombre_plan, proxima_factura, pagos_realizados, total_pagado, contact_id, mp_preapproval_id, mp_payer_email, mp_desfase_at, mp_monto_cobrado)';
   const CONTACTS_NEW = 'contacts(id, nombre, email, whatsapp, telefono, rol, es_principal)';
   const CONTACTS_OLD = 'contacts(id, nombre, email, whatsapp, telefono)';
   // pipeline_stage y rol/es_principal pueden no existir aún (SQL pendiente) →
@@ -22,11 +25,12 @@ export const GET: APIRoute = async () => {
     'pipeline_stage, ' + mkSel(CONTACTS_OLD),
     mkSel(CONTACTS_NEW),
     mkSel(CONTACTS_OLD),
+    ('pipeline_stage, ' + mkSel(CONTACTS_NEW)).replace('propiedades, ', ''),
   ];
   let res: any = null;
   for (const sel of intentos) {
     res = await supabase.from('companies').select(sel).is('archived_at', null);
-    if (!res.error || !/pipeline_stage|rol|es_principal|column|schema cache/i.test(res.error.message || '')) break;
+    if (!res.error || !/pipeline_stage|rol|es_principal|propiedades|column|schema cache/i.test(res.error.message || '')) break;
   }
   const { data: companies, error } = res;
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });

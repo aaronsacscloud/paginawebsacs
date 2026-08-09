@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ChipsEtiquetas, FiltroEtiquetas, useCatalogoEtiquetas, useMapaEtiquetas } from './Etiquetas';
+import { useCampos } from './CamposPersonalizados';
 import { Users, TrendingUp, Wallet, AlertTriangle, Plus, ChevronDown, Link2, MessageCircle, Download, Settings2, LayoutGrid, Table2, Infinity as InfinityIcon } from 'lucide-react';
 import { S } from './SubscriptionsTab';
 import ClienteDrawer360 from './ClienteDrawer360';
@@ -85,6 +86,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   const [data, setData] = useState<any[]>([]);
   // Etiquetas: el mismo catálogo que oportunidades y suscripciones, así el
   // filtro significa lo mismo en las tres secciones.
+  const { props: campos } = useCampos('company');
   const { cat: catEtiquetas } = useCatalogoEtiquetas();
   const { mapa: etiquetasCliente } = useMapaEtiquetas('company');
   const [selEtiquetas, setSelEtiquetas] = useState<string[]>([]);
@@ -387,6 +389,43 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
     { key: 'pagos_realizados', label: 'Núm. de pagos', ftype: 'number', val: c => Number(c.pagos_realizados || 0) },
     { key: 'dias_sin_venta', label: 'Días sin vender', ftype: 'number', val: c => c.dias_sin_venta == null ? null : Number(c.dias_sin_venta) },
     { key: 'ultima_venta', label: 'Última venta SACS', ftype: 'date', val: c => c.ultima_venta_at || '' },
+
+    // ── Campos personalizados ──
+    // Se inyectan como columnas normales, y con eso heredan TODO lo que la
+    // tabla ya sabe hacer: mostrar/ocultar, ordenar, filtros avanzados y vistas
+    // guardadas. Ese reúso es lo que hace que capturar un campo sirva de algo:
+    // un dato que no se puede filtrar es un dato que nadie vuelve a mirar.
+    ...campos.map((p: any): ColDef => {
+      const ftype = ['numero', 'moneda', 'porcentaje'].includes(p.tipo) ? 'number'
+        : p.tipo === 'fecha' ? 'date'
+        : ['select', 'booleano'].includes(p.tipo) ? 'select'
+        : 'text';
+      const opciones = p.tipo === 'booleano'
+        ? [{ v: 'si', l: 'Sí' }, { v: 'no', l: 'No' }]
+        : p.depende_de
+          ? Object.values(p.opciones_por_padre || {}).flat().map((o: any) => ({ v: o.v, l: o.l }))
+          : (p.opciones || []).map((o: any) => ({ v: o.v, l: o.l }));
+      const crudo = (c: any) => (c.propiedades || {})[p.key];
+      const texto = (c: any) => {
+        const v = crudo(c);
+        if (v === undefined || v === null || v === '') return '';
+        if (p.tipo === 'booleano') return v ? 'Sí' : 'No';
+        if (p.tipo === 'multiselect') return (Array.isArray(v) ? v : [v]).map((x: any) => opciones.find((o: any) => o.v === x)?.l || x).join(', ');
+        if (p.tipo === 'select') return opciones.find((o: any) => o.v === v)?.l || String(v);
+        return String(v);
+      };
+      return {
+        key: 'prop_' + p.key, label: p.etiqueta, ftype: ftype as any,
+        ...(ftype === 'select' ? { options: opciones } : {}),
+        // El filtro compara contra el valor CRUDO (la clave de la opción), no
+        // contra la etiqueta: renombrar "Moda" no puede romper una vista guardada.
+        val: (c: any) => ftype === 'number' ? (crudo(c) == null ? null : Number(crudo(c)))
+          : ftype === 'select' ? (p.tipo === 'booleano' ? (crudo(c) === true ? 'si' : crudo(c) === false ? 'no' : '') : (crudo(c) ?? ''))
+          : ftype === 'date' ? (crudo(c) || '')
+          : texto(c).toLowerCase(),
+        render: (c: any) => <td style={{ ...T.td, ...T.ell }} title={texto(c) || undefined}>{texto(c) || <span style={{ color: '#ddd' }}>—</span>}</td>,
+      };
+    }),
   ];
 
   const quick: QuickDef[] = [

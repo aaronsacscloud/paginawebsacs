@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import CamposConfig from './crm/CamposPersonalizados';
 import { plans as plansData } from '../../data/plans';
 import { PLANS, PLAN_PRICES, IMPL_PRICES, METODOS, fmt, fmtDate } from '../../lib/quotes/constants';
 import { parseMeta, serializeMeta, addTimelineEvent } from '../../lib/quotes/meta';
@@ -2226,6 +2227,11 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
         {tab === 'cotizaciones' && <QuotesView />}
         {tab === 'config' && (
           <div>
+            {/* Campos personalizados del cliente: información interna de
+                gestión. Va primero porque es lo que se toca seguido; el folio
+                de cotizaciones se configura una vez y no se vuelve a mirar. */}
+            <div style={{ marginBottom: 28 }}><CamposConfig entidad="company" /></div>
+
             {/* Folio config */}
             <h2 style={{ fontSize: '1.125rem', fontWeight: 800, marginBottom: 16 }}>Folio de cotizaciones</h2>
             <div style={{ ...S.card, marginBottom: 24 }}>

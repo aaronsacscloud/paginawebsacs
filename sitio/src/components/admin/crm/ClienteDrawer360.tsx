@@ -2,6 +2,7 @@ import { Fragment, useEffect, useRef, useState } from 'react';
 import { computarSenales } from '../../../lib/crm/senales';
 import NuevaOportunidadModal from './NuevaOportunidadModal';
 import Etiquetas from './Etiquetas';
+import { CamposFicha } from './CamposPersonalizados';
 import { useIsMobile, useDrawerHistory, BP } from '../../../lib/ui/mobile';
 
 /* ═══ Cliente 360 — drawer ancho con pestañas, TODO editable ═══
@@ -457,6 +458,13 @@ function TabInfoGeneral({ co, reload, flash }: any) {
   return (
     <div>
       <EtapaSelector co={co} reload={reload} flash={flash} />
+      {/* Campos personalizados: información INTERNA de gestión, definida en
+          Configuración. Va antes de los datos fiscales a propósito — es lo que
+          se consulta para atender la cuenta, no para facturarla. */}
+      <div style={D.card}>
+        <div style={D.h}>Información de gestión</div>
+        <CamposFicha entidad="company" entidadId={co.id} valores={co.propiedades} onGuardado={reload} />
+      </div>
       <div style={D.card}>
         <div style={D.h}>Datos del cliente (editables)</div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
