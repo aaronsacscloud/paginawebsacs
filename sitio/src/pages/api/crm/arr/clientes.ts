@@ -104,6 +104,12 @@ export const GET: APIRoute = async () => {
         plan: c.plan, tipo_cuenta: c.tipo_cuenta, estado_cuenta: c.estado_cuenta,
         pipeline_stage: c.pipeline_stage ?? null,
         sucursales: c.sucursales,
+        // Campos personalizados: esta fila se arma a mano, así que lo que no se
+        // liste aquí NO llega a la pantalla por más que venga del select. Sin
+        // esto, las columnas de campos personalizados se veían vacías y los
+        // filtros y vistas guardadas no encontraban a nadie — el dato estaba
+        // bien capturado en la base todo el tiempo.
+        propiedades: c.propiedades || {},
         contacto: contacto ? { id: contacto.id, nombre: contacto.nombre, email: contacto.email, whatsapp: contacto.whatsapp, telefono: contacto.telefono } : null,
         sub_contact_id: subContactId,
         // Cómo se le cobra a este cliente, resumido para la lista.
