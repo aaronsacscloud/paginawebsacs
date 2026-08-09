@@ -43,6 +43,10 @@ export default function NuevoClienteModal({ onClose, onCreated }: { onClose: () 
     cotizacion_id: '',
   });
   const [planes, setPlanes] = useState<any[]>([]);
+  // El giro se elige de la MISMA lista que la ficha (campo personalizado
+  // giro_negocio). Capturarlo libre aquí volvería a llenar la base de "moda",
+  // "Moda" y "Ropa" — el problema que se acaba de arreglar.
+  const [girosOpts, setGirosOpts] = useState<{ v: string; l: string }[]>([]);
   const [cotizaciones, setCotizaciones] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
   const [pasos, setPasos] = useState<string[]>([]);
@@ -51,6 +55,11 @@ export default function NuevoClienteModal({ onClose, onCreated }: { onClose: () 
   const [hecho, setHecho] = useState<any>(null);
 
   useEffect(() => { fetch('/api/crm/arr/plans').then(r => r.json()).then(j => setPlanes(j.data || j.plans || [])).catch(() => {}); }, []);
+  useEffect(() => {
+    fetch('/api/crm/propiedades?entidad=company').then(r => r.json())
+      .then(j => setGirosOpts(((j.data || []).find((p: any) => p.key === 'giro_negocio')?.opciones) || []))
+      .catch(() => {});
+  }, []);
   // Cotizaciones SIN cliente ligado (para poder hacer el match desde aquí).
   useEffect(() => {
     fetch('/api/revenue/quotes').then(r => r.json()).then((rows: any) => {
@@ -88,7 +97,7 @@ export default function NuevoClienteModal({ onClose, onCreated }: { onClose: () 
     const hechos: string[] = [];
     try {
       // 1) Empresa
-      const rCo = await fetch('/api/crm/companies', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre: f.nombre.trim(), giro: f.giro.trim() || null, rfc: f.rfc.trim() || null, ciudad: f.ciudad.trim() || null, sucursales: parseInt(f.sucursales) || 1, estado_cuenta: 'activo' }) });
+      const rCo = await fetch('/api/crm/companies', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre: f.nombre.trim(), rfc: f.rfc.trim() || null, ciudad: f.ciudad.trim() || null, sucursales: parseInt(f.sucursales) || 1, estado_cuenta: 'activo', ...(f.giro ? { propiedades: { giro_negocio: f.giro } } : {}) }) });
       const jCo = await rCo.json().catch(() => ({}));
       const companyId = jCo?.data?.id || jCo?.id;
       if (!rCo.ok || jCo.error || !companyId) { alert(jCo.error || 'No se pudo crear el cliente.'); setBusy(false); return; }
@@ -223,7 +232,13 @@ export default function NuevoClienteModal({ onClose, onCreated }: { onClose: () 
         <div style={M.h}>1 · Datos del cliente</div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {campo('Nombre del negocio *', 'nombre', 'Papelería El Faro')}
-          {campo('Giro', 'giro', 'papelería, boutique…')}
+          <div style={{ flex: '1 1 180px' }}>
+            <label style={M.lbl}>Giro de negocio</label>
+            <select value={f.giro} onChange={e => set('giro', e.target.value)} style={M.input}>
+              <option value="">—</option>
+              {girosOpts.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+            </select>
+          </div>
           {campo('RFC', 'rfc')}
           {campo('Ciudad', 'ciudad')}
           {campo('Sucursales', 'sucursales', '', 'number', '0 1 100px')}

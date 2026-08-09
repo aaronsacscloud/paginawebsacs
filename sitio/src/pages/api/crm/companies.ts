@@ -37,6 +37,10 @@ export const POST: APIRoute = async ({ request }) => {
       plan: body.plan || null,
       billing_period: body.billing_period || null,
       sucursales: body.sucursales || 1,
+      // Campos personalizados capturados en el alta (giro de negocio, etc.):
+      // si no viajan aquí, el cliente nace sin clasificar y clasificarlo
+      // después es justo lo que nadie hace.
+      ...(body.propiedades && typeof body.propiedades === 'object' ? { propiedades: body.propiedades } : {}),
       precio_por_sucursal: body.precio_por_sucursal || null,
       mrr: body.mrr || 0,
       arr: body.arr || 0,

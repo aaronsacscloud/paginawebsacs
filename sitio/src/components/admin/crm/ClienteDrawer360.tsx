@@ -438,9 +438,19 @@ function EtapaSelector({ co, reload, flash }: any) {
 }
 
 /* ─────────── 📇 Info general (datos editables del cliente) ─────────── */
+const ESTADOS_MX = ['Aguascalientes','Baja California','Baja California Sur','Campeche','Chiapas','Chihuahua','Ciudad de México','Coahuila','Colima','Durango','Estado de México','Guanajuato','Guerrero','Hidalgo','Jalisco','Michoacán','Morelos','Nayarit','Nuevo León','Oaxaca','Puebla','Querétaro','Quintana Roo','San Luis Potosí','Sinaloa','Sonora','Tabasco','Tamaulipas','Tlaxcala','Veracruz','Yucatán','Zacatecas'];
+
 function TabInfoGeneral({ co, reload, flash }: any) {
   const [f, setF] = useState<any>({ nombre: co.nombre || '', rfc: co.rfc || '', razon_social: co.razon_social || '', giro: co.giro || '', sitio_web: co.sitio_web || '', ciudad: co.ciudad || '', estado_geo: co.estado_geo || '', sucursales: co.sucursales || 1, estado_cuenta: co.estado_cuenta || 'activo' });
   const [saving, setSaving] = useState(false);
+  // Ciudades que ya se usaron: autocompletar con lo real evita que la misma
+  // ciudad se escriba de cuatro formas, sin tener que mantener un catálogo.
+  const [ciudadesUsadas, setCiudadesUsadas] = useState<string[]>([]);
+  useEffect(() => {
+    fetch('/api/crm/companies').then(r => r.json())
+      .then(j => setCiudadesUsadas(Array.from(new Set((j.companies || []).map((x: any) => String(x.ciudad || '').trim()).filter(Boolean))).sort() as string[]))
+      .catch(() => {});
+  }, []);
   async function guardar() {
     if (!f.nombre.trim()) { alert('El nombre es obligatorio.'); return; }
     setSaving(true);
@@ -473,10 +483,24 @@ function TabInfoGeneral({ co, reload, flash }: any) {
           {campo('RFC', 'rfc')}
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
-          {campo('Giro', 'giro', 'boutique, papelería…')}
+          {/* "Giro" en texto libre YA NO se captura aquí: lo sustituye el campo
+              de lista "Giro de negocio" de arriba. Dejarlo abierto reintroducía
+              el problema que se acaba de arreglar — "moda", "Moda" y "Ropa"
+              volverían a ser tres giros. El valor viejo se conserva en la base
+              y se muestra solo como referencia mientras quede alguno. */}
           {campo('Sitio web', 'sitio_web', 'https://…')}
-          {campo('Ciudad', 'ciudad')}
-          {campo('Estado', 'estado_geo')}
+          <div style={{ flex: '1 1 160px' }}>
+            <label style={D.lbl}>Ciudad</label>
+            <input list="ciudades-usadas" value={f.ciudad} onChange={e => setF({ ...f, ciudad: e.target.value })} style={D.input} placeholder="empieza a escribir…" />
+            <datalist id="ciudades-usadas">{(ciudadesUsadas || []).map((x: string) => <option key={x} value={x} />)}</datalist>
+          </div>
+          <div style={{ flex: '1 1 160px' }}>
+            <label style={D.lbl}>Estado</label>
+            <select value={f.estado_geo} onChange={e => setF({ ...f, estado_geo: e.target.value })} style={D.input}>
+              <option value="">—</option>
+              {ESTADOS_MX.map(x => <option key={x} value={x}>{x}</option>)}
+            </select>
+          </div>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div style={{ width: 120 }}>
