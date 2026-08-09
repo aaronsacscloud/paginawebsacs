@@ -16,7 +16,7 @@ export type Prop = {
   grupo: string | null; descripcion: string | null;
   opciones?: { v: string; l: string }[] | null;
   depende_de?: string | null; opciones_por_padre?: Record<string, { v: string; l: string }[]> | null;
-  obligatorio: boolean; importante: boolean; orden: number; archivada_at?: string | null; uso?: number;
+  obligatorio: boolean; importante: boolean; solo_interno?: boolean; orden: number; archivada_at?: string | null; uso?: number;
   /** Valores guardados que ya no corresponden a ninguna opción de la lista. */
   huerfanos?: { v: string; n: number }[];
 };
@@ -60,7 +60,7 @@ export default function CamposConfig({ entidad = 'company' }: { entidad?: 'compa
   const [f, setF] = useState<any>({});
   const [busy, setBusy] = useState(false);
 
-  const vacio = { etiqueta: '', tipo: 'select', grupo: 'General', descripcion: '', opciones_txt: '', obligatorio: false, importante: false };
+  const vacio = { etiqueta: '', tipo: 'select', grupo: 'General', descripcion: '', opciones_txt: '', obligatorio: false, importante: false, solo_interno: true };
 
   async function crear() {
     if (!nuevo.etiqueta.trim()) { alert('Ponle nombre al campo.'); return; }
@@ -82,7 +82,7 @@ export default function CamposConfig({ entidad = 'company' }: { entidad?: 'compa
 
   async function guardar(p: Prop) {
     setBusy(true);
-    const body: any = { id: p.id, etiqueta: f.etiqueta, grupo: f.grupo, descripcion: f.descripcion, obligatorio: !!f.obligatorio, importante: !!f.importante, orden: Number(f.orden) || p.orden };
+    const body: any = { id: p.id, etiqueta: f.etiqueta, grupo: f.grupo, descripcion: f.descripcion, obligatorio: !!f.obligatorio, importante: !!f.importante, solo_interno: f.solo_interno !== false, orden: Number(f.orden) || p.orden };
     if (['select', 'multiselect'].includes(p.tipo) && !p.depende_de) {
       body.opciones = String(f.opciones_txt || '').split('\n').map((l: string) => l.trim()).filter(Boolean)
         .map((l: string) => {
@@ -161,6 +161,13 @@ export default function CamposConfig({ entidad = 'company' }: { entidad?: 'compa
               <input type="checkbox" checked={nuevo.obligatorio} onChange={e => setNuevo({ ...nuevo, obligatorio: e.target.checked })} />
               Obligatorio <span style={{ color: '#999' }}>— úsalo poco: demasiados hacen que se capture basura</span>
             </label>
+            {/* Un solo campo, dos usos. El día que un formulario le pregunte esto
+                al cliente, la respuesta cae en ESTE campo — no en uno paralelo
+                que después haya que reconciliar a mano. */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem' }}>
+              <input type="checkbox" checked={nuevo.solo_interno === false} onChange={e => setNuevo({ ...nuevo, solo_interno: !e.target.checked })} />
+              Se le puede preguntar al cliente <span style={{ color: '#999' }}>— el mismo campo, respondido por él en un formulario</span>
+            </label>
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
             <button style={E.btn} disabled={busy} onClick={crear}>Crear campo</button>
@@ -188,6 +195,7 @@ export default function CamposConfig({ entidad = 'company' }: { entidad?: 'compa
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center', flex: '1 1 100%' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem' }}><input type="checkbox" checked={f.importante} onChange={e => setF({ ...f, importante: e.target.checked })} /> Importante</label>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem' }}><input type="checkbox" checked={f.obligatorio} onChange={e => setF({ ...f, obligatorio: e.target.checked })} /> Obligatorio</label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem' }} title="El mismo campo, pero además se le puede preguntar al cliente en un formulario"><input type="checkbox" checked={f.solo_interno === false} onChange={e => setF({ ...f, solo_interno: !e.target.checked })} /> Preguntable al cliente</label>
                     <div style={{ flex: 1 }} />
                     <button style={E.btn} disabled={busy} onClick={() => guardar(p)}>Guardar</button>
                     <button style={E.btnG} onClick={() => setEditando(null)}>Cancelar</button>
@@ -201,6 +209,7 @@ export default function CamposConfig({ entidad = 'company' }: { entidad?: 'compa
                       {p.obligatorio && <span style={{ ...E.badge, background: '#fde8e8', color: '#b93333', marginLeft: 6 }}>obligatorio</span>}
                       {p.importante && <span style={{ ...E.badge, background: '#fff3e0', color: '#a06600', marginLeft: 6 }}>importante</span>}
                       {p.depende_de && <span style={{ ...E.badge, background: '#eef2ff', color: '#3764c4', marginLeft: 6 }}>depende de {props.find(x => x.key === p.depende_de)?.etiqueta}</span>}
+                      {(p as any).solo_interno === false && <span style={{ ...E.badge, background: '#e6f6f2', color: '#1A8F7A', marginLeft: 6 }} title="Este mismo campo se le puede preguntar al cliente en un formulario">preguntable al cliente</span>}
                     </div>
                     <div style={{ fontSize: '0.74rem', color: '#888' }}>{p.descripcion}</div>
                     <div style={{ fontSize: '0.68rem', color: '#bbb' }}>
@@ -225,7 +234,7 @@ export default function CamposConfig({ entidad = 'company' }: { entidad?: 'compa
                       </div>
                     </div>
                   ) : null}
-                  <button style={E.btnG} onClick={() => { setEditando(p.id); setF({ etiqueta: p.etiqueta, grupo: p.grupo || 'General', descripcion: p.descripcion || '', orden: p.orden, obligatorio: p.obligatorio, importante: p.importante, opciones_txt: (p.opciones || []).map(o => o.l).join('\n') }); }}>Editar</button>
+                  <button style={E.btnG} onClick={() => { setEditando(p.id); setF({ etiqueta: p.etiqueta, grupo: p.grupo || 'General', descripcion: p.descripcion || '', orden: p.orden, obligatorio: p.obligatorio, importante: p.importante, solo_interno: (p as any).solo_interno !== false, opciones_txt: (p.opciones || []).map(o => o.l).join('\n') }); }}>Editar</button>
                   <button style={{ ...E.btnG, color: '#b93333' }} onClick={() => archivar(p)}>Archivar</button>
                 </div>
               )}
