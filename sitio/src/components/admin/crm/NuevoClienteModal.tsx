@@ -241,7 +241,15 @@ export default function NuevoClienteModal({ onClose, onCreated }: { onClose: () 
           </div>
           {campo('RFC', 'rfc')}
           {campo('Ciudad', 'ciudad')}
-          {campo('Sucursales', 'sucursales', '', 'number', '0 1 100px')}
+          <div style={{ flex: '0 1 150px' }}>
+            <label style={M.lbl}>Sucursales</label>
+            {/* Misma lista que la ficha: si aquí se pudiera escribir libre, la
+                clasificación se rompería justo en el alta. */}
+            <select value={f.sucursales} onChange={e => set('sucursales', e.target.value)} style={M.input}>
+              {Array.from({ length: 50 }, (_, i) => i + 1).map(n => <option key={n} value={n}>{n}</option>)}
+              <option value={51}>Más de 50</option>
+            </select>
+          </div>
         </div>
 
         <div style={M.h}>2 · Contacto principal</div>

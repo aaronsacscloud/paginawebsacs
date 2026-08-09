@@ -438,6 +438,14 @@ function EtapaSelector({ co, reload, flash }: any) {
 }
 
 /* ─────────── 📇 Info general (datos editables del cliente) ─────────── */
+// Sucursales como LISTA, no como número libre: es lo que se filtra ("todos los
+// de 5 o más") y con captura libre acaban conviviendo 4 y 40 por un dedazo.
+// Arriba de 50 el número exacto ya no cambia ninguna decisión, así que se
+// agrupa — pero NO se pisa el valor real de quien ya lo tenía (hay un cliente
+// con 100): se sigue guardando y se muestra abajo.
+const SUCURSALES_OPTS = Array.from({ length: 50 }, (_, i) => i + 1);
+const MAS_DE_50 = 51;
+
 const ESTADOS_MX = ['Aguascalientes','Baja California','Baja California Sur','Campeche','Chiapas','Chihuahua','Ciudad de México','Coahuila','Colima','Durango','Estado de México','Guanajuato','Guerrero','Hidalgo','Jalisco','Michoacán','Morelos','Nayarit','Nuevo León','Oaxaca','Puebla','Querétaro','Quintana Roo','San Luis Potosí','Sinaloa','Sonora','Tabasco','Tamaulipas','Tlaxcala','Veracruz','Yucatán','Zacatecas'];
 
 function TabInfoGeneral({ co, reload, flash }: any) {
@@ -503,9 +511,13 @@ function TabInfoGeneral({ co, reload, flash }: any) {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <div style={{ width: 120 }}>
+          <div style={{ width: 170 }}>
             <label style={D.lbl}>Sucursales</label>
-            <input type="number" min={1} value={f.sucursales} onChange={e => setF({ ...f, sucursales: e.target.value })} style={D.input} />
+            <select value={Number(f.sucursales) > 50 ? MAS_DE_50 : (f.sucursales || 1)} onChange={e => setF({ ...f, sucursales: e.target.value })} style={D.input}>
+              {SUCURSALES_OPTS.map(n => <option key={n} value={n}>{n}</option>)}
+              <option value={MAS_DE_50}>Más de 50</option>
+            </select>
+            {Number(f.sucursales) > 50 && <div style={{ fontSize: '0.68rem', color: '#999', marginTop: 2 }}>guardado: {f.sucursales}</div>}
           </div>
           <div style={{ width: 180 }}>
             <label style={D.lbl}>Estado de la cuenta</label>

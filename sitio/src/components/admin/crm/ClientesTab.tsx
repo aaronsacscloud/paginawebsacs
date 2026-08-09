@@ -389,6 +389,12 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
     { key: 'pagos_realizados', label: 'Núm. de pagos', ftype: 'number', val: c => Number(c.pagos_realizados || 0) },
     { key: 'dias_sin_venta', label: 'Días sin vender', ftype: 'number', val: c => c.dias_sin_venta == null ? null : Number(c.dias_sin_venta) },
     { key: 'ultima_venta', label: 'Última venta SACS', ftype: 'date', val: c => c.ultima_venta_at || '' },
+    // Sucursales: filtrable como NÚMERO a propósito, aunque se capture con
+    // lista. Así se puede pedir "5 o más" o "entre 2 y 10", que es la pregunta
+    // real; con un filtro de lista habría que ir marcando valor por valor.
+    { key: 'sucursales', label: 'Sucursales', ftype: 'number',
+      val: c => c.sucursales == null ? null : Number(c.sucursales),
+      render: c => <td style={T.td}>{c.sucursales == null ? <span style={{ color: '#ddd' }}>—</span> : (Number(c.sucursales) > 50 ? `Más de 50 (${c.sucursales})` : c.sucursales)}</td> },
 
     // ── Campos personalizados ──
     // Se inyectan como columnas normales, y con eso heredan TODO lo que la
