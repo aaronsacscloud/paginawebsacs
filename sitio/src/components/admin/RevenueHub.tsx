@@ -1097,36 +1097,11 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                       </td>}
                       {qVisibleCols.has('estado') && <td style={{ ...S.td, padding: rowPad }}>
                         <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 4, alignItems: 'flex-start' }}>
-                          {(() => {
-                            // En el archivo, el estado por sí solo no dice nada:
-                            // lo que importa es POR QUÉ se archivó y qué la
-                            // reemplazó. Y en las activas, saber que sustituye a
-                            // otras es la mitad del contexto de por qué existe.
-                            const mm = parseMeta(q.notas).meta;
-                            const el = mm.eliminada;
-                            const rp = Array.isArray(mm.reemplaza_a) ? mm.reemplaza_a : (mm.reemplaza_a ? [mm.reemplaza_a] : []);
-                            return (
-                              <>
-                                {el && (
-                                  <span title={`${el.motivo_label}${el.detalle ? ': ' + el.detalle : ''} · por ${el.por} · ${new Date(el.at).toLocaleString('es-MX')}`}
-                                    style={{ fontSize: '0.62rem', fontWeight: 700, padding: '2px 8px', borderRadius: 12, background: '#f3f4f6', color: '#666' }}>
-                                    🗄 {el.motivo_label}{el.reemplazada_por ? ` → ${el.reemplazada_por.numero}` : ''}
-                                    {el.junto_con?.length ? ` (con ${el.junto_con.join(', ')})` : ''}
-                                  </span>
-                                )}
-                                {/* El folio de lo que reemplaza ya NO va en la
-                                    fila: satura y casi nunca se necesita ahí.
-                                    Queda un indicador mínimo que abre el detalle. */}
-                                {rp.length > 0 && (
-                                  <button onClick={(e) => { e.stopPropagation(); setVerActividad(q.id); }}
-                                    title={`Sustituye a ${rp.map((x: any) => x.numero).join(', ')} — ver detalle`}
-                                    style={{ fontSize: '0.62rem', fontWeight: 700, padding: '2px 8px', borderRadius: 12, background: '#eef2ff', color: '#3764c4', border: 'none', cursor: 'pointer' }}>
-                                    ♻ {rp.length}
-                                  </button>
-                                )}
-                              </>
-                            );
-                          })()}
+                          {/* La columna de ESTADO muestra el estado y nada más.
+                              Todo lo demás —a quién reemplaza, por qué se
+                              archivó— vive en el panel de actividad: meterlo
+                              aquí rompía la lectura de la tabla, que es para
+                              barrer 35 cotizaciones de un vistazo. */}
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.6875rem', fontWeight: 700, padding: '3px 10px', borderRadius: 12, background: ec.bg, color: ec.fg }}>
                             <span style={{ width: 6, height: 6, borderRadius: '50%', background: ec.dot }}></span>
                             {estadoLabels[q.estado] || q.estado}
