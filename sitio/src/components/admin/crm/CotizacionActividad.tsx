@@ -138,10 +138,14 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
             {/* Los vínculos, que salieron de la fila para no saturarla */}
             {d.reemplaza_a?.length > 0 && (
               <div style={{ marginTop: 10, fontSize: '0.8rem', background: '#eef2ff', border: '1px solid #dbe3fb', borderRadius: 8, padding: '8px 10px' }}>
+                {/* Solo los folios: el monto de cada una junto al folio
+                    amontonaba la línea y el dato que sí importa —cuánto cambió
+                    en total— ya va abajo, en una sola frase. El monto de cada
+                    cotización sigue a un clic, en su propio panel. */}
                 ♻ <b>Reemplaza a</b> {d.reemplaza_a.map((x: any, i: number) => (
                   <span key={x.id}>{i > 0 ? ', ' : ''}
-                    <a href={`/cotizacion/${x.id}?admin=1`} target="_blank" rel="noreferrer" style={{ color: '#3764c4' }}>{x.numero}</a>
-                    {x.actual ? <span style={{ color: '#888' }}> ({money(x.actual.total)})</span> : null}
+                    <a href={`/cotizacion/${x.id}?admin=1`} target="_blank" rel="noreferrer"
+                      title={x.actual ? money(x.actual.total) : undefined} style={{ color: '#3764c4' }}>{x.numero}</a>
                   </span>
                 ))}
                 {/* E4 · comparar: la diferencia de precio contra lo que sustituye
@@ -150,8 +154,11 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
                   const anterior = d.reemplaza_a.reduce((a: number, x: any) => a + Number(x.actual?.total || 0), 0);
                   const dif = Number(q.total) - anterior;
                   return anterior > 0 ? (
-                    <div style={{ marginTop: 4, color: dif === 0 ? '#888' : dif > 0 ? '#1A8F7A' : '#b93333' }}>
-                      Antes sumaban {money(anterior)} · ahora {money(q.total)} ({dif >= 0 ? '+' : '−'}{money(Math.abs(dif))})
+                    <div style={{ marginTop: 5, fontSize: '0.74rem', color: '#8a8f98' }}>
+                      Antes sumaban {money(anterior)} · ahora {money(q.total)}
+                      <span style={{ color: dif === 0 ? '#8a8f98' : dif > 0 ? '#1A8F7A' : '#b93333', fontWeight: 700 }}>
+                        {' '}({dif >= 0 ? '+' : '−'}{money(Math.abs(dif))})
+                      </span>
                     </div>
                   ) : null;
                 })()}
