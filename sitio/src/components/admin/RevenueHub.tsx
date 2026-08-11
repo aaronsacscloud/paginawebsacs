@@ -639,6 +639,10 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       if (view === 'stale') return q.estado === 'sent' && daysSince(q.created_at) > 7 && viewsCount === 0;
       if (view === 'hot') return viewsCount >= 5;
       if (view === 'rejected') return q.estado === 'rejected';
+      // El archivo se cuenta y se lista aparte (la lista activa nunca trae
+      // archivadas). Sin esta línea caía en el `return true` de abajo y la
+      // pestaña anunciaba 32 archivadas cuando había 3.
+      if (view === 'archivadas') return q.estado === 'deleted';
       return true;
     };
 
@@ -701,7 +705,9 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     quotes.forEach((q: any) => { counts[q.estado] = (counts[q.estado] || 0) + 1; });
     const viewCounts: Record<string, number> = {};
     savedViews.forEach(v => {
-      viewCounts[v.id] = quotes.filter((q: any) => matchesView(q, v.id, parseMeta(q.notas).meta.views || 0)).length;
+      viewCounts[v.id] = v.id === 'archivadas'
+        ? archivadas.length
+        : quotes.filter((q: any) => matchesView(q, v.id, parseMeta(q.notas).meta.views || 0)).length;
     });
 
     // KPI stats
@@ -721,6 +727,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     // Persist preferences
     useEffect(() => { try { localStorage.setItem('sacs_q_view', qView); } catch {} }, [qView]);
     // Se pide solo cuando se entra al archivo, y al volver de archivar algo.
+    useEffect(() => { cargarArchivadas(); }, []);
     useEffect(() => { if (qView === 'archivadas') cargarArchivadas(); }, [qView]);
     useEffect(() => { try { localStorage.setItem('sacs_q_pagesize', String(qPageSize)); } catch {} }, [qPageSize]);
     useEffect(() => { try { localStorage.setItem('sacs_q_density', qDensity); } catch {} }, [qDensity]);
