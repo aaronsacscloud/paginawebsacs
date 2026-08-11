@@ -27,8 +27,28 @@ function serializeMeta(text: string, meta: Record<string, any>): string {
 
 // POST — record a view
 export const POST: APIRoute = async ({ request }) => {
-  const { id } = await request.json();
+  const body = await request.json().catch(() => ({} as any));
+  const { id } = body;
   if (!id) return new Response(JSON.stringify({ error: 'Missing id' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+
+  // ── Cierre de la lectura ──
+  // Al salir, la página manda cuánto tiempo estuvo y hasta dónde bajó. "La
+  // abrió 3:40 y llegó al precio" y "8 segundos y cerró" son la misma vista en
+  // el contador y dos cosas opuestas en la realidad. Se ACTUALIZA el último
+  // evento en vez de crear uno nuevo: cerrar la pestaña no es otra visita.
+  if (body?.cierre) {
+    const { data: qc } = await supabase.from('quotes').select('notas').eq('id', id).maybeSingle();
+    if (!qc) return new Response(JSON.stringify({ ok: false }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    const { text: tc, meta: mc } = parseMeta(qc.notas);
+    const idx = [...(mc.timeline || [])].map((t: any, i: number) => ({ t, i })).filter((x: any) => x.t.event === 'viewed').pop();
+    if (idx) {
+      const seg = Math.max(0, Math.min(3600, Number(body.duracion_seg) || 0));
+      const pct = Math.max(0, Math.min(100, Number(body.scroll_pct) || 0));
+      mc.timeline[idx.i] = { ...mc.timeline[idx.i], duracion_seg: seg, scroll_pct: pct, dispositivo: body.movil ? 'movil' : 'escritorio' };
+      await supabase.from('quotes').update({ notas: serializeMeta(tc, mc) }).eq('id', id);
+    }
+    return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }
 
   const { data: quote, error } = await supabase.from('quotes')
     .select('notas, estado, partner_id, numero, empresa, contacto, total, moneda, company_id, contact_id, deal_id')

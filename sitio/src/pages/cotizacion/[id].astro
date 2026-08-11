@@ -2774,6 +2774,33 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: quoteId }),
     }).catch(() => {});
+
+    // Al salir: cuánto estuvo y hasta dónde bajó. Con sendBeacon, que es lo
+    // único que el navegador garantiza al cerrar la pestaña — un fetch normal
+    // se cancela a medio camino y el dato se pierde justo cuando importa.
+    const t0 = Date.now();
+    let maxScroll = 0;
+    const medirScroll = () => {
+      const alto = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = alto > 0 ? Math.round(((window.scrollY || 0) / alto) * 100) : 100;
+      if (pct > maxScroll) maxScroll = Math.min(100, pct);
+    };
+    window.addEventListener('scroll', medirScroll, { passive: true });
+    medirScroll();
+    let enviado = false;
+    const cerrar = () => {
+      if (enviado) return; enviado = true;
+      const payload = JSON.stringify({
+        id: quoteId, cierre: true,
+        duracion_seg: Math.round((Date.now() - t0) / 1000),
+        scroll_pct: maxScroll,
+        movil: window.matchMedia('(max-width: 768px)').matches,
+      });
+      try { navigator.sendBeacon('/api/revenue/quote-view', new Blob([payload], { type: 'application/json' })); }
+      catch { /* si el navegador no lo soporta, se pierde el cierre y ya */ }
+    };
+    window.addEventListener('pagehide', cerrar);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') cerrar(); });
   }
 
   // ─── Paquetes A/B: alternar opción (filas + totales) ───

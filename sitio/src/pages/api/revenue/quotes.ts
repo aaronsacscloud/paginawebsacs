@@ -261,6 +261,49 @@ export const PUT: APIRoute = async ({ request }) => {
     console.error('[quotes PUT] paquete resolve error:', e);
   }
 
+  // ── Historial de cambios (qué cambió, quién y cuándo) ──
+  // Editar sobrescribía sin dejar rastro: nadie podía decir después si el
+  // precio bajó porque se pactó o porque alguien se equivocó al teclear. Se
+  // graba solo lo que DE VERDAD cambió, en lenguaje legible; los campos de
+  // control (notas, estado interno) no ensucian el historial.
+  try {
+    const { data: antes } = await supabase.from('quotes')
+      .select('total, subtotal, descuento_global, vigencia, empresa, contacto, email, whatsapp, moneda, items, notas')
+      .eq('id', id).maybeSingle();
+    if (antes) {
+      const cambios: string[] = [];
+      const dinero = (n: any) => '$' + Number(n || 0).toLocaleString('es-MX');
+      if (clean.total !== undefined && Number(clean.total) !== Number(antes.total)) cambios.push(`Total: ${dinero(antes.total)} → ${dinero(clean.total)}`);
+      if (clean.vigencia !== undefined && clean.vigencia !== antes.vigencia) cambios.push(`Vigencia: ${antes.vigencia || '—'} → ${clean.vigencia || '—'}`);
+      if (clean.descuento_global !== undefined && Number(clean.descuento_global || 0) !== Number(antes.descuento_global || 0)) cambios.push(`Descuento: ${antes.descuento_global || 0} → ${clean.descuento_global || 0}`);
+      for (const k of ['empresa', 'contacto', 'email', 'whatsapp', 'moneda'] as const) {
+        if (clean[k] !== undefined && String(clean[k] || '') !== String((antes as any)[k] || '')) cambios.push(`${k}: ${(antes as any)[k] || '—'} → ${clean[k] || '—'}`);
+      }
+      if (clean.items !== undefined) {
+        const nA = (Array.isArray(antes.items) ? antes.items : []).length;
+        const nD = (Array.isArray(clean.items) ? clean.items : []).length;
+        const igual = JSON.stringify(antes.items || []) === JSON.stringify(clean.items || []);
+        if (!igual) cambios.push(nA === nD ? `Se editaron los conceptos (${nD})` : `Conceptos: ${nA} → ${nD}`);
+      }
+      if (cambios.length) {
+        const { text: tx, meta: mt } = parseMeta(antes.notas);
+        mt.cambios = [
+          { at: new Date().toISOString(), por: user?.nombre || user?.email || 'admin', cambios },
+          ...(mt.cambios || []),
+        ].slice(0, 200);
+        // Se escribe ANTES del update principal para no pisar `clean.notas` si
+        // la edición también trae notas; si las trae, gana la del formulario y
+        // el historial se reintenta después.
+        if (clean.notas === undefined) clean.notas = serializeMeta(tx, mt);
+        else {
+          const { text: tx2, meta: mt2 } = parseMeta(clean.notas);
+          mt2.cambios = mt.cambios;
+          clean.notas = serializeMeta(tx2, mt2);
+        }
+      }
+    }
+  } catch (e) { console.error('[quotes PUT] historial de cambios:', e); }
+
   const { data, error } = await supabase.from('quotes').update(clean).eq('id', id).select().single();
 
   if (error) return jsonResponse({ error: error.message }, 500);

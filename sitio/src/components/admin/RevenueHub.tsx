@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import CotizacionActividad from './crm/CotizacionActividad';
 import CamposConfig from './crm/CamposPersonalizados';
 import { plans as plansData } from '../../data/plans';
 import { PLANS, PLAN_PRICES, IMPL_PRICES, METODOS, fmt, fmtDate } from '../../lib/quotes/constants';
@@ -250,6 +251,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     // cliente con folio y precio, y borrarlo sin explicación es lo que después
     // impide saber por qué se le cotizó dos veces.
     const [aEliminar, setAEliminar] = useState<any[]>([]);
+    const [verActividad, setVerActividad] = useState<string | null>(null);
     // El archivo se carga aparte: son pocas y no tienen por qué pesar en la
     // vista de todos los días.
     const [archivadas, setArchivadas] = useState<any[]>([]);
@@ -1112,11 +1114,15 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                                     {el.junto_con?.length ? ` (con ${el.junto_con.join(', ')})` : ''}
                                   </span>
                                 )}
+                                {/* El folio de lo que reemplaza ya NO va en la
+                                    fila: satura y casi nunca se necesita ahí.
+                                    Queda un indicador mínimo que abre el detalle. */}
                                 {rp.length > 0 && (
-                                  <span title={`Sustituye a ${rp.map((x: any) => x.numero).join(', ')}`}
-                                    style={{ fontSize: '0.62rem', fontWeight: 700, padding: '2px 8px', borderRadius: 12, background: '#eef2ff', color: '#3764c4' }}>
-                                    ♻ reemplaza a {rp.map((x: any) => x.numero).join(', ')}
-                                  </span>
+                                  <button onClick={(e) => { e.stopPropagation(); setVerActividad(q.id); }}
+                                    title={`Sustituye a ${rp.map((x: any) => x.numero).join(', ')} — ver detalle`}
+                                    style={{ fontSize: '0.62rem', fontWeight: 700, padding: '2px 8px', borderRadius: 12, background: '#eef2ff', color: '#3764c4', border: 'none', cursor: 'pointer' }}>
+                                    ♻ {rp.length}
+                                  </button>
                                 )}
                               </>
                             );
@@ -1136,7 +1142,9 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                         {(() => {
                           const mv = parseMeta(q.notas).meta;
                           return views > 0 ? (
-                            <span title={detalleVistas(mv)} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', fontWeight: 700, color: views >= 5 ? '#6C5CE7' : '#666', cursor: 'help' }}>
+                            <span onClick={(e) => { e.stopPropagation(); setVerActividad(q.id); }}
+                              title={detalleVistas(mv) + '\n\nClic para ver toda la actividad'}
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', fontWeight: 700, color: views >= 5 ? '#6C5CE7' : '#666', cursor: 'pointer' }}>
                               <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" strokeWidth="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/></svg>
                               {views}
                               {mv.last_viewed_at && <span style={{ fontWeight: 500, color: '#999', fontSize: '0.68rem' }}>· {haceTexto(mv.last_viewed_at)}</span>}
@@ -1150,6 +1158,11 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                         <button onClick={(e) => { e.stopPropagation(); setQMenuRow(qMenuRow === q.id ? null : q.id); }} style={{ ...S.btnSmall, background: '#fff', padding: '4px 8px', marginRight: 0 }} title="Más acciones">⋮</button>
                         {qMenuRow === q.id && (
                           <div data-q-menu style={{ position: 'absolute' as const, right: 0, top: 34, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 8, padding: 6, minWidth: 200, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', zIndex: 50, textAlign: 'left' as const }}>
+                            <button onClick={() => { setVerActividad(q.id); setQMenuRow(null); }}
+                              style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', fontWeight: 700 }}>
+                              🕓 Actividad y pagos
+                            </button>
+                            <div style={{ borderTop: '1px solid #f0f0f0', margin: '4px 0 6px' }} />
                             <button onClick={() => { duplicateQuote(q); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex' }}>📋 Duplicar</button>
                             {(q.estado === 'sent' || q.estado === 'draft' || q.estado === 'expired') && <button onClick={() => { openExtendModal(q); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', color: '#1d4ed8' }}>⏱️ Extender vigencia</button>}
                             {(q.estado === 'sent' || q.estado === 'draft' || q.estado === 'expired') && <button onClick={() => { openAcceptModal(q); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', color: '#00695c' }}>✓ Aceptar manualmente</button>}
@@ -1175,6 +1188,14 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             </table>
           </div>
 
+          {verActividad && (
+            <CotizacionActividad quoteId={verActividad} onClose={() => setVerActividad(null)}
+              onCambio={async () => {
+                const d2 = await fetch('/api/revenue/quotes').then(r => r.json()).catch(() => null);
+                if (Array.isArray(d2)) setQuotes(d2);
+                cargarArchivadas();
+              }} />
+          )}
           {aEliminar.length > 0 && (
             <EliminarCotizacionModal
               seleccion={aEliminar}
