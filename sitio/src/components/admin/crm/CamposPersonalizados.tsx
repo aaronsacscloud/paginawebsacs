@@ -83,6 +83,20 @@ export default function CamposConfig({ entidad = 'company' }: { entidad?: 'compa
   async function guardar(p: Prop) {
     setBusy(true);
     const body: any = { id: p.id, etiqueta: f.etiqueta, grupo: f.grupo, descripcion: f.descripcion, obligatorio: !!f.obligatorio, importante: !!f.importante, solo_interno: f.solo_interno !== false, orden: Number(f.orden) || p.orden };
+    if (p.depende_de && f.por_padre) {
+      // Se conserva la clave de cada opción que ya existía: reescribirla dejaría
+      // huérfano el subgiro capturado en los clientes que ya lo tienen.
+      const out: Record<string, { v: string; l: string }[]> = {};
+      for (const [padreVal, txt] of Object.entries(f.por_padre as Record<string, string>)) {
+        const previas = (p.opciones_por_padre || {})[padreVal] || [];
+        const lista = String(txt || '').split('\n').map(x => x.trim()).filter(Boolean).map(l => {
+          const ya = previas.find(o => o.l === l);
+          return ya || { v: l.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''), l };
+        });
+        if (lista.length) out[padreVal] = lista;
+      }
+      body.opciones_por_padre = out;
+    }
     if (['select', 'multiselect'].includes(p.tipo) && !p.depende_de) {
       body.opciones = String(f.opciones_txt || '').split('\n').map((l: string) => l.trim()).filter(Boolean)
         .map((l: string) => {
@@ -191,7 +205,34 @@ export default function CamposConfig({ entidad = 'company' }: { entidad?: 'compa
                     <div style={{ flex: '1 1 100%' }}><label style={E.lbl}>Opciones (una por línea)</label>
                       <textarea value={f.opciones_txt} onChange={e => setF({ ...f, opciones_txt: e.target.value })} rows={4} style={{ ...E.input, resize: 'vertical' as const }} /></div>
                   )}
-                  {p.depende_de && <div style={{ flex: '1 1 100%', fontSize: '0.74rem', color: '#a06600' }}>Las opciones de este campo dependen de “{props.find(x => x.key === p.depende_de)?.etiqueta || p.depende_de}” y se editan por ahora desde la base.</div>}
+                  {p.depende_de && (() => {
+                    // Campo dependiente (subgiro): sus opciones cambian según el
+                    // padre, así que se editan POR CADA valor del padre. Un solo
+                    // cuadro de texto no serviría: no habría forma de decir cuál
+                    // opción pertenece a cuál giro.
+                    const padre = props.find(x => x.key === p.depende_de);
+                    const porPadre = f.por_padre || {};
+                    return (
+                      <div style={{ flex: '1 1 100%' }}>
+                        <label style={E.lbl}>Opciones por cada “{padre?.etiqueta || p.depende_de}” (una por línea)</label>
+                        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                          {(padre?.opciones || []).map(op => (
+                            <div key={op.v} style={{ flex: '1 1 200px' }}>
+                              <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#555', marginBottom: 3 }}>{op.l}</div>
+                              <textarea rows={4} value={porPadre[op.v] ?? ''} placeholder="(sin opciones)"
+                                onChange={e => setF({ ...f, por_padre: { ...porPadre, [op.v]: e.target.value } })}
+                                style={{ ...E.input, resize: 'vertical' as const, fontSize: '0.78rem' }} />
+                            </div>
+                          ))}
+                        </div>
+                        {!(padre?.opciones || []).length && (
+                          <div style={{ fontSize: '0.74rem', color: '#a06600' }}>
+                            Primero dale opciones a “{padre?.etiqueta || p.depende_de}”: sin padre no hay de qué depender.
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center', flex: '1 1 100%' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem' }}><input type="checkbox" checked={f.importante} onChange={e => setF({ ...f, importante: e.target.checked })} /> Importante</label>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem' }}><input type="checkbox" checked={f.obligatorio} onChange={e => setF({ ...f, obligatorio: e.target.checked })} /> Obligatorio</label>
@@ -234,7 +275,8 @@ export default function CamposConfig({ entidad = 'company' }: { entidad?: 'compa
                       </div>
                     </div>
                   ) : null}
-                  <button style={E.btnG} onClick={() => { setEditando(p.id); setF({ etiqueta: p.etiqueta, grupo: p.grupo || 'General', descripcion: p.descripcion || '', orden: p.orden, obligatorio: p.obligatorio, importante: p.importante, solo_interno: (p as any).solo_interno !== false, opciones_txt: (p.opciones || []).map(o => o.l).join('\n') }); }}>Editar</button>
+                  <button style={E.btnG} onClick={() => { setEditando(p.id); setF({ etiqueta: p.etiqueta, grupo: p.grupo || 'General', descripcion: p.descripcion || '', orden: p.orden, obligatorio: p.obligatorio, importante: p.importante, solo_interno: (p as any).solo_interno !== false,
+                    por_padre: Object.fromEntries(Object.entries(p.opciones_por_padre || {}).map(([k, arr]: any) => [k, (arr || []).map((o: any) => o.l).join('\n')])), opciones_txt: (p.opciones || []).map(o => o.l).join('\n') }); }}>Editar</button>
                   <button style={{ ...E.btnG, color: '#b93333' }} onClick={() => archivar(p)}>Archivar</button>
                 </div>
               )}
