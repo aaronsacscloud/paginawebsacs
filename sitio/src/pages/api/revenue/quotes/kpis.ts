@@ -35,7 +35,7 @@ export const GET: APIRoute = async () => {
   const mes = rangoMes(0);
   const previo = rangoMes(-1);
 
-  const [{ data: quotes }, { data: pagos }] = await Promise.all([
+  const [{ data: quotes }, { data: pagos }, { data: porVencer }] = await Promise.all([
     supabase.from('quotes')
       .select('id, total, estado, created_at')
       .not('estado', 'in', '(deleted,plantilla)')
@@ -43,6 +43,13 @@ export const GET: APIRoute = async () => {
     // Todos los abonos ligados a cotizaciones: los del mes para el flujo, y los
     // anteriores porque un anticipo de marzo reduce el saldo de hoy.
     supabase.from('payments').select('quote_id, monto, fecha').not('quote_id', 'is', null).limit(5000),
+    // "Vencen esta semana" NO se limita al mes a propósito: una cotización de
+    // marzo que vence el jueves es urgente hoy, y filtrarla por mes de creación
+    // la escondería justo cuando hay que llamarle.
+    // Solo `sent`: son las que esperan respuesta del cliente. Un borrador no
+    // vence para nadie y una aceptada ya no depende de la vigencia del precio.
+    supabase.from('quotes').select('id, total, vigencia, estado').eq('estado', 'sent')
+      .not('vigencia', 'is', null).limit(1000),
   ]);
 
   const delMes = (q: any) => q.created_at >= mes.desde && q.created_at < mes.hasta;
@@ -78,7 +85,20 @@ export const GET: APIRoute = async () => {
   const pagado = pagosMes.reduce((a: number, p: any) => a + Number(p.monto || 0), 0);
   const cotizacionesConPago = new Set(pagosMes.map((p: any) => p.quote_id)).size;
 
-  // 5 · Ticket promedio del mes
+  // 5 · Vencen esta semana — los próximos 7 días, hora de México.
+  const hoyMx = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Mexico_City' }));
+  const isoD = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const hoyStr = isoD(hoyMx);
+  const en7 = isoD(new Date(hoyMx.getFullYear(), hoyMx.getMonth(), hoyMx.getDate() + 7));
+  const vencenLista = (porVencer || []).filter((q: any) => {
+    const v = String(q.vigencia || '').slice(0, 10);
+    return v >= hoyStr && v <= en7;
+  });
+  // Las que vencen HOY o mañana se cuentan aparte: son las que no aguantan
+  // esperar al lunes.
+  const manana = isoD(new Date(hoyMx.getFullYear(), hoyMx.getMonth(), hoyMx.getDate() + 1));
+  const urgentes = vencenLista.filter((q: any) => String(q.vigencia).slice(0, 10) <= manana).length;
+
   const ticket = qMes.length ? cotizado / qMes.length : 0;
   const ticketPrev = qPrev.length ? cotizadoPrev / qPrev.length : 0;
 
@@ -91,6 +111,9 @@ export const GET: APIRoute = async () => {
     pendiente: { monto: r2(pendiente), activas: activasMes.length, con_parcial: conParcial },
     pagado: { monto: r2(pagado), cotizaciones: cotizacionesConPago },
     activas: { total: activasMes.length },
+    vencen: { monto: r2(vencenLista.reduce((a: number, q: any) => a + Number(q.total || 0), 0)), total: vencenLista.length, urgentes, hasta: en7 },
+    // Se sigue devolviendo aunque ya no tenga tarjeta: el dashboard que viene
+    // lo va a necesitar y calcularlo aquí no cuesta nada.
     ticket: { monto: r2(ticket), variacion: variacion(ticket, ticketPrev), mes_anterior: r2(ticketPrev) },
   });
 };

@@ -896,8 +896,15 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   '#2e7d32', () => setQView('paid'))}
                 {card('Cotizaciones activas del mes', String(k.activas.total),
                   'Draft + enviadas + aceptadas pendientes', '#1a1a1a', () => setQView('active'))}
-                {card('Ticket promedio del mes', fmt(k.ticket.monto),
-                  <>{varTxt(k.ticket.variacion)} vs. mes anterior</>)}
+                {/* Ventana de 7 días, no del mes: una cotización de marzo que
+                    vence el jueves es urgente HOY. Es el único número de la
+                    fila que dice a quién llamarle antes del viernes. */}
+                {card('Vencen esta semana', fmt(k.vencen?.monto || 0),
+                  (k.vencen?.total || 0) === 0
+                    ? 'Nada por vencer en 7 días'
+                    : <>{k.vencen.total} cotizaci{k.vencen.total === 1 ? 'ón' : 'ones'} enviada{k.vencen.total === 1 ? '' : 's'}{k.vencen.urgentes ? <span style={{ color: '#b93333', fontWeight: 700 }}> · {k.vencen.urgentes} hoy o mañana</span> : ''}</>,
+                  (k.vencen?.total || 0) > 0 ? '#b45309' : '#1a1a1a',
+                  () => setQView('expiring'))}
               </>
             );
           })()}
