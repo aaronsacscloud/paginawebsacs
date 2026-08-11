@@ -373,6 +373,13 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       else delete meta.implementacion_nota;
       if (qf.promo_label?.trim()) meta.promo_label = qf.promo_label.trim();
       else delete meta.promo_label;
+      // El plan de parcialidades viaja con la cotización: es parte del trato.
+      if (Array.isArray(qf.plan_pagos) && qf.plan_pagos.length) {
+        meta.plan_pagos = qf.plan_pagos
+          .filter((x: any) => Number(x.monto) > 0 && x.fecha)
+          .map((x: any, i: number) => ({ id: x.id || 'p' + i, fecha: String(x.fecha).slice(0, 10), monto: Number(x.monto), concepto: String(x.concepto || `Parcialidad ${i + 1}`).slice(0, 80) }))
+          .sort((a: any, b: any) => a.fecha.localeCompare(b.fecha));
+      } else delete meta.plan_pagos;
       if (qf.minuta_raw?.trim()) meta.minuta_raw = qf.minuta_raw.trim();
       else delete meta.minuta_raw;
       if (qf.key_points?.length) meta.key_points = qf.key_points;
@@ -1161,7 +1168,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                       </td>}
                       {qVisibleCols.has('actions') && <td style={{ ...S.td, padding: rowPad, textAlign: 'right' as const, whiteSpace: 'nowrap' as const, position: 'relative' as const }}>
                         <a href={`/cotizacion/${q.id}?admin=1`} target="_blank" rel="noopener" style={{ ...S.btnSmall, textDecoration: 'none', display: 'inline-flex', marginRight: 4 }}>Ver</a>
-                        <button onClick={() => { const { meta: m } = parseMeta(q.notas); setQf({ ...q, items: Array.isArray(q.items) ? q.items : [], logo_url: m.logo_url || '', iva_mode: m.iva_mode || (q.iva_incluido ? 'suma' : 'sin'), mostrar_timer: m.mostrar_timer !== undefined ? m.mostrar_timer : true, mostrar_features: m.mostrar_features !== undefined ? m.mostrar_features : true, mostrar_desglose: m.mostrar_desglose !== undefined ? m.mostrar_desglose : true, mostrar_condiciones: m.mostrar_condiciones !== undefined ? m.mostrar_condiciones : true, mostrar_key_points: m.mostrar_key_points !== undefined ? m.mostrar_key_points : true, key_points: m.key_points || [], roi: m.roi || null, antes_despues: m.antes_despues || [], mostrar_roi: m.mostrar_roi || false, mostrar_antes_despues: m.mostrar_antes_despues || false, mostrar_firma: m.mostrar_firma !== undefined ? m.mostrar_firma : true, mostrar_qr: m.mostrar_qr !== undefined ? m.mostrar_qr : true, mostrar_animaciones: m.mostrar_animaciones !== undefined ? m.mostrar_animaciones : true, mostrar_timeline: m.mostrar_timeline !== undefined ? m.mostrar_timeline : true, timeline_tipo: m.timeline_tipo || '1suc', mostrar_implementacion: m.mostrar_implementacion !== undefined ? m.mostrar_implementacion : true, implementacion_nota: m.implementacion_nota || '', mostrar_porque_sacs: m.mostrar_porque_sacs !== undefined ? m.mostrar_porque_sacs : true, promo_label: m.promo_label || '', minuta_raw: m.minuta_raw || '' }); setShowDrawer(true); setMinutaError(null); }} style={S.btnSmall}>Editar</button>
+                        <button onClick={() => { const { meta: m } = parseMeta(q.notas); setQf({ ...q, items: Array.isArray(q.items) ? q.items : [], logo_url: m.logo_url || '', iva_mode: m.iva_mode || (q.iva_incluido ? 'suma' : 'sin'), mostrar_timer: m.mostrar_timer !== undefined ? m.mostrar_timer : true, mostrar_features: m.mostrar_features !== undefined ? m.mostrar_features : true, mostrar_desglose: m.mostrar_desglose !== undefined ? m.mostrar_desglose : true, mostrar_condiciones: m.mostrar_condiciones !== undefined ? m.mostrar_condiciones : true, mostrar_key_points: m.mostrar_key_points !== undefined ? m.mostrar_key_points : true, key_points: m.key_points || [], roi: m.roi || null, antes_despues: m.antes_despues || [], mostrar_roi: m.mostrar_roi || false, mostrar_antes_despues: m.mostrar_antes_despues || false, mostrar_firma: m.mostrar_firma !== undefined ? m.mostrar_firma : true, mostrar_qr: m.mostrar_qr !== undefined ? m.mostrar_qr : true, mostrar_animaciones: m.mostrar_animaciones !== undefined ? m.mostrar_animaciones : true, mostrar_timeline: m.mostrar_timeline !== undefined ? m.mostrar_timeline : true, timeline_tipo: m.timeline_tipo || '1suc', mostrar_implementacion: m.mostrar_implementacion !== undefined ? m.mostrar_implementacion : true, implementacion_nota: m.implementacion_nota || '', mostrar_porque_sacs: m.mostrar_porque_sacs !== undefined ? m.mostrar_porque_sacs : true, promo_label: m.promo_label || '', minuta_raw: m.minuta_raw || '', plan_pagos: m.plan_pagos || [] }); setShowDrawer(true); setMinutaError(null); }} style={S.btnSmall}>Editar</button>
                         <button onClick={(e) => { e.stopPropagation(); setQMenuRow(qMenuRow === q.id ? null : q.id); }} style={{ ...S.btnSmall, background: '#fff', padding: '4px 8px', marginRight: 0 }} title="Más acciones">⋮</button>
                         {qMenuRow === q.id && (
                           <div data-q-menu style={{ position: 'absolute' as const, right: 0, top: 34, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 8, padding: 6, minWidth: 200, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', zIndex: 50, textAlign: 'left' as const }}>
@@ -1324,10 +1331,12 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 <label style={S.label}>Motivo</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {[
-                    { v: 'precio', l: 'Precio fuera de presupuesto' },
-                    { v: 'timing', l: 'No es el momento' },
-                    { v: 'competidor', l: 'Competidor elegido' },
-                    { v: 'no_fit', l: 'No es el producto que buscan' },
+                    { v: 'precio', l: 'No aceptó el monto' },
+                    { v: 'competidor', l: 'Contrató otro sistema' },
+                    { v: 'timing', l: 'No era el momento' },
+                    { v: 'no_fit', l: 'Le faltaba una función que necesitaba' },
+                    { v: 'sin_respuesta', l: 'Nunca respondió' },
+                    { v: 'cancelo_proyecto', l: 'Canceló el proyecto / cerró el negocio' },
                     { v: 'otro', l: 'Otro motivo' },
                   ].map(opt => {
                     const sel = rejectForm.motivo === opt.v;
@@ -1913,6 +1922,56 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               </div>
 
               <div><label style={S.label}>Condiciones</label><textarea value={qf.condiciones || ''} onChange={e => setQf({ ...qf, condiciones: e.target.value })} style={{ ...S.input, height: 60 }} /></div>
+
+              {/* ── Parcialidades ──
+                  Cuando se pacta en pagos, las FECHAS se acuerdan al cotizar, no
+                  después: son parte del trato. Guardarlas aquí es lo que permite
+                  saber qué debería entrar cada mes y cobrar a tiempo, en vez de
+                  descubrir el vencimiento cuando ya pasó. */}
+              {(() => {
+                const plan: any[] = Array.isArray(qf.plan_pagos) ? qf.plan_pagos : [];
+                const setPlan = (p: any[]) => setQf({ ...qf, plan_pagos: p });
+                const sumado = plan.reduce((a, x) => a + (Number(x.monto) || 0), 0);
+                const totalQ = Number(qf.total || 0);
+                const fin = (n: number) => { const d = new Date(); d.setMonth(d.getMonth() + n); return d.toISOString().slice(0, 10); };
+                return (
+                  <div style={{ marginTop: 12, background: '#fafbfd', border: '1px solid #e8eaf0', borderRadius: 10, padding: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <label style={{ ...S.label, marginTop: 0, marginBottom: 0, flex: 1 }}>Plan de pagos (parcialidades)</label>
+                      <button onClick={() => setPlan([...plan, { id: 'p' + Date.now().toString(36) + plan.length, fecha: fin(plan.length), monto: '', concepto: plan.length === 0 ? 'Anticipo' : `Parcialidad ${plan.length + 1}` }])}
+                        style={{ ...S.btnSmall, marginRight: 0 }}>+ Parcialidad</button>
+                      {plan.length === 0 && totalQ > 0 && (
+                        <button onClick={() => setPlan([
+                          { id: 'p1', fecha: fin(0), monto: Math.round(totalQ / 2), concepto: 'Anticipo 50%' },
+                          { id: 'p2', fecha: fin(1), monto: totalQ - Math.round(totalQ / 2), concepto: 'Liquidación 50%' },
+                        ])} style={{ ...S.btnSmall, marginRight: 0 }}>50 / 50</button>
+                      )}
+                    </div>
+                    {plan.length === 0 ? (
+                      <div style={{ fontSize: '0.7rem', color: '#999' }}>Sin parcialidades: se cobra en un solo pago.</div>
+                    ) : plan.map((x: any, i: number) => (
+                      <div key={x.id || i} style={{ display: 'flex', gap: 6, marginBottom: 5, alignItems: 'center' }}>
+                        <input value={x.concepto || ''} onChange={e => setPlan(plan.map((y, j) => j === i ? { ...y, concepto: e.target.value } : y))}
+                          placeholder="concepto" style={{ ...S.input, flex: 1, fontSize: '0.75rem', padding: '6px 8px' }} />
+                        <input type="date" value={x.fecha || ''} onChange={e => setPlan(plan.map((y, j) => j === i ? { ...y, fecha: e.target.value } : y))}
+                          style={{ ...S.input, width: 140, fontSize: '0.75rem', padding: '6px 8px' }} />
+                        <input type="number" value={x.monto} onChange={e => setPlan(plan.map((y, j) => j === i ? { ...y, monto: e.target.value } : y))}
+                          placeholder="monto" style={{ ...S.input, width: 110, fontSize: '0.75rem', padding: '6px 8px' }} />
+                        <button onClick={() => setPlan(plan.filter((_, j) => j !== i))} style={{ ...S.btnSmall, marginRight: 0, color: '#b93333' }}>✕</button>
+                      </div>
+                    ))}
+                    {plan.length > 0 && (
+                      /* El descuadre se avisa, no se corrige solo: puede ser
+                         intencional (un saldo que se define después) y ajustar
+                         a la fuerza cambiaría lo pactado sin avisar. */
+                      <div style={{ fontSize: '0.7rem', marginTop: 4, color: Math.abs(sumado - totalQ) < 1 ? '#2e7d32' : '#b45309' }}>
+                        Suman {fmt(sumado)} de {fmt(totalQ)}
+                        {Math.abs(sumado - totalQ) >= 1 ? ` · faltan ${fmt(totalQ - sumado)} por repartir` : ' · cuadra'}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Minuta editor — visible siempre que el toggle esté ON */}
               {(qf.mostrar_key_points !== false) && (

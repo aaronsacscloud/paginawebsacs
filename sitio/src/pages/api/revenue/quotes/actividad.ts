@@ -61,6 +61,20 @@ export const GET: APIRoute = async ({ url }) => {
       // Cada apertura tal cual se registró. Sin canal: se decidió no marcarlo.
       eventos: (meta.timeline || []).filter((t: any) => t.event === 'viewed'),
     },
+    // Plan de parcialidades pactado al cotizar, cruzado contra lo que de verdad
+    // entró. Se cubre EN ORDEN de fecha: sin recibo por parcialidad, aplicar el
+    // dinero a la más vieja es la única regla que no inventa nada.
+    plan_pagos: (() => {
+      const plan = Array.isArray(meta.plan_pagos) ? [...meta.plan_pagos].sort((a: any, b: any) => String(a.fecha).localeCompare(String(b.fecha))) : [];
+      let restante = totalPagado;
+      const hoyStr = new Date().toISOString().slice(0, 10);
+      return plan.map((x: any) => {
+        const cubierto = Math.min(Number(x.monto || 0), Math.max(0, restante));
+        restante -= cubierto;
+        const pagada = cubierto >= Number(x.monto || 0) - 0.01;
+        return { ...x, cubierto: Math.round(cubierto * 100) / 100, pagada, vencida: !pagada && String(x.fecha) < hoyStr };
+      });
+    })(),
     cambios: meta.cambios || [],
     notas_internas: meta.notas_internas || [],
     archivado: meta.eliminada || null,

@@ -6,11 +6,16 @@ import { getCurrentUser } from '../../../lib/auth/scope';
 
 export const prerender = false;
 
+// Las CLAVES viejas se conservan aunque cambie la etiqueta: son las que tienen
+// guardadas las cotizaciones ya rechazadas, y renombrarlas dejaría ese histórico
+// sin motivo justo cuando se va a empezar a medir.
 const MOTIVOS: Record<string, string> = {
-  precio: 'Precio',
-  timing: 'Timing',
-  competidor: 'Competidor',
-  no_fit: 'No es el producto que necesitan',
+  precio: 'No aceptó el monto',
+  competidor: 'Contrató otro sistema',
+  timing: 'No era el momento',
+  no_fit: 'Le faltaba una función que necesitaba',
+  sin_respuesta: 'Nunca respondió',
+  cancelo_proyecto: 'Canceló el proyecto / cerró el negocio',
   otro: 'Otro',
 };
 
