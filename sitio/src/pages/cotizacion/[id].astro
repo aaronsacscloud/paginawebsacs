@@ -238,7 +238,30 @@ const hasTimelineReal = showTimeline && !!timelineTipo;
 const hasImplementacionReal = showImplementacion;
 
 // Tab "Pagos": visible cuando hay pagos registrados, esta aceptada/pagada, o estamos en modo admin
-const showPagosTab = paymentsList.length > 0 || isAccepted || isPaid || isAdminMode;
+// ── Plan de parcialidades pactado ──
+// El cliente tiene que ver a qué se comprometió y cuánto lleva: sin el
+// calendario a la vista, "pendiente $79,738" no le dice para cuándo.
+// Lo abonado cubre las parcialidades EN ORDEN de fecha, igual que en el CRM:
+// sin recibo por parcialidad, aplicar el dinero a la más vieja es la única
+// regla que no inventa nada.
+const hoyStrPlan = new Date().toISOString().slice(0, 10);
+const planPagos = (() => {
+  const raw = Array.isArray(quoteMeta.plan_pagos) ? [...quoteMeta.plan_pagos] : [];
+  raw.sort((a: any, b: any) => String(a.fecha).localeCompare(String(b.fecha)));
+  let restante = totalPagado;
+  return raw.map((x: any) => {
+    const monto = Number(x.monto || 0);
+    const cubierto = Math.min(monto, Math.max(0, restante));
+    restante -= cubierto;
+    const pagada = cubierto >= monto - 0.01;
+    return { ...x, monto, cubierto, pagada, vencida: !pagada && String(x.fecha) < hoyStrPlan };
+  });
+})();
+const hayPlan = planPagos.length > 0;
+
+// Con un plan pactado, la pestaña de Pagos importa aunque todavía no haya
+// ninguno: es el calendario de lo que viene.
+const showPagosTab = paymentsList.length > 0 || isAccepted || isPaid || isAdminMode || hayPlan;
 
 const tabsDef = [
   { id: 'minuta', label: 'Minuta', show: hasKeyPoints },
@@ -954,11 +977,28 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
           <div class="qph-bar"><div class="qph-bar-fill" style={`width:${porcentajePagado}%`}></div></div>
         )}
 
+        {hayPlan && (
+          <div class="qpp">
+            <div class="qpp-title">Plan de pagos acordado</div>
+            {planPagos.map((x: any) => (
+              <div class={`qpp-row${x.pagada ? ' is-paid' : ''}${x.vencida ? ' is-late' : ''}`}>
+                <span class="qpp-ic">{x.pagada ? '✓' : x.vencida ? '!' : '•'}</span>
+                <span class="qpp-when">{fmtDate(x.fecha)}</span>
+                <span class="qpp-what">{x.concepto}</span>
+                <span class="qpp-amt">{fmt(x.monto)}</span>
+                <span class="qpp-state">{x.pagada ? 'Pagado' : x.cubierto > 0 ? `Abonado ${fmt(x.cubierto)}` : x.vencida ? 'Vencido' : 'Por pagar'}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {paymentsList.length === 0 ? (
           <div class="qph-empty">
             {isAdminMode
               ? 'Cuando registres un pago, aparecerá aquí y se generará el acuse correspondiente para tu cliente.'
-              : 'Aún no hay pagos confirmados en esta cotización.'}
+              : hayPlan
+                ? 'Aún no hay pagos confirmados. Arriba está el calendario acordado.'
+                : 'Aún no hay pagos confirmados en esta cotización.'}
           </div>
         ) : (
           <div class="qph-list">
@@ -2444,6 +2484,42 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
   text-align: center;
   font-style: italic;
 }
+/* ── Plan de pagos acordado ──
+   Mismo lenguaje visual que el resto del bloque de pagos: fila limpia, sin
+   colores fuertes. El cliente tiene que leer su calendario, no ser regañado
+   por él — lo vencido se marca en ámbar, no en rojo de alarma. */
+.qpp { margin-bottom: 14px; }
+.qpp-title {
+  font-size: 0.6875rem; font-weight: 700; color: #999;
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;
+}
+.qpp-row {
+  display: grid; grid-template-columns: 18px 108px 1fr auto 92px;
+  align-items: center; gap: 8px;
+  padding: 9px 12px; border: 1px solid #ececec; border-radius: 8px;
+  margin-bottom: 6px; font-size: 0.8125rem; background: #fff;
+}
+.qpp-ic { color: #c9ccd2; font-weight: 700; text-align: center; }
+.qpp-when { color: #666; }
+.qpp-what { color: #1a1a1a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qpp-amt { font-weight: 700; color: #1a1a1a; }
+.qpp-state { font-size: 0.6875rem; color: #999; text-align: right; }
+.qpp-row.is-paid { background: #f7fcfa; border-color: #d8ede6; }
+.qpp-row.is-paid .qpp-ic, .qpp-row.is-paid .qpp-state { color: #1A8F7A; }
+.qpp-row.is-late { background: #fffaf2; border-color: #f2e2c7; }
+.qpp-row.is-late .qpp-ic, .qpp-row.is-late .qpp-state { color: #b45309; }
+.quote-dark .qpp-row { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); }
+.quote-dark .qpp-what, .quote-dark .qpp-amt { color: rgba(255,255,255,0.92); }
+.quote-dark .qpp-when { color: rgba(255,255,255,0.6); }
+@media (max-width: 640px) {
+  /* En móvil la fila de 5 columnas no cabe: concepto arriba, lo demás debajo. */
+  .qpp-row { grid-template-columns: 18px 1fr auto; row-gap: 2px; }
+  .qpp-when { grid-column: 2 / 3; order: 3; font-size: 0.75rem; }
+  .qpp-what { grid-column: 2 / 3; order: 1; }
+  .qpp-amt { grid-column: 3 / 4; order: 2; }
+  .qpp-state { grid-column: 3 / 4; order: 4; }
+}
+
 .qph-list { display: flex; flex-direction: column; gap: 8px; }
 .qph-row {
   display: grid;
