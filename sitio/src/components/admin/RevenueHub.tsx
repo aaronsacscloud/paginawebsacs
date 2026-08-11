@@ -252,6 +252,12 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     // impide saber por qué se le cotizó dos veces.
     const [aEliminar, setAEliminar] = useState<any[]>([]);
     const [verActividad, setVerActividad] = useState<string | null>(null);
+    // Los 5 números del mes se calculan en el servidor: dos de ellos necesitan
+    // los ABONOS, y aquí solo hay cotizaciones. Calcularlos en el front daría un
+    // "pendiente" que ignora los anticipos.
+    const [kpis, setKpis] = useState<any>(null);
+    const cargarKpis = () => fetch('/api/revenue/quotes/kpis').then(r => r.json()).then(setKpis).catch(() => {});
+    useEffect(() => { cargarKpis(); }, []);
     // El archivo se carga aparte: son pocas y no tienen por qué pesar en la
     // vista de todos los días.
     const [archivadas, setArchivadas] = useState<any[]>([]);
@@ -850,32 +856,51 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
         </div>
 
         {/* ─── KPI stats row ─── */}
+        {/* Mismo diseño de siempre: título, dato grande, línea secundaria. Sin
+            gráficas y sin una palabra de más — se leen de un vistazo o no
+            sirven. Todo el bloque mira SOLO el mes en curso. */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, marginBottom: 16 }}>
-          <div style={{ background: '#fff', border: '1px solid #e5e5e5', padding: '14px 16px', borderRadius: 8 }}>
-            <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Pendiente de pago</div>
-            <div style={{ fontSize: '1.375rem', fontWeight: 700, color: '#1a1a1a', marginTop: 4 }}>{fmt(totalPending)}</div>
-            <div style={{ fontSize: '0.6875rem', color: '#888', marginTop: 2 }}>{counts.sent || 0} enviadas · {counts.accepted || 0} aceptadas</div>
-          </div>
-          <div style={{ background: '#fff', border: '1px solid #e5e5e5', padding: '14px 16px', borderRadius: 8 }}>
-            <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Pagado este mes</div>
-            <div style={{ fontSize: '1.375rem', fontWeight: 700, color: '#2e7d32', marginTop: 4 }}>{fmt(totalPaidThisMonth)}</div>
-            <div style={{ fontSize: '0.6875rem', color: '#888', marginTop: 2 }}>{counts.paid || 0} pagadas totales</div>
-          </div>
-          <div style={{ background: '#fff', border: '1px solid #e5e5e5', padding: '14px 16px', borderRadius: 8 }}>
-            <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Cotizaciones activas</div>
-            <div style={{ fontSize: '1.375rem', fontWeight: 700, color: '#1a1a1a', marginTop: 4 }}>{activeCount}</div>
-            <div style={{ fontSize: '0.6875rem', color: '#888', marginTop: 2 }}>Draft + enviadas</div>
-          </div>
-          <div style={{ background: '#fff', border: '1px solid #e5e5e5', padding: '14px 16px', borderRadius: 8 }}>
-            <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Ticket promedio</div>
-            <div style={{ fontSize: '1.375rem', fontWeight: 700, color: '#1a1a1a', marginTop: 4 }}>{fmt(avgTicket)}</div>
-            <div style={{ fontSize: '0.6875rem', color: '#888', marginTop: 2 }}>Todas las cotizaciones</div>
-          </div>
-          <div style={{ background: '#fff', border: '1px solid #e5e5e5', padding: '14px 16px', borderRadius: 8 }}>
-            <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Tasa de conversión</div>
-            <div style={{ fontSize: '1.375rem', fontWeight: 700, color: conversionRate >= 40 ? '#2e7d32' : '#1a1a1a', marginTop: 4 }}>{conversionRate}%</div>
-            <div style={{ fontSize: '0.6875rem', color: '#888', marginTop: 2 }}>Aceptadas / Enviadas</div>
-          </div>
+          {(() => {
+            const k = kpis;
+            const card = (titulo: string, valor: string, sec: React.ReactNode, color = '#1a1a1a', onClick?: () => void) => (
+              <div onClick={onClick} style={{ background: '#fff', border: '1px solid #e5e5e5', padding: '14px 16px', borderRadius: 8, cursor: onClick ? 'pointer' : 'default' }}>
+                <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>{titulo}</div>
+                <div style={{ fontSize: '1.375rem', fontWeight: 700, color, marginTop: 4 }}>{valor}</div>
+                <div style={{ fontSize: '0.6875rem', color: '#888', marginTop: 2 }}>{sec}</div>
+              </div>
+            );
+            // La variación se pinta sola: verde arriba, rojo abajo. Y cuando no
+            // hay mes anterior con qué comparar NO se inventa un "+100%".
+            const varTxt = (v: number | null) => (v === null || v === undefined)
+              ? <span style={{ color: '#bbb' }}>sin mes anterior</span>
+              : <span style={{ color: v > 0 ? '#2e7d32' : v < 0 ? '#b93333' : '#888', fontWeight: 700 }}>{v > 0 ? '↑' : v < 0 ? '↓' : '='} {Math.abs(v)}%</span>;
+
+            if (!k) return [0, 1, 2, 3, 4].map(i => (
+              <div key={i} style={{ background: '#fff', border: '1px solid #e5e5e5', padding: '14px 16px', borderRadius: 8 }}>
+                <div style={{ height: 9, width: '55%', background: '#f2f2f2', borderRadius: 4 }} />
+                <div style={{ height: 20, width: '70%', background: '#f2f2f2', borderRadius: 4, marginTop: 8 }} />
+                <div style={{ height: 9, width: '85%', background: '#f7f7f7', borderRadius: 4, marginTop: 8 }} />
+              </div>
+            ));
+
+            return (
+              <>
+                {card('Cotizado este mes', fmt(k.cotizado.monto),
+                  <>{varTxt(k.cotizado.variacion)} vs. mes anterior · Mes anterior {fmt(k.cotizado.mes_anterior)}</>)}
+                {card('Pendiente de pago del mes', fmt(k.pendiente.monto),
+                  <>{k.pendiente.activas} activas{k.pendiente.con_parcial ? ` · ${k.pendiente.con_parcial} con pago parcial` : ''}</>,
+                  k.pendiente.monto > 0 ? '#1a1a1a' : '#2e7d32',
+                  () => setQView('active'))}
+                {card('Pagado este mes', fmt(k.pagado.monto),
+                  <>{k.pagado.cotizaciones} cotizaci{k.pagado.cotizaciones === 1 ? 'ón' : 'ones'} con pagos este mes</>,
+                  '#2e7d32', () => setQView('paid'))}
+                {card('Cotizaciones activas del mes', String(k.activas.total),
+                  'Draft + enviadas + aceptadas pendientes', '#1a1a1a', () => setQView('active'))}
+                {card('Ticket promedio del mes', fmt(k.ticket.monto),
+                  <>{varTxt(k.ticket.variacion)} vs. mes anterior</>)}
+              </>
+            );
+          })()}
         </div>
 
         {/* ─── Saved views tabs ─── */}
