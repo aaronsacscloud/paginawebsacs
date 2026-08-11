@@ -249,7 +249,12 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     // Eliminar una cotización pide MOTIVO: es un documento que se le mandó al
     // cliente con folio y precio, y borrarlo sin explicación es lo que después
     // impide saber por qué se le cotizó dos veces.
-    const [aEliminar, setAEliminar] = useState<any>(null);
+    const [aEliminar, setAEliminar] = useState<any[]>([]);
+    // El archivo se carga aparte: son pocas y no tienen por qué pesar en la
+    // vista de todos los días.
+    const [archivadas, setArchivadas] = useState<any[]>([]);
+    const cargarArchivadas = () => fetch('/api/revenue/quotes?archivadas=1').then(r => r.json())
+      .then(d => setArchivadas(Array.isArray(d) ? d : [])).catch(() => {});
     const PER_PAGE = qPageSize;
     // Transcript analysis
     const [showTranscriptModal, setShowTranscriptModal] = useState(false);
@@ -608,6 +613,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       { id: 'stale', label: 'Sin actividad' },         // sent > 7 días sin vistas
       { id: 'hot', label: 'Más vistas' },              // views ≥ 5
       { id: 'rejected', label: 'Rechazadas' },         // estado=rejected
+      { id: 'archivadas', label: '🗄 Archivadas' },     // eliminadas, con su motivo
     ];
 
     const now = Date.now();
@@ -658,10 +664,11 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       return true;
     };
 
-    const filtered = quotes
+    const fuente = qView === 'archivadas' ? archivadas : quotes;
+    const filtered = fuente
       .map((q: any) => ({ q, views: parseMeta(q.notas).meta.views || 0 }))
       .filter(({ q, views }) => {
-        if (!matchesView(q, qView, views)) return false;
+        if (qView !== 'archivadas' && !matchesView(q, qView, views)) return false;
         if (qFilter !== 'all' && q.estado !== qFilter) return false;
         for (const f of qFilters) { if (!matchesAdvFilter(q, f)) return false; }
         if (!qSearch) return true;
@@ -713,6 +720,8 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
 
     // Persist preferences
     useEffect(() => { try { localStorage.setItem('sacs_q_view', qView); } catch {} }, [qView]);
+    // Se pide solo cuando se entra al archivo, y al volver de archivar algo.
+    useEffect(() => { if (qView === 'archivadas') cargarArchivadas(); }, [qView]);
     useEffect(() => { try { localStorage.setItem('sacs_q_pagesize', String(qPageSize)); } catch {} }, [qPageSize]);
     useEffect(() => { try { localStorage.setItem('sacs_q_density', qDensity); } catch {} }, [qDensity]);
     useEffect(() => { try { localStorage.setItem('sacs_q_cols', JSON.stringify(Array.from(qVisibleCols))); } catch {} }, [qVisibleCols]);
@@ -995,6 +1004,23 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             <span style={{ fontSize: '0.8125rem', fontWeight: 600 }}>{qSelected.size} cotización(es) seleccionada(s)</span>
             <div style={{ flex: 1 }}></div>
             <button onClick={bulkMarkPaid} style={{ ...S.btnSmall, background: '#e8f5e9', color: '#2e7d32', borderColor: 'transparent' }}>Marcar como pagadas</button>
+            {qView === 'archivadas' ? (
+              <button onClick={async () => {
+                if (!confirm(`¿Restaurar ${qSelected.size} cotización(es)? Vuelven al estado que tenían antes de archivarse.`)) return;
+                await fetch('/api/revenue/quotes/eliminar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: Array.from(qSelected), restaurar: true }) });
+                clearSelection(); cargarArchivadas();
+                const d = await fetch('/api/revenue/quotes').then(r => r.json()).catch(() => null);
+                if (Array.isArray(d)) setQuotes(d);
+              }} style={{ ...S.btnSmall, background: '#fff', color: '#1a1a1a', borderColor: 'transparent' }}>↩️ Restaurar</button>
+            ) : (
+              /* Varias hacia la MISMA cotización nueva: el caso de dos que se
+                 fusionan en una tercera. Se archivan juntas y la nueva queda
+                 apuntada por las dos. */
+              <button onClick={() => setAEliminar(filteredQuotes.filter((q: any) => qSelected.has(q.id)))}
+                style={{ ...S.btnSmall, background: '#fdeaea', color: '#b93333', borderColor: 'transparent', fontWeight: 700 }}>
+                🗑 Archivar ({qSelected.size})
+              </button>
+            )}
             <button onClick={exportCsv} style={{ ...S.btnSmall, background: '#fff', color: '#1a1a1a', borderColor: 'transparent' }}>Exportar selección</button>
             <button onClick={clearSelection} style={{ ...S.btnSmall, background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.3)' }}>Deseleccionar</button>
           </div>
@@ -1062,6 +1088,32 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                       </td>}
                       {qVisibleCols.has('estado') && <td style={{ ...S.td, padding: rowPad }}>
                         <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 4, alignItems: 'flex-start' }}>
+                          {(() => {
+                            // En el archivo, el estado por sí solo no dice nada:
+                            // lo que importa es POR QUÉ se archivó y qué la
+                            // reemplazó. Y en las activas, saber que sustituye a
+                            // otras es la mitad del contexto de por qué existe.
+                            const mm = parseMeta(q.notas).meta;
+                            const el = mm.eliminada;
+                            const rp = Array.isArray(mm.reemplaza_a) ? mm.reemplaza_a : (mm.reemplaza_a ? [mm.reemplaza_a] : []);
+                            return (
+                              <>
+                                {el && (
+                                  <span title={`${el.motivo_label}${el.detalle ? ': ' + el.detalle : ''} · por ${el.por} · ${new Date(el.at).toLocaleString('es-MX')}`}
+                                    style={{ fontSize: '0.62rem', fontWeight: 700, padding: '2px 8px', borderRadius: 12, background: '#f3f4f6', color: '#666' }}>
+                                    🗄 {el.motivo_label}{el.reemplazada_por ? ` → ${el.reemplazada_por.numero}` : ''}
+                                    {el.junto_con?.length ? ` (con ${el.junto_con.join(', ')})` : ''}
+                                  </span>
+                                )}
+                                {rp.length > 0 && (
+                                  <span title={`Sustituye a ${rp.map((x: any) => x.numero).join(', ')}`}
+                                    style={{ fontSize: '0.62rem', fontWeight: 700, padding: '2px 8px', borderRadius: 12, background: '#eef2ff', color: '#3764c4' }}>
+                                    ♻ reemplaza a {rp.map((x: any) => x.numero).join(', ')}
+                                  </span>
+                                )}
+                              </>
+                            );
+                          })()}
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.6875rem', fontWeight: 700, padding: '3px 10px', borderRadius: 12, background: ec.bg, color: ec.fg }}>
                             <span style={{ width: 6, height: 6, borderRadius: '50%', background: ec.dot }}></span>
                             {estadoLabels[q.estado] || q.estado}
@@ -1102,7 +1154,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                             <a href={`https://wa.me/?text=${encodeURIComponent(`Cotización ${q.numero}: https://www.sacscloud.com/cotizacion/${q.id}`)}`} target="_blank" rel="noopener" onClick={() => setQMenuRow(null)} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', textDecoration: 'none' }}>💬 Enviar WhatsApp</a>
                             <a href={`mailto:${q.email || ''}?subject=${encodeURIComponent(`Cotización ${q.numero} - Sacs`)}&body=${encodeURIComponent(`Hola ${q.contacto || ''},\n\nTe comparto tu cotización:\nhttps://www.sacscloud.com/cotizacion/${q.id}\n\nQuedo al pendiente.\nSaludos`)}`} onClick={() => setQMenuRow(null)} style={{ ...S.btnSmall, width: '100%', marginRight: 0, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', textDecoration: 'none' }}>✉️ Enviar por email</a>
                             <div style={{ borderTop: '1px solid #f0f0f0', margin: '6px 0 4px' }} />
-                            <button onClick={() => { setAEliminar(q); setQMenuRow(null); }}
+                            <button onClick={() => { setAEliminar([q]); setQMenuRow(null); }}
                               style={{ ...S.btnSmall, width: '100%', marginRight: 0, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', color: '#b93333', fontWeight: 700 }}>
                               🗑 Eliminar cotización
                             </button>
@@ -1116,13 +1168,13 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             </table>
           </div>
 
-          {aEliminar && (
+          {aEliminar.length > 0 && (
             <EliminarCotizacionModal
-              quote={aEliminar}
+              seleccion={aEliminar}
               quotes={quotes}
-              onClose={() => setAEliminar(null)}
+              onClose={() => setAEliminar([])}
               onDone={async (msg: string) => {
-                setAEliminar(null);
+                setAEliminar([]); clearSelection();
                 const d = await fetch('/api/revenue/quotes').then(r => r.json()).catch(() => null);
                 if (Array.isArray(d)) setQuotes(d);
                 alert(msg);
@@ -2391,22 +2443,30 @@ const MOTIVOS_ELIMINAR: { v: string; l: string }[] = [
   { v: 'otro', l: 'Otro' },
 ];
 
-function EliminarCotizacionModal({ quote, quotes, onClose, onDone }: {
-  quote: any; quotes: any[]; onClose: () => void; onDone: (msg: string) => void;
+function EliminarCotizacionModal({ seleccion, quotes, onClose, onDone }: {
+  seleccion: any[]; quotes: any[]; onClose: () => void; onDone: (msg: string) => void;
 }) {
+  const quote = seleccion[0];
+  const varias = seleccion.length > 1;
   const [motivo, setMotivo] = useState('');
   const [detalle, setDetalle] = useState('');
   const [reemplazo, setReemplazo] = useState('');
   const [busy, setBusy] = useState(false);
 
   // Del mismo cliente: por empresa ligada o, si no la hay, por correo. Se
-  // excluye ella misma y lo ya eliminado.
+  // excluyen las que se están archivando y lo ya archivado.
+  const ids = seleccion.map((q: any) => q.id);
   const delCliente = (quotes || []).filter((q: any) => {
-    if (q.id === quote.id || q.estado === 'deleted') return false;
+    if (ids.includes(q.id) || q.estado === 'deleted') return false;
     if (quote.company_id && q.company_id) return q.company_id === quote.company_id;
     if (quote.email && q.email) return String(q.email).toLowerCase() === String(quote.email).toLowerCase();
     return false;
   });
+  // Archivar juntas cotizaciones de clientes distintos hacia UNA nueva no tiene
+  // sentido: se avisa en vez de dejar que el servidor lo rechace al final.
+  const mezcla = varias && seleccion.some((q: any) => (quote.company_id && q.company_id)
+    ? q.company_id !== quote.company_id
+    : String(q.email || '').toLowerCase() !== String(quote.email || '').toLowerCase());
 
   async function confirmar() {
     if (!motivo) { alert('Elige el motivo de la eliminación.'); return; }
@@ -2415,11 +2475,12 @@ function EliminarCotizacionModal({ quote, quotes, onClose, onDone }: {
     setBusy(true);
     const j = await fetch('/api/revenue/quotes/eliminar', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: quote.id, motivo, motivo_detalle: detalle.trim() || null, reemplazada_por_id: reemplazo || null }),
-    }).then(r => r.json()).catch(() => ({ error: 'No se pudo eliminar' }));
+      body: JSON.stringify({ ids, motivo, motivo_detalle: detalle.trim() || null, reemplazada_por_id: reemplazo || null }),
+    }).then(r => r.json()).catch(() => ({ error: 'No se pudo archivar' }));
     setBusy(false);
     if (j?.error) { alert(j.error); return; }
-    onDone(`Cotización ${j.numero || ''} eliminada` + (j.reemplazada_por ? ` · la reemplaza la ${j.reemplazada_por.numero}` : ''));
+    onDone(`${j.eliminadas} cotización(es) archivada(s): ${(j.numeros || []).join(', ')}`
+      + (j.reemplazada_por ? ` · las reemplaza la ${j.reemplazada_por.numero}` : ''));
   }
 
   const inp: React.CSSProperties = { padding: '9px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.85rem', outline: 'none', width: '100%', boxSizing: 'border-box', background: '#fff' };
@@ -2428,13 +2489,20 @@ function EliminarCotizacionModal({ quote, quotes, onClose, onDone }: {
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '6vh 14px', overflow: 'auto' }}>
       <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 14, padding: 22, width: 'min(560px, 100%)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-          <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Eliminar cotización {quote.numero}</h3>
+          <h3 style={{ margin: 0, fontSize: '1.05rem' }}>{varias ? `Archivar ${seleccion.length} cotizaciones` : `Eliminar cotización ${quote.numero}`}</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.1rem', cursor: 'pointer', color: '#999' }}>✕</button>
         </div>
         <div style={{ fontSize: '0.78rem', color: '#888', marginBottom: 14, lineHeight: 1.5 }}>
-          {quote.empresa || quote.contacto} · ${Number(quote.total || 0).toLocaleString('es-MX')}.
-          No se borra: se archiva y queda en el historial del cliente con el motivo, quién la eliminó y cuándo.
+          {varias
+            ? <>{seleccion.map((q: any) => q.numero).join(', ')} · {quote.empresa || quote.contacto}. Se archivan con el MISMO motivo.</>
+            : <>{quote.empresa || quote.contacto} · ${Number(quote.total || 0).toLocaleString('es-MX')}.</>}
+          {' '}No se borran: pasan al archivo y quedan en el historial del cliente con el motivo, quién y cuándo. Se pueden restaurar.
         </div>
+        {mezcla && (
+          <div style={{ fontSize: '0.78rem', color: '#b93333', background: '#fdeaea', border: '1px solid #f5c6c6', borderRadius: 8, padding: 10, marginBottom: 12 }}>
+            Hay cotizaciones de clientes distintos en la selección. Se pueden archivar juntas, pero no apuntarlas a una misma cotización nueva.
+          </div>
+        )}
 
         <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#888', display: 'block', marginBottom: 6 }}>MOTIVO DE ELIMINACIÓN *</label>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 12 }}>
@@ -2448,7 +2516,7 @@ function EliminarCotizacionModal({ quote, quotes, onClose, onDone }: {
 
         {motivo === 'nueva_cotizacion' && (
           <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#888', display: 'block', marginBottom: 3 }}>¿QUÉ COTIZACIÓN REEMPLAZA A ESTA? *</label>
+            <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#888', display: 'block', marginBottom: 3 }}>{varias ? '¿QUÉ COTIZACIÓN LAS REEMPLAZA? *' : '¿QUÉ COTIZACIÓN REEMPLAZA A ESTA? *'}</label>
             {delCliente.length ? (
               <>
                 <select value={reemplazo} onChange={e => setReemplazo(e.target.value)} style={inp}>
@@ -2461,7 +2529,7 @@ function EliminarCotizacionModal({ quote, quotes, onClose, onDone }: {
                 </select>
                 {reemplazo && (
                   <div style={{ fontSize: '0.76rem', color: '#1A8F7A', marginTop: 6 }}>
-                    Cotización {quote.numero} → reemplazada por {delCliente.find((q: any) => q.id === reemplazo)?.numero}
+                    {seleccion.map((q: any) => q.numero).join(' + ')} → reemplazada{varias ? 's' : ''} por {delCliente.find((q: any) => q.id === reemplazo)?.numero}
                   </div>
                 )}
               </>
@@ -2482,7 +2550,7 @@ function EliminarCotizacionModal({ quote, quotes, onClose, onDone }: {
           <button onClick={onClose} style={{ padding: '9px 16px', borderRadius: 8, border: '1px solid #ddd', background: '#fff', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>Cancelar</button>
           <button onClick={confirmar} disabled={busy || !motivo || (motivo === 'nueva_cotizacion' && !reemplazo)}
             style={{ padding: '9px 16px', borderRadius: 8, border: 'none', background: '#b93333', color: '#fff', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', opacity: (busy || !motivo || (motivo === 'nueva_cotizacion' && !reemplazo)) ? 0.5 : 1 }}>
-            {busy ? 'Eliminando…' : 'Confirmar eliminación'}
+            {busy ? 'Archivando…' : (varias ? `Confirmar archivado de ${seleccion.length}` : 'Confirmar eliminación')}
           </button>
         </div>
       </div>

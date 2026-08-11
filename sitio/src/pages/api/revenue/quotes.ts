@@ -67,6 +67,15 @@ export const GET: APIRoute = async ({ request, url }) => {
     return jsonResponse(data || []);
   }
 
+  // ?archivadas=1 → SOLO las archivadas. El archivo existe justo para que nada
+  // se pierda: se sacan de la vista activa, no de la base.
+  if (url.searchParams.get('archivadas') === '1') {
+    const { data, error } = await supabase.from('quotes').select('*')
+      .eq('estado', 'deleted').order('created_at', { ascending: false });
+    if (error) return jsonResponse({ error: error.message }, 500);
+    return jsonResponse(data || []);
+  }
+
   // Founder/cs see all. Unauthenticated preserves legacy behavior (admin UI without auth header).
   const { data, error } = await supabase.from('quotes').select('*')
     .neq('estado', 'deleted') // ocultar archivadas de la lista
