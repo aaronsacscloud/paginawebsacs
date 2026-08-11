@@ -246,6 +246,10 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     const [qShowFilterPopover, setQShowFilterPopover] = useState(false);
     const [qFilters, setQFilters] = useState<Array<{ field: string; op: string; value: any }>>([]);
     const [qMenuRow, setQMenuRow] = useState<string | null>(null);
+    // Eliminar una cotización pide MOTIVO: es un documento que se le mandó al
+    // cliente con folio y precio, y borrarlo sin explicación es lo que después
+    // impide saber por qué se le cotizó dos veces.
+    const [aEliminar, setAEliminar] = useState<any>(null);
     const PER_PAGE = qPageSize;
     // Transcript analysis
     const [showTranscriptModal, setShowTranscriptModal] = useState(false);
@@ -1097,6 +1101,11 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                             <button onClick={() => { navigator.clipboard.writeText(`https://www.sacscloud.com/cotizacion/${q.id}/implementacion`); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex' }}>⚡ Copiar link proceso</button>
                             <a href={`https://wa.me/?text=${encodeURIComponent(`Cotización ${q.numero}: https://www.sacscloud.com/cotizacion/${q.id}`)}`} target="_blank" rel="noopener" onClick={() => setQMenuRow(null)} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', textDecoration: 'none' }}>💬 Enviar WhatsApp</a>
                             <a href={`mailto:${q.email || ''}?subject=${encodeURIComponent(`Cotización ${q.numero} - Sacs`)}&body=${encodeURIComponent(`Hola ${q.contacto || ''},\n\nTe comparto tu cotización:\nhttps://www.sacscloud.com/cotizacion/${q.id}\n\nQuedo al pendiente.\nSaludos`)}`} onClick={() => setQMenuRow(null)} style={{ ...S.btnSmall, width: '100%', marginRight: 0, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', textDecoration: 'none' }}>✉️ Enviar por email</a>
+                            <div style={{ borderTop: '1px solid #f0f0f0', margin: '6px 0 4px' }} />
+                            <button onClick={() => { setAEliminar(q); setQMenuRow(null); }}
+                              style={{ ...S.btnSmall, width: '100%', marginRight: 0, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', color: '#b93333', fontWeight: 700 }}>
+                              🗑 Eliminar cotización
+                            </button>
                           </div>
                         )}
                       </td>}
@@ -1106,6 +1115,20 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               </tbody>
             </table>
           </div>
+
+          {aEliminar && (
+            <EliminarCotizacionModal
+              quote={aEliminar}
+              quotes={quotes}
+              onClose={() => setAEliminar(null)}
+              onDone={async (msg: string) => {
+                setAEliminar(null);
+                const d = await fetch('/api/revenue/quotes').then(r => r.json()).catch(() => null);
+                if (Array.isArray(d)) setQuotes(d);
+                alert(msg);
+              }}
+            />
+          )}
 
           {/* Pagination */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderTop: '1px solid #f0f0f0', background: '#fafafa' }}>
@@ -2347,3 +2370,122 @@ const REVENUE_HUB_MOBILE_CSS = `
     .rh-quote-preview > div[style*="maxWidth: 640"] { max-width: 100% !important; }
   }
 `;
+
+/* ═══ Eliminar cotización ═══
+ *
+ * No borra: archiva y deja escrito POR QUÉ, QUIÉN y CUÁNDO. Una cotización es
+ * un documento que salió al cliente con folio, precio y vigencia; que se esfume
+ * sin rastro es lo que después impide explicar por qué se le cotizó dos veces o
+ * por qué cambió el precio.
+ *
+ * Cuando el motivo es "se generó una nueva", se elige cuál la reemplaza —solo
+ * cotizaciones DEL MISMO CLIENTE, porque ligar la de otro rompe los dos
+ * historiales— y el vínculo queda en las dos direcciones.
+ */
+const MOTIVOS_ELIMINAR: { v: string; l: string }[] = [
+  { v: 'nueva_cotizacion', l: 'Se generó una nueva cotización' },
+  { v: 'error_captura', l: 'Me equivoqué al generar la cotización' },
+  { v: 'duplicada', l: 'La cotización está duplicada' },
+  { v: 'cambios_cliente', l: 'El cliente solicitó cambios' },
+  { v: 'operacion_cancelada', l: 'La operación fue cancelada' },
+  { v: 'otro', l: 'Otro' },
+];
+
+function EliminarCotizacionModal({ quote, quotes, onClose, onDone }: {
+  quote: any; quotes: any[]; onClose: () => void; onDone: (msg: string) => void;
+}) {
+  const [motivo, setMotivo] = useState('');
+  const [detalle, setDetalle] = useState('');
+  const [reemplazo, setReemplazo] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  // Del mismo cliente: por empresa ligada o, si no la hay, por correo. Se
+  // excluye ella misma y lo ya eliminado.
+  const delCliente = (quotes || []).filter((q: any) => {
+    if (q.id === quote.id || q.estado === 'deleted') return false;
+    if (quote.company_id && q.company_id) return q.company_id === quote.company_id;
+    if (quote.email && q.email) return String(q.email).toLowerCase() === String(quote.email).toLowerCase();
+    return false;
+  });
+
+  async function confirmar() {
+    if (!motivo) { alert('Elige el motivo de la eliminación.'); return; }
+    if (motivo === 'otro' && !detalle.trim()) { alert('Escribe el motivo: "Otro" a secas no explica nada después.'); return; }
+    if (motivo === 'nueva_cotizacion' && !reemplazo) { alert('Indica cuál cotización reemplaza a esta.'); return; }
+    setBusy(true);
+    const j = await fetch('/api/revenue/quotes/eliminar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: quote.id, motivo, motivo_detalle: detalle.trim() || null, reemplazada_por_id: reemplazo || null }),
+    }).then(r => r.json()).catch(() => ({ error: 'No se pudo eliminar' }));
+    setBusy(false);
+    if (j?.error) { alert(j.error); return; }
+    onDone(`Cotización ${j.numero || ''} eliminada` + (j.reemplazada_por ? ` · la reemplaza la ${j.reemplazada_por.numero}` : ''));
+  }
+
+  const inp: React.CSSProperties = { padding: '9px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.85rem', outline: 'none', width: '100%', boxSizing: 'border-box', background: '#fff' };
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '6vh 14px', overflow: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 14, padding: 22, width: 'min(560px, 100%)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+          <h3 style={{ margin: 0, fontSize: '1.05rem' }}>Eliminar cotización {quote.numero}</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.1rem', cursor: 'pointer', color: '#999' }}>✕</button>
+        </div>
+        <div style={{ fontSize: '0.78rem', color: '#888', marginBottom: 14, lineHeight: 1.5 }}>
+          {quote.empresa || quote.contacto} · ${Number(quote.total || 0).toLocaleString('es-MX')}.
+          No se borra: se archiva y queda en el historial del cliente con el motivo, quién la eliminó y cuándo.
+        </div>
+
+        <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#888', display: 'block', marginBottom: 6 }}>MOTIVO DE ELIMINACIÓN *</label>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 12 }}>
+          {MOTIVOS_ELIMINAR.map(m => (
+            <label key={m.v} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.86rem', padding: '7px 9px', borderRadius: 8, cursor: 'pointer', background: motivo === m.v ? '#f5f7ff' : 'transparent', border: '1px solid ' + (motivo === m.v ? '#d8e0fb' : 'transparent') }}>
+              <input type="radio" name="motivo-eliminar" checked={motivo === m.v} onChange={() => setMotivo(m.v)} />
+              {m.l}
+            </label>
+          ))}
+        </div>
+
+        {motivo === 'nueva_cotizacion' && (
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#888', display: 'block', marginBottom: 3 }}>¿QUÉ COTIZACIÓN REEMPLAZA A ESTA? *</label>
+            {delCliente.length ? (
+              <>
+                <select value={reemplazo} onChange={e => setReemplazo(e.target.value)} style={inp}>
+                  <option value="">— elegir —</option>
+                  {delCliente.map((q: any) => (
+                    <option key={q.id} value={q.id}>
+                      {q.numero} · ${Number(q.total || 0).toLocaleString('es-MX')} · {q.estado} · {new Date(q.created_at).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </option>
+                  ))}
+                </select>
+                {reemplazo && (
+                  <div style={{ fontSize: '0.76rem', color: '#1A8F7A', marginTop: 6 }}>
+                    Cotización {quote.numero} → reemplazada por {delCliente.find((q: any) => q.id === reemplazo)?.numero}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ fontSize: '0.78rem', color: '#a06600', background: '#fff8ec', border: '1px solid #f5e2b8', borderRadius: 8, padding: 10 }}>
+                Este cliente no tiene otra cotización a la cual apuntar. Créala primero, o elige otro motivo.
+              </div>
+            )}
+          </div>
+        )}
+
+        <label style={{ fontSize: '0.7rem', fontWeight: 700, color: '#888', display: 'block', marginBottom: 3 }}>
+          {motivo === 'otro' ? 'CUÉNTAME EL MOTIVO *' : 'NOTA (opcional)'}
+        </label>
+        <input value={detalle} onChange={e => setDetalle(e.target.value)} placeholder="lo que ayude a entenderlo dentro de tres meses" style={{ ...inp, marginBottom: 16 }} />
+
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button onClick={onClose} style={{ padding: '9px 16px', borderRadius: 8, border: '1px solid #ddd', background: '#fff', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>Cancelar</button>
+          <button onClick={confirmar} disabled={busy || !motivo || (motivo === 'nueva_cotizacion' && !reemplazo)}
+            style={{ padding: '9px 16px', borderRadius: 8, border: 'none', background: '#b93333', color: '#fff', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', opacity: (busy || !motivo || (motivo === 'nueva_cotizacion' && !reemplazo)) ? 0.5 : 1 }}>
+            {busy ? 'Eliminando…' : 'Confirmar eliminación'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
