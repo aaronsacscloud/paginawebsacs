@@ -65,6 +65,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
   const [bankAccounts, setBankAccounts] = useState<any[]>([]);
   const [bankForm, setBankForm] = useState<any>({});
   const [altaBanco, setAltaBanco] = useState<any>(null);
+  const [recup, setRecup] = useState<any>(null);
   const [allQuotes, setAllQuotes] = useState<any[]>([]);
   const [partnersById, setPartnersById] = useState<Record<string, { nombre: string; email?: string }>>({});
 
@@ -2706,6 +2707,65 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             <div style={{ marginBottom: 28 }}><CamposConfig entidad="company" /></div>
 
             {/* Folio config */}
+            {/* ── Recuperación de una sola vez ──
+                Las cotizaciones que se ligaron a un cliente cuando YA estaban
+                cobradas nunca generaron oportunidad, porque el puente solo corría
+                para borrador / enviada / aceptada. Ya está arreglado hacia
+                adelante; esto repara lo que quedó atrás. */}
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 800, marginBottom: 16 }}>Oportunidades que faltan</h2>
+            <div style={{ ...S.card, marginBottom: 24 }}>
+              <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: 12, lineHeight: 1.6 }}>
+                Genera la oportunidad de las cotizaciones que ya están <b>cobradas, vencidas o rechazadas</b> y se quedaron
+                sin ella. Se crean ya cerradas y <b>con su fecha real</b> — una venta de julio no aparece como cerrada hoy.
+                Solo se tocan las que tienen cliente ligado: sin empresa, la oportunidad no aparecería en ninguna ficha.
+                Correrlo dos veces no duplica nada.
+              </div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' as const }}>
+                <button onClick={async () => {
+                  const r = await fetch('/api/revenue/quotes/recuperar-oportunidades', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dry: true }),
+                  }).then(x => x.json()).catch(() => null);
+                  setRecup(r);
+                }} style={S.btnSmall}>Ver qué se recuperaría</button>
+                <button onClick={async () => {
+                  if (!confirm('Se van a crear las oportunidades faltantes de las cotizaciones ya cobradas, vencidas y rechazadas.\n\n¿Continuar?')) return;
+                  const r = await fetch('/api/revenue/quotes/recuperar-oportunidades', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dry: false }),
+                  }).then(x => x.json()).catch(() => null);
+                  setRecup(r);
+                }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', padding: '6px 14px', fontSize: '0.78rem' }}>Recuperar ahora</button>
+              </div>
+              {recup && (
+                <div style={{ marginTop: 12, fontSize: '0.76rem', lineHeight: 1.6 }}>
+                  <b>{recup.dry ? 'Se recuperarían' : 'Se recuperaron'} {recup.recuperadas}</b>
+                  {' '}({recup.ganadas} ganadas · {recup.perdidas} perdidas)
+                  {(recup.detalle || []).length > 0 && (
+                    <div style={{ marginTop: 6, maxHeight: 160, overflowY: 'auto' as const, background: '#fafafa', borderRadius: 7, padding: 9 }}>
+                      {recup.detalle.map((x: any) => (
+                        <div key={x.numero} style={{ fontSize: '0.72rem', color: '#555' }}>
+                          {x.numero} · {x.empresa} · {fmt(x.total)} — {x.etapa === 'cerrada_ganada' ? 'ganada' : 'perdida'} el {String(x.closed_at || '').slice(0, 10)}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {(recup.sin_cliente_ligado || []).length > 0 && (
+                    <div style={{ marginTop: 10, background: '#fff8ec', border: '1px solid #f5e2b8', borderRadius: 8, padding: '9px 11px', color: '#8a6212' }}>
+                      <b>{recup.sin_cliente_ligado.length} no se pueden recuperar todavía</b> porque no tienen cliente ligado.
+                      Lígalas desde la lista y su oportunidad nace sola:
+                      <div style={{ marginTop: 5, fontSize: '0.72rem' }}>
+                        {recup.sin_cliente_ligado.map((x: any) => `${x.numero} (${x.empresa || 'sin nombre'})`).join(' · ')}
+                      </div>
+                    </div>
+                  )}
+                  {(recup.fallidas || []).length > 0 && (
+                    <div style={{ marginTop: 8, color: '#b4302f', fontSize: '0.73rem' }}>
+                      Fallaron {recup.fallidas.length}: {recup.fallidas.map((f: any) => `${f.numero} (${f.motivo})`).join(' · ')}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             <h2 style={{ fontSize: '1.125rem', fontWeight: 800, marginBottom: 16 }}>Folio de cotizaciones</h2>
             <div style={{ ...S.card, marginBottom: 24 }}>
               <div style={{ fontSize: '0.75rem', color: '#999', marginBottom: 12 }}>Este número se usa como <b>folio inicial</b>. A partir de él, cada cotización nueva se numera de forma consecutiva y nunca se repite.</div>
