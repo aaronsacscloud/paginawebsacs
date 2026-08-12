@@ -179,8 +179,11 @@ export const POST: APIRoute = async ({ request }) => {
   const empresa = String(b?.empresa || '').trim();
   if (!empresa) return json({ error: 'El nombre de la empresa es obligatorio: el cliente es la empresa.' }, 400);
 
+  // Nace como prospecto salvo que se diga lo contrario. Marcar cliente de
+  // entrada a alguien que todavía no compra ensucia la cuenta de cuentas nuevas.
+  const esCliente = String(b?.tipo || '') === 'cliente';
   const { data: co, error } = await supabase.from('companies')
-    .insert({ nombre: empresa, estado_cuenta: 'prospecto' }).select('id, nombre').maybeSingle();
+    .insert({ nombre: empresa, estado_cuenta: esCliente ? 'activo' : 'prospecto' }).select('id, nombre').maybeSingle();
   if (error || !co) return json({ error: error?.message || 'No se pudo crear el cliente.' }, 500);
 
   let contactId: string | null = null;
@@ -188,12 +191,13 @@ export const POST: APIRoute = async ({ request }) => {
   if (contacto || b?.email) {
     const { data: ct } = await supabase.from('contacts').insert({
       nombre: contacto || empresa, email: b.email || null, whatsapp: b.whatsapp || null,
-      company_id: co.id, tipo: 'prospecto', lifecycle_stage: 'oportunidad',
+      company_id: co.id, tipo: esCliente ? 'cliente' : 'prospecto',
+      lifecycle_stage: esCliente ? 'cliente' : 'oportunidad',
     }).select('id').maybeSingle();
     contactId = ct?.id || null;
     // Primer contacto = principal. La columna puede no existir en instalaciones
     // viejas, así que el fallo se ignora: perder la marca no vale romper el alta.
     if (contactId) await supabase.from('contacts').update({ es_principal: true }).eq('id', contactId).then(() => {}, () => {});
   }
-  return json({ ok: true, company_id: co.id, empresa: co.nombre, contact_id: contactId });
+  return json({ ok: true, company_id: co.id, empresa: co.nombre, contact_id: contactId, clase: esCliente ? 'cliente' : 'lead', es_cliente: esCliente });
 };

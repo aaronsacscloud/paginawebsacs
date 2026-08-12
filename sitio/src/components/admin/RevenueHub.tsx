@@ -1635,9 +1635,16 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>
                         {qf.empresa}
-                        <span style={{ marginLeft: 6, fontSize: '0.6rem', fontWeight: 700, padding: '1px 7px', borderRadius: 10, background: qf._es_cliente ? '#e6f6f2' : '#eef2ff', color: qf._es_cliente ? '#1A8F7A' : '#3764c4' }}>
-                          {qf._es_cliente ? 'Cliente' : 'Lead'}
-                        </span>
+                        {(() => {
+                          const cl = qf._clase || (qf._es_cliente ? 'cliente' : 'lead');
+                          const est: Record<string, any> = {
+                            cliente: { t: 'Cliente', bg: '#f0e9ff', fg: '#6d4bc7' },
+                            lead: { t: 'Lead', bg: '#e8f0fd', fg: '#3764c4' },
+                            excliente: { t: 'Excliente', bg: '#f4f5f7', fg: '#5b6472' },
+                          };
+                          const e = est[cl] || est.lead;
+                          return <span style={{ marginLeft: 6, fontSize: '0.6rem', fontWeight: 700, padding: '1px 7px', borderRadius: 10, background: e.bg, color: e.fg }}>{e.t}</span>;
+                        })()}
                       </div>
                       <div style={{ fontSize: '0.72rem', color: '#888' }}>{[qf.contacto, qf.email, qf.whatsapp].filter(Boolean).join(' · ') || 'sin contacto'}</div>
                       {qf._ctx_n ? (
@@ -1646,22 +1653,34 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                         </div>
                       ) : null}
                     </div>
-                    <button onClick={() => setQf({ ...qf, company_id: null, contact_id: null, _es_cliente: false, _ctx_n: 0, _ctx_ultima: '' })}
+                    <button onClick={() => setQf({ ...qf, company_id: null, contact_id: null, _es_cliente: false, _clase: '', _ctx_n: 0, _ctx_ultima: '' })}
                       style={{ ...S.btnSmall, marginRight: 0 }}>Cambiar</button>
+                  </div>
+                  {/* Decirlo explícito: si no, no hay forma de saber si el clic
+                      en el buscador sí agarró. */}
+                  <div style={{ fontSize: '0.7rem', color: '#0f7a56', marginTop: 6 }}>
+                    Ligada — ya aparece en su ficha y en su historial.
                   </div>
                 </div>
               ) : (
                 <ClienteBuscador
                   valorInicial={qf.empresa || ''}
+                  datos={{ empresa: qf.empresa, contacto: qf.contacto, email: qf.email, whatsapp: qf.whatsapp }}
                   onElegir={(r: any) => setQf({
                     ...qf, company_id: r.company_id, contact_id: r.contact_id || null,
                     empresa: r.empresa || r.contacto, contacto: r.contacto || '',
                     email: r.email || qf.email || '', whatsapp: r.whatsapp || qf.whatsapp || '',
-                    _es_cliente: !!r.es_cliente, _ctx_n: r.n || 0,
+                    _es_cliente: !!r.es_cliente, _clase: r.clase || (r.es_cliente ? 'cliente' : 'lead'), _ctx_n: r.n || 0,
                     _ctx_ultima: r.ultima ? `${r.ultima.numero} · $${Number(r.ultima.total || 0).toLocaleString('es-MX')} · ${r.ultima.estado}` : '',
                   })}
                 />
               )}
+              {/* Estos cuatro son lo que se IMPRIME. Se pueden cambiar sin
+                  tocar la ficha del cliente: un contacto distinto para esta
+                  cotización es un caso real y no debe editar el CRM. */}
+              <div style={{ fontSize: '0.63rem', fontWeight: 700, color: '#a3a3a3', textTransform: 'uppercase' as const, letterSpacing: '.07em', margin: '14px 0 7px' }}>
+                Datos que salen en la cotización
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
                 <input value={qf.empresa || ''} onChange={e => setQf({ ...qf, empresa: e.target.value })} placeholder="Empresa *" required style={{ ...S.input, borderColor: !qf.empresa ? '#fca5a5' : undefined }} />
                 <input value={qf.contacto || ''} onChange={e => setQf({ ...qf, contacto: e.target.value })} placeholder="Contacto" style={S.input} />
@@ -2690,8 +2709,11 @@ function EliminarCotizacionModal({ seleccion, quotes, onClose, onDone }: {
  * avisa si ya hay algo parecido: detectar el duplicado cuesta un query, y
  * fusionarlo después cuesta una tarde.
  */
-function ClienteBuscador({ valorInicial, onElegir }: { valorInicial?: string; onElegir: (r: any) => void }) {
-  const [q, setQ] = useState(valorInicial || '');
+function ClienteBuscador({ valorInicial, datos, onElegir }: { valorInicial?: string; datos?: any; onElegir: (r: any) => void }) {
+  // La caja arranca VACÍA aunque la cotización ya traiga nombre: prellenada se
+  // leía como un campo más que ya está lleno y nadie la tocaba. Lo escrito se
+  // ofrece en una pastilla de un clic, debajo.
+  const [q, setQ] = useState('');
   const [res, setRes] = useState<any[]>([]);
   const [abierto, setAbierto] = useState(false);
   const [buscando, setBuscando] = useState(false);
@@ -2714,9 +2736,15 @@ function ClienteBuscador({ valorInicial, onElegir }: { valorInicial?: string; on
   };
 
   async function abrirAlta() {
-    setCreando({ empresa: q.trim(), contacto: '', email: '', whatsapp: '' });
+    // Se arrastra lo que ya está capturado en la cotización: volver a teclear
+    // correo y teléfono es justo el momento en que se abandona y se deja sin ligar.
+    setCreando({
+      empresa: q.trim() || datos?.empresa || '', contacto: datos?.contacto || '',
+      email: datos?.email || '', whatsapp: datos?.whatsapp || '', tipo: 'lead',
+    });
     setAbierto(false);
-    const j = await fetch(`/api/crm/buscar-cliente?duplicado=${encodeURIComponent(q.trim())}`).then(r => r.json()).catch(() => ({}));
+    const nombre = q.trim() || datos?.empresa || '';
+    const j = await fetch(`/api/crm/buscar-cliente?duplicado=${encodeURIComponent(nombre)}&email=${encodeURIComponent(datos?.email || '')}`).then(r => r.json()).catch(() => ({}));
     setDupes(j);
   }
 
@@ -2726,7 +2754,7 @@ function ClienteBuscador({ valorInicial, onElegir }: { valorInicial?: string; on
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(creando),
     }).then(r => r.json()).catch(() => ({ error: 'No se pudo crear' }));
     if (j?.error) { alert(j.error); return; }
-    onElegir({ ...j, contacto: creando.contacto, email: creando.email, whatsapp: creando.whatsapp, es_cliente: false, n: 0 });
+    onElegir({ ...j, contacto: creando.contacto, email: creando.email, whatsapp: creando.whatsapp, es_cliente: creando.tipo === 'cliente', clase: creando.tipo, n: 0 });
     setCreando(null); setDupes(null);
   }
 
@@ -2755,7 +2783,22 @@ function ClienteBuscador({ valorInicial, onElegir }: { valorInicial?: string; on
           <input value={creando.email} onChange={e => setCreando({ ...creando, email: e.target.value })} placeholder="Correo" style={S.input} />
           <input value={creando.whatsapp} onChange={e => setCreando({ ...creando, whatsapp: e.target.value })} placeholder="WhatsApp" style={S.input} />
         </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+        {/* Nace como lead salvo que se diga lo contrario: casi siempre se cotiza
+            a alguien que todavía no compra, y marcarlo cliente de entrada
+            ensucia la cuenta de cuántas cuentas nuevas trajiste. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+          <span style={{ display: 'inline-flex', background: '#f2f3f5', borderRadius: 20, padding: 3, gap: 3 }}>
+            {(['lead', 'cliente'] as const).map(t => (
+              <button key={t} onClick={() => setCreando({ ...creando, tipo: t })}
+                style={{ border: 'none', cursor: 'pointer', borderRadius: 20, padding: '3px 12px', fontSize: '0.68rem', fontWeight: 800,
+                  background: creando.tipo === t ? '#3764c4' : 'transparent', color: creando.tipo === t ? '#fff' : '#6b7280' }}>
+                {t === 'lead' ? 'Lead' : 'Cliente'}
+              </button>
+            ))}
+          </span>
+          <span style={{ fontSize: '0.71rem', color: '#8a8a8a' }}>se guarda así en su ficha</span>
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
           <button onClick={crear} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', padding: '6px 14px', fontSize: '0.78rem' }}>Crear y ligar</button>
           <button onClick={() => { setCreando(null); setDupes(null); }} style={{ ...S.btnSmall, marginRight: 0 }}>Cancelar</button>
         </div>
@@ -2786,12 +2829,28 @@ function ClienteBuscador({ valorInicial, onElegir }: { valorInicial?: string; on
 
   return (
     <div style={{ position: 'relative', marginBottom: 8 }}>
-      <input value={q} onChange={e => buscar(e.target.value)} onFocus={() => setAbierto(true)} onKeyDown={teclas}
-        placeholder="Buscar por empresa, contacto, correo, teléfono, cuenta SACS o folio…" style={{ ...S.input, width: '100%' }} />
+      <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 9, border: '1.5px solid #b9a0f0', borderRadius: 9, padding: '0 12px', background: '#fbfaff' }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2.2" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.3-4.3" /></svg>
+          <input value={q} onChange={e => buscar(e.target.value)} onFocus={() => setAbierto(true)} onKeyDown={teclas}
+            placeholder="Buscar cliente o lead…"
+            title="Empresa, contacto, correo, teléfono, cuenta SACS o folio"
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', padding: '10px 0', fontSize: '0.85rem', fontFamily: 'inherit' }} />
+        </div>
+        <button onClick={abrirAlta} style={{ ...S.btnSmall, marginRight: 0, whiteSpace: 'nowrap' as const, padding: '0 14px', fontWeight: 700 }}>+ Nuevo</button>
+      </div>
+      {/* Lo que ya estaba escrito en la cotización, a un clic: es el caso más
+          común —abrir una vieja sin ligar— y obliga a retecleárselo. */}
+      {!q && (valorInicial || '').trim().length > 1 && (
+        <button onClick={() => buscar((valorInicial || '').trim())}
+          style={{ border: '1px solid #e6e2ef', background: '#f4f2f8', color: '#5b4a91', borderRadius: 20, padding: '5px 12px', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer', marginTop: 8 }}>
+          Buscar “{(valorInicial || '').trim()}”
+        </button>
+      )}
       {abierto && q.trim().length >= 2 && (
         <>
           <div onClick={() => setAbierto(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
-          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, zIndex: 41, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 8, boxShadow: '0 8px 28px rgba(0,0,0,0.12)', maxHeight: 340, overflowY: 'auto' }}>
+          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 6, zIndex: 41, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 8, boxShadow: '0 8px 28px rgba(0,0,0,0.12)', maxHeight: 340, overflowY: 'auto' }}>
             {res.length > 0 && (
               <div style={{ display: 'flex', gap: 6, padding: '8px 10px', borderBottom: '1px solid #f2f2f2', background: '#fcfcfd', position: 'sticky' as const, top: 0 }}>
                 {([['todos', 'Todos'], ['cliente', 'Clientes'], ['lead', 'Leads'], ['excliente', 'Exclientes']] as const).map(([k, t]) => {
