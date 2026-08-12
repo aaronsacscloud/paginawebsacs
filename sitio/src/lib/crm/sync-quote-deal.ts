@@ -262,7 +262,11 @@ export async function createDealFromQuote(quote: any, targetStage: DealStage, ct
     categoria,
     ...montos,
     contact_id: contactId,
-    company_id: contact?.company_id || null,
+    // La empresa de la COTIZACIÓN manda: es la que se eligió al ligarla. La del
+    // contacto es el respaldo — si el contacto está en otra empresa (o en
+    // ninguna), la oportunidad terminaría colgada del cliente equivocado, o de
+    // nadie, y no aparecería en la ficha.
+    company_id: quote.company_id || contact?.company_id || null,
     plan,
     sucursales,
     billing_period: billingPeriod,

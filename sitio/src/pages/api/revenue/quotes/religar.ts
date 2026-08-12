@@ -49,14 +49,26 @@ async function proponer() {
       sinEmpate.push({ quote_id: q.id, numero: q.numero, empresa_escrita: q.empresa, email: q.email, total: q.total });
     }
   }
-  return { ligables, ambiguas, sin_empate: sinEmpate };
+  // Ligadas pero SIN oportunidad: pasa cuando se ligó a mano en el editor antes
+  // de que existiera el automatismo, o si la creación falló. Sin esto quedan en
+  // tierra de nadie — el cliente correcto, la ficha vacía.
+  const { data: huerfanas } = await supabase.from('quotes')
+    .select('id, numero, empresa, total, estado, company_id, companies(nombre)')
+    .not('company_id', 'is', null).is('deal_id', null)
+    .in('estado', ['draft', 'sent', 'accepted']).limit(300);
+  const sinOportunidad = (huerfanas || []).map((q: any) => ({
+    quote_id: q.id, numero: q.numero, total: q.total, estado: q.estado,
+    company_id: q.company_id, cliente: (Array.isArray(q.companies) ? q.companies[0] : q.companies)?.nombre,
+  }));
+
+  return { ligables, ambiguas, sin_empate: sinEmpate, sin_oportunidad: sinOportunidad };
 }
 
 export const GET: APIRoute = async () => json(await proponer());
 
 export const POST: APIRoute = async ({ request }) => {
   const b = await request.json().catch(() => ({} as any));
-  const { ligables, ambiguas, sin_empate } = await proponer();
+  const { ligables, ambiguas, sin_empate, sin_oportunidad } = await proponer();
   // Se puede aplicar solo un subconjunto (ids), para revisar por partes.
   const filtro: string[] | null = Array.isArray(b?.quote_ids) && b.quote_ids.length ? b.quote_ids.map(String) : null;
   const aplicar = filtro ? ligables.filter(x => filtro.includes(x.quote_id)) : ligables;
@@ -80,6 +92,16 @@ export const POST: APIRoute = async ({ request }) => {
         if (r?.created) oportunidades++;
       } catch (e: any) { errores.push({ numero: x.numero, error: 'oportunidad: ' + (e?.message || e) }); }
     }
+  }
+
+  // Y las que ya tenían cliente pero se quedaron sin oportunidad.
+  for (const x of (filtro ? sin_oportunidad.filter((y: any) => filtro.includes(y.quote_id)) : sin_oportunidad)) {
+    try {
+      const { syncQuoteToDeal } = await import('../../../../lib/crm/sync-quote-deal');
+      const etapa = x.estado === 'accepted' ? 'negociacion' : x.estado === 'sent' ? 'cotizacion_enviada' : 'calificacion';
+      const r = await syncQuoteToDeal(x.quote_id, { targetStage: etapa as any, valor_total: Number(x.total || 0), trigger: 'religado_sin_oportunidad' });
+      if (r?.created) oportunidades++;
+    } catch (e: any) { errores.push({ numero: x.numero, error: 'oportunidad: ' + (e?.message || e) }); }
   }
 
   return json({

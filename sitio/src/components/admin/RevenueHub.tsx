@@ -860,20 +860,24 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             {/* Religar: las cotizaciones viejas se capturaron con el cliente a
                 mano y no apuntan a nadie. El botón solo aparece si hay algo que
                 arreglar, y enseña la propuesta antes de tocar nada. */}
-            {quotes.some((q: any) => !q.company_id) && (
+            {quotes.some((q: any) => !q.company_id || (!q.deal_id && ['draft', 'sent', 'accepted'].includes(q.estado))) && (
               <button onClick={async () => {
                 const j = await fetch('/api/revenue/quotes/religar').then(r => r.json()).catch(() => null);
                 if (!j) { alert('No se pudo consultar.'); return; }
                 const n = j.ligables?.length || 0;
-                if (!n) { alert(`No hay ninguna que se pueda ligar por correo.\n\n${j.sin_empate?.length || 0} sin empate · ${j.ambiguas?.length || 0} ambiguas (mismo correo en dos clientes).`); return; }
-                const muestra = j.ligables.slice(0, 8).map((x: any) => `· ${x.numero} → ${x.cliente}`).join('\n');
-                if (!confirm(`Se van a ligar ${n} cotización(es) a su cliente por correo:\n\n${muestra}${n > 8 ? `\n… y ${n - 8} más` : ''}\n\nLas activas además van a generar su oportunidad.\n\n¿Aplico?`)) return;
+                const so = j.sin_oportunidad?.length || 0;
+                if (!n && !so) { alert(`Nada que arreglar por correo.\n\n${j.sin_empate?.length || 0} sin empate · ${j.ambiguas?.length || 0} ambiguas (mismo correo en dos clientes).`); return; }
+                const muestra = [
+                  ...(j.ligables || []).slice(0, 6).map((x: any) => `· ${x.numero} → ${x.cliente}`),
+                  ...(j.sin_oportunidad || []).slice(0, 6).map((x: any) => `· ${x.numero} (${x.cliente}) → crear su oportunidad`),
+                ].join('\n');
+                if (!confirm(`${n} por ligar a su cliente y ${so} ligada(s) sin oportunidad:\n\n${muestra}\n\n¿Aplico?`)) return;
                 const r = await fetch('/api/revenue/quotes/religar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).then(x => x.json());
                 alert(`${r.ligadas} ligada(s) · ${r.oportunidades} oportunidad(es) creada(s).` + (r.pendientes?.sin_empate ? `\n\nQuedan ${r.pendientes.sin_empate} sin empate por correo: hay que ligarlas a mano desde el editor.` : ''));
                 const d = await fetch('/api/revenue/quotes').then(x => x.json()).catch(() => null);
                 if (Array.isArray(d)) setQuotes(d);
               }} style={{ ...S.btn, background: '#fff8ec', color: '#b45309', border: '1px solid #f5e2b8', padding: '8px 14px' }}>
-                🔗 Religar ({quotes.filter((q: any) => !q.company_id).length})
+                🔗 Religar ({quotes.filter((q: any) => !q.company_id || (!q.deal_id && ['draft', 'sent', 'accepted'].includes(q.estado))).length})
               </button>
             )}
             <button onClick={() => { setTranscript(''); setAnalysisResult(null); setShowTranscriptModal(true); }} style={{ ...S.btn, background: '#f5f5f5', color: '#555', padding: '8px 14px' }}>Transcripción</button>
