@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import CotizacionActividad from './crm/CotizacionActividad';
 import CamposConfig from './crm/CamposPersonalizados';
+import CotizacionesDashboard from './crm/CotizacionesDashboard';
 import { plans as plansData } from '../../data/plans';
 import { PLANS, PLAN_PRICES, IMPL_PRICES, METODOS, fmt, fmtDate } from '../../lib/quotes/constants';
 import { parseMeta, serializeMeta, addTimelineEvent } from '../../lib/quotes/meta';
@@ -82,6 +83,8 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
   };
 
   useEffect(() => { load(); }, []);
+
+  const [dashCot, setDashCot] = useState(false);
 
   // Sync tab when controlled by CrmDashboard
   useEffect(() => {
@@ -888,10 +891,8 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             </button>
             <button onClick={() => { setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida. Soporte por chat SACS y WhatsApp. Sin contratos.' }); setShowDrawer(true); }}
               style={{ ...S.btn, background: '#4B7BE5', color: '#fff', padding: '8px 18px', fontWeight: 700 }}>+ Nueva cotización</button>
-            {/* El dashboard cierra la fila y lleva el peso: es donde se empieza
-                el día. Todavía no existe, así que el clic dice qué va a traer en
-                vez de llevar a una pantalla vacía. */}
-            <button onClick={() => alert('El dashboard completo es lo siguiente.\n\nVa a traer: embudo del periodo (cotizado → aceptado → pagado), cobranza por semana, próximos pagos según las parcialidades pactadas, motivos de rechazo y la lista de las que hay que mover hoy — todo con filtro de fechas.\n\nDime qué bloques quieres primero.')}
+            {/* El dashboard cierra la fila y lleva el peso: es donde se empieza el día. */}
+            <button onClick={() => setDashCot(true)}
               style={{ ...S.btn, background: '#1a1a1a', color: '#fff', padding: '8px 16px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="4" width="3" height="14"/></svg>
               Dashboard
@@ -2415,6 +2416,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       {/* Content */}
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px' }}>
         {tab === 'dashboard' && <DashboardView />}
+        {dashCot && <CotizacionesDashboard onCerrar={() => setDashCot(false)} />}
         {tab === 'cotizaciones' && <QuotesView />}
         {tab === 'config' && (
           <div>
@@ -2691,6 +2693,8 @@ function ClienteBuscador({ valorInicial, onElegir }: { valorInicial?: string; on
   const [buscando, setBuscando] = useState(false);
   const [creando, setCreando] = useState<any>(null);
   const [dupes, setDupes] = useState<any>(null);
+  const [filtro, setFiltro] = useState<'todos' | 'cliente' | 'lead' | 'excliente'>('todos');
+  const [cursor, setCursor] = useState(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const buscar = (texto: string) => {
@@ -2701,7 +2705,7 @@ function ClienteBuscador({ valorInicial, onElegir }: { valorInicial?: string; on
     timer.current = setTimeout(async () => {
       setBuscando(true);
       const j = await fetch('/api/crm/buscar-cliente?q=' + encodeURIComponent(texto)).then(r => r.json()).catch(() => ({}));
-      setRes(j?.resultados || []); setBuscando(false);
+      setRes(j?.resultados || []); setCursor(0); setBuscando(false);
     }, 250);
   };
 
@@ -2755,29 +2759,75 @@ function ClienteBuscador({ valorInicial, onElegir }: { valorInicial?: string; on
     );
   }
 
+  const clases: Record<string, { txt: string; bg: string; fg: string }> = {
+    cliente:   { txt: 'Cliente',   bg: '#f0e9ff', fg: '#6d4bc7' },
+    lead:      { txt: 'Lead',      bg: '#e8f0fd', fg: '#3764c4' },
+    excliente: { txt: 'Excliente', bg: '#f4f5f7', fg: '#5b6472' },
+  };
+  const estadoTxt: Record<string, string> = { sent: 'enviada', draft: 'borrador', accepted: 'aceptada', paid: 'pagada', expired: 'vencida', rejected: 'rechazada' };
+  const estadoCol: Record<string, string> = { sent: '#a15c07', accepted: '#2c5fc4', paid: '#0f7a56', expired: '#b4302f', rejected: '#5b6472', draft: '#8a8a8a' };
+
+  const visibles = res.filter((r: any) => filtro === 'todos' || r.clase === filtro);
+  const elegir = (r: any) => { onElegir(r); setAbierto(false); setCursor(0); };
+
+  // ↑↓ para moverse y ↵ para elegir: quien está capturando una cotización no
+  // suelta el teclado para tomar el mouse.
+  const teclas = (e: any) => {
+    if (!abierto) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); setCursor(c => Math.min(c + 1, visibles.length - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setCursor(c => Math.max(c - 1, 0)); }
+    else if (e.key === 'Enter' && visibles[cursor]) { e.preventDefault(); elegir(visibles[cursor]); }
+    else if (e.key === 'Escape') { setAbierto(false); }
+  };
+
   return (
     <div style={{ position: 'relative', marginBottom: 8 }}>
-      <input value={q} onChange={e => buscar(e.target.value)} onFocus={() => setAbierto(true)}
-        placeholder="Buscar cliente o lead por empresa, contacto o correo…" style={{ ...S.input, width: '100%' }} />
+      <input value={q} onChange={e => buscar(e.target.value)} onFocus={() => setAbierto(true)} onKeyDown={teclas}
+        placeholder="Buscar por empresa, contacto, correo, teléfono, cuenta SACS o folio…" style={{ ...S.input, width: '100%' }} />
       {abierto && q.trim().length >= 2 && (
         <>
           <div onClick={() => setAbierto(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
-          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, zIndex: 41, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 8, boxShadow: '0 8px 28px rgba(0,0,0,0.12)', maxHeight: 280, overflowY: 'auto' }}>
-            {buscando && <div style={{ padding: 10, fontSize: '0.78rem', color: '#999' }}>Buscando…</div>}
-            {!buscando && res.length === 0 && <div style={{ padding: 10, fontSize: '0.78rem', color: '#999' }}>Sin resultados.</div>}
-            {res.map((r: any, i: number) => (
-              <div key={i} onClick={() => { onElegir(r); setAbierto(false); }}
-                style={{ padding: '8px 10px', cursor: 'pointer', borderBottom: '1px solid #f5f5f5' }}>
-                <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>
-                  {r.empresa || r.contacto}
-                  <span style={{ marginLeft: 6, fontSize: '0.58rem', fontWeight: 700, padding: '1px 6px', borderRadius: 10, background: r.es_cliente ? '#e6f6f2' : '#eef2ff', color: r.es_cliente ? '#1A8F7A' : '#3764c4' }}>
-                    {r.es_cliente ? 'Cliente' : 'Lead'}
-                  </span>
-                </div>
-                <div style={{ fontSize: '0.72rem', color: '#888' }}>{[r.contacto, r.email].filter(Boolean).join(' · ')}</div>
-                {r.n ? <div style={{ fontSize: '0.7rem', color: '#a06600' }}>{r.n} cotización{r.n === 1 ? '' : 'es'}{r.ultima ? ` · última ${r.ultima.numero} (${r.ultima.estado})` : ''}</div> : null}
+          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, zIndex: 41, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 8, boxShadow: '0 8px 28px rgba(0,0,0,0.12)', maxHeight: 340, overflowY: 'auto' }}>
+            {res.length > 0 && (
+              <div style={{ display: 'flex', gap: 6, padding: '8px 10px', borderBottom: '1px solid #f2f2f2', background: '#fcfcfd', position: 'sticky' as const, top: 0 }}>
+                {([['todos', 'Todos'], ['cliente', 'Clientes'], ['lead', 'Leads'], ['excliente', 'Exclientes']] as const).map(([k, t]) => {
+                  const n = k === 'todos' ? res.length : res.filter((r: any) => r.clase === k).length;
+                  if (!n && k !== 'todos') return null;
+                  return (
+                    <button key={k} onClick={() => { setFiltro(k); setCursor(0); }}
+                      style={{ border: 'none', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 700, padding: '4px 10px', borderRadius: 20,
+                        background: filtro === k ? '#1a1a1a' : '#f2f3f5', color: filtro === k ? '#fff' : '#6b7280' }}>
+                      {t} <span style={{ opacity: 0.55 }}>{n}</span>
+                    </button>
+                  );
+                })}
+                <span style={{ marginLeft: 'auto', fontSize: '0.62rem', color: '#b8b8b8', alignSelf: 'center' }}>↑↓ mover · ↵ elegir</span>
               </div>
-            ))}
+            )}
+            {buscando && <div style={{ padding: 10, fontSize: '0.78rem', color: '#999' }}>Buscando…</div>}
+            {!buscando && visibles.length === 0 && <div style={{ padding: 10, fontSize: '0.78rem', color: '#999' }}>Sin resultados.</div>}
+            {visibles.map((r: any, i: number) => {
+              const cl = clases[r.clase] || clases.lead;
+              return (
+                <div key={i} onClick={() => elegir(r)} onMouseEnter={() => setCursor(i)}
+                  style={{ padding: '9px 10px', cursor: 'pointer', borderBottom: '1px solid #f5f5f5', background: cursor === i ? '#f7f7fa' : '#fff' }}>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const }}>
+                    {r.empresa || r.contacto}
+                    <span style={{ fontSize: '0.58rem', fontWeight: 700, padding: '1px 7px', borderRadius: 10, background: cl.bg, color: cl.fg }}>{cl.txt}</span>
+                    {r.sacs_account && <span style={{ fontSize: '0.58rem', fontWeight: 700, padding: '1px 7px', borderRadius: 10, background: '#f4f5f7', color: '#5b6472' }}>{r.sacs_account}</span>}
+                    {r.dup && <span style={{ fontSize: '0.58rem', fontWeight: 700, padding: '1px 7px', borderRadius: 10, background: '#fdecec', color: '#b4302f' }}>posible duplicado</span>}
+                    {r.via_folio && <span style={{ fontSize: '0.58rem', fontWeight: 700, padding: '1px 7px', borderRadius: 10, background: '#eef2ff', color: '#3764c4' }}>por {r.via_folio}</span>}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#888' }}>{[r.contacto, r.email, r.whatsapp].filter(Boolean).join(' · ')}</div>
+                  {r.n ? (
+                    <div style={{ fontSize: '0.7rem', color: '#8a8a8a', marginTop: 2 }}>
+                      {r.n} cotización{r.n === 1 ? '' : 'es'}
+                      {r.ultima ? <> · última {r.ultima.numero} por ${Number(r.ultima.total || 0).toLocaleString('es-MX')} — <b style={{ color: estadoCol[r.ultima.estado] || '#8a8a8a' }}>{estadoTxt[r.ultima.estado] || r.ultima.estado}</b></> : null}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
             <button onClick={abrirAlta} style={{ width: '100%', textAlign: 'left', padding: '9px 10px', border: 'none', background: '#fafafa', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700, color: '#1a1a1a' }}>
               + Crear "{q.trim()}" como cliente nuevo
             </button>

@@ -140,6 +140,20 @@ export const POST: APIRoute = async ({ request }) => {
   const vigencia = clean.vigencia || new Date(Date.now() + 15 * 86400000).toISOString().slice(0, 10);
   const estado = clean.estado || 'draft';
 
+  // ── Qué era el cotizante HOY ──
+  // Se congela al crear y no se vuelve a tocar. Si se dedujera al leer, un lead
+  // que compra se convierte en cliente y su cotización pasaría a contarse "de
+  // cliente" hacia atrás: el mes en que trajiste cuentas nuevas se vería vacío.
+  // Lo decide el servidor desde la ficha del cliente, no el navegador.
+  if (!clean.origen_cotizante) {
+    if (!clean.company_id) clean.origen_cotizante = 'sin_ligar';
+    else {
+      const { data: co } = await supabase.from('companies').select('estado_cuenta').eq('id', clean.company_id).maybeSingle();
+      const ec = co?.estado_cuenta;
+      clean.origen_cotizante = ec === 'activo' ? 'cliente' : (ec === 'cancelado' || ec === 'vencido') ? 'excliente' : 'lead';
+    }
+  }
+
   // Las PLANTILLAS del partner no consumen folio COT-xxx (no son cotizaciones reales)
   if (estado === 'plantilla') {
     const { data, error } = await supabase.from('quotes').insert({
@@ -252,6 +266,18 @@ export const PUT: APIRoute = async ({ request }) => {
   if (user?.role === 'partner') {
     delete clean.partner_id;
     delete clean.created_via;
+  }
+
+  // El origen se congela una sola vez. Si la cotización nació sin cliente y
+  // apenas ahora se liga, este es el mejor momento disponible para fijarlo; si
+  // ya lo tiene, no se toca aunque el cliente haya cambiado de estado después.
+  if (clean.company_id) {
+    const { data: prev } = await supabase.from('quotes').select('origen_cotizante').eq('id', id).maybeSingle();
+    if (!prev?.origen_cotizante) {
+      const { data: co } = await supabase.from('companies').select('estado_cuenta').eq('id', clean.company_id).maybeSingle();
+      const ec = co?.estado_cuenta;
+      clean.origen_cotizante = ec === 'activo' ? 'cliente' : (ec === 'cancelado' || ec === 'vencido') ? 'excliente' : 'lead';
+    }
   }
 
   // ─── Paquetes A/B: al ACEPTAR con opción elegida, fijar items y totales ───

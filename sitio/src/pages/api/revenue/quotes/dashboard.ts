@@ -1,0 +1,225 @@
+// GET /api/revenue/quotes/dashboard?mes=2026-07&segmento=todos
+//
+// Todo el dashboard en una sola llamada. Se lee la tabla completa y se calcula
+// en memoria a propósito: son decenas de cotizaciones, no millones, y la mitad
+// de lo que hace falta —aperturas, plan de parcialidades, motivo de rechazo—
+// vive dentro del JSON de `notas`, donde SQL no puede filtrar sin volverse
+// ilegible. El día que esto pase de unos miles de filas, lo que toca es un
+// resumen nocturno, no exprimir esta consulta.
+import type { APIRoute } from 'astro';
+import { supabase } from '../../../../lib/supabase';
+import { parseMeta } from '../../../../lib/quotes/meta';
+
+export const prerender = false;
+const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+
+const PERDIDA = ['expired', 'rejected'];
+const GANADA = ['paid'];
+
+// mes 'YYYY-MM' → [inicio, fin) en ISO
+const rangoMes = (mes: string) => {
+  const [a, m] = mes.split('-').map(Number);
+  const ini = new Date(Date.UTC(a, m - 1, 1));
+  const fin = new Date(Date.UTC(m === 12 ? a + 1 : a, m === 12 ? 0 : m, 1));
+  return [ini.toISOString(), fin.toISOString()];
+};
+const mesAnterior = (mes: string) => {
+  const [a, m] = mes.split('-').map(Number);
+  return m === 1 ? `${a - 1}-12` : `${a}-${String(m - 1).padStart(2, '0')}`;
+};
+const mesDe = (iso: string) => String(iso || '').slice(0, 7);
+const dinero = (n: number) => Math.round(n || 0);
+
+export const GET: APIRoute = async ({ url }) => {
+  const hoy = new Date();
+  const mes = url.searchParams.get('mes') || `${hoy.getUTCFullYear()}-${String(hoy.getUTCMonth() + 1).padStart(2, '0')}`;
+  const segmento = url.searchParams.get('segmento') || 'todos';
+
+  const [{ data: qs }, { data: pagos }, { data: cos }] = await Promise.all([
+    supabase.from('quotes')
+      .select('id, numero, empresa, total, estado, created_at, pagado_fecha, aceptado_fecha, rechazado_fecha, vigencia, company_id, origen_cotizante, notas')
+      .not('estado', 'eq', 'plantilla').order('created_at', { ascending: false }).limit(3000),
+    supabase.from('payments').select('quote_id, monto, fecha').limit(5000),
+    supabase.from('companies').select('id, estado_cuenta').limit(3000),
+  ]);
+
+  const estadoPorCuenta = new Map((cos || []).map((c: any) => [c.id, c.estado_cuenta]));
+  const pagadoPorQuote = new Map<string, number>();
+  for (const p of pagos || []) pagadoPorQuote.set(p.quote_id, (pagadoPorQuote.get(p.quote_id) || 0) + Number(p.monto || 0));
+
+  // Origen: el congelado manda. Solo si falta —cotizaciones anteriores a que
+  // existiera el campo— se deduce del estado que tiene el cliente HOY, y eso se
+  // marca como estimado: no es lo que era ese día, es lo único que queda.
+  const filas = (qs || []).filter((q: any) => q.estado !== 'deleted').map((q: any) => {
+    const { meta } = parseMeta(q.notas || '');
+    let origen = q.origen_cotizante as string | null;
+    let estimado = false;
+    if (!origen) {
+      estimado = true;
+      const ec = q.company_id ? estadoPorCuenta.get(q.company_id) : null;
+      origen = !q.company_id ? 'sin_ligar' : ec === 'activo' ? 'cliente' : (ec === 'cancelado' || ec === 'vencido') ? 'excliente' : 'lead';
+    }
+    return {
+      id: q.id, numero: q.numero, empresa: q.empresa, total: Number(q.total || 0), estado: q.estado,
+      created_at: q.created_at, pagado_fecha: q.pagado_fecha, aceptado_fecha: q.aceptado_fecha,
+      company_id: q.company_id, origen, origen_estimado: estimado,
+      vistas: Number(meta?.views || 0),
+      abonado: pagadoPorQuote.get(q.id) || 0,
+      plan: Array.isArray(meta?.plan_pagos) ? meta.plan_pagos : [],
+      motivo_rechazo: meta?.motivo_rechazo || null,
+    };
+  });
+
+  const delSegmento = (f: any) => segmento === 'todos' || f.origen === segmento;
+  const base = filas.filter(delSegmento);
+
+  // ── KPIs del periodo, contra el periodo anterior ──
+  const kpisDe = (m: string) => {
+    const [ini, fin] = rangoMes(m);
+    const delMes = base.filter(f => f.created_at >= ini && f.created_at < fin);
+    // Cobrado se cuenta por FECHA DE PAGO, no por fecha de la cotización: el
+    // dinero de julio es el que entró en julio, aunque se haya cotizado en mayo.
+    const cobradoMes = base.filter(f => f.pagado_fecha && mesDe(f.pagado_fecha) === m);
+    const cerradas = delMes.filter(f => GANADA.includes(f.estado)).length;
+    const resueltas = delMes.filter(f => GANADA.includes(f.estado) || PERDIDA.includes(f.estado)).length;
+    const dias = cobradoMes.filter(f => f.pagado_fecha && f.created_at)
+      .map(f => (new Date(f.pagado_fecha).getTime() - new Date(f.created_at).getTime()) / 86400000)
+      .filter(d => d >= 0);
+    return {
+      cotizado: dinero(delMes.reduce((a, f) => a + f.total, 0)),
+      cobrado: dinero(cobradoMes.reduce((a, f) => a + f.total, 0)),
+      // Contra las que ya se resolvieron, no contra todas: las que siguen vivas
+      // todavía no ganaron ni perdieron, y meterlas hunde el número sin razón.
+      cierre: resueltas ? Math.round((cerradas / resueltas) * 100) : 0,
+      dias: dias.length ? Math.round(dias.reduce((a, b) => a + b, 0) / dias.length) : null,
+      n: delMes.length,
+    };
+  };
+  const act = kpisDe(mes);
+  const ant = kpisDe(mesAnterior(mes));
+
+  // ── Aperturas antes de comprar ──
+  // Las de 0 aperturas que aparecen como pagadas se cerraron fuera del sistema
+  // y se marcaron a mano; se cuentan aparte para no leerlas como "compró sin
+  // abrir", que es la conclusión contraria a la verdadera.
+  const conVistas = base.filter(f => f.estado !== 'draft');
+  const prom = (arr: any[]) => arr.length ? Math.round((arr.reduce((a, f) => a + f.vistas, 0) / arr.length) * 10) / 10 : 0;
+  const rangos = [
+    { rango: '0', min: 0, max: 0 }, { rango: '1 a 3', min: 1, max: 3 }, { rango: '4 a 7', min: 4, max: 7 },
+    { rango: '8 a 14', min: 8, max: 14 }, { rango: '15 o más', min: 15, max: 1e9 },
+  ].map(r => {
+    const en = conVistas.filter(f => f.vistas >= r.min && f.vistas <= r.max);
+    return { rango: r.rango, total: en.length, cerradas: en.filter(f => GANADA.includes(f.estado) || f.estado === 'accepted').length };
+  });
+  // El umbral es el primer rango (saltándose el de cero) donde alguien cerró.
+  const primeroQueCierra = rangos.slice(1).find(r => r.cerradas > 0);
+  const umbral = primeroQueCierra ? Number(String(primeroQueCierra.rango).match(/\d+/)?.[0] || 4) : 4;
+  const calientes = base
+    .filter(f => ['sent', 'accepted'].includes(f.estado) && f.vistas >= umbral)
+    .sort((a, b) => b.vistas - a.vistas).slice(0, 5)
+    .map(f => ({ id: f.id, numero: f.numero, empresa: f.empresa, vistas: f.vistas, total: f.total }));
+
+  // ── Mes a mes: cotizado contra cobrado ──
+  const meses: string[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(Date.UTC(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)) - 1 - i, 1));
+    meses.push(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`);
+  }
+  const mensual = meses.map(m => {
+    const [ini, fin] = rangoMes(m);
+    return {
+      mes: m,
+      cotizado: dinero(base.filter(f => f.created_at >= ini && f.created_at < fin).reduce((a, f) => a + f.total, 0)),
+      cobrado: dinero(base.filter(f => f.pagado_fecha && mesDe(f.pagado_fecha) === m).reduce((a, f) => a + f.total, 0)),
+    };
+  });
+
+  // ── Clientes contra leads (sobre TODO el histórico, no solo el mes) ──
+  const bloque = (o: string) => {
+    const en = filas.filter(f => f.origen === o);
+    const ganadas = en.filter(f => GANADA.includes(f.estado));
+    const resueltas = en.filter(f => GANADA.includes(f.estado) || PERDIDA.includes(f.estado)).length;
+    return {
+      n: en.length, cotizado: dinero(en.reduce((a, f) => a + f.total, 0)),
+      cobrado: dinero(ganadas.reduce((a, f) => a + f.total, 0)),
+      cierre: resueltas ? Math.round((ganadas.length / resueltas) * 100) : 0,
+      ticket: en.length ? dinero(en.reduce((a, f) => a + f.total, 0) / en.length) : 0,
+      estimados: en.filter(f => f.origen_estimado).length,
+    };
+  };
+  const origenes = { cliente: bloque('cliente'), lead: bloque('lead'), excliente: bloque('excliente'), sin_ligar: bloque('sin_ligar') };
+
+  // ── Lo próximo en cobrar: parcialidades pactadas dentro de la cotización ──
+  // Se cubren en orden de fecha con lo que ya entró: sin recibo por parcialidad,
+  // aplicar el dinero a la más vieja es la única regla que no inventa nada.
+  const hoyStr = new Date().toISOString().slice(0, 10);
+  const pendientes: any[] = [];
+  for (const f of base) {
+    if (!f.plan.length || GANADA.includes(f.estado)) continue;
+    let restante = f.abonado;
+    for (const p of [...f.plan].sort((a: any, b: any) => String(a.fecha).localeCompare(String(b.fecha)))) {
+      const monto = Number(p.monto || 0);
+      const cubierto = Math.min(monto, Math.max(0, restante));
+      restante -= cubierto;
+      if (cubierto >= monto - 0.01) continue;
+      pendientes.push({
+        quote_id: f.id, numero: f.numero, empresa: f.empresa, fecha: p.fecha,
+        monto: dinero(monto - cubierto), vencida: String(p.fecha) < hoyStr,
+        indice: f.plan.indexOf(p) + 1, de: f.plan.length,
+      });
+    }
+  }
+  pendientes.sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
+  const mesHoy = hoyStr.slice(0, 7);
+  const proximos = {
+    este_mes: dinero(pendientes.filter(p => mesDe(p.fecha) === mesHoy).reduce((a, p) => a + p.monto, 0)),
+    comprometido: dinero(pendientes.reduce((a, p) => a + p.monto, 0)),
+    con_plan: base.filter(f => f.plan.length > 0).length,
+    filas: pendientes.slice(0, 6),
+  };
+
+  // ── Por qué se pierden ──
+  const perdidas = base.filter(f => PERDIDA.includes(f.estado));
+  const porMotivo = new Map<string, { n: number; monto: number }>();
+  for (const f of perdidas) {
+    // Vencer sin que nadie conteste no es un motivo capturado, pero es el más
+    // frecuente y el más accionable: se nombra explícitamente.
+    const k = f.estado === 'expired' ? 'Sin respuesta (venció)' : (f.motivo_rechazo || 'Rechazada sin motivo capturado');
+    const cur = porMotivo.get(k) || { n: 0, monto: 0 };
+    cur.n++; cur.monto += f.total;
+    porMotivo.set(k, cur);
+  }
+  const motivos = [...porMotivo.entries()].map(([motivo, v]) => ({ motivo, ...v, monto: dinero(v.monto) }))
+    .sort((a, b) => b.monto - a.monto);
+  const silencio = perdidas.filter(f => f.estado === 'expired');
+
+  return json({
+    mes, mes_anterior: mesAnterior(mes), segmento,
+    kpis: {
+      cotizado: { valor: act.cotizado, anterior: ant.cotizado },
+      cobrado: { valor: act.cobrado, anterior: ant.cobrado },
+      cierre: { valor: act.cierre, anterior: ant.cierre },
+      dias: { valor: act.dias, anterior: ant.dias },
+    },
+    aperturas: {
+      pagadas: prom(conVistas.filter(f => GANADA.includes(f.estado))),
+      perdidas: prom(conVistas.filter(f => PERDIDA.includes(f.estado))),
+      umbral, rangos, calientes,
+      // Las ventas marcadas a mano, para poder decirlo en pantalla.
+      cerradas_sin_abrir: conVistas.filter(f => f.vistas === 0 && GANADA.includes(f.estado)).length,
+    },
+    mensual,
+    origenes,
+    proximos,
+    perdidas: {
+      n: perdidas.length, total: dinero(perdidas.reduce((a, f) => a + f.total, 0)),
+      motivos: motivos.slice(0, 6),
+      silencio_n: silencio.length,
+      silencio_monto: dinero(silencio.reduce((a, f) => a + f.total, 0)),
+    },
+    conteos: {
+      todos: filas.length, cliente: origenes.cliente.n, lead: origenes.lead.n,
+      excliente: origenes.excliente.n, sin_ligar: origenes.sin_ligar.n,
+    },
+  });
+};
