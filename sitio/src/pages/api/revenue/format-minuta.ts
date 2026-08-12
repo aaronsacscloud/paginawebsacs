@@ -16,12 +16,32 @@ REGLAS:
 - NO inventes información que no esté en las notas raw.
 - Si el ejecutivo escribió algo ambiguo, sé conservador en el detail.
 
+También extraes, SI Y SOLO SI las notas lo dicen, los números que alimentan la
+calculadora de retorno de inversión. Nunca los inventes ni los estimes: si el
+ejecutivo no anotó cuánto vende el cliente, ese campo va en null. Un ROI armado
+con números inventados se cae en la primera junta y cuesta la venta.
+
+- ventas_mes: ventas mensuales del cliente en pesos (ej. "factura 600 mil al mes" → 600000).
+- sucursales: cuántas tiene.
+- clientes_activos: tamaño de su base de clientes.
+- ticket_promedio: ticket promedio de venta en pesos.
+- stock_valor: valor del inventario en pesos.
+- compras_mes: compras mensuales en pesos.
+- horas_admin: horas al mes que dedica a tareas administrativas o de inventario.
+- problema: UNA oración con el dolor concreto y medible que mencionó
+  (ej. "Pierden 200 piezas al mes por falta de control"). null si no lo dijo.
+
 RESPONDE ÚNICAMENTE con este JSON (sin texto adicional):
 
 {
   "key_points": [
     { "title": "...", "detail": "..." }
-  ]
+  ],
+  "roi": {
+    "ventas_mes": null, "sucursales": null, "clientes_activos": null,
+    "ticket_promedio": null, "stock_valor": null, "compras_mes": null,
+    "horas_admin": null, "problema": null
+  }
 }`;
 
 function json(payload: any, status = 200) {
@@ -75,7 +95,24 @@ export const POST: APIRoute = async ({ request }) => {
           .filter((kp: any) => kp.title.length > 0 && kp.detail.length > 0)
       : [];
 
-    return json({ key_points });
+    // Los números del ROI: se aceptan solo si son positivos y finitos. Un cero
+    // o un texto raro llegando al formulario prellenaría el bloque con basura y
+    // el ejecutivo lo mandaría sin revisar.
+    const num = (x: any) => {
+      const n = typeof x === 'number' ? x : parseFloat(String(x ?? '').replace(/[^0-9.]/g, ''));
+      return Number.isFinite(n) && n > 0 ? n : null;
+    };
+    const r = parsed.roi || {};
+    const roi = {
+      ventas_mes: num(r.ventas_mes), sucursales: num(r.sucursales),
+      clientes_activos: num(r.clientes_activos), ticket_promedio: num(r.ticket_promedio),
+      stock_valor: num(r.stock_valor), compras_mes: num(r.compras_mes),
+      horas_admin: num(r.horas_admin),
+      problema: typeof r.problema === 'string' && r.problema.trim() ? r.problema.trim().slice(0, MAX_DETAIL) : null,
+    };
+    const tieneAlgo = Object.values(roi).some(v => v !== null);
+
+    return json({ key_points, roi: tieneAlgo ? roi : null });
   } catch (err: any) {
     const msg = err?.status === 401 ? 'API key inválida' : err?.message || 'Error desconocido';
     return json({ error: `Error al procesar: ${msg}` }, 500);

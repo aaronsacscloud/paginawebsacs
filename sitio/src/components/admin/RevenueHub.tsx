@@ -3,8 +3,9 @@ import CotizacionActividad from './crm/CotizacionActividad';
 import CamposConfig from './crm/CamposPersonalizados';
 import CotizacionesDashboard from './crm/CotizacionesDashboard';
 import { plans as plansData } from '../../data/plans';
-import { PLANS, PLAN_PRICES, IMPL_PRICES, METODOS, fmt, fmtDate } from '../../lib/quotes/constants';
+import { PLANS, PLAN_PRICES, IMPL_PRICES, METODOS, COMISION_CATEGORIAS, COMISION_LABELS, COMISION_RATES, fmt, fmtDate } from '../../lib/quotes/constants';
 import { parseMeta, serializeMeta, addTimelineEvent } from '../../lib/quotes/meta';
+import { PLANTILLAS_ROI, PLANES_SIN_PLANTILLA, driversParaPlanes, costoHoraParaPlanes, calcularRoi, payback, textoSupuestos, type Driver } from '../../lib/quotes/roi';
 
 // ── Cuándo la vieron ──
 // El número de vistas dice que hay interés; CUÁNDO fue la última dice si el
@@ -62,6 +63,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
   const [quoteForm, setQuoteForm] = useState<any>({});
   const [bankAccounts, setBankAccounts] = useState<any[]>([]);
   const [bankForm, setBankForm] = useState<any>({});
+  const [altaBanco, setAltaBanco] = useState<any>(null);
   const [allQuotes, setAllQuotes] = useState<any[]>([]);
   const [partnersById, setPartnersById] = useState<Record<string, { nombre: string; email?: string }>>({});
 
@@ -311,6 +313,82 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       setQf({ ...qf, items: [...items, { tipo: 'extra', nombre: '', monto: 0, recurrente: false, descripcion: '' }] });
     };
 
+    // Cada botón guarda su categoria_comision. No es cosmético: licencia,
+    // plugin, personalizacion y hardware son las categorías con las que YA se
+    // calcula la comisión del partner (35 / 25 / 20 / 5 %). Metiendo todo como
+    // "Extra" sin categoría, el sistema la ADIVINABA leyendo el nombre del
+    // concepto — un plugin llamado "conector con Shopify" pegaba de casualidad,
+    // y uno llamado "enlace con su ERP" se comisionaba como personalización.
+    const addPluginItem = () => {
+      setQf({ ...qf, items: [...items, { tipo: 'extra', categoria_comision: 'plugin', nombre: '', monto: 0, recurrente: false, descripcion: '' }] });
+    };
+    const addPersonalizacionItem = () => {
+      setQf({ ...qf, items: [...items, { tipo: 'extra', categoria_comision: 'personalizacion', nombre: '', monto: 0, recurrente: false, descripcion: '' }] });
+    };
+
+    // Una sola tarjeta de concepto. Se extrae de la lista porque ahora hay dos
+    // listas —conceptos y promociones— y las dos pintan lo mismo. El índice que
+    // recibe es el REAL dentro de items: filtrar y reindexar haría que borrar
+    // una promoción borrara el concepto que quedó en esa posición.
+    const renderItem = (item: any, idx: number) => (
+                  <div key={idx} style={{ background: item.es_promocion ? '#ecfdf5' : '#f8f9fb', borderRadius: 10, padding: 12, marginBottom: 8, position: 'relative' as const, border: item.es_promocion ? '1.5px solid #2AB5A0' : 'none' }}>
+                    <button onClick={() => removeItem(idx)} style={{ position: 'absolute' as const, top: 8, right: 8, background: 'none', border: 'none', color: '#ccc', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+                    {item.tipo === 'plan' ? (
+                      <div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                          <div><label style={{ ...S.label, marginTop: 0 }}>Plan</label><select value={item.nombre} onChange={e => updateItem(idx, 'nombre', e.target.value)} style={S.input}>{PLANS.map(p => <option key={p} value={p}>{p} (${PLAN_PRICES[p]})</option>)}</select></div>
+                          <div><label style={{ ...S.label, marginTop: 0 }}>Sucursales</label><input type="number" value={item.sucursales} onChange={e => updateItem(idx, 'sucursales', e.target.value)} style={S.input} /></div>
+                          <div><label style={{ ...S.label, marginTop: 0 }}>Período</label><select value={item.periodo} onChange={e => updateItem(idx, 'periodo', e.target.value)} style={S.input}><option value="mensual">Mensual</option><option value="anual">Anual (2 meses gratis)</option></select></div>
+                          <div><label style={{ ...S.label, marginTop: 0 }}>Desc. %</label><input type="number" value={item.descuento_pct || 0} onChange={e => updateItem(idx, 'descuento_pct', e.target.value)} style={S.input} /></div>
+                        </div>
+                        <div style={{ marginTop: 6 }}><input value={item.nota || ''} onChange={e => updateItem(idx, 'nota', e.target.value)} placeholder="Nota (opcional)" style={{ ...S.input, fontSize: '0.6875rem' }} /></div>
+                      </div>
+                    ) : item.es_promocion ? (
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                          <span style={{ fontSize: '0.5625rem', fontWeight: 800, color: '#fff', background: '#2AB5A0', padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}>Promocion</span>
+                          <span style={{ fontSize: '0.5625rem', color: '#999' }}>Al contratar plan anual</span>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 6, marginBottom: 6 }}>
+                          <div><label style={{ ...S.label, marginTop: 0 }}>Concepto</label><input value={item.nombre || ''} onChange={e => updateItem(idx, 'nombre', e.target.value)} style={S.input} /></div>
+                          <div><label style={{ ...S.label, marginTop: 0 }}>Valor original</label><input type="number" value={item.precio_original || ''} onChange={e => updateItem(idx, 'precio_original', parseFloat(e.target.value) || 0)} style={S.input} /></div>
+                          <div style={{ gridColumn: '1/-1' }}><label style={{ ...S.label, marginTop: 0 }}>Descripción</label><input value={item.descripcion || ''} onChange={e => updateItem(idx, 'descripcion', e.target.value)} style={S.input} /></div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                          <span style={{ textDecoration: 'line-through', color: '#ccc', fontWeight: 600 }}>{fmt(item.precio_original || 0)}</span>
+                          <span style={{ fontSize: '1.125rem', fontWeight: 800, color: '#2AB5A0' }}>$0</span>
+                          <span style={{ fontSize: '0.625rem', color: '#999', marginLeft: 4 }}>Gratis al contratar plan anual</span>
+                        </div>
+                        <input value={item.nota || ''} onChange={e => updateItem(idx, 'nota', e.target.value)} placeholder="Nota (opcional)" style={{ ...S.input, fontSize: '0.6875rem' }} />
+                      </div>
+                    ) : (
+                      <div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 6 }}>
+                          <div><label style={{ ...S.label, marginTop: 0 }}>Concepto</label><input value={item.nombre || ''} onChange={e => updateItem(idx, 'nombre', e.target.value)} placeholder="Ej. Implementación" style={S.input} /></div>
+                          <div><label style={{ ...S.label, marginTop: 0 }}>Monto</label><input type="number" value={item.monto || ''} onChange={e => updateItem(idx, 'monto', e.target.value)} style={S.input} /></div>
+                          <div><label style={{ ...S.label, marginTop: 0 }}>Descripción</label><input value={item.descripcion || ''} onChange={e => updateItem(idx, 'descripcion', e.target.value)} style={S.input} /></div>
+                          <div><label style={{ ...S.label, marginTop: 0 }}>Periodo</label><select value={item.periodo_extra || (item.recurrente ? 'mensual' : 'unico')} onChange={e => updateItem(idx, 'periodo_extra', e.target.value)} style={S.input}><option value="unico">Unico</option><option value="mensual">Mensual</option><option value="anual">Anual (×10 meses)</option></select></div>
+                        </div>
+                        <div style={{ marginTop: 6, display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 6 }}>
+                          <input value={item.nota || ''} onChange={e => updateItem(idx, 'nota', e.target.value)} placeholder="Nota (opcional)" style={{ ...S.input, fontSize: '0.6875rem' }} />
+                          {/* Visible y corregible: de esta categoría depende la
+                              comisión del partner. Si se deja vacía, el sistema
+                              la adivina leyendo el nombre — que es lo que pasaba
+                              con todo antes de separar los botones. */}
+                          {!item.es_promocion && (
+                            <select value={item.categoria_comision || ''} onChange={e => updateItem(idx, 'categoria_comision', e.target.value)}
+                              title="Define la comisión del partner" style={{ ...S.input, fontSize: '0.6875rem' }}>
+                              <option value="">Categoría: automática</option>
+                              {COMISION_CATEGORIAS.map(c => <option key={c} value={c}>{COMISION_LABELS[c]} · {COMISION_RATES[c]}%</option>)}
+                            </select>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {!item.es_promocion && <div style={{ textAlign: 'right' as const, fontSize: '0.875rem', fontWeight: 700, color: '#2AB5A0', marginTop: 6 }}>{fmt(item.subtotal || item.monto || 0)}</div>}
+                  </div>
+    );
+
     const updateItem = (idx: number, field: string, value: any) => {
       const arr = [...items];
       arr[idx] = { ...arr[idx], [field]: value };
@@ -453,7 +531,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       }
 
       setShowDrawer(false);
-      setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida. Soporte por chat SACS y WhatsApp. Sin contratos.' });
+      setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida. Soporte por chat SACS y WhatsApp. Sin contratos.', ...(() => { const d = bankAccounts.find((b: any) => b.es_default) || bankAccounts[0]; return d ? { bank_account_id: d.id, mostrar_banco: true } : {}; })() });
       const d = await fetch('/api/revenue/quotes').then(r => r.json());
       setQuotes(Array.isArray(d) ? d : []);
       setSaving(false);
@@ -511,7 +589,30 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
         if (newPoints.length === 0) {
           setMinutaError('No se pudieron extraer puntos. Agrega más detalle a las notas y vuelve a intentar.');
         } else {
-          setQf({ ...qf, key_points: newPoints });
+          // La IA también propone los números del ROI cuando la minuta los
+          // menciona. Se PRELLENAN, no se dan por buenos: el bloque queda
+          // visible con sus renglones para revisarlos antes de mandar.
+          const r = data.roi;
+          const patch: any = { key_points: newPoints };
+          if (r) {
+            const planes = Array.from(new Set(items.filter((i: any) => i.tipo === 'plan').map((i: any) => i.nombre)))
+              .filter((x: any) => !PLANES_SIN_PLANTILLA.includes(x)) as string[];
+            const drivers = driversParaPlanes(planes);
+            const entradas = {
+              ventas_mes: r.ventas_mes || undefined, stock_valor: r.stock_valor || undefined,
+              compras_mes: r.compras_mes || undefined, clientes_activos: r.clientes_activos || undefined,
+              ticket_promedio: r.ticket_promedio || undefined, costo_hora: costoHoraParaPlanes(planes),
+            };
+            // Si dijo cuántas horas gasta, se respeta ese número en vez del de
+            // la plantilla: es dato del cliente contra un supuesto nuestro.
+            if (r.horas_admin) for (const d of drivers) if (d.tipo === 'horas') d.valor = r.horas_admin;
+            const c = calcularRoi(entradas, drivers);
+            if (c.mensual > 0) {
+              patch.roi = { ...(qf.roi || {}), ...entradas, drivers, problema: r.problema || qf.roi?.problema || '', ahorro_mensual: c.mensual };
+              patch.mostrar_roi = true;
+            }
+          }
+          setQf({ ...qf, ...patch });
         }
       } catch (e: any) {
         setMinutaError(e?.message || 'Error de red al procesar la minuta');
@@ -889,7 +990,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               style={{ ...S.btn, background: '#fff', color: '#666', border: '1px solid #e0e0e0', width: 38, height: 38, padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
             </button>
-            <button onClick={() => { setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida. Soporte por chat SACS y WhatsApp. Sin contratos.' }); setShowDrawer(true); }}
+            <button onClick={() => { setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida. Soporte por chat SACS y WhatsApp. Sin contratos.', ...(() => { const d = bankAccounts.find((b: any) => b.es_default) || bankAccounts[0]; return d ? { bank_account_id: d.id, mostrar_banco: true } : {}; })() }); setShowDrawer(true); }}
               style={{ ...S.btn, background: '#4B7BE5', color: '#fff', padding: '8px 18px', fontWeight: 700 }}>+ Nueva cotización</button>
             {/* El dashboard cierra la fila y lleva el peso: es donde se empieza el día. */}
             <button onClick={() => setDashCot(true)}
@@ -1726,64 +1827,108 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               </div>
 
               {/* Items */}
-              <div style={S.label}>Conceptos</div>
-              {items.map((item: any, idx: number) => (
-                <div key={idx} style={{ background: item.es_promocion ? '#ecfdf5' : '#f8f9fb', borderRadius: 10, padding: 12, marginBottom: 8, position: 'relative' as const, border: item.es_promocion ? '1.5px solid #2AB5A0' : 'none' }}>
-                  <button onClick={() => removeItem(idx)} style={{ position: 'absolute' as const, top: 8, right: 8, background: 'none', border: 'none', color: '#ccc', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
-                  {item.tipo === 'plan' ? (
-                    <div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                        <div><label style={{ ...S.label, marginTop: 0 }}>Plan</label><select value={item.nombre} onChange={e => updateItem(idx, 'nombre', e.target.value)} style={S.input}>{PLANS.map(p => <option key={p} value={p}>{p} (${PLAN_PRICES[p]})</option>)}</select></div>
-                        <div><label style={{ ...S.label, marginTop: 0 }}>Sucursales</label><input type="number" value={item.sucursales} onChange={e => updateItem(idx, 'sucursales', e.target.value)} style={S.input} /></div>
-                        <div><label style={{ ...S.label, marginTop: 0 }}>Período</label><select value={item.periodo} onChange={e => updateItem(idx, 'periodo', e.target.value)} style={S.input}><option value="mensual">Mensual</option><option value="anual">Anual (2 meses gratis)</option></select></div>
-                        <div><label style={{ ...S.label, marginTop: 0 }}>Desc. %</label><input type="number" value={item.descuento_pct || 0} onChange={e => updateItem(idx, 'descuento_pct', e.target.value)} style={S.input} /></div>
-                      </div>
-                      <div style={{ marginTop: 6 }}><input value={item.nota || ''} onChange={e => updateItem(idx, 'nota', e.target.value)} placeholder="Nota (opcional)" style={{ ...S.input, fontSize: '0.6875rem' }} /></div>
-                    </div>
-                  ) : item.es_promocion ? (
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                        <span style={{ fontSize: '0.5625rem', fontWeight: 800, color: '#fff', background: '#2AB5A0', padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}>Promocion</span>
-                        <span style={{ fontSize: '0.5625rem', color: '#999' }}>Al contratar plan anual</span>
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 6, marginBottom: 6 }}>
-                        <div><label style={{ ...S.label, marginTop: 0 }}>Concepto</label><input value={item.nombre || ''} onChange={e => updateItem(idx, 'nombre', e.target.value)} style={S.input} /></div>
-                        <div><label style={{ ...S.label, marginTop: 0 }}>Valor original</label><input type="number" value={item.precio_original || ''} onChange={e => updateItem(idx, 'precio_original', parseFloat(e.target.value) || 0)} style={S.input} /></div>
-                        <div style={{ gridColumn: '1/-1' }}><label style={{ ...S.label, marginTop: 0 }}>Descripción</label><input value={item.descripcion || ''} onChange={e => updateItem(idx, 'descripcion', e.target.value)} style={S.input} /></div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                        <span style={{ textDecoration: 'line-through', color: '#ccc', fontWeight: 600 }}>{fmt(item.precio_original || 0)}</span>
-                        <span style={{ fontSize: '1.125rem', fontWeight: 800, color: '#2AB5A0' }}>$0</span>
-                        <span style={{ fontSize: '0.625rem', color: '#999', marginLeft: 4 }}>Gratis al contratar plan anual</span>
-                      </div>
-                      <input value={item.nota || ''} onChange={e => updateItem(idx, 'nota', e.target.value)} placeholder="Nota (opcional)" style={{ ...S.input, fontSize: '0.6875rem' }} />
-                    </div>
-                  ) : (
-                    <div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 6 }}>
-                        <div><label style={{ ...S.label, marginTop: 0 }}>Concepto</label><input value={item.nombre || ''} onChange={e => updateItem(idx, 'nombre', e.target.value)} placeholder="Ej. Implementación" style={S.input} /></div>
-                        <div><label style={{ ...S.label, marginTop: 0 }}>Monto</label><input type="number" value={item.monto || ''} onChange={e => updateItem(idx, 'monto', e.target.value)} style={S.input} /></div>
-                        <div><label style={{ ...S.label, marginTop: 0 }}>Descripción</label><input value={item.descripcion || ''} onChange={e => updateItem(idx, 'descripcion', e.target.value)} style={S.input} /></div>
-                        <div><label style={{ ...S.label, marginTop: 0 }}>Periodo</label><select value={item.periodo_extra || (item.recurrente ? 'mensual' : 'unico')} onChange={e => updateItem(idx, 'periodo_extra', e.target.value)} style={S.input}><option value="unico">Unico</option><option value="mensual">Mensual</option><option value="anual">Anual (×10 meses)</option></select></div>
-                      </div>
-                      <div style={{ marginTop: 6 }}><input value={item.nota || ''} onChange={e => updateItem(idx, 'nota', e.target.value)} placeholder="Nota (opcional)" style={{ ...S.input, fontSize: '0.6875rem' }} /></div>
+              {/* ── Minuta de la reunión ──
+                  Va ANTES de los conceptos porque es la que dice qué se acordó:
+                  cuántas sucursales, qué le urge, qué descuento se prometió.
+                  Estaba hasta el fondo, después de los toggles, y ahí se llenaba
+                  —si se llenaba— cuando la cotización ya estaba armada. */}
+              {(qf.mostrar_key_points !== false) && (
+                <div style={{ marginTop: 12, background: '#fafbfd', border: '1px solid #e8eaf0', borderRadius: 10, padding: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+                    <div style={S.label}>Minuta de la reunión</div>
+                    <div style={{ fontSize: '0.625rem', color: '#999' }}>{(qf.key_points || []).length} {((qf.key_points || []).length === 1 ? 'punto' : 'puntos')}</div>
+                  </div>
+                  <div style={{ fontSize: '0.6875rem', color: '#777', marginBottom: 8, lineHeight: 1.5 }}>
+                    Pega aquí los puntos raw que platicaste con el cliente. Después da clic en <strong>Estructurar con IA</strong> y lo acomodamos en una minuta profesional.
+                  </div>
+                  <textarea
+                    value={qf.minuta_raw || ''}
+                    onChange={e => setQf({ ...qf, minuta_raw: e.target.value })}
+                    placeholder="Ej. cliente tiene 3 sucursales, le urge controlar inventario porque pierde 200 piezas al mes; quiere migrar de microsip; le gusta lealtad por whatsapp; presupuesto ~25k; cierra en mayo; pidió descuento si paga anual..."
+                    rows={5}
+                    style={{ ...S.input, fontSize: '0.75rem', resize: 'vertical' as const, minHeight: 100, fontFamily: 'inherit', lineHeight: 1.5 }}
+                  />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' as const }}>
+                    <button
+                      onClick={formatMinuta}
+                      disabled={formattingMinuta || !(qf.minuta_raw || '').trim()}
+                      style={{ ...S.btnSmall, background: '#1a1a1a', color: '#fff', padding: '6px 14px', opacity: formattingMinuta || !(qf.minuta_raw || '').trim() ? 0.5 : 1, cursor: formattingMinuta || !(qf.minuta_raw || '').trim() ? 'not-allowed' : 'pointer' }}
+                    >
+                      {formattingMinuta ? '⏳ Procesando…' : '✨ Estructurar con IA'}
+                    </button>
+                    {(qf.key_points || []).length > 0 && (
+                      <button
+                        onClick={() => { if (confirm('¿Borrar los puntos actuales y dejar el editor vacío?')) setQf({ ...qf, key_points: [] }); }}
+                        style={{ ...S.btnSmall, color: '#999' }}
+                      >
+                        Limpiar puntos
+                      </button>
+                    )}
+                    <span style={{ fontSize: '0.625rem', color: '#bbb' }}>Mín. 30 caracteres</span>
+                  </div>
+                  {minutaError && (
+                    <div style={{ marginTop: 8, padding: '6px 10px', background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 6, fontSize: '0.6875rem', color: '#c53030' }}>
+                      {minutaError}
                     </div>
                   )}
-                  {!item.es_promocion && <div style={{ textAlign: 'right' as const, fontSize: '0.875rem', fontWeight: 700, color: '#2AB5A0', marginTop: 6 }}>{fmt(item.subtotal || item.monto || 0)}</div>}
+
+                  {(qf.key_points || []).length > 0 && (
+                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px dashed #e0e3eb' }}>
+                      <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#555', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.04em' }}>Puntos estructurados</div>
+                      {qf.key_points.map((kp: any, i: number) => (
+                        <div key={i} style={{ background: '#fff', borderRadius: 8, padding: 10, marginBottom: 6, borderLeft: '3px solid #4B7BE5', display: 'flex', gap: 8 }}>
+                          <div style={{ flex: 1 }}>
+                            <input value={kp.title} onChange={e => { const kps = [...qf.key_points]; kps[i] = { ...kps[i], title: e.target.value }; setQf({ ...qf, key_points: kps }); }} placeholder="Título" style={{ ...S.input, fontWeight: 700, fontSize: '0.75rem', marginBottom: 4 }} />
+                            <input value={kp.detail} onChange={e => { const kps = [...qf.key_points]; kps[i] = { ...kps[i], detail: e.target.value }; setQf({ ...qf, key_points: kps }); }} placeholder="Detalle" style={{ ...S.input, fontSize: '0.6875rem' }} />
+                          </div>
+                          <button onClick={() => { const kps = [...qf.key_points]; kps.splice(i, 1); setQf({ ...qf, key_points: kps }); }} style={{ ...S.btnSmall, color: '#E54B4B', alignSelf: 'flex-start' }}>✕</button>
+                        </div>
+                      ))}
+                      <button onClick={() => setQf({ ...qf, key_points: [...(qf.key_points || []), { title: '', detail: '' }] })} style={S.btnSmall}>+ Agregar punto manual</button>
+                    </div>
+                  )}
                 </div>
-              ))}
-              <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
-                <button onClick={addPlanItem} style={{ ...S.btnSmall, flex: 1 }}>+ Plan Sacs</button>
+              )}
+
+
+              <div style={S.label}>Conceptos</div>
+              {items.map((it: any, i: number) => [it, i] as [any, number]).filter((par: [any, number]) => !par[0].es_promocion).map((par: [any, number]) => renderItem(par[0], par[1]))}
+              <div style={{ display: 'flex', gap: 6, marginBottom: 18 }}>
+                <button onClick={addPlanItem} style={{ ...S.btnSmall, flex: 1 }}>+ Plan SACS</button>
+                <button onClick={addPluginItem} style={{ ...S.btnSmall, flex: 1 }}>+ Plugin</button>
+                <button onClick={addPersonalizacionItem} style={{ ...S.btnSmall, flex: 1 }}>+ Personalización</button>
                 <button onClick={addExtraItem} style={{ ...S.btnSmall, flex: 1 }}>+ Extra</button>
+              </div>
+
+              {/* ── Promociones y cortesías ──
+                  Sección aparte, no un botón más en la fila de conceptos. Una
+                  promoción no es un concepto: es un concepto con precio tachado.
+                  Revueltos, se escoge por color y se acaba metiendo una cortesía
+                  donde iba un cobro. */}
+              <div style={S.label}>Promociones y cortesías</div>
+              {items.map((it: any, i: number) => [it, i] as [any, number]).filter((par: [any, number]) => par[0].es_promocion).map((par: [any, number]) => renderItem(par[0], par[1]))}
+              <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
                 <button onClick={() => {
                   const mainPlan = items.find((i: any) => i.tipo === 'plan')?.nombre || 'controla';
                   const precio = IMPL_PRICES[mainPlan] || 4000;
                   setQf({ ...qf, items: [...items, { tipo: 'extra', nombre: 'Implementacion y configuracion', descripcion: 'Setup inicial, migracion de datos y capacitacion. Aplica al contratar plan anual.', monto: 0, precio_original: precio, es_promocion: true, recurrente: false, subtotal: 0 }] });
-                }} style={{ ...S.btnSmall, flex: 1, background: '#f8f9fb', color: '#2AB5A0', borderColor: '#2AB5A0' }}>+ Promo impl.</button>
+                }} style={{ ...S.btnSmall, flex: 1, background: '#f8f9fb', color: '#2AB5A0', borderColor: '#2AB5A0' }}>+ Implementación de cortesía</button>
                 <button onClick={() => {
                   setQf({ ...qf, items: [...items, { tipo: 'extra', nombre: '', descripcion: '', monto: 0, precio_original: 0, es_promocion: true, recurrente: false, subtotal: 0 }] });
-                }} style={{ ...S.btnSmall, flex: 1, background: '#f8f9fb', color: '#2AB5A0', borderColor: '#2AB5A0' }}>+ Promo custom</button>
+                }} style={{ ...S.btnSmall, flex: 1, background: '#f8f9fb', color: '#2AB5A0', borderColor: '#2AB5A0' }}>+ Promoción libre</button>
               </div>
+              {/* Cuánto se está regalando, en un solo número. Hoy no aparecía en
+                  ningún lado: se veía concepto por concepto y nunca el total. */}
+              {(() => {
+                const regalado = items.filter((i: any) => i.es_promocion)
+                  .reduce((a: number, i: number | any) => a + (Number(i.precio_original || 0) - Number(i.monto || 0)), 0);
+                if (regalado <= 0) return null;
+                return (
+                  <div style={{ fontSize: '0.72rem', color: '#1A8F7A', background: '#eefaf7', borderRadius: 7, padding: '8px 10px', marginBottom: 16, fontWeight: 600 }}>
+                    Estás regalando {fmt(regalado)} en esta cotización
+                  </div>
+                );
+              })()}
 
               {/* Totals & Config */}
               <div style={{ background: '#f8f9fb', borderRadius: 10, padding: 16, marginBottom: 16 }}>
@@ -1839,14 +1984,64 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 </div>
               </div>
 
+              {/* Alta rápida de cuenta: salir a Configuración a medio cotizar
+                  es la razón por la que la cotización se manda sin datos de pago. */}
+              {altaBanco && (
+                <div style={{ background: '#fafbfd', border: '1px dashed #cfd6e4', borderRadius: 8, padding: 12, marginBottom: 12 }}>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#666', marginBottom: 8 }}>Nueva cuenta bancaria</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    <input value={altaBanco.alias} onChange={e => setAltaBanco({ ...altaBanco, alias: e.target.value })} placeholder="Alias — ej. BBVA pesos" style={S.input} />
+                    <input value={altaBanco.banco} onChange={e => setAltaBanco({ ...altaBanco, banco: e.target.value })} placeholder="Banco *" style={S.input} />
+                    <input value={altaBanco.titular} onChange={e => setAltaBanco({ ...altaBanco, titular: e.target.value })} placeholder="Titular" style={S.input} />
+                    <input value={altaBanco.cuenta} onChange={e => setAltaBanco({ ...altaBanco, cuenta: e.target.value })} placeholder="Cuenta" style={S.input} />
+                    <input value={altaBanco.clabe} onChange={e => setAltaBanco({ ...altaBanco, clabe: e.target.value })} placeholder="CLABE" style={S.input} />
+                    <input value={altaBanco.rfc} onChange={e => setAltaBanco({ ...altaBanco, rfc: e.target.value })} placeholder="RFC" style={S.input} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                    <button onClick={async () => {
+                      if (!altaBanco.banco.trim()) { alert('El banco es obligatorio.'); return; }
+                      const r = await fetch('/api/revenue/bank-accounts', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ...altaBanco, activa: true, es_default: bankAccounts.length === 0 }),
+                      }).then(x => x.json()).catch(() => null);
+                      if (!r?.id) { alert('No se pudo guardar la cuenta.'); return; }
+                      setBankAccounts([...bankAccounts, r]);
+                      // Se selecciona sola: se dio de alta para usarla ahora.
+                      setQf({ ...qf, bank_account_id: r.id, mostrar_banco: true });
+                      setAltaBanco(null);
+                    }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', padding: '6px 14px', fontSize: '0.78rem' }}>Guardar y usar</button>
+                    <button onClick={() => setAltaBanco(null)} style={{ ...S.btnSmall, marginRight: 0 }}>Cancelar</button>
+                  </div>
+                </div>
+              )}
+
               {/* Bank account */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
                 <div>
                   <label style={S.label}>Cuenta bancaria</label>
                   <select value={qf.bank_account_id || ''} onChange={e => setQf({ ...qf, bank_account_id: e.target.value || null, mostrar_banco: !!e.target.value })} style={S.input}>
                     <option value="">Sin cuenta bancaria</option>
-                    {bankAccounts.map((ba: any) => <option key={ba.id} value={ba.id}>{ba.banco} - {ba.cuenta} {ba.es_default ? '(default)' : ''}</option>)}
+                    {/* El alias primero: con dos cuentas del mismo banco, "BBVA
+                        - 1234" y "BBVA - 5678" no se distinguen de un vistazo. */}
+                    {bankAccounts.map((ba: any) => (
+                      <option key={ba.id} value={ba.id}>
+                        {ba.alias ? `${ba.alias} · ` : ''}{ba.banco}{ba.cuenta ? ` - ${ba.cuenta}` : ''}{ba.es_default ? ' (predeterminada)' : ''}
+                      </option>
+                    ))}
                   </select>
+                  {bankAccounts.length === 0 ? (
+                    // Antes solo decía "Sin cuenta bancaria" y parecía roto. No
+                    // lo está: no hay ninguna capturada.
+                    <button onClick={() => setAltaBanco({ banco: '', alias: '', titular: '', cuenta: '', clabe: '', rfc: '' })}
+                      style={{ ...S.btnSmall, marginTop: 6, marginRight: 0, width: '100%' }}>
+                      No hay cuentas capturadas · + Agregar una
+                    </button>
+                  ) : (
+                    <button onClick={() => setAltaBanco({ banco: '', alias: '', titular: '', cuenta: '', clabe: '', rfc: '' })}
+                      style={{ border: 'none', background: 'none', color: '#3764c4', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700, padding: '4px 0 0' }}>
+                      + Agregar cuenta
+                    </button>
+                  )}
                 </div>
                 <div>
                   <label style={S.label}>Vigencia</label>
@@ -2015,79 +2210,120 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 );
               })()}
 
-              {/* Minuta editor — visible siempre que el toggle esté ON */}
-              {(qf.mostrar_key_points !== false) && (
-                <div style={{ marginTop: 12, background: '#fafbfd', border: '1px solid #e8eaf0', borderRadius: 10, padding: 12 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-                    <div style={S.label}>Minuta de la reunión</div>
-                    <div style={{ fontSize: '0.625rem', color: '#999' }}>{(qf.key_points || []).length} {((qf.key_points || []).length === 1 ? 'punto' : 'puntos')}</div>
-                  </div>
-                  <div style={{ fontSize: '0.6875rem', color: '#777', marginBottom: 8, lineHeight: 1.5 }}>
-                    Pega aquí los puntos raw que platicaste con el cliente. Después da clic en <strong>Estructurar con IA</strong> y lo acomodamos en una minuta profesional.
-                  </div>
-                  <textarea
-                    value={qf.minuta_raw || ''}
-                    onChange={e => setQf({ ...qf, minuta_raw: e.target.value })}
-                    placeholder="Ej. cliente tiene 3 sucursales, le urge controlar inventario porque pierde 200 piezas al mes; quiere migrar de microsip; le gusta lealtad por whatsapp; presupuesto ~25k; cierra en mayo; pidió descuento si paga anual..."
-                    rows={5}
-                    style={{ ...S.input, fontSize: '0.75rem', resize: 'vertical' as const, minHeight: 100, fontFamily: 'inherit', lineHeight: 1.5 }}
-                  />
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' as const }}>
-                    <button
-                      onClick={formatMinuta}
-                      disabled={formattingMinuta || !(qf.minuta_raw || '').trim()}
-                      style={{ ...S.btnSmall, background: '#1a1a1a', color: '#fff', padding: '6px 14px', opacity: formattingMinuta || !(qf.minuta_raw || '').trim() ? 0.5 : 1, cursor: formattingMinuta || !(qf.minuta_raw || '').trim() ? 'not-allowed' : 'pointer' }}
-                    >
-                      {formattingMinuta ? '⏳ Procesando…' : '✨ Estructurar con IA'}
-                    </button>
-                    {(qf.key_points || []).length > 0 && (
-                      <button
-                        onClick={() => { if (confirm('¿Borrar los puntos actuales y dejar el editor vacío?')) setQf({ ...qf, key_points: [] }); }}
-                        style={{ ...S.btnSmall, color: '#999' }}
-                      >
-                        Limpiar puntos
-                      </button>
-                    )}
-                    <span style={{ fontSize: '0.625rem', color: '#bbb' }}>Mín. 30 caracteres</span>
-                  </div>
-                  {minutaError && (
-                    <div style={{ marginTop: 8, padding: '6px 10px', background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 6, fontSize: '0.6875rem', color: '#c53030' }}>
-                      {minutaError}
-                    </div>
-                  )}
+              {/* ── Calculadora de ROI ──
+                  Antes eran cuatro campos de texto y lo único automático era
+                  multiplicar por 12; nadie la usaba porque inventar el número
+                  cuesta más que capturarlo. Ahora se capturan tres datos que el
+                  cliente ya dijo y la plantilla del plan hace el resto. */}
+              {qf.mostrar_roi && (() => {
+                const planesCotizados = Array.from(new Set(items.filter((i: any) => i.tipo === 'plan').map((i: any) => i.nombre)))
+                  .filter((p: any) => !PLANES_SIN_PLANTILLA.includes(p)) as string[];
+                const r = qf.roi || {};
+                // Los drivers se guardan en la cotización: si mañana cambian las
+                // plantillas, una cotización vieja sigue explicando SU número.
+                const drivers: Driver[] = Array.isArray(r.drivers) && r.drivers.length ? r.drivers : driversParaPlanes(planesCotizados);
+                const entradas = {
+                  ventas_mes: r.ventas_mes, costo_hora: r.costo_hora || costoHoraParaPlanes(planesCotizados),
+                  stock_valor: r.stock_valor, compras_mes: r.compras_mes,
+                  clientes_activos: r.clientes_activos, ticket_promedio: r.ticket_promedio,
+                };
+                const calc = calcularRoi(entradas, drivers);
+                const setRoi = (patch: any) => {
+                  // Se recalcula y se guarda el resultado: la vista previa y la
+                  // cotización del cliente leen ahorro_mensual, no los drivers.
+                  const c2 = calcularRoi({ ...entradas, ...patch }, drivers);
+                  setQf({ ...qf, roi: { ...r, drivers, ...patch, ahorro_mensual: c2.mensual } });
+                };
+                const setDriver = (i: number, patch: any) => {
+                  const ds = drivers.map((d, j) => j === i ? { ...d, ...patch } : d);
+                  const c2 = calcularRoi(entradas, ds);
+                  setQf({ ...qf, roi: { ...r, drivers: ds, ahorro_mensual: c2.mensual } });
+                };
+                // Contra el costo RECURRENTE, no contra el total: la
+                // implementación es un pago único y mezclarla infla los días.
+                const mensualPlan = items.filter((i: any) => i.tipo === 'plan' && !i.es_promocion)
+                  .reduce((a: number, i: any) => a + (Number(i.subtotal) || 0) / (i.periodo === 'anual' ? 12 : 1), 0);
+                const pb = payback(calc.mensual, mensualPlan);
+                const necesitaVentas = drivers.some(d => d.on && ['pct_ventas'].includes(d.tipo)) && !(Number(r.ventas_mes) > 0);
 
-                  {(qf.key_points || []).length > 0 && (
-                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px dashed #e0e3eb' }}>
-                      <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#555', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.04em' }}>Puntos estructurados</div>
-                      {qf.key_points.map((kp: any, i: number) => (
-                        <div key={i} style={{ background: '#fff', borderRadius: 8, padding: 10, marginBottom: 6, borderLeft: '3px solid #4B7BE5', display: 'flex', gap: 8 }}>
-                          <div style={{ flex: 1 }}>
-                            <input value={kp.title} onChange={e => { const kps = [...qf.key_points]; kps[i] = { ...kps[i], title: e.target.value }; setQf({ ...qf, key_points: kps }); }} placeholder="Título" style={{ ...S.input, fontWeight: 700, fontSize: '0.75rem', marginBottom: 4 }} />
-                            <input value={kp.detail} onChange={e => { const kps = [...qf.key_points]; kps[i] = { ...kps[i], detail: e.target.value }; setQf({ ...qf, key_points: kps }); }} placeholder="Detalle" style={{ ...S.input, fontSize: '0.6875rem' }} />
-                          </div>
-                          <button onClick={() => { const kps = [...qf.key_points]; kps.splice(i, 1); setQf({ ...qf, key_points: kps }); }} style={{ ...S.btnSmall, color: '#E54B4B', alignSelf: 'flex-start' }}>✕</button>
+                return (
+                  <div style={{ marginTop: 12 }}>
+                    <div style={S.label}>Calculadora de ROI</div>
+                    {planesCotizados.length === 0 ? (
+                      <div style={{ fontSize: '0.72rem', color: '#8a6212', background: '#fff8ec', border: '1px solid #f5e2b8', borderRadius: 8, padding: '9px 11px' }}>
+                        Agrega un plan a los conceptos y aquí aparece su plantilla de ahorros.
+                        Los planes a la medida y la póliza de soporte no traen plantilla: se venden por alcance.
+                      </div>
+                    ) : (
+                      <div style={{ background: '#f8f9fb', borderRadius: 8, padding: 12 }}>
+                        <div style={{ fontSize: '0.7rem', color: '#5b30c4', background: '#f4efff', borderRadius: 6, padding: '6px 9px', marginBottom: 10 }}>
+                          Plantilla: <b>{planesCotizados.map(p => PLANTILLAS_ROI[p]?.titulo || p).join(' + ')}</b> — se eligió por el plan cotizado
                         </div>
-                      ))}
-                      <button onClick={() => setQf({ ...qf, key_points: [...(qf.key_points || []), { title: '', detail: '' }] })} style={S.btnSmall}>+ Agregar punto manual</button>
-                    </div>
-                  )}
-                </div>
-              )}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 }}>
+                          <div><label style={{ ...S.label, marginTop: 0 }}>Ventas al mes ($)</label>
+                            <input type="number" value={r.ventas_mes || ''} onChange={e => setRoi({ ventas_mes: parseFloat(e.target.value) || 0 })} placeholder="Ej. 600000" style={{ ...S.input, borderColor: necesitaVentas ? '#fca5a5' : undefined }} /></div>
+                          <div><label style={{ ...S.label, marginTop: 0 }}>Costo de la hora ($)</label>
+                            <input type="number" value={entradas.costo_hora} onChange={e => setRoi({ costo_hora: parseFloat(e.target.value) || 0 })} style={S.input} /></div>
+                          {drivers.some(d => d.on && d.tipo === 'pct_stock') && (
+                            <div><label style={{ ...S.label, marginTop: 0 }}>Valor del inventario ($)</label>
+                              <input type="number" value={r.stock_valor || ''} onChange={e => setRoi({ stock_valor: parseFloat(e.target.value) || 0 })} style={S.input} /></div>
+                          )}
+                          {drivers.some(d => d.on && d.tipo === 'pct_compras') && (
+                            <div><label style={{ ...S.label, marginTop: 0 }}>Compras al mes ($)</label>
+                              <input type="number" value={r.compras_mes || ''} onChange={e => setRoi({ compras_mes: parseFloat(e.target.value) || 0 })} style={S.input} /></div>
+                          )}
+                          {drivers.some(d => d.on && d.tipo === 'clientes_dormidos') && (<>
+                            <div><label style={{ ...S.label, marginTop: 0 }}>Clientes activos</label>
+                              <input type="number" value={r.clientes_activos || ''} onChange={e => setRoi({ clientes_activos: parseFloat(e.target.value) || 0 })} style={S.input} /></div>
+                            <div><label style={{ ...S.label, marginTop: 0 }}>Ticket promedio ($)</label>
+                              <input type="number" value={r.ticket_promedio || ''} onChange={e => setRoi({ ticket_promedio: parseFloat(e.target.value) || 0 })} style={S.input} /></div>
+                          </>)}
+                        </div>
 
-              {/* ROI editor */}
-              {qf.mostrar_roi && (
-                <div style={{ marginTop: 12 }}>
-                  <div style={S.label}>Calculadora de ROI</div>
-                  <div style={{ background: '#f8f9fb', borderRadius: 8, padding: 12 }}>
-                    <div style={{ marginBottom: 6 }}><label style={{ ...S.label, marginTop: 0 }}>Problema actual del cliente</label><textarea value={qf.roi?.problema || ''} onChange={e => setQf({ ...qf, roi: { ...(qf.roi || {}), problema: e.target.value } })} placeholder="Ej. Pierden 200 piezas al mes por falta de control" style={{ ...S.input, height: 40, fontSize: '0.6875rem' }} /></div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                      <div><label style={{ ...S.label, marginTop: 0 }}>Ahorro mensual ($)</label><input type="number" value={qf.roi?.ahorro_mensual || ''} onChange={e => setQf({ ...qf, roi: { ...(qf.roi || {}), ahorro_mensual: parseFloat(e.target.value) || 0 } })} placeholder="Ej. 15000" style={S.input} /></div>
-                      <div><label style={{ ...S.label, marginTop: 0 }}>Ahorro anual ($)</label><div style={{ ...S.input, background: '#f0f0f0', color: '#2AB5A0', fontWeight: 700 }}>{fmt((qf.roi?.ahorro_mensual || 0) * 12)}</div></div>
-                    </div>
-                    <div style={{ marginTop: 6 }}><label style={{ ...S.label, marginTop: 0 }}>Detalle del calculo</label><input value={qf.roi?.detalle || ''} onChange={e => setQf({ ...qf, roi: { ...(qf.roi || {}), detalle: e.target.value } })} placeholder="Cómo se estima este ahorro" style={{ ...S.input, fontSize: '0.6875rem' }} /></div>
+                        <div style={{ ...S.label, marginTop: 4 }}>De dónde sale el ahorro</div>
+                        {drivers.map((d, i) => {
+                          const ren = calc.renglones.find(x => x.key === d.key);
+                          return (
+                            <div key={d.key} style={{ display: 'grid', gridTemplateColumns: '1fr 64px 92px', gap: 6, alignItems: 'center', padding: '5px 0', borderBottom: '1px solid #f0f1f4', opacity: d.on ? 1 : 0.45 }}>
+                              <label style={{ fontSize: '0.73rem', display: 'flex', gap: 6, alignItems: 'flex-start', cursor: 'pointer' }}>
+                                <input type="checkbox" checked={d.on} onChange={e => setDriver(i, { on: e.target.checked })} style={{ marginTop: 3 }} />
+                                <span>{d.label}<small style={{ display: 'block', color: '#9a9a9a', fontSize: '0.66rem' }}>{d.detalle}</small></span>
+                              </label>
+                              <input type="number" step="0.1" value={d.valor} onChange={e => setDriver(i, { valor: parseFloat(e.target.value) || 0 })}
+                                title={d.tipo === 'horas' ? 'Horas al mes' : 'Porcentaje'}
+                                style={{ ...S.input, textAlign: 'center' as const, fontSize: '0.72rem', padding: '5px 4px' }} />
+                              <div style={{ textAlign: 'right' as const, fontWeight: 800, color: ren ? '#1A8F7A' : '#ccc', fontSize: '0.75rem' }}>
+                                {ren ? fmt(ren.monto) : '—'}
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        <div style={{ display: 'flex', gap: 20, background: '#f4f2f8', borderRadius: 9, padding: '11px 13px', marginTop: 10 }}>
+                          <div><div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '.06em', color: '#8a8a8a' }}>Ahorro al mes</div>
+                            <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#7C3AED' }}>{fmt(calc.mensual)}</div></div>
+                          <div><div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '.06em', color: '#8a8a8a' }}>Al año</div>
+                            <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>{fmt(calc.anual)}</div></div>
+                          {pb && (<div><div style={{ fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '.06em', color: '#8a8a8a' }}>Se paga en</div>
+                            <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>{pb}</div></div>)}
+                        </div>
+
+                        {necesitaVentas && (
+                          // Preferible no mostrar ROI que mostrar uno inventado:
+                          // el dato es del cliente y hay que preguntarlo.
+                          <div style={{ fontSize: '0.7rem', color: '#b45309', marginTop: 8 }}>
+                            Falta cuánto vende al mes. Sin ese dato el bloque no se imprime en la cotización.
+                          </div>
+                        )}
+                        <div style={{ marginTop: 8 }}>
+                          <label style={{ ...S.label, marginTop: 0 }}>Problema del cliente (opcional)</label>
+                          <input value={r.problema || ''} onChange={e => setRoi({ problema: e.target.value })} placeholder="Ej. Pierden 200 piezas al mes por falta de control" style={{ ...S.input, fontSize: '0.72rem' }} />
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Antes/Después editor */}
               {qf.mostrar_antes_despues && (
@@ -2265,23 +2501,46 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   </div>
                 </div>
 
-                {/* Preview ROI */}
-                {qf.mostrar_roi && qf.roi?.ahorro_mensual > 0 && (
-                  <div style={{ padding: '14px 32px', borderTop: '1px solid #f0f0f0' }}>
-                    <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#1a1a1a', marginBottom: 8 }}>Retorno de inversión estimado</div>
-                    {qf.roi.problema && <div style={{ fontSize: '0.5625rem', color: '#999', marginBottom: 8 }}>{qf.roi.problema}</div>}
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <div style={{ flex: 1, background: '#f8f9fb', borderRadius: 8, padding: 10, textAlign: 'center' as const }}>
-                        <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#2AB5A0' }}>{fmt(qf.roi.ahorro_mensual)}</div>
-                        <div style={{ fontSize: '0.4375rem', color: '#999', textTransform: 'uppercase' as const }}>Ahorro mensual</div>
+                {/* Preview ROI — lo que ve el cliente */}
+                {qf.mostrar_roi && qf.roi?.ahorro_mensual > 0 && (() => {
+                  const rr = qf.roi || {};
+                  const ds: Driver[] = Array.isArray(rr.drivers) ? rr.drivers : [];
+                  const c = calcularRoi(rr, ds);
+                  const supuestos = textoSupuestos(c.renglones);
+                  const mensualPlan = items.filter((i: any) => i.tipo === 'plan' && !i.es_promocion)
+                    .reduce((a: number, i: any) => a + (Number(i.subtotal) || 0) / (i.periodo === 'anual' ? 12 : 1), 0);
+                  const pb = payback(rr.ahorro_mensual, mensualPlan);
+                  return (
+                    <div style={{ padding: '14px 32px', borderTop: '1px solid #f0f0f0' }}>
+                      <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#1a1a1a', marginBottom: 8 }}>Retorno de inversión estimado</div>
+                      {rr.problema && <div style={{ fontSize: '0.5625rem', color: '#999', marginBottom: 8 }}>{rr.problema}</div>}
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <div style={{ flex: 1, background: '#f8f9fb', borderRadius: 8, padding: 10, textAlign: 'center' as const }}>
+                          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#2AB5A0' }}>{fmt(rr.ahorro_mensual)}</div>
+                          <div style={{ fontSize: '0.4375rem', color: '#999', textTransform: 'uppercase' as const }}>Ahorro mensual</div>
+                        </div>
+                        <div style={{ flex: 1, background: '#f8f9fb', borderRadius: 8, padding: 10, textAlign: 'center' as const }}>
+                          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#2AB5A0' }}>{fmt(rr.ahorro_mensual * 12)}</div>
+                          <div style={{ fontSize: '0.4375rem', color: '#999', textTransform: 'uppercase' as const }}>Ahorro anual</div>
+                        </div>
                       </div>
-                      <div style={{ flex: 1, background: '#f8f9fb', borderRadius: 8, padding: 10, textAlign: 'center' as const }}>
-                        <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#2AB5A0' }}>{fmt(qf.roi.ahorro_mensual * 12)}</div>
-                        <div style={{ fontSize: '0.4375rem', color: '#999', textTransform: 'uppercase' as const }}>Ahorro anual</div>
-                      </div>
+                      {pb && (
+                        <div style={{ background: '#f4f2f8', borderRadius: 8, padding: 9, textAlign: 'center' as const, marginTop: 8, fontSize: '0.6875rem', fontWeight: 800, color: '#5b30c4' }}>
+                          Se paga solo en {pb} de operación
+                        </div>
+                      )}
+                      {/* El supuesto se imprime junto al número. Un ahorro sin
+                          decir de dónde sale es lo primero que el cliente pone
+                          en duda; con el desglose, se discute — que es lo que
+                          se busca que pase en la junta. */}
+                      {supuestos && (
+                        <div style={{ fontSize: '0.5rem', color: '#999', marginTop: 8, lineHeight: 1.5, borderTop: '1px solid #f4f4f6', paddingTop: 6 }}>
+                          <b>Cómo se estima:</b> {supuestos}. Supuestos conservadores, sujetos a la operación real del negocio.
+                        </div>
+                      )}
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Preview Antes vs Después */}
                 {qf.mostrar_antes_despues && (qf.antes_despues || []).length > 0 && (
@@ -2489,6 +2748,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             <h2 style={{ fontSize: '1.125rem', fontWeight: 800, marginBottom: 16 }}>Cuentas bancarias</h2>
             <div style={{ ...S.card, marginBottom: 16 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr auto', gap: 8, alignItems: 'end' }}>
+                <div><label style={S.label}>Alias</label><input value={bankForm.alias || ''} onChange={e => setBankForm({ ...bankForm, alias: e.target.value })} placeholder="Ej. BBVA pesos" style={S.input} /></div>
                 <div><label style={S.label}>Banco</label><input value={bankForm.banco || ''} onChange={e => setBankForm({ ...bankForm, banco: e.target.value })} placeholder="Ej. BBVA" style={S.input} /></div>
                 <div><label style={S.label}>Cuenta</label><input value={bankForm.cuenta || ''} onChange={e => setBankForm({ ...bankForm, cuenta: e.target.value })} placeholder="Número de cuenta" style={S.input} /></div>
                 <div><label style={S.label}>CLABE</label><input value={bankForm.clabe || ''} onChange={e => setBankForm({ ...bankForm, clabe: e.target.value })} placeholder="18 dígitos" style={S.input} /></div>
