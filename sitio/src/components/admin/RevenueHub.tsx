@@ -826,11 +826,6 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       setTimeout(() => URL.revokeObjectURL(url), 500);
     };
 
-    const refreshQuotes = async () => {
-      const d = await fetch('/api/revenue/quotes').then(r => r.json());
-      setQuotes(Array.isArray(d) ? d : []);
-    };
-
     const allColumns = [
       { id: 'numero', label: '#' },
       { id: 'created_at', label: 'Fecha' },
@@ -876,16 +871,30 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             <h2 style={{ margin: 0, fontSize: '1.375rem', fontWeight: 800, letterSpacing: '-0.01em' }}>Cotizaciones</h2>
             <div style={{ fontSize: '0.8125rem', color: '#888', marginTop: 2 }}>{quotes.length} totales · {filteredQuotes.length} en vista</div>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={refreshQuotes} title="Actualizar" style={{ ...S.btn, background: '#fff', color: '#666', border: '1px solid #e0e0e0', padding: '8px 12px' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {/* Exportar y Transcripción quedan como ÍCONOS: son herramientas, no
+                acciones del día. Con `title` dicen qué hacen al pasar el mouse.
+                El ⟳ se fue: la lista ya se recarga sola después de cada acción,
+                que es cuando de verdad cambia algo. */}
+            <button onClick={exportCsv} title="Exportar a CSV" aria-label="Exportar a CSV"
+              style={{ ...S.btn, background: '#fff', color: '#666', border: '1px solid #e0e0e0', width: 38, height: 38, padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </button>
-            <button onClick={exportCsv} style={{ ...S.btn, background: '#fff', color: '#666', border: '1px solid #e0e0e0', padding: '8px 14px' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Exportar
+            <button onClick={() => { setTranscript(''); setAnalysisResult(null); setShowTranscriptModal(true); }}
+              title="Analizar transcripción de una llamada" aria-label="Analizar transcripción"
+              style={{ ...S.btn, background: '#fff', color: '#666', border: '1px solid #e0e0e0', width: 38, height: 38, padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
             </button>
-            <button onClick={() => { setTranscript(''); setAnalysisResult(null); setShowTranscriptModal(true); }} style={{ ...S.btn, background: '#f5f5f5', color: '#555', padding: '8px 14px' }}>Transcripción</button>
-            <button onClick={() => { setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida. Soporte por chat SACS y WhatsApp. Sin contratos.' }); setShowDrawer(true); }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', padding: '8px 18px' }}>+ Nueva cotización</button>
+            <button onClick={() => { setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida. Soporte por chat SACS y WhatsApp. Sin contratos.' }); setShowDrawer(true); }}
+              style={{ ...S.btn, background: '#4B7BE5', color: '#fff', padding: '8px 18px', fontWeight: 700 }}>+ Nueva cotización</button>
+            {/* El dashboard cierra la fila y lleva el peso: es donde se empieza
+                el día. Todavía no existe, así que el clic dice qué va a traer en
+                vez de llevar a una pantalla vacía. */}
+            <button onClick={() => alert('El dashboard completo es lo siguiente.\n\nVa a traer: embudo del periodo (cotizado → aceptado → pagado), cobranza por semana, próximos pagos según las parcialidades pactadas, motivos de rechazo y la lista de las que hay que mover hoy — todo con filtro de fechas.\n\nDime qué bloques quieres primero.')}
+              style={{ ...S.btn, background: '#1a1a1a', color: '#fff', padding: '8px 16px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="4" width="3" height="14"/></svg>
+              Dashboard
+            </button>
           </div>
         </div>
 
@@ -942,16 +951,6 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               </>
             );
           })()}
-        </div>
-
-        {/* Lugar reservado para el dashboard completo. Se deja visible y con la
-            etiqueta de que aún no existe: un botón que promete y no cumple es
-            peor que no tenerlo, pero reservar el lugar evita rediseñar después. */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -8, marginBottom: 14 }}>
-          <button onClick={() => alert('El dashboard completo es lo siguiente.\n\nVa a traer: embudo del periodo (cotizado → aceptado → pagado), cobranza por semana, próximos pagos según las parcialidades pactadas, motivos de rechazo y la lista de las que hay que mover hoy — todo con filtro de fechas.\n\nDime qué bloques quieres primero.')}
-            style={{ ...S.btn, background: '#f4f7fd', color: '#3764c4', border: '1px solid #dde6f7', padding: '7px 14px', fontSize: '0.78rem', fontWeight: 700 }}>
-            📊 Dashboard de cotizaciones <span style={{ marginLeft: 6, fontSize: '0.62rem', fontWeight: 700, background: '#fff', border: '1px solid #dde6f7', borderRadius: 10, padding: '1px 7px', color: '#8a93a5' }}>pronto</span>
-          </button>
         </div>
 
         {/* ─── Saved views tabs ─── */}
