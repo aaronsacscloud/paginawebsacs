@@ -608,7 +608,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     };
 
     // ─── Filter, search, sort, paginate ───
-    const estadoLabels: Record<string, string> = { draft: 'Borrador', sent: 'Enviada', accepted: 'Aceptada', paid: 'Pagada', expired: 'Vencida', rejected: 'Rechazada', parcial: 'Parcial' };
+    const estadoLabels: Record<string, string> = { draft: 'Borrador', sent: 'Enviada', accepted: 'Aceptada', paid: 'Pagada', expired: 'Vencida', rejected: 'Rechazada', parcial: 'Parcial', deleted: 'Eliminado' };
     const estadoColors: Record<string, { bg: string; fg: string; dot: string }> = {
       // El color agrupa por lo que hay que hacer, no una tinta por estado:
       // gris = fuera de juego · ámbar = en su cancha · azul = hay compromiso ·
@@ -619,6 +619,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       paid:     { bg: '#e7f5ef', fg: '#0f7a56', dot: '#0f9d68' },
       expired:  { bg: '#fdecec', fg: '#b4302f', dot: '#dc2626' },
       rejected: { bg: '#f4f5f7', fg: '#5b6472', dot: '#98a2b3' },
+      deleted:  { bg: '#f6e9ec', fg: '#8c1d3f', dot: '#9f1239' },
       // Derivados, no capturados: se calculan de los abonos y de las vistas, así
       // que funcionan hacia atrás y no se pueden desincronizar.
       parcial:  { bg: '#eaf1fd', fg: '#2c5fc4', dot: '#4B7BE5' },
