@@ -366,8 +366,44 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
               <div style={{ fontSize: '0.8rem', color: '#999' }}>Sin ediciones registradas. El historial se guarda desde ahora.</div>
             ) : d.cambios.map((c: any, i: number) => (
               <div key={i} style={{ ...P.fila, display: 'block' }}>
-                <div style={{ color: '#666', fontSize: '0.72rem' }}>{fHora(c.at)} · {c.por}</div>
-                {c.cambios.map((x: string, j: number) => <div key={j} style={{ fontSize: '0.8rem' }}>· {x}</div>)}
+                <div style={{ color: '#8a8a8a', fontSize: '0.72rem', marginBottom: 5 }}>{fHora(c.at)} · {c.por}</div>
+
+                {/* Campo a la izquierda, cambio a la derecha: el valor viejo
+                    tachado y el nuevo en negritas se leen de un golpe, sin
+                    tener que buscar la flecha en medio de una frase. */}
+                {(c.campos || []).map((f: any, j: number) => (
+                  <div key={'f' + j} style={{ display: 'grid', gridTemplateColumns: '104px 1fr', gap: 8, fontSize: '0.79rem', padding: '2px 0', alignItems: 'baseline' }}>
+                    <span style={{ color: '#8a8a8a' }}>{f.k}</span>
+                    <span><span style={{ color: '#b0b0b0', textDecoration: 'line-through', marginRight: 6 }}>{f.antes}</span><b>{f.despues}</b></span>
+                  </div>
+                ))}
+
+                {(c.conceptos || []).length > 0 && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '104px 1fr', gap: 8, fontSize: '0.79rem', padding: '2px 0', alignItems: 'start' }}>
+                    <span style={{ color: '#8a8a8a' }}>Conceptos</span>
+                    <span>
+                      {c.conceptos.map((x: any, k: number) => (
+                        <div key={'c' + k} style={{ display: 'flex', gap: 8, alignItems: 'baseline', padding: '2px 0' }}>
+                          <span style={{ width: 12, fontWeight: 800, textAlign: 'center', color: x.op === 'add' ? '#0f7a56' : x.op === 'del' ? '#b4302f' : '#2c5fc4' }}>
+                            {x.op === 'add' ? '+' : x.op === 'del' ? '−' : '✎'}
+                          </span>
+                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.nombre}</span>
+                          <span style={{ whiteSpace: 'nowrap' }}>
+                            {x.antes && <span style={{ color: '#b0b0b0', textDecoration: 'line-through', marginRight: 6 }}>{x.antes}</span>}
+                            {x.despues && <b>{x.despues}</b>}
+                          </span>
+                        </div>
+                      ))}
+                    </span>
+                  </div>
+                )}
+
+                {/* Ediciones guardadas antes de este detalle: se muestran como
+                    quedaron. No se pueden reconstruir, y fingir el desglose
+                    sería peor que enseñarlas tal cual. */}
+                {!c.campos && !c.conceptos && (c.cambios || []).map((x: string, j: number) => (
+                  <div key={'v' + j} style={{ fontSize: '0.79rem', color: '#666' }}>· {x}</div>
+                ))}
               </div>
             ))}
           </div>

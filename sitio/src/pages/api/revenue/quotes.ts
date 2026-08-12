@@ -299,24 +299,54 @@ export const PUT: APIRoute = async ({ request }) => {
       .select('total, subtotal, descuento_global, vigencia, empresa, contacto, email, whatsapp, moneda, items, notas')
       .eq('id', id).maybeSingle();
     if (antes) {
-      const cambios: string[] = [];
+      // El historial guarda CAMPOS y CONCEPTOS por separado. Antes decía "se
+      // editaron los conceptos (2)", que es como no decir nada: lo que importa
+      // no es cuántos se tocaron, sino cuál bajó de precio y cuál se quitó.
+      const campos: { k: string; antes: string; despues: string }[] = [];
       const dinero = (n: any) => '$' + Number(n || 0).toLocaleString('es-MX');
-      if (clean.total !== undefined && Number(clean.total) !== Number(antes.total)) cambios.push(`Total: ${dinero(antes.total)} → ${dinero(clean.total)}`);
-      if (clean.vigencia !== undefined && clean.vigencia !== antes.vigencia) cambios.push(`Vigencia: ${antes.vigencia || '—'} → ${clean.vigencia || '—'}`);
-      if (clean.descuento_global !== undefined && Number(clean.descuento_global || 0) !== Number(antes.descuento_global || 0)) cambios.push(`Descuento: ${antes.descuento_global || 0} → ${clean.descuento_global || 0}`);
-      for (const k of ['empresa', 'contacto', 'email', 'whatsapp', 'moneda'] as const) {
-        if (clean[k] !== undefined && String(clean[k] || '') !== String((antes as any)[k] || '')) cambios.push(`${k}: ${(antes as any)[k] || '—'} → ${clean[k] || '—'}`);
-      }
+      const cmp = (k: string, a: any, b: any, fmt = (x: any) => String(x ?? '—')) => {
+        if (b === undefined) return;
+        if (String(a ?? '') === String(b ?? '')) return;
+        campos.push({ k, antes: fmt(a), despues: fmt(b) });
+      };
+      cmp('Total', antes.total, clean.total, dinero);
+      cmp('Vigencia', antes.vigencia, clean.vigencia);
+      cmp('Descuento', antes.descuento_global, clean.descuento_global, dinero);
+      cmp('Cliente', antes.empresa, clean.empresa);
+      cmp('Contacto', antes.contacto, clean.contacto);
+      cmp('Correo', antes.email, clean.email);
+      cmp('WhatsApp', antes.whatsapp, clean.whatsapp);
+      cmp('Moneda', antes.moneda, clean.moneda);
+
+      // Conceptos, comparados por NOMBRE: es la única llave estable que tienen
+      // (no llevan id), y renombrar un concepto se lee como quitar uno y poner
+      // otro — que es exactamente lo que pasó.
+      const conceptos: { op: 'mod' | 'add' | 'del'; nombre: string; antes?: string; despues?: string }[] = [];
       if (clean.items !== undefined) {
-        const nA = (Array.isArray(antes.items) ? antes.items : []).length;
-        const nD = (Array.isArray(clean.items) ? clean.items : []).length;
-        const igual = JSON.stringify(antes.items || []) === JSON.stringify(clean.items || []);
-        if (!igual) cambios.push(nA === nD ? `Se editaron los conceptos (${nD})` : `Conceptos: ${nA} → ${nD}`);
+        const monto = (i: any) => Number(i?.subtotal ?? i?.monto ?? 0);
+        const mapa = (arr: any[]) => new Map((Array.isArray(arr) ? arr : []).map((i: any) => [String(i?.nombre || '').trim().toLowerCase(), i]));
+        const mA = mapa(antes.items as any[]); const mD = mapa(clean.items);
+        for (const [k, i] of mD) {
+          const prev = mA.get(k);
+          if (!prev) conceptos.push({ op: 'add', nombre: i.nombre, despues: dinero(monto(i)) });
+          else if (monto(prev) !== monto(i)) conceptos.push({ op: 'mod', nombre: i.nombre, antes: dinero(monto(prev)), despues: dinero(monto(i)) });
+        }
+        for (const [k, i] of mA) if (!mD.has(k)) conceptos.push({ op: 'del', nombre: i.nombre, antes: dinero(monto(i)) });
       }
+
+      // Se conserva `cambios` en texto para que el historial viejo y el nuevo se
+      // sigan leyendo con el mismo código.
+      const cambios: string[] = [
+        ...campos.map(c => `${c.k}: ${c.antes} → ${c.despues}`),
+        ...conceptos.map(c => c.op === 'add' ? `Agregado: ${c.nombre} ${c.despues}`
+          : c.op === 'del' ? `Quitado: ${c.nombre} ${c.antes}`
+          : `${c.nombre}: ${c.antes} → ${c.despues}`),
+      ];
+
       if (cambios.length) {
         const { text: tx, meta: mt } = parseMeta(antes.notas);
         mt.cambios = [
-          { at: new Date().toISOString(), por: user?.nombre || user?.email || 'admin', cambios },
+          { at: new Date().toISOString(), por: user?.nombre || user?.email || 'admin', cambios, campos, conceptos },
           ...(mt.cambios || []),
         ].slice(0, 200);
         // Se escribe ANTES del update principal para no pisar `clean.notas` si
