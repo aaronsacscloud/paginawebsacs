@@ -857,6 +857,25 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Exportar
             </button>
+            {/* Religar: las cotizaciones viejas se capturaron con el cliente a
+                mano y no apuntan a nadie. El botón solo aparece si hay algo que
+                arreglar, y enseña la propuesta antes de tocar nada. */}
+            {quotes.some((q: any) => !q.company_id) && (
+              <button onClick={async () => {
+                const j = await fetch('/api/revenue/quotes/religar').then(r => r.json()).catch(() => null);
+                if (!j) { alert('No se pudo consultar.'); return; }
+                const n = j.ligables?.length || 0;
+                if (!n) { alert(`No hay ninguna que se pueda ligar por correo.\n\n${j.sin_empate?.length || 0} sin empate · ${j.ambiguas?.length || 0} ambiguas (mismo correo en dos clientes).`); return; }
+                const muestra = j.ligables.slice(0, 8).map((x: any) => `· ${x.numero} → ${x.cliente}`).join('\n');
+                if (!confirm(`Se van a ligar ${n} cotización(es) a su cliente por correo:\n\n${muestra}${n > 8 ? `\n… y ${n - 8} más` : ''}\n\nLas activas además van a generar su oportunidad.\n\n¿Aplico?`)) return;
+                const r = await fetch('/api/revenue/quotes/religar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).then(x => x.json());
+                alert(`${r.ligadas} ligada(s) · ${r.oportunidades} oportunidad(es) creada(s).` + (r.pendientes?.sin_empate ? `\n\nQuedan ${r.pendientes.sin_empate} sin empate por correo: hay que ligarlas a mano desde el editor.` : ''));
+                const d = await fetch('/api/revenue/quotes').then(x => x.json()).catch(() => null);
+                if (Array.isArray(d)) setQuotes(d);
+              }} style={{ ...S.btn, background: '#fff8ec', color: '#b45309', border: '1px solid #f5e2b8', padding: '8px 14px' }}>
+                🔗 Religar ({quotes.filter((q: any) => !q.company_id).length})
+              </button>
+            )}
             <button onClick={() => { setTranscript(''); setAnalysisResult(null); setShowTranscriptModal(true); }} style={{ ...S.btn, background: '#f5f5f5', color: '#555', padding: '8px 14px' }}>Transcripción</button>
             <button onClick={() => { setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida. Soporte por chat SACS y WhatsApp. Sin contratos.' }); setShowDrawer(true); }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', padding: '8px 18px' }}>+ Nueva cotización</button>
           </div>

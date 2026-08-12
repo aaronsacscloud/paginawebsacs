@@ -344,6 +344,17 @@ export const PUT: APIRoute = async ({ request }) => {
     } else if (data?.deal_id && (valorTotal !== (prev?.total || 0))) {
       // Total changed → sync deal amounts without moving stage
       await supabase.from('deals').update({ valor_total: valorTotal, valor_mensual: valorMensual }).eq('id', data.deal_id);
+    } else if (!data?.deal_id && data?.company_id && ['draft', 'sent', 'accepted'].includes(String(data?.estado))) {
+      // ── Ligar un cliente TAMBIÉN crea la oportunidad ──
+      // El puente solo se disparaba al pasar de borrador a enviada. Si la
+      // cotización ya estaba enviada y apenas ahora se le liga el cliente —el
+      // caso de las 32 que existen— la oportunidad no nacía nunca y la ficha del
+      // cliente se veía vacía aunque tuviera cotizaciones vivas por miles.
+      const etapa = data.estado === 'accepted' ? 'negociacion'
+        : data.estado === 'sent' ? 'cotizacion_enviada' : 'calificacion';
+      await syncQuoteToDeal(id, {
+        targetStage: etapa as any, valor_total: valorTotal, valor_mensual: valorMensual, trigger: 'quote_linked',
+      });
     }
   } catch (syncErr) {
     console.error('[quotes PUT] deal sync error:', syncErr);
