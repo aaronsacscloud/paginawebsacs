@@ -896,7 +896,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
           {(() => {
             const k = kpis;
             const card = (titulo: string, valor: string, sec: React.ReactNode, color = '#1a1a1a', onClick?: () => void) => (
-              <div onClick={onClick} style={{ background: '#f4f7fd', border: '1px solid #dde6f7', padding: '14px 16px', borderRadius: 10, cursor: onClick ? 'pointer' : 'default' }}>
+              <div onClick={onClick} style={{ background: '#fff', border: '1px solid #ececec', borderLeft: '3px solid #4B7BE5', padding: '14px 16px', borderRadius: 10, cursor: onClick ? 'pointer' : 'default' }}>
                 <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>{titulo}</div>
                 <div style={{ fontSize: '1.375rem', fontWeight: 700, color, marginTop: 4 }}>{valor}</div>
                 <div style={{ fontSize: '0.6875rem', color: '#888', marginTop: 2 }}>{sec}</div>
@@ -909,10 +909,10 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               : <span style={{ color: v > 0 ? '#2e7d32' : v < 0 ? '#b93333' : '#888', fontWeight: 700 }}>{v > 0 ? '↑' : v < 0 ? '↓' : '='} {Math.abs(v)}%</span>;
 
             if (!k) return [0, 1, 2, 3, 4].map(i => (
-              <div key={i} style={{ background: '#f4f7fd', border: '1px solid #dde6f7', padding: '14px 16px', borderRadius: 10 }}>
-                <div style={{ height: 9, width: '55%', background: '#e6ecf8', borderRadius: 4 }} />
-                <div style={{ height: 20, width: '70%', background: '#e6ecf8', borderRadius: 4, marginTop: 8 }} />
-                <div style={{ height: 9, width: '85%', background: '#eef2fa', borderRadius: 4, marginTop: 8 }} />
+              <div key={i} style={{ background: '#fff', border: '1px solid #ececec', borderLeft: '3px solid #4B7BE5', padding: '14px 16px', borderRadius: 10 }}>
+                <div style={{ height: 9, width: '55%', background: '#f0f0f0', borderRadius: 4 }} />
+                <div style={{ height: 20, width: '70%', background: '#f0f0f0', borderRadius: 4, marginTop: 8 }} />
+                <div style={{ height: 9, width: '85%', background: '#f6f6f6', borderRadius: 4, marginTop: 8 }} />
               </div>
             ));
 
