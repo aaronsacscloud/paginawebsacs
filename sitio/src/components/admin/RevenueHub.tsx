@@ -1620,7 +1620,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             {/* Split layout */}
             <div className="rh-quote-split" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
             {/* Left: Form */}
-            <div className="rh-quote-form" style={{ width: 480, flexShrink: 0, background: '#fff', overflowY: 'auto' as const, padding: 24, borderRight: '1px solid #eee' }}>
+            <div className="rh-quote-form" style={{ width: 640, flexShrink: 0, background: '#fff', overflowY: 'auto' as const, padding: 24, borderRight: '1px solid #eee' }}>
 
               {/* ── Cliente ──
                   Un buscador sobre clientes Y leads a la vez: quien cotiza no
