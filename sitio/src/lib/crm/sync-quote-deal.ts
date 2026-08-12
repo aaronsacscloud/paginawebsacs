@@ -185,6 +185,38 @@ export async function advanceDealStage(dealId: string, targetStage: DealStage, c
  * Create a new deal from a quote (when quote has no deal_id yet).
  * Sets quote.deal_id back-reference. Returns the new deal.
  */
+/**
+ * La EMPRESA de la cotización, garantizada.
+ *
+ * Una oportunidad sin `company_id` no aparece en la ficha de nadie: existe en la
+ * base y es invisible en la pantalla, que es peor que no existir. Pasó con
+ * "Oportunidad — ARTIK VITALICIO", creada sin empresa.
+ *
+ * Orden: la de la cotización (la que se eligió al ligarla) → la del contacto →
+ * y si no hay ninguna, se crea con el nombre que trae la cotización. Un cliente
+ * con nombre provisional se corrige; una oportunidad huérfana no se encuentra.
+ */
+async function ensureCompanyForQuote(quote: any, contactId: string | null): Promise<string | null> {
+  if (quote.company_id) return quote.company_id;
+
+  if (contactId) {
+    const { data: ct } = await supabase.from('contacts').select('id, nombre, company_id').eq('id', contactId).maybeSingle();
+    if (ct?.company_id) {
+      await supabase.from('quotes').update({ company_id: ct.company_id }).eq('id', quote.id);
+      return ct.company_id;
+    }
+    const nombre = String(quote.empresa || quote.contacto || ct?.nombre || '').trim();
+    if (!nombre) return null;
+    const { data: co } = await supabase.from('companies')
+      .insert({ nombre, estado_cuenta: 'prospecto' }).select('id').maybeSingle();
+    if (!co) return null;
+    await supabase.from('contacts').update({ company_id: co.id }).eq('id', contactId);
+    await supabase.from('quotes').update({ company_id: co.id }).eq('id', quote.id);
+    return co.id;
+  }
+  return null;
+}
+
 export async function createDealFromQuote(quote: any, targetStage: DealStage, ctx: { trigger?: string; motivo_perdida?: string } = {}) {
   const contactId = await ensureContactForQuote(quote);
   if (!contactId) {
@@ -279,6 +311,8 @@ export async function createDealFromQuote(quote: any, targetStage: DealStage, ct
     // el deal lo refleja para que la commission vaya al partner correcto.
     referrer_partner_id: (contact as any)?.referrer_partner_id || null,
   };
+  // Empresa garantizada: sin ella la oportunidad no aparece en ninguna ficha.
+  insertPayload.company_id = await ensureCompanyForQuote(quote, contactId) || insertPayload.company_id || null;
   if (targetStage === 'cerrada_ganada') {
     insertPayload.probabilidad = 100;
     insertPayload.closed_at = new Date().toISOString();

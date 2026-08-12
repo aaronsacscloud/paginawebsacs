@@ -152,6 +152,21 @@ export const POST: APIRoute = async ({ request }) => {
     }).select().single();
 
     if (!error) {
+      // ── Crear una cotización TAMBIÉN crea su oportunidad ──
+      // El puente vivía solo en el PUT (al pasar de borrador a enviada), así que
+      // una cotización nacida ya como "enviada" —el flujo normal del botón
+      // "Crear y enviar"— nunca generaba oportunidad. Es exactamente lo que se
+      // reportó: se cotiza y no aparece nada en el cliente.
+      try {
+        if (['draft', 'sent', 'accepted'].includes(String(data?.estado))) {
+          const { syncQuoteToDeal } = await import('../../../lib/crm/sync-quote-deal');
+          const etapa = data.estado === 'accepted' ? 'negociacion'
+            : data.estado === 'sent' ? 'cotizacion_enviada' : 'calificacion';
+          await syncQuoteToDeal(data.id, {
+            targetStage: etapa as any, valor_total: Math.round(data.total || 0), trigger: 'quote_created',
+          });
+        }
+      } catch (e) { console.error('[quotes POST] oportunidad:', e); }
       return jsonResponse(data, 201);
     }
     lastErr = error;
