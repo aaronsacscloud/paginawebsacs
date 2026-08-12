@@ -1967,6 +1967,56 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 </div>
               </div>
 
+              {/* ── Parcialidades ──
+                  Cuando se pacta en pagos, las FECHAS se acuerdan al cotizar, no
+                  después: son parte del trato. Guardarlas aquí es lo que permite
+                  saber qué debería entrar cada mes y cobrar a tiempo, en vez de
+                  descubrir el vencimiento cuando ya pasó. */}
+              {(() => {
+                const plan: any[] = Array.isArray(qf.plan_pagos) ? qf.plan_pagos : [];
+                const setPlan = (p: any[]) => setQf({ ...qf, plan_pagos: p });
+                const sumado = plan.reduce((a, x) => a + (Number(x.monto) || 0), 0);
+                const totalQ = Number(qf.total || 0);
+                const fin = (n: number) => { const d = new Date(); d.setMonth(d.getMonth() + n); return d.toISOString().slice(0, 10); };
+                return (
+                  <div style={{ marginTop: 12, background: '#fafbfd', border: '1px solid #e8eaf0', borderRadius: 10, padding: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <label style={{ ...S.label, marginTop: 0, marginBottom: 0, flex: 1 }}>Plan de pagos (parcialidades)</label>
+                      <button onClick={() => setPlan([...plan, { id: 'p' + Date.now().toString(36) + plan.length, fecha: fin(plan.length), monto: '', concepto: plan.length === 0 ? 'Anticipo' : `Parcialidad ${plan.length + 1}` }])}
+                        style={{ ...S.btnSmall, marginRight: 0 }}>+ Parcialidad</button>
+                      {plan.length === 0 && totalQ > 0 && (
+                        <button onClick={() => setPlan([
+                          { id: 'p1', fecha: fin(0), monto: Math.round(totalQ / 2), concepto: 'Anticipo 50%' },
+                          { id: 'p2', fecha: fin(1), monto: totalQ - Math.round(totalQ / 2), concepto: 'Liquidación 50%' },
+                        ])} style={{ ...S.btnSmall, marginRight: 0 }}>50 / 50</button>
+                      )}
+                    </div>
+                    {plan.length === 0 ? (
+                      <div style={{ fontSize: '0.7rem', color: '#999' }}>Sin parcialidades: se cobra en un solo pago.</div>
+                    ) : plan.map((x: any, i: number) => (
+                      <div key={x.id || i} style={{ display: 'flex', gap: 6, marginBottom: 5, alignItems: 'center' }}>
+                        <input value={x.concepto || ''} onChange={e => setPlan(plan.map((y, j) => j === i ? { ...y, concepto: e.target.value } : y))}
+                          placeholder="concepto" style={{ ...S.input, flex: 1, fontSize: '0.75rem', padding: '6px 8px' }} />
+                        <input type="date" value={x.fecha || ''} onChange={e => setPlan(plan.map((y, j) => j === i ? { ...y, fecha: e.target.value } : y))}
+                          style={{ ...S.input, width: 140, fontSize: '0.75rem', padding: '6px 8px' }} />
+                        <input type="number" value={x.monto} onChange={e => setPlan(plan.map((y, j) => j === i ? { ...y, monto: e.target.value } : y))}
+                          placeholder="monto" style={{ ...S.input, width: 110, fontSize: '0.75rem', padding: '6px 8px' }} />
+                        <button onClick={() => setPlan(plan.filter((_, j) => j !== i))} style={{ ...S.btnSmall, marginRight: 0, color: '#b93333' }}>✕</button>
+                      </div>
+                    ))}
+                    {plan.length > 0 && (
+                      /* El descuadre se avisa, no se corrige solo: puede ser
+                         intencional (un saldo que se define después) y ajustar
+                         a la fuerza cambiaría lo pactado sin avisar. */
+                      <div style={{ fontSize: '0.7rem', marginTop: 4, color: Math.abs(sumado - totalQ) < 1 ? '#2e7d32' : '#b45309' }}>
+                        Suman {fmt(sumado)} de {fmt(totalQ)}
+                        {Math.abs(sumado - totalQ) >= 1 ? ` · faltan ${fmt(totalQ - sumado)} por repartir` : ' · cuadra'}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               {/* Config */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
                 <div><label style={S.label}>Moneda</label><select value={qf.moneda} onChange={e => setQf({ ...qf, moneda: e.target.value })} style={S.input}><option value="MXN">MXN</option><option value="USD">USD</option></select></div>
@@ -2215,56 +2265,6 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 </div>
                 <textarea value={qf.condiciones || ''} onChange={e => setQf({ ...qf, condiciones: e.target.value })} style={{ ...S.input, height: 60 }} />
               </div>
-
-              {/* ── Parcialidades ──
-                  Cuando se pacta en pagos, las FECHAS se acuerdan al cotizar, no
-                  después: son parte del trato. Guardarlas aquí es lo que permite
-                  saber qué debería entrar cada mes y cobrar a tiempo, en vez de
-                  descubrir el vencimiento cuando ya pasó. */}
-              {(() => {
-                const plan: any[] = Array.isArray(qf.plan_pagos) ? qf.plan_pagos : [];
-                const setPlan = (p: any[]) => setQf({ ...qf, plan_pagos: p });
-                const sumado = plan.reduce((a, x) => a + (Number(x.monto) || 0), 0);
-                const totalQ = Number(qf.total || 0);
-                const fin = (n: number) => { const d = new Date(); d.setMonth(d.getMonth() + n); return d.toISOString().slice(0, 10); };
-                return (
-                  <div style={{ marginTop: 12, background: '#fafbfd', border: '1px solid #e8eaf0', borderRadius: 10, padding: 12 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <label style={{ ...S.label, marginTop: 0, marginBottom: 0, flex: 1 }}>Plan de pagos (parcialidades)</label>
-                      <button onClick={() => setPlan([...plan, { id: 'p' + Date.now().toString(36) + plan.length, fecha: fin(plan.length), monto: '', concepto: plan.length === 0 ? 'Anticipo' : `Parcialidad ${plan.length + 1}` }])}
-                        style={{ ...S.btnSmall, marginRight: 0 }}>+ Parcialidad</button>
-                      {plan.length === 0 && totalQ > 0 && (
-                        <button onClick={() => setPlan([
-                          { id: 'p1', fecha: fin(0), monto: Math.round(totalQ / 2), concepto: 'Anticipo 50%' },
-                          { id: 'p2', fecha: fin(1), monto: totalQ - Math.round(totalQ / 2), concepto: 'Liquidación 50%' },
-                        ])} style={{ ...S.btnSmall, marginRight: 0 }}>50 / 50</button>
-                      )}
-                    </div>
-                    {plan.length === 0 ? (
-                      <div style={{ fontSize: '0.7rem', color: '#999' }}>Sin parcialidades: se cobra en un solo pago.</div>
-                    ) : plan.map((x: any, i: number) => (
-                      <div key={x.id || i} style={{ display: 'flex', gap: 6, marginBottom: 5, alignItems: 'center' }}>
-                        <input value={x.concepto || ''} onChange={e => setPlan(plan.map((y, j) => j === i ? { ...y, concepto: e.target.value } : y))}
-                          placeholder="concepto" style={{ ...S.input, flex: 1, fontSize: '0.75rem', padding: '6px 8px' }} />
-                        <input type="date" value={x.fecha || ''} onChange={e => setPlan(plan.map((y, j) => j === i ? { ...y, fecha: e.target.value } : y))}
-                          style={{ ...S.input, width: 140, fontSize: '0.75rem', padding: '6px 8px' }} />
-                        <input type="number" value={x.monto} onChange={e => setPlan(plan.map((y, j) => j === i ? { ...y, monto: e.target.value } : y))}
-                          placeholder="monto" style={{ ...S.input, width: 110, fontSize: '0.75rem', padding: '6px 8px' }} />
-                        <button onClick={() => setPlan(plan.filter((_, j) => j !== i))} style={{ ...S.btnSmall, marginRight: 0, color: '#b93333' }}>✕</button>
-                      </div>
-                    ))}
-                    {plan.length > 0 && (
-                      /* El descuadre se avisa, no se corrige solo: puede ser
-                         intencional (un saldo que se define después) y ajustar
-                         a la fuerza cambiaría lo pactado sin avisar. */
-                      <div style={{ fontSize: '0.7rem', marginTop: 4, color: Math.abs(sumado - totalQ) < 1 ? '#2e7d32' : '#b45309' }}>
-                        Suman {fmt(sumado)} de {fmt(totalQ)}
-                        {Math.abs(sumado - totalQ) >= 1 ? ` · faltan ${fmt(totalQ - sumado)} por repartir` : ' · cuadra'}
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
 
               {/* ── Calculadora de ROI ──
                   Antes eran cuatro campos de texto y lo único automático era
