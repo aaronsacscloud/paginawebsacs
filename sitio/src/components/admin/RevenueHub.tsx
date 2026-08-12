@@ -66,10 +66,15 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
   const [bankForm, setBankForm] = useState<any>({});
   const [altaBanco, setAltaBanco] = useState<any>(null);
   const [recup, setRecup] = useState<any>(null);
+  const [condicionesTpl, setCondicionesTpl] = useState<any[]>([]);
   const [allQuotes, setAllQuotes] = useState<any[]>([]);
   const [partnersById, setPartnersById] = useState<Record<string, { nombre: string; email?: string }>>({});
 
   const load = async () => {
+    // Aparte del Promise.all de abajo: meterlo ahí corría las posiciones del
+    // destructuring y las cotizaciones se cargaban con los datos del banco.
+    fetch('/api/revenue/condiciones').then(r => r.json())
+      .then(x => setCondicionesTpl(Array.isArray(x) ? x : [])).catch(() => {});
     const [d, ba, q, p] = await Promise.all([
       fetch('/api/revenue/dashboard').then(r => r.json()),
       fetch('/api/revenue/bank-accounts').then(r => r.json()),
@@ -234,7 +239,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
   const QuotesView = () => {
     const [quotes, setQuotes] = useState<any[]>([]);
     const [showDrawer, setShowDrawer] = useState(false);
-    const [qf, setQf] = useState<any>({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida en planes de pago. Soporte por chat SACS y WhatsApp incluido. Sin contratos de permanencia.' });
+    const [qf, setQf] = useState<any>({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: (condicionesTpl.find((t: any) => t.es_default) || condicionesTpl[0])?.texto || 'Precios en MXN. Migracion incluida en planes de pago. Soporte por chat SACS y WhatsApp incluido. Sin contratos de permanencia.' });
     const [qSearch, setQSearch] = useState('');
     const [qFilter, setQFilter] = useState<string>('all');
     const [qSort, setQSort] = useState<{ col: string; asc: boolean }>({ col: 'created_at', asc: false });
@@ -307,6 +312,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     // Ensure items is always an array
     const items = Array.isArray(qf.items) ? qf.items : [];
     const [cobrando, setCobrando] = useState<any>(null);
+    const [verMasOpc, setVerMasOpc] = useState(false);
 
     const addPlanItem = () => {
       setQf({ ...qf, items: [...items, { tipo: 'plan', nombre: 'controla', sucursales: 1, precio_unitario: 900, periodo: 'mensual', descuento_pct: 0, subtotal: 900 }] });
@@ -453,8 +459,6 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       meta.timeline_tipo = qf.timeline_tipo || '1suc';
       meta.mostrar_porque_sacs = qf.mostrar_porque_sacs !== undefined ? qf.mostrar_porque_sacs : true;
       meta.mostrar_implementacion = qf.mostrar_implementacion !== undefined ? qf.mostrar_implementacion : true;
-      if (qf.implementacion_nota) meta.implementacion_nota = qf.implementacion_nota;
-      else delete meta.implementacion_nota;
       if (qf.promo_label?.trim()) meta.promo_label = qf.promo_label.trim();
       else delete meta.promo_label;
       // El plan de parcialidades viaja con la cotización: es parte del trato.
@@ -534,7 +538,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       }
 
       setShowDrawer(false);
-      setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida. Soporte por chat SACS y WhatsApp. Sin contratos.', ...(() => { const d = bankAccounts.find((b: any) => b.es_default) || bankAccounts[0]; return d ? { bank_account_id: d.id, mostrar_banco: true } : {}; })() });
+      setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: (condicionesTpl.find((t: any) => t.es_default) || condicionesTpl[0])?.texto || 'Precios en MXN. Migracion incluida. Soporte por chat SACS y WhatsApp. Sin contratos.', ...(() => { const d = bankAccounts.find((b: any) => b.es_default) || bankAccounts[0]; return d ? { bank_account_id: d.id, mostrar_banco: true } : {}; })() });
       const d = await fetch('/api/revenue/quotes').then(r => r.json());
       setQuotes(Array.isArray(d) ? d : []);
       setSaving(false);
@@ -989,7 +993,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               style={{ ...S.btn, background: '#fff', color: '#666', border: '1px solid #e0e0e0', width: 38, height: 38, padding: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
             </button>
-            <button onClick={() => { setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida. Soporte por chat SACS y WhatsApp. Sin contratos.', ...(() => { const d = bankAccounts.find((b: any) => b.es_default) || bankAccounts[0]; return d ? { bank_account_id: d.id, mostrar_banco: true } : {}; })() }); setShowDrawer(true); }}
+            <button onClick={() => { setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: (condicionesTpl.find((t: any) => t.es_default) || condicionesTpl[0])?.texto || 'Precios en MXN. Migracion incluida. Soporte por chat SACS y WhatsApp. Sin contratos.', ...(() => { const d = bankAccounts.find((b: any) => b.es_default) || bankAccounts[0]; return d ? { bank_account_id: d.id, mostrar_banco: true } : {}; })() }); setShowDrawer(true); }}
               style={{ ...S.btn, background: '#4B7BE5', color: '#fff', padding: '8px 18px', fontWeight: 700 }}>+ Nueva cotización</button>
             {/* El dashboard cierra la fila y lleva el peso: es donde se empieza el día. */}
             <button onClick={() => setDashCot(true)}
@@ -2113,29 +2117,57 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
 
               {/* Visibility toggles */}
               <div style={{ marginBottom: 12 }}>
+                {/* ── Mostrar en cotización ──
+                    Trece casillas en fila hacían que ninguna se leyera. Arriba
+                    quedan las tres que sí se deciden por cliente; el resto vive
+                    detrás de "Ver más" porque se pone una vez y no se vuelve a
+                    tocar. */}
                 <div style={S.label}>Mostrar en cotización</div>
-                <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, background: '#f8f9fb', borderRadius: 8, padding: 10 }}>
-                  {[
-                    { key: 'mostrar_timer', label: 'Contador de tiempo (urgencia)', default: true },
-                    { key: 'mostrar_features', label: 'Detalle del plan (qué incluye)', default: true },
+                {(() => {
+                  const OPCIONES = [
+                    { key: 'mostrar_timer', label: 'Contador de tiempo (urgencia)', default: true, principal: true },
+                    { key: 'mostrar_features', label: 'Detalle del plan (qué incluye)', default: true, principal: true },
+                    { key: 'mostrar_firma', label: 'Firma digital', default: true, principal: true },
                     { key: 'mostrar_desglose', label: 'Resumen de pagos', default: true },
                     { key: 'mostrar_condiciones', label: 'Condiciones', default: true },
                     { key: 'mostrar_key_points', label: 'Minuta de la reunión', default: true },
                     { key: 'mostrar_roi', label: 'Calculadora de ROI', default: false },
                     { key: 'mostrar_antes_despues', label: 'Antes vs Después', default: false },
                     { key: 'mostrar_timeline', label: 'Timeline de implementación', default: true },
-                    { key: 'mostrar_implementacion', label: 'Proceso de implementación (pasos operativos)', default: true },
+                    { key: 'mostrar_implementacion', label: 'Proceso de implementación', default: true },
                     { key: 'mostrar_porque_sacs', label: '¿Por qué SACS? (historia, casos de éxito)', default: true },
-                    { key: 'mostrar_firma', label: 'Firma digital', default: true },
                     { key: 'mostrar_qr', label: 'Código QR', default: true },
                     { key: 'mostrar_animaciones', label: 'Números animados', default: true },
-                  ].map(opt => (
-                    <label key={opt.key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.75rem', color: '#555', cursor: 'pointer' }}>
-                      <input type="checkbox" checked={qf[opt.key] !== undefined ? qf[opt.key] : opt.default} onChange={e => setQf({ ...qf, [opt.key]: e.target.checked })} />
-                      {opt.label}
+                  ];
+                  const val = (o: any) => (qf[o.key] !== undefined ? qf[o.key] : o.default);
+                  const secundarias = OPCIONES.filter(o => !o.principal);
+                  // Cuántas de las de abajo están apagadas: si alguien las movió,
+                  // hay que poder verlo sin abrir el bloque.
+                  const apagadas = secundarias.filter(o => !val(o)).length;
+                  const fila = (o: any) => (
+                    <label key={o.key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.75rem', color: '#555', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={val(o)} onChange={e => setQf({ ...qf, [o.key]: e.target.checked })} />
+                      {o.label}
                     </label>
-                  ))}
-                </div>
+                  );
+                  return (
+                    <div style={{ background: '#f8f9fb', borderRadius: 8, padding: 10 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6 }}>
+                        {OPCIONES.filter(o => o.principal).map(fila)}
+                      </div>
+                      <button onClick={() => setVerMasOpc(!verMasOpc)}
+                        style={{ border: 'none', background: 'none', color: '#3764c4', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700, padding: '8px 0 0' }}>
+                        {verMasOpc ? 'Ver menos' : `Ver más (${secundarias.length})`}
+                        {!verMasOpc && apagadas > 0 && <span style={{ color: '#b45309', fontWeight: 600 }}> · {apagadas} apagada{apagadas === 1 ? '' : 's'}</span>}
+                      </button>
+                      {verMasOpc && (
+                        <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 6, marginTop: 8, paddingTop: 8, borderTop: '1px solid #ecedf1' }}>
+                          {secundarias.map(fila)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
                 {/* Timeline type selector */}
                 {(qf.mostrar_timeline !== undefined ? qf.mostrar_timeline : true) && (
                   <div style={{ marginTop: 8 }}>
@@ -2147,17 +2179,42 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                     </select>
                   </div>
                 )}
-                {/* Implementacion nota */}
-                {(qf.mostrar_implementacion !== undefined ? qf.mostrar_implementacion : true) && (
-                  <div style={{ marginTop: 8 }}>
-                    <label style={{ ...S.label, marginTop: 0 }}>Nota en proceso de implementación (opcional)</label>
-                    <textarea value={qf.implementacion_nota || ''} onChange={e => setQf({ ...qf, implementacion_nota: e.target.value })} placeholder="Ej. Tu migración incluye integración con SAP" style={{ ...S.input, height: 56, resize: 'vertical' as const, fontSize: '0.75rem' }} />
-                    <div style={{ fontSize: '0.625rem', color: '#bbb', marginTop: 4 }}>Se muestra al cliente en la cotización y en el link compartible del proceso.</div>
-                  </div>
-                )}
               </div>
 
-              <div><label style={S.label}>Condiciones</label><textarea value={qf.condiciones || ''} onChange={e => setQf({ ...qf, condiciones: e.target.value })} style={{ ...S.input, height: 60 }} /></div>
+              {/* ── Condiciones ──
+                  El texto vivía escrito a mano en cada cotización, así que cada
+                  quien mandaba su versión. Ahora se elige una plantilla y el
+                  texto queda COPIADO en la cotización: cambiar la plantilla
+                  después no altera lo que un cliente ya recibió. */}
+              <div>
+                <label style={S.label}>Condiciones</label>
+                <div style={{ display: 'flex', gap: 6, marginBottom: 6, flexWrap: 'wrap' as const }}>
+                  {condicionesTpl.map((t: any) => (
+                    <button key={t.id} onClick={() => setQf({ ...qf, condiciones: t.texto })}
+                      title={t.texto}
+                      style={{ border: '1px solid', borderColor: qf.condiciones === t.texto ? '#1a1a1a' : '#dcdce2',
+                        background: qf.condiciones === t.texto ? '#1a1a1a' : '#fff', color: qf.condiciones === t.texto ? '#fff' : '#555',
+                        borderRadius: 20, padding: '4px 12px', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}>
+                      {t.nombre}{t.es_default ? ' ·' : ''}
+                    </button>
+                  ))}
+                  <button onClick={async () => {
+                    const texto = (qf.condiciones || '').trim();
+                    if (texto.length < 10) { alert('Escribe primero las condiciones que quieres guardar.'); return; }
+                    const nombre = prompt('Nombre de la plantilla:', '');
+                    if (!nombre?.trim()) return;
+                    const r = await fetch('/api/revenue/condiciones', {
+                      method: 'POST', headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ nombre: nombre.trim(), texto }),
+                    }).then(x => x.json()).catch(() => null);
+                    if (r?.id) setCondicionesTpl([...condicionesTpl, r]);
+                    else alert(r?.error || 'No se pudo guardar la plantilla.');
+                  }} style={{ border: 'none', background: 'none', color: '#3764c4', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700 }}>
+                    Guardar esta como plantilla
+                  </button>
+                </div>
+                <textarea value={qf.condiciones || ''} onChange={e => setQf({ ...qf, condiciones: e.target.value })} style={{ ...S.input, height: 60 }} />
+              </div>
 
               {/* ── Parcialidades ──
                   Cuando se pacta en pagos, las FECHAS se acuerdan al cotizar, no
@@ -2436,6 +2493,18 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   {qf.email && <div style={{ fontSize: '0.75rem', color: '#888' }}>{qf.email}</div>}
                 </div>
 
+                {/* Contador. Vivía solo en la cotización real: se prendía la
+                    casilla y en la vista previa no pasaba nada, así que parecía
+                    que el interruptor estaba muerto. */}
+                {(qf.mostrar_timer !== false) && (
+                  <div style={{ margin: '0 32px 14px', background: '#fff6ed', border: '1px solid #fde3c7', borderRadius: 8, padding: '9px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#b45309' }}>
+                      {(() => { const d = daysUntil(qf.vigencia); return d === null ? 'Vigencia por definir' : d < 0 ? 'Vigencia vencida' : d === 0 ? 'Vence hoy' : `Faltan ${d} día${d === 1 ? '' : 's'}`; })()}
+                    </span>
+                    <span style={{ fontSize: '0.5625rem', color: '#c88a4a' }}>· cuenta regresiva en vivo para el cliente</span>
+                  </div>
+                )}
+
                 {/* Preview Key Points */}
                 {(qf.key_points || []).length > 0 && (qf.mostrar_key_points !== false) && (
                   <div style={{ padding: '14px 32px', borderTop: '1px solid #f0f0f0' }}>
@@ -2653,6 +2722,69 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   </div>
                 )}
 
+                {/* Timeline de implementación */}
+                {(qf.mostrar_timeline !== false) && (
+                  <div style={{ padding: '14px 32px', borderTop: '1px solid #f0f0f0' }}>
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#1a1a1a', marginBottom: 8 }}>Timeline de implementación</div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {(qf.timeline_tipo === '5massuc' ? ['Kickoff', 'Migración', 'Configuración', 'Capacitación', 'Go live']
+                        : qf.timeline_tipo === '2a5suc' ? ['Kickoff', 'Migración', 'Capacitación', 'Go live']
+                        : ['Kickoff', 'Configuración', 'Go live']).map((paso, i) => (
+                        <div key={paso} style={{ flex: 1, textAlign: 'center' as const }}>
+                          <div style={{ height: 4, background: i === 0 ? '#4B7BE5' : '#e6ecf8', borderRadius: 3 }} />
+                          <div style={{ fontSize: '0.5rem', color: '#999', marginTop: 4 }}>{paso}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Proceso de implementación */}
+                {(qf.mostrar_implementacion !== false) && (
+                  <div style={{ padding: '14px 32px', borderTop: '1px solid #f0f0f0' }}>
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#1a1a1a', marginBottom: 6 }}>Proceso de implementación</div>
+                    <div style={{ fontSize: '0.5625rem', color: '#999', lineHeight: 1.7 }}>
+                      Alta de la cuenta · Carga de catálogo e inventario · Configuración de sucursales y usuarios · Capacitación del equipo · Acompañamiento en el arranque
+                    </div>
+                  </div>
+                )}
+
+                {/* ¿Por qué SACS? */}
+                {(qf.mostrar_porque_sacs !== false) && (
+                  <div style={{ padding: '14px 32px', borderTop: '1px solid #f0f0f0' }}>
+                    <div style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#1a1a1a', marginBottom: 6 }}>¿Por qué SACS?</div>
+                    <div style={{ fontSize: '0.5625rem', color: '#999', lineHeight: 1.7 }}>Historia, casos de éxito y respaldo del equipo.</div>
+                  </div>
+                )}
+
+                {/* Firma digital y QR */}
+                {((qf.mostrar_firma !== false) || (qf.mostrar_qr !== false)) && (
+                  <div style={{ padding: '14px 32px', borderTop: '1px solid #f0f0f0', display: 'flex', gap: 14, alignItems: 'flex-end' }}>
+                    {(qf.mostrar_firma !== false) && (
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '0.5rem', fontWeight: 600, color: '#aaa', textTransform: 'uppercase' as const, letterSpacing: '0.08em', marginBottom: 6 }}>Firma digital</div>
+                        <div style={{ borderBottom: '1px solid #dcdce2', height: 26 }} />
+                        <div style={{ fontSize: '0.5rem', color: '#bbb', marginTop: 4 }}>El cliente firma desde la liga y queda registrada con fecha</div>
+                      </div>
+                    )}
+                    {(qf.mostrar_qr !== false) && (
+                      <div style={{ textAlign: 'center' as const }}>
+                        <div style={{ width: 46, height: 46, borderRadius: 6, background: 'repeating-conic-gradient(#1a1a1a 0% 25%, #fff 0% 50%) 0 0/9px 9px', border: '1px solid #e6e6ea' }} />
+                        <div style={{ fontSize: '0.5rem', color: '#bbb', marginTop: 4 }}>QR</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Números animados no tiene bloque: es un efecto que solo
+                    existe en la cotización viva. Se dice, en vez de dejar la
+                    casilla sin ningún eco visible. */}
+                {(qf.mostrar_animaciones !== false) && (
+                  <div style={{ padding: '8px 32px', fontSize: '0.5rem', color: '#c4c4c4', borderTop: '1px solid #f6f6f6' }}>
+                    Los montos se animan al abrir la cotización.
+                  </div>
+                )}
+
                 {/* Preview Footer */}
                 <div style={{ padding: '14px 32px', background: '#fafafa', borderTop: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', fontSize: '0.5625rem', color: '#bbb' }}>
                   <span><strong style={{ color: '#1a1a1a', fontFamily: "'Clash Display',sans-serif" }}>Sacs</strong> Sistema operativo para retailers</span>
@@ -2712,6 +2844,48 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 cobradas nunca generaron oportunidad, porque el puente solo corría
                 para borrador / enviada / aceptada. Ya está arreglado hacia
                 adelante; esto repara lo que quedó atrás. */}
+            {/* ── Plantillas de condiciones ── */}
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 800, marginBottom: 16 }}>Términos y condiciones</h2>
+            <div style={{ ...S.card, marginBottom: 24 }}>
+              <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: 12, lineHeight: 1.6 }}>
+                La marcada como <b>predeterminada</b> es la que trae una cotización nueva. Al elegir una plantilla, su texto
+                queda <b>copiado</b> en la cotización: cambiarla aquí no altera lo que un cliente ya recibió.
+              </div>
+              {condicionesTpl.map((t: any) => (
+                <div key={t.id} style={{ border: '1px solid #ececec', borderRadius: 9, padding: 10, marginBottom: 8 }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+                    <input value={t.nombre} onChange={e => setCondicionesTpl(condicionesTpl.map((x: any) => x.id === t.id ? { ...x, nombre: e.target.value } : x))}
+                      style={{ ...S.input, fontWeight: 700, maxWidth: 220 }} />
+                    {t.es_default
+                      ? <span style={{ ...S.badge, background: '#e8f5e9', color: '#2e7d32' }}>Predeterminada</span>
+                      : <button onClick={async () => {
+                          await fetch('/api/revenue/condiciones', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: t.id, es_default: true }) });
+                          setCondicionesTpl(condicionesTpl.map((x: any) => ({ ...x, es_default: x.id === t.id })));
+                        }} style={S.btnSmall}>Hacer predeterminada</button>}
+                    <span style={{ flex: 1 }} />
+                    <button onClick={async () => {
+                      await fetch('/api/revenue/condiciones', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: t.id, nombre: t.nombre, texto: t.texto }) });
+                      alert('Plantilla guardada.');
+                    }} style={S.btnSmall}>Guardar</button>
+                    <button onClick={async () => {
+                      if (!confirm(`¿Quitar la plantilla "${t.nombre}"?\n\nLas cotizaciones que ya la usaron conservan su texto.`)) return;
+                      await fetch('/api/revenue/condiciones', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: t.id }) });
+                      setCondicionesTpl(condicionesTpl.filter((x: any) => x.id !== t.id));
+                    }} style={{ ...S.btnSmall, color: '#E54B4B' }}>Quitar</button>
+                  </div>
+                  <textarea value={t.texto} onChange={e => setCondicionesTpl(condicionesTpl.map((x: any) => x.id === t.id ? { ...x, texto: e.target.value } : x))}
+                    style={{ ...S.input, height: 64, fontSize: '0.75rem', resize: 'vertical' as const }} />
+                </div>
+              ))}
+              <button onClick={async () => {
+                const r = await fetch('/api/revenue/condiciones', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ nombre: 'Nueva plantilla', texto: 'Escribe aquí los términos y condiciones.' }),
+                }).then(x => x.json()).catch(() => null);
+                if (r?.id) setCondicionesTpl([...condicionesTpl, r]);
+              }} style={S.btnSmall}>+ Nueva plantilla</button>
+            </div>
+
             <h2 style={{ fontSize: '1.125rem', fontWeight: 800, marginBottom: 16 }}>Oportunidades que faltan</h2>
             <div style={{ ...S.card, marginBottom: 24 }}>
               <div style={{ fontSize: '0.75rem', color: '#666', marginBottom: 12, lineHeight: 1.6 }}>
