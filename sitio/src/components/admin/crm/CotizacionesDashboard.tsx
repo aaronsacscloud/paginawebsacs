@@ -269,8 +269,10 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
   const der = orden.filter((_, i) => i % 2 === 1);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#fafafc', zIndex: 60, overflowY: 'auto' }}>
-      <div style={{ maxWidth: 1360, margin: '0 auto', padding: '26px 30px 60px' }}>
+    // Panel dentro del flujo de la página: el ancho lo pone el contenedor de
+    // Cotizaciones, así que abrir o cerrar el menú lateral lo reacomoda solo.
+    <div style={{ background: '#fafafc', border: '1px solid #f0eef4', borderRadius: 14, padding: '22px 24px 26px' }}>
+      <div>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9, marginBottom: 16 }}>
           <div style={{ flex: 1 }}>
             <h1 style={{ fontSize: '1.4rem', margin: 0, fontWeight: 800, letterSpacing: '-.015em' }}>Dashboard de cotizaciones</h1>
@@ -303,7 +305,7 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
 
         {d && (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14, marginBottom: 14 }}>
               <Kpi azul t="Cotizado" v={money(d.kpis.cotizado.valor)}
                 hijo={<><Delta v={d.kpis.cotizado.valor} a={d.kpis.cotizado.anterior} /> · {nombreMes(d.mes_anterior)} {money(d.kpis.cotizado.anterior)}</>} />
               <Kpi t={<span>Cobrado</span>} v={<span style={{ color: P }}>{money(d.kpis.cobrado.valor)}</span>}
@@ -314,7 +316,7 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
                 hijo={<><Delta v={d.kpis.dias.valor} a={d.kpis.dias.anterior} invertido /> · envío → pago</>} />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 14, alignItems: 'start' }}>
               <div>{izq.map(k => <div key={k}>{bloques[k]?.()}</div>)}</div>
               <div>{der.map(k => <div key={k}>{bloques[k]?.()}</div>)}</div>
             </div>

@@ -2416,8 +2416,12 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       {/* Content */}
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px' }}>
         {tab === 'dashboard' && <DashboardView />}
-        {dashCot && <CotizacionesDashboard onCerrar={() => setDashCot(false)} />}
-        {tab === 'cotizaciones' && <QuotesView />}
+        {/* El dashboard ocupa el lugar de la lista, no se encima: como panel
+            flotante quedaba por debajo del menú lateral y se cortaba al
+            abrirlo. Así el ancho lo decide el contenedor de siempre. */}
+        {tab === 'cotizaciones' && (dashCot
+          ? <CotizacionesDashboard onCerrar={() => setDashCot(false)} />
+          : <QuotesView />)}
         {tab === 'config' && (
           <div>
             {/* Campos personalizados del cliente: información interna de
