@@ -428,17 +428,22 @@ export const PUT: APIRoute = async ({ request }) => {
     } else if (data?.deal_id && (valorTotal !== (prev?.total || 0))) {
       // Total changed → sync deal amounts without moving stage
       await supabase.from('deals').update({ valor_total: valorTotal, valor_mensual: valorMensual }).eq('id', data.deal_id);
-    } else if (!data?.deal_id && data?.company_id && ['draft', 'sent', 'accepted'].includes(String(data?.estado))) {
-      // ── Ligar un cliente TAMBIÉN crea la oportunidad ──
-      // El puente solo se disparaba al pasar de borrador a enviada. Si la
-      // cotización ya estaba enviada y apenas ahora se le liga el cliente —el
-      // caso de las 32 que existen— la oportunidad no nacía nunca y la ficha del
-      // cliente se veía vacía aunque tuviera cotizaciones vivas por miles.
-      const etapa = data.estado === 'accepted' ? 'negociacion'
-        : data.estado === 'sent' ? 'cotizacion_enviada' : 'calificacion';
-      await syncQuoteToDeal(id, {
-        targetStage: etapa as any, valor_total: valorTotal, valor_mensual: valorMensual, trigger: 'quote_linked',
-      });
+    } else if (!data?.deal_id && data?.company_id) {
+      // ── Ligar un cliente crea la oportunidad, ESTÉ COMO ESTÉ LA COTIZACIÓN ──
+      // Antes esto solo corría para borrador, enviada y aceptada. Si la
+      // cotización ya estaba PAGADA cuando se le ligó el cliente, no se creaba
+      // nada: la venta entró y en el tablero nunca existió. De 11 pagadas, 8
+      // estaban así. Una pagada nace ya cerrada como ganada, con la fecha real
+      // del pago — no como si hubiera estado meses en el embudo.
+      const { etapaParaEstado } = await import('../../../lib/crm/sync-quote-deal');
+      const etapa = etapaParaEstado(String(data?.estado));
+      if (etapa) {
+        const cerrada = etapa === 'cerrada_ganada' || etapa === 'cerrada_perdida';
+        await syncQuoteToDeal(id, {
+          targetStage: etapa, valor_total: valorTotal, valor_mensual: valorMensual, trigger: 'quote_linked',
+          closed_at: cerrada ? (data.pagado_fecha || data.rechazado_fecha || data.vigencia || data.created_at) : undefined,
+        });
+      }
     }
   } catch (syncErr) {
     console.error('[quotes PUT] deal sync error:', syncErr);

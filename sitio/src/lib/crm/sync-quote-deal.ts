@@ -45,6 +45,22 @@ function parseNotas(notas: string | null | undefined): { text: string; meta: any
  * Ensure a contact exists for the given quote. Upserts by email/whatsapp if no contact_id.
  * Returns the contact_id.
  */
+// El estado de la cotización manda la etapa de su oportunidad. Estaba escrito
+// suelto en tres archivos y por eso 'paid' se quedó fuera del puente: ligar un
+// cliente a una cotización YA PAGADA no creaba nada, y la venta no existía en
+// el tablero. Aquí vive una sola vez.
+export function etapaParaEstado(estado: string): DealStage | null {
+  switch (estado) {
+    case 'draft': return 'calificacion';
+    case 'sent': return 'cotizacion_enviada';
+    case 'accepted': return 'negociacion';
+    case 'paid': return 'cerrada_ganada';
+    case 'expired':
+    case 'rejected': return 'cerrada_perdida';
+    default: return null;   // plantilla, deleted: no son oportunidades
+  }
+}
+
 export async function ensureContactForQuote(quote: any): Promise<string | null> {
   if (quote.contact_id) return quote.contact_id;
   const email = (quote.email || '').trim().toLowerCase();
@@ -217,7 +233,7 @@ async function ensureCompanyForQuote(quote: any, contactId: string | null): Prom
   return null;
 }
 
-export async function createDealFromQuote(quote: any, targetStage: DealStage, ctx: { trigger?: string; motivo_perdida?: string } = {}) {
+export async function createDealFromQuote(quote: any, targetStage: DealStage, ctx: { trigger?: string; motivo_perdida?: string; closed_at?: string } = {}) {
   const contactId = await ensureContactForQuote(quote);
   if (!contactId) {
     console.warn('[sync-quote-deal] cannot create deal without contact');
@@ -331,13 +347,15 @@ export async function createDealFromQuote(quote: any, targetStage: DealStage, ct
   Object.assign(insertPayload, montos);
   // Empresa garantizada: sin ella la oportunidad no aparece en ninguna ficha.
   insertPayload.company_id = await ensureCompanyForQuote(quote, contactId) || insertPayload.company_id || null;
+  // La fecha real, no la de hoy: una venta de julio recuperada en agosto no
+  // puede aparecer cerrada en agosto — desplazaría el mes en todo reporte.
   if (targetStage === 'cerrada_ganada') {
     insertPayload.probabilidad = 100;
-    insertPayload.closed_at = new Date().toISOString();
+    insertPayload.closed_at = ctx.closed_at || new Date().toISOString();
   }
   if (targetStage === 'cerrada_perdida') {
     insertPayload.probabilidad = 0;
-    insertPayload.closed_at = new Date().toISOString();
+    insertPayload.closed_at = ctx.closed_at || new Date().toISOString();
     if (ctx.motivo_perdida) insertPayload.motivo_perdida = ctx.motivo_perdida;
   }
 
@@ -395,6 +413,7 @@ export async function syncQuoteToDeal(
     targetStage: DealStage;
     motivo_perdida?: string;
     trigger?: string;
+    closed_at?: string;
     valor_total?: number;
     valor_mensual?: number;
   }

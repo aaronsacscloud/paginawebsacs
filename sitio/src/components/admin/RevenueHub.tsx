@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import CotizacionActividad from './crm/CotizacionActividad';
 import CamposConfig from './crm/CamposPersonalizados';
 import CotizacionesDashboard from './crm/CotizacionesDashboard';
+import RegistrarPagoModal, { resumenCierre } from './crm/RegistrarPagoModal';
 import { plans as plansData } from '../../data/plans';
 import { PLANS, PLAN_PRICES, IMPL_PRICES, METODOS, COMISION_CATEGORIAS, COMISION_LABELS, COMISION_RATES, fmt, fmtDate } from '../../lib/quotes/constants';
 import { parseMeta, serializeMeta, addTimelineEvent } from '../../lib/quotes/meta';
@@ -304,6 +305,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
 
     // Ensure items is always an array
     const items = Array.isArray(qf.items) ? qf.items : [];
+    const [cobrando, setCobrando] = useState<any>(null);
 
     const addPlanItem = () => {
       setQf({ ...qf, items: [...items, { tipo: 'plan', nombre: 'controla', sucursales: 1, precio_unitario: 900, periodo: 'mensual', descuento_pct: 0, subtotal: 900 }] });
@@ -537,28 +539,23 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       setSaving(false);
     };
 
-    const markQuotePaid = async (q: any) => {
-      const metodo = prompt(
-        `Marcar ${q.numero} como pagada.\n\n¿Con qué método pagó el cliente?\n(transferencia / tarjeta / efectivo / oxxo / otro)`,
-        'transferencia'
-      );
-      if (!metodo) return;
-      const referencia = prompt(`Referencia / # de operación (opcional):`, '') || '';
-      setSaving(true);
-      const res = await fetch('/api/revenue/mark-paid', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quoteId: q.id, metodo: metodo.trim().toLowerCase(), referencia: referencia.trim() || null, enviar_acuse: true }),
-      });
-      const data = await res.json().catch(() => ({}));
+    // Abre el modal. Los dos prompt() encadenados se escribían a mano —un typo
+    // en "transferencia" y el reporte por método deja de cuadrar— y en celular
+    // eran impracticables. Tampoco decían que cobrar cierra la oportunidad y
+    // convierte al lead en cliente.
+    const markQuotePaid = (q: any) => setCobrando(q);
+
+    const trasCobrar = async (data: any) => {
       const d = await fetch('/api/revenue/quotes').then(r => r.json());
       setQuotes(Array.isArray(d) ? d : []);
-      setSaving(false);
+      setCobrando(null);
+      const extra = resumenCierre(data?.cierre);
+      const linea = extra ? '\n' + extra.charAt(0).toUpperCase() + extra.slice(1) + '.' : '';
       if (data?.acuse_url) {
-        const goNow = confirm(`✓ Cotización marcada como pagada.\nAcuse generado: ${data.acuse_url}\n${data?.acuse_email?.ok ? 'Email enviado al cliente.' : 'No se pudo enviar el email automáticamente — abre el acuse y reenvíalo manualmente.'}\n\n¿Abrir el acuse ahora?`);
+        const goNow = confirm(`✓ Pago registrado.${linea}\n\nAcuse: ${data.acuse_url}\n${data?.acuse_email?.ok ? 'Email enviado al cliente.' : 'No se pudo enviar el email — abre el acuse y reenvíalo.'}\n\n¿Abrir el acuse ahora?`);
         if (goNow) window.open(data.acuse_url + '?admin', '_blank');
       } else {
-        alert('Cotización marcada como pagada (no se generó acuse — verifica que el total > 0).');
+        alert(`✓ Pago registrado.${linea}`);
       }
     };
 
@@ -970,6 +967,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
 
     return (
       <div>
+        {cobrando && <RegistrarPagoModal quote={cobrando} onCerrar={() => setCobrando(null)} onListo={trasCobrar} />}
         {/* ─── Top header: title + actions ─── */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 12 }}>
           <div>

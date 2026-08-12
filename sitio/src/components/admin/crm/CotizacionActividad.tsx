@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import RegistrarPagoModal, { resumenCierre } from './RegistrarPagoModal';
 
 /* ═══ Panel de actividad de una cotización ═══
  *
@@ -37,6 +38,7 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
   const [nuevoAbono, setNuevoAbono] = useState<any>(null);
   const [editPago, setEditPago] = useState<string | null>(null);
   const [ep, setEp] = useState<any>({});
+  const [cobrando, setCobrando] = useState(false);
   const [editFechaPago, setEditFechaPago] = useState(false);
 
   const cargar = () => fetch(`/api/revenue/quotes/actividad?id=${quoteId}`).then(r => r.json()).then(setD).catch(() => {});
@@ -113,16 +115,10 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
   async function cambiarEstado(accion: 'aceptada' | 'pagada' | 'rechazada' | 'extender') {
     setBusy(true);
     try {
-      if (accion === 'pagada') {
-        const metodo = prompt('¿Con qué se pagó?\n\ntransferencia · efectivo · tarjeta · oxxo · otro', 'transferencia');
-        if (!metodo) return;
-        const referencia = prompt('Referencia (opcional):', '') || '';
-        const j = await fetch('/api/revenue/mark-paid', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ quoteId: quoteId, metodo, referencia }),
-        }).then(r => r.json());
-        if (j?.error) { alert(j.error); return; }
-      }
+      // El cobro se registra en su modal: forma de pago con botones (escrita a
+      // mano se colaban typos y el reporte por método dejaba de cuadrar),
+      // referencia, fecha y el aviso de que cobrar cierra la oportunidad.
+      if (accion === 'pagada') { setCobrando(true); return; }
       if (accion === 'aceptada') {
         if (!confirm('¿Marcar esta cotización como ACEPTADA?\n\nSe registra como aceptada por el cliente y avanza su oportunidad.')) return;
         const j = await fetch('/api/revenue/mark-accepted', {
@@ -166,6 +162,18 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
 
   return (
     <>
+      {cobrando && d?.quote && (
+        <RegistrarPagoModal
+          quote={{ id: quoteId, numero: d.quote.numero, empresa: d.quote.empresa, total: d.quote.total, abonado: d.total_pagado || 0 }}
+          onCerrar={() => setCobrando(false)}
+          onListo={(r: any) => {
+            setCobrando(false);
+            const extra = resumenCierre(r?.cierre);
+            if (extra) alert('✓ Pago registrado.\n' + extra.charAt(0).toUpperCase() + extra.slice(1) + '.');
+            cargar(); onCambio?.();
+          }}
+        />
+      )}
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 1199 }} />
       <div style={P.panel}>
         <div style={{ position: 'sticky', top: 0, background: '#fff', borderBottom: '1px solid #f0f0f0', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 10, zIndex: 2 }}>

@@ -116,11 +116,48 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
+    // ─── Cobrar cierra la oportunidad ───
+    // Toda la maquinaria de "ganar" ya existía —convertir el lead en cliente,
+    // crear la suscripción, registrar el pago único como licencia vitalicia—
+    // pero solo se disparaba moviendo la tarjeta en el tablero. Cobrar desde la
+    // cotización se la saltaba entera: la venta quedaba cobrada y el cliente
+    // seguía siendo lead, sin suscripción.
+    //
+    // Nada de esto puede tumbar el cobro: el pago ya está registrado y el acuse
+    // enviado. Si algo falla aquí se reporta en la respuesta y se resuelve
+    // después, pero el dinero no se pierde.
+    let cierre: any = null;
+    try {
+      const { syncQuoteToDeal } = await import('../../../lib/crm/sync-quote-deal');
+      const { data: q2 } = await supabase.from('quotes')
+        .select('id, deal_id, company_id, contact_id, total, pagado_fecha').eq('id', quoteId).maybeSingle();
+      const r = await syncQuoteToDeal(quoteId, {
+        targetStage: 'cerrada_ganada',
+        valor_total: Math.round(Number(q2?.total || 0)),
+        trigger: 'quote_paid',
+        closed_at: q2?.pagado_fecha || nowIso,
+      });
+      // Materializar: lead → cliente, suscripción del recurrente y pago único.
+      // Es idempotente, así que volver a cobrar no duplica nada.
+      if (r.dealId) {
+        const { data: deal } = await supabase.from('deals').select('*').eq('id', r.dealId).maybeSingle();
+        if (deal) {
+          const { materializarDealGanado } = await import('../../../lib/crm/deal-cierre');
+          cierre = await materializarDealGanado(deal);
+        }
+      }
+      cierre = { ...(cierre || {}), deal_id: r.dealId, oportunidad_creada: r.created };
+    } catch (e) {
+      console.error('[mark-paid] cierre de oportunidad:', e);
+      cierre = { error: String(e) };
+    }
+
     return new Response(JSON.stringify({
       success: true,
       payment_id: createdPaymentId,
       acuse_url: createdPaymentId ? `/acuse/${createdPaymentId}` : null,
       acuse_email: acuseGenerated,
+      cierre,
     }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
