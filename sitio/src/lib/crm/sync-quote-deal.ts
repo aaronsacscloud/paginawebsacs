@@ -267,6 +267,21 @@ export async function createDealFromQuote(quote: any, targetStage: DealStage, ct
   let montos: any = {};
   try {
     const { calcularTotales } = await import('./deal-items');
+    // ── El TOTAL de la cotización manda ──
+    // Las líneas vienen en bruto: el descuento global (fijo o porcentaje) y el
+    // IVA solo existen en el total. Si el desglose se copiara tal cual, la
+    // oportunidad diría "valor $159,476" y "pago único $200,699" a la vez — dos
+    // números distintos para la misma venta, y el KPI contaría $41,223 de más.
+    //
+    // Se reparte el total ENTRE las líneas con un factor proporcional, en vez de
+    // recalcular el descuento: así cuadra exactamente, sin importar si el
+    // descuento fue fijo, porcentual o si lleva IVA.
+    const bruto = itemsDeal.reduce((a: number, x: any) => a + Number(x.precio_unitario || 0), 0);
+    const totalQuote = Number(quote.total || 0);
+    const factor = bruto > 0 && totalQuote > 0 ? totalQuote / bruto : 1;
+    if (factor !== 1) {
+      for (const x of itemsDeal) x.precio_unitario = Math.round(Number(x.precio_unitario || 0) * factor * 100) / 100;
+    }
     const t = calcularTotales(itemsDeal as any, 0);
     montos = {
       items: itemsDeal, mrr: t.mrr, valor_unico: t.valor_unico,
@@ -292,7 +307,6 @@ export async function createDealFromQuote(quote: any, targetStage: DealStage, ct
     nombre: `Oportunidad — ${quote.empresa || quote.contacto || 'Cliente'}`,
     origen: 'cotizacion',
     categoria,
-    ...montos,
     contact_id: contactId,
     // La empresa de la COTIZACIÓN manda: es la que se eligió al ligarla. La del
     // contacto es el respaldo — si el contacto está en otra empresa (o en
@@ -311,6 +325,10 @@ export async function createDealFromQuote(quote: any, targetStage: DealStage, ct
     // el deal lo refleja para que la commission vaya al partner correcto.
     referrer_partner_id: (contact as any)?.referrer_partner_id || null,
   };
+  // Los montos calculados van AL FINAL para que no los pisen los campos sueltos
+  // de arriba (valor_total, valor_mensual): antes se colaban en medio y la
+  // oportunidad quedaba con el total bien y el desglose en bruto.
+  Object.assign(insertPayload, montos);
   // Empresa garantizada: sin ella la oportunidad no aparece en ninguna ficha.
   insertPayload.company_id = await ensureCompanyForQuote(quote, contactId) || insertPayload.company_id || null;
   if (targetStage === 'cerrada_ganada') {
