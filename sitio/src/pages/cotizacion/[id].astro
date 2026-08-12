@@ -89,6 +89,7 @@ const timelineTipo = quoteMeta.timeline_tipo || '1suc';
 const showImplementacion = quoteMeta.mostrar_implementacion !== undefined ? quoteMeta.mostrar_implementacion : true;
 const implementacionNota = quoteMeta.implementacion_nota || '';
 const promoLabel = (quoteMeta.promo_label || '').trim();
+
 const extensions = Array.isArray(quoteMeta.extensions) ? quoteMeta.extensions : [];
 
 // ─── Personalización extendida del partner (giro, video, adjuntos, paquetes) ───
@@ -111,6 +112,33 @@ if (rawVideoUrl) {
 const paquetes = Array.isArray(quoteMeta.paquetes) && quoteMeta.paquetes.length >= 2 ? quoteMeta.paquetes : null;
 const opcionElegida = quoteMeta.opcion_elegida || null;
 const itemsAll = Array.isArray(quote.items) ? quote.items : [];
+
+// ─── Plantilla Ejecutiva ───
+// Para quien decide y NO estuvo en la llamada: el dueño, el socio, el contador.
+// El 60% de las cotizaciones que se pierden mueren en silencio, y las que se
+// cierran se abren 11 veces — o sea, circulan. Esa persona no va a leer nueve
+// pestañas: necesita el problema, el número y cuándo se paga sola, arriba.
+// El detalle sigue abajo para quien lo quiera.
+const esEjecutiva = template === 'ejecutiva';
+const mensualPlanPub = itemsAll
+  .filter((i: any) => i.tipo === 'plan' && !i.es_promocion)
+  .reduce((a: number, i: any) => a + (Number(i.subtotal) || 0) / (i.periodo === 'anual' ? 12 : 1), 0);
+const paybackTxt = (() => {
+  const ahorro = Number(roi?.ahorro_mensual || 0);
+  if (!hasRoi || ahorro <= 0 || mensualPlanPub <= 0) return null;
+  const dias = Math.round((mensualPlanPub / ahorro) * 30);
+  if (dias <= 1) return 'menos de un día';
+  if (dias < 45) return `${dias} días`;
+  const m = Math.round(dias / 30);
+  return `${m} ${m === 1 ? 'mes' : 'meses'}`;
+})();
+const planPrincipalNombre = (() => {
+  const p = itemsAll.find((i: any) => i.tipo === 'plan' && !i.es_promocion);
+  if (!p) return '';
+  const n = String(p.nombre || '').replace(/_/g, ' ');
+  return n ? 'Plan ' + n.charAt(0).toUpperCase() + n.slice(1) : '';
+})();
+const arranqueTxt = timelineTipo === '5massuc' ? '4 semanas' : timelineTipo === '2a5suc' ? '3 semanas' : '2 semanas';
 const paqueteTotales: Record<string, { itemsSubtotal: number; globalDisc: number; ivaMonto: number; grandTotal: number }> = {};
 if (paquetes) {
   for (const p of paquetes) {
@@ -366,6 +394,47 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
       {quote.email && <div class="quote-client-detail">{quote.email}</div>}
       {quote.whatsapp && <div class="quote-client-detail">{quote.whatsapp}</div>}
     </div>
+
+    {esEjecutiva && (
+      <div class="quote-exec">
+        <div class="quote-exec-band">
+          <span>Recomendación</span>
+          <span>{planPrincipalNombre || 'Propuesta SACS'}</span>
+        </div>
+        <div class="quote-exec-body">
+          {roi?.problema && (
+            <>
+              <div class="quote-exec-k">Situación</div>
+              <p class="quote-exec-sit">{roi.problema}</p>
+            </>
+          )}
+          <div class="quote-exec-grid">
+            {mensualPlanPub > 0 && (
+              <div class="quote-exec-kpi"><div class="k">Inversión mensual</div><div class="v">${Math.round(mensualPlanPub).toLocaleString('es-MX')}</div></div>
+            )}
+            {hasRoi && (
+              <div class="quote-exec-kpi"><div class="k">Ahorro estimado</div><div class="v quote-exec-green">${Math.round(roi.ahorro_mensual).toLocaleString('es-MX')}</div></div>
+            )}
+            {paybackTxt && (
+              <div class="quote-exec-kpi"><div class="k">Se paga en</div><div class="v">{paybackTxt}</div></div>
+            )}
+            <div class="quote-exec-kpi"><div class="k">Arranque</div><div class="v">{arranqueTxt}</div></div>
+          </div>
+          {/* El supuesto va junto al número: un ahorro sin decir de dónde sale
+              es lo primero que se pone en duda, y aquí lo lee alguien que no
+              estuvo en la junta y no puede preguntar. */}
+          {hasRoi && roi?.drivers && (
+            <div class="quote-exec-sup">
+              Estimado sobre: {(roi.drivers || []).filter((d: any) => d.on).map((d: any) => d.label.toLowerCase()).join(' · ')}
+            </div>
+          )}
+          <div class="quote-exec-total">
+            <span>Primer pago</span>
+            <strong>${Math.round(quote.total || 0).toLocaleString('es-MX')} {quote.moneda}</strong>
+          </div>
+        </div>
+      </div>
+    )}
 
     {partnerAssigned && (
       <div class="quote-asesor">
@@ -2789,6 +2858,34 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
   /* Footer */
   .quote-footer { flex-direction: column; gap: 10px; padding: 20px 24px; text-align: center; }
 }
+
+/* ─── Plantilla Ejecutiva ─────────────────────────────────────────────────
+   Resumen para quien decide y no estuvo en la llamada. El detalle sigue
+   abajo en sus pestañas: esto no reemplaza la cotización, la encabeza. */
+.quote-exec { border: 1px solid #e6e6ea; border-radius: 14px; overflow: hidden; margin: 0 0 22px; background: #fff; }
+.quote-exec-band { background: #0f7a56; color: #fff; padding: 10px 18px; font-size: .78rem; font-weight: 800; display: flex; justify-content: space-between; gap: 12px; }
+.quote-exec-body { padding: 16px 18px 18px; }
+.quote-exec-k { font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #9a9a9a; }
+.quote-exec-sit { font-size: .9rem; color: #444; line-height: 1.5; margin: 4px 0 14px; }
+.quote-exec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.quote-exec-kpi { background: #f7f8fa; border-radius: 10px; padding: 12px 14px; }
+.quote-exec-kpi .k { font-size: .58rem; color: #9a9a9a; text-transform: uppercase; letter-spacing: .06em; }
+.quote-exec-kpi .v { font-size: 1.3rem; font-weight: 800; letter-spacing: -.02em; margin-top: 3px; }
+.quote-exec-green { color: #0f7a56; }
+.quote-exec-sup { font-size: .68rem; color: #9a9a9a; line-height: 1.55; margin-top: 12px; }
+.quote-exec-total { display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid #f0f0f2; margin-top: 14px; padding-top: 12px; font-size: .82rem; }
+.quote-exec-total strong { font-size: 1.15rem; font-weight: 800; }
+.quote-dark .quote-exec { background: rgba(255,255,255,.03); border-color: rgba(255,255,255,.1); }
+.quote-dark .quote-exec-kpi { background: rgba(255,255,255,.05); }
+.quote-dark .quote-exec-sit { color: rgba(255,255,255,.75); }
+
+/* ─── Plantilla Interactiva ───────────────────────────────────────────────
+   Las opciones dejan de ser una fila de botones y se vuelven el centro del
+   documento: la pregunta pasa de "¿compras?" a "¿cuál?". */
+.quote-interactiva .paquete-tab { border-width: 2px; border-radius: 14px; padding: 18px 18px; transition: transform .12s ease, box-shadow .12s ease; }
+.quote-interactiva .paquete-tab:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(16,24,40,.10); }
+.quote-interactiva .paquete-tab[data-active] { box-shadow: 0 10px 26px rgba(124,58,237,.20); border-color: #7C3AED !important; background: #7C3AED !important; }
+
 </style>
 
 <script>

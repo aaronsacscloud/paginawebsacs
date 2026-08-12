@@ -314,6 +314,27 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     const [cobrando, setCobrando] = useState<any>(null);
     const [verMasOpc, setVerMasOpc] = useState(false);
 
+    // ─── Paquetes: el cliente elige ENTRE opciones, no si compra ───
+    // La maquinaria ya existía —la cotización pública pinta las pestañas y
+    // recalcula el total de cada una— pero solo el portal de partners podía
+    // armarlas. Desde aquí no había forma, así que la plantilla Interactiva
+    // habría salido vacía.
+    const paquetes: any[] = Array.isArray(qf.paquetes) ? qf.paquetes : [];
+    const paquetesOn = paquetes.length >= 2;
+    const togglePaquetes = () => {
+      if (paquetesOn) {
+        // Al apagar, los conceptos vuelven a ser de todos: dejarlos marcados
+        // los escondería si mañana se vuelve a encender con otras opciones.
+        setQf({ ...qf, paquetes: [], items: items.map((it: any) => { const { paquete: _p, ...r } = it; return r; }) });
+      } else {
+        setQf({ ...qf, paquetes: [{ id: 'a', nombre: 'Opción Esencial' }, { id: 'b', nombre: 'Opción Completa' }] });
+      }
+    };
+    const totalDePaquete = (pid: string) => calcQuoteTotals({
+      items: items.filter((it: any) => !it.paquete || it.paquete === pid),
+      descuento_global: qf.descuento_global, descuento_tipo: qf.descuento_tipo, iva_mode: ivaMode,
+    }).grandTotal;
+
     const addPlanItem = () => {
       setQf({ ...qf, items: [...items, { tipo: 'plan', nombre: 'controla', sucursales: 1, precio_unitario: 900, periodo: 'mensual', descuento_pct: 0, subtotal: 900 }] });
     };
@@ -384,6 +405,13 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                               comisión del partner. Si se deja vacía, el sistema
                               la adivina leyendo el nombre — que es lo que pasaba
                               con todo antes de separar los botones. */}
+                          {paquetesOn && (
+                            <select value={item.paquete || ''} onChange={e => updateItem(idx, 'paquete', e.target.value || undefined)}
+                              title="¿En qué opción aparece este concepto?" style={{ ...S.input, fontSize: '0.6875rem' }}>
+                              <option value="">En todas las opciones</option>
+                              {paquetes.map((p: any) => <option key={p.id} value={p.id}>Solo {p.nombre}</option>)}
+                            </select>
+                          )}
                           {!item.es_promocion && (
                             <select value={item.categoria_comision || ''} onChange={e => updateItem(idx, 'categoria_comision', e.target.value)}
                               title="Define la comisión del partner" style={{ ...S.input, fontSize: '0.6875rem' }}>
@@ -470,6 +498,8 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       } else delete meta.plan_pagos;
       if (qf.minuta_raw?.trim()) meta.minuta_raw = qf.minuta_raw.trim();
       else delete meta.minuta_raw;
+      if (paquetes.length >= 2) meta.paquetes = paquetes;
+      else delete meta.paquetes;
       if (qf.key_points?.length) meta.key_points = qf.key_points;
       else delete meta.key_points;
       if (qf.roi) meta.roi = qf.roi;
@@ -503,9 +533,15 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
         notas = addTimelineEvent(notas, 'edited');
       }
       // Remove frontend-only fields
-      const { _custom_days, _es_cliente, _ctx_n, _ctx_ultima, logo_url, iva_mode: _im, _pago_mode, mostrar_timer: _mt, mostrar_features: _mf, mostrar_desglose: _md, mostrar_condiciones: _mc, mostrar_key_points: _mkp, key_points: _kp, roi: _roi, antes_despues: _ad, mostrar_roi: _mr, mostrar_antes_despues: _mad, mostrar_firma: _msf, mostrar_qr: _mq, mostrar_animaciones: _ma, mostrar_timeline: _mtl, timeline_tipo: _tt, mostrar_implementacion: _mi, implementacion_nota: _in, mostrar_porque_sacs: _mps, promo_label: _pl, minuta_raw: _mr2, ...rest } = qf;
+      const { _custom_days, _es_cliente, _ctx_n, _ctx_ultima, logo_url, iva_mode: _im, _pago_mode, mostrar_timer: _mt, mostrar_features: _mf, mostrar_desglose: _md, mostrar_condiciones: _mc, mostrar_key_points: _mkp, key_points: _kp, roi: _roi, antes_despues: _ad, mostrar_roi: _mr, mostrar_antes_despues: _mad, mostrar_firma: _msf, mostrar_qr: _mq, mostrar_animaciones: _ma, mostrar_timeline: _mtl, timeline_tipo: _tt, mostrar_implementacion: _mi, implementacion_nota: _in, mostrar_porque_sacs: _mps, promo_label: _pl, minuta_raw: _mr2, paquetes: _pq, ...rest } = qf;
       const folioOffset = typeof window !== 'undefined' ? parseInt(localStorage.getItem('sacs_folio_offset') || '0') || 0 : 0;
-      const body = { ...rest, notas, subtotal: itemsSubtotal, iva_incluido: ivaMode !== 'sin', iva_monto: Math.round(ivaMonto), total: Math.round(grandTotal), estado: rest.estado || 'sent', _folio_offset: folioOffset };
+      // Con opciones, el documento se guarda con el total de la PRIMERA: sumar los
+      // conceptos de todas daría un total que no corresponde a nada que el cliente
+      // pueda comprar. Cuando elija otra y acepte, el servidor lo recalcula.
+      const tCot = paquetes.length >= 2
+        ? calcQuoteTotals({ items: items.filter((it: any) => !it.paquete || it.paquete === paquetes[0].id), descuento_global: qf.descuento_global, descuento_tipo: qf.descuento_tipo, iva_mode: ivaMode })
+        : { itemsSubtotal, ivaMonto, grandTotal };
+      const body = { ...rest, notas, subtotal: tCot.itemsSubtotal, iva_incluido: ivaMode !== 'sin', iva_monto: Math.round(tCot.ivaMonto), total: Math.round(tCot.grandTotal), estado: rest.estado || 'sent', _folio_offset: folioOffset };
 
       // Save quote first
       const res = await fetch('/api/revenue/quotes', { method: isEdit ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -1254,7 +1290,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                         <button onClick={(e) => { e.stopPropagation(); setQMenuRow(qMenuRow === q.id ? null : q.id); }} style={{ ...S.btnSmall, background: '#fff', padding: '4px 8px', marginRight: 0 }} title="Más acciones">⋮</button>
                         {qMenuRow === q.id && (
                           <div data-q-menu style={{ position: 'absolute' as const, right: 0, top: 34, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 8, padding: 6, minWidth: 200, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', zIndex: 50, textAlign: 'left' as const }}>
-                            <button onClick={() => { const { meta: m } = parseMeta(q.notas); setQf({ ...q, items: Array.isArray(q.items) ? q.items : [], logo_url: m.logo_url || '', iva_mode: m.iva_mode || (q.iva_incluido ? 'suma' : 'sin'), mostrar_timer: m.mostrar_timer !== undefined ? m.mostrar_timer : true, mostrar_features: m.mostrar_features !== undefined ? m.mostrar_features : true, mostrar_desglose: m.mostrar_desglose !== undefined ? m.mostrar_desglose : true, mostrar_condiciones: m.mostrar_condiciones !== undefined ? m.mostrar_condiciones : true, mostrar_key_points: m.mostrar_key_points !== undefined ? m.mostrar_key_points : true, key_points: m.key_points || [], roi: m.roi || null, antes_despues: m.antes_despues || [], mostrar_roi: m.mostrar_roi || false, mostrar_antes_despues: m.mostrar_antes_despues || false, mostrar_firma: m.mostrar_firma !== undefined ? m.mostrar_firma : true, mostrar_qr: m.mostrar_qr !== undefined ? m.mostrar_qr : true, mostrar_animaciones: m.mostrar_animaciones !== undefined ? m.mostrar_animaciones : true, mostrar_timeline: m.mostrar_timeline !== undefined ? m.mostrar_timeline : true, timeline_tipo: m.timeline_tipo || '1suc', mostrar_implementacion: m.mostrar_implementacion !== undefined ? m.mostrar_implementacion : true, implementacion_nota: m.implementacion_nota || '', mostrar_porque_sacs: m.mostrar_porque_sacs !== undefined ? m.mostrar_porque_sacs : true, promo_label: m.promo_label || '', minuta_raw: m.minuta_raw || '', plan_pagos: m.plan_pagos || [] }); setShowDrawer(true); setMinutaError(null); setQMenuRow(null); }}
+                            <button onClick={() => { const { meta: m } = parseMeta(q.notas); setQf({ ...q, items: Array.isArray(q.items) ? q.items : [], logo_url: m.logo_url || '', iva_mode: m.iva_mode || (q.iva_incluido ? 'suma' : 'sin'), mostrar_timer: m.mostrar_timer !== undefined ? m.mostrar_timer : true, mostrar_features: m.mostrar_features !== undefined ? m.mostrar_features : true, mostrar_desglose: m.mostrar_desglose !== undefined ? m.mostrar_desglose : true, mostrar_condiciones: m.mostrar_condiciones !== undefined ? m.mostrar_condiciones : true, mostrar_key_points: m.mostrar_key_points !== undefined ? m.mostrar_key_points : true, key_points: m.key_points || [], roi: m.roi || null, antes_despues: m.antes_despues || [], mostrar_roi: m.mostrar_roi || false, mostrar_antes_despues: m.mostrar_antes_despues || false, mostrar_firma: m.mostrar_firma !== undefined ? m.mostrar_firma : true, mostrar_qr: m.mostrar_qr !== undefined ? m.mostrar_qr : true, mostrar_animaciones: m.mostrar_animaciones !== undefined ? m.mostrar_animaciones : true, mostrar_timeline: m.mostrar_timeline !== undefined ? m.mostrar_timeline : true, timeline_tipo: m.timeline_tipo || '1suc', mostrar_implementacion: m.mostrar_implementacion !== undefined ? m.mostrar_implementacion : true, implementacion_nota: m.implementacion_nota || '', mostrar_porque_sacs: m.mostrar_porque_sacs !== undefined ? m.mostrar_porque_sacs : true, promo_label: m.promo_label || '', minuta_raw: m.minuta_raw || '', plan_pagos: m.plan_pagos || [], paquetes: Array.isArray(m.paquetes) ? m.paquetes : [] }); setShowDrawer(true); setMinutaError(null); setQMenuRow(null); }}
                               style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex' }}>
                               ✏️ Editar
                             </button>
@@ -1262,7 +1298,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                               style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 4, justifyContent: 'flex-start', border: '1px solid #e6e6e6', background: '#fafafa', padding: '9px 10px', display: 'flex', fontWeight: 700, color: '#1a1a1a' }}>
                               Ver actividad y pagos
                             </button>
-                            <button onClick={() => { const { meta: m } = parseMeta(q.notas); setQf({ ...q, items: Array.isArray(q.items) ? q.items : [], logo_url: m.logo_url || '', iva_mode: m.iva_mode || (q.iva_incluido ? 'suma' : 'sin'), mostrar_timer: m.mostrar_timer !== undefined ? m.mostrar_timer : true, mostrar_features: m.mostrar_features !== undefined ? m.mostrar_features : true, mostrar_desglose: m.mostrar_desglose !== undefined ? m.mostrar_desglose : true, mostrar_condiciones: m.mostrar_condiciones !== undefined ? m.mostrar_condiciones : true, mostrar_key_points: m.mostrar_key_points !== undefined ? m.mostrar_key_points : true, key_points: m.key_points || [], roi: m.roi || null, antes_despues: m.antes_despues || [], mostrar_roi: m.mostrar_roi || false, mostrar_antes_despues: m.mostrar_antes_despues || false, mostrar_firma: m.mostrar_firma !== undefined ? m.mostrar_firma : true, mostrar_qr: m.mostrar_qr !== undefined ? m.mostrar_qr : true, mostrar_animaciones: m.mostrar_animaciones !== undefined ? m.mostrar_animaciones : true, mostrar_timeline: m.mostrar_timeline !== undefined ? m.mostrar_timeline : true, timeline_tipo: m.timeline_tipo || '1suc', mostrar_implementacion: m.mostrar_implementacion !== undefined ? m.mostrar_implementacion : true, implementacion_nota: m.implementacion_nota || '', mostrar_porque_sacs: m.mostrar_porque_sacs !== undefined ? m.mostrar_porque_sacs : true, promo_label: m.promo_label || '', minuta_raw: m.minuta_raw || '', plan_pagos: m.plan_pagos || [] }); setShowDrawer(true); setMinutaError(null); setQMenuRow(null); }}
+                            <button onClick={() => { const { meta: m } = parseMeta(q.notas); setQf({ ...q, items: Array.isArray(q.items) ? q.items : [], logo_url: m.logo_url || '', iva_mode: m.iva_mode || (q.iva_incluido ? 'suma' : 'sin'), mostrar_timer: m.mostrar_timer !== undefined ? m.mostrar_timer : true, mostrar_features: m.mostrar_features !== undefined ? m.mostrar_features : true, mostrar_desglose: m.mostrar_desglose !== undefined ? m.mostrar_desglose : true, mostrar_condiciones: m.mostrar_condiciones !== undefined ? m.mostrar_condiciones : true, mostrar_key_points: m.mostrar_key_points !== undefined ? m.mostrar_key_points : true, key_points: m.key_points || [], roi: m.roi || null, antes_despues: m.antes_despues || [], mostrar_roi: m.mostrar_roi || false, mostrar_antes_despues: m.mostrar_antes_despues || false, mostrar_firma: m.mostrar_firma !== undefined ? m.mostrar_firma : true, mostrar_qr: m.mostrar_qr !== undefined ? m.mostrar_qr : true, mostrar_animaciones: m.mostrar_animaciones !== undefined ? m.mostrar_animaciones : true, mostrar_timeline: m.mostrar_timeline !== undefined ? m.mostrar_timeline : true, timeline_tipo: m.timeline_tipo || '1suc', mostrar_implementacion: m.mostrar_implementacion !== undefined ? m.mostrar_implementacion : true, implementacion_nota: m.implementacion_nota || '', mostrar_porque_sacs: m.mostrar_porque_sacs !== undefined ? m.mostrar_porque_sacs : true, promo_label: m.promo_label || '', minuta_raw: m.minuta_raw || '', plan_pagos: m.plan_pagos || [], paquetes: Array.isArray(m.paquetes) ? m.paquetes : [] }); setShowDrawer(true); setMinutaError(null); setQMenuRow(null); }}
                               style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 1, justifyContent: 'flex-start', border: 'none', background: 'transparent', padding: '7px 10px', display: 'flex', textDecoration: 'none', color: '#1a1a1a' }}>Editar</button>
                             <button onClick={() => { duplicateQuote(q); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 1, justifyContent: 'flex-start', border: 'none', background: 'transparent', padding: '7px 10px', display: 'flex', textDecoration: 'none', color: '#1a1a1a' }}>Duplicar</button>
                             <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#a3a3a3', textTransform: 'uppercase', letterSpacing: '0.09em', padding: '9px 10px 3px' }}>Compartir</div>
@@ -1933,6 +1969,64 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 );
               })()}
 
+              {/* ── Paquetes ──
+                  Cambia la pregunta: de "¿compras?" a "¿cuál?". Solo tiene
+                  sentido con la plantilla Interactiva, así que se enciende sola
+                  al elegirla y se avisa si falta una de las dos cosas. */}
+              <div style={{ marginBottom: 14, borderTop: '1px solid #f0f0f2', paddingTop: 12 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={paquetesOn} onChange={togglePaquetes} />
+                  Ofrecer 2–3 opciones al cliente
+                </label>
+                {paquetesOn && (
+                  <div style={{ marginTop: 10, background: '#f8f9fb', borderRadius: 8, padding: 10 }}>
+                    <div style={{ fontSize: '0.71rem', color: '#777', marginBottom: 8, lineHeight: 1.5 }}>
+                      Asigna cada concepto a una opción con el selector de su tarjeta, o déjalo en todas.
+                    </div>
+                    {paquetes.map((p: any, pi: number) => {
+                      const n = items.filter((it: any) => !it.paquete || it.paquete === p.id).length;
+                      return (
+                        <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                          <input value={p.nombre}
+                            onChange={e => setQf({ ...qf, paquetes: paquetes.map((x: any, i: number) => i === pi ? { ...x, nombre: e.target.value } : x) })}
+                            style={{ ...S.input, maxWidth: 200 }} />
+                          <span style={{ fontSize: '0.72rem', color: '#888' }}>{n} concepto{n === 1 ? '' : 's'} · <b style={{ color: '#1a1a1a' }}>{fmt(totalDePaquete(p.id))}</b></span>
+                          {paquetes.length > 2 && (
+                            <button onClick={() => setQf({ ...qf, paquetes: paquetes.filter((_: any, i: number) => i !== pi), items: items.map((it: any) => it.paquete === p.id ? { ...it, paquete: undefined } : it) })}
+                              style={{ background: 'none', border: 'none', color: '#E54B4B', cursor: 'pointer' }}>✕</button>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {paquetes.length < 3 && (
+                      <button onClick={() => {
+                        const usados = paquetes.map((p: any) => p.id);
+                        const next = ['a', 'b', 'c'].find(x => !usados.includes(x)) || 'c';
+                        setQf({ ...qf, paquetes: [...paquetes, { id: next, nombre: 'Opción Premium' }] });
+                      }} style={S.btnSmall}>+ Otra opción</button>
+                    )}
+                    <div style={{ fontSize: '0.68rem', color: '#999', marginTop: 8 }}>
+                      El total de la cotización es el de la primera opción. Cuando el cliente elija otra y acepte, el documento se queda con esa.
+                    </div>
+                  </div>
+                )}
+                {/* Las dos mitades tienen que ir juntas: paquetes sin plantilla
+                    Interactiva se ven como una lista más, y la plantilla sin
+                    paquetes no tiene nada que ofrecer. */}
+                {paquetesOn && qf.template !== 'interactiva' && (
+                  <div style={{ fontSize: '0.71rem', color: '#b45309', marginTop: 8 }}>
+                    Tienes opciones armadas pero la plantilla no es la Interactiva.
+                    <button onClick={() => setQf({ ...qf, template: 'interactiva' })} style={{ border: 'none', background: 'none', color: '#3764c4', cursor: 'pointer', fontWeight: 700, fontSize: '0.71rem' }}>Cambiar a Interactiva</button>
+                  </div>
+                )}
+                {!paquetesOn && qf.template === 'interactiva' && (
+                  <div style={{ fontSize: '0.71rem', color: '#b45309', marginTop: 8 }}>
+                    La plantilla Interactiva necesita opciones para que el cliente elija.
+                    <button onClick={togglePaquetes} style={{ border: 'none', background: 'none', color: '#3764c4', cursor: 'pointer', fontWeight: 700, fontSize: '0.71rem' }}>Crear dos opciones</button>
+                  </div>
+                )}
+              </div>
+
               {/* Totals & Config */}
               <div style={{ background: '#f8f9fb', borderRadius: 10, padding: 16, marginBottom: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginBottom: 8 }}>
@@ -2020,7 +2114,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               {/* Config */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
                 <div><label style={S.label}>Moneda</label><select value={qf.moneda} onChange={e => setQf({ ...qf, moneda: e.target.value })} style={S.input}><option value="MXN">MXN</option><option value="USD">USD</option></select></div>
-                <div><label style={S.label}>Template</label><select value={qf.template} onChange={e => setQf({ ...qf, template: e.target.value })} style={S.input}><option value="modern">Modern</option><option value="dark">Dark</option><option value="classic">Classic</option></select></div>
+                <div><label style={S.label}>Template</label><select value={qf.template} onChange={e => setQf({ ...qf, template: e.target.value })} style={S.input}><option value="modern">Moderna</option><option value="dark">Oscura</option><option value="interactiva">Interactiva · el cliente elige</option><option value="ejecutiva">Ejecutiva · una pantalla</option></select></div>
               </div>
 
               {/* Promo label */}
@@ -2492,6 +2586,44 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   {qf.contacto && <div style={{ fontSize: '0.75rem', color: '#888' }}>{qf.contacto}</div>}
                   {qf.email && <div style={{ fontSize: '0.75rem', color: '#888' }}>{qf.email}</div>}
                 </div>
+
+                {/* Encabezado de la plantilla Ejecutiva, también en la vista
+                    previa: elegir plantilla sin ver el cambio es elegir a ciegas. */}
+                {qf.template === 'ejecutiva' && (
+                  <div style={{ margin: '0 32px 14px', border: '1px solid #e6e6ea', borderRadius: 10, overflow: 'hidden' }}>
+                    <div style={{ background: '#0f7a56', color: '#fff', padding: '7px 11px', fontSize: '0.6rem', fontWeight: 800, display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Recomendación</span>
+                      <span>{(() => { const pl = items.find((i: any) => i.tipo === 'plan' && !i.es_promocion); return pl ? `Plan ${String(pl.nombre || '').replace(/_/g, ' ')}` : 'Propuesta SACS'; })()}</span>
+                    </div>
+                    <div style={{ padding: 11 }}>
+                      {qf.roi?.problema && <div style={{ fontSize: '0.58rem', color: '#666', marginBottom: 8, lineHeight: 1.5 }}>{qf.roi.problema}</div>}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(88px, 1fr))', gap: 6 }}>
+                        {[
+                          ['Inversión mensual', fmt(items.filter((i: any) => i.tipo === 'plan' && !i.es_promocion).reduce((a: number, i: any) => a + (Number(i.subtotal) || 0) / (i.periodo === 'anual' ? 12 : 1), 0)), '#1a1a1a'],
+                          ...(qf.roi?.ahorro_mensual > 0 ? [['Ahorro estimado', fmt(qf.roi.ahorro_mensual), '#0f7a56']] : []),
+                          ['Arranque', qf.timeline_tipo === '5massuc' ? '4 semanas' : qf.timeline_tipo === '2a5suc' ? '3 semanas' : '2 semanas', '#1a1a1a'],
+                        ].map(([k, v, c]: any) => (
+                          <div key={k} style={{ background: '#f7f8fa', borderRadius: 7, padding: 7 }}>
+                            <div style={{ fontSize: '0.46rem', color: '#9a9a9a', textTransform: 'uppercase' as const, letterSpacing: '.05em' }}>{k}</div>
+                            <div style={{ fontSize: '0.78rem', fontWeight: 800, color: c }}>{v}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Las opciones, cuando la cotización las ofrece */}
+                {paquetesOn && (
+                  <div style={{ margin: '0 32px 14px', display: 'flex', gap: 6 }}>
+                    {paquetes.map((p: any, i: number) => (
+                      <div key={p.id} style={{ flex: 1, border: '2px solid', borderColor: i === 0 ? '#7C3AED' : '#e5e5e5', background: i === 0 ? '#7C3AED' : '#fff', color: i === 0 ? '#fff' : '#1a1a1a', borderRadius: 9, padding: '8px 9px' }}>
+                        <div style={{ fontSize: '0.55rem', opacity: 0.75 }}>{p.nombre}</div>
+                        <div style={{ fontSize: '0.72rem', fontWeight: 800 }}>{fmt(totalDePaquete(p.id))}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Contador. Vivía solo en la cotización real: se prendía la
                     casilla y en la vista previa no pasaba nada, así que parecía
