@@ -848,8 +848,8 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     // baila cada vez que cambia el contenido — es lo que hacía que se vieran
     // cuadradas y descuadradas entre sí.
     const anchoCol: Record<string, number | undefined> = {
-      numero: 104, created_at: 108, empresa: undefined, origen: 130,
-      total: 128, vigencia: 132, estado: 140, views: 78, actions: 150,
+      numero: 92, created_at: 96, empresa: undefined, origen: 110,
+      total: 114, vigencia: 114, estado: 112, views: 60, actions: 104,
     };
     const alinCol: Record<string, 'left' | 'right' | 'center'> = { total: 'right', views: 'center', actions: 'right' };
 
@@ -1046,7 +1046,11 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
         {/* ─── Table ─── */}
         <div style={{ ...S.card, padding: 0, overflow: 'hidden' }}>
           <div style={{ overflowX: 'auto' as const }}>
-            <table style={S.table}>
+            {/* `fixed` hace que los anchos de arriba se respeten y que la
+                columna sin ancho (Empresa) absorba lo que sobre: al 80% ya no
+                queda hueco a la derecha y al 100% no se desborda cortando
+                Acciones. `minWidth` es el piso antes de permitir scroll. */}
+            <table style={{ ...S.table, tableLayout: 'fixed' as const, minWidth: 1040 }}>
               <thead>
                 <tr>
                   <th style={{ ...S.th, width: 36, padding: '8px 0 8px 16px', position: 'sticky' as const, top: 0, background: '#fafafa', zIndex: 2 }}>
@@ -1055,12 +1059,12 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   {qVisibleCols.has('numero') && <SortHeader col="numero" label="#" />}
                   {qVisibleCols.has('created_at') && <SortHeader col="created_at" label="Fecha" />}
                   {qVisibleCols.has('empresa') && <SortHeader col="empresa" label="Empresa" />}
-                  {qVisibleCols.has('origen') && <th style={{ ...S.th, position: 'sticky' as const, top: 0, background: '#fafafa', zIndex: 2, whiteSpace: 'nowrap' as const }}>Origen</th>}
+                  {qVisibleCols.has('origen') && <th style={{ ...S.th, width: anchoCol.origen, position: 'sticky' as const, top: 0, background: '#fafafa', zIndex: 2, whiteSpace: 'nowrap' as const }}>Origen</th>}
                   {qVisibleCols.has('total') && <SortHeader col="total" label="Total" />}
                   {qVisibleCols.has('vigencia') && <SortHeader col="vigencia" label="Vigencia" />}
                   {qVisibleCols.has('estado') && <SortHeader col="estado" label="Estado" />}
                   {qVisibleCols.has('views') && <SortHeader col="views" label="Vistas" />}
-                  {qVisibleCols.has('actions') && <th style={{ ...S.th, position: 'sticky' as const, top: 0, background: '#fafafa', zIndex: 2, textAlign: 'right' as const }}>Acciones</th>}
+                  {qVisibleCols.has('actions') && <th style={{ ...S.th, width: anchoCol.actions, position: 'sticky' as const, top: 0, background: '#fafafa', zIndex: 2, textAlign: 'right' as const }}>Acciones</th>}
                 </tr>
               </thead>
               <tbody>
@@ -1093,9 +1097,10 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                         <div style={{ fontWeight: 600, color: '#1a1a1a', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{q.empresa || '—'}</div>
                         {(q.contacto || q.email) && <div title={`${q.contacto || ''}${q.contacto && q.email ? ' · ' : ''}${q.email || ''}`} style={{ fontSize: '0.6875rem', color: '#999', marginTop: 1, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{q.contacto}{q.contacto && q.email ? ' · ' : ''}{q.email}</div>}
                       </td>}
-                      {qVisibleCols.has('origen') && <td style={{ ...S.td, padding: rowPad, whiteSpace: 'nowrap' as const }}>
+                      {qVisibleCols.has('origen') && <td style={{ ...S.td, padding: rowPad, whiteSpace: 'nowrap' as const, overflow: 'hidden' }}>
                         {q.partner_id ? (
-                          <span style={{ display: 'inline-block', padding: '3px 8px', borderRadius: 999, background: '#EEF2FB', color: '#3764C4', fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.02em' }}>
+                          <span title={`Partner: ${partnersById[q.partner_id]?.nombre || 'Partner'}`}
+                            style={{ display: 'inline-block', maxWidth: '100%', padding: '3px 8px', borderRadius: 999, background: '#EEF2FB', color: '#3764C4', fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const, verticalAlign: 'middle' }}>
                             P: {partnersById[q.partner_id]?.nombre || 'Partner'}
                           </span>
                         ) : (
@@ -1141,12 +1146,16 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                           ) : <span title="Nadie la ha abierto todavía." style={{ color: '#ddd', fontSize: '0.75rem', cursor: 'help' }}>—</span>;
                         })()}
                       </td>}
-                      {qVisibleCols.has('actions') && <td style={{ ...S.td, padding: rowPad, textAlign: 'right' as const, whiteSpace: 'nowrap' as const, position: 'relative' as const }}>
-                        <a href={`/cotizacion/${q.id}?admin=1`} target="_blank" rel="noopener" style={{ ...S.btnSmall, textDecoration: 'none', display: 'inline-flex', marginRight: 4 }}>Ver</a>
-                        <button onClick={() => { const { meta: m } = parseMeta(q.notas); setQf({ ...q, items: Array.isArray(q.items) ? q.items : [], logo_url: m.logo_url || '', iva_mode: m.iva_mode || (q.iva_incluido ? 'suma' : 'sin'), mostrar_timer: m.mostrar_timer !== undefined ? m.mostrar_timer : true, mostrar_features: m.mostrar_features !== undefined ? m.mostrar_features : true, mostrar_desglose: m.mostrar_desglose !== undefined ? m.mostrar_desglose : true, mostrar_condiciones: m.mostrar_condiciones !== undefined ? m.mostrar_condiciones : true, mostrar_key_points: m.mostrar_key_points !== undefined ? m.mostrar_key_points : true, key_points: m.key_points || [], roi: m.roi || null, antes_despues: m.antes_despues || [], mostrar_roi: m.mostrar_roi || false, mostrar_antes_despues: m.mostrar_antes_despues || false, mostrar_firma: m.mostrar_firma !== undefined ? m.mostrar_firma : true, mostrar_qr: m.mostrar_qr !== undefined ? m.mostrar_qr : true, mostrar_animaciones: m.mostrar_animaciones !== undefined ? m.mostrar_animaciones : true, mostrar_timeline: m.mostrar_timeline !== undefined ? m.mostrar_timeline : true, timeline_tipo: m.timeline_tipo || '1suc', mostrar_implementacion: m.mostrar_implementacion !== undefined ? m.mostrar_implementacion : true, implementacion_nota: m.implementacion_nota || '', mostrar_porque_sacs: m.mostrar_porque_sacs !== undefined ? m.mostrar_porque_sacs : true, promo_label: m.promo_label || '', minuta_raw: m.minuta_raw || '', plan_pagos: m.plan_pagos || [] }); setShowDrawer(true); setMinutaError(null); }} style={S.btnSmall}>Editar</button>
+                      {qVisibleCols.has('actions') && <td style={{ ...S.td, padding: `${rowPad.split(' ')[0]} 12px ${rowPad.split(' ')[0]} 2px`, textAlign: 'right' as const, whiteSpace: 'nowrap' as const, position: 'relative' as const }}>
+                        <a href={`/cotizacion/${q.id}?admin=1`} target="_blank" rel="noopener" style={{ ...S.btnSmall, textDecoration: 'none', display: 'inline-flex', marginRight: 4, padding: '4px 9px' }}>Ver</a>
+
                         <button onClick={(e) => { e.stopPropagation(); setQMenuRow(qMenuRow === q.id ? null : q.id); }} style={{ ...S.btnSmall, background: '#fff', padding: '4px 8px', marginRight: 0 }} title="Más acciones">⋮</button>
                         {qMenuRow === q.id && (
                           <div data-q-menu style={{ position: 'absolute' as const, right: 0, top: 34, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 8, padding: 6, minWidth: 200, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', zIndex: 50, textAlign: 'left' as const }}>
+                            <button onClick={() => { const { meta: m } = parseMeta(q.notas); setQf({ ...q, items: Array.isArray(q.items) ? q.items : [], logo_url: m.logo_url || '', iva_mode: m.iva_mode || (q.iva_incluido ? 'suma' : 'sin'), mostrar_timer: m.mostrar_timer !== undefined ? m.mostrar_timer : true, mostrar_features: m.mostrar_features !== undefined ? m.mostrar_features : true, mostrar_desglose: m.mostrar_desglose !== undefined ? m.mostrar_desglose : true, mostrar_condiciones: m.mostrar_condiciones !== undefined ? m.mostrar_condiciones : true, mostrar_key_points: m.mostrar_key_points !== undefined ? m.mostrar_key_points : true, key_points: m.key_points || [], roi: m.roi || null, antes_despues: m.antes_despues || [], mostrar_roi: m.mostrar_roi || false, mostrar_antes_despues: m.mostrar_antes_despues || false, mostrar_firma: m.mostrar_firma !== undefined ? m.mostrar_firma : true, mostrar_qr: m.mostrar_qr !== undefined ? m.mostrar_qr : true, mostrar_animaciones: m.mostrar_animaciones !== undefined ? m.mostrar_animaciones : true, mostrar_timeline: m.mostrar_timeline !== undefined ? m.mostrar_timeline : true, timeline_tipo: m.timeline_tipo || '1suc', mostrar_implementacion: m.mostrar_implementacion !== undefined ? m.mostrar_implementacion : true, implementacion_nota: m.implementacion_nota || '', mostrar_porque_sacs: m.mostrar_porque_sacs !== undefined ? m.mostrar_porque_sacs : true, promo_label: m.promo_label || '', minuta_raw: m.minuta_raw || '', plan_pagos: m.plan_pagos || [] }); setShowDrawer(true); setMinutaError(null); setQMenuRow(null); }}
+                              style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex' }}>
+                              ✏️ Editar
+                            </button>
                             <button onClick={() => { setVerActividad(q.id); setQMenuRow(null); }}
                               style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', fontWeight: 700 }}>
                               🕓 Actividad y pagos
