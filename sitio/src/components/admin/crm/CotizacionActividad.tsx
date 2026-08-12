@@ -107,6 +107,60 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
     try { navigator.clipboard?.writeText(l.join('\n')); alert('Historial copiado'); } catch { /* */ }
   }
 
+  // Los cambios de estado se hacen DESDE AQUÍ: es la pantalla donde se ve el
+  // historial, los abonos y las vistas, o sea el contexto para decidir. En el
+  // menú de la lista eran cuatro opciones más entre las que había que buscar.
+  async function cambiarEstado(accion: 'aceptada' | 'pagada' | 'rechazada' | 'extender') {
+    setBusy(true);
+    try {
+      if (accion === 'pagada') {
+        const metodo = prompt('¿Con qué se pagó?\n\ntransferencia · efectivo · tarjeta · oxxo · otro', 'transferencia');
+        if (!metodo) return;
+        const referencia = prompt('Referencia (opcional):', '') || '';
+        const j = await fetch('/api/revenue/mark-paid', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ quoteId: quoteId, metodo, referencia }),
+        }).then(r => r.json());
+        if (j?.error) { alert(j.error); return; }
+      }
+      if (accion === 'aceptada') {
+        if (!confirm('¿Marcar esta cotización como ACEPTADA?\n\nSe registra como aceptada por el cliente y avanza su oportunidad.')) return;
+        const j = await fetch('/api/revenue/mark-accepted', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ quoteId: quoteId, aceptado_por: 'admin' }),
+        }).then(r => r.json());
+        if (j?.error) { alert(j.error); return; }
+      }
+      if (accion === 'rechazada') {
+        // El motivo es obligatorio: sin él, en tres meses no se sabe si se
+        // pierde por precio, por función o por no dar seguimiento.
+        const op = prompt('¿Por qué se rechazó?\n\n1 No aceptó el monto\n2 Contrató otro sistema\n3 No era el momento\n4 Le faltaba una función\n5 Nunca respondió\n6 Canceló el proyecto\n7 Otro\n\nEscribe el número:', '1');
+        if (!op) return;
+        const mapa: Record<string, string> = { '1': 'precio', '2': 'competidor', '3': 'timing', '4': 'no_fit', '5': 'sin_respuesta', '6': 'cancelo_proyecto', '7': 'otro' };
+        const motivo = mapa[String(op).trim()];
+        if (!motivo) { alert('Escribe un número del 1 al 7.'); return; }
+        const detalle = prompt('¿Algo que agregar? (obligatorio si elegiste "Otro")', '') || '';
+        if (motivo === 'otro' && !detalle.trim()) { alert('Escribe el motivo.'); return; }
+        const j = await fetch('/api/revenue/mark-rejected', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ quoteId: quoteId, motivo, detalle }),
+        }).then(r => r.json());
+        if (j?.error) { alert(j.error); return; }
+      }
+      if (accion === 'extender') {
+        const dias = prompt('¿Cuántos días más de vigencia?', '7');
+        if (!dias) return;
+        const j = await fetch('/api/revenue/extend-quote', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ quoteId: quoteId, days: parseInt(dias) || 7 }),
+        }).then(r => r.json());
+        if (j?.error) { alert(j.error); return; }
+      }
+      await refrescar();
+    } catch (e: any) { alert('No se pudo: ' + (e?.message || e)); }
+    finally { setBusy(false); }
+  }
+
   const wa = String(q.whatsapp || '').replace(/\D/g, '');
   const link = typeof window !== 'undefined' ? `${window.location.origin}/cotizacion/${q.id}` : '';
 
@@ -175,6 +229,26 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
                 {d.archivado.junto_con?.length ? ` · junto con ${d.archivado.junto_con.join(', ')}` : ''}
               </div>
             )}
+          </div>
+
+          {/* ── Cambiar estado ── */}
+          {/* Aquí y no en el menú de la lista: este es el lugar donde ya estás
+              viendo abonos, vistas e historial, que es lo que te dice si toca
+              marcarla pagada, extenderla o darla por perdida. */}
+          <div style={P.card}>
+            <div style={P.h}>Cambiar estado</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {q.estado !== 'accepted' && q.estado !== 'paid' && (
+                <button style={P.btnG} disabled={busy} onClick={() => cambiarEstado('aceptada')}>Marcar aceptada</button>
+              )}
+              {q.estado !== 'paid' && (
+                <button style={{ ...P.btnG, color: '#0f7a56', borderColor: '#cfe9df', fontWeight: 700 }} disabled={busy} onClick={() => cambiarEstado('pagada')}>Marcar pagada</button>
+              )}
+              <button style={P.btnG} disabled={busy} onClick={() => cambiarEstado('extender')}>Extender vigencia</button>
+              {q.estado !== 'rejected' && q.estado !== 'paid' && (
+                <button style={{ ...P.btnG, color: '#b4302f', borderColor: '#f0cfcf' }} disabled={busy} onClick={() => cambiarEstado('rechazada')}>Marcar rechazada</button>
+              )}
+            </div>
           </div>
 
           {/* ── Pagos y abonos ── */}

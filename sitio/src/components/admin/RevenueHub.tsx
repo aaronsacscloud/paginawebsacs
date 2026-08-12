@@ -610,16 +610,18 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     // ─── Filter, search, sort, paginate ───
     const estadoLabels: Record<string, string> = { draft: 'Borrador', sent: 'Enviada', accepted: 'Aceptada', paid: 'Pagada', expired: 'Vencida', rejected: 'Rechazada' };
     const estadoColors: Record<string, { bg: string; fg: string; dot: string }> = {
-      draft:    { bg: '#f5f5f5', fg: '#666',    dot: '#999' },
-      sent:     { bg: '#fff3e0', fg: '#b35500', dot: '#e65100' },
-      accepted: { bg: '#e8f5e9', fg: '#1b5e20', dot: '#2e7d32' },
-      paid:     { bg: '#e3f2fd', fg: '#0d47a1', dot: '#1565c0' },
-      expired:  { bg: '#fce4ec', fg: '#880e4f', dot: '#c62828' },
-      rejected: { bg: '#f3f4f6', fg: '#6b7280', dot: '#9ca3af' },
+      // El color agrupa por lo que hay que hacer, no una tinta por estado:
+      // gris = fuera de juego · ámbar = en su cancha · azul = hay compromiso ·
+      // verde = cobrado · rojo = urge hoy.
+      draft:    { bg: '#f4f5f7', fg: '#5b6472', dot: '#98a2b3' },
+      sent:     { bg: '#fdf3e3', fg: '#a15c07', dot: '#d97706' },
+      accepted: { bg: '#eaf1fd', fg: '#2c5fc4', dot: '#4B7BE5' },
+      paid:     { bg: '#e7f5ef', fg: '#0f7a56', dot: '#0f9d68' },
+      expired:  { bg: '#fdecec', fg: '#b4302f', dot: '#dc2626' },
+      rejected: { bg: '#f4f5f7', fg: '#5b6472', dot: '#98a2b3' },
       // Derivados, no capturados: se calculan de los abonos y de las vistas, así
       // que funcionan hacia atrás y no se pueden desincronizar.
-      parcial:  { bg: '#e0f2fe', fg: '#0369a1', dot: '#0284c7' },
-      vista:    { bg: '#eef2ff', fg: '#3764c4', dot: '#4B7BE5' },
+      parcial:  { bg: '#eaf1fd', fg: '#2c5fc4', dot: '#4B7BE5' },
     };
 
     /**
@@ -627,11 +629,10 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
      * pagó una parte. Y una enviada que el cliente abrió no es lo mismo que una
      * que quizá ni le llegó — la primera se persigue, la segunda se reenvía.
      */
-    const estadoVisual = (q: any, vistas: number): string => {
+    const estadoVisual = (q: any, _vistas: number): string => {
       const abonado = Number(q.abonado || 0);
       const total = Number(q.total || 0);
       if (q.estado !== 'paid' && abonado > 0 && abonado < total - 0.01) return 'parcial';
-      if (q.estado === 'sent' && vistas > 0) return 'vista';
       return q.estado;
     };
 
@@ -1035,7 +1036,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                  apuntada por las dos. */
               <button onClick={() => setAEliminar(filteredQuotes.filter((q: any) => qSelected.has(q.id)))}
                 style={{ ...S.btnSmall, background: '#fdeaea', color: '#b93333', borderColor: 'transparent', fontWeight: 700 }}>
-                🗑 Archivar ({qSelected.size})
+                🗑 Eliminar ({qSelected.size})
               </button>
             )}
             <button onClick={exportCsv} style={{ ...S.btnSmall, background: '#fff', color: '#1a1a1a', borderColor: 'transparent' }}>Exportar selección</button>
@@ -1108,9 +1109,11 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                         )}
                       </td>}
                       {qVisibleCols.has('total') && <td style={{ ...S.td, padding: rowPad, fontWeight: 700, color: '#1a1a1a', whiteSpace: 'nowrap' as const, textAlign: 'right' as const }}>{fmt(q.total || 0)} <span style={{ fontSize: '0.625rem', color: '#aaa', fontWeight: 500 }}>{q.moneda || 'MXN'}</span></td>}
-                      {qVisibleCols.has('vigencia') && <td style={{ ...S.td, padding: rowPad, whiteSpace: 'nowrap' as const, color: days !== null && days < 0 ? '#c62828' : days !== null && days <= 5 ? '#e65100' : '#666' }}>
-                        {/* "3d" no dice si faltan o pasaron: se escribe completo. */}
-                        {q.vigencia ? (days !== null && days < 0 ? `Venció hace ${-days} d` : days === 0 ? 'Vence hoy' : `Vence en ${days} d`) : '—'}
+                      {qVisibleCols.has('vigencia') && <td style={{ ...S.td, padding: rowPad, whiteSpace: 'nowrap' as const, color: days !== null && days < 0 ? '#dc2626' : '#8a8a8a', fontWeight: days !== null && days < 0 ? 700 : 400 }}>
+                        {/* Solo el número: gris = sigue vigente, rojo = ya
+                            venció. El color hace el trabajo del texto y la
+                            columna deja de robar espacio. */}
+                        {q.vigencia ? (days === 0 ? 'Hoy' : `${Math.abs(days as number)} ${Math.abs(days as number) === 1 ? 'día' : 'días'}`) : '—'}
                       </td>}
                       {qVisibleCols.has('estado') && <td style={{ ...S.td, padding: rowPad }}>
                         <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 4, alignItems: 'flex-start' }}>
@@ -1157,25 +1160,20 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                               ✏️ Editar
                             </button>
                             <button onClick={() => { setVerActividad(q.id); setQMenuRow(null); }}
-                              style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', fontWeight: 700 }}>
-                              🕓 Actividad y pagos
+                              style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 4, justifyContent: 'flex-start', border: '1px solid #e6e6e6', background: '#fafafa', padding: '9px 10px', display: 'flex', fontWeight: 700, color: '#1a1a1a' }}>
+                              Ver actividad y pagos
                             </button>
-                            <div style={{ borderTop: '1px solid #f0f0f0', margin: '4px 0 6px' }} />
-                            <button onClick={() => { duplicateQuote(q); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex' }}>📋 Duplicar</button>
-                            {(q.estado === 'sent' || q.estado === 'draft' || q.estado === 'expired') && <button onClick={() => { openExtendModal(q); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', color: '#1d4ed8' }}>⏱️ Extender vigencia</button>}
-                            {(q.estado === 'sent' || q.estado === 'draft' || q.estado === 'expired') && <button onClick={() => { openAcceptModal(q); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', color: '#00695c' }}>✓ Aceptar manualmente</button>}
-                            {q.estado !== 'paid' && <button onClick={() => { markQuotePaid(q); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', color: '#2e7d32' }}>💵 Marcar pagada</button>}
-                            {(q.estado === 'sent' || q.estado === 'draft' || q.estado === 'expired') && <button onClick={() => { openRejectModal(q); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', color: '#c62828' }}>✕ Marcar rechazada</button>}
-                            <div style={{ height: 1, background: '#f0f0f0', margin: '4px 0' }}></div>
-                            <button onClick={() => { navigator.clipboard.writeText(`https://www.sacscloud.com/cotizacion/${q.id}`); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex' }}>🔗 Copiar link</button>
-                            <button onClick={() => { navigator.clipboard.writeText(`https://www.sacscloud.com/cotizacion/${q.id}/implementacion`); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex' }}>⚡ Copiar link proceso</button>
-                            <a href={`https://wa.me/?text=${encodeURIComponent(`Cotización ${q.numero}: https://www.sacscloud.com/cotizacion/${q.id}`)}`} target="_blank" rel="noopener" onClick={() => setQMenuRow(null)} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 2, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', textDecoration: 'none' }}>💬 Enviar WhatsApp</a>
-                            <a href={`mailto:${q.email || ''}?subject=${encodeURIComponent(`Cotización ${q.numero} - Sacs`)}&body=${encodeURIComponent(`Hola ${q.contacto || ''},\n\nTe comparto tu cotización:\nhttps://www.sacscloud.com/cotizacion/${q.id}\n\nQuedo al pendiente.\nSaludos`)}`} onClick={() => setQMenuRow(null)} style={{ ...S.btnSmall, width: '100%', marginRight: 0, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', textDecoration: 'none' }}>✉️ Enviar por email</a>
-                            <div style={{ borderTop: '1px solid #f0f0f0', margin: '6px 0 4px' }} />
+                            <button onClick={() => { const { meta: m } = parseMeta(q.notas); setQf({ ...q, items: Array.isArray(q.items) ? q.items : [], logo_url: m.logo_url || '', iva_mode: m.iva_mode || (q.iva_incluido ? 'suma' : 'sin'), mostrar_timer: m.mostrar_timer !== undefined ? m.mostrar_timer : true, mostrar_features: m.mostrar_features !== undefined ? m.mostrar_features : true, mostrar_desglose: m.mostrar_desglose !== undefined ? m.mostrar_desglose : true, mostrar_condiciones: m.mostrar_condiciones !== undefined ? m.mostrar_condiciones : true, mostrar_key_points: m.mostrar_key_points !== undefined ? m.mostrar_key_points : true, key_points: m.key_points || [], roi: m.roi || null, antes_despues: m.antes_despues || [], mostrar_roi: m.mostrar_roi || false, mostrar_antes_despues: m.mostrar_antes_despues || false, mostrar_firma: m.mostrar_firma !== undefined ? m.mostrar_firma : true, mostrar_qr: m.mostrar_qr !== undefined ? m.mostrar_qr : true, mostrar_animaciones: m.mostrar_animaciones !== undefined ? m.mostrar_animaciones : true, mostrar_timeline: m.mostrar_timeline !== undefined ? m.mostrar_timeline : true, timeline_tipo: m.timeline_tipo || '1suc', mostrar_implementacion: m.mostrar_implementacion !== undefined ? m.mostrar_implementacion : true, implementacion_nota: m.implementacion_nota || '', mostrar_porque_sacs: m.mostrar_porque_sacs !== undefined ? m.mostrar_porque_sacs : true, promo_label: m.promo_label || '', minuta_raw: m.minuta_raw || '', plan_pagos: m.plan_pagos || [] }); setShowDrawer(true); setMinutaError(null); setQMenuRow(null); }}
+                              style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 1, justifyContent: 'flex-start', border: 'none', background: 'transparent', padding: '7px 10px', display: 'flex', textDecoration: 'none', color: '#1a1a1a' }}>Editar</button>
+                            <button onClick={() => { duplicateQuote(q); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 1, justifyContent: 'flex-start', border: 'none', background: 'transparent', padding: '7px 10px', display: 'flex', textDecoration: 'none', color: '#1a1a1a' }}>Duplicar</button>
+                            <div style={{ fontSize: '0.58rem', fontWeight: 800, color: '#a3a3a3', textTransform: 'uppercase', letterSpacing: '0.09em', padding: '9px 10px 3px' }}>Compartir</div>
+                            <a href={`https://wa.me/?text=${encodeURIComponent(`Cotización ${q.numero}: https://www.sacscloud.com/cotizacion/${q.id}`)}`} target="_blank" rel="noopener" onClick={() => setQMenuRow(null)} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 1, justifyContent: 'flex-start', border: 'none', background: 'transparent', padding: '7px 10px', display: 'flex', textDecoration: 'none', color: '#1a1a1a' }}>Enviar por WhatsApp</a>
+                            <a href={`mailto:${q.email || ''}?subject=${encodeURIComponent(`Cotización ${q.numero} - Sacs`)}&body=${encodeURIComponent(`Hola ${q.contacto || ''},\n\nTe comparto tu cotización:\nhttps://www.sacscloud.com/cotizacion/${q.id}\n\nQuedo al pendiente.\nSaludos`)}`} onClick={() => setQMenuRow(null)} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 1, justifyContent: 'flex-start', border: 'none', background: 'transparent', padding: '7px 10px', display: 'flex', textDecoration: 'none', color: '#1a1a1a' }}>Enviar por correo</a>
+                            <button onClick={() => { navigator.clipboard.writeText(`https://www.sacscloud.com/cotizacion/${q.id}`); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 1, justifyContent: 'flex-start', border: 'none', background: 'transparent', padding: '7px 10px', display: 'flex', textDecoration: 'none', color: '#1a1a1a' }}>Copiar liga</button>
+                            <button onClick={() => { navigator.clipboard.writeText(`https://www.sacscloud.com/cotizacion/${q.id}/implementacion`); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 1, justifyContent: 'flex-start', border: 'none', background: 'transparent', padding: '7px 10px', display: 'flex', textDecoration: 'none', color: '#1a1a1a' }}>Copiar liga del proceso</button>
+                            <div style={{ height: 1, background: '#f0f0f0', margin: '6px 4px' }}></div>
                             <button onClick={() => { setAEliminar([q]); setQMenuRow(null); }}
-                              style={{ ...S.btnSmall, width: '100%', marginRight: 0, justifyContent: 'flex-start' as const, border: 'none', background: 'transparent', padding: '8px 10px', display: 'flex', color: '#b93333', fontWeight: 700 }}>
-                              🗑 Eliminar cotización
-                            </button>
+                              style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 1, justifyContent: 'flex-start', border: 'none', background: 'transparent', padding: '7px 10px', display: 'flex', textDecoration: 'none', color: '#b4302f' }}>Eliminar cotización</button>
                           </div>
                         )}
                       </td>}
