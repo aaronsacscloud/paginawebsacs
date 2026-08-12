@@ -615,7 +615,24 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       accepted: { bg: '#e8f5e9', fg: '#1b5e20', dot: '#2e7d32' },
       paid:     { bg: '#e3f2fd', fg: '#0d47a1', dot: '#1565c0' },
       expired:  { bg: '#fce4ec', fg: '#880e4f', dot: '#c62828' },
-      rejected: { bg: '#ffebee', fg: '#b71c1c', dot: '#e53935' },
+      rejected: { bg: '#f3f4f6', fg: '#6b7280', dot: '#9ca3af' },
+      // Derivados, no capturados: se calculan de los abonos y de las vistas, así
+      // que funcionan hacia atrás y no se pueden desincronizar.
+      parcial:  { bg: '#e0f2fe', fg: '#0369a1', dot: '#0284c7' },
+      vista:    { bg: '#eef2ff', fg: '#3764c4', dot: '#4B7BE5' },
+    };
+
+    /**
+     * El estado que se MUESTRA. "Enviada" con un anticipo encima es falso: ya
+     * pagó una parte. Y una enviada que el cliente abrió no es lo mismo que una
+     * que quizá ni le llegó — la primera se persigue, la segunda se reenvía.
+     */
+    const estadoVisual = (q: any, vistas: number): string => {
+      const abonado = Number(q.abonado || 0);
+      const total = Number(q.total || 0);
+      if (q.estado !== 'paid' && abonado > 0 && abonado < total - 0.01) return 'parcial';
+      if (q.estado === 'sent' && vistas > 0) return 'vista';
+      return q.estado;
     };
 
     // Saved views (HubSpot-style presets)
@@ -628,7 +645,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
       { id: 'stale', label: 'Sin actividad' },         // sent > 7 días sin vistas
       { id: 'hot', label: 'Más vistas' },              // views ≥ 5
       { id: 'rejected', label: 'Rechazadas' },         // estado=rejected
-      { id: 'archivadas', label: '🗄 Archivadas' },     // eliminadas, con su motivo
+      { id: 'archivadas', label: 'Archivadas' },     // eliminadas, con su motivo
     ];
 
     const now = Date.now();
@@ -827,8 +844,17 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
 
     const rowPad = qDensity === 'compact' ? '6px 12px' : '12px 14px';
 
+    // Ancho fijo por columna: sin esto el navegador reparte a ojo y la tabla
+    // baila cada vez que cambia el contenido — es lo que hacía que se vieran
+    // cuadradas y descuadradas entre sí.
+    const anchoCol: Record<string, number | undefined> = {
+      numero: 104, created_at: 108, empresa: undefined, origen: 130,
+      total: 128, vigencia: 132, estado: 140, views: 78, actions: 150,
+    };
+    const alinCol: Record<string, 'left' | 'right' | 'center'> = { total: 'right', views: 'center', actions: 'right' };
+
     const SortHeader = ({ col, label }: { col: string; label: string }) => (
-      <th style={{ ...S.th, cursor: 'pointer', userSelect: 'none' as const, whiteSpace: 'nowrap' as const, position: 'sticky' as const, top: 0, background: '#fafafa', zIndex: 2 }} onClick={() => setQSort({ col, asc: qSort.col === col ? !qSort.asc : col === 'total' || col === 'views' ? false : true })}>
+      <th style={{ ...S.th, cursor: 'pointer', userSelect: 'none' as const, whiteSpace: 'nowrap' as const, position: 'sticky' as const, top: 0, background: '#fafafa', zIndex: 2, width: anchoCol[col], textAlign: (alinCol[col] || 'left') as any }} onClick={() => setQSort({ col, asc: qSort.col === col ? !qSort.asc : col === 'total' || col === 'views' ? false : true })}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
           {label}
           <span style={{ color: qSort.col === col ? '#1a1a1a' : '#ddd', fontSize: '0.75rem' }}>{qSort.col === col ? (qSort.asc ? '↑' : '↓') : '⇅'}</span>
@@ -857,29 +883,6 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Exportar
             </button>
-            {/* Religar: las cotizaciones viejas se capturaron con el cliente a
-                mano y no apuntan a nadie. El botón solo aparece si hay algo que
-                arreglar, y enseña la propuesta antes de tocar nada. */}
-            {quotes.some((q: any) => !q.company_id || (!q.deal_id && ['draft', 'sent', 'accepted'].includes(q.estado))) && (
-              <button onClick={async () => {
-                const j = await fetch('/api/revenue/quotes/religar').then(r => r.json()).catch(() => null);
-                if (!j) { alert('No se pudo consultar.'); return; }
-                const n = j.ligables?.length || 0;
-                const so = j.sin_oportunidad?.length || 0;
-                if (!n && !so) { alert(`Nada que arreglar por correo.\n\n${j.sin_empate?.length || 0} sin empate · ${j.ambiguas?.length || 0} ambiguas (mismo correo en dos clientes).`); return; }
-                const muestra = [
-                  ...(j.ligables || []).slice(0, 6).map((x: any) => `· ${x.numero} → ${x.cliente}`),
-                  ...(j.sin_oportunidad || []).slice(0, 6).map((x: any) => `· ${x.numero} (${x.cliente}) → crear su oportunidad`),
-                ].join('\n');
-                if (!confirm(`${n} por ligar a su cliente y ${so} ligada(s) sin oportunidad:\n\n${muestra}\n\n¿Aplico?`)) return;
-                const r = await fetch('/api/revenue/quotes/religar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).then(x => x.json());
-                alert(`${r.ligadas} ligada(s) · ${r.oportunidades} oportunidad(es) creada(s).` + (r.pendientes?.sin_empate ? `\n\nQuedan ${r.pendientes.sin_empate} sin empate por correo: hay que ligarlas a mano desde el editor.` : ''));
-                const d = await fetch('/api/revenue/quotes').then(x => x.json()).catch(() => null);
-                if (Array.isArray(d)) setQuotes(d);
-              }} style={{ ...S.btn, background: '#fff8ec', color: '#b45309', border: '1px solid #f5e2b8', padding: '8px 14px' }}>
-                🔗 Religar ({quotes.filter((q: any) => !q.company_id || (!q.deal_id && ['draft', 'sent', 'accepted'].includes(q.estado))).length})
-              </button>
-            )}
             <button onClick={() => { setTranscript(''); setAnalysisResult(null); setShowTranscriptModal(true); }} style={{ ...S.btn, background: '#f5f5f5', color: '#555', padding: '8px 14px' }}>Transcripción</button>
             <button onClick={() => { setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: 'Precios en MXN. Migracion incluida. Soporte por chat SACS y WhatsApp. Sin contratos.' }); setShowDrawer(true); }} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', padding: '8px 18px' }}>+ Nueva cotización</button>
           </div>
@@ -893,7 +896,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
           {(() => {
             const k = kpis;
             const card = (titulo: string, valor: string, sec: React.ReactNode, color = '#1a1a1a', onClick?: () => void) => (
-              <div onClick={onClick} style={{ background: '#fff', border: '1px solid #e5e5e5', padding: '14px 16px', borderRadius: 8, cursor: onClick ? 'pointer' : 'default' }}>
+              <div onClick={onClick} style={{ background: '#f4f7fd', border: '1px solid #dde6f7', padding: '14px 16px', borderRadius: 10, cursor: onClick ? 'pointer' : 'default' }}>
                 <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>{titulo}</div>
                 <div style={{ fontSize: '1.375rem', fontWeight: 700, color, marginTop: 4 }}>{valor}</div>
                 <div style={{ fontSize: '0.6875rem', color: '#888', marginTop: 2 }}>{sec}</div>
@@ -906,10 +909,10 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               : <span style={{ color: v > 0 ? '#2e7d32' : v < 0 ? '#b93333' : '#888', fontWeight: 700 }}>{v > 0 ? '↑' : v < 0 ? '↓' : '='} {Math.abs(v)}%</span>;
 
             if (!k) return [0, 1, 2, 3, 4].map(i => (
-              <div key={i} style={{ background: '#fff', border: '1px solid #e5e5e5', padding: '14px 16px', borderRadius: 8 }}>
-                <div style={{ height: 9, width: '55%', background: '#f2f2f2', borderRadius: 4 }} />
-                <div style={{ height: 20, width: '70%', background: '#f2f2f2', borderRadius: 4, marginTop: 8 }} />
-                <div style={{ height: 9, width: '85%', background: '#f7f7f7', borderRadius: 4, marginTop: 8 }} />
+              <div key={i} style={{ background: '#f4f7fd', border: '1px solid #dde6f7', padding: '14px 16px', borderRadius: 10 }}>
+                <div style={{ height: 9, width: '55%', background: '#e6ecf8', borderRadius: 4 }} />
+                <div style={{ height: 20, width: '70%', background: '#e6ecf8', borderRadius: 4, marginTop: 8 }} />
+                <div style={{ height: 9, width: '85%', background: '#eef2fa', borderRadius: 4, marginTop: 8 }} />
               </div>
             ));
 
@@ -938,6 +941,16 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               </>
             );
           })()}
+        </div>
+
+        {/* Lugar reservado para el dashboard completo. Se deja visible y con la
+            etiqueta de que aún no existe: un botón que promete y no cumple es
+            peor que no tenerlo, pero reservar el lugar evita rediseñar después. */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -8, marginBottom: 14 }}>
+          <button onClick={() => alert('El dashboard completo es lo siguiente.\n\nVa a traer: embudo del periodo (cotizado → aceptado → pagado), cobranza por semana, próximos pagos según las parcialidades pactadas, motivos de rechazo y la lista de las que hay que mover hoy — todo con filtro de fechas.\n\nDime qué bloques quieres primero.')}
+            style={{ ...S.btn, background: '#f4f7fd', color: '#3764c4', border: '1px solid #dde6f7', padding: '7px 14px', fontSize: '0.78rem', fontWeight: 700 }}>
+            📊 Dashboard de cotizaciones <span style={{ marginLeft: 6, fontSize: '0.62rem', fontWeight: 700, background: '#fff', border: '1px solid #dde6f7', borderRadius: 10, padding: '1px 7px', color: '#8a93a5' }}>pronto</span>
+          </button>
         </div>
 
         {/* ─── Saved views tabs ─── */}
@@ -997,77 +1010,10 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             )}
           </div>
 
-          {/* Estado quick chips */}
-          <div style={{ display: 'flex', gap: 4 }}>
-            {['draft', 'sent', 'accepted', 'paid', 'expired', 'rejected'].map(st => {
-              const active = qFilter === st;
-              const ec = estadoColors[st];
-              const count = counts[st] || 0;
-              if (count === 0) return null;
-              return (
-                <button key={st} onClick={() => { setQFilter(active ? 'all' : st); setQPage(0); }} style={{
-                  padding: '0 12px', height: 36, borderRadius: 6,
-                  border: active ? `1.5px solid ${ec.dot}` : '1px solid #e0e0e0',
-                  background: active ? ec.bg : '#fff',
-                  color: active ? ec.fg : '#666',
-                  fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                }}>
-                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: ec.dot }}></span>
-                  {estadoLabels[st]} <span style={{ fontSize: '0.6875rem', opacity: 0.7, fontWeight: 500 }}>{count}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div style={{ flex: 1 }}></div>
-
-          {/* Density + columns */}
-          <button onClick={() => setQDensity(qDensity === 'compact' ? 'comfortable' : 'compact')} title={`Densidad: ${qDensity}`} style={{ ...S.btnSmall, padding: '0 10px', height: 36, background: '#fff' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-          </button>
-          <div style={{ position: 'relative' as const }}>
-            <button onClick={() => setQShowColsMenu(!qShowColsMenu)} title="Columnas" style={{ ...S.btnSmall, padding: '0 14px', height: 36, background: '#fff', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
-              Columnas
-            </button>
-            {qShowColsMenu && (
-              <div style={{ position: 'absolute' as const, top: 42, right: 0, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 10, padding: 12, minWidth: 200, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', zIndex: 100 }}>
-                <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Mostrar columnas</div>
-                {allColumns.map(c => (
-                  <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', fontSize: '0.8125rem', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={qVisibleCols.has(c.id)} onChange={() => {
-                      const next = new Set(qVisibleCols);
-                      if (next.has(c.id)) next.delete(c.id); else next.add(c.id);
-                      setQVisibleCols(next);
-                    }} />
-                    {c.label}
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Los chips de estado vivían aquí y duplicaban las pestañas de
+              arriba (Pagadas y Rechazadas salían dos veces). Se quitaron: las
+              vistas mandan, y este renglón queda para buscar y filtrar. */}
         </div>
-
-        {/* ─── Active filters chip bar ─── */}
-        {qFilters.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, flexWrap: 'wrap' as const }}>
-            <span style={{ fontSize: '0.6875rem', color: '#999', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Filtros:</span>
-            {qFilters.map((f, i) => {
-              let label = '';
-              if (f.field === 'total') label = `Total ${f.op === 'gt' ? '>' : f.op === 'lt' ? '<' : '='} ${fmt(f.value)}`;
-              else if (f.field === 'created_at') label = `Creada ${f.op === 'within' ? 'en últimos' : 'hace más de'} ${f.value}d`;
-              else if (f.field === 'estado') label = `Estado: ${(Array.isArray(f.value) ? f.value : [f.value]).map((s: string) => estadoLabels[s] || s).join(', ')}`;
-              return (
-                <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: '#e8f0fe', color: '#1a56db', fontSize: '0.75rem', fontWeight: 600, borderRadius: 14 }}>
-                  {label}
-                  <button onClick={() => removeFilter(i)} style={{ background: 'none', border: 'none', color: '#1a56db', cursor: 'pointer', padding: 0, fontSize: '0.875rem', lineHeight: 1 }}>✕</button>
-                </span>
-              );
-            })}
-            <button onClick={() => { setQFilters([]); setQPage(0); }} style={{ background: 'none', border: 'none', color: '#999', fontSize: '0.75rem', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}>Limpiar todo</button>
-          </div>
-        )}
 
         {/* ─── Bulk selection bar (appears when 1+ selected) ─── */}
         {qSelected.size > 0 && (
@@ -1127,7 +1073,8 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 )}
                 {paginated.map((q: any) => {
                   const views = filteredViewsMap.get(q.id) || 0;
-                  const ec = estadoColors[q.estado] || estadoColors.draft;
+                  const estVis = estadoVisual(q, views);
+                  const ec = estadoColors[estVis] || estadoColors.draft;
                   const isSel = qSelected.has(q.id);
                   const days = q.vigencia ? Math.ceil(daysUntil(q.vigencia)) : null;
                   const qMeta = parseMeta(q.notas).meta;
@@ -1141,8 +1088,10 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                       {qVisibleCols.has('numero') && <td style={{ ...S.td, padding: rowPad, fontWeight: 700, color: '#1a1a1a' }}>{q.numero || '-'}</td>}
                       {qVisibleCols.has('created_at') && <td style={{ ...S.td, padding: rowPad, color: '#666', whiteSpace: 'nowrap' as const }}>{fmtDate(q.created_at)}</td>}
                       {qVisibleCols.has('empresa') && <td style={{ ...S.td, padding: rowPad }}>
-                        <div style={{ fontWeight: 600, color: '#1a1a1a' }}>{q.empresa || '—'}</div>
-                        {(q.contacto || q.email) && <div style={{ fontSize: '0.6875rem', color: '#999', marginTop: 1 }}>{q.contacto}{q.contacto && q.email ? ' · ' : ''}{q.email}</div>}
+                        {/* Una línea por dato y recortado con "…": el correo
+                            largo partía el renglón y descuadraba toda la fila. */}
+                        <div style={{ fontWeight: 600, color: '#1a1a1a', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{q.empresa || '—'}</div>
+                        {(q.contacto || q.email) && <div title={`${q.contacto || ''}${q.contacto && q.email ? ' · ' : ''}${q.email || ''}`} style={{ fontSize: '0.6875rem', color: '#999', marginTop: 1, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{q.contacto}{q.contacto && q.email ? ' · ' : ''}{q.email}</div>}
                       </td>}
                       {qVisibleCols.has('origen') && <td style={{ ...S.td, padding: rowPad, whiteSpace: 'nowrap' as const }}>
                         {q.partner_id ? (
@@ -1153,9 +1102,10 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                           <span style={{ display: 'inline-block', padding: '3px 8px', borderRadius: 999, background: '#f0f0f0', color: '#666', fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.02em' }}>SACS</span>
                         )}
                       </td>}
-                      {qVisibleCols.has('total') && <td style={{ ...S.td, padding: rowPad, fontWeight: 700, color: '#1a1a1a', whiteSpace: 'nowrap' as const }}>{fmt(q.total || 0)} <span style={{ fontSize: '0.625rem', color: '#aaa', fontWeight: 500 }}>{q.moneda || 'MXN'}</span></td>}
+                      {qVisibleCols.has('total') && <td style={{ ...S.td, padding: rowPad, fontWeight: 700, color: '#1a1a1a', whiteSpace: 'nowrap' as const, textAlign: 'right' as const }}>{fmt(q.total || 0)} <span style={{ fontSize: '0.625rem', color: '#aaa', fontWeight: 500 }}>{q.moneda || 'MXN'}</span></td>}
                       {qVisibleCols.has('vigencia') && <td style={{ ...S.td, padding: rowPad, whiteSpace: 'nowrap' as const, color: days !== null && days < 0 ? '#c62828' : days !== null && days <= 5 ? '#e65100' : '#666' }}>
-                        {q.vigencia ? (days !== null && days < 0 ? `Vencida hace ${-days}d` : days === 0 ? 'Vence hoy' : `${days}d`) : '—'}
+                        {/* "3d" no dice si faltan o pasaron: se escribe completo. */}
+                        {q.vigencia ? (days !== null && days < 0 ? `Venció hace ${-days} d` : days === 0 ? 'Vence hoy' : `Vence en ${days} d`) : '—'}
                       </td>}
                       {qVisibleCols.has('estado') && <td style={{ ...S.td, padding: rowPad }}>
                         <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 4, alignItems: 'flex-start' }}>
@@ -1166,7 +1116,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                               barrer 35 cotizaciones de un vistazo. */}
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.6875rem', fontWeight: 700, padding: '3px 10px', borderRadius: 12, background: ec.bg, color: ec.fg }}>
                             <span style={{ width: 6, height: 6, borderRadius: '50%', background: ec.dot }}></span>
-                            {estadoLabels[q.estado] || q.estado}
+                            {estadoLabels[estVis] || estVis}
                           </span>
                           {extensions.length > 0 && (
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '0.625rem', fontWeight: 700, color: '#1d4ed8', background: '#eff6ff', padding: '1px 7px', borderRadius: 10, letterSpacing: '0.02em', whiteSpace: 'nowrap' as const }} title={`Extendida ${extensions.length} ${extensions.length === 1 ? 'vez' : 'veces'}: +${totalExtDays}d en total`}>
@@ -1175,16 +1125,18 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                           )}
                         </div>
                       </td>}
-                      {qVisibleCols.has('views') && <td style={{ ...S.td, padding: rowPad }}>
+                      {qVisibleCols.has('views') && <td style={{ ...S.td, padding: rowPad, textAlign: 'center' as const, whiteSpace: 'nowrap' as const }}>
                         {(() => {
                           const mv = parseMeta(q.notas).meta;
                           return views > 0 ? (
+                            /* Solo el ojo y el número: el "hace 2 min" no cabía
+                               y partía la celda en tres renglones. El detalle
+                               completo sigue en el hover y en el panel. */
                             <span onClick={(e) => { e.stopPropagation(); setVerActividad(q.id); }}
                               title={detalleVistas(mv) + '\n\nClic para ver toda la actividad'}
                               style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', fontWeight: 700, color: views >= 5 ? '#6C5CE7' : '#666', cursor: 'pointer' }}>
                               <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" stroke="currentColor" strokeWidth="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2"/></svg>
                               {views}
-                              {mv.last_viewed_at && <span style={{ fontWeight: 500, color: '#999', fontSize: '0.68rem' }}>· {haceTexto(mv.last_viewed_at)}</span>}
                             </span>
                           ) : <span title="Nadie la ha abierto todavía." style={{ color: '#ddd', fontSize: '0.75rem', cursor: 'help' }}>—</span>;
                         })()}

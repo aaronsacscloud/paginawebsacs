@@ -38,6 +38,19 @@ export const GET: APIRoute = async ({ request, url }) => {
   const user = await getCurrentUser(request);
   const id = url.searchParams.get('id');
 
+  // Cuánto lleva abonado cada cotización: es lo único que permite distinguir
+  // "Enviada" de "Pago parcial" en la lista. Sin esto, una cotización con
+  // anticipo se sigue viendo como si el cliente no hubiera pagado nada.
+  const conAbonos = async (filas: any[]) => {
+    const ids = (filas || []).map((q: any) => q.id);
+    if (!ids.length) return filas;
+    const { data: pagos } = await supabase.from('payments').select('quote_id, monto').in('quote_id', ids);
+    const m = new Map<string, number>();
+    for (const p of pagos || []) m.set(p.quote_id, (m.get(p.quote_id) || 0) + Number(p.monto || 0));
+    return (filas || []).map((q: any) => ({ ...q, abonado: Math.round((m.get(q.id) || 0) * 100) / 100 }));
+  };
+
+
   if (id) {
     // Public URL access needed (e.g., client accepting quote) — don't enforce scope on single lookup
     const { data, error } = await supabase.from('quotes').select('*').eq('id', id).single();
@@ -64,7 +77,7 @@ export const GET: APIRoute = async ({ request, url }) => {
       .order('created_at', { ascending: false });
 
     if (error) return jsonResponse({ error: error.message }, 500);
-    return jsonResponse(data || []);
+    return jsonResponse(await conAbonos(data || []));
   }
 
   // ?archivadas=1 → SOLO las archivadas. El archivo existe justo para que nada
@@ -73,7 +86,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     const { data, error } = await supabase.from('quotes').select('*')
       .eq('estado', 'deleted').order('created_at', { ascending: false });
     if (error) return jsonResponse({ error: error.message }, 500);
-    return jsonResponse(data || []);
+    return jsonResponse(await conAbonos(data || []));
   }
 
   // Founder/cs see all. Unauthenticated preserves legacy behavior (admin UI without auth header).
@@ -82,7 +95,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     .neq('estado', 'plantilla') // las plantillas de partner no son cotizaciones reales
     .order('created_at', { ascending: false });
   if (error) return jsonResponse({ error: error.message }, 500);
-  return jsonResponse(data || []);
+  return jsonResponse(await conAbonos(data || []));
 };
 
 async function getMaxFolio(): Promise<number> {
