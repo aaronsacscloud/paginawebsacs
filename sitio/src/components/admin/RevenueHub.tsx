@@ -608,7 +608,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     };
 
     // ─── Filter, search, sort, paginate ───
-    const estadoLabels: Record<string, string> = { draft: 'Borrador', sent: 'Enviada', accepted: 'Aceptada', paid: 'Pagada', expired: 'Vencida', rejected: 'Rechazada' };
+    const estadoLabels: Record<string, string> = { draft: 'Borrador', sent: 'Enviada', accepted: 'Aceptada', paid: 'Pagada', expired: 'Vencida', rejected: 'Rechazada', parcial: 'Parcial' };
     const estadoColors: Record<string, { bg: string; fg: string; dot: string }> = {
       // El color agrupa por lo que hay que hacer, no una tinta por estado:
       // gris = fuera de juego · ámbar = en su cancha · azul = hay compromiso ·
@@ -1082,8 +1082,6 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   const isSel = qSelected.has(q.id);
                   const days = q.vigencia ? Math.ceil(daysUntil(q.vigencia)) : null;
                   const qMeta = parseMeta(q.notas).meta;
-                  const extensions = Array.isArray(qMeta.extensions) ? qMeta.extensions : [];
-                  const totalExtDays = extensions.reduce((s: number, ext: any) => s + (Number(ext.days) || 0), 0);
                   return (
                     <tr key={q.id} style={{ background: isSel ? '#f0f7ff' : 'transparent', transition: 'background 0.12s' }} onMouseEnter={e => { if (!isSel) (e.currentTarget.style.background = '#f8f9fb'); }} onMouseLeave={e => { if (!isSel) (e.currentTarget.style.background = 'transparent'); }}>
                       <td style={{ padding: `${rowPad.split(' ')[0]} 0 ${rowPad.split(' ')[0]} 16px`, borderBottom: '1px solid #f0f0f0' }}>
@@ -1125,11 +1123,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                             <span style={{ width: 6, height: 6, borderRadius: '50%', background: ec.dot }}></span>
                             {estadoLabels[estVis] || estVis}
                           </span>
-                          {extensions.length > 0 && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: '0.625rem', fontWeight: 700, color: '#1d4ed8', background: '#eff6ff', padding: '1px 7px', borderRadius: 10, letterSpacing: '0.02em', whiteSpace: 'nowrap' as const }} title={`Extendida ${extensions.length} ${extensions.length === 1 ? 'vez' : 'veces'}: +${totalExtDays}d en total`}>
-                              ⏱ +{totalExtDays}d
-                            </span>
-                          )}
+
                         </div>
                       </td>}
                       {qVisibleCols.has('views') && <td style={{ ...S.td, padding: rowPad, textAlign: 'center' as const, whiteSpace: 'nowrap' as const }}>
