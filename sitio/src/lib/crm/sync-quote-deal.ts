@@ -212,8 +212,55 @@ export async function createDealFromQuote(quote: any, targetStage: DealStage, ct
     .eq('id', contactId)
     .single();
 
+  // ── Las LÍNEAS de la cotización se vuelven líneas de la oportunidad ──
+  // Sin esto la oportunidad nace con un monto suelto y el pipeline no puede
+  // decir cuánto de eso es recurrente y cuánto se cobra una vez — que es toda
+  // la diferencia entre ARR nuevo y un ingreso de un solo golpe.
+  const itemsDeal = items.map((i: any) => {
+    const anual = i.periodo === 'anual' || i.periodo_extra === 'anual';
+    const recurrente = i.tipo === 'plan' || (i.tipo === 'extra' && i.recurrente);
+    const monto = Number(i.subtotal ?? i.monto ?? 0);
+    const cant = Number(i.cantidad || 1) || 1;
+    return {
+      tipo: i.tipo === 'plan' ? 'plan' : (recurrente ? 'personalizado' : 'unico'),
+      nombre: String(i.nombre || 'Concepto').slice(0, 120),
+      cantidad: 1,
+      precio_unitario: monto,
+      ciclo: recurrente ? (anual ? 'anual' : 'mensual') : 'unico',
+      descuento_pct: 0,
+      _cant_original: cant,
+    };
+  }).filter((x: any) => x.precio_unitario > 0);
+
+  let montos: any = {};
+  try {
+    const { calcularTotales } = await import('./deal-items');
+    const t = calcularTotales(itemsDeal as any, 0);
+    montos = {
+      items: itemsDeal, mrr: t.mrr, valor_unico: t.valor_unico,
+      tipo_ingreso: t.tipo_ingreso, billing_period: t.billing_period || billingPeriod,
+      // valor_total = primer año (ARR + único), el mismo criterio que el resto
+      // del pipeline. Si no hay líneas usables se respeta el total cotizado.
+      valor_total: t.valor_total > 0 ? Math.round(t.valor_total) : Math.round(quote.total || 0),
+      valor_mensual: t.mrr > 0 ? Math.round(t.mrr) : Math.round(valorMensual),
+    };
+  } catch { /* si algo falla, quedan los montos sueltos de siempre */ }
+
+  // Cliente nuevo o ampliación: el mismo criterio que usa el alta manual.
+  let categoria = 'nuevo';
+  try {
+    if (contact?.company_id) {
+      const { data: subPrev } = await supabase.from('subscriptions').select('id')
+        .eq('company_id', contact.company_id).limit(1).maybeSingle();
+      if (subPrev) categoria = 'upsell';
+    }
+  } catch { /* por defecto, nuevo */ }
+
   const insertPayload: any = {
     nombre: `Oportunidad — ${quote.empresa || quote.contacto || 'Cliente'}`,
+    origen: 'cotizacion',
+    categoria,
+    ...montos,
     contact_id: contactId,
     company_id: contact?.company_id || null,
     plan,
@@ -238,7 +285,13 @@ export async function createDealFromQuote(quote: any, targetStage: DealStage, ct
     if (ctx.motivo_perdida) insertPayload.motivo_perdida = ctx.motivo_perdida;
   }
 
-  const { data: deal } = await supabase.from('deals').insert(insertPayload).select().single();
+  // Las columnas v2/v3 (items, mrr, categoria…) pueden no existir si el SQL no
+  // corrió: se reintenta sin ellas antes que perder la oportunidad entera.
+  let { data: deal } = await supabase.from('deals').insert(insertPayload).select().single();
+  if (!deal) {
+    const { items: _i, mrr: _m, valor_unico: _vu, tipo_ingreso: _ti, categoria: _c, origen: _o, ...basico } = insertPayload;
+    ({ data: deal } = await supabase.from('deals').insert(basico).select().single());
+  }
   if (!deal) return null;
 
   // Back-reference on quote

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import CotizacionActividad from './crm/CotizacionActividad';
 import CamposConfig from './crm/CamposPersonalizados';
 import { plans as plansData } from '../../data/plans';
@@ -415,7 +415,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
         notas = addTimelineEvent(notas, 'edited');
       }
       // Remove frontend-only fields
-      const { _custom_days, logo_url, iva_mode: _im, _pago_mode, mostrar_timer: _mt, mostrar_features: _mf, mostrar_desglose: _md, mostrar_condiciones: _mc, mostrar_key_points: _mkp, key_points: _kp, roi: _roi, antes_despues: _ad, mostrar_roi: _mr, mostrar_antes_despues: _mad, mostrar_firma: _msf, mostrar_qr: _mq, mostrar_animaciones: _ma, mostrar_timeline: _mtl, timeline_tipo: _tt, mostrar_implementacion: _mi, implementacion_nota: _in, mostrar_porque_sacs: _mps, promo_label: _pl, minuta_raw: _mr2, ...rest } = qf;
+      const { _custom_days, _es_cliente, _ctx_n, _ctx_ultima, logo_url, iva_mode: _im, _pago_mode, mostrar_timer: _mt, mostrar_features: _mf, mostrar_desglose: _md, mostrar_condiciones: _mc, mostrar_key_points: _mkp, key_points: _kp, roi: _roi, antes_despues: _ad, mostrar_roi: _mr, mostrar_antes_despues: _mad, mostrar_firma: _msf, mostrar_qr: _mq, mostrar_animaciones: _ma, mostrar_timeline: _mtl, timeline_tipo: _tt, mostrar_implementacion: _mi, implementacion_nota: _in, mostrar_porque_sacs: _mps, promo_label: _pl, minuta_raw: _mr2, ...rest } = qf;
       const folioOffset = typeof window !== 'undefined' ? parseInt(localStorage.getItem('sacs_folio_offset') || '0') || 0 : 0;
       const body = { ...rest, notas, subtotal: itemsSubtotal, iva_incluido: ivaMode !== 'sin', iva_monto: Math.round(ivaMonto), total: Math.round(grandTotal), estado: rest.estado || 'sent', _folio_offset: folioOffset };
 
@@ -1645,14 +1645,60 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             {/* Left: Form */}
             <div className="rh-quote-form" style={{ width: 480, flexShrink: 0, background: '#fff', overflowY: 'auto' as const, padding: 24, borderRight: '1px solid #eee' }}>
 
-              {/* Client */}
+              {/* ── Cliente ──
+                  Un buscador sobre clientes Y leads a la vez: quien cotiza no
+                  sabe —ni tiene por qué— en qué tabla está esa persona. Elegir
+                  aquí es lo que LIGA la cotización; escribiéndola a mano nace
+                  desconectada y no aparece en la ficha de nadie (es lo que pasó
+                  con las 32 que hay hoy). */}
               <div style={S.label}>Cliente</div>
+              {qf.company_id ? (
+                <div style={{ background: '#f7f9fc', border: '1px solid #e2e8f2', borderRadius: 8, padding: '10px 12px', marginBottom: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>
+                        {qf.empresa}
+                        <span style={{ marginLeft: 6, fontSize: '0.6rem', fontWeight: 700, padding: '1px 7px', borderRadius: 10, background: qf._es_cliente ? '#e6f6f2' : '#eef2ff', color: qf._es_cliente ? '#1A8F7A' : '#3764c4' }}>
+                          {qf._es_cliente ? 'Cliente' : 'Lead'}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#888' }}>{[qf.contacto, qf.email, qf.whatsapp].filter(Boolean).join(' · ') || 'sin contacto'}</div>
+                      {qf._ctx_n ? (
+                        <div style={{ fontSize: '0.72rem', color: '#a06600', marginTop: 2 }}>
+                          Ya tiene {qf._ctx_n} cotización{qf._ctx_n === 1 ? '' : 'es'}{qf._ctx_ultima ? ` · última ${qf._ctx_ultima}` : ''}
+                        </div>
+                      ) : null}
+                    </div>
+                    <button onClick={() => setQf({ ...qf, company_id: null, contact_id: null, _es_cliente: false, _ctx_n: 0, _ctx_ultima: '' })}
+                      style={{ ...S.btnSmall, marginRight: 0 }}>Cambiar</button>
+                  </div>
+                </div>
+              ) : (
+                <ClienteBuscador
+                  valorInicial={qf.empresa || ''}
+                  onElegir={(r: any) => setQf({
+                    ...qf, company_id: r.company_id, contact_id: r.contact_id || null,
+                    empresa: r.empresa || r.contacto, contacto: r.contacto || '',
+                    email: r.email || qf.email || '', whatsapp: r.whatsapp || qf.whatsapp || '',
+                    _es_cliente: !!r.es_cliente, _ctx_n: r.n || 0,
+                    _ctx_ultima: r.ultima ? `${r.ultima.numero} · $${Number(r.ultima.total || 0).toLocaleString('es-MX')} · ${r.ultima.estado}` : '',
+                  })}
+                />
+              )}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
                 <input value={qf.empresa || ''} onChange={e => setQf({ ...qf, empresa: e.target.value })} placeholder="Empresa *" required style={{ ...S.input, borderColor: !qf.empresa ? '#fca5a5' : undefined }} />
                 <input value={qf.contacto || ''} onChange={e => setQf({ ...qf, contacto: e.target.value })} placeholder="Contacto" style={S.input} />
                 <input value={qf.email || ''} onChange={e => setQf({ ...qf, email: e.target.value })} placeholder="Email *" required type="email" style={{ ...S.input, borderColor: !qf.email ? '#fca5a5' : undefined }} />
                 <input value={qf.whatsapp || ''} onChange={e => setQf({ ...qf, whatsapp: e.target.value })} placeholder="WhatsApp *" required type="tel" style={{ ...S.input, borderColor: !qf.whatsapp ? '#fca5a5' : undefined }} />
               </div>
+              {/* Aviso, no candado: cotizar rápido en una llamada es un caso real
+                  y bloquear el guardado haría que se escriba cualquier cosa con
+                  tal de avanzar. El candado va al aceptar o cobrar. */}
+              {!qf.company_id && (qf.empresa || '').trim().length > 1 && (
+                <div style={{ fontSize: '0.7rem', color: '#b45309', marginBottom: 8 }}>
+                  ⚠ Sin cliente ligado: no va a aparecer en su ficha ni en su historial. Búscalo arriba o créalo.
+                </div>
+              )}
 
               {/* Client logo */}
               <div style={{ marginBottom: 16 }}>
@@ -2648,6 +2694,120 @@ function EliminarCotizacionModal({ seleccion, quotes, onClose, onDone }: {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ═══ Buscador de cliente para la cotización ═══
+ *
+ * Busca en clientes Y leads a la vez. Elegir aquí es lo que liga la cotización
+ * al CRM; escribir el nombre a mano la deja huérfana y fuera de la ficha del
+ * cliente — que es como quedaron las 32 que existen hoy.
+ *
+ * Si no existe, se crea en el momento sin salir del editor. Y antes de crear,
+ * avisa si ya hay algo parecido: detectar el duplicado cuesta un query, y
+ * fusionarlo después cuesta una tarde.
+ */
+function ClienteBuscador({ valorInicial, onElegir }: { valorInicial?: string; onElegir: (r: any) => void }) {
+  const [q, setQ] = useState(valorInicial || '');
+  const [res, setRes] = useState<any[]>([]);
+  const [abierto, setAbierto] = useState(false);
+  const [buscando, setBuscando] = useState(false);
+  const [creando, setCreando] = useState<any>(null);
+  const [dupes, setDupes] = useState<any>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const buscar = (texto: string) => {
+    setQ(texto); setAbierto(true);
+    if (timer.current) clearTimeout(timer.current);
+    if (texto.trim().length < 2) { setRes([]); return; }
+    // 250 ms: teclear rápido no puede disparar una consulta por letra.
+    timer.current = setTimeout(async () => {
+      setBuscando(true);
+      const j = await fetch('/api/crm/buscar-cliente?q=' + encodeURIComponent(texto)).then(r => r.json()).catch(() => ({}));
+      setRes(j?.resultados || []); setBuscando(false);
+    }, 250);
+  };
+
+  async function abrirAlta() {
+    setCreando({ empresa: q.trim(), contacto: '', email: '', whatsapp: '' });
+    setAbierto(false);
+    const j = await fetch(`/api/crm/buscar-cliente?duplicado=${encodeURIComponent(q.trim())}`).then(r => r.json()).catch(() => ({}));
+    setDupes(j);
+  }
+
+  async function crear() {
+    if (!creando.empresa.trim()) { alert('El cliente es la EMPRESA: escribe su nombre.'); return; }
+    const j = await fetch('/api/crm/buscar-cliente', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(creando),
+    }).then(r => r.json()).catch(() => ({ error: 'No se pudo crear' }));
+    if (j?.error) { alert(j.error); return; }
+    onElegir({ ...j, contacto: creando.contacto, email: creando.email, whatsapp: creando.whatsapp, es_cliente: false, n: 0 });
+    setCreando(null); setDupes(null);
+  }
+
+  if (creando) {
+    return (
+      <div style={{ background: '#fafbfd', border: '1px dashed #cfd6e4', borderRadius: 8, padding: 12, marginBottom: 8 }}>
+        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#666', marginBottom: 6 }}>Nuevo cliente</div>
+        {dupes && (dupes.empresas_parecidas?.length > 0 || dupes.contactos_mismo_correo?.length > 0) && (
+          <div style={{ fontSize: '0.72rem', color: '#b45309', background: '#fff8ec', border: '1px solid #f5e2b8', borderRadius: 7, padding: '7px 9px', marginBottom: 8 }}>
+            Ya existe algo parecido — ¿es alguno de estos?
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 5 }}>
+              {(dupes.empresas_parecidas || []).map((x: any) => (
+                <button key={x.id} onClick={() => { onElegir({ company_id: x.id, empresa: x.nombre, es_cliente: x.estado_cuenta === 'activo' }); setCreando(null); setDupes(null); }}
+                  style={{ ...S.btnSmall, marginRight: 0 }}>{x.nombre}</button>
+              ))}
+              {(dupes.contactos_mismo_correo || []).map((x: any) => (
+                <button key={x.id} onClick={() => { const co = Array.isArray(x.companies) ? x.companies[0] : x.companies; onElegir({ company_id: co?.id || null, contact_id: x.id, empresa: co?.nombre || x.nombre, contacto: x.nombre, email: x.email }); setCreando(null); setDupes(null); }}
+                  style={{ ...S.btnSmall, marginRight: 0 }}>{x.nombre} ({x.email})</button>
+              ))}
+            </div>
+          </div>
+        )}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <input value={creando.empresa} onChange={e => setCreando({ ...creando, empresa: e.target.value })} placeholder="Empresa *" style={S.input} />
+          <input value={creando.contacto} onChange={e => setCreando({ ...creando, contacto: e.target.value })} placeholder="Contacto (persona)" style={S.input} />
+          <input value={creando.email} onChange={e => setCreando({ ...creando, email: e.target.value })} placeholder="Correo" style={S.input} />
+          <input value={creando.whatsapp} onChange={e => setCreando({ ...creando, whatsapp: e.target.value })} placeholder="WhatsApp" style={S.input} />
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+          <button onClick={crear} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', padding: '6px 14px', fontSize: '0.78rem' }}>Crear y ligar</button>
+          <button onClick={() => { setCreando(null); setDupes(null); }} style={{ ...S.btnSmall, marginRight: 0 }}>Cancelar</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ position: 'relative', marginBottom: 8 }}>
+      <input value={q} onChange={e => buscar(e.target.value)} onFocus={() => setAbierto(true)}
+        placeholder="Buscar cliente o lead por empresa, contacto o correo…" style={{ ...S.input, width: '100%' }} />
+      {abierto && q.trim().length >= 2 && (
+        <>
+          <div onClick={() => setAbierto(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
+          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4, zIndex: 41, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 8, boxShadow: '0 8px 28px rgba(0,0,0,0.12)', maxHeight: 280, overflowY: 'auto' }}>
+            {buscando && <div style={{ padding: 10, fontSize: '0.78rem', color: '#999' }}>Buscando…</div>}
+            {!buscando && res.length === 0 && <div style={{ padding: 10, fontSize: '0.78rem', color: '#999' }}>Sin resultados.</div>}
+            {res.map((r: any, i: number) => (
+              <div key={i} onClick={() => { onElegir(r); setAbierto(false); }}
+                style={{ padding: '8px 10px', cursor: 'pointer', borderBottom: '1px solid #f5f5f5' }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>
+                  {r.empresa || r.contacto}
+                  <span style={{ marginLeft: 6, fontSize: '0.58rem', fontWeight: 700, padding: '1px 6px', borderRadius: 10, background: r.es_cliente ? '#e6f6f2' : '#eef2ff', color: r.es_cliente ? '#1A8F7A' : '#3764c4' }}>
+                    {r.es_cliente ? 'Cliente' : 'Lead'}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.72rem', color: '#888' }}>{[r.contacto, r.email].filter(Boolean).join(' · ')}</div>
+                {r.n ? <div style={{ fontSize: '0.7rem', color: '#a06600' }}>{r.n} cotización{r.n === 1 ? '' : 'es'}{r.ultima ? ` · última ${r.ultima.numero} (${r.ultima.estado})` : ''}</div> : null}
+              </div>
+            ))}
+            <button onClick={abrirAlta} style={{ width: '100%', textAlign: 'left', padding: '9px 10px', border: 'none', background: '#fafafa', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700, color: '#1a1a1a' }}>
+              + Crear "{q.trim()}" como cliente nuevo
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
