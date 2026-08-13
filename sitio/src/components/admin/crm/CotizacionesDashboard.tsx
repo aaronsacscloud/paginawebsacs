@@ -8,10 +8,22 @@
 // todavía en juego, gris = fuera. El color dice en qué punto está el dinero.
 import { useEffect, useState } from 'react';
 
-const P = '#7C3AED';        // morado — cerrado, cobrado
-const P_SUAVE = '#b9a0f0';  // morado claro — en proceso
-const AZUL = '#cfe0fa';     // azul — cotizado, en juego
-const GRIS = '#dedbe6';
+// ─── Gama: morado, rosa y naranja ───
+// Morado = el dinero que YA entró. Naranja = lo que sigue en juego. Rosa = los
+// estados intermedios. Gris = fuera. El contraste morado/naranja es el más
+// fuerte de los tres y se le deja a la pareja que más se compara: cotizado
+// contra cobrado.
+//
+// El rojo se conserva SOLO para lo vencido. Es el único color que se lee sin
+// pensar, y pintar una parcialidad vencida de naranja la confundiría con "en
+// juego", que es exactamente lo contrario. El verde sí se sacrifica: el morado
+// toma su lugar como "dinero cobrado".
+const P = '#7C3AED';         // morado — cobrado, cerrado
+const P_SUAVE = '#A78BFA';   // morado claro — en proceso
+const ROSA = '#F9A8D4';      // rosa — parcial, intermedio
+const NARANJA = '#FB923C';   // naranja — en juego
+const NAR_SUAVE = '#FDBA74'; // naranja claro — cotizado
+const GRIS = '#E5E3EA';
 
 const money = (n: any) => '$' + Number(n || 0).toLocaleString('es-MX', { maximumFractionDigits: 0 });
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -70,12 +82,12 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
     if (dif === 0) return <span style={{ color: '#9c99a6' }}>igual que {nombreMes(d.mes_anterior)}</span>;
     // "Días a cobro" mejora cuando BAJA: el color no puede leer solo el signo.
     const bueno = invertido ? dif < 0 : dif > 0;
-    return <span style={{ color: bueno ? P : '#8a5cc4', fontWeight: 800 }}>{dif > 0 ? '↑' : '↓'} {Math.abs(dif)}{pts ? ' pts' : '%'}</span>;
+    return <span style={{ color: bueno ? P : '#c2410c', fontWeight: 800 }}>{dif > 0 ? '↑' : '↓'} {Math.abs(dif)}{pts ? ' pts' : '%'}</span>;
   };
 
-  const Kpi = ({ t, v, hijo, azul, abrir }: any) => (
+  const Kpi = ({ t, v, hijo, barra, abrir }: any) => (
     <div onClick={abrir} title={abrir ? 'Ver de qué cotizaciones sale' : undefined}
-      style={{ background: '#fff', border: '1px solid #eeecf3', borderLeft: `3px solid ${azul ? '#7EA6F0' : '#8B5CF6'}`, borderRadius: 12, padding: '16px 18px', cursor: abrir ? 'pointer' : 'default' }}>
+      style={{ background: '#fff', border: '1px solid #eeecf3', borderLeft: `3px solid ${barra || P}`, borderRadius: 12, padding: '16px 18px', cursor: abrir ? 'pointer' : 'default' }}>
       <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#9c99a6', textTransform: 'uppercase', letterSpacing: '.08em' }}>{t}</div>
       <div style={{ fontSize: '1.65rem', fontWeight: 800, marginTop: 8, letterSpacing: '-.025em' }}>{v}</div>
       <div style={{ fontSize: '0.7rem', marginTop: 5, color: '#9c99a6' }}>{hijo}</div>
@@ -119,7 +131,7 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
                 <div key={r.rango} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
                   <div title={`${r.total} cotizaciones · ${r.cerradas} cerraron`}
                     style={{ width: '100%', maxWidth: 52, height: alto, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', borderRadius: '5px 5px 0 0', overflow: 'hidden', background: '#f5f4f8' }}>
-                    {r.total > 0 && <><div style={{ height: cerr, background: P }} /><div style={{ height: alto - cerr, background: AZUL }} /></>}
+                    {r.total > 0 && <><div style={{ height: cerr, background: P }} /><div style={{ height: alto - cerr, background: NAR_SUAVE }} /></>}
                   </div>
                   <div style={{ fontSize: '0.66rem', fontWeight: 700, color: '#7d7a88' }}>{r.rango}</div>
                 </div>
@@ -128,7 +140,7 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
           </div>
           <div style={{ display: 'flex', gap: 16, fontSize: '0.68rem', color: '#a5a2af', marginTop: 12 }}>
             <span><i style={{ width: 9, height: 9, borderRadius: 2, display: 'inline-block', marginRight: 6, background: P }} />Terminó en venta</span>
-            <span><i style={{ width: 9, height: 9, borderRadius: 2, display: 'inline-block', marginRight: 6, background: AZUL }} />No cerró</span>
+            <span><i style={{ width: 9, height: 9, borderRadius: 2, display: 'inline-block', marginRight: 6, background: NAR_SUAVE }} />No cerró</span>
           </div>
           <Nota>
             <b>Debajo de {a.umbral} aperturas casi nadie compra.</b> Pasando ese punto se empareja y de ahí sube. Ese es el momento de llamar.
@@ -159,7 +171,7 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
             {d.mensual.map((m: any) => (
               <div key={m.mes} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
                 <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end', height: 108 }}>
-                  <div title={`Cotizado ${money(m.cotizado)}`} style={{ width: 20, height: Math.round((m.cotizado / max) * 108), minHeight: m.cotizado ? 2 : 0, background: AZUL, borderRadius: '3px 3px 0 0' }} />
+                  <div title={`Cotizado ${money(m.cotizado)}`} style={{ width: 20, height: Math.round((m.cotizado / max) * 108), minHeight: m.cotizado ? 2 : 0, background: NAR_SUAVE, borderRadius: '3px 3px 0 0' }} />
                   <div title={`Cobrado ${money(m.cobrado)}`} style={{ width: 20, height: Math.round((m.cobrado / max) * 108), minHeight: m.cobrado ? 2 : 0, background: P, borderRadius: '3px 3px 0 0' }} />
                 </div>
                 <div style={{ fontSize: '0.65rem', fontWeight: 700, color: m.mes === d.mes ? P : '#a5a2af' }}>{MESES[Number(m.mes.slice(5, 7)) - 1].toUpperCase()}</div>
@@ -167,7 +179,7 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
             ))}
           </div>
           <div style={{ display: 'flex', gap: 16, fontSize: '0.68rem', color: '#a5a2af', marginTop: 12 }}>
-            <span><i style={{ width: 9, height: 9, borderRadius: 2, display: 'inline-block', marginRight: 6, background: AZUL }} />Cotizado</span>
+            <span><i style={{ width: 9, height: 9, borderRadius: 2, display: 'inline-block', marginRight: 6, background: NAR_SUAVE }} />Cotizado</span>
             <span><i style={{ width: 9, height: 9, borderRadius: 2, display: 'inline-block', marginRight: 6, background: P }} />Cobrado</span>
           </div>
         </W>
@@ -193,7 +205,7 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
         <W id="origenes" titulo="Clientes contra leads" cap="De dónde sale el dinero: de tu base o de gente nueva.">
           <div style={{ display: 'flex', height: 38, borderRadius: 9, overflow: 'hidden', marginBottom: 16 }}>
             {([['Clientes', o.cliente.cotizado, P, '#fff'], ['Leads', o.lead.cotizado, P_SUAVE, '#fff'],
-               ['Exclientes', o.excliente.cotizado, '#a9b8d8', '#fff'], ['Sin ligar', o.sin_ligar.cotizado, GRIS, '#5a5766']] as const)
+               ['Exclientes', o.excliente.cotizado, ROSA, '#7a2f56'], ['Sin ligar', o.sin_ligar.cotizado, GRIS, '#5a5766']] as const)
               .filter(([, v]) => v > 0)
               .map(([t, v, bg, fg]) => (
                 <div key={t} style={{ width: `${pc(v as number)}%`, background: bg as string, color: fg as string, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.71rem', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden' }}>
@@ -265,7 +277,9 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
             <div key={m.motivo} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 0', fontSize: '0.78rem' }}>
               <span style={{ flex: '0 0 170px', color: '#4a4753' }}>{m.motivo}</span>
               <span style={{ flex: 1, height: 7, background: '#f5f4f8', borderRadius: 4, overflow: 'hidden' }}>
-                <i style={{ display: 'block', height: '100%', width: `${Math.round((m.monto / max) * 100)}%`, background: P_SUAVE, borderRadius: 4 }} />
+                {/* Reemplazada no es una pérdida real —el dinero se movió a otra
+                    cotización—, así que se distingue del resto en rosa. */}
+                <i style={{ display: 'block', height: '100%', width: `${Math.round((m.monto / max) * 100)}%`, background: /reempla/i.test(m.motivo) ? ROSA : NARANJA, borderRadius: 4 }} />
               </span>
               <span style={{ width: 88, textAlign: 'right', fontWeight: 700, color: '#7d7a88' }}>{money(m.monto)}</span>
             </div>
@@ -316,7 +330,7 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
   return (
     // Panel dentro del flujo de la página: el ancho lo pone el contenedor de
     // Cotizaciones, así que abrir o cerrar el menú lateral lo reacomoda solo.
-    <div style={{ background: '#fafafc', border: '1px solid #f0eef4', borderRadius: 14, padding: '22px 24px 26px' }}>
+    <div style={{ background: '#faf9fc', border: '1px solid #f0eef4', borderRadius: 14, padding: '22px 24px 26px' }}>
       <Desglose />
       <div>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9, marginBottom: 16 }}>
@@ -352,15 +366,15 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
         {d && (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14, marginBottom: 14 }}>
-              <Kpi azul t="Cotizado" v={money(d.kpis.cotizado.valor)}
+              <Kpi barra={NARANJA} t="Cotizado" v={money(d.kpis.cotizado.valor)}
                 abrir={() => setDetalle({ titulo: `Cotizado en ${nombreMes(d.mes)}`, filas: (d.kpis.cotizado.detalle || []).map((x: any) => ({ ...x, sub: x.estado })) })}
                 hijo={<><Delta v={d.kpis.cotizado.valor} a={d.kpis.cotizado.anterior} /> · {nombreMes(d.mes_anterior)} {money(d.kpis.cotizado.anterior)}</>} />
               <Kpi t={<span>Cobrado</span>} v={<span style={{ color: P }}>{money(d.kpis.cobrado.valor)}</span>}
                 abrir={() => setDetalle({ titulo: `Cobrado en ${nombreMes(d.mes)}`, filas: (d.kpis.cobrado.detalle || []).map((x: any) => ({ ...x, sub: [x.tipo, x.metodo, x.referencia].filter(Boolean).join(' · ') })) })}
                 hijo={<><Delta v={d.kpis.cobrado.valor} a={d.kpis.cobrado.anterior} /> · {nombreMes(d.mes_anterior)} {money(d.kpis.cobrado.anterior)}</>} />
-              <Kpi t="Tasa de cierre" v={`${d.kpis.cierre.valor}%`}
+              <Kpi barra={P_SUAVE} t="Tasa de cierre" v={`${d.kpis.cierre.valor}%`}
                 hijo={<><Delta v={d.kpis.cierre.valor} a={d.kpis.cierre.anterior} pts /> · sobre las ya resueltas</>} />
-              <Kpi azul t="Días a cobro" v={d.kpis.dias.valor == null ? '—' : `${d.kpis.dias.valor} d`}
+              <Kpi barra={ROSA} t="Días a cobro" v={d.kpis.dias.valor == null ? '—' : `${d.kpis.dias.valor} d`}
                 hijo={<><Delta v={d.kpis.dias.valor} a={d.kpis.dias.anterior} invertido /> · envío → pago</>} />
             </div>
 
