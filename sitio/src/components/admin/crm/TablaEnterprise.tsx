@@ -1,4 +1,4 @@
-import { cloneElement, useEffect, useMemo, useState } from 'react';
+import { cloneElement, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import { useIsMobile } from '../../../lib/ui/mobile';
@@ -94,6 +94,71 @@ const E = {
   chip: { display: 'inline-flex', alignItems: 'center', gap: 5, background: '#eef2fe', color: '#3764c4', borderRadius: 99, padding: '3px 10px', fontSize: '0.7rem', fontWeight: 700 } as const,
   tab: (act: boolean) => ({ padding: '9px 13px', border: 'none', borderBottom: act ? '2px solid #1a1a1a' : '2px solid transparent', background: 'none', cursor: 'pointer', fontWeight: act ? 700 : 600, fontSize: '0.8rem', color: act ? '#16181d' : '#6b7078', whiteSpace: 'nowrap' as const, display: 'inline-flex', alignItems: 'center', gap: 6 }) as const,
 };
+
+
+/* ─── Filtro desplegable ─────────────────────────────────────────────────────
+   Un <select> nativo NO se puede pintar: el panel de opciones lo dibuja el
+   sistema operativo, y en macOS sale negro con el color de acento del usuario
+   —de ahí el recuadro oscuro con rosa—. Para que siga la gama del módulo hay
+   que dibujarlo nosotros.
+
+   Panel lila translúcido con desenfoque detrás, y la opción elegida en rosa
+   claro: el rosa marca la selección sin competir con el morado de la interfaz. */
+function FiltroDesplegable({ qd, valor, onElegir, isMobile }: { qd: QuickDef; valor: string; onElegir: (v: string) => void; isMobile: boolean }) {
+  const [abierto, setAbierto] = useState(false);
+  const caja = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!abierto) return;
+    const fuera = (e: MouseEvent) => { if (caja.current && !caja.current.contains(e.target as Node)) setAbierto(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setAbierto(false); };
+    window.addEventListener('mousedown', fuera);
+    window.addEventListener('keydown', esc);
+    return () => { window.removeEventListener('mousedown', fuera); window.removeEventListener('keydown', esc); };
+  }, [abierto]);
+
+  const activo = !!valor;
+  const elegido = qd.options.find(o => o.v === valor);
+  return (
+    <div ref={caja} style={{ position: 'relative', width: isMobile ? '100%' : undefined }}>
+      <button type="button" onClick={() => setAbierto(a => !a)}
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 7, width: isMobile ? '100%' : undefined,
+          height: isMobile ? 44 : 36, padding: '0 12px', borderRadius: 9, cursor: 'pointer',
+          fontFamily: 'inherit', fontSize: '0.78rem', fontWeight: activo ? 700 : 600,
+          border: '1px solid', borderColor: activo || abierto ? '#c9bcf7' : '#e2e4e9',
+          background: activo || abierto ? '#f7f4ff' : '#fff', color: activo ? '#5B4BD6' : '#555',
+        }}>
+        <span>{qd.label}</span>
+        {elegido && <span style={{ color: '#7a6fc9', fontWeight: 600 }}>{elegido.l}</span>}
+        <span style={{ color: activo ? '#9B8CFA' : '#b3afbd', fontSize: '0.6rem', marginLeft: 'auto' }}>▾</span>
+      </button>
+      {abierto && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 6px)', left: 0, minWidth: 'max(100%, 190px)', zIndex: 60,
+          background: 'rgba(250,248,255,0.94)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)',
+          border: '1px solid #e6ddfa', borderRadius: 12, boxShadow: '0 14px 34px rgba(91,75,214,0.16)', padding: 5,
+        }}>
+          {[{ v: '', l: 'Todos' }, ...qd.options].map(o => {
+            const sel = (valor || '') === o.v;
+            return (
+              <button key={o.v || '_'} type="button" onClick={() => { onElegir(o.v); setAbierto(false); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left',
+                  border: 'none', cursor: 'pointer', borderRadius: 8, padding: '8px 10px',
+                  fontFamily: 'inherit', fontSize: '0.78rem', fontWeight: sel ? 800 : 500,
+                  background: sel ? 'rgba(244,168,205,0.34)' : 'transparent',
+                  color: sel ? '#9c3d70' : '#3f3b4d',
+                }}>
+                <span style={{ width: 12, color: '#9c3d70' }}>{sel ? '✓' : ''}</span>
+                {o.l}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function TablaEnterprise({
   tabla, data, cols, quick = [], vistasBase, searchText, searchPlaceholder = 'Buscar…',
@@ -238,10 +303,7 @@ export default function TablaEnterprise({
 
   const activeFiltros = conds.length + Object.values(quickVals).filter(Boolean).length;
   const quickSelects = quick.map(qd => (
-    <select key={qd.key} value={quickVals[qd.key] || ''} onChange={e => setQuickV(qd.key, e.target.value)} style={isMobile ? { ...E.input, width: '100%', height: 44 } : E.input}>
-      <option value="">{qd.label}</option>
-      {qd.options.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
-    </select>
+    <FiltroDesplegable key={qd.key} qd={qd} valor={quickVals[qd.key] || ''} onElegir={(v: string) => setQuickV(qd.key, v)} isMobile={isMobile} />
   ));
   const condsPanel = (
     <div style={{ background: '#fafbfd', border: '1px solid #e8eaee', borderRadius: 10, padding: 14 }}>

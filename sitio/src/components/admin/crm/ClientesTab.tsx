@@ -6,10 +6,7 @@ import ClienteDrawer360 from './ClienteDrawer360';
 import NuevoClienteModal from './NuevoClienteModal';
 import PipelineKanban from './PipelineKanban';
 import TablaEnterprise, { type ColDef, type QuickDef, type VistaDef } from './TablaEnterprise';
-import NombresEmpresaModal from './NombresEmpresaModal';
 import { useToast, Toast, logStageChange } from './crmHelpers';
-import EnriquecerWhatsApp from './EnriquecerWhatsApp';
-import RevisarRelaciones from './RevisarRelaciones';
 import { SENAL_LABEL } from '../../../lib/crm/senales';
 import { useIsMobile } from '../../../lib/ui/mobile';
 import HealthScoreBadge from './HealthScoreBadge';
@@ -90,21 +87,9 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   const [detailId, setDetailId] = useState<string | null>(null);
   const [showNuevo, setShowNuevo] = useState(false);
   const [modo, setModo] = useState<'tabla' | 'kanban'>('tabla');
-  const [stages, setStages] = useState<{ key: string; label: string; color: string }[]>([]);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [showNombres, setShowNombres] = useState(false);
   const isMobile = useIsMobile();
   const { toast, show } = useToast();
-
-  // Cierra "Más acciones" con click fuera o Escape.
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false); };
-    const onClick = () => setMenuOpen(false);
-    window.addEventListener('keydown', onKey);
-    window.addEventListener('click', onClick);
-    return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('click', onClick); };
-  }, [menuOpen]);
+  const [stages, setStages] = useState<{ key: string; label: string; color: string }[]>([]);
 
   // KPIs con dual-value (spec UI/UX): riesgo/vencidas/pagado se derivan de data.
   const kpis = useMemo(() => {
@@ -487,45 +472,19 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   if (loading) return <div style={{ padding: 48, textAlign: 'center', color: '#999' }}>Cargando clientes reales…</div>;
   if (error) return <div style={{ padding: 48, textAlign: 'center', color: '#E54B4B' }}>{error} <button style={S.btnSmall} onClick={load}>Reintentar</button></div>;
 
+  // Un ícono y un botón, como en Cotizaciones: los secundarios son íconos sin
+  // texto y solo la acción principal lleva color. El menú "Más acciones"
+  // guardaba herramientas de una sola vez que estorbaban todos los días.
   const cabeceraAcciones = (<>
-            <button onClick={() => setShowNuevo(true)} title="Alta completa: cliente + contacto + cuenta SACS + suscripción"
-              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, height: isMobile ? 44 : 36, flex: isMobile ? 1 : undefined, minWidth: 0, padding: '0 16px', border: 'none', borderRadius: 10, background: CL.violeta, color: '#fff', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 1px 2px rgba(16,24,40,0.10)', whiteSpace: 'nowrap' }}>
-              <Plus size={15} strokeWidth={2.5} /> Nuevo cliente
-            </button>
-            <div style={{ position: 'relative', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-              <button onClick={() => setMenuOpen(o => !o)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: isMobile ? 44 : 36, padding: isMobile ? '0 12px' : '0 14px', border: '1px solid #e2e4e9', borderRadius: 10, background: menuOpen ? '#f7f8fa' : '#fff', color: '#333', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                {isMobile ? 'Más' : 'Más acciones'} <ChevronDown size={14} strokeWidth={2} style={{ transform: menuOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
-              </button>
-              {menuOpen && isMobile && <div onClick={() => setMenuOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.42)', zIndex: 949 }} />}
-              {menuOpen && (
-                <div style={isMobile
-                  ? { position: 'fixed', left: 0, right: 0, bottom: 0, background: '#fff', borderRadius: '16px 16px 0 0', boxShadow: '0 -8px 30px rgba(0,0,0,0.18)', padding: '8px 8px calc(12px + env(safe-area-inset-bottom))', zIndex: 950 }
-                  : { position: 'absolute', right: 0, top: 'calc(100% + 6px)', width: 236, background: '#fff', border: '1px solid #e9eaee', borderRadius: 14, boxShadow: '0 4px 6px -2px rgba(16,24,40,0.05), 0 12px 24px -4px rgba(16,24,40,0.12)', padding: 6, zIndex: 50 }}>
-                  <RevisarRelaciones onDone={() => { setMenuOpen(false); load(); }} trigger={open => (
-                    <button className="te-item" style={T.menuItem} onClick={open}><Link2 size={15} color="#8a8f98" /> Revisar relaciones</button>
-                  )} />
-                  {/* Nombres de empresa: 40 de las 83 cuentas quedaron con el
-                      slug capitalizado porque no son palabras separables. Aquí
-                      se escriben todas de corrido en vez de entrar a 40 fichas. */}
-                  <button className="te-item" style={T.menuItem} onClick={() => { setMenuOpen(false); setShowNombres(true); }}>
-                    <Building2 size={15} color="#8a8f98" /> Nombres de las empresas
-                  </button>
-                  <EnriquecerWhatsApp onDone={() => { setMenuOpen(false); load(); }} trigger={open => (
-                    <button className="te-item" style={T.menuItem} onClick={open}><MessageCircle size={15} color="#8a8f98" /> Enriquecer WhatsApp</button>
-                  )} />
-                  <div style={{ height: 1, background: '#f1f2f5', margin: '6px 4px' }} />
-                  <a className="te-item" style={T.menuItem} href="/api/crm/arr/export-clientes" onClick={() => setMenuOpen(false)}><Download size={15} color="#8a8f98" /> Exportar clientes</a>
-                  <div style={{ height: 1, background: '#f1f2f5', margin: '6px 4px' }} />
-                  <button className="te-item" style={T.menuItem} onClick={() => { setMenuOpen(false); onConfig?.(); }}><Settings2 size={15} color="#8a8f98" /> Configurar etapas</button>
-                  <button className="te-item" style={T.menuItem} onClick={() => { setMenuOpen(false); setModo(m => m === 'tabla' ? 'kanban' : 'tabla'); }}>
-                    {modo === 'tabla' ? <LayoutGrid size={15} color="#8a8f98" /> : <Table2 size={15} color="#8a8f98" />}
-                    {modo === 'tabla' ? 'Ver como Kanban' : 'Ver como Tabla'}
-                  </button>
-                </div>
-              )}
-            </div>
-</>);
+    <a href="/api/crm/arr/export-clientes" title="Exportar clientes" aria-label="Exportar clientes"
+      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, border: '1px solid #e2e4e9', borderRadius: 10, background: '#fff', color: '#666', textDecoration: 'none', flexShrink: 0 }}>
+      <Download size={16} strokeWidth={2} />
+    </a>
+    <button onClick={() => setShowNuevo(true)} title="Alta completa: cliente + contacto + cuenta SACS + suscripción"
+      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, height: isMobile ? 44 : 36, flex: isMobile ? 1 : undefined, minWidth: 0, padding: '0 16px', border: 'none', borderRadius: 10, background: CL.violeta, color: '#fff', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 1px 2px rgba(16,24,40,0.10)', whiteSpace: 'nowrap' }}>
+      <Plus size={15} strokeWidth={2.5} /> Nuevo cliente
+    </button>
+  </>);
 
   return (
     // Mismo contenedor que Cotizaciones: sin esto la tabla se estira de orilla a
@@ -658,7 +617,6 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
 
       {detailId && <ClienteDrawer360 companyId={detailId} onClose={() => setDetailId(null)} onChanged={load} />}
       {showNuevo && <NuevoClienteModal onClose={() => setShowNuevo(false)} onCreated={(id) => { setShowNuevo(false); load(); if (id) setDetailId(id); }} />}
-      {showNombres && <NombresEmpresaModal onCerrar={() => setShowNombres(false)} onGuardado={load} />}
       <Toast toast={toast} />
     </div>
   );
