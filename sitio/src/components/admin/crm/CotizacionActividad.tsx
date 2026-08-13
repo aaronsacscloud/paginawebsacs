@@ -22,9 +22,25 @@ const P = {
   card: { border: '1px solid #ececec', borderRadius: 12, padding: 14, marginBottom: 12 } as const,
   h: { fontSize: '0.68rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: 10 } as const,
   input: { padding: '7px 9px', border: '1px solid #ddd', borderRadius: 7, fontSize: '0.82rem', outline: 'none', boxSizing: 'border-box' as const, background: '#fff' },
-  btn: { padding: '7px 12px', border: 'none', borderRadius: 8, fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', background: '#1a1a1a', color: '#fff' } as const,
+  // Los mismos tres pesos que en el resto de Cotizaciones: morado sólido para
+  // la acción principal, contorno azul para las importantes que no lo son, y
+  // gris para lo secundario.
+  btn: { padding: '7px 14px', border: 'none', borderRadius: 8, fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', background: '#9B8CFA', color: '#fff' } as const,
+  btnA: { padding: '6px 13px', border: '1.5px solid #7DA6F5', borderRadius: 10, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', background: '#fff', color: '#2C5FC4' } as const,
   btnG: { padding: '6px 11px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', background: '#fff', color: '#333' } as const,
   fila: { display: 'flex', gap: 8, alignItems: 'center', padding: '7px 0', borderTop: '1px solid #f5f5f5', fontSize: '0.8rem' } as const,
+};
+
+// El historial mostraba las claves internas: "created", "sent", "edited". Son
+// el nombre del evento en la base, no algo que alguien deba leer.
+const ESTADO_ES: Record<string, string> = {
+  draft: 'borrador', sent: 'enviada', accepted: 'aceptada', paid: 'pagada',
+  expired: 'vencida', rejected: 'rechazada', deleted: 'eliminada',
+};
+const EVENTO_ES: Record<string, string> = {
+  created: 'Se creó la cotización', sent: 'Se envió al cliente', edited: 'Se editó',
+  accepted: 'La aceptó el cliente', paid: 'Se marcó pagada', rejected: 'Se marcó rechazada',
+  expired: 'Venció', extended: 'Se extendió la vigencia', duplicated: 'Se duplicó',
 };
 
 const METODOS = ['transferencia', 'efectivo', 'tarjeta', 'oxxo', 'mercadopago', 'stripe', 'otro'];
@@ -176,13 +192,15 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
       )}
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 1199 }} />
       <div style={P.panel}>
-        <div style={{ position: 'sticky', top: 0, background: '#fff', borderBottom: '1px solid #f0f0f0', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 10, zIndex: 2 }}>
+        {/* Encabezado con el mismo tinte morado del buscador de cliente: separa
+            el título del contenido sin meter una línea más. */}
+        <div style={{ position: 'sticky', top: 0, background: '#faf8ff', borderBottom: '1px solid #e6ddfa', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 10, zIndex: 2 }}>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontWeight: 800, fontSize: '1rem' }}>Cotización {q.numero}</div>
-            <div style={{ fontSize: '0.76rem', color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.empresa || q.contacto} · {money(q.total)} · {q.estado}</div>
+            <div style={{ fontWeight: 800, fontSize: '1rem', color: '#3b2a6b' }}>Cotización {q.numero}</div>
+            <div style={{ fontSize: '0.76rem', color: '#7a6fc9', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{q.empresa || q.contacto} · {money(q.total)} · {ESTADO_ES[q.estado] || q.estado}</div>
           </div>
           <button onClick={copiarHistorial} style={P.btnG} title="Copiar el historial para pegarlo en un correo o nota">📋</button>
-          <a href={`/cotizacion/${q.id}?admin=1`} target="_blank" rel="noreferrer" style={{ ...P.btnG, textDecoration: 'none' }}>Ver documento</a>
+          <a href={`/cotizacion/${q.id}?admin=1`} target="_blank" rel="noreferrer" style={{ ...P.btnA, textDecoration: 'none' }}>Ver documento</a>
           <button onClick={onClose} style={{ ...P.btnG, border: 'none', fontSize: '1rem' }}>✕</button>
         </div>
 
@@ -247,12 +265,13 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
             <div style={P.h}>Cambiar estado</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {q.estado !== 'accepted' && q.estado !== 'paid' && (
-                <button style={P.btnG} disabled={busy} onClick={() => cambiarEstado('aceptada')}>Marcar aceptada</button>
+                <button style={P.btnA} disabled={busy} onClick={() => cambiarEstado('aceptada')}>Marcar aceptada</button>
               )}
+              {/* La principal de este bloque: es la que cierra la venta. */}
               {q.estado !== 'paid' && (
-                <button style={{ ...P.btnG, color: '#0f7a56', borderColor: '#cfe9df', fontWeight: 700 }} disabled={busy} onClick={() => cambiarEstado('pagada')}>Marcar pagada</button>
+                <button style={P.btn} disabled={busy} onClick={() => cambiarEstado('pagada')}>Registrar pago</button>
               )}
-              <button style={P.btnG} disabled={busy} onClick={() => cambiarEstado('extender')}>Extender vigencia</button>
+              <button style={P.btnA} disabled={busy} onClick={() => cambiarEstado('extender')}>Extender vigencia</button>
               {q.estado !== 'rejected' && q.estado !== 'paid' && (
                 <button style={{ ...P.btnG, color: '#b4302f', borderColor: '#f0cfcf' }} disabled={busy} onClick={() => cambiarEstado('rechazada')}>Marcar rechazada</button>
               )}
@@ -263,7 +282,7 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
           <div style={P.card}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ ...P.h, marginBottom: 0, flex: 1 }}>Pagos y abonos</div>
-              <button style={P.btnG} onClick={() => setNuevoAbono({ fecha: hoy(), monto: d.saldo > 0 ? d.saldo : '', metodo: 'transferencia', referencia: '' })}>+ Abono</button>
+              <button style={P.btnA} onClick={() => setNuevoAbono({ fecha: hoy(), monto: d.saldo > 0 ? d.saldo : '', metodo: 'transferencia', referencia: '' })}>+ Abono</button>
             </div>
 
             {/* La fecha de pago SIEMPRE editable: el pago casi nunca se captura
@@ -348,7 +367,7 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
                   cuesta un clic. */}
               {d.vistas.total > 0 && q.estado !== 'paid' && (
                 <a href={`https://wa.me/${wa}?text=${encodeURIComponent(`Hola ${q.contacto || ''} 👋 ¿Pudiste revisar la cotización ${q.numero}? Aquí la tienes:\n${link}`)}`}
-                  target="_blank" rel="noreferrer" style={{ ...P.btnG, textDecoration: 'none', color: '#1A8F7A', borderColor: '#bfe8df', fontWeight: 700 }}>💬 Recordar</a>
+                  target="_blank" rel="noreferrer" style={{ ...P.btnA, textDecoration: 'none' }}>Recordar por WhatsApp</a>
               )}
             </div>
             {d.vistas.total === 0 ? (
@@ -447,7 +466,7 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
                     : t.event === 'restaurada' ? '↩️ Restaurada'
                     : t.event === 'abono' ? `💵 ${t.detalle || 'abono'}`
                     : t.event === 'fecha_pago_editada' ? `📅 Fecha de pago: ${t.de || '—'} → ${t.a || '—'}`
-                    : t.event}
+                    : EVENTO_ES[t.event] || t.event}
                   {t.por ? <span style={{ color: '#aaa' }}> · {t.por}</span> : null}
                 </span>
                 <span style={{ color: '#aaa', fontSize: '0.72rem' }}>{fHora(t.at)}</span>
