@@ -40,8 +40,12 @@ const D = {
   // calcula solo. El color dice si se toca, sin tener que escribirlo.
   cardM: { background: '#fff', border: '1.5px solid #ddd6fb', borderRadius: 12, padding: 16, marginBottom: 14 } as const,
   cardA: { background: '#fff', border: '1.5px solid #cfe0fa', borderRadius: 12, padding: 16, marginBottom: 14 } as const,
-  hM: { fontSize: '0.66rem', fontWeight: 800, color: '#5B4BD6', textTransform: 'uppercase' as const, letterSpacing: '0.9px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 } as const,
-  hA: { fontSize: '0.66rem', fontWeight: 800, color: '#2C5FC4', textTransform: 'uppercase' as const, letterSpacing: '0.9px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 } as const,
+  // Título en negro: el color del CONTORNO ya dice si la sección se captura o
+  // solo se mira, y con el título también teñido eran dos señales para lo mismo.
+  hM: { fontSize: '0.66rem', fontWeight: 800, color: '#1a1a1a', textTransform: 'uppercase' as const, letterSpacing: '0.9px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 } as const,
+  hA: { fontSize: '0.66rem', fontWeight: 800, color: '#1a1a1a', textTransform: 'uppercase' as const, letterSpacing: '0.9px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 } as const,
+  // Campos con el lila del buscador: contorno tenue y fondo casi blanco.
+  inputM: { padding: '8px 11px', border: '1.5px solid #e4dffb', borderRadius: 9, fontSize: '0.79rem', outline: 'none', width: '100%', boxSizing: 'border-box' as const, background: '#fdfcff', fontFamily: 'inherit' } as const,
   hNota: { marginLeft: 'auto', fontSize: '0.66rem', fontWeight: 500, textTransform: 'none' as const, letterSpacing: 0, color: '#a5a2af' } as const,
   h: { fontSize: '0.72rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: 10 },
   kpi: { background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '12px 14px', minWidth: 130, flex: 1 } as const,
@@ -545,7 +549,7 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
   const campo = (label: string, k: string, ph = '') => (
     <div style={{ flex: '1 1 200px' }}>
       <label style={D.lbl}>{label}</label>
-      <input value={f[k]} onChange={e => setF({ ...f, [k]: e.target.value })} placeholder={ph} style={D.input} />
+      <input value={f[k]} onChange={e => setF({ ...f, [k]: e.target.value })} placeholder={ph} style={D.inputM} />
     </div>
   );
   // ── Contrato: NO se captura, se deriva ──
@@ -571,26 +575,6 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
 
   return (
     <div>
-      <EtapaSelector co={co} reload={reload} flash={flash} />
-
-      <div style={D.cardA}>
-        <div style={D.hA}>Contrato
-          <span style={D.hNota}>no se captura · se calcula de sus suscripciones y pagos</span>
-        </div>
-        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' as const, marginTop: 4 }}>
-          {dato('Plan', planes.length ? planes.join(' + ') : (co.plan || '—'))}
-          {dato('Ciclo', ciclos.length ? ciclos.join(' + ') : '—')}
-          {dato('Sucursales', co.sucursales || 1)}
-          {dato('Renovación', renov ? fmtDate(renov) : '—')}
-          {dato('ARR', arr > 0 ? money(arr) : '—', '#5B4BD6')}
-          {dato('Cobrado', cobrado > 0 ? money(cobrado) : '—', '#1E8A63')}
-          {unicos > 0 ? dato('Ingresos únicos', money(unicos), '#1E8A63') : null}
-        </div>
-      </div>
-
-      {/* Campos personalizados: información INTERNA de gestión, definida en
-          Configuración. Va antes de los datos fiscales a propósito — es lo que
-          se consulta para atender la cuenta, no para facturarla. */}
       {/* Contactos vive aquí y no en su propia pestaña: para ver el correo de
           alguien había que cambiar de pantalla. */}
       <div style={D.cardM}>
@@ -598,10 +582,38 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
         <TabContactos companyId={companyId} contactos={contactos} reload={reload} flash={flash} compacto />
       </div>
 
-      <div style={D.cardM}>
-        <div style={D.hM}>Gestión interna<span style={D.hNota}>solo para el equipo · es lo que se filtra en la lista</span></div>
-        <CamposFicha entidad="company" entidadId={co.id} valores={co.propiedades} onGuardado={reload} />
+      <EtapaSelector co={co} reload={reload} flash={flash} />
+
+      <div style={D.cardA}>
+        <div style={D.hA}>Contrato
+          <span style={D.hNota}>no se captura · se calcula de sus suscripciones y pagos</span>
+        </div>
+        {/* Rejilla pareja: el nombre del plan ocupaba tres renglones y empujaba
+            las demás columnas. Ahora va en pastillas —una por suscripción— en
+            una celda de doble ancho. */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 14 }}>
+          <div style={{ gridColumn: 'span 2' }}>
+            <div style={{ fontSize: '0.56rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '.07em', color: '#9c99a6' }}>Plan</div>
+            <div style={{ marginTop: 3 }}>
+              {planes.length
+                ? planes.map((n: any) => (
+                  <span key={n} style={{ display: 'inline-block', background: '#EEECFE', color: '#4536BE', borderRadius: 20, padding: '3px 10px', fontSize: '0.66rem', fontWeight: 800, margin: '3px 4px 0 0' }}>{n}</span>
+                ))
+                : <span style={{ fontSize: '0.9rem', fontWeight: 800 }}>{co.plan || '—'}</span>}
+            </div>
+          </div>
+          {dato('Ciclo', ciclos.length ? ciclos.join(' + ') : '—')}
+          {dato('Sucursales', co.sucursales || 1)}
+          {dato('Renovación', renov ? fmtDate(renov) : '—')}
+          <div>
+            <div style={{ fontSize: '0.56rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '.07em', color: '#9c99a6' }}>ARR · Cobrado</div>
+            <div style={{ fontSize: '0.92rem', fontWeight: 800, marginTop: 3, color: '#5B4BD6' }}>{arr > 0 ? money(arr) : '—'}</div>
+            {cobrado > 0 && <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#1E8A63' }}>{money(cobrado)} cobrado</div>}
+            {unicos > 0 && <div style={{ fontSize: '0.68rem', color: '#1E8A63' }}>{money(unicos)} de pago único</div>}
+          </div>
+        </div>
       </div>
+
       <div style={D.cardM}>
         <div style={D.hM}>Identidad</div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
@@ -618,12 +630,12 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
           {campo('Sitio web', 'sitio_web', 'https://…')}
           <div style={{ flex: '1 1 160px' }}>
             <label style={D.lbl}>Ciudad</label>
-            <input list="ciudades-usadas" value={f.ciudad} onChange={e => setF({ ...f, ciudad: e.target.value })} style={D.input} placeholder="empieza a escribir…" />
+            <input list="ciudades-usadas" value={f.ciudad} onChange={e => setF({ ...f, ciudad: e.target.value })} style={D.inputM} placeholder="empieza a escribir…" />
             <datalist id="ciudades-usadas">{(ciudadesUsadas || []).map((x: string) => <option key={x} value={x} />)}</datalist>
           </div>
           <div style={{ flex: '1 1 160px' }}>
             <label style={D.lbl}>Estado</label>
-            <select value={f.estado_geo} onChange={e => setF({ ...f, estado_geo: e.target.value })} style={D.input}>
+            <select value={f.estado_geo} onChange={e => setF({ ...f, estado_geo: e.target.value })} style={D.inputM}>
               <option value="">—</option>
               {ESTADOS_MX.map(x => <option key={x} value={x}>{x}</option>)}
             </select>
@@ -632,7 +644,7 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div style={{ width: 170 }}>
             <label style={D.lbl}>Sucursales</label>
-            <select value={Number(f.sucursales) > 50 ? MAS_DE_50 : (f.sucursales || 1)} onChange={e => setF({ ...f, sucursales: e.target.value })} style={D.input}>
+            <select value={Number(f.sucursales) > 50 ? MAS_DE_50 : (f.sucursales || 1)} onChange={e => setF({ ...f, sucursales: e.target.value })} style={D.inputM}>
               {SUCURSALES_OPTS.map(n => <option key={n} value={n}>{n}</option>)}
               <option value={MAS_DE_50}>Más de 50</option>
             </select>
@@ -640,12 +652,17 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
           </div>
           <div style={{ width: 180 }}>
             <label style={D.lbl}>Estado de la cuenta</label>
-            <select value={f.estado_cuenta} onChange={e => setF({ ...f, estado_cuenta: e.target.value })} style={D.input}>
+            <select value={f.estado_cuenta} onChange={e => setF({ ...f, estado_cuenta: e.target.value })} style={D.inputM}>
               {['activo', 'prospecto', 'pausado', 'churned'].map(x => <option key={x} value={x}>{x}</option>)}
             </select>
           </div>
         </div>
         {barraGuardado}
+      </div>
+
+      <div style={D.cardM}>
+        <div style={D.hM}>Gestión interna<span style={D.hNota}>solo para el equipo · es lo que se filtra en la lista</span></div>
+        <CamposFicha entidad="company" entidadId={co.id} valores={co.propiedades} onGuardado={reload} />
       </div>
     </div>
   );
