@@ -67,6 +67,8 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
   const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'oport' | 'reuniones' | 'notas' | 'act'>('resumen');
   const [msg, setMsg] = useState('');
   const [borrar, setBorrar] = useState(false);
+  const [editandoNombre, setEditandoNombre] = useState(false);
+  const [nombreEd, setNombreEd] = useState('');
   const isMobile = useIsMobile();
   useDrawerHistory(true, onClose); // atrás cierra el drawer + scroll-lock del body
 
@@ -81,6 +83,18 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
   useEffect(() => { setData(null); setTab('resumen'); load(); }, [companyId]);
 
   function flash(t: string) { setMsg(t); setTimeout(() => setMsg(''), 2600); }
+
+  // Vacío = volver a la sugerencia automática, no dejar al cliente sin nombre.
+  async function guardarNombre() {
+    const v = nombreEd.trim();
+    setEditandoNombre(false);
+    await fetch('/api/crm/companies', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: companyId, nombre_comercial: v || null }),
+    }).catch(() => {});
+    flash(v ? 'Nombre de la empresa guardado' : 'Nombre restablecido');
+    load();
+  }
 
   const co = data?.company;
   const contactos: any[] = data?.contacts || [];
@@ -100,7 +114,27 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
             <div style={D.head}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '1.15rem', fontWeight: 800 }}>{co.nombre}</div>
+                  {/* El título es la EMPRESA y se puede corregir aquí mismo: el
+                      nombre se sugirió partiendo la cuenta SACS, y cuando la
+                      cuenta no se puede partir queda tal cual con la inicial en
+                      mayúscula. Escribirlo bien es cosa de un clic. */}
+                  {editandoNombre ? (
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <input autoFocus value={nombreEd} onChange={e => setNombreEd(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') guardarNombre(); if (e.key === 'Escape') setEditandoNombre(false); }}
+                        placeholder="Nombre de la empresa"
+                        style={{ fontSize: '1.05rem', fontWeight: 800, border: '1px solid #cfd6e4', borderRadius: 7, padding: '4px 8px', minWidth: 240 }} />
+                      <button onClick={guardarNombre} style={{ ...D.btnG, color: '#1A8F7A', fontWeight: 800 }}>✓</button>
+                      <button onClick={() => setEditandoNombre(false)} style={D.btnG}>✕</button>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '1.15rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 7 }}>
+                      {co.nombre_comercial || co.sacs_account || co.nombre}
+                      <button title="Editar el nombre de la empresa"
+                        onClick={() => { setNombreEd(co.nombre_comercial || ''); setEditandoNombre(true); }}
+                        style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '0.8rem', opacity: 0.55 }}>✏️</button>
+                    </div>
+                  )}
                   <div style={{ fontSize: '0.78rem', color: '#888', marginTop: 2 }}>
                     {co.sacs_account ? <>Cuenta SACS: <b>{co.sacs_account}</b></> : <span style={{ color: '#c62828' }}>Sin cuenta SACS ligada</span>}
                     {principal ? <> · {principal.nombre}{principal.email ? ` · ${principal.email}` : ''}</> : null}

@@ -202,10 +202,12 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
 
   const cols: ColDef[] = [
     {
-      key: 'cliente', label: 'Cliente', width: '17%', ftype: 'text',
-      val: c => (c.contacto?.nombre || c.nombre || '').toLowerCase(),
+      key: 'cliente', label: 'Cliente', width: '15%', ftype: 'text',
+      // El cliente es la EMPRESA. El título salía del contacto, así que un
+      // renglón decía "Oscar Rivera" cuando la cuenta es Super Carnes Rivera.
+      val: c => (c.nombre_comercial || c.sacs_account || c.nombre || '').toLowerCase(),
       render: c => {
-        const titulo = c.contacto?.nombre || c.nombre;
+        const titulo = c.nombre_comercial || c.sacs_account || c.nombre;
         const cuentas: string[] = c.cuentas?.length ? c.cuentas : (c.sacs_account ? [c.sacs_account] : []);
         return (
           <td style={{ ...T.td, ...T.ell, fontWeight: 700 }}>
@@ -230,7 +232,21 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       },
     },
     {
-      key: 'contacto', label: 'Contacto', width: '18%', ftype: 'text',
+      key: 'contacto', label: 'Contacto', width: 132, ftype: 'text',
+      val: c => (c.contacto?.nombre || '').toLowerCase(),
+      render: c => (
+        <td style={{ ...T.td, ...T.ell }}>
+          {c.contacto?.nombre
+            ? <><span style={{ fontWeight: 700 }}>{c.contacto.nombre}</span>
+                <div style={{ ...T.sub, ...T.ell }}>{c.contacto.rol || (c.contacto.es_principal ? 'contacto principal' : '')}</div></>
+            : <span style={{ color: '#c62828' }}>sin contacto</span>}
+        </td>
+      ),
+    },
+    {
+      // Correo y teléfono aparte: juntos con el nombre, la columna se saturaba
+      // y no se leía ninguno de los tres.
+      key: 'datos_contacto', label: 'Datos de contacto', width: '15%', ftype: 'text',
       val: c => [c.contacto?.email, c.contacto?.whatsapp, c.contacto?.telefono].filter(Boolean).join(' '),
       render: c => (
         <td style={T.td} onClick={e => e.stopPropagation()}>
@@ -246,10 +262,10 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ ...T.ell, color: c.contacto?.email ? '#444' : (c.contacto ? '#c4c8cf' : '#c62828'), fontSize: '0.78rem' }}>
-                  {c.contacto?.email || (c.contacto ? '—' : 'sin contacto')}
+                <div style={{ ...T.ell, color: c.contacto?.email ? '#444' : '#c4c8cf', fontSize: '0.76rem' }}>
+                  {c.contacto?.email || '—'}
                 </div>
-                <div style={{ ...T.ell, ...T.sub, marginTop: 1 }}>{c.contacto?.whatsapp || c.contacto?.telefono || ''}</div>
+                <div style={{ ...T.ell, ...T.sub, marginTop: 1 }}>{c.contacto?.whatsapp || c.contacto?.telefono || 'sin teléfono'}</div>
               </div>
               <button className="ct-pencil" title={c.contacto ? 'Editar correo/WhatsApp' : 'Agregar contacto'} onClick={() => startEdit(c)} style={{ ...S.btnSmall, padding: '2px 7px', border: 'none', background: 'none', flexShrink: 0 }}>✏️</button>
             </div>
@@ -258,18 +274,144 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       ),
     },
     {
-      key: 'plan', label: 'Plan', width: 124, ftype: 'select',
+      key: 'plan', label: 'Plan', width: 118, ftype: 'select',
       options: Object.entries(PLAN_BADGE).map(([v, b]) => ({ v, l: b.label })),
       val: c => c.plan || '',
+      // Solo el tipo de suscripción. El estado de la cuenta vivía pegado abajo
+      // y las dos etiquetas juntas hacían que no se leyera ninguna; se filtra
+      // por estado desde los filtros, que es donde sirve.
       render: c => {
         const b = PLAN_BADGE[c.plan] || null;
-        const e = ESTADO_SUB(c);
         return (
           <td style={{ ...T.td, ...T.ell }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}>
-              {b ? <span style={{ ...T.badge, background: b.bg, color: b.color }}>{b.label}</span> : <span style={{ color: '#c4c8cf' }}>—</span>}
-              <span style={{ ...T.badge, background: e.bg, color: e.color, fontSize: '0.62rem' }}>{e.label}</span>
+            {b ? <span style={{ ...T.badge, background: b.bg, color: b.color }}>{b.label}</span> : <span style={{ color: '#c4c8cf' }}>—</span>}
+          </td>
+        );
+      },
+    },
+    {
+      key: 'renovacion', label: 'Renovación', width: 106, ftype: 'date', val: c => c.proxima_factura || '',
+      render: c => {
+        const f = c.proxima_factura;
+        if (!f) return <td style={T.td}><span style={{ color: '#c4c8cf' }}>—</span></td>;
+        const dias = Math.round((new Date(f + 'T00:00:00').getTime() - Date.now()) / 86400000);
+        return (
+          <td style={T.td}>
+            <div style={{ fontSize: '0.74rem' }}>{fmtDate(f)}</div>
+            <div style={{ ...T.sub, color: dias < 0 ? '#C0554E' : '#9aa0a8', fontWeight: dias < 0 ? 700 : 600 }}>
+              {dias < 0 ? `venció hace ${Math.abs(dias)} d` : dias === 0 ? 'hoy' : `en ${dias} días`}
             </div>
+          </td>
+        );
+      },
+    },
+    {
+      // ── Estado de pago ──
+      // Independiente de la renovación: una cuenta puede renovar en diciembre y
+      // traer la mensualidad de este mes vencida. Es la columna que contesta
+      // "¿a quién hay que cobrarle hoy?" sin abrir a nadie.
+      key: 'estado_pago', label: 'Estado de pago', width: 126, ftype: 'select',
+      options: [{ v: 'corriente', l: 'Al corriente' }, { v: 'proximo', l: 'Pago próximo' }, { v: 'vencido', l: 'Pago vencido' }],
+      val: c => c.estado_pago || '',
+      render: c => {
+        const e = c.estado_pago;
+        if (!e) return <td style={T.td}><span style={{ color: '#c4c8cf' }}>—</span></td>;
+        const cfg: Record<string, { l: string; bg: string; fg: string; dot: string }> = {
+          corriente: { l: 'Al corriente', bg: '#EAF8F2', fg: '#1E8A63', dot: '#4FBF95' },
+          proximo:   { l: 'Pago próximo', bg: '#FEF6E8', fg: '#A06600', dot: '#E9B949' },
+          vencido:   { l: 'Pago vencido', bg: '#FEF0EF', fg: '#C0554E', dot: '#EF7A72' },
+        };
+        const k = cfg[e];
+        return (
+          <td style={T.td}>
+            <span style={{ ...T.badge, background: k.bg, color: k.fg, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: k.dot }} />{k.l}
+            </span>
+            {c.mp?.rechazos ? <div style={{ ...T.sub, color: '#C0554E', fontWeight: 700 }}>{c.mp.rechazos} rechazo{c.mp.rechazos > 1 ? 's' : ''} MP</div> : null}
+          </td>
+        );
+      },
+    },
+    {
+      key: 'arr', label: 'ARR', width: 112, num: true, ftype: 'number', val: c => Number(c.arr || 0),
+      render: c => (
+        <td style={{ ...T.td, ...T.num, fontWeight: 800 }}>
+          {money(c.arr)}
+          <div style={{ ...T.sub, fontWeight: 600 }}>
+            {c.vitalicia
+              ? <span style={{ ...T.badge, background: '#f1effd', color: '#6C5CE7', fontWeight: 700 }}>Vitalicia</span>
+              : <>{c.subs_activas} sub{c.subs_activas === 1 ? '' : 's'}{c.arr_pendiente > 0 ? <span style={{ color: '#a06600' }}> +{money(c.arr_pendiente)}</span> : ''}</>}
+          </div>
+        </td>
+      ),
+    },
+    {
+      key: 'pagado', label: 'Pagado', width: 104, num: true, ftype: 'number', val: c => Number(c.total_pagado || 0),
+      render: c => (
+        <td style={{ ...T.td, ...T.num }}>
+          <span style={{ fontWeight: 700 }}>{money(c.total_pagado)}</span>
+          <div style={{ ...T.sub, fontWeight: 600 }}>{c.pagos_realizados} pago{c.pagos_realizados === 1 ? '' : 's'}</div>
+        </td>
+      ),
+    },
+    {
+      // ── Actividad ──
+      // Un hecho: cuándo vendió por última vez. Iba mezclada con el score de
+      // salud en una sola columna llamada "Actividad" que en realidad mostraba
+      // la salud; así no se veía el caso importante — el cliente que paga
+      // puntual y lleva 41 días sin vender.
+      key: 'actividad', label: 'Actividad', width: 118, ftype: 'number',
+      val: c => (c.dias_sin_venta == null ? 99999 : Number(c.dias_sin_venta)),
+      render: c => {
+        const d = c.dias_sin_venta;
+        const rojo = d != null && d > 15, ambar = d != null && d >= 3;
+        return (
+          <td style={T.td}>
+            <div style={{ fontSize: '0.74rem', fontWeight: rojo ? 700 : 500, color: rojo ? '#C0554E' : ambar ? '#A06600' : '#444' }}>
+              {c.ultima_venta_at ? (d === 0 ? 'hoy' : `hace ${d} día${d === 1 ? '' : 's'}`) : (c.sacs_account ? 'sin datos' : 'sin cuenta')}
+            </div>
+            <div style={{ ...T.sub, ...T.ell }}>{c.ultima_venta_at ? fmtDate(c.ultima_venta_at) : ''}</div>
+          </td>
+        );
+      },
+    },
+    {
+      key: 'ventas30', label: 'Ventas 30d', width: 116, num: true, ftype: 'number', val: c => Number(c.total_30d || 0),
+      render: c => (
+        <td style={{ ...T.td, ...T.num }}>
+          {c.total_30d != null || c.ventas_30d != null ? (
+            <>
+              <span style={{ fontWeight: 700 }}>{money(c.total_30d || 0)}</span>
+              <div style={{ ...T.sub, fontWeight: 600 }}>{c.ventas_30d || 0} venta{c.ventas_30d === 1 ? '' : 's'}</div>
+            </>
+          ) : <span style={{ color: '#c4c8cf' }}>—</span>}
+        </td>
+      ),
+    },
+    {
+      // ── Salud del cliente ──
+      // El score ya se calculaba con seis factores guardados (uso, recencia,
+      // adopción, equipo, tendencia y crecimiento) pero vivía escondido junto a
+      // la actividad. Aquí es su propia columna, con la barra que deja
+      // compararlos de un vistazo.
+      key: 'salud', label: 'Salud', width: 128, ftype: 'number',
+      val: c => c.health_score == null ? null : Number(c.health_score),
+      render: c => {
+        const h = c.health_score;
+        if (h == null) return <td style={T.td}><span style={{ color: '#c4c8cf' }}>—</span></td>;
+        const alto = h >= 70, medio = h >= 40;
+        const fg = alto ? '#1E8A63' : medio ? '#A06600' : '#C0554E';
+        const bg = alto ? '#EAF8F2' : medio ? '#FEF6E8' : '#FEF0EF';
+        const barra = alto ? '#4FBF95' : medio ? '#E9B949' : '#EF7A72';
+        return (
+          <td style={T.td}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ ...T.badge, background: bg, color: fg }}>{h}</span>
+              <span style={{ width: 34, height: 5, borderRadius: 3, background: '#eef0f4', overflow: 'hidden' }}>
+                <span style={{ display: 'block', height: '100%', width: `${Math.max(0, Math.min(100, h))}%`, background: barra, borderRadius: 3 }} />
+              </span>
+            </div>
+            <div style={{ ...T.sub, color: fg, fontWeight: 700 }}>{alto ? 'Salud alta' : medio ? 'Salud media' : 'En riesgo'}</div>
           </td>
         );
       },
@@ -305,61 +447,6 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           </td>
         );
       },
-    },
-    {
-      key: 'arr', label: 'ARR', width: 112, num: true, ftype: 'number', val: c => Number(c.arr || 0),
-      render: c => (
-        <td style={{ ...T.td, ...T.num, fontWeight: 800 }}>
-          {money(c.arr)}
-          <div style={{ ...T.sub, fontWeight: 600 }}>
-            {c.vitalicia
-              ? <span style={{ ...T.badge, background: '#f1effd', color: '#6C5CE7', fontWeight: 700 }}>Vitalicia</span>
-              : <>{c.subs_activas} sub{c.subs_activas === 1 ? '' : 's'}{c.arr_pendiente > 0 ? <span style={{ color: '#a06600' }}> +{money(c.arr_pendiente)}</span> : ''}</>}
-          </div>
-        </td>
-      ),
-    },
-    {
-      key: 'pagado', label: 'Pagado', width: 104, num: true, ftype: 'number', val: c => Number(c.total_pagado || 0),
-      render: c => (
-        <td style={{ ...T.td, ...T.num }}>
-          <span style={{ fontWeight: 700 }}>{money(c.total_pagado)}</span>
-          <div style={{ ...T.sub, fontWeight: 600 }}>{c.pagos_realizados} pago{c.pagos_realizados === 1 ? '' : 's'}</div>
-        </td>
-      ),
-    },
-    {
-      key: 'renovacion', label: 'Renovación', width: 108, ftype: 'date', val: c => c.proxima_factura || '',
-      render: c => { const venc = c.proxima_factura && c.proxima_factura < new Date().toISOString().slice(0, 10); return <td style={{ ...T.td, ...T.muted, color: venc ? '#b93333' : T.muted.color, fontWeight: venc ? 700 : 400 }}>{fmtDate(c.proxima_factura)}</td>; },
-    },
-    {
-      key: 'salud', label: 'Actividad', width: 138, ftype: 'number', val: c => c.health_score == null ? null : Number(c.health_score),
-      render: c => { const dias = c.dias_sin_venta; const st = c.pipeline_stage && stageBy[c.pipeline_stage]; return (
-        <td style={T.td}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-            {c.health_score != null && <span style={{ ...T.badge, background: c.health_score >= 70 ? '#e6f6f2' : c.health_score >= 40 ? '#fdf3e0' : '#fdecea', color: c.health_score >= 70 ? '#1A8F7A' : c.health_score >= 40 ? '#a06600' : '#b93333' }}>{c.health_score}</span>}
-            <span style={{ ...T.ell, ...T.muted, fontSize: '0.72rem', color: dias != null && dias > 15 ? '#b93333' : dias != null && dias >= 3 ? '#a06600' : '#9aa0a8' }}>
-              {c.ultima_venta_at ? <>{fmtDate(c.ultima_venta_at)}{dias != null ? ` · ${dias}d` : ''}</> : (c.sacs_account ? 'sin datos' : 'sin cuenta')}
-            </span>
-          </div>
-          <div style={{ ...T.sub, marginTop: 3, ...T.ell, color: st ? st.color : '#c4c8cf', fontWeight: st ? 700 : 400 }}>
-            {st ? st.label : 'sin etapa'}
-          </div>
-        </td>
-      ); },
-    },
-    {
-      key: 'ventas30', label: 'Ventas 30d', width: 116, num: true, ftype: 'number', val: c => Number(c.total_30d || 0),
-      render: c => (
-        <td style={{ ...T.td, ...T.num }}>
-          {c.total_30d != null || c.ventas_30d != null ? (
-            <>
-              <span style={{ fontWeight: 700 }}>{money(c.total_30d || 0)}</span>
-              <div style={{ ...T.sub, fontWeight: 600 }}>{c.ventas_30d || 0} venta{c.ventas_30d === 1 ? '' : 's'}</div>
-            </>
-          ) : <span style={{ color: '#c4c8cf' }}>—</span>}
-        </td>
-      ),
     },
     {
       key: 'senal', label: 'Señal', width: 118, ftype: 'select',
@@ -503,7 +590,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           cols={cols}
           quick={quick}
           vistasBase={vistasBase}
-          searchText={c => [c.nombre, ...(c.cuentas || [c.sacs_account]), c.contacto?.nombre, c.contacto?.email, c.contacto?.whatsapp].filter(Boolean).join(' ')}
+          searchText={c => [c.nombre_comercial, c.nombre, ...(c.cuentas || [c.sacs_account]), c.contacto?.nombre, c.contacto?.email, c.contacto?.whatsapp].filter(Boolean).join(' ')}
           searchPlaceholder="Buscar cliente, cuenta o contacto…"
           minWidth={1100}
           onRowClick={c => { if (editId !== c.id) setDetailId(c.id); }}
@@ -511,7 +598,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontWeight: 800, fontSize: '0.92rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.contacto?.nombre || c.nombre}</div>
+                  <div style={{ fontWeight: 800, fontSize: '0.92rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nombre_comercial || c.sacs_account || c.nombre}</div>
                   {(() => { const cs: string[] = c.cuentas?.length ? c.cuentas : (c.sacs_account ? [c.sacs_account] : []); return cs.length ? <div style={{ fontSize: '0.74rem', color: '#8a8f98', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cs.join(' · ')}{cs.length > 1 ? ` (${cs.length} cuentas)` : ''}</div> : null; })()}
                 </div>
                 {c.health_score != null && <HealthScoreBadge score={c.health_score} factors={c.health_factors} size="sm" />}

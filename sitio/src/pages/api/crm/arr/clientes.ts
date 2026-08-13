@@ -15,7 +15,7 @@ export const GET: APIRoute = async () => {
   // `propiedades` (campos personalizados) viaja con cada cliente: es lo que
   // permite que la lista los ofrezca como columnas filtrables sin una consulta
   // por campo. Va en la cadena de reintentos por si el SQL aún no corrió.
-  const mkSel = (contactsSel: string) => 'id, nombre, sacs_account, plan, tipo_cuenta, estado_cuenta, sucursales, mrr, arr, fecha_renovacion, health_score, ultima_venta_at, dias_sin_venta, actividad, uso_sacs, propiedades, ' + contactsSel + ', subscriptions(id, estado, ciclo, arr, precio, nombre_plan, proxima_factura, pagos_realizados, total_pagado, contact_id, mp_preapproval_id, mp_payer_email, mp_desfase_at, mp_monto_cobrado)';
+  const mkSel = (contactsSel: string) => 'id, nombre, nombre_comercial, sacs_account, plan, tipo_cuenta, estado_cuenta, sucursales, mrr, arr, fecha_renovacion, health_score, ultima_venta_at, dias_sin_venta, actividad, uso_sacs, propiedades, ' + contactsSel + ', subscriptions(id, estado, ciclo, arr, precio, nombre_plan, proxima_factura, pagos_realizados, total_pagado, contact_id, mp_preapproval_id, mp_payer_email, mp_desfase_at, mp_monto_cobrado)';
   const CONTACTS_NEW = 'contacts(id, nombre, email, whatsapp, telefono, rol, es_principal)';
   const CONTACTS_OLD = 'contacts(id, nombre, email, whatsapp, telefono)';
   // pipeline_stage y rol/es_principal pueden no existir aún (SQL pendiente) →
@@ -90,7 +90,10 @@ export const GET: APIRoute = async () => {
       // cliente muerto — la licencia ya está pagada y hay que poder verlas.
       const pausadas = subs.filter((s: any) => s.estado === 'pausada');
       // Principal si existe la marca; si no, el primero (comportamiento previo).
-      const contacto = (c.contacts || []).find((x: any) => x.es_principal) || (c.contacts || [])[0] || null;
+      // Con varios contactos manda el Dueño. Hoy solo 9 lo tienen marcado, así
+      // que en la mayoría cae al principal — que es el comportamiento pedido.
+      const contacto = (c.contacts || []).find((x: any) => /due[ñn]o/i.test(x.rol || ''))
+        || (c.contacts || []).find((x: any) => x.es_principal) || (c.contacts || [])[0] || null;
       // Si la empresa no tiene contacto ligado pero una suscripción SÍ referencia
       // un contact_id, lo señalamos (relación que vive en subscriptions, no en la
       // empresa) para poder repararla.
@@ -100,6 +103,10 @@ export const GET: APIRoute = async () => {
       const top = senales[0] || null;
       return {
         id: c.id, nombre: c.nombre, sacs_account: c.sacs_account,
+        // Cómo se le llama al cliente. Si nadie lo ha escrito, la cuenta SACS
+        // con la inicial en mayúscula — nunca el nombre del contacto, que es
+        // justo lo que hacía que un renglón dijera "Oscar Rivera".
+        nombre_comercial: c.nombre_comercial || null,
         cuentas: cuentasPorEmpresa[c.id]?.length ? cuentasPorEmpresa[c.id] : (c.sacs_account ? [String(c.sacs_account)] : []),
         plan: c.plan, tipo_cuenta: c.tipo_cuenta, estado_cuenta: c.estado_cuenta,
         pipeline_stage: c.pipeline_stage ?? null,
@@ -110,7 +117,7 @@ export const GET: APIRoute = async () => {
         // filtros y vistas guardadas no encontraban a nadie — el dato estaba
         // bien capturado en la base todo el tiempo.
         propiedades: c.propiedades || {},
-        contacto: contacto ? { id: contacto.id, nombre: contacto.nombre, email: contacto.email, whatsapp: contacto.whatsapp, telefono: contacto.telefono } : null,
+        contacto: contacto ? { id: contacto.id, nombre: contacto.nombre, email: contacto.email, whatsapp: contacto.whatsapp, telefono: contacto.telefono, rol: contacto.rol || null, es_principal: !!contacto.es_principal } : null,
         sub_contact_id: subContactId,
         // Cómo se le cobra a este cliente, resumido para la lista.
         mp: (() => {
@@ -138,6 +145,20 @@ export const GET: APIRoute = async () => {
         proxima_factura: activas.map((s: any) => s.proxima_factura).filter(Boolean).sort()[0]
           || pend.map((s: any) => s.proxima_factura).filter(Boolean).sort()[0] || null,
         health_score: c.health_score,
+        // ── Estado de pago ──
+        // Independiente de la renovación del contrato: una cuenta puede renovar
+        // en diciembre y traer la mensualidad de este mes vencida. Sale del
+        // cobro más próximo y de los rechazos de Mercado Pago.
+        estado_pago: (() => {
+          const rz = rechazosPorEmpresa[c.id]?.n || 0;
+          if (rz > 0) return 'vencido';
+          const prox = activas.map((s: any) => s.proxima_factura).filter(Boolean).sort()[0] || null;
+          if (!prox) return activas.length ? 'corriente' : null;
+          const hoyS = new Date().toISOString().slice(0, 10);
+          if (prox < hoyS) return 'vencido';
+          const en7 = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+          return prox <= en7 ? 'proximo' : 'corriente';
+        })(),
         ultima_venta_at: c.ultima_venta_at, dias_sin_venta: c.dias_sin_venta,
         ventas_30d: c.actividad?.ventas_30d ?? null,
         total_30d: c.actividad?.total_30d ?? null,
