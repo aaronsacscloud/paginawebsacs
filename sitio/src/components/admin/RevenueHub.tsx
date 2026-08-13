@@ -1124,14 +1124,19 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
         <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #e5e5e5', marginBottom: 12, overflowX: 'auto' as const }}>
           {savedViews.map(v => {
             const active = qView === v.id;
+            const n = viewCounts[v.id] || 0;
             return (
               <button key={v.id} onClick={() => { setQView(v.id); setQPage(0); clearSelection(); }} style={{
                 padding: '10px 16px',
-                background: 'transparent',
+                // La activa se marca con fondo, no solo con la línea: sobre una
+                // barra de nueve pestañas el subrayado solo se ve si ya sabes
+                // dónde buscarlo.
+                background: active ? M.violetaAgua : 'transparent',
+                borderRadius: active ? '9px 9px 0 0' : 0,
                 border: 'none',
-                borderBottom: active ? '2px solid #1a1a1a' : '2px solid transparent',
-                color: active ? '#1a1a1a' : '#666',
-                fontWeight: active ? 700 : 500,
+                borderBottom: active ? `2px solid ${M.violeta}` : '2px solid transparent',
+                color: active ? M.violetaTinta : '#666',
+                fontWeight: active ? 800 : 500,
                 fontSize: '0.8125rem',
                 cursor: 'pointer',
                 fontFamily: 'inherit',
@@ -1139,7 +1144,15 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 marginBottom: -1,
               }}>
                 {v.label}
-                <span style={{ marginLeft: 6, fontSize: '0.6875rem', color: active ? '#1a1a1a' : '#aaa', fontWeight: 500 }}>{viewCounts[v.id] || 0}</span>
+                {/* El contador en pastilla: pegado al texto, "Todas 27" se lee
+                    como una sola palabra. En cero va más tenue — una pestaña
+                    vacía no debe invitar al clic. */}
+                <span style={{
+                  marginLeft: 6, fontSize: '0.66rem', fontWeight: active ? 800 : 700,
+                  background: active ? '#fff' : '#f3f3f6',
+                  color: active ? M.violetaTinta : n === 0 ? '#c4c4cc' : '#8a8a92',
+                  borderRadius: 20, padding: '2px 8px',
+                }}>{n}</span>
               </button>
             );
           })}
@@ -1784,7 +1797,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             <div className="rh-quote-topbar" style={{ background: '#fff', borderBottom: '1px solid #eee', padding: '10px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
               <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800 }}>{qf.id ? `Editar ${qf.numero || 'cotización'}` : 'Nueva cotización'}</h3>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <button onClick={createQuote} disabled={saving || !items.length || !qf.empresa} style={{ ...S.btn, background: '#1a1a1a', color: '#fff', fontSize: '0.75rem', padding: '6px 16px' }}>{saving ? 'Guardando...' : qf.id ? 'Guardar cambios' : 'Crear y enviar'}</button>
+                <button onClick={createQuote} disabled={saving || !items.length || !qf.empresa} style={{ ...S.btn, background: M.violeta, color: '#fff', fontSize: '0.75rem', padding: '6px 16px' }}>{saving ? 'Guardando...' : qf.id ? 'Guardar cambios' : 'Crear y enviar'}</button>
                 <button onClick={() => setShowDrawer(false)} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#999' }}>✕</button>
               </div>
             </div>
