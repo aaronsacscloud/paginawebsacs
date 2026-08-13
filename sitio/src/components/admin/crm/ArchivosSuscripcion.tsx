@@ -24,12 +24,29 @@ export default function ArchivosSuscripcion({ subId, nombre, onCerrar, onCambio 
   useEffect(() => { cargar(); }, [subId]);
 
   const subir = async (f: File) => {
+    // Se avisa ANTES de mandarlo: subir 8 MB para que lo rechacen al final es
+    // esperar en balde con datos móviles.
+    if (f.size > 4 * 1024 * 1024) {
+      setError(`"${f.name}" pesa ${(f.size / 1048576).toFixed(1)} MB y el máximo son 4 MB. Comprime el PDF antes de subirlo.`);
+      return;
+    }
     setError(''); setSubiendo(true);
     const fd = new FormData(); fd.append('id', subId); fd.append('file', f);
-    const j = await fetch('/api/crm/suscripciones/archivos', { method: 'POST', body: fd })
-      .then(r => r.json()).catch(() => ({ error: 'Error de red al subir.' }));
+    // Se lee la respuesta como TEXTO primero: cuando la petición muere por
+    // tamaño, el servidor contesta HTML y r.json() reventaba con un error de
+    // parseo que no decía nada de lo que pasó.
+    const r = await fetch('/api/crm/suscripciones/archivos', { method: 'POST', body: fd }).catch(() => null);
     setSubiendo(false);
-    if (j?.error) { setError(j.error); return; }
+    if (!r) { setError('No se pudo conectar. Revisa tu internet e intenta de nuevo.'); return; }
+    const txt = await r.text().catch(() => '');
+    let j: any = null;
+    try { j = JSON.parse(txt); } catch { /* no era JSON */ }
+    if (!r.ok || j?.error) {
+      setError(j?.error || (r.status === 413
+        ? 'El archivo es demasiado grande. El máximo son 4 MB.'
+        : `El servidor respondió ${r.status}. ${txt.slice(0, 120)}`));
+      return;
+    }
     cargar();
   };
 
@@ -89,7 +106,7 @@ export default function ArchivosSuscripcion({ subId, nombre, onCerrar, onCambio 
             {subiendo ? 'Subiendo…' : 'Subir documento'}
           </button>
           <span style={{ fontSize: '0.68rem', color: '#a5a2af', lineHeight: 1.4 }}>
-            PDF, Word o imagen · hasta 15 MB.<br />Los enlaces caducan en una hora: no se pueden compartir por fuera.
+            PDF, Word o imagen · hasta 4 MB.<br />Los enlaces caducan en una hora: no se pueden compartir por fuera.
           </span>
         </div>
       </div>

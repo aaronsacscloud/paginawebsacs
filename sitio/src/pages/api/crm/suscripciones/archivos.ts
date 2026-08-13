@@ -18,7 +18,10 @@ import { supabase } from '../../../../lib/supabase';
 export const prerender = false;
 const BUCKET = 'crm-docs';
 const VIGENCIA = 3600;   // 1 hora
-const MAX = 15 * 1024 * 1024;
+// 4 MB, no 15: la función donde corre esto acepta cuerpos de ~4.5 MB y arriba
+// de eso la petición muere ANTES de llegar aquí, con un error que no dice nada.
+// Mejor rechazarlo con un mensaje claro que dejar que falle sin explicación.
+const MAX = 4 * 1024 * 1024;
 const TIPOS = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp',
   'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
 
@@ -47,7 +50,7 @@ export const POST: APIRoute = async ({ request }) => {
   const file = fd?.get('file') as File | null;
   if (!id || !file) return json({ error: 'Falta la suscripción o el archivo.' }, 400);
   if (!TIPOS.includes(file.type)) return json({ error: 'Tipo no permitido. Usa PDF, Word o imagen.' }, 400);
-  if (file.size > MAX) return json({ error: 'El archivo pasa de 15 MB.' }, 400);
+  if (file.size > MAX) return json({ error: `"${file.name}" pesa ${(file.size / 1048576).toFixed(1)} MB y el máximo son 4 MB. Comprime el PDF o súbelo en partes.` }, 413);
 
   // Nombre en el path con marca de tiempo: dos contratos con el mismo nombre no
   // se pisan, y el original se conserva para mostrarlo.
@@ -55,7 +58,7 @@ export const POST: APIRoute = async ({ request }) => {
   const path = `suscripciones/${id}/${Date.now()}_${limpio}`;
   const { error } = await supabase.storage.from(BUCKET)
     .upload(path, file, { contentType: file.type, upsert: false });
-  if (error) return json({ error: error.message }, 500);
+  if (error) return json({ error: 'Storage: ' + error.message }, 500);
 
   const archivos = await leer(id);
   const nuevo = { path, nombre: file.name, tipo: file.type, size: file.size, subido_at: new Date().toISOString() };

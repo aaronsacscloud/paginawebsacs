@@ -339,16 +339,69 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [co?.id]);
   const tend = act && act.tendencia_pct;
+  const [periodo, setPeriodo] = useState<'30d' | '12m'>('30d');
   const sucPlan = Number(co.sucursales || 0);
   const sucReales = act ? Number(act.sucursales || 0) : 0;
   return (
     <div>
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
-        {[['Subs activas', res.subs_activas ?? 0], ['ARR', money(res.arr)], ['MRR', money(res.mrr)],
-          ['Próx. factura', fmtDate(res.proxima_factura)], ['Pagos', res.pagos_totales ?? 0], ['Total pagado', money(res.total_pagado)]].map(([l, v]) => (
-          <div key={String(l)} style={D.kpi}><div style={D.kl}>{l}</div><div style={D.kv}>{v}</div></div>
-        ))}
-      </div>
+      {/* ── Qué tan viva está la cuenta ──
+          Fuera ARR, MRR, próxima factura y total pagado: eso es del CONTRATO y
+          ya vive en Suscripciones y en Info general. Repetirlo aquí obligaba a
+          preguntarse cuál de los dos estaba bien.
+          Y se muestra lo ACTIVO contra lo dado de alta: el número solo no dice
+          nada, la proporción sí — 146 usuarios de 418 con acceso significa que
+          hay 272 cuentas que nadie usa. */}
+      {(() => {
+        const sucDet: any[] = Array.isArray(act?.sucursales_detalle) ? act.sucursales_detalle : [];
+        const sucAltas = sucDet.length || sucReales;
+        const sucVivas = sucDet.length ? sucDet.filter(x => x.activa).length : sucReales;
+        const usTotal = Number(act?.usuarios || 0);
+        const usVivos = Number(act?.usuarios_operando ?? 0);
+        const t30 = Number(act?.total_30d || 0);
+        const v30 = Number(act?.ventas_30d || 0);
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 11, marginBottom: 14 }}>
+            <div style={{ ...D.kpi, borderLeft: '3px solid #9B8CFA' }}>
+              <div style={D.kl}>Sucursales activas</div>
+              <div style={D.kv}>{sucAltas ? sucVivas : '—'}</div>
+              <div style={{ fontSize: '0.66rem', color: '#a7abb3' }}>
+                {sucAltas ? <>de {sucAltas} dadas de alta{sucAltas - sucVivas > 0 ? ` · ${sucAltas - sucVivas} sin vender` : ''}</> : 'sin datos de la cuenta'}
+              </div>
+            </div>
+            <div style={{ ...D.kpi, borderLeft: '3px solid #9B8CFA' }}>
+              <div style={D.kl}>Usuarios activos</div>
+              <div style={D.kv}>{usTotal ? usVivos : '—'}</div>
+              <div style={{ fontSize: '0.66rem', color: '#a7abb3' }}>
+                {usTotal ? <>de {usTotal} con acceso{act?.ultimo_usuario_at ? ` · último ingreso ${fmtDate(act.ultimo_usuario_at)}` : ''}</> : 'sin datos de la cuenta'}
+              </div>
+            </div>
+            <div style={{ ...D.kpi, borderLeft: '3px solid #4FBF95' }}>
+              <div style={D.kl}>Facturación en el sistema</div>
+              <div style={{ ...D.kv, color: '#1E8A63' }}>{money(periodo === '12m' ? t30 * 12 : t30)}</div>
+              {/* En una cuenta de eventos el mes suelto engaña: el anual es una
+                  proyección del último mes, y se dice que lo es. */}
+              <div style={{ display: 'inline-flex', background: '#f3f3f6', borderRadius: 20, padding: 2, gap: 2, marginTop: 5 }}>
+                {(['30d', '12m'] as const).map(k => (
+                  <button key={k} onClick={() => setPeriodo(k)}
+                    style={{ border: 'none', cursor: 'pointer', borderRadius: 20, padding: '2px 9px', fontSize: '0.6rem', fontWeight: 800, fontFamily: 'inherit', background: periodo === k ? '#9B8CFA' : 'transparent', color: periodo === k ? '#fff' : '#8a8a92' }}>
+                    {k === '30d' ? '30 días' : '12 meses'}
+                  </button>
+                ))}
+              </div>
+              {periodo === '12m' && <div style={{ fontSize: '0.62rem', color: '#b3afbd', marginTop: 3 }}>proyectado del último mes</div>}
+            </div>
+            <div style={{ ...D.kpi, borderLeft: '3px solid #7DA6F5' }}>
+              <div style={D.kl}>Qué tanto lo usa</div>
+              <div style={D.kv}>{v30.toLocaleString('es-MX')} <span style={{ fontSize: '0.68rem', fontWeight: 600, color: '#a7abb3' }}>ventas</span></div>
+              <div style={{ fontSize: '0.66rem', color: '#a7abb3' }}>
+                {tend != null && <b style={{ color: tend >= 0 ? '#1E8A63' : '#C0554E' }}>{tend >= 0 ? '↑' : '↓'} {Math.abs(Math.round(tend))}%</b>}
+                {tend != null ? ' vs. mes anterior' : ''}
+                {act?.ultima_venta ? ` · vendió ${fmtDate(act.ultima_venta)}` : ''}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Onboarding del cliente nuevo (checklist accionable) ── */}
       {onboarding.length > 0 && (
@@ -2165,6 +2218,7 @@ function TabNotas({ companyId }: any) {
 function TabOportunidades({ companyId, co, principal, subs = [], flash, reload }: any) {
   const senales = computarSenales(co, (subs || []).find((s: any) => s.estado === 'activa'));
   const [deals, setDeals] = useState<any[] | null>(null);
+  const [verTodasSenales, setVerTodasSenales] = useState(false);
   const [stages, setStages] = useState<any[]>([]);
   const [busyId, setBusyId] = useState('');
   const [showNew, setShowNew] = useState(false);
@@ -2315,7 +2369,7 @@ function TabOportunidades({ companyId, co, principal, subs = [], flash, reload }
         <div style={D.cardM}>
           <div style={D.hM}>Qué venderle y atender<span style={D.hNota}>del uso real de su cuenta en SACS</span></div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {senales.map((s: any, i: number) => (
+            {(verTodasSenales ? senales : senales.slice(0, 2)).map((s: any, i: number) => (
               <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 10px', borderRadius: 10, background: s.nivel === 'riesgo' ? '#fdf2f2' : '#f0f7f4', border: '1px solid ' + (s.nivel === 'riesgo' ? '#f7d7d7' : '#d6ebe2') }}>
                 <span style={{ fontSize: '1rem', lineHeight: 1.2 }}>{s.nivel === 'riesgo' ? '⚠️' : '📈'}</span>
                 <div style={{ minWidth: 0 }}>
@@ -2325,6 +2379,15 @@ function TabOportunidades({ companyId, co, principal, subs = [], flash, reload }
                 </div>
               </div>
             ))}
+            {/* Con cuatro o más, la sección empujaba la lista de oportunidades
+                fuera de la pantalla. Son contexto para leer, no una lista para
+                recorrer. */}
+            {senales.length > 2 && (
+              <button onClick={() => setVerTodasSenales(v => !v)}
+                style={{ width: '100%', border: '1px dashed #ddd6fb', background: '#faf8ff', borderRadius: 10, padding: 9, fontSize: '0.76rem', fontWeight: 700, color: '#5B4BD6', cursor: 'pointer', fontFamily: 'inherit' }}>
+                {verTodasSenales ? 'Ver menos' : `Ver ${senales.length - 2} señal${senales.length - 2 === 1 ? '' : 'es'} más`}
+              </button>
+            )}
           </div>
         </div>
       )}
