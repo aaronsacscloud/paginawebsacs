@@ -191,7 +191,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
 
   const cols: ColDef[] = [
     {
-      key: 'cliente', label: 'Cliente', width: 210, fija: true, ftype: 'text',
+      key: 'cliente', label: 'Cliente', width: 188, fija: true, ftype: 'text',
       // El cliente es la EMPRESA. El título salía del contacto, así que un
       // renglón decía "Oscar Rivera" cuando la cuenta es Super Carnes Rivera.
       val: c => (c.nombre_comercial || c.sacs_account || c.nombre || '').toLowerCase(),
@@ -215,7 +215,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       },
     },
     {
-      key: 'contacto', label: 'Contacto', width: 132, ftype: 'text',
+      key: 'contacto', label: 'Contacto', width: 116, ftype: 'text',
       val: c => (c.contacto?.nombre || '').toLowerCase(),
       render: c => (
         <td style={{ ...T.td, ...T.ell }}>
@@ -229,7 +229,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
     {
       // Correo y teléfono aparte: juntos con el nombre, la columna se saturaba
       // y no se leía ninguno de los tres.
-      key: 'datos_contacto', label: 'Datos de contacto', width: 196, ftype: 'text',
+      key: 'datos_contacto', label: 'Datos de contacto', width: 174, ftype: 'text',
       val: c => [c.contacto?.email, c.contacto?.whatsapp, c.contacto?.telefono].filter(Boolean).join(' '),
       render: c => (
         <td style={T.td} onClick={e => e.stopPropagation()}>
@@ -257,7 +257,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       ),
     },
     {
-      key: 'plan', label: 'Plan', width: 118, ftype: 'select',
+      key: 'plan', label: 'Plan', width: 104, ftype: 'select',
       options: Object.entries(PLAN_BADGE).map(([v, b]) => ({ v, l: b.label })),
       val: c => c.plan || '',
       // Solo el tipo de suscripción. El estado de la cuenta vivía pegado abajo
@@ -273,7 +273,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       },
     },
     {
-      key: 'renovacion', label: 'Renovación', width: 106, ftype: 'date', val: c => c.proxima_factura || '',
+      key: 'renovacion', label: 'Renovación', width: 98, ftype: 'date', val: c => c.proxima_factura || '',
       render: c => {
         const f = c.proxima_factura;
         if (!f) return <td style={T.td}><span style={{ color: '#c4c8cf' }}>—</span></td>;
@@ -293,7 +293,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       // Independiente de la renovación: una cuenta puede renovar en diciembre y
       // traer la mensualidad de este mes vencida. Es la columna que contesta
       // "¿a quién hay que cobrarle hoy?" sin abrir a nadie.
-      key: 'estado_pago', label: 'Estado de pago', width: 126, ftype: 'select',
+      key: 'estado_pago', label: 'Estado de pago', width: 116, ftype: 'select',
       options: [{ v: 'corriente', l: 'Al corriente' }, { v: 'proximo', l: 'Pago próximo' }, { v: 'vencido', l: 'Pago vencido' }],
       val: c => c.estado_pago || '',
       render: c => {
@@ -316,7 +316,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       },
     },
     {
-      key: 'arr', label: 'ARR', width: 112, num: true, ftype: 'number', val: c => Number(c.arr || 0),
+      key: 'arr', label: 'ARR', width: 100, num: true, ftype: 'number', val: c => Number(c.arr || 0),
       render: c => (
         <td style={{ ...T.td, ...T.num, fontWeight: 800 }}>
           {money(c.arr)}
@@ -329,7 +329,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       ),
     },
     {
-      key: 'pagado', label: 'Pagado', width: 104, num: true, ftype: 'number', val: c => Number(c.total_pagado || 0),
+      key: 'pagado', label: 'Pagado', width: 94, num: true, ftype: 'number', val: c => Number(c.total_pagado || 0),
       render: c => (
         <td style={{ ...T.td, ...T.num }}>
           <span style={{ fontWeight: 700 }}>{money(c.total_pagado)}</span>
@@ -343,7 +343,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       // salud en una sola columna llamada "Actividad" que en realidad mostraba
       // la salud; así no se veía el caso importante — el cliente que paga
       // puntual y lleva 41 días sin vender.
-      key: 'actividad', label: 'Actividad', width: 118, ftype: 'number',
+      key: 'actividad', label: 'Actividad', width: 104, ftype: 'number',
       val: c => (c.dias_sin_venta == null ? 99999 : Number(c.dias_sin_venta)),
       render: c => {
         const d = c.dias_sin_venta;
@@ -359,7 +359,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       },
     },
     {
-      key: 'ventas30', label: 'Ventas 30d', width: 116, num: true, ftype: 'number', val: c => Number(c.total_30d || 0),
+      key: 'ventas30', label: 'Ventas 30d', width: 106, num: true, ftype: 'number', val: c => Number(c.total_30d || 0),
       render: c => (
         <td style={{ ...T.td, ...T.num }}>
           {c.total_30d != null || c.ventas_30d != null ? (
@@ -377,7 +377,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       // adopción, equipo, tendencia y crecimiento) pero vivía escondido junto a
       // la actividad. Aquí es su propia columna, con la barra que deja
       // compararlos de un vistazo.
-      key: 'salud', label: 'Salud', width: 128, ftype: 'number',
+      key: 'salud', label: 'Salud', width: 112, ftype: 'number',
       val: c => c.health_score == null ? null : Number(c.health_score),
       render: c => {
         const h = c.health_score;
@@ -402,7 +402,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
     {
       // Cómo se le cobra. En la lista y no solo en la ficha: es lo que contesta
       // "¿a cuántos les cobro a mano?" sin abrir 218 clientes uno por uno.
-      key: 'cobro', label: 'Cobro', width: 104, ftype: 'select',
+      key: 'cobro', label: 'Cobro', width: 88, ftype: 'select',
       options: [{ v: 'auto', l: 'Automático (MP)' }, { v: 'manual', l: 'Manual' }, { v: 'rechazo', l: 'Con rechazo' }, { v: 'desfase', l: 'Con desfase' }],
       val: c => c.mp?.rechazos ? 'rechazo' : c.mp?.desfase ? 'desfase' : c.mp?.domiciliadas ? 'auto' : 'manual',
       render: c => {
@@ -432,7 +432,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       },
     },
     {
-      key: 'senal', label: 'Señal', width: 118, ftype: 'select',
+      key: 'senal', label: 'Señal', width: 100, ftype: 'select',
       options: Object.keys(SENAL_LABEL).map(t => ({ v: t, l: SENAL_LABEL[t] })),
       val: c => c.senal_peso || 0,     // ordena por urgencia/valor
       render: c => (
@@ -526,14 +526,71 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   if (loading) return <div style={{ padding: 48, textAlign: 'center', color: '#999' }}>Cargando clientes reales…</div>;
   if (error) return <div style={{ padding: 48, textAlign: 'center', color: '#E54B4B' }}>{error} <button style={S.btnSmall} onClick={load}>Reintentar</button></div>;
 
+  const cabeceraAcciones = (<>
+            <button onClick={() => setShowNuevo(true)} title="Alta completa: cliente + contacto + cuenta SACS + suscripción"
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, height: isMobile ? 44 : 36, flex: isMobile ? 1 : undefined, minWidth: 0, padding: '0 16px', border: 'none', borderRadius: 10, background: CL.violeta, color: '#fff', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 1px 2px rgba(16,24,40,0.10)', whiteSpace: 'nowrap' }}>
+              <Plus size={15} strokeWidth={2.5} /> Nuevo cliente
+            </button>
+            <div style={{ position: 'relative', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+              <button onClick={() => setMenuOpen(o => !o)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: isMobile ? 44 : 36, padding: isMobile ? '0 12px' : '0 14px', border: '1px solid #e2e4e9', borderRadius: 10, background: menuOpen ? '#f7f8fa' : '#fff', color: '#333', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                {isMobile ? 'Más' : 'Más acciones'} <ChevronDown size={14} strokeWidth={2} style={{ transform: menuOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
+              </button>
+              {menuOpen && isMobile && <div onClick={() => setMenuOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.42)', zIndex: 949 }} />}
+              {menuOpen && (
+                <div style={isMobile
+                  ? { position: 'fixed', left: 0, right: 0, bottom: 0, background: '#fff', borderRadius: '16px 16px 0 0', boxShadow: '0 -8px 30px rgba(0,0,0,0.18)', padding: '8px 8px calc(12px + env(safe-area-inset-bottom))', zIndex: 950 }
+                  : { position: 'absolute', right: 0, top: 'calc(100% + 6px)', width: 236, background: '#fff', border: '1px solid #e9eaee', borderRadius: 14, boxShadow: '0 4px 6px -2px rgba(16,24,40,0.05), 0 12px 24px -4px rgba(16,24,40,0.12)', padding: 6, zIndex: 50 }}>
+                  <RevisarRelaciones onDone={() => { setMenuOpen(false); load(); }} trigger={open => (
+                    <button className="te-item" style={T.menuItem} onClick={open}><Link2 size={15} color="#8a8f98" /> Revisar relaciones</button>
+                  )} />
+                  {/* Nombres de empresa: 40 de las 83 cuentas quedaron con el
+                      slug capitalizado porque no son palabras separables. Aquí
+                      se escriben todas de corrido en vez de entrar a 40 fichas. */}
+                  <button className="te-item" style={T.menuItem} onClick={() => { setMenuOpen(false); setShowNombres(true); }}>
+                    <Building2 size={15} color="#8a8f98" /> Nombres de las empresas
+                  </button>
+                  <EnriquecerWhatsApp onDone={() => { setMenuOpen(false); load(); }} trigger={open => (
+                    <button className="te-item" style={T.menuItem} onClick={open}><MessageCircle size={15} color="#8a8f98" /> Enriquecer WhatsApp</button>
+                  )} />
+                  <div style={{ height: 1, background: '#f1f2f5', margin: '6px 4px' }} />
+                  <a className="te-item" style={T.menuItem} href="/api/crm/arr/export-clientes" onClick={() => setMenuOpen(false)}><Download size={15} color="#8a8f98" /> Exportar clientes</a>
+                  <div style={{ height: 1, background: '#f1f2f5', margin: '6px 4px' }} />
+                  <button className="te-item" style={T.menuItem} onClick={() => { setMenuOpen(false); onConfig?.(); }}><Settings2 size={15} color="#8a8f98" /> Configurar etapas</button>
+                  <button className="te-item" style={T.menuItem} onClick={() => { setMenuOpen(false); setModo(m => m === 'tabla' ? 'kanban' : 'tabla'); }}>
+                    {modo === 'tabla' ? <LayoutGrid size={15} color="#8a8f98" /> : <Table2 size={15} color="#8a8f98" />}
+                    {modo === 'tabla' ? 'Ver como Kanban' : 'Ver como Tabla'}
+                  </button>
+                </div>
+              )}
+            </div>
+</>);
+
   return (
-    <div style={{ padding: '4px 12px 28px' }}>
+    // Mismo contenedor que Cotizaciones: sin esto la tabla se estira de orilla a
+    // orilla del monitor y las dos pantallas del mismo módulo se ven de sistemas
+    // distintos.
+    <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px' }}>
       <style>{`
         .ct360 tbody tr { transition: background .12s ease; }
         .ct360 tbody tr:hover td { background: #f7f9fc; }
         .ct360 .ct-pencil { opacity: 0; transition: opacity .15s ease; }
         .ct360 tbody tr:hover .ct-pencil, .ct360 .ct-pencil:focus { opacity: .65; }
       `}</style>
+
+      {/* Encabezado: título y acciones ARRIBA, y debajo los KPIs. Los botones
+          vivían dentro de la barra de la tabla, junto al buscador, así que
+          "Nuevo cliente" competía con un campo de texto en vez de encabezar la
+          pantalla. */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, gap: 12 }}>
+        <div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, letterSpacing: '-0.02em' }}>Clientes</h1>
+          <div style={{ fontSize: '0.75rem', color: '#9c99a6', marginTop: 2 }}>
+            {tot?.clientes ?? 0} totales · {tot?.activos ?? 0} con ARR activo
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>{cabeceraAcciones}</div>
+      </div>
 
       {/* KPIs: en móvil carrusel scroll-snap (1 visible + peek → no gasta pantalla
           y se ve claro que se desliza); en desktop, grid multi-columna. */}
@@ -562,7 +619,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           sinVistas
           searchText={c => [c.nombre_comercial, c.nombre, ...(c.cuentas || [c.sacs_account]), c.contacto?.nombre, c.contacto?.email, c.contacto?.whatsapp].filter(Boolean).join(' ')}
           searchPlaceholder="Buscar cliente, cuenta o contacto…"
-          minWidth={1690}
+          minWidth={1500}
           onRowClick={c => { if (editId !== c.id) setDetailId(c.id); }}
           mobileCard={(c: any) => (
             <div>
@@ -633,45 +690,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
                   )}
                 />
           )) : null}
-          actions={<>
-            <button onClick={() => setShowNuevo(true)} title="Alta completa: cliente + contacto + cuenta SACS + suscripción"
-              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, height: isMobile ? 44 : 36, flex: isMobile ? 1 : undefined, minWidth: 0, padding: '0 16px', border: 'none', borderRadius: 10, background: CL.violeta, color: '#fff', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 1px 2px rgba(16,24,40,0.10)', whiteSpace: 'nowrap' }}>
-              <Plus size={15} strokeWidth={2.5} /> Nuevo cliente
-            </button>
-            <div style={{ position: 'relative', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-              <button onClick={() => setMenuOpen(o => !o)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: isMobile ? 44 : 36, padding: isMobile ? '0 12px' : '0 14px', border: '1px solid #e2e4e9', borderRadius: 10, background: menuOpen ? '#f7f8fa' : '#fff', color: '#333', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                {isMobile ? 'Más' : 'Más acciones'} <ChevronDown size={14} strokeWidth={2} style={{ transform: menuOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
-              </button>
-              {menuOpen && isMobile && <div onClick={() => setMenuOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.42)', zIndex: 949 }} />}
-              {menuOpen && (
-                <div style={isMobile
-                  ? { position: 'fixed', left: 0, right: 0, bottom: 0, background: '#fff', borderRadius: '16px 16px 0 0', boxShadow: '0 -8px 30px rgba(0,0,0,0.18)', padding: '8px 8px calc(12px + env(safe-area-inset-bottom))', zIndex: 950 }
-                  : { position: 'absolute', right: 0, top: 'calc(100% + 6px)', width: 236, background: '#fff', border: '1px solid #e9eaee', borderRadius: 14, boxShadow: '0 4px 6px -2px rgba(16,24,40,0.05), 0 12px 24px -4px rgba(16,24,40,0.12)', padding: 6, zIndex: 50 }}>
-                  <RevisarRelaciones onDone={() => { setMenuOpen(false); load(); }} trigger={open => (
-                    <button className="te-item" style={T.menuItem} onClick={open}><Link2 size={15} color="#8a8f98" /> Revisar relaciones</button>
-                  )} />
-                  {/* Nombres de empresa: 40 de las 83 cuentas quedaron con el
-                      slug capitalizado porque no son palabras separables. Aquí
-                      se escriben todas de corrido en vez de entrar a 40 fichas. */}
-                  <button className="te-item" style={T.menuItem} onClick={() => { setMenuOpen(false); setShowNombres(true); }}>
-                    <Building2 size={15} color="#8a8f98" /> Nombres de las empresas
-                  </button>
-                  <EnriquecerWhatsApp onDone={() => { setMenuOpen(false); load(); }} trigger={open => (
-                    <button className="te-item" style={T.menuItem} onClick={open}><MessageCircle size={15} color="#8a8f98" /> Enriquecer WhatsApp</button>
-                  )} />
-                  <div style={{ height: 1, background: '#f1f2f5', margin: '6px 4px' }} />
-                  <a className="te-item" style={T.menuItem} href="/api/crm/arr/export-clientes" onClick={() => setMenuOpen(false)}><Download size={15} color="#8a8f98" /> Exportar clientes</a>
-                  <div style={{ height: 1, background: '#f1f2f5', margin: '6px 4px' }} />
-                  <button className="te-item" style={T.menuItem} onClick={() => { setMenuOpen(false); onConfig?.(); }}><Settings2 size={15} color="#8a8f98" /> Configurar etapas</button>
-                  <button className="te-item" style={T.menuItem} onClick={() => { setMenuOpen(false); setModo(m => m === 'tabla' ? 'kanban' : 'tabla'); }}>
-                    {modo === 'tabla' ? <LayoutGrid size={15} color="#8a8f98" /> : <Table2 size={15} color="#8a8f98" />}
-                    {modo === 'tabla' ? 'Ver como Kanban' : 'Ver como Tabla'}
-                  </button>
-                </div>
-              )}
-            </div>
-          </>}
+
         />
       </div>
 
