@@ -3150,6 +3150,12 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               </div>
               {recup && (
                 <div style={{ marginTop: 12, fontSize: '0.76rem', lineHeight: 1.6 }}>
+                  {recup.cerradas > 0 && (
+                    <div style={{ marginBottom: 8, background: M.verdeAgua, border: '1px solid #cdeadd', borderRadius: 8, padding: '9px 11px', color: M.verdeTinta }}>
+                      <b>{recup.cerradas} cotización{recup.cerradas === 1 ? '' : 'es'} ya cobrada{recup.cerradas === 1 ? '' : 's'} se cerró como ganada.</b>{' '}
+                      {(recup.cerradas_detalle || []).map((x: any) => x.numero).join(' · ')} — con eso el lead pasa a cliente y nace su suscripción.
+                    </div>
+                  )}
                   <b>{recup.dry ? 'Se recuperarían' : 'Se recuperaron'} {recup.recuperadas}</b>
                   {' '}({recup.ganadas} ganadas · {recup.perdidas} perdidas)
                   {(recup.detalle || []).length > 0 && (

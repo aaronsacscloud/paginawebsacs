@@ -60,7 +60,7 @@ export default function ArchivosSuscripcion({ subId, nombre, onCerrar, onCambio 
   };
 
   return (
-    <div onClick={onCerrar}
+    <div onClick={e => { if (e.target === e.currentTarget) onCerrar(); }}
       style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 960, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div onClick={e => e.stopPropagation()}
         style={{ background: '#fff', borderRadius: 14, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: 560, maxHeight: '86vh', display: 'flex', flexDirection: 'column' }}>
@@ -98,13 +98,14 @@ export default function ArchivosSuscripcion({ subId, nombre, onCerrar, onCambio 
         </div>
 
         <div style={{ padding: '12px 18px 16px', borderTop: '1px solid #f1eff7', display: 'flex', gap: 9, alignItems: 'center' }}>
-          <input ref={input} type="file" style={{ display: 'none' }}
-            accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx"
-            onChange={e => { const f = e.target.files?.[0]; if (f) subir(f); e.target.value = ''; }} />
-          <button onClick={() => input.current?.click()} disabled={subiendo}
-            style={{ border: 'none', borderRadius: 9, padding: '9px 16px', background: '#9B8CFA', color: '#fff', fontSize: '0.79rem', fontWeight: 700, cursor: subiendo ? 'wait' : 'pointer', opacity: subiendo ? .6 : 1 }}>
+          <label htmlFor={`sub-file-${subId}`}
+            style={{ border: 'none', borderRadius: 9, padding: '9px 16px', background: '#9B8CFA', color: '#fff', fontSize: '0.79rem', fontWeight: 700, cursor: subiendo ? 'wait' : 'pointer', opacity: subiendo ? .6 : 1, display: 'inline-block' }}>
             {subiendo ? 'Subiendo…' : 'Subir documento'}
-          </button>
+          </label>
+          <input id={`sub-file-${subId}`} ref={input} type="file" disabled={subiendo}
+            accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx"
+            style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
+            onChange={e => { const f = e.target.files?.[0]; if (f) subir(f); e.target.value = ''; }} />
           <span style={{ fontSize: '0.68rem', color: '#a5a2af', lineHeight: 1.4 }}>
             PDF, Word o imagen · hasta 4 MB.<br />Los enlaces caducan en una hora: no se pueden compartir por fuera.
           </span>

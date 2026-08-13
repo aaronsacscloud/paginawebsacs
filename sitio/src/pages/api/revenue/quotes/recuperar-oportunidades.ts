@@ -28,6 +28,35 @@ export const POST: APIRoute = async ({ request }) => {
   const dry = !!b?.dry;
 
   const estados = incluirPerdidas ? ['paid', 'expired', 'rejected'] : ['paid'];
+  // ── Pagadas cuya oportunidad existe pero NO está cerrada ──
+  // Las que se cobraron ANTES de que existiera la cadena de cierre quedaron con
+  // el deal en "cotización enviada", el cliente como prospecto y sin
+  // suscripción: la venta entró y no dejó nada.
+  const cerradas: any[] = [];
+  if (!dry) {
+    const { data: pendientes } = await supabase.from('quotes')
+      .select('id, numero, empresa, total, deal_id, pagado_fecha')
+      .eq('estado', 'paid').not('deal_id', 'is', null);
+    const { syncQuoteToDeal: sync2 } = await import('../../../../lib/crm/sync-quote-deal');
+    for (const q of pendientes || []) {
+      const { data: deal } = await supabase.from('deals').select('*').eq('id', q.deal_id).maybeSingle();
+      if (!deal || deal.stage === 'cerrada_ganada') continue;
+      await sync2(q.id, {
+        targetStage: 'cerrada_ganada', valor_total: Math.round(Number(q.total || 0)),
+        trigger: 'recuperacion_cierre', closed_at: q.pagado_fecha || undefined,
+      });
+      const { data: fresco } = await supabase.from('deals').select('*').eq('id', q.deal_id).maybeSingle();
+      let cierre: any = null;
+      if (fresco) {
+        try {
+          const { materializarDealGanado } = await import('../../../../lib/crm/deal-cierre');
+          cierre = await materializarDealGanado(fresco);
+        } catch (e: any) { cierre = { error: String(e?.message || e) }; }
+      }
+      cerradas.push({ numero: q.numero, empresa: q.empresa, total: q.total, cierre });
+    }
+  }
+
   const { data: qs, error } = await supabase.from('quotes')
     .select('id, numero, empresa, total, estado, company_id, deal_id, pagado_fecha, rechazado_fecha, vigencia, created_at')
     .in('estado', estados).is('deal_id', null).not('company_id', 'is', null)
@@ -65,6 +94,8 @@ export const POST: APIRoute = async ({ request }) => {
 
   return json({
     dry,
+    cerradas: cerradas.length,
+    cerradas_detalle: cerradas,
     recuperadas: hechas.length,
     ganadas: hechas.filter(h => h.etapa === 'cerrada_ganada').length,
     perdidas: hechas.filter(h => h.etapa === 'cerrada_perdida').length,
