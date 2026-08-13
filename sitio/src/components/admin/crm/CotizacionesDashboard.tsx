@@ -38,6 +38,9 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
     return ORDEN_BASE;
   });
   const [arrastrando, setArrastrando] = useState<string | null>(null);
+  // Un número sin poder abrirlo obliga a confiar en él. Al tocar Cotizado o
+  // Cobrado se ve de qué cotizaciones salió.
+  const [detalle, setDetalle] = useState<{ titulo: string; filas: any[] } | null>(null);
 
   useEffect(() => {
     setCargando(true);
@@ -70,11 +73,13 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
     return <span style={{ color: bueno ? P : '#8a5cc4', fontWeight: 800 }}>{dif > 0 ? '↑' : '↓'} {Math.abs(dif)}{pts ? ' pts' : '%'}</span>;
   };
 
-  const Kpi = ({ t, v, hijo, azul }: any) => (
-    <div style={{ background: '#fff', border: '1px solid #eeecf3', borderLeft: `3px solid ${azul ? '#7EA6F0' : '#8B5CF6'}`, borderRadius: 12, padding: '16px 18px' }}>
+  const Kpi = ({ t, v, hijo, azul, abrir }: any) => (
+    <div onClick={abrir} title={abrir ? 'Ver de qué cotizaciones sale' : undefined}
+      style={{ background: '#fff', border: '1px solid #eeecf3', borderLeft: `3px solid ${azul ? '#7EA6F0' : '#8B5CF6'}`, borderRadius: 12, padding: '16px 18px', cursor: abrir ? 'pointer' : 'default' }}>
       <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#9c99a6', textTransform: 'uppercase', letterSpacing: '.08em' }}>{t}</div>
       <div style={{ fontSize: '1.65rem', fontWeight: 800, marginTop: 8, letterSpacing: '-.025em' }}>{v}</div>
       <div style={{ fontSize: '0.7rem', marginTop: 5, color: '#9c99a6' }}>{hijo}</div>
+      {abrir && <div style={{ fontSize: '0.63rem', color: '#b9b5c4', marginTop: 6, fontWeight: 700 }}>Ver desglose</div>}
     </div>
   );
 
@@ -240,7 +245,15 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
               </div>
             );
           })}
-        <Nota>Solo {d.proximos.con_plan} cotización{d.proximos.con_plan === 1 ? '' : 'es'} tiene{d.proximos.con_plan === 1 ? '' : 'n'} plan de parcialidades cargado. Si alguna se pactó en pagos y no se capturó, aquí no aparece.</Nota>
+        <Nota>
+          Aquí solo entran las parcialidades de cotizaciones que <b>ya se están pagando o el cliente confirmó</b>
+          ({d.proximos.con_plan} {d.proximos.con_plan === 1 ? 'cotización' : 'cotizaciones'}).
+          {d.proximos.propuestas?.length > 0 && (
+            <> Hay {d.proximos.propuestas.length} plan{d.proximos.propuestas.length === 1 ? '' : 'es'} más por {money(d.proximos.propuestas_monto)} en
+            cotizaciones sin confirmar: son una <b>propuesta</b> de pago, no dinero comprometido, y su monto ya está contado en Cotizado.
+            {' '}<span style={{ color: '#a5a2af' }}>({d.proximos.propuestas.map((p: any) => p.numero).join(' · ')})</span></>
+          )}
+        </Nota>
       </W>
     ),
 
@@ -268,10 +281,43 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
   const izq = orden.filter((_, i) => i % 2 === 0);
   const der = orden.filter((_, i) => i % 2 === 1);
 
+  const Desglose = () => !detalle ? null : (
+    <div onClick={() => setDetalle(null)}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div onClick={e => e.stopPropagation()}
+        style={{ background: '#fff', borderRadius: 14, boxShadow: '0 20px 50px rgba(16,24,40,.22)', width: 520, maxHeight: '80vh', overflowY: 'auto' }}>
+        <div style={{ padding: '16px 18px 10px', display: 'flex', alignItems: 'baseline', gap: 10 }}>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, flex: 1 }}>{detalle.titulo}</h3>
+          <button onClick={() => setDetalle(null)} style={{ border: 'none', background: 'none', color: '#9c99a6', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+        </div>
+        <div style={{ padding: '0 18px 18px' }}>
+          {detalle.filas.length === 0
+            ? <div style={{ fontSize: '0.8rem', color: '#a5a2af' }}>Nada en este periodo.</div>
+            : (<>
+              {detalle.filas.map((f: any, i: number) => (
+                <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'baseline', padding: '9px 0', borderBottom: '1px solid #f6f5f9', fontSize: '0.8rem' }}>
+                  <span style={{ flex: '0 0 88px', fontWeight: 700, color: '#5B21B6', fontSize: '0.73rem' }}>{f.numero}</span>
+                  <span style={{ flex: 1 }}>{f.empresa || '—'}
+                    {f.sub && <small style={{ display: 'block', color: '#a5a2af', fontSize: '0.69rem' }}>{f.sub}{f.fecha ? ` · ${f.fecha}` : ''}</small>}
+                  </span>
+                  <b>{money(f.monto)}</b>
+                </div>
+              ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 11, fontSize: '0.85rem', fontWeight: 800 }}>
+                <span>{detalle.filas.length} movimiento{detalle.filas.length === 1 ? '' : 's'}</span>
+                <span>{money(detalle.filas.reduce((a: number, f: any) => a + Number(f.monto || 0), 0))}</span>
+              </div>
+            </>)}
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     // Panel dentro del flujo de la página: el ancho lo pone el contenedor de
     // Cotizaciones, así que abrir o cerrar el menú lateral lo reacomoda solo.
     <div style={{ background: '#fafafc', border: '1px solid #f0eef4', borderRadius: 14, padding: '22px 24px 26px' }}>
+      <Desglose />
       <div>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 9, marginBottom: 16 }}>
           <div style={{ flex: 1 }}>
@@ -307,8 +353,10 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14, marginBottom: 14 }}>
               <Kpi azul t="Cotizado" v={money(d.kpis.cotizado.valor)}
+                abrir={() => setDetalle({ titulo: `Cotizado en ${nombreMes(d.mes)}`, filas: (d.kpis.cotizado.detalle || []).map((x: any) => ({ ...x, sub: x.estado })) })}
                 hijo={<><Delta v={d.kpis.cotizado.valor} a={d.kpis.cotizado.anterior} /> · {nombreMes(d.mes_anterior)} {money(d.kpis.cotizado.anterior)}</>} />
               <Kpi t={<span>Cobrado</span>} v={<span style={{ color: P }}>{money(d.kpis.cobrado.valor)}</span>}
+                abrir={() => setDetalle({ titulo: `Cobrado en ${nombreMes(d.mes)}`, filas: (d.kpis.cobrado.detalle || []).map((x: any) => ({ ...x, sub: [x.tipo, x.metodo, x.referencia].filter(Boolean).join(' · ') })) })}
                 hijo={<><Delta v={d.kpis.cobrado.valor} a={d.kpis.cobrado.anterior} /> · {nombreMes(d.mes_anterior)} {money(d.kpis.cobrado.anterior)}</>} />
               <Kpi t="Tasa de cierre" v={`${d.kpis.cierre.valor}%`}
                 hijo={<><Delta v={d.kpis.cierre.valor} a={d.kpis.cierre.anterior} pts /> · sobre las ya resueltas</>} />

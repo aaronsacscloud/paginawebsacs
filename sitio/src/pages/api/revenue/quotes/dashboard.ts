@@ -39,13 +39,18 @@ export const GET: APIRoute = async ({ url }) => {
     supabase.from('quotes')
       .select('id, numero, empresa, total, estado, created_at, pagado_fecha, aceptado_fecha, rechazado_fecha, vigencia, company_id, origen_cotizante, notas')
       .not('estado', 'eq', 'plantilla').order('created_at', { ascending: false }).limit(3000),
-    supabase.from('payments').select('quote_id, monto, fecha').limit(5000),
+    supabase.from('payments').select('quote_id, monto, fecha, metodo, referencia').limit(5000),
     supabase.from('companies').select('id, estado_cuenta').limit(3000),
   ]);
 
   const estadoPorCuenta = new Map((cos || []).map((c: any) => [c.id, c.estado_cuenta]));
   const pagadoPorQuote = new Map<string, number>();
-  for (const p of pagos || []) pagadoPorQuote.set(p.quote_id, (pagadoPorQuote.get(p.quote_id) || 0) + Number(p.monto || 0));
+  const pagosPorQuote = new Map<string, any[]>();
+  for (const p of pagos || []) {
+    if (!p.quote_id) continue;   // pagos de suscripción: no son de una cotización
+    pagadoPorQuote.set(p.quote_id, (pagadoPorQuote.get(p.quote_id) || 0) + Number(p.monto || 0));
+    pagosPorQuote.set(p.quote_id, [...(pagosPorQuote.get(p.quote_id) || []), p]);
+  }
 
   // Origen: el congelado manda. Solo si falta —cotizaciones anteriores a que
   // existiera el campo— se deduce del estado que tiene el cliente HOY, y eso se
@@ -65,6 +70,7 @@ export const GET: APIRoute = async ({ url }) => {
       company_id: q.company_id, origen, origen_estimado: estimado,
       vistas: Number(meta?.views || 0),
       abonado: pagadoPorQuote.get(q.id) || 0,
+      pagos: pagosPorQuote.get(q.id) || [],
       plan: Array.isArray(meta?.plan_pagos) ? meta.plan_pagos : [],
       motivo_rechazo: meta?.motivo_rechazo || null,
     };
@@ -77,17 +83,34 @@ export const GET: APIRoute = async ({ url }) => {
   const kpisDe = (m: string) => {
     const [ini, fin] = rangoMes(m);
     const delMes = base.filter(f => f.created_at >= ini && f.created_at < fin);
-    // Cobrado se cuenta por FECHA DE PAGO, no por fecha de la cotización: el
-    // dinero de julio es el que entró en julio, aunque se haya cotizado en mayo.
-    const cobradoMes = base.filter(f => f.pagado_fecha && mesDe(f.pagado_fecha) === m);
+    // ── Cobrado = lo que de verdad ENTRÓ ese mes ──
+    // Antes se sumaba el TOTAL de las cotizaciones marcadas como pagadas, lo
+    // que ignoraba los anticipos y contaba de más: una cotización de $7,777 con
+    // un abono de $3,888 aportaba $0 (no está "pagada") y una pagada en dos
+    // exhibiciones cargaba todo al mes de la última. Ahora se suman los pagos,
+    // cada uno en su mes: anticipos, parcialidades y liquidaciones.
+    const pagosMes = base.flatMap(f => (f.pagos || [])
+      .filter((p: any) => mesDe(p.fecha) === m)
+      .map((p: any) => ({ ...p, numero: f.numero, empresa: f.empresa, quote_id: f.id, estado_quote: f.estado })));
+    const cobradoMes = pagosMes;
     const cerradas = delMes.filter(f => GANADA.includes(f.estado)).length;
     const resueltas = delMes.filter(f => GANADA.includes(f.estado) || PERDIDA.includes(f.estado)).length;
-    const dias = cobradoMes.filter(f => f.pagado_fecha && f.created_at)
+    // Días a cobro: solo de las que se liquidaron en el mes; una parcialidad
+    // suelta no dice cuánto tardó el trato en cerrarse.
+    const liquidadas = base.filter(f => f.pagado_fecha && mesDe(f.pagado_fecha) === m);
+    const dias = liquidadas.filter(f => f.pagado_fecha && f.created_at)
       .map(f => (new Date(f.pagado_fecha).getTime() - new Date(f.created_at).getTime()) / 86400000)
       .filter(d => d >= 0);
     return {
       cotizado: dinero(delMes.reduce((a, f) => a + f.total, 0)),
-      cobrado: dinero(cobradoMes.reduce((a, f) => a + f.total, 0)),
+      cobrado: dinero(cobradoMes.reduce((a: number, p: any) => a + Number(p.monto || 0), 0)),
+      cobrado_detalle: pagosMes.map((p: any) => ({
+        numero: p.numero, empresa: p.empresa, monto: dinero(Number(p.monto || 0)), fecha: p.fecha,
+        metodo: p.metodo || null, referencia: p.referencia || null,
+        // Anticipo o liquidación: es la diferencia que el usuario pidió ver.
+        tipo: p.estado_quote === 'paid' ? 'liquidación' : 'anticipo',
+      })),
+      cotizado_detalle: delMes.map(f => ({ numero: f.numero, empresa: f.empresa, monto: f.total, estado: f.estado })),
       // Contra las que ya se resolvieron, no contra todas: las que siguen vivas
       // todavía no ganaron ni perdieron, y meterlas hunde el número sin razón.
       cierre: resueltas ? Math.round((cerradas / resueltas) * 100) : 0,
@@ -130,7 +153,10 @@ export const GET: APIRoute = async ({ url }) => {
     return {
       mes: m,
       cotizado: dinero(base.filter(f => f.created_at >= ini && f.created_at < fin).reduce((a, f) => a + f.total, 0)),
-      cobrado: dinero(base.filter(f => f.pagado_fecha && mesDe(f.pagado_fecha) === m).reduce((a, f) => a + f.total, 0)),
+      // Mismo criterio que el KPI: el dinero que entró ese mes, sin importar
+      // cuándo se cotizó ni si la cotización ya quedó liquidada.
+      cobrado: dinero(base.reduce((a, f) => a + (f.pagos || [])
+        .filter((p: any) => mesDe(p.fecha) === m).reduce((x: number, p: any) => x + Number(p.monto || 0), 0), 0)),
     };
   });
 
@@ -154,8 +180,23 @@ export const GET: APIRoute = async ({ url }) => {
   // aplicar el dinero a la más vieja es la única regla que no inventa nada.
   const hoyStr = new Date().toISOString().slice(0, 10);
   const pendientes: any[] = [];
+  const soloPropuestas: any[] = [];
   for (const f of base) {
     if (!f.plan.length || GANADA.includes(f.estado)) continue;
+    // ── Un plan de pagos no es dinero comprometido ──
+    // Mientras la cotización no esté confirmada ni tenga un peso encima, esas
+    // parcialidades son una PROPUESTA: el cliente todavía puede no comprar.
+    // Contarlas junto a las que ya se están pagando inflaba la cobranza con
+    // dinero que nadie prometió — el monto cotizado ya está en "Cotizado".
+    const enCurso = f.abonado > 0 || f.estado === 'accepted';
+    if (!enCurso) {
+      soloPropuestas.push({
+        numero: f.numero, empresa: f.empresa, estado: f.estado,
+        monto: dinero(f.plan.reduce((a: number, p: any) => a + Number(p.monto || 0), 0)),
+        parcialidades: f.plan.length,
+      });
+      continue;
+    }
     let restante = f.abonado;
     for (const p of [...f.plan].sort((a: any, b: any) => String(a.fecha).localeCompare(String(b.fecha)))) {
       const monto = Number(p.monto || 0);
@@ -174,8 +215,12 @@ export const GET: APIRoute = async ({ url }) => {
   const proximos = {
     este_mes: dinero(pendientes.filter(p => mesDe(p.fecha) === mesHoy).reduce((a, p) => a + p.monto, 0)),
     comprometido: dinero(pendientes.reduce((a, p) => a + p.monto, 0)),
-    con_plan: base.filter(f => f.plan.length > 0).length,
+    con_plan: base.filter(f => f.plan.length > 0 && (f.abonado > 0 || f.estado === 'accepted')).length,
     filas: pendientes.slice(0, 6),
+    // Se reportan aparte, no se esconden: son cobranza POTENCIAL y hay que
+    // poder verla, pero fuera del número comprometido.
+    propuestas: soloPropuestas,
+    propuestas_monto: dinero(soloPropuestas.reduce((a, p) => a + p.monto, 0)),
   };
 
   // ── Por qué se pierden ──
@@ -196,8 +241,8 @@ export const GET: APIRoute = async ({ url }) => {
   return json({
     mes, mes_anterior: mesAnterior(mes), segmento,
     kpis: {
-      cotizado: { valor: act.cotizado, anterior: ant.cotizado },
-      cobrado: { valor: act.cobrado, anterior: ant.cobrado },
+      cotizado: { valor: act.cotizado, anterior: ant.cotizado, detalle: act.cotizado_detalle },
+      cobrado: { valor: act.cobrado, anterior: ant.cobrado, detalle: act.cobrado_detalle },
       cierre: { valor: act.cierre, anterior: ant.cierre },
       dias: { valor: act.dias, anterior: ant.dias },
     },
