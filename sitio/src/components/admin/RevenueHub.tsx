@@ -22,8 +22,11 @@ const M = {
   violeta: '#9B8CFA', azul: '#7DA6F5',
   violetaAgua: '#EEECFE', azulAgua: '#E3EDFD', azulAgua2: '#DDE8FC',
   violetaTinta: '#5B4BD6', azulTinta: '#2C5FC4', violetaHondo: '#4536BE',
-  verde: '#0F9D68', verdeTinta: '#0B7A50', verdeAgua: '#E6F6EF',
-  rojo: '#DC2626', rojoTinta: '#C62828', rojoAgua: '#FDECEC',
+  // Pastel en la FORMA —punto, franja, barra— y tinta en la CIFRA. El color
+  // suave es decoración; la cantidad de dinero es información y si se despinta
+  // hay que acercarse a la pantalla para leerla, docenas de veces al día.
+  verde: '#4FBF95', verdeTinta: '#1E8A63', verdeAgua: '#EAF8F2',
+  rojo: '#EF7A72', rojoTinta: '#C0554E', rojoAgua: '#FEF0EF',
   gris: '#E5E3EA', grisAgua: '#F4F4F6', grisTinta: '#6B7280', grisPunto: '#C9C7D0',
 } as const;
 import { PLANTILLAS_ROI, PLANES_SIN_PLANTILLA, driversParaPlanes, costoHoraParaPlanes, calcularRoi, payback, textoSupuestos, type Driver } from '../../lib/quotes/roi';
@@ -1078,7 +1081,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             // hay mes anterior con qué comparar NO se inventa un "+100%".
             const varTxt = (v: number | null) => (v === null || v === undefined)
               ? <span style={{ color: '#bbb' }}>sin mes anterior</span>
-              : <span style={{ color: v > 0 ? M.verde : v < 0 ? M.azulTinta : '#888', fontWeight: 700 }}>{v > 0 ? '↑' : v < 0 ? '↓' : '='} {Math.abs(v)}%</span>;
+              : <span style={{ color: v > 0 ? M.verdeTinta : v < 0 ? M.azulTinta : '#888', fontWeight: 700 }}>{v > 0 ? '↑' : v < 0 ? '↓' : '='} {Math.abs(v)}%</span>;
 
             if (!k) return [0, 1, 2, 3, 4].map(i => (
               <div key={i} style={{ background: '#fff', border: '1px solid #ececec', borderLeft: `3px solid ${M.violetaAgua}`, padding: '14px 16px', borderRadius: 10 }}>
@@ -1095,11 +1098,11 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   '#1a1a1a', undefined, M.azul)}
                 {card('Pendiente de pago del mes', fmt(k.pendiente.monto),
                   <>{k.pendiente.activas} activas{k.pendiente.con_parcial ? ` · ${k.pendiente.con_parcial} con pago parcial` : ''}</>,
-                  k.pendiente.monto > 0 ? '#1a1a1a' : M.verde,
+                  k.pendiente.monto > 0 ? '#1a1a1a' : M.verdeTinta,
                   () => setQView('active'), M.violeta)}
                 {card('Pagado este mes', fmt(k.pagado.monto),
                   <>{k.pagado.cotizaciones} cotizaci{k.pagado.cotizaciones === 1 ? 'ón' : 'ones'} con pagos este mes</>,
-                  M.verde, () => setQView('paid'), M.verde)}
+                  M.verdeTinta, () => setQView('paid'), M.verde)}
                 {card('Cotizaciones activas del mes', String(k.activas.total),
                   'Draft + enviadas + aceptadas pendientes', '#1a1a1a', () => setQView('active'), M.violeta)}
                 {/* Ventana de 7 días, no del mes: una cotización de marzo que
@@ -1274,8 +1277,8 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                           la cotización: es un monto que ya se pagó. Una vencida
                           con anticipo lleva pastilla roja y cifra verde — los
                           dos hechos son ciertos y ahora se ven juntos. */}
-                      {qVisibleCols.has('abonado') && <td style={{ ...S.td, padding: rowPad, whiteSpace: 'nowrap' as const, textAlign: 'right' as const, fontWeight: Number(q.abonado || 0) >= Number(q.total || 0) - 0.01 && Number(q.abonado || 0) > 0 ? 800 : 700, color: Number(q.abonado || 0) > 0 ? M.verde : '#c9c7d0' }}>{Number(q.abonado || 0) > 0 ? fmt(q.abonado) : '—'}</td>}
-                      {qVisibleCols.has('vigencia') && <td style={{ ...S.td, padding: rowPad, whiteSpace: 'nowrap' as const, color: days !== null && days < 0 ? '#dc2626' : '#8a8a8a', fontWeight: days !== null && days < 0 ? 700 : 400 }}>
+                      {qVisibleCols.has('abonado') && <td style={{ ...S.td, padding: rowPad, whiteSpace: 'nowrap' as const, textAlign: 'right' as const, fontWeight: Number(q.abonado || 0) >= Number(q.total || 0) - 0.01 && Number(q.abonado || 0) > 0 ? 800 : 700, color: Number(q.abonado || 0) > 0 ? M.verdeTinta : '#c9c7d0' }}>{Number(q.abonado || 0) > 0 ? fmt(q.abonado) : '—'}</td>}
+                      {qVisibleCols.has('vigencia') && <td style={{ ...S.td, padding: rowPad, whiteSpace: 'nowrap' as const, color: days !== null && days < 0 ? M.rojoTinta : '#8a8a8a', fontWeight: days !== null && days < 0 ? 700 : 400 }}>
                         {/* Solo el número: gris = sigue vigente, rojo = ya
                             venció. El color hace el trabajo del texto y la
                             columna deja de robar espacio. */}
@@ -1335,7 +1338,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                             <button onClick={() => { navigator.clipboard.writeText(`https://www.sacscloud.com/cotizacion/${q.id}/implementacion`); setQMenuRow(null); }} style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 1, justifyContent: 'flex-start', border: 'none', background: 'transparent', padding: '7px 10px', display: 'flex', textDecoration: 'none', color: '#1a1a1a' }}>Copiar liga del proceso</button>
                             <div style={{ height: 1, background: '#f0f0f0', margin: '6px 4px' }}></div>
                             <button onClick={() => { setAEliminar([q]); setQMenuRow(null); }}
-                              style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 1, justifyContent: 'flex-start', border: 'none', background: 'transparent', padding: '7px 10px', display: 'flex', textDecoration: 'none', color: '#b4302f' }}>Eliminar cotización</button>
+                              style={{ ...S.btnSmall, width: '100%', marginRight: 0, marginBottom: 1, justifyContent: 'flex-start', border: 'none', background: 'transparent', padding: '7px 10px', display: 'flex', textDecoration: 'none', color: M.rojoTinta }}>Eliminar cotización</button>
                           </div>
                         )}
                       </td>}

@@ -13,12 +13,14 @@ import { useEffect, useState } from 'react';
 // estructural. Verde y rojo están reservados al dinero: verde un monto que ya
 // se pagó, rojo lo vencido. Por eso "por qué se pierden" va en azul — perder
 // por precio no es una urgencia de hoy.
-const P = '#0F9D68';         // verde — cobrado, dinero que entró
+// Verde y rojo en pastel: el relleno se suaviza y la cifra conserva su tinta.
+const P = '#4FBF95';         // verde pastel — barras y franjas del cobrado
+const P_TINTA = '#1E8A63';   // el mismo, legible — para las CANTIDADES
 const P_MEDIO = '#9B8CFA';   // morado — estructura, aceptada
 const P_SUAVE = '#B6ABFC';   // morado claro
 const LILA = '#7DA6F5';      // azul cielo — cotizado, en juego
 const LILA_AGUA = '#DDE8FC'; // azul aguado — relleno de barras
-const NOCHE = '#DC2626';     // rojo — vencido
+const NOCHE = '#C0554E';     // rojo pastel en tinta — vencido (va sobre texto)
 const TINTA = '#5B4BD6';     // morado oscuro — texto y énfasis
 const GRIS = '#E5E3EA';
 
@@ -79,7 +81,7 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
     if (dif === 0) return <span style={{ color: '#9c99a6' }}>igual que {nombreMes(d.mes_anterior)}</span>;
     // "Días a cobro" mejora cuando BAJA: el color no puede leer solo el signo.
     const bueno = invertido ? dif < 0 : dif > 0;
-    return <span style={{ color: bueno ? P : TINTA, fontWeight: 800 }}>{dif > 0 ? '↑' : '↓'} {Math.abs(dif)}{pts ? ' pts' : '%'}</span>;
+    return <span style={{ color: bueno ? P_TINTA : TINTA, fontWeight: 800 }}>{dif > 0 ? '↑' : '↓'} {Math.abs(dif)}{pts ? ' pts' : '%'}</span>;
   };
 
   const Kpi = ({ t, v, hijo, barra, abrir }: any) => (
@@ -211,7 +213,7 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
               ))}
           </div>
           <div style={{ display: 'flex', gap: 28 }}>
-            <Col t="De clientes" x={o.cliente} color={P} />
+            <Col t="De clientes" x={o.cliente} color={P_TINTA} />
             <Col t="De leads" x={o.lead} color={P_SUAVE} />
           </div>
           {o.sin_ligar.n > 0 && (
@@ -366,7 +368,7 @@ export default function CotizacionesDashboard({ onCerrar }: { onCerrar: () => vo
               <Kpi barra={LILA} t="Cotizado" v={money(d.kpis.cotizado.valor)}
                 abrir={() => setDetalle({ titulo: `Cotizado en ${nombreMes(d.mes)}`, filas: (d.kpis.cotizado.detalle || []).map((x: any) => ({ ...x, sub: x.estado })) })}
                 hijo={<><Delta v={d.kpis.cotizado.valor} a={d.kpis.cotizado.anterior} /> · {nombreMes(d.mes_anterior)} {money(d.kpis.cotizado.anterior)}</>} />
-              <Kpi barra={P} t={<span>Cobrado</span>} v={<span style={{ color: P }}>{money(d.kpis.cobrado.valor)}</span>}
+              <Kpi barra={P} t={<span>Cobrado</span>} v={<span style={{ color: P_TINTA }}>{money(d.kpis.cobrado.valor)}</span>}
                 abrir={() => setDetalle({ titulo: `Cobrado en ${nombreMes(d.mes)}`, filas: (d.kpis.cobrado.detalle || []).map((x: any) => ({ ...x, sub: [x.tipo, x.metodo, x.referencia].filter(Boolean).join(' · ') })) })}
                 hijo={<><Delta v={d.kpis.cobrado.valor} a={d.kpis.cobrado.anterior} /> · {nombreMes(d.mes_anterior)} {money(d.kpis.cobrado.anterior)}</>} />
               <Kpi barra={P_MEDIO} t="Tasa de cierre" v={`${d.kpis.cierre.valor}%`}
