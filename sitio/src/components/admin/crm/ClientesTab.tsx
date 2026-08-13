@@ -204,7 +204,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
 
   const cols: ColDef[] = [
     {
-      key: 'cliente', label: 'Cliente', width: '15%', ftype: 'text',
+      key: 'cliente', label: 'Cliente', width: 210, fija: true, ftype: 'text',
       // El cliente es la EMPRESA. El título salía del contacto, así que un
       // renglón decía "Oscar Rivera" cuando la cuenta es Super Carnes Rivera.
       val: c => (c.nombre_comercial || c.sacs_account || c.nombre || '').toLowerCase(),
@@ -248,7 +248,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
     {
       // Correo y teléfono aparte: juntos con el nombre, la columna se saturaba
       // y no se leía ninguno de los tres.
-      key: 'datos_contacto', label: 'Datos de contacto', width: '15%', ftype: 'text',
+      key: 'datos_contacto', label: 'Datos de contacto', width: 196, ftype: 'text',
       val: c => [c.contacto?.email, c.contacto?.whatsapp, c.contacto?.telefono].filter(Boolean).join(' '),
       render: c => (
         <td style={T.td} onClick={e => e.stopPropagation()}>
@@ -594,7 +594,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           vistasBase={vistasBase}
           searchText={c => [c.nombre_comercial, c.nombre, ...(c.cuentas || [c.sacs_account]), c.contacto?.nombre, c.contacto?.email, c.contacto?.whatsapp].filter(Boolean).join(' ')}
           searchPlaceholder="Buscar cliente, cuenta o contacto…"
-          minWidth={1100}
+          minWidth={1690}
           onRowClick={c => { if (editId !== c.id) setDetailId(c.id); }}
           mobileCard={(c: any) => (
             <div>

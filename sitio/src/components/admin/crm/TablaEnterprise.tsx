@@ -20,6 +20,7 @@ export type ColDef = {
   label: string;
   render?: (row: any) => any;      // sin render ⇒ columna oculta (solo para filtros)
   val?: (row: any) => any;          // valor para ordenar/filtrar
+  fija?: boolean;                   // se queda pegada al desplazar a lo ancho
   ftype?: 'text' | 'select' | 'number' | 'date';
   options?: Opcion[];
   num?: boolean;                    // alineado a la derecha
@@ -411,7 +412,8 @@ export default function TablaEnterprise({
                   <th key={c.key} onClick={() => toggleSort(c)}
                     className={ordenable ? 'te-th-sort' : undefined}
                     title={ordenable ? (activa && sort?.dir === -1 ? 'Ordenado de mayor a menor — clic para invertir' : activa ? 'Ordenado de menor a mayor — clic para invertir' : 'Clic para ordenar por ' + c.label) : undefined}
-                    style={{ ...E.th, ...(c.num ? { textAlign: 'right' as const } : {}), cursor: ordenable ? 'pointer' : 'default', userSelect: 'none' }}>
+                    style={{ ...E.th, ...(c.num ? { textAlign: 'right' as const } : {}), cursor: ordenable ? 'pointer' : 'default', userSelect: 'none',
+                      ...(c.fija ? { position: 'sticky' as const, left: 0, zIndex: 3, background: '#fafafe', boxShadow: '1px 0 0 #eeedf1' } : {}) }}>
                     {c.label}
                     {ordenable && (
                       <span className={activa ? 'te-sort te-sort-on' : 'te-sort'} aria-hidden="true">
@@ -425,7 +427,16 @@ export default function TablaEnterprise({
               <tbody>
                 {pagina.map(r => (
                   <tr key={rowKey(r)} style={{ cursor: onRowClick ? 'pointer' : 'default' }} onClick={() => onRowClick?.(r)}>
-                    {visibles.map(c => cloneElement(c.render!(r), { key: c.key }))}
+                    {visibles.map(c => {
+                      const celda = c.render!(r);
+                      if (!c.fija) return cloneElement(celda, { key: c.key });
+                      // El fondo tiene que ser opaco: si no, al desplazar se ve
+                      // el contenido de las otras columnas pasando por debajo.
+                      return cloneElement(celda, {
+                        key: c.key,
+                        style: { ...(celda.props?.style || {}), position: 'sticky', left: 0, zIndex: 2, background: '#fff', boxShadow: '1px 0 0 #f1f1f5' },
+                      });
+                    })}
                   </tr>
                 ))}
               </tbody>
