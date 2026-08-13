@@ -401,56 +401,13 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
         );
       },
     },
-    {
-      // Cómo se le cobra. En la lista y no solo en la ficha: es lo que contesta
-      // "¿a cuántos les cobro a mano?" sin abrir 218 clientes uno por uno.
-      key: 'cobro', label: 'Cobro', width: 96, ftype: 'select',
-      options: [{ v: 'auto', l: 'Automático (MP)' }, { v: 'manual', l: 'Manual' }, { v: 'rechazo', l: 'Con rechazo' }, { v: 'desfase', l: 'Con desfase' }],
-      val: c => c.mp?.rechazos ? 'rechazo' : c.mp?.desfase ? 'desfase' : c.mp?.domiciliadas ? 'auto' : 'manual',
-      render: c => {
-        const m = c.mp || {};
-        return (
-          <td style={T.td}>
-            {m.domiciliadas ? (
-              <span style={{ ...T.badge, background: 'rgba(42,181,160,.15)', color: '#1A8F7A' }}
-                title={'Se le cobra solo por Mercado Pago' + (m.correo ? ' · paga ' + m.correo : '') + (m.manuales ? ` · ${m.manuales} más a mano` : '')}>
-                auto{m.manuales ? ` +${m.manuales}` : ''}
-              </span>
-            ) : <span style={{ fontSize: '0.72rem', color: '#c4c8cf' }} title="No tiene ninguna suscripción domiciliada">manual</span>}
-            {m.rechazos ? (
-              <div style={{ fontSize: '0.66rem', color: '#E54B4B', fontWeight: 700, marginTop: 2, whiteSpace: 'nowrap' }}
-                title={`${m.rechazos} cobros rechazados en 60 días por ${money(m.rechazo_monto)}${m.rechazo_ultimo ? ' · último ' + m.rechazo_ultimo : ''}`}>
-                ⚠ {m.rechazos} rechazo{m.rechazos > 1 ? 's' : ''}
-              </div>
-            ) : null}
-            {m.desfase ? (
-              <div style={{ fontSize: '0.66rem', color: '#E54B4B', fontWeight: 700, marginTop: 2, whiteSpace: 'nowrap' }}
-                title="Mercado Pago cobra un monto distinto al de su suscripción: el ARR de este cliente está mal.">
-                ⚠ desfase
-              </div>
-            ) : null}
-          </td>
-        );
-      },
-    },
-    {
-      key: 'senal', label: 'Señal', width: 112, ftype: 'select',
-      options: Object.keys(SENAL_LABEL).map(t => ({ v: t, l: SENAL_LABEL[t] })),
-      val: c => c.senal_peso || 0,     // ordena por urgencia/valor
-      render: c => (
-        <td style={T.td}>
-          {c.senal_tipo ? (
-            <span title={c.senal_titulo || ''} style={{ ...T.badge, display: 'inline-flex', alignItems: 'center', background: c.senal_nivel === 'riesgo' ? '#fdecea' : '#e6f6f2', color: c.senal_nivel === 'riesgo' ? '#b93333' : '#1A8F7A', maxWidth: '100%', overflow: 'hidden' }}>
-              <span style={{ ...T.ell }}>{SENAL_LABEL[c.senal_tipo] || c.senal_tipo}</span>
-            </span>
-          ) : <span style={{ color: '#c4c8cf' }}>—</span>}
-        </td>
-      ),
-    },
     /* Campos SOLO para "Más filtros" (sin columna visible). */
     { key: 'etapa', label: 'Etapa', ftype: 'select', options: stages.map(s => ({ v: s.key, l: s.label })), val: c => c.pipeline_stage || '' },
     { key: 'vitalicia', label: 'Licencia', ftype: 'select', options: [{ v: 'si', l: 'Vitalicia' }, { v: 'no', l: 'Recurrente' }], val: c => c.vitalicia ? 'si' : 'no' },
-    { key: 'senal_nivel', label: 'Señal (nivel)', ftype: 'select', options: [{ v: 'oportunidad', l: 'Oportunidad' }, { v: 'riesgo', l: 'Riesgo' }, { v: '', l: 'Sin señal' }], val: c => c.senal_nivel || '' },
+    { key: 'cobro', label: 'Cobro', ftype: 'select',
+      options: [{ v: 'auto', l: 'Automático (MP)' }, { v: 'manual', l: 'Manual' }, { v: 'rechazo', l: 'Con rechazo' }, { v: 'desfase', l: 'Con desfase' }],
+      val: c => c.mp?.rechazos ? 'rechazo' : c.mp?.desfase ? 'desfase' : c.mp?.domiciliadas ? 'auto' : 'manual' },
+    { key: 'senal_nivel', label: 'Señal', ftype: 'select', options: [{ v: 'oportunidad', l: 'Oportunidad' }, { v: 'riesgo', l: 'Riesgo' }, { v: '', l: 'Sin señal' }], val: c => c.senal_nivel || '' },
     { key: 'cuenta', label: 'Cuenta SACS', ftype: 'text', val: c => (c.cuentas?.length ? c.cuentas.join(' ') : (c.sacs_account || '')) },
     { key: 'correo', label: 'Correo', ftype: 'text', val: c => c.contacto?.email || '' },
     { key: 'telefono', label: 'Teléfono/WhatsApp', ftype: 'text', val: c => c.contacto?.whatsapp || c.contacto?.telefono || '' },
@@ -464,9 +421,9 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
     // Sucursales: filtrable como NÚMERO a propósito, aunque se capture con
     // lista. Así se puede pedir "5 o más" o "entre 2 y 10", que es la pregunta
     // real; con un filtro de lista habría que ir marcando valor por valor.
+    // Sucursales sin render: sigue filtrable, sin gastar una columna.
     { key: 'sucursales', label: 'Sucursales', ftype: 'number',
-      val: c => c.sucursales == null ? null : Number(c.sucursales),
-      render: c => <td style={T.td}>{c.sucursales == null ? <span style={{ color: '#ddd' }}>—</span> : (Number(c.sucursales) > 50 ? `Más de 50 (${c.sucursales})` : c.sucursales)}</td> },
+      val: c => c.sucursales == null ? null : Number(c.sucursales) },
 
     // ── Campos personalizados ──
     // Se inyectan como columnas normales, y con eso heredan TODO lo que la
@@ -623,7 +580,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           sinVistas
           searchText={c => [c.nombre_comercial, c.nombre, ...(c.cuentas || [c.sacs_account]), c.contacto?.nombre, c.contacto?.email, c.contacto?.whatsapp].filter(Boolean).join(' ')}
           searchPlaceholder="Buscar cliente, cuenta o contacto…"
-          minWidth={1698}
+          minWidth={1400}
           headerTint
           onRowClick={c => { if (editId !== c.id) setDetailId(c.id); }}
           mobileCard={(c: any) => (
