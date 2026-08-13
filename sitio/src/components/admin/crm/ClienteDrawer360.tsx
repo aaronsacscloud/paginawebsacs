@@ -2149,7 +2149,7 @@ function TabReuniones({ companyId, principal, contactos, flash }: any) {
       {agendando && (
         <AgendarReunion companyId={companyId} tipos={tipos} principal={principal} contactos={contactos || []}
           onCerrar={() => setAgendando(false)}
-          onListo={() => { setAgendando(false); cargar(); flash('Reunión agendada'); }} />
+          onListo={(paraMinuta: any) => { setAgendando(false); cargar(); flash('Reunión guardada'); if (paraMinuta) setCerrando(paraMinuta); }} />
       )}
       {cerrando && (
         <MinutaReunion reunion={cerrando}
@@ -2177,6 +2177,10 @@ function AgendarReunion({ companyId, tipos, principal, contactos, onCerrar, onLi
   // más común, pero muchas veces se sienta el encargado de sucursal o el
   // contador: dejarlo fijo obligaría a registrar una reunión con quien no
   // estuvo.
+  // Muchas reuniones se capturan DESPUÉS de que pasaron, así que el estado se
+  // elige al agendar: obligar a guardar como "agendada" y volver a entrar a
+  // marcar que sí llegó es capturar lo mismo dos veces.
+  const [estado, setEstado] = useState<string>('agendada');
   const [conId, setConId] = useState<string>(principal?.id || 'otro');
   const [otroNombre, setOtroNombre] = useState('');
   const [otroEmail, setOtroEmail] = useState('');
@@ -2200,7 +2204,7 @@ function AgendarReunion({ companyId, tipos, principal, contactos, onCerrar, onLi
     const r = await fetch('/api/scheduling/reuniones', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        event_type_id: tipoId, fecha, hora_inicio: hora, duracion_minutos: dur,
+        event_type_id: tipoId, fecha, hora_inicio: hora, duracion_minutos: dur, estado,
         company_id: companyId,
         contact_id: conId === 'otro' ? null : conId,
         invitee_nombre: nombreCon || null,
@@ -2210,7 +2214,8 @@ function AgendarReunion({ companyId, tipos, principal, contactos, onCerrar, onLi
     }).then(x => x.json()).catch(() => null);
     setGuardando(false);
     if (!r || r.error) { setError(r?.error || 'No se pudo agendar.'); return; }
-    onListo();
+    const tipo = lista.find((t: any) => t.id === tipoId) || null;
+    onListo(estado === 'asistio' && tipo?.requiere_minuta !== false ? { ...r.data, event_types: tipo } : null);
   }
 
   return (
@@ -2231,6 +2236,20 @@ function AgendarReunion({ companyId, tipos, principal, contactos, onCerrar, onLi
                 {t.nombre.replace(/^Reunión de |^Sesión de /i, '')}
               </button>
             ))}
+          </div>
+
+          <div style={{ ...D.lbl, textTransform: 'uppercase', fontSize: '0.62rem', letterSpacing: '.05em' }}>Estado</div>
+          <div style={{ display: 'flex', border: '1.5px solid #e4dffb', borderRadius: 9, overflow: 'hidden', marginBottom: 12 }}>
+            {(['agendada', 'confirmada', 'asistio', 'no_asistio'] as const).map((e, i) => {
+              const on = estado === e;
+              const tinte = e === 'asistio' ? '#4FBF95' : e === 'no_asistio' ? '#EF7A72' : '#9B8CFA';
+              return (
+                <button key={e} type="button" onClick={() => setEstado(e)}
+                  style={{ flex: 1, border: 'none', borderLeft: i ? '1px solid #efeafd' : 'none', background: on ? tinte : '#fdfcff', color: on ? '#fff' : '#6b6b74', padding: '9px 4px', fontSize: '0.73rem', fontWeight: on ? 800 : 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  {ESTADOS[e].label}
+                </button>
+              );
+            })}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginBottom: 10 }}>
@@ -2269,7 +2288,9 @@ function AgendarReunion({ companyId, tipos, principal, contactos, onCerrar, onLi
             <button onClick={onCerrar} style={D.btnG}>Cancelar</button>
           </div>
           <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 9, lineHeight: 1.45 }}>
-            Queda como agendada y sin correo al cliente: esta pantalla registra lo que ya se acordó, no le pide que confirme.
+            {estado === 'asistio' ? 'Al guardarla se abre la minuta para dejar por escrito lo que se acordó.'
+              : estado === 'no_asistio' ? 'Cuenta para la alerta por inasistencias de la cuenta.'
+              : 'No se le manda correo al cliente: esta pantalla registra lo que ya se acordó, no le pide que confirme.'}
           </div>
         </div>
       </div>

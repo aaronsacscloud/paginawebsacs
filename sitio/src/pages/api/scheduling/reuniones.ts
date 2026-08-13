@@ -163,9 +163,11 @@ export const POST: APIRoute = async ({ request }) => {
     deal_id: b?.deal_id || null,
     asunto: b?.asunto || null,
     google_meet_link: b?.google_meet_link || null,
-    estado: 'agendada',
+    // La reunión se puede capturar después de que pasó, así que el estado
+    // llega del formulario. Uno inventado se ignora en vez de guardarse.
+    estado: ESTADOS[String(b?.estado || '')] ? String(b.estado) : 'agendada',
     origen: 'crm',
-    estado_hist: [{ estado: 'agendada', at: new Date().toISOString(), por: user.nombre || user.email || 'CRM' }],
+    estado_hist: [{ estado: ESTADOS[String(b?.estado || '')] ? String(b.estado) : 'agendada', at: new Date().toISOString(), por: user.nombre || user.email || 'CRM' }],
   };
   const { data: creada, error } = await supabase.from('bookings').insert(fila).select('*').single();
   if (error) return json({ error: error.message }, 500);
