@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ChipsEtiquetas, FiltroEtiquetas, useCatalogoEtiquetas, useMapaEtiquetas } from './Etiquetas';
 import { useCampos } from './CamposPersonalizados';
-import { Users, TrendingUp, Wallet, AlertTriangle, Plus, ChevronDown, Link2, MessageCircle, Download, Settings2, LayoutGrid, Table2, Infinity as InfinityIcon } from 'lucide-react';
+import { Users, TrendingUp, Wallet, AlertTriangle, Plus, ChevronDown, Link2, MessageCircle, Download, Settings2, LayoutGrid, Table2, Building2, Infinity as InfinityIcon } from 'lucide-react';
 import { S } from './SubscriptionsTab';
 import ClienteDrawer360 from './ClienteDrawer360';
 import NuevoClienteModal from './NuevoClienteModal';
 import PipelineKanban from './PipelineKanban';
 import TablaEnterprise, { type ColDef, type QuickDef, type VistaDef } from './TablaEnterprise';
+import NombresEmpresaModal from './NombresEmpresaModal';
 import { useToast, Toast, logStageChange } from './crmHelpers';
 import EnriquecerWhatsApp from './EnriquecerWhatsApp';
 import RevisarRelaciones from './RevisarRelaciones';
@@ -98,6 +99,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   const [modo, setModo] = useState<'tabla' | 'kanban'>('tabla');
   const [stages, setStages] = useState<{ key: string; label: string; color: string }[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showNombres, setShowNombres] = useState(false);
   const isMobile = useIsMobile();
   const { toast, show } = useToast();
 
@@ -681,6 +683,12 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
                   <RevisarRelaciones onDone={() => { setMenuOpen(false); load(); }} trigger={open => (
                     <button className="te-item" style={T.menuItem} onClick={open}><Link2 size={15} color="#8a8f98" /> Revisar relaciones</button>
                   )} />
+                  {/* Nombres de empresa: 40 de las 83 cuentas quedaron con el
+                      slug capitalizado porque no son palabras separables. Aquí
+                      se escriben todas de corrido en vez de entrar a 40 fichas. */}
+                  <button className="te-item" style={T.menuItem} onClick={() => { setMenuOpen(false); setShowNombres(true); }}>
+                    <Building2 size={15} color="#8a8f98" /> Nombres de las empresas
+                  </button>
                   <EnriquecerWhatsApp onDone={() => { setMenuOpen(false); load(); }} trigger={open => (
                     <button className="te-item" style={T.menuItem} onClick={open}><MessageCircle size={15} color="#8a8f98" /> Enriquecer WhatsApp</button>
                   )} />
@@ -701,6 +709,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
 
       {detailId && <ClienteDrawer360 companyId={detailId} onClose={() => setDetailId(null)} onChanged={load} />}
       {showNuevo && <NuevoClienteModal onClose={() => setShowNuevo(false)} onCreated={(id) => { setShowNuevo(false); load(); if (id) setDetailId(id); }} />}
+      {showNombres && <NombresEmpresaModal onCerrar={() => setShowNombres(false)} onGuardado={load} />}
       <Toast toast={toast} />
     </div>
   );
