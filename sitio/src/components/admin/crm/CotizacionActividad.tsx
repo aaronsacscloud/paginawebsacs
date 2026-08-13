@@ -27,6 +27,9 @@ const P = {
   // gris para lo secundario.
   btn: { padding: '7px 14px', border: 'none', borderRadius: 8, fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', background: '#9B8CFA', color: '#fff' } as const,
   btnA: { padding: '6px 13px', border: '1.5px solid #7DA6F5', borderRadius: 10, fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', background: '#fff', color: '#2C5FC4' } as const,
+  // Verde relleno, con el mismo peso que el morado: es la acción principal Y es
+  // dinero. El verde del módulo está reservado a eso.
+  btnV: { padding: '7px 14px', border: 'none', borderRadius: 8, fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', background: '#4FBF95', color: '#fff' } as const,
   btnG: { padding: '6px 11px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', background: '#fff', color: '#333' } as const,
   fila: { display: 'flex', gap: 8, alignItems: 'center', padding: '7px 0', borderTop: '1px solid #f5f5f5', fontSize: '0.8rem' } as const,
 };
@@ -269,7 +272,7 @@ export default function CotizacionActividad({ quoteId, onClose, onCambio }: {
               )}
               {/* La principal de este bloque: es la que cierra la venta. */}
               {q.estado !== 'paid' && (
-                <button style={P.btn} disabled={busy} onClick={() => cambiarEstado('pagada')}>Registrar pago</button>
+                <button style={P.btnV} disabled={busy} onClick={() => cambiarEstado('pagada')}>Registrar pago</button>
               )}
               <button style={P.btnA} disabled={busy} onClick={() => cambiarEstado('extender')}>Extender vigencia</button>
               {q.estado !== 'rejected' && q.estado !== 'paid' && (
