@@ -139,9 +139,6 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                     {co.sacs_account ? <>Cuenta SACS: <b>{co.sacs_account}</b></> : <span style={{ color: '#c62828' }}>Sin cuenta SACS ligada</span>}
                     {principal ? <> · {principal.nombre}{principal.email ? ` · ${principal.email}` : ''}</> : null}
                   </div>
-                  {/* Etiquetas del cliente: mismo catálogo que oportunidades y
-                      suscripciones, para que el filtro cruce las tres. */}
-                  <div style={{ marginTop: 6 }}><Etiquetas entidad="company" id={companyId} /></div>
                 </div>
                 {principal?.whatsapp && (
                   <a href={waLink(principal.whatsapp)} target="_blank" rel="noreferrer" style={{ ...D.btnG, textDecoration: 'none', color: '#1A8F7A', borderColor: '#bfe8df', fontWeight: 700 }}>💬 WhatsApp</a>

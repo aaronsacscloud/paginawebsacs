@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChipsEtiquetas, FiltroEtiquetas, useCatalogoEtiquetas, useMapaEtiquetas } from './Etiquetas';
 import { useCampos } from './CamposPersonalizados';
 import { Users, TrendingUp, Wallet, AlertTriangle, Plus, ChevronDown, Link2, MessageCircle, Download, Settings2, LayoutGrid, Table2, Building2, Infinity as InfinityIcon } from 'lucide-react';
 import { S } from './SubscriptionsTab';
@@ -18,6 +17,13 @@ import HealthScoreBadge from './HealthScoreBadge';
 /* ═══ Clientes REALES — primer datatable sobre el estándar TablaEnterprise ═══
  * (proyecto "Datatables Enterprise", estilo HubSpot: filtros → buscador → tabs
  * de vistas guardadas → tabla ordenable con paginación). */
+
+// Los mismos tonos de Cotizaciones: morado y azul para lo estructural, verde
+// solo para montos pagados y rojo solo para lo vencido o en riesgo.
+const CL = {
+  violeta: '#9B8CFA', azul: '#7DA6F5', violetaTinta: '#5B4BD6',
+  verde: '#4FBF95', verdeTinta: '#1E8A63', rojo: '#EF7A72', rojoTinta: '#C0554E',
+} as const;
 
 const PLAN_BADGE: Record<string, { bg: string; color: string; label: string }> = {
   vende:           { bg: 'rgba(75,123,229,0.12)',  color: '#3764c4', label: 'Vende' },
@@ -62,38 +68,25 @@ const T = {
 };
 
 /* Tarjeta KPI reutilizable (fila: chip+label · valor · dual-value). */
-function KpiCard({ icon, chipBg, label, value, duals, style }: { icon: any; chipBg: string; label: string; value: any; duals: { dot: string; num: any; lbl: string }[]; style?: any }) {
+// Misma tarjeta que en Cotizaciones: franja lateral de 3 px, título chico en
+// mayúsculas, número grande y una línea secundaria. Sin el ícono en cuadrito de
+// color — allá no existe y aquí solo agregaba peso.
+function KpiCard({ franja, label, value, valueColor, sub, style }: { franja: string; label: string; value: any; valueColor?: string; sub: any; style?: any }) {
   return (
-    <div style={{ ...T.kpiCard, ...style }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={T.kpiChip(chipBg)}>{icon}</div>
-        <span style={T.kLabel}>{label}</span>
-      </div>
-      <div style={T.kValue}>{value}</div>
-      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-        {duals.map((d, i) => (
-          <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <span style={T.dot(d.dot)} />
-            <span style={T.dualNum}>{d.num}</span>
-            <span style={T.dualLbl}>{d.lbl}</span>
-          </span>
-        ))}
-      </div>
+    <div style={{ background: '#fff', border: '1px solid #ececf0', borderLeft: `3px solid ${franja}`, borderRadius: 10, padding: '13px 15px', ...style }}>
+      <div style={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '.08em', color: '#9c99a6' }}>{label}</div>
+      <div style={{ fontSize: '1.32rem', fontWeight: 800, marginTop: 5, letterSpacing: '-.02em', color: valueColor || '#1a1a1a' }}>{value}</div>
+      <div style={{ fontSize: '0.66rem', color: '#a5a2af', marginTop: 3, lineHeight: 1.45 }}>{sub}</div>
     </div>
   );
 }
 
 export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}) {
   const [data, setData] = useState<any[]>([]);
-  // Etiquetas: el mismo catálogo que oportunidades y suscripciones, así el
-  // filtro significa lo mismo en las tres secciones.
-  const { props: campos } = useCampos('company');
-  const { cat: catEtiquetas } = useCatalogoEtiquetas();
-  const { mapa: etiquetasCliente } = useMapaEtiquetas('company');
-  const [selEtiquetas, setSelEtiquetas] = useState<string[]>([]);
   const [tot, setTot] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { props: campos } = useCampos('company');
   const [detailId, setDetailId] = useState<string | null>(null);
   const [showNuevo, setShowNuevo] = useState(false);
   const [modo, setModo] = useState<'tabla' | 'kanban'>('tabla');
@@ -194,13 +187,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   }
 
   /* ── Definición del datatable estándar ── */
-  // Y implícita: dos etiquetas dejan los clientes que tienen LAS DOS.
-  const dataEtiquetada = selEtiquetas.length
-    ? data.filter((c: any) => {
-        const ids = (etiquetasCliente[c.id] || []).map((e: any) => e.id);
-        return selEtiquetas.every(x => ids.includes(x));
-      })
-    : data;
+  const dataEtiquetada = data;
 
   const cols: ColDef[] = [
     {
@@ -223,12 +210,6 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
                 {cuentas.join(' · ')}
               </div>
             ) : (cuentas[0] && cuentas[0] !== titulo ? <div style={{ ...T.sub, ...T.ell }}>{cuentas[0]}</div> : null)}
-            {/* Las etiquetas se ven en la LISTA, no solo dentro del cliente: si
-                hay que abrir cada uno para saber cómo está categorizado, la
-                categorización no sirve para leer la cartera de un vistazo. */}
-            {etiquetasCliente[c.id]?.length ? (
-              <div style={{ marginTop: 3 }}><ChipsEtiquetas etiquetas={etiquetasCliente[c.id]} max={3} /></div>
-            ) : null}
           </td>
         );
       },
@@ -523,31 +504,23 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
     }),
   ];
 
+  // Tres filtros afuera y el resto en "Más filtros". Las etiquetas dicen la
+  // DIMENSIÓN, no el valor por omisión: "Todos" no contestaba ninguna pregunta.
   const quick: QuickDef[] = [
-    { key: 'plan', label: 'Todos los planes', options: Object.entries(PLAN_BADGE).map(([v, b]) => ({ v, l: b.label })), apply: (c, v) => c.plan === v },
     {
-      key: 'estado', label: 'Todos', options: [
-        { v: 'activos', l: 'Con ARR activo' }, { v: 'pendientes', l: 'Con pendientes de pago' }, { v: 'riesgo', l: 'En riesgo (≥3 días sin vender)' },
-      ],
-      apply: (c, v) => v === 'activos' ? c.subs_activas > 0 : v === 'pendientes' ? c.subs_pendientes > 0 : (c.dias_sin_venta != null && c.dias_sin_venta >= 3 && c.subs_activas > 0),
+      key: 'acompanamiento', label: 'Acompañamiento',
+      options: (campos.find((p: any) => p.key === 'tipo_acompanamiento')?.opciones || []).map((o: any) => ({ v: o.v, l: o.l })),
+      apply: (c, v) => (c.propiedades || {}).tipo_acompanamiento === v,
     },
-    { key: 'senal', label: 'Cualquier señal', options: [{ v: 'oportunidad', l: 'Con oportunidad' }, { v: 'riesgo', l: 'En riesgo' }], apply: (c, v) => c.senal_nivel === v },
-    { key: 'licencia', label: 'Tipo de licencia', options: [{ v: 'si', l: 'Vitalicia' }, { v: 'no', l: 'Recurrente' }], apply: (c, v) => (v === 'si') === !!c.vitalicia },
+    { key: 'plan', label: 'Plan', options: Object.entries(PLAN_BADGE).map(([v, b]) => ({ v, l: b.label })), apply: (c, v) => c.plan === v },
+    { key: 'licencia', label: 'Licencia', options: [{ v: 'si', l: 'Vitalicia' }, { v: 'no', l: 'Recurrente' }], apply: (c, v) => (v === 'si') === !!c.vitalicia },
   ];
 
-  /* El ORDEN importa: TablaEnterprise abre siempre en vistasBase[0] (vista y
-   * orden). "Con ARR activo" va primero a propósito — al entrar a Clientes lo
-   * que se quiere ver es el negocio recurrente vivo, de mayor a menor ARR, no
-   * el padrón completo con los 68 clientes sin ARR encima. */
+  /* Sin pestañas de vistas: abre con TODOS los clientes, de mayor a menor ARR.
+   * Antes abría en "Con ARR activo" y mostraba 78 de 218 — los otros 140
+   * existían y nada en la pantalla decía que estaban escondidos. */
   const vistasBase: VistaDef[] = [
-    { key: 'arr_activo', nombre: 'Con ARR activo', config: { conds: [{ campo: 'subs_activas', op: 'mayor', v1: '0' }], sort: { key: 'arr', dir: -1 } } },
     { key: 'todos', nombre: 'Todos', config: { sort: { key: 'arr', dir: -1 } } },
-    { key: 'pendientes', nombre: 'Pendientes de pago', config: { conds: [{ campo: 'subs_pendientes', op: 'mayor', v1: '0' }], sort: { key: 'arr', dir: -1 } } },
-    { key: 'riesgo', nombre: 'En riesgo', config: { conds: [{ campo: 'dias_sin_venta', op: 'mayor', v1: '2' }, { campo: 'subs_activas', op: 'mayor', v1: '0' }], sort: { key: 'salud', dir: 1 } } },
-    { key: 'sin_contacto', nombre: 'Sin contacto', config: { conds: [{ campo: 'sin_contacto', op: 'es', v1: 'si' }] } },
-    { key: 'vencidas', nombre: 'Renovación vencida', config: { conds: [{ campo: 'renovacion', op: 'antes_hoy' }], sort: { key: 'renovacion', dir: 1 } } },
-    { key: 'oportunidad', nombre: 'Con oportunidad', config: { conds: [{ campo: 'senal_nivel', op: 'es', v1: 'oportunidad' }], sort: { key: 'senal', dir: -1 } } },
-    { key: 'vitalicias', nombre: 'Licencias vitalicias', config: { conds: [{ campo: 'vitalicia', op: 'es', v1: 'si' }], sort: { key: 'pagado', dir: -1 } } },
   ];
 
   if (loading) return <div style={{ padding: 48, textAlign: 'center', color: '#999' }}>Cargando clientes reales…</div>;
@@ -568,23 +541,17 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
         ? { display: 'flex', gap: 12, overflowX: 'auto', scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch', marginBottom: 16, paddingBottom: 4, marginLeft: -2, marginRight: -2, paddingLeft: 2, paddingRight: 2 }
         : { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 230px), 1fr))', gap: 14, marginBottom: 18 }}>
         {(() => { const kStyle = isMobile ? { minWidth: '82vw', scrollSnapAlign: 'start' as const, flexShrink: 0 } : undefined; return (<>
-        <KpiCard style={kStyle} icon={<Users size={18} strokeWidth={2} color="#4B7BE5" />} chipBg="#eef2fe" label="Clientes" value={tot?.clientes ?? '—'}
-          duals={[{ dot: '#1A8F7A', num: tot?.activos ?? 0, lbl: 'con ARR activo' }, { dot: '#c6cad2', num: Math.max(0, (tot?.clientes || 0) - (tot?.activos || 0)), lbl: 'sin ARR' }]} />
-        <KpiCard style={kStyle} icon={<TrendingUp size={18} strokeWidth={2} color="#1A8F7A" />} chipBg="#e6f6f2" label="ARR" value={money(tot?.arr)}
-          duals={[{ dot: '#1A8F7A', num: money(tot?.arr), lbl: 'activo' }, { dot: '#E8A838', num: money(kpis.arrPend), lbl: 'pendiente' }]} />
-        <KpiCard style={kStyle} icon={<AlertTriangle size={18} strokeWidth={2} color="#d9534a" />} chipBg="#fdf0ee" label="Atención" value={kpis.riesgo}
-          duals={[{ dot: '#d9534a', num: kpis.riesgo, lbl: '≥3 días sin vender' }, { dot: '#E8A838', num: kpis.vencidas, lbl: 'renov. vencida' }]} />
-        <KpiCard style={kStyle} icon={<InfinityIcon size={18} strokeWidth={2} color="#6C5CE7" />} chipBg="#f1effd" label="Licencias vitalicias" value={tot?.vitalicias ?? 0}
-          duals={[{ dot: '#6C5CE7', num: money(tot?.vitalicias_pagado), lbl: 'pagado (ingreso único)' }, { dot: '#c6cad2', num: 'fuera del ARR', lbl: 'no recurrente' }]} />
+        <KpiCard style={kStyle} franja={CL.violeta} label="Clientes" value={tot?.clientes ?? '—'}
+          sub={<>{tot?.activos ?? 0} con ARR activo · {Math.max(0, (tot?.clientes || 0) - (tot?.activos || 0))} sin ARR</>} />
+        <KpiCard style={kStyle} franja={CL.verde} label="ARR" value={money(tot?.arr)} valueColor={CL.verdeTinta}
+          sub={kpis.arrPend > 0 ? <>{money(kpis.arrPend)} pendiente de activar</> : 'todo activo'} />
+        <KpiCard style={kStyle} franja={CL.rojo} label="Requieren atención" value={kpis.riesgo + kpis.vencidas} valueColor={CL.rojoTinta}
+          sub={<>{kpis.riesgo} sin vender 3+ días · {kpis.vencidas} con renovación vencida</>} />
+        <KpiCard style={kStyle} franja={CL.azul} label="Licencias vitalicias" value={tot?.vitalicias ?? 0}
+          sub={<>{money(tot?.vitalicias_pagado)} cobrado · fuera del ARR</>} />
         </>); })()}
       </div>
 
-      {catEtiquetas.length > 0 && (
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', margin: '0 0 12px' }}>
-          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#999' }}>ETIQUETAS</span>
-          <FiltroEtiquetas cat={catEtiquetas} sel={selEtiquetas} onChange={setSelEtiquetas} />
-        </div>
-      )}
       <div style={{ ...S.card, padding: '20px 22px', borderRadius: 14, border: '1px solid #e9eaee', boxShadow: '0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06)' }}>
         <TablaEnterprise
           tabla="clientes"
@@ -592,6 +559,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           cols={cols}
           quick={quick}
           vistasBase={vistasBase}
+          sinVistas
           searchText={c => [c.nombre_comercial, c.nombre, ...(c.cuentas || [c.sacs_account]), c.contacto?.nombre, c.contacto?.email, c.contacto?.whatsapp].filter(Boolean).join(' ')}
           searchPlaceholder="Buscar cliente, cuenta o contacto…"
           minWidth={1690}
@@ -667,7 +635,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           )) : null}
           actions={<>
             <button onClick={() => setShowNuevo(true)} title="Alta completa: cliente + contacto + cuenta SACS + suscripción"
-              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, height: isMobile ? 44 : 36, flex: isMobile ? 1 : undefined, minWidth: 0, padding: '0 16px', border: 'none', borderRadius: 10, background: '#1a1a1a', color: '#fff', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 1px 2px rgba(16,24,40,0.18)', whiteSpace: 'nowrap' }}>
+              style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, height: isMobile ? 44 : 36, flex: isMobile ? 1 : undefined, minWidth: 0, padding: '0 16px', border: 'none', borderRadius: 10, background: CL.violeta, color: '#fff', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', boxShadow: '0 1px 2px rgba(16,24,40,0.10)', whiteSpace: 'nowrap' }}>
               <Plus size={15} strokeWidth={2.5} /> Nuevo cliente
             </button>
             <div style={{ position: 'relative', flexShrink: 0 }} onClick={e => e.stopPropagation()}>

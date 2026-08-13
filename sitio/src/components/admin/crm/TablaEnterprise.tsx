@@ -98,12 +98,17 @@ const E = {
 export default function TablaEnterprise({
   tabla, data, cols, quick = [], vistasBase, searchText, searchPlaceholder = 'Buscar…',
   actions, onRowClick, rowKey = (r: any) => r.id, customBody, mobileCard, minWidth = 1080, emptyMsg = 'Sin resultados con esos filtros.',
+  sinVistas = false,
 }: {
   tabla: string;
   data: any[];
   cols: ColDef[];
   quick?: QuickDef[];
   vistasBase: VistaDef[];
+  /** Oculta la tira de pestañas. La lista abre en vistasBase[0] y todo se
+   *  maneja con filtros: unas pestañas que esconden filas sin decirlo hacen que
+   *  se lea una lista corta creyendo que es completa. */
+  sinVistas?: boolean;
   searchText: (row: any) => string;
   searchPlaceholder?: string;
   actions?: any;
@@ -325,6 +330,7 @@ export default function TablaEnterprise({
       </div>
 
       {/* ③ TABS DE VISTAS + guardar */}
+      {!sinVistas && (
       <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: '1px solid #e8eaee', marginBottom: 0, overflowX: 'auto', flexWrap: 'nowrap' }}>
         {vistas.map(v => (
           <button key={v.key} style={E.tab(v.key === vistaKey)} onClick={() => aplicarVista(v)} title={v.fija ? 'Vista predefinida' : 'Vista guardada'}>
@@ -342,7 +348,8 @@ export default function TablaEnterprise({
         )}
         <span style={{ marginLeft: 'auto', flexShrink: 0, fontSize: '0.72rem', color: '#9aa0a8', padding: '0 6px' }}>{filtrados.length} resultado{filtrados.length === 1 ? '' : 's'}</span>
       </div>
-      {dirty && isMobile && (
+      )}
+      {dirty && isMobile && !sinVistas && (
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '10px 0 0' }}>
           <span style={{ fontSize: '0.78rem', color: '#a06600', fontWeight: 700, flex: 1 }}>Vista modificada</span>
           {vistaActiva && !vistaActiva.fija && <button style={{ ...E.btn, padding: '8px 12px' }} disabled={savingVista} onClick={() => guardarVista(false)}>💾 Guardar</button>}
