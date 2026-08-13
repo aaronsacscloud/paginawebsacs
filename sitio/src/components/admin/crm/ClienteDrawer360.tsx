@@ -2174,6 +2174,10 @@ function AgendarReunion({ companyId, tipos, principal, onCerrar, onListo }: any)
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
 
+  // Los tipos llegan por fetch: si el modal se abre antes que la respuesta, el
+  // useState inicial se queda vacío y "Agendar" reclama un tipo que sí existe.
+  useEffect(() => { if (!tipoId && lista[0]) { setTipoId(lista[0].id); setDur(lista[0].duracion_minutos || 60); } }, [lista.length]);
+
   const elegir = (t: any) => { setTipoId(t.id); setDur(t.duracion_minutos || 60); };
 
   async function guardar() {
