@@ -34,6 +34,15 @@ const D = {
   tab: (act: boolean) => ({ flexShrink: 0, minHeight: 44, padding: '9px 14px', border: 'none', borderBottom: act ? '2.5px solid #1a1a1a' : '2.5px solid transparent', background: 'none', cursor: 'pointer', fontWeight: act ? 800 : 600, fontSize: '0.83rem', color: act ? '#1a1a1a' : '#777', whiteSpace: 'nowrap' as const }) as const,
   body: { padding: 22 } as const,
   card: { background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: 16, marginBottom: 14 } as const,
+  // ── Secciones de la ficha ──
+  // Todas iguales: fondo blanco, contorno de color y título en ese color.
+  // Morado lo que se captura y se gestiona; azul lo que solo se mira porque se
+  // calcula solo. El color dice si se toca, sin tener que escribirlo.
+  cardM: { background: '#fff', border: '1.5px solid #ddd6fb', borderRadius: 12, padding: 16, marginBottom: 14 } as const,
+  cardA: { background: '#fff', border: '1.5px solid #cfe0fa', borderRadius: 12, padding: 16, marginBottom: 14 } as const,
+  hM: { fontSize: '0.66rem', fontWeight: 800, color: '#5B4BD6', textTransform: 'uppercase' as const, letterSpacing: '0.9px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 } as const,
+  hA: { fontSize: '0.66rem', fontWeight: 800, color: '#2C5FC4', textTransform: 'uppercase' as const, letterSpacing: '0.9px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 } as const,
+  hNota: { marginLeft: 'auto', fontSize: '0.66rem', fontWeight: 500, textTransform: 'none' as const, letterSpacing: 0, color: '#a5a2af' } as const,
   h: { fontSize: '0.72rem', fontWeight: 800, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.5px', marginBottom: 10 },
   kpi: { background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '12px 14px', minWidth: 130, flex: 1 } as const,
   kl: { fontSize: '0.68rem', color: '#999', fontWeight: 700, textTransform: 'uppercase' as const },
@@ -67,6 +76,13 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
   const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'oport' | 'reuniones' | 'notas' | 'act'>('resumen');
   const [msg, setMsg] = useState('');
   const [borrar, setBorrar] = useState(false);
+  // Cambiar de pestaña o cerrar con algo a medio escribir tira lo capturado sin
+  // avisar. Cada sección reporta si tiene cambios pendientes.
+  const [sucio, setSucio] = useState<Record<string, boolean>>({});
+  const haySucio = Object.values(sucio).some(Boolean);
+  const confirmarSalida = () => !haySucio || confirm('Hay cambios sin guardar en esta ficha.\n\n¿Salir y perderlos?');
+  const irA = (t: any) => { if (confirmarSalida()) { setSucio({}); setTab(t); } };
+  const cerrar = () => { if (confirmarSalida()) onClose(); };
   const [editandoNombre, setEditandoNombre] = useState(false);
   const [nombreEd, setNombreEd] = useState('');
   const isMobile = useIsMobile();
@@ -150,26 +166,27 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                   style={{ ...D.btnG, color: '#c0392b', borderColor: '#f0c4bd', background: '#fff6f4', fontWeight: 700, minHeight: 44, flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   🗑{isMobile ? '' : ' Eliminar'}
                 </button>
-                <button aria-label={isMobile ? 'Atrás' : 'Cerrar'} onClick={onClose} style={{ ...D.btnG, border: 'none', fontSize: '1.15rem', minWidth: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{isMobile ? '←' : '✕'}</button>
+                <button aria-label={isMobile ? 'Atrás' : 'Cerrar'} onClick={cerrar} style={{ ...D.btnG, border: 'none', fontSize: '1.15rem', minWidth: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{isMobile ? '←' : '✕'}</button>
               </div>
               <div style={D.tabbar}>
-                <button style={D.tab(tab === 'resumen')} onClick={() => setTab('resumen')}>Resumen</button>
-                <button style={D.tab(tab === 'info')} onClick={() => setTab('info')}>Info general</button>
-                <button style={D.tab(tab === 'sacs')} onClick={() => setTab('sacs')}>Actividad en SACS</button>
-                <button style={D.tab(tab === 'contactos')} onClick={() => setTab('contactos')}>Contactos ({contactos.length})</button>
-                <button style={D.tab(tab === 'subs')} onClick={() => setTab('subs')}>Suscripciones ({subs.length})</button>
-                <button style={D.tab(tab === 'oport')} onClick={() => setTab('oport')}>Oportunidades</button>
-                <button style={D.tab(tab === 'reuniones')} onClick={() => setTab('reuniones')}>Reuniones</button>
-                <button style={D.tab(tab === 'notas')} onClick={() => setTab('notas')}>Notas</button>
-                <button style={D.tab(tab === 'act')} onClick={() => setTab('act')}>Actividad</button>
+                {/* Seis pestañas. Contactos entra en Info general, y "Resumen"
+                    con "Actividad en SACS" se juntan: las dos contaban lo mismo
+                    desde dos lados. */}
+                <button style={D.tab(tab === 'info')} onClick={() => irA('info')}>Info general</button>
+                <button style={D.tab(tab === 'subs')} onClick={() => irA('subs')}>Suscripciones ({subs.length})</button>
+                <button style={D.tab(tab === 'oport')} onClick={() => irA('oport')}>Oportunidades</button>
+                <button style={D.tab(tab === 'resumen')} onClick={() => irA('resumen')}>Actividad</button>
+                <button style={D.tab(tab === 'reuniones')} onClick={() => irA('reuniones')}>Reuniones</button>
+                <button style={D.tab(tab === 'notas')} onClick={() => irA('notas')}>Notas</button>
               </div>
             </div>
             <div style={D.body}>
               {msg && <div style={{ background: '#e8f5e9', color: '#1b5e20', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: '0.8rem', fontWeight: 700 }}>{msg}</div>}
-              {tab === 'resumen' && <TabResumen res={res} co={co} act={act} subs={subs} acts={data?.activities || []} reload={() => { load(); onChanged(); }} />}
-              {tab === 'info' && <TabInfoGeneral co={co} subs={subs} pagos={data?.payments || []} contactos={contactos} reload={() => { load(); onChanged(); }} flash={flash} />}
-              {tab === 'sacs' && <TabSacs co={co} act={act} reload={() => { load(); onChanged(); }} flash={flash} />}
-              {tab === 'contactos' && <TabContactos companyId={companyId} contactos={contactos} reload={() => { load(); onChanged(); }} flash={flash} />}
+              {tab === 'resumen' && (<>
+                <TabResumen res={res} co={co} act={act} subs={subs} acts={data?.activities || []} reload={() => { load(); onChanged(); }} />
+                <TabSacs co={co} act={act} reload={() => { load(); onChanged(); }} flash={flash} />
+              </>)}
+              {tab === 'info' && <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []} contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'subs' && <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />}
               {tab === 'oport' && <TabOportunidades companyId={companyId} co={co} principal={principal} flash={flash} reload={() => { load(); onChanged(); }} />}
               {tab === 'reuniones' && <TabReuniones companyId={companyId} principal={principal} flash={flash} />}
@@ -450,8 +467,8 @@ function EtapaSelector({ co, reload, flash }: any) {
   }
   const actual = stages.find(s => s.key === co.pipeline_stage);
   return (
-    <div style={D.card}>
-      <div style={D.h}>Etapa del cliente</div>
+    <div style={D.cardM}>
+      <div style={D.hM}>Etapa del cliente<span style={D.hNota}>en qué momento de la relación está</span></div>
       {stages.length === 0 ? (
         <div style={{ color: '#999', fontSize: '0.82rem' }}>Configura las etapas en Configuración → Pipelines.</div>
       ) : (
@@ -479,7 +496,7 @@ const MAS_DE_50 = 51;
 
 const ESTADOS_MX = ['Aguascalientes','Baja California','Baja California Sur','Campeche','Chiapas','Chihuahua','Ciudad de México','Coahuila','Colima','Durango','Estado de México','Guanajuato','Guerrero','Hidalgo','Jalisco','Michoacán','Morelos','Nayarit','Nuevo León','Oaxaca','Puebla','Querétaro','Quintana Roo','San Luis Potosí','Sinaloa','Sonora','Tabasco','Tamaulipas','Tlaxcala','Veracruz','Yucatán','Zacatecas'];
 
-function TabInfoGeneral({ co, subs = [], pagos = [], contactos = [], reload, flash }: any) {
+function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], principal, sucio, setSucio, reload, flash }: any) {
   const [f, setF] = useState<any>({ nombre: co.nombre || '', rfc: co.rfc || '', razon_social: co.razon_social || '', giro: co.giro || '', sitio_web: co.sitio_web || '', ciudad: co.ciudad || '', estado_geo: co.estado_geo || '', sucursales: co.sucursales || 1, estado_cuenta: co.estado_cuenta || 'activo' });
   const [saving, setSaving] = useState(false);
   // Ciudades que ya se usaron: autocompletar con lo real evita que la misma
@@ -490,14 +507,41 @@ function TabInfoGeneral({ co, subs = [], pagos = [], contactos = [], reload, fla
       .then(j => setCiudadesUsadas(Array.from(new Set((j.companies || []).map((x: any) => String(x.ciudad || '').trim()).filter(Boolean))).sort() as string[]))
       .catch(() => {});
   }, []);
+  // Nada se guarda al teclear. El guardado NO recarga la ficha: recargar
+  // reconstruía el panel entero y se sentía como si te sacara de la pantalla a
+  // media captura.
+  const original = useRef<any>(null);
+  if (!original.current) original.current = { ...f };
+  const dirty = JSON.stringify(f) !== JSON.stringify(original.current);
+  const [guardado, setGuardado] = useState(false);
+  useEffect(() => { setSucio?.((s: any) => ({ ...s, info: dirty })); }, [dirty]);
+
   async function guardar() {
     if (!f.nombre.trim()) { alert('El nombre es obligatorio.'); return; }
     setSaving(true);
     const r = await fetch('/api/crm/companies', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: co.id, ...f, sucursales: parseInt(f.sucursales) || 1 }) });
     const j = await r.json().catch(() => ({}));
     setSaving(false);
-    if (!r.ok || j.error) alert(j.error || 'No se pudo guardar.'); else { flash('Datos del cliente guardados'); reload(); }
+    if (!r.ok || j.error) { alert(j.error || 'No se pudo guardar.'); return; }
+    original.current = { ...f };
+    setSucio?.((s: any) => ({ ...s, info: false }));
+    setGuardado(true);
+    setTimeout(() => setGuardado(false), 2600);
   }
+  const barraGuardado = (dirty || guardado) ? (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 12, paddingTop: 11, borderTop: dirty ? '1px dashed #e6ddfa' : '1px solid #eaf6f1' }}>
+      {dirty ? (<>
+        <span style={{ fontSize: '0.74rem', color: '#5B4BD6', fontWeight: 700, flex: 1 }}>Cambios sin guardar</span>
+        <button style={D.btnG} onClick={() => { setF({ ...original.current }); }}>Descartar</button>
+        <button disabled={saving} onClick={guardar}
+          style={{ border: 'none', borderRadius: 9, padding: '7px 15px', background: '#9B8CFA', color: '#fff', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}>
+          {saving ? 'Guardando…' : 'Guardar cambios'}
+        </button>
+      </>) : (
+        <span style={{ fontSize: '0.74rem', color: '#1E8A63', fontWeight: 700 }}>✓ Guardado</span>
+      )}
+    </div>
+  ) : null;
   const campo = (label: string, k: string, ph = '') => (
     <div style={{ flex: '1 1 200px' }}>
       <label style={D.lbl}>{label}</label>
@@ -517,24 +561,7 @@ function TabInfoGeneral({ co, subs = [], pagos = [], contactos = [], reload, fla
   const ciclos = Array.from(new Set(activas.map((x: any) => x.ciclo).filter(Boolean)));
   const planes = Array.from(new Set(activas.map((x: any) => x.nombre_plan).filter(Boolean)));
 
-  // ── Qué falta para poder segmentar ──
-  // Sin esto, "filtrar por número de colaboradores" devuelve resultados
-  // incompletos y parece que el filtro está roto — que es justo lo que pasó.
   const props = co.propiedades || {};
-  const principalC = (contactos || []).find((x: any) => /due[ñn]o/i.test(x.rol || '')) || (contactos || []).find((x: any) => x.es_principal) || (contactos || [])[0] || null;
-  const chequeo = [
-    { k: 'Nombre de la empresa', ok: !!String(co.nombre_comercial || '').trim() },
-    { k: 'Contacto', ok: !!principalC },
-    { k: 'Correo', ok: !!principalC?.email },
-    { k: 'Teléfono', ok: !!(principalC?.whatsapp || principalC?.telefono) },
-    { k: 'Giro de negocio', ok: !!props.giro_negocio },
-    { k: 'Número de colaboradores', ok: !!props.numero_colaboradores },
-    { k: 'Origen de la cuenta', ok: !!props.origen_cuenta },
-    { k: 'Tipo de acompañamiento', ok: !!props.tipo_acompanamiento },
-  ];
-  const listos = chequeo.filter(x => x.ok).length;
-  const pct = Math.round((listos / chequeo.length) * 100);
-  const faltan = chequeo.filter(x => !x.ok).map(x => x.k);
   const dato = (k: string, v: any, color?: string) => (
     <div style={{ flex: '1 1 130px', minWidth: 120 }}>
       <div style={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '.06em', color: '#9c99a6' }}>{k}</div>
@@ -546,10 +573,9 @@ function TabInfoGeneral({ co, subs = [], pagos = [], contactos = [], reload, fla
     <div>
       <EtapaSelector co={co} reload={reload} flash={flash} />
 
-      <div style={D.card}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <div style={{ ...D.h, flex: 1 }}>Contrato</div>
-          <span style={{ fontSize: '0.66rem', color: '#9c99a6' }}>se calcula de sus suscripciones y pagos</span>
+      <div style={D.cardA}>
+        <div style={D.hA}>Contrato
+          <span style={D.hNota}>no se captura · se calcula de sus suscripciones y pagos</span>
         </div>
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' as const, marginTop: 4 }}>
           {dato('Plan', planes.length ? planes.join(' + ') : (co.plan || '—'))}
@@ -562,30 +588,22 @@ function TabInfoGeneral({ co, subs = [], pagos = [], contactos = [], reload, fla
         </div>
       </div>
 
-      <div style={D.card}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ ...D.h, flex: 1, marginBottom: 0 }}>Ficha {pct}% completa</div>
-          <span style={{ width: 120, height: 6, borderRadius: 4, background: '#eef0f4', overflow: 'hidden' }}>
-            <span style={{ display: 'block', height: '100%', width: `${pct}%`, borderRadius: 4, background: pct >= 80 ? '#4FBF95' : pct >= 50 ? '#E9B949' : '#EF7A72' }} />
-          </span>
-        </div>
-        {faltan.length ? (
-          <div style={{ fontSize: '0.74rem', color: '#8a6212', marginTop: 8, lineHeight: 1.55 }}>
-            Falta capturar: <b>{faltan.join(' · ')}</b>. Sin estos datos el cliente no aparece al filtrar por ellos.
-          </div>
-        ) : (
-          <div style={{ fontSize: '0.74rem', color: '#1E8A63', marginTop: 8 }}>Todo capturado: este cliente se puede segmentar por cualquier campo.</div>
-        )}
-      </div>
       {/* Campos personalizados: información INTERNA de gestión, definida en
           Configuración. Va antes de los datos fiscales a propósito — es lo que
           se consulta para atender la cuenta, no para facturarla. */}
-      <div style={D.card}>
-        <div style={D.h}>Información de gestión</div>
+      {/* Contactos vive aquí y no en su propia pestaña: para ver el correo de
+          alguien había que cambiar de pantalla. */}
+      <div style={D.cardM}>
+        <div style={D.hM}>Contactos<span style={D.hNota}>{(contactos || []).length} en esta cuenta</span></div>
+        <TabContactos companyId={companyId} contactos={contactos} reload={reload} flash={flash} compacto />
+      </div>
+
+      <div style={D.cardM}>
+        <div style={D.hM}>Gestión interna<span style={D.hNota}>solo para el equipo · es lo que se filtra en la lista</span></div>
         <CamposFicha entidad="company" entidadId={co.id} valores={co.propiedades} onGuardado={reload} />
       </div>
-      <div style={D.card}>
-        <div style={D.h}>Datos del cliente (editables)</div>
+      <div style={D.cardM}>
+        <div style={D.hM}>Identidad</div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
           {campo('Nombre *', 'nombre')}
           {campo('Razón social', 'razon_social')}
@@ -626,8 +644,8 @@ function TabInfoGeneral({ co, subs = [], pagos = [], contactos = [], reload, fla
               {['activo', 'prospecto', 'pausado', 'churned'].map(x => <option key={x} value={x}>{x}</option>)}
             </select>
           </div>
-          <button style={{ ...D.btn, marginLeft: 'auto' }} disabled={saving} onClick={guardar}>{saving ? 'Guardando…' : '💾 Guardar cambios'}</button>
         </div>
+        {barraGuardado}
       </div>
     </div>
   );
@@ -1105,7 +1123,7 @@ function UsuariosSacs({ account }: { account: string }) {
 }
 
 /* ─────────── 👤 Contactos (multi-contacto: lista + alta + principal) ─────────── */
-function TabContactos({ companyId, contactos, reload, flash }: any) {
+function TabContactos({ companyId, contactos, reload, flash, compacto = false }: any) {
   const [editId, setEditId] = useState<string | null>(null);
   const [f, setF] = useState<any>({});
   const [adding, setAdding] = useState(false);
@@ -1185,10 +1203,10 @@ function TabContactos({ companyId, contactos, reload, flash }: any) {
           ⚠ Para roles y contacto principal, corre <code>scripts/migration-2026-07-contactos-rol.sql</code> en Supabase (una vez).
         </div>
       )}
-      <div style={D.card}>
+      <div style={compacto ? { marginTop: -4 } : D.card}>
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
-          <div style={D.h}>Contactos de este cliente</div>
-          <button style={{ ...D.btnG, marginLeft: 'auto' }} onClick={() => setAdding(!adding)}>{adding ? '✕ Cancelar' : '+ Agregar contacto'}</button>
+          {!compacto && <div style={D.h}>Contactos de este cliente</div>}
+          <button style={{ ...D.btnG, marginLeft: 'auto', border: '1.5px solid #7DA6F5', color: '#2C5FC4', fontWeight: 700 }} onClick={() => setAdding(!adding)}>{adding ? 'Cancelar' : '+ Agregar contacto'}</button>
         </div>
 
         {adding && (
