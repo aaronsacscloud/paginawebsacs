@@ -3,6 +3,7 @@ import { computarSenales } from '../../../lib/crm/senales';
 import NuevaOportunidadModal from './NuevaOportunidadModal';
 import Etiquetas from './Etiquetas';
 import { CamposFicha } from './CamposPersonalizados';
+import ArchivosSuscripcion from './ArchivosSuscripcion';
 import { useIsMobile, useDrawerHistory, BP } from '../../../lib/ui/mobile';
 
 /* ═══ Cliente 360 — drawer ancho con pestañas, TODO editable ═══
@@ -54,6 +55,7 @@ const D = {
   input: { padding: '7px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.83rem', outline: 'none', width: '100%', boxSizing: 'border-box' as const },
   lbl: { fontSize: '0.7rem', fontWeight: 700, color: '#888', marginBottom: 3, display: 'block' } as const,
   btn: { padding: '8px 15px', border: 'none', borderRadius: 9, fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', background: '#9B8CFA', color: '#fff' } as const,
+  btnAzul: { padding: '7px 13px', border: '1.5px solid #7DA6F5', borderRadius: 9, fontSize: '0.77rem', fontWeight: 700, cursor: 'pointer', background: '#fff', color: '#2C5FC4' } as const,
   btnG: { padding: '7px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', background: '#fff', color: '#333' } as const,
   badge: { display: 'inline-block', padding: '2px 9px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap' as const } as const,
   th: { textAlign: 'left' as const, padding: '7px 9px', fontSize: '0.66rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, borderBottom: '1px solid #eee' },
@@ -192,7 +194,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
               </>)}
               {tab === 'info' && <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []} contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'subs' && <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />}
-              {tab === 'oport' && <TabOportunidades companyId={companyId} co={co} principal={principal} flash={flash} reload={() => { load(); onChanged(); }} />}
+              {tab === 'oport' && <TabOportunidades companyId={companyId} co={co} principal={principal} subs={subs} flash={flash} reload={() => { load(); onChanged(); }} />}
               {tab === 'reuniones' && <TabReuniones companyId={companyId} principal={principal} flash={flash} />}
               {tab === 'notas' && <TabNotas companyId={companyId} />}
               {tab === 'act' && <TabActividad companyId={companyId} data={data} reload={() => { load(); onChanged(); }} />}
@@ -344,25 +346,6 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
           <div key={String(l)} style={D.kpi}><div style={D.kl}>{l}</div><div style={D.kv}>{v}</div></div>
         ))}
       </div>
-
-      {/* ── Qué venderle (señales reales) ── */}
-      {senales.length > 0 && (
-        <div style={D.card}>
-          <div style={D.h}>💡 Qué venderle / atender</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {senales.map((s, i) => (
-              <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 10px', borderRadius: 10, background: s.nivel === 'riesgo' ? '#fdf2f2' : '#f0f7f4', border: '1px solid ' + (s.nivel === 'riesgo' ? '#f7d7d7' : '#d6ebe2') }}>
-                <span style={{ fontSize: '1rem', lineHeight: 1.2 }}>{s.nivel === 'riesgo' ? '⚠️' : '📈'}</span>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '0.83rem', fontWeight: 700, color: s.nivel === 'riesgo' ? '#b93333' : '#1A8F7A' }}>{s.titulo}</div>
-                  <div style={{ fontSize: '0.78rem', color: '#555', marginTop: 1 }}>{s.detalle}</div>
-                  <div style={{ fontSize: '0.78rem', color: '#16181d', marginTop: 3 }}><b>Acción:</b> {s.accion}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* ── Onboarding del cliente nuevo (checklist accionable) ── */}
       {onboarding.length > 0 && (
@@ -1292,6 +1275,7 @@ const NF_VACIO = { plan_slug: '', plan_id: '', nombre_plan: '', ciclo: 'anual', 
 const ES_CORREO = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 function TabSubs({ companyId, subs, reload, flash, principal }: any) {
+  const [archivosSub, setArchivosSub] = useState<any>(null);
   // Estado de cuenta CONSOLIDADO del cliente (todas sus subs + próximo a pagar).
   const ecUrl = typeof window !== 'undefined' ? `${window.location.origin}/estado-cuenta/cliente/${companyId}` : '';
   function abrirEstadoCuenta() {
@@ -1511,16 +1495,22 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
 
   return (
     <div>
-      <div style={D.card}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-          <div style={D.h}>Suscripciones del cliente</div>
+      {archivosSub && (
+        <ArchivosSuscripcion subId={archivosSub.id} nombre={archivosSub.nombre_plan}
+          onCerrar={() => setArchivosSub(null)} onCambio={() => reload()} />
+      )}
+      <div style={D.cardM}>
+        {/* Encabezado con el destello morado y los botones en la escala del
+            sistema: morado el que crea, contorno azul lo importante. */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+          <div style={{ ...D.hM, marginBottom: 0 }}>Suscripciones del cliente</div>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            <button style={{ ...D.btnG, background: '#1A8F7A', color: '#fff', borderColor: '#1A8F7A' }} title="Estado de cuenta con TODO lo próximo a pagar — 1 clic a PDF" onClick={abrirEstadoCuenta}>📄 Estado de cuenta</button>
-            {principal?.whatsapp && <button style={{ ...D.btnG, color: '#1A8F7A', borderColor: '#bfe8df', fontWeight: 700 }} title="Enviar el link del estado de cuenta por WhatsApp" onClick={enviarWhatsApp}>💬 Enviar</button>}
-            <button style={{ ...D.btnG, color: '#009ee3', borderColor: '#b9e4f7', fontWeight: 700 }}
+            <button style={D.btnAzul} title="Estado de cuenta con TODO lo próximo a pagar — 1 clic a PDF" onClick={abrirEstadoCuenta}>Estado de cuenta</button>
+            {principal?.whatsapp && <button style={D.btnAzul} title="Enviar el link del estado de cuenta por WhatsApp" onClick={enviarWhatsApp}>Enviar por WhatsApp</button>}
+            <button style={D.btnAzul}
               title="Busca si a este cliente ya le estás cobrando algo en Mercado Pago que no esté vinculado aquí"
-              disabled={buscandoMP} onClick={buscarEnMP}>{buscandoMP ? '…' : '🔎 Buscar en Mercado Pago'}</button>
-            <button style={D.btnG} onClick={() => setAdding(!adding)}>{adding ? '✕ Cancelar' : '+ Agregar'}</button>
+              disabled={buscandoMP} onClick={buscarEnMP}>{buscandoMP ? '…' : 'Buscar en Mercado Pago'}</button>
+            <button style={D.btn} onClick={() => setAdding(!adding)}>{adding ? 'Cancelar' : '+ Agregar'}</button>
           </div>
         </div>
 
@@ -1674,11 +1664,9 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                           </div>
                         )}
                       </td>
-                      <td style={D.td}>{s.ciclo}
-                        {/* La suscripción se etiqueta por sí misma ("piloto",
-                            "precio especial"), no solo por su cliente. */}
-                        <div style={{ marginTop: 4 }}><Etiquetas entidad="subscription" id={s.id} compacto /></div>
-                      </td>
+                      {/* Solo el ciclo: las etiquetas partían la celda en dos
+                          y no pertenecían a esta columna. */}
+                      <td style={D.td}>{s.ciclo}</td>
                       <td style={D.td}><EstadoBadge e={s.estado} /></td>
                       <td style={D.td}>{money(s.precio || s.arr)}</td>
                       <td style={D.td}>{s.estado === 'pausada' ? <span style={{ color: '#a06600' }}>en pausa</span> : fmtDate(s.proxima_factura)}</td>
@@ -1708,6 +1696,12 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                         <button style={{ ...D.btnG, marginRight: 4, color: s.estado === 'pausada' ? '#1A8F7A' : '#a06600', borderColor: s.estado === 'pausada' ? '#bfe8df' : '#f0dcb8' }}
                           title={s.estado === 'pausada' ? 'Reactivar: pide desde cuándo quedó activa y cuándo se le cobra' : 'Pausar: deja de sumar ARR; pide el motivo y qué esperamos del cliente'}
                           onClick={() => setPausaSub(s)}>{s.estado === 'pausada' ? '▶' : '⏸'}</button>
+                        {/* Contratos y anexos de ESTA suscripción, no del
+                            cliente entero: el contrato es del servicio que se
+                            firmó, y una cuenta puede tener varios. */}
+                        <button style={{ ...D.btnG, marginRight: 4, color: '#5B4BD6', borderColor: '#ddd6fb', fontWeight: 700 }}
+                          title="Contratos y documentos de esta suscripción"
+                          onClick={() => setArchivosSub(s)}>📎{Array.isArray(s.archivos) && s.archivos.length ? ` ${s.archivos.length}` : ''}</button>
                         <button style={D.btnG} onClick={() => { setEditId(s.id); setF({ nombre_plan: s.nombre_plan || '', plan_id: s.plan_id || '', plan_slug: (planes.find((p: any) => p.id && p.id === s.plan_id) || {}).slug || '', ciclo: s.ciclo || 'anual', estado: s.estado || 'activa', precio: s.precio ?? s.arr ?? '', proxima_factura: s.proxima_factura || '' }); }}>✏️</button></td>
                     </tr>
                   )
@@ -2141,7 +2135,8 @@ function TabNotas({ companyId }: any) {
 }
 
 /* ─────────── 🎯 Oportunidades del cliente (deals) ─────────── */
-function TabOportunidades({ companyId, co, principal, flash, reload }: any) {
+function TabOportunidades({ companyId, co, principal, subs = [], flash, reload }: any) {
+  const senales = computarSenales(co, (subs || []).find((s: any) => s.estado === 'activa'));
   const [deals, setDeals] = useState<any[] | null>(null);
   const [stages, setStages] = useState<any[]>([]);
   const [busyId, setBusyId] = useState('');
@@ -2215,15 +2210,23 @@ function TabOportunidades({ companyId, co, principal, flash, reload }: any) {
   const unicoDe = (d: any) => Number(d.valor_unico ?? (d.billing_period === 'unico' ? d.valor_total : 0) ?? 0);
   const mrrGanado = ganadas.reduce((a, d) => a + mrrDe(d), 0);
   const unicoGanado = ganadas.reduce((a, d) => a + unicoDe(d), 0);
+  // ── Cuántas se pagan y cuántas se rechazan ──
+  // Sobre las RESUELTAS: las abiertas todavía no ganaron ni perdieron y
+  // meterlas hundiría los dos porcentajes sin que haya pasado nada.
+  const perdidas = deals.filter(d => isLost(d.stage));
+  const resueltas = ganadas.length + perdidas.length;
+  const pctGana = resueltas ? Math.round((ganadas.length / resueltas) * 100) : 0;
+  const pctPierde = resueltas ? 100 - pctGana : 0;
+  const montoPerdido = perdidas.reduce((a, d) => a + Number(d.valor_total || 0), 0);
 
   return (
     <div>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
-        <div style={D.kpi}><div style={D.kl}>En pipeline</div><div style={D.kv}>{money(pipeline)}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{abiertas.length} abierta{abiertas.length === 1 ? '' : 's'}</div></div>
-        <div style={D.kpi}><div style={D.kl}>Ponderado</div><div style={D.kv}>{money(ponderado)}</div></div>
-        <div style={D.kpi}><div style={D.kl}>Ganadas</div><div style={D.kv}>{ganadas.length}</div></div>
-        <div style={D.kpi}><div style={D.kl}>MRR / ARR ganado</div><div style={D.kv}>{money(mrrGanado)}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{money(mrrGanado * 12)} ARR</div></div>
-        <div style={D.kpi}><div style={D.kl}>Pago único ganado</div><div style={D.kv}>{money(unicoGanado)}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>no suma al ARR</div></div>
+        <div style={{ ...D.kpi, borderLeft: '3px solid #7DA6F5' }}><div style={D.kl}>En pipeline</div><div style={D.kv}>{money(pipeline)}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{abiertas.length} abierta{abiertas.length === 1 ? '' : 's'}</div></div>
+        <div style={{ ...D.kpi, borderLeft: '3px solid #4FBF95' }}><div style={D.kl}>MRR / ARR ganado</div><div style={{ ...D.kv, color: '#1E8A63' }}>{money(mrrGanado)}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{money(mrrGanado * 12)} ARR</div></div>
+        <div style={{ ...D.kpi, borderLeft: '3px solid #4FBF95' }}><div style={D.kl}>Pago único ganado</div><div style={{ ...D.kv, color: '#1E8A63' }}>{money(unicoGanado)}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>no suma al ARR</div></div>
+        <div style={{ ...D.kpi, borderLeft: '3px solid #9B8CFA' }}><div style={D.kl}>Se pagan</div><div style={D.kv}>{resueltas ? pctGana + '%' : '—'}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{ganadas.length} de {resueltas} resueltas</div></div>
+        <div style={{ ...D.kpi, borderLeft: '3px solid #EF7A72' }}><div style={D.kl}>Rechazadas</div><div style={{ ...D.kv, color: resueltas && pctPierde > 0 ? '#C0554E' : '#1a1a1a' }}>{resueltas ? pctPierde + '%' : '—'}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{perdidas.length}{montoPerdido > 0 ? ' · ' + money(montoPerdido) : ''}</div></div>
         <button style={{ ...D.btn, marginLeft: 'auto', alignSelf: 'center' }} onClick={() => setShowNew(true)}>+ Nueva oportunidad</button>
       </div>
 
@@ -2269,6 +2272,37 @@ function TabOportunidades({ companyId, co, principal, flash, reload }: any) {
           onCreated={() => { setShowNew(false); cargar(); reload?.(); }}
         />
       )}
+      {/* ── Qué venderle y atender ──
+          Vive en Oportunidades y no en Actividad: las señales salen del uso
+          real de la cuenta y todas terminan en lo mismo —venderle algo o
+          atenderlo—. Van DEBAJO de las oportunidades ya abiertas: primero lo
+          que está en curso, después lo que podría abrirse.
+          Si no hay señales el bloque no aparece: una tarjeta que dice "sin
+          señales" ocupa lo mismo que una con contenido y no enseña nada. */}
+      {senales.length > 0 && (
+        <div style={D.cardM}>
+          <div style={D.hM}>Qué venderle y atender<span style={D.hNota}>del uso real de su cuenta en SACS</span></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {senales.map((s: any, i: number) => (
+              <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 10px', borderRadius: 10, background: s.nivel === 'riesgo' ? '#fdf2f2' : '#f0f7f4', border: '1px solid ' + (s.nivel === 'riesgo' ? '#f7d7d7' : '#d6ebe2') }}>
+                <span style={{ fontSize: '1rem', lineHeight: 1.2 }}>{s.nivel === 'riesgo' ? '⚠️' : '📈'}</span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '0.83rem', fontWeight: 700, color: s.nivel === 'riesgo' ? '#b93333' : '#1A8F7A' }}>{s.titulo}</div>
+                  <div style={{ fontSize: '0.78rem', color: '#555', marginTop: 1 }}>{s.detalle}</div>
+                  <div style={{ fontSize: '0.78rem', color: '#16181d', marginTop: 3 }}><b>Acción:</b> {s.accion}</div>
+                </div>
+                {/* La señal dejaba de servir en cuanto se leía: había que
+                    acordarse de ir a crear la oportunidad a mano. */}
+                <button style={s.nivel === 'riesgo' ? D.btnAzul : D.btn}
+                  onClick={() => setShowNew(true)}>
+                  {s.nivel === 'riesgo' ? 'Atender' : 'Crear oportunidad'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
