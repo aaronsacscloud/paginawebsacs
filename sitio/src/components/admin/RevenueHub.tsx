@@ -2111,10 +2111,37 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 );
               })()}
 
+              {/* ── Plantilla ──
+                  Escondida en un <select> junto a la moneda, nadie la cambiaba:
+                  no se veía qué hacía cada una. Aquí se elige viendo el nombre y
+                  para qué sirve, y la vista previa de la derecha cambia al
+                  instante. */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={S.label}>Plantilla</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7 }}>
+                  {[
+                    { id: 'modern', n: 'Moderna', d: 'Color de marca y contador. La de siempre.' },
+                    { id: 'dark', n: 'Oscura', d: 'La misma, en fondo negro.' },
+                    { id: 'interactiva', n: 'Interactiva', d: 'El cliente elige entre 2–3 opciones.' },
+                    { id: 'ejecutiva', n: 'Ejecutiva', d: 'Una pantalla: problema, número y arranque.' },
+                  ].map(t => {
+                    const on = (qf.template || 'modern') === t.id;
+                    return (
+                      <button key={t.id} onClick={() => setQf({ ...qf, template: t.id })}
+                        style={{ textAlign: 'left' as const, cursor: 'pointer', borderRadius: 9, padding: '9px 11px',
+                          border: '1.5px solid', borderColor: on ? '#1a1a1a' : '#e2e2e8', background: on ? '#1a1a1a' : '#fff' }}>
+                        <div style={{ fontSize: '0.76rem', fontWeight: 800, color: on ? '#fff' : '#1a1a1a' }}>{t.n}</div>
+                        <div style={{ fontSize: '0.65rem', color: on ? 'rgba(255,255,255,.6)' : '#9a9a9a', marginTop: 1, lineHeight: 1.35 }}>{t.d}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Config */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
                 <div><label style={S.label}>Moneda</label><select value={qf.moneda} onChange={e => setQf({ ...qf, moneda: e.target.value })} style={S.input}><option value="MXN">MXN</option><option value="USD">USD</option></select></div>
-                <div><label style={S.label}>Template</label><select value={qf.template} onChange={e => setQf({ ...qf, template: e.target.value })} style={S.input}><option value="modern">Moderna</option><option value="dark">Oscura</option><option value="interactiva">Interactiva · el cliente elige</option><option value="ejecutiva">Ejecutiva · una pantalla</option></select></div>
+                <div />
               </div>
 
               {/* Promo label */}
@@ -2565,8 +2592,8 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
 
             </div>
             {/* Right: Preview */}
-            <div className="rh-quote-preview" style={{ flex: 1, overflowY: 'auto' as const, padding: 32 }}>
-              <div style={{ width: '100%', maxWidth: 640, margin: '0 auto', background: '#fff', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+            <div className={`rh-quote-preview rh-prev-${qf.template || 'modern'}`} style={{ flex: 1, overflowY: 'auto' as const, padding: 32 }}>
+              <div className="rh-doc" style={{ width: '100%', maxWidth: 640, margin: '0 auto', background: '#fff', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
                 {/* Preview Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '28px 32px 18px', borderBottom: '1px solid #f0f0f0' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -2629,7 +2656,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                     casilla y en la vista previa no pasaba nada, así que parecía
                     que el interruptor estaba muerto. */}
                 {(qf.mostrar_timer !== false) && (
-                  <div style={{ margin: '0 32px 14px', background: '#fff6ed', border: '1px solid #fde3c7', borderRadius: 8, padding: '9px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div className="rh-warn" style={{ margin: '0 32px 14px', background: '#fff6ed', border: '1px solid #fde3c7', borderRadius: 8, padding: '9px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: '0.6875rem', fontWeight: 800, color: '#b45309' }}>
                       {(() => { const d = daysUntil(qf.vigencia); return d === null ? 'Vigencia por definir' : d < 0 ? 'Vigencia vencida' : d === 0 ? 'Vence hoy' : `Faltan ${d} día${d === 1 ? '' : 's'}`; })()}
                     </span>
@@ -2683,7 +2710,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                             {isPromo ? <span style={{ textDecoration: 'line-through', color: '#ccc' }}>{fmt(item.precio_original || 0)}</span> : fmt(item.precio_unitario || item.monto || 0)}
                           </td>
                           <td style={{ padding: '10px 12px', fontSize: '0.6875rem', textAlign: 'right' as const, fontWeight: 600 }}>
-                            {isPromo ? <span style={{ color: '#2AB5A0', fontWeight: 800 }}>$0</span> : fmt(item.subtotal || item.monto || 0)}
+                            {isPromo ? <span className="rh-money" style={{ color: '#2AB5A0', fontWeight: 800 }}>$0</span> : fmt(item.subtotal || item.monto || 0)}
                           </td>
                         </tr>
                       );
@@ -2694,10 +2721,10 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 {/* Preview Totals */}
                 <div style={{ padding: '16px 32px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#888', marginBottom: 4 }}><span>Subtotal</span><span>{fmt(itemsSubtotal)}</span></div>
-                  {parseFloat(qf.descuento_global) > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#2AB5A0', marginBottom: 4 }}><span>Descuento</span><span>-{fmt(globalDisc)}</span></div>}
+                  {parseFloat(qf.descuento_global) > 0 && <div className="rh-money" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#2AB5A0', marginBottom: 4 }}><span>Descuento</span><span>-{fmt(globalDisc)}</span></div>}
                   {ivaMode !== 'sin' && <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#888', marginBottom: 4 }}><span>{ivaMode === 'incluido' ? 'IVA incluido' : 'IVA (16%)'}</span><span>{fmt(ivaMonto)}</span></div>}
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.125rem', fontWeight: 800, borderTop: '2px solid #1a1a1a', paddingTop: 8, marginTop: 4 }}>
-                    <span>Total {ivaMode === 'incluido' ? '(IVA incl.)' : ''}</span><span style={{ color: '#2AB5A0' }}>{fmt(grandTotal)} {qf.moneda}</span>
+                    <span>Total {ivaMode === 'incluido' ? '(IVA incl.)' : ''}</span><span className="rh-money" style={{ color: '#2AB5A0' }}>{fmt(grandTotal)} {qf.moneda}</span>
                   </div>
                 </div>
 
@@ -2716,11 +2743,11 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                       {rr.problema && <div style={{ fontSize: '0.5625rem', color: '#999', marginBottom: 8 }}>{rr.problema}</div>}
                       <div style={{ display: 'flex', gap: 8 }}>
                         <div style={{ flex: 1, background: '#f8f9fb', borderRadius: 8, padding: 10, textAlign: 'center' as const }}>
-                          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#2AB5A0' }}>{fmt(rr.ahorro_mensual)}</div>
+                          <div className="rh-money" style={{ fontSize: '1.125rem', fontWeight: 800, color: '#2AB5A0' }}>{fmt(rr.ahorro_mensual)}</div>
                           <div style={{ fontSize: '0.4375rem', color: '#999', textTransform: 'uppercase' as const }}>Ahorro mensual</div>
                         </div>
                         <div style={{ flex: 1, background: '#f8f9fb', borderRadius: 8, padding: 10, textAlign: 'center' as const }}>
-                          <div style={{ fontSize: '1.125rem', fontWeight: 800, color: '#2AB5A0' }}>{fmt(rr.ahorro_mensual * 12)}</div>
+                          <div className="rh-money" style={{ fontSize: '1.125rem', fontWeight: 800, color: '#2AB5A0' }}>{fmt(rr.ahorro_mensual * 12)}</div>
                           <div style={{ fontSize: '0.4375rem', color: '#999', textTransform: 'uppercase' as const }}>Ahorro anual</div>
                         </div>
                       </div>
@@ -2750,7 +2777,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                       <thead><tr>
                         <th style={{ padding: '4px 6px', textAlign: 'left' as const, color: '#aaa', fontWeight: 600 }}>Aspecto</th>
                         <th style={{ padding: '4px 6px', textAlign: 'center' as const, color: '#ccc', fontWeight: 600 }}>Hoy</th>
-                        <th style={{ padding: '4px 6px', textAlign: 'center' as const, color: '#2AB5A0', fontWeight: 600 }}>Con SACS</th>
+                        <th className="rh-money" style={{ padding: '4px 6px', textAlign: 'center' as const, color: '#2AB5A0', fontWeight: 600 }}>Con SACS</th>
                       </tr></thead>
                       <tbody>
                         {(qf.antes_despues || []).map((row: any, i: number) => (
@@ -2918,7 +2945,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                 )}
 
                 {/* Preview Footer */}
-                <div style={{ padding: '14px 32px', background: '#fafafa', borderTop: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', fontSize: '0.5625rem', color: '#bbb' }}>
+                <div className="rh-soft rh-mute" style={{ padding: '14px 32px', background: '#fafafa', borderTop: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', fontSize: '0.5625rem', color: '#bbb' }}>
                   <span><strong style={{ color: '#1a1a1a', fontFamily: "'Clash Display',sans-serif" }}>Sacs</strong> Sistema operativo para retailers</span>
                   <span>www.sacscloud.com</span>
                 </div>
@@ -2941,7 +2968,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
         <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 0', marginRight: 32 }}>
             <span style={{ fontFamily: "'Clash Display',sans-serif", fontSize: '1.25rem', fontWeight: 700 }}>Sacs</span>
-            <span style={{ fontSize: '0.5625rem', fontWeight: 700, color: '#2AB5A0', background: 'rgba(42,181,160,0.08)', padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>Revenue</span>
+            <span className="rh-money" style={{ fontSize: '0.5625rem', fontWeight: 700, color: '#2AB5A0', background: 'rgba(42,181,160,0.08)', padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>Revenue</span>
           </div>
           {(['dashboard', 'cotizaciones', 'config'] as Tab[]).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{ padding: '14px 16px', fontSize: '0.8125rem', fontWeight: tab === t ? 700 : 500, color: tab === t ? '#1a1a1a' : '#999', background: 'none', border: 'none', borderBottom: tab === t ? '2px solid #1a1a1a' : '2px solid transparent', cursor: 'pointer', textTransform: 'capitalize' as const }}>{t}</button>
@@ -3175,6 +3202,27 @@ const S: Record<string, React.CSSProperties> = {
 
 // CSS responsive — drawer del editor de cotizaciones mobile-friendly
 const REVENUE_HUB_MOBILE_CSS = `
+  /* ── Tema de la vista previa según la plantilla ──
+     El documento está pintado con estilos inline, así que teñirlo por plantilla
+     solo se puede con !important acotado a esta clase. Los acentos se devuelven
+     por CLASE y no por selector de atributo: React serializa los colores inline
+     a rgb(), así que [style*="#2AB5A0"] nunca casa. */
+  .rh-prev-dark { background: #0f0f12; border-radius: 12px; }
+  .rh-prev-dark .rh-doc { background: #17171c !important; box-shadow: none !important; }
+  .rh-prev-dark .rh-doc,
+  .rh-prev-dark .rh-doc div, .rh-prev-dark .rh-doc span,
+  .rh-prev-dark .rh-doc td, .rh-prev-dark .rh-doc th,
+  .rh-prev-dark .rh-doc strong, .rh-prev-dark .rh-doc small,
+  .rh-prev-dark .rh-doc s { color: #e9e9ee !important; border-color: rgba(255,255,255,0.09) !important; }
+  .rh-prev-dark .rh-doc .rh-mute, .rh-prev-dark .rh-doc .rh-mute * { color: rgba(255,255,255,0.45) !important; }
+  .rh-prev-dark .rh-doc .rh-money, .rh-prev-dark .rh-doc .rh-money * { color: #2AB5A0 !important; }
+  .rh-prev-dark .rh-doc .rh-soft { background: rgba(255,255,255,0.05) !important; }
+  .rh-prev-dark .rh-doc .rh-warn, .rh-prev-dark .rh-doc .rh-warn * { color: #fdba74 !important; }
+  .rh-prev-dark .rh-doc .rh-warn { background: rgba(253,186,116,0.10) !important; border-color: rgba(253,186,116,0.28) !important; }
+
+  .rh-prev-interactiva { background: #f7f4ff; border-radius: 12px; }
+  .rh-prev-ejecutiva { background: #f3f8f6; border-radius: 12px; }
+
   @media (max-width: 900px) {
     .rh-quote-topbar { padding: 10px 14px !important; }
     .rh-quote-topbar h3 { font-size: 0.875rem !important; }
