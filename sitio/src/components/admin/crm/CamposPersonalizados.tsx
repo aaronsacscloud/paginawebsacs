@@ -40,7 +40,7 @@ const E = {
   card: { background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: 16, marginBottom: 12 } as const,
   input: { padding: '8px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.85rem', outline: 'none', width: '100%', boxSizing: 'border-box' as const, background: '#fff' },
   lbl: { fontSize: '0.7rem', fontWeight: 700, color: '#888', marginBottom: 3, display: 'block' } as const,
-  btn: { padding: '8px 14px', border: 'none', borderRadius: 8, fontSize: '0.83rem', fontWeight: 700, cursor: 'pointer', background: '#1a1a1a', color: '#fff' } as const,
+  btn: { padding: '8px 15px', border: 'none', borderRadius: 9, fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', background: '#9B8CFA', color: '#fff' } as const,
   btnG: { padding: '7px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', background: '#fff', color: '#333' } as const,
   badge: { fontSize: '0.62rem', fontWeight: 700, padding: '2px 7px', borderRadius: 20, whiteSpace: 'nowrap' as const } as const,
 };

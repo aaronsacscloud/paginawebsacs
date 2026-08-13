@@ -53,7 +53,7 @@ const D = {
   kv: { fontSize: '1.05rem', fontWeight: 800, color: '#1a1a1a', marginTop: 2 } as const,
   input: { padding: '7px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.83rem', outline: 'none', width: '100%', boxSizing: 'border-box' as const },
   lbl: { fontSize: '0.7rem', fontWeight: 700, color: '#888', marginBottom: 3, display: 'block' } as const,
-  btn: { padding: '8px 14px', border: 'none', borderRadius: 8, fontSize: '0.83rem', fontWeight: 700, cursor: 'pointer', background: '#1a1a1a', color: '#fff' } as const,
+  btn: { padding: '8px 15px', border: 'none', borderRadius: 9, fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', background: '#9B8CFA', color: '#fff' } as const,
   btnG: { padding: '7px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', background: '#fff', color: '#333' } as const,
   badge: { display: 'inline-block', padding: '2px 9px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap' as const } as const,
   th: { textAlign: 'left' as const, padding: '7px 9px', fontSize: '0.66rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, borderBottom: '1px solid #eee' },
@@ -547,7 +547,7 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
     </div>
   ) : null;
   const campo = (label: string, k: string, ph = '') => (
-    <div style={{ flex: '1 1 200px' }}>
+    <div>
       <label style={D.lbl}>{label}</label>
       <input value={f[k]} onChange={e => setF({ ...f, [k]: e.target.value })} placeholder={ph} style={D.inputM} />
     </div>
@@ -616,24 +616,24 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
 
       <div style={D.cardM}>
         <div style={D.hM}>Identidad</div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 11, marginBottom: 10, alignItems: 'start' }}>
           {campo('Nombre *', 'nombre')}
           {campo('Razón social', 'razon_social')}
           {campo('RFC', 'rfc')}
         </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 11, marginBottom: 10, alignItems: 'start' }}>
           {/* "Giro" en texto libre YA NO se captura aquí: lo sustituye el campo
               de lista "Giro de negocio" de arriba. Dejarlo abierto reintroducía
               el problema que se acaba de arreglar — "moda", "Moda" y "Ropa"
               volverían a ser tres giros. El valor viejo se conserva en la base
               y se muestra solo como referencia mientras quede alguno. */}
           {campo('Sitio web', 'sitio_web', 'https://…')}
-          <div style={{ flex: '1 1 160px' }}>
+          <div>
             <label style={D.lbl}>Ciudad</label>
             <input list="ciudades-usadas" value={f.ciudad} onChange={e => setF({ ...f, ciudad: e.target.value })} style={D.inputM} placeholder="empieza a escribir…" />
             <datalist id="ciudades-usadas">{(ciudadesUsadas || []).map((x: string) => <option key={x} value={x} />)}</datalist>
           </div>
-          <div style={{ flex: '1 1 160px' }}>
+          <div>
             <label style={D.lbl}>Estado</label>
             <select value={f.estado_geo} onChange={e => setF({ ...f, estado_geo: e.target.value })} style={D.inputM}>
               <option value="">—</option>
@@ -641,8 +641,8 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
             </select>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <div style={{ width: 170 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 11, alignItems: 'start' }}>
+          <div>
             <label style={D.lbl}>Sucursales</label>
             <select value={Number(f.sucursales) > 50 ? MAS_DE_50 : (f.sucursales || 1)} onChange={e => setF({ ...f, sucursales: e.target.value })} style={D.inputM}>
               {SUCURSALES_OPTS.map(n => <option key={n} value={n}>{n}</option>)}
@@ -650,7 +650,7 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
             </select>
             {Number(f.sucursales) > 50 && <div style={{ fontSize: '0.68rem', color: '#999', marginTop: 2 }}>guardado: {f.sucursales}</div>}
           </div>
-          <div style={{ width: 180 }}>
+          <div>
             <label style={D.lbl}>Estado de la cuenta</label>
             <select value={f.estado_cuenta} onChange={e => setF({ ...f, estado_cuenta: e.target.value })} style={D.inputM}>
               {['activo', 'prospecto', 'pausado', 'churned'].map(x => <option key={x} value={x}>{x}</option>)}
