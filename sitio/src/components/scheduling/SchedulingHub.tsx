@@ -832,6 +832,9 @@ function EventTypeModal({
     max_dias_adelanto: eventType?.max_dias_adelanto || 30,
     ubicacion_tipo: eventType?.ubicacion_tipo || 'google_meet',
     color: eventType?.color || '#4B7BE5',
+    categoria: (eventType as any)?.categoria || 'otro',
+    alerta_inasistencias: (eventType as any)?.alerta_inasistencias ?? '',
+    requiere_minuta: (eventType as any)?.requiere_minuta !== false,
   });
   const [saving, setSaving] = useState(false);
   const [emailConfig, setEmailConfig] = useState<Record<string, any>>(() => {
@@ -874,6 +877,9 @@ function EventTypeModal({
       max_dias_adelanto: form.max_dias_adelanto,
       ubicacion_tipo: form.ubicacion_tipo,
       color: form.color,
+      categoria: form.categoria || 'otro',
+      alerta_inasistencias: form.alerta_inasistencias === '' ? null : Number(form.alerta_inasistencias),
+      requiere_minuta: form.requiere_minuta !== false,
       routing_rules: {
         ...(eventType?.routing_rules || {}),
         emails: emailConfig,
@@ -968,6 +974,38 @@ function EventTypeModal({
             <label style={label}>Ubicación</label>
             <select value={form.ubicacion_tipo} onChange={e => updateForm('ubicacion_tipo', e.target.value)} style={selectStyle}>
               {UBICACION_OPTIONS.map(u => <option key={u.value} value={u.value}>{u.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={label}>Categoría</label>
+            <select value={form.categoria} onChange={e => updateForm('categoria', e.target.value)} style={selectStyle}>
+              <option value="consultoria">Consultoría</option>
+              <option value="cotizacion">Cotización</option>
+              <option value="personalizacion">Personalización</option>
+              <option value="seguimiento">Seguimiento</option>
+              <option value="otro">Otro</option>
+            </select>
+            <div style={{ fontSize: '0.625rem', color: '#999', marginTop: 2 }}>Agrupa las reuniones en la ficha del cliente</div>
+          </div>
+        </div>
+
+        {/* El umbral vive aquí y no escrito en el código: consultoría avisa a
+            las 3 porque es lo que el cliente está pagando, pero mañana puede
+            ser otro número sin tocar nada. */}
+        <div className="sh-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+          <div>
+            <label style={label}>Alertar tras N inasistencias</label>
+            <select value={form.alerta_inasistencias} onChange={e => updateForm('alerta_inasistencias', e.target.value)} style={selectStyle}>
+              <option value="">Sin alerta</option>
+              {[2, 3, 4, 5].map(n => <option key={n} value={n}>{n} inasistencias</option>)}
+            </select>
+            <div style={{ fontSize: '0.625rem', color: '#999', marginTop: 2 }}>Se muestra en la ficha del cliente</div>
+          </div>
+          <div>
+            <label style={label}>Minuta</label>
+            <select value={form.requiere_minuta ? '1' : '0'} onChange={e => updateForm('requiere_minuta', e.target.value === '1')} style={selectStyle}>
+              <option value="1">Pedir minuta al cerrarla</option>
+              <option value="0">No pedir minuta</option>
             </select>
           </div>
         </div>

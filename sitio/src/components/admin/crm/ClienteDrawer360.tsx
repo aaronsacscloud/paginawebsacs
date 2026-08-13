@@ -5,6 +5,7 @@ import Etiquetas from './Etiquetas';
 import { CamposFicha } from './CamposPersonalizados';
 import ArchivosSuscripcion from './ArchivosSuscripcion';
 import { useIsMobile, useDrawerHistory, BP } from '../../../lib/ui/mobile';
+import { ESTADOS, MINUTA_CAMPOS, minutaLlena, minutaTexto, minutaVacia, normalizaEstado, siguientes } from '../../../lib/crm/reuniones';
 
 /* ═══ Cliente 360 — drawer ancho con pestañas, TODO editable ═══
  * Pestañas: Resumen · Cliente & SACS · Contactos · Suscripciones · Actividad.
@@ -92,6 +93,10 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
   const confirmarSalida = () => !haySucio || confirm('Hay cambios sin guardar en esta ficha.\n\n¿Salir y perderlos?');
   const irA = (t: any) => { if (confirmarSalida()) { setSucio({}); setTab(t); } };
   const cerrar = () => { if (confirmarSalida()) onClose(); };
+  // Las inasistencias se piden al abrir la ficha, no al entrar a Reuniones: si
+  // el cliente no está acudiendo a la consultoría que paga, eso tiene que verse
+  // sin que nadie vaya a buscarlo.
+  const [alertasReu, setAlertasReu] = useState<any[]>([]);
   const [editandoNombre, setEditandoNombre] = useState(false);
   const [nombreEd, setNombreEd] = useState('');
   const isMobile = useIsMobile();
@@ -106,6 +111,12 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
     } catch (e: any) { setErr(e?.message || 'No se pudo cargar'); }
   }
   useEffect(() => { setData(null); setTab('resumen'); load(); }, [companyId]);
+  useEffect(() => {
+    let alive = true; setAlertasReu([]);
+    fetch('/api/scheduling/reuniones?company_id=' + companyId)
+      .then(r => r.json()).then(j => { if (alive) setAlertasReu(j.alertas || []); }).catch(() => {});
+    return () => { alive = false; };
+  }, [companyId]);
 
   function flash(t: string) { setMsg(t); setTimeout(() => setMsg(''), 2600); }
 
@@ -185,12 +196,22 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                 <button style={D.tab(tab === 'subs')} onClick={() => irA('subs')}>Suscripciones ({subs.length})</button>
                 <button style={D.tab(tab === 'oport')} onClick={() => irA('oport')}>Oportunidades</button>
                 <button style={D.tab(tab === 'resumen')} onClick={() => irA('resumen')}>Actividad</button>
-                <button style={D.tab(tab === 'reuniones')} onClick={() => irA('reuniones')}>Reuniones</button>
+                <button style={D.tab(tab === 'reuniones')} onClick={() => irA('reuniones')}>
+                  Reuniones
+                  {alertasReu.length > 0 && <span title="Inasistencias" style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 99, background: '#EF7A72', marginLeft: 5, verticalAlign: 'middle' }} />}
+                </button>
                 <button style={D.tab(tab === 'notas')} onClick={() => irA('notas')}>Notas</button>
               </div>
             </div>
             <div style={D.body}>
               {msg && <div style={{ background: '#e8f5e9', color: '#1b5e20', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: '0.8rem', fontWeight: 700 }}>{msg}</div>}
+              {tab === 'resumen' && alertasReu.map((a: any) => (
+                <div key={a.categoria} onClick={() => irA('reuniones')}
+                  style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 10, padding: '10px 13px', marginBottom: 12, fontSize: '0.79rem', color: '#C0554E', cursor: 'pointer', lineHeight: 1.5 }}>
+                  <b style={{ color: '#8c2f28' }}>⚠️ {a.faltas} inasistencias en {String(a.tipo_nombre).toLowerCase()}.</b>{' '}
+                  No está acudiendo a lo que tiene contratado — ver reuniones.
+                </div>
+              ))}
               {tab === 'resumen' && (<>
                 <TabResumen res={res} co={co} act={act} subs={subs} acts={data?.activities || []} reload={() => { load(); onChanged(); }} />
                 <TabSacs co={co} act={act} reload={() => { load(); onChanged(); }} flash={flash} />
@@ -1961,25 +1982,46 @@ function PlanPickerModal({ planes, ciclo, actual, onPick, onClose }: { planes: a
 
 /* ─────────── 🕓 Actividad (pagos + notas + timeline) ─────────── */
 /* ─────────── 📅 Reuniones del cliente (bookings) ─────────── */
-const ESTADO_REUNION: Record<string, { bg: string; color: string }> = {
-  pendiente: { bg: '#fff8e1', color: '#a06600' },
-  confirmada: { bg: '#e6f6f2', color: '#1A8F7A' },
-  realizada: { bg: '#eef2ff', color: '#3730a3' },
-  no_show: { bg: '#fdf2f2', color: '#b93333' },
-  cancelada: { bg: '#f3f4f6', color: '#9aa0a8' },
-  reagendada: { bg: '#f3f4f6', color: '#9aa0a8' },
-};
+// El módulo de agenda ya existía para que un prospecto reservara solo desde la
+// página. Lo que faltaba es lo de DESPUÉS: si llegó, qué se acordó y dónde
+// quedó la grabación. Aquí se agenda a mano (la mayoría se acuerdan por
+// WhatsApp), se marca la asistencia y se levanta la minuta.
 function TabReuniones({ companyId, principal, flash }: any) {
   const [rows, setRows] = useState<any[] | null>(null);
+  const [alertas, setAlertas] = useState<any[]>([]);
   const [tipos, setTipos] = useState<any[]>([]);
+  const [agendando, setAgendando] = useState(false);
+  const [cerrando, setCerrando] = useState<any>(null);   // reunión que se está documentando
+  const [verMinuta, setVerMinuta] = useState<any>(null);
+  const [links, setLinks] = useState(false);
+
+  const cargar = () => fetch('/api/scheduling/reuniones?company_id=' + companyId)
+    .then(r => r.json()).then(j => { setRows(j.data || []); setAlertas(j.alertas || []); })
+    .catch(() => setRows([]));
   useEffect(() => {
     let alive = true; setRows(null);
     fetch('/api/scheduling/reuniones?company_id=' + companyId)
-      .then(r => r.json()).then(j => { if (alive) setRows(j.data || []); }).catch(() => { if (alive) setRows([]); });
+      .then(r => r.json()).then(j => { if (alive) { setRows(j.data || []); setAlertas(j.alertas || []); } })
+      .catch(() => { if (alive) setRows([]); });
     fetch('/api/scheduling/event-types?activo=true')
       .then(r => r.json()).then(j => { if (alive) setTipos(j.data || j.event_types || []); }).catch(() => {});
     return () => { alive = false; };
   }, [companyId]);
+
+  async function marcar(r: any, estado: string) {
+    const res = await fetch('/api/scheduling/reuniones', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: r.id, estado }),
+    }).then(x => x.json()).catch(() => null);
+    if (!res || res.error) { flash(res?.error || 'No se pudo actualizar la reunión'); return; }
+    flash(ESTADOS[estado]?.label || 'Actualizada');
+    await cargar();
+    // Si se presentó, lo que sigue es documentarla: se abre solo para no
+    // depender de que alguien se acuerde de volver.
+    if (estado === 'asistio' && r.event_types?.requiere_minuta !== false) {
+      setCerrando({ ...r, estado });
+    }
+  }
 
   function linkAgendar(slug: string) {
     const base = window.location.origin + '/agendar/' + slug;
@@ -1998,47 +2040,266 @@ function TabReuniones({ companyId, principal, flash }: any) {
   if (rows === null) return <div style={{ ...D.card, color: '#999', fontSize: '0.82rem' }}>Cargando reuniones…</div>;
 
   const hoy = new Date().toISOString().slice(0, 10);
-  const proxima = rows.find(r => r.fecha >= hoy && !['cancelada', 'reagendada', 'no_show'].includes(r.estado));
-  const realizadas = rows.filter(r => r.estado === 'realizada').length;
+  const orden = rows.slice().sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
+  const proximas = rows.filter(r => r.fecha >= hoy && ['agendada', 'confirmada'].includes(normalizaEstado(r.estado)));
+  const asistidas = rows.filter(r => normalizaEstado(r.estado) === 'asistio').length;
 
   return (
     <div>
+      {/* La alerta va ARRIBA de todo: si el cliente no está usando la
+          consultoría que paga, eso es lo primero que hay que saber al abrir. */}
+      {alertas.map((a: any) => (
+        <div key={a.categoria} style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 10, padding: '11px 13px', marginBottom: 12, display: 'flex', gap: 9, alignItems: 'flex-start' }}>
+          <span style={{ fontSize: '1rem', lineHeight: 1.2 }}>⚠️</span>
+          <div style={{ fontSize: '0.79rem', color: '#C0554E', lineHeight: 1.55 }}>
+            <b style={{ color: '#8c2f28' }}>
+              {a.faltas} inasistencias en {String(a.tipo_nombre).toLowerCase()}
+              {a.seguidas >= a.umbral ? ` (${a.seguidas} seguidas)` : ''}.
+            </b>{' '}
+            No se presentó el {a.fechas.map((f: string) => fmtDate(f)).join(', el ')}. Conviene hablar con el dueño
+            de la cuenta antes de la renovación.
+          </div>
+        </div>
+      ))}
+
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
-        <div style={D.kpi}><div style={D.kl}>Próxima reunión</div><div style={{ ...D.kv, fontSize: '1rem' }}>{proxima ? `${fmtDate(proxima.fecha)} · ${String(proxima.hora_inicio || '').slice(0, 5)}` : '—'}</div></div>
-        <div style={D.kpi}><div style={D.kl}>Realizadas</div><div style={D.kv}>{realizadas}</div></div>
+        <div style={D.kpi}><div style={D.kl}>Próxima reunión</div><div style={{ ...D.kv, fontSize: '1rem' }}>{proximas[0] ? `${fmtDate(proximas[0].fecha)} · ${String(proximas[0].hora_inicio || '').slice(0, 5)}` : '—'}</div></div>
+        <div style={D.kpi}><div style={D.kl}>Se presentó</div><div style={D.kv}>{asistidas}</div></div>
+        <div style={D.kpi}><div style={D.kl}>No se presentó</div><div style={{ ...D.kv, color: rows.filter(r => normalizaEstado(r.estado) === 'no_asistio').length ? '#C0554E' : '#1a1a1a' }}>{rows.filter(r => normalizaEstado(r.estado) === 'no_asistio').length}</div></div>
         <div style={D.kpi}><div style={D.kl}>Total</div><div style={D.kv}>{rows.length}</div></div>
       </div>
 
-      <div style={D.card}>
-        <div style={D.h}>Agendar una reunión</div>
-        {tipos.length === 0 ? <div style={{ color: '#999', fontSize: '0.8rem' }}>Sin tipos de reunión activos (Configúralos en Reuniones → Config).</div> : (
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {tipos.map((t: any) => (
-              <button key={t.id} style={D.btnG} onClick={() => copiar(t.slug)}>
-                📅 {t.nombre} ({t.duracion_minutos} min) · copiar link
-              </button>
-            ))}
-          </div>
-        )}
-        <div style={{ fontSize: '0.72rem', color: '#999', marginTop: 8 }}>Copia el link y mándaselo al cliente{principal?.email ? ` (se pre-llena con ${principal.email})` : ''}.</div>
-      </div>
+      <div style={D.cardM}>
+        <div style={D.hM}>
+          Reuniones
+          <span style={D.hNota}>{rows.length} en total{proximas.length ? ` · ${proximas.length} por venir` : ''}</span>
+          <button style={{ ...D.btn, padding: '7px 13px', fontSize: '0.77rem' }} onClick={() => setAgendando(true)}>+ Agendar reunión</button>
+        </div>
 
-      <div style={D.card}>
-        <div style={D.h}>Historial ({rows.length})</div>
-        {rows.length === 0 && <div style={{ color: '#999', fontSize: '0.85rem' }}>Este cliente aún no tiene reuniones agendadas.</div>}
-        {rows.slice().reverse().map((r: any) => {
-          const st = ESTADO_REUNION[r.estado] || ESTADO_REUNION.pendiente;
+        {rows.length === 0 && <div style={{ color: '#999', fontSize: '0.85rem', padding: '6px 0 10px' }}>Este cliente aún no tiene reuniones. Agenda la primera o mándale el link para que elija horario.</div>}
+
+        {orden.map((r: any) => {
+          const e = normalizaEstado(r.estado);
+          const st = ESTADOS[e];
+          const futura = r.fecha >= hoy;
+          const [dd, mmm] = [String(r.fecha || '').slice(8, 10), fmtDate(r.fecha).split(' ')[1] || ''];
+          const tono = e === 'asistio' ? { bg: '#EAF8F2', bd: '#cdeadd', tx: '#1E8A63' }
+            : e === 'no_asistio' ? { bg: '#FEF0EF', bd: '#f7c9c5', tx: '#C0554E' }
+            : (e === 'cancelada' || e === 'reagendada') ? { bg: '#f4f4f6', bd: '#eceaef', tx: '#8a8a92' }
+            : { bg: '#faf8ff', bd: '#ede6fb', tx: '#5B4BD6' };
           return (
-            <div key={r.id} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #f4f4f4', fontSize: '0.83rem' }}>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontWeight: 700 }}>{r.event_types?.nombre || 'Reunión'} · {fmtDate(r.fecha)} {String(r.hora_inicio || '').slice(0, 5)}</div>
-                <div style={{ color: '#888', fontSize: '0.76rem' }}>{r.invitee_nombre || ''}{r.host_nombre ? ` · con ${r.host_nombre}` : ''}</div>
+            <div key={r.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '12px 0', borderTop: '1px solid #f5f4f8' }}>
+              <div style={{ flex: '0 0 62px', textAlign: 'center', background: tono.bg, border: `1px solid ${tono.bd}`, borderRadius: 9, padding: '5px 0' }}>
+                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: tono.tx, lineHeight: 1 }}>{dd}</div>
+                <div style={{ fontSize: '0.56rem', fontWeight: 800, color: '#9c99a6', textTransform: 'uppercase', letterSpacing: '.06em' }}>{mmm}</div>
               </div>
-              {r.google_meet_link && <a href={r.google_meet_link} target="_blank" rel="noreferrer" style={{ ...D.badge, background: '#e6f6f2', color: '#1A8F7A', textDecoration: 'none' }}>Meet</a>}
-              <span style={{ ...D.badge, background: st.bg, color: st.color }}>{r.estado}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '0.84rem', fontWeight: 700 }}>
+                  {r.asunto || r.event_types?.nombre || 'Reunión'}
+                  {r.event_types?.nombre && <span style={{ fontSize: '0.58rem', fontWeight: 800, background: '#EEECFE', color: '#5B4BD6', borderRadius: 20, padding: '2px 8px', marginLeft: 6 }}>{r.event_types.nombre.replace(/^Reunión de |^Sesión de /i, '')}</span>}
+                </div>
+                <div style={{ fontSize: '0.72rem', color: '#8a8a8a', marginTop: 2 }}>
+                  {String(r.hora_inicio || '').slice(0, 5)}{r.hora_fin ? ` – ${String(r.hora_fin).slice(0, 5)}` : ''}
+                  {r.host_nombre ? ` · ${r.host_nombre}` : ''}
+                  {r.invitee_nombre ? ` · ${r.invitee_nombre}` : ''}
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 7 }}>
+                  {r.google_meet_link && futura && <a href={r.google_meet_link} target="_blank" rel="noreferrer" style={{ ...D.btnAzul, textDecoration: 'none', padding: '5px 11px', fontSize: '0.72rem' }}>Entrar</a>}
+                  {r.grabacion_url && <a href={r.grabacion_url} target="_blank" rel="noreferrer" style={{ ...D.btnAzul, textDecoration: 'none', padding: '5px 11px', fontSize: '0.72rem' }}>▶ Ver grabación</a>}
+                  {minutaLlena(r.minuta) && <button style={{ ...D.btnAzul, padding: '5px 11px', fontSize: '0.72rem' }} onClick={() => setVerMinuta(r)}>Ver minuta</button>}
+                  {e === 'asistio' && !minutaLlena(r.minuta) && <button style={{ ...D.btnG, padding: '5px 11px', fontSize: '0.72rem' }} onClick={() => setCerrando(r)}>Levantar minuta</button>}
+                  {(e === 'asistio' || e === 'no_asistio') && (r.grabacion_url || minutaLlena(r.minuta)) && <button style={{ ...D.btnG, padding: '5px 11px', fontSize: '0.72rem' }} onClick={() => setCerrando(r)}>Editar</button>}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <span style={{ ...D.badge, background: st.bg, color: st.color }}>{st.label}</span>
+                <div style={{ display: 'flex', gap: 5, justifyContent: 'flex-end', marginTop: 7, flexWrap: 'wrap' }}>
+                  {siguientes(r.estado, futura).slice(0, 3).map(sig => (
+                    <button key={sig} onClick={() => marcar(r, sig)}
+                      style={{ ...D.btnG, padding: '4px 9px', fontSize: '0.7rem', color: sig === 'no_asistio' ? '#C0554E' : sig === 'asistio' ? '#1E8A63' : '#555' }}>
+                      {sig === 'asistio' ? 'Asistió' : sig === 'no_asistio' ? 'No llegó' : ESTADOS[sig].label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           );
         })}
+      </div>
+
+      {/* El link público sigue existiendo para cuando el cliente elige horario;
+          se guarda plegado porque el 90% de las veces se agenda a mano. */}
+      <div style={D.cardA}>
+        <div style={D.hA}>
+          Que el cliente elija horario
+          <button style={{ ...D.btnG, marginLeft: 'auto', padding: '5px 11px', fontSize: '0.72rem' }} onClick={() => setLinks(v => !v)}>{links ? 'Ocultar' : 'Ver links'}</button>
+        </div>
+        {links && (tipos.length === 0
+          ? <div style={{ color: '#999', fontSize: '0.8rem' }}>Sin tipos de reunión activos. Configúralos en Reuniones → Tipos.</div>
+          : <>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {tipos.map((t: any) => <button key={t.id} style={{ ...D.btnG, fontSize: '0.75rem' }} onClick={() => copiar(t.slug)}>{t.nombre} ({t.duracion_minutos} min)</button>)}
+            </div>
+            <div style={{ fontSize: '0.72rem', color: '#999', marginTop: 8 }}>Copia el link y mándaselo{principal?.email ? ` (se pre-llena con ${principal.email})` : ''}.</div>
+          </>)}
+      </div>
+
+      {agendando && (
+        <AgendarReunion companyId={companyId} tipos={tipos} principal={principal}
+          onCerrar={() => setAgendando(false)}
+          onListo={() => { setAgendando(false); cargar(); flash('Reunión agendada'); }} />
+      )}
+      {cerrando && (
+        <MinutaReunion reunion={cerrando}
+          onCerrar={() => setCerrando(null)}
+          onListo={() => { setCerrando(null); cargar(); flash('Minuta guardada'); }} />
+      )}
+      {verMinuta && <MinutaReunion reunion={verMinuta} soloLectura onCerrar={() => setVerMinuta(null)} onListo={() => setVerMinuta(null)} />}
+    </div>
+  );
+}
+
+/* ── Agendar: la reunión ya se acordó por WhatsApp, aquí solo se registra ── */
+function AgendarReunion({ companyId, tipos, principal, onCerrar, onListo }: any) {
+  const hoy = new Date();
+  const manana = new Date(hoy.getTime() + 86400000).toISOString().slice(0, 10);
+  const conCategoria = tipos.filter((t: any) => t.categoria && t.categoria !== 'otro');
+  const lista = conCategoria.length ? conCategoria : tipos;
+  const [tipoId, setTipoId] = useState(lista[0]?.id || '');
+  const [fecha, setFecha] = useState(manana);
+  const [hora, setHora] = useState('10:00');
+  const [dur, setDur] = useState<number>(lista[0]?.duracion_minutos || 60);
+  const [asunto, setAsunto] = useState('');
+  const [meet, setMeet] = useState('');
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState('');
+
+  const elegir = (t: any) => { setTipoId(t.id); setDur(t.duracion_minutos || 60); };
+
+  async function guardar() {
+    if (!tipoId || !fecha || !hora) { setError('Falta el tipo, la fecha o la hora.'); return; }
+    setGuardando(true); setError('');
+    const r = await fetch('/api/scheduling/reuniones', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event_type_id: tipoId, fecha, hora_inicio: hora, duracion_minutos: dur,
+        company_id: companyId, contact_id: principal?.id || null,
+        invitee_nombre: principal?.nombre || null, invitee_email: principal?.email || null,
+        asunto: asunto || null, google_meet_link: meet || null,
+      }),
+    }).then(x => x.json()).catch(() => null);
+    setGuardando(false);
+    if (!r || r.error) { setError(r?.error || 'No se pudo agendar.'); return; }
+    onListo();
+  }
+
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onCerrar(); }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 960, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: 430, maxHeight: '88vh', overflowY: 'auto' }}>
+        <div style={{ padding: '14px 17px', background: '#faf8ff', borderBottom: '1px solid #e6ddfa', borderRadius: '14px 14px 0 0', display: 'flex', alignItems: 'center' }}>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, flex: 1 }}>Agendar reunión</h3>
+          <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#9c99a6', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+        </div>
+        <div style={{ padding: '14px 17px 17px' }}>
+          <div style={{ ...D.lbl, textTransform: 'uppercase', fontSize: '0.62rem', letterSpacing: '.05em' }}>Tipo de reunión</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+            {lista.map((t: any) => (
+              <button key={t.id} onClick={() => elegir(t)}
+                style={{ border: '1.5px solid', borderColor: tipoId === t.id ? '#9B8CFA' : '#e2e2e8', background: tipoId === t.id ? '#9B8CFA' : '#fff', color: tipoId === t.id ? '#fff' : '#555', borderRadius: 20, padding: '5px 12px', fontSize: '0.73rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                {t.nombre.replace(/^Reunión de |^Sesión de /i, '')}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginBottom: 10 }}>
+            <div><div style={D.lbl}>Fecha</div><input type="date" value={fecha} onChange={e => setFecha(e.target.value)} style={D.inputM} /></div>
+            <div><div style={D.lbl}>Hora</div><input type="time" value={hora} onChange={e => setHora(e.target.value)} style={D.inputM} /></div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginBottom: 10 }}>
+            <div><div style={D.lbl}>Duración</div>
+              <select value={dur} onChange={e => setDur(Number(e.target.value))} style={D.inputM}>
+                {[15, 30, 45, 60, 90, 120].map(n => <option key={n} value={n}>{n} min</option>)}
+              </select>
+            </div>
+            <div><div style={D.lbl}>Con</div><input value={principal?.nombre || 'El cliente'} disabled style={{ ...D.inputM, background: '#f7f6fa', color: '#8a8a92' }} /></div>
+          </div>
+          <div style={{ marginBottom: 10 }}><div style={D.lbl}>Asunto</div>
+            <input value={asunto} onChange={e => setAsunto(e.target.value)} placeholder="Revisión de avance" style={D.inputM} /></div>
+          <div style={{ marginBottom: 12 }}><div style={D.lbl}>Liga de la reunión (opcional)</div>
+            <input value={meet} onChange={e => setMeet(e.target.value)} placeholder="https://meet.google.com/…" style={D.inputM} /></div>
+
+          {error && <div style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 8, padding: '8px 10px', fontSize: '0.75rem', color: '#C0554E', marginBottom: 10 }}>{error}</div>}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={guardar} disabled={guardando} style={{ ...D.btn, opacity: guardando ? .6 : 1 }}>{guardando ? 'Agendando…' : 'Agendar'}</button>
+            <button onClick={onCerrar} style={D.btnG}>Cancelar</button>
+          </div>
+          <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 9, lineHeight: 1.45 }}>
+            Queda como agendada y sin correo al cliente: esta pantalla registra lo que ya se acordó, no le pide que confirme.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Minuta y grabación ── */
+function MinutaReunion({ reunion, soloLectura, onCerrar, onListo }: any) {
+  const [m, setM] = useState<Record<string, string>>(() => ({ ...minutaVacia(), ...(reunion.minuta || {}) }));
+  const [url, setUrl] = useState(reunion.grabacion_url || '');
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState('');
+
+  async function guardar() {
+    setGuardando(true); setError('');
+    const r = await fetch('/api/scheduling/reuniones', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: reunion.id, minuta: m, grabacion_url: url }),
+    }).then(x => x.json()).catch(() => null);
+    setGuardando(false);
+    if (!r || r.error) { setError(r?.error || 'No se pudo guardar.'); return; }
+    onListo();
+  }
+
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onCerrar(); }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 960, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: 470, maxHeight: '88vh', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '14px 17px', background: '#faf8ff', borderBottom: '1px solid #e6ddfa', borderRadius: '14px 14px 0 0', display: 'flex', alignItems: 'baseline', gap: 9 }}>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, flex: 1 }}>
+            {soloLectura ? 'Minuta' : 'Documentar la reunión'}
+          </h3>
+          <span style={{ fontSize: '0.72rem', color: '#7a6fc9' }}>{reunion.event_types?.nombre || 'Reunión'} · {fmtDate(reunion.fecha)}</span>
+          <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#9c99a6', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+        </div>
+
+        <div style={{ padding: '13px 17px', overflowY: 'auto', flex: 1 }}>
+          <div style={D.lbl}>Liga de la grabación</div>
+          {soloLectura
+            ? <div style={{ fontSize: '0.79rem', marginBottom: 12 }}>{url ? <a href={url} target="_blank" rel="noreferrer" style={{ color: '#2C5FC4' }}>{url}</a> : <span style={{ color: '#a5a2af' }}>Sin grabación</span>}</div>
+            : <input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://drive.google.com/…" style={{ ...D.inputM, marginBottom: 12 }} />}
+
+          <div style={{ background: '#fbfaff', border: '1px solid #ede6fb', borderRadius: 9, padding: '11px 12px' }}>
+            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#5B4BD6', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 7 }}>Minuta</div>
+            {MINUTA_CAMPOS.map(c => (
+              <div key={c.k} style={{ marginTop: 9 }}>
+                <div style={{ fontSize: '0.73rem', fontWeight: 700, color: '#3f3b4d' }}>{c.label}</div>
+                {soloLectura
+                  ? <div style={{ fontSize: '0.78rem', color: m[c.k] ? '#333' : '#a5a2af', whiteSpace: 'pre-wrap', marginTop: 3 }}>{m[c.k] || '—'}</div>
+                  : <textarea value={m[c.k] || ''} onChange={e => setM(v => ({ ...v, [c.k]: e.target.value }))}
+                      placeholder={c.hint} rows={2}
+                      style={{ ...D.inputM, marginTop: 3, resize: 'vertical', fontFamily: 'inherit', background: '#fff' }} />}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ padding: '12px 17px 15px', borderTop: '1px solid #f1eff7', display: 'flex', gap: 8, alignItems: 'center' }}>
+          {!soloLectura && <button onClick={guardar} disabled={guardando} style={{ ...D.btn, opacity: guardando ? .6 : 1 }}>{guardando ? 'Guardando…' : 'Guardar minuta'}</button>}
+          <button onClick={() => { navigator.clipboard?.writeText(minutaTexto({ ...reunion, minuta: m, grabacion_url: url })); }} style={D.btnG}>Copiar como texto</button>
+          <button onClick={onCerrar} style={{ ...D.btnG, marginLeft: 'auto' }}>{soloLectura ? 'Cerrar' : 'Después'}</button>
+          {error && <div style={{ fontSize: '0.73rem', color: '#C0554E' }}>{error}</div>}
+        </div>
       </div>
     </div>
   );
