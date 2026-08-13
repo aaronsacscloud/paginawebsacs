@@ -219,7 +219,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
               {tab === 'info' && <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []} contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'subs' && <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />}
               {tab === 'oport' && <TabOportunidades companyId={companyId} co={co} principal={principal} subs={subs} flash={flash} reload={() => { load(); onChanged(); }} />}
-              {tab === 'reuniones' && <TabReuniones companyId={companyId} principal={principal} flash={flash} />}
+              {tab === 'reuniones' && <TabReuniones companyId={companyId} principal={principal} contactos={contactos} flash={flash} />}
               {tab === 'notas' && <TabNotas companyId={companyId} />}
               {tab === 'act' && <TabActividad companyId={companyId} data={data} reload={() => { load(); onChanged(); }} />}
             </div>
@@ -1986,7 +1986,7 @@ function PlanPickerModal({ planes, ciclo, actual, onPick, onClose }: { planes: a
 // página. Lo que faltaba es lo de DESPUÉS: si llegó, qué se acordó y dónde
 // quedó la grabación. Aquí se agenda a mano (la mayoría se acuerdan por
 // WhatsApp), se marca la asistencia y se levanta la minuta.
-function TabReuniones({ companyId, principal, flash }: any) {
+function TabReuniones({ companyId, principal, contactos, flash }: any) {
   const [rows, setRows] = useState<any[] | null>(null);
   const [alertas, setAlertas] = useState<any[]>([]);
   const [tipos, setTipos] = useState<any[]>([]);
@@ -2004,7 +2004,9 @@ function TabReuniones({ companyId, principal, flash }: any) {
       .then(r => r.json()).then(j => { if (alive) { setRows(j.data || []); setAlertas(j.alertas || []); } })
       .catch(() => { if (alive) setRows([]); });
     fetch('/api/scheduling/event-types?activo=true')
-      .then(r => r.json()).then(j => { if (alive) setTipos(j.data || j.event_types || []); }).catch(() => {});
+      // Este endpoint contesta un ARREGLO pelón, no {data:[…]}: leerlo como
+      // objeto dejaba la lista vacía y sin tipos no se podía agendar nada.
+      .then(r => r.json()).then(j => { if (alive) setTipos(Array.isArray(j) ? j : (j?.data || j?.event_types || [])); }).catch(() => {});
     return () => { alive = false; };
   }, [companyId]);
 
@@ -2145,7 +2147,7 @@ function TabReuniones({ companyId, principal, flash }: any) {
       </div>
 
       {agendando && (
-        <AgendarReunion companyId={companyId} tipos={tipos} principal={principal}
+        <AgendarReunion companyId={companyId} tipos={tipos} principal={principal} contactos={contactos || []}
           onCerrar={() => setAgendando(false)}
           onListo={() => { setAgendando(false); cargar(); flash('Reunión agendada'); }} />
       )}
@@ -2160,7 +2162,7 @@ function TabReuniones({ companyId, principal, flash }: any) {
 }
 
 /* ── Agendar: la reunión ya se acordó por WhatsApp, aquí solo se registra ── */
-function AgendarReunion({ companyId, tipos, principal, onCerrar, onListo }: any) {
+function AgendarReunion({ companyId, tipos, principal, contactos, onCerrar, onListo }: any) {
   const hoy = new Date();
   const manana = new Date(hoy.getTime() + 86400000).toISOString().slice(0, 10);
   const conCategoria = tipos.filter((t: any) => t.categoria && t.categoria !== 'otro');
@@ -2171,6 +2173,15 @@ function AgendarReunion({ companyId, tipos, principal, onCerrar, onListo }: any)
   const [dur, setDur] = useState<number>(lista[0]?.duracion_minutos || 60);
   const [asunto, setAsunto] = useState('');
   const [meet, setMeet] = useState('');
+  // Con quién fue la reunión. Por defecto el contacto principal porque es lo
+  // más común, pero muchas veces se sienta el encargado de sucursal o el
+  // contador: dejarlo fijo obligaría a registrar una reunión con quien no
+  // estuvo.
+  const [conId, setConId] = useState<string>(principal?.id || 'otro');
+  const [otroNombre, setOtroNombre] = useState('');
+  const [otroEmail, setOtroEmail] = useState('');
+  const contacto = (contactos || []).find((c: any) => c.id === conId) || null;
+  const nombreCon = conId === 'otro' ? otroNombre.trim() : [contacto?.nombre, contacto?.apellido].filter(Boolean).join(' ');
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
 
@@ -2181,14 +2192,19 @@ function AgendarReunion({ companyId, tipos, principal, onCerrar, onListo }: any)
   const elegir = (t: any) => { setTipoId(t.id); setDur(t.duracion_minutos || 60); };
 
   async function guardar() {
-    if (!tipoId || !fecha || !hora) { setError('Falta el tipo, la fecha o la hora.'); return; }
+    // Decir cuál falta, no los tres: el mensaje genérico manda a buscar a ciegas.
+    const falta = !tipoId ? 'Elige el tipo de reunión.' : !fecha ? 'Falta la fecha.' : !hora ? 'Falta la hora.'
+      : (conId === 'otro' && !otroNombre.trim()) ? 'Escribe con quién fue la reunión.' : '';
+    if (falta) { setError(falta); return; }
     setGuardando(true); setError('');
     const r = await fetch('/api/scheduling/reuniones', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         event_type_id: tipoId, fecha, hora_inicio: hora, duracion_minutos: dur,
-        company_id: companyId, contact_id: principal?.id || null,
-        invitee_nombre: principal?.nombre || null, invitee_email: principal?.email || null,
+        company_id: companyId,
+        contact_id: conId === 'otro' ? null : conId,
+        invitee_nombre: nombreCon || null,
+        invitee_email: (conId === 'otro' ? otroEmail.trim() : contacto?.email) || null,
         asunto: asunto || null, google_meet_link: meet || null,
       }),
     }).then(x => x.json()).catch(() => null);
@@ -2208,6 +2224,7 @@ function AgendarReunion({ companyId, tipos, principal, onCerrar, onListo }: any)
         <div style={{ padding: '14px 17px 17px' }}>
           <div style={{ ...D.lbl, textTransform: 'uppercase', fontSize: '0.62rem', letterSpacing: '.05em' }}>Tipo de reunión</div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+            {lista.length === 0 && <div style={{ fontSize: '0.76rem', color: '#C0554E' }}>No hay tipos de reunión activos. Créalos en Reuniones → Tipos.</div>}
             {lista.map((t: any) => (
               <button key={t.id} onClick={() => elegir(t)}
                 style={{ border: '1.5px solid', borderColor: tipoId === t.id ? '#9B8CFA' : '#e2e2e8', background: tipoId === t.id ? '#9B8CFA' : '#fff', color: tipoId === t.id ? '#fff' : '#555', borderRadius: 20, padding: '5px 12px', fontSize: '0.73rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -2226,8 +2243,21 @@ function AgendarReunion({ companyId, tipos, principal, onCerrar, onListo }: any)
                 {[15, 30, 45, 60, 90, 120].map(n => <option key={n} value={n}>{n} min</option>)}
               </select>
             </div>
-            <div><div style={D.lbl}>Con</div><input value={principal?.nombre || 'El cliente'} disabled style={{ ...D.inputM, background: '#f7f6fa', color: '#8a8a92' }} /></div>
+            <div><div style={D.lbl}>Con quién</div>
+              <select value={conId} onChange={e => setConId(e.target.value)} style={D.inputM}>
+                {(contactos || []).map((c: any) => (
+                  <option key={c.id} value={c.id}>{[c.nombre, c.apellido].filter(Boolean).join(' ')}{c.puesto ? ` · ${c.puesto}` : ''}</option>
+                ))}
+                <option value="otro">Otra persona…</option>
+              </select>
+            </div>
           </div>
+          {conId === 'otro' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginBottom: 10 }}>
+              <div><div style={D.lbl}>Nombre</div><input value={otroNombre} onChange={e => setOtroNombre(e.target.value)} placeholder="Quién estuvo en la reunión" style={D.inputM} /></div>
+              <div><div style={D.lbl}>Correo (opcional)</div><input value={otroEmail} onChange={e => setOtroEmail(e.target.value)} placeholder="correo@empresa.com" style={D.inputM} /></div>
+            </div>
+          )}
           <div style={{ marginBottom: 10 }}><div style={D.lbl}>Asunto</div>
             <input value={asunto} onChange={e => setAsunto(e.target.value)} placeholder="Revisión de avance" style={D.inputM} /></div>
           <div style={{ marginBottom: 12 }}><div style={D.lbl}>Liga de la reunión (opcional)</div>
