@@ -5,7 +5,7 @@ import Etiquetas from './Etiquetas';
 import { CamposFicha } from './CamposPersonalizados';
 import ArchivosSuscripcion from './ArchivosSuscripcion';
 import { useIsMobile, useDrawerHistory, BP } from '../../../lib/ui/mobile';
-import { ESTADOS, MINUTA_CAMPOS, minutaLlena, minutaTexto, minutaVacia, normalizaEstado, siguientes } from '../../../lib/crm/reuniones';
+import { ESTADOS, MINUTA_CAMPOS, minutaLlena, minutaTexto, minutaVacia, normalizaEstado } from '../../../lib/crm/reuniones';
 
 /* ═══ Cliente 360 — drawer ancho con pestañas, TODO editable ═══
  * Pestañas: Resumen · Cliente & SACS · Contactos · Suscripciones · Actividad.
@@ -2113,15 +2113,29 @@ function TabReuniones({ companyId, principal, contactos, flash }: any) {
                   {(e === 'asistio' || e === 'no_asistio') && (r.grabacion_url || minutaLlena(r.minuta)) && <button style={{ ...D.btnG, padding: '5px 11px', fontSize: '0.72rem' }} onClick={() => setCerrando(r)}>Editar</button>}
                 </div>
               </div>
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <span style={{ ...D.badge, background: st.bg, color: st.color }}>{st.label}</span>
-                <div style={{ display: 'flex', gap: 5, justifyContent: 'flex-end', marginTop: 7, flexWrap: 'wrap' }}>
-                  {siguientes(r.estado, futura).slice(0, 3).map(sig => (
-                    <button key={sig} onClick={() => marcar(r, sig)}
-                      style={{ ...D.btnG, padding: '4px 9px', fontSize: '0.7rem', color: sig === 'no_asistio' ? '#C0554E' : sig === 'asistio' ? '#1E8A63' : '#555' }}>
-                      {sig === 'asistio' ? 'Asistió' : sig === 'no_asistio' ? 'No llegó' : ESTADOS[sig].label}
-                    </button>
-                  ))}
+              {/* El estado se elige AQUÍ, sobre la reunión que ya existe: en el
+                  alta no hay nada que confirmar todavía. Los cuatro se ven
+                  siempre —también los que no aplican— para que se lea de un
+                  golpe en cuál está y a cuál se puede mover. */}
+              <div style={{ flexShrink: 0, width: 236 }}>
+                <div style={{ display: 'flex', border: '1.5px solid #e8e6ee', borderRadius: 9, overflow: 'hidden' }}>
+                  {(['agendada', 'confirmada', 'asistio', 'no_asistio'] as const).map((sig, i) => {
+                    const on = e === sig;
+                    const tinte = sig === 'asistio' ? '#4FBF95' : sig === 'no_asistio' ? '#EF7A72' : '#9B8CFA';
+                    return (
+                      <button key={sig} title={ESTADOS[sig].label} onClick={() => { if (!on) marcar(r, sig); }}
+                        style={{ flex: 1, border: 'none', borderLeft: i ? '1px solid #f1f0f5' : 'none', background: on ? tinte : '#fff', color: on ? '#fff' : '#8a8a92', padding: '7px 2px', fontSize: '0.66rem', fontWeight: on ? 800 : 600, cursor: on ? 'default' : 'pointer', fontFamily: 'inherit', lineHeight: 1.25 }}>
+                        {sig === 'asistio' ? 'Asistió' : sig === 'no_asistio' ? 'No llegó' : sig === 'agendada' ? 'Agendada' : 'Confirmada'}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 5 }}>
+                  {(e === 'cancelada' || e === 'reagendada') && <span style={{ ...D.badge, background: st.bg, color: st.color }}>{st.label}</span>}
+                  {e !== 'cancelada' && (
+                    <button onClick={() => marcar(r, 'cancelada')}
+                      style={{ border: 'none', background: 'none', fontSize: '0.68rem', fontWeight: 600, color: '#a5a2af', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>Cancelar reunión</button>
+                  )}
                 </div>
               </div>
             </div>
@@ -2149,7 +2163,7 @@ function TabReuniones({ companyId, principal, contactos, flash }: any) {
       {agendando && (
         <AgendarReunion companyId={companyId} tipos={tipos} principal={principal} contactos={contactos || []}
           onCerrar={() => setAgendando(false)}
-          onListo={(paraMinuta: any) => { setAgendando(false); cargar(); flash('Reunión guardada'); if (paraMinuta) setCerrando(paraMinuta); }} />
+          onListo={() => { setAgendando(false); cargar(); flash('Reunión agendada'); }} />
       )}
       {cerrando && (
         <MinutaReunion reunion={cerrando}
@@ -2177,10 +2191,6 @@ function AgendarReunion({ companyId, tipos, principal, contactos, onCerrar, onLi
   // más común, pero muchas veces se sienta el encargado de sucursal o el
   // contador: dejarlo fijo obligaría a registrar una reunión con quien no
   // estuvo.
-  // Muchas reuniones se capturan DESPUÉS de que pasaron, así que el estado se
-  // elige al agendar: obligar a guardar como "agendada" y volver a entrar a
-  // marcar que sí llegó es capturar lo mismo dos veces.
-  const [estado, setEstado] = useState<string>('agendada');
   const [conId, setConId] = useState<string>(principal?.id || 'otro');
   const [otroNombre, setOtroNombre] = useState('');
   const [otroEmail, setOtroEmail] = useState('');
@@ -2204,7 +2214,7 @@ function AgendarReunion({ companyId, tipos, principal, contactos, onCerrar, onLi
     const r = await fetch('/api/scheduling/reuniones', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        event_type_id: tipoId, fecha, hora_inicio: hora, duracion_minutos: dur, estado,
+        event_type_id: tipoId, fecha, hora_inicio: hora, duracion_minutos: dur,
         company_id: companyId,
         contact_id: conId === 'otro' ? null : conId,
         invitee_nombre: nombreCon || null,
@@ -2214,8 +2224,7 @@ function AgendarReunion({ companyId, tipos, principal, contactos, onCerrar, onLi
     }).then(x => x.json()).catch(() => null);
     setGuardando(false);
     if (!r || r.error) { setError(r?.error || 'No se pudo agendar.'); return; }
-    const tipo = lista.find((t: any) => t.id === tipoId) || null;
-    onListo(estado === 'asistio' && tipo?.requiere_minuta !== false ? { ...r.data, event_types: tipo } : null);
+    onListo();
   }
 
   return (
@@ -2236,20 +2245,6 @@ function AgendarReunion({ companyId, tipos, principal, contactos, onCerrar, onLi
                 {t.nombre.replace(/^Reunión de |^Sesión de /i, '')}
               </button>
             ))}
-          </div>
-
-          <div style={{ ...D.lbl, textTransform: 'uppercase', fontSize: '0.62rem', letterSpacing: '.05em' }}>Estado</div>
-          <div style={{ display: 'flex', border: '1.5px solid #e4dffb', borderRadius: 9, overflow: 'hidden', marginBottom: 12 }}>
-            {(['agendada', 'confirmada', 'asistio', 'no_asistio'] as const).map((e, i) => {
-              const on = estado === e;
-              const tinte = e === 'asistio' ? '#4FBF95' : e === 'no_asistio' ? '#EF7A72' : '#9B8CFA';
-              return (
-                <button key={e} type="button" onClick={() => setEstado(e)}
-                  style={{ flex: 1, border: 'none', borderLeft: i ? '1px solid #efeafd' : 'none', background: on ? tinte : '#fdfcff', color: on ? '#fff' : '#6b6b74', padding: '9px 4px', fontSize: '0.73rem', fontWeight: on ? 800 : 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  {ESTADOS[e].label}
-                </button>
-              );
-            })}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginBottom: 10 }}>
@@ -2288,9 +2283,7 @@ function AgendarReunion({ companyId, tipos, principal, contactos, onCerrar, onLi
             <button onClick={onCerrar} style={D.btnG}>Cancelar</button>
           </div>
           <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 9, lineHeight: 1.45 }}>
-            {estado === 'asistio' ? 'Al guardarla se abre la minuta para dejar por escrito lo que se acordó.'
-              : estado === 'no_asistio' ? 'Cuenta para la alerta por inasistencias de la cuenta.'
-              : 'No se le manda correo al cliente: esta pantalla registra lo que ya se acordó, no le pide que confirme.'}
+            Queda como agendada y sin correo al cliente: la asistencia se marca en la lista, cuando la reunión ya existe.
           </div>
         </div>
       </div>
