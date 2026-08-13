@@ -6,6 +6,7 @@ import ClienteDrawer360 from './ClienteDrawer360';
 import NuevoClienteModal from './NuevoClienteModal';
 import PipelineKanban from './PipelineKanban';
 import TablaEnterprise, { type ColDef, type QuickDef, type VistaDef } from './TablaEnterprise';
+import FiltroRenovacion, { type RangoRenov } from './FiltroRenovacion';
 import { useToast, Toast, logStageChange } from './crmHelpers';
 import { SENAL_LABEL } from '../../../lib/crm/senales';
 import { useIsMobile } from '../../../lib/ui/mobile';
@@ -84,6 +85,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { props: campos } = useCampos('company');
+  const [rangoRenov, setRangoRenov] = useState<RangoRenov>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [showNuevo, setShowNuevo] = useState(false);
   const [modo, setModo] = useState<'tabla' | 'kanban'>('tabla');
@@ -172,7 +174,15 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
   }
 
   /* ── Definición del datatable estándar ── */
-  const dataEtiquetada = data;
+  // Periodo de renovación: se aplica sobre la PRÓXIMA FACTURA, que es la que
+  // contesta "¿a quién le toca pagar en este periodo?". Un cliente sin fecha
+  // —sin suscripción activa— no puede caer dentro de ningún rango.
+  const dataEtiquetada = rangoRenov
+    ? data.filter((c: any) => {
+        const f = String(c.proxima_factura || '').slice(0, 10);
+        return !!f && f >= rangoRenov.desde && f <= rangoRenov.hasta;
+      })
+    : data;
 
   const cols: ColDef[] = [
     {
@@ -537,6 +547,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           quick={quick}
           vistasBase={vistasBase}
           sinVistas
+          quickExtra={<FiltroRenovacion valor={rangoRenov} onCambio={setRangoRenov} />}
           searchText={c => [c.nombre_comercial, c.nombre, ...(c.cuentas || [c.sacs_account]), c.contacto?.nombre, c.contacto?.email, c.contacto?.whatsapp].filter(Boolean).join(' ')}
           searchPlaceholder="Buscar cliente, cuenta o contacto…"
           minWidth={1400}

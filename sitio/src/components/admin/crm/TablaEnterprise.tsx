@@ -163,7 +163,7 @@ function FiltroDesplegable({ qd, valor, onElegir, isMobile }: { qd: QuickDef; va
 export default function TablaEnterprise({
   tabla, data, cols, quick = [], vistasBase, searchText, searchPlaceholder = 'Buscar…',
   actions, onRowClick, rowKey = (r: any) => r.id, customBody, mobileCard, minWidth = 1080, emptyMsg = 'Sin resultados con esos filtros.',
-  sinVistas = false, headerTint = false,
+  sinVistas = false, headerTint = false, quickExtra,
 }: {
   tabla: string;
   data: any[];
@@ -178,6 +178,9 @@ export default function TablaEnterprise({
    *  tabla a media pantalla no se distinga dónde termina el encabezado —y este
    *  se queda pegado arriba al desplazar. */
   headerTint?: boolean;
+  /** Filtro propio de la pantalla, al lado de los rápidos (p. ej. un rango de
+   *  fechas, que un <select> de una sola opción no puede expresar). */
+  quickExtra?: ReactNode;
   searchText: (row: any) => string;
   searchPlaceholder?: string;
   actions?: any;
@@ -354,6 +357,7 @@ export default function TablaEnterprise({
         <>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
             {quickSelects}
+            {quickExtra}
             <button style={{ ...E.btn, fontWeight: 700, borderColor: conds.length ? '#1a1a1a' : '#e2e4e9' }} onClick={() => setShowFiltros(!showFiltros)}>
               <SlidersHorizontal size={15} strokeWidth={2} />
               Más filtros
@@ -371,6 +375,7 @@ export default function TablaEnterprise({
           headerActions={activeFiltros > 0 ? <button style={{ ...E.btn, height: 36 }} onClick={() => { setQuickVals({}); setConds([]); setPage(0); }}>Limpiar</button> : undefined}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {quickSelects}
+            {quickExtra}
             <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#8a8f98', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 4 }}>Condiciones avanzadas</div>
             {condsPanel}
             <button style={{ ...E.btnDark, height: 48, justifyContent: 'center', marginTop: 4 }} onClick={() => setShowFiltrosSheet(false)}>Ver {filtrados.length} resultado{filtrados.length === 1 ? '' : 's'}</button>
