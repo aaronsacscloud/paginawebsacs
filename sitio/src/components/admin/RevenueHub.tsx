@@ -1056,7 +1056,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               style={{ ...S.btn, background: M.violeta, color: '#fff', padding: '8px 18px', fontWeight: 700 }}>+ Nueva cotización</button>
             {/* El dashboard cierra la fila y lleva el peso: es donde se empieza el día. */}
             <button onClick={() => setDashCot(true)}
-              style={{ ...S.btn, background: M.azul, color: '#fff', padding: '8px 16px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              style={{ ...S.btn, background: '#fff', color: M.azulTinta, border: `1.5px solid ${M.azul}`, borderRadius: 12, padding: '9px 20px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="4" width="3" height="14"/></svg>
               Dashboard
             </button>
