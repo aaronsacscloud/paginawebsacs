@@ -55,6 +55,9 @@ const D = {
   input: { padding: '7px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.83rem', outline: 'none', width: '100%', boxSizing: 'border-box' as const },
   lbl: { fontSize: '0.7rem', fontWeight: 700, color: '#888', marginBottom: 3, display: 'block' } as const,
   btn: { padding: '8px 15px', border: 'none', borderRadius: 9, fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', background: '#9B8CFA', color: '#fff' } as const,
+  mi: { display: 'block', width: '100%', textAlign: 'left' as const, border: 'none', background: 'transparent', borderRadius: 8, padding: '8px 10px', fontSize: '0.79rem', fontWeight: 600, color: '#1a1a1a', cursor: 'pointer', fontFamily: 'inherit' } as const,
+  miSub: { display: 'block', fontSize: '0.66rem', fontWeight: 400, color: '#a5a2af', marginTop: 1 } as const,
+  miSep: { height: 1, background: '#f1f1f5', margin: '5px 4px' } as const,
   btnAzul: { padding: '7px 13px', border: '1.5px solid #7DA6F5', borderRadius: 9, fontSize: '0.77rem', fontWeight: 700, cursor: 'pointer', background: '#fff', color: '#2C5FC4' } as const,
   btnG: { padding: '7px 12px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', background: '#fff', color: '#333' } as const,
   badge: { display: 'inline-block', padding: '2px 9px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap' as const } as const,
@@ -1276,6 +1279,7 @@ const ES_CORREO = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 function TabSubs({ companyId, subs, reload, flash, principal }: any) {
   const [archivosSub, setArchivosSub] = useState<any>(null);
+  const [menuSub, setMenuSub] = useState<string | null>(null);
   // Estado de cuenta CONSOLIDADO del cliente (todas sus subs + próximo a pagar).
   const ecUrl = typeof window !== 'undefined' ? `${window.location.origin}/estado-cuenta/cliente/${companyId}` : '';
   function abrirEstadoCuenta() {
@@ -1672,37 +1676,49 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                       <td style={D.td}>{s.estado === 'pausada' ? <span style={{ color: '#a06600' }}>en pausa</span> : fmtDate(s.proxima_factura)}</td>
                       <td style={D.td}>{s.pagos_realizados || 0}</td>
                       <td style={D.td}>{money(s.total_pagado)}</td>
-                      <td style={D.td}>
-                        {s.estado !== 'cancelada' && s.estado !== 'pausada' && (
-                          <button style={{ ...D.btnG, marginRight: 4, color: '#009ee3', borderColor: '#b9e4f7', fontWeight: 700 }}
-                            title="Genera el link de pago del periodo y lo deja listo para WhatsApp"
-                            disabled={cobrando === s.id} onClick={() => cobrarMP(s)}>{cobrando === s.id ? '…' : '💳'}</button>
-                        )}
-                        {s.estado !== 'cancelada' && s.estado !== 'pausada' && s.ciclo !== 'vitalicia' && !s.mp_preapproval_id && (
-                          <button style={{ ...D.btnG, marginRight: 4, color: '#4B7BE5', borderColor: '#c9d8f7', fontWeight: 700 }}
-                            title="Domiciliar: crea el cargo recurrente en Mercado Pago para que se le cobre solo cada periodo"
-                            disabled={cobrando === s.id} onClick={() => domiciliarMP(s)}>🔁</button>
-                        )}
-                        {s.mp_preapproval_id && (
+                      <td style={{ ...D.td, textAlign: 'right' as const, position: 'relative' as const }}>
+                        {/* Un menú en vez de siete iconos sueltos. Con siete no
+                            cabían en la celda, se partían en dos renglones y
+                            había que adivinar qué hacía cada dibujo. */}
+                        <button style={{ ...D.btnG, padding: '5px 10px' }} title="Acciones"
+                          onClick={e => { e.stopPropagation(); setMenuSub(menuSub === s.id ? null : s.id); }}>⋮</button>
+                        {menuSub === s.id && (
                           <>
-                            <button style={{ ...D.btnG, marginRight: 4, color: '#1A8F7A', borderColor: '#bfe8df', fontWeight: 700 }}
-                              title="Traer al historial los cobros que Mercado Pago ya le hizo antes de vincularlo"
-                              disabled={cobrando === s.id} onClick={() => importarHistorial(s)}>⬇</button>
-                            <button style={{ ...D.btnG, marginRight: 4, color: '#E54B4B', borderColor: '#f0c4bd', fontWeight: 700 }}
-                              title="Dejar de cobrarle en Mercado Pago (cancelar, pausar o reanudar)"
-                              disabled={cobrando === s.id} onClick={() => cancelarMP(s)}>⏹</button>
+                            <div onClick={() => setMenuSub(null)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
+                            <div style={{ position: 'absolute', right: 8, top: 38, zIndex: 41, width: 254, background: '#fff', border: '1px solid #e6e6ea', borderRadius: 11, boxShadow: '0 12px 32px rgba(16,24,40,.14)', padding: 6, textAlign: 'left' as const }}>
+                              {s.estado !== 'cancelada' && s.estado !== 'pausada' && (
+                                <button style={D.mi} disabled={cobrando === s.id} onClick={() => { setMenuSub(null); cobrarMP(s); }}>
+                                  Generar link de cobro<small style={D.miSub}>del periodo, listo para WhatsApp</small>
+                                </button>
+                              )}
+                              {s.estado !== 'cancelada' && s.estado !== 'pausada' && s.ciclo !== 'vitalicia' && !s.mp_preapproval_id && (
+                                <button style={D.mi} disabled={cobrando === s.id} onClick={() => { setMenuSub(null); domiciliarMP(s); }}>
+                                  Domiciliar en Mercado Pago<small style={D.miSub}>que se le cobre solo cada periodo</small>
+                                </button>
+                              )}
+                              {s.mp_preapproval_id && (<>
+                                <button style={D.mi} disabled={cobrando === s.id} onClick={() => { setMenuSub(null); importarHistorial(s); }}>
+                                  Importar historial de cobros<small style={D.miSub}>los que Mercado Pago ya le hizo</small>
+                                </button>
+                                <button style={{ ...D.mi, color: '#C0554E' }} disabled={cobrando === s.id} onClick={() => { setMenuSub(null); cancelarMP(s); }}>
+                                  Dejar de cobrar en Mercado Pago
+                                </button>
+                              </>)}
+                              <div style={D.miSep} />
+                              <button style={D.mi} onClick={() => { setMenuSub(null); setArchivosSub(s); }}>
+                                Documentos y contratos{Array.isArray(s.archivos) && s.archivos.length ? ` (${s.archivos.length})` : ''}
+                              </button>
+                              <button style={D.mi} onClick={() => { setMenuSub(null); setPausaSub(s); }}>
+                                {s.estado === 'pausada' ? 'Reactivar suscripción' : 'Pausar suscripción'}
+                                <small style={D.miSub}>{s.estado === 'pausada' ? 'pide desde cuándo quedó activa' : 'deja de sumar ARR; pide el motivo'}</small>
+                              </button>
+                              <button style={D.mi} onClick={() => { setMenuSub(null); setEditId(s.id); setF({ nombre_plan: s.nombre_plan || '', plan_id: s.plan_id || '', plan_slug: (planes.find((p: any) => p.id && p.id === s.plan_id) || {}).slug || '', ciclo: s.ciclo || 'anual', estado: s.estado || 'activa', precio: s.precio ?? s.arr ?? '', proxima_factura: s.proxima_factura || '' }); }}>
+                                Editar suscripción
+                              </button>
+                            </div>
                           </>
                         )}
-                        <button style={{ ...D.btnG, marginRight: 4, color: s.estado === 'pausada' ? '#1A8F7A' : '#a06600', borderColor: s.estado === 'pausada' ? '#bfe8df' : '#f0dcb8' }}
-                          title={s.estado === 'pausada' ? 'Reactivar: pide desde cuándo quedó activa y cuándo se le cobra' : 'Pausar: deja de sumar ARR; pide el motivo y qué esperamos del cliente'}
-                          onClick={() => setPausaSub(s)}>{s.estado === 'pausada' ? '▶' : '⏸'}</button>
-                        {/* Contratos y anexos de ESTA suscripción, no del
-                            cliente entero: el contrato es del servicio que se
-                            firmó, y una cuenta puede tener varios. */}
-                        <button style={{ ...D.btnG, marginRight: 4, color: '#5B4BD6', borderColor: '#ddd6fb', fontWeight: 700 }}
-                          title="Contratos y documentos de esta suscripción"
-                          onClick={() => setArchivosSub(s)}>📎{Array.isArray(s.archivos) && s.archivos.length ? ` ${s.archivos.length}` : ''}</button>
-                        <button style={D.btnG} onClick={() => { setEditId(s.id); setF({ nombre_plan: s.nombre_plan || '', plan_id: s.plan_id || '', plan_slug: (planes.find((p: any) => p.id && p.id === s.plan_id) || {}).slug || '', ciclo: s.ciclo || 'anual', estado: s.estado || 'activa', precio: s.precio ?? s.arr ?? '', proxima_factura: s.proxima_factura || '' }); }}>✏️</button></td>
+                      </td>
                     </tr>
                   )
                 ))}
@@ -2221,13 +2237,18 @@ function TabOportunidades({ companyId, co, principal, subs = [], flash, reload }
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14, alignItems: 'center' }}>
+      {/* El botón encabeza la pestaña, no compite con las tarjetas: metido
+          entre ellas se leía como una más y quedaba a distinta altura. */}
+      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+        <div style={{ ...D.hM, marginBottom: 0, flex: 1 }}>Oportunidades del cliente</div>
+        <button style={D.btn} onClick={() => setShowNew(true)}>+ Nueva oportunidad</button>
+      </div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14, alignItems: 'stretch' }}>
         <div style={{ ...D.kpi, borderLeft: '3px solid #7DA6F5' }}><div style={D.kl}>En pipeline</div><div style={D.kv}>{money(pipeline)}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{abiertas.length} abierta{abiertas.length === 1 ? '' : 's'}</div></div>
         <div style={{ ...D.kpi, borderLeft: '3px solid #4FBF95' }}><div style={D.kl}>MRR / ARR ganado</div><div style={{ ...D.kv, color: '#1E8A63' }}>{money(mrrGanado)}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{money(mrrGanado * 12)} ARR</div></div>
         <div style={{ ...D.kpi, borderLeft: '3px solid #4FBF95' }}><div style={D.kl}>Pago único ganado</div><div style={{ ...D.kv, color: '#1E8A63' }}>{money(unicoGanado)}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>no suma al ARR</div></div>
         <div style={{ ...D.kpi, borderLeft: '3px solid #9B8CFA' }}><div style={D.kl}>Se pagan</div><div style={D.kv}>{resueltas ? pctGana + '%' : '—'}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{ganadas.length} de {resueltas} resueltas</div></div>
         <div style={{ ...D.kpi, borderLeft: '3px solid #EF7A72' }}><div style={D.kl}>Rechazadas</div><div style={{ ...D.kv, color: resueltas && pctPierde > 0 ? '#C0554E' : '#1a1a1a' }}>{resueltas ? pctPierde + '%' : '—'}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{perdidas.length}{montoPerdido > 0 ? ' · ' + money(montoPerdido) : ''}</div></div>
-        <button style={{ ...D.btn, marginLeft: 'auto', alignSelf: 'center' }} onClick={() => setShowNew(true)}>+ Nueva oportunidad</button>
       </div>
 
       {deals.length === 0 ? (
@@ -2291,12 +2312,6 @@ function TabOportunidades({ companyId, co, principal, subs = [], flash, reload }
                   <div style={{ fontSize: '0.78rem', color: '#555', marginTop: 1 }}>{s.detalle}</div>
                   <div style={{ fontSize: '0.78rem', color: '#16181d', marginTop: 3 }}><b>Acción:</b> {s.accion}</div>
                 </div>
-                {/* La señal dejaba de servir en cuanto se leía: había que
-                    acordarse de ir a crear la oportunidad a mano. */}
-                <button style={s.nivel === 'riesgo' ? D.btnAzul : D.btn}
-                  onClick={() => setShowNew(true)}>
-                  {s.nivel === 'riesgo' ? 'Atender' : 'Crear oportunidad'}
-                </button>
               </div>
             ))}
           </div>
