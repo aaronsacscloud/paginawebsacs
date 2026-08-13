@@ -1279,7 +1279,10 @@ const ES_CORREO = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 function TabSubs({ companyId, subs, reload, flash, principal }: any) {
   const [archivosSub, setArchivosSub] = useState<any>(null);
-  const [menuSub, setMenuSub] = useState<string | null>(null);
+  // El menú se ancla con position FIXED y coordenadas del botón: la tabla vive
+  // dentro de un contenedor con desplazamiento horizontal, y eso recorta
+  // cualquier panel absoluto — por eso solo se veía la primera opción.
+  const [menuSub, setMenuSub] = useState<{ id: string; x: number; y: number } | null>(null);
   // Estado de cuenta CONSOLIDADO del cliente (todas sus subs + próximo a pagar).
   const ecUrl = typeof window !== 'undefined' ? `${window.location.origin}/estado-cuenta/cliente/${companyId}` : '';
   function abrirEstadoCuenta() {
@@ -1681,11 +1684,19 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
                             cabían en la celda, se partían en dos renglones y
                             había que adivinar qué hacía cada dibujo. */}
                         <button style={{ ...D.btnG, padding: '5px 10px' }} title="Acciones"
-                          onClick={e => { e.stopPropagation(); setMenuSub(menuSub === s.id ? null : s.id); }}>⋮</button>
-                        {menuSub === s.id && (
+                          onClick={e => {
+                            e.stopPropagation();
+                            if (menuSub?.id === s.id) { setMenuSub(null); return; }
+                            const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                            // Si no cabe hacia abajo, se abre hacia arriba.
+                            const alto = 300;
+                            const y = r.bottom + alto > window.innerHeight ? Math.max(8, r.top - alto) : r.bottom + 6;
+                            setMenuSub({ id: s.id, x: r.right, y });
+                          }}>⋮</button>
+                        {menuSub?.id === s.id && (
                           <>
-                            <div onClick={() => setMenuSub(null)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
-                            <div style={{ position: 'absolute', right: 8, top: 38, zIndex: 41, width: 254, background: '#fff', border: '1px solid #e6e6ea', borderRadius: 11, boxShadow: '0 12px 32px rgba(16,24,40,.14)', padding: 6, textAlign: 'left' as const }}>
+                            <div onClick={() => setMenuSub(null)} style={{ position: 'fixed', inset: 0, zIndex: 1400 }} />
+                            <div style={{ position: 'fixed', left: (menuSub?.x ?? 0) - 254, top: menuSub?.y ?? 0, zIndex: 1401, width: 254, background: '#fff', border: '1px solid #e6e6ea', borderRadius: 11, boxShadow: '0 12px 32px rgba(16,24,40,.18)', padding: 6, textAlign: 'left' as const }}>
                               {s.estado !== 'cancelada' && s.estado !== 'pausada' && (
                                 <button style={D.mi} disabled={cobrando === s.id} onClick={() => { setMenuSub(null); cobrarMP(s); }}>
                                   Generar link de cobro<small style={D.miSub}>del periodo, listo para WhatsApp</small>
