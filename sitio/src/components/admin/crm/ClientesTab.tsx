@@ -191,7 +191,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
 
   const cols: ColDef[] = [
     {
-      key: 'cliente', label: 'Cliente', width: 188, fija: true, ftype: 'text',
+      key: 'cliente', label: 'Cliente', width: 212, fija: true, ftype: 'text',
       // El cliente es la EMPRESA. El título salía del contacto, así que un
       // renglón decía "Oscar Rivera" cuando la cuenta es Super Carnes Rivera.
       val: c => (c.nombre_comercial || c.sacs_account || c.nombre || '').toLowerCase(),
@@ -215,7 +215,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       },
     },
     {
-      key: 'contacto', label: 'Contacto', width: 116, ftype: 'text',
+      key: 'contacto', label: 'Contacto', width: 132, ftype: 'text',
       val: c => (c.contacto?.nombre || '').toLowerCase(),
       render: c => (
         <td style={{ ...T.td, ...T.ell }}>
@@ -229,7 +229,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
     {
       // Correo y teléfono aparte: juntos con el nombre, la columna se saturaba
       // y no se leía ninguno de los tres.
-      key: 'datos_contacto', label: 'Datos de contacto', width: 174, ftype: 'text',
+      key: 'datos_contacto', label: 'Datos de contacto', width: 202, ftype: 'text',
       val: c => [c.contacto?.email, c.contacto?.whatsapp, c.contacto?.telefono].filter(Boolean).join(' '),
       render: c => (
         <td style={T.td} onClick={e => e.stopPropagation()}>
@@ -257,7 +257,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       ),
     },
     {
-      key: 'plan', label: 'Plan', width: 104, ftype: 'select',
+      key: 'plan', label: 'Plan', width: 142, ftype: 'select',
       options: Object.entries(PLAN_BADGE).map(([v, b]) => ({ v, l: b.label })),
       val: c => c.plan || '',
       // Solo el tipo de suscripción. El estado de la cuenta vivía pegado abajo
@@ -266,14 +266,16 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       render: c => {
         const b = PLAN_BADGE[c.plan] || null;
         return (
-          <td style={{ ...T.td, ...T.ell }}>
-            {b ? <span style={{ ...T.badge, background: b.bg, color: b.color }}>{b.label}</span> : <span style={{ color: '#c4c8cf' }}>—</span>}
+          <td style={T.td}>
+            {/* Sin ellipsis: "Soporte premium" salía recortado a media palabra.
+                La pastilla manda el ancho, no al revés. */}
+            {b ? <span style={{ ...T.badge, background: b.bg, color: b.color, whiteSpace: 'nowrap' as const }}>{b.label}</span> : <span style={{ color: '#c4c8cf' }}>—</span>}
           </td>
         );
       },
     },
     {
-      key: 'renovacion', label: 'Renovación', width: 98, ftype: 'date', val: c => c.proxima_factura || '',
+      key: 'renovacion', label: 'Renovación', width: 108, ftype: 'date', val: c => c.proxima_factura || '',
       render: c => {
         const f = c.proxima_factura;
         if (!f) return <td style={T.td}><span style={{ color: '#c4c8cf' }}>—</span></td>;
@@ -293,7 +295,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       // Independiente de la renovación: una cuenta puede renovar en diciembre y
       // traer la mensualidad de este mes vencida. Es la columna que contesta
       // "¿a quién hay que cobrarle hoy?" sin abrir a nadie.
-      key: 'estado_pago', label: 'Estado de pago', width: 116, ftype: 'select',
+      key: 'estado_pago', label: 'Estado de pago', width: 128, ftype: 'select',
       options: [{ v: 'corriente', l: 'Al corriente' }, { v: 'proximo', l: 'Pago próximo' }, { v: 'vencido', l: 'Pago vencido' }],
       val: c => c.estado_pago || '',
       render: c => {
@@ -316,7 +318,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       },
     },
     {
-      key: 'arr', label: 'ARR', width: 100, num: true, ftype: 'number', val: c => Number(c.arr || 0),
+      key: 'arr', label: 'ARR', width: 108, num: true, ftype: 'number', val: c => Number(c.arr || 0),
       render: c => (
         <td style={{ ...T.td, ...T.num, fontWeight: 800 }}>
           {money(c.arr)}
@@ -329,7 +331,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       ),
     },
     {
-      key: 'pagado', label: 'Pagado', width: 94, num: true, ftype: 'number', val: c => Number(c.total_pagado || 0),
+      key: 'pagado', label: 'Pagado', width: 102, num: true, ftype: 'number', val: c => Number(c.total_pagado || 0),
       render: c => (
         <td style={{ ...T.td, ...T.num }}>
           <span style={{ fontWeight: 700 }}>{money(c.total_pagado)}</span>
@@ -343,7 +345,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       // salud en una sola columna llamada "Actividad" que en realidad mostraba
       // la salud; así no se veía el caso importante — el cliente que paga
       // puntual y lleva 41 días sin vender.
-      key: 'actividad', label: 'Actividad', width: 104, ftype: 'number',
+      key: 'actividad', label: 'Actividad', width: 114, ftype: 'number',
       val: c => (c.dias_sin_venta == null ? 99999 : Number(c.dias_sin_venta)),
       render: c => {
         const d = c.dias_sin_venta;
@@ -359,7 +361,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       },
     },
     {
-      key: 'ventas30', label: 'Ventas 30d', width: 106, num: true, ftype: 'number', val: c => Number(c.total_30d || 0),
+      key: 'ventas30', label: 'Ventas 30d', width: 118, num: true, ftype: 'number', val: c => Number(c.total_30d || 0),
       render: c => (
         <td style={{ ...T.td, ...T.num }}>
           {c.total_30d != null || c.ventas_30d != null ? (
@@ -377,7 +379,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       // adopción, equipo, tendencia y crecimiento) pero vivía escondido junto a
       // la actividad. Aquí es su propia columna, con la barra que deja
       // compararlos de un vistazo.
-      key: 'salud', label: 'Salud', width: 112, ftype: 'number',
+      key: 'salud', label: 'Salud', width: 124, ftype: 'number',
       val: c => c.health_score == null ? null : Number(c.health_score),
       render: c => {
         const h = c.health_score;
@@ -402,7 +404,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
     {
       // Cómo se le cobra. En la lista y no solo en la ficha: es lo que contesta
       // "¿a cuántos les cobro a mano?" sin abrir 218 clientes uno por uno.
-      key: 'cobro', label: 'Cobro', width: 88, ftype: 'select',
+      key: 'cobro', label: 'Cobro', width: 96, ftype: 'select',
       options: [{ v: 'auto', l: 'Automático (MP)' }, { v: 'manual', l: 'Manual' }, { v: 'rechazo', l: 'Con rechazo' }, { v: 'desfase', l: 'Con desfase' }],
       val: c => c.mp?.rechazos ? 'rechazo' : c.mp?.desfase ? 'desfase' : c.mp?.domiciliadas ? 'auto' : 'manual',
       render: c => {
@@ -432,7 +434,7 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
       },
     },
     {
-      key: 'senal', label: 'Señal', width: 100, ftype: 'select',
+      key: 'senal', label: 'Señal', width: 112, ftype: 'select',
       options: Object.keys(SENAL_LABEL).map(t => ({ v: t, l: SENAL_LABEL[t] })),
       val: c => c.senal_peso || 0,     // ordena por urgencia/valor
       render: c => (
@@ -499,7 +501,9 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           : ftype === 'select' ? (p.tipo === 'booleano' ? (crudo(c) === true ? 'si' : crudo(c) === false ? 'no' : '') : (crudo(c) ?? ''))
           : ftype === 'date' ? (crudo(c) || '')
           : texto(c).toLowerCase(),
-        render: (c: any) => <td style={{ ...T.td, ...T.ell }} title={texto(c) || undefined}>{texto(c) || <span style={{ color: '#ddd' }}>—</span>}</td>,
+        // SIN render a propósito: eran las únicas columnas sin ancho asignado,
+        // así que la tabla las aplastaba a cero y sus cinco encabezados se
+        // encimaban en un borrón gris. Siguen en "Más filtros" y en la ficha.
       };
     }),
   ];
@@ -619,7 +623,8 @@ export default function ClientesTab({ onConfig }: { onConfig?: () => void } = {}
           sinVistas
           searchText={c => [c.nombre_comercial, c.nombre, ...(c.cuentas || [c.sacs_account]), c.contacto?.nombre, c.contacto?.email, c.contacto?.whatsapp].filter(Boolean).join(' ')}
           searchPlaceholder="Buscar cliente, cuenta o contacto…"
-          minWidth={1500}
+          minWidth={1698}
+          headerTint
           onRowClick={c => { if (editId !== c.id) setDetailId(c.id); }}
           mobileCard={(c: any) => (
             <div>

@@ -98,7 +98,7 @@ const E = {
 export default function TablaEnterprise({
   tabla, data, cols, quick = [], vistasBase, searchText, searchPlaceholder = 'Buscar…',
   actions, onRowClick, rowKey = (r: any) => r.id, customBody, mobileCard, minWidth = 1080, emptyMsg = 'Sin resultados con esos filtros.',
-  sinVistas = false,
+  sinVistas = false, headerTint = false,
 }: {
   tabla: string;
   data: any[];
@@ -109,6 +109,10 @@ export default function TablaEnterprise({
    *  maneja con filtros: unas pestañas que esconden filas sin decirlo hacen que
    *  se lea una lista corta creyendo que es completa. */
   sinVistas?: boolean;
+  /** Encabezado con el lila del buscador. El gris sobre gris hace que con la
+   *  tabla a media pantalla no se distinga dónde termina el encabezado —y este
+   *  se queda pegado arriba al desplazar. */
+  headerTint?: boolean;
   searchText: (row: any) => string;
   searchPlaceholder?: string;
   actions?: any;
@@ -420,7 +424,8 @@ export default function TablaEnterprise({
                     className={ordenable ? 'te-th-sort' : undefined}
                     title={ordenable ? (activa && sort?.dir === -1 ? 'Ordenado de mayor a menor — clic para invertir' : activa ? 'Ordenado de menor a mayor — clic para invertir' : 'Clic para ordenar por ' + c.label) : undefined}
                     style={{ ...E.th, ...(c.num ? { textAlign: 'right' as const } : {}), cursor: ordenable ? 'pointer' : 'default', userSelect: 'none',
-                      ...(c.fija ? { position: 'sticky' as const, left: 0, zIndex: 3, background: '#fafafe', boxShadow: '1px 0 0 #eeedf1' } : {}) }}>
+                      ...(headerTint ? { background: '#faf8ff', color: '#6b5fa8', borderBottomColor: '#e6ddfa' } : {}),
+                      ...(c.fija ? { position: 'sticky' as const, left: 0, zIndex: 3, background: headerTint ? '#faf8ff' : '#fafafe', boxShadow: '1px 0 0 #eeedf1' } : {}) }}>
                     {c.label}
                     {ordenable && (
                       <span className={activa ? 'te-sort te-sort-on' : 'te-sort'} aria-hidden="true">
