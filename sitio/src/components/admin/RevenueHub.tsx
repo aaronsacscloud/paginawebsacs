@@ -6,6 +6,19 @@ import RegistrarPagoModal, { resumenCierre } from './crm/RegistrarPagoModal';
 import { plans as plansData } from '../../data/plans';
 import { PLANS, PLAN_PRICES, IMPL_PRICES, METODOS, COMISION_CATEGORIAS, COMISION_LABELS, COMISION_RATES, fmt, fmtDate } from '../../lib/quotes/constants';
 import { parseMeta, serializeMeta, addTimelineEvent } from '../../lib/quotes/meta';
+
+// ─── Gama del módulo: morados y un lila ───
+// El color no dice "de qué tipo es" sino QUÉ TAN AVANZADO ESTÁ: mientras más
+// oscuro, más cerca del dinero. Lila enviada · morado claro parcial · morado
+// aceptada · morado hondo cobrada.
+//
+// Sin rojo ni naranja, "vencida" sería un morado más entre morados. Se
+// distingue INVIRTIÉNDOLA —única pastilla rellena con texto blanco—: la
+// inversión interrumpe igual que un color de alerta sin salirse de la gama.
+const M = {
+  lila: '#E3A9F0', claro: '#C061E8', medio: '#9B30C4', hondo: '#6B2D82', noche: '#4A1D5C',
+  bruma: '#EDE7F4', gris: '#E5E3EA',
+} as const;
 import { PLANTILLAS_ROI, PLANES_SIN_PLANTILLA, driversParaPlanes, costoHoraParaPlanes, calcularRoi, payback, textoSupuestos, type Driver } from '../../lib/quotes/roi';
 
 // ── Cuándo la vieron ──
@@ -752,19 +765,19 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     // ─── Filter, search, sort, paginate ───
     const estadoLabels: Record<string, string> = { draft: 'Borrador', sent: 'Enviada', accepted: 'Aceptada', paid: 'Pagada', expired: 'Vencida', rejected: 'Rechazada', parcial: 'Parcial', deleted: 'Eliminado' };
     const estadoColors: Record<string, { bg: string; fg: string; dot: string }> = {
-      // El color agrupa por lo que hay que hacer, no una tinta por estado:
-      // gris = fuera de juego · ámbar = en su cancha · azul = hay compromiso ·
-      // verde = cobrado · rojo = urge hoy.
-      draft:    { bg: '#f4f5f7', fg: '#5b6472', dot: '#98a2b3' },
-      sent:     { bg: '#fdf3e3', fg: '#a15c07', dot: '#d97706' },
-      accepted: { bg: '#eaf1fd', fg: '#2c5fc4', dot: '#4B7BE5' },
-      paid:     { bg: '#e7f5ef', fg: '#0f7a56', dot: '#0f9d68' },
-      expired:  { bg: '#fdecec', fg: '#b4302f', dot: '#dc2626' },
-      rejected: { bg: '#f4f5f7', fg: '#5b6472', dot: '#98a2b3' },
-      deleted:  { bg: '#f6e9ec', fg: '#8c1d3f', dot: '#9f1239' },
-      // Derivados, no capturados: se calculan de los abonos y de las vistas, así
-      // que funcionan hacia atrás y no se pueden desincronizar.
-      parcial:  { bg: '#eaf1fd', fg: '#2c5fc4', dot: '#4B7BE5' },
+      // La intensidad ES el significado: mientras más oscuro, más cerca del
+      // dinero. Fondo aguado y punto saturado, para que se distingan a un metro
+      // sin que la tabla se vuelva un semáforo.
+      draft:    { bg: M.bruma,  fg: '#6b6480', dot: '#C9C0D8' },
+      sent:     { bg: '#fbf0fd', fg: '#8B2BAE', dot: M.lila },
+      parcial:  { bg: '#f8e9fc', fg: '#7A24A0', dot: M.claro },
+      accepted: { bg: '#f4e4fa', fg: M.hondo,  dot: M.medio },
+      paid:     { bg: '#efe3f4', fg: M.noche,  dot: M.hondo },
+      // La ÚNICA invertida. Sin rojo ni naranja no hay tono que la separe del
+      // resto: la separa el contraste. Es lo único que debe interrumpirte.
+      expired:  { bg: M.noche,  fg: '#ffffff', dot: M.lila },
+      rejected: { bg: '#f4f4f6', fg: '#6b7280', dot: '#c9c7d0' },
+      deleted:  { bg: M.gris,   fg: '#5b5568', dot: '#9a94a8' },
     };
 
     /**
@@ -1030,10 +1043,10 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
             </button>
             <button onClick={() => { setQf({ empresa: '', contacto: '', email: '', whatsapp: '', items: [], iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern', condiciones: (condicionesTpl.find((t: any) => t.es_default) || condicionesTpl[0])?.texto || 'Precios en MXN. Migracion incluida. Soporte por chat SACS y WhatsApp. Sin contratos.', ...(() => { const d = bankAccounts.find((b: any) => b.es_default) || bankAccounts[0]; return d ? { bank_account_id: d.id, mostrar_banco: true } : {}; })() }); setShowDrawer(true); }}
-              style={{ ...S.btn, background: '#4B7BE5', color: '#fff', padding: '8px 18px', fontWeight: 700 }}>+ Nueva cotización</button>
+              style={{ ...S.btn, background: M.medio, color: '#fff', padding: '8px 18px', fontWeight: 700 }}>+ Nueva cotización</button>
             {/* El dashboard cierra la fila y lleva el peso: es donde se empieza el día. */}
             <button onClick={() => setDashCot(true)}
-              style={{ ...S.btn, background: '#1a1a1a', color: '#fff', padding: '8px 16px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              style={{ ...S.btn, background: M.noche, color: '#fff', padding: '8px 16px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 7 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="4" width="3" height="14"/></svg>
               Dashboard
             </button>
@@ -1047,8 +1060,8 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10, marginBottom: 16 }}>
           {(() => {
             const k = kpis;
-            const card = (titulo: string, valor: string, sec: React.ReactNode, color = '#1a1a1a', onClick?: () => void) => (
-              <div onClick={onClick} style={{ background: '#fff', border: '1px solid #ececec', borderLeft: '3px solid #8B5CF6', padding: '14px 16px', borderRadius: 10, cursor: onClick ? 'pointer' : 'default' }}>
+            const card = (titulo: string, valor: string, sec: React.ReactNode, color = '#1a1a1a', onClick?: () => void, franja: string = M.medio) => (
+              <div onClick={onClick} style={{ background: '#fff', border: '1px solid #ececec', borderLeft: `3px solid ${franja}`, padding: '14px 16px', borderRadius: 10, cursor: onClick ? 'pointer' : 'default' }}>
                 <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.08em' }}>{titulo}</div>
                 <div style={{ fontSize: '1.375rem', fontWeight: 700, color, marginTop: 4 }}>{valor}</div>
                 <div style={{ fontSize: '0.6875rem', color: '#888', marginTop: 2 }}>{sec}</div>
@@ -1058,10 +1071,10 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             // hay mes anterior con qué comparar NO se inventa un "+100%".
             const varTxt = (v: number | null) => (v === null || v === undefined)
               ? <span style={{ color: '#bbb' }}>sin mes anterior</span>
-              : <span style={{ color: v > 0 ? '#2e7d32' : v < 0 ? '#b93333' : '#888', fontWeight: 700 }}>{v > 0 ? '↑' : v < 0 ? '↓' : '='} {Math.abs(v)}%</span>;
+              : <span style={{ color: v > 0 ? M.hondo : v < 0 ? '#a08bb0' : '#888', fontWeight: 700 }}>{v > 0 ? '↑' : v < 0 ? '↓' : '='} {Math.abs(v)}%</span>;
 
             if (!k) return [0, 1, 2, 3, 4].map(i => (
-              <div key={i} style={{ background: '#fff', border: '1px solid #ececec', borderLeft: '3px solid #8B5CF6', padding: '14px 16px', borderRadius: 10 }}>
+              <div key={i} style={{ background: '#fff', border: '1px solid #ececec', borderLeft: `3px solid ${M.bruma}`, padding: '14px 16px', borderRadius: 10 }}>
                 <div style={{ height: 9, width: '55%', background: '#f0f0f0', borderRadius: 4 }} />
                 <div style={{ height: 20, width: '70%', background: '#f0f0f0', borderRadius: 4, marginTop: 8 }} />
                 <div style={{ height: 9, width: '85%', background: '#f6f6f6', borderRadius: 4, marginTop: 8 }} />
@@ -1071,25 +1084,26 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
             return (
               <>
                 {card('Cotizado este mes', fmt(k.cotizado.monto),
-                  <>{varTxt(k.cotizado.variacion)} vs. mes anterior · Mes anterior {fmt(k.cotizado.mes_anterior)}</>)}
+                  <>{varTxt(k.cotizado.variacion)} vs. mes anterior · Mes anterior {fmt(k.cotizado.mes_anterior)}</>,
+                  '#1a1a1a', undefined, M.lila)}
                 {card('Pendiente de pago del mes', fmt(k.pendiente.monto),
                   <>{k.pendiente.activas} activas{k.pendiente.con_parcial ? ` · ${k.pendiente.con_parcial} con pago parcial` : ''}</>,
-                  k.pendiente.monto > 0 ? '#1a1a1a' : '#2e7d32',
-                  () => setQView('active'))}
+                  k.pendiente.monto > 0 ? '#1a1a1a' : M.hondo,
+                  () => setQView('active'), M.claro)}
                 {card('Pagado este mes', fmt(k.pagado.monto),
                   <>{k.pagado.cotizaciones} cotizaci{k.pagado.cotizaciones === 1 ? 'ón' : 'ones'} con pagos este mes</>,
-                  '#2e7d32', () => setQView('paid'))}
+                  M.hondo, () => setQView('paid'), M.hondo)}
                 {card('Cotizaciones activas del mes', String(k.activas.total),
-                  'Draft + enviadas + aceptadas pendientes', '#1a1a1a', () => setQView('active'))}
+                  'Draft + enviadas + aceptadas pendientes', '#1a1a1a', () => setQView('active'), M.medio)}
                 {/* Ventana de 7 días, no del mes: una cotización de marzo que
                     vence el jueves es urgente HOY. Es el único número de la
                     fila que dice a quién llamarle antes del viernes. */}
                 {card('Vencen esta semana', fmt(k.vencen?.monto || 0),
                   (k.vencen?.total || 0) === 0
                     ? 'Nada por vencer en 7 días'
-                    : <>{k.vencen.total} cotizaci{k.vencen.total === 1 ? 'ón' : 'ones'} enviada{k.vencen.total === 1 ? '' : 's'}{k.vencen.urgentes ? <span style={{ color: '#b93333', fontWeight: 700 }}> · {k.vencen.urgentes} hoy o mañana</span> : ''}</>,
-                  (k.vencen?.total || 0) > 0 ? '#b45309' : '#1a1a1a',
-                  () => setQView('expiring'))}
+                    : <>{k.vencen.total} cotizaci{k.vencen.total === 1 ? 'ón' : 'ones'} enviada{k.vencen.total === 1 ? '' : 's'}{k.vencen.urgentes ? <span style={{ color: M.noche, fontWeight: 800 }}> · {k.vencen.urgentes} hoy o mañana</span> : ''}</>,
+                  (k.vencen?.total || 0) > 0 ? M.noche : '#1a1a1a',
+                  () => setQView('expiring'), M.noche)}
               </>
             );
           })()}
@@ -1162,7 +1176,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', background: '#1a1a1a', color: '#fff', borderRadius: 8, marginBottom: 12 }}>
             <span style={{ fontSize: '0.8125rem', fontWeight: 600 }}>{qSelected.size} cotización(es) seleccionada(s)</span>
             <div style={{ flex: 1 }}></div>
-            <button onClick={bulkMarkPaid} style={{ ...S.btnSmall, background: '#e8f5e9', color: '#2e7d32', borderColor: 'transparent' }}>Marcar como pagadas</button>
+            <button onClick={bulkMarkPaid} style={{ ...S.btnSmall, background: '#efe3f4', color: M.noche, borderColor: 'transparent' }}>Marcar como pagadas</button>
             {qView === 'archivadas' ? (
               <button onClick={async () => {
                 if (!confirm(`¿Restaurar ${qSelected.size} cotización(es)? Vuelven al estado que tenían antes de archivarse.`)) return;
@@ -1729,7 +1743,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   <h3 style={S.cardTitle}>Minuta de la reunión ({(analysisResult.key_points || []).length})</h3>
                   <p style={{ fontSize: '0.6875rem', color: '#999', margin: '0 0 12px' }}>Estos puntos aparecerán en la cotización como "Minuta de la reunión"</p>
                   {(analysisResult.key_points || []).map((kp: any, i: number) => (
-                    <div key={i} style={{ background: '#f8f9fb', borderRadius: 8, padding: 12, marginBottom: 8, borderLeft: '3px solid #4B7BE5' }}>
+                    <div key={i} style={{ background: '#f8f9fb', borderRadius: 8, padding: 12, marginBottom: 8, borderLeft: `3px solid ${M.medio}` }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                         <div style={{ flex: 1 }}>
                           <input value={kp.title} onChange={e => { const kps = [...analysisResult.key_points]; kps[i] = { ...kps[i], title: e.target.value }; setAnalysisResult({ ...analysisResult, key_points: kps }); }} style={{ ...S.input, fontWeight: 700, marginBottom: 4 }} />
@@ -1915,7 +1929,7 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                     <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px dashed #e0e3eb' }}>
                       <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#555', marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.04em' }}>Puntos estructurados</div>
                       {qf.key_points.map((kp: any, i: number) => (
-                        <div key={i} style={{ background: '#fff', borderRadius: 8, padding: 10, marginBottom: 6, borderLeft: '3px solid #4B7BE5', display: 'flex', gap: 8 }}>
+                        <div key={i} style={{ background: '#fff', borderRadius: 8, padding: 10, marginBottom: 6, borderLeft: `3px solid ${M.medio}`, display: 'flex', gap: 8 }}>
                           <div style={{ flex: 1 }}>
                             <input value={kp.title} onChange={e => { const kps = [...qf.key_points]; kps[i] = { ...kps[i], title: e.target.value }; setQf({ ...qf, key_points: kps }); }} placeholder="Título" style={{ ...S.input, fontWeight: 700, fontSize: '0.75rem', marginBottom: 4 }} />
                             <input value={kp.detail} onChange={e => { const kps = [...qf.key_points]; kps[i] = { ...kps[i], detail: e.target.value }; setQf({ ...qf, key_points: kps }); }} placeholder="Detalle" style={{ ...S.input, fontSize: '0.6875rem' }} />
