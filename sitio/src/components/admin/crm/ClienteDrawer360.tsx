@@ -170,7 +170,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
             <div style={D.body}>
               {msg && <div style={{ background: '#e8f5e9', color: '#1b5e20', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: '0.8rem', fontWeight: 700 }}>{msg}</div>}
               {tab === 'resumen' && <TabResumen res={res} co={co} act={act} subs={subs} acts={data?.activities || []} reload={() => { load(); onChanged(); }} />}
-              {tab === 'info' && <TabInfoGeneral co={co} reload={() => { load(); onChanged(); }} flash={flash} />}
+              {tab === 'info' && <TabInfoGeneral co={co} subs={subs} pagos={data?.payments || []} contactos={contactos} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'sacs' && <TabSacs co={co} act={act} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'contactos' && <TabContactos companyId={companyId} contactos={contactos} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'subs' && <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />}
@@ -482,7 +482,7 @@ const MAS_DE_50 = 51;
 
 const ESTADOS_MX = ['Aguascalientes','Baja California','Baja California Sur','Campeche','Chiapas','Chihuahua','Ciudad de México','Coahuila','Colima','Durango','Estado de México','Guanajuato','Guerrero','Hidalgo','Jalisco','Michoacán','Morelos','Nayarit','Nuevo León','Oaxaca','Puebla','Querétaro','Quintana Roo','San Luis Potosí','Sinaloa','Sonora','Tabasco','Tamaulipas','Tlaxcala','Veracruz','Yucatán','Zacatecas'];
 
-function TabInfoGeneral({ co, reload, flash }: any) {
+function TabInfoGeneral({ co, subs = [], pagos = [], contactos = [], reload, flash }: any) {
   const [f, setF] = useState<any>({ nombre: co.nombre || '', rfc: co.rfc || '', razon_social: co.razon_social || '', giro: co.giro || '', sitio_web: co.sitio_web || '', ciudad: co.ciudad || '', estado_geo: co.estado_geo || '', sucursales: co.sucursales || 1, estado_cuenta: co.estado_cuenta || 'activo' });
   const [saving, setSaving] = useState(false);
   // Ciudades que ya se usaron: autocompletar con lo real evita que la misma
@@ -507,9 +507,79 @@ function TabInfoGeneral({ co, reload, flash }: any) {
       <input value={f[k]} onChange={e => setF({ ...f, [k]: e.target.value })} placeholder={ph} style={D.input} />
     </div>
   );
+  // ── Contrato: NO se captura, se deriva ──
+  // El plan se tecleaba aquí Y se elegía en la cotización, y cuando no
+  // coincidían nadie sabía cuál era el bueno. Derivado de las suscripciones y
+  // los pagos no se puede desincronizar.
+  const activas = (subs || []).filter((x: any) => x.estado === 'activa');
+  const arr = activas.reduce((a: number, x: any) => a + Number(x.arr || 0), 0);
+  const cobrado = (pagos || []).reduce((a: number, p: any) => a + Number(p.monto || 0), 0);
+  const unicos = (subs || []).filter((x: any) => /vitalicia|unico|único/i.test(String(x.ciclo || x.nombre_plan || '')))
+    .reduce((a: number, x: any) => a + Number(x.total_pagado || 0), 0);
+  const renov = activas.map((x: any) => x.proxima_factura).filter(Boolean).sort()[0] || co.fecha_renovacion || null;
+  const ciclos = Array.from(new Set(activas.map((x: any) => x.ciclo).filter(Boolean)));
+  const planes = Array.from(new Set(activas.map((x: any) => x.nombre_plan).filter(Boolean)));
+
+  // ── Qué falta para poder segmentar ──
+  // Sin esto, "filtrar por número de colaboradores" devuelve resultados
+  // incompletos y parece que el filtro está roto — que es justo lo que pasó.
+  const props = co.propiedades || {};
+  const principalC = (contactos || []).find((x: any) => /due[ñn]o/i.test(x.rol || '')) || (contactos || []).find((x: any) => x.es_principal) || (contactos || [])[0] || null;
+  const chequeo = [
+    { k: 'Nombre de la empresa', ok: !!String(co.nombre_comercial || '').trim() },
+    { k: 'Contacto', ok: !!principalC },
+    { k: 'Correo', ok: !!principalC?.email },
+    { k: 'Teléfono', ok: !!(principalC?.whatsapp || principalC?.telefono) },
+    { k: 'Giro de negocio', ok: !!props.giro_negocio },
+    { k: 'Número de colaboradores', ok: !!props.numero_colaboradores },
+    { k: 'Origen de la cuenta', ok: !!props.origen_cuenta },
+    { k: 'Tipo de acompañamiento', ok: !!props.tipo_acompanamiento },
+  ];
+  const listos = chequeo.filter(x => x.ok).length;
+  const pct = Math.round((listos / chequeo.length) * 100);
+  const faltan = chequeo.filter(x => !x.ok).map(x => x.k);
+  const dato = (k: string, v: any, color?: string) => (
+    <div style={{ flex: '1 1 130px', minWidth: 120 }}>
+      <div style={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '.06em', color: '#9c99a6' }}>{k}</div>
+      <div style={{ fontSize: '0.95rem', fontWeight: 800, marginTop: 2, color: color || '#1a1a1a' }}>{v}</div>
+    </div>
+  );
+
   return (
     <div>
       <EtapaSelector co={co} reload={reload} flash={flash} />
+
+      <div style={D.card}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+          <div style={{ ...D.h, flex: 1 }}>Contrato</div>
+          <span style={{ fontSize: '0.66rem', color: '#9c99a6' }}>se calcula de sus suscripciones y pagos</span>
+        </div>
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' as const, marginTop: 4 }}>
+          {dato('Plan', planes.length ? planes.join(' + ') : (co.plan || '—'))}
+          {dato('Ciclo', ciclos.length ? ciclos.join(' + ') : '—')}
+          {dato('Sucursales', co.sucursales || 1)}
+          {dato('Renovación', renov ? fmtDate(renov) : '—')}
+          {dato('ARR', arr > 0 ? money(arr) : '—', '#5B4BD6')}
+          {dato('Cobrado', cobrado > 0 ? money(cobrado) : '—', '#1E8A63')}
+          {unicos > 0 ? dato('Ingresos únicos', money(unicos), '#1E8A63') : null}
+        </div>
+      </div>
+
+      <div style={D.card}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ ...D.h, flex: 1, marginBottom: 0 }}>Ficha {pct}% completa</div>
+          <span style={{ width: 120, height: 6, borderRadius: 4, background: '#eef0f4', overflow: 'hidden' }}>
+            <span style={{ display: 'block', height: '100%', width: `${pct}%`, borderRadius: 4, background: pct >= 80 ? '#4FBF95' : pct >= 50 ? '#E9B949' : '#EF7A72' }} />
+          </span>
+        </div>
+        {faltan.length ? (
+          <div style={{ fontSize: '0.74rem', color: '#8a6212', marginTop: 8, lineHeight: 1.55 }}>
+            Falta capturar: <b>{faltan.join(' · ')}</b>. Sin estos datos el cliente no aparece al filtrar por ellos.
+          </div>
+        ) : (
+          <div style={{ fontSize: '0.74rem', color: '#1E8A63', marginTop: 8 }}>Todo capturado: este cliente se puede segmentar por cualquier campo.</div>
+        )}
+      </div>
       {/* Campos personalizados: información INTERNA de gestión, definida en
           Configuración. Va antes de los datos fiscales a propósito — es lo que
           se consulta para atender la cuenta, no para facturarla. */}
