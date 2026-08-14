@@ -80,8 +80,23 @@ interface RevenueHubProps {
   _hideNav?: boolean;
 }
 
+/** AA de "Aaron Araujo"; si solo hay correo, sus dos primeras letras. */
+const inicialesYo = (n?: string | null) => {
+  const t = String(n || '').trim();
+  if (!t) return '—';
+  const p = t.split(/[\s@.]+/).filter(Boolean);
+  return ((p[0]?.[0] || '') + (p[1]?.[0] || '')).toUpperCase() || t.slice(0, 2).toUpperCase();
+};
+
 export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = {}) {
   const [tab, setTab] = useState<Tab>(_initialTab || 'dashboard');
+  // Quién entró: lo pinta la sección "Datos del usuario" de Configuración.
+  const [yo, setYo] = useState<any>(null);
+  useEffect(() => {
+    let vivo = true;
+    fetch('/api/auth/yo').then(r => r.json()).then(j => { if (vivo && !j.error) setYo(j); }).catch(() => {});
+    return () => { vivo = false; };
+  }, []);
   const [dash, setDash] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [quoteForm, setQuoteForm] = useState<any>({});
@@ -3104,6 +3119,27 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
           : <QuotesView />)}
         {tab === 'config' && (
           <div>
+            {/* ── Tu perfil ──
+                La contraseña se cambia aquí y no en el pie del menú: ahí
+                convivía con "cerrar sesión" y son cosas distintas —una es un
+                ajuste, la otra una salida— con el mismo peso visual. */}
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 800, marginBottom: 16 }}>Datos del usuario</h2>
+            <div style={{ ...S.card, marginBottom: 28, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+              <span style={{ width: 42, height: 42, borderRadius: 99, background: M.violetaAgua, color: M.violetaTinta, fontSize: '0.9rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {inicialesYo(yo?.nombre || yo?.email)}
+              </span>
+              <div style={{ flex: '1 1 200px', minWidth: 0 }}>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>{yo?.nombre || '—'}</div>
+                <div style={{ fontSize: '0.8rem', color: '#777' }}>
+                  {yo?.email || 'sin correo'}{yo?.rol ? ` · ${yo.rol}` : ''}
+                </div>
+              </div>
+              <a href="/admin/cambiar-password"
+                style={{ ...S.btn, background: M.violeta, color: '#fff', padding: '8px 16px', fontWeight: 700, textDecoration: 'none', display: 'inline-block' }}>
+                Cambiar contraseña
+              </a>
+            </div>
+
             {/* Campos personalizados del cliente: información interna de
                 gestión. Va primero porque es lo que se toca seguido; el folio
                 de cotizaciones se configura una vez y no se vuelve a mirar. */}

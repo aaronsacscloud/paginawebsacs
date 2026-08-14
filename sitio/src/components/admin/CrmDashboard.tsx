@@ -61,9 +61,15 @@ const ICONS: Record<string, string> = {
 
 // El pie son SALIDAS, no destinos: mismos iconos de línea que el menú pero más
 // chicos, sobre un fondo apenas distinto. Sin emoji, como el resto del módulo.
-const ICONO_LLAVE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>';
 const ICONO_SALIR = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>';
 const ICONO_ATRAS = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>';
+/** AA de "Aaron Araujo"; si solo hay correo, sus dos primeras letras. */
+const iniciales = (n?: string | null) => {
+  const t = String(n || '').trim();
+  if (!t) return '—';
+  const p = t.split(/[\s@.]+/).filter(Boolean);
+  return ((p[0]?.[0] || '') + (p[1]?.[0] || '')).toUpperCase() || t.slice(0, 2).toUpperCase();
+};
 const pieItem = { display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' } as const;
 const pieIcono = { display: 'flex', alignItems: 'center', flexShrink: 0 } as const;
 
@@ -116,7 +122,6 @@ const NAV_SECTIONS = [
       { id: 'agenda' as Tab, label: 'Agenda', icon: 'agenda' },
       { id: 'pipelines' as Tab, label: 'Pipelines', icon: 'pipeline' },
       { id: 'cobros' as Tab, label: 'Cobro con Mercado Pago', icon: 'pagos' },
-      { id: 'config' as Tab, label: 'Configuración', icon: 'config' },
     ],
   },
 ];
@@ -149,10 +154,13 @@ export default function CrmDashboard() {
   // Compromisos con fecha vencida en TODAS las cuentas. Se pide una vez al
   // entrar: es la única cifra del menú y solo aparece cuando hay algo tarde.
   const [vencidasMenu, setVencidasMenu] = useState(0);
+  const [yo, setYo] = useState<any>(null);
   useEffect(() => {
     let vivo = true;
     fetch('/api/crm/mejoras').then(r => r.json())
       .then(j => { if (vivo) setVencidasMenu((j.vencidas || []).length); }).catch(() => {});
+    fetch('/api/auth/yo').then(r => r.json())
+      .then(j => { if (vivo && !j.error) setYo(j); }).catch(() => {});
     return () => { vivo = false; };
   }, []);
   const isMobile = useIsMobile();
@@ -409,12 +417,32 @@ export default function CrmDashboard() {
         {/* Footer */}
         {!sidebarCollapsed && (
           <div style={{
-            padding: '11px 20px 13px', borderTop: '1px solid #f2f1f6', background: '#fcfcfd',
+            padding: '11px 20px 13px', borderTop: '1px solid #ece7fa', background: '#faf8ff',
             fontSize: '0.72rem', color: '#a5a2af', display: 'flex', flexDirection: 'column', gap: 5,
           }}>
-            <a href="/admin/cambiar-password" style={{ ...pieItem, color: '#8a8a8a' }}>
-              <span style={pieIcono} dangerouslySetInnerHTML={{ __html: ICONO_LLAVE }} />Cambiar contraseña
-            </a>
+            {/* Quién entró. El día que haya más de una persona en el CRM,
+                saber con qué cuenta estás parado deja de ser un adorno. */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '2px 0 8px' }}>
+              <span style={{ width: 26, height: 26, borderRadius: 99, background: '#EEECFE', color: '#5B4BD6', fontSize: '0.66rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {iniciales(yo?.nombre || yo?.email)}
+              </span>
+              <span style={{ minWidth: 0 }}>
+                <div style={{ fontSize: '0.73rem', fontWeight: 700, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{yo?.nombre || yo?.email || '—'}</div>
+                <div style={{ fontSize: '0.62rem', color: '#a5a2af' }}>{yo?.rol || ''}</div>
+              </span>
+            </div>
+
+            {/* Configuración es un DESTINO, no una salida: va arriba de la
+                línea y se prende en lila como cualquier otro renglón. */}
+            <button onClick={() => switchTab('config' as Tab)}
+              style={{ ...pieItem, width: '100%', background: tab === 'config' ? '#EEECFE' : 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', margin: '0 -8px', padding: '7px 8px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700, color: '#5B4BD6', textAlign: 'left' }}>
+              <span style={{ ...pieIcono, color: '#9B8CFA' }} dangerouslySetInnerHTML={{ __html: ICONS.config }} />Configuración
+            </button>
+
+            {/* La línea separa el destino de las salidas: es lo que evita darle
+                a "cerrar sesión" cuando ibas a ajustes. */}
+            <div style={{ height: 1, background: '#ece7fa', margin: '7px 0 5px' }} />
+
             <button
               onClick={async () => { try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {} window.location.href = '/admin/login'; }}
               style={{ ...pieItem, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#C0554E', fontSize: '0.72rem', fontFamily: 'inherit', textAlign: 'left' }}>
