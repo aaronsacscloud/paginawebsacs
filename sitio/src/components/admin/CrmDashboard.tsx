@@ -70,7 +70,14 @@ const iniciales = (n?: string | null) => {
   const p = t.split(/[\s@.]+/).filter(Boolean);
   return ((p[0]?.[0] || '') + (p[1]?.[0] || '')).toUpperCase() || t.slice(0, 2).toUpperCase();
 };
-const pieItem = { display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' } as const;
+const ICONO_PLEGAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><polyline points="11 17 6 12 11 7"/><line x1="18" y1="7" x2="18" y2="17"/></svg>';
+// Los renglones del pie pesan como los del menú: mismo alto y mismo tipo de
+// letra. Antes eran ligas de 11 px que había que buscar.
+const pieFila = {
+  display: 'flex', alignItems: 'center', gap: 11, width: '100%', minHeight: 36,
+  padding: '8px 18px', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+  fontSize: '0.79rem', fontWeight: 700, textAlign: 'left' as const,
+} as const;
 const pieIcono = { display: 'flex', alignItems: 'center', flexShrink: 0 } as const;
 
 const NAV_SECTIONS = [
@@ -310,16 +317,20 @@ export default function CrmDashboard() {
               </div>
             </div>
           )}
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            aria-label={sidebarCollapsed ? 'Expandir menú' : 'Colapsar menú'}
-            style={{
-              background: 'none', border: 'none', color: '#ccc',
-              cursor: 'pointer', fontSize: '1rem',
-              width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: -10, // compensa para no mover el layout desktop
-            }}
-          >{sidebarCollapsed ? '→' : '←'}</button>
+          {/* Plegado, este es el único modo de volver a abrir; expandido, la
+              flecha vive abajo, junto a lo demás que se toca. */}
+          {(sidebarCollapsed || isMobile) && (
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              aria-label={sidebarCollapsed ? 'Expandir menú' : 'Colapsar menú'}
+              style={{
+                background: 'none', border: 'none', color: '#ccc',
+                cursor: 'pointer', fontSize: '1rem',
+                width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: -10,
+              }}
+            >{sidebarCollapsed ? '→' : '←'}</button>
+          )}
         </div>
 
         {/* Search (sidebar) */}
@@ -436,47 +447,54 @@ export default function CrmDashboard() {
           ))}
         </div>
 
-        {/* Footer */}
+        {/* Footer.
+            Deja de ser una lista de ligas chiquitas: notificaciones y
+            configuración son renglones completos, quién eres vive en su propio
+            panel, y abajo una barra con plegar el menú y salir. */}
         {!sidebarCollapsed && (
-          <div style={{
-            padding: '11px 20px 13px', borderTop: '1px solid #ece7fa', background: '#faf8ff',
-            fontSize: '0.72rem', color: '#a5a2af', display: 'flex', flexDirection: 'column', gap: 5,
-          }}>
-            {/* Quién entró. El día que haya más de una persona en el CRM,
-                saber con qué cuenta estás parado deja de ser un adorno. */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '2px 0 8px' }}>
-              <span style={{ width: 26, height: 26, borderRadius: 99, background: '#EEECFE', color: '#5B4BD6', fontSize: '0.66rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ borderTop: '1px solid #ece7fa', background: '#faf8ff' }}>
+            <div style={{ padding: '8px 0 2px' }}>
+              {!isMobile && <CampanaNotificaciones onIrA={(t) => switchTab(t as Tab)} enMenu />}
+
+              <button onClick={() => switchTab('config' as Tab)} style={{ ...pieFila, background: tab === 'config' ? '#EEECFE' : 'none', color: tab === 'config' ? '#5B4BD6' : '#5a5a63' }}>
+                <span style={{ ...pieIcono, color: '#9B8CFA' }} dangerouslySetInnerHTML={{ __html: ICONS.config }} />Configuración
+              </button>
+
+              <a href="/" style={{ ...pieFila, color: '#a5a2af', fontWeight: 600, textDecoration: 'none' }}>
+                <span style={{ ...pieIcono, color: '#b3b1bb' }} dangerouslySetInnerHTML={{ __html: ICONO_ATRAS }} />Volver al sitio
+              </a>
+            </div>
+
+            {/* Quién entró. El día que haya más de una persona en el CRM, saber
+                con qué cuenta estás parado deja de ser un adorno. */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', margin: '6px 10px', borderRadius: 11, background: '#EEECFE' }}>
+              <span style={{ width: 34, height: 34, borderRadius: 9, background: '#fff', color: '#5B4BD6', fontSize: '0.75rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {iniciales(yo?.nombre || yo?.email)}
               </span>
               <span style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '0.73rem', fontWeight: 700, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{yo?.nombre || yo?.email || '—'}</div>
-                <div style={{ fontSize: '0.62rem', color: '#a5a2af' }}>{yo?.rol || ''}</div>
+                <div style={{ fontSize: '0.82rem', fontWeight: 800, lineHeight: 1.15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {yo?.nombre || yo?.email || '—'}
+                </div>
+                {yo?.rol && (
+                  /* El rol es una etiqueta que describe, no un botón: por eso va
+                     en el rosa de la firma y en pastilla chica. */
+                  <span style={{ display: 'inline-block', fontSize: '0.55rem', fontWeight: 800, letterSpacing: '.09em', textTransform: 'uppercase', borderRadius: 5, padding: '2px 7px', marginTop: 4, background: 'rgba(244,168,205,.42)', color: '#9c3d70' }}>
+                    {yo.rol}
+                  </span>
+                )}
               </span>
             </div>
 
-            {!isMobile && !sidebarCollapsed && (
-              <CampanaNotificaciones onIrA={(t) => switchTab(t as Tab)} enMenu />
-            )}
-
-            {/* Configuración es un DESTINO, no una salida: va arriba de la
-                línea y se prende en lila como cualquier otro renglón. */}
-            <button onClick={() => switchTab('config' as Tab)}
-              style={{ ...pieItem, width: '100%', background: tab === 'config' ? '#EEECFE' : 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', margin: '0 -8px', padding: '7px 8px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700, color: '#5B4BD6', textAlign: 'left' }}>
-              <span style={{ ...pieIcono, color: '#9B8CFA' }} dangerouslySetInnerHTML={{ __html: ICONS.config }} />Configuración
-            </button>
-
-            {/* La línea separa el destino de las salidas: es lo que evita darle
-                a "cerrar sesión" cuando ibas a ajustes. */}
-            <div style={{ height: 1, background: '#ece7fa', margin: '7px 0 5px' }} />
-
-            <button
-              onClick={async () => { try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {} window.location.href = '/admin/login'; }}
-              style={{ ...pieItem, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#C0554E', fontSize: '0.72rem', fontFamily: 'inherit', textAlign: 'left' }}>
-              <span style={pieIcono} dangerouslySetInnerHTML={{ __html: ICONO_SALIR }} />Cerrar sesión
-            </button>
-            <a href="/" style={{ ...pieItem, color: '#a5a2af' }}>
-              <span style={pieIcono} dangerouslySetInnerHTML={{ __html: ICONO_ATRAS }} />Volver al sitio
-            </a>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 16px', borderTop: '1px solid #ece7fa', background: '#f3efff' }}>
+              <button onClick={() => setSidebarCollapsed(true)} aria-label="Plegar menú"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9c99a6', display: 'flex', padding: 0 }}
+                dangerouslySetInnerHTML={{ __html: ICONO_PLEGAR }} />
+              <button
+                onClick={async () => { try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {} window.location.href = '/admin/login'; }}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto', background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#C0554E', fontSize: '0.75rem', fontWeight: 700, fontFamily: 'inherit' }}>
+                <span style={pieIcono} dangerouslySetInnerHTML={{ __html: ICONO_SALIR }} />Cerrar sesión
+              </button>
+            </div>
           </div>
         )}
       </div>

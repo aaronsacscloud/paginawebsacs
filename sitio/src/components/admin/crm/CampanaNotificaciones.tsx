@@ -94,6 +94,9 @@ export default function CampanaNotificaciones({ onIrA, enMenu }: { onIrA?: (tab:
     if (!abierto) cargar();
   };
 
+  // Alguna sin leer que de verdad urge: solo entonces el contador se pinta rojo.
+  const hayUrgente = data.some((n: any) => !n.leida_at && n.nivel === 'urgente');
+
   const icono = (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
       <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -108,17 +111,22 @@ export default function CampanaNotificaciones({ onIrA, enMenu }: { onIrA?: (tab:
            tipo de letra. Es un lugar del CRM, no un botón flotando encima. */
         <button onClick={alternar} aria-label="Notificaciones"
           style={{
-            display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left',
+            display: 'flex', alignItems: 'center', gap: 11, width: '100%', minHeight: 36, textAlign: 'left',
             background: abierto ? '#EEECFE' : 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-            margin: '0 -8px', padding: '7px 8px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700,
-            color: noLeidas > 0 ? '#C0554E' : '#6b6b74',
+            padding: '8px 18px', fontSize: '0.79rem', fontWeight: 700, color: '#5a5a63',
           }}>
-          <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, color: noLeidas > 0 ? '#C0554E' : '#b3b1bb' }}>{icono}</span>
+          <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, color: '#9B8CFA' }}>{icono}</span>
           Notificaciones
           {noLeidas > 0 && (
-            <span style={{ marginLeft: 'auto', minWidth: 18, background: '#C0554E', color: '#fff', borderRadius: 99, fontSize: '0.6rem', fontWeight: 800, padding: '2px 6px', textAlign: 'center' }}>
-              {noLeidas > 99 ? '99+' : noLeidas}
-            </span>
+            /* Morado, no rojo: en este módulo el rojo significa "atiéndelo hoy"
+               —vencidos, eliminados, inasistencias— y unas notificaciones
+               normales gastaban esa señal. Vuelve al rojo SOLO si alguna sin
+               leer es urgente; así, cuando aparece, se le hace caso. */
+            <span style={{
+              marginLeft: 'auto', minWidth: 22, textAlign: 'center', borderRadius: 20,
+              background: hayUrgente ? '#C0554E' : '#9B8CFA', color: '#fff',
+              fontSize: '0.63rem', fontWeight: 800, padding: '3px 8px',
+            }}>{noLeidas > 99 ? '99+' : noLeidas}</span>
           )}
         </button>
       ) : (
