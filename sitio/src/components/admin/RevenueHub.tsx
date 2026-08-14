@@ -1960,6 +1960,14 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
                   <div style={{ fontSize: '0.6875rem', color: '#777', marginBottom: 8, lineHeight: 1.5 }}>
                     Pega aquí los puntos raw que platicaste con el cliente. Después da clic en <strong>Estructurar con IA</strong> y lo acomodamos en una minuta profesional.
                   </div>
+                  {/* Antes, sin pasar por la IA la minuta no salía en la
+                      cotización del cliente: se escribía y desaparecía sin
+                      avisar. Ahora sí sale, y aquí se dice cómo. */}
+                  <div style={{ fontSize: '0.6875rem', color: (qf.key_points || []).length ? '#1E8A63' : '#7a6fc9', marginBottom: 8, lineHeight: 1.5 }}>
+                    {(qf.key_points || []).length
+                      ? 'El cliente la ve estructurada en puntos.'
+                      : 'Si no la estructuras, el cliente la ve tal como la escribas aquí. Las líneas que empiecen con "1.", "2." salen como títulos.'}
+                  </div>
                   <textarea
                     value={qf.minuta_raw || ''}
                     onChange={e => setQf({ ...qf, minuta_raw: e.target.value })}

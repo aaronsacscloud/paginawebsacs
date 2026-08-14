@@ -74,6 +74,21 @@ const showCondiciones = quoteMeta.mostrar_condiciones !== undefined ? quoteMeta.
 const showKeyPoints = quoteMeta.mostrar_key_points !== undefined ? quoteMeta.mostrar_key_points : true;
 const keyPoints = quoteMeta.key_points || [];
 const hasKeyPoints = showKeyPoints && Array.isArray(keyPoints) && keyPoints.length > 0;
+// La minuta se escribe en crudo y "Estructurar con IA" la convierte en puntos.
+// Si no se pasó por la IA, key_points queda vacío y la minuta NO le llegaba al
+// cliente: se escribía, se guardaba y desaparecía sin avisar. Lo capturado se
+// muestra tal cual; el paso de IA mejora la presentación, no es requisito para
+// que exista.
+const minutaRaw = String(quoteMeta.minuta_raw || '').trim();
+const hasMinutaRaw = showKeyPoints && !hasKeyPoints && !!minutaRaw;
+const hasMinuta = hasKeyPoints || hasMinutaRaw;
+// Las líneas numeradas ("1. Experiencia…") son títulos de sección; el resto,
+// párrafos. Es la estructura que la gente ya escribe sin que nadie se la pida.
+const minutaBloques = hasMinutaRaw
+  ? minutaRaw.split(/\n/).map(l => l.trim()).filter(Boolean).map(l => ({
+      titulo: /^\d+[.)]\s+/.test(l), texto: l.replace(/^\d+[.)]\s+/, ''),
+    }))
+  : [];
 const showRoi = quoteMeta.mostrar_roi || false;
 const roi = quoteMeta.roi || null;
 const hasRoi = showRoi && roi && roi.ahorro_mensual > 0;
@@ -292,7 +307,7 @@ const hayPlan = planPagos.length > 0;
 const showPagosTab = paymentsList.length > 0 || isAccepted || isPaid || isAdminMode || hayPlan;
 
 const tabsDef = [
-  { id: 'minuta', label: 'Minuta', show: hasKeyPoints },
+  { id: 'minuta', label: 'Minuta', show: hasMinuta },
   { id: 'inversion', label: 'Inversión', show: items.length > 0 || hasPagosContent || hasFeaturesReal || hasTimelineReal },
   { id: 'pagos', label: isPaid ? 'Pagos ✓' : (paymentsList.length > 0 ? `Pagos (${paymentsList.length})` : 'Pagos'), show: showPagosTab },
   { id: 'roi', label: 'ROI', show: hasRoi },
@@ -606,10 +621,17 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
     {/* ═══════════════════════════════════════════════
          TAB: MINUTA
          ═══════════════════════════════════════════════ */}
-    {hasKeyPoints && (
+    {hasMinuta && (
     <section class="quote-tab-panel" data-tab="minuta">
       <div class="quote-key-points">
         <div class="quote-key-points-title">Minuta de la reunión</div>
+        {hasMinutaRaw && (
+          <div class="quote-minuta-raw">
+            {minutaBloques.map((b: any) => (
+              b.titulo ? <h3 class="quote-minuta-h">{b.texto}</h3> : <p class="quote-minuta-p">{b.texto}</p>
+            ))}
+          </div>
+        )}
         <div class="quote-key-points-list">
           {keyPoints.map((kp: any) => (
             <div class="quote-key-point">
@@ -2451,11 +2473,17 @@ const initialTab = isClosed ? 'firma' : (visibleTabs[0]?.id || 'inversion');
 .quote-key-point-content { flex: 1; min-width: 0; }
 .quote-key-point-title { font-size: 0.9375rem; font-weight: 500; color: #1a1a1a; margin-bottom: 4px; letter-spacing: -0.005em; }
 .quote-key-point-detail { font-size: 0.8125rem; color: #666; line-height: 1.55; }
+.quote-minuta-raw { max-width: 62ch; }
+.quote-minuta-h { font-size: 0.95rem; font-weight: 700; color: #1a1a1a; margin: 26px 0 8px; letter-spacing: -0.01em; }
+.quote-minuta-h:first-child { margin-top: 0; }
+.quote-minuta-p { font-size: 0.875rem; color: #555; line-height: 1.7; margin: 0 0 8px; }
 
 .quote-dark .quote-key-points { border-color: rgba(255,255,255,0.08); }
 .quote-dark .quote-key-points-title { color: #fff; }
 .quote-dark .quote-key-point-title { color: #fff; }
 .quote-dark .quote-key-point-detail { color: rgba(255,255,255,0.5); }
+.quote-dark .quote-minuta-h { color: #fff; }
+.quote-dark .quote-minuta-p { color: rgba(255,255,255,0.62); }
 .quote-dark .quote-key-point-icon svg path { stroke: #2AB5A0; }
 
 /* ─── Versions ─── */
