@@ -2168,11 +2168,11 @@ function TabReuniones({ companyId, principal, contactos, flash }: any) {
           onListo={() => { setAgendando(false); cargar(); flash('Reunión agendada'); }} />
       )}
       {cerrando && (
-        <MinutaReunion reunion={cerrando}
+        <MinutaReunion reunion={cerrando} companyId={companyId}
           onCerrar={() => setCerrando(null)}
-          onListo={() => { setCerrando(null); cargar(); flash('Minuta guardada'); }} />
+          onListo={(n: number) => { setCerrando(null); cargar(); flash(n ? `Minuta guardada · ${n} mejora${n === 1 ? '' : 's'} agregada${n === 1 ? '' : 's'}` : 'Minuta guardada'); }} />
       )}
-      {verMinuta && <MinutaReunion reunion={verMinuta} soloLectura onCerrar={() => setVerMinuta(null)} onListo={() => setVerMinuta(null)} />}
+      {verMinuta && <MinutaReunion reunion={verMinuta} companyId={companyId} soloLectura onCerrar={() => setVerMinuta(null)} onListo={() => setVerMinuta(null)} />}
     </div>
   );
 }
@@ -2294,27 +2294,93 @@ function AgendarReunion({ companyId, tipos, principal, contactos, onCerrar, onLi
 }
 
 /* ── Minuta y grabación ── */
-function MinutaReunion({ reunion, soloLectura, onCerrar, onListo }: any) {
+// Se puede escribir campo por campo o pegar la conversación completa y dejar
+// que se acomode sola. Lo segundo es lo que pasa de verdad: al colgar hay un
+// bloque de WhatsApp o una transcripción, no cinco párrafos ordenados.
+//
+// Del mismo texto salen las MEJORAS que pidió el cliente, que en la
+// conversación van revueltas con todo lo demás. Se proponen en un checklist y
+// NO se crean solas: quien estuvo en la junta decide cuáles eran de verdad,
+// porque un "estaría padre que…" no es un compromiso.
+const CATS_MEJORA: Record<string, string> = {
+  personalizacion: 'personalización', plugin: 'plugin', modulo: 'módulo',
+  ajuste: 'ajuste', capacitacion: 'capacitación',
+};
+function MinutaReunion({ reunion, companyId, soloLectura, onCerrar, onListo }: any) {
   const [m, setM] = useState<Record<string, string>>(() => ({ ...minutaVacia(), ...(reunion.minuta || {}) }));
   const [url, setUrl] = useState(reunion.grabacion_url || '');
+  const [crudo, setCrudo] = useState<string>(reunion.minuta?.raw || '');
+  const [pegando, setPegando] = useState(!soloLectura && !minutaLlena(reunion.minuta));
+  const [acomodando, setAcomodando] = useState(false);
+  const [propuestas, setPropuestas] = useState<any[]>([]);
+  const [marcadas, setMarcadas] = useState<Record<number, boolean>>({});
+  const [yaCreadas, setYaCreadas] = useState<any[]>([]);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
+
+  // Las mejoras que ya salieron de ESTA junta: sin esto, acomodar dos veces la
+  // misma conversación crearía la misma idea repetida.
+  useEffect(() => {
+    if (!companyId) return;
+    let alive = true;
+    fetch('/api/crm/mejoras?company_id=' + companyId).then(r => r.json())
+      .then(j => { if (alive) setYaCreadas((j.data || []).filter((x: any) => x.booking_id === reunion.id)); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [companyId, reunion.id]);
+
+  async function acomodar() {
+    if (crudo.trim().length < 40) { setError('Pega la conversación completa: con tan poco texto no hay nada que acomodar.'); return; }
+    setAcomodando(true); setError('');
+    const r = await fetch('/api/scheduling/reuniones/estructurar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texto: crudo }),
+    }).then(x => x.json()).catch(() => null);
+    setAcomodando(false);
+    if (!r || r.error) { setError(r?.error || 'No se pudo acomodar la conversación.'); return; }
+    setM(v => ({ ...v, ...r.minuta }));
+    const nuevas = (r.mejoras || []).filter((p: any) =>
+      !yaCreadas.some((y: any) => y.titulo.toLowerCase().trim() === String(p.titulo).toLowerCase().trim()));
+    setPropuestas(nuevas);
+    // Solo las que el cliente empujó vienen palomeadas. Las demás se ven, pero
+    // se palomean a mano: es la diferencia entre una idea y un compromiso.
+    setMarcadas(Object.fromEntries(nuevas.map((p: any, i: number) => [i, p.interes === 'alto'])));
+    setPegando(false);
+  }
 
   async function guardar() {
     setGuardando(true); setError('');
     const r = await fetch('/api/scheduling/reuniones', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: reunion.id, minuta: m, grabacion_url: url }),
+      body: JSON.stringify({ id: reunion.id, minuta: { ...m, raw: crudo || undefined }, grabacion_url: url }),
     }).then(x => x.json()).catch(() => null);
+    if (!r || r.error) { setGuardando(false); setError(r?.error || 'No se pudo guardar.'); return; }
+
+    // Las mejoras palomeadas nacen como IDEA ligada a esta junta. De ahí se
+    // cotizan o se marcan entregadas desde la pestaña Mejoras.
+    const elegidas = propuestas.filter((_, i) => marcadas[i]);
+    let fallidas = 0;
+    for (const p of elegidas) {
+      const res = await fetch('/api/crm/mejoras', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          company_id: companyId, titulo: p.titulo, descripcion: p.descripcion,
+          categoria: p.categoria, valor: p.valor || 0, estado: 'idea', booking_id: reunion.id,
+        }),
+      }).then(x => x.json()).catch(() => null);
+      if (!res || res.error) fallidas++;
+    }
     setGuardando(false);
-    if (!r || r.error) { setError(r?.error || 'No se pudo guardar.'); return; }
-    onListo();
+    if (fallidas) { setError(`Se guardó la minuta, pero ${fallidas} mejora(s) no se pudieron agregar.`); return; }
+    onListo(elegidas.length);
   }
+
+  const total = propuestas.filter((_, i) => marcadas[i]).length;
 
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onCerrar(); }}
       style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 960, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: 470, maxHeight: '88vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: 560, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '14px 17px', background: '#faf8ff', borderBottom: '1px solid #e6ddfa', borderRadius: '14px 14px 0 0', display: 'flex', alignItems: 'baseline', gap: 9 }}>
           <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, flex: 1 }}>
             {soloLectura ? 'Minuta' : 'Documentar la reunión'}
@@ -2324,6 +2390,31 @@ function MinutaReunion({ reunion, soloLectura, onCerrar, onListo }: any) {
         </div>
 
         <div style={{ padding: '13px 17px', overflowY: 'auto', flex: 1 }}>
+          {!soloLectura && (
+            <div style={{ background: '#f7f4ff', border: '1.5px solid #e4dffb', borderRadius: 10, padding: '11px 12px', marginBottom: 13 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: pegando ? 7 : 0 }}>
+                <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#5B4BD6', textTransform: 'uppercase', letterSpacing: '.06em', flex: 1 }}>
+                  Pega la conversación y se acomoda sola
+                </div>
+                <button onClick={() => setPegando(v => !v)} style={{ ...D.btnG, padding: '4px 10px', fontSize: '0.7rem' }}>{pegando ? 'Ocultar' : 'Abrir'}</button>
+              </div>
+              {pegando && (<>
+                <textarea value={crudo} onChange={e => setCrudo(e.target.value)} rows={5}
+                  placeholder="Pega aquí el chat de WhatsApp, la transcripción o tus notas tal como salieron. No hace falta ordenarlas."
+                  style={{ ...D.inputM, background: '#fff', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5, fontSize: '0.76rem' }} />
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8 }}>
+                  <button onClick={acomodar} disabled={acomodando || crudo.trim().length < 40}
+                    style={{ ...D.btn, padding: '7px 14px', fontSize: '0.77rem', opacity: acomodando || crudo.trim().length < 40 ? .5 : 1 }}>
+                    {acomodando ? 'Acomodando…' : 'Acomodar con IA'}
+                  </button>
+                  <span style={{ fontSize: '0.68rem', color: '#a5a2af', lineHeight: 1.4 }}>
+                    Llena los cinco campos y separa las mejoras que se pidieron.<br />Lo que ya escribiste a mano se conserva si el texto no lo menciona.
+                  </span>
+                </div>
+              </>)}
+            </div>
+          )}
+
           <div style={D.lbl}>Liga de la grabación</div>
           {soloLectura
             ? <div style={{ fontSize: '0.79rem', marginBottom: 12 }}>{url ? <a href={url} target="_blank" rel="noreferrer" style={{ color: '#2C5FC4' }}>{url}</a> : <span style={{ color: '#a5a2af' }}>Sin grabación</span>}</div>
@@ -2342,13 +2433,50 @@ function MinutaReunion({ reunion, soloLectura, onCerrar, onListo }: any) {
               </div>
             ))}
           </div>
+
+          {/* Checklist de mejoras: se proponen, se palomean, y al guardar
+              nacen como ideas en la pestaña Mejoras ligadas a esta junta. */}
+          {!soloLectura && propuestas.length > 0 && (
+            <div style={{ background: '#f6f9ff', border: '1.5px solid #cfe0fa', borderRadius: 10, padding: '11px 12px', marginTop: 13 }}>
+              <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#2C5FC4', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 3 }}>
+                Mejoras que se pidieron en la junta
+              </div>
+              <div style={{ fontSize: '0.7rem', color: '#7a8598', marginBottom: 8, lineHeight: 1.45 }}>
+                Palomea las que sí van. Se agregan como ideas en Mejoras, ligadas a esta reunión.
+              </div>
+              {propuestas.map((p, i) => (
+                <label key={i} style={{ display: 'flex', gap: 9, alignItems: 'flex-start', padding: '8px 0', borderTop: i ? '1px solid #e8eff9' : 'none', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={!!marcadas[i]} onChange={e => setMarcadas(v => ({ ...v, [i]: e.target.checked }))} style={{ marginTop: 3 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '0.79rem', fontWeight: 700 }}>
+                      {p.titulo}
+                      <span style={{ fontSize: '0.55rem', fontWeight: 800, background: '#EEECFE', color: '#5B4BD6', borderRadius: 20, padding: '2px 7px', marginLeft: 6 }}>{CATS_MEJORA[p.categoria] || p.categoria}</span>
+                      {p.interes === 'alto' && <span style={{ fontSize: '0.55rem', fontWeight: 800, background: '#EAF8F2', color: '#1E8A63', borderRadius: 20, padding: '2px 7px', marginLeft: 4 }}>lo pidió él</span>}
+                    </div>
+                    {p.descripcion && <div style={{ fontSize: '0.72rem', color: '#71717a', lineHeight: 1.45, marginTop: 2 }}>{p.descripcion}</div>}
+                  </div>
+                  {p.valor > 0 && <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#2C5FC4', whiteSpace: 'nowrap' }}>${Math.round(p.valor).toLocaleString('es-MX')}</span>}
+                </label>
+              ))}
+            </div>
+          )}
+
+          {yaCreadas.length > 0 && (
+            <div style={{ fontSize: '0.72rem', color: '#a5a2af', marginTop: 10, lineHeight: 1.5 }}>
+              De esta junta ya salieron {yaCreadas.length} mejora(s): {yaCreadas.map((y: any) => y.titulo).join(' · ')}
+            </div>
+          )}
         </div>
 
-        <div style={{ padding: '12px 17px 15px', borderTop: '1px solid #f1eff7', display: 'flex', gap: 8, alignItems: 'center' }}>
-          {!soloLectura && <button onClick={guardar} disabled={guardando} style={{ ...D.btn, opacity: guardando ? .6 : 1 }}>{guardando ? 'Guardando…' : 'Guardar minuta'}</button>}
+        <div style={{ padding: '12px 17px 15px', borderTop: '1px solid #f1eff7', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          {!soloLectura && (
+            <button onClick={guardar} disabled={guardando} style={{ ...D.btn, opacity: guardando ? .6 : 1 }}>
+              {guardando ? 'Guardando…' : total ? `Guardar y agregar ${total} mejora${total === 1 ? '' : 's'}` : 'Guardar minuta'}
+            </button>
+          )}
           <button onClick={() => { navigator.clipboard?.writeText(minutaTexto({ ...reunion, minuta: m, grabacion_url: url })); }} style={D.btnG}>Copiar como texto</button>
           <button onClick={onCerrar} style={{ ...D.btnG, marginLeft: 'auto' }}>{soloLectura ? 'Cerrar' : 'Después'}</button>
-          {error && <div style={{ fontSize: '0.73rem', color: '#C0554E' }}>{error}</div>}
+          {error && <div style={{ fontSize: '0.73rem', color: '#C0554E', width: '100%' }}>{error}</div>}
         </div>
       </div>
     </div>

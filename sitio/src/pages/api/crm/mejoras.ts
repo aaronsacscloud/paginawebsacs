@@ -18,7 +18,7 @@ export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 
 export const ESTADOS_MEJORA = ['idea', 'cotizada', 'en_proceso', 'entregada', 'descartada'] as const;
-const CATEGORIAS = ['personalizacion', 'ajuste', 'modulo', 'capacitacion', 'otro'];
+const CATEGORIAS = ['personalizacion', 'plugin', 'ajuste', 'modulo', 'capacitacion', 'otro'];
 
 // Campos que el cliente puede mandar. Lista blanca a propósito: un update con
 // company_id o created_at colados movería el renglón de cuenta o falsearía su

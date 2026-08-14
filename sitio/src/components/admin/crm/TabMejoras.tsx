@@ -19,8 +19,8 @@ const ESTADOS: Record<string, { label: string; punto: string; tag?: string; tagB
   descartada: { label: 'Descartada',  punto: '#C9C7D0' },
 };
 const CATS: Record<string, string> = {
-  personalizacion: 'personalización', ajuste: 'ajuste', modulo: 'módulo',
-  capacitacion: 'capacitación', otro: 'otro',
+  personalizacion: 'personalización', plugin: 'plugin', ajuste: 'ajuste',
+  modulo: 'módulo', capacitacion: 'capacitación', otro: 'otro',
 };
 
 const S = {
