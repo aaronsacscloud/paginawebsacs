@@ -151,7 +151,11 @@ export default function ReporteMejoras({ companyId, cliente, onCerrar }: any) {
               {h.reuniones.capacitaciones.map((c: any, i: number) => (
                 <div key={i} style={{ display: 'flex', gap: 9, padding: '7px 0', fontSize: '0.79rem', borderBottom: '1px solid #f7f6fa' }}>
                   <span style={{ color: c.asistio ? '#1E8A63' : '#C0554E', fontWeight: 800, fontSize: '0.7rem', marginTop: 2 }}>{c.asistio ? '✓' : '✕'}</span>
-                  <div style={{ flex: 1 }}>{c.asunto || 'Capacitación'}{!c.asistio && <span style={{ color: '#C0554E' }}> · no se presentó</span>}</div>
+                  <div style={{ flex: 1 }}>
+                    {c.asunto || 'Capacitación'}
+                    {c.modo && <span style={{ color: '#a5a2af', fontSize: '0.72rem' }}> · {c.modo}</span>}
+                    {!c.asistio && <span style={{ color: '#C0554E' }}> · no se presentó</span>}
+                  </div>
                   <span style={{ fontSize: '0.68rem', color: '#a5a2af' }}>{fmtDate(c.fecha)}</span>
                 </div>
               ))}

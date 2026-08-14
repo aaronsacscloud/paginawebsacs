@@ -53,6 +53,8 @@ function limpia(b: any) {
   if ('quote_id' in b) p.quote_id = b.quote_id || null;
   if ('deal_id' in b) p.deal_id = b.deal_id || null;
   if ('modulo' in b) p.modulo = String(b.modulo || '').trim() || null;
+  // Liga del recurso: el video que se le mandó al cliente para eso que pidió.
+  if ('url' in b) p.url = String(b.url || '').trim() || null;
   if ('fecha_entrega' in b) p.fecha_entrega = b.fecha_entrega || null;
   if ('fecha_compromiso' in b) p.fecha_compromiso = b.fecha_compromiso || null;
   return p;

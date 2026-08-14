@@ -112,10 +112,17 @@ export const POST: APIRoute = async ({ request }) => {
     };
   }
 
+  // Las capacitaciones capturadas a mano (una junta donde se enseñó algo, o el
+  // video que se le mandó) cuentan igual que las sesiones agendadas: para el
+  // cliente son lo mismo, y separarlas por su origen sería contarle nuestra
+  // cocina.
+  const capsMejora = (mejoras || []).filter((m: any) => m.categoria === 'capacitacion');
+  const entregadasReales = (mejoras || []).filter((m: any) => m.categoria !== 'capacitacion');
+
   const hechos = {
     cliente: co.nombre_comercial || co.nombre, plan: co.plan || null,
     periodo: { desde, hasta, texto: `${fmtFecha(desde)} al ${fmtFecha(hasta)}` },
-    entregadas: (mejoras || []).map((m: any) => ({
+    entregadas: entregadasReales.map((m: any) => ({
       titulo: m.titulo, descripcion: m.descripcion, fecha: m.fecha_entrega,
       categoria: m.categoria, cortesia: m.cortesia, valor: Number(m.valor || 0),
       surgio_en: m.bookings ? { fecha: m.bookings.fecha, tipo: m.bookings.event_types?.nombre } : null,
@@ -124,10 +131,16 @@ export const POST: APIRoute = async ({ request }) => {
     en_curso: enCurso || [],
     reuniones: {
       total: reuniones.length, asistidas: asistidas.length, inasistencias: faltas.length,
-      capacitaciones: capacitaciones.map((c: any) => ({
-        fecha: c.fecha, asunto: c.asunto, asistio: normalizaEstado(c.estado) === 'asistio',
-        minuta: c.minuta || null,
-      })),
+      capacitaciones: [
+        ...capacitaciones.map((c: any) => ({
+          fecha: c.fecha, asunto: c.asunto, asistio: normalizaEstado(c.estado) === 'asistio',
+          minuta: c.minuta || null, modo: 'sesión agendada',
+        })),
+        ...capsMejora.map((m: any) => ({
+          fecha: m.fecha_entrega, asunto: m.titulo, asistio: true, minuta: null,
+          modo: m.url ? 'video enviado' : 'en junta', detalle: m.descripcion || null, modulo: m.modulo || null,
+        })),
+      ].sort((a: any, b: any) => String(a.fecha).localeCompare(String(b.fecha))),
     },
     modulos_nuevos: modulosNuevos,
     operacion,

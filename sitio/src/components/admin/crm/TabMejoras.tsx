@@ -80,9 +80,14 @@ export default function TabMejoras({ companyId, cliente, flash }: any) {
 
   if (rows === null) return <div style={{ ...S.card, color: '#999', fontSize: '0.82rem' }}>Cargando mejoras…</div>;
 
-  const entregadas = rows.filter(m => m.estado === 'entregada');
-  const enCurso = rows.filter(m => m.estado === 'cotizada' || m.estado === 'en_proceso');
-  const ideas = rows.filter(m => m.estado === 'idea');
+  // Las capacitaciones se sacan de las dos listas de arriba y viven en la
+  // suya: no son algo que se le "entregue" al sistema del cliente, son algo
+  // que se le enseñó a su gente. Mezclarlas inflaba el conteo de mejoras.
+  const capacitaciones = rows.filter(m => m.categoria === 'capacitacion');
+  const otras = rows.filter(m => m.categoria !== 'capacitacion');
+  const entregadas = otras.filter(m => m.estado === 'entregada');
+  const enCurso = otras.filter(m => m.estado === 'cotizada' || m.estado === 'en_proceso');
+  const ideas = otras.filter(m => m.estado === 'idea');
   const potencial = ideas.reduce((a, m) => a + Number(m.valor || 0), 0);
   const cobrado = entregadas.reduce((a, m) => a + (m.cortesia ? 0 : Number(m.valor || 0)), 0);
   const anio = new Date().getFullYear();
@@ -175,6 +180,51 @@ export default function TabMejoras({ companyId, cliente, flash }: any) {
         {ideas.map(m => <Renglon key={m.id} m={m} />)}
       </div>
 
+      {/* Capacitaciones: lo que se le ENSEÑÓ a la gente del cliente, ya sea en
+          una junta o mandándole el video de eso que preguntó. Va aquí y no en
+          Reuniones porque lo que importa es el seguimiento del tema, no la
+          sesión: un mismo tema puede tocarse en tres juntas. */}
+      <div style={{ ...S.card, borderColor: '#f5e2b8' }}>
+        <div style={S.h}>
+          Capacitaciones
+          <span style={S.nota}>{capacitaciones.length ? `${capacitaciones.filter(m => m.estado === 'entregada').length} impartidas de ${capacitaciones.length}` : ''}</span>
+          <button style={S.btn} onClick={() => setEditando({ estado: 'entregada', categoria: 'capacitacion', visible_cliente: true })}>+ Agregar capacitación</button>
+        </div>
+        {capacitaciones.length === 0 && (
+          <div style={{ color: '#999', fontSize: '0.82rem', padding: '4px 0 8px' }}>
+            Lo que le enseñaste en una junta y los videos que le mandaste por lo que preguntó. Así se ve de un vistazo
+            qué ya sabe usar y qué se le ha repetido.
+          </div>
+        )}
+        {capacitaciones.map(m => {
+          const impartida = m.estado === 'entregada';
+          const modo = m.url ? 'video enviado' : m.bookings?.fecha ? 'en junta' : 'pendiente de dar';
+          return (
+            <div key={m.id} style={{ display: 'flex', gap: 11, padding: '11px 0', borderTop: '1px solid #f5f4f8', alignItems: 'flex-start' }}>
+              <span style={{ flex: '0 0 8px', height: 8, borderRadius: 99, background: impartida ? '#4FBF95' : '#F0B84E', marginTop: 6 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '0.83rem', fontWeight: 700 }}>
+                  {m.titulo}
+                  <span style={{ fontSize: '0.57rem', fontWeight: 800, background: '#FEF6E7', color: '#9a6a10', borderRadius: 20, padding: '2px 8px', marginLeft: 6 }}>{modo}</span>
+                  {m.modulo && <span style={{ fontSize: '0.57rem', fontWeight: 800, background: '#EEECFE', color: '#5B4BD6', borderRadius: 20, padding: '2px 8px', marginLeft: 5 }}>{m.modulo}</span>}
+                </div>
+                {m.descripcion && <div style={{ fontSize: '0.74rem', color: '#71717a', lineHeight: 1.5, marginTop: 2 }}>{m.descripcion}</div>}
+                <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 5 }}>
+                  {m.fecha_entrega ? <>Impartida {fmtDate(m.fecha_entrega)}</> : m.fecha_compromiso ? <>Programada para el {fmtDate(m.fecha_compromiso)}</> : 'Sin fecha'}
+                  {m.bookings?.fecha && <> · <b style={{ color: '#5B4BD6' }}>junta del {fmtDate(m.bookings.fecha)}</b></>}
+                </div>
+                <div style={{ display: 'flex', gap: 6, marginTop: 7, flexWrap: 'wrap' }}>
+                  {m.url && <a href={m.url} target="_blank" rel="noreferrer" style={{ ...S.btnAzul, textDecoration: 'none' }}>Ver el video</a>}
+                  {!impartida && <button style={S.btnG} onClick={() => cambiarEstado(m, 'entregada')}>Marcar impartida</button>}
+                  <button style={S.btnG} onClick={() => setEditando(m)}>Editar</button>
+                  <button style={{ ...S.btnG, color: '#a5a2af' }} onClick={() => archivar(m)}>Quitar</button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       <div style={{ ...S.card, background: '#faf8ff', borderColor: '#e6ddfa' }}>
         <div style={S.h}>Reporte ejecutivo del periodo</div>
         <div style={{ fontSize: '0.78rem', color: '#6b6b74', lineHeight: 1.55, marginBottom: 10 }}>
@@ -198,26 +248,44 @@ function EditorMejora({ m, reuniones, onCerrar, onGuardar }: any) {
   const [guardando, setGuardando] = useState(false);
   const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
   const esEntregada = f.estado === 'entregada';
+  // Una capacitación no se cobra ni se "entrega": se imparte o se manda. El
+  // formulario cambia de palabras para no pedir datos que no existen.
+  const esCap = f.categoria === 'capacitacion';
 
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onCerrar(); }}
       style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 960, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: 460, maxHeight: '88vh', overflowY: 'auto' }}>
         <div style={{ padding: '14px 17px', background: '#faf8ff', borderBottom: '1px solid #e6ddfa', display: 'flex', alignItems: 'center' }}>
-          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, flex: 1 }}>{m.id ? 'Editar' : esEntregada ? 'Nueva mejora' : 'Nueva idea'}</h3>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, flex: 1 }}>{m.id ? 'Editar' : esCap ? 'Nueva capacitación' : esEntregada ? 'Nueva mejora' : 'Nueva idea'}</h3>
           <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#9c99a6', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
         </div>
         <div style={{ padding: '14px 17px 17px' }}>
-          <div style={{ marginBottom: 10 }}><div style={S.lbl}>Qué es</div>
-            <input value={f.titulo} onChange={e => set('titulo', e.target.value)} placeholder="Certificados digitales de pieza" style={S.input} autoFocus /></div>
-          <div style={{ marginBottom: 10 }}><div style={S.lbl}>En una línea que el cliente entienda</div>
+          <div style={{ marginBottom: 10 }}><div style={S.lbl}>{esCap ? 'Qué se le enseñó' : 'Qué es'}</div>
+            <input value={f.titulo} onChange={e => set('titulo', e.target.value)}
+              placeholder={esCap ? 'Cómo levantar un conteo físico' : 'Certificados digitales de pieza'} style={S.input} autoFocus /></div>
+          <div style={{ marginBottom: 10 }}><div style={S.lbl}>{esCap ? 'Qué se cubrió' : 'En una línea que el cliente entienda'}</div>
             <textarea value={f.descripcion || ''} onChange={e => set('descripcion', e.target.value)} rows={2}
-              placeholder="Cada pieza vendida genera su certificado con QR y liga pública." style={{ ...S.input, resize: 'vertical' }} /></div>
+              placeholder={esCap ? 'Se vio el conteo por almacén y qué hacer con las diferencias.' : 'Cada pieza vendida genera su certificado con QR y liga pública.'}
+              style={{ ...S.input, resize: 'vertical' }} /></div>
+
+          {esCap && (<>
+            <div style={{ marginBottom: 10 }}><div style={S.lbl}>Liga del video (si se lo mandaste)</div>
+              <input value={f.url || ''} onChange={e => set('url', e.target.value)} placeholder="https://…" style={S.input} />
+              <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 4, lineHeight: 1.45 }}>
+                Con liga se registra como video enviado; sin liga, como capacitación dada en junta.
+              </div>
+            </div>
+            <div style={{ marginBottom: 10 }}><div style={S.lbl}>Módulo del sistema (opcional)</div>
+              <input value={f.modulo || ''} onChange={e => set('modulo', e.target.value)} placeholder="Conteos físicos" style={S.input} /></div>
+          </>)}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginBottom: 10 }}>
             <div><div style={S.lbl}>Estado</div>
               <select value={f.estado} onChange={e => set('estado', e.target.value)} style={S.input}>
-                {Object.entries(ESTADOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                {esCap
+                  ? [['entregada', 'Impartida'], ['en_proceso', 'Programada'], ['descartada', 'Cancelada']].map(([k, v]) => <option key={k} value={k}>{v}</option>)
+                  : Object.entries(ESTADOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select></div>
             <div><div style={S.lbl}>Tipo</div>
               <select value={f.categoria} onChange={e => set('categoria', e.target.value)} style={S.input}>
@@ -225,27 +293,29 @@ function EditorMejora({ m, reuniones, onCerrar, onGuardar }: any) {
               </select></div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginBottom: 10 }}>
-            <div><div style={S.lbl}>{esEntregada ? 'Cuánto se cobró' : 'Cuánto podría valer'}</div>
-              <input type="number" value={f.valor || ''} onChange={e => set('valor', e.target.value)} placeholder="0" style={S.input} disabled={f.cortesia} /></div>
-            <div><div style={S.lbl}>{esEntregada ? 'Fecha de entrega' : 'Comprometida para'}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: esCap ? '1fr' : '1fr 1fr', gap: 9, marginBottom: 10 }}>
+            {!esCap && <div><div style={S.lbl}>{esEntregada ? 'Cuánto se cobró' : 'Cuánto podría valer'}</div>
+              <input type="number" value={f.valor || ''} onChange={e => set('valor', e.target.value)} placeholder="0" style={S.input} disabled={f.cortesia} /></div>}
+            <div><div style={S.lbl}>{esCap ? (esEntregada ? 'Cuándo se dio' : 'Programada para') : esEntregada ? 'Fecha de entrega' : 'Comprometida para'}</div>
               <input type="date" value={(esEntregada ? f.fecha_entrega : f.fecha_compromiso) || ''}
                 onChange={e => set(esEntregada ? 'fecha_entrega' : 'fecha_compromiso', e.target.value)} style={S.input} /></div>
           </div>
 
-          <div style={{ marginBottom: 10 }}><div style={S.lbl}>¿De qué junta salió?</div>
+          <div style={{ marginBottom: 10 }}><div style={S.lbl}>{esCap ? '¿En qué junta se dio?' : '¿De qué junta salió?'}</div>
             <select value={f.booking_id || ''} onChange={e => set('booking_id', e.target.value)} style={S.input}>
-              <option value="">No salió de una junta</option>
+              <option value="">{esCap ? 'No fue en una junta' : 'No salió de una junta'}</option>
               {reuniones.map((r: any) => (
                 <option key={r.id} value={r.id}>{fmtDate(r.fecha)} · {r.asunto || r.event_types?.nombre || 'Reunión'}</option>
               ))}
             </select>
           </div>
 
-          <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: '0.78rem', marginBottom: 7, cursor: 'pointer' }}>
-            <input type="checkbox" checked={!!f.cortesia} onChange={e => set('cortesia', e.target.checked)} />
-            Fue sin costo (cortesía)
-          </label>
+          {!esCap && (
+            <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: '0.78rem', marginBottom: 7, cursor: 'pointer' }}>
+              <input type="checkbox" checked={!!f.cortesia} onChange={e => set('cortesia', e.target.checked)} />
+              Fue sin costo (cortesía)
+            </label>
+          )}
           {/* Los ajustes internos no tienen por qué salir en el reporte que ve
               el cliente; lo que se le presume debe ser lo que le sirve. */}
           <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: '0.78rem', marginBottom: 13, cursor: 'pointer' }}>
