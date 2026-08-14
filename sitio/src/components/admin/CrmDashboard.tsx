@@ -59,6 +59,14 @@ const ICONS: Record<string, string> = {
   oportunidades: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>',
 };
 
+// El pie son SALIDAS, no destinos: mismos iconos de línea que el menú pero más
+// chicos, sobre un fondo apenas distinto. Sin emoji, como el resto del módulo.
+const ICONO_LLAVE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>';
+const ICONO_SALIR = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>';
+const ICONO_ATRAS = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>';
+const pieItem = { display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' } as const;
+const pieIcono = { display: 'flex', alignItems: 'center', flexShrink: 0 } as const;
+
 const NAV_SECTIONS = [
   {
     label: 'Principal',
@@ -138,6 +146,15 @@ export default function CrmDashboard() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearch, setShowSearch] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Compromisos con fecha vencida en TODAS las cuentas. Se pide una vez al
+  // entrar: es la única cifra del menú y solo aparece cuando hay algo tarde.
+  const [vencidasMenu, setVencidasMenu] = useState(0);
+  useEffect(() => {
+    let vivo = true;
+    fetch('/api/crm/mejoras').then(r => r.json())
+      .then(j => { if (vivo) setVencidasMenu((j.vencidas || []).length); }).catch(() => {});
+    return () => { vivo = false; };
+  }, []);
   const isMobile = useIsMobile();
   const searchRef = useRef<HTMLInputElement>(null);
   // Shell mobile: sheet "Más", búsqueda fullscreen y deal a abrir directo.
@@ -239,18 +256,28 @@ export default function CrmDashboard() {
       }}>
         {/* Logo */}
         <div style={{
-          padding: sidebarCollapsed ? '16px 0' : '16px 20px', display: 'flex', alignItems: 'center',
-          justifyContent: sidebarCollapsed ? 'center' : 'space-between',
+          padding: sidebarCollapsed ? '16px 0' : '15px 20px 14px', display: 'flex', alignItems: sidebarCollapsed ? 'center' : 'flex-start',
+          justifyContent: sidebarCollapsed ? 'center' : 'space-between', gap: 10,
           borderBottom: '1px solid #f0f0f0', minHeight: 56,
         }}>
           {!sidebarCollapsed && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontFamily: "'Clash Display',sans-serif", fontSize: '1.25rem', fontWeight: 700, color: '#1a1a1a' }}>Sacs</span>
-              <span style={{
-                fontSize: '0.5rem', fontWeight: 700, color: '#4B7BE5',
-                background: 'rgba(75,123,229,0.06)', padding: '2px 6px', borderRadius: 3,
-                textTransform: 'uppercase', letterSpacing: '0.08em',
-              }}>CRM</span>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontFamily: "'Clash Display',sans-serif", fontSize: '1.25rem', fontWeight: 700, color: '#1a1a1a' }}>Sacs</span>
+                <span style={{
+                  fontSize: '0.5rem', fontWeight: 800, color: '#5B4BD6',
+                  background: '#EEECFE', padding: '3px 7px', borderRadius: 5,
+                  textTransform: 'uppercase', letterSpacing: '0.08em',
+                }}>CRM</span>
+              </div>
+              {/* La firma va con un filete que se desvanece, no encerrada en una
+                  pastilla: el rosa en este módulo significa "esto es lo que
+                  escogiste" y una pastilla fija se leería como un control que no
+                  se deja tocar. */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 7 }}>
+                <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#9c3d70', letterSpacing: '0.1em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>by Andy Araujo</span>
+                <span style={{ height: 1, flex: 1, background: 'linear-gradient(90deg, rgba(244,168,205,.7), rgba(244,168,205,0))' }} />
+              </div>
             </div>
           )}
           <button
@@ -336,9 +363,9 @@ export default function CrmDashboard() {
             <div key={section.label} style={{ marginBottom: 8 }}>
               {!sidebarCollapsed && (
                 <div style={{
-                  padding: '6px 20px', fontSize: '0.5625rem', fontWeight: 700,
-                  color: '#bbb', textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
+                  padding: '13px 20px 5px', fontSize: '0.55rem', fontWeight: 800,
+                  color: '#c2c0c9', textTransform: 'uppercase',
+                  letterSpacing: '0.13em',
                 }}>{section.label}</div>
               )}
               {section.items.map(item => {
@@ -353,18 +380,25 @@ export default function CrmDashboard() {
                       justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
                       padding: sidebarCollapsed ? '10px 0' : '8px 20px',
                       minHeight: 44,
-                      background: isActive ? '#f5f5f5' : 'transparent',
-                      color: isActive ? '#1a1a1a' : '#888',
+                      background: isActive ? '#EEECFE' : 'transparent',
+                      color: isActive ? '#5B4BD6' : '#6b6b74',
                       border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                      fontSize: '0.8125rem', fontWeight: isActive ? 600 : 400,
-                      borderLeft: isActive ? '3px solid #1a1a1a' : '3px solid transparent',
+                      fontSize: '0.8125rem', fontWeight: isActive ? 800 : 500,
+                      borderLeft: isActive ? '3px solid #9B8CFA' : '3px solid transparent',
                       transition: 'all 0.15s ease',
                     }}
-                    onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = '#fafafa'; }}
+                    onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = '#faf8ff'; }}
                     onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                   >
-                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, color: isActive ? '#1a1a1a' : '#aaa' }} dangerouslySetInnerHTML={{ __html: ICONS[item.icon] || '' }} />
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, color: isActive ? '#9B8CFA' : '#b3b1bb' }} dangerouslySetInnerHTML={{ __html: ICONS[item.icon] || '' }} />
                     {!sidebarCollapsed && <span>{item.label}</span>}
+                    {/* El único contador del menú, y solo cuando urge: un
+                        compromiso con fecha que ya pasó. Poner números en todos
+                        los renglones los convertiría en adorno y este dejaría
+                        de verse. */}
+                    {!sidebarCollapsed && item.id === 'mejoras' && vencidasMenu > 0 && (
+                      <span style={{ marginLeft: 'auto', fontSize: '0.6rem', fontWeight: 800, background: '#FEF0EF', color: '#C0554E', borderRadius: 20, padding: '2px 7px' }}>{vencidasMenu}</span>
+                    )}
                   </button>
                 );
               })}
@@ -375,16 +409,20 @@ export default function CrmDashboard() {
         {/* Footer */}
         {!sidebarCollapsed && (
           <div style={{
-            padding: '12px 20px', borderTop: '1px solid #f0f0f0',
-            fontSize: '0.6875rem', color: '#aaa', display: 'flex', flexDirection: 'column', gap: 6,
+            padding: '11px 20px 13px', borderTop: '1px solid #f2f1f6', background: '#fcfcfd',
+            fontSize: '0.72rem', color: '#a5a2af', display: 'flex', flexDirection: 'column', gap: 5,
           }}>
-            <a href="/admin/cambiar-password" style={{ color: '#888', textDecoration: 'none' }}>🔑 Cambiar contraseña</a>
+            <a href="/admin/cambiar-password" style={{ ...pieItem, color: '#8a8a8a' }}>
+              <span style={pieIcono} dangerouslySetInnerHTML={{ __html: ICONO_LLAVE }} />Cambiar contraseña
+            </a>
             <button
               onClick={async () => { try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {} window.location.href = '/admin/login'; }}
-              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#888', fontSize: '0.6875rem', fontFamily: 'inherit', textAlign: 'left' }}>
-              ⎋ Cerrar sesión
+              style={{ ...pieItem, background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#C0554E', fontSize: '0.72rem', fontFamily: 'inherit', textAlign: 'left' }}>
+              <span style={pieIcono} dangerouslySetInnerHTML={{ __html: ICONO_SALIR }} />Cerrar sesión
             </button>
-            <a href="/" style={{ color: '#aaa', textDecoration: 'none' }}>← Volver al sitio</a>
+            <a href="/" style={{ ...pieItem, color: '#a5a2af' }}>
+              <span style={pieIcono} dangerouslySetInnerHTML={{ __html: ICONO_ATRAS }} />Volver al sitio
+            </a>
           </div>
         )}
       </div>
