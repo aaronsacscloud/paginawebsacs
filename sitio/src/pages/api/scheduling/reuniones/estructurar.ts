@@ -10,7 +10,7 @@
 // junta decide cuáles eran de verdad: un modelo entusiasta convertiría
 // cualquier "estaría padre que…" en un compromiso con el cliente.
 import type { APIRoute } from 'astro';
-import OpenAI from 'openai';
+import { pedirJSON, modeloEnUso } from '../../../../lib/ia';
 import { getCurrentUser } from '../../../../lib/auth/scope';
 import { isPartner } from '../../../../lib/scheduling/scope';
 
@@ -64,23 +64,11 @@ export const POST: APIRoute = async ({ request }) => {
   const texto = String(b?.texto || '').trim();
   if (texto.length < 40) return json({ error: 'Pega la conversación completa: con tan poco texto no hay nada que acomodar.' }, 400);
 
-  const apiKey = import.meta.env.OPENAI_API_KEY;
-  if (!apiKey) return json({ error: 'OPENAI_API_KEY no configurada.' }, 500);
-
   try {
-    const openai = new OpenAI({ apiKey });
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      temperature: 0.2,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: SYSTEM },
-        // Se recorta a 60k caracteres: más que eso es una transcripción de
-        // horas y el modelo devuelve una minuta peor, no mejor.
-        { role: 'user', content: texto.slice(0, 60000) },
-      ],
-    });
-    const out = JSON.parse(completion.choices?.[0]?.message?.content || '{}');
+    // Se recorta a 60k caracteres: más que eso es una transcripción de horas y
+    // el modelo devuelve una minuta peor, no mejor.
+    const out = await pedirJSON({ system: SYSTEM, user: texto.slice(0, 60000) });
+
     const m = out?.minuta || {};
     // Se normaliza aquí y no se confía en la forma que devolvió el modelo: un
     // campo que llega como objeto rompería el textarea que lo va a mostrar.
@@ -97,7 +85,7 @@ export const POST: APIRoute = async ({ request }) => {
         valor: Number(x.valor) > 0 ? Math.round(Number(x.valor)) : 0,
         interes: ['alto', 'medio', 'bajo'].includes(x.interes) ? x.interes : 'medio',
       }));
-    return json({ minuta, mejoras });
+    return json({ minuta, mejoras, modelo: modeloEnUso() });
   } catch (e: any) {
     return json({ error: 'No se pudo acomodar la conversación: ' + String(e?.message || e) }, 500);
   }

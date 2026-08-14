@@ -12,7 +12,7 @@
 // Por eso la respuesta trae SIEMPRE los hechos aparte del texto: si la IA falla
 // o no está configurada, el reporte se muestra igual, sin narrativa.
 import type { APIRoute } from 'astro';
-import OpenAI from 'openai';
+import { pedirJSON } from '../../../../lib/ia';
 import { supabase } from '../../../../lib/supabase';
 import { getCurrentUser } from '../../../../lib/auth/scope';
 import { normalizaEstado } from '../../../../lib/crm/reuniones';
@@ -138,9 +138,6 @@ export const POST: APIRoute = async ({ request }) => {
 
   if (b?.con_ia === false) return json({ hechos, narrativa: null });
 
-  const apiKey = import.meta.env.OPENAI_API_KEY;
-  if (!apiKey) return json({ hechos, narrativa: null, ia_error: 'OPENAI_API_KEY no configurada.' });
-
   const SYSTEM = `Eres quien escribe el reporte ejecutivo que un cliente de SACS (plataforma de punto de venta y gestión para retail en México) recibe de su consultor.
 
 Te entregan HECHOS ya verificados en JSON. Tu trabajo es redactarlos, no averiguarlos.
@@ -165,18 +162,8 @@ Devuelve ÚNICAMENTE este JSON:
 }`;
 
   try {
-    const openai = new OpenAI({ apiKey });
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      temperature: 0.3,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: SYSTEM },
-        { role: 'user', content: JSON.stringify(hechos) },
-      ],
-    });
-    const txt = completion.choices?.[0]?.message?.content || '{}';
-    return json({ hechos, narrativa: JSON.parse(txt) });
+    const narrativa = await pedirJSON({ system: SYSTEM, user: JSON.stringify(hechos) });
+    return json({ hechos, narrativa });
   } catch (e: any) {
     // La IA es el adorno, los hechos son el reporte: si falla, el reporte sale.
     return json({ hechos, narrativa: null, ia_error: String(e?.message || e) });

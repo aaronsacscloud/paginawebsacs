@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import OpenAI from 'openai';
+import { pedirJSON } from '../../../lib/ia';
 
 export const prerender = false;
 
@@ -64,25 +64,14 @@ export const POST: APIRoute = async ({ request }) => {
     return json({ error: 'Las notas exceden 20,000 caracteres. Acórtalas.' }, 400);
   }
 
-  const apiKey = import.meta.env.OPENAI_API_KEY;
-  if (!apiKey) return json({ error: 'OPENAI_API_KEY no configurada.' }, 500);
-
   try {
-    const openai = new OpenAI({ apiKey });
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      temperature: 0.3,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: `NOTAS RAW DE LA LLAMADA:\n\n${raw.trim()}` },
-      ],
-    });
-
-    const text = completion.choices[0]?.message?.content || '{}';
+    // Pasa por el selector de modelo: este endpoint moría con un 403 de
+    // permisos de proyecto —por eso las minutas de cotización nunca se
+    // estructuraban— y el mensaje no le decía nada a quien la estaba
+    // capturando.
     let parsed: any;
-    try { parsed = JSON.parse(text); }
-    catch { return json({ error: 'La IA devolvió una respuesta inválida. Intenta de nuevo.' }, 502); }
+    try { parsed = await pedirJSON({ system: SYSTEM_PROMPT, user: `NOTAS RAW DE LA LLAMADA:\n\n${raw.trim()}` }); }
+    catch (e: any) { return json({ error: String(e?.message || e) }, 502); }
 
     const key_points = Array.isArray(parsed.key_points)
       ? parsed.key_points
