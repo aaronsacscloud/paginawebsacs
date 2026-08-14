@@ -293,6 +293,30 @@ export default function RevenueHub({ _initialTab, _hideNav }: RevenueHubProps = 
     const [kpis, setKpis] = useState<any>(null);
     const cargarKpis = () => fetch('/api/revenue/quotes/kpis').then(r => r.json()).then(setKpis).catch(() => {});
     useEffect(() => { cargarKpis(); }, []);
+
+    // Llegar desde "Cotizar esta idea" (ficha del cliente → Mejoras). La idea
+    // que salió en una junta se vuelve cobro sin volver a capturarla: se abre
+    // la cotización con el concepto y el monto ya puestos.
+    useEffect(() => {
+      if (typeof window === 'undefined') return;
+      const p = new URLSearchParams(window.location.search);
+      if (p.get('nueva') !== '1') return;
+      const concepto = (p.get('concepto') || '').trim();
+      const monto = Math.max(0, Number(p.get('importe') || 0));
+      const banco = bankAccounts.find((b: any) => b.es_default) || bankAccounts[0];
+      setQf({
+        empresa: p.get('empresa') || '', contacto: '', email: '', whatsapp: '',
+        company_id: p.get('company_id') || null,
+        items: concepto ? [{ tipo: 'extra', categoria_comision: 'personalizacion', nombre: concepto, monto, recurrente: false, descripcion: p.get('detalle') || '' }] : [],
+        iva_incluido: false, descuento_global: 0, descuento_tipo: 'pct', moneda: 'MXN', template: 'modern',
+        condiciones: (condicionesTpl.find((t: any) => t.es_default) || condicionesTpl[0])?.texto || '',
+        ...(banco ? { bank_account_id: banco.id, mostrar_banco: true } : {}),
+      });
+      setShowDrawer(true);
+      // Se limpia la barra de direcciones: recargar no debe volver a abrir una
+      // cotización nueva encima de la que se está capturando.
+      window.history.replaceState({}, '', window.location.pathname);
+    }, [bankAccounts.length, condicionesTpl.length]);
     // El archivo se carga aparte: son pocas y no tienen por qué pesar en la
     // vista de todos los días.
     const [archivadas, setArchivadas] = useState<any[]>([]);

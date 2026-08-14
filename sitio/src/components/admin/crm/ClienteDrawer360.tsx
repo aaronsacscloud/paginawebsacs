@@ -4,6 +4,7 @@ import NuevaOportunidadModal from './NuevaOportunidadModal';
 import Etiquetas from './Etiquetas';
 import { CamposFicha } from './CamposPersonalizados';
 import ArchivosSuscripcion from './ArchivosSuscripcion';
+import TabMejoras from './TabMejoras';
 import { useIsMobile, useDrawerHistory, BP } from '../../../lib/ui/mobile';
 import { ESTADOS, MINUTA_CAMPOS, minutaLlena, minutaTexto, minutaVacia, normalizaEstado } from '../../../lib/crm/reuniones';
 
@@ -83,7 +84,7 @@ const ROLES = ['Dueño', 'Gerente', 'Facturación', 'Sistemas', 'Compras', 'Otro
 export default function ClienteDrawer360({ companyId, onClose, onChanged }: { companyId: string; onClose: () => void; onChanged: () => void }) {
   const [data, setData] = useState<any>(null);
   const [err, setErr] = useState('');
-  const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'oport' | 'reuniones' | 'notas' | 'act'>('resumen');
+  const [tab, setTab] = useState<'resumen' | 'info' | 'sacs' | 'contactos' | 'subs' | 'oport' | 'reuniones' | 'mejoras' | 'notas' | 'act'>('resumen');
   const [msg, setMsg] = useState('');
   const [borrar, setBorrar] = useState(false);
   // Cambiar de pestaña o cerrar con algo a medio escribir tira lo capturado sin
@@ -196,6 +197,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                 <button style={D.tab(tab === 'subs')} onClick={() => irA('subs')}>Suscripciones ({subs.length})</button>
                 <button style={D.tab(tab === 'oport')} onClick={() => irA('oport')}>Oportunidades</button>
                 <button style={D.tab(tab === 'resumen')} onClick={() => irA('resumen')}>Actividad</button>
+                <button style={D.tab(tab === 'mejoras')} onClick={() => irA('mejoras')}>Mejoras</button>
                 <button style={D.tab(tab === 'reuniones')} onClick={() => irA('reuniones')}>
                   Reuniones
                   {alertasReu.length > 0 && <span title="Inasistencias" style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 99, background: '#EF7A72', marginLeft: 5, verticalAlign: 'middle' }} />}
@@ -220,6 +222,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
               {tab === 'subs' && <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />}
               {tab === 'oport' && <TabOportunidades companyId={companyId} co={co} principal={principal} subs={subs} flash={flash} reload={() => { load(); onChanged(); }} />}
               {tab === 'reuniones' && <TabReuniones companyId={companyId} principal={principal} contactos={contactos} flash={flash} />}
+              {tab === 'mejoras' && <TabMejoras companyId={companyId} cliente={co?.nombre_comercial || co?.nombre} flash={flash} />}
               {tab === 'notas' && <TabNotas companyId={companyId} />}
               {tab === 'act' && <TabActividad companyId={companyId} data={data} reload={() => { load(); onChanged(); }} />}
             </div>
