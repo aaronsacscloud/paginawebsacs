@@ -258,9 +258,10 @@ export default function CrmDashboard() {
           </svg>
         </button>
       )}
-      {/* Campana: lo que pasó solo (cobros automáticos, rebotes, dinero sin
-          dueño) tiene que verse sin ir a buscarlo, esté donde esté el usuario. */}
-      <CampanaNotificaciones onIrA={(t) => switchTab(t as Tab)} />
+      {/* La campana vive en el pie del menú, junto a quién eres. Solo vuelve a
+          flotar cuando el menú está plegado o en mobile, donde no hay pie que
+          la contenga: lo que pasó solo tiene que verse sin ir a buscarlo. */}
+      {(isMobile || sidebarCollapsed) && <CampanaNotificaciones onIrA={(t) => switchTab(t as Tab)} />}
       {/* Lupa mobile: búsqueda global a 2 taps sin abrir el sidebar */}
       {isMobile && sidebarCollapsed && (
         <button onClick={() => setMobileSearchOpen(true)} style={{
@@ -452,6 +453,10 @@ export default function CrmDashboard() {
                 <div style={{ fontSize: '0.62rem', color: '#a5a2af' }}>{yo?.rol || ''}</div>
               </span>
             </div>
+
+            {!isMobile && !sidebarCollapsed && (
+              <CampanaNotificaciones onIrA={(t) => switchTab(t as Tab)} enMenu />
+            )}
 
             {/* Configuración es un DESTINO, no una salida: va arriba de la
                 línea y se prende en lila como cualquier otro renglón. */}

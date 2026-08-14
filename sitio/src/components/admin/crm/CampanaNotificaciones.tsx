@@ -31,9 +31,13 @@ function hace(iso: string): string {
   return new Date(iso).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
 }
 
-export default function CampanaNotificaciones({ onIrA }: { onIrA?: (tab: string) => void }) {
+export default function CampanaNotificaciones({ onIrA, enMenu }: { onIrA?: (tab: string) => void; enMenu?: boolean }) {
   const isMobile = useIsMobile();
   const [abierto, setAbierto] = useState(false);
+  // Dónde nace el panel cuando la campana vive en el menú: se ancla al botón,
+  // no a la esquina de la pantalla. Un panel fijo arriba a la derecha, con el
+  // botón abajo a la izquierda, obliga a cruzar la vista de punta a punta.
+  const [ancla, setAncla] = useState<{ left: number; bottom: number } | null>(null);
   const [data, setData] = useState<any[]>([]);
   const [noLeidas, setNoLeidas] = useState(0);
   const [cargando, setCargando] = useState(false);
@@ -79,28 +83,61 @@ export default function CampanaNotificaciones({ onIrA }: { onIrA?: (tab: string)
 
   const panel: any = isMobile
     ? { position: 'fixed', top: 64, left: 8, right: 8, maxHeight: '72vh' }
-    : { position: 'fixed', top: 60, right: 16, width: 400, maxHeight: '78vh' };
+    : enMenu && ancla
+      ? { position: 'fixed', left: ancla.left, bottom: ancla.bottom, width: 400, maxHeight: '72vh' }
+      : { position: 'fixed', top: 60, right: 16, width: 400, maxHeight: '78vh' };
+
+  const alternar = (e: any) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    setAncla({ left: r.right + 8, bottom: Math.max(12, window.innerHeight - r.bottom) });
+    setAbierto(a => !a);
+    if (!abierto) cargar();
+  };
+
+  const icono = (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+    </svg>
+  );
 
   return (
     <>
-      <button onClick={() => { setAbierto(a => !a); if (!abierto) cargar(); }} aria-label="Notificaciones"
-        style={{
-          position: 'fixed', top: 12, right: 12, zIndex: 108, width: 44, height: 44,
-          background: '#fff', border: '1px solid #e8e8e8', borderRadius: 10, cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-        }}>
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-          <path d="M13.7 21a2 2 0 0 1-3.4 0" />
-        </svg>
-        {noLeidas > 0 && (
-          <span style={{
-            position: 'absolute', top: -5, right: -5, minWidth: 19, height: 19, padding: '0 5px',
-            background: '#b93333', color: '#fff', borderRadius: 99, fontSize: '0.65rem', fontWeight: 800,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
-          }}>{noLeidas > 99 ? '99+' : noLeidas}</span>
-        )}
-      </button>
+      {enMenu ? (
+        /* Dentro del menú se comporta como un renglón más: mismo alto, mismo
+           tipo de letra. Es un lugar del CRM, no un botón flotando encima. */
+        <button onClick={alternar} aria-label="Notificaciones"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left',
+            background: abierto ? '#EEECFE' : 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+            margin: '0 -8px', padding: '7px 8px', borderRadius: 8, fontSize: '0.78rem', fontWeight: 700,
+            color: noLeidas > 0 ? '#C0554E' : '#6b6b74',
+          }}>
+          <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, color: noLeidas > 0 ? '#C0554E' : '#b3b1bb' }}>{icono}</span>
+          Notificaciones
+          {noLeidas > 0 && (
+            <span style={{ marginLeft: 'auto', minWidth: 18, background: '#C0554E', color: '#fff', borderRadius: 99, fontSize: '0.6rem', fontWeight: 800, padding: '2px 6px', textAlign: 'center' }}>
+              {noLeidas > 99 ? '99+' : noLeidas}
+            </span>
+          )}
+        </button>
+      ) : (
+        <button onClick={() => { setAbierto(a => !a); if (!abierto) cargar(); }} aria-label="Notificaciones"
+          style={{
+            position: 'fixed', top: 12, right: 12, zIndex: 108, width: 44, height: 44,
+            background: '#fff', border: '1px solid #e8e8e8', borderRadius: 10, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', color: '#1a1a1a',
+          }}>
+          {icono}
+          {noLeidas > 0 && (
+            <span style={{
+              position: 'absolute', top: -5, right: -5, minWidth: 19, height: 19, padding: '0 5px',
+              background: '#b93333', color: '#fff', borderRadius: 99, fontSize: '0.65rem', fontWeight: 800,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+            }}>{noLeidas > 99 ? '99+' : noLeidas}</span>
+          )}
+        </button>
+      )}
 
       {abierto && (
         <>
