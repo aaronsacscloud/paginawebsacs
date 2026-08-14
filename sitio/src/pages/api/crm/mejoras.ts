@@ -20,6 +20,23 @@ const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, h
 export const ESTADOS_MEJORA = ['idea', 'cotizada', 'en_proceso', 'entregada', 'descartada'] as const;
 const CATEGORIAS = ['personalizacion', 'plugin', 'ajuste', 'modulo', 'capacitacion', 'otro'];
 
+// Lo prometido que ya venció. Las cuentas no se pierden por lo que no
+// prometiste: se pierden por lo que prometiste y no llegó. Solo cuentan las
+// COMPROMETIDAS —cotizada o en proceso—; una idea con fecha tentativa no es una
+// promesa rota.
+export function vencidas(rows: any[]): any[] {
+  const hoy = new Date().toISOString().slice(0, 10);
+  return rows.filter(m => m.fecha_compromiso && m.fecha_compromiso < hoy
+    && (m.estado === 'cotizada' || m.estado === 'en_proceso'))
+    .map(m => ({
+      id: m.id, titulo: m.titulo, company_id: m.company_id,
+      cliente: m.companies?.nombre_comercial || m.companies?.nombre || null,
+      fecha_compromiso: m.fecha_compromiso,
+      dias: Math.floor((Date.now() - new Date(m.fecha_compromiso + 'T12:00:00').getTime()) / 86400000),
+    }))
+    .sort((a, b) => b.dias - a.dias);
+}
+
 // Campos que el cliente puede mandar. Lista blanca a propósito: un update con
 // company_id o created_at colados movería el renglón de cuenta o falsearía su
 // antigüedad.
@@ -45,15 +62,23 @@ export const GET: APIRoute = async ({ request, url }) => {
   const user = await getCurrentUser(request);
   if (!user) return json({ error: 'No autenticado' }, 401);
   const companyId = url.searchParams.get('company_id') || '';
-  if (!companyId) return json({ error: 'Falta el cliente.' }, 400);
 
-  const { data, error } = await supabase.from('mejoras')
-    .select('*, bookings(id, fecha, asunto, event_types(nombre, categoria)), quotes(id, numero, estado, total)')
-    .eq('company_id', companyId).is('archived_at', null)
+  // Sin cliente devuelve TODAS: las mejoras viven dentro de cada cuenta y así
+  // no se ve el conjunto —cuánto dinero hay parado en ideas abiertas ni qué se
+  // prometió y ya venció—, que es un embudo entero invisible.
+  let q = supabase.from('mejoras')
+    .select(companyId
+      ? '*, bookings(id, fecha, asunto, event_types(nombre, categoria)), quotes(id, numero, estado, total)'
+      : '*, companies(id, nombre, nombre_comercial, plan), quotes(id, numero, estado)')
+    .is('archived_at', null)
     .order('fecha_entrega', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false });
+  if (companyId) q = q.eq('company_id', companyId);
+  else q = q.limit(500);
+
+  const { data, error } = await q;
   if (error) return json({ error: error.message }, 500);
-  return json({ data: data || [] });
+  return json({ data: data || [], vencidas: vencidas(data || []) });
 };
 
 export const POST: APIRoute = async ({ request }) => {

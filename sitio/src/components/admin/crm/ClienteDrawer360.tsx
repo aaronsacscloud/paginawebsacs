@@ -98,6 +98,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
   // el cliente no está acudiendo a la consultoría que paga, eso tiene que verse
   // sin que nadie vaya a buscarlo.
   const [alertasReu, setAlertasReu] = useState<any[]>([]);
+  const [vencidasMej, setVencidasMej] = useState<any[]>([]);
   const [editandoNombre, setEditandoNombre] = useState(false);
   const [nombreEd, setNombreEd] = useState('');
   const isMobile = useIsMobile();
@@ -116,6 +117,8 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
     let alive = true; setAlertasReu([]);
     fetch('/api/scheduling/reuniones?company_id=' + companyId)
       .then(r => r.json()).then(j => { if (alive) setAlertasReu(j.alertas || []); }).catch(() => {});
+    fetch('/api/crm/mejoras?company_id=' + companyId)
+      .then(r => r.json()).then(j => { if (alive) setVencidasMej(j.vencidas || []); }).catch(() => {});
     return () => { alive = false; };
   }, [companyId]);
 
@@ -197,7 +200,10 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                 <button style={D.tab(tab === 'subs')} onClick={() => irA('subs')}>Suscripciones ({subs.length})</button>
                 <button style={D.tab(tab === 'oport')} onClick={() => irA('oport')}>Oportunidades</button>
                 <button style={D.tab(tab === 'resumen')} onClick={() => irA('resumen')}>Actividad</button>
-                <button style={D.tab(tab === 'mejoras')} onClick={() => irA('mejoras')}>Mejoras</button>
+                <button style={D.tab(tab === 'mejoras')} onClick={() => irA('mejoras')}>
+                  Mejoras
+                  {vencidasMej.length > 0 && <span title="Comprometido y vencido" style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 99, background: '#EF7A72', marginLeft: 5, verticalAlign: 'middle' }} />}
+                </button>
                 <button style={D.tab(tab === 'reuniones')} onClick={() => irA('reuniones')}>
                   Reuniones
                   {alertasReu.length > 0 && <span title="Inasistencias" style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 99, background: '#EF7A72', marginLeft: 5, verticalAlign: 'middle' }} />}
@@ -207,6 +213,13 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
             </div>
             <div style={D.body}>
               {msg && <div style={{ background: '#e8f5e9', color: '#1b5e20', borderRadius: 8, padding: '8px 12px', marginBottom: 12, fontSize: '0.8rem', fontWeight: 700 }}>{msg}</div>}
+              {tab === 'resumen' && vencidasMej.length > 0 && (
+                <div onClick={() => irA('mejoras')}
+                  style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 10, padding: '10px 13px', marginBottom: 12, fontSize: '0.79rem', color: '#C0554E', cursor: 'pointer', lineHeight: 1.5 }}>
+                  <b style={{ color: '#8c2f28' }}>⚠️ {vencidasMej.length} cosa(s) comprometidas se pasaron de fecha.</b>{' '}
+                  {vencidasMej[0].titulo} lleva {vencidasMej[0].dias} días tarde — ver mejoras.
+                </div>
+              )}
               {tab === 'resumen' && alertasReu.map((a: any) => (
                 <div key={a.categoria} onClick={() => irA('reuniones')}
                   style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 10, padding: '10px 13px', marginBottom: 12, fontSize: '0.79rem', color: '#C0554E', cursor: 'pointer', lineHeight: 1.5 }}>

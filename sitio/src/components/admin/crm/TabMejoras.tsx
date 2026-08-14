@@ -38,16 +38,17 @@ const S = {
 export default function TabMejoras({ companyId, cliente, flash }: any) {
   // `cliente` es el nombre que va al abrir la cotización desde una idea.
   const [rows, setRows] = useState<any[] | null>(null);
+  const [vencidas, setVencidas] = useState<any[]>([]);
   const [reuniones, setReuniones] = useState<any[]>([]);
   const [editando, setEditando] = useState<any>(null);   // {} = nueva
   const [reporte, setReporte] = useState(false);
 
   const cargar = () => fetch('/api/crm/mejoras?company_id=' + companyId)
-    .then(r => r.json()).then(j => setRows(j.data || [])).catch(() => setRows([]));
+    .then(r => r.json()).then(j => { setRows(j.data || []); setVencidas(j.vencidas || []); }).catch(() => setRows([]));
   useEffect(() => {
     let alive = true; setRows(null);
     fetch('/api/crm/mejoras?company_id=' + companyId).then(r => r.json())
-      .then(j => { if (alive) setRows(j.data || []); }).catch(() => { if (alive) setRows([]); });
+      .then(j => { if (alive) { setRows(j.data || []); setVencidas(j.vencidas || []); } }).catch(() => { if (alive) setRows([]); });
     fetch('/api/scheduling/reuniones?company_id=' + companyId).then(r => r.json())
       .then(j => { if (alive) setReuniones(j.data || []); }).catch(() => {});
     return () => { alive = false; };
@@ -131,6 +132,20 @@ export default function TabMejoras({ companyId, cliente, flash }: any) {
 
   return (
     <div>
+      {/* Lo prometido que ya venció va ARRIBA de todo: una promesa que no llegó
+          hace más daño que una que nunca se hizo. */}
+      {vencidas.length > 0 && (
+        <div style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 10, padding: '11px 13px', marginBottom: 12, display: 'flex', gap: 9, alignItems: 'flex-start' }}>
+          <span style={{ fontSize: '1rem', lineHeight: 1.2 }}>⚠️</span>
+          <div style={{ fontSize: '0.79rem', color: '#C0554E', lineHeight: 1.6 }}>
+            <b style={{ color: '#8c2f28' }}>{vencidas.length} {vencidas.length === 1 ? 'cosa comprometida se pasó de fecha' : 'cosas comprometidas se pasaron de fecha'}.</b>
+            {vencidas.map((v: any) => (
+              <div key={v.id}>{v.titulo} · se prometió para el {fmtDate(v.fecha_compromiso)}, {v.dias} {v.dias === 1 ? 'día' : 'días'} tarde</div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
         {[['Entregadas este año', esteAnio], ['Cobrado en mejoras', money(cobrado)], ['Ideas abiertas', ideas.length], ['Potencial', '~' + money(potencial)]].map(([l, v]: any) => (
           <div key={l} style={{ background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '12px 14px', minWidth: 130, flex: 1 }}>

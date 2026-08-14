@@ -17,6 +17,7 @@ import CommissionsTab from './crm/CommissionsTab';
 import ContentReviewTab from './crm/ContentReviewTab';
 import RevenueHub from './RevenueHub';
 import ClientesTab from './crm/ClientesTab';
+import MejorasTab from './crm/MejorasTab';
 import ReunionesTab from './crm/ReunionesTab';
 import SubscriptionsTab from './crm/SubscriptionsTab';
 import PagosTab from './crm/PagosTab';
@@ -39,7 +40,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros';
+type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras';
 
 // SVG icons (Squarespace-style, clean strokes)
 const ICONS: Record<string, string> = {
@@ -77,6 +78,7 @@ const NAV_SECTIONS = [
       { id: 'cotizaciones' as Tab, label: 'Cotizaciones', icon: 'cotizaciones' },
       { id: 'pagos' as Tab, label: 'Pagos', icon: 'pagos' },
       { id: 'reuniones' as Tab, label: 'Reuniones', icon: 'agenda' },
+      { id: 'mejoras' as Tab, label: 'Mejoras e ideas', icon: 'oportunidades' },
     ],
   },
   {
@@ -450,6 +452,8 @@ export default function CrmDashboard() {
           </div>
         ) : tab === 'reuniones' ? (
           <ReunionesTab onOpenContact={(id) => setProfileContactId(id)} />
+        ) : tab === 'mejoras' ? (
+          <ErrorBoundary><MejorasTab /></ErrorBoundary>
         ) : tab === 'pagos' ? (
           <ErrorBoundary><PagosTab /></ErrorBoundary>
         ) : tab === 'clientes' ? (
