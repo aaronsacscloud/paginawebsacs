@@ -74,52 +74,70 @@ const pieItem = { display: 'flex', alignItems: 'center', gap: 8, textDecoration:
 const pieIcono = { display: 'flex', alignItems: 'center', flexShrink: 0 } as const;
 
 const NAV_SECTIONS = [
+  // Agrupado por el SUJETO de cada pantalla, no por "lo importante primero":
+  // el grupo "Principal" era un cajón de sastre donde convivían un tablero, una
+  // lista de pendientes, los leads, los clientes y un radar.
+  //
+  // Los títulos son los de la consultoría —cuentas, facturación,
+  // acompañamiento— y no los del software: "acompañamiento" ya es una palabra
+  // que se usa en los filtros de Clientes.
   {
-    label: 'Principal',
+    // Sin título: lo que se abre todos los días no necesita presentación.
+    label: '',
     items: [
-      { id: 'dashboard' as Tab, label: 'Dashboard', icon: 'dashboard' },
       { id: 'hoy' as Tab, label: 'Hoy', icon: 'hoy' },
+      { id: 'dashboard' as Tab, label: 'Tablero', icon: 'dashboard' },
+    ],
+  },
+  {
+    label: 'Cuentas',
+    items: [
       { id: 'pipeline' as Tab, label: 'Leads', icon: 'pipeline' },
-      { id: 'deals' as Tab, label: 'Oportunidades', icon: 'deals' },
       { id: 'clientes' as Tab, label: 'Clientes', icon: 'clientes' },
+      { id: 'deals' as Tab, label: 'Oportunidades', icon: 'deals' },
+      // Reuniones se junta con las cuentas: es con quien te sientas. Antes
+      // vivía en Ventas y su gemela "Agenda" en Sistema, en grupos distintos.
+      { id: 'reuniones' as Tab, label: 'Reuniones', icon: 'agenda' },
+    ],
+  },
+  {
+    label: 'Facturación',
+    items: [
+      { id: 'cotizaciones' as Tab, label: 'Cotizaciones', icon: 'cotizaciones' },
+      { id: 'pagos' as Tab, label: 'Pagos', icon: 'pagos' },
+      { id: 'suscripciones' as Tab, label: 'Suscripciones · ARR', icon: 'pagos' },
+    ],
+  },
+  {
+    label: 'Acompañamiento',
+    items: [
+      { id: 'mejoras' as Tab, label: 'Mejoras e ideas', icon: 'oportunidades' },
       { id: 'oportunidades' as Tab, label: 'Radar de ventas', icon: 'oportunidades' },
     ],
   },
   {
-    label: 'Ventas',
-    items: [
-      { id: 'suscripciones' as Tab, label: 'Suscripciones · ARR', icon: 'pagos' },
-      { id: 'cotizaciones' as Tab, label: 'Cotizaciones', icon: 'cotizaciones' },
-      { id: 'pagos' as Tab, label: 'Pagos', icon: 'pagos' },
-      { id: 'reuniones' as Tab, label: 'Reuniones', icon: 'agenda' },
-      { id: 'mejoras' as Tab, label: 'Mejoras e ideas', icon: 'oportunidades' },
-    ],
-  },
-  {
-    label: 'Marketing',
+    // "Marketing" agrupaba un solo renglón. Un grupo de uno no agrupa nada.
+    label: 'Automatización',
     items: [
       { id: 'automations' as Tab, label: 'Automatizaciones', icon: 'automations' },
+      { id: 'agents' as Tab, label: 'Agentes IA', icon: 'automations' },
     ],
   },
   {
-    label: 'Partners',
+    label: 'Colaboradores',
     items: [
       { id: 'partners' as Tab, label: 'Partners', icon: 'partners' },
       { id: 'commissions' as Tab, label: 'Comisiones', icon: 'pagos' },
       { id: 'content-review' as Tab, label: 'Revisar contenido', icon: 'automations' },
-    ],
-  },
-  {
-    label: 'IA',
-    items: [
-      { id: 'agents' as Tab, label: 'Agentes IA', icon: 'automations' },
+      // "Mi desempeño" no tiene nada de IA: es tu marcador.
       { id: 'desempeno' as Tab, label: 'Mi desempeño', icon: 'dashboard' },
     ],
   },
   {
-    label: 'Sistema',
+    // Se llama Ajustes y no Configuración para no chocar con el botón del pie,
+    // que lleva a otra pantalla.
+    label: 'Ajustes',
     items: [
-      { id: 'agenda' as Tab, label: 'Agenda', icon: 'agenda' },
       { id: 'pipelines' as Tab, label: 'Pipelines', icon: 'pipeline' },
       { id: 'cobros' as Tab, label: 'Cobro con Mercado Pago', icon: 'pagos' },
     ],
@@ -130,7 +148,10 @@ function getInitialTab(): Tab {
   if (typeof window === 'undefined') return 'dashboard';
   const params = new URLSearchParams(window.location.search);
   const t = params.get('tab') as Tab | null;
-  const allIds = NAV_SECTIONS.flatMap(s => s.items.map(i => i.id));
+  // 'agenda' y 'config' ya no son renglones del menú —la primera es una vista
+  // dentro de Reuniones y la segunda vive en el pie—, pero las ligas viejas y
+  // los enlaces guardados tienen que seguir llevando a donde llevaban.
+  const allIds = [...NAV_SECTIONS.flatMap(s => s.items.map(i => i.id)), 'agenda', 'config', 'sacs'];
   if (t && allIds.includes(t)) return t;
   // Mobile aterriza en "Hoy" (inbox diario); desktop en Dashboard.
   if (window.matchMedia('(max-width: 899px)').matches) return 'hoy';
@@ -367,9 +388,9 @@ export default function CrmDashboard() {
 
         {/* Nav sections */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
-          {NAV_SECTIONS.map(section => (
-            <div key={section.label} style={{ marginBottom: 8 }}>
-              {!sidebarCollapsed && (
+          {NAV_SECTIONS.map((section, si) => (
+            <div key={section.label || si} style={{ marginBottom: 8 }}>
+              {!sidebarCollapsed && section.label && (
                 <div style={{
                   padding: '13px 20px 5px', fontSize: '0.55rem', fontWeight: 800,
                   color: '#c2c0c9', textTransform: 'uppercase',
@@ -470,8 +491,30 @@ export default function CrmDashboard() {
           <ErrorBoundary><SubscriptionsTab /></ErrorBoundary>
         ) : tab === 'cobros' ? (
           <ErrorBoundary><div style={{ padding: '4px 12px 28px' }}><PasarelaMercadoPago /></div></ErrorBoundary>
-        ) : tab === 'agenda' ? (
-          <SchedulingTab />
+        ) : tab === 'agenda' || tab === 'reuniones' ? (
+          /* Reuniones y Agenda eran dos entradas del menú, en grupos distintos,
+             para el mismo tema: las juntas que ya tienes y los horarios en que
+             te pueden agendar. Ahora es una sola con dos vistas. */
+          <div>
+            <div style={{ display: 'flex', gap: 6, padding: '18px 24px 0' }}>
+              {([['reuniones', 'Reuniones'], ['agenda', 'Horarios y tipos']] as const).map(([id, l]) => {
+                const on = tab === id;
+                return (
+                  <button key={id} onClick={() => switchTab(id as Tab)} style={{
+                    padding: '9px 16px', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                    background: on ? '#EEECFE' : 'transparent', color: on ? '#5B4BD6' : '#666',
+                    borderRadius: '9px 9px 0 0', borderBottom: on ? '2px solid #9B8CFA' : '2px solid transparent',
+                    fontWeight: on ? 800 : 500, fontSize: '0.8125rem', marginBottom: -1,
+                  }}>{l}</button>
+                );
+              })}
+            </div>
+            <div style={{ borderTop: '1px solid #ececec' }}>
+              {tab === 'reuniones'
+                ? <ReunionesTab onOpenContact={(id) => setProfileContactId(id)} />
+                : <SchedulingTab />}
+            </div>
+          </div>
         ) : tab === 'automations' ? (
           <ErrorBoundary><AutomationsTab /></ErrorBoundary>
         ) : tab === 'partners' ? (
@@ -516,8 +559,6 @@ export default function CrmDashboard() {
               Reemplaza YOUR_USER_ID con tu team_members.id
             </div>
           </div>
-        ) : tab === 'reuniones' ? (
-          <ReunionesTab onOpenContact={(id) => setProfileContactId(id)} />
         ) : tab === 'mejoras' ? (
           <ErrorBoundary><MejorasTab /></ErrorBoundary>
         ) : tab === 'pagos' ? (
@@ -563,7 +604,7 @@ export default function CrmDashboard() {
             section.items
               .filter(i => !BOTTOM_IDS.includes(i.id))
               .map(i => ({
-                label: `${section.label} · ${i.label}`,
+                label: section.label ? `${section.label} · ${i.label}` : i.label,
                 icon: <span style={{ display: 'flex', width: 20, color: '#8a8f98' }} dangerouslySetInnerHTML={{ __html: ICONS[i.icon] || '' }} />,
                 active: tab === i.id,
                 onClick: () => switchTab(i.id),
