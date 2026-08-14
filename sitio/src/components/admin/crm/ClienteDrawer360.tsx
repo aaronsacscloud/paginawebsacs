@@ -34,7 +34,18 @@ const D = {
   // Una sola fila con scroll horizontal (9 pestañas). En desktop (940px) caben
   // igual; nowrap no cambia nada visible y arregla el wrap en mobile.
   tabbar: { display: 'flex', gap: 2, marginTop: 12, flexWrap: 'nowrap' as const, overflowX: 'auto' as const, WebkitOverflowScrolling: 'touch' as const },
-  tab: (act: boolean) => ({ flexShrink: 0, minHeight: 44, padding: '9px 14px', border: 'none', borderBottom: act ? '2.5px solid #1a1a1a' : '2.5px solid transparent', background: 'none', cursor: 'pointer', fontWeight: act ? 800 : 600, fontSize: '0.83rem', color: act ? '#1a1a1a' : '#777', whiteSpace: 'nowrap' as const }) as const,
+  // La activa se marca con FONDO, no solo con la línea, igual que en
+  // cotizaciones: sobre una barra de siete pestañas el subrayado solo se ve si
+  // ya sabes dónde buscarlo.
+  tab: (act: boolean) => ({
+    flexShrink: 0, minHeight: 44, padding: '9px 15px', border: 'none',
+    background: act ? '#EEECFE' : 'transparent',
+    borderRadius: act ? '9px 9px 0 0' : 0,
+    borderBottom: act ? '2px solid #9B8CFA' : '2px solid transparent',
+    color: act ? '#5B4BD6' : '#666', cursor: 'pointer',
+    fontWeight: act ? 800 : 500, fontSize: '0.83rem',
+    whiteSpace: 'nowrap' as const, marginBottom: -1, fontFamily: 'inherit',
+  }) as const,
   body: { padding: 22 } as const,
   card: { background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: 16, marginBottom: 14 } as const,
   // ── Secciones de la ficha ──
@@ -227,12 +238,12 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                   No está acudiendo a lo que tiene contratado — ver reuniones.
                 </div>
               ))}
-              {tab === 'resumen' && (<>
-                <TabResumen res={res} co={co} act={act} subs={subs} acts={data?.activities || []} reload={() => { load(); onChanged(); }} />
+              {tab === 'resumen' && <TabResumen res={res} co={co} act={act} subs={subs} acts={data?.activities || []} reload={() => { load(); onChanged(); }} />}
+              {tab === 'info' && <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []} contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio} reload={() => { load(); onChanged(); }} flash={flash} />}
+              {tab === 'subs' && (<>
+                <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />
                 <TabSacs co={co} act={act} reload={() => { load(); onChanged(); }} flash={flash} />
               </>)}
-              {tab === 'info' && <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []} contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio} reload={() => { load(); onChanged(); }} flash={flash} />}
-              {tab === 'subs' && <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />}
               {tab === 'oport' && <TabOportunidades companyId={companyId} co={co} principal={principal} subs={subs} flash={flash} reload={() => { load(); onChanged(); }} />}
               {tab === 'reuniones' && <TabReuniones companyId={companyId} principal={principal} contactos={contactos} flash={flash} />}
               {tab === 'mejoras' && <TabMejoras companyId={companyId} cliente={co?.nombre_comercial || co?.nombre} flash={flash} />}
@@ -352,11 +363,16 @@ function DatosDesactualizados({ syncAt }: { syncAt?: string | null }) {
   );
 }
 
-/* ─────────── 📊 Resumen ─────────── */
+/* ─────────── 📊 Actividad ─────────── */
+// Todo sale del caché que llenan los crons —companies.actividad y
+// companies.uso_sacs—: abrir esta pestaña ya no le pide nada a SACS. Antes
+// disparaba una consulta en vivo por cada apertura para pintar listas de 60
+// sucursales y 418 usuarios que nadie leía.
+const FAMILIAS = ['Ventas', 'Inventario', 'Clientes', 'Programas', 'Cortes', 'Administración'];
+const FAM_LABEL: Record<string, string> = { Programas: 'Fidelización', Cortes: 'Cortes de caja' };
+
 function TabResumen({ res, co, act, subs, acts, reload }: any) {
-  const isMobile = useIsMobile();
   const dias = co?.dias_sin_venta;
-  const senales = computarSenales(co, (subs || []).find((s: any) => s.estado === 'activa'));
   // Tareas de onboarding del cliente (activities tipo 'tarea' category onboarding).
   const onboarding = (acts || []).filter((a: any) => a.tipo === 'tarea' && a.metadata?.category === 'onboarding');
   const [togMsg, setTogMsg] = useState('');
@@ -375,77 +391,109 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [co?.id]);
-  const tend = act && act.tendencia_pct;
+
   const [periodo, setPeriodo] = useState<'30d' | '12m'>('30d');
-  const sucPlan = Number(co.sucursales || 0);
-  const sucReales = act ? Number(act.sucursales || 0) : 0;
+  const [ventana, setVentana] = useState<'7d' | '30d'>('30d');
+  const uso = co?.uso_sacs || null;
+  const tend = act?.tendencia_pct;
+
+  // Sucursales: la buena es la del CATÁLOGO. Antes se contaba el largo del
+  // desglose —60 renglones— y arriba decía "de 60 dadas de alta" mientras abajo
+  // decía "147 registradas". Eran el mismo dato mal contado.
+  const sucVivas = Number(act?.sucursales || 0);
+  const sucTotales = Number(act?.sucursales_totales || 0) || sucVivas;
+  const usTotal = Number(act?.usuarios || 0);
+  const usVivos = Number(act?.usuarios_operando ?? 0);
+  const t30 = Number(act?.total_30d || 0);
+  const v30 = Number(act?.ventas_30d || 0);
+  const v7 = Number(act?.ventas_7d || 0);
+
+  const modulos: any[] = Array.isArray(uso?.modulos) ? uso.modulos : [];
+  const top5 = modulos.filter(m => Number(m.docs_30d || 0) > 0)
+    .sort((a, b) => Number(b.docs_30d || 0) - Number(a.docs_30d || 0)).slice(0, 5);
+  // La barra se mide contra el SEGUNDO lugar: con el punto de venta en 66,850 y
+  // el resto por debajo de 500, medir contra el primero dejaría todo lo demás
+  // como una raya y no se distinguiría transferencias de cortes de caja.
+  const tope = Math.max(1, Number(top5[1]?.docs_30d || top5[0]?.docs_30d || 1));
+  const docs = (nombre: string, campo: 'docs_7d' | 'docs_30d' = 'docs_7d') =>
+    Number(modulos.find(m => m.modulo === nombre)?.[campo] || 0);
+
+  const familias = FAMILIAS.map(f => {
+    const items = modulos.filter(m => m.familia === f);
+    return {
+      nombre: FAM_LABEL[f] || f, total: items.length,
+      usa: items.filter(m => m.usa).length,
+      mov: items.reduce((a, m) => a + Number(m.docs_30d || 0), 0),
+    };
+  }).filter(f => f.total > 0);
+  const nunca = modulos.filter(m => !m.usa && !Number(m.docs_30d || 0)).map(m => m.modulo);
+
+  const sietes: [string, number][] = uso ? [
+    ['Ventas en piso', docs('Punto de venta')],
+    ['Transferencias', Number(uso?.transferencias?.total_7d || 0)],
+    ['Facturas timbradas', Number(uso?.facturacion?.timbradas_7d || 0)],
+    ['Clientes nuevos', Number(uso?.clientes?.nuevos_7d || 0)],
+    ['Pedidos / eCommerce', docs('Pedidos / eCommerce')],
+    ['Conteos físicos', Number(uso?.conteos?.total_7d || 0)],
+    ['Apartados', docs('Apartados')],
+    ['Órdenes de compra', docs('Órdenes de compra')],
+  ] : [];
+
+  // El rosa marca lo ELEGIDO, igual que la opción seleccionada de los filtros.
+  const seg = (on: boolean) => ({
+    border: 'none', cursor: 'pointer', padding: '5px 13px', fontSize: '0.7rem', fontWeight: 700,
+    fontFamily: 'inherit', background: on ? 'rgba(244,168,205,.34)' : 'transparent', color: on ? '#9c3d70' : '#8a8a92',
+  }) as const;
+  const cajaSeg = { display: 'inline-flex', border: '1px solid #efe7f1', borderRadius: 20, overflow: 'hidden', background: '#fff' } as const;
+  const num = { fontSize: '1.4rem', fontWeight: 800, lineHeight: 1, letterSpacing: '-.02em' } as const;
+  const cap = { fontSize: '0.64rem', color: '#a5a2af', fontWeight: 700, textTransform: 'uppercase' as const, marginTop: 5, letterSpacing: '.05em' } as const;
+  const kpi = { background: '#fff', border: '1px solid #eeeef1', borderRadius: 12, padding: '14px 15px' } as const;
+
   return (
     <div>
-      {/* ── Qué tan viva está la cuenta ──
-          Fuera ARR, MRR, próxima factura y total pagado: eso es del CONTRATO y
-          ya vive en Suscripciones y en Info general. Repetirlo aquí obligaba a
-          preguntarse cuál de los dos estaba bien.
-          Y se muestra lo ACTIVO contra lo dado de alta: el número solo no dice
-          nada, la proporción sí — 146 usuarios de 418 con acceso significa que
-          hay 272 cuentas que nadie usa. */}
-      {(() => {
-        const sucDet: any[] = Array.isArray(act?.sucursales_detalle) ? act.sucursales_detalle : [];
-        const sucAltas = sucDet.length || sucReales;
-        const sucVivas = sucDet.length ? sucDet.filter(x => x.activa).length : sucReales;
-        const usTotal = Number(act?.usuarios || 0);
-        const usVivos = Number(act?.usuarios_operando ?? 0);
-        const t30 = Number(act?.total_30d || 0);
-        const v30 = Number(act?.ventas_30d || 0);
-        return (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 11, marginBottom: 14 }}>
-            <div style={{ ...D.kpi, borderLeft: '3px solid #9B8CFA' }}>
-              <div style={D.kl}>Sucursales activas</div>
-              <div style={D.kv}>{sucAltas ? sucVivas : '—'}</div>
-              <div style={{ fontSize: '0.66rem', color: '#a7abb3' }}>
-                {sucAltas ? <>de {sucAltas} dadas de alta{sucAltas - sucVivas > 0 ? ` · ${sucAltas - sucVivas} sin vender` : ''}</> : 'sin datos de la cuenta'}
-              </div>
-            </div>
-            <div style={{ ...D.kpi, borderLeft: '3px solid #9B8CFA' }}>
-              <div style={D.kl}>Usuarios activos</div>
-              <div style={D.kv}>{usTotal ? usVivos : '—'}</div>
-              <div style={{ fontSize: '0.66rem', color: '#a7abb3' }}>
-                {usTotal ? <>de {usTotal} con acceso{act?.ultimo_usuario_at ? ` · último ingreso ${fmtDate(act.ultimo_usuario_at)}` : ''}</> : 'sin datos de la cuenta'}
-              </div>
-            </div>
-            <div style={{ ...D.kpi, borderLeft: '3px solid #4FBF95' }}>
-              <div style={D.kl}>Facturación en el sistema</div>
-              <div style={{ ...D.kv, color: '#1E8A63' }}>{money(periodo === '12m' ? t30 * 12 : t30)}</div>
-              {/* En una cuenta de eventos el mes suelto engaña: el anual es una
-                  proyección del último mes, y se dice que lo es. */}
-              <div style={{ display: 'inline-flex', background: '#f3f3f6', borderRadius: 20, padding: 2, gap: 2, marginTop: 5 }}>
-                {(['30d', '12m'] as const).map(k => (
-                  <button key={k} onClick={() => setPeriodo(k)}
-                    style={{ border: 'none', cursor: 'pointer', borderRadius: 20, padding: '2px 9px', fontSize: '0.6rem', fontWeight: 800, fontFamily: 'inherit', background: periodo === k ? '#9B8CFA' : 'transparent', color: periodo === k ? '#fff' : '#8a8a92' }}>
-                    {k === '30d' ? '30 días' : '12 meses'}
-                  </button>
-                ))}
-              </div>
-              {periodo === '12m' && <div style={{ fontSize: '0.62rem', color: '#b3afbd', marginTop: 3 }}>proyectado del último mes</div>}
-            </div>
-            <div style={{ ...D.kpi, borderLeft: '3px solid #7DA6F5' }}>
-              <div style={D.kl}>Qué tanto lo usa</div>
-              <div style={D.kv}>{v30.toLocaleString('es-MX')} <span style={{ fontSize: '0.68rem', fontWeight: 600, color: '#a7abb3' }}>ventas</span></div>
-              <div style={{ fontSize: '0.66rem', color: '#a7abb3' }}>
-                {tend != null && <b style={{ color: tend >= 0 ? '#1E8A63' : '#C0554E' }}>{tend >= 0 ? '↑' : '↓'} {Math.abs(Math.round(tend))}%</b>}
-                {tend != null ? ' vs. mes anterior' : ''}
-                {act?.ultima_venta ? ` · vendió ${fmtDate(act.ultima_venta)}` : ''}
-              </div>
-            </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 10, marginBottom: 16 }}>
+        <div style={kpi}>
+          <div style={D.kl}>Sucursales vendiendo</div>
+          <div style={{ ...num, marginTop: 5 }}>{sucTotales ? sucVivas : '—'}</div>
+          <div style={{ fontSize: '0.71rem', color: '#8a8a8a', marginTop: 6 }}>
+            {sucTotales ? <>de <b style={{ color: '#3f3b4d' }}>{sucTotales}</b> en la cuenta</> : 'sin datos de la cuenta'}
           </div>
-        );
-      })()}
+        </div>
+        <div style={kpi}>
+          <div style={D.kl}>Usuarios operando</div>
+          <div style={{ ...num, marginTop: 5 }}>{usTotal ? usVivos : '—'}</div>
+          <div style={{ fontSize: '0.71rem', color: '#8a8a8a', marginTop: 6 }}>
+            {usTotal ? <>de <b style={{ color: '#3f3b4d' }}>{usTotal}</b> con acceso</> : 'sin datos de la cuenta'}
+          </div>
+        </div>
+        <div style={kpi}>
+          <div style={D.kl}>Facturación</div>
+          <div style={{ ...num, marginTop: 5, color: '#1E8A63' }}>{money(periodo === '12m' ? t30 * 12 : t30)}</div>
+          <div style={{ marginTop: 7 }}>
+            <span style={cajaSeg}>
+              {(['30d', '12m'] as const).map(k => (
+                <button key={k} onClick={() => setPeriodo(k)} style={seg(periodo === k)}>{k === '30d' ? '30 días' : '12 meses'}</button>
+              ))}
+            </span>
+          </div>
+          {/* En una cuenta de eventos el mes suelto engaña: el anual es una
+              proyección del último mes, y se dice que lo es. */}
+          {periodo === '12m' && <div style={{ fontSize: '0.62rem', color: '#b3afbd', marginTop: 4 }}>proyectado del último mes</div>}
+        </div>
+        <div style={kpi}>
+          <div style={D.kl}>Ventas</div>
+          <div style={{ ...num, marginTop: 5 }}>{v30.toLocaleString('es-MX')}</div>
+          <div style={{ fontSize: '0.71rem', color: '#8a8a8a', marginTop: 6 }}>
+            {tend != null ? <><b style={{ color: tend >= 0 ? '#1E8A63' : '#C0554E' }}>{tend >= 0 ? '↑' : '↓'}{Math.abs(Math.round(tend))}%</b> vs. mes anterior</> : 'en 30 días'}
+          </div>
+        </div>
+      </div>
 
-      {/* ── Onboarding del cliente nuevo (checklist accionable) ── */}
       {onboarding.length > 0 && (
         <div style={D.card}>
           <div style={D.h}>Onboarding ({onboarding.filter((t: any) => t.metadata?.done || (t.metadata?.step === 'activar_cuenta' && co.sacs_account)).length}/{onboarding.length})</div>
           {onboarding.map((t: any) => {
-            const autoOk = t.metadata?.step === 'activar_cuenta' && !!co.sacs_account; // se auto-palomea si la cuenta ya está ligada
+            const autoOk = t.metadata?.step === 'activar_cuenta' && !!co.sacs_account;
             const done = t.metadata?.done || autoOk;
             const due = t.metadata?.due_at ? new Date(t.metadata.due_at) : null;
             const vencida = !done && due && due.getTime() < Date.now();
@@ -462,64 +510,141 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
         </div>
       )}
 
-      {/* ── Qué está usando (actividad real de SACS) ── */}
-      <div style={D.card}>
-        <div style={D.h}>Qué está usando en SACS</div>
-        {/* Estos números vienen del cron; si el cron se cae, siguen pintándose
-            igual y se leen como si fueran de hoy (pasó 6 días en jul-2026).
-            Con más de 24 h sin sincronizar, dilo en la cara. */}
-        <DatosDesactualizados syncAt={co.actividad_sync_at} />
-        {/* Si el cliente opera varias cuentas, dilo: un "$639k en 30d" sin
-            contexto se lee como una sola cuenta y no cuadra con lo que se ve
-            dentro de SACS. */}
-        {act?.cuentas?.length > 1 && (
-          <div style={{ fontSize: '0.76rem', color: '#3764c4', background: '#f2f6ff', border: '1px solid #d9e3fb', borderRadius: 10, padding: '8px 12px', marginBottom: 10 }}>
-            🔗 Suma de <b>{act.cuentas.length} cuentas de SACS</b>: {act.cuentas.join(' · ')}
+      {!act && (
+        <div style={{ ...D.card, color: '#999', fontSize: '0.82rem' }}>
+          {co?.sacs_account ? 'Sin datos sincronizados aún — sincroniza desde Suscripciones.' : 'Liga la cuenta de SACS en Suscripciones para ver su actividad real.'}
+        </div>
+      )}
+
+      {act && (
+        <div style={{ ...D.card, border: '1px solid #eeeef1' }}>
+          <div style={D.h}>
+            Cómo lo está usando
+            <span style={{ marginLeft: 'auto' }}>
+              <span style={cajaSeg}>
+                {(['7d', '30d'] as const).map(k => (
+                  <button key={k} onClick={() => setVentana(k)} style={seg(ventana === k)}>{k === '7d' ? '7 días' : '30 días'}</button>
+                ))}
+              </span>
+            </span>
           </div>
-        )}
-        {act ? (
-          <div>
-            <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: '0.83rem' }}>
-              <span>Última venta: <b style={{ color: dias != null && dias > 15 ? '#b93333' : dias != null && dias >= 3 ? '#a06600' : '#1A8F7A' }}>{fmtDate(co.ultima_venta_at)}{dias != null ? ` (hace ${dias}d)` : ''}</b></span>
-              {act.ventas_7d != null && <span>Ventas 7d: <b>{act.ventas_7d}</b></span>}
-              {act.ventas_30d != null && <span>Ventas 30d: <b>{act.ventas_30d}</b></span>}
-              {act.total_30d != null && <span>Monto 30d: <b>{money(act.total_30d)}</b></span>}
-              {tend != null && <span>Tendencia: <b style={{ color: tend >= 0 ? '#1A8F7A' : '#b93333' }}>{tend >= 0 ? '+' : ''}{tend}%</b></span>}
-              {act.usuarios != null && <span>Usuarios: <b>{act.usuarios}</b>{act.usuarios_operando != null ? ` (${act.usuarios_operando} operando)` : ''}</span>}
-              {/* "Sucursales" es las que OPERAN (vendieron en 30d), no las
-                  registradas: hay cuentas con 145 dadas de alta y 8 vivas. Si
-                  difieren, se dice, porque si no el número parece un error. */}
-              {(sucReales > 0 || sucPlan > 0) && (
-                <span title={act?.sucursales_totales ? `${act.sucursales_totales} registradas en total · ${act.sucursales_permitidas ?? '—'} asignadas a superadmin` : undefined}>
-                  Sucursales operando: <b style={{ color: sucReales > sucPlan && sucPlan > 0 ? '#a06600' : '#16181d' }}>{sucReales || sucPlan}{sucPlan > 0 && sucReales > sucPlan ? ` (plan: ${sucPlan})` : ''}</b>
-                  {act?.sucursales_totales > sucReales ? <span style={{ color: '#9aa0a8' }}> · {act.sucursales_totales} registradas</span> : null}
-                </span>
-              )}
-              {co.health_score != null && <span>Salud: <b style={{ color: co.health_score >= 70 ? '#1A8F7A' : co.health_score >= 40 ? '#a06600' : '#b93333' }}>{co.health_score}</b></span>}
+          {/* Estos números vienen del cron; si el cron se cae, siguen pintándose
+              igual y se leen como si fueran de hoy (pasó 6 días en jul-2026). */}
+          <DatosDesactualizados syncAt={co.actividad_sync_at} />
+          {act?.cuentas?.length > 1 && (
+            <div style={{ fontSize: '0.76rem', color: '#2C5FC4', background: '#f6f9ff', border: '1px solid #dbe7fb', borderRadius: 10, padding: '8px 12px', marginBottom: 12 }}>
+              Suma de <b>{act.cuentas.length} cuentas de SACS</b>: {act.cuentas.join(' · ')}
             </div>
-            <div style={{ marginTop: 10 }}>
-              <div style={{ fontSize: '0.7rem', color: '#999', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Módulos que usa ({(act.modulos || []).length})</div>
-              {(act.modulos || []).length ? (
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {act.modulos.map((m: string) => <span key={m} style={{ ...D.badge, background: '#eef2ff', color: '#3730a3' }}>{m}</span>)}
+          )}
+          <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div>
+              <div style={num}>{(ventana === '7d' ? v7 : v30).toLocaleString('es-MX')}</div>
+              <div style={cap}>Ventas</div>
+            </div>
+            <div>
+              <div style={num}>{Math.round((ventana === '7d' ? v7 / 7 : v30 / 30)).toLocaleString('es-MX')}</div>
+              <div style={cap}>Por día</div>
+            </div>
+            <div>
+              <div style={{ ...num, color: '#1E8A63' }}>{money(t30)}</div>
+              <div style={cap}>Monto 30 días</div>
+            </div>
+            {tend != null && (
+              <div>
+                <div style={{ ...num, color: tend >= 0 ? '#1E8A63' : '#C0554E' }}>{tend >= 0 ? '+' : ''}{Math.round(tend)}%</div>
+                <div style={cap}>Tendencia</div>
+              </div>
+            )}
+            <div>
+              <div style={num}>{usVivos} <span style={{ fontSize: '0.78rem', color: '#b3afbd', fontWeight: 600 }}>de {usTotal}</span></div>
+              <div style={cap}>Usuarios</div>
+            </div>
+            {co.health_score != null && (
+              <div>
+                <div style={{ ...num, color: co.health_score >= 70 ? '#1E8A63' : co.health_score >= 40 ? '#a06600' : '#C0554E' }}>{co.health_score}</div>
+                <div style={cap}>Salud</div>
+              </div>
+            )}
+            <div>
+              <div style={{ ...num, fontSize: '1rem', color: dias != null && dias > 15 ? '#C0554E' : dias != null && dias >= 3 ? '#a06600' : '#1E8A63' }}>
+                {dias === 0 ? 'Hoy' : dias != null ? `Hace ${dias}d` : fmtDate(co.ultima_venta_at)}
+              </div>
+              <div style={cap}>Última venta</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {top5.length > 0 && (
+        <div style={{ ...D.card, border: '1px solid #eeeef1' }}>
+          <div style={D.h}>Los módulos que más usa</div>
+          <div style={{ display: 'flex', gap: 12, fontSize: '0.6rem', color: '#c2c0c9', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em', paddingBottom: 4, borderBottom: '1px solid #f4f3f7' }}>
+            <span style={{ width: 184 }} /><span style={{ flex: 1 }} />
+            <span style={{ width: 74, textAlign: 'right' }}>30 días</span>
+            <span style={{ width: 74, textAlign: 'right' }}>7 días</span>
+          </div>
+          {top5.map((m, i) => (
+            <div key={m.modulo} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '7px 0' }}>
+              <div style={{ fontSize: '0.79rem', fontWeight: 700, width: 184, flexShrink: 0 }}>{m.modulo}</div>
+              <div style={{ flex: 1, height: 8, background: '#f4f3f7', borderRadius: 9, overflow: 'hidden' }}>
+                <span style={{ display: 'block', height: '100%', borderRadius: 9, background: i === 0 ? '#9B8CFA' : i < 3 ? '#b8a8fb' : '#d4cafd', width: `${Math.min(100, (Number(m.docs_30d) / tope) * 100)}%` }} />
+              </div>
+              <div style={{ fontSize: '0.77rem', fontWeight: 800, width: 74, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{Number(m.docs_30d).toLocaleString('es-MX')}</div>
+              <div style={{ fontSize: '0.7rem', color: '#b3afbd', width: 74, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{Number(m.docs_7d || 0).toLocaleString('es-MX')}</div>
+            </div>
+          ))}
+          <div style={{ fontSize: '0.68rem', color: '#c2c0c9', marginTop: 9 }}>
+            La barra compara contra el segundo lugar, no contra el primero: si no, todo lo demás sería una raya.
+          </div>
+        </div>
+      )}
+
+      {uso && (
+        <div style={{ ...D.card, border: '1px solid #eeeef1' }}>
+          <div style={D.h}>Últimos 7 días</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', borderTop: '1px solid #f4f3f7' }}>
+            {sietes.map(([l, v]) => (
+              <div key={l} style={{ padding: '13px 4px 3px' }}>
+                <div style={{ fontSize: '0.62rem', color: '#a5a2af', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em' }}>{l}</div>
+                <div style={{ fontSize: '1.15rem', fontWeight: 800, marginTop: 4, letterSpacing: '-.02em', color: v ? '#1a1a1a' : '#d3d1d9' }}>{v.toLocaleString('es-MX')}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {familias.length > 0 && (
+        <div style={{ ...D.card, border: '1px solid #eeeef1' }}>
+          <div style={D.h}>Uso por familia</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+            {familias.map(f => (
+              <div key={f.nombre}>
+                <div style={{ fontSize: '0.76rem', fontWeight: 800 }}>{f.nombre}</div>
+                <div style={{ fontSize: '0.66rem', color: '#a5a2af', marginTop: 3 }}>
+                  {f.usa} de {f.total} · {f.mov ? f.mov.toLocaleString('es-MX') : 'sin movimiento'}
                 </div>
-              ) : <span style={{ color: '#999', fontSize: '0.8rem' }}>Sin módulos con actividad reciente.</span>}
+                <div style={{ display: 'flex', gap: 3, marginTop: 8 }}>
+                  {Array.from({ length: f.total }).map((_, i) => (
+                    <span key={i} style={{ width: '100%', height: 5, borderRadius: 9, background: i < f.usa ? (f.mov ? '#9B8CFA' : '#ddd9e4') : '#f0eff3' }} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Lo que nunca ha tocado es la lista de lo que le puedes vender: por
+              eso va aquí y no escondido en una pestaña aparte. */}
+          {nunca.length > 0 && (
+            <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid #f4f3f7', fontSize: '0.74rem', color: '#8a8a8a', lineHeight: 2 }}>
+              <b style={{ color: '#1a1a1a' }}>Nunca ha tocado</b>{' '}
+              {nunca.map(n => (
+                <span key={n} style={{ display: 'inline-block', fontSize: '0.68rem', fontWeight: 700, background: '#f6f5f9', color: '#6b6b74', borderRadius: 20, padding: '3px 11px', marginRight: 5 }}>{n}</span>
+              ))}
             </div>
-          </div>
-        ) : <div style={{ color: '#999', fontSize: '0.82rem' }}>{co?.sacs_account ? 'Sin datos sincronizados aún — usa "Sincronizar" en la pestaña Cliente & SACS.' : 'Liga la cuenta SACS en la pestaña Cliente & SACS para ver su actividad real.'}</div>}
-      </div>
-      <div style={D.card}>
-        <div style={D.h}>Suscripciones</div>
-        {subs.length === 0 && <div style={{ color: '#999', fontSize: '0.82rem' }}>Sin suscripciones — agrégala en la pestaña Suscripciones.</div>}
-        {subs.map((s: any) => (
-          <div key={s.id} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #f4f4f4', fontSize: '0.83rem', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
-            <b style={{ minWidth: isMobile ? 0 : 150 }}>{s.nombre_plan}</b><span style={{ color: '#888' }}>{s.ciclo}</span>
-            <span style={{ fontWeight: 700 }}>{money(s.arr)} ARR</span>
-            <span style={{ color: '#888' }}>próx: {fmtDate(s.proxima_factura)}</span>
-            <span style={{ marginLeft: 'auto' }}><EstadoBadge e={s.estado} /></span>
-          </div>
-        ))}
-      </div>
+          )}
+        </div>
+      )}
+
+      {co?.id && <Evolucion companyId={co.id} />}
     </div>
   );
 }
@@ -744,202 +869,6 @@ function TabInfoGeneral({ co, companyId, subs = [], pagos = [], contactos = [], 
   );
 }
 
-/* Panorama 360 de la cuenta en SACS (usuarios/sucursales/transacciones/promos +
- * uso profundo: 7 días, programas, administración, módulos nunca activados).
- * Carga on-demand desde /api/crm/sacs-cuenta-360; mientras llega, pinta el uso
- * persistido por el cron (co.uso_sacs). */
-function Panorama360({ account, co }: { account: string; co?: any }) {
-  const isMobile = useIsMobile();
-  const [d, setD] = useState<any>(null);
-  const [err, setErr] = useState('');
-  useEffect(() => {
-    let alive = true; setD(null); setErr('');
-    fetch('/api/crm/sacs-cuenta-360?account=' + encodeURIComponent(account))
-      .then(r => r.json()).then(j => { if (!alive) return; if (j.error) setErr(j.error); else setD(j); })
-      .catch(() => { if (alive) setErr('x'); });
-    return () => { alive = false; };
-  }, [account]);
-
-  // uso: preferimos lo recién traído; si aún no llega (o falló), el caché del cron
-  const uso = (d && d.uso) || co?.uso_sacs || null;
-
-  if (err && !uso) return null;
-  if (!d && !uso) return <div style={{ ...D.card, color: '#999', fontSize: '0.82rem' }}>Cargando panorama de SACS…</div>;
-
-  const u = d?.usuarios || {}, suc = d?.sucursales || {}, tx = d?.ultimas_transacciones || [], pr = d?.promociones || {};
-  const lbl: any = { fontSize: '0.68rem', color: '#999', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '4px 0 6px' };
-  const ell: any = { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' };
-  const usa = (b: boolean, txt: string, extra = '') => (
-    <span style={{ ...D.badge, background: b ? '#e6f6f2' : '#fafafa', color: b ? '#1A8F7A' : '#9aa0a8', border: '1px solid ' + (b ? '#bfe8df' : '#e8e8ea') }}>
-      <b>{txt}</b>{b ? <> · <b style={{ color: '#1A8F7A' }}>SÍ lo usa</b>{extra ? ` (${extra})` : ''}</> : <> · no lo usa</>}
-    </span>
-  );
-  const le = uso?.lealtad, adm = uso?.administracion, fac = uso?.facturacion, tg = uso?.tarjetas_regalo, tr = uso?.transferencias;
-  // Matriz integral de módulos agrupada por familia.
-  const familias: any[] = [];
-  (uso?.modulos || []).forEach((m: any) => {
-    let f = familias.find(x => x.nombre === m.familia);
-    if (!f) { f = { nombre: m.familia, items: [] }; familias.push(f); }
-    f.items.push(m);
-  });
-  const nUsa = (uso?.modulos || []).filter((m: any) => m.usa).length;
-  const chipMod = (m: any) => (
-    <span key={m.modulo} style={{ ...D.badge, background: m.usa ? '#e6f6f2' : '#fafafa', color: m.usa ? '#1A8F7A' : '#9aa0a8', border: '1px solid ' + (m.usa ? '#bfe8df' : '#e8e8ea') }}>
-      <b>{m.modulo}</b>{m.usa
-        ? <> · <b style={{ color: '#1A8F7A' }}>SÍ</b>{m.docs_7d ? ` · ${m.docs_7d} en 7d` : m.docs_30d ? ` · ${m.docs_30d} en 30d` : ''}{m.total ? ` · ${Number(m.total).toLocaleString()} total` : ''}</>
-        : <> · no lo usa</>}
-    </span>
-  );
-  return (
-    <>
-    {d && <div style={D.card}>
-      <div style={D.h}>Panorama en SACS</div>
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
-        <div style={D.kpi}><div style={D.kl}>Usuarios</div><div style={D.kv}>{u.total ?? 0}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{u.activos ?? 0} activos</div></div>
-        <div style={D.kpi}>
-          <div style={D.kl}>Sucursales operando</div>
-          <div style={D.kv}>{suc.activas ?? '—'}</div>
-          <div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>de {suc.total ?? 0} registradas</div>
-        </div>
-        <div style={D.kpi}><div style={D.kl}>Promociones</div><div style={D.kv}>{pr.total ?? 0}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{pr.activas ?? 0} activas</div></div>
-      </div>
-
-      {u.por_grupo?.length ? (
-        <div style={{ marginBottom: 12 }}>
-          <div style={lbl}>Usuarios por grupo</div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {u.por_grupo.map((g: any, i: number) => <span key={i} style={{ ...D.badge, background: '#f3f4f6', color: '#475569' }}>{g.grupo}: {g.n}</span>)}
-          </div>
-        </div>
-      ) : null}
-
-      {/* Activas e inactivas por separado. Antes salían las 145 en verde por
-          igual, y con eso no se puede decidir nada: en liveshows solo 8
-          vendieron este mes y las otras 137 son pop-ups de conciertos que ya
-          terminaron. "Activa" = vendió algo en los últimos 30 días. */}
-      {suc.detalle?.length ? (() => {
-        const act = suc.detalle.filter((x: any) => x.activa);
-        const ina = suc.detalle.filter((x: any) => !x.activa);
-        return (
-          <div style={{ marginBottom: 12 }}>
-            {act.length > 0 && (<>
-              <div style={lbl}>Sucursales operando ({act.length}) · vendieron en 30 días</div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: ina.length ? 10 : 0 }}>
-                {act.map((x: any, i: number) => (
-                  <span key={i} style={{ ...D.badge, background: '#e6f6f2', color: '#1A8F7A', border: '1px solid #bfe8df' }}>
-                    <b>{x.nombre}</b> · {money(x.total_30d)}{x.ventas_30d ? ` · ${Number(x.ventas_30d).toLocaleString()} ventas` : ''}
-                    {x.en_catalogo === false ? ' · fuera del catálogo' : ''}
-                  </span>
-                ))}
-              </div>
-            </>)}
-            {ina.length > 0 && (<>
-              <div style={lbl}>Sin ventas en 30 días ({ina.length})</div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {ina.map((x: any, i: number) => (
-                  <span key={i} style={{ ...D.badge, background: '#fafafa', color: '#9aa0a8', border: '1px solid #e8e8ea' }}>{x.nombre}</span>
-                ))}
-              </div>
-            </>)}
-          </div>
-        );
-      })() : suc.nombres?.length ? (
-        <div style={{ marginBottom: 12 }}>
-          <div style={lbl}>Sucursales</div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {suc.nombres.map((n: string, i: number) => <span key={i} style={{ ...D.badge, background: '#f3f4f6', color: '#475569' }}>{n}</span>)}
-          </div>
-        </div>
-      ) : null}
-
-      <div style={{ marginBottom: pr.ultimas?.length ? 12 : 0 }}>
-        <div style={lbl}>Últimas transacciones</div>
-        {tx.length ? tx.map((t: any, i: number) => (
-          <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f4f4f4', fontSize: '0.8rem' }}>
-            <b>#{t.folio}</b>
-            <span style={{ color: '#888' }}>{fmtDate(t.fecha)}</span>
-            {t.sucursal ? <span style={{ color: '#888', ...ell, maxWidth: isMobile ? '60vw' : 120 }}>{t.sucursal}</span> : null}
-            <span style={{ marginLeft: 'auto', fontWeight: 700 }}>{money(t.total)}</span>
-          </div>
-        )) : <div style={{ color: '#999', fontSize: '0.8rem' }}>Sin ventas recientes.</div>}
-      </div>
-
-      {pr.ultimas?.length ? (
-        <div>
-          <div style={lbl}>Últimas promociones</div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {pr.ultimas.map((p: any, i: number) => <span key={i} style={{ ...D.badge, background: p.activa ? '#fff8e1' : '#f3f4f6', color: p.activa ? '#a06600' : '#777' }}>{p.nombre}{p.activa ? ' · activa' : ''}</span>)}
-          </div>
-        </div>
-      ) : null}
-    </div>}
-
-    {uso && <div style={D.card}>
-      <div style={D.h}>Uso últimos 7 días</div>
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: (tr?.ultimas?.length || uso.conteos?.ultimo) ? 12 : 0 }}>
-        <div style={D.kpi}><div style={D.kl}>Transferencias</div><div style={D.kv}>{tr?.total_7d ?? 0}</div></div>
-        <div style={D.kpi}><div style={D.kl}>Conteos físicos</div><div style={D.kv}>{uso.conteos?.total_7d ?? 0}</div></div>
-        <div style={D.kpi}><div style={D.kl}>Clientes nuevos</div><div style={D.kv}>{uso.clientes?.nuevos_7d ?? 0}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{Number(uso.clientes?.total || 0).toLocaleString()} en total</div></div>
-        <div style={D.kpi}><div style={D.kl}>Facturas timbradas</div><div style={D.kv}>{fac?.timbradas_7d ?? 0}</div></div>
-        <div style={D.kpi}><div style={D.kl}>Promos creadas</div><div style={D.kv}>{uso.promociones?.creadas_7d ?? 0}</div></div>
-      </div>
-      {tr?.ultimas?.length ? (
-        <div style={{ marginBottom: uso.conteos?.ultimo ? 10 : 0 }}>
-          <div style={lbl}>Últimas transferencias</div>
-          {tr.ultimas.map((t: any, i: number) => (
-            <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '6px 0', borderBottom: '1px solid #f4f4f4', fontSize: '0.8rem' }}>
-              <span style={{ color: '#888' }}>{fmtDate(t.fecha)}</span>
-              <span style={{ ...ell, maxWidth: isMobile ? '70vw' : 260 }}><b>{t.origen || '—'}</b> → <b>{t.destino || '—'}</b></span>
-              <span style={{ marginLeft: 'auto', ...D.badge, background: /Recibida/.test(t.status) ? '#e6f6f2' : t.status === 'Cancelada' ? '#fdf2f2' : '#fff8e1', color: /Recibida/.test(t.status) ? '#1A8F7A' : t.status === 'Cancelada' ? '#b93333' : '#a06600' }}>{t.status || '—'}</span>
-            </div>
-          ))}
-        </div>
-      ) : null}
-      {uso.conteos?.ultimo && <div style={{ fontSize: '0.78rem', color: '#666' }}>Último conteo: <b>{fmtDate(uso.conteos.ultimo.fecha)}</b> · {uso.conteos.ultimo.status}</div>}
-    </div>}
-
-    {/* ── Matriz INTEGRAL: TODOS los módulos por familia, uso real ── */}
-    {familias.length > 0 && (
-      <div style={D.card}>
-        <div style={D.h}>Uso de módulos ({nUsa}/{uso.modulos.length})</div>
-        <div style={{ fontSize: '0.74rem', color: '#999', marginTop: -6, marginBottom: 12 }}>
-          <span style={{ color: '#1A8F7A', fontWeight: 700 }}>Verde = lo usa</span> · <span style={{ color: '#9aa0a8', fontWeight: 700 }}>gris = oportunidad de venta</span>
-        </div>
-        {familias.map((fam: any) => (
-          <div key={fam.nombre} style={{ marginBottom: 12 }}>
-            <div style={lbl}>{fam.nombre}</div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {fam.items.map((m: any) => chipMod(m))}
-            </div>
-          </div>
-        ))}
-      </div>
-    )}
-
-    {/* ── Detalle de programas (lo que la matriz no cabe: tipo, inscritos, promos) ── */}
-    {uso && (le?.activo || fac?.configurada || tg?.usa || uso.promociones?.activas?.length || Number(adm?.cxp_pendientes || 0) > 0) ? (
-      <div style={D.card}>
-        <div style={D.h}>Detalle de programas y administración</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.82rem' }}>
-          {le?.activo && <div>💎 <b>Lealtad {le.tipo === 'completo' ? 'COMPLETO' : le.tipo === 'basico' ? 'BÁSICO' : ''}</b> — {Number(le.inscritos || 0).toLocaleString()} inscritos{Number(le.nuevos_7d || 0) > 0 ? `, +${le.nuevos_7d} en 7d` : ''}</div>}
-          {fac?.configurada && <div>🧾 <b>Facturación configurada</b>{fac.timbradas_7d ? ` — ${fac.timbradas_7d} timbradas en 7d` : ''}</div>}
-          {tg?.usa && <div>🎁 <b>Tarjetas de regalo</b>{tg.activas ? ` — ${tg.activas} activas` : ''}</div>}
-          {Number(adm?.cxp_pendientes || 0) > 0 && <div>📌 <b>Cuentas por pagar</b> — {adm.cxp_pendientes} pendientes</div>}
-        </div>
-        {uso.promociones?.activas?.length ? (
-          <div style={{ marginTop: 10 }}>
-            <div style={lbl}>Promociones activas ahora</div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {uso.promociones.activas.map((p: any, i: number) => <span key={i} style={{ ...D.badge, background: '#fff8e1', color: '#a06600' }}>{p.nombre}{p.origen === 'pos' ? ' · POS' : ''}</span>)}
-            </div>
-          </div>
-        ) : null}
-      </div>
-    ) : null}
-    </>
-  );
-}
-
 /* ─────────── 🏢 SACS (solo información de SACS: ligar cuenta + panorama) ─────────── */
 function TabSacs({ co, act, reload, flash }: any) {
   // Un cliente puede operar VARIAS cuentas de SACS (el dueño de `boomfitness`
@@ -1058,12 +987,14 @@ function TabSacs({ co, act, reload, flash }: any) {
         </div>
       )}
 
-      {ver && <Panorama360 account={ver} co={co} />}
-      {lista.length > 0 && <Evolucion companyId={co.id} />}
-      {ver && <UsuariosSacs account={ver} />}
+      {/* El panorama en vivo y los listados de sucursales y usuarios se
+          retiraron: pedían una consulta a SACS por cada apertura para pintar
+          páginas de scroll de las que solo se leían dos números. Esos dos
+          viven ahora en Actividad, desde el caché del cron. */}
     </div>
   );
 }
+
 
 /* Evolución del uso: compara el snapshot más reciente vs el más viejo dentro de
  * ~30 días (histórico en uso_snapshots que llenan los crons). */
@@ -1149,71 +1080,10 @@ function AccederCuenta({ account, uid, label }: { account: string; uid?: string;
   );
 }
 
-/* Usuarios de la cuenta SACS, con filtro por sucursal y orden por último acceso
- * (más reciente primero). Carga on-demand desde /api/crm/sacs-usuarios?account= */
-function UsuariosSacs({ account }: { account: string }) {
-  const [d, setD] = useState<any>(null);
-  const [err, setErr] = useState('');
-  const [filtroSuc, setFiltroSuc] = useState('__todas');
-  useEffect(() => {
-    let alive = true; setD(null); setErr(''); setFiltroSuc('__todas');
-    fetch('/api/crm/sacs-usuarios?account=' + encodeURIComponent(account))
-      .then(r => r.json()).then(j => { if (!alive) return; if (j.error) setErr(j.error); else setD(j); })
-      .catch(() => { if (alive) setErr('x'); });
-    return () => { alive = false; };
-  }, [account]);
-
-  if (err) return null;
-  if (!d) return <div style={{ ...D.card, color: '#999', fontSize: '0.82rem' }}>Cargando usuarios…</div>;
-
-  const usuarios: any[] = d.usuarios || [];
-  // Catálogo de sucursales presente en los usuarios (+ opción "sin sucursal").
-  const sucsSet = new Set<string>();
-  let haySinSuc = false;
-  usuarios.forEach(u => {
-    const s = u.sucursales_nombres || [];
-    if (s.length) s.forEach((x: string) => sucsSet.add(x)); else haySinSuc = true;
-  });
-  const sucOpciones = Array.from(sucsSet).sort((a, b) => a.localeCompare(b));
-
-  // Filtrar por sucursal seleccionada.
-  const ms = (u: any) => { const t = Date.parse(u.ultimo_login || ''); return isNaN(t) ? -1 : t; };
-  const filtrados = usuarios.filter(u => {
-    if (filtroSuc === '__todas') return true;
-    if (filtroSuc === '__sin') return !(u.sucursales_nombres && u.sucursales_nombres.length);
-    return (u.sucursales_nombres || []).indexOf(filtroSuc) >= 0;
-  }).sort((a, b) => ms(b) - ms(a)); // más reciente primero
-
-  return (
-    <div style={D.card}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
-        <div style={{ ...D.h, margin: 0 }}>Usuarios ({filtrados.length}{filtroSuc !== '__todas' ? ` de ${usuarios.length}` : ''})</div>
-        <select value={filtroSuc} onChange={e => setFiltroSuc(e.target.value)} style={{ ...D.input, width: 'auto', marginLeft: 'auto', padding: '6px 10px', fontSize: '0.82rem' }}>
-          <option value="__todas">Todas las sucursales</option>
-          {sucOpciones.map(s => <option key={s} value={s}>{s}</option>)}
-          {haySinSuc && <option value="__sin">(sin sucursal asignada)</option>}
-        </select>
-      </div>
-      {filtrados.map((u: any, i: number) => (
-        <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #f4f4f4', fontSize: '0.82rem' }}>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {u.nombre}{u.es_super ? <span style={{ ...D.badge, background: '#EDE9FE', color: '#6D28D9', marginLeft: 6 }}>Super Admin</span> : null}{u.activo === false ? <span style={{ ...D.badge, background: '#fdf2f2', color: '#b93333', marginLeft: 6 }}>inactivo</span> : null}
-            </div>
-            <div style={{ color: '#888', fontSize: '0.76rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {u.grupo_nombre || '(sin grupo)'}{(u.sucursales_nombres && u.sucursales_nombres.length) ? ` · 🏬 ${u.sucursales_nombres.join(', ')}` : ''}{u.email ? ` · ${u.email}` : ''}
-            </div>
-          </div>
-          <div style={{ color: '#999', fontSize: '0.72rem', textAlign: 'right', whiteSpace: 'nowrap' }}>
-            {u.ultimo_login ? <>último acceso<br /><b style={{ color: '#666' }}>{fmtDate(u.ultimo_login)}</b></> : 'sin registro'}
-          </div>
-        </div>
-      ))}
-      {!filtrados.length && <div style={{ color: '#999', fontSize: '0.82rem' }}>Sin usuarios en esta sucursal.</div>}
-      <div style={{ fontSize: '0.72rem', color: '#999', marginTop: 8 }}>Ordenados por último acceso (más reciente primero). El acceso a la cuenta entra como Super Admin (botón arriba).</div>
-    </div>
-  );
-}
+/* El Panorama 360 en vivo se retiró: pedía /api/crm/sacs-cuenta-360 en cada
+ * apertura de la ficha para pintar el detalle de cada sucursal y de cada
+ * usuario. Los dos números que de ahí se leían —cuántas venden, cuántos operan—
+ * ya vienen en el caché del cron y se pintan en Actividad sin costo. */
 
 /* ─────────── 👤 Contactos (multi-contacto: lista + alta + principal) ─────────── */
 function TabContactos({ companyId, contactos, reload, flash, compacto = false }: any) {
