@@ -7,6 +7,7 @@
 // cobró. Ese hilo es lo que se le enseña al cliente.
 import { useEffect, useState } from 'react';
 import ReporteMejoras from './ReporteMejoras';
+import { MODULOS_SACS, MODOS, modoDe, etiquetaCap } from '../../../lib/crm/modulos-sacs';
 
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '';
@@ -197,25 +198,27 @@ export default function TabMejoras({ companyId, cliente, flash }: any) {
           </div>
         )}
         {capacitaciones.map(m => {
-          const impartida = m.estado === 'entregada';
-          const modo = m.url ? 'video enviado' : m.bookings?.fecha ? 'en junta' : 'pendiente de dar';
+          const { texto: etq, hecha: impartida } = etiquetaCap(m);
+          const modo = MODOS[modoDe(m)];
           return (
             <div key={m.id} style={{ display: 'flex', gap: 11, padding: '11px 0', borderTop: '1px solid #f5f4f8', alignItems: 'flex-start' }}>
               <span style={{ flex: '0 0 8px', height: 8, borderRadius: 99, background: impartida ? '#4FBF95' : '#F0B84E', marginTop: 6 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '0.83rem', fontWeight: 700 }}>
                   {m.titulo}
-                  <span style={{ fontSize: '0.57rem', fontWeight: 800, background: '#FEF6E7', color: '#9a6a10', borderRadius: 20, padding: '2px 8px', marginLeft: 6 }}>{modo}</span>
+                  <span style={{ fontSize: '0.57rem', fontWeight: 800, background: impartida ? '#EAF8F2' : '#FEF6E7', color: impartida ? '#1E8A63' : '#9a6a10', borderRadius: 20, padding: '2px 8px', marginLeft: 6 }}>
+                    {modo.label.replace(/^En una |^En la /, '')} · {etq}
+                  </span>
                   {m.modulo && <span style={{ fontSize: '0.57rem', fontWeight: 800, background: '#EEECFE', color: '#5B4BD6', borderRadius: 20, padding: '2px 8px', marginLeft: 5 }}>{m.modulo}</span>}
                 </div>
                 {m.descripcion && <div style={{ fontSize: '0.74rem', color: '#71717a', lineHeight: 1.5, marginTop: 2 }}>{m.descripcion}</div>}
                 <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 5 }}>
-                  {m.fecha_entrega ? <>Impartida {fmtDate(m.fecha_entrega)}</> : m.fecha_compromiso ? <>Programada para el {fmtDate(m.fecha_compromiso)}</> : 'Sin fecha'}
+                  {m.fecha_entrega ? <>{modoDe(m) === 'video' ? 'Enviada' : 'Impartida'} {fmtDate(m.fecha_entrega)}</> : m.fecha_compromiso ? <>Para el {fmtDate(m.fecha_compromiso)}</> : 'Sin fecha'}
                   {m.bookings?.fecha && <> · <b style={{ color: '#5B4BD6' }}>junta del {fmtDate(m.bookings.fecha)}</b></>}
                 </div>
                 <div style={{ display: 'flex', gap: 6, marginTop: 7, flexWrap: 'wrap' }}>
                   {m.url && <a href={m.url} target="_blank" rel="noreferrer" style={{ ...S.btnAzul, textDecoration: 'none' }}>Ver el video</a>}
-                  {!impartida && <button style={S.btnG} onClick={() => cambiarEstado(m, 'entregada')}>Marcar impartida</button>}
+                  {!impartida && <button style={S.btnG} onClick={() => cambiarEstado(m, 'entregada')}>{modoDe(m) === 'video' ? 'Marcar enviada' : 'Marcar impartida'}</button>}
                   <button style={S.btnG} onClick={() => setEditando(m)}>Editar</button>
                   <button style={{ ...S.btnG, color: '#a5a2af' }} onClick={() => archivar(m)}>Quitar</button>
                 </div>
@@ -243,7 +246,8 @@ export default function TabMejoras({ companyId, cliente, flash }: any) {
 function EditorMejora({ m, reuniones, onCerrar, onGuardar }: any) {
   const [f, setF] = useState<any>({
     titulo: '', descripcion: '', estado: 'idea', categoria: 'personalizacion',
-    valor: 0, cortesia: false, visible_cliente: true, booking_id: '', fecha_entrega: '', fecha_compromiso: '', ...m,
+    valor: 0, cortesia: false, visible_cliente: true, booking_id: '', fecha_entrega: '', fecha_compromiso: '',
+    modo: 'junta', url: '', modulo: '', ...m,
   });
   const [guardando, setGuardando] = useState(false);
   const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
@@ -270,21 +274,39 @@ function EditorMejora({ m, reuniones, onCerrar, onGuardar }: any) {
               style={{ ...S.input, resize: 'vertical' }} /></div>
 
           {esCap && (<>
-            <div style={{ marginBottom: 10 }}><div style={S.lbl}>Liga del video (si se lo mandaste)</div>
-              <input value={f.url || ''} onChange={e => set('url', e.target.value)} placeholder="https://…" style={S.input} />
-              <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 4, lineHeight: 1.45 }}>
-                Con liga se registra como video enviado; sin liga, como capacitación dada en junta.
-              </div>
+            <div style={{ marginBottom: 10 }}><div style={S.lbl}>Cómo se da</div>
+              <select value={f.modo || 'junta'} onChange={e => set('modo', e.target.value)} style={S.input}>
+                {Object.entries(MODOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+              </select>
+              <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 4, lineHeight: 1.45 }}>{MODOS[(f.modo || 'junta') as keyof typeof MODOS].ayuda}</div>
             </div>
-            <div style={{ marginBottom: 10 }}><div style={S.lbl}>Módulo del sistema (opcional)</div>
-              <input value={f.modulo || ''} onChange={e => set('modulo', e.target.value)} placeholder="Conteos físicos" style={S.input} /></div>
+            {(f.modo || 'junta') === 'video' && (
+              <div style={{ marginBottom: 10 }}><div style={S.lbl}>Liga del video</div>
+                <input value={f.url || ''} onChange={e => set('url', e.target.value)} placeholder="https://…" style={S.input} />
+                <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 4 }}>Déjala vacía si todavía no se lo mandas: queda en la lista de pendientes.</div>
+              </div>
+            )}
           </>)}
+
+          {/* Dónde se trabajó. De catálogo, no escrito: es lo que permite
+              después contar cuántas capacitaciones fueron de inventario y
+              cruzarlas con los módulos que el cliente empezó a usar. */}
+          <div style={{ marginBottom: 10 }}><div style={S.lbl}>Dónde se trabaja {esCap ? '' : '(opcional)'}</div>
+            <select value={f.modulo || ''} onChange={e => set('modulo', e.target.value)} style={S.input}>
+              <option value="">— sin definir —</option>
+              {MODULOS_SACS.map(g => (
+                <optgroup key={g.familia} label={g.familia}>
+                  {g.modulos.map(mo => <option key={mo} value={mo}>{mo}</option>)}
+                </optgroup>
+              ))}
+            </select>
+          </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginBottom: 10 }}>
             <div><div style={S.lbl}>Estado</div>
               <select value={f.estado} onChange={e => set('estado', e.target.value)} style={S.input}>
                 {esCap
-                  ? [['entregada', 'Impartida'], ['en_proceso', 'Programada'], ['descartada', 'Cancelada']].map(([k, v]) => <option key={k} value={k}>{v}</option>)
+                  ? [['entregada', (f.modo === 'video' ? 'Enviada' : 'Impartida')], ['en_proceso', (f.modo === 'video' ? 'Pendiente de enviar' : 'Pendiente')], ['descartada', 'Cancelada']].map(([k, v]) => <option key={k} value={k}>{v}</option>)
                   : Object.entries(ESTADOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
               </select></div>
             <div><div style={S.lbl}>Tipo</div>
@@ -296,7 +318,7 @@ function EditorMejora({ m, reuniones, onCerrar, onGuardar }: any) {
           <div style={{ display: 'grid', gridTemplateColumns: esCap ? '1fr' : '1fr 1fr', gap: 9, marginBottom: 10 }}>
             {!esCap && <div><div style={S.lbl}>{esEntregada ? 'Cuánto se cobró' : 'Cuánto podría valer'}</div>
               <input type="number" value={f.valor || ''} onChange={e => set('valor', e.target.value)} placeholder="0" style={S.input} disabled={f.cortesia} /></div>}
-            <div><div style={S.lbl}>{esCap ? (esEntregada ? 'Cuándo se dio' : 'Programada para') : esEntregada ? 'Fecha de entrega' : 'Comprometida para'}</div>
+            <div><div style={S.lbl}>{esCap ? (esEntregada ? (f.modo === 'video' ? 'Cuándo se envió' : 'Cuándo se dio') : 'Para cuándo') : esEntregada ? 'Fecha de entrega' : 'Comprometida para'}</div>
               <input type="date" value={(esEntregada ? f.fecha_entrega : f.fecha_compromiso) || ''}
                 onChange={e => set(esEntregada ? 'fecha_entrega' : 'fecha_compromiso', e.target.value)} style={S.input} /></div>
           </div>

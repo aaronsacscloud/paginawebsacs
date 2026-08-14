@@ -8,6 +8,7 @@
 // una que nunca se hizo, y es lo único de esta pantalla que se atiende hoy.
 import { useEffect, useMemo, useState } from 'react';
 import ClienteDrawer360 from './ClienteDrawer360';
+import { MODOS, modoDe } from '../../../lib/crm/modulos-sacs';
 
 const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
 const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '') : '';
@@ -39,7 +40,7 @@ const S = {
 export default function MejorasTab() {
   const [rows, setRows] = useState<any[] | null>(null);
   const [vencidas, setVencidas] = useState<any[]>([]);
-  const [filtro, setFiltro] = useState<'todo' | 'idea' | 'comprometidas' | 'entregada'>('todo');
+  const [filtro, setFiltro] = useState<'todo' | 'pendientes' | 'idea' | 'comprometidas' | 'entregada'>('pendientes');
   const [busca, setBusca] = useState('');
   const [abierto, setAbierto] = useState<string | null>(null);
 
@@ -62,9 +63,20 @@ export default function MejorasTab() {
     };
   }, [rows]);
 
+  // Lo que falta por hacer: mejoras comprometidas y capacitaciones que no se
+  // han dado. Es la razón de ser de esta pantalla —lo prometido y no cumplido
+  // no se ve desde adentro de una sola ficha.
+  const pendientes = useMemo(() => (rows || []).filter(m =>
+    (m.estado === 'cotizada' || m.estado === 'en_proceso')), [rows]);
+  const videosPorEnviar = useMemo(() => (rows || []).filter(m =>
+    m.categoria === 'capacitacion' && m.estado !== 'entregada' && m.estado !== 'descartada' && modoDe(m) === 'video'), [rows]);
+  const capsAgendadas = useMemo(() => (rows || []).filter(m =>
+    m.categoria === 'capacitacion' && m.estado !== 'entregada' && m.estado !== 'descartada' && modoDe(m) === 'agendada'), [rows]);
+
   const lista = useMemo(() => {
     let r = rows || [];
-    if (filtro === 'idea') r = r.filter(m => m.estado === 'idea');
+    if (filtro === 'pendientes') r = r.filter(m => m.estado === 'cotizada' || m.estado === 'en_proceso');
+    else if (filtro === 'idea') r = r.filter(m => m.estado === 'idea');
     else if (filtro === 'comprometidas') r = r.filter(m => m.estado === 'cotizada' || m.estado === 'en_proceso');
     else if (filtro === 'entregada') r = r.filter(m => m.estado === 'entregada');
     const t = busca.trim().toLowerCase();
@@ -117,6 +129,28 @@ export default function MejorasTab() {
         </div>
       )}
 
+      {(videosPorEnviar.length > 0 || capsAgendadas.length > 0) && (
+        <div style={{ ...S.card, borderColor: '#f5e2b8', background: '#fffdf7' }}>
+          <div style={S.h}>
+            Capacitaciones pendientes
+            <span style={S.nota}>{videosPorEnviar.length ? `${videosPorEnviar.length} video(s) por enviar` : ''}{videosPorEnviar.length && capsAgendadas.length ? ' · ' : ''}{capsAgendadas.length ? `${capsAgendadas.length} agendada(s)` : ''}</span>
+          </div>
+          {[...videosPorEnviar, ...capsAgendadas].map(m => (
+            <div key={m.id} onClick={() => setAbierto(m.company_id)}
+              style={{ display: 'flex', gap: 10, alignItems: 'baseline', padding: '7px 0', borderTop: '1px solid #f7f1e4', fontSize: '0.8rem', cursor: 'pointer' }}>
+              <b style={{ minWidth: 170, flexShrink: 0 }}>{m.companies?.nombre_comercial || m.companies?.nombre || 'Cuenta'}</b>
+              <span style={{ flex: 1 }}>
+                {m.titulo}
+                {m.modulo && <span style={{ color: '#a5a2af' }}> · {m.modulo}</span>}
+              </span>
+              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#9a6a10', whiteSpace: 'nowrap' }}>
+                {MODOS[modoDe(m)].pendiente}{m.fecha_compromiso ? ` · ${fmtDate(m.fecha_compromiso)}` : ''}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
         <div style={S.kpi}><div style={S.kl}>Entregadas este mes</div><div style={S.kv}>{k.entregadasMes}</div></div>
         <div style={S.kpi}><div style={S.kl}>Cobrado este año</div><div style={{ ...S.kv, color: '#1E8A63' }}>{money(k.cobradoAnio)}</div></div>
@@ -126,8 +160,11 @@ export default function MejorasTab() {
           <div style={{ fontSize: '0.7rem', color: '#a5a2af', marginTop: 2 }}>{k.ideas} ideas en {k.cuentasConIdeas} cuentas</div>
         </div>
         <div style={S.kpi}>
-          <div style={S.kl}>Compromisos vencidos</div>
-          <div style={{ ...S.kv, color: vencidas.length ? '#C0554E' : '#1a1a1a' }}>{vencidas.length}</div>
+          <div style={S.kl}>Por hacer</div>
+          <div style={{ ...S.kv, color: vencidas.length ? '#C0554E' : '#1a1a1a' }}>{pendientes.length}</div>
+          <div style={{ fontSize: '0.7rem', color: vencidas.length ? '#C0554E' : '#a5a2af', marginTop: 2 }}>
+            {vencidas.length ? `${vencidas.length} ya vencidas` : 'ninguna vencida'}
+          </div>
         </div>
       </div>
 
@@ -146,7 +183,7 @@ export default function MejorasTab() {
 
       <div style={S.card}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
-          {([['todo', 'Todas'], ['idea', 'Ideas abiertas'], ['comprometidas', 'Comprometidas'], ['entregada', 'Entregadas']] as const).map(([id, l]) => (
+          {([['pendientes', 'Por hacer'], ['idea', 'Ideas abiertas'], ['entregada', 'Entregadas'], ['todo', 'Todas']] as const).map(([id, l]) => (
             <button key={id} onClick={() => setFiltro(id as any)} style={S.chip(filtro === id)}>{l}</button>
           ))}
           <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar por cuenta o mejora…"

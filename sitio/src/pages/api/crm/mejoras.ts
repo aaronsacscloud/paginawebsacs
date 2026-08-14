@@ -13,6 +13,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
 import { getCurrentUser } from '../../../lib/auth/scope';
+import { MODULOS_PLANOS } from '../../../lib/crm/modulos-sacs';
 
 export const prerender = false;
 const json = (o: any, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -52,7 +53,12 @@ function limpia(b: any) {
   if ('booking_id' in b) p.booking_id = b.booking_id || null;
   if ('quote_id' in b) p.quote_id = b.quote_id || null;
   if ('deal_id' in b) p.deal_id = b.deal_id || null;
-  if ('modulo' in b) p.modulo = String(b.modulo || '').trim() || null;
+  // El módulo sale del catálogo, no de lo que alguien escriba: en texto libre
+  // la misma pantalla acaba como "conteos", "Conteo físico" y "conteos fisicos".
+  if ('modulo' in b) p.modulo = MODULOS_PLANOS.includes(b.modulo) ? b.modulo : null;
+  // Cómo se dio la capacitación. Explícito y no adivinado por si hay liga: un
+  // video que todavía NO se manda es justo el caso que hay que poder ver.
+  if ('modo' in b) p.modo = ['junta', 'video', 'agendada'].includes(b.modo) ? b.modo : null;
   // Liga del recurso: el video que se le mandó al cliente para eso que pidió.
   if ('url' in b) p.url = String(b.url || '').trim() || null;
   if ('fecha_entrega' in b) p.fecha_entrega = b.fecha_entrega || null;
