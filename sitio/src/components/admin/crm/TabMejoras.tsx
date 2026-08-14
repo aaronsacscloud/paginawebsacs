@@ -19,10 +19,18 @@ const ESTADOS: Record<string, { label: string; punto: string; tag?: string; tagB
   entregada:  { label: 'Entregada',   punto: '#4FBF95' },
   descartada: { label: 'Descartada',  punto: '#C9C7D0' },
 };
-const CATS: Record<string, string> = {
-  personalizacion: 'personalización', plugin: 'plugin', ajuste: 'ajuste',
-  modulo: 'módulo', capacitacion: 'capacitación', otro: 'otro',
+// Un color por tipo, igual que en la vista de todas las cuentas: la lista se
+// recorre de un vistazo sin leer palabra por palabra.
+const CATS_COLOR: Record<string, { label: string; bg: string; fg: string }> = {
+  capacitacion:    { label: 'capacitación',    bg: '#FEF6E7', fg: '#9a6a10' },
+  personalizacion: { label: 'personalización', bg: '#EEECFE', fg: '#5B4BD6' },
+  plugin:          { label: 'plugin',          bg: '#E3EDFD', fg: '#2C5FC4' },
+  modulo:          { label: 'módulo',          bg: '#EAF8F2', fg: '#1E8A63' },
+  ajuste:          { label: 'ajuste',          bg: '#F4F4F6', fg: '#6B7280' },
+  otro:            { label: 'otro',            bg: '#F4F4F6', fg: '#6B7280' },
 };
+const cat = (k: string) => CATS_COLOR[k] || CATS_COLOR.otro;
+const CATS: Record<string, string> = Object.fromEntries(Object.entries(CATS_COLOR).map(([k, v]) => [k, v.label]));
 
 const S = {
   card: { background: '#fff', border: '1.5px solid #ddd6fb', borderRadius: 12, padding: 16, marginBottom: 14 } as const,
@@ -102,7 +110,7 @@ export default function TabMejoras({ companyId, cliente, flash }: any) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: '0.83rem', fontWeight: 700 }}>
             {m.titulo}
-            <span style={{ fontSize: '0.57rem', fontWeight: 800, background: '#EEECFE', color: '#5B4BD6', borderRadius: 20, padding: '2px 8px', marginLeft: 6 }}>{CATS[m.categoria] || m.categoria}</span>
+            <span style={{ fontSize: '0.57rem', fontWeight: 800, background: cat(m.categoria).bg, color: cat(m.categoria).fg, borderRadius: 20, padding: '2px 8px', marginLeft: 6 }}>{cat(m.categoria).label}</span>
             {e.tag && <span style={{ fontSize: '0.57rem', fontWeight: 800, background: e.tagBg, color: e.tagTx, borderRadius: 20, padding: '2px 8px', marginLeft: 5 }}>{e.tag}</span>}
             {m.visible_cliente === false && <span style={{ fontSize: '0.57rem', fontWeight: 800, background: '#F4F4F6', color: '#6B7280', borderRadius: 20, padding: '2px 8px', marginLeft: 5 }}>interna</span>}
           </div>
