@@ -2074,8 +2074,7 @@ function TabReuniones({ companyId, principal, contactos, flash }: any) {
       <div style={D.cardM}>
         <div style={D.hM}>
           Reuniones
-          <span style={D.hNota}>{rows.length} en total{proximas.length ? ` · ${proximas.length} por venir` : ''}</span>
-          <button style={{ ...D.btn, padding: '7px 13px', fontSize: '0.77rem' }} onClick={() => setAgendando(true)}>+ Agendar reunión</button>
+          <button style={{ ...D.btn, padding: '7px 13px', fontSize: '0.77rem', marginLeft: 'auto' }} onClick={() => setAgendando(true)}>+ Agendar reunión</button>
         </div>
 
         {rows.length === 0 && <div style={{ color: '#999', fontSize: '0.85rem', padding: '6px 0 10px' }}>Este cliente aún no tiene reuniones. Agenda la primera o mándale el link para que elija horario.</div>}
@@ -2090,12 +2089,12 @@ function TabReuniones({ companyId, principal, contactos, flash }: any) {
             : (e === 'cancelada' || e === 'reagendada') ? { bg: '#f4f4f6', bd: '#eceaef', tx: '#8a8a92' }
             : { bg: '#faf8ff', bd: '#ede6fb', tx: '#5B4BD6' };
           return (
-            <div key={r.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '12px 0', borderTop: '1px solid #f5f4f8' }}>
+            <div key={r.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '12px 0', borderTop: '1px solid #f5f4f8', flexWrap: 'wrap' }}>
               <div style={{ flex: '0 0 62px', textAlign: 'center', background: tono.bg, border: `1px solid ${tono.bd}`, borderRadius: 9, padding: '5px 0' }}>
                 <div style={{ fontSize: '1.05rem', fontWeight: 800, color: tono.tx, lineHeight: 1 }}>{dd}</div>
                 <div style={{ fontSize: '0.56rem', fontWeight: 800, color: '#9c99a6', textTransform: 'uppercase', letterSpacing: '.06em' }}>{mmm}</div>
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ flex: '1 1 200px', minWidth: 0 }}>
                 <div style={{ fontSize: '0.84rem', fontWeight: 700 }}>
                   {r.asunto || r.event_types?.nombre || 'Reunión'}
                   {r.event_types?.nombre && <span style={{ fontSize: '0.58rem', fontWeight: 800, background: '#EEECFE', color: '#5B4BD6', borderRadius: 20, padding: '2px 8px', marginLeft: 6 }}>{r.event_types.nombre.replace(/^Reunión de |^Sesión de /i, '')}</span>}
@@ -2117,20 +2116,20 @@ function TabReuniones({ companyId, principal, contactos, flash }: any) {
                   alta no hay nada que confirmar todavía. Los cuatro se ven
                   siempre —también los que no aplican— para que se lea de un
                   golpe en cuál está y a cuál se puede mover. */}
-              <div style={{ flexShrink: 0, width: 236 }}>
-                <div style={{ display: 'flex', border: '1.5px solid #e8e6ee', borderRadius: 9, overflow: 'hidden' }}>
+              <div style={{ flex: '0 1 330px', minWidth: 250, marginLeft: 'auto' }}>
+                <div style={{ display: 'flex', border: '1.5px solid #e8e6ee', borderRadius: 11, overflow: 'hidden', background: '#fff' }}>
                   {(['agendada', 'confirmada', 'asistio', 'no_asistio'] as const).map((sig, i) => {
                     const on = e === sig;
                     const tinte = sig === 'asistio' ? '#4FBF95' : sig === 'no_asistio' ? '#EF7A72' : '#9B8CFA';
                     return (
                       <button key={sig} title={ESTADOS[sig].label} onClick={() => { if (!on) marcar(r, sig); }}
-                        style={{ flex: 1, border: 'none', borderLeft: i ? '1px solid #f1f0f5' : 'none', background: on ? tinte : '#fff', color: on ? '#fff' : '#8a8a92', padding: '7px 2px', fontSize: '0.66rem', fontWeight: on ? 800 : 600, cursor: on ? 'default' : 'pointer', fontFamily: 'inherit', lineHeight: 1.25 }}>
+                        style={{ flex: 1, border: 'none', borderLeft: i ? '1px solid #f1f0f5' : 'none', background: on ? tinte : '#fff', color: on ? '#fff' : '#8a8a92', padding: '9px 14px', fontSize: '0.71rem', fontWeight: on ? 800 : 600, cursor: on ? 'default' : 'pointer', fontFamily: 'inherit', lineHeight: 1.25, whiteSpace: 'nowrap' }}>
                         {sig === 'asistio' ? 'Asistió' : sig === 'no_asistio' ? 'No llegó' : sig === 'agendada' ? 'Agendada' : 'Confirmada'}
                       </button>
                     );
                   })}
                 </div>
-                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 5 }}>
+                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 7 }}>
                   {(e === 'cancelada' || e === 'reagendada') && <span style={{ ...D.badge, background: st.bg, color: st.color }}>{st.label}</span>}
                   {e !== 'cancelada' && (
                     <button onClick={() => marcar(r, 'cancelada')}
