@@ -440,13 +440,17 @@ export default function CrmDashboard() {
                       color: isActive ? '#5B4BD6' : '#4a4a52',
                       border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                       fontSize: '0.79rem', fontWeight: isActive ? 800 : 600,
+                      // Un <button> centra su texto: al partirse en dos
+                      // renglones, "Cobro con Mercado Pago" quedaba centrado y
+                      // desalineado del resto del menú.
+                      textAlign: 'left' as const, lineHeight: 1.3,
                       transition: 'all 0.15s ease',
                     }}
                     onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = '#faf8ff'; }}
                     onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                   >
-                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, color: isActive ? '#9B8CFA' : '#9c99a6' }} dangerouslySetInnerHTML={{ __html: ICONS[item.icon] || '' }} />
-                    {!sidebarCollapsed && <span>{item.label}</span>}
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, flexShrink: 0, alignSelf: 'flex-start', marginTop: 1, color: isActive ? '#9B8CFA' : '#9c99a6' }} dangerouslySetInnerHTML={{ __html: ICONS[item.icon] || '' }} />
+                    {!sidebarCollapsed && <span style={{ flex: 1, minWidth: 0 }}>{item.label}</span>}
                     {/* El único contador del menú, y solo cuando urge: un
                         compromiso con fecha que ya pasó. Poner números en todos
                         los renglones los convertiría en adorno y este dejaría
