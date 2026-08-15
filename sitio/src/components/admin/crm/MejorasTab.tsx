@@ -292,6 +292,32 @@ export default function MejorasTab() {
         </div>
       </div>
 
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+        <div style={S.kpi}><div style={S.kl}>Entregadas este mes</div><div style={S.kv}>{k.entregadasMes}</div></div>
+        <div style={S.kpi}><div style={S.kl}>Cobrado este año</div><div style={{ ...S.kv, color: '#1E8A63' }}>{money(k.cobradoAnio)}</div></div>
+        <div style={S.kpi}>
+          <div style={S.kl}>Capacitaciones</div>
+          <div style={{ ...S.kv, color: (videosPorEnviar.length + capsAgendadas.length) ? '#9a6a10' : '#1a1a1a' }}>
+            {videosPorEnviar.length + capsAgendadas.length}
+          </div>
+          <div style={{ fontSize: '0.7rem', color: '#a5a2af', marginTop: 2 }}>
+            pendientes · {k.capsDadas} dadas este año
+          </div>
+        </div>
+        <div style={S.kpi}>
+          <div style={S.kl}>Sobre la mesa</div>
+          <div style={{ ...S.kv, color: '#2C5FC4' }}>{money(k.potencial)}</div>
+          <div style={{ fontSize: '0.7rem', color: '#a5a2af', marginTop: 2 }}>{k.ideas} ideas en {k.cuentasConIdeas} cuentas</div>
+        </div>
+        <div style={S.kpi}>
+          <div style={S.kl}>Por hacer</div>
+          <div style={{ ...S.kv, color: vencidas.length ? '#C0554E' : '#1a1a1a' }}>{pendientes.length}</div>
+          <div style={{ fontSize: '0.7rem', color: vencidas.length ? '#C0554E' : '#a5a2af', marginTop: 2 }}>
+            {vencidas.length ? `${vencidas.length} ya vencidas` : 'ninguna vencida'}
+          </div>
+        </div>
+      </div>
+
       {vencidas.length > 0 && (
         <div style={{ background: '#FEF0EF', border: '1px solid #f7c9c5', borderRadius: 12, padding: '13px 15px', marginBottom: 14 }}>
           <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#8c2f28', marginBottom: 7 }}>
@@ -345,32 +371,6 @@ export default function MejorasTab() {
           ))}
         </div>
       )}
-
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
-        <div style={S.kpi}><div style={S.kl}>Entregadas este mes</div><div style={S.kv}>{k.entregadasMes}</div></div>
-        <div style={S.kpi}><div style={S.kl}>Cobrado este año</div><div style={{ ...S.kv, color: '#1E8A63' }}>{money(k.cobradoAnio)}</div></div>
-        <div style={S.kpi}>
-          <div style={S.kl}>Capacitaciones</div>
-          <div style={{ ...S.kv, color: (videosPorEnviar.length + capsAgendadas.length) ? '#9a6a10' : '#1a1a1a' }}>
-            {videosPorEnviar.length + capsAgendadas.length}
-          </div>
-          <div style={{ fontSize: '0.7rem', color: '#a5a2af', marginTop: 2 }}>
-            pendientes · {k.capsDadas} dadas este año
-          </div>
-        </div>
-        <div style={S.kpi}>
-          <div style={S.kl}>Sobre la mesa</div>
-          <div style={{ ...S.kv, color: '#2C5FC4' }}>{money(k.potencial)}</div>
-          <div style={{ fontSize: '0.7rem', color: '#a5a2af', marginTop: 2 }}>{k.ideas} ideas en {k.cuentasConIdeas} cuentas</div>
-        </div>
-        <div style={S.kpi}>
-          <div style={S.kl}>Por hacer</div>
-          <div style={{ ...S.kv, color: vencidas.length ? '#C0554E' : '#1a1a1a' }}>{pendientes.length}</div>
-          <div style={{ fontSize: '0.7rem', color: vencidas.length ? '#C0554E' : '#a5a2af', marginTop: 2 }}>
-            {vencidas.length ? `${vencidas.length} ya vencidas` : 'ninguna vencida'}
-          </div>
-        </div>
-      </div>
 
       {repetidas.length > 0 && (
         <div style={{ ...S.card, background: '#f6f9ff', borderColor: '#cfe0fa' }}>
