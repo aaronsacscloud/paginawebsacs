@@ -1,24 +1,48 @@
 ---
-// Estado de cuenta CONSOLIDADO del cliente: TODAS sus suscripciones recurrentes
-// y lo próximo a pagar, en un documento formal (PDF de 1 clic con imprimir).
+// Estado de cuenta del cliente.
+//
+// Se puede pedir de TODAS sus suscripciones o de las que se elijan
+// (?subs=id,id). Eso importa: mandarle el total de todo cuando lo que se le
+// está cobrando es una sola suscripción invita a la pregunta equivocada —"¿y
+// esto otro por qué me lo cobran ahora?"— y una aclaración de esas cuesta más
+// que el cobro.
+//
 // Llave = id (UUID) de la company. Solo datos del propio cliente.
 import { supabase } from '../../../lib/supabase';
 
 export const prerender = false;
 
 const { id } = Astro.params;
+const q = Astro.url.searchParams;
+const soloIds = (q.get('subs') || '').split(',').map(x => x.trim()).filter(Boolean);
+const verPagos = q.get('pagos') !== '0';
+const verPagar = q.get('pagar') !== '0';
 
-const { data: company } = await supabase.from('companies').select('id, nombre, sacs_account').eq('id', id).single();
+const { data: company } = await supabase.from('companies').select('id, nombre, nombre_comercial, sacs_account').eq('id', id).single();
 if (!company) return Astro.redirect('/404');
 
 const { data: subsRaw } = await supabase
   .from('subscriptions')
-  .select('id, nombre_plan, ciclo, precio, monto_proximo, proxima_factura, estado')
+  .select('id, nombre_plan, ciclo, precio, monto_proximo, proxima_factura, estado, fecha_inicio, total_pagado, mp_link_pago, mp_link_periodo')
   .eq('company_id', id)
   .in('estado', ['activa', 'pendiente_pago', 'programada'])
   .order('proxima_factura', { ascending: true, nullsFirst: false });
 // "Próximo a pagar" = suscripciones recurrentes (las vitalicias son pago único).
-const subs = (subsRaw || []).filter((s: any) => s.ciclo !== 'vitalicia');
+let subs = (subsRaw || []).filter((s: any) => s.ciclo !== 'vitalicia');
+if (soloIds.length) subs = subs.filter((s: any) => soloIds.includes(s.id));
+
+// Pagos de ESAS suscripciones. El acumulado ya estaba en el CRM y no aparecía
+// en el documento: ponerlo evita el "yo ya te pagué" y las capturas de ida y
+// vuelta.
+const idsSubs = subs.map((s: any) => s.id);
+let pagos: any[] = [];
+if (verPagos && idsSubs.length) {
+  const { data } = await supabase.from('payments')
+    .select('id, fecha, monto, metodo, referencia, subscription_id')
+    .in('subscription_id', idsSubs).neq('estado', 'reembolsado')
+    .order('fecha', { ascending: false }).limit(12);
+  pagos = data || [];
+}
 
 const { data: contacts } = await supabase.from('contacts').select('nombre, apellido, email').eq('company_id', id).limit(3);
 const contact = (contacts || [])[0] || null;
@@ -26,6 +50,7 @@ const contact = (contacts || [])[0] || null;
 // ── formato ──
 const money = (n: number | null | undefined) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX') + '.00';
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const MES3 = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 function fmtFecha(d?: string | null) {
   if (!d) return '—';
   const [y, m, day] = String(d).slice(0, 10).split('-').map(Number);
@@ -38,24 +63,49 @@ function fmtCorta(d?: string | null) {
   if (!y) return '—';
   return `${String(day).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
 }
+function fmtMesAno(d?: string | null) {
+  if (!d) return '—';
+  const [y, m] = String(d).slice(0, 10).split('-').map(Number);
+  if (!y) return '—';
+  return `${MES3[(m || 1) - 1]} ${String(y).slice(2)}`;
+}
+/** El periodo que cubre el cobro: la duda número uno de quien lo recibe. */
+function periodo(s: any) {
+  const fin = s.proxima_factura;
+  if (!fin) return '—';
+  const [y, m, d] = String(fin).slice(0, 10).split('-').map(Number);
+  const ini = s.ciclo === 'mensual' ? new Date(y, (m || 1) - 2, d || 1) : new Date(y - 1, (m || 1) - 1, d || 1);
+  const iniStr = `${ini.getFullYear()}-${String(ini.getMonth() + 1).padStart(2, '0')}-01`;
+  return `${fmtMesAno(iniStr)} – ${fmtMesAno(fin)}`;
+}
+
 const CICLO: Record<string, string> = { mensual: 'Mensual', anual: 'Anual' };
 const ESTADO: Record<string, { label: string; bg: string; color: string }> = {
-  activa: { label: 'Activa', bg: '#e6f6f2', color: '#1A8F7A' },
-  pendiente_pago: { label: 'Pago pendiente', bg: '#fff4e0', color: '#a06600' },
-  programada: { label: 'Programada', bg: '#eef2fe', color: '#4B7BE5' },
+  activa: { label: 'Activa', bg: '#EAF8F2', color: '#1E8A63' },
+  pendiente_pago: { label: 'Pago pendiente', bg: '#FEF6E7', color: '#9a6a10' },
+  programada: { label: 'Programada', bg: '#E3EDFD', color: '#2C5FC4' },
 };
 const hoyStr = new Date().toISOString().slice(0, 10);
+const diasDe = (d: string) => Math.max(0, Math.floor((Date.parse(hoyStr) - Date.parse(String(d).slice(0, 10))) / 86400000));
 
 const rows = subs.map((s: any) => {
   const monto = Number(s.monto_proximo ?? s.precio) || 0;
   const vencida = !!(s.proxima_factura && String(s.proxima_factura).slice(0, 10) < hoyStr);
-  return { ...s, monto, vencida };
+  return { ...s, monto, vencida, dias: vencida ? diasDe(s.proxima_factura) : 0, pagos: pagos.filter((p: any) => p.subscription_id === s.id) };
 });
 const total = rows.reduce((a: number, r: any) => a + r.monto, 0);
+const pagado = pagos.reduce((a: number, p: any) => a + Number(p.monto || 0), 0);
 const proximaMasCercana = rows.map((r: any) => r.proxima_factura).filter(Boolean).sort()[0] || null;
+const hayVencido = rows.some((r: any) => r.vencida);
+const diasRetraso = Math.max(0, ...rows.map((r: any) => r.dias));
+// Un solo botón de pago: solo tiene sentido cuando se está cobrando UNA
+// suscripción y esa tiene su liga viva de Mercado Pago. Con dos, el importe
+// del botón no correspondería a ninguna de las dos ligas.
+const linkPago = rows.length === 1 && rows[0].mp_link_pago ? rows[0].mp_link_pago : null;
+const parcial = soloIds.length > 0 && (subsRaw || []).filter((x: any) => x.ciclo !== 'vitalicia').length > rows.length;
 
 const clienteNombre = [contact?.nombre, contact?.apellido].filter(Boolean).join(' ').trim() || company.nombre || 'Cliente';
-const empresaNombre = company.nombre || '';
+const empresaNombre = company.nombre_comercial || company.nombre || '';
 const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
 ---
 
@@ -67,59 +117,72 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
   <meta name="robots" content="noindex, nofollow" />
   <title>Estado de cuenta · {empresaNombre || clienteNombre} · SACS</title>
   <style>
-    :root { --ink:#16181d; --muted:#6b7280; --faint:#9aa0a8; --accent:#1A8F7A; --line:#e7e9ee; --paper:#fff; --bg:#eef0f3; }
+    :root { --ink:#16181d; --muted:#6b7280; --faint:#a5a2af; --violeta:#9B8CFA; --tinta:#5B4BD6; --hondo:#3f2fb8; --rojo:#C0554E; --verde:#1E8A63; --line:#f0eff3; --paper:#fff; --bg:#eceef1; }
     * { box-sizing:border-box; }
     html,body { margin:0; padding:0; }
-    body { background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; line-height:1.5; padding:28px 16px 64px; }
+    body { background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; line-height:1.5; padding:26px 16px 60px; }
     .num { font-variant-numeric:tabular-nums; }
-    .toolbar { max-width:720px; margin:0 auto 16px; display:flex; gap:10px; justify-content:flex-end; }
-    .btn { display:inline-flex; align-items:center; gap:7px; height:42px; padding:0 18px; border-radius:10px; font-size:0.85rem; font-weight:700; cursor:pointer; font-family:inherit; border:1px solid var(--line); background:#fff; color:var(--ink); text-decoration:none; }
-    .btn-primary { background:var(--accent); color:#fff; border-color:var(--accent); }
-    .doc { max-width:720px; margin:0 auto; background:var(--paper); border:1px solid var(--line); border-radius:16px; overflow:hidden; box-shadow:0 1px 3px rgba(16,24,40,0.06), 0 8px 32px rgba(16,24,40,0.06); }
-    .doc-head { padding:34px 40px 26px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:flex-start; gap:20px; }
-    .doc-head img { height:30px; }
-    .doc-head .meta { text-align:right; font-size:0.72rem; color:var(--muted); line-height:1.7; }
-    .doc-head .meta b { color:var(--ink); }
-    .eyebrow { font-size:0.68rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent); }
-    .section { padding:26px 40px; border-bottom:1px solid var(--line); }
-    .section:last-child { border-bottom:none; }
-    .label { font-size:0.66rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--faint); margin-bottom:4px; }
-    .para-quien { font-size:1.05rem; font-weight:700; }
-    .para-quien .sub { font-size:0.82rem; font-weight:400; color:var(--muted); margin-top:2px; }
-    table { width:100%; border-collapse:collapse; }
-    th { text-align:left; font-size:0.64rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--faint); padding:0 0 10px; border-bottom:1px solid var(--line); }
-    td { padding:13px 0; font-size:0.88rem; border-bottom:1px solid #f2f3f6; vertical-align:top; }
-    tr:last-child td { border-bottom:none; }
-    .right { text-align:right; }
-    .plan { font-weight:700; }
-    .pill { display:inline-block; padding:2px 9px; border-radius:999px; font-size:0.66rem; font-weight:700; }
-    .venc { color:#b93333; font-weight:700; }
-    .total { background:linear-gradient(180deg,#f6fbfa 0%,#eef8f5 100%); border:1px solid #cfe9e2; border-radius:14px; padding:20px 24px; display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; }
-    .total .amount { font-size:2rem; font-weight:800; letter-spacing:-0.02em; }
-    .total .when { text-align:right; font-size:0.8rem; color:var(--muted); }
-    .foot { padding:22px 40px 30px; color:var(--muted); font-size:0.76rem; line-height:1.7; }
-    .foot .brand { color:var(--ink); font-weight:800; }
+    .toolbar { max-width:620px; margin:0 auto 14px; display:flex; gap:10px; justify-content:flex-end; }
+    .btn { display:inline-flex; align-items:center; gap:7px; height:40px; padding:0 16px; border-radius:10px; font-size:0.83rem; font-weight:700; cursor:pointer; font-family:inherit; border:1px solid #e6e6ea; background:#fff; color:var(--ink); text-decoration:none; }
+    .btn-primary { background:var(--violeta); color:#fff; border-color:var(--violeta); }
+    .doc { max-width:620px; margin:0 auto; background:var(--paper); border-radius:16px; overflow:hidden; box-shadow:0 1px 3px rgba(16,24,40,0.06), 0 14px 36px rgba(16,24,40,0.10); }
+    .head { padding:22px 26px 18px; display:flex; justify-content:space-between; align-items:flex-start; gap:20px; border-bottom:1px solid var(--line); }
+    .marca { font-size:1.25rem; font-weight:800; letter-spacing:-0.01em; }
+    .firma { font-size:0.55rem; font-weight:800; color:#9c3d70; letter-spacing:0.11em; text-transform:uppercase; margin-top:3px; }
+    .meta { text-align:right; font-size:0.7rem; color:var(--muted); line-height:1.7; }
+    .meta b { color:#3f3b4d; }
+    .eyebrow { font-size:0.6rem; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; color:var(--tinta); }
+    .k { font-size:0.57rem; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; color:var(--faint); }
+    .para { padding:15px 26px; border-bottom:1px solid var(--line); }
+    .para .n { font-size:0.95rem; font-weight:800; margin-top:4px; }
+    .para .c { font-size:0.74rem; color:var(--muted); }
+    /* Lo que se debe, hasta arriba y en grande: un estado de cuenta se abre
+       para saber cuánto y para cuándo. En lila, no en verde — el verde en este
+       módulo significa pagado. */
+    .hero { margin:16px 26px; border-radius:12px; padding:16px 18px; background:linear-gradient(135deg,#EEECFE,#E3EDFD); }
+    .hero .k { color:var(--tinta); }
+    .hero .v { font-size:1.85rem; font-weight:800; color:var(--hondo); letter-spacing:-0.02em; line-height:1.1; margin-top:4px; }
+    .hero .d { font-size:0.75rem; color:var(--tinta); margin-top:5px; font-weight:600; }
+    .hero .venc { display:inline-block; background:#FEF0EF; color:var(--rojo); border-radius:20px; padding:2px 9px; font-size:0.63rem; font-weight:800; margin-left:6px; }
+    .sec { padding:0 26px; }
+    .sec .k { margin:16px 0 9px; display:block; }
+    .pl { border:1px solid var(--line); border-radius:11px; padding:12px 14px; margin-bottom:9px; }
+    .pl .top { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+    .pl .nm { font-size:0.87rem; font-weight:800; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:0.55rem; font-weight:800; }
+    .pl .mo { margin-left:auto; font-size:0.95rem; font-weight:800; }
+    .gr { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:10px; padding-top:10px; border-top:1px solid #f7f6fa; }
+    .gr .c { font-size:0.54rem; font-weight:800; color:#b3b1bb; text-transform:uppercase; letter-spacing:0.06em; }
+    .gr .v { font-size:0.76rem; font-weight:700; margin-top:2px; }
+    .pago { display:flex; font-size:0.76rem; padding:4px 0; }
+    .pago + .pago { border-top:1px solid #f7f6fa; }
+    .cta { display:block; text-align:center; background:var(--violeta); color:#fff; border-radius:10px; padding:12px; font-size:0.84rem; font-weight:800; margin:8px 26px 16px; text-decoration:none; }
+    .foot { padding:14px 26px 20px; border-top:1px solid var(--line); color:var(--muted); font-size:0.71rem; line-height:1.7; }
+    .foot b { color:#3f3b4d; }
     @media (max-width:560px) {
-      .doc-head,.section,.foot { padding-left:22px; padding-right:22px; }
-      .total { flex-direction:column; align-items:flex-start; } .total .when { text-align:left; }
-      td, th { font-size:0.8rem; }
+      .head,.para,.sec,.foot { padding-left:18px; padding-right:18px; }
+      .hero,.cta { margin-left:18px; margin-right:18px; }
+      .gr { grid-template-columns:1fr 1fr; }
     }
     @media print {
       body { background:#fff; padding:0; }
-      .toolbar { display:none !important; }
-      .doc { box-shadow:none; border:none; border-radius:0; max-width:none; }
+      .toolbar, .cta { display:none !important; }
+      .doc { box-shadow:none; border-radius:0; max-width:none; }
     }
   </style>
 </head>
 <body>
   <div class="toolbar">
-    <button class="btn" id="copy-link">🔗 Copiar link</button>
-    <button class="btn btn-primary" id="download-pdf">⬇ Descargar PDF</button>
+    <button class="btn" id="copy-link">Copiar link</button>
+    <button class="btn btn-primary" id="download-pdf">Descargar PDF</button>
   </div>
 
   <div class="doc">
-    <div class="doc-head">
-      <img src="/brand/sacs-wordmark-dark.svg" alt="SACS" />
+    <div class="head">
+      <div>
+        <div class="marca">Sacs</div>
+        <div class="firma">by Andy Araujo</div>
+      </div>
       <div class="meta">
         <div class="eyebrow">Estado de cuenta</div>
         <div style="margin-top:6px"><b>Folio</b> {folio}</div>
@@ -127,64 +190,70 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
       </div>
     </div>
 
-    <div class="section">
-      <div class="label">Para</div>
-      <div class="para-quien">
-        {clienteNombre}
-        {empresaNombre && empresaNombre !== clienteNombre && <div class="sub">{empresaNombre}</div>}
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="label" style="margin-bottom:12px">Tus suscripciones — próximo a pagar</div>
-      {rows.length === 0 ? (
-        <div style="color:var(--muted);font-size:0.9rem">No hay suscripciones con pagos próximos.</div>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Plan</th>
-              <th>Periodicidad</th>
-              <th>Próximo pago</th>
-              <th class="right">Monto</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r: any) => (
-              <tr>
-                <td>
-                  <div class="plan">{r.nombre_plan}</div>
-                  {(ESTADO[r.estado]) && <span class="pill" style={`background:${ESTADO[r.estado].bg};color:${ESTADO[r.estado].color};margin-top:4px`}>{ESTADO[r.estado].label}</span>}
-                </td>
-                <td>{CICLO[r.ciclo] || r.ciclo}</td>
-                <td class={r.vencida ? 'venc' : ''}>{fmtFecha(r.proxima_factura)}{r.vencida ? ' · vencido' : ''}</td>
-                <td class="right num" style="font-weight:700">{money(r.monto)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+    <div class="para">
+      <span class="k">Para</span>
+      <div class="n">{clienteNombre}</div>
+      <div class="c">{empresaNombre}{company.sacs_account ? ` · ${company.sacs_account}` : ''}</div>
     </div>
 
     {rows.length > 0 && (
-      <div class="section">
-        <div class="total">
-          <div>
-            <div class="label">Total próximo a pagar</div>
-            <div class="amount num">{money(total)}</div>
-          </div>
-          {proximaMasCercana && (
-            <div class="when">
-              <div class="label">Pago más próximo</div>
-              <div style="font-weight:800;color:var(--ink);font-size:1rem">{fmtFecha(proximaMasCercana)}</div>
-            </div>
-          )}
+      <div class="hero">
+        <span class="k">Por pagar</span>
+        <div class="v num">{money(total)}</div>
+        <div class="d">
+          {hayVencido
+            ? <>Venció el {fmtFecha(proximaMasCercana)}<span class="venc">{diasRetraso} {diasRetraso === 1 ? 'día' : 'días'} de retraso</span></>
+            : <>Próximo pago: {fmtFecha(proximaMasCercana)}</>}
         </div>
       </div>
     )}
 
+    <div class="sec">
+      <span class="k">{rows.length === 1 ? 'Detalle de la suscripción' : 'Detalle de tus suscripciones'}</span>
+      {rows.length === 0 && <div style="color:var(--muted);font-size:0.85rem;padding-bottom:8px">No hay suscripciones con pagos próximos.</div>}
+      {rows.map((r: any) => (
+        <div class="pl">
+          <div class="top">
+            <span class="nm">{r.nombre_plan}</span>
+            {ESTADO[r.estado] && <span class="pill" style={`background:${ESTADO[r.estado].bg};color:${ESTADO[r.estado].color}`}>{ESTADO[r.estado].label}</span>}
+            <span class="mo num">{money(r.monto)}</span>
+          </div>
+          <div class="gr">
+            <div><div class="c">Periodicidad</div><div class="v">{CICLO[r.ciclo] || r.ciclo}</div></div>
+            <div><div class="c">Periodo que cubre</div><div class="v">{periodo(r)}</div></div>
+            <div><div class="c">{r.vencida ? 'Venció' : 'Vence'}</div><div class="v" style={r.vencida ? 'color:var(--rojo)' : ''}>{fmtCorta(r.proxima_factura)}</div></div>
+          </div>
+        </div>
+      ))}
+
+      {verPagos && pagos.length > 0 && (
+        <>
+          <span class="k">Pagos recibidos</span>
+          <div class="pl" style="padding:10px 14px">
+            {pagos.slice(0, 6).map((p: any) => (
+              <div class="pago">
+                <span>{fmtCorta(p.fecha)}{p.metodo ? ` · ${p.metodo}` : ''}</span>
+                <b class="num" style="margin-left:auto">{money(p.monto)}</b>
+              </div>
+            ))}
+            <div class="pago" style="border-top:1px solid #f0eff3;margin-top:2px;padding-top:6px">
+              <span style="color:var(--muted)">Acumulado pagado</span>
+              <b class="num" style="margin-left:auto;color:var(--verde)">{money(pagado)}</b>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+
+    {verPagar && linkPago && (
+      <a class="cta" href={linkPago} target="_blank" rel="noreferrer">Pagar {money(total)} en línea</a>
+    )}
+
     <div class="foot">
-      Resumen de tus suscripciones activas con <span class="brand">SACS</span> y los próximos pagos. Para cualquier aclaración escríbenos a <b>hola@sacscloud.com</b>.
+      {parcial
+        ? <>Este documento corresponde a <b>{rows.length === 1 ? 'una' : `${rows.length}`}</b> de tus suscripciones con <b>SACS</b>.</>
+        : <>Resumen de tus suscripciones activas con <b>SACS</b> y sus próximos pagos.</>}
+      {' '}Para cualquier aclaración escríbenos a <b>hola@sacscloud.com</b>.
       <div style="margin-top:8px">SACS · www.sacscloud.com</div>
     </div>
   </div>
@@ -193,7 +262,7 @@ const folio = 'EC-' + String(id).slice(0, 8).toUpperCase();
     document.getElementById('download-pdf')?.addEventListener('click', () => window.print());
     document.getElementById('copy-link')?.addEventListener('click', async (e) => {
       const btn = e.currentTarget as HTMLButtonElement;
-      try { await navigator.clipboard.writeText(window.location.href); const p = btn.textContent; btn.textContent = '✓ Copiado'; setTimeout(() => { btn.textContent = p; }, 1600); } catch { /* */ }
+      try { await navigator.clipboard.writeText(window.location.href); const p = btn.textContent; btn.textContent = 'Copiado'; setTimeout(() => { btn.textContent = p; }, 1600); } catch { /* */ }
     });
   </script>
 </body>

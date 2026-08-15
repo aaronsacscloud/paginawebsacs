@@ -1241,18 +1241,20 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
   // dentro de un contenedor con desplazamiento horizontal, y eso recorta
   // cualquier panel absoluto — por eso solo se veía la primera opción.
   const [menuSub, setMenuSub] = useState<{ id: string; x: number; y: number } | null>(null);
-  // Estado de cuenta CONSOLIDADO del cliente (todas sus subs + próximo a pagar).
-  const ecUrl = typeof window !== 'undefined' ? `${window.location.origin}/estado-cuenta/cliente/${companyId}` : '';
-  function abrirEstadoCuenta() {
-    window.open(ecUrl, '_blank', 'noopener'); // sync (iOS) — trae "Descargar PDF"
-    try { navigator.clipboard?.writeText(ecUrl); } catch { /* */ }
-    flash?.('Estado de cuenta abierto · link copiado');
-  }
-  function enviarWhatsApp() {
-    const num = String(principal?.whatsapp || '').replace(/\D/g, '');
-    const msg = `Hola 👋 Te comparto tu estado de cuenta SACS con tus próximos pagos:\n${ecUrl}`;
-    window.open((num ? `https://wa.me/${num}` : 'https://wa.me/') + `?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
-  }
+  // Estado de cuenta. Antes salía siempre con TODAS las suscripciones; ahora se
+  // elige cuáles entran, porque mandarle el total de todo a quien le estás
+  // cobrando una sola invita a la pregunta equivocada.
+  const [edoCuenta, setEdoCuenta] = useState<null | 'ver' | 'wa'>(null);
+  const ecUrl = (ids: string[], opts: any = {}) => {
+    const base = typeof window !== 'undefined' ? `${window.location.origin}/estado-cuenta/cliente/${companyId}` : '';
+    const q = new URLSearchParams();
+    // Sin recorte no se ensucia la liga: un estado de cuenta completo es la URL
+    // de siempre y los links viejos siguen sirviendo.
+    if (ids.length && ids.length < subs.filter((x: any) => x.ciclo !== 'vitalicia').length) q.set('subs', ids.join(','));
+    if (opts.pagos === false) q.set('pagos', '0');
+    if (opts.pagar === false) q.set('pagar', '0');
+    return q.toString() ? `${base}?${q}` : base;
+  };
   const [planes, setPlanes] = useState<any[]>([]);
   const [editId, setEditId] = useState<string | null>(null);
   const [f, setF] = useState<any>({});
@@ -1470,8 +1472,8 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
           <div style={{ ...D.hM, marginBottom: 0 }}>Suscripciones del cliente</div>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            <button style={D.btnAzul} title="Estado de cuenta con TODO lo próximo a pagar — 1 clic a PDF" onClick={abrirEstadoCuenta}>Estado de cuenta</button>
-            {principal?.whatsapp && <button style={D.btnAzul} title="Enviar el link del estado de cuenta por WhatsApp" onClick={enviarWhatsApp}>Enviar por WhatsApp</button>}
+            <button style={D.btnAzul} title="Elegir qué suscripciones entran y generar el estado de cuenta" onClick={() => setEdoCuenta('ver')}>Estado de cuenta</button>
+            {principal?.whatsapp && <button style={D.btnAzul} title="Elegir qué entra y mandarlo por WhatsApp" onClick={() => setEdoCuenta('wa')}>Enviar por WhatsApp</button>}
             <button style={D.btnAzul}
               title="Busca si a este cliente ya le estás cobrando algo en Mercado Pago que no esté vinculado aquí"
               disabled={buscandoMP} onClick={buscarEnMP}>{buscandoMP ? '…' : 'Buscar en Mercado Pago'}</button>
@@ -1696,6 +1698,16 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
           )}
         </div>
       </div>
+      {edoCuenta && (
+        <EstadoCuentaModal
+          subs={subs.filter((x: any) => x.ciclo !== 'vitalicia')}
+          whatsapp={principal?.whatsapp}
+          modo={edoCuenta}
+          url={ecUrl}
+          onCerrar={() => setEdoCuenta(null)}
+          flash={flash}
+        />
+      )}
       {pausaSub && (
         <PausaModal sub={pausaSub} onCancel={() => setPausaSub(null)}
           onDone={() => { setPausaSub(null); flash(pausaSub.estado === 'pausada' ? 'Licencia reactivada' : 'Licencia pausada'); reload(); }} />
@@ -1718,6 +1730,102 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
  * churn: la relación sigue viva, solo deja de sumar ARR mientras esté pausada.
  * Por eso lo obligatorio al pausar es el MOTIVO y el "qué esperamos de él" —no
  * una fecha inventada— y al reactivar, las dos fechas que definen el cobro. */
+/* Elegir qué suscripciones entran al estado de cuenta.
+ *
+ * Antes se generaba de golpe con todas. Mandarle a un cliente el total de todo
+ * cuando lo que se le está cobrando es UNA suscripción invita a la pregunta
+ * equivocada —"¿y esto otro por qué me lo cobran ahora?"— y esa aclaración
+ * cuesta más que el cobro. */
+function EstadoCuentaModal({ subs, whatsapp, modo, url, onCerrar, flash }: any) {
+  const hoy = new Date().toISOString().slice(0, 10);
+  // Viene marcado lo VENCIDO: es la razón por la que casi siempre se abre esto.
+  const vencidas = subs.filter((s: any) => s.proxima_factura && String(s.proxima_factura).slice(0, 10) < hoy);
+  const [sel, setSel] = useState<Set<string>>(new Set((vencidas.length ? vencidas : subs).map((s: any) => s.id)));
+  const [pagos, setPagos] = useState(true);
+  const [pagar, setPagar] = useState(true);
+
+  const alternar = (id: string) => setSel(s2 => { const n = new Set(s2); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const elegidas = subs.filter((s: any) => sel.has(s.id));
+  const total = elegidas.reduce((a: number, s: any) => a + Number(s.monto_proximo ?? s.precio ?? 0), 0);
+  const liga = () => url(Array.from(sel), { pagos, pagar });
+
+  function generar() {
+    if (!sel.size) return;
+    const u = liga();
+    if (modo === 'wa') {
+      const num = String(whatsapp || '').replace(/\D/g, '');
+      const msg = `Hola, te comparto tu estado de cuenta SACS:\n${u}`;
+      window.open((num ? `https://wa.me/${num}` : 'https://wa.me/') + `?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+    } else {
+      window.open(u, '_blank', 'noopener');   // síncrono: iOS bloquea lo que abre después de un await
+      try { navigator.clipboard?.writeText(u); } catch { /* */ }
+      flash?.('Estado de cuenta abierto · link copiado');
+    }
+    onCerrar();
+  }
+
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onCerrar(); }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 962, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: 440, maxHeight: '88vh', overflowY: 'auto' }}>
+        <div style={{ padding: '14px 17px', background: '#faf8ff', borderBottom: '1px solid #e6ddfa', display: 'flex', alignItems: 'baseline', gap: 8 }}>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, flex: 1 }}>Estado de cuenta</h3>
+          <button onClick={onCerrar} style={{ border: 'none', background: 'none', color: '#9c99a6', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+        </div>
+        <div style={{ padding: '14px 17px 17px' }}>
+          <div style={{ ...D.lbl, textTransform: 'uppercase', fontSize: '0.62rem', letterSpacing: '.05em' }}>Qué incluir</div>
+          {subs.length === 0 && <div style={{ fontSize: '0.8rem', color: '#999' }}>Este cliente no tiene suscripciones recurrentes.</div>}
+          {subs.map((s: any) => {
+            const on = sel.has(s.id);
+            const venc = s.proxima_factura && String(s.proxima_factura).slice(0, 10) < hoy;
+            return (
+              <label key={s.id} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', border: '1.5px solid', borderColor: on ? '#9B8CFA' : '#e4dffb', background: on ? '#faf8ff' : '#fdfcff', borderRadius: 10, padding: '10px 12px', marginBottom: 8, cursor: 'pointer' }}>
+                <input type="checkbox" checked={on} onChange={() => alternar(s.id)} style={{ marginTop: 3 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{s.nombre_plan}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#8a8a8a', marginTop: 2 }}>
+                    {s.ciclo === 'mensual' ? 'Mensual' : 'Anual'} · {venc ? <b style={{ color: '#C0554E' }}>venció el {fmtDate(s.proxima_factura)}</b> : <>próximo {fmtDate(s.proxima_factura)}</>}
+                  </div>
+                </div>
+                <span style={{ fontSize: '0.82rem', fontWeight: 800, whiteSpace: 'nowrap' }}>{money(s.monto_proximo ?? s.precio)}</span>
+              </label>
+            );
+          })}
+
+          <div style={{ display: 'flex', alignItems: 'baseline', background: '#EEECFE', borderRadius: 10, padding: '10px 12px', margin: '10px 0 12px' }}>
+            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#5B4BD6', textTransform: 'uppercase', letterSpacing: '.05em' }}>Total del estado de cuenta</span>
+            <span style={{ marginLeft: 'auto', fontSize: '1.05rem', fontWeight: 800, color: '#5B4BD6' }}>{money(total)}</span>
+          </div>
+
+          <div style={{ ...D.lbl, textTransform: 'uppercase', fontSize: '0.62rem', letterSpacing: '.05em' }}>Qué mostrar</div>
+          <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: '0.78rem', padding: '4px 0', cursor: 'pointer' }}>
+            <input type="checkbox" checked={pagos} onChange={e => setPagos(e.target.checked)} /> Historial de pagos
+          </label>
+          <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: '0.78rem', padding: '4px 0', cursor: 'pointer' }}>
+            <input type="checkbox" checked={pagar} onChange={e => setPagar(e.target.checked)} /> Botón para pagar en línea
+          </label>
+          {/* El botón solo aparece si esa suscripción tiene liga viva de Mercado
+              Pago: con dos, el importe no correspondería a ninguna de las dos. */}
+          {pagar && (sel.size !== 1 || !elegidas[0]?.mp_link_pago) && (
+            <div style={{ fontSize: '0.68rem', color: '#9a6a10', background: '#FEF6E7', border: '1px solid #f5e2b8', borderRadius: 8, padding: '7px 9px', marginTop: 4, lineHeight: 1.45 }}>
+              {sel.size === 1 ? 'Esa suscripción no tiene liga de cobro generada, así que el documento saldrá sin botón de pago.'
+                : 'El botón de pago solo sale con UNA suscripción elegida: con dos, el importe no correspondería a ninguna liga.'}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+            <button onClick={generar} disabled={!sel.size} style={{ ...D.btn, opacity: sel.size ? 1 : .5 }}>
+              {modo === 'wa' ? 'Mandar por WhatsApp' : 'Generar'}
+            </button>
+            <button onClick={() => { navigator.clipboard?.writeText(liga()); flash?.('Link copiado'); }} disabled={!sel.size} style={D.btnG}>Copiar link</button>
+            <button onClick={onCerrar} style={{ ...D.btnG, marginLeft: 'auto' }}>Cancelar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PausaModal({ sub, onCancel, onDone }: { sub: any; onCancel: () => void; onDone: () => void }) {
   const reactivando = sub.estado === 'pausada';
   const [f, setF] = useState<any>({
