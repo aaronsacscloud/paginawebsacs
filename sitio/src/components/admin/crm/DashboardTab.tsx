@@ -24,12 +24,12 @@ const hace = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); 
 
 const S = {
   wrap: { maxWidth: 1280, margin: '0 auto', padding: 24 } as const,
-  card: { background: '#fff', border: '1px solid #eeeef1', borderRadius: 12, padding: '16px 18px', marginBottom: 14 } as const,
+  card: { background: '#fff', border: '1px solid #eeeef1', borderRadius: 12, padding: '18px 20px', marginBottom: 14 } as const,
   h: { fontSize: '0.64rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '0.9px', display: 'flex', alignItems: 'center', gap: 9, marginBottom: 4 } as const,
   hr: { marginLeft: 'auto', fontSize: '0.68rem', fontWeight: 500, textTransform: 'none' as const, letterSpacing: 0, color: '#a5a2af' } as const,
   hd: { fontSize: '0.72rem', color: '#8a8a8a', marginBottom: 13, lineHeight: 1.5 } as const,
   kl: { fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase' as const, letterSpacing: '.06em' } as const,
-  kv: { fontSize: '1.55rem', fontWeight: 800, marginTop: 5, letterSpacing: '-.02em', lineHeight: 1 } as const,
+  kv: { fontSize: '1.85rem', fontWeight: 800, marginTop: 6, letterSpacing: '-.02em', lineHeight: 1 } as const,
   ks: { fontSize: '0.7rem', color: '#8a8a8a', marginTop: 5, lineHeight: 1.45 } as const,
   ke: { fontSize: '0.66rem', color: '#b3b1bb', marginTop: 6, paddingTop: 6, borderTop: '1px solid #f5f4f8', lineHeight: 1.45 } as const,
   fila: { display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: '1px solid #f5f4f8', fontSize: '0.78rem' } as const,
@@ -82,6 +82,16 @@ export default function DashboardTab() {
 
   return (
     <div style={S.wrap}>
+      {/* Las rejillas van por clase y no con auto-fit: con minmax el navegador
+          decidía 3 columnas y dejaba un hueco del ancho de una tarjeta. */}
+      <style>{`
+        .tb-4 { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:14px; }
+        .tb-3 { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:22px; }
+        .tb-2 { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px; }
+        @media (max-width: 1100px) { .tb-4 { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+        @media (max-width: 900px)  { .tb-3, .tb-2 { grid-template-columns:1fr; gap:16px; } }
+        @media (max-width: 620px)  { .tb-4 { grid-template-columns:1fr; } }
+      `}</style>
       <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Tablero</h2>
@@ -102,8 +112,8 @@ export default function DashboardTab() {
 
       {/* ── Los cuatro de siempre, con lo que se movió EN el periodo: un ARR de
              $1.3M no dice nada; "+$60K este mes" sí. ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 12, marginBottom: 14 }}>
-        <div style={S.card}>
+      <div className="tb-4" style={{ marginBottom: 14 }}>
+        <div style={{ ...S.card, marginBottom: 0 }}>
           <div style={S.kl}>ARR</div>
           <div style={{ ...S.kv, color: '#5B4BD6' }}>{money(k.arr)}</div>
           <div style={S.ks}>
@@ -111,19 +121,19 @@ export default function DashboardTab() {
           </div>
           <div style={S.ke}>Lo que facturarías en 12 meses si nadie se va ni entra nadie.</div>
         </div>
-        <div style={S.card}>
+        <div style={{ ...S.card, marginBottom: 0 }}>
           <div style={S.kl}>Clientes activos</div>
           <div style={S.kv}>{k.clientes}</div>
           <div style={S.ks}>con suscripción activa · <b style={{ color: '#1E8A63' }}>+{k.altas}</b> nuevos{k.bajas ? <>, <b style={{ color: '#C0554E' }}>{k.bajas}</b> baja{k.bajas === 1 ? '' : 's'}</> : ''}</div>
           <div style={S.ke}>Cuentas que pagan hoy. Sin ellas el ARR es una proyección vacía.</div>
         </div>
-        <div style={S.card}>
+        <div style={{ ...S.card, marginBottom: 0 }}>
           <div style={S.kl}>Oportunidades</div>
           <div style={{ ...S.kv, color: '#2C5FC4' }}>{money(k.oportunidades)}</div>
           <div style={S.ks}>{k.oportunidades_n} abiertas · {k.oportunidades_nuevas} creadas en el periodo</div>
           <div style={S.ke}>Dinero en pláticas. Es el combustible del mes que viene.</div>
         </div>
-        <div style={S.card}>
+        <div style={{ ...S.card, marginBottom: 0 }}>
           <div style={S.kl}>Cotizaciones vivas</div>
           <div style={{ ...S.kv, color: '#2C5FC4' }}>{money(k.cotizaciones)}</div>
           <div style={S.ks}>{k.cotizaciones_n} vivas · {k.cotizaciones_nuevas} enviadas en el periodo</div>
@@ -135,7 +145,7 @@ export default function DashboardTab() {
       <div style={S.card}>
         <div style={S.h}>ARR por cobrar<span style={S.hr}>próximos 90 días</span></div>
         <div style={S.hd}>Lo que ya está contratado y toca renovar. No es una proyección: son fechas con nombre y monto.</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10, marginBottom: 12 }}>
+        <div className="tb-4" style={{ marginBottom: 12 }}>
           {[
             ['Vencido', cob.vencido, '#FEF0EF', '#f7c9c5', '#C0554E'],
             ['En 30 días', cob.d30, '#FEF6E7', '#f5e2b8', '#9a6a10'],
@@ -174,7 +184,7 @@ export default function DashboardTab() {
       {/* ── Metas ── */}
       <div style={S.card}>
         <div style={S.h}>Meta del mes<span style={S.hr}>quedan {m.dias_restantes} días</span></div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 26 }}>
+        <div className="tb-3">
           <div>
             <div style={S.kl}>Ingresos totales</div>
             {barra(m.ingresos.real, m.ingresos.meta, '#9B8CFA')}
@@ -206,7 +216,7 @@ export default function DashboardTab() {
       <div style={S.card}>
         <div style={S.h}>Salud del negocio<span style={S.hr}>lo que preguntan un inversionista y tu equipo</span></div>
         <div style={S.hd}>Cada número dice qué significa. Lo que todavía no se puede calcular con la historia que hay, lo dice.</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 12 }}>
+        <div className="tb-3">
           <Metrica rosa titulo="Retención neta (NRR)" valor={sal.nrr != null ? `${sal.nrr}%` : '—'} color={sal.nrr != null && sal.nrr >= 100 ? '#1E8A63' : '#9a6a10'}
             explica={sal.nrr != null
               ? <>De cada $100 que te pagaban al inicio del periodo, hoy te pagan <b>${sal.nrr}</b> los MISMOS clientes. Arriba de 100 creces sin vender a nadie nuevo.</>
@@ -229,7 +239,7 @@ export default function DashboardTab() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 14 }}>
+      <div className="tb-2">
         <div style={{ ...S.card, margin: 0 }}>
           <div style={S.h}>Ingresos por plan<span style={S.hr}>MRR {money(d.mrr_total)}</span></div>
           {d.planes.length === 0 && <div style={{ color: '#c9c7d0', fontSize: '0.8rem', padding: '10px 0' }}>Sin suscripciones activas.</div>}
