@@ -107,6 +107,9 @@ export default function MejorasTab() {
   const [vencidas, setVencidas] = useState<any[]>([]);
   const [filtro, setFiltro] = useState<'todo' | 'pendientes' | 'idea' | 'comprometidas' | 'entregada'>('pendientes');
   const [tipo, setTipo] = useState<string>('todo');
+  const [origen, setOrigen] = useState<string>('todo');   // salió de juntas recientes
+  const [agrupado, setAgrupado] = useState(true);
+  const [sel, setSel] = useState<Set<string>>(new Set());
   const [busca, setBusca] = useState('');
   const [abierto, setAbierto] = useState<string | null>(null);
 
@@ -152,6 +155,17 @@ export default function MejorasTab() {
   const capsAgendadas = useMemo(() => (rows || []).filter(m =>
     m.categoria === 'capacitacion' && m.estado !== 'entregada' && m.estado !== 'descartada' && modoDe(m) === 'agendada'), [rows]);
 
+  const hoyISO = new Date().toISOString().slice(0, 10);
+  const enDias = (n: number) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
+
+  // Lo que vence en los próximos 7 días. Va en ámbar y aparte: llegar antes de
+  // que se ponga rojo es todo el chiste: después ya es una promesa rota.
+  const estaSemana = useMemo(() => (rows || []).filter(m =>
+    (m.estado === 'cotizada' || m.estado === 'en_proceso')
+    && m.fecha_compromiso && m.fecha_compromiso >= hoyISO && m.fecha_compromiso <= enDias(7)
+  ).sort((a, b) => String(a.fecha_compromiso).localeCompare(String(b.fecha_compromiso))), [rows]);
+  const idsSemana = useMemo(() => new Set(estaSemana.map(m => m.id)), [estaSemana]);
+
   const lista = useMemo(() => {
     let r = rows || [];
     if (filtro === 'pendientes') r = r.filter(m => m.estado === 'cotizada' || m.estado === 'en_proceso');
@@ -159,6 +173,12 @@ export default function MejorasTab() {
     else if (filtro === 'comprometidas') r = r.filter(m => m.estado === 'cotizada' || m.estado === 'en_proceso');
     else if (filtro === 'entregada') r = r.filter(m => m.estado === 'entregada');
     if (tipo !== 'todo') r = r.filter(m => (m.categoria || 'otro') === tipo);
+    // Lo que nació en juntas recientes: la lista de seguimiento de después de
+    // las reuniones, que hoy había que armar a ojo.
+    if (origen !== 'todo') {
+      const desde = enDias(-Number(origen));
+      r = r.filter(m => m.bookings?.fecha && m.bookings.fecha >= desde);
+    }
     const t = busca.trim().toLowerCase();
     if (t) r = r.filter(m => `${m.titulo} ${m.descripcion || ''} ${m.companies?.nombre_comercial || m.companies?.nombre || ''}`.toLowerCase().includes(t));
     // En "por hacer" manda la fecha comprometida: lo que vence primero, primero.
@@ -168,7 +188,48 @@ export default function MejorasTab() {
     // el dinero más grande sin cerrar.
     if (filtro === 'idea') r = r.slice().sort((a, b) => Number(b.valor || 0) - Number(a.valor || 0));
     return r;
-  }, [rows, filtro, tipo, busca]);
+  }, [rows, filtro, tipo, origen, busca]);
+
+  // Agrupado por cuenta: al salir de tres juntas seguidas lo que quieres ver es
+  // "Live Shows: 4 pendientes", no cuatro renglones perdidos entre los de otros.
+  const grupos = useMemo(() => {
+    const g: Record<string, { id: string; nombre: string; items: any[] }> = {};
+    for (const m of lista) {
+      const id = m.company_id;
+      g[id] = g[id] || { id, nombre: m.companies?.nombre_comercial || m.companies?.nombre || 'Cuenta', items: [] };
+      g[id].items.push(m);
+    }
+    return Object.values(g).sort((a, b) => b.items.length - a.items.length || a.nombre.localeCompare(b.nombre));
+  }, [lista]);
+
+  /** La lista de una cuenta en texto plano, para pegarla en el chat del equipo. */
+  function copiarGrupo(g: any) {
+    const L = [`${g.nombre} — pendientes`, ''];
+    for (const m of g.items) {
+      L.push(`· ${m.titulo}${m.modulo ? ` (${m.modulo})` : ''}${m.fecha_compromiso ? ` — para el ${fmtDate(m.fecha_compromiso)}` : ''}`);
+      if (m.descripcion) L.push(`  ${m.descripcion}`);
+    }
+    navigator.clipboard?.writeText(L.join('\n'));
+  }
+
+  // Cerrar varias de un golpe: tras una junta se cierran cinco cosas y hacerlo
+  // una por una es el motivo por el que estas listas se dejan de actualizar.
+  async function cerrarSeleccionadas() {
+    const ids = Array.from(sel);
+    if (!ids.length) return;
+    if (!confirm(`¿Marcar ${ids.length} como hechas?`)) return;
+    for (const id of ids) {
+      await fetch('/api/crm/mejoras', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, estado: 'entregada' }),
+      }).catch(() => {});
+    }
+    setSel(new Set()); cargar();
+  }
+  const alternarSel = (e: any, id: string) => {
+    e.stopPropagation();
+    setSel(s2 => { const n = new Set(s2); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  };
 
   // Lo mismo pedido por varias cuentas ya no es trabajo a la medida: es un
   // producto. Se agrupa por título normalizado.
@@ -186,6 +247,41 @@ export default function MejorasTab() {
   }, [rows]);
 
   if (rows === null) return <div style={{ ...S.wrap, color: '#999', fontSize: '0.85rem' }}>Cargando mejoras…</div>;
+
+  const renglon = (m: any, conCliente: boolean) => (
+          <div key={m.id} onClick={() => setAbierto(m.company_id)}
+            style={{ display: 'flex', gap: 11, padding: '11px 0', borderTop: '1px solid #f5f4f8', alignItems: 'flex-start', cursor: 'pointer' }}>
+            {m.estado !== 'entregada' && m.estado !== 'descartada'
+              ? <input type="checkbox" checked={sel.has(m.id)} onClick={e => alternarSel(e, m.id)} onChange={() => {}} style={{ marginTop: 4, cursor: 'pointer', flexShrink: 0 }} />
+              : <span style={{ width: 13, flexShrink: 0 }} />}
+            <span style={{ flex: '0 0 8px', height: 8, borderRadius: 99, background: PUNTO[m.estado] || '#C9C7D0', marginTop: 6 }} />
+            {!conCliente ? null : (
+              <div style={{ flex: '0 0 190px', fontSize: '0.79rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {m.companies?.nombre_comercial || m.companies?.nombre || '—'}
+              </div>
+            )}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>
+                {m.titulo}
+                <span style={{ fontSize: '0.57rem', fontWeight: 800, background: cat(m.categoria).bg, color: cat(m.categoria).fg, borderRadius: 20, padding: '2px 8px', marginLeft: 6 }}>{cat(m.categoria).label}</span>
+              </div>
+              {m.descripcion && <div style={{ fontSize: '0.73rem', color: '#71717a', lineHeight: 1.45, marginTop: 2 }}>{m.descripcion}</div>}
+              <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 4 }}>
+                {m.fecha_entrega ? `Entregada ${fmtDate(m.fecha_entrega)}` : m.fecha_compromiso ? `Comprometida para el ${fmtDate(m.fecha_compromiso)}` : 'Sin fecha'}
+                {m.quotes?.numero && ` · ${m.quotes.numero}`}
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
+              <div style={{ fontSize: '0.79rem', fontWeight: 800, whiteSpace: 'nowrap', color: m.cortesia ? '#a5a2af' : m.estado === 'entregada' ? '#1E8A63' : '#2C5FC4' }}>
+                {m.cortesia ? 'Cortesía' : Number(m.valor) > 0 ? (m.estado === 'idea' ? '~' : '') + money(m.valor) : '—'}
+              </div>
+              {m.estado !== 'entregada' && m.estado !== 'descartada' && (
+                <button onClick={e => marcarHecha(e, m)} title="Marcar hecha"
+                  style={{ border: '1px solid #cdeadd', background: '#EAF8F2', color: '#1E8A63', borderRadius: 8, padding: '4px 9px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>✓</button>
+              )}
+            </div>
+          </div>
+  );
 
   return (
     <div style={S.wrap}>
@@ -212,13 +308,29 @@ export default function MejorasTab() {
         </div>
       )}
 
-      {(videosPorEnviar.length > 0 || capsAgendadas.length > 0) && (
+      {estaSemana.length > 0 && (
+        <div style={{ background: '#fffdf7', border: '1px solid #f5e2b8', borderRadius: 12, padding: '13px 15px', marginBottom: 14 }}>
+          <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#9a6a10', marginBottom: 7 }}>
+            Vence esta semana · {estaSemana.length}
+          </div>
+          {estaSemana.map((m: any) => (
+            <div key={m.id} onClick={() => setAbierto(m.company_id)}
+              style={{ display: 'flex', gap: 10, alignItems: 'baseline', padding: '6px 0', borderTop: '1px solid #f7f1e4', fontSize: '0.8rem', cursor: 'pointer' }}>
+              <b style={{ minWidth: 170, flexShrink: 0 }}>{m.companies?.nombre_comercial || m.companies?.nombre || 'Cuenta'}</b>
+              <span style={{ flex: 1 }}>{m.titulo}</span>
+              <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#9a6a10', whiteSpace: 'nowrap' }}>{fmtDate(m.fecha_compromiso)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {(videosPorEnviar.filter(m => !idsSemana.has(m.id)).length > 0 || capsAgendadas.filter(m => !idsSemana.has(m.id)).length > 0) && (
         <div style={{ ...S.card, borderColor: '#f5e2b8', background: '#fffdf7' }}>
           <div style={S.h}>
             Capacitaciones pendientes
             <span style={S.nota}>{videosPorEnviar.length ? `${videosPorEnviar.length} video(s) por enviar` : ''}{videosPorEnviar.length && capsAgendadas.length ? ' · ' : ''}{capsAgendadas.length ? `${capsAgendadas.length} agendada(s)` : ''}</span>
           </div>
-          {[...videosPorEnviar, ...capsAgendadas].map(m => (
+          {[...videosPorEnviar, ...capsAgendadas].filter(m => !idsSemana.has(m.id)).map(m => (
             <div key={m.id} onClick={() => setAbierto(m.company_id)}
               style={{ display: 'flex', gap: 10, alignItems: 'baseline', padding: '7px 0', borderTop: '1px solid #f7f1e4', fontSize: '0.8rem', cursor: 'pointer' }}>
               <b style={{ minWidth: 170, flexShrink: 0 }}>{m.companies?.nombre_comercial || m.companies?.nombre || 'Cuenta'}</b>
@@ -289,8 +401,21 @@ export default function MejorasTab() {
             ]} />
           <Desplegable etiqueta="Tipo" valor={tipo} onCambio={setTipo}
             opciones={[{ v: 'todo', l: 'Todos' }, ...Object.entries(CATS).map(([k, v]) => ({ v: k, l: v.label }))]} />
+          <Desplegable etiqueta="Salió de" valor={origen} onCambio={setOrigen}
+            opciones={[{ v: 'todo', l: 'Cualquier junta' }, { v: '7', l: 'Juntas de 7 días' }, { v: '30', l: 'Juntas de 30 días' }]} />
+          <button onClick={() => setAgrupado(a => !a)} style={S.chip(agrupado)}>{agrupado ? 'Agrupado por cliente' : 'Lista corrida'}</button>
           <span style={{ marginLeft: 'auto', fontSize: '0.75rem', color: '#a5a2af' }}>{lista.length} de {rows.length}</span>
         </div>
+
+        {sel.size > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#EEECFE', border: '1px solid #ddd6fb', borderRadius: 10, padding: '9px 12px', marginBottom: 10 }}>
+            <b style={{ fontSize: '0.79rem', color: '#5B4BD6' }}>{sel.size} seleccionada{sel.size === 1 ? '' : 's'}</b>
+            <button onClick={cerrarSeleccionadas}
+              style={{ border: 'none', background: '#4FBF95', color: '#fff', borderRadius: 8, padding: '6px 13px', fontSize: '0.76rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Marcar hechas</button>
+            <button onClick={() => setSel(new Set())}
+              style={{ marginLeft: 'auto', border: 'none', background: 'none', color: '#7a6fc9', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Quitar selección</button>
+          </div>
+        )}
 
         {lista.length === 0 && (
           <div style={{ color: '#999', fontSize: '0.83rem', padding: '14px 0' }}>
@@ -300,35 +425,23 @@ export default function MejorasTab() {
           </div>
         )}
 
-        {lista.map(m => (
-          <div key={m.id} onClick={() => setAbierto(m.company_id)}
-            style={{ display: 'flex', gap: 11, padding: '11px 0', borderTop: '1px solid #f5f4f8', alignItems: 'flex-start', cursor: 'pointer' }}>
-            <span style={{ flex: '0 0 8px', height: 8, borderRadius: 99, background: PUNTO[m.estado] || '#C9C7D0', marginTop: 6 }} />
-            <div style={{ flex: '0 0 190px', fontSize: '0.79rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {m.companies?.nombre_comercial || m.companies?.nombre || '—'}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>
-                {m.titulo}
-                <span style={{ fontSize: '0.57rem', fontWeight: 800, background: cat(m.categoria).bg, color: cat(m.categoria).fg, borderRadius: 20, padding: '2px 8px', marginLeft: 6 }}>{cat(m.categoria).label}</span>
+        {/* Agrupado, el nombre del cliente va en el encabezado del grupo y no
+            se repite en cada renglón: repetirlo veinte veces es ruido. */}
+        {agrupado
+          ? grupos.map(g => (
+            <div key={g.id} style={{ marginBottom: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '12px 0 4px', borderTop: '1px solid #f0eff3' }}>
+                <b onClick={() => setAbierto(g.id)} style={{ fontSize: '0.85rem', cursor: 'pointer' }}>{g.nombre}</b>
+                <span style={{ fontSize: '0.68rem', fontWeight: 800, background: '#f1f0f5', color: '#8a8a92', borderRadius: 20, padding: '2px 8px' }}>{g.items.length}</span>
+                <button onClick={() => copiarGrupo(g)}
+                  style={{ marginLeft: 'auto', border: '1px solid #e2e4e9', background: '#fff', borderRadius: 8, padding: '4px 10px', fontSize: '0.7rem', fontWeight: 700, color: '#5a5a63', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Copiar lista
+                </button>
               </div>
-              {m.descripcion && <div style={{ fontSize: '0.73rem', color: '#71717a', lineHeight: 1.45, marginTop: 2 }}>{m.descripcion}</div>}
-              <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 4 }}>
-                {m.fecha_entrega ? `Entregada ${fmtDate(m.fecha_entrega)}` : m.fecha_compromiso ? `Comprometida para el ${fmtDate(m.fecha_compromiso)}` : 'Sin fecha'}
-                {m.quotes?.numero && ` · ${m.quotes.numero}`}
-              </div>
+              {g.items.map((m: any) => renglon(m, false))}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
-              <div style={{ fontSize: '0.79rem', fontWeight: 800, whiteSpace: 'nowrap', color: m.cortesia ? '#a5a2af' : m.estado === 'entregada' ? '#1E8A63' : '#2C5FC4' }}>
-                {m.cortesia ? 'Cortesía' : Number(m.valor) > 0 ? (m.estado === 'idea' ? '~' : '') + money(m.valor) : '—'}
-              </div>
-              {m.estado !== 'entregada' && m.estado !== 'descartada' && (
-                <button onClick={e => marcarHecha(e, m)} title="Marcar hecha"
-                  style={{ border: '1px solid #cdeadd', background: '#EAF8F2', color: '#1E8A63', borderRadius: 8, padding: '4px 9px', fontSize: '0.7rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>✓</button>
-              )}
-            </div>
-          </div>
-        ))}
+          ))
+          : lista.map(m => renglon(m, true))}
       </div>
 
       {abierto && <ClienteDrawer360 companyId={abierto} onClose={() => setAbierto(null)} onChanged={cargar} />}
