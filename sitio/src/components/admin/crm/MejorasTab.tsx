@@ -109,6 +109,7 @@ export default function MejorasTab() {
   const [tipo, setTipo] = useState<string>('todo');
   const [origen, setOrigen] = useState<string>('todo');   // salió de juntas recientes
   const [agrupado, setAgrupado] = useState(true);
+  const [verSemana, setVerSemana] = useState(false);
   const [sel, setSel] = useState<Set<string>>(new Set());
   const [busca, setBusca] = useState('');
   const [abierto, setAbierto] = useState<string | null>(null);
@@ -334,19 +335,34 @@ export default function MejorasTab() {
         </div>
       )}
 
+      {/* Franja, no lista: el aviso crece a lo ANCHO y no a lo alto. En lista
+          el nombre del cliente se repetía en cada renglón y la fecha se iba
+          hasta el extremo derecho, así que cuatro pendientes ocupaban un tercio
+          de la pantalla. Con quince sigue midiendo dos renglones. */}
       {estaSemana.length > 0 && (
-        <div style={{ background: '#fffdf7', border: '1px solid #f5e2b8', borderRadius: 12, padding: '13px 15px', marginBottom: 14 }}>
-          <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#9a6a10', marginBottom: 7 }}>
-            Vence esta semana · {estaSemana.length}
-          </div>
-          {estaSemana.map((m: any) => (
-            <div key={m.id} onClick={() => setAbierto(m.company_id)}
-              style={{ display: 'flex', gap: 10, alignItems: 'baseline', padding: '6px 0', borderTop: '1px solid #f7f1e4', fontSize: '0.8rem', cursor: 'pointer' }}>
-              <b style={{ minWidth: 170, flexShrink: 0 }}>{m.companies?.nombre_comercial || m.companies?.nombre || 'Cuenta'}</b>
-              <span style={{ flex: 1 }}>{m.titulo}</span>
-              <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#9a6a10', whiteSpace: 'nowrap' }}>{fmtDate(m.fecha_compromiso)}</span>
-            </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', background: '#fffdf7', border: '1px solid #f5e2b8', borderRadius: 11, padding: '9px 13px', marginBottom: 14 }}>
+          <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#9a6a10', whiteSpace: 'nowrap' }}>
+            ⚠ Vence esta semana · {estaSemana.length}
+          </span>
+          {estaSemana.slice(0, verSemana ? estaSemana.length : 4).map((m: any) => (
+            <button key={m.id} onClick={() => setAbierto(m.company_id)} title={m.companies?.nombre_comercial || m.companies?.nombre || ''}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 7, background: '#fff', border: '1px solid #f2e6c8',
+                borderRadius: 20, padding: '4px 11px', fontSize: '0.72rem', cursor: 'pointer', fontFamily: 'inherit',
+                maxWidth: 300,
+              }}>
+              <b style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.titulo}</b>
+              <span style={{ fontSize: '0.65rem', fontWeight: 800, color: '#9a6a10', whiteSpace: 'nowrap' }}>
+                {fmtDate(m.fecha_compromiso).replace(/ \d{4}$/, '')}
+              </span>
+            </button>
           ))}
+          {estaSemana.length > 4 && (
+            <button onClick={() => setVerSemana(v => !v)}
+              style={{ marginLeft: 'auto', border: 'none', background: 'none', fontSize: '0.7rem', fontWeight: 800, color: '#9a6a10', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+              {verSemana ? 'Ver menos' : `Ver todos (${estaSemana.length}) ›`}
+            </button>
+          )}
         </div>
       )}
 
