@@ -1,703 +1,316 @@
-import { useState, useEffect } from 'react';
+// Tablero del CRM.
+//
+// Cada número trae una línea que dice QUÉ es y qué hacer con él, con el dato
+// propio adentro: no "el NRR mide expansión neta", sino "de cada $100 que te
+// pagaban, hoy te pagan $104". Un tablero que hay que saber leer no lo lee
+// nadie.
+//
+// Lo que no se puede calcular se dice. El CAC necesita gasto de marketing y el
+// LTV varios meses de bajas: un número inventado en una pantalla que puede ver
+// un inversionista es peor que un hueco.
+import { useEffect, useMemo, useState } from 'react';
 import ClienteDrawer360 from './ClienteDrawer360';
-import { useIsMobile } from '../../../lib/ui/mobile';
 
-// ─── Types ───
-interface RevenueByPlan {
-  count: number;
-  mrr: number;
-}
-
-interface Deudor {
-  id: string;
-  nombre: string;
-  plan: string;
-  mrr: number;
-  fecha_renovacion: string;
-  days_overdue: number;
-}
-
-interface Renovacion {
-  id: string;
-  nombre: string;
-  plan: string;
-  mrr: number;
-  fecha_renovacion: string;
-  days_remaining: number;
-}
-
-interface PipelineStage {
-  stage: string;
-  count: number;
-  value: number;
-}
-
-interface DashboardData {
-  revenue: {
-    mrr: number;
-    arr: number;
-    churn_rate: number;
-    avg_ltv: number;
-    active_clients: number;
-    cancelled_clients: number;
-    by_plan: Record<string, RevenueByPlan>;
-    payments_this_month: number;
-  };
-  cobranza: {
-    deudores: Deudor[];
-    monto_deuda: number;
-    renovaciones_proximas: Renovacion[];
-  };
-  pipeline: {
-    total_value: number;
-    weighted_value: number;
-    open_deals: number;
-    won: number;
-    lost: number;
-    win_rate: number;
-    avg_deal_size: number;
-    avg_days_to_close: number;
-    by_stage: PipelineStage[];
-  };
-  contacts: {
-    total: number;
-    leads: number;
-    clients: number;
-    leads_this_month: number;
-    leads_last_month: number;
-    lead_growth: number;
-  };
-  activity: {
-    total_this_month: number;
-  };
-}
-
-// ─── Constants ───
-const PLAN_COLORS: Record<string, string> = {
-  vende: '#6C5CE7',
-  controla: '#4B7BE5',
-  fideliza: '#2AB5A0',
-  automatiza: '#E8A838',
+const money = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
+const corto = (n?: number | null) => {
+  const v = Math.abs(Number(n || 0));
+  if (v >= 1000000) return (Number(n) / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (v >= 1000) return Math.round(Number(n) / 1000) + 'K';
+  return String(Math.round(Number(n || 0)));
 };
+const fmtDate = (d?: string | null) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }).replace(/\./g, '') : '';
+const iso = (d: Date) => d.toISOString().slice(0, 10);
+const hace = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return iso(d); };
 
-const PLAN_LABELS: Record<string, string> = {
-  vende: 'Vende',
-  controla: 'Controla',
-  fideliza: 'Fideliza',
-  automatiza: 'Automatiza',
+const S = {
+  wrap: { maxWidth: 1280, margin: '0 auto', padding: 24 } as const,
+  card: { background: '#fff', border: '1px solid #eeeef1', borderRadius: 12, padding: '16px 18px', marginBottom: 14 } as const,
+  h: { fontSize: '0.64rem', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '0.9px', display: 'flex', alignItems: 'center', gap: 9, marginBottom: 4 } as const,
+  hr: { marginLeft: 'auto', fontSize: '0.68rem', fontWeight: 500, textTransform: 'none' as const, letterSpacing: 0, color: '#a5a2af' } as const,
+  hd: { fontSize: '0.72rem', color: '#8a8a8a', marginBottom: 13, lineHeight: 1.5 } as const,
+  kl: { fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase' as const, letterSpacing: '.06em' } as const,
+  kv: { fontSize: '1.55rem', fontWeight: 800, marginTop: 5, letterSpacing: '-.02em', lineHeight: 1 } as const,
+  ks: { fontSize: '0.7rem', color: '#8a8a8a', marginTop: 5, lineHeight: 1.45 } as const,
+  ke: { fontSize: '0.66rem', color: '#b3b1bb', marginTop: 6, paddingTop: 6, borderTop: '1px solid #f5f4f8', lineHeight: 1.45 } as const,
+  fila: { display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: '1px solid #f5f4f8', fontSize: '0.78rem' } as const,
+  btnA: { border: '1.5px solid #7DA6F5', borderRadius: 8, padding: '4px 10px', background: '#fff', fontSize: '0.69rem', fontWeight: 700, color: '#2C5FC4', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none' } as const,
+  btnP: { border: 'none', borderRadius: 8, padding: '5px 11px', background: '#9B8CFA', color: '#fff', fontSize: '0.69rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none' } as const,
+  pill: (bg: string, fg: string) => ({ fontSize: '0.6rem', fontWeight: 800, background: bg, color: fg, borderRadius: 20, padding: '2px 8px', whiteSpace: 'nowrap' as const }) as const,
 };
+// El rosa marca lo ELEGIDO, igual que en los filtros del resto del módulo.
+const seg = (on: boolean) => ({
+  border: 'none', cursor: 'pointer', padding: '6px 14px', fontSize: '0.72rem', fontWeight: 700,
+  fontFamily: 'inherit', background: on ? 'rgba(244,168,205,.34)' : 'transparent', color: on ? '#9c3d70' : '#8a8a92',
+}) as const;
 
-const STAGE_COLORS: Record<string, string> = {
-  calificacion: '#6C5CE7',
-  demo_agendada: '#4B7BE5',
-  demo_realizada: '#E8A838',
-  cotizacion_enviada: '#F39C12',
-  negociacion: '#2AB5A0',
-  cerrada_ganada: '#2e7d32',
-  cerrada_perdida: '#999',
-};
-
-const STAGE_LABELS: Record<string, string> = {
-  calificacion: 'Calificacion',
-  demo_agendada: 'Demo agendada',
-  demo_realizada: 'Demo realizada',
-  cotizacion_enviada: 'Cotizacion enviada',
-  negociacion: 'Negociacion',
-  cerrada_ganada: 'Cerrada ganada',
-  cerrada_perdida: 'Cerrada perdida',
-};
-
-// ─── Helpers ───
-const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-MX');
-const fmtK = (n: number) => {
-  if (n >= 1000000) return `$${(n / 1000000).toFixed(1)}M`;
-  if (n >= 1000) return `$${(n / 1000).toFixed(0)}K`;
-  return `$${n}`;
-};
-const fmtPct = (n: number) => `${n.toFixed(1)}%`;
-const fmtDate = (d: string | null) => {
-  if (!d) return '--';
-  const date = new Date(d.length === 10 ? d + 'T12:00:00' : d);
-  if (isNaN(date.getTime())) return '--';
-  return `${date.getDate()}/${date.toLocaleDateString('es-MX', { month: 'short' }).replace('.', '')}`;
-};
-
-// ─── Main Component ───
 export default function DashboardTab() {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [drawerCompanyId, setDrawerCompanyId] = useState<string | null>(null);
-  const isMobile = useIsMobile();
+  const [rango, setRango] = useState<'7' | '30' | '365' | 'custom'>('30');
+  const [desde, setDesde] = useState(hace(30));
+  const [hasta, setHasta] = useState(iso(new Date()));
+  const [d, setD] = useState<any>(null);
+  const [err, setErr] = useState('');
+  const [abierto, setAbierto] = useState<string | null>(null);
 
-  const load = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/crm/reports/revenue');
-      if (!res.ok) throw new Error(`Error ${res.status}`);
-      const json = await res.json();
-      setData(json);
-    } catch (e: any) {
-      setError(e.message || 'Error al cargar datos');
-    } finally {
-      setLoading(false);
-    }
+  const cargar = () => {
+    setD(null); setErr('');
+    fetch(`/api/crm/reports/tablero?desde=${desde}&hasta=${hasta}`)
+      .then(r => r.json()).then(j => { if (j.error) setErr(j.error); else setD(j); })
+      .catch(() => setErr('No se pudo cargar el tablero.'));
   };
+  useEffect(() => { cargar(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [desde, hasta]);
 
-  useEffect(() => { load(); }, []);
+  const preset = (k: '7' | '30' | '365') => { setRango(k); setDesde(hace(Number(k))); setHasta(iso(new Date())); };
 
-  if (loading) {
-    return (
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 48 }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={spinnerStyle} />
-          <div style={{ marginTop: 16, color: '#999', fontSize: '0.875rem', fontFamily }}>Cargando dashboard...</div>
-        </div>
+  if (err) return <div style={{ ...S.wrap, color: '#C0554E', fontSize: '0.85rem' }}>{err}</div>;
+  if (!d) return <div style={{ ...S.wrap, color: '#999', fontSize: '0.85rem' }}>Cargando tablero…</div>;
+
+  const k = d.kpis, sal = d.salud, m = d.metas, cob = d.cobrar;
+  const barra = (real: number, meta: number, color: string) => (
+    <>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+        <span style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-.02em' }}>{money(real)}</span>
+        <span style={{ fontSize: '0.72rem', color: '#a5a2af' }}>de {money(meta)}</span>
+        <span style={{ marginLeft: 'auto', fontSize: '0.85rem', fontWeight: 800, color: meta && real / meta >= 0.8 ? '#1E8A63' : '#C0554E' }}>
+          {meta > 0 ? Math.round((real / meta) * 100) : 0}%
+        </span>
       </div>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 48 }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '2rem', marginBottom: 12 }}>!</div>
-          <div style={{ color: '#E54B4B', fontSize: '0.875rem', fontFamily, marginBottom: 16 }}>{error || 'No hay datos disponibles'}</div>
-          <button onClick={load} style={{ ...btnBase, background: '#1a1a1a', color: '#fff' }}>Reintentar</button>
-        </div>
+      <div style={{ height: 9, background: '#f1f0f5', borderRadius: 9, overflow: 'hidden', margin: '7px 0 5px' }}>
+        <span style={{ display: 'block', height: '100%', borderRadius: 9, background: color, width: `${Math.min(100, meta > 0 ? (real / meta) * 100 : 0)}%` }} />
       </div>
-    );
-  }
-
-  const { revenue, cobranza, pipeline } = data;
-  const dash: any = (data as any).dashboard || {};
-  const radar: any[] = dash.radar || [];
-  const riesgo: any[] = dash.riesgo || [];
-  const reunionesHoy: any[] = dash.reuniones_hoy || [];
-
-  // Compute max MRR for bar chart scale
-  const planEntries = Object.entries(revenue.by_plan || {});
-  const maxMrr = Math.max(...planEntries.map(([, v]) => v.mrr), 1);
-
-  // Pipeline funnel: filter out closed stages, sort by typical order
-  const funnelOrder = ['calificacion', 'demo_agendada', 'demo_realizada', 'cotizacion_enviada', 'negociacion', 'cerrada_ganada'];
-  const funnelStages = funnelOrder
-    .map(id => {
-      const found = (pipeline.by_stage || []).find((s: PipelineStage) => s.stage === id);
-      return found ? { ...found, stage: id } : { stage: id, count: 0, value: 0 };
-    })
-    .filter(s => s.stage !== 'cerrada_perdida');
-  const maxFunnelCount = Math.max(...funnelStages.map(s => s.count), 1);
+    </>
+  );
 
   return (
-    <div style={{ flex: 1, overflow: 'auto', padding: '20px 24px 40px', fontFamily }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+    <div style={S.wrap}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
         <div>
-          <h1 style={{ fontSize: '1.375rem', fontWeight: 800, color: '#1a1a1a', margin: 0 }}>Dashboard</h1>
-          <p style={{ fontSize: '0.8125rem', color: '#999', margin: '4px 0 0' }}>Vista general del negocio</p>
+          <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Tablero</h2>
+          <div style={{ fontSize: '0.75rem', color: '#8a8a8a', marginTop: 2 }}>Cómo va el negocio y qué dinero está por entrar</div>
         </div>
-        <button onClick={load} style={{ ...btnBase, background: '#f5f5f5', color: '#555' }}>
-          Actualizar
-        </button>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 7, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ display: 'inline-flex', border: '1px solid #efe7f1', borderRadius: 20, overflow: 'hidden', background: '#fff' }}>
+            {([['7', '7 días'], ['30', '30 días'], ['365', '12 meses']] as const).map(([v, l]) => (
+              <button key={v} onClick={() => preset(v)} style={seg(rango === v)}>{l}</button>
+            ))}
+          </span>
+          <input type="date" value={desde} onChange={e => { setDesde(e.target.value); setRango('custom'); }}
+            style={{ border: '1px solid #e4dffb', background: '#fdfcff', borderRadius: 9, padding: '6px 9px', fontSize: '0.72rem', fontFamily: 'inherit' }} />
+          <input type="date" value={hasta} onChange={e => { setHasta(e.target.value); setRango('custom'); }}
+            style={{ border: '1px solid #e4dffb', background: '#fdfcff', borderRadius: 9, padding: '6px 9px', fontSize: '0.72rem', fontFamily: 'inherit' }} />
+        </div>
       </div>
 
-      {(() => {
-      /* Bloques reutilizables: mismo contenido, distinto ORDEN en mobile vs
-         desktop (mobile-first: primero lo accionable, KPIs/Meta al final). */
-      const kpisBlock = (
-        <div className="dash-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }}>
-        <KpiCard label="ARR" value={fmtK(dash.arr_real ?? revenue.arr)} color="#2AB5A0" subtitle="Ingreso anual recurrente" />
-        <KpiCard label="Clientes activos" value={String(dash.clientes_activos ?? revenue.active_clients)} color="#6C5CE7" subtitle="con suscripción activa" />
-        <KpiCard label="Oportunidades" value={fmtK(dash.oportunidades_monto ?? pipeline.total_value)} color="#E8A838" subtitle={`${dash.oportunidades_abiertas ?? pipeline.open_deals} abiertas`} />
-        <KpiCard label="Cotizaciones" value={fmtK(dash.cotizaciones_monto ?? 0)} color="#4B7BE5" subtitle={`${dash.cotizaciones_n ?? 0} vivas`} />
-        </div>
-      );
-      const metaBlock = <MetaDelMes meta={dash.meta} onSaved={load} />;
-
-      // Cuentas vencidas: tabla en desktop, lista tap→drawer en mobile.
-      const deudoresBlock = (
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ ...cardTitleStyle, margin: 0 }}>Cuentas vencidas</h3>
-            {cobranza.monto_deuda > 0 && (
-              <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#E54B4B', background: 'rgba(229,75,75,0.08)', padding: '4px 10px', borderRadius: 6 }}>Deuda: {fmt(cobranza.monto_deuda)}</span>
-            )}
+      {/* ── Los cuatro de siempre, con lo que se movió EN el periodo: un ARR de
+             $1.3M no dice nada; "+$60K este mes" sí. ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 12, marginBottom: 14 }}>
+        <div style={S.card}>
+          <div style={S.kl}>ARR</div>
+          <div style={{ ...S.kv, color: '#5B4BD6' }}>{money(k.arr)}</div>
+          <div style={S.ks}>
+            Ingreso anual recurrente{k.arr_delta ? <> · <b style={{ color: k.arr_delta >= 0 ? '#1E8A63' : '#C0554E' }}>{k.arr_delta >= 0 ? '+' : ''}{money(k.arr_delta)}</b> en el periodo</> : ''}
           </div>
-          {cobranza.deudores.length === 0 ? (
-            <div style={{ padding: '24px 0', textAlign: 'center', color: '#ccc', fontSize: '0.8125rem' }}>Sin cuentas vencidas</div>
-          ) : isMobile ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {cobranza.deudores.map(d => (
-                <div key={d.id} onClick={() => setDrawerCompanyId(d.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px', borderRadius: 8, background: d.days_overdue > 30 ? 'rgba(229,75,75,0.05)' : '#fafbfc', cursor: 'pointer' }}>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: d.days_overdue > 30 ? '#E54B4B' : '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.nombre}</div>
-                    <div style={{ fontSize: '0.72rem', color: '#999' }}>{PLAN_LABELS[d.plan] || d.plan} · {fmt(d.mrr)}</div>
-                  </div>
-                  <span style={{ fontWeight: 800, fontSize: '0.82rem', color: d.days_overdue > 30 ? '#E54B4B' : d.days_overdue > 15 ? '#E8A838' : '#555' }}>{d.days_overdue}d</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="crm-scroll-x">
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
-                <thead><tr>{['Empresa', 'Plan', 'MRR', 'Dias vencido', ''].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
-                <tbody>
-                  {cobranza.deudores.map((d, i) => {
-                    const isOverdue30 = d.days_overdue > 30;
-                    return (
-                      <tr key={d.id} onClick={() => setDrawerCompanyId(d.id)} style={{ cursor: 'pointer', background: isOverdue30 ? 'rgba(229,75,75,0.04)' : i % 2 === 0 ? '#fff' : '#fafbfc' }}>
-                        <td style={{ ...tdStyle, fontWeight: 700, color: isOverdue30 ? '#E54B4B' : '#1a1a1a' }}>{d.nombre}</td>
-                        <td style={tdStyle}><span style={{ fontSize: '0.6875rem', fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: (PLAN_COLORS[d.plan] || '#ccc') + '14', color: PLAN_COLORS[d.plan] || '#888' }}>{PLAN_LABELS[d.plan] || d.plan}</span></td>
-                        <td style={{ ...tdStyle, fontWeight: 700, color: '#1a1a1a' }}>{fmt(d.mrr)}</td>
-                        <td style={tdStyle}><span style={{ fontWeight: 700, color: isOverdue30 ? '#E54B4B' : d.days_overdue > 15 ? '#E8A838' : '#555' }}>{d.days_overdue}d</span></td>
-                        <td style={tdStyle}><button disabled style={{ ...btnBase, fontSize: '0.6875rem', padding: '4px 10px', background: '#f0f0f0', color: '#bbb', cursor: 'not-allowed' }}>Enviar cobro</button></td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <div style={S.ke}>Lo que facturarías en 12 meses si nadie se va ni entra nadie.</div>
         </div>
-      );
+        <div style={S.card}>
+          <div style={S.kl}>Clientes activos</div>
+          <div style={S.kv}>{k.clientes}</div>
+          <div style={S.ks}>con suscripción activa · <b style={{ color: '#1E8A63' }}>+{k.altas}</b> nuevos{k.bajas ? <>, <b style={{ color: '#C0554E' }}>{k.bajas}</b> baja{k.bajas === 1 ? '' : 's'}</> : ''}</div>
+          <div style={S.ke}>Cuentas que pagan hoy. Sin ellas el ARR es una proyección vacía.</div>
+        </div>
+        <div style={S.card}>
+          <div style={S.kl}>Oportunidades</div>
+          <div style={{ ...S.kv, color: '#2C5FC4' }}>{money(k.oportunidades)}</div>
+          <div style={S.ks}>{k.oportunidades_n} abiertas · {k.oportunidades_nuevas} creadas en el periodo</div>
+          <div style={S.ke}>Dinero en pláticas. Es el combustible del mes que viene.</div>
+        </div>
+        <div style={S.card}>
+          <div style={S.kl}>Cotizaciones vivas</div>
+          <div style={{ ...S.kv, color: '#2C5FC4' }}>{money(k.cotizaciones)}</div>
+          <div style={S.ks}>{k.cotizaciones_n} vivas · {k.cotizaciones_nuevas} enviadas en el periodo</div>
+          <div style={S.ke}>Ya con precio y en manos del cliente. De aquí sale lo que cierra este mes.</div>
+        </div>
+      </div>
 
-      // Próximas renovaciones: tabla en desktop, lista tap→drawer en mobile.
-      const renovacionesBlock = (
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ ...cardTitleStyle, margin: 0 }}>Proximas renovaciones</h3>
-            {cobranza.renovaciones_proximas.length > 0 && (
-              <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#E8A838', background: 'rgba(232,168,56,0.08)', padding: '4px 10px', borderRadius: 6 }}>{cobranza.renovaciones_proximas.length} proximas</span>
-            )}
-          </div>
-          {cobranza.renovaciones_proximas.length === 0 ? (
-            <div style={{ padding: '24px 0', textAlign: 'center', color: '#ccc', fontSize: '0.8125rem' }}>Sin renovaciones proximas</div>
-          ) : isMobile ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {cobranza.renovaciones_proximas.map(r => (
-                <div key={r.id} onClick={() => setDrawerCompanyId(r.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px', borderRadius: 8, background: '#fafbfc', cursor: 'pointer' }}>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.nombre}</div>
-                    <div style={{ fontSize: '0.72rem', color: '#999' }}>{PLAN_LABELS[r.plan] || r.plan} · {fmt(r.mrr)} · {fmtDate(r.fecha_renovacion)}</div>
-                  </div>
-                  <span style={{ fontWeight: 700, fontSize: '0.8rem', color: r.days_remaining < 7 ? '#E8A838' : r.days_remaining > 15 ? '#2e7d32' : '#555' }}>{r.days_remaining}d</span>
-                </div>
-              ))}
+      {/* ── ARR por cobrar ── */}
+      <div style={S.card}>
+        <div style={S.h}>ARR por cobrar<span style={S.hr}>próximos 90 días</span></div>
+        <div style={S.hd}>Lo que ya está contratado y toca renovar. No es una proyección: son fechas con nombre y monto.</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10, marginBottom: 12 }}>
+          {[
+            ['Vencido', cob.vencido, '#FEF0EF', '#f7c9c5', '#C0554E'],
+            ['En 30 días', cob.d30, '#FEF6E7', '#f5e2b8', '#9a6a10'],
+            ['En 60 días', cob.d60, '#EEECFE', '#ddd6fb', '#5B4BD6'],
+            ['En 90 días', cob.d90, '#E3EDFD', '#cfe0fa', '#2C5FC4'],
+          ].map(([t, v, bg, bd, fg]: any) => (
+            <div key={t} style={{ background: bg, border: `1px solid ${bd}`, borderRadius: 11, padding: '12px 14px' }}>
+              <div style={{ fontSize: '0.6rem', fontWeight: 800, color: fg, textTransform: 'uppercase', letterSpacing: '.06em' }}>{t}</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: fg, marginTop: 4, letterSpacing: '-.02em' }}>{money(v.monto)}</div>
+              <div style={{ fontSize: '0.67rem', color: fg, marginTop: 3 }}>{v.n} {v.n === 1 ? 'renovación' : 'renovaciones'}</div>
             </div>
-          ) : (
-            <div className="crm-scroll-x">
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
-                <thead><tr>{['Empresa', 'Plan', 'MRR', 'Fecha', 'Dias'].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr></thead>
-                <tbody>
-                  {cobranza.renovaciones_proximas.map((r, i) => {
-                    const urgent = r.days_remaining < 7; const ok = r.days_remaining > 15;
-                    return (
-                      <tr key={r.id} onClick={() => setDrawerCompanyId(r.id)} style={{ cursor: 'pointer', background: urgent ? 'rgba(232,168,56,0.04)' : i % 2 === 0 ? '#fff' : '#fafbfc' }}>
-                        <td style={{ ...tdStyle, fontWeight: 700, color: '#1a1a1a' }}>{r.nombre}</td>
-                        <td style={tdStyle}><span style={{ fontSize: '0.6875rem', fontWeight: 600, padding: '2px 8px', borderRadius: 4, background: (PLAN_COLORS[r.plan] || '#ccc') + '14', color: PLAN_COLORS[r.plan] || '#888' }}>{PLAN_LABELS[r.plan] || r.plan}</span></td>
-                        <td style={{ ...tdStyle, fontWeight: 700 }}>{fmt(r.mrr)}</td>
-                        <td style={tdStyle}>{fmtDate(r.fecha_renovacion)}</td>
-                        <td style={tdStyle}><span style={{ fontWeight: 700, color: urgent ? '#E8A838' : ok ? '#2e7d32' : '#555', background: urgent ? 'rgba(232,168,56,0.1)' : ok ? 'rgba(46,125,50,0.08)' : 'transparent', padding: '2px 6px', borderRadius: 4 }}>{r.days_remaining}d</span></td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.75rem', color: '#999', fontWeight: 600 }}>MRR en riesgo</span>
-                <span style={{ fontSize: '0.9375rem', fontWeight: 800, color: '#E8A838' }}>{fmt(cobranza.renovaciones_proximas.reduce((sum, r) => sum + r.mrr, 0))}</span>
+          ))}
+        </div>
+        {[...cob.vencido.items, ...cob.d30.items].slice(0, 6).map((r: any) => {
+          const venc = r.fecha < iso(new Date());
+          return (
+            <div key={r.id} style={S.fila}>
+              <span style={S.pill(venc ? '#FEF0EF' : '#FEF6E7', venc ? '#C0554E' : '#9a6a10')}>{venc ? 'vencido' : fmtDate(r.fecha)}</span>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 700, cursor: 'pointer' }} onClick={() => setAbierto(r.company_id)}>{r.cliente}</div>
+                <div style={{ fontSize: '0.67rem', color: '#a5a2af' }}>{r.plan} · {venc ? `venció el ${fmtDate(r.fecha)}` : `renueva el ${fmtDate(r.fecha)}`}</div>
+              </div>
+              <div style={{ marginLeft: 'auto', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                <b style={{ color: venc ? '#C0554E' : '#1a1a1a' }}>{money(r.monto)}</b>
+                <div style={{ marginTop: 4, display: 'flex', gap: 5, justifyContent: 'flex-end' }}>
+                  <button style={S.btnA} onClick={() => window.open(`/estado-cuenta/cliente/${r.company_id}?subs=${r.id}`, '_blank', 'noopener')}>Estado de cuenta</button>
+                  {r.link && <a style={S.btnP} href={r.link} target="_blank" rel="noreferrer">Cobrar</a>}
+                </div>
               </div>
             </div>
-          )}
-        </div>
-      );
-
-      const ingresosBlock = (
-        <div style={cardStyle}>
-          <h3 style={cardTitleStyle}>Ingresos por plan</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 16 }}>
-            {(['vende', 'controla', 'fideliza', 'automatiza'] as const).map(planId => {
-              const plan = revenue.by_plan[planId];
-              const mrr = plan?.mrr || 0;
-              const count = plan?.count || 0;
-              const pct = maxMrr > 0 ? (mrr / maxMrr) * 100 : 0;
-              const color = PLAN_COLORS[planId] || '#ccc';
-              return (
-                <div key={planId}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ width: 10, height: 10, borderRadius: 3, background: color, display: 'inline-block', flexShrink: 0 }} />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#1a1a1a' }}>{PLAN_LABELS[planId]}</span>
-                      <span style={{ fontSize: '0.6875rem', color: '#999', fontWeight: 500 }}>{count} cliente{count !== 1 ? 's' : ''}</span>
-                    </div>
-                    <span style={{ fontSize: '0.9375rem', fontWeight: 800, color }}>{fmt(mrr)}</span>
-                  </div>
-                  <div style={{ height: 8, background: '#f0f1f3', borderRadius: 4, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${Math.max(pct, 2)}%`, background: color, borderRadius: 4, transition: 'width 0.5s ease' }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <div style={{ marginTop: 20, paddingTop: 14, borderTop: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.75rem', color: '#999', fontWeight: 600 }}>Total MRR</span>
-            <span style={{ fontSize: '1rem', fontWeight: 800, color: '#1a1a1a' }}>{fmt(revenue.mrr)}</span>
-          </div>
-        </div>
-      );
-
-      const reunionesBlock = (
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ ...cardTitleStyle, margin: 0 }}>Reuniones de hoy</h3>
-            {reunionesHoy.length > 0 && (
-              <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#2AB5A0', background: 'rgba(42,181,160,0.1)', padding: '4px 10px', borderRadius: 6 }}>{reunionesHoy.length}</span>
-            )}
-          </div>
-          {reunionesHoy.length === 0 ? (
-            <div style={{ padding: '24px 0', textAlign: 'center', color: '#ccc', fontSize: '0.8125rem' }}>No hay reuniones agendadas para hoy</div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {reunionesHoy.map((m) => (
-                <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 10px', borderRadius: 8, background: '#fafbfc' }}>
-                  <div style={{ fontWeight: 800, color: '#1a1a1a', fontSize: '0.875rem', minWidth: 52 }}>{String(m.hora_inicio || '').slice(0, 5)}</div>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.quien}{m.empresa ? ` · ${m.empresa}` : ''}</div>
-                    <div style={{ fontSize: '0.7rem', color: '#999' }}>{m.tipo}{m.host ? ` · con ${m.host}` : ''}</div>
-                  </div>
-                  {m.meet && <a href={m.meet} target="_blank" rel="noreferrer" style={{ ...btnBase, fontSize: '0.68rem', padding: '4px 10px', background: '#e6f6f2', color: '#1A8F7A', textDecoration: 'none' }}>Meet</a>}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-
-      const radarBlock = (
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ ...cardTitleStyle, margin: 0 }}>Oportunidades de venta</h3>
-            {radar.length > 0 && <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#1A8F7A', background: 'rgba(42,181,160,0.1)', padding: '4px 10px', borderRadius: 6 }}>{radar.length}</span>}
-          </div>
-          {radar.length === 0 ? (
-            <div style={{ padding: '24px 0', textAlign: 'center', color: '#ccc', fontSize: '0.8125rem' }}>Sin señales de venta ahora</div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {radar.slice(0, 8).map((o) => (
-                <div key={o.company_id} onClick={() => setDrawerCompanyId(o.company_id)} style={{ padding: '9px 11px', borderRadius: 8, background: '#f0f7f4', border: '1px solid #d6ebe2', cursor: 'pointer' }}>
-                  <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#1A8F7A' }}>{o.cuenta || o.nombre} · {o.titulo}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#555', marginTop: 2 }}>{o.accion}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-
-      const riesgoBlock = (
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h3 style={{ ...cardTitleStyle, margin: 0 }}>Cuentas en riesgo</h3>
-            {riesgo.length > 0 && <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#E54B4B', background: 'rgba(229,75,75,0.08)', padding: '4px 10px', borderRadius: 6 }}>{riesgo.length}</span>}
-          </div>
-          {riesgo.length === 0 ? (
-            <div style={{ padding: '24px 0', textAlign: 'center', color: '#ccc', fontSize: '0.8125rem' }}>Sin cuentas en riesgo</div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {riesgo.slice(0, 10).map((r) => (
-                <div key={r.id} onClick={() => setDrawerCompanyId(r.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, background: '#fafbfc', cursor: 'pointer' }}>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.cuenta || r.nombre}</div>
-                    <div style={{ fontSize: '0.7rem', color: '#999' }}>última venta: {r.ultima_venta_at ? fmtDate(r.ultima_venta_at) : '—'}</div>
-                  </div>
-                  <span style={{ fontWeight: 800, fontSize: '0.8rem', color: r.dias_sin_venta > 15 ? '#E54B4B' : '#E8A838' }}>{r.dias_sin_venta}d</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-
-      const radarRiesgo = (
-        <div className="dash-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
-          {radarBlock}
-          {riesgoBlock}
-        </div>
-      );
-
-      if (isMobile) {
-        // Orden mobile: primero lo accionable (reuniones, cobranza, radar/riesgo),
-        // KPIs + Meta al final.
-        return (
-          <>
-            {reunionesBlock}
-            <div style={{ marginTop: 20 }} />
-            {deudoresBlock}
-            <div style={{ marginTop: 20 }} />
-            {renovacionesBlock}
-            <div style={{ marginTop: 20 }} />
-            {radarRiesgo}
-            {ingresosBlock}
-            <div style={{ marginTop: 20 }} />
-            {kpisBlock}
-            {metaBlock}
-          </>
-        );
-      }
-      // Desktop: orden original.
-      return (
-        <>
-          {kpisBlock}
-          {metaBlock}
-          <div className="dash-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
-            {ingresosBlock}
-            {reunionesBlock}
-          </div>
-          <div className="dash-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
-            {deudoresBlock}
-            {renovacionesBlock}
-          </div>
-          {radarRiesgo}
-        </>
-      );
-      })()}
-      {drawerCompanyId && <ClienteDrawer360 companyId={drawerCompanyId} onClose={() => setDrawerCompanyId(null)} onChanged={load} />}
-
-      {/* Responsive overrides */}
-      <style>{`
-        @media (max-width: 900px) {
-          .dash-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
-          .dash-two-col { grid-template-columns: 1fr !important; }
-        }
-        @media (max-width: 560px) {
-          .dash-kpi-grid { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-// ─── Sub-components ───
-function KpiCard({
-  label,
-  value,
-  color,
-  subtitle,
-  trend,
-  trendValue,
-}: {
-  label: string;
-  value: string;
-  color: string;
-  subtitle?: string;
-  trend?: 'good' | 'bad' | 'neutral';
-  trendValue?: string;
-}) {
-  return (
-    <div
-      className="dash-kpi-card"
-      style={{
-        background: '#fff',
-        borderRadius: 12,
-        padding: '18px 20px',
-        borderTop: `3px solid ${color}`,
-        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 4,
-        minWidth: 0,
-      }}
-    >
-      <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}>
-        {label}
+          );
+        })}
+        {cob.vencido.n === 0 && cob.d30.n === 0 && <div style={{ padding: '14px 0', color: '#c9c7d0', fontSize: '0.8rem' }}>Nada por cobrar en los próximos 30 días.</div>}
       </div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-        <span style={{ fontSize: '1.625rem', fontWeight: 800, color: '#1a1a1a', lineHeight: 1.1 }}>{value}</span>
-        {trend && trendValue && (
-          <span style={{
-            fontSize: '0.6875rem',
-            fontWeight: 700,
-            color: trend === 'good' ? '#2e7d32' : trend === 'bad' ? '#E54B4B' : '#999',
-          }}>
-            {trend === 'good' ? '\u2191' : trend === 'bad' ? '\u2193' : ''} {trendValue}
-          </span>
-        )}
-      </div>
-      {subtitle && (
-        <div style={{ fontSize: '0.75rem', color: '#bbb', fontWeight: 500, marginTop: 2 }}>{subtitle}</div>
-      )}
-    </div>
-  );
-}
 
-function SummaryMetric({
-  label,
-  value,
-  detail,
-  badge,
-  badgeColor,
-}: {
-  label: string;
-  value: string;
-  detail?: string;
-  badge?: string;
-  badgeColor?: string;
-}) {
-  return (
-    <div style={{ textAlign: 'center', padding: '12px 8px' }}>
-      <div style={{ fontSize: '0.625rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 6 }}>
-        {label}
-      </div>
-      <div style={{ fontSize: '1.375rem', fontWeight: 800, color: '#1a1a1a', lineHeight: 1.1 }}>
-        {value}
-      </div>
-      {badge && (
-        <span style={{
-          display: 'inline-block',
-          marginTop: 6,
-          fontSize: '0.625rem',
-          fontWeight: 700,
-          color: badgeColor || '#999',
-          background: (badgeColor || '#999') + '14',
-          padding: '2px 8px',
-          borderRadius: 4,
-        }}>
-          {badge}
-        </span>
-      )}
-      {detail && (
-        <div style={{ fontSize: '0.6875rem', color: '#bbb', marginTop: badge ? 4 : 6 }}>{detail}</div>
-      )}
-    </div>
-  );
-}
-
-// ─── Shared styles ───
-const fontFamily = "'Plus Jakarta Sans', sans-serif";
-
-const btnBase: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 4,
-  fontSize: '0.8125rem',
-  fontWeight: 600,
-  padding: '8px 16px',
-  borderRadius: 8,
-  border: 'none',
-  cursor: 'pointer',
-  fontFamily,
-};
-
-const cardStyle: React.CSSProperties = {
-  background: '#fff',
-  borderRadius: 12,
-  padding: '20px 24px',
-  boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-};
-
-const cardTitleStyle: React.CSSProperties = {
-  fontSize: '0.875rem',
-  fontWeight: 800,
-  color: '#1a1a1a',
-  margin: '0 0 0 0',
-};
-
-const thStyle: React.CSSProperties = {
-  padding: '8px 12px',
-  textAlign: 'left' as const,
-  fontSize: '0.625rem',
-  fontWeight: 600,
-  textTransform: 'uppercase' as const,
-  letterSpacing: '0.06em',
-  color: '#aaa',
-  background: '#fafbfc',
-  borderBottom: '1px solid #f0f0f0',
-  whiteSpace: 'nowrap' as const,
-};
-
-const tdStyle: React.CSSProperties = {
-  padding: '10px 12px',
-  color: '#555',
-  borderBottom: '1px solid #f8f8f8',
-};
-
-const spinnerStyle: React.CSSProperties = {
-  width: 32,
-  height: 32,
-  border: '3px solid #f0f0f0',
-  borderTopColor: '#4B7BE5',
-  borderRadius: '50%',
-  animation: 'dashSpin 0.8s linear infinite',
-  margin: '0 auto',
-};
-
-// Inject keyframes once
-if (typeof document !== 'undefined' && !document.getElementById('dash-spin-keyframes')) {
-  const style = document.createElement('style');
-  style.id = 'dash-spin-keyframes';
-  style.textContent = '@keyframes dashSpin { to { transform: rotate(360deg); } }';
-  document.head.appendChild(style);
-}
-
-// ─── Meta del mes (crm_goals tipo new_arr_mensual; fallback ARR anual/12) ───
-const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-function MetaDelMes({ meta, onSaved }: { meta: any; onSaved: () => void }) {
-  const [editando, setEditando] = useState(false);
-  const [monto, setMonto] = useState('');
-  const [saving, setSaving] = useState(false);
-  if (!meta) return null;
-
-  async function guardar() {
-    setSaving(true);
-    const r = await fetch('/api/crm/arr/goals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tipo: 'new_arr_mensual', anio: meta.anio, mes: meta.mes, monto: parseFloat(monto) || 0 }) });
-    setSaving(false);
-    if (r.ok) { setEditando(false); onSaved(); }
-  }
-
-  const vendido = meta.vendido || 0;
-  const objetivo = meta.monto || 0;
-  const pct = objetivo > 0 ? Math.min(100, Math.round((vendido / objetivo) * 100)) : 0;
-  const alcanza = objetivo > 0 && (vendido + (meta.pipeline_abierto || 0)) >= objetivo;
-  const color = pct >= 100 ? '#2e7d32' : pct >= 60 ? '#2AB5A0' : pct >= 30 ? '#E8A838' : '#E54B4B';
-
-  return (
-    <div style={{ ...cardStyle, marginBottom: 28 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-        <h3 style={{ ...cardTitleStyle, margin: 0 }}>Meta de ventas · {MESES[(meta.mes || 1) - 1]} {meta.anio}</h3>
-        {!editando ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: '0.8125rem', color: '#999' }}>Meta: <b style={{ color: '#1a1a1a' }}>{objetivo > 0 ? fmt(objetivo) : 'sin definir'}</b> ARR nuevo</span>
-            <button onClick={() => { setMonto(String(objetivo || '')); setEditando(true); }} style={{ ...btnBase, background: '#f5f5f5', color: '#555', fontSize: '0.6875rem', padding: '4px 10px' }}>Editar</button>
+      {/* ── Metas ── */}
+      <div style={S.card}>
+        <div style={S.h}>Meta del mes<span style={S.hr}>quedan {m.dias_restantes} días</span></div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 26 }}>
+          <div>
+            <div style={S.kl}>Ingresos totales</div>
+            {barra(m.ingresos.real, m.ingresos.meta, '#9B8CFA')}
+            <div style={{ fontSize: '0.71rem', color: '#8a8a8a' }}>Faltan <b style={{ color: '#3f3b4d' }}>{money(Math.max(0, m.ingresos.meta - m.ingresos.real))}</b> · todo lo cobrado en el mes</div>
           </div>
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <input type="number" value={monto} onChange={e => setMonto(e.target.value)} placeholder="Meta del mes ($ ARR)" style={{ padding: '5px 8px', border: '1px solid #ddd', borderRadius: 6, fontSize: '0.8rem', width: 150 }} />
-            <button onClick={guardar} disabled={saving} style={{ ...btnBase, background: '#1a1a1a', color: '#fff', fontSize: '0.6875rem', padding: '5px 12px' }}>{saving ? '…' : 'Guardar'}</button>
-            <button onClick={() => setEditando(false)} style={{ ...btnBase, background: '#f5f5f5', color: '#555', fontSize: '0.6875rem', padding: '5px 10px' }}>Cancelar</button>
+          <div>
+            <div style={S.kl}>ARR nuevo</div>
+            {barra(m.arr.real, m.arr.meta, '#7DA6F5')}
+            <div style={{ fontSize: '0.71rem', color: '#8a8a8a' }}>Pipeline abierto <b style={{ color: '#3f3b4d' }}>{money(m.pipeline)}</b></div>
+          </div>
+          <div>
+            <div style={S.kl}>Pagos únicos</div>
+            {barra(m.unicos.real, m.unicos.meta, '#F0B84E')}
+            <div style={{ fontSize: '0.71rem', color: '#8a8a8a' }}>Personalizaciones, plugins y extras</div>
+          </div>
+        </div>
+        {/* Recurrente y pago único se venden distinto y valen distinto: una sola
+            barra los mezclaba y escondía cuál de los dos va mal. */}
+        {m.arr.meta > m.arr.real && (
+          <div style={{ marginTop: 11, paddingTop: 10, borderTop: '1px solid #f5f4f8', fontSize: '0.76rem', fontWeight: 700, color: m.pipeline >= (m.arr.meta - m.arr.real) ? '#1E8A63' : '#C0554E' }}>
+            {m.pipeline >= (m.arr.meta - m.arr.real)
+              ? `El pipeline alcanza: ${money(m.pipeline)} abiertos contra ${money(m.arr.meta - m.arr.real)} que faltan.`
+              : `Con el pipeline abierto no alcanzas la meta de ARR: faltarían ${money(m.arr.meta - m.arr.real - m.pipeline)} aun cerrando todo.`}
           </div>
         )}
       </div>
-      {objetivo > 0 ? (
-        <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
-            <span style={{ fontSize: '1.25rem', fontWeight: 800, color }}>{fmt(vendido)} <span style={{ fontSize: '0.75rem', color: '#999', fontWeight: 600 }}>vendido</span></span>
-            <span style={{ fontSize: '0.8125rem', fontWeight: 800, color }}>{pct}%</span>
+
+      {/* ── Salud del negocio ── */}
+      <div style={S.card}>
+        <div style={S.h}>Salud del negocio<span style={S.hr}>lo que preguntan un inversionista y tu equipo</span></div>
+        <div style={S.hd}>Cada número dice qué significa. Lo que todavía no se puede calcular con la historia que hay, lo dice.</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 12 }}>
+          <Metrica rosa titulo="Retención neta (NRR)" valor={sal.nrr != null ? `${sal.nrr}%` : '—'} color={sal.nrr != null && sal.nrr >= 100 ? '#1E8A63' : '#9a6a10'}
+            explica={sal.nrr != null
+              ? <>De cada $100 que te pagaban al inicio del periodo, hoy te pagan <b>${sal.nrr}</b> los MISMOS clientes. Arriba de 100 creces sin vender a nadie nuevo.</>
+              : <>Hace falta más historia de altas y bajas para calcularla.</>} />
+          <Metrica rosa titulo="Bajas (churn)" valor={sal.churn_pct != null ? `${sal.churn_pct}%` : '—'}
+            explica={sal.churn_arr ? <>Se fueron <b>{money(sal.churn_arr)} de ARR</b> en el periodo. A ese ritmo, perderías esa proporción del negocio cada mes.</>
+              : <>Sin bajas en el periodo. Eso es lo que sostiene el ARR.</>} />
+          <Metrica rosa titulo="Ingreso por cuenta" valor={money(sal.arpa)}
+            explica={<>ARR entre clientes activos. Sube cuando vendes plugins y personalizaciones, no solo licencias.</>} />
+          <Metrica titulo="Tasa de cierre" valor={sal.cierre_pct != null ? `${sal.cierre_pct}%` : '—'} color="#5B4BD6"
+            explica={sal.cierre_pct != null
+              ? <>De cada 10 cotizaciones resueltas, <b>{Math.round(sal.cierre_pct / 10)} se pagan</b>. Sobre {sal.cierre_n} cotizaciones cerradas.</>
+              : <>Todavía no hay cotizaciones resueltas para calcularla.</>} />
+          <Metrica titulo="Ciclo de venta" valor={sal.ciclo_dias != null ? `${sal.ciclo_dias} días` : '—'} color="#5B4BD6"
+            explica={sal.ciclo_dias != null
+              ? <>Lo que pasa entre que mandas la cotización y te pagan. Para cerrar este mes, hay que cotizar con {sal.ciclo_dias} días de anticipación.</>
+              : <>Aún no hay cotizaciones pagadas para medirlo.</>} />
+          <Metrica titulo="Concentración" valor={sal.concentracion != null ? `${sal.concentracion}%` : '—'} color={(sal.concentracion || 0) > 30 ? '#9a6a10' : '#1E8A63'}
+            explica={<>Tus <b>5 cuentas más grandes</b> son ese porcentaje del ARR. Arriba de 30% un inversionista lo marca como riesgo.</>} />
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 14 }}>
+        <div style={{ ...S.card, margin: 0 }}>
+          <div style={S.h}>Ingresos por plan<span style={S.hr}>MRR {money(d.mrr_total)}</span></div>
+          {d.planes.length === 0 && <div style={{ color: '#c9c7d0', fontSize: '0.8rem', padding: '10px 0' }}>Sin suscripciones activas.</div>}
+          {d.planes.map((p: any, i: number) => {
+            const tope = Math.max(1, ...d.planes.map((x: any) => x.mrr));
+            const col = ['#9B8CFA', '#7DA6F5', '#4FBF95', '#F0B84E', '#C9C7D0'][i % 5];
+            return (
+              <div key={p.nombre} style={{ marginBottom: 9 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                  <span style={{ width: 9, height: 9, borderRadius: 99, background: col, flexShrink: 0 }} />
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>{p.nombre}</span>
+                  <span style={{ fontSize: '0.68rem', color: '#a5a2af' }}>{p.clientes} {p.clientes === 1 ? 'cliente' : 'clientes'}</span>
+                  <span style={{ marginLeft: 'auto', fontSize: '0.82rem', fontWeight: 800 }}>{money(p.mrr)}</span>
+                </div>
+                <div style={{ height: 7, background: '#f4f3f7', borderRadius: 9, overflow: 'hidden', marginTop: 3 }}>
+                  <span style={{ display: 'block', height: '100%', borderRadius: 9, background: col, width: `${Math.max(2, (p.mrr / tope) * 100)}%` }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{ ...S.card, margin: 0 }}>
+          <div style={S.h}>Reuniones<span style={S.hr}>hoy {d.reuniones.filter((r: any) => r.hoy).length} · esta semana {d.reuniones.length}</span></div>
+          {d.reuniones.length === 0 && <div style={{ color: '#c9c7d0', fontSize: '0.8rem', padding: '14px 0' }}>Sin reuniones agendadas esta semana.</div>}
+          {d.reuniones.slice(0, 6).map((r: any) => (
+            <div key={r.id} style={S.fila}>
+              <span style={S.pill(r.hoy ? '#EEECFE' : '#f4f4f6', r.hoy ? '#5B4BD6' : '#6B7280')}>{r.hoy ? 'hoy' : fmtDate(r.fecha)}</span>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 700 }}>{r.asunto || r.tipo || 'Reunión'}</div>
+                <div style={{ fontSize: '0.67rem', color: '#a5a2af' }}>{r.hora}{r.tipo ? ` · ${r.tipo}` : ''}{r.con ? ` · ${r.con}` : ''}</div>
+              </div>
+              {r.company_id && <button style={{ ...S.btnA, marginLeft: 'auto' }} onClick={() => setAbierto(r.company_id)}>Ver cuenta</button>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ ...S.card, marginTop: 14 }}>
+        <div style={S.h}>Atención<span style={S.hr}>{d.atencion.cotizaciones.length} cotizaciones por vencer · {d.atencion.riesgo.length} cuentas en riesgo</span></div>
+        {d.atencion.cotizaciones.length === 0 && d.atencion.riesgo.length === 0 && (
+          <div style={{ color: '#c9c7d0', fontSize: '0.8rem', padding: '10px 0' }}>Nada urgente. Bien ahí.</div>
+        )}
+        {d.atencion.cotizaciones.map((q: any) => (
+          <div key={q.id} style={S.fila}>
+            <span style={S.pill('#FEF6E7', '#9a6a10')}>vence en {q.dias} d</span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 700 }}>{q.numero} · {q.empresa}</div>
+              <div style={{ fontSize: '0.67rem', color: '#a5a2af' }}>{money(q.total)} · {q.vistas ? `vista ${q.vistas} ${q.vistas === 1 ? 'vez' : 'veces'}` : 'sin abrir'}</div>
+            </div>
+            <a style={{ ...S.btnA, marginLeft: 'auto' }} href={`/cotizacion/${q.id}`} target="_blank" rel="noreferrer">Abrir</a>
           </div>
-          <div style={{ height: 10, background: '#f0f1f3', borderRadius: 5, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${Math.max(pct, 2)}%`, background: color, borderRadius: 5, transition: 'width 0.5s ease' }} />
+        ))}
+        {d.atencion.riesgo.map((c: any) => (
+          <div key={c.id} style={S.fila}>
+            <span style={S.pill('#FEF0EF', '#C0554E')}>{c.dias} d sin vender</span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontWeight: 700 }}>{c.nombre}</div>
+              <div style={{ fontSize: '0.67rem', color: '#a5a2af' }}>{money(c.arr)} de ARR en riesgo</div>
+            </div>
+            <button style={{ ...S.btnA, marginLeft: 'auto' }} onClick={() => setAbierto(c.id)}>Ver cuenta</button>
           </div>
-          <div style={{ display: 'flex', gap: 18, marginTop: 10, fontSize: '0.75rem', color: '#777', flexWrap: 'wrap' }}>
-            <span>Faltan: <b style={{ color: '#1a1a1a' }}>{fmt(meta.faltante)}</b></span>
-            <span>Pipeline abierto: <b style={{ color: '#1a1a1a' }}>{fmt(meta.pipeline_abierto)}</b></span>
-            <span style={{ color: alcanza ? '#2e7d32' : '#E54B4B', fontWeight: 700 }}>{pct >= 100 ? '🎉 Meta cumplida' : alcanza ? 'El pipeline alcanza para llegar' : 'El pipeline NO alcanza — generar más oportunidades'}</span>
-          </div>
-        </>
-      ) : (
-        <div style={{ fontSize: '0.8125rem', color: '#999' }}>Define la meta de ARR nuevo del mes para medir el avance (botón Editar).</div>
-      )}
+        ))}
+      </div>
+
+      {abierto && <ClienteDrawer360 companyId={abierto} onClose={() => setAbierto(null)} onChanged={cargar} />}
+    </div>
+  );
+}
+
+/** Una métrica con su explicación. El rosa marca las de inversionista: son las
+ *  que no se tocan a diario, y así se distinguen sin gritar. */
+function Metrica({ titulo, valor, explica, color, rosa }: any) {
+  return (
+    <div style={{
+      border: '1px solid', borderColor: rosa ? 'rgba(244,168,205,.45)' : '#f0eff3',
+      background: rosa ? 'rgba(244,168,205,.13)' : '#fff', borderRadius: 11, padding: '12px 14px',
+    }}>
+      <div style={{ fontSize: '0.63rem', fontWeight: 800, color: rosa ? '#9c3d70' : '#5B4BD6', textTransform: 'uppercase', letterSpacing: '.06em' }}>{titulo}</div>
+      <div style={{ fontSize: '1.3rem', fontWeight: 800, marginTop: 4, letterSpacing: '-.02em', color: color || '#1a1a1a' }}>{valor}</div>
+      <div style={{ fontSize: '0.68rem', color: '#8a8a8a', marginTop: 5, lineHeight: 1.5 }}>{explica}</div>
     </div>
   );
 }

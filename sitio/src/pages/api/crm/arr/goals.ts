@@ -12,7 +12,10 @@ export const GET: APIRoute = async () => {
 
 export const POST: APIRoute = async ({ request }) => {
   const body = await request.json().catch(() => null);
-  const tipo = body?.tipo === 'new_arr_mensual' ? 'new_arr_mensual' : 'arr';
+  // Tres metas posibles: ARR anual, ARR nuevo del mes e ingresos del mes. La de
+  // pagos únicos NO se captura: es ingresos menos ARR nuevo, y pedir tres
+  // cuando dos determinan la tercera es invitar a que no cuadren.
+  const tipo = ['new_arr_mensual', 'ingresos_mensual'].includes(body?.tipo) ? body.tipo : 'arr';
   const anio = Number(body?.anio);
   const mes = body?.mes != null ? Number(body.mes) : null;
   const monto = Number(body?.monto);
