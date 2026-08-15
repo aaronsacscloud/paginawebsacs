@@ -43,20 +43,30 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
 type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras';
 
 // SVG icons (Squarespace-style, clean strokes)
+// Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
+// y el trazo encima. Al activarse no cambia solo el color de la línea —la
+// silueta se tiñe con él—, así que el dibujo acompaña al estado en vez de
+// quedarse gris.
+//
+// De paso se corrigieron tres que decían otra cosa: Clientes era una casa (se
+// lee "inicio", no una cuenta), Leads era un grupo de personas idéntico al de
+// Colaboradores, y Oportunidades era un rayo, que ahí no significa nada.
 const ICONS: Record<string, string> = {
-  dashboard: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
-  pipeline: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
-  deals: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
-  clientes: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
-  cotizaciones: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
-  pagos: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>',
-  agenda: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
-  automations: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
-  config: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>',
-  partners: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11l-3 3-1.5-1.5"/></svg>',
-  hoy: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>',
-  sacs: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="8" rx="2"/><rect x="2" y="13" width="20" height="8" rx="2"/><line x1="6" y1="7" x2="6.01" y2="7"/><line x1="6" y1="17" x2="6.01" y2="17"/></svg>',
-  oportunidades: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>',
+  hoy: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" opacity=".18"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  dashboard: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="2" fill="currentColor" opacity=".18"/><rect x="13" y="13" width="8" height="8" rx="2" fill="currentColor" opacity=".18"/><rect x="13" y="3" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/></svg>',
+  pipeline: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 5h18l-7 8v6l-4 2v-8z" fill="currentColor" opacity=".18"/><path d="M3 5h18l-7 8v6l-4 2v-8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+  clientes: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" fill="currentColor" opacity=".18"/><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M9 8h1.5M13.5 8H15M9 12h1.5M13.5 12H15M10 21v-4h4v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  deals: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 17l5-5 4 3 7-8v13H4z" fill="currentColor" opacity=".18"/><path d="M4 17l5-5 4 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 7h5v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  agenda: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="3" fill="currentColor" opacity=".18"/><rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M8 3v4M16 3v4M3 10h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  cotizaciones: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 3h9l4 4v14H6z" fill="currentColor" opacity=".18"/><path d="M6 3h9l4 4v14H6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3v5h5M9 13h6M9 17h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  pagos: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="5" width="20" height="14" rx="3" fill="currentColor" opacity=".18"/><rect x="2" y="5" width="20" height="14" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M2 10h20" stroke="currentColor" stroke-width="1.8"/><path d="M6 15h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  suscripciones: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" opacity=".18"/><path d="M19 12a7 7 0 11-2.1-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M19 4.5V8h-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  mejoras: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3l2 5.5L19.5 10 14 12l-2 5.5L10 12 4.5 10 10 8.5z" fill="currentColor" opacity=".18"/><path d="M12 3l2 5.5L19.5 10 14 12l-2 5.5L10 12 4.5 10 10 8.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+  oportunidades: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" opacity=".18"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.8"/></svg>',
+  automations: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="7" width="16" height="12" rx="3" fill="currentColor" opacity=".18"/><rect x="4" y="7" width="16" height="12" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 3v4M9 12h.01M15 12h.01M9.5 16h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  partners: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="4" fill="currentColor" opacity=".18"/><circle cx="9" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M2 21v-1.5A5.5 5.5 0 017.5 14h3a5.5 5.5 0 015.5 5.5V21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M18 10.5l2 2 3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  config: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" opacity=".18"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  sacs: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="8" rx="2" fill="currentColor" opacity=".18"/><rect x="2" y="3" width="20" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/><rect x="2" y="13" width="20" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M6 7h.01M6 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
 };
 
 // El pie son SALIDAS, no destinos: mismos iconos de línea que el menú pero más
@@ -74,8 +84,9 @@ const ICONO_PLEGAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none
 // Los renglones del pie pesan como los del menú: mismo alto y mismo tipo de
 // letra. Antes eran ligas de 11 px que había que buscar.
 const pieFila = {
-  display: 'flex', alignItems: 'center', gap: 11, width: '100%', minHeight: 36,
-  padding: '8px 18px', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+  display: 'flex', alignItems: 'center', gap: 11, width: 'calc(100% - 16px)', minHeight: 38,
+  margin: '1px 8px', padding: '7px 10px', borderRadius: 9,
+  border: 'none', cursor: 'pointer', fontFamily: 'inherit',
   fontSize: '0.79rem', fontWeight: 700, textAlign: 'left' as const,
 } as const;
 const pieIcono = { display: 'flex', alignItems: 'center', flexShrink: 0 } as const;
@@ -112,13 +123,13 @@ const NAV_SECTIONS = [
     items: [
       { id: 'cotizaciones' as Tab, label: 'Cotizaciones', icon: 'cotizaciones' },
       { id: 'pagos' as Tab, label: 'Pagos', icon: 'pagos' },
-      { id: 'suscripciones' as Tab, label: 'Suscripciones · ARR', icon: 'pagos' },
+      { id: 'suscripciones' as Tab, label: 'Suscripciones · ARR', icon: 'suscripciones' },
     ],
   },
   {
     label: 'Acompañamiento',
     items: [
-      { id: 'mejoras' as Tab, label: 'Mejoras e ideas', icon: 'oportunidades' },
+      { id: 'mejoras' as Tab, label: 'Mejoras e ideas', icon: 'mejoras' },
       { id: 'oportunidades' as Tab, label: 'Radar de ventas', icon: 'oportunidades' },
     ],
   },
@@ -298,22 +309,18 @@ export default function CrmDashboard() {
           borderBottom: '1px solid #f0f0f0', minHeight: 56,
         }}>
           {!sidebarCollapsed && (
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontFamily: "'Clash Display',sans-serif", fontSize: '1.25rem', fontWeight: 700, color: '#1a1a1a' }}>Sacs</span>
-                <span style={{
-                  fontSize: '0.5rem', fontWeight: 800, color: '#5B4BD6',
-                  background: '#EEECFE', padding: '3px 7px', borderRadius: 5,
-                  textTransform: 'uppercase', letterSpacing: '0.08em',
-                }}>CRM</span>
-              </div>
-              {/* La firma va con un filete que se desvanece, no encerrada en una
-                  pastilla: el rosa en este módulo significa "esto es lo que
-                  escogiste" y una pastilla fija se leería como un control que no
-                  se deja tocar. */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 7 }}>
-                <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#9c3d70', letterSpacing: '0.1em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>by Andy Araujo</span>
-                <span style={{ height: 1, flex: 1, background: 'linear-gradient(90deg, rgba(244,168,205,.7), rgba(244,168,205,0))' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+              {/* Marca en un solo bloque, como el selector de cuenta del
+                  sistema: distintivo, nombre y firma se leen como una unidad. */}
+              <span style={{ width: 30, height: 30, borderRadius: 99, background: 'linear-gradient(135deg,#9B8CFA,#7DA6F5)', flexShrink: 0 }} />
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontFamily: "'Clash Display',sans-serif", fontSize: '1.02rem', fontWeight: 700, color: '#1a1a1a', lineHeight: 1.15 }}>
+                  Sacs <span style={{ fontSize: '0.5rem', fontWeight: 800, color: '#5B4BD6', background: '#EEECFE', padding: '3px 6px', borderRadius: 5, textTransform: 'uppercase', letterSpacing: '0.08em', verticalAlign: 'middle' }}>CRM</span>
+                </div>
+                {/* La firma en el rosa de los filtros, bajo el nombre. */}
+                <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#9c3d70', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 2, whiteSpace: 'nowrap' }}>
+                  by Andy Araujo
+                </div>
               </div>
             </div>
           )}
@@ -401,11 +408,14 @@ export default function CrmDashboard() {
         {/* Nav sections */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
           {NAV_SECTIONS.map((section, si) => (
-            <div key={section.label || si} style={{ marginBottom: 8 }}>
+            <div key={section.label || si} style={{ marginBottom: 4 }}>
+              {/* Una línea fina entre bloques: agrupa igual que el título, sin
+                  gastar un renglón de texto. */}
+              {si > 0 && !sidebarCollapsed && <div style={{ height: 1, background: '#f0eff3', margin: '6px 12px 2px' }} />}
               {!sidebarCollapsed && section.label && (
                 <div style={{
-                  padding: '13px 20px 5px', fontSize: '0.55rem', fontWeight: 800,
-                  color: '#c2c0c9', textTransform: 'uppercase',
+                  padding: '10px 18px 3px', fontSize: '0.54rem', fontWeight: 800,
+                  color: '#c9c7d0', textTransform: 'uppercase',
                   letterSpacing: '0.13em',
                 }}>{section.label}</div>
               )}
@@ -416,22 +426,26 @@ export default function CrmDashboard() {
                     key={item.id}
                     onClick={() => switchTab(item.id)}
                     style={{
-                      width: '100%', display: 'flex', alignItems: 'center',
-                      gap: sidebarCollapsed ? 0 : 10,
+                      // Pastilla con aire a los lados, no franja pegada al
+                      // borde: el activo se despega y el menú respira.
+                      width: sidebarCollapsed ? '100%' : 'calc(100% - 16px)',
+                      display: 'flex', alignItems: 'center',
+                      gap: sidebarCollapsed ? 0 : 11,
                       justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-                      padding: sidebarCollapsed ? '10px 0' : '8px 20px',
-                      minHeight: 44,
+                      padding: sidebarCollapsed ? '10px 0' : '7px 10px',
+                      margin: sidebarCollapsed ? 0 : '1px 8px',
+                      minHeight: sidebarCollapsed ? 44 : 38,
+                      borderRadius: sidebarCollapsed ? 0 : 9,
                       background: isActive ? '#EEECFE' : 'transparent',
-                      color: isActive ? '#5B4BD6' : '#6b6b74',
+                      color: isActive ? '#5B4BD6' : '#4a4a52',
                       border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                      fontSize: '0.8125rem', fontWeight: isActive ? 800 : 500,
-                      borderLeft: isActive ? '3px solid #9B8CFA' : '3px solid transparent',
+                      fontSize: '0.79rem', fontWeight: isActive ? 800 : 600,
                       transition: 'all 0.15s ease',
                     }}
                     onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = '#faf8ff'; }}
                     onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                   >
-                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, color: isActive ? '#9B8CFA' : '#b3b1bb' }} dangerouslySetInnerHTML={{ __html: ICONS[item.icon] || '' }} />
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, color: isActive ? '#9B8CFA' : '#9c99a6' }} dangerouslySetInnerHTML={{ __html: ICONS[item.icon] || '' }} />
                     {!sidebarCollapsed && <span>{item.label}</span>}
                     {/* El único contador del menú, y solo cuando urge: un
                         compromiso con fecha que ya pasó. Poner números en todos

@@ -111,9 +111,10 @@ export default function CampanaNotificaciones({ onIrA, enMenu }: { onIrA?: (tab:
            tipo de letra. Es un lugar del CRM, no un botón flotando encima. */
         <button onClick={alternar} aria-label="Notificaciones"
           style={{
-            display: 'flex', alignItems: 'center', gap: 11, width: '100%', minHeight: 36, textAlign: 'left',
+            display: 'flex', alignItems: 'center', gap: 11, width: 'calc(100% - 16px)', minHeight: 38, textAlign: 'left',
             background: abierto ? '#EEECFE' : 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-            padding: '8px 18px', fontSize: '0.79rem', fontWeight: 700, color: '#5a5a63',
+            margin: '1px 8px', padding: '7px 10px', borderRadius: 9,
+            fontSize: '0.79rem', fontWeight: 700, color: '#5a5a63',
           }}>
           <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0, color: '#9B8CFA' }}>{icono}</span>
           Notificaciones
