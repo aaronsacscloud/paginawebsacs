@@ -30,7 +30,7 @@ export const GET: APIRoute = async ({ url }) => {
   const dias = Math.max(1, Math.round((Date.parse(hasta) - Date.parse(desde)) / 86400000));
 
   const [subsQ, compQ, quotesQ, dealsQ, movQ, goalsQ, bookQ, payQ] = await Promise.all([
-    supabase.from('subscriptions').select('id, company_id, nombre_plan, plan_id, ciclo, precio, monto_proximo, proxima_factura, estado, mp_link_pago'),
+    supabase.from('subscriptions').select('id, company_id, nombre_plan, plan_id, ciclo, precio, monto_proximo, proxima_factura, estado, mp_link_pago, fecha_inicio'),
     supabase.from('companies').select('id, nombre, nombre_comercial, plan, sacs_account, dias_sin_venta, ultima_venta_at, estado_cuenta').is('archived_at', null),
     supabase.from('quotes').select('id, numero, empresa, total, estado, vigencia, created_at, pagado_fecha, company_id, notas'),
     supabase.from('deals').select('id, valor_total, stage, created_at, company_id'),
@@ -94,6 +94,18 @@ export const GET: APIRoute = async ({ url }) => {
   const churnArr = Math.abs(churn) * 12;
   const churnPct = baseMrr > 0 ? Number(((Math.abs(churn) / baseMrr) * 100).toFixed(1)) : null;
   const arpa = clientesActivos > 0 ? Math.round(arr / clientesActivos) : 0;
+
+  // Antigüedad de la cartera: la primera suscripción de cada cuenta activa.
+  // Es el dato que dice si el negocio retiene o solo repone.
+  const primeraDe: Record<string, string> = {};
+  subs.filter((s: any) => s.estado === 'activa' && (s as any).fecha_inicio).forEach((s: any) => {
+    const f = String((s as any).fecha_inicio).slice(0, 10);
+    if (!primeraDe[s.company_id] || f < primeraDe[s.company_id]) primeraDe[s.company_id] = f;
+  });
+  const antig = Object.values(primeraDe);
+  const antigMeses = antig.length
+    ? Math.round(antig.reduce((a, f) => a + (Date.now() - Date.parse(f + 'T12:00:00')) / 2629800000, 0) / antig.length)
+    : null;
 
   const resueltas = quotes.filter((q: any) => ['paid', 'rejected', 'expired'].includes(q.estado));
   const cierrePct = pct(resueltas.filter((q: any) => q.estado === 'paid').length, resueltas.length);
@@ -169,6 +181,7 @@ export const GET: APIRoute = async ({ url }) => {
     },
     salud: {
       nrr, churn_pct: churnPct, churn_arr: Math.round(churnArr), arpa,
+      antiguedad_meses: antigMeses, antiguedad_n: antig.length,
       cierre_pct: cierrePct, cierre_n: resueltas.length,
       ciclo_dias: ciclo, ciclo_n: pagadas.length,
       concentracion, top5: top5.map(([id, v]) => ({ cliente: empresaDe[id] || 'Cuenta', arr: Math.round(v) })),

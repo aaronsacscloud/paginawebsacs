@@ -237,7 +237,7 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                   No está acudiendo a lo que tiene contratado — ver reuniones.
                 </div>
               ))}
-              {tab === 'resumen' && <TabResumen res={res} co={co} act={act} subs={subs} acts={data?.activities || []} reload={() => { load(); onChanged(); }} />}
+              {tab === 'resumen' && <TabResumen res={res} co={co} act={act} subs={subs} acts={data?.activities || []} ant={data?.antiguedad} reload={() => { load(); onChanged(); }} />}
               {tab === 'info' && <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []} contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'subs' && (<>
                 <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />
@@ -369,7 +369,7 @@ function DatosDesactualizados({ syncAt }: { syncAt?: string | null }) {
 const FAMILIAS = ['Ventas', 'Inventario', 'Clientes', 'Programas', 'Cortes', 'Administración'];
 const FAM_LABEL: Record<string, string> = { Programas: 'Fidelización', Cortes: 'Cortes de caja' };
 
-function TabResumen({ res, co, act, subs, acts, reload }: any) {
+function TabResumen({ res, co, act, subs, acts, ant, reload }: any) {
   const dias = co?.dias_sin_venta;
   // Tareas de onboarding del cliente (activities tipo 'tarea' category onboarding).
   const onboarding = (acts || []).filter((a: any) => a.tipo === 'tarea' && a.metadata?.category === 'onboarding');
@@ -477,6 +477,27 @@ function TabResumen({ res, co, act, subs, acts, reload }: any) {
           {/* En una cuenta de eventos el mes suelto engaña: el anual es una
               proyección del último mes, y se dice que lo es. */}
           {periodo === '12m' && <div style={{ fontSize: '0.62rem', color: '#b3afbd', marginTop: 4 }}>proyectado del último mes</div>}
+        </div>
+        {/* Cuánto lleva con nosotros. Va con los demás números de la cuenta
+            porque la antigüedad es lo que da contexto a todo lo otro: 8
+            sucursales en un cliente de tres meses no significa lo mismo que en
+            uno de dos años. */}
+        <div style={kpi}>
+          <div style={D.kl}>Antigüedad</div>
+          <div style={{ ...num, marginTop: 5 }}>
+            {ant?.meses != null
+              ? (ant.meses >= 12 ? <>{(ant.meses / 12).toFixed(1).replace('.0', '')} <span style={{ fontSize: '0.8rem', color: '#b3afbd', fontWeight: 600 }}>años</span></>
+                : <>{ant.meses} <span style={{ fontSize: '0.8rem', color: '#b3afbd', fontWeight: 600 }}>{ant.meses === 1 ? 'mes' : 'meses'}</span></>)
+              : '—'}
+          </div>
+          <div style={{ fontSize: '0.71rem', color: '#8a8a8a', marginTop: 6 }}>
+            {ant?.cliente_desde ? <>cliente desde <b style={{ color: '#3f3b4d' }}>{fmtDate(ant.cliente_desde)}</b></> : 'sin fecha de alta'}
+            {ant?.promedio_meses != null && ant?.meses != null && (
+              <div style={{ color: ant.meses >= ant.promedio_meses ? '#1E8A63' : '#a5a2af' }}>
+                {ant.meses >= ant.promedio_meses ? 'arriba del' : 'abajo del'} promedio de tu cartera ({ant.promedio_meses} meses)
+              </div>
+            )}
+          </div>
         </div>
         <div style={kpi}>
           <div style={D.kl}>Ventas</div>

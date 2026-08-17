@@ -234,6 +234,11 @@ export default function DashboardTab() {
             explica={sal.ciclo_dias != null
               ? <>Lo que pasa entre que mandas la cotización y te pagan. Para cerrar este mes, hay que cotizar con {sal.ciclo_dias} días de anticipación.</>
               : <>Aún no hay cotizaciones pagadas para medirlo.</>} />
+          <Metrica rosa titulo="Antigüedad promedio"
+            valor={sal.antiguedad_meses != null ? (sal.antiguedad_meses >= 12 ? `${(sal.antiguedad_meses / 12).toFixed(1).replace('.0', '')} años` : `${sal.antiguedad_meses} meses`) : '—'}
+            explica={sal.antiguedad_meses != null
+              ? <>Lo que llevan tus <b>{sal.antiguedad_n} cuentas activas</b> contigo, desde su primera suscripción. Es lo que separa un negocio que retiene de uno que solo repone.</>
+              : <>Faltan fechas de inicio en las suscripciones para calcularla.</>} />
           <Metrica titulo="Concentración" valor={sal.concentracion != null ? `${sal.concentracion}%` : '—'} color={(sal.concentracion || 0) > 30 ? '#9a6a10' : '#1E8A63'}
             explica={<>Tus <b>5 cuentas más grandes</b> son ese porcentaje del ARR. Arriba de 30% un inversionista lo marca como riesgo.</>} />
         </div>

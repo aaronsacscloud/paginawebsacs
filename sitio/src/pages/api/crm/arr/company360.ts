@@ -109,9 +109,45 @@ export const GET: APIRoute = async ({ url }) => {
     proxima_factura: activas.map(s => s.proxima_factura).filter(Boolean).sort()[0] || null,
   };
 
+  // ── Desde cuándo es cliente ──
+  // Se toma la fecha MÁS VIEJA de tres candidatas: el alta comercial, el inicio
+  // de su primera suscripción y su primer pago. Ninguna sola es confiable —hay
+  // cuentas con suscripción cargada después de meses operando y otras con pago
+  // adelantado— y la más vieja de las tres es la que nunca miente por arriba.
+  //
+  // No es la fecha en que se creó la cuenta EN SACS: esa vive del otro lado del
+  // puente y traerla costaría una consulta más por cuenta.
+  const candidatas = [
+    (co.data as any)?.fecha_inicio,
+    ...(subs.data || []).map((x: any) => x.fecha_inicio),
+    ...(pays.data || []).map((x: any) => x.fecha),
+  ].filter(Boolean).map((x: any) => String(x).slice(0, 10)).sort();
+  const clienteDesde = candidatas[0] || null;
+  const mesesCliente = clienteDesde
+    ? Math.max(0, Math.round((Date.now() - Date.parse(clienteDesde + 'T12:00:00')) / 2629800000))
+    : null;
+
+  // Promedio de la cartera, para que el número de esta cuenta signifique algo:
+  // "1.2 años" no dice nada hasta saber que el promedio es 7 meses.
+  let promedioMeses: number | null = null;
+  try {
+    const { data: act } = await supabase.from('subscriptions').select('company_id, fecha_inicio').eq('estado', 'activa');
+    const prim: Record<string, string> = {};
+    (act || []).forEach((x: any) => {
+      if (!x.fecha_inicio) return;
+      const f = String(x.fecha_inicio).slice(0, 10);
+      if (!prim[x.company_id] || f < prim[x.company_id]) prim[x.company_id] = f;
+    });
+    const vals = Object.values(prim);
+    if (vals.length) {
+      promedioMeses = Math.round(vals.reduce((a, f) => a + (Date.now() - Date.parse(f + 'T12:00:00')) / 2629800000, 0) / vals.length);
+    }
+  } catch { /* el promedio nunca bloquea la ficha */ }
+
   return new Response(JSON.stringify({
     company: co.data,
     resumen,
+    antiguedad: { cliente_desde: clienteDesde, meses: mesesCliente, promedio_meses: promedioMeses },
     subscriptions: subs.data || [],
     payments: pays.data || [],
     cobros_mp: cobrosMp,
