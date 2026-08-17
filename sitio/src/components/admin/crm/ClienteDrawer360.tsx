@@ -237,10 +237,10 @@ export default function ClienteDrawer360({ companyId, onClose, onChanged }: { co
                   No está acudiendo a lo que tiene contratado — ver reuniones.
                 </div>
               ))}
-              {tab === 'resumen' && <TabResumen res={res} co={co} act={act} subs={subs} acts={data?.activities || []} ant={data?.antiguedad} reload={() => { load(); onChanged(); }} />}
+              {tab === 'resumen' && <TabResumen res={res} co={co} act={act} subs={subs} acts={data?.activities || []} reload={() => { load(); onChanged(); }} />}
               {tab === 'info' && <TabInfoGeneral co={co} companyId={companyId} subs={subs} pagos={data?.payments || []} contactos={contactos} principal={principal} sucio={sucio} setSucio={setSucio} reload={() => { load(); onChanged(); }} flash={flash} />}
               {tab === 'subs' && (<>
-                <TabSubs companyId={companyId} subs={subs} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />
+                <TabSubs companyId={companyId} subs={subs} ant={data?.antiguedad} reload={() => { load(); onChanged(); }} flash={flash} principal={principal} />
                 <TabSacs co={co} act={act} reload={() => { load(); onChanged(); }} flash={flash} />
               </>)}
               {tab === 'oport' && <TabOportunidades companyId={companyId} co={co} principal={principal} subs={subs} flash={flash} reload={() => { load(); onChanged(); }} />}
@@ -369,7 +369,7 @@ function DatosDesactualizados({ syncAt }: { syncAt?: string | null }) {
 const FAMILIAS = ['Ventas', 'Inventario', 'Clientes', 'Programas', 'Cortes', 'Administración'];
 const FAM_LABEL: Record<string, string> = { Programas: 'Fidelización', Cortes: 'Cortes de caja' };
 
-function TabResumen({ res, co, act, subs, acts, ant, reload }: any) {
+function TabResumen({ res, co, act, subs, acts, reload }: any) {
   const dias = co?.dias_sin_venta;
   // Tareas de onboarding del cliente (activities tipo 'tarea' category onboarding).
   const onboarding = (acts || []).filter((a: any) => a.tipo === 'tarea' && a.metadata?.category === 'onboarding');
@@ -477,27 +477,6 @@ function TabResumen({ res, co, act, subs, acts, ant, reload }: any) {
           {/* En una cuenta de eventos el mes suelto engaña: el anual es una
               proyección del último mes, y se dice que lo es. */}
           {periodo === '12m' && <div style={{ fontSize: '0.62rem', color: '#b3afbd', marginTop: 4 }}>proyectado del último mes</div>}
-        </div>
-        {/* Cuánto lleva con nosotros. Va con los demás números de la cuenta
-            porque la antigüedad es lo que da contexto a todo lo otro: 8
-            sucursales en un cliente de tres meses no significa lo mismo que en
-            uno de dos años. */}
-        <div style={kpi}>
-          <div style={D.kl}>Antigüedad</div>
-          <div style={{ ...num, marginTop: 5 }}>
-            {ant?.meses != null
-              ? (ant.meses >= 12 ? <>{(ant.meses / 12).toFixed(1).replace('.0', '')} <span style={{ fontSize: '0.8rem', color: '#b3afbd', fontWeight: 600 }}>años</span></>
-                : <>{ant.meses} <span style={{ fontSize: '0.8rem', color: '#b3afbd', fontWeight: 600 }}>{ant.meses === 1 ? 'mes' : 'meses'}</span></>)
-              : '—'}
-          </div>
-          <div style={{ fontSize: '0.71rem', color: '#8a8a8a', marginTop: 6 }}>
-            {ant?.cliente_desde ? <>cliente desde <b style={{ color: '#3f3b4d' }}>{fmtDate(ant.cliente_desde)}</b></> : 'sin fecha de alta'}
-            {ant?.promedio_meses != null && ant?.meses != null && (
-              <div style={{ color: ant.meses >= ant.promedio_meses ? '#1E8A63' : '#a5a2af' }}>
-                {ant.meses >= ant.promedio_meses ? 'arriba del' : 'abajo del'} promedio de tu cartera ({ant.promedio_meses} meses)
-              </div>
-            )}
-          </div>
         </div>
         <div style={kpi}>
           <div style={D.kl}>Ventas</div>
@@ -1256,7 +1235,7 @@ function TabContactos({ companyId, contactos, reload, flash, compacto = false }:
 const NF_VACIO = { plan_slug: '', plan_id: '', nombre_plan: '', ciclo: 'anual', precio: '', proxima_factura: '', estado: 'programada', cobro: 'manual', payer_email: '' };
 const ES_CORREO = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-function TabSubs({ companyId, subs, reload, flash, principal }: any) {
+function TabSubs({ companyId, subs, ant, reload, flash, principal }: any) {
   const [archivosSub, setArchivosSub] = useState<any>(null);
   // El menú se ancla con position FIXED y coordenadas del botón: la tabla vive
   // dentro de un contenedor con desplazamiento horizontal, y eso recorta
@@ -1487,6 +1466,29 @@ function TabSubs({ companyId, subs, reload, flash, principal }: any) {
         <ArchivosSuscripcion subId={archivosSub.id} nombre={archivosSub.nombre_plan}
           onCerrar={() => setArchivosSub(null)} onCambio={() => reload()} />
       )}
+      {/* Desde cuándo es cliente. Vive aquí y no en Actividad porque la
+          antigüedad es un hecho de la RELACIÓN comercial —cuándo empezó a
+          pagarnos—, no de cuánto usa el sistema esta semana. */}
+      {ant?.meses != null && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: '#faf8ff', border: '1.5px solid #e6ddfa', borderRadius: 12, padding: '13px 16px', marginBottom: 14, flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.06em' }}>Antigüedad</div>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#5B4BD6', marginTop: 3, letterSpacing: '-.02em' }}>
+              {ant.meses >= 12 ? <>{(ant.meses / 12).toFixed(1).replace('.0', '')} <span style={{ fontSize: '0.78rem', color: '#b3afbd', fontWeight: 600 }}>años</span></>
+                : <>{ant.meses} <span style={{ fontSize: '0.78rem', color: '#b3afbd', fontWeight: 600 }}>{ant.meses === 1 ? 'mes' : 'meses'}</span></>}
+            </div>
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#6b6b74', lineHeight: 1.6 }}>
+            Cliente desde <b style={{ color: '#3f3b4d' }}>{fmtDate(ant.cliente_desde)}</b>
+            {ant.promedio_meses != null && (
+              <div style={{ color: ant.meses >= ant.promedio_meses ? '#1E8A63' : '#a5a2af' }}>
+                {ant.meses >= ant.promedio_meses ? 'Arriba' : 'Abajo'} del promedio de tu cartera, que es de {ant.promedio_meses} meses.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div style={D.cardM}>
         {/* Encabezado con el destello morado y los botones en la escala del
             sistema: morado el que crea, contorno azul lo importante. */}
