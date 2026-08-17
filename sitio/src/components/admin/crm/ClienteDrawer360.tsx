@@ -1486,6 +1486,40 @@ function TabSubs({ companyId, subs, ant, reload, flash, principal }: any) {
               </div>
             )}
           </div>
+          {(() => {
+            // Sucursales con fecha: cuándo se abrió cada una y cuánto lleva la
+            // cuenta creciendo. Distingue a quien ABRIÓ puntos de venta de quien
+            // solo los movió de lugar, que en el conteo se ven igual.
+            const det: any[] = Array.isArray(ant?.sucursales) ? ant.sucursales : [];
+            const conFecha = det.filter(x => x.creada);
+            if (!conFecha.length) return null;
+            const primera = conFecha.map(x => x.creada).sort()[0];
+            const meses = (f: string) => Math.max(0, Math.round((Date.now() - Date.parse(f + 'T12:00:00')) / 2629800000));
+            const prom = Math.round(conFecha.reduce((a, x) => a + meses(x.creada), 0) / conFecha.length);
+            return (
+              <div style={{ width: '100%', marginTop: 12, paddingTop: 12, borderTop: '1px solid #ece7fa' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase', letterSpacing: '.06em' }}>Sucursales</span>
+                  <span style={{ fontSize: '0.73rem', color: '#6b6b74' }}>
+                    {det.length} en la cuenta · la primera abrió {fmtDate(primera)} · llevan <b style={{ color: '#3f3b4d' }}>{prom >= 12 ? `${(prom / 12).toFixed(1).replace('.0', '')} años` : `${prom} meses`}</b> en promedio
+                  </span>
+                </div>
+                {conFecha.slice().sort((a, b) => String(a.creada).localeCompare(String(b.creada))).slice(0, 8).map((x: any, i: number) => (
+                  <div key={x.fid || i} style={{ display: 'flex', alignItems: 'baseline', gap: 9, padding: '3px 0', fontSize: '0.75rem' }}>
+                    <span style={{ fontSize: '0.62rem', fontWeight: 800, color: '#5B4BD6', width: 74, flexShrink: 0 }}>{fmtDate(x.creada)}</span>
+                    <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: x.activa ? '#1a1a1a' : '#a5a2af' }}>{x.nombre}</span>
+                    <span style={{ fontSize: '0.68rem', color: x.activa ? '#1E8A63' : '#c9c7d0', whiteSpace: 'nowrap' }}>{x.activa ? 'vendiendo' : 'sin venta en 30 d'}</span>
+                  </div>
+                ))}
+                {conFecha.length > 8 && <div style={{ fontSize: '0.7rem', color: '#a5a2af', marginTop: 4 }}>y {conFecha.length - 8} más</div>}
+                {det.length > conFecha.length && (
+                  <div style={{ fontSize: '0.68rem', color: '#b3afbd', marginTop: 6 }}>
+                    {det.length - conFecha.length} sin fecha de creación: son anteriores al dato o se dieron de alta por fuera.
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
 

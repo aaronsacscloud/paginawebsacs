@@ -147,7 +147,11 @@ export const GET: APIRoute = async ({ url }) => {
   return new Response(JSON.stringify({
     company: co.data,
     resumen,
-    antiguedad: { cliente_desde: clienteDesde, meses: mesesCliente, promedio_meses: promedioMeses },
+    antiguedad: {
+      cliente_desde: clienteDesde, meses: mesesCliente, promedio_meses: promedioMeses,
+      // Viene del caché del cron, no de una consulta a SACS.
+      sucursales: (co.data as any)?.actividad?.sucursales_detalle || [],
+    },
     subscriptions: subs.data || [],
     payments: pays.data || [],
     cobros_mp: cobrosMp,
