@@ -18,6 +18,7 @@ import RevenueHub from './RevenueHub';
 import ClientesTab from './crm/ClientesTab';
 import LeadsTab from './crm/LeadsTab';
 import MejorasTab from './crm/MejorasTab';
+import CobranzaTab from './crm/CobranzaTab';
 import ReunionesTab from './crm/ReunionesTab';
 import SubscriptionsTab from './crm/SubscriptionsTab';
 import PagosTab from './crm/PagosTab';
@@ -40,7 +41,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras';
+type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -129,6 +130,7 @@ const NAV_SECTIONS = [
   {
     label: 'Acompañamiento',
     items: [
+      { id: 'cobranza' as Tab, label: 'Cobranza', icon: 'pagos' },
       { id: 'mejoras' as Tab, label: 'Mejoras e ideas', icon: 'mejoras' },
       { id: 'oportunidades' as Tab, label: 'Radar de ventas', icon: 'oportunidades' },
     ],
@@ -600,6 +602,8 @@ export default function CrmDashboard() {
               Reemplaza YOUR_USER_ID con tu team_members.id
             </div>
           </div>
+        ) : tab === 'cobranza' ? (
+          <ErrorBoundary><CobranzaTab /></ErrorBoundary>
         ) : tab === 'mejoras' ? (
           <ErrorBoundary><MejorasTab /></ErrorBoundary>
         ) : tab === 'pagos' ? (
