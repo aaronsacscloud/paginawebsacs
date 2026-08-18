@@ -20,9 +20,17 @@ type Segmento = 'hoy' | 'semana' | 'proximas' | 'pasadas' | 'todas';
  */
 function origenDeReunion(b: any): { l: string; color: string; campana?: string } | null {
   if (b?.origen === 'crm') return null;
+  const referrer = b?.atribucion?.primer_toque?.referrer;
+  // Sin canal identificable no se pinta nada. Poner "Página de agenda" en cada
+  // fila sería repetir dónde llenó el formulario, que ya se sabe, y taparía
+  // las pocas filas que sí traen la campaña que las pagó.
+  if (!b?.utm_source && !referrer) return null;
   const o = origenDe(origenDeRegistro({ utm_source: b?.utm_source, fuente: 'booking-page' }));
-  if (!o.v) return null;
-  return { l: o.l, color: o.color, campana: b?.atribucion?.primer_toque?.campana || undefined };
+  return {
+    l: o.v ? o.l : 'Referido',
+    color: o.color,
+    campana: b?.atribucion?.primer_toque?.campana || undefined,
+  };
 }
 
 function ChipOrigen({ b }: { b: any }) {

@@ -52,7 +52,10 @@ export const POST: APIRoute = async ({ request }) => {
       tipo: 'wa_intento',
       nivel: 'info',
       titulo: `Pidieron demo por WhatsApp${giro ? ` — ${giro}` : ''}`,
-      detalle: [resumenAtribucion(atribucion), o.l, bloque.primer_toque?.landing].filter(Boolean).join(' · '),
+      // `o.l` ya es el canal en legible ("TikTok"); meter además el utm_source
+      // crudo repetía la misma palabra dos veces en la campana.
+      detalle: [o.v ? o.l : resumenAtribucion(atribucion), bloque.primer_toque?.campana, bloque.primer_toque?.landing]
+        .filter(Boolean).join(' · '),
       metadata: { giro, contexto, atribucion: bloque },
     });
   } catch { /* nunca falla hacia el usuario: es telemetría */ }
