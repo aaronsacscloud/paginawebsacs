@@ -18,6 +18,7 @@ import SuiteCortina from '../../components/suite/SuiteCortina.astro';
 import SuiteRack from '../../components/suite/SuiteRack.astro';
 import SuiteCifras from '../../components/suite/SuiteCifras.astro';
 import SuiteCierre from '../../components/suite/SuiteCierre.astro';
+import PosMock from '../../components/suite/PosMock.astro';
 import { seccionesRopa } from '../../data/suite-ropa';
 
 const titulo = 'Suite para Tiendas de Ropa';
@@ -52,13 +53,11 @@ const desc =
         <a href="/contacto" class="btn-pri">Agenda una demo</a>
         <a href="/prueba-gratis" class="btn-sec">Prueba gratis</a>
       </div>
-      <!-- La reticula se arma sobre la escena: el sistema aparece encima de la
-           realidad, no en una captura aparte. Se oculta en movil, donde no cabe
-           sin taparle la cara a la foto. -->
-      <div class="hero-matriz" id="heroMatriz" aria-hidden="true">
-        <span class="hm-rot">Blusa satinada · talla × color</span>
-        <div class="hm-grid" id="hmGrid"></div>
-      </div>
+      <!-- El sistema aparece encima de la escena, y es el NUESTRO: la pantalla
+           que la vendedora usa todos los dias. Antes habia aqui una reticula de
+           numeros sueltos que no se entendia sin contexto. Se oculta en movil,
+           donde no cabe sin taparle la cara a la foto. -->
+      <div class="hero-pos" aria-hidden="true"><PosMock /></div>
 
       <div class="hero-datos">
         <div><b>+3,000</b><span>marcas activas</span></div>
@@ -182,30 +181,31 @@ const desc =
   }
   .hero-datos span { font-size: 13px; color: #A1A1AA; font-weight: 600; }
 
-  /* Matriz superpuesta a la foto */
-  .hero-matriz {
-    position: absolute; right: 0; top: 50%; transform: translateY(-50%);
-    background: rgba(9,9,13,.86); border: 1px solid rgba(255,255,255,.14);
-    border-radius: 18px; padding: 18px 20px 20px; box-shadow: 0 28px 70px rgba(0,0,0,.55);
+  /* El punto de venta se dibuja a 980 px y se escala: asi se ve nitido en
+     cualquier pantalla y no depende de una captura que envejece. */
+  .hero-pos {
+    position: absolute; right: -78px; top: 50%;
+    transform: translateY(-50%) scale(.58); transform-origin: right center;
+    filter: drop-shadow(0 30px 60px rgba(0,0,0,.6));
+    opacity: 0; animation: posEntra .9s cubic-bezier(.16,1,.3,1) .35s forwards;
   }
-  .hm-rot {
-    display: block; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase;
-    color: #A1A1AA; font-weight: 700; margin-bottom: 14px;
+  @keyframes posEntra {
+    from { opacity: 0; transform: translateY(-50%) scale(.56) translateX(26px); }
+    to   { opacity: 1; transform: translateY(-50%) scale(.58); }
   }
-  .hm-grid { display: grid; grid-template-columns: repeat(6, 44px); gap: 6px; }
-  .hm-celda {
-    height: 44px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; color: #fff;
-    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
-    opacity: 0; transform: scale(.72);
-    transition: opacity .4s ease, transform .4s cubic-bezier(.2,1.1,.3,1);
+  @media (min-width: 1500px) { .hero-pos { transform: translateY(-50%) scale(.66); right: -40px; } }
+  /* Con el POS a la derecha el parrafo tiene que ser mas corto o se mete
+     debajo del marco. */
+  @media (min-width: 1181px) {
+    .hero-sub { max-width: 44ch; }
+    /* El titulo tambien tiene que caber en la mitad libre: a 84 px la linea
+       "productos. Vende" se metia debajo del marco del punto de venta. */
+    .hero-title { font-size: clamp(38px, 5vw, 66px); letter-spacing: -2px; }
   }
-  .hm-celda.on { opacity: 1; transform: none; }
-  .hm-celda.ok { background: rgba(52,211,153,.7); border-color: #6EE7B7; color: #04241A; }
-  .hm-celda.bajo { background: rgba(232,168,56,.74); border-color: #F5C978; color: #2A1B04; }
-  .hm-celda.cero { background: rgba(20,20,26,.78); border-color: rgba(248,113,113,.45); color: #F0A9A9; }
-
-  @media (max-width: 1180px) { .hero-matriz { display: none; } }
+  @media (max-width: 1180px) { .hero-pos { display: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-pos { opacity: 1; animation: none; }
+  }
 
   @media (max-width: 900px) {
     .hero { min-height: 88vh; padding: 104px 18px 56px; }
@@ -218,30 +218,3 @@ const desc =
     .hero-cta { margin-bottom: 34px; }
   }
 </style>
-
-<script>
-  /* La matriz de la portada se arma sola al cargar: cada celda entra con un
-     retardo mínimo, como si el sistema estuviera leyendo la tienda. Se usa
-     transición (no animation-delay) porque el estado final es el normal: si
-     algo falla a media cascada, las celdas quedan visibles igual. */
-  {
-    const grid = document.getElementById('hmGrid');
-    if (grid) {
-      const filas = [[0,8,12,9,4,0],[3,11,14,7,2,0],[2,5,6,3,1,0],[1,4,7,5,2,0]];
-      const menos = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const celdas: HTMLElement[] = [];
-
-      filas.forEach((f) => f.forEach((n) => {
-        const c = document.createElement('div');
-        c.className = 'hm-celda ' + (n === 0 ? 'cero' : n <= 3 ? 'bajo' : 'ok');
-        c.textContent = String(n);
-        grid.appendChild(c);
-        celdas.push(c);
-      }));
-
-      requestAnimationFrame(() => {
-        celdas.forEach((c, i) => setTimeout(() => c.classList.add('on'), menos ? 0 : 220 + i * 28));
-      });
-    }
-  }
-</script>

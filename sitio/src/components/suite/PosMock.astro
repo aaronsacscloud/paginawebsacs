@@ -1,0 +1,284 @@
+---
+/**
+ * PosMock — el punto de venta REAL de SACS, dibujado en HTML.
+ *
+ * Regla nueva de la pagina: cuando se muestre "el sistema", que se vea que es
+ * el nuestro. Antes flotaba una reticula de numeros sueltos sobre la foto de
+ * portada y no se entendia que era; ahora se ve la pantalla que el cliente va a
+ * usar todos los dias: buscador, mosaico de productos, cliente con puntos y el
+ * boton azul de COBRAR.
+ *
+ * Va en HTML/CSS y no como captura de pantalla porque una imagen de 700 px se
+ * ve borrosa en pantalla retina, pesa mas y envejece: cada cambio del POS
+ * obligaria a rehacerla. Asi el mock se mantiene nitido a cualquier tamaño.
+ *
+ * Los datos se pasan por props para que cada giro muestre SU catalogo: en moda
+ * son prendas con talla y color; en otro giro seran otros productos.
+ */
+interface Linea {
+  nombre: string;
+  detalle: string;
+  cant: number;
+  precio: string;
+}
+interface Props {
+  cajero?: string;
+  caja?: string;
+  cliente?: string;
+  puntos?: string;
+  /** Mosaico: nombre + color del tile. */
+  tiles?: { t: string; c: string }[];
+  lineas?: Linea[];
+  subtotal?: string;
+  iva?: string;
+  total?: string;
+  articulos?: string;
+}
+
+const {
+  cajero = 'Ivonne',
+  caja = 'Caja Chapalita',
+  cliente = 'MARIANA R.',
+  puntos = '3,733 pts',
+  tiles = [
+    { t: 'Blusa satinada', c: '#C084FC' },
+    { t: 'Vestido midi', c: '#7DA9E8' },
+    { t: 'Pantalón sastre', c: '#C9A87C' },
+    { t: 'Saco lino', c: '#9BB8C4' },
+    { t: 'Jean recto', c: '#5B87C4' },
+    { t: 'Playera oversize', c: '#94A3B8' },
+    { t: 'Falda plisada', c: '#8A3A4C' },
+    { t: 'Gabardina', c: '#3F9E75' },
+    { t: 'Suéter punto', c: '#7C8AA0' },
+    { t: 'Chaleco acolchado', c: '#4B5563' },
+  ],
+  lineas = [
+    { nombre: 'Blusa satinada', detalle: 'Negro · Talla M', cant: 1, precio: '899.00' },
+    { nombre: 'Pantalón sastre', detalle: 'Camel · Talla S', cant: 1, precio: '1,290.00' },
+  ],
+  subtotal = '$1,887.07',
+  iva = '$301.93',
+  total = '$2,189.00',
+  articulos = '2 ARTÍCULOS · 2 UNIDADES',
+} = Astro.props;
+---
+
+<div class="pm">
+  <div class="pm-camara"></div>
+
+  <div class="pm-cuerpo">
+    <!-- Columna de catálogo -->
+    <div class="pm-izq">
+      <div class="pm-cab">
+        <span class="pm-avatar">{cajero.charAt(0)}</span>
+        <div class="pm-quien">
+          <b>{cajero}</b>
+          <small>{caja} <i>|</i> <em class="pm-verde"></em> Conexión estable</small>
+        </div>
+        <span class="pm-acciones">Más acciones</span>
+      </div>
+
+      <div class="pm-buscar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path>
+        </svg>
+        <span>Busca el nombre del producto, sku o código de barras</span>
+      </div>
+
+      <div class="pm-tiles">
+        <div class="pm-tile pm-tile-rapida">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 7h18l-2 12H5L3 7z"></path><path d="M8 7a4 4 0 018 0"></path>
+          </svg>
+          <span>Venta rápida</span>
+        </div>
+        {tiles.map((x) => (
+          <div class="pm-tile" style={`background:${x.c}`}><span>{x.t}</span></div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Columna del ticket -->
+    <div class="pm-der">
+      <div class="pm-tabs">
+        <span class="on">Guardar</span><span class="off">Ventas guardadas</span>
+        <span>Pedidos</span><span>Limpiar</span>
+      </div>
+
+      <div class="pm-cliente">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path>
+        </svg>
+        <b>{cliente}</b>
+        <span class="pm-x">×</span>
+      </div>
+
+      <div class="pm-lealtad">
+        <span class="pm-miembro">★ Miembro</span>
+        <b>{puntos}</b>
+        <span class="pm-cash">Cashback: $0.00</span>
+        <span class="pm-vermas">Ver más →</span>
+      </div>
+
+      <div class="pm-lineas">
+        {lineas.map((l) => (
+          <div class="pm-linea">
+            <div class="pm-linea-txt"><b>{l.nombre}</b><small>{l.detalle}</small></div>
+            <div class="pm-cant"><i>−</i><u>{l.cant}</u><i>+</i></div>
+            <span class="pm-precio">{l.precio} MXN</span>
+            <span class="pm-borrar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round">
+                <path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"></path>
+              </svg>
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div class="pm-pie">
+        <div class="pm-pie-tabs"><span>Descuento</span><span>Nota</span><span>Código</span></div>
+        <div class="pm-fila"><div><b>Subtotal</b><small>Antes de impuestos</small></div><span>{subtotal}</span></div>
+        <div class="pm-fila pm-fila-fina"><div><b>IVA 16%</b></div><span>{iva}</span></div>
+        <div class="pm-cobrar">
+          <div><b>COBRAR</b><small>{articulos}</small></div>
+          <div class="pm-total"><b>{total}</b><small>MXN</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Todo el mock se dibuja a un ancho base de 980 px y se escala desde fuera
+     con transform: scale(). Asi las proporciones no dependen del contenedor. */
+  .pm {
+    width: 980px; background: #F7F7F9; border-radius: 26px; padding: 16px;
+    box-shadow: 0 40px 90px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.08);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    position: relative; color: #0F172A;
+  }
+  .pm-camara {
+    width: 9px; height: 9px; border-radius: 50%; background: #C9CBD2;
+    margin: 0 auto 12px;
+  }
+  /* El alto es fijo para que el marco tenga siempre la misma proporcion. Las
+     dos columnas llevan min-height:0 porque, sin el, el min-height:auto de
+     grid/flex las deja desbordar y el boton de COBRAR se sale del marco. */
+  .pm-cuerpo {
+    display: grid; grid-template-columns: 1fr 400px; gap: 14px;
+    background: #fff; border-radius: 18px; overflow: hidden; height: 680px;
+  }
+  .pm-izq, .pm-der { min-height: 0; }
+
+  /* ── Catálogo ── */
+  .pm-izq { padding: 20px 18px; display: flex; flex-direction: column; min-width: 0; }
+  .pm-cab { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+  .pm-avatar {
+    width: 42px; height: 42px; border-radius: 11px; background: #FDE68A; color: #92400E;
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 17px;
+  }
+  .pm-quien { flex: 1; min-width: 0; }
+  .pm-quien b { display: block; font-size: 17px; font-weight: 600; letter-spacing: -.2px; }
+  .pm-quien small { font-size: 12.5px; color: #64748B; display: flex; align-items: center; gap: 6px; }
+  .pm-quien i { color: #CBD5E1; font-style: normal; }
+  .pm-verde { width: 7px; height: 7px; border-radius: 50%; background: #22C55E; display: inline-block; }
+  .pm-acciones {
+    font-size: 13.5px; font-weight: 600; color: #334155; border: 1px solid #E2E8F0;
+    border-radius: 12px; padding: 10px 16px; background: #fff;
+  }
+  .pm-buscar {
+    display: flex; align-items: center; gap: 11px; border: 1px solid #E2E8F0;
+    border-radius: 14px; height: 52px; padding: 0 16px; margin-bottom: 18px; background: #fff;
+  }
+  .pm-buscar svg { width: 19px; height: 19px; flex-shrink: 0; }
+  .pm-buscar span { font-size: 14.5px; color: #94A3B8; }
+
+  .pm-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .pm-tile {
+    height: 96px; border-radius: 16px; display: flex; align-items: center; justify-content: center;
+    text-align: center; padding: 10px;
+  }
+  .pm-tile span { color: #fff; font-size: 14.5px; font-weight: 500; line-height: 1.25; }
+  .pm-tile-rapida { background: #fff; border: 1px solid #E8ECF1; flex-direction: column; gap: 8px; }
+  .pm-tile-rapida svg { width: 26px; height: 26px; }
+  .pm-tile-rapida span { color: #64748B; font-size: 13.5px; }
+
+  /* ── Ticket ── */
+  .pm-der { background: #F4F5F7; display: flex; flex-direction: column; min-width: 0; }
+  .pm-tabs { display: grid; grid-template-columns: repeat(4, 1fr); background: #fff; }
+  .pm-tabs span {
+    text-align: center; font-size: 13px; font-weight: 600; color: #334155;
+    padding: 15px 4px; border-bottom: 1px solid #E8ECF1; border-left: 1px solid #E8ECF1;
+  }
+  .pm-tabs span:first-child { border-left: none; }
+  .pm-tabs .off { color: #CBD5E1; }
+
+  .pm-cliente {
+    display: flex; align-items: center; gap: 10px; background: #fff; margin: 12px;
+    border: 1px solid #E2E8F0; border-radius: 12px; height: 46px; padding: 0 14px;
+  }
+  .pm-cliente svg { width: 17px; height: 17px; }
+  .pm-cliente b { flex: 1; font-size: 14px; font-weight: 600; letter-spacing: .2px; }
+  .pm-x { color: #94A3B8; font-size: 17px; }
+
+  .pm-lealtad {
+    display: flex; align-items: center; gap: 9px; padding: 0 12px 12px; flex-wrap: wrap;
+  }
+  .pm-miembro {
+    background: #4B5FE3; color: #fff; font-size: 11.5px; font-weight: 700;
+    border-radius: 8px; padding: 5px 10px;
+  }
+  .pm-lealtad b { font-size: 13px; font-weight: 600; }
+  .pm-cash { font-size: 12.5px; color: #16A34A; font-weight: 500; }
+  .pm-vermas {
+    margin-left: auto; font-size: 12px; font-weight: 600; color: #2563EB;
+    border: 1px solid #C7DAFB; border-radius: 8px; padding: 5px 10px; background: #fff;
+  }
+
+  /* min-height:0 es obligatorio: sin el, el min-height:auto de flex impide que
+     esta zona ceda y el boton de COBRAR se sale del marco. */
+  .pm-lineas { background: #fff; flex: 1; min-height: 0; overflow: hidden; }
+  .pm-linea {
+    display: flex; align-items: center; gap: 10px; padding: 13px 12px;
+    border-bottom: 1px solid #F1F5F9;
+  }
+  .pm-linea-txt { flex: 1; min-width: 0; }
+  .pm-linea-txt b { display: block; font-size: 14px; font-weight: 600; }
+  .pm-linea-txt small { font-size: 12px; color: #94A3B8; }
+  .pm-cant { display: flex; align-items: center; gap: 12px; color: #475569; }
+  .pm-cant i { font-style: normal; font-size: 15px; }
+  .pm-cant u { text-decoration: none; font-size: 14px; font-weight: 600; }
+  .pm-precio { font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .pm-borrar {
+    width: 30px; height: 30px; border-radius: 8px; background: #EF4444;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pm-borrar svg { width: 15px; height: 15px; }
+
+  .pm-pie { background: #fff; border-top: 1px solid #EEF1F5; }
+  .pm-pie-tabs { display: flex; gap: 0; border-bottom: 1px solid #EEF1F5; }
+  .pm-pie-tabs span {
+    flex: 1; text-align: center; font-size: 12.5px; color: #94A3B8; padding: 12px 4px;
+    border-right: 1px solid #EEF1F5;
+  }
+  .pm-pie-tabs span:last-child { border-right: none; }
+  .pm-fila {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 11px 16px; border-bottom: 1px solid #F1F5F9;
+  }
+  .pm-fila b { font-size: 14px; font-weight: 600; display: block; }
+  .pm-fila small { font-size: 11.5px; color: #94A3B8; }
+  .pm-fila span { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .pm-fila-fina { padding: 9px 16px; }
+  .pm-fila-fina b { font-weight: 500; font-size: 13.5px; }
+
+  .pm-cobrar {
+    margin: 12px; background: #2563EB; border-radius: 14px; padding: 16px 18px;
+    display: flex; align-items: center; justify-content: space-between; color: #fff;
+    box-shadow: 0 8px 22px rgba(37,99,235,.35);
+  }
+  .pm-cobrar b { font-size: 19px; font-weight: 700; letter-spacing: .3px; display: block; }
+  .pm-cobrar small { font-size: 11px; opacity: .82; }
+  .pm-total { text-align: right; }
+  .pm-total b { font-size: 28px; letter-spacing: -.8px; font-variant-numeric: tabular-nums; }
+</style>
