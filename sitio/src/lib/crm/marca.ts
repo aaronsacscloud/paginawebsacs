@@ -131,9 +131,25 @@ export const SELECT_MARCA = 'id, nombre, email, logo_url, ' + CAMPOS_MARCA.join(
 export function vinetas(txt?: string | null): string[] {
   const t = String(txt || '').trim();
   if (!t) return [];
-  const porRenglon = t.split(/\r?\n+/).map(s => s.trim()).filter(Boolean);
-  const base = porRenglon.length > 1 ? porRenglon : t.split(/\s+·\s+|\s*;\s*/).map(s => s.trim()).filter(Boolean);
-  return base.map(s => s.replace(/^[-–—•*·]\s*/, '').replace(/^\d+[.)]\s*/, '').trim()).filter(Boolean);
+  const limpia = (a: string[]) => a.map(s => s.replace(/^[-–—•*·]\s*/, '').replace(/^\d+[.)]\s*/, '').trim()).filter(Boolean);
+
+  const porRenglon = limpia(t.split(/\r?\n+/));
+  if (porRenglon.length > 1) return porRenglon;
+  const porSeparador = limpia(t.split(/\s+·\s+|\s*;\s*/));
+  if (porSeparador.length > 1) return porSeparador;
+
+  // Un solo párrafo largo —así lo escribían las minutas viejas— se parte por
+  // oración. Se agrupan las cortas para que no quede una viñeta de tres
+  // palabras junto a otra de tres renglones, y si el texto es corto se deja
+  // entero: partir dos frases no ordena nada.
+  if (t.length <= 200) return [t];
+  const frases = t.match(/[^.!?]+[.!?]*/g) || [t];
+  const out: string[] = [];
+  for (const f of frases.map(x => x.trim()).filter(Boolean)) {
+    if (out.length && out[out.length - 1].length < 70) out[out.length - 1] += ' ' + f;
+    else out.push(f);
+  }
+  return limpia(out);
 }
 
 /** Folio estable del documento: MIN + trozo del id + fecha. */
