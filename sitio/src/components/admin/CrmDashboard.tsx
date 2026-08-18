@@ -4,7 +4,6 @@ import { useIsMobile, isTouchDevice } from '../../lib/ui/mobile';
 import BottomNav from './crm/ui/BottomNav';
 import ActionSheet from './crm/ui/ActionSheet';
 import Sheet from './crm/ui/Sheet';
-import PipelineTab from './crm/PipelineTab';
 import DealsTab from './crm/DealsTab';
 import AutomationsTab from './crm/AutomationsTab';
 import SchedulingTab from './crm/SchedulingTab';
@@ -17,6 +16,7 @@ import CommissionsTab from './crm/CommissionsTab';
 import ContentReviewTab from './crm/ContentReviewTab';
 import RevenueHub from './RevenueHub';
 import ClientesTab from './crm/ClientesTab';
+import LeadsTab from './crm/LeadsTab';
 import MejorasTab from './crm/MejorasTab';
 import ReunionesTab from './crm/ReunionesTab';
 import SubscriptionsTab from './crm/SubscriptionsTab';
@@ -525,7 +525,7 @@ export default function CrmDashboard() {
         ) : tab === 'hoy' ? (
           <ErrorBoundary><AgendaHoy onOpenContact={(id) => setProfileContactId(id)} onGoDeals={() => switchTab('deals')} /></ErrorBoundary>
         ) : tab === 'pipeline' ? (
-          <PipelineTab onConfig={() => goConfigPipeline('lead')} />
+          <ErrorBoundary><LeadsTab /></ErrorBoundary>
         ) : tab === 'deals' ? (
           <DealsTab onConfig={() => goConfigPipeline('oportunidad')} initialDealId={initialDealId} onDealConsumed={() => setInitialDealId(null)} />
         ) : tab === 'suscripciones' ? (
