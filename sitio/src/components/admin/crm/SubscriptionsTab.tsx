@@ -22,11 +22,11 @@ type Sub = {
 };
 
 const ESTADOS: Record<string, { label: string; bg: string; color: string }> = {
-  activa:         { label: 'Activa',          bg: 'rgba(42,181,160,0.14)', color: '#1A8F7A' },
+  activa:         { label: 'Activa',          bg: '#EAF8F2', color: '#1E8A63' },
   pendiente_pago: { label: 'Pendiente',       bg: 'rgba(232,168,56,0.16)', color: '#a06600' },
   programada:     { label: 'Programada',      bg: 'rgba(75,123,229,0.12)', color: '#3764c4' },
   pausada:        { label: 'Pausada',         bg: 'rgba(150,150,150,0.15)', color: '#666' },
-  cancelada:      { label: 'Cancelada',       bg: 'rgba(229,75,75,0.10)', color: '#b93333' },
+  cancelada:      { label: 'Cancelada',       bg: '#FEF0EF', color: '#C0554E' },
 };
 
 const fmt = (n?: number | null) => '$' + Math.round(Number(n || 0)).toLocaleString('es-MX');
@@ -45,10 +45,10 @@ function addCicloDate(fecha: string, ciclo: string): string {
 
 export const S = {
   card: { background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: 18, marginBottom: 16 } as const,
-  kpi: { background: '#fff', border: '1px solid #ececec', borderRadius: 12, padding: '14px 18px', flex: 1, minWidth: 150 } as const,
-  kLabel: { fontSize: '0.7rem', fontWeight: 700, color: '#999', textTransform: 'uppercase' as const, letterSpacing: '0.5px' },
-  kValue: { fontSize: '1.45rem', fontWeight: 800, color: '#1a1a1a', fontVariantNumeric: 'tabular-nums' as const },
-  kSub: { fontSize: '0.72rem', color: '#999' },
+  kpi: { background: '#fff', border: '1px solid #eeeef1', borderRadius: 12, padding: '16px 18px', flex: 1, minWidth: 150 } as const,
+  kLabel: { fontSize: '0.6rem', fontWeight: 800, color: '#a5a2af', textTransform: 'uppercase' as const, letterSpacing: '0.06em' },
+  kValue: { fontSize: '1.75rem', fontWeight: 800, color: '#5B4BD6', letterSpacing: '-.02em', marginTop: 5, fontVariantNumeric: 'tabular-nums' as const },
+  kSub: { fontSize: '0.7rem', color: '#8a8a8a', marginTop: 5 },
   input: { padding: '8px 10px', border: '1px solid #ddd', borderRadius: 8, fontSize: '0.85rem', outline: 'none' } as const,
   btn: { padding: '8px 14px', border: 'none', borderRadius: 8, fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' } as const,
   btnSmall: { padding: '4px 10px', border: '1px solid #ddd', background: '#fff', borderRadius: 6, fontSize: '0.75rem', cursor: 'pointer' } as const,
@@ -270,7 +270,7 @@ export default function SubscriptionsTab() {
         </div>
         <div style={kpiCard}>
           <div style={S.kLabel}>ARR en riesgo</div>
-          <div style={{ ...S.kValue, color: (riesgo?.arr_en_riesgo || 0) > 0 ? '#b93333' : '#1A8F7A' }}>{fmt(riesgo?.arr_en_riesgo)}</div>
+          <div style={{ ...S.kValue, color: (riesgo?.arr_en_riesgo || 0) > 0 ? '#C0554E' : '#1E8A63' }}>{fmt(riesgo?.arr_en_riesgo)}</div>
           <div style={S.kSub}>{(riesgo?.banda_3_15?.length || 0) + (riesgo?.banda_15_mas?.length || 0)} clientes sin vender ≥3 días</div>
         </div>
         <div style={kpiCard}>
@@ -281,7 +281,7 @@ export default function SubscriptionsTab() {
           {meta?.monto ? (<>
             <div style={S.kValue}>{meta.progreso_pct}%</div>
             <div style={{ height: 7, background: '#f0f0f0', borderRadius: 99, margin: '4px 0' }}>
-              <div style={{ height: '100%', width: Math.min(100, meta.progreso_pct || 0) + '%', background: (meta.progreso_pct || 0) >= 100 ? '#1A8F7A' : '#4B7BE5', borderRadius: 99 }} />
+              <div style={{ height: '100%', width: Math.min(100, meta.progreso_pct || 0) + '%', background: (meta.progreso_pct || 0) >= 100 ? '#4FBF95' : '#9B8CFA', borderRadius: 99 }} />
             </div>
             <div style={S.kSub}>{fmt(k?.arr_activo)} de {fmt(meta.monto)}</div>
           </>) : <div style={{ ...S.kSub, marginTop: 8 }}>Sin meta configurada — da clic en ⚙</div>}
@@ -294,24 +294,26 @@ export default function SubscriptionsTab() {
         : { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
         {(['subs', 'riesgo', 'cobranza', 'conciliacion', 'inteligencia'] as const).map(v => (
           <button key={v} onClick={() => setVista(v)}
-            style={{ ...S.btn, ...(isMobile ? { flexShrink: 0, height: 44, scrollSnapAlign: 'start' } : {}), background: vista === v ? '#1a1a1a' : '#f2f2f2', color: vista === v ? '#fff' : '#555' }}>
-            {v === 'subs' ? 'Suscripciones' : v === 'riesgo' ? `Riesgo (${(riesgo?.banda_3_15?.length || 0) + (riesgo?.banda_15_mas?.length || 0)})` : v === 'cobranza' ? 'Cobranza y proyección' : v === 'conciliacion' ? 'Conciliación' : '★ Inteligencia ARR'}
+            style={{ ...S.btn, ...(isMobile ? { flexShrink: 0, height: 44, scrollSnapAlign: 'start' } : {}),
+              background: vista === v ? '#EEECFE' : 'transparent', color: vista === v ? '#5B4BD6' : '#666',
+              borderRadius: vista === v ? '9px 9px 0 0' : 9, borderBottom: vista === v ? '2px solid #9B8CFA' : '2px solid transparent', fontWeight: vista === v ? 800 : 500 }}>
+            {v === 'subs' ? 'Suscripciones' : v === 'riesgo' ? `Riesgo (${(riesgo?.banda_3_15?.length || 0) + (riesgo?.banda_15_mas?.length || 0)})` : v === 'cobranza' ? 'Cobranza y proyección' : v === 'conciliacion' ? 'Conciliación' : 'Inteligencia ARR'}
           </button>
         ))}
         {/* La acción principal del hub es dar de alta lo que se acaba de vender.
             Registrar un pago es el paso de DESPUÉS (exige que la sub ya exista),
-            así que queda como acción secundaria — el 💰 de cada fila y el de
+            así que queda como acción secundaria — el botón de cada fila y el de
             facturas vencidas siguen siendo la vía corta. */}
         {!isMobile && <>
           <div style={{ flex: 1 }} />
-          <button style={{ ...S.btn, background: '#fff', border: '1px solid #ddd', color: '#333' }} onClick={() => setShowPago(true)}>💰 Registrar pago</button>
-          <button style={{ ...S.btn, background: '#1A8F7A', color: '#fff' }} onClick={() => setShowNueva(true)}>+ Nueva suscripción</button>
+          <button style={{ ...S.btn, background: '#fff', border: '1.5px solid #7DA6F5', color: '#2C5FC4' }} onClick={() => setShowPago(true)}>Registrar pago</button>
+          <button style={{ ...S.btn, background: '#9B8CFA', color: '#fff' }} onClick={() => setShowNueva(true)}>+ Nueva suscripción</button>
         </>}
       </div>
       {isMobile && (
         <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-          <button style={{ ...S.btn, flex: 1, height: 44, background: '#1A8F7A', color: '#fff' }} onClick={() => setShowNueva(true)}>+ Nueva suscripción</button>
-          <button style={{ ...S.btn, flex: '0 0 auto', height: 44, background: '#fff', border: '1px solid #ddd', color: '#333' }} onClick={() => setShowPago(true)}>💰 Pago</button>
+          <button style={{ ...S.btn, flex: 1, height: 44, background: '#9B8CFA', color: '#fff' }} onClick={() => setShowNueva(true)}>+ Nueva suscripción</button>
+          <button style={{ ...S.btn, flex: '0 0 auto', height: 44, background: '#fff', border: '1.5px solid #7DA6F5', color: '#2C5FC4' }} onClick={() => setShowPago(true)}>Registrar pago</button>
         </div>
       )}
 
@@ -322,7 +324,7 @@ export default function SubscriptionsTab() {
           <div style={{ ...S.card, borderLeft: '4px solid #a06600' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               <div style={{ fontWeight: 800 }}>♾️ Vitalicias legacy <span style={{ color: '#999', fontWeight: 400, fontSize: 13 }}>· pago único, fuera de ARR — oportunidad de recurrencia</span></div>
-              <button onClick={() => { setFCiclo(fCiclo === 'vitalicia' ? '' : 'vitalicia'); }} style={{ ...S.btnSmall, background: fCiclo === 'vitalicia' ? '#1a1a1a' : '#fff', color: fCiclo === 'vitalicia' ? '#fff' : '#333' }}>{fCiclo === 'vitalicia' ? 'Ver todas' : `Ver los ${vitStats.total} →`}</button>
+              <button onClick={() => { setFCiclo(fCiclo === 'vitalicia' ? '' : 'vitalicia'); }} style={{ ...S.btnSmall, background: fCiclo === 'vitalicia' ? '#9B8CFA' : '#fff', color: fCiclo === 'vitalicia' ? '#fff' : '#333' }}>{fCiclo === 'vitalicia' ? 'Ver todas' : `Ver los ${vitStats.total} →`}</button>
             </div>
             <div style={{ ...kpiCarril, marginTop: 12, marginBottom: 0 }}>
               <div style={kpiCard}><div style={S.kLabel}>Clientes vitalicios</div><div style={S.kValue}>{vitStats.total}</div><div style={S.kSub}>{vitStats.activas} activos</div></div>
@@ -332,7 +334,7 @@ export default function SubscriptionsTab() {
                   que alguien concluya que ese dinero no entró. */}
               <div style={S.kSub}>{vitStats.cobrado > 0 ? 'ingreso reconocido, no ARR'
                 : (vitStats.total > 0 ? `sin pagos capturados en ${vitStats.total} licencias` : 'ingreso reconocido, no ARR')}</div></div>
-              <div style={kpiCard}><div style={S.kLabel}>Usando SACS (≤30d)</div><div style={{ ...S.kValue, color: '#1A8F7A' }}>{vitStats.usando}</div><div style={S.kSub}>upsell caliente</div></div>
+              <div style={kpiCard}><div style={S.kLabel}>Usando SACS (≤30d)</div><div style={{ ...S.kValue, color: '#1E8A63' }}>{vitStats.usando}</div><div style={S.kSub}>upsell caliente</div></div>
               <div style={kpiCard}><div style={S.kLabel}>Sin uso reciente</div><div style={{ ...S.kValue, color: (vitStats.total - vitStats.usando) > 0 ? '#a06600' : '#999' }}>{vitStats.total - vitStats.usando}</div><div style={S.kSub}>reactivar / recuperar</div></div>
             </div>
           </div>
@@ -340,14 +342,14 @@ export default function SubscriptionsTab() {
         <div style={S.card}>
           {stalePend.length > 0 && (
             <div style={{ marginBottom: 10, padding: '8px 12px', background: '#fff8ec', border: '1px solid #f5e2b8', borderRadius: 8, fontSize: 13, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-              <span>⚠️ {stalePend.length} pendiente(s) con +60 días vencidas y 0 pagos — probablemente cierres que nunca se cobraron (cancelar o registrar su pago).</span>
-              <button onClick={() => setFStale(!fStale)} style={{ ...S.btnSmall, background: fStale ? '#1a1a1a' : '#fff', color: fStale ? '#fff' : '#333' }}>{fStale ? 'Ver todas' : 'Ver solo esas'}</button>
+              <span>{stalePend.length} pendiente(s) con +60 días vencidas y 0 pagos — probablemente cierres que nunca se cobraron (cancelar o registrar su pago).</span>
+              <button onClick={() => setFStale(!fStale)} style={{ ...S.btnSmall, background: fStale ? '#9B8CFA' : '#fff', color: fStale ? '#fff' : '#333' }}>{fStale ? 'Ver todas' : 'Ver solo esas'}</button>
             </div>
           )}
           <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar cliente, cuenta o plan…" style={{ ...S.input, flex: 1, minWidth: 180, ...(isMobile ? { flex: '1 1 100%', minWidth: 0 } : {}) }} />
             {isMobile
-              ? <button style={{ ...S.btn, height: 44, background: '#fff', border: '1px solid ' + (activeFiltros ? '#1a1a1a' : '#ddd'), color: '#333', display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => setShowFiltrosSheet(true)}>⚙ Filtros{activeFiltros ? ` (${activeFiltros})` : ''}</button>
+              ? <button style={{ ...S.btn, height: 44, background: '#fff', border: '1.5px solid ' + (activeFiltros ? '#9B8CFA' : '#e2e4e9'), color: '#333', display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => setShowFiltrosSheet(true)}>⚙ Filtros{activeFiltros ? ` (${activeFiltros})` : ''}</button>
               : filtrosSelects}
           </div>
           {catEtiquetas.length > 0 && (
@@ -359,7 +361,7 @@ export default function SubscriptionsTab() {
             <Sheet open={showFiltrosSheet} onClose={() => setShowFiltrosSheet(false)} title="Filtros">
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {filtrosSelects}
-                <button style={{ ...S.btn, background: '#1a1a1a', color: '#fff', height: 48, justifyContent: 'center', marginTop: 4 }} onClick={() => setShowFiltrosSheet(false)}>Ver {filtered.length} suscripci{filtered.length === 1 ? 'ón' : 'ones'}</button>
+                <button style={{ ...S.btn, background: '#9B8CFA', color: '#fff', height: 48, justifyContent: 'center', marginTop: 4 }} onClick={() => setShowFiltrosSheet(false)}>Ver {filtered.length} suscripci{filtered.length === 1 ? 'ón' : 'ones'}</button>
               </div>
             </Sheet>
           )}
@@ -387,8 +389,8 @@ export default function SubscriptionsTab() {
                         <span style={{ color: '#999', fontSize: '0.72rem', marginLeft: 4 }}>{s.ciclo === 'vitalicia' ? 'pago único' : 'ARR'}</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        {h != null && <span style={{ fontWeight: 800, color: h >= 70 ? '#1A8F7A' : h >= 40 ? '#a06600' : '#b93333', fontSize: '0.82rem' }} title="Salud">♥ {h}</span>}
-                        <button style={{ ...S.btnSmall, minHeight: 44, padding: '0 12px', background: '#1A8F7A', color: '#fff', border: 'none' }} title="Registrar pago: genera comprobante y actualiza el ARR + próxima fecha" onClick={e => { e.stopPropagation(); setPagoPrefill({ subscription_id: s.id }); setShowPago(true); }}>💰 Pago</button>
+                        {h != null && <span style={{ fontWeight: 800, color: h >= 70 ? '#1E8A63' : h >= 40 ? '#a06600' : '#C0554E', fontSize: '0.82rem' }} title="Salud">♥ {h}</span>}
+                        <button style={{ ...S.btnSmall, minHeight: 44, padding: '0 12px', background: '#4FBF95', color: '#fff', border: 'none' }} title="Registrar pago: genera comprobante y actualiza el ARR + próxima fecha" onClick={e => { e.stopPropagation(); setPagoPrefill({ subscription_id: s.id }); setShowPago(true); }}>Pago</button>
                         <button style={{ ...S.btnSmall, minHeight: 44, padding: '0 12px' }} title="Genera un link formal para el cliente (plan, monto y próxima fecha) + PDF" onClick={e => { e.stopPropagation(); setLinkSub(s); }}>🔗 Link</button>
                         <button style={{ ...S.btnSmall, minHeight: 44, padding: '0 14px' }} onClick={e => { e.stopPropagation(); setEditSub(s); }}>Editar</button>
                       </div>
@@ -436,7 +438,7 @@ export default function SubscriptionsTab() {
                           vistazo "¿a cuántos les cobro yo a mano?" — que es la
                           pregunta que decide a quién domiciliar primero. */}
                       <td style={S.td}>{(s as any).mp_preapproval_id ? (<>
-                        <span style={{ ...S.badge, background: 'rgba(42,181,160,.15)', color: '#1A8F7A' }}
+                        <span style={{ ...S.badge, background: 'rgba(42,181,160,.15)', color: '#1E8A63' }}
                           title={'Se le cobra solo por Mercado Pago' + ((s as any).mp_payer_email ? ' · paga ' + (s as any).mp_payer_email : '')}>auto</span>
                         {(s as any).mp_desfase_at && (s as any).mp_monto_cobrado != null ? (
                           <div style={{ fontSize: '0.65rem', color: '#E54B4B', fontWeight: 700, whiteSpace: 'nowrap', marginTop: 2 }}
@@ -456,16 +458,16 @@ export default function SubscriptionsTab() {
                       <td style={{ ...S.td, fontWeight: 700 }}>{s.ciclo === 'vitalicia' ? <span style={{ color: '#bbb', fontWeight: 400 }} title="Pago único — no cuenta como ARR">— (único)</span> : fmt(s.arr)}</td>
                       {/* Pausada: no hay fecha de cobro corriendo, así que no se
                           enseña una fecha vieja (menos aún en rojo de vencida). */}
-                      <td style={{ ...S.td, color: s.proxima_factura && s.proxima_factura < new Date().toISOString().slice(0, 10) && (s.estado === 'activa' || s.estado === 'pendiente_pago') ? '#b93333' : '#333' }}>
+                      <td style={{ ...S.td, color: s.proxima_factura && s.proxima_factura < new Date().toISOString().slice(0, 10) && (s.estado === 'activa' || s.estado === 'pendiente_pago') ? '#C0554E' : '#333' }}>
                         {s.estado === 'pausada' ? <span style={{ color: '#a06600' }}>en pausa</span> : fmtDate(s.proxima_factura)}</td>
                       <td style={S.td}>{s.pagos_realizados}</td>
                       <td style={S.td}>{fmt(s.total_pagado)}</td>
-                      <td style={{ ...S.td, color: dias != null && dias > 15 ? '#b93333' : dias != null && dias >= 3 ? '#a06600' : '#333' }}>
+                      <td style={{ ...S.td, color: dias != null && dias > 15 ? '#C0554E' : dias != null && dias >= 3 ? '#a06600' : '#333' }}>
                         {s.companies?.ultima_venta_at ? fmtDate(s.companies.ultima_venta_at) + (dias != null ? ` (${dias}d)` : '') : '—'}
                       </td>
-                      <td style={S.td}>{(() => { const h = (s.companies as any)?.health_score; if (h == null) return '—'; const c = h >= 70 ? '#1A8F7A' : h >= 40 ? '#a06600' : '#b93333'; return <span style={{ fontWeight: 800, color: c }}>{h}</span>; })()}</td>
+                      <td style={S.td}>{(() => { const h = (s.companies as any)?.health_score; if (h == null) return '—'; const c = h >= 70 ? '#1E8A63' : h >= 40 ? '#a06600' : '#C0554E'; return <span style={{ fontWeight: 800, color: c }}>{h}</span>; })()}</td>
                       <td style={S.td} onClick={e => e.stopPropagation()}>
-                        <button style={{ ...S.btnSmall, marginRight: 4, background: '#1A8F7A', color: '#fff', border: 'none' }} title="Registrar pago: genera comprobante y actualiza el ARR + próxima fecha" onClick={() => { setPagoPrefill({ subscription_id: s.id }); setShowPago(true); }}>💰 Pago</button>
+                        <button style={{ ...S.btnSmall, marginRight: 4, background: '#4FBF95', color: '#fff', border: 'none' }} title="Registrar pago: genera comprobante y actualiza el ARR + próxima fecha" onClick={() => { setPagoPrefill({ subscription_id: s.id }); setShowPago(true); }}>Pago</button>
                         {s.estado !== 'cancelada' && s.estado !== 'pausada' && (
                           <button style={{ ...S.btnSmall, marginRight: 4, color: '#009ee3', borderColor: '#b9e4f7', fontWeight: 700 }}
                             title="Genera el link de cobro del periodo (tarjeta, OXXO o transferencia) y lo deja listo para WhatsApp"
@@ -513,13 +515,13 @@ export default function SubscriptionsTab() {
                       <td style={{ ...S.td, fontWeight: 700 }}>{x.nombre}</td>
                       <td style={S.td}>{x.sacs_account}</td>
                       <td style={S.td}>{fmtDate(x.ultima_venta)}</td>
-                      <td style={{ ...S.td, fontWeight: 800, color: x.dias_sin_venta > 15 ? '#b93333' : '#a06600' }}>{x.dias_sin_venta} días</td>
+                      <td style={{ ...S.td, fontWeight: 800, color: x.dias_sin_venta > 15 ? '#C0554E' : '#a06600' }}>{x.dias_sin_venta} días</td>
                       <td style={{ ...S.td, fontWeight: 700 }}>{fmt(x.arr)}</td>
                       <td style={S.td}><button style={S.btnSmall} onClick={() => setDetailId(x.company_id)}>Ver cliente</button></td>
                     </tr>
                   ))}</tbody>
                 </table></div>
-              ) : <div style={{ color: '#1A8F7A', fontSize: '0.85rem' }}>Nadie en esta banda. 🎉</div>}
+              ) : <div style={{ color: '#1E8A63', fontSize: '0.85rem' }}>Nadie en esta banda. 🎉</div>}
             </div>
           ))}
           {riesgo?.sin_liga > 0 && <div style={{ ...S.card, color: '#999', fontSize: '0.8rem' }}>ℹ️ {riesgo.sin_liga} cliente(s) con cuenta ligada aún sin datos de actividad — corre el sync o espera al cron (cada 6 h).</div>}
@@ -531,7 +533,7 @@ export default function SubscriptionsTab() {
         <div>
           {vencidas.length > 0 && (
             <div style={{ ...S.card, borderLeft: '4px solid #E54B4B' }}>
-              <div style={{ fontWeight: 800, marginBottom: 10 }}>⚠️ Facturas vencidas <span style={{ color: '#999', fontWeight: 400 }}>· {vencidas.length} · {fmt(vencidas.reduce((a: number, v: any) => a + v.monto, 0))}</span></div>
+              <div style={{ fontWeight: 800, marginBottom: 10 }}>Facturas vencidas <span style={{ color: '#999', fontWeight: 400 }}>· {vencidas.length} · {fmt(vencidas.reduce((a: number, v: any) => a + v.monto, 0))}</span></div>
               <div className="crm-scroll-x"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr>{['Cliente', 'Plan', 'Ciclo', 'Vencida desde', 'Días', 'Monto', 'Acciones'].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
                 <tbody>{vencidas.map((v: any) => (
@@ -540,7 +542,7 @@ export default function SubscriptionsTab() {
                     <td style={S.td}>{v.plan}</td>
                     <td style={S.td}>{v.ciclo}</td>
                     <td style={S.td}>{fmtDate(v.vencida_desde)}</td>
-                    <td style={{ ...S.td, fontWeight: 800, color: '#b93333' }}>{v.dias_vencida}</td>
+                    <td style={{ ...S.td, fontWeight: 800, color: '#C0554E' }}>{v.dias_vencida}</td>
                     <td style={{ ...S.td, fontWeight: 700 }}>{fmt(v.monto)}</td>
                     <td style={S.td}>
                       <button style={{ ...S.btnSmall, background: '#e8f5e9', color: '#2e7d32', marginRight: 4 }} title="¿Ya se pagó? Regístralo con su fecha real"
@@ -573,9 +575,9 @@ export default function SubscriptionsTab() {
               <tbody>{meses.map((m: any) => (
                 <tr key={m.mes} onClick={() => setMesAbierto(mesAbierto === m.mes ? null : m.mes)} style={{ cursor: 'pointer', background: mesAbierto === m.mes ? '#fafafa' : undefined }}>
                   <td style={{ ...S.td, fontWeight: 700 }}>{fmtMes(m.mes)}</td>
-                  <td style={{ ...S.td, color: '#1A8F7A', fontWeight: 700 }}>{fmt(m.contratado)}</td>
+                  <td style={{ ...S.td, color: '#1E8A63', fontWeight: 700 }}>{fmt(m.contratado)}</td>
                   <td style={{ ...S.td, color: '#a06600' }}>{fmt(m.pendiente)}</td>
-                  <td style={{ ...S.td, color: m.enRiesgo > 0 ? '#b93333' : '#999' }}>{fmt(m.enRiesgo)}</td>
+                  <td style={{ ...S.td, color: m.enRiesgo > 0 ? '#C0554E' : '#999' }}>{fmt(m.enRiesgo)}</td>
                   <td style={{ ...S.td, fontWeight: 800 }}>{fmt(m.contratado + m.pendiente)}</td>
                 </tr>
               ))}</tbody>
@@ -671,7 +673,7 @@ function LinkClienteModal({ sub, onClose }: { sub: Sub; onClose: () => void }) {
 
         <input readOnly value={url} onFocus={e => e.currentTarget.select()} style={{ ...S.input, width: '100%', marginBottom: 8 }} />
         <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
-          <button style={{ ...S.btn, background: '#1A8F7A', color: '#fff', flex: 1 }} onClick={() => { try { navigator.clipboard?.writeText(url); setMsg({ t: 'ok', x: 'Link copiado' }); setTimeout(() => setMsg(null), 1500); } catch { /* */ } }}>Copiar link</button>
+          <button style={{ ...S.btn, background: '#1E8A63', color: '#fff', flex: 1 }} onClick={() => { try { navigator.clipboard?.writeText(url); setMsg({ t: 'ok', x: 'Link copiado' }); setTimeout(() => setMsg(null), 1500); } catch { /* */ } }}>Copiar link</button>
           <button style={{ ...S.btn, border: '1px solid #ddd', background: '#fff' }} onClick={() => window.open(url, '_blank', 'noopener')}>Abrir / PDF</button>
         </div>
 
@@ -710,7 +712,7 @@ function LinkClienteModal({ sub, onClose }: { sub: Sub; onClose: () => void }) {
           </>)}
         </div>
 
-        {msg && <div style={{ marginTop: 12, fontSize: '0.8rem', fontWeight: 600, color: msg.t === 'ok' ? '#1A8F7A' : '#b93333' }}>{msg.x}</div>}
+        {msg && <div style={{ marginTop: 12, fontSize: '0.8rem', fontWeight: 600, color: msg.t === 'ok' ? '#1E8A63' : '#C0554E' }}>{msg.x}</div>}
       </div>
     </div>
   );
@@ -787,11 +789,11 @@ export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: S
         <div style={{ fontSize: '0.84rem', color: '#555', marginBottom: 12 }}>Comprobante <b>{done.numero_acuse}</b> generado. El ARR y la próxima fecha se actualizaron.</div>
         <input readOnly value={acuseUrl} onFocus={e => e.currentTarget.select()} style={{ ...S.input, width: '100%', marginBottom: 8 }} />
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button style={{ ...S.btn, background: '#1A8F7A', color: '#fff', flex: 1 }} onClick={() => window.open(done.acuse_url, '_blank', 'noopener')}>Ver / PDF</button>
+          <button style={{ ...S.btn, background: '#1E8A63', color: '#fff', flex: 1 }} onClick={() => window.open(done.acuse_url, '_blank', 'noopener')}>Ver / PDF</button>
           <button style={{ ...S.btn, border: '1px solid #ddd', background: '#fff' }} onClick={() => { try { navigator.clipboard?.writeText(acuseUrl); setSendMsg('Link copiado.'); setTimeout(() => setSendMsg(''), 1500); } catch { /* */ } }}>Copiar link</button>
           <button disabled={sending} style={{ ...S.btn, background: '#4B7BE5', color: '#fff', opacity: sending ? 0.6 : 1 }} onClick={enviarComprobante}>{sending ? 'Enviando…' : 'Enviar por correo'}</button>
         </div>
-        {sendMsg && <div style={{ marginTop: 10, fontSize: '0.8rem', fontWeight: 600, color: sendMsg.startsWith('✓') || sendMsg === 'Link copiado.' ? '#1A8F7A' : '#b93333' }}>{sendMsg}</div>}
+        {sendMsg && <div style={{ marginTop: 10, fontSize: '0.8rem', fontWeight: 600, color: sendMsg.startsWith('✓') || sendMsg === 'Link copiado.' ? '#1E8A63' : '#C0554E' }}>{sendMsg}</div>}
         <button onClick={onDone} style={{ ...S.btn, width: '100%', marginTop: 14, background: '#f2f2f2', color: '#555' }}>Cerrar</button>
       </div>
     </div>
@@ -845,8 +847,8 @@ export function RegistrarPagoModal({ subs, prefill, onClose, onDone }: { subs: S
         </div>
         <div style={{ marginTop: 10 }}><label style={S.label}>Notas</label><textarea value={form.notas || ''} onChange={e => setForm({ ...form, notas: e.target.value })} style={{ ...S.input, width: '100%', height: 54, resize: 'vertical' }} /></div>
 
-        {err && <div style={{ color: '#b93333', fontSize: '0.8rem', marginTop: 8 }}>{err}</div>}
-        <button onClick={guardar} disabled={saving} style={{ ...S.btn, width: '100%', marginTop: 14, background: '#1A8F7A', color: '#fff', opacity: saving ? 0.6 : 1 }}>
+        {err && <div style={{ color: '#C0554E', fontSize: '0.8rem', marginTop: 8 }}>{err}</div>}
+        <button onClick={guardar} disabled={saving} style={{ ...S.btn, width: '100%', marginTop: 14, background: '#1E8A63', color: '#fff', opacity: saving ? 0.6 : 1 }}>
           {saving ? 'Registrando…' : 'Registrar pago y activar ARR'}
         </button>
       </div>
@@ -885,7 +887,7 @@ function MetaModal({ meta, onClose, onDone }: { meta: any; onClose: () => void; 
           <div><label style={S.label}>Meta ARR (MXN)</label><input type="number" value={monto} onChange={e => setMonto(e.target.value)} style={{ ...S.input, width: '100%' }} placeholder="3000000" /></div>
         </div>
         <div style={{ fontSize: '0.75rem', color: '#999', marginTop: 8 }}>El progreso se llena solo con cada suscripción activa.</div>
-        {err && <div style={{ color: '#b93333', fontSize: '0.8rem', marginTop: 8 }}>{err}</div>}
+        {err && <div style={{ color: '#C0554E', fontSize: '0.8rem', marginTop: 8 }}>{err}</div>}
         <button onClick={guardar} disabled={saving} style={{ ...S.btn, width: '100%', marginTop: 14, background: '#1a1a1a', color: '#fff', opacity: saving ? 0.6 : 1 }}>{saving ? 'Guardando…' : 'Guardar meta'}</button>
       </div>
     </div>
@@ -966,7 +968,7 @@ export function ClienteDrawer({ companyId, onClose, onChanged }: { companyId: st
                 <div>Última venta: <b>{fmtDate(act.ultima_venta)}</b> · Ventas 7d: <b>{act.ventas_7d}</b> · 30d: <b>{act.ventas_30d}</b> ({fmt(act.total_30d)})</div>
                 <div style={{ margin: '6px 0' }}>Usuarios: <b>{act.usuarios}</b> (último creado {fmtDate(act.ultimo_usuario_at)}) · Sucursales: <b>{act.sucursales}</b></div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
-                  {(act.modulos || []).length ? act.modulos.map((m: string) => <span key={m} style={{ ...S.badge, background: 'rgba(75,123,229,0.10)', color: '#3764c4' }}>{m}</span>) : <span style={{ color: '#b93333' }}>Sin módulos activos en 30 días</span>}
+                  {(act.modulos || []).length ? act.modulos.map((m: string) => <span key={m} style={{ ...S.badge, background: 'rgba(75,123,229,0.10)', color: '#3764c4' }}>{m}</span>) : <span style={{ color: '#C0554E' }}>Sin módulos activos en 30 días</span>}
                 </div>
               </div>
             ) : <div style={{ color: '#999', fontSize: '0.8rem' }}>{co?.sacs_account ? 'Aún sin datos del sync (corre cada 6 h).' : 'Liga la cuenta SACS para ver su actividad real.'}</div>}
@@ -993,10 +995,10 @@ export function ClienteDrawer({ companyId, onClose, onChanged }: { companyId: st
                   <tr key={p.id} style={{ opacity: p.reembolsado ? 0.5 : 1 }}>
                     <td style={{ ...S.td, fontSize: '0.78rem' }}>{fmtDate(p.fecha)}</td>
                     <td style={{ ...S.td, fontSize: '0.78rem' }}>{p.metodo}{p.migrado ? ' · histórico' : ''}{p.reembolsado ? ' · reembolsado' : ''}{negativo ? ' · ajuste' : ''}</td>
-                    <td style={{ ...S.td, fontSize: '0.78rem', fontWeight: 700, textAlign: 'right', color: negativo ? '#b93333' : '#333' }}>{fmt(p.monto)}</td>
+                    <td style={{ ...S.td, fontSize: '0.78rem', fontWeight: 700, textAlign: 'right', color: negativo ? '#C0554E' : '#333' }}>{fmt(p.monto)}</td>
                     <td style={{ ...S.td, textAlign: 'right' }}>
                       {!p.reembolsado && !negativo && !p.migrado && (
-                        <button style={{ ...S.btnSmall, padding: '2px 8px', color: '#b93333', fontSize: '0.7rem' }}
+                        <button style={{ ...S.btnSmall, padding: '2px 8px', color: '#C0554E', fontSize: '0.7rem' }}
                           onClick={async () => { const m = prompt('Motivo del reembolso (opcional):', ''); if (m === null) return; const r = await fetch('/api/crm/arr/refund', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ payment_id: p.id, motivo: m }) }); const j = await r.json(); if (j.error) alert(j.error); else { load(); onChanged(); } }}>
                           Reembolsar
                         </button>
@@ -1016,7 +1018,7 @@ export function ClienteDrawer({ companyId, onClose, onChanged }: { companyId: st
             </div>
             <div style={{ maxHeight: 220, overflowY: 'auto' }}>
               {(data.activities || []).map((a: any) => (
-                <div key={a.id} style={{ borderLeft: '3px solid ' + (a.tipo === 'nota' ? '#4B7BE5' : a.tipo === 'pago_recibido' ? '#1A8F7A' : '#ddd'), padding: '6px 10px', marginBottom: 6, background: '#fafafa', borderRadius: '0 8px 8px 0' }}>
+                <div key={a.id} style={{ borderLeft: '3px solid ' + (a.tipo === 'nota' ? '#4B7BE5' : a.tipo === 'pago_recibido' ? '#1E8A63' : '#ddd'), padding: '6px 10px', marginBottom: 6, background: '#fafafa', borderRadius: '0 8px 8px 0' }}>
                   <div style={{ fontSize: '0.78rem', fontWeight: 600 }}>{a.titulo || a.tipo}</div>
                   {a.descripcion && a.descripcion !== a.titulo && <div style={{ fontSize: '0.75rem', color: '#666' }}>{a.descripcion}</div>}
                   <div style={{ fontSize: '0.68rem', color: '#aaa' }}>{new Date(a.created_at).toLocaleString('es-MX')}</div>
@@ -1298,7 +1300,7 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
                   <div><label style={S.label}>Email</label><input value={nc.email} onChange={e => setNc({ ...nc, email: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
                   <div><label style={S.label}>WhatsApp</label><input value={nc.whatsapp} onChange={e => setNc({ ...nc, whatsapp: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
                   <div style={{ gridColumn: '1 / -1' }}>
-                    <button type="button" onClick={crearContactoRapido} disabled={creandoC || !nc.nombre.trim()} style={{ ...S.btn, width: '100%', background: '#1A8F7A', color: '#fff', opacity: creandoC || !nc.nombre.trim() ? 0.6 : 1 }}>{creandoC ? 'Creando…' : 'Crear y ligar a ' + (sub.companies?.sacs_account || sub.companies?.nombre || 'esta cuenta')}</button>
+                    <button type="button" onClick={crearContactoRapido} disabled={creandoC || !nc.nombre.trim()} style={{ ...S.btn, width: '100%', background: '#1E8A63', color: '#fff', opacity: creandoC || !nc.nombre.trim() ? 0.6 : 1 }}>{creandoC ? 'Creando…' : 'Crear y ligar a ' + (sub.companies?.sacs_account || sub.companies?.nombre || 'esta cuenta')}</button>
                     <div style={{ fontSize: '0.7rem', color: '#aaa', marginTop: 6 }}>Se crea el contacto en la empresa <b>{sub.companies?.nombre || sub.companies?.sacs_account || '—'}</b> y se liga a esta suscripción.</div>
                   </div>
                 </div>
@@ -1311,20 +1313,20 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
         <div style={{ background: '#fafafa', border: '1px solid #eee', borderRadius: 8, padding: 10, marginBottom: 12 }}>
           <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 160 }}>
-              <label style={S.label}>Cuenta SACS (subdominio){(sub.companies as any)?.sacs_account ? <span style={{ color: '#1A8F7A' }}> · ligada</span> : <span style={{ color: '#c62828' }}> · sin ligar</span>}</label>
+              <label style={S.label}>Cuenta SACS (subdominio){(sub.companies as any)?.sacs_account ? <span style={{ color: '#1E8A63' }}> · ligada</span> : <span style={{ color: '#c62828' }}> · sin ligar</span>}</label>
               <input value={sacsInput} onChange={e => setSacsInput(e.target.value)} placeholder="ej. esculturadressmx" style={{ ...S.input, width: '100%' }} />
             </div>
             <button type="button" onClick={ligarYSync} disabled={ligandoSacs} style={{ ...S.btn, background: '#4B7BE5', color: '#fff', opacity: ligandoSacs ? 0.6 : 1 }}>{ligandoSacs ? 'Trayendo…' : ((sub.companies as any)?.sacs_account ? '↻ Actualizar historial' : 'Ligar y traer historial')}</button>
           </div>
-          {sacsMsg && <div style={{ fontSize: '0.75rem', marginTop: 6, color: sacsMsg.includes('✓') ? '#1A8F7A' : '#b93333' }}>{sacsMsg}</div>}
+          {sacsMsg && <div style={{ fontSize: '0.75rem', marginTop: 6, color: sacsMsg.includes('✓') ? '#1E8A63' : '#C0554E' }}>{sacsMsg}</div>}
           {sacsCtx && (
             <div style={{ marginTop: 8, background: '#fff', border: '1px solid #eee', borderRadius: 8, padding: 10, fontSize: '0.78rem' }}>
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 6 }}>
-                <span>Última venta: <b>{fmtDate(sacsCtx.ultima_venta)}</b>{sacsCtx.dias_sin_venta != null ? <span style={{ color: sacsCtx.dias_sin_venta > 15 ? '#b93333' : sacsCtx.dias_sin_venta >= 3 ? '#a06600' : '#1A8F7A' }}> ({sacsCtx.dias_sin_venta}d)</span> : null}</span>
+                <span>Última venta: <b>{fmtDate(sacsCtx.ultima_venta)}</b>{sacsCtx.dias_sin_venta != null ? <span style={{ color: sacsCtx.dias_sin_venta > 15 ? '#C0554E' : sacsCtx.dias_sin_venta >= 3 ? '#a06600' : '#1E8A63' }}> ({sacsCtx.dias_sin_venta}d)</span> : null}</span>
                 <span>Ventas 30d: <b>{sacsCtx.ventas_30d ?? '—'}</b> ({fmt(sacsCtx.total_30d)})</span>
                 <span>Usuarios: <b>{sacsCtx.usuarios ?? '—'}</b></span>
                 <span>Sucursales: <b>{sacsCtx.sucursales ?? '—'}</b></span>
-                <span>Salud: <b style={{ color: (sacsCtx.health_score || 0) >= 70 ? '#1A8F7A' : (sacsCtx.health_score || 0) >= 40 ? '#a06600' : '#b93333' }}>{sacsCtx.health_score}</b></span>
+                <span>Salud: <b style={{ color: (sacsCtx.health_score || 0) >= 70 ? '#1E8A63' : (sacsCtx.health_score || 0) >= 40 ? '#a06600' : '#C0554E' }}>{sacsCtx.health_score}</b></span>
               </div>
               {(sacsCtx.modulos || []).length > 0 && <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>{sacsCtx.modulos.map((m: string) => <span key={m} style={{ ...S.badge, background: 'rgba(75,123,229,0.10)', color: '#3764c4' }}>{m}</span>)}</div>}
             </div>
@@ -1391,7 +1393,7 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
         {/* Panel: cancelación */}
         {esCancelar && (
           <div style={{ marginTop: 12, padding: 12, borderRadius: 8, background: '#FFF5F5', border: '1px solid #FED7D7' }}>
-            <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#b93333', marginBottom: 8 }}>Cancelar suscripción — se pierden ${Number(sub.arr).toLocaleString('es-MX')} de ARR</div>
+            <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#C0554E', marginBottom: 8 }}>Cancelar suscripción — se pierden ${Number(sub.arr).toLocaleString('es-MX')} de ARR</div>
             <label style={S.label}>Razón *</label>
             <select value={form.razon_cancelacion} onChange={e => setForm({ ...form, razon_cancelacion: e.target.value })} style={{ ...S.input, width: '100%', marginBottom: 8 }}>
               <option value="">— elegir —</option>
@@ -1407,7 +1409,7 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
               <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                 <input type="number" value={form.reten_pct} onChange={e => setForm({ ...form, reten_pct: e.target.value })} style={{ ...S.input, width: 60 }} /> <span style={{ fontSize: '0.76rem' }}>% off ×</span>
                 <input type="number" value={form.reten_meses} onChange={e => setForm({ ...form, reten_meses: e.target.value })} style={{ ...S.input, width: 55 }} /> <span style={{ fontSize: '0.76rem' }}>meses</span>
-                <button type="button" disabled={saving} onClick={retener} style={{ ...S.btnSmall, background: '#1A8F7A', color: '#fff', border: 'none' }}>Aplicar y mantener activo</button>
+                <button type="button" disabled={saving} onClick={retener} style={{ ...S.btnSmall, background: '#1E8A63', color: '#fff', border: 'none' }}>Aplicar y mantener activo</button>
               </div>
               <div style={{ fontSize: '0.68rem', color: '#888', marginTop: 4 }}>Aplica el descuento, mantiene la suscripción y cuenta como cliente retenido (sube el save-rate). Si no acepta, sigue abajo para cancelar.</div>
             </div>
@@ -1415,7 +1417,7 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
             <label style={{ display: 'block', fontSize: '0.78rem', marginBottom: 4 }}><input type="radio" checked={form.cancela_al_vencer} onChange={() => setForm({ ...form, cancela_al_vencer: true })} /> Al terminar lo pagado ({sub.proxima_factura || 'fin del periodo'}) — sigue activa hasta ahí.</label>
             <label style={{ display: 'block', fontSize: '0.78rem', marginBottom: 8 }}><input type="radio" checked={!form.cancela_al_vencer} onChange={() => setForm({ ...form, cancela_al_vencer: false })} /> Hoy — corta ya.</label>
             {form.stripe_subscription_id && (
-              <label style={{ display: 'block', fontSize: '0.78rem' }}><input type="checkbox" checked={form.cancelar_stripe} onChange={e => setForm({ ...form, cancelar_stripe: e.target.checked })} /> Cancelar también en Stripe {!form.cancelar_stripe && <span style={{ color: '#b93333' }}>⚠️ Stripe seguirá cobrando</span>}</label>
+              <label style={{ display: 'block', fontSize: '0.78rem' }}><input type="checkbox" checked={form.cancelar_stripe} onChange={e => setForm({ ...form, cancelar_stripe: e.target.checked })} /> Cancelar también en Stripe {!form.cancelar_stripe && <span style={{ color: '#C0554E', fontWeight: 700 }}>Stripe seguirá cobrando</span>}</label>
             )}
           </div>
         )}
@@ -1441,7 +1443,7 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
             vuelve al ARR con una próxima factura vieja y se le cobra mal. */}
         {esReactivar && (
           <div style={{ marginTop: 12, padding: 12, borderRadius: 8, background: '#F2FBF8', border: '1px solid #bfe8df' }}>
-            <div style={{ fontWeight: 700, fontSize: '0.82rem', marginBottom: 6, color: '#1A8F7A' }}>Reactivar — vuelve a sumar ARR</div>
+            <div style={{ fontWeight: 700, fontSize: '0.82rem', marginBottom: 6, color: '#1E8A63' }}>Reactivar — vuelve a sumar ARR</div>
             {(sub as any).razon_pausa && (
               <div style={{ fontSize: '0.76rem', color: '#666', marginBottom: 8 }}>Estuvo pausada por: <b>{(sub as any).razon_pausa}</b></div>
             )}
@@ -1483,35 +1485,35 @@ function EditarSubModal({ sub, onClose, onDone }: { sub: Sub; onClose: () => voi
               {addons.map((a: any) => (
                 <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', padding: '4px 0', borderBottom: '1px solid #f5f5f5' }}>
                   <span>{a.nombre} · {fmt(a.precio)}{a.cantidad > 1 ? ` ×${a.cantidad}` : ''}</span>
-                  <button type="button" onClick={() => delAddon(a.id)} style={{ ...S.btnSmall, color: '#b93333', padding: '2px 8px' }}>Quitar</button>
+                  <button type="button" onClick={() => delAddon(a.id)} style={{ ...S.btnSmall, color: '#C0554E', padding: '2px 8px' }}>Quitar</button>
                 </div>
               ))}
               <div style={{ display: 'flex', gap: 6, marginTop: 6, marginBottom: 12 }}>
                 <input value={nuevoAddon.nombre} onChange={e => setNuevoAddon({ ...nuevoAddon, nombre: e.target.value })} placeholder="Sucursal extra / Soporte premium…" style={{ ...S.input, flex: 2 }} />
                 <input type="number" value={nuevoAddon.precio} onChange={e => setNuevoAddon({ ...nuevoAddon, precio: e.target.value })} placeholder="$/ciclo" style={{ ...S.input, flex: 1 }} />
-                <button type="button" onClick={addAddon} style={{ ...S.btnSmall, background: '#1A8F7A', color: '#fff', border: 'none' }}>+</button>
+                <button type="button" onClick={addAddon} style={{ ...S.btnSmall, background: '#1E8A63', color: '#fff', border: 'none' }}>+</button>
               </div>
               {/* Descuentos */}
               <div style={{ fontWeight: 700, fontSize: '0.78rem', marginBottom: 6 }}>Descuentos (reducen lo que se cobra)</div>
               {descs.map((dd: any) => (
                 <div key={dd.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', padding: '4px 0', borderBottom: '1px solid #f5f5f5' }}>
                   <span>{dd.tipo === 'porcentaje' ? `${dd.valor}%` : fmt(dd.valor)}{dd.motivo ? ` · ${dd.motivo}` : ''}{dd.vigente_hasta ? ` · hasta ${dd.vigente_hasta}` : ''}</span>
-                  <button type="button" onClick={() => delDesc(dd.id)} style={{ ...S.btnSmall, color: '#b93333', padding: '2px 8px' }}>Quitar</button>
+                  <button type="button" onClick={() => delDesc(dd.id)} style={{ ...S.btnSmall, color: '#C0554E', padding: '2px 8px' }}>Quitar</button>
                 </div>
               ))}
               <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
                 <select value={nuevoDesc.tipo} onChange={e => setNuevoDesc({ ...nuevoDesc, tipo: e.target.value })} style={{ ...S.input, flex: 1 }}><option value="porcentaje">%</option><option value="monto">$</option></select>
                 <input type="number" value={nuevoDesc.valor} onChange={e => setNuevoDesc({ ...nuevoDesc, valor: e.target.value })} placeholder="valor" style={{ ...S.input, flex: 1 }} />
                 <input value={nuevoDesc.motivo} onChange={e => setNuevoDesc({ ...nuevoDesc, motivo: e.target.value })} placeholder="motivo" style={{ ...S.input, flex: 2 }} />
-                <button type="button" onClick={addDesc} style={{ ...S.btnSmall, background: '#1A8F7A', color: '#fff', border: 'none' }}>+</button>
+                <button type="button" onClick={addDesc} style={{ ...S.btnSmall, background: '#1E8A63', color: '#fff', border: 'none' }}>+</button>
               </div>
             </div>
           )}
         </div>
 
         <div style={{ marginTop: 10 }}><label style={S.label}>Notas</label><textarea value={form.notas} onChange={e => setForm({ ...form, notas: e.target.value })} style={{ ...S.input, width: '100%', height: 50, resize: 'vertical' }} /></div>
-        {err && <div style={{ color: '#b93333', fontSize: '0.8rem', marginTop: 8 }}>{err}</div>}
-        <button onClick={guardar} disabled={saving} style={{ ...S.btn, width: '100%', marginTop: 14, background: esCancelar ? '#b93333' : '#1a1a1a', color: '#fff', opacity: saving ? 0.6 : 1 }}>
+        {err && <div style={{ color: '#C0554E', fontSize: '0.8rem', marginTop: 8 }}>{err}</div>}
+        <button onClick={guardar} disabled={saving} style={{ ...S.btn, width: '100%', marginTop: 14, background: esCancelar ? '#C0554E' : '#1a1a1a', color: '#fff', opacity: saving ? 0.6 : 1 }}>
           {saving ? 'Guardando…' : esCancelar ? `Confirmar cancelación` : 'Guardar cambios'}
         </button>
       </div>
@@ -1632,7 +1634,7 @@ function ConciliacionView({ onChanged }: { onChanged: () => void }) {
         {sel.size > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: '#eef7f5', border: '1px solid #cdeae4', borderRadius: 8, marginBottom: 10, flexWrap: 'wrap' }}>
             <b>{sel.size} cuenta(s) seleccionada(s)</b>
-            <button onClick={() => setBulkOpen(true)} style={{ ...S.btn, background: '#1A8F7A', color: '#fff', padding: '6px 12px' }}>+ Crear sub en lote</button>
+            <button onClick={() => setBulkOpen(true)} style={{ ...S.btn, background: '#1E8A63', color: '#fff', padding: '6px 12px' }}>+ Crear sub en lote</button>
             <button onClick={() => setSel(new Set())} style={S.btnSmall}>Limpiar selección</button>
           </div>
         )}
@@ -1655,7 +1657,7 @@ function ConciliacionView({ onChanged }: { onChanged: () => void }) {
                     {Object.entries(TIPOS_CUENTA).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                   </select>
                 </td>
-                <td style={S.td}><button style={{ ...S.btnSmall, background: '#1A8F7A', color: '#fff', border: 'none' }} onClick={() => setCrearPara(c)}>+ Crear sub</button></td>
+                <td style={S.td}><button style={{ ...S.btnSmall, background: '#1E8A63', color: '#fff', border: 'none' }} onClick={() => setCrearPara(c)}>+ Crear sub</button></td>
               </tr>
             ))}</tbody>
           </table>
@@ -1726,9 +1728,9 @@ function BulkCrearSubModal({ cuentas, onClose, onDone }: { cuentas: any[]; onClo
           <div><label style={S.label}>Ciclo</label><select value={form.ciclo} onChange={e => setForm({ ...form, ciclo: e.target.value, ...(e.target.value === 'vitalicia' ? { precio_lista: null } : {}) })} style={{ ...S.input, width: '100%' }}><option value="vitalicia">Vitalicia (pago único)</option><option value="anual">Anual</option><option value="mensual">Mensual</option></select></div>
           <div><label style={S.label}>{esVit ? 'Monto pagado (para todas)' : 'Precio por ' + sufCiclo(form.ciclo)} *</label><input type="number" value={form.precio || ''} onChange={e => setForm({ ...form, precio: e.target.value })} style={{ ...S.input, width: '100%' }} placeholder={esVit ? 'ej. 10475' : ''} /></div>
         </div>
-        {prog && <div style={{ fontSize: '0.8rem', marginTop: 10, color: '#555' }}>{prog.hechas}/{prog.total} creadas{prog.fallos.length ? ` · ${prog.fallos.length} con error` : ''}{prog.fallos.length ? <div style={{ color: '#b93333', fontSize: '0.72rem', marginTop: 4 }}>{prog.fallos.slice(0, 5).join(' · ')}</div> : null}</div>}
-        {err && <div style={{ color: '#b93333', fontSize: '0.8rem', marginTop: 8 }}>{err}</div>}
-        <button onClick={crear} disabled={saving} style={{ ...S.btn, width: '100%', marginTop: 14, background: '#1A8F7A', color: '#fff', opacity: saving ? 0.6 : 1 }}>{saving ? `Creando… (${prog?.hechas || 0}/${cuentas.length})` : `Crear ${cuentas.length} suscripciones`}</button>
+        {prog && <div style={{ fontSize: '0.8rem', marginTop: 10, color: '#555' }}>{prog.hechas}/{prog.total} creadas{prog.fallos.length ? ` · ${prog.fallos.length} con error` : ''}{prog.fallos.length ? <div style={{ color: '#C0554E', fontSize: '0.72rem', marginTop: 4 }}>{prog.fallos.slice(0, 5).join(' · ')}</div> : null}</div>}
+        {err && <div style={{ color: '#C0554E', fontSize: '0.8rem', marginTop: 8 }}>{err}</div>}
+        <button onClick={crear} disabled={saving} style={{ ...S.btn, width: '100%', marginTop: 14, background: '#1E8A63', color: '#fff', opacity: saving ? 0.6 : 1 }}>{saving ? `Creando… (${prog?.hechas || 0}/${cuentas.length})` : `Crear ${cuentas.length} suscripciones`}</button>
       </div>
     </div>
   );
@@ -1781,8 +1783,8 @@ function CrearSubModal({ cuenta, onClose, onDone }: { cuenta: any; onClose: () =
           <div><label style={S.label}>Contacto</label><input value={form.contacto_nombre || ''} onChange={e => setForm({ ...form, contacto_nombre: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
           <div><label style={S.label}>Email</label><input value={form.email || ''} onChange={e => setForm({ ...form, email: e.target.value })} style={{ ...S.input, width: '100%' }} /></div>
         </div>
-        {err && <div style={{ color: '#b93333', fontSize: '0.8rem', marginTop: 8 }}>{err}</div>}
-        <button onClick={crear} disabled={saving} style={{ ...S.btn, width: '100%', marginTop: 14, background: '#1A8F7A', color: '#fff', opacity: saving ? 0.6 : 1 }}>{saving ? 'Creando…' : 'Crear suscripción'}</button>
+        {err && <div style={{ color: '#C0554E', fontSize: '0.8rem', marginTop: 8 }}>{err}</div>}
+        <button onClick={crear} disabled={saving} style={{ ...S.btn, width: '100%', marginTop: 14, background: '#1E8A63', color: '#fff', opacity: saving ? 0.6 : 1 }}>{saving ? 'Creando…' : 'Crear suscripción'}</button>
       </div>
     </div>
   );
