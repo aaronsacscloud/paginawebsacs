@@ -1,0 +1,476 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { businessSectors } from '../../data/navigation';
+import { giroIcons } from '../../data/giro-icons';
+import { waDemoGiro, waLink } from '../../lib/whatsapp';
+
+// Los giros salen del MISMO arreglo que alimenta el mega-menú, así que agregar
+// un giro allá lo publica aquí sin tocar esta página.
+const giros = businessSectors;
+
+const waGenerico = waLink('¡Hola! Quiero agendar una demo en línea de Sacscloud para mi negocio.');
+// El de "¿no ves tu giro?" deja la frase abierta a propósito: el prospecto
+// completa su giro en el mismo mensaje y el asesor abre con esa información.
+const waOtroGiro = waLink('¡Hola! Quiero agendar una demo en línea de Sacscloud. Mi giro es: ');
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'Giros de negocio que atiende SACS',
+  itemListElement: giros.map((g, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: g.label,
+    description: g.description,
+    url: `https://www.sacscloud.com${g.href}`,
+  })),
+};
+---
+
+<BaseLayout
+  title="Giros de negocio — SACS"
+  description="SACS se configura para tu giro: ropa, zapaterías, joyerías, farmacias, ferreterías, minisúpers y más. Cada giro con sus propias personalizaciones."
+  structuredData={structuredData}
+>
+  <section class="giros-hero">
+    <div class="container giros-hero-inner">
+      <span class="giros-eyebrow">Hecho a la medida de tu giro</span>
+      <h1 class="giros-title">Un punto de venta que ya entiende tu negocio.</h1>
+      <p class="giros-sub">
+        No es el mismo sistema con otro logo. Cada giro trae sus propias personalizaciones —
+        variantes, unidades, caducidades, temporadas— configuradas desde el primer día.
+      </p>
+      <div class="giros-hero-ctas">
+        <a href={waGenerico} class="gh-btn gh-btn-wa" target="_blank" rel="noopener noreferrer" data-giro="Genérico">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Agenda una demo en línea
+        </a>
+        <a href="/prueba-gratis" class="gh-btn gh-btn-outline">Prueba 7 días gratis</a>
+      </div>
+      <p class="giros-count">{giros.length} giros con configuración propia</p>
+    </div>
+  </section>
+
+  <section class="giros-grid-section">
+    <div class="container">
+      <div class="giros-grid">
+        {giros.map((g) => (
+          <article class="giro-card" style={`--accent:${g.color}; --accent-bg:${g.bgColor};`}>
+            {g.image && (
+              <a href={g.href} class="giro-card-media" aria-label={`Ver más sobre ${g.label}`}>
+                <img src={g.image} alt={`SACS para ${g.label}`} loading="lazy" decoding="async" width="480" height="300" />
+              </a>
+            )}
+            <div class="giro-card-body">
+              <div class="giro-card-head">
+                <span class="giro-card-icon" set:html={giroIcons[g.iconId]} />
+                <div class="giro-card-titles">
+                  <h2 class="giro-card-title"><a href={g.href}>{g.label}</a></h2>
+                  <p class="giro-card-desc">{g.description}</p>
+                </div>
+              </div>
+
+              <ul class="giro-card-list">
+                {g.personalizations.slice(0, 3).map((p) => (
+                  <li>
+                    <span class="giro-card-dot" aria-hidden="true"></span>
+                    <span class="giro-card-list-label">{p.label}</span>
+                    <span class="giro-card-list-desc">{p.description}</span>
+                  </li>
+                ))}
+              </ul>
+              <span class="giro-card-more">+{g.personalizations.length - 3} personalizaciones más</span>
+
+              <div class="giro-card-actions">
+                <a
+                  href={waDemoGiro(g.label, g.description)}
+                  class="giro-card-wa"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-giro={g.label}
+                  aria-label={`Agenda una demo en línea de SACS para ${g.label} por WhatsApp`}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                  Agenda demo
+                </a>
+                <a href={g.href} class="giro-card-link">
+                  Ver más
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="giros-cta">
+    <div class="container giros-cta-inner">
+      <h2 class="giros-cta-title">¿No ves tu giro?</h2>
+      <p class="giros-cta-sub">
+        SACS opera hoy en más de 500 negocios de giros que no caben en una lista.
+        Cuéntanos a qué te dedicas y te mostramos en vivo cómo quedaría configurado.
+      </p>
+      <a href={waOtroGiro} class="gh-btn gh-btn-wa" target="_blank" rel="noopener noreferrer" data-giro="Otro">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Cuéntanos tu giro por WhatsApp
+      </a>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  // Mismo evento de conversión que la barra de WhatsApp y los CTA del menú.
+  document.querySelectorAll<HTMLAnchorElement>('a[data-giro]').forEach((el) => {
+    el.addEventListener('click', () => {
+      try {
+        const giro = el.dataset.giro || '';
+        if (typeof (window as any).ttq !== 'undefined') {
+          (window as any).ttq.track('Contact', { content_id: 'whatsapp-giro', content_name: `demo-giro-${giro}`, content_type: 'product' });
+        }
+        (window as any).sacsOai?.('custom', { type: 'custom' }, { custom_event_name: 'mandowhatsapp' });
+      } catch {}
+    });
+  });
+</script>
+
+<style>
+  /* ─── Hero ─── */
+  .giros-hero {
+    padding: 140px 0 56px;
+    background: var(--color-bg-primary, #FAFAF8);
+  }
+
+  .giros-hero-inner {
+    max-width: 760px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .giros-eyebrow {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--color-text-tertiary, #9ca3af);
+  }
+
+  .giros-title {
+    font-family: var(--font-display);
+    font-size: clamp(2.125rem, 5.5vw, 3.5rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+    color: var(--color-text-primary);
+    margin: 0;
+  }
+
+  .giros-sub {
+    font-size: 1.0625rem;
+    line-height: 1.65;
+    color: var(--color-text-secondary);
+    max-width: 600px;
+    margin: 0;
+  }
+
+  .giros-hero-ctas {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+    width: 100%;
+    max-width: 340px;
+  }
+
+  @media (min-width: 560px) {
+    .giros-hero-ctas {
+      flex-direction: row;
+      justify-content: center;
+      max-width: none;
+    }
+  }
+
+  .gh-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    padding: 15px 26px;
+    border-radius: 12px;
+    text-decoration: none;
+    line-height: 1;
+    transition: all 0.2s ease;
+  }
+
+  .gh-btn-wa {
+    background: #25D366;
+    color: #fff;
+  }
+
+  .gh-btn-wa:hover {
+    background: #1EBE5A;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(37, 211, 102, 0.3);
+    text-decoration: none;
+    color: #fff;
+  }
+
+  .gh-btn-outline {
+    background: transparent;
+    color: var(--color-text-primary);
+    border: 1.5px solid rgba(0, 0, 0, 0.15);
+  }
+
+  .gh-btn-outline:hover {
+    border-color: rgba(0, 0, 0, 0.3);
+    text-decoration: none;
+  }
+
+  .giros-count {
+    font-size: 0.8125rem;
+    color: var(--color-text-tertiary, #9ca3af);
+    margin: 4px 0 0;
+  }
+
+  /* ─── Grid ─── */
+  .giros-grid-section {
+    padding: 24px 0 96px;
+    background: var(--color-bg-primary, #FAFAF8);
+  }
+
+  .giros-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+  }
+
+  .giro-card {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.07);
+    border-radius: 18px;
+    overflow: hidden;
+    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+  }
+
+  .giro-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(0, 0, 0, 0.12);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.07);
+  }
+
+  .giro-card-media {
+    display: block;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: var(--accent-bg);
+  }
+
+  .giro-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.4s ease;
+  }
+
+  .giro-card:hover .giro-card-media img {
+    transform: scale(1.04);
+  }
+
+  .giro-card-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 20px 22px 22px;
+  }
+
+  .giro-card-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    margin-bottom: 18px;
+  }
+
+  .giro-card-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: 11px;
+    background: var(--accent-bg);
+    color: var(--accent);
+  }
+
+  .giro-card-icon :global(svg) {
+    width: 22px;
+    height: 22px;
+  }
+
+  .giro-card-titles {
+    min-width: 0;
+  }
+
+  .giro-card-title {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+    margin: 0 0 3px;
+  }
+
+  .giro-card-title a {
+    color: var(--color-text-primary);
+    text-decoration: none;
+  }
+
+  .giro-card-title a:hover {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .giro-card-desc {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    line-height: 1.45;
+    margin: 0;
+  }
+
+  .giro-card-list {
+    list-style: none;
+    margin: 0 0 10px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+  }
+
+  .giro-card-list li {
+    position: relative;
+    padding-left: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .giro-card-dot {
+    position: absolute;
+    left: 0;
+    top: 7px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .giro-card-list-label {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    letter-spacing: -0.01em;
+  }
+
+  .giro-card-list-desc {
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--color-text-secondary);
+  }
+
+  .giro-card-more {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-tertiary, #9ca3af);
+    margin-bottom: 18px;
+  }
+
+  .giro-card-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+  }
+
+  .giro-card-wa {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 15px;
+    border-radius: 9px;
+    background: #25D366;
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 0.18s ease;
+  }
+
+  .giro-card-wa:hover {
+    background: #1EBE5A;
+    color: #fff;
+    text-decoration: none;
+  }
+
+  .giro-card-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-primary, #4B7BE5);
+    text-decoration: none;
+    transition: gap 0.18s ease;
+  }
+
+  .giro-card-link:hover {
+    gap: 9px;
+    text-decoration: none;
+  }
+
+  /* ─── CTA final ─── */
+  .giros-cta {
+    padding: 0 0 110px;
+    background: var(--color-bg-primary, #FAFAF8);
+  }
+
+  .giros-cta-inner {
+    max-width: 640px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding-top: 56px;
+    border-top: 1px solid rgba(0, 0, 0, 0.07);
+  }
+
+  .giros-cta-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 3.4vw, 2rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--color-text-primary);
+    margin: 0;
+  }
+
+  .giros-cta-sub {
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    color: var(--color-text-secondary);
+    margin: 0;
+  }
+</style>

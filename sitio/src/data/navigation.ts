@@ -470,6 +470,7 @@ export const footerLinks = {
     { label: 'API e integraciones', href: '/producto/api-e-integraciones' },
   ],
   empresa: [
+    { label: 'Giros de negocio', href: '/giros' },
     { label: 'Nosotros', href: '/nosotros' },
     { label: 'Manifiesto', href: '/manifiesto' },
     { label: 'Casos de éxito', href: '/casos-de-exito' },
