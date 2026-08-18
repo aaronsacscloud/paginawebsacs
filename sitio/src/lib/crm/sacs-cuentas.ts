@@ -19,6 +19,11 @@ export type Actividad = {
   sucursales_totales?: number;           // las registradas en el catálogo
   sucursales_permitidas?: number;        // asignadas a un superadmin activo
   sucursales_detalle?: any[];            // desglose: cuál vendió cuánto
+  cuenta_desde?: string | null;          // primer rastro en SACS (venta o sucursal)
+  cuenta_desde_origen?: string | null;   // de cuál de los dos salió la fecha
+  primera_venta?: string | null;
+  sucursal_primera?: string | null;
+  sucursal_reciente?: { nombre?: string; creada?: string; fid?: string } | null;
   cuentas?: string[];                    // qué cuentas entraron en el agregado
   por_cuenta?: Record<string, Actividad>; // desglose, para pintarlo en el CRM
 };
@@ -81,6 +86,12 @@ const maxFecha = (partes: Actividad[], k: 'ultima_venta' | 'ultimo_usuario_at'):
   const vals = partes.map(p => p?.[k]).filter(Boolean) as string[];
   return vals.length ? vals.sort().slice(-1)[0] : null;
 };
+// La antigüedad va al revés que el resto: con dos cuentas, el cliente lleva en
+// SACS desde que abrió la PRIMERA, no la última.
+const minFecha = (partes: Actividad[], k: 'cuenta_desde' | 'primera_venta' | 'sucursal_primera'): string | null => {
+  const vals = partes.map(p => p?.[k]).filter(Boolean) as string[];
+  return vals.length ? vals.sort()[0] : null;
+};
 
 /**
  * Une la actividad de N cuentas en una sola foto del CLIENTE.
@@ -126,6 +137,17 @@ export function agregarActividad(porCuenta: Record<string, Actividad | null | un
     sucursales_detalle: partes
       .flatMap((p, i) => (p.sucursales_detalle || []).map(d => ({ ...d, cuenta: cuentas[i] })))
       .sort((a: any, b: any) => (b.total_30d || 0) - (a.total_30d || 0)),
+    // Antigüedad y última apertura, cruzando cuentas: la más vieja para saber
+    // desde cuándo opera y la más nueva para saber si sigue creciendo. Un campo
+    // nuevo que no se nombre aquí se pierde en cuanto el cliente tiene dos
+    // cuentas —le pasó a sucursales_detalle— y el bug es invisible: la ficha
+    // simplemente no muestra el dato.
+    cuenta_desde: minFecha(partes, 'cuenta_desde'),
+    cuenta_desde_origen: partes.find(p => p.cuenta_desde && p.cuenta_desde === minFecha(partes, 'cuenta_desde'))?.cuenta_desde_origen || null,
+    primera_venta: minFecha(partes, 'primera_venta'),
+    sucursal_primera: minFecha(partes, 'sucursal_primera'),
+    sucursal_reciente: partes.map(p => p.sucursal_reciente).filter(x => x && x.creada)
+      .sort((a: any, b: any) => String(b.creada).localeCompare(String(a.creada)))[0] || null,
     cuentas,
     por_cuenta: Object.fromEntries(cuentas.map(c => [c, porCuenta[c] as Actividad])),
   };
