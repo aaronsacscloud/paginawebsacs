@@ -119,6 +119,25 @@ export const PUT: APIRoute = async ({ request }) => {
   const { id, ...updates } = body;
   if (!id) return new Response(JSON.stringify({ error: 'id required' }), { status: 400 });
 
+  // `empresa` no es columna: es el NOMBRE de la cuenta. Se resuelve a
+  // company_id buscando primero y creando después, igual que en el alta. Sin
+  // esto, escribir la empresa en la ficha del lead tiraba el update entero.
+  if ('empresa' in updates) {
+    const nombre = String(updates.empresa || '').trim();
+    delete updates.empresa;
+    if (!nombre) updates.company_id = null;
+    else {
+      const { data: existe } = await supabase.from('companies').select('id').ilike('nombre', nombre).limit(1).maybeSingle();
+      if (existe?.id) updates.company_id = existe.id;
+      else {
+        const { data: nueva, error: ce } = await supabase.from('companies')
+          .insert({ nombre, estado_cuenta: 'prospecto' }).select('id').single();
+        if (ce) return new Response(JSON.stringify({ error: 'No se pudo crear la empresa: ' + ce.message }), { status: 500 });
+        updates.company_id = nueva.id;
+      }
+    }
+  }
+
   const { data, error } = await supabase
     .from('contacts')
     .update(updates)

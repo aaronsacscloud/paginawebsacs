@@ -47,6 +47,22 @@ const D = {
 // puede filtrar ni saber con quién se está hablando.
 const ROLES = ['Dueño', 'Gerente', 'Facturación', 'Sistemas', 'Compras', 'Otro'];
 
+// El mismo catálogo de giro que la ficha del cliente. Se lee de las propiedades
+// del CRM para no tener dos listas que se separen con el tiempo; el subgiro
+// depende del giro y sus opciones vienen del padre.
+function useGiros() {
+  const [g, setG] = useState<{ giros: any[]; subs: Record<string, any[]> }>({ giros: [], subs: {} });
+  useEffect(() => {
+    fetch('/api/crm/propiedades?entidad=company').then(r => r.json()).then((j: any) => {
+      const l = j.data || j.propiedades || [];
+      const giro = l.find((x: any) => x.key === 'giro_negocio');
+      const sub = l.find((x: any) => x.key === 'subgiro');
+      setG({ giros: giro?.opciones || [], subs: sub?.opciones_por_padre || {} });
+    }).catch(() => {});
+  }, []);
+  return g;
+}
+
 const ETAPAS: Record<string, { l: string; bg: string; fg: string }> = {
   lead: { l: 'Nuevo', bg: '#f4f4f6', fg: '#6B7280' },
   lead_calificado: { l: 'Calificado', bg: '#EEECFE', fg: '#5B4BD6' },
@@ -101,12 +117,20 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
     const prueba = props.prueba_inicio || null;
     const cotizada = quotes.slice().sort((a: any, b: any) => String(a.created_at).localeCompare(String(b.created_at)))[0];
     const esCliente = c.lifecycle_stage === 'cliente';
+    // Prueba y demo son el MISMO paso: después de contactarlo, o pide probarlo
+    // o pide que se lo enseñen —y muchas veces la prueba va antes de la demo—.
+    // Separarlos dejaba la ruta con un hueco permanente en quien nunca hace una
+    // de las dos, y un paso que nunca se llena deja de leerse.
+    const primero = [prueba, demo?.fecha].filter(Boolean).sort()[0] || null;
     return [
       { k: 'llego', l: 'Llegó', f: c.created_at, ok: true },
       { k: 'contactado', l: 'Contactado', f: contacto, ok: !!contacto },
-      { k: 'demo', l: 'Demo agendada', f: demo?.fecha, ok: !!demo, extra: demo },
+      {
+        k: 'interes', l: prueba && !demo ? 'Prueba gratis' : demo && !prueba ? 'Demo agendada' : 'Prueba o demo',
+        f: primero, ok: !!(prueba || demo), extra: demo,
+        detalle: prueba && demo ? 'prueba y demo' : null,
+      },
       { k: 'asistio', l: 'Se presentó', f: asistio?.fecha, ok: !!asistio, pendiente: !!demo && !asistio && String(demo.fecha) < hoy() },
-      { k: 'prueba', l: 'Prueba gratis', f: prueba, ok: !!prueba },
       { k: 'cotizado', l: 'Cotizado', f: cotizada?.created_at, ok: !!cotizada },
       { k: 'cliente', l: 'Cliente', f: esCliente ? c.updated_at : null, ok: esCliente },
     ];
@@ -121,7 +145,7 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
   const et = ETAPAS[c.lifecycle_stage] || ETAPAS.lead;
   const tel = c.whatsapp || c.telefono;
   const o = origenDe(origenDeRegistro(c));
-  const demo = ruta.find(p => p.k === 'demo')?.extra;
+  const demo = ruta.find(p => p.k === 'interes')?.extra;
   const sinContacto = dias(c.last_contact_at || c.created_at);
 
   return (
@@ -180,6 +204,7 @@ export default function LeadDrawer({ contactId, onClose, onChanged }: any) {
                     }}>{est === 'ok' ? '✓' : i + 1}</div>
                     <div style={{ fontSize: '0.68rem', fontWeight: est === 'now' ? 800 : 700, marginTop: 6, color: est === 'ok' ? '#3f3b4d' : est === 'now' ? '#5B4BD6' : '#a5a2af' }}>{p.l}</div>
                     <div style={{ fontSize: '0.62rem', color: '#c2c0c9', marginTop: 2 }}>{p.f ? fmtDate(p.f) : p.pendiente ? 'falta marcar' : '—'}</div>
+                    {p.detalle && <div style={{ fontSize: '0.6rem', color: '#b3afbd' }}>{p.detalle}</div>}
                   </div>
                 );
               })}
@@ -383,8 +408,8 @@ function SiguientePaso({ c, ruta, demo, guardar, flash, recargar }: any) {
   } else if (sinContacto != null && sinContacto > 7) {
     texto = <>Lleva <b>{sinContacto} días</b> sin contacto. Se está enfriando.</>;
     acciones = <button style={D.btnP} onClick={() => guardar({ last_contact_at: new Date().toISOString() })}>Ya lo contacté</button>;
-  } else if (!(c.bookings || []).length) {
-    texto = <>Sin demo agendada. Es el paso que más mueve la aguja.</>;
+  } else if (!(c.bookings || []).length && !c.propiedades?.prueba_inicio) {
+    texto = <>Ni prueba ni demo todavía. Es el paso que más mueve la aguja.</>;
     acciones = <a style={D.btnP} href="/agendar/demo" target="_blank" rel="noreferrer">Agendar demo</a>;
   } else if (!(c.quotes || []).length) {
     texto = <>Ya lo viste en la demo. Falta ponerle precio.</>;
@@ -404,6 +429,9 @@ function SiguientePaso({ c, ruta, demo, guardar, flash, recargar }: any) {
 function PruebaGratis({ c, guardar, flash }: any) {
   const p = c.propiedades || {};
   const [abierto, setAbierto] = useState(false);
+  // El inicio también se captura: muchas pruebas se abren días antes de que
+  // alguien las registre, y poner "hoy" a fuerza falsea cuándo vence.
+  const [ini, setIni] = useState(hoy());
   const [fin, setFin] = useState(() => { const d = new Date(); d.setDate(d.getDate() + 14); return d.toISOString().slice(0, 10); });
   const activa = p.prueba_inicio && (!p.prueba_fin || p.prueba_fin >= hoy());
   const restan = p.prueba_fin ? Math.ceil((Date.parse(p.prueba_fin + 'T12:00:00') - Date.now()) / 86400000) : null;
@@ -420,15 +448,22 @@ function PruebaGratis({ c, guardar, flash }: any) {
             {restan != null ? (restan >= 0 ? `Termina el ${fmtLargo(p.prueba_fin)} · ${restan} días` : `Venció hace ${Math.abs(restan)} días`) : 'Sin fecha de término'}
           </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+            <button style={D.btnA} onClick={() => { setIni(p.prueba_inicio || hoy()); setFin(p.prueba_fin || hoy()); setAbierto(true); }}>Cambiar fechas</button>
             <button style={D.btnA} onClick={() => guardar({ propiedades: { ...p, prueba_fin: null, prueba_inicio: null } }).then(() => flash('Prueba cerrada'))}>Cerrar prueba</button>
           </div>
         </>
       ) : abierto ? (
         <>
-          <div style={D.fl}>¿Hasta cuándo?</div>
-          <input type="date" value={fin} onChange={e => setFin(e.target.value)} style={D.fi} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
+            <div><div style={D.fl}>Empieza</div><input type="date" value={ini} onChange={e => setIni(e.target.value)} style={D.fi} /></div>
+            <div><div style={D.fl}>Termina</div><input type="date" value={fin} onChange={e => setFin(e.target.value)} style={D.fi} /></div>
+          </div>
+          <div style={{ fontSize: '0.68rem', color: '#a5a2af', marginTop: 6 }}>
+            {ini && fin && fin > ini ? `${Math.round((Date.parse(fin) - Date.parse(ini)) / 86400000)} días de prueba.` : 'La fecha de término tiene que ser posterior al inicio.'}
+          </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 9 }}>
-            <button style={D.btnP} onClick={() => guardar({ propiedades: { ...p, prueba_inicio: hoy(), prueba_fin: fin } }).then(() => { setAbierto(false); flash('Prueba registrada'); })}>Guardar</button>
+            <button style={D.btnP} disabled={!(fin > ini)}
+              onClick={() => guardar({ propiedades: { ...p, prueba_inicio: ini, prueba_fin: fin } }).then(() => { setAbierto(false); flash('Prueba registrada'); })}>Guardar</button>
             <button style={D.btnA} onClick={() => setAbierto(false)}>Cancelar</button>
           </div>
         </>
@@ -447,6 +482,7 @@ function PruebaGratis({ c, guardar, flash }: any) {
 /* Los campos, agrupados por PARA QUÉ sirven: para llamarle, o para venderle. */
 function Campos({ c, guardar, guardando }: any) {
   const [f, setF] = useState<any>({});
+  const giros = useGiros();
   const v = (k: string) => (f[k] !== undefined ? f[k] : (c[k] ?? '')) as any;
   const set = (k: string, val: any) => setF((p: any) => ({ ...p, [k]: val }));
   const prop = (k: string) => (f[`p_${k}`] !== undefined ? f[`p_${k}`] : (c.propiedades?.[k] ?? '')) as any;
@@ -486,7 +522,13 @@ function Campos({ c, guardar, guardando }: any) {
       <div style={D.cardM}>
         <div style={D.h}>Qué sabemos del negocio</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
-          <div><div style={D.fl}>Empresa</div><div style={{ ...D.fi, background: '#f7f6fa', color: c.companies?.nombre ? '#1a1a1a' : '#a5a2af' }}>{c.companies?.nombre || 'sin empresa'}</div></div>
+          <div>
+            <div style={D.fl}>Empresa</div>
+            {/* Editable: un lead que llegó sin empresa la gana en la primera
+                llamada, y es el dato que después lo convierte en cliente. */}
+            <input style={D.fi} value={f.empresa !== undefined ? f.empresa : (c.companies?.nombre || '')}
+              onChange={e => set('empresa', e.target.value)} placeholder="sin empresa" />
+          </div>
           <div><div style={D.fl}>Sucursales</div><input style={D.fi} value={v('sucursales_interes')} onChange={e => set('sucursales_interes', e.target.value)} /></div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginTop: 9 }}>
@@ -501,8 +543,26 @@ function Campos({ c, guardar, guardando }: any) {
               ))}
             </select>
           </div>
-          <div><div style={D.fl}>Giro</div><input style={D.fi} value={v('giro')} onChange={e => set('giro', e.target.value)} /></div>
+          <div>
+            <div style={D.fl}>Giro</div>
+            <select style={D.fi} value={prop('giro_negocio') || v('giro') || ''} onChange={e => { set('p_giro_negocio', e.target.value); set('giro', e.target.value); set('p_subgiro', ''); }}>
+              <option value="">— sin definir —</option>
+              {giros.giros.map((x: any) => <option key={x.v} value={x.v}>{x.l}</option>)}
+            </select>
+          </div>
         </div>
+        {/* El subgiro solo aparece cuando su giro ya tiene opciones: preguntar
+            un subgiro sin giro es pedir un dato que nadie puede contestar. */}
+        {(giros.subs[prop('giro_negocio') || v('giro')] || []).length > 0 && (
+          <div style={{ marginTop: 9 }}>
+            <div style={D.fl}>Subgiro</div>
+            <select style={D.fi} value={prop('subgiro')} onChange={e => set('p_subgiro', e.target.value)}>
+              <option value="">— sin definir —</option>
+              {(giros.subs[prop('giro_negocio') || v('giro')] || []).map((x: any) => <option key={x.v} value={x.v}>{x.l}</option>)}
+            </select>
+          </div>
+        )}
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginTop: 9 }}>
           <div>
             <div style={D.fl}>Etapa</div>
