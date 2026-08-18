@@ -1728,7 +1728,7 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
     });
   }
 
-  // ─── Sectors dropdown: swap featured panel on hover ───
+  // ─── Sectors dropdown: swap featured panel on CLICK ───
   const sectorRows = document.querySelectorAll<HTMLElement>('.sector-row[data-sector-idx]');
   const sectorPanels = document.querySelectorAll<HTMLElement>('.sector-panel[data-panel-idx]');
   function activateSector(idx: string) {
@@ -1740,10 +1740,21 @@ const waGlyph = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"
   // sitio: tracking + registro del intento. Aquí no se duplica.
 
   sectorRows.forEach((row) => {
-    row.addEventListener('mouseenter', () => {
+    // Antes cambiaba con mouseenter: al mover el mouse hacia el panel se
+    // atravesaban otros giros y el contenido saltaba solo. Ahora el cambio es
+    // deliberado.
+    row.addEventListener('click', (e) => {
       const idx = row.dataset.sectorIdx;
-      if (idx) activateSector(idx);
+      if (!idx) return;
+      // El renglón es un <a> al giro: se conserva el href para que funcione sin
+      // JS y para el SEO, pero con JS el clic SELECCIONA en vez de navegar.
+      // Para ir a la página está el "Ver más sobre …" dentro del panel.
+      // Se respetan los atajos del navegador (ctrl/cmd/medio = abrir en pestaña).
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
+      e.preventDefault();
+      activateSector(idx);
     });
+    // Teclado: al tabular por la lista el panel sigue al foco.
     row.addEventListener('focus', () => {
       const idx = row.dataset.sectorIdx;
       if (idx) activateSector(idx);
