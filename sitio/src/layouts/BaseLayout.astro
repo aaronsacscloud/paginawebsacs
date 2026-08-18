@@ -120,6 +120,21 @@ const allSchemas = structuredData
         }
       } catch (e) {}
     };
+
+    /* Clic a WhatsApp, medido en UN SOLO lugar.
+       Antes vivia dentro de WhatsAppButton, asi que los OTROS enlaces a
+       WhatsApp del sitio (el del menu, el de implementacion, el de prueba
+       gratis) NO se median: el lead entraba por un anuncio, escribia desde el
+       menu, y la conversion nunca llegaba a OpenAI.
+       Con delegacion en document cualquier <a> que apunte a wa.me queda
+       cubierto, incluidos los que se agreguen en el futuro. */
+    document.addEventListener("click", function (e) {
+      var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
+      if (!a) return;
+      var h = a.getAttribute("href") || "";
+      if (h.indexOf("wa.me") === -1 && h.indexOf("api.whatsapp.com") === -1) return;
+      window.sacsOai("custom", { type: "custom" }, { custom_event_name: "mandowhatsapp" });
+    }, true);
     </script>
 
     <!-- Partner attribution strip hydration -->
