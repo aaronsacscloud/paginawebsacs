@@ -2520,6 +2520,22 @@ function MinutaReunion({ reunion, companyId, soloLectura, onCerrar, onListo }: a
               {guardando ? 'Guardando…' : total ? `Guardar y agregar ${total} mejora${total === 1 ? '' : 's'}` : 'Guardar minuta'}
             </button>
           )}
+          {/* El documento se arma de lo GUARDADO, no de lo que está en pantalla:
+              ofrecer descargar una minuta a medio escribir manda al cliente un
+              PDF que no corresponde a lo que se acordó. El rosa se reserva para
+              lo que sale con tu marca hacia afuera. */}
+          {minutaLlena(reunion.minuta) && (<>
+            <button onClick={() => window.open(`/minuta/${reunion.id}`, '_blank')}
+              style={{ border: '1.5px solid rgba(244,168,205,.75)', background: 'rgba(244,168,205,.22)', color: '#9c3d70', borderRadius: 9, padding: '7px 13px', fontSize: '0.78rem', fontWeight: 800, cursor: 'pointer' }}>
+              Descargar minuta
+            </button>
+            <button onClick={() => {
+              const liga = `${window.location.origin}/minuta/${reunion.id}`;
+              const tel = String(reunion.invitee_whatsapp || '').replace(/\D/g, '');
+              const txt = encodeURIComponent(`Minuta de nuestra sesión del ${fmtDate(reunion.fecha)}: ${liga}`);
+              window.open(tel ? `https://wa.me/${tel}?text=${txt}` : `https://wa.me/?text=${txt}`, '_blank');
+            }} style={D.btnG}>Enviar por WhatsApp</button>
+          </>)}
           <button onClick={() => { navigator.clipboard?.writeText(minutaTexto({ ...reunion, minuta: m, grabacion_url: url })); }} style={D.btnG}>Copiar como texto</button>
           <button onClick={onCerrar} style={{ ...D.btnG, marginLeft: 'auto' }}>{soloLectura ? 'Cerrar' : 'Después'}</button>
           {error && <div style={{ fontSize: '0.73rem', color: '#C0554E', width: '100%' }}>{error}</div>}

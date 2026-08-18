@@ -1,0 +1,326 @@
+---
+// Minuta descargable de una reunión.
+//
+// Es el documento que el cliente recibe: sale con la marca de QUIEN dio la
+// sesión (logo, nombre y color de acento configurados en Ajustes › Mi marca),
+// no con la de la plataforma. Se imprime a PDF desde el navegador, igual que
+// el estado de cuenta, y la misma liga se puede compartir por WhatsApp.
+//
+// Llave = id (UUID) de la reunión. Solo muestra lo que ya se acordó con ese
+// cliente: nada de precios, cartera ni datos de otras cuentas.
+import { supabase } from '../../lib/supabase';
+import { MINUTA_CAMPOS } from '../../lib/crm/reuniones';
+import { marcaDe, vinetas, folioMinuta, SELECT_MARCA } from '../../lib/crm/marca';
+import { getCurrentUser } from '../../lib/auth/scope';
+
+export const prerender = false;
+
+const { id } = Astro.params;
+
+// /minuta/ejemplo → la vista previa de Ajustes › Mi marca: contenido de mentira
+// con la marca REAL de quien está en sesión. Sin sesión salen los valores por
+// defecto, así que nunca filtra nada de nadie.
+const esEjemplo = id === 'ejemplo';
+const EJEMPLO = {
+  id: '00000000-0000-4000-8000-000000000000', fecha: new Date().toISOString().slice(0, 10),
+  hora_inicio: '16:00', hora_fin: '17:00', grabacion_url: null,
+  invitee_nombre: 'Nombre del cliente', invitee_empresa: 'Empresa del cliente', invitee_whatsapp: null,
+  host_id: null, company_id: null, estado: 'asistio',
+  event_types: { nombre: 'Consultoría', categoria: 'consultoria' },
+  minuta: {
+    reviso: 'Aquí va lo que sí se tocó en la sesión: los módulos que se revisaron, lo que se probó en pantalla y los pendientes que traía el cliente desde la junta anterior.',
+    acuerdos: 'Lo que quedó decidido, no lo que se propuso. Este bloque es el que alguien busca cuando reabre la minuta tres semanas después.',
+    cliente: 'Enviar la información que quedó de su lado.\nValidar la configuración antes del siguiente corte.\nDefinir a quién se le dan permisos.',
+    sacs: 'Revisar el punto que quedó abierto y responder por escrito.\nEnviar el video de la capacitación.\nAjustar los permisos acordados.',
+    siguiente: 'Miércoles 00 de mes · 4:00 p.m.\nSeguimiento a los compromisos de esta sesión.',
+  },
+};
+
+const { data: bReal } = esEjemplo ? { data: null } : await supabase
+  .from('bookings')
+  .select('id, fecha, hora_inicio, hora_fin, minuta, grabacion_url, invitee_nombre, invitee_empresa, host_id, company_id, estado, event_types(nombre, categoria)')
+  .eq('id', id)
+  .maybeSingle();
+const b: any = esEjemplo ? EJEMPLO : bReal;
+if (!b) return Astro.redirect('/404');
+
+const m: Record<string, string> = (b.minuta || {}) as any;
+const hayMinuta = MINUTA_CAMPOS.some(c => String(m?.[c.k] || '').trim());
+
+// En el ejemplo la marca sale de la sesión; en una minuta real, de quien dio
+// la sesión: el cliente recibe el documento de su consultora.
+const usuario = esEjemplo ? await getCurrentUser(Astro.request) : null;
+const hostId = esEjemplo ? usuario?.id : b.host_id;
+
+const [{ data: host }, { data: company }] = await Promise.all([
+  hostId
+    ? supabase.from('team_members').select(SELECT_MARCA).eq('id', hostId).maybeSingle()
+    : Promise.resolve({ data: null } as any),
+  b.company_id
+    ? supabase.from('companies').select('nombre, nombre_comercial, sacs_account, sucursales').eq('id', b.company_id).maybeSingle()
+    : Promise.resolve({ data: null } as any),
+]);
+// Si quien dio la sesión no configuró su marca, se usa la que sí esté puesta
+// en el equipo antes que caer a los valores de fábrica: muchas juntas quedaron
+// registradas con la cuenta del sistema como anfitrión, y ninguna de esas
+// debería salir sin marca.
+let miembro: any = host;
+if (!host?.marca_nombre) {
+  const { data: alterna } = await supabase.from('team_members').select(SELECT_MARCA)
+    .not('marca_nombre', 'is', null).order('created_at').limit(1).maybeSingle();
+  if (alterna) miembro = alterna;
+}
+const marca = marcaDe(miembro);
+const A = marca.acento;
+
+// Cuál sesión es dentro del acompañamiento. Se cuenta sobre las que sí
+// ocurrieron: numerar las canceladas inflaría el conteo y el cliente lo nota.
+let sesion = 0;
+if (b.company_id) {
+  const { count } = await supabase.from('bookings')
+    .select('id', { count: 'exact', head: true })
+    .eq('company_id', b.company_id)
+    .in('estado', ['asistio', 'realizada', 'completada'])
+    .lte('fecha', b.fecha);
+  sesion = count || 0;
+}
+
+const cliente = company?.nombre_comercial || company?.nombre || b.invitee_empresa || 'Cliente';
+const tipo = (b.event_types as any)?.nombre || 'Reunión';
+
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+function fmtFecha(d?: string | null, conDia = false) {
+  if (!d) return '';
+  const [y, mm, dd] = String(d).slice(0, 10).split('-').map(Number);
+  if (!y) return '';
+  const t = `${dd} de ${MESES[(mm || 1) - 1]} de ${y}`;
+  return conDia ? `${DIAS[new Date(Date.UTC(y, mm - 1, dd)).getUTCDay()].replace(/^./, c => c.toUpperCase())} ${t}` : t;
+}
+function hora12(h?: string | null) {
+  if (!h) return '';
+  const [H, M] = String(h).slice(0, 5).split(':').map(Number);
+  const ap = H >= 12 ? 'p.m.' : 'a.m.';
+  return `${((H + 11) % 12) + 1}:${String(M || 0).padStart(2, '0')} ${ap}`;
+}
+function duracion() {
+  if (!b.hora_inicio || !b.hora_fin) return '';
+  const t = (x: string) => { const [H, M] = String(x).slice(0, 5).split(':').map(Number); return H * 60 + M; };
+  const d = t(b.hora_fin) - t(b.hora_inicio);
+  return d > 0 ? ` · ${d} min` : '';
+}
+const ORD = ['', 'Primera', 'Segunda', 'Tercera', 'Cuarta', 'Quinta', 'Sexta', 'Séptima', 'Octava', 'Novena', 'Décima'];
+
+const folio = folioMinuta(b.id, b.fecha);
+const doCliente = vinetas(m.cliente);
+const doNos = vinetas(m.sacs);
+// El siguiente paso se parte: la primera línea manda (suele traer la fecha) y
+// el resto explica. Sin partirlo, una fecha se pierde dentro del párrafo.
+const sig = String(m.siguiente || '').trim();
+const sigCorte = sig.split(/\r?\n/)[0].trim();
+const sigTitulo = sigCorte.length <= 90 ? sigCorte : '';
+const sigResto = sigTitulo ? sig.slice(sigCorte.length).trim() : sig;
+const titulo = `Minuta ${tipo} · ${cliente}`;
+---
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{titulo}</title>
+  <meta name="robots" content="noindex" />
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;padding:26px 16px 60px;background:#eceef1;color:#1a1a1a;
+      font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .wrap{max-width:760px;margin:0 auto}
+    .bar{display:flex;gap:9px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+    .bar b{font-size:.8rem;font-weight:700;color:#6b6b74;margin-right:auto}
+    .btn{border:none;border-radius:9px;padding:9px 16px;background:var(--fuerte);color:#fff;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit}
+    .btn2{border:1px solid #dcd9e4;border-radius:9px;padding:8px 14px;background:#fff;color:#4a4a52;font-size:.82rem;font-weight:600;cursor:pointer;text-decoration:none;font-family:inherit}
+    .doc{background:#fff;border-radius:16px;box-shadow:0 20px 48px rgba(16,24,40,.16);overflow:hidden}
+
+    .hd{position:relative;background:var(--hd);padding:26px 30px 24px;display:flex;align-items:center;gap:16px;overflow:hidden}
+    .hd:after{content:"";position:absolute;right:-70px;top:-90px;width:250px;height:250px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.22),transparent 62%)}
+    .logo{width:56px;height:56px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px rgba(0,0,0,.18);overflow:hidden;position:relative;z-index:1}
+    .logo img{max-width:46px;max-height:46px;object-fit:contain}
+    .logo b{font-family:Georgia,"Times New Roman",serif;font-size:1.3rem;color:var(--oscuro);font-weight:400}
+    .wm{font-family:Georgia,"Times New Roman",serif;font-size:1.6rem;color:#fff;line-height:1.1;position:relative;z-index:1}
+    .wsub{font-size:.56rem;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.88);margin-top:7px;position:relative;z-index:1}
+    .hr2{margin-left:auto;text-align:right;position:relative;z-index:1}
+    .hr2 .t{font-size:.57rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.8)}
+    .hr2 .f{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.76rem;color:#fff;margin-top:8px;letter-spacing:.04em}
+    .hr2 .d{font-size:.68rem;color:rgba(255,255,255,.68);margin-top:4px}
+    .rule{height:3px;background:var(--rule)}
+
+    .meta{display:flex;flex-wrap:wrap;border-bottom:1px solid #f1eef3;background:var(--tono)}
+    .meta>div{flex:1;min-width:170px;padding:14px 20px;border-left:1px solid #f2eef1}
+    .meta>div:first-child{border-left:none;padding-left:30px}
+    .k{font-size:.54rem;font-weight:800;color:#b8b2b8;letter-spacing:.13em;text-transform:uppercase}
+    .v{font-size:.82rem;font-weight:700;margin-top:5px;color:#2e2a35}
+    .v small{display:block;font-weight:500;font-size:.69rem;color:#918893;margin-top:2px}
+
+    .body{padding:2px 30px 0;position:relative}
+    .body:before{content:attr(data-mono);position:absolute;right:16px;top:110px;font-family:Georgia,serif;font-size:14rem;color:var(--fuerte);opacity:.035;line-height:1;pointer-events:none}
+    .st{display:flex;align-items:center;gap:10px;margin:22px 0 10px}
+    .st .n{width:22px;height:22px;border-radius:50%;border:1px solid var(--fuerte);color:var(--oscuro);font-size:.63rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .st .x{font-size:.63rem;font-weight:800;color:var(--oscuro);letter-spacing:.15em;text-transform:uppercase}
+    .st .ln{flex:1;height:1px;background:linear-gradient(90deg,var(--borde),transparent)}
+    .p{font-size:.83rem;color:#4c4a57;line-height:1.72;position:relative;z-index:1;white-space:pre-wrap}
+
+    .acu{position:relative;background:var(--suave);border:1px solid var(--borde);border-left:3px solid var(--fuerte);border-radius:0 12px 12px 0;padding:15px 18px;font-size:.83rem;line-height:1.72;color:#413c46;white-space:pre-wrap;overflow:hidden}
+    .acu:after{content:"\201D";position:absolute;right:12px;top:-28px;font-family:Georgia,serif;font-size:7rem;color:var(--fuerte);opacity:.16}
+
+    .comp{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .cc{border:1px solid #eeecf3;border-radius:12px;overflow:hidden;background:#fff}
+    .cc .h{font-size:.58rem;font-weight:800;letter-spacing:.13em;text-transform:uppercase;padding:9px 14px;display:flex;align-items:center;gap:7px}
+    .cc .h i{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+    .cc ul{margin:0;padding:11px 14px 13px;list-style:none}
+    .cc li{display:flex;gap:9px;font-size:.78rem;color:#4c4a57;line-height:1.58;padding:6px 0;border-top:1px solid #f6f5f9}
+    .cc li:first-child{border-top:none;padding-top:1px}
+    .cc li b{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.6rem;color:#c0bcc6;flex-shrink:0;margin-top:2px}
+    .cc .vacio{padding:12px 14px;font-size:.76rem;color:#b3b0ba}
+
+    .graba{margin-top:14px;font-size:.78rem;color:#4c4a57}
+    .graba a{color:#2C5FC4;word-break:break-all}
+
+    .sig{margin:20px 30px 0;border-radius:14px;padding:18px 22px;background:var(--hd);position:relative;overflow:hidden}
+    .sig:after{content:"";position:absolute;left:-40px;bottom:-80px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.16),transparent 62%)}
+    .sig .k2{font-size:.57rem;font-weight:800;color:rgba(255,255,255,.9);letter-spacing:.2em;text-transform:uppercase;position:relative;z-index:1}
+    .sig .f{font-family:Georgia,"Times New Roman",serif;font-size:1.24rem;color:#fff;margin-top:7px;position:relative;z-index:1;line-height:1.35}
+    .sig .d{font-size:.78rem;color:rgba(255,255,255,.82);margin-top:6px;line-height:1.6;position:relative;z-index:1;white-space:pre-wrap}
+
+    .firmas{display:flex;gap:40px;padding:28px 30px 4px}
+    .firmas>div{flex:1}
+    .ff{font-family:Georgia,"Times New Roman",serif;font-size:1.15rem;color:var(--oscuro);transform:rotate(-3deg);margin-bottom:3px;opacity:.85;height:22px}
+    .fl{border-top:1px solid #e3dfe6;padding-top:7px;font-size:.72rem;font-weight:700;color:#3c3852}
+    .fl small{display:block;font-weight:500;color:#9a97a5;font-size:.65rem;margin-top:2px}
+
+    .pie{margin-top:20px;padding:13px 30px;background:var(--tono);border-top:1px solid #f2eef1;display:flex;gap:10px;align-items:center;font-size:.65rem;color:#a5a1a8;flex-wrap:wrap}
+    .pie b{color:#6c6879;font-weight:700}
+    .pie span{margin-left:auto;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+    .aviso{background:#FEF6E7;color:#9a6a10;font-size:.8rem;padding:14px 30px;line-height:1.6}
+
+    @media (max-width:700px){
+      body{padding:14px 10px 40px}
+      .hd{flex-wrap:wrap;padding:20px}
+      .hr2{margin-left:0;text-align:left;width:100%}
+      .comp{grid-template-columns:1fr}
+      .body,.firmas,.pie{padding-left:20px;padding-right:20px}
+      .sig{margin-left:20px;margin-right:20px}
+      .meta>div:first-child{padding-left:20px}
+      .firmas{flex-direction:column;gap:18px}
+    }
+    @media print{
+      body{background:#fff;padding:0}
+      .bar{display:none}
+      .doc{box-shadow:none;border-radius:0}
+      .sig,.cc,.acu{break-inside:avoid}
+      @page{margin:12mm}
+    }
+  </style>
+</head>
+<body style={`--hd:${A.hd};--rule:${A.rule};--fuerte:${A.fuerte};--oscuro:${A.oscuro};--suave:${A.suave};--borde:${A.borde};--tono:${A.tono}`}>
+  <div class="wrap">
+    <div class="bar">
+      <b>{cliente} · {fmtFecha(b.fecha)}</b>
+      <button class="btn" onclick="window.print()">Descargar PDF</button>
+      <a class="btn2" href={`https://wa.me/?text=${encodeURIComponent(`Minuta de nuestra sesión del ${fmtFecha(b.fecha)}: ${Astro.url.href}`)}`} target="_blank" rel="noreferrer">Compartir por WhatsApp</a>
+    </div>
+
+    <div class="doc">
+      <div class="hd">
+        <div class="logo">
+          {marca.logo ? <img src={marca.logo} alt={marca.nombre} /> : <b>{marca.iniciales}</b>}
+        </div>
+        <div>
+          <div class="wm">{marca.nombre}</div>
+          {marca.linea && <div class="wsub">{marca.linea}</div>}
+        </div>
+        <div class="hr2">
+          <div class="t">Minuta de reunión</div>
+          <div class="f">{folio}</div>
+          <div class="d">{fmtFecha(b.fecha)}{duracion()}</div>
+        </div>
+      </div>
+      <div class="rule"></div>
+
+      <div class="meta">
+        <div>
+          <div class="k">Cliente</div>
+          <div class="v">{cliente}
+            <small>{[company?.sacs_account ? `Cuenta ${company.sacs_account}` : null, company?.sucursales ? `${company.sucursales} sucursal${company.sucursales === 1 ? '' : 'es'}` : null].filter(Boolean).join(' · ') || '—'}</small>
+          </div>
+        </div>
+        <div>
+          <div class="k">Sesión</div>
+          <div class="v">{tipo}
+            <small>{sesion > 0 ? `${ORD[sesion] || `Sesión ${sesion}`} del acompañamiento` : hora12(b.hora_inicio) || '—'}</small>
+          </div>
+        </div>
+        <div>
+          <div class="k">Participantes</div>
+          <div class="v">{b.invitee_nombre || cliente}
+            <small>{[marca.firma, marca.nombre].filter(Boolean).join(' · ')}</small>
+          </div>
+        </div>
+      </div>
+
+      {!hayMinuta && <div class="aviso">Esta reunión todavía no tiene minuta capturada. En cuanto se documente, esta misma liga la mostrará.</div>}
+
+      <div class="body" data-mono={marca.iniciales}>
+        {m.reviso && <>
+          <div class="st"><span class="n">1</span><span class="x">Qué se revisó</span><span class="ln"></span></div>
+          <div class="p">{m.reviso}</div>
+        </>}
+
+        {m.acuerdos && <>
+          <div class="st"><span class="n">2</span><span class="x">Acuerdos</span><span class="ln"></span></div>
+          <div class="acu">{m.acuerdos}</div>
+        </>}
+
+        {(doCliente.length > 0 || doNos.length > 0) && <>
+          <div class="st"><span class="n">3</span><span class="x">Compromisos</span><span class="ln"></span></div>
+          <div class="comp">
+            <div class="cc">
+              <div class="h" style="background:#F2F6FE;color:#2C5FC4"><i style="background:#7DA6F5"></i>Del cliente</div>
+              {doCliente.length
+                ? <ul>{doCliente.map((t, i) => <li><b>{String(i + 1).padStart(2, '0')}</b><span>{t}</span></li>)}</ul>
+                : <div class="vacio">Sin compromisos de su lado en esta sesión.</div>}
+            </div>
+            <div class="cc">
+              <div class="h" style={`background:${A.tono === '#FEFBFC' ? '#FDF2F7' : A.tono};color:${A.oscuro}`}><i style={`background:${A.fuerte}`}></i>De {marca.nombre}</div>
+              {doNos.length
+                ? <ul>{doNos.map((t, i) => <li><b>{String(i + 1).padStart(2, '0')}</b><span>{t}</span></li>)}</ul>
+                : <div class="vacio">Sin compromisos de nuestro lado en esta sesión.</div>}
+            </div>
+          </div>
+        </>}
+
+        {b.grabacion_url && <div class="graba">Grabación de la sesión: <a href={b.grabacion_url} target="_blank" rel="noreferrer">{b.grabacion_url}</a></div>}
+      </div>
+
+      {sig && <div class="sig">
+        <div class="k2">Siguiente paso</div>
+        {sigTitulo && <div class="f">{sigTitulo}</div>}
+        {sigResto && <div class="d">{sigResto}</div>}
+      </div>}
+
+      <div class="firmas">
+        <div>
+          <div class="ff">{marca.firma}</div>
+          <div class="fl">{marca.firma || marca.nombre}<small>{marca.nombre}</small></div>
+        </div>
+        <div>
+          <div class="ff">&nbsp;</div>
+          <div class="fl">{b.invitee_nombre || '—'}<small>{cliente}</small></div>
+        </div>
+      </div>
+
+      <div class="pie">
+        <div>Documento generado por <b>{marca.nombre}</b>{marca.pie ? ` · ${marca.pie}` : ''}</div>
+        <span>{folio} · 1/1</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

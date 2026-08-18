@@ -18,6 +18,7 @@ import RevenueHub from './RevenueHub';
 import ClientesTab from './crm/ClientesTab';
 import LeadsTab from './crm/LeadsTab';
 import MejorasTab from './crm/MejorasTab';
+import MarcaTab from './crm/MarcaTab';
 import CobranzaTab from './crm/CobranzaTab';
 import ReunionesTab from './crm/ReunionesTab';
 import SubscriptionsTab from './crm/SubscriptionsTab';
@@ -41,7 +42,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
   }
 }
 
-type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza';
+type Tab = 'dashboard' | 'hoy' | 'pipeline' | 'deals' | 'agenda' | 'reuniones' | 'automations' | 'clientes' | 'suscripciones' | 'cotizaciones' | 'pagos' | 'config' | 'pipelines' | 'agents' | 'desempeno' | 'partners' | 'commissions' | 'content-review' | 'sacs' | 'oportunidades' | 'cobros' | 'mejoras' | 'cobranza' | 'marca';
 
 // SVG icons (Squarespace-style, clean strokes)
 // Iconos a dos tonos: una silueta rellena con la MISMA tinta del renglón al 18 %
@@ -56,6 +57,7 @@ const ICONS: Record<string, string> = {
   hoy: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" opacity=".18"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   dashboard: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="2" fill="currentColor" opacity=".18"/><rect x="13" y="13" width="8" height="8" rx="2" fill="currentColor" opacity=".18"/><rect x="13" y="3" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="13" width="8" height="8" rx="2" stroke="currentColor" stroke-width="1.8"/></svg>',
   pipeline: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 5h18l-7 8v6l-4 2v-8z" fill="currentColor" opacity=".18"/><path d="M3 5h18l-7 8v6l-4 2v-8z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+  marca: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9.5" r="5.5" fill="currentColor" opacity=".18"/><circle cx="12" cy="9.5" r="5.5" stroke="currentColor" stroke-width="1.8"/><path d="M9 14.5 8 22l4-2.2L16 22l-1-7.5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
   clientes: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="2" fill="currentColor" opacity=".18"/><rect x="4" y="3" width="16" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M9 8h1.5M13.5 8H15M9 12h1.5M13.5 12H15M10 21v-4h4v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   deals: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 17l5-5 4 3 7-8v13H4z" fill="currentColor" opacity=".18"/><path d="M4 17l5-5 4 3 7-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 7h5v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   agenda: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="3" fill="currentColor" opacity=".18"/><rect x="3" y="5" width="18" height="16" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M8 3v4M16 3v4M3 10h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
@@ -162,6 +164,9 @@ const NAV_SECTIONS = [
     label: 'Ajustes',
     items: [
       { id: 'pipelines' as Tab, label: 'Pipelines', icon: 'pipeline' },
+      // Los documentos que salen al cliente los firma una persona, no la
+      // plataforma: aquí cada quien pone su logo, su nombre y su color.
+      { id: 'marca' as Tab, label: 'Mi marca', icon: 'marca' },
       { id: 'cobros' as Tab, label: 'Cobro con Mercado Pago', icon: 'pagos' },
     ],
   },
@@ -617,6 +622,8 @@ export default function CrmDashboard() {
           <ErrorBoundary><SacsUsuariosTab /></ErrorBoundary>
         ) : tab === 'oportunidades' ? (
           <ErrorBoundary><OportunidadesTab /></ErrorBoundary>
+        ) : tab === 'marca' ? (
+          <ErrorBoundary><MarcaTab /></ErrorBoundary>
         ) : tab === 'pipelines' ? (
           <ErrorBoundary><PipelinesConfig initialTipo={pipelineTipo} /></ErrorBoundary>
         ) : (
