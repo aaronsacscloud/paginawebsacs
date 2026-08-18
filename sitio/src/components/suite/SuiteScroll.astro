@@ -105,9 +105,12 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
 <style>
   .suite-nav {
     position: sticky; top: 71px; z-index: 90; background: #fff;
+    transition: opacity .25s ease, transform .25s ease;
     border-top: 1px solid rgba(0,0,0,.06); border-bottom: 1px solid rgba(0,0,0,.06);
     box-shadow: 0 1px 4px rgba(0,0,0,.03);
   }
+  /* Fuera del recorrido la barra estorba: tapaba el titulo del cierre. */
+  .suite-nav.fuera { opacity: 0; transform: translateY(-100%); pointer-events: none; }
   .suite-nav-inner {
     max-width: 1200px; margin: 0 auto; padding: 0 24px; height: 60px;
     display: flex; align-items: center; gap: 22px;
@@ -223,6 +226,112 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
   }
 </style>
 
+<!-- Animaciones de los mocks del panel.
+     Va en un <style is:global> a proposito: los mocks entran por set:html y no
+     reciben el atributo de ambito de Astro, asi que un <style> normal no los
+     alcanzaria. Todo cuelga de .suite-visual.on, de modo que la animacion se
+     dispara cada vez que la seccion se vuelve la activa. -->
+<style is:global>
+  /* ── Perchero que corre de lado (Colecciones) ── */
+  .mk-rack { position: relative; overflow: hidden; height: 250px; }
+  .mk-tubo { position: absolute; top: 26px; left: -20px; right: -20px; height: 3px;
+    background: linear-gradient(90deg, #C9CDD6, #8A8F9C, #C9CDD6); border-radius: 2px; }
+  .mk-prendas { display: flex; gap: 18px; padding-top: 8px; transform: translateX(0); }
+  .suite-visual.on .mk-prendas { animation: mkRack 22s linear infinite; }
+  @keyframes mkRack { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  .mk-prenda { width: 104px; flex-shrink: 0; text-align: center; }
+  .mk-gancho { width: 22px; height: 22px; border: 2.5px solid #A8AEBB; border-bottom: none;
+    border-radius: 50% 50% 0 0; margin: 0 auto -2px; }
+  .mk-tela { height: 128px; border-radius: 5px 5px 14px 14px; box-shadow: inset 0 -24px 30px rgba(0,0,0,.22); }
+  .mk-ficha { margin-top: 9px; font-size: 10px; color: #94A3B8; font-weight: 600; }
+  .mk-ficha b { display: block; font-size: 11.5px; color: #0F172A; margin-bottom: 2px; }
+
+  /* ── Cursor fantasma sobre el buscador (Matriz) ── */
+  .mk-cursor { position: absolute; width: 17px; height: 17px; z-index: 4; opacity: 0;
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); pointer-events: none; }
+  .suite-visual.on .mk-cursor { animation: mkRuta 8s cubic-bezier(.4,0,.2,1) infinite; }
+  @keyframes mkRuta {
+    0%   { opacity: 0; left: 62%; top: 84%; }
+    6%   { opacity: 1; }
+    20%  { left: 16%; top: 12%; }
+    40%  { left: 16%; top: 12%; }
+    54%  { left: 26%; top: 25%; }
+    68%  { left: 44%; top: 25%; }
+    88%  { left: 52%; top: 62%; opacity: 1; }
+    100% { left: 52%; top: 62%; opacity: 0; }
+  }
+  .mk-chip { transition: background .3s ease, border-color .3s ease, color .3s ease; }
+  .suite-visual.on .mk-chip-1 { animation: mkPrende .1s 2.9s forwards; }
+  .suite-visual.on .mk-chip-2 { animation: mkPrende .1s 3.3s forwards; }
+  .suite-visual.on .mk-chip-3 { animation: mkPrende .1s 3.7s forwards; }
+  @keyframes mkPrende { to { background: #EFF6FF; border-color: #93B4F5; color: #1D4ED8; } }
+
+  /* ── Traspaso trazándose en el mapa (Multisucursal) ── */
+  .mk-mapa { position: relative; height: 234px; }
+  .mk-mapa svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .mk-linea { stroke: #2563EB; stroke-width: 2; fill: none; stroke-dasharray: 340; stroke-dashoffset: 340; }
+  .suite-visual.on .mk-linea { animation: mkTrazo 1.6s ease forwards .4s; }
+  @keyframes mkTrazo { to { stroke-dashoffset: 0; } }
+  .mk-pin { position: absolute; transform: translate(-50%, -50%); text-align: center; }
+  .mk-pin i { display: block; width: 11px; height: 11px; border-radius: 50%; margin: 0 auto 6px; background: #CBD5E1; }
+  .mk-pin.viva i { background: #10B981; }
+  .mk-pin.aqui i { background: #2563EB; }
+  .suite-visual.on .mk-pin.viva i,
+  .suite-visual.on .mk-pin.aqui i { animation: mkLatido 2.6s ease-out infinite; }
+  @keyframes mkLatido {
+    0%   { box-shadow: 0 0 0 0 rgba(37,99,235,.45); }
+    70%  { box-shadow: 0 0 0 14px rgba(37,99,235,0); }
+    100% { box-shadow: 0 0 0 0 rgba(37,99,235,0); }
+  }
+  .mk-pin b { display: block; font-size: 11.5px; font-weight: 700; color: #0F172A; }
+  .mk-pin small { font-size: 10px; color: #94A3B8; font-weight: 600; }
+
+  /* ── La colección que se apaga (Temporadas) ── */
+  .mk-env { display: flex; gap: 10px; margin-bottom: 16px; }
+  .mk-env-p { flex: 1; text-align: center; }
+  .mk-env-tela { height: 96px; border-radius: 5px 5px 12px 12px; transition: filter 1.4s ease, opacity 1.4s ease; }
+  .mk-env-p small { display: block; margin-top: 7px; font-size: 9.5px; color: #94A3B8; font-weight: 700; }
+  .suite-visual.on .mk-env-p:nth-child(2) .mk-env-tela { filter: grayscale(.5); }
+  .suite-visual.on .mk-env-p:nth-child(3) .mk-env-tela { filter: grayscale(.85); opacity: .78; }
+  .suite-visual.on .mk-env-p:nth-child(4) .mk-env-tela { filter: grayscale(1); opacity: .5; }
+  .mk-env-barra { height: 6px; background: #F1F5F9; border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+  .mk-env-barra i { display: block; height: 100%; width: 0;
+    background: linear-gradient(90deg, #10B981, #F59E0B, #EF4444); transition: width 2.2s ease; }
+  .suite-visual.on .mk-env-barra i { width: 100%; }
+
+  /* ── El agente escribiendo (Agentes de IA) ── */
+  .mk-chat { display: flex; flex-direction: column; gap: 9px; }
+  .mk-burb { max-width: 82%; border-radius: 13px; padding: 10px 13px; font-size: 12.5px; line-height: 1.5; }
+  .mk-burb-cli { background: #F1F5F9; color: #0F172A; border-bottom-left-radius: 4px; }
+  .mk-burb-ia { background: #EFF6FF; border: 1px solid #C7DAFB; color: #0F172A;
+    align-self: flex-end; border-bottom-right-radius: 4px; }
+  .mk-rot { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; font-weight: 800;
+    color: #94A3B8; margin-bottom: 5px; }
+  .mk-burb-ia .mk-rot { color: #2563EB; }
+  .mk-teclea { display: inline-block; width: 7px; height: 13px; background: #2563EB;
+    vertical-align: -2px; margin-left: 1px; }
+  .suite-visual.on .mk-teclea { animation: mkParpadeo 1s steps(2) infinite; }
+  @keyframes mkParpadeo { 50% { opacity: 0; } }
+  .mk-accion { border: 1px solid #A7F3D0; background: #F0FDF9; border-radius: 10px;
+    padding: 10px 13px; opacity: 0; transform: translateY(6px); }
+  .suite-visual.on .mk-accion { animation: mkSube .5s ease 3.4s forwards; }
+  @keyframes mkSube { to { opacity: 1; transform: none; } }
+  .mk-accion b { display: block; font-size: 9.5px; letter-spacing: .1em; color: #047857; margin-bottom: 3px; }
+  .mk-accion span { font-size: 11.5px; color: #065F46; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .suite-visual.on .mk-prendas,
+    .suite-visual.on .mk-cursor,
+    .suite-visual.on .mk-pin.viva i,
+    .suite-visual.on .mk-pin.aqui i,
+    .suite-visual.on .mk-teclea { animation: none; }
+    .mk-cursor { opacity: 1; left: 52%; top: 62%; }
+    .mk-linea { stroke-dashoffset: 0; }
+    .mk-accion { opacity: 1; transform: none; animation: none; }
+    .mk-chip-1, .mk-chip-2, .mk-chip-3 { background: #EFF6FF; border-color: #93B4F5; color: #1D4ED8; }
+  }
+</style>
+
 <script>
   {
     const pasos = document.querySelectorAll<HTMLElement>('.suite-step[data-step]');
@@ -258,6 +367,16 @@ const { eyebrow, titulo, intro, secciones } = Astro.props;
       pasos.forEach((p) => obs.observe(p));
 
       activar(pasos[0].dataset.step || '');
+
+      // La barra solo existe mientras el recorrido esta en pantalla.
+      const suite = document.getElementById('suite');
+      const barra = document.querySelector<HTMLElement>('.suite-nav');
+      if (suite && barra) {
+        new IntersectionObserver(
+          ([e]) => barra.classList.toggle('fuera', !e.isIntersecting),
+          { rootMargin: '-71px 0px 0px 0px' },
+        ).observe(suite);
+      }
     }
   }
 </script>

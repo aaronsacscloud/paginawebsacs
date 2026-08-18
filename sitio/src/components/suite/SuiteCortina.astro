@@ -1,0 +1,169 @@
+---
+/**
+ * SuiteCortina — el antes y el después, con una línea que el visitante arrastra.
+ *
+ * Por que arrastrable y no dos columnas: la comparacion la HACE el visitante
+ * con su propia mano, y eso se recuerda mucho mas que leerla. Es el unico
+ * bloque de la pagina donde hay que tocar algo.
+ *
+ * Regla de tono: la libreta no esta ridiculizada. Funciona — hasta que abres la
+ * segunda tienda. Si el visitante siente que se estan burlando de como trabaja
+ * hoy, deja de leer.
+ */
+---
+
+<section class="cort-bloque">
+  <div class="cort-head">
+    <p class="cort-eyebrow">La misma pregunta, dos veces</p>
+    <h2>“¿Tendrás esta en chica?”</h2>
+    <p class="cort-sub">Arrastra la línea. A la izquierda, cómo se responde hoy. A la derecha, en tres segundos.</p>
+  </div>
+
+  <div class="cort" id="cort">
+    <div class="cort-capa cort-antes">
+      <span class="cort-etq cort-etq-a">Hoy</span>
+      <div class="cort-libreta" aria-hidden="true">
+        Blusa negra M — ¿quedan?<br />
+        Vestido S … <s>¿en Satélite?</s><br />
+        Llamar a Poli p/ preguntar<br />
+        Liverpool: 40 vestidos ¿?
+      </div>
+    </div>
+
+    <div class="cort-capa cort-despues" id="cortDespues">
+      <span class="cort-etq cort-etq-d">Con SACS</span>
+      <div class="cort-pos">
+        <div class="cort-fila"><b>Blusa satinada negra · M</b><i>Centro</i><u>4</u></div>
+        <div class="cort-fila"><b>Vestido midi verde · S</b><i>Satélite</i><u>3</u></div>
+        <div class="cort-fila"><b>Vestido cruzado · M</b><i>Liverpool</i><u>31 vend.</u></div>
+      </div>
+    </div>
+
+    <div
+      class="cort-tirador"
+      id="cortTirador"
+      role="slider"
+      tabindex="0"
+      aria-label="Comparar antes y después"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow="50"
+    ></div>
+  </div>
+</section>
+
+<style>
+  .cort-bloque { background: #0A0A0B; padding: 96px 24px 110px; }
+  .cort-head { max-width: 1200px; margin: 0 auto 40px; }
+  .cort-eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: #60A5FA; margin: 0 0 16px;
+  }
+  .cort-head h2 {
+    font-size: clamp(28px, 4.4vw, 50px); font-weight: 800; letter-spacing: -1.8px;
+    color: #fff; margin: 0 0 14px; line-height: 1.05;
+  }
+  .cort-sub { color: #A1A1AA; font-size: clamp(15px, 1.7vw, 18px); margin: 0; max-width: 56ch; }
+
+  .cort {
+    position: relative; max-width: 1200px; margin: 0 auto; height: 440px;
+    border-radius: 20px; overflow: hidden; border: 1px solid #23232B;
+    user-select: none; touch-action: pan-y;
+  }
+  .cort-capa { position: absolute; inset: 0; display: flex; align-items: center; }
+  .cort-antes { background: #17140F; justify-content: flex-start; padding-left: 7%; }
+  .cort-despues {
+    background: #0D1018; justify-content: flex-end; padding-right: 6%;
+    clip-path: inset(0 0 0 50%);
+  }
+
+  .cort-etq {
+    position: absolute; top: 20px; font-size: 10.5px; letter-spacing: .14em;
+    text-transform: uppercase; font-weight: 800; padding: 6px 13px; border-radius: 999px;
+  }
+  .cort-etq-a { left: 22px; background: rgba(232,168,56,.14); color: #E8A838; border: 1px solid rgba(232,168,56,.3); }
+  .cort-etq-d { right: 22px; background: rgba(75,123,229,.16); color: #7FA6F5; border: 1px solid rgba(75,123,229,.36); }
+
+  .cort-libreta {
+    font-family: "Bradley Hand", "Segoe Script", "Comic Sans MS", cursive;
+    color: #C9B48A; font-size: clamp(16px, 2vw, 21px); line-height: 2.1;
+    transform: rotate(-1.6deg);
+  }
+  .cort-libreta s { color: #7A6A4E; }
+
+  .cort-pos { width: min(440px, 46vw); }
+  .cort-fila {
+    display: flex; align-items: center; gap: 10px; background: #151A24;
+    border: 1px solid #22304A; border-radius: 11px; padding: 12px 14px; margin-bottom: 8px;
+  }
+  .cort-fila b { font-size: 13.5px; font-weight: 600; color: #fff; flex: 1; }
+  .cort-fila i { font-style: normal; font-size: 12px; color: #6A6A76; }
+  .cort-fila u {
+    text-decoration: none; font-size: 11.5px; color: #04241A; background: #34D399;
+    border-radius: 6px; padding: 3px 9px; font-weight: 800;
+  }
+
+  .cort-tirador {
+    position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: #fff;
+    cursor: ew-resize; z-index: 3;
+  }
+  .cort-tirador::after {
+    content: ""; position: absolute; top: 50%; left: 50%;
+    width: 48px; height: 48px; margin: -24px 0 0 -24px; border-radius: 50%;
+    background: #fff; box-shadow: 0 4px 18px rgba(0,0,0,.4);
+  }
+  .cort-tirador::before {
+    content: "⟷"; position: absolute; top: 50%; left: 50%; z-index: 1;
+    transform: translate(-50%, -50%); color: #0A0A0B; font-size: 18px; font-weight: 700;
+  }
+  .cort-tirador:focus-visible { outline: 3px solid #60A5FA; outline-offset: 3px; }
+
+  @media (max-width: 760px) {
+    .cort-bloque { padding: 64px 18px 76px; }
+    .cort { height: 380px; }
+    .cort-antes { padding-left: 5%; }
+    .cort-pos { width: 60vw; }
+    .cort-fila b { font-size: 12px; }
+  }
+</style>
+
+<script>
+  {
+    const caja = document.getElementById('cort');
+    const tir = document.getElementById('cortTirador');
+    const desp = document.getElementById('cortDespues');
+
+    if (caja && tir && desp) {
+      let arrastrando = false;
+
+      const poner = (pct: number) => {
+        const p = Math.min(94, Math.max(6, pct));
+        tir.style.left = p + '%';
+        desp.style.clipPath = `inset(0 0 0 ${p}%)`;
+        tir.setAttribute('aria-valuenow', String(Math.round(p)));
+      };
+      const desdeX = (x: number) => {
+        const r = caja.getBoundingClientRect();
+        poner(((x - r.left) / r.width) * 100);
+      };
+
+      tir.addEventListener('mousedown', (e) => { arrastrando = true; e.preventDefault(); });
+      tir.addEventListener('touchstart', () => { arrastrando = true; }, { passive: true });
+      window.addEventListener('mousemove', (e) => { if (arrastrando) desdeX(e.clientX); });
+      window.addEventListener('touchmove', (e) => { if (arrastrando) desdeX(e.touches[0].clientX); }, { passive: true });
+      window.addEventListener('mouseup', () => { arrastrando = false; });
+      window.addEventListener('touchend', () => { arrastrando = false; });
+
+      // Un clic en cualquier parte del bloque también mueve la línea: es lo que
+      // la gente intenta antes de descubrir que se arrastra.
+      caja.addEventListener('click', (e) => { if (e.target !== tir) desdeX((e as MouseEvent).clientX); });
+
+      // Teclado: el bloque es un control, no una imagen.
+      tir.addEventListener('keydown', (e) => {
+        const actual = parseFloat(tir.style.left) || 50;
+        if (e.key === 'ArrowLeft') { poner(actual - 4); e.preventDefault(); }
+        if (e.key === 'ArrowRight') { poner(actual + 4); e.preventDefault(); }
+      });
+    }
+  }
+</script>

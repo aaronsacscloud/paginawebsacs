@@ -39,18 +39,24 @@ export const seccionesRopa: SuiteSeccion[] = [
       'Ves de un vistazo que el negro XS lleva tres semanas agotado',
       'Y que el vino XXL nunca se vendió — deja de recomprarlo',
     ],
-    visual: `<div style="${est.wrap}">
+    visual: `<div style="${est.wrap}position:relative;">
+      <svg class="mk-cursor" viewBox="0 0 24 24" fill="#0F172A" stroke="#fff" stroke-width="1.6"><path d="M4 2l7 18 2.5-7.5L21 10z"/></svg>
       <p style="${est.h}">Blusa satinada · existencia por talla y color</p>
+      <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+        ${[['Negro','mk-chip-1'],['Talla M','mk-chip-2'],['Con existencia','mk-chip-3']]
+          .map(([t,c]:any)=>`<span class="mk-chip ${c}" style="font-size:10.5px;font-weight:700;border:1px solid #DFE3EA;border-radius:999px;padding:4px 10px;color:#475569;background:#fff;">${t}</span>`).join('')}
+      </div>
       <table style="width:100%;border-collapse:separate;border-spacing:4px;font-size:12px;">
         <tr><th style="text-align:left;font-size:10.5px;color:#64748B;width:64px;"></th>
         ${['XS','S','M','L','XL','XXL'].map(t=>`<th style="font-size:10.5px;color:#64748B;font-weight:700;">${t}</th>`).join('')}</tr>
         ${[['Negro',[0,8,12,9,4,0]],['Blanco',[3,11,14,7,2,0]],['Vino',[2,5,6,3,1,0]],['Camel',[1,4,7,5,2,0]]]
-          .map(([c,v]:any)=>`<tr><td style="font-size:11px;font-weight:700;color:#0F172A;">${c}</td>${v.map((n:number)=>{
-            const s = n===0?est.celdaZero:(n<=3?est.celdaLo:est.celdaOk);
-            return `<td style="${s}border-radius:7px;height:30px;text-align:center;font-weight:800;font-variant-numeric:tabular-nums;">${n}</td>`;
+          .map(([c,v]:any)=>`<tr><td style="font-size:11px;font-weight:700;color:#0F172A;">${c}</td>${v.map((n:number,i:number)=>{
+            const st = n===0?est.celdaZero:(n<=3?est.celdaLo:est.celdaOk);
+            const marca = (c==='Negro'&&i===2)?'box-shadow:0 0 0 2px #2563EB;':'';
+            return `<td style="${st}${marca}border-radius:7px;height:30px;text-align:center;font-weight:800;font-variant-numeric:tabular-nums;">${n}</td>`;
           }).join('')}</tr>`).join('')}
       </table>
-      <p style="margin:12px 0 0;font-size:11px;color:#94A3B8;">Negro XS agotado · Vino XXL sin una sola venta</p>
+      <p style="margin:12px 0 0;font-size:11px;color:#94A3B8;">Negro M · 12 disponibles en esta sucursal</p>
     </div>`,
   },
   {
@@ -120,15 +126,20 @@ export const seccionesRopa: SuiteSeccion[] = [
       'Alerta de prenda que lleva más de 90 días sin moverse',
     ],
     visual: `<div style="${est.wrap}">
-      <p style="${est.h}">Inventario por temporada</p>
-      ${[['PV 26 · actual',68,'#2563EB','$840,000'],['OI 25',22,'#F59E0B','$270,000'],['PV 25 · rezago',10,'#EF4444','$118,000']]
-        .map(([n,p,c,m]:any)=>`<div style="margin-bottom:14px;">
-          <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:#0F172A;margin-bottom:5px;">
-            <span>${n}</span><span style="font-variant-numeric:tabular-nums;">${m}</span></div>
-          <div style="height:9px;background:#F1F5F9;border-radius:5px;overflow:hidden;">
-            <div style="width:${p}%;height:100%;background:${c};"></div></div>
-        </div>`).join('')}
-      <p style="margin:6px 0 0;font-size:11px;color:#EF4444;font-weight:700;">$118,000 parados en colección de hace un año</p>
+      <p style="${est.h}">Lo que tienes colgado, por antigüedad</p>
+      <div class="mk-env">
+        ${[['PV 26','12 días','linear-gradient(160deg,#4B7BE5,#2D4EA8)'],
+           ['OI 25','210 días','linear-gradient(160deg,#C58B5C,#8A5A38)'],
+           ['PV 25','400 días','linear-gradient(160deg,#6FB98F,#3E7A5C)'],
+           ['OI 24','580 días','linear-gradient(160deg,#B26B7A,#7A3F4E)']]
+          .map(([t,d,bg]:any)=>`<div class="mk-env-p"><div class="mk-env-tela" style="background:${bg}"></div><small>${t} · ${d}</small></div>`).join('')}
+      </div>
+      <div class="mk-env-barra"><i></i></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;">
+        <span style="color:#94A3B8;">Recién llegado</span>
+        <span style="color:#EF4444;">$118,000 parados</span>
+      </div>
+      <p style="margin:14px 0 0;font-size:11px;color:#94A3B8;">La colección vieja pierde color en el tablero: se ve el rezago sin abrir un reporte</p>
     </div>`,
   },
   {
@@ -171,16 +182,20 @@ export const seccionesRopa: SuiteSeccion[] = [
     ],
     visual: `<div style="${est.wrap}">
       <p style="${est.h}">Vestido midi verde · talla S</p>
-      ${[['Centro','Esta tienda',0,true],['Satélite','Sucursal Norte',3,false],['Polanco','Sucursal Sur',5,false],['Bodega','Almacén central',12,false]]
-        .map(([n,s,q,aqui]:any)=>`<div style="border:1px solid ${aqui?'#3B82F6':'#EEF1F5'};background:${aqui?'#F7FBFF':'#fff'};border-radius:11px;padding:11px 13px;margin-bottom:7px;display:flex;align-items:center;gap:11px;">
-          <div style="flex:1;">
-            <div style="font-size:12.5px;font-weight:700;color:#0F172A;">${n}</div>
-            <div style="font-size:10.5px;color:#94A3B8;font-weight:600;">${s}</div>
-          </div>
-          <span style="font-size:14px;font-weight:800;color:${q>0?'#10B981':'#CBD5E1'};font-variant-numeric:tabular-nums;">${q}</span>
-          ${aqui?'<span style="background:#3B82F6;color:#fff;border-radius:999px;padding:2px 8px;font-size:9px;font-weight:800;">AQUÍ</span>'
-                :(q>0?'<span style="background:#ECFDF5;color:#047857;border-radius:999px;padding:2px 8px;font-size:9px;font-weight:800;">TOMAR</span>':'')}
-        </div>`).join('')}
+      <div class="mk-mapa">
+        <svg viewBox="0 0 400 234" preserveAspectRatio="none">
+          <path class="mk-linea" d="M300 62 C 240 40, 180 120, 120 140" />
+        </svg>
+        <div class="mk-pin viva" style="left:75%;top:26%"><i></i><b>Satélite</b><small>3 disponibles</small></div>
+        <div class="mk-pin aqui" style="left:30%;top:60%"><i></i><b>Centro · aquí</b><small>agotada</small></div>
+        <div class="mk-pin" style="left:60%;top:80%"><i></i><b>Polanco</b><small>5 disponibles</small></div>
+        <div class="mk-pin" style="left:18%;top:20%"><i></i><b>CEDIS</b><small>12 disponibles</small></div>
+      </div>
+      <div style="border:1px solid #EEF1F5;border-radius:11px;padding:11px 13px;display:flex;align-items:center;gap:10px;">
+        <div style="flex:1;"><div style="font-size:12.5px;font-weight:700;color:#0F172A;">Tomar de Satélite</div>
+        <div style="font-size:10.5px;color:#94A3B8;font-weight:600;">Sale de su inventario, entra al tuyo</div></div>
+        <span style="background:#ECFDF5;color:#047857;border-radius:999px;padding:3px 10px;font-size:10px;font-weight:800;">TOMAR</span>
+      </div>
     </div>`,
     testimonio: {
       cita:
@@ -312,23 +327,15 @@ export const seccionesRopa: SuiteSeccion[] = [
       'Tú decides si el agente solo te avisa o si ya ejecuta la acción',
     ],
     visual: `<div style="${est.wrap}">
-      <p style="${est.h}">Tus agentes · activos</p>
-      ${[
-        ['Vigía de tallas','Cada mañana, 8:00','Avisa','Jean recto M: quedan 4, se agota en 6 días'],
-        ['Asesora de WhatsApp','En cuanto escriben','Ejecuta','Respondió 23 mensajes · 6 apartados creados'],
-        ['Compradora','Lunes, 9:00','Solo propone','Pedido sugerido a 3 proveedores, listo para tu OK'],
-      ].map(([n,c,m,r]:any)=>`<div style="border:1px solid #EEF1F5;border-radius:12px;padding:12px 13px;margin-bottom:8px;">
-        <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px;">
-          <span style="width:26px;height:26px;border-radius:8px;background:#EFF6FF;color:#2563EB;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;">IA</span>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:12.5px;font-weight:700;color:#0F172A;">${n}</div>
-            <div style="font-size:10.5px;color:#94A3B8;font-weight:600;">${c}</div>
-          </div>
-          <span style="background:${m==='Ejecuta'?'#ECFDF5':'#EFF6FF'};color:${m==='Ejecuta'?'#047857':'#2563EB'};border-radius:999px;padding:3px 9px;font-size:9.5px;font-weight:800;white-space:nowrap;">${m}</span>
-        </div>
-        <div style="font-size:11px;color:#475569;font-weight:600;line-height:1.45;">${r}</div>
-      </div>`).join('')}
-      <p style="margin:10px 0 0;font-size:11px;color:#94A3B8;">Los configuras tú, con tus reglas y tus límites</p>
+      <p style="${est.h}">Asesora de WhatsApp · en vivo</p>
+      <div class="mk-chat">
+        <div class="mk-burb mk-burb-cli"><div class="mk-rot">Clienta</div>Hola, vi el vestido verde en su historia. ¿Lo tienen en chica?</div>
+        <div class="mk-burb mk-burb-ia"><div class="mk-rot">Agente de IA</div><span class="mk-txt-ia">Sí, nos queda una en chica. Está en Satélite y ya te la aparté aquí en Centro</span><span class="mk-teclea"></span></div>
+      </div>
+      <div class="mk-accion" style="margin-top:10px;">
+        <b>EJECUTÓ</b><span>Apartado #4471 creado en Centro · pieza tomada de Satélite</span>
+      </div>
+      <p style="margin:12px 0 0;font-size:11px;color:#94A3B8;">Tú decides si el agente solo avisa o si ya ejecuta</p>
     </div>`,
     testimonio: {
       cita:

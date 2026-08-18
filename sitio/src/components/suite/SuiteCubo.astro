@@ -1,0 +1,318 @@
+---
+/**
+ * SuiteCubo — el cubo de inventario en 3D.
+ *
+ * Es el momento fuerte de la pagina: la retícula talla × color × sucursal
+ * flotando y girando mientras el visitante baja. Cada cubo es una casilla real
+ * de la blusa satinada (los mismos numeros que la seccion "matriz" del
+ * recorrido), y las casillas apagadas son las combinaciones agotadas. El
+ * problema del giro se ve antes de leerse.
+ *
+ * Tres decisiones que importan:
+ *
+ * 1. Three.js se carga SOLO cuando el bloque se acerca al viewport. Son 590 KB;
+ *    cargarlos en el <head> castigaria el LCP de toda la pagina por un adorno
+ *    que esta a tres pantallas de distancia.
+ * 2. Si no hay WebGL —o si el visitante pidio menos animacion— se muestra la
+ *    version plana en HTML, que dice exactamente lo mismo. Nunca queda un hueco.
+ * 3. El giro lo manda el SCROLL, no un temporizador: el objeto responde al
+ *    visitante en vez de moverse solo. Se puede arrastrar con el dedo.
+ */
+---
+
+<section class="cubo-bloque" id="cubo3d">
+  <div class="cubo-pin">
+    <canvas id="cuboLienzo" aria-hidden="true"></canvas>
+    <div class="cubo-velo" aria-hidden="true"></div>
+
+    <!-- Respaldo: se queda si no hay WebGL. Es la misma matriz, plana. -->
+    <div class="cubo-plano" id="cuboPlano">
+      <table>
+        <tr><th></th>{['XS','S','M','L','XL','XXL'].map((t) => <th>{t}</th>)}</tr>
+        {[
+          ['Negro', [0, 8, 12, 9, 4, 0]],
+          ['Blanco', [3, 11, 14, 7, 2, 0]],
+          ['Vino', [2, 5, 6, 3, 1, 0]],
+          ['Camel', [1, 4, 7, 5, 2, 0]],
+        ].map(([c, vals]: any) => (
+          <tr>
+            <td class="c">{c}</td>
+            {vals.map((n: number) => (
+              <td class:list={['n', n === 0 ? 'cero' : n <= 3 ? 'bajo' : 'ok']}>{n}</td>
+            ))}
+          </tr>
+        ))}
+      </table>
+    </div>
+
+    <div class="cubo-txt">
+      <p class="cubo-eyebrow">Una sola prenda</p>
+      <h2>Esto es lo que de verdad hay<br /> detrás de <span>“una blusa”</span>.</h2>
+      <p class="cubo-sub">
+        Seis tallas por cuatro colores, en tres sucursales. Setenta y dos casillas, cada una
+        con su propia existencia. Las apagadas son las que ya no tienes — y las que tu clienta
+        justo está pidiendo.
+      </p>
+      <ul class="cubo-leyenda">
+        <li><i class="ok"></i>Con existencia</li>
+        <li><i class="bajo"></i>Última pieza</li>
+        <li><i class="cero"></i>Agotado</li>
+      </ul>
+    </div>
+
+    <p class="cubo-pista" id="cuboPista">Gira con el scroll · arrástralo si quieres</p>
+  </div>
+</section>
+
+<style>
+  /* El bloque mide 3 pantallas: el pin se queda fijo y el scroll de esas tres
+     pantallas es el que hace girar el objeto. */
+  .cubo-bloque { height: 300vh; background: #08080A; position: relative; }
+  .cubo-pin {
+    position: sticky; top: 0; height: 100vh; overflow: hidden;
+    display: flex; align-items: center;
+  }
+  #cuboLienzo { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  /* El objeto vive a la derecha; este velo oscurece la izquierda para que el
+     titulo no se lea encima de los cubos. Sin el, ambos pierden. */
+  .cubo-velo {
+    position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(90deg, rgba(8,8,10,.92) 0%, rgba(8,8,10,.8) 32%, rgba(8,8,10,.25) 58%, rgba(8,8,10,0) 78%);
+  }
+
+  .cubo-txt {
+    position: relative; z-index: 2; max-width: 1200px; margin: 0 auto;
+    padding: 0 24px; width: 100%;
+  }
+  .cubo-eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: #60A5FA; margin: 0 0 18px;
+  }
+  .cubo-txt h2 {
+    font-size: clamp(30px, 5vw, 60px); font-weight: 800; letter-spacing: -2px;
+    line-height: 1.04; color: #fff; margin: 0 0 20px; max-width: 15ch;
+  }
+  .cubo-txt h2 span {
+    background: linear-gradient(90deg, #60A5FA, #A78BFA);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .cubo-sub {
+    font-size: clamp(15px, 1.7vw, 19px); line-height: 1.6; color: #C6C6CE;
+    max-width: 44ch; margin: 0 0 28px;
+  }
+  .cubo-leyenda {
+    list-style: none; padding: 0; margin: 0; display: flex; gap: 22px; flex-wrap: wrap;
+    font-size: 13px; color: #A1A1AA; font-weight: 600;
+  }
+  .cubo-leyenda i {
+    display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 7px;
+  }
+  .cubo-leyenda i.ok { background: #34D399; }
+  .cubo-leyenda i.bajo { background: #E8A838; }
+  .cubo-leyenda i.cero { background: #2A2A33; }
+
+  .cubo-pista {
+    position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%);
+    font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: #55555F;
+    margin: 0; z-index: 2; transition: opacity .4s ease;
+  }
+
+  /* Respaldo plano: visible por defecto, el 3D lo oculta al arrancar. Asi, si
+     el script no corre, el visitante ve la matriz igual. */
+  .cubo-plano {
+    position: absolute; right: 6%; top: 50%; transform: translateY(-50%); z-index: 1;
+    background: rgba(12,12,16,.86); border: 1px solid rgba(255,255,255,.13);
+    border-radius: 18px; padding: 20px 22px;
+  }
+  .cubo-plano.oculto { display: none; }
+  .cubo-plano table { border-collapse: separate; border-spacing: 5px; }
+  .cubo-plano th {
+    font-size: 11px; color: #8A8A94; font-weight: 700; padding-bottom: 2px;
+  }
+  .cubo-plano td.c { font-size: 12px; font-weight: 700; color: #E4E4E7; padding-right: 6px; }
+  .cubo-plano td.n {
+    width: 40px; height: 34px; text-align: center; border-radius: 8px;
+    font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums;
+  }
+  .cubo-plano td.ok { background: rgba(52,211,153,.7); color: #04241A; }
+  .cubo-plano td.bajo { background: rgba(232,168,56,.75); color: #2A1B04; }
+  .cubo-plano td.cero { background: rgba(22,22,28,.9); color: #F0A9A9; border: 1px solid rgba(248,113,113,.4); }
+
+  @media (max-width: 900px) {
+    /* En movil el objeto va detras del texto y el bloque se acorta: tres
+       pantallas de scroll en un telefono se sienten eternas. */
+    .cubo-bloque { height: 220vh; }
+    /* En movil no hay lugar para poner el objeto al lado: se sube arriba, el
+       texto baja y el velo pasa a ser vertical. Antes el titulo se leia encima
+       de los cubos claros y no se entendia ninguno de los dos. */
+    .cubo-pin { align-items: flex-end; padding-bottom: 52px; }
+    .cubo-velo {
+      background: linear-gradient(180deg, rgba(8,8,10,.2) 0%, rgba(8,8,10,.62) 38%, rgba(8,8,10,.94) 62%, rgba(8,8,10,.98) 100%);
+    }
+    .cubo-plano { right: auto; left: 24px; top: auto; bottom: 30px; transform: none; padding: 14px; }
+    .cubo-plano td.n { width: 30px; height: 26px; font-size: 11px; }
+    .cubo-txt h2 { font-size: clamp(26px, 7vw, 40px); }
+    .cubo-pista { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cubo-bloque { height: auto; }
+    .cubo-pin { position: relative; height: auto; padding: 90px 0; }
+    #cuboLienzo { display: none; }
+    .cubo-plano { position: relative; right: auto; top: auto; transform: none; margin: 40px auto 0; width: max-content; max-width: 100%; }
+    .cubo-pin { display: block; }
+    .cubo-pista { display: none; }
+  }
+</style>
+
+<script>
+  {
+    const bloque = document.getElementById('cubo3d');
+    const lienzo = document.getElementById('cuboLienzo') as HTMLCanvasElement | null;
+    const plano = document.getElementById('cuboPlano');
+    const menos = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const hayWebGL = (() => {
+      try {
+        const c = document.createElement('canvas');
+        return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl')));
+      } catch { return false; }
+    })();
+
+    if (bloque && lienzo && hayWebGL && !menos) {
+      // Three.js pesa 590 KB: se pide solo cuando el bloque ya viene en camino.
+      let pedido = false;
+      const cargar = () => {
+        if (pedido) return;
+        pedido = true;
+        const s = document.createElement('script');
+        s.src = '/lib/three.min.js';
+        s.onload = arrancar;
+        s.onerror = () => { /* se queda la matriz plana, que ya esta puesta */ };
+        document.head.appendChild(s);
+      };
+
+      new IntersectionObserver((es) => {
+        if (es[0].isIntersecting) cargar();
+      }, { rootMargin: '900px 0px' }).observe(bloque);
+
+      function arrancar() {
+        const THREE = (window as any).THREE;
+        if (!THREE) return;
+        plano?.classList.add('oculto');
+
+        const esc = new THREE.Scene();
+        const cam = new THREE.PerspectiveCamera(42, 1, 0.1, 140);
+        cam.position.set(0, 2.2, 16);
+        cam.lookAt(0, 0, 0);
+
+        const r = new THREE.WebGLRenderer({ canvas: lienzo, antialias: true, alpha: true });
+        r.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        esc.add(new THREE.AmbientLight(0x1a1d2a, 2.2));
+        const l1 = new THREE.PointLight(0x7FA6F5, 2.0, 80); l1.position.set(-10, 9, 10); esc.add(l1);
+        const l2 = new THREE.PointLight(0xA78BFA, 1.7, 80); l2.position.set(10, -4, 8); esc.add(l2);
+        const l3 = new THREE.PointLight(0xE8A838, 1.0, 70); l3.position.set(0, 10, -7); esc.add(l3);
+
+        // La misma matriz de la blusa satinada que vive en el recorrido. Al
+        // alejarse de la sucursal principal queda menos pieza: por eso el -2.
+        const stock = [
+          [0, 8, 12, 9, 4, 0],
+          [3, 11, 14, 7, 2, 0],
+          [2, 5, 6, 3, 1, 0],
+          [1, 4, 7, 5, 2, 0],
+        ];
+        const grupo = new THREE.Group();
+        const geo = new THREE.BoxGeometry(0.82, 0.82, 0.82);
+        const vivos: any[] = [];
+
+        for (let s = 0; s < 3; s++) {
+          for (let c = 0; c < 4; c++) {
+            for (let t = 0; t < 6; t++) {
+              const n = Math.max(0, stock[c][t] - s * 2);
+              const agotado = n === 0;
+              const ultima = n > 0 && n <= 3;
+              const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
+                color: agotado ? 0x24242c : ultima ? 0xE8A838 : 0x34D399,
+                metalness: agotado ? 0.2 : 0.55,
+                roughness: agotado ? 0.85 : 0.28,
+                emissive: agotado ? 0x000000 : ultima ? 0x3a2a08 : 0x06301f,
+                emissiveIntensity: 0.9,
+                transparent: true,
+                opacity: agotado ? 0.3 : 0.95,
+              }));
+              m.position.set((t - 2.5) * 1.25, (1.5 - c) * 1.25, (1 - s) * 1.25);
+              grupo.add(m);
+              if (!agotado) vivos.push({ m, base: m.position.y, fase: (t + c + s) * 0.7 });
+            }
+          }
+        }
+        grupo.add(new THREE.LineSegments(
+          new THREE.EdgesGeometry(new THREE.BoxGeometry(8.4, 5.9, 4.4)),
+          new THREE.LineBasicMaterial({ color: 0x4B7BE5, transparent: true, opacity: 0.26 }),
+        ));
+        esc.add(grupo);
+
+        const medir = () => {
+          const a = lienzo!.clientWidth || window.innerWidth;
+          const b = lienzo!.clientHeight || window.innerHeight;
+          r.setSize(a, b, false);
+          cam.aspect = a / b;
+          const angosto = a < 900;
+          // En pantalla angosta el ancho visible es la mitad que el alto: a 22
+          // el cubo se salia por los lados, por eso la camara se va mas lejos.
+          cam.position.z = angosto ? 30 : 16;
+          cam.lookAt(0, 0, 0);
+          // En escritorio el cubo se recorre a la derecha y la mitad izquierda
+          // queda para el texto. En movil sube, y el texto baja.
+          grupo.position.x = angosto ? 0 : 3.6;
+          grupo.position.y = angosto ? 2.6 : 0;
+          cam.updateProjectionMatrix();
+        };
+        medir();
+        window.addEventListener('resize', medir);
+
+        // Giro: lo manda el scroll dentro del bloque; el arrastre lo corrige.
+        let porScroll = 0, manual = 0, incX = 0.3;
+        let ultX = 0, ultY = 0, agarrado = false;
+        const abajo = (x: number, y: number) => { agarrado = true; ultX = x; ultY = y; };
+        const mueve = (x: number, y: number) => {
+          if (!agarrado) return;
+          manual += (x - ultX) * 0.008;
+          incX = Math.max(-0.85, Math.min(0.85, incX + (y - ultY) * 0.006));
+          ultX = x; ultY = y;
+        };
+        const suelta = () => { agarrado = false; };
+        lienzo.addEventListener('mousedown', (e) => abajo(e.clientX, e.clientY));
+        window.addEventListener('mousemove', (e) => mueve(e.clientX, e.clientY));
+        window.addEventListener('mouseup', suelta);
+        lienzo.addEventListener('touchstart', (e) => abajo(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+        lienzo.addEventListener('touchmove', (e) => mueve(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+        lienzo.addEventListener('touchend', suelta);
+
+        const pista = document.getElementById('cuboPista');
+        let visible = false;
+        new IntersectionObserver((es) => { visible = es[0].isIntersecting; }, { threshold: 0.02 }).observe(bloque!);
+
+        const avance = () => {
+          const rect = bloque!.getBoundingClientRect();
+          const total = rect.height - window.innerHeight;
+          return total <= 0 ? 0 : Math.min(1, Math.max(0, -rect.top / total));
+        };
+
+        const dibuja = (t: number) => {
+          requestAnimationFrame(dibuja);
+          if (!visible) return;
+          const p = avance();
+          porScroll = p * Math.PI * 1.7;
+          if (pista) pista.style.opacity = p > 0.12 ? '0' : '1';
+          grupo.rotation.y = -0.5 + porScroll + manual;
+          grupo.rotation.x = incX * (1 - p * 0.5);
+          vivos.forEach((v) => { v.m.position.y = v.base + Math.sin(t * 0.0011 + v.fase) * 0.07; });
+          r.render(esc, cam);
+        };
+        requestAnimationFrame(dibuja);
+      }
+    }
+  }
+</script>

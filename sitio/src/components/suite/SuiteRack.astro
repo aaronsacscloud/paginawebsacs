@@ -1,0 +1,143 @@
+---
+/**
+ * SuiteRack — el perchero que corre de lado con el scroll.
+ *
+ * Es un respiro entre bloques: rompe el ritmo vertical de la pagina con un
+ * movimiento lateral que es, literalmente, la metafora del giro. Cada prenda
+ * lleva su ficha (modelo, color, tallas vivas), asi que el adorno tambien
+ * informa.
+ *
+ * Va contra el scroll de la pagina, NO lo secuestra: el visitante nunca pierde
+ * el control de su rueda. Un rack que atrapa el scroll es la forma mas rapida
+ * de que alguien cierre la pestaña.
+ */
+const prendas = [
+  { n: 'Blusa satinada', c: 'Negro', t: 'XS S M L', bg: 'linear-gradient(160deg,#2C2C34,#141418)' },
+  { n: 'Vestido midi', c: 'Verde olivo', t: 'S M L', bg: 'linear-gradient(160deg,#6B7A4B,#3E4A2A)' },
+  { n: 'Pantalón sastre', c: 'Camel', t: 'S M L XL', bg: 'linear-gradient(160deg,#C0996A,#8A6942)' },
+  { n: 'Saco lino', c: 'Beige', t: 'M L', bg: 'linear-gradient(160deg,#D6CBB4,#A79A7E)' },
+  { n: 'Jean recto', c: 'Azul medio', t: 'S M L XL', bg: 'linear-gradient(160deg,#4A6C99,#2C4160)' },
+  { n: 'Playera oversize', c: 'Blanco', t: 'S M L', bg: 'linear-gradient(160deg,#EFEFEF,#BFBFC4)' },
+  { n: 'Falda plisada', c: 'Vino', t: 'XS S M', bg: 'linear-gradient(160deg,#8A3A4C,#5A2431)' },
+  { n: 'Gabardina', c: 'Arena', t: 'M L XL', bg: 'linear-gradient(160deg,#CBB795,#96825F)' },
+  { n: 'Suéter punto', c: 'Gris jaspe', t: 'S M L', bg: 'linear-gradient(160deg,#9A9AA4,#63636D)' },
+  { n: 'Chaleco acolchado', c: 'Negro', t: 'M L XL', bg: 'linear-gradient(160deg,#33333B,#17171C)' },
+];
+---
+
+<section class="rack-bloque" id="rackBloque">
+  <div class="rack-head">
+    <p class="rack-eyebrow">Un modelo no es un producto</p>
+    <h2>Cada prenda que cuelgas son <span>ocho, doce, veinticuatro</span> piezas distintas.</h2>
+  </div>
+
+  <div class="rack">
+    <div class="rack-tubo"></div>
+    <div class="rack-prendas" id="rackPrendas">
+      {prendas.map((p) => (
+        <div class="rack-prenda">
+          <div class="rack-gancho"></div>
+          <div class="rack-tela" style={`background:${p.bg}`}></div>
+          <div class="rack-ficha">
+            <b>{p.n}</b>{p.c} · {p.t}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <div class="rack-pista"><i id="rackPista"></i></div>
+</section>
+
+<style>
+  .rack-bloque { background: #0C0C10; padding: 90px 0 70px; overflow: hidden; }
+  .rack-head { max-width: 1200px; margin: 0 auto 46px; padding: 0 24px; }
+  .rack-eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+    color: #60A5FA; margin: 0 0 16px;
+  }
+  .rack-head h2 {
+    font-size: clamp(26px, 4vw, 46px); font-weight: 800; letter-spacing: -1.8px;
+    line-height: 1.06; color: #fff; margin: 0; max-width: 22ch;
+  }
+  .rack-head h2 span {
+    background: linear-gradient(90deg, #60A5FA, #A78BFA);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+
+  .rack { position: relative; height: 340px; }
+  .rack-tubo {
+    position: absolute; top: 24px; left: 0; right: 0; height: 4px;
+    background: linear-gradient(90deg, #2E2E36, #7A7A88 20%, #7A7A88 80%, #2E2E36);
+  }
+  .rack-prendas { display: flex; gap: 30px; padding: 0 40px; will-change: transform; }
+  .rack-prenda { width: 140px; flex-shrink: 0; text-align: center; }
+  .rack-gancho {
+    width: 26px; height: 26px; border: 2.5px solid #9A9AA8; border-bottom: none;
+    border-radius: 50% 50% 0 0; margin: 0 auto -2px;
+  }
+  .rack-tela {
+    height: 196px; border-radius: 6px 6px 16px 16px;
+    box-shadow: inset 0 -34px 44px rgba(0,0,0,.34);
+  }
+  .rack-ficha { margin-top: 13px; font-size: 11px; color: #71717A; font-weight: 600; }
+  .rack-ficha b { display: block; font-size: 12.5px; color: #E4E4E7; margin-bottom: 3px; font-weight: 600; }
+
+  .rack-pista {
+    max-width: 1200px; margin: 34px auto 0; padding: 0 24px; height: 3px;
+  }
+  .rack-pista i {
+    display: block; height: 3px; width: 14%; background: #2563EB; border-radius: 2px;
+    transition: width .1s linear;
+  }
+
+  @media (max-width: 760px) {
+    .rack-bloque { padding: 64px 0 52px; }
+    .rack { height: 280px; }
+    .rack-prenda { width: 108px; }
+    .rack-tela { height: 152px; }
+    .rack-prendas { gap: 20px; padding: 0 18px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* Sin movimiento el rack se navega a mano, como una galería normal. */
+    .rack { overflow-x: auto; }
+    .rack-prendas { transform: none !important; }
+    .rack-pista { display: none; }
+  }
+</style>
+
+<script>
+  {
+    const bloque = document.getElementById('rackBloque');
+    const tira = document.getElementById('rackPrendas');
+    const pista = document.getElementById('rackPista');
+    const menos = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (bloque && tira && !menos) {
+      let pendiente = false;
+
+      const mover = () => {
+        pendiente = false;
+        const r = bloque.getBoundingClientRect();
+        // Avance del bloque por la pantalla: 0 cuando asoma por abajo, 1 cuando
+        // termina de salir por arriba.
+        const p = Math.min(1, Math.max(0, (window.innerHeight - r.top) / (window.innerHeight + r.height)));
+        const max = Math.max(0, tira.scrollWidth - bloque.clientWidth + 80);
+        tira.style.transform = `translateX(${-p * max}px)`;
+        if (pista) pista.style.width = Math.max(14, p * 100) + '%';
+      };
+
+      // El scroll dispara muchisimo; se pinta una vez por cuadro y no por evento.
+      const alScroll = () => {
+        if (pendiente) return;
+        pendiente = true;
+        requestAnimationFrame(mover);
+      };
+
+      window.addEventListener('scroll', alScroll, { passive: true });
+      window.addEventListener('resize', alScroll);
+      mover();
+    }
+  }
+</script>

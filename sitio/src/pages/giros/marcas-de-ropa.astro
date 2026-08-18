@@ -13,7 +13,11 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SuiteScroll from '../../components/suite/SuiteScroll.astro';
 import SuiteManifiesto from '../../components/suite/SuiteManifiesto.astro';
-import FinalCTA from '../../components/FinalCTA.astro';
+import SuiteCubo from '../../components/suite/SuiteCubo.astro';
+import SuiteCortina from '../../components/suite/SuiteCortina.astro';
+import SuiteRack from '../../components/suite/SuiteRack.astro';
+import SuiteCifras from '../../components/suite/SuiteCifras.astro';
+import SuiteCierre from '../../components/suite/SuiteCierre.astro';
 import { seccionesRopa } from '../../data/suite-ropa';
 
 const titulo = 'Suite para Tiendas de Ropa';
@@ -48,6 +52,14 @@ const desc =
         <a href="/contacto" class="btn-pri">Agenda una demo</a>
         <a href="/prueba-gratis" class="btn-sec">Prueba gratis</a>
       </div>
+      <!-- La reticula se arma sobre la escena: el sistema aparece encima de la
+           realidad, no en una captura aparte. Se oculta en movil, donde no cabe
+           sin taparle la cara a la foto. -->
+      <div class="hero-matriz" id="heroMatriz" aria-hidden="true">
+        <span class="hm-rot">Blusa satinada · talla × color</span>
+        <div class="hm-grid" id="hmGrid"></div>
+      </div>
+
       <div class="hero-datos">
         <div><b>+3,000</b><span>marcas activas</span></div>
         <div><b>24 SKU</b><span>de un modelo, en un paso</span></div>
@@ -72,6 +84,29 @@ const desc =
     cierre="Ningún sistema de abarrotes entiende esto. Y hoy ya no basta con entender el mostrador: tu tienda física, tu tienda en línea, tus marketplaces y tu WhatsApp son el mismo negocio, con el mismo inventario y la misma clienta. Esa es la nueva era del retail y es la que llevamos años construyendo: cada pantalla que sigue funciona igual en el piso de venta que en digital, y encima puedes poner agentes de IA — programados por ti — para que hagan el trabajo repetitivo."
   />
 
+  <!-- ── El momento fuerte: el cubo de inventario girando ── -->
+  <SuiteCubo />
+
+  <!-- ── La comparación que hace el propio visitante ── -->
+  <SuiteCortina />
+
+  <!-- ── Respiro fotográfico: la escala de la operación ── -->
+  <SuiteCifras
+    foto="/images/suite-moda-cedis.webp"
+    alt="Centro de distribución de ropa con racks de prenda colgada y cajas"
+    frase="Desde una boutique hasta una cadena con centro de distribución."
+    encuadre="center 42%"
+    datos={[
+      { n: 3000, pre: '+', rotulo: 'MARCAS ACTIVAS' },
+      { n: 558, rotulo: 'OPERACIONES EN VIVO' },
+      { n: 24, pos: ' SKU', rotulo: 'DE UN MODELO, EN UN PASO' },
+      { n: 4, pos: ' canales', rotulo: 'UN SOLO INVENTARIO' },
+    ]}
+  />
+
+  <!-- ── El perchero: un modelo son muchas piezas ── -->
+  <SuiteRack />
+
   <!-- ── Recorrido de funcionalidades ── -->
   <SuiteScroll
     eyebrow="Suite Moda"
@@ -80,7 +115,14 @@ const desc =
     secciones={seccionesRopa}
   />
 
-  <FinalCTA />
+  <!-- ── Cierre propio del giro, no el pie compartido ── -->
+  <SuiteCierre
+    foto="/images/suite-moda-probador.webp"
+    alt="Probador de una boutique con prendas y espejo"
+    titulo="Que tu tienda deje de <span>adivinar</span>."
+    sub="Te enseñamos la matriz de tallas con tu propio catálogo cargado, en 30 minutos. Físico, en línea y WhatsApp, con un solo inventario."
+    encuadre="62% 40%"
+  />
 </BaseLayout>
 
 <style>
@@ -140,6 +182,31 @@ const desc =
   }
   .hero-datos span { font-size: 13px; color: #A1A1AA; font-weight: 600; }
 
+  /* Matriz superpuesta a la foto */
+  .hero-matriz {
+    position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+    background: rgba(9,9,13,.86); border: 1px solid rgba(255,255,255,.14);
+    border-radius: 18px; padding: 18px 20px 20px; box-shadow: 0 28px 70px rgba(0,0,0,.55);
+  }
+  .hm-rot {
+    display: block; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase;
+    color: #A1A1AA; font-weight: 700; margin-bottom: 14px;
+  }
+  .hm-grid { display: grid; grid-template-columns: repeat(6, 44px); gap: 6px; }
+  .hm-celda {
+    height: 44px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; color: #fff;
+    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+    opacity: 0; transform: scale(.72);
+    transition: opacity .4s ease, transform .4s cubic-bezier(.2,1.1,.3,1);
+  }
+  .hm-celda.on { opacity: 1; transform: none; }
+  .hm-celda.ok { background: rgba(52,211,153,.7); border-color: #6EE7B7; color: #04241A; }
+  .hm-celda.bajo { background: rgba(232,168,56,.74); border-color: #F5C978; color: #2A1B04; }
+  .hm-celda.cero { background: rgba(20,20,26,.78); border-color: rgba(248,113,113,.45); color: #F0A9A9; }
+
+  @media (max-width: 1180px) { .hero-matriz { display: none; } }
+
   @media (max-width: 900px) {
     .hero { min-height: 88vh; padding: 104px 18px 56px; }
     .hero-bg img { object-position: 62% 32%; }
@@ -151,3 +218,30 @@ const desc =
     .hero-cta { margin-bottom: 34px; }
   }
 </style>
+
+<script>
+  /* La matriz de la portada se arma sola al cargar: cada celda entra con un
+     retardo mínimo, como si el sistema estuviera leyendo la tienda. Se usa
+     transición (no animation-delay) porque el estado final es el normal: si
+     algo falla a media cascada, las celdas quedan visibles igual. */
+  {
+    const grid = document.getElementById('hmGrid');
+    if (grid) {
+      const filas = [[0,8,12,9,4,0],[3,11,14,7,2,0],[2,5,6,3,1,0],[1,4,7,5,2,0]];
+      const menos = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const celdas: HTMLElement[] = [];
+
+      filas.forEach((f) => f.forEach((n) => {
+        const c = document.createElement('div');
+        c.className = 'hm-celda ' + (n === 0 ? 'cero' : n <= 3 ? 'bajo' : 'ok');
+        c.textContent = String(n);
+        grid.appendChild(c);
+        celdas.push(c);
+      }));
+
+      requestAnimationFrame(() => {
+        celdas.forEach((c, i) => setTimeout(() => c.classList.add('on'), menos ? 0 : 220 + i * 28));
+      });
+    }
+  }
+</script>

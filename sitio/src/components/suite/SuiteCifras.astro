@@ -1,0 +1,108 @@
+---
+/**
+ * SuiteCifras — franja fotográfica a sangre con números que se cuentan solos.
+ *
+ * Su trabajo no es informar, es cambiar el ritmo. Entre bloques de producto,
+ * una foto de ancho completo y cuatro cifras grandes suben la percepcion de
+ * precio de toda la pagina: se lee como producto caro y no como plantilla.
+ *
+ * Los numeros se animan una sola vez y SIEMPRE terminan en su valor real,
+ * incluso si el visitante pidio menos movimiento — el dato importa mas que el
+ * efecto.
+ */
+interface Dato {
+  /** Valor final; se cuenta desde cero hasta aqui. */
+  n: number;
+  /** Texto antes del numero, p. ej. "+" o "$". */
+  pre?: string;
+  /** Texto despues del numero, p. ej. " SKU". */
+  pos?: string;
+  rotulo: string;
+}
+interface Props {
+  foto: string;
+  alt: string;
+  frase: string;
+  datos: Dato[];
+  /** Encuadre de la foto; por defecto centrado. */
+  encuadre?: string;
+}
+const { foto, alt, frase, datos, encuadre = 'center 45%' } = Astro.props;
+---
+
+<section class="cif">
+  <img src={foto} alt={alt} loading="lazy" decoding="async" style={`object-position:${encuadre}`} />
+  <div class="cif-velo"></div>
+  <div class="cif-inner">
+    <p class="cif-frase">{frase}</p>
+    <div class="cif-grid">
+      {datos.map((d) => (
+        <div>
+          <b data-hasta={d.n} data-pre={d.pre || ''} data-pos={d.pos || ''}>0</b>
+          <span>{d.rotulo}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .cif { position: relative; min-height: 460px; display: flex; align-items: flex-end; overflow: hidden; }
+  .cif img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .cif-velo {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(8,8,10,.42) 0%, rgba(8,8,10,.72) 55%, rgba(8,8,10,.95) 100%);
+  }
+  .cif-inner {
+    position: relative; max-width: 1200px; margin: 0 auto; width: 100%;
+    padding: 0 24px 56px;
+  }
+  .cif-frase {
+    font-size: clamp(19px, 2.6vw, 30px); font-weight: 700; color: #fff; letter-spacing: -.8px;
+    max-width: 26ch; line-height: 1.2; margin: 0 0 40px;
+  }
+  .cif-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+  .cif-grid b {
+    display: block; font-size: clamp(26px, 4.2vw, 52px); font-weight: 800;
+    letter-spacing: -2px; color: #fff; line-height: 1; font-variant-numeric: tabular-nums;
+    margin-bottom: 8px;
+  }
+  .cif-grid span { font-size: 12.5px; color: #A1A1AA; font-weight: 600; letter-spacing: .04em; }
+
+  @media (max-width: 760px) {
+    .cif { min-height: 400px; }
+    .cif-inner { padding: 0 18px 40px; }
+    .cif-grid { grid-template-columns: 1fr 1fr; gap: 18px; }
+  }
+</style>
+
+<script>
+  {
+    const menos = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    document.querySelectorAll<HTMLElement>('.cif').forEach((franja) => {
+      const io = new IntersectionObserver((es) => {
+        if (!es[0].isIntersecting) return;
+        io.disconnect();
+
+        franja.querySelectorAll<HTMLElement>('b[data-hasta]').forEach((el) => {
+          const fin = Number(el.dataset.hasta) || 0;
+          const pre = el.dataset.pre || '';
+          const pos = el.dataset.pos || '';
+          const pinta = (v: number) => { el.textContent = pre + v.toLocaleString('es-MX') + pos; };
+
+          if (menos) { pinta(fin); return; }
+
+          const t0 = performance.now();
+          const paso = (t: number) => {
+            const p = Math.min(1, (t - t0) / 1400);
+            pinta(Math.round(fin * (1 - Math.pow(1 - p, 3))));
+            if (p < 1) requestAnimationFrame(paso);
+          };
+          requestAnimationFrame(paso);
+        });
+      }, { threshold: 0.4 });
+      io.observe(franja);
+    });
+  }
+</script>

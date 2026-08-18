@@ -2524,6 +2524,94 @@ function MinutaReunion({ reunion, companyId, soloLectura, onCerrar, onListo }: a
   );
 }
 
+
+/* ─────────── Elegir de dónde sale la oportunidad ───────────
+ * Casi ninguna oportunidad nace de la nada: nace de algo que ya se cotizó. Por
+ * eso el alta empieza por buscar la cotización de la cuenta y solo si no está
+ * se abre el formulario en blanco —al revés se capturaba a mano lo que ya
+ * existía, con otro monto y otra fecha. */
+const ESTADO_COT: Record<string, string> = {
+  draft: 'borrador', sent: 'enviada', accepted: 'aceptada', paid: 'pagada',
+  expired: 'vencida', rejected: 'rechazada',
+};
+
+function ElegirCotizacionModal({ companyId, busyId, onUsar, onDesdeCero, onClose }: any) {
+  const [q, setQ] = useState('');
+  const [propias, setPropias] = useState<any[] | null>(null);
+  const [huerfanas, setHuerfanas] = useState<any[]>([]);
+
+  useEffect(() => {
+    let vivo = true;
+    // Se busca contra el servidor y no en memoria: las cotizaciones que valen
+    // son justo las que NO están ligadas a esta cuenta todavía.
+    const t = setTimeout(() => {
+      fetch(`/api/crm/deals/cotizaciones?company_id=${companyId}&q=${encodeURIComponent(q)}`)
+        .then(r => r.json())
+        .then(j => { if (!vivo) return; setPropias(j.propias || []); setHuerfanas(j.huerfanas || []); })
+        .catch(() => { if (vivo) { setPropias([]); setHuerfanas([]); } });
+    }, q ? 260 : 0);
+    return () => { vivo = false; clearTimeout(t); };
+  }, [companyId, q]);
+
+  const fila = (c: any, ajena: boolean) => (
+    <div key={c.id} style={{ display: 'flex', gap: 9, alignItems: 'center', flexWrap: 'wrap', padding: '9px 0', borderTop: '1px solid #f2f1f6' }}>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{ fontSize: '0.83rem', fontWeight: 700 }}>
+          {c.numero} · {money(c.total)}
+          <span style={{ ...D.badge, marginLeft: 7, background: c.estado === 'paid' ? '#EAF8F2' : '#F4F4F6', color: c.estado === 'paid' ? '#1E8A63' : '#6B7280' }}>{ESTADO_COT[c.estado] || c.estado}</span>
+        </div>
+        <div style={{ fontSize: '0.73rem', color: '#8a8590' }}>
+          {fmtDate(c.pagado_fecha || c.created_at)}{c.empresa ? ' · ' + c.empresa : ''}{c.contacto ? ' · ' + c.contacto : ''}
+          {ajena && <span style={{ color: '#9a6a10' }}> · sin cliente ligado</span>}
+        </div>
+      </div>
+      <a href={`/cotizacion/${c.id}`} target="_blank" rel="noreferrer" style={{ ...D.btnG, textDecoration: 'none', fontSize: '0.76rem' }}>Ver</a>
+      <button style={{ ...D.btn, fontSize: '0.76rem' }} disabled={busyId === c.id} onClick={() => onUsar(c)}>
+        {busyId === c.id ? '…' : 'Usar esta'}
+      </button>
+    </div>
+  );
+
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(16,24,40,.35)', zIndex: 970, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 22px 54px rgba(16,24,40,.24)', width: 560, maxWidth: '100%', maxHeight: '88vh', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '14px 17px', background: '#faf8ff', borderBottom: '1px solid #e6ddfa', borderRadius: '14px 14px 0 0', display: 'flex', alignItems: 'baseline', gap: 9 }}>
+          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, flex: 1 }}>Nueva oportunidad</h3>
+          <button onClick={onClose} style={{ border: 'none', background: 'none', color: '#9c99a6', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+        </div>
+        <div style={{ padding: '13px 17px', overflowY: 'auto', flex: 1 }}>
+          <div style={{ fontSize: '0.78rem', color: '#6b6b74', lineHeight: 1.55, marginBottom: 10 }}>
+            Búscala entre lo que ya se cotizó: así hereda el monto, las líneas y la fecha real. Solo salen las
+            que todavía no tienen oportunidad.
+          </div>
+          <input value={q} onChange={e => setQ(e.target.value)} autoFocus
+            placeholder="Número de cotización, empresa o correo…"
+            style={{ ...D.inputM, marginBottom: 12 }} />
+
+          {propias === null ? <div style={{ fontSize: '0.8rem', color: '#a5a2af' }}>Buscando…</div> : (<>
+            <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#7a7684', textTransform: 'uppercase', letterSpacing: '.06em' }}>De esta cuenta</div>
+            {propias.length ? propias.map((c: any) => fila(c, false))
+              : <div style={{ fontSize: '0.78rem', color: '#a5a2af', padding: '8px 0' }}>Todo lo cotizado de esta cuenta ya tiene su oportunidad.</div>}
+
+            {huerfanas.length > 0 && (<>
+              <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#7a7684', textTransform: 'uppercase', letterSpacing: '.06em', marginTop: 16 }}>Sin cliente ligado</div>
+              <div style={{ fontSize: '0.73rem', color: '#a5a2af', lineHeight: 1.5, marginBottom: 2 }}>
+                Se hicieron antes de que existiera la ficha. Al usarlas quedan ligadas a este cliente.
+              </div>
+              {huerfanas.map((c: any) => fila(c, true))}
+            </>)}
+          </>)}
+        </div>
+        <div style={{ padding: '12px 17px 15px', borderTop: '1px solid #f1eff7', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <button style={D.btnG} onClick={onDesdeCero}>No está cotizada · crear desde cero</button>
+          <button style={{ ...D.btnG, marginLeft: 'auto' }} onClick={onClose}>Cancelar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─────────── 🎯 Oportunidades del cliente (deals) ─────────── */
 function TabOportunidades({ companyId, co, principal, subs = [], flash, reload }: any) {
   const senales = computarSenales(co, (subs || []).find((s: any) => s.estado === 'activa'));
@@ -2532,10 +2620,16 @@ function TabOportunidades({ companyId, co, principal, subs = [], flash, reload }
   const [stages, setStages] = useState<any[]>([]);
   const [busyId, setBusyId] = useState('');
   const [showNew, setShowNew] = useState(false);
+  const [eligiendo, setEligiendo] = useState(false);
+  // Cotizado que no llegó a ser oportunidad. Es la mitad que faltaba: la
+  // pestaña decía "$0 ganado" en cuentas que ya habían cobrado.
+  const [sueltas, setSueltas] = useState<any[]>([]);
 
   function cargar() {
     fetch('/api/crm/deals?company_id=' + companyId).then(r => r.json())
       .then(j => setDeals(Array.isArray(j) ? j : (j.deals || j.data || []))).catch(() => setDeals([]));
+    fetch('/api/crm/deals/cotizaciones?company_id=' + companyId).then(r => r.json())
+      .then(j => setSueltas(j.propias || [])).catch(() => setSueltas([]));
     fetch('/api/crm/pipelines').then(r => r.json())
       .then(pj => { const o = (pj.data || []).find((p: any) => p.tipo === 'oportunidad'); setStages(o?.stages || []); }).catch(() => {});
   }
@@ -2578,6 +2672,21 @@ function TabOportunidades({ companyId, co, principal, subs = [], flash, reload }
     flash(isWon(stage) ? (hechos ? 'Ganada · ' + hechos : 'Oportunidad ganada') + (c?.avisos?.length ? ' · ⚠ ' + c.avisos[0] : '') : 'Etapa actualizada');
     cargar(); reload?.();
   }
+  async function crearDesdeCotizacion(q: any) {
+    setBusyId(q.id);
+    const r = await fetch('/api/crm/deals/cotizaciones', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quote_id: q.id, company_id: companyId }),
+    });
+    const j = await r.json().catch(() => ({}));
+    setBusyId('');
+    if (!r.ok || j.error) { alert(j.error || 'No se pudo crear la oportunidad.'); return; }
+    const c = j?.cierre;
+    const hechos = [c?.cliente_creado && 'cliente creado', c?.sub_creada && 'suscripción generada', c?.unico_creado && 'pago único registrado'].filter(Boolean).join(' · ');
+    flash(`Oportunidad de ${q.numero} creada${hechos ? ' · ' + hechos : ''}`);
+    setEligiendo(false); cargar(); reload?.();
+  }
+
   async function convertir(d: any) {
     setBusyId(d.id);
     const w = window.open('', '_blank'); // síncrono en el gesto (iOS)
@@ -2598,7 +2707,15 @@ function TabOportunidades({ companyId, co, principal, subs = [], flash, reload }
   // Un pago único no es MRR. Sumarlos juntos hacía que una implementación de
   // $80,000 se leyera como recurrencia que no existe.
   const mrrDe = (d: any) => Number(d.mrr ?? d.valor_mensual ?? 0);
-  const unicoDe = (d: any) => Number(d.valor_unico ?? (d.billing_period === 'unico' ? d.valor_total : 0) ?? 0);
+  // Las oportunidades creadas antes del desglose por línea traen mrr y único en
+  // cero con el valor completo en valor_total: sin respaldo, una venta ganada de
+  // $44,505 se leía como "$0 ganado". Se cuentan como pago ÚNICO, que es lo que
+  // no infla: inventarles recurrencia sí movería el ARR.
+  const unicoDe = (d: any) => {
+    const u = Number(d.valor_unico ?? (d.billing_period === 'unico' ? d.valor_total : 0) ?? 0);
+    if (u > 0) return u;
+    return Number(d.mrr ?? d.valor_mensual ?? 0) > 0 ? 0 : Number(d.valor_total || 0);
+  };
   const mrrGanado = ganadas.reduce((a, d) => a + mrrDe(d), 0);
   const unicoGanado = ganadas.reduce((a, d) => a + unicoDe(d), 0);
   // ── Cuántas se pagan y cuántas se rechazan ──
@@ -2616,7 +2733,7 @@ function TabOportunidades({ companyId, co, principal, subs = [], flash, reload }
           entre ellas se leía como una más y quedaba a distinta altura. */}
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
         <div style={{ ...D.hM, marginBottom: 0, flex: 1 }}>Oportunidades del cliente</div>
-        <button style={D.btn} onClick={() => setShowNew(true)}>+ Nueva oportunidad</button>
+        <button style={D.btn} onClick={() => setEligiendo(true)}>+ Nueva oportunidad</button>
       </div>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14, alignItems: 'stretch' }}>
         <div style={{ ...D.kpi, borderLeft: '3px solid #7DA6F5' }}><div style={D.kl}>En pipeline</div><div style={D.kv}>{money(pipeline)}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{abiertas.length} abierta{abiertas.length === 1 ? '' : 's'}</div></div>
@@ -2625,6 +2742,36 @@ function TabOportunidades({ companyId, co, principal, subs = [], flash, reload }
         <div style={{ ...D.kpi, borderLeft: '3px solid #9B8CFA' }}><div style={D.kl}>Se pagan</div><div style={D.kv}>{resueltas ? pctGana + '%' : '—'}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{ganadas.length} de {resueltas} resueltas</div></div>
         <div style={{ ...D.kpi, borderLeft: '3px solid #EF7A72' }}><div style={D.kl}>Rechazadas</div><div style={{ ...D.kv, color: resueltas && pctPierde > 0 ? '#C0554E' : '#1a1a1a' }}>{resueltas ? pctPierde + '%' : '—'}</div><div style={{ fontSize: '0.68rem', color: '#a7abb3' }}>{perdidas.length}{montoPerdido > 0 ? ' · ' + money(montoPerdido) : ''}</div></div>
       </div>
+
+      {/* Cotizado que no llegó a ser oportunidad. Va ARRIBA de la lista: es lo
+          que está mal y hay que resolver, no un archivo que se consulta. */}
+      {sueltas.length > 0 && (
+        <div style={{ background: '#FEF6E7', border: '1.5px solid #f6e2bc', borderRadius: 12, padding: '12px 14px', marginBottom: 14 }}>
+          <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#9a6a10', textTransform: 'uppercase', letterSpacing: '.06em' }}>
+            Cotizado sin oportunidad ({sueltas.length})
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#8a6a2a', lineHeight: 1.5, margin: '3px 0 9px' }}>
+            Se le cotizó y no quedó registrado aquí, así que no cuenta en lo ganado ni en los porcentajes.
+          </div>
+          {sueltas.map((q: any) => (
+            <div key={q.id} style={{ display: 'flex', gap: 9, alignItems: 'center', flexWrap: 'wrap', padding: '7px 0', borderTop: '1px solid #f4e6cd' }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>
+                  {q.numero} · {money(q.total)}
+                  <span style={{ ...D.badge, marginLeft: 7, background: q.estado === 'paid' ? '#EAF8F2' : '#F4F4F6', color: q.estado === 'paid' ? '#1E8A63' : '#6B7280' }}>{ESTADO_COT[q.estado] || q.estado}</span>
+                </div>
+                <div style={{ fontSize: '0.73rem', color: '#8a8590' }}>
+                  {fmtDate(q.pagado_fecha || q.created_at)}{q.contacto ? ' · ' + q.contacto : ''}
+                </div>
+              </div>
+              <a href={`/cotizacion/${q.id}`} target="_blank" rel="noreferrer" style={{ ...D.btnG, textDecoration: 'none', fontSize: '0.76rem' }}>Ver</a>
+              <button style={{ ...D.btn, fontSize: '0.76rem' }} disabled={busyId === q.id} onClick={() => crearDesdeCotizacion(q)}>
+                {busyId === q.id ? '…' : 'Crear oportunidad'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {deals.length === 0 ? (
         <div style={{ ...D.card, color: '#999', fontSize: '0.85rem' }}>Este cliente aún no tiene oportunidades.</div>
@@ -2661,6 +2808,15 @@ function TabOportunidades({ companyId, co, principal, subs = [], flash, reload }
 
       {/* El alta completa (catálogo, personalizado, descuentos, MRR/único) ya
           cuelga del cliente: por eso no hace falta contacto principal. */}
+      {eligiendo && (
+        <ElegirCotizacionModal
+          companyId={companyId}
+          busyId={busyId}
+          onUsar={crearDesdeCotizacion}
+          onDesdeCero={() => { setEligiendo(false); setShowNew(true); }}
+          onClose={() => setEligiendo(false)}
+        />
+      )}
       {showNew && (
         <NuevaOportunidadModal
           companyIdInicial={companyId}
