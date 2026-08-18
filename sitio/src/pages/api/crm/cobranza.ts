@@ -25,6 +25,11 @@ const dias = (f: string) => Math.floor((Date.parse(hoy()) - Date.parse(String(f)
 
 export const GET: APIRoute = async () => {
   const mes1 = hoy().slice(0, 8) + '01';
+  // Y el corte de arriba: sin él, un pago capturado con fecha del año que viene
+  // —pasa— entraba en "cobrado este mes" y el KPI cobraba $5,500 de más. Se
+  // topa en el primer día del mes siguiente.
+  const [aa, mm] = mes1.split('-').map(Number);
+  const mesFin = new Date(Date.UTC(aa, mm, 1)).toISOString().slice(0, 10);
   const [subsQ, compQ, cobrosQ, pagosQ, cotsQ, abonosQ, cancelQ] = await Promise.all([
     supabase.from('subscriptions')
       .select('id, company_id, nombre_plan, ciclo, precio, monto_proximo, proxima_factura, estado, total_pagado, pagos_realizados, mp_link_pago, cobranza_estado, cobranza_promesa, cobranza_nota, saldo_favor')
@@ -34,7 +39,7 @@ export const GET: APIRoute = async () => {
     // El detalle del mes, no solo la suma: un KPI que nadie puede abrir es un
     // número que hay que creer. Aquí se ve de quién salió cada peso.
     supabase.from('payments').select('id, monto, fecha, metodo, referencia, subscription_id, quote_id, company_id')
-      .gte('fecha', mes1).neq('estado', 'reembolsado').order('fecha', { ascending: false }),
+      .gte('fecha', mes1).lt('fecha', mesFin).neq('estado', 'reembolsado').order('fecha', { ascending: false }),
     // Cobranza NO es solo suscripciones: una cotización aceptada sin pagar —o
     // pagada a medias— es dinero comprometido que nadie está persiguiendo.
     supabase.from('quotes').select('id, numero, empresa, contacto, email, total, estado, company_id, aceptado_fecha, vigencia, created_at, link_pago, cobranza_estado, cobranza_promesa, cobranza_nota')
@@ -43,7 +48,7 @@ export const GET: APIRoute = async () => {
     // Lo que se fue este mes y por qué: sin el motivo, la baja es un número que
     // no enseña nada.
     supabase.from('subscriptions').select('id, company_id, nombre_plan, ciclo, precio, arr, mrr, razon_cancelacion, cancelada_at')
-      .eq('estado', 'cancelada').gte('cancelada_at', mes1),
+      .eq('estado', 'cancelada').gte('cancelada_at', mes1).lt('cancelada_at', mesFin),
   ]);
 
   const empresas = Object.fromEntries((compQ.data || []).map((c: any) => [c.id, c]));

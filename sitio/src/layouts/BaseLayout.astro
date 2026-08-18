@@ -143,6 +143,11 @@ import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
          donde se caen. Complementa a los pixeles de campaña, que solo cuentan
          llegadas.
 
+         Se instala como paquete y NO con el fragmento de CDN: con el loader
+         remoto la instancia quedaba a medias —capture() salia sin enviar y no
+         llegaba un solo evento al proyecto— y ademas el bundle dependia de un
+         host externo. Importado por Astro queda una sola instancia, verificada.
+
          Tres decisiones de configuracion que importan:
 
          · person_profiles "identified_only": no se crea perfil por cada visita
@@ -151,38 +156,44 @@ import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
          · maskAllInputs: si algun dia se enciende la grabacion de sesion, lo
            que la gente teclea NO se graba. Es informacion de personas reales.
          · respect_dnt: si el navegador pide no ser rastreado, se respeta. -->
-    <script is:inline define:vars={{ phKey: POSTHOG_KEY, phHost: POSTHOG_HOST }}>
-    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
-    posthog.init(phKey, {
-      api_host: phHost,
-      person_profiles: "identified_only",
-      respect_dnt: true,
-      session_recording: { maskAllInputs: true },
-    });
+    <script>
+      import posthog from 'posthog-js';
+      import { POSTHOG_KEY, POSTHOG_HOST } from '../lib/posthog';
 
-    /* Envoltorio unico, igual que sacsOai: si el SDK no cargo (bloqueador, sin
-       red), nada de lo que sigue truena. */
-    window.sacsPH = function (evento, props) {
-      try { if (window.posthog && window.posthog.capture) window.posthog.capture(evento, props || {}); } catch (e) {}
-    };
+      posthog.init(POSTHOG_KEY, {
+        api_host: POSTHOG_HOST,
+        person_profiles: 'identified_only',
+        respect_dnt: true,
+        session_recording: { maskAllInputs: true },
+      });
 
-    /* Los tres momentos que definen el embudo del sitio, medidos en un solo
-       lugar por delegacion: sirve para los enlaces que ya existen y para los
-       que se agreguen despues. */
-    document.addEventListener("click", function (e) {
-      var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
-      if (!a) return;
-      var h = a.getAttribute("href") || "";
-      var comun = { destino: h, texto: (a.textContent || "").trim().slice(0, 60), pagina: location.pathname };
+      /* Envoltorio unico, igual que sacsOai: si el SDK no cargo (bloqueador,
+         sin red), nada de lo que sigue truena. */
+      (window as any).sacsPH = function (evento: string, props?: Record<string, unknown>) {
+        try { posthog.capture(evento, props || {}); } catch (e) {}
+      };
 
-      if (h.indexOf("wa.me") !== -1 || h.indexOf("api.whatsapp.com") !== -1) {
-        window.sacsPH("whatsapp_click", comun);
-      } else if (h.indexOf("/contacto") !== -1) {
-        window.sacsPH("demo_click", comun);
-      } else if (h.indexOf("/prueba-gratis") !== -1 || h.indexOf("/registro") !== -1) {
-        window.sacsPH("prueba_click", comun);
-      }
-    }, true);
+      /* Los tres momentos que definen el embudo del sitio, medidos en un solo
+         lugar por delegacion: sirve para los enlaces que ya existen y para los
+         que se agreguen despues. */
+      document.addEventListener('click', (e) => {
+        const a = (e.target as HTMLElement)?.closest?.('a[href]');
+        if (!a) return;
+        const h = a.getAttribute('href') || '';
+        const comun = {
+          destino: h,
+          texto: (a.textContent || '').trim().slice(0, 60),
+          pagina: location.pathname,
+        };
+
+        if (h.includes('wa.me') || h.includes('api.whatsapp.com')) {
+          posthog.capture('whatsapp_click', comun);
+        } else if (h.includes('/contacto')) {
+          posthog.capture('demo_click', comun);
+        } else if (h.includes('/prueba-gratis') || h.includes('/registro')) {
+          posthog.capture('prueba_click', comun);
+        }
+      }, true);
     </script>
 
     <!-- Partner attribution strip hydration -->
