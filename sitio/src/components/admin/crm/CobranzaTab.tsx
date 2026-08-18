@@ -111,11 +111,17 @@ export default function CobranzaTab() {
             <div style={{ fontSize: '0.62rem', color: '#b3b1bb' }}>{esCot ? 'cotización' : mensual ? 'recurrencia' : 'anualidad'}</div>
           </td>
           <td style={S.td}>{fmtDate(f.vence)}</td>
-          <td style={{ ...S.td, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: f.dias > 90 ? '#C0554E' : f.dias > 7 ? '#9a6a10' : '#5B4BD6' }}>{f.dias}</td>
-          <td style={S.td}>
-            <b style={{ color: f.dias > 90 ? '#C0554E' : '#1a1a1a' }}>{money(f.deuda)}</b>
-            {f.detalle && <div style={{ fontSize: '0.67rem', color: '#a5a2af' }}>{f.detalle}</div>}
-            {!f.detalle && f.pagado > 0 && <div style={{ fontSize: '0.67rem', color: '#a5a2af' }}>lleva {money(f.pagado)} pagados</div>}
+          <td style={{ ...S.td, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums', color: f.dias > 90 ? '#C0554E' : f.dias > 7 ? '#9a6a10' : '#5B4BD6' }}>
+            <b>{f.dias}</b> <span style={{ fontSize: '0.65rem', fontWeight: 500, color: '#b3b1bb' }}>{f.dias === 1 ? 'día' : 'días'}</span>
+          </td>
+          {/* El monto solo. La explicación de CÓMO se llega a él va en su propia
+              columna: apiladas se leían como un renglón de tres pisos y el
+              número —que es lo que se cobra— quedaba enterrado. */}
+          <td style={{ ...S.td, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+            <b style={{ fontSize: '0.86rem', color: f.dias > 90 ? '#C0554E' : '#1a1a1a' }}>{money(f.deuda)}</b>
+          </td>
+          <td style={{ ...S.td, fontSize: '0.72rem', color: '#8a8590', lineHeight: 1.45 }}>
+            {f.detalle || (f.pagado > 0 ? `lleva ${money(f.pagado)} pagados` : <span style={{ color: '#c9c7d0' }}>—</span>)}
           </td>
           <td style={S.td}>
             <span style={S.tag(g.bg, g.fg)}>{g.l}</span>
@@ -123,7 +129,7 @@ export default function CobranzaTab() {
           </td>
           <td style={S.td}>{se ? <span style={S.tag(se.bg, se.fg)}>{se.l}</span> : <span style={{ color: '#c9c7d0' }}>—</span>}</td>
           <td style={S.td}>
-            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'nowrap' }}>
               <button style={{ ...S.mini, ...S.mp }} onClick={() => setGestion({ ...f, modo: 'pago' })}>Registrar pago</button>
               {esCot && <a style={S.mini} href={`/cotizacion/${f.id}`} target="_blank" rel="noreferrer">Ver cotización</a>}
               {!esCot && (f.plan_pagos.length > 0
@@ -140,7 +146,7 @@ export default function CobranzaTab() {
         </tr>
         {abierto && f.plan_pagos.length > 0 && (
           <tr>
-            <td colSpan={8} style={{ background: '#faf8ff', borderTop: '1px solid #ece7fa', padding: '11px 14px' }}>
+            <td colSpan={9} style={{ background: '#faf8ff', borderTop: '1px solid #ece7fa', padding: '11px 14px' }}>
               <div style={{ fontSize: '0.62rem', fontWeight: 800, color: '#5B4BD6', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8 }}>
                 Plan de pagos · {money(f.plan_pagos.reduce((a: number, x: any) => a + x.monto, 0))} en {f.plan_pagos.length} exhibiciones
               </div>
@@ -173,21 +179,22 @@ export default function CobranzaTab() {
 
   const Tabla = ({ filas }: any) => (
     <div style={{ overflowX: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <table style={{ width: '100%', minWidth: 1240, borderCollapse: 'collapse' }}>
         <thead>
           <tr>
             <th style={{ ...S.th, minWidth: 150 }}>Cliente</th>
-            <th style={{ ...S.th, minWidth: 140 }}>Concepto</th>
-            <th style={{ ...S.th, width: 110 }}>Venció</th>
-            <th style={{ ...S.th, width: 50 }}>Días</th>
-            <th style={{ ...S.th, width: 120 }}>Debe</th>
-            <th style={{ ...S.th, width: 110 }}>Gestión</th>
-            <th style={{ ...S.th, width: 100 }}>Señal</th>
-            <th style={{ ...S.th, minWidth: 230 }} />
+            <th style={{ ...S.th, minWidth: 150 }}>Concepto</th>
+            <th style={{ ...S.th, minWidth: 104 }}>Venció</th>
+            <th style={{ ...S.th, minWidth: 78 }}>Atraso</th>
+            <th style={{ ...S.th, minWidth: 96 }}>Debe</th>
+            <th style={{ ...S.th, minWidth: 150 }}>Cómo se compone</th>
+            <th style={{ ...S.th, minWidth: 120 }}>Gestión</th>
+            <th style={{ ...S.th, minWidth: 96 }}>Señal</th>
+            <th style={{ ...S.th, minWidth: 380 }} />
           </tr>
         </thead>
         <tbody>
-          {filas.length === 0 && <tr><td style={{ ...S.td, color: '#c9c7d0' }} colSpan={8}>Nada por cobrar aquí.</td></tr>}
+          {filas.length === 0 && <tr><td style={{ ...S.td, color: '#c9c7d0' }} colSpan={9}>Nada por cobrar aquí.</td></tr>}
           {filas.map((f: any) => <Fila key={f.id} f={f} />)}
         </tbody>
       </table>
@@ -266,16 +273,16 @@ export default function CobranzaTab() {
           const n = v.filas.length;
           return (
             <button key={v.id} onClick={() => setVista(v.id)} style={{
-              padding: '9px 14px', background: on ? 'rgba(244,168,205,.28)' : 'transparent',
+              padding: '9px 14px', background: on ? '#EEECFE' : 'transparent',
               borderRadius: on ? '9px 9px 0 0' : 0, border: 'none',
-              borderBottom: on ? '2px solid #d9538e' : '2px solid transparent',
-              color: on ? '#9c3d70' : '#6b6b74', fontWeight: on ? 800 : 500,
+              borderBottom: on ? '2px solid #9B8CFA' : '2px solid transparent',
+              color: on ? '#5B4BD6' : '#6b6b74', fontWeight: on ? 800 : 500,
               fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', marginBottom: -1,
             }}>
               {v.label}
               <span style={{
                 marginLeft: 6, fontSize: '0.66rem', fontWeight: on ? 800 : 700,
-                background: on ? '#fff' : '#f3f3f6', color: on ? '#9c3d70' : n === 0 ? '#c4c4cc' : '#8a8a92',
+                background: on ? '#fff' : '#f3f3f6', color: on ? '#5B4BD6' : n === 0 ? '#c4c4cc' : '#8a8a92',
                 borderRadius: 20, padding: '2px 8px',
               }}>{n}</span>
             </button>
@@ -312,8 +319,8 @@ function DetalleMes({ filas, total, onCerrar, onCliente }: any) {
       <div style={{ display: 'flex', gap: 6, marginBottom: 11, flexWrap: 'wrap' }}>
         {([['todos', 'Todos'], ['suscripcion', 'Suscripciones'], ['cotizacion', 'Cotizaciones']] as const).map(([id, l]) => (
           <button key={id} onClick={() => setTipo(id)} style={{
-            ...S.mini, background: tipo === id ? 'rgba(244,168,205,.28)' : '#fff',
-            color: tipo === id ? '#9c3d70' : '#555', borderColor: tipo === id ? '#f3c9dd' : '#e2e4e9',
+            ...S.mini, background: tipo === id ? '#EEECFE' : '#fff',
+            color: tipo === id ? '#5B4BD6' : '#555', borderColor: tipo === id ? '#ddd6fb' : '#e2e4e9',
           }}>{l} <b>{id === 'todos' ? filas.length : filas.filter((f: any) => f.tipo === id).length}</b></button>
         ))}
         <span style={{ marginLeft: 'auto', fontSize: '0.82rem', fontWeight: 800, color: '#1E8A63' }}>{money(suma)}</span>
