@@ -109,48 +109,43 @@ export const GET: APIRoute = async ({ url }) => {
     proxima_factura: activas.map(s => s.proxima_factura).filter(Boolean).sort()[0] || null,
   };
 
-  // ── Desde cuándo es cliente ──
-  // Se toma la fecha MÁS VIEJA de tres candidatas: el alta comercial, el inicio
-  // de su primera suscripción y su primer pago. Ninguna sola es confiable —hay
-  // cuentas con suscripción cargada después de meses operando y otras con pago
-  // adelantado— y la más vieja de las tres es la que nunca miente por arriba.
+  // ── Desde cuándo existe esta cuenta ──
   //
-  // No es la fecha en que se creó la cuenta EN SACS: esa vive del otro lado del
-  // puente y traerla costaría una consulta más por cuenta.
+  // Manda lo que dice SACS (`cuenta_desde`: su primera venta o su primera
+  // sucursal, lo que sea más viejo), no el registro comercial. Es la diferencia
+  // entre "desde cuándo nos paga" y "desde cuándo opera": Live Shows figuraba
+  // con 8 meses porque su suscripción se cargó en dic-2025, cuando llevaba
+  // vendiendo desde feb-2024.
+  //
+  // El dato viene del caché que deja el cron nocturno. No cuesta una consulta a
+  // SACS por abrir la ficha.
+  const cuentaDesde = (co.data as any)?.actividad?.cuenta_desde || null;
+
+  // El registro comercial se conserva como respaldo: una cuenta recién ligada
+  // —o una sin ventas todavía— no tiene rastro en SACS del cual fecharse.
   const candidatas = [
     (co.data as any)?.fecha_inicio,
     ...(subs.data || []).map((x: any) => x.fecha_inicio),
     ...(pays.data || []).map((x: any) => x.fecha),
   ].filter(Boolean).map((x: any) => String(x).slice(0, 10)).sort();
   const clienteDesde = candidatas[0] || null;
-  const mesesCliente = clienteDesde
-    ? Math.max(0, Math.round((Date.now() - Date.parse(clienteDesde + 'T12:00:00')) / 2629800000))
+  const desde = cuentaDesde || clienteDesde;
+  const mesesCliente = desde
+    ? Math.max(0, Math.round((Date.now() - Date.parse(desde + 'T12:00:00')) / 2629800000))
     : null;
-
-  // Promedio de la cartera, para que el número de esta cuenta signifique algo:
-  // "1.2 años" no dice nada hasta saber que el promedio es 7 meses.
-  let promedioMeses: number | null = null;
-  try {
-    const { data: act } = await supabase.from('subscriptions').select('company_id, fecha_inicio').eq('estado', 'activa');
-    const prim: Record<string, string> = {};
-    (act || []).forEach((x: any) => {
-      if (!x.fecha_inicio) return;
-      const f = String(x.fecha_inicio).slice(0, 10);
-      if (!prim[x.company_id] || f < prim[x.company_id]) prim[x.company_id] = f;
-    });
-    const vals = Object.values(prim);
-    if (vals.length) {
-      promedioMeses = Math.round(vals.reduce((a, f) => a + (Date.now() - Date.parse(f + 'T12:00:00')) / 2629800000, 0) / vals.length);
-    }
-  } catch { /* el promedio nunca bloquea la ficha */ }
 
   return new Response(JSON.stringify({
     company: co.data,
     resumen,
     antiguedad: {
-      cliente_desde: clienteDesde, meses: mesesCliente, promedio_meses: promedioMeses,
-      // Viene del caché del cron, no de una consulta a SACS.
-      sucursales: (co.data as any)?.actividad?.sucursales_detalle || [],
+      desde, meses: mesesCliente,
+      // De dónde salió la fecha, para poder discutir el número sin adivinar.
+      origen: cuentaDesde ? ((co.data as any)?.actividad?.cuenta_desde_origen || 'SACS') : 'registro comercial',
+      cliente_desde: clienteDesde,
+      // La última sucursal que abrió, con fecha: dice si la cuenta sigue
+      // creciendo. Todo del caché del cron, no de una consulta a SACS.
+      sucursal_reciente: (co.data as any)?.actividad?.sucursal_reciente || null,
+      sucursales_totales: (co.data as any)?.actividad?.sucursales_totales ?? null,
     },
     subscriptions: subs.data || [],
     payments: pays.data || [],
