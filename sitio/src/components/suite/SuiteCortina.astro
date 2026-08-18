@@ -3,12 +3,16 @@
  * SuiteCortina — el antes y el después, con una línea que el visitante arrastra.
  *
  * Por que arrastrable y no dos columnas: la comparacion la HACE el visitante
- * con su propia mano, y eso se recuerda mucho mas que leerla. Es el unico
- * bloque de la pagina donde hay que tocar algo.
+ * con su propia mano, y eso se recuerda mucho mas que leerla.
+ *
+ * Lo que de verdad cierra el argumento no son los datos, son las dos caras: a
+ * la izquierda la vendedora agobiada con su libreta; a la derecha la misma
+ * escena resuelta. El dueño de la boutique no se reconoce en una tabla, se
+ * reconoce en la cara de su colaboradora un sabado a las dos de la tarde.
  *
  * Regla de tono: la libreta no esta ridiculizada. Funciona — hasta que abres la
- * segunda tienda. Si el visitante siente que se estan burlando de como trabaja
- * hoy, deja de leer.
+ * segunda tienda. Si el visitante siente que se burlan de como trabaja hoy,
+ * deja de leer.
  */
 ---
 
@@ -16,26 +20,38 @@
   <div class="cort-head">
     <p class="cort-eyebrow">La misma pregunta, dos veces</p>
     <h2>“¿Tendrás esta en chica?”</h2>
-    <p class="cort-sub">Arrastra la línea. A la izquierda, cómo se responde hoy. A la derecha, en tres segundos.</p>
+    <p class="cort-sub">
+      Arrastra la línea. A la izquierda, cómo se responde hoy. A la derecha, en tres segundos.
+    </p>
   </div>
 
   <div class="cort" id="cort">
+    <!-- HOY -->
     <div class="cort-capa cort-antes">
+      <img src="/images/suite-moda-hoy.webp" alt="Vendedora buscando en su libreta si queda una talla" loading="lazy" decoding="async" />
+      <div class="cort-velo cort-velo-a"></div>
       <span class="cort-etq cort-etq-a">Hoy</span>
-      <div class="cort-libreta" aria-hidden="true">
-        Blusa negra M — ¿quedan?<br />
-        Vestido S … <s>¿en Satélite?</s><br />
-        Llamar a Poli p/ preguntar<br />
-        Liverpool: 40 vestidos ¿?
+      <div class="cort-panel cort-panel-a">
+        <div class="cort-libreta" aria-hidden="true">
+          Blusa negra M — ¿quedan?<br />
+          Vestido S … <s>¿en Satélite?</s>
+        </div>
+        <p class="cort-pie cort-pie-a">Dos llamadas, una libreta<br />y la clienta esperando.</p>
       </div>
     </div>
 
+    <!-- CON SACS -->
     <div class="cort-capa cort-despues" id="cortDespues">
+      <img src="/images/suite-moda-resuelto.webp" alt="Vendedora atendiendo tranquila con el sistema en pantalla" loading="lazy" decoding="async" />
+      <div class="cort-velo cort-velo-d"></div>
       <span class="cort-etq cort-etq-d">Con SACS</span>
-      <div class="cort-pos">
-        <div class="cort-fila"><b>Blusa satinada negra · M</b><i>Centro</i><u>4</u></div>
-        <div class="cort-fila"><b>Vestido midi verde · S</b><i>Satélite</i><u>3</u></div>
-        <div class="cort-fila"><b>Vestido cruzado · M</b><i>Liverpool</i><u>31 vend.</u></div>
+      <div class="cort-panel cort-panel-d">
+        <div class="cort-pos">
+          <div class="cort-fila"><b>Blusa satinada negra · M</b><i>Centro</i><u>4</u></div>
+          <div class="cort-fila"><b>Vestido midi verde · S</b><i>Satélite</i><u>3</u></div>
+          <div class="cort-fila"><b>Vestido cruzado · M</b><i>Liverpool</i><u>31 vend.</u></div>
+        </div>
+        <p class="cort-pie cort-pie-d">Tres segundos, sin llamarle a nadie.</p>
       </div>
     </div>
 
@@ -66,64 +82,101 @@
   .cort-sub { color: #A1A1AA; font-size: clamp(15px, 1.7vw, 18px); margin: 0; max-width: 56ch; }
 
   .cort {
-    position: relative; max-width: 1200px; margin: 0 auto; height: 440px;
-    border-radius: 20px; overflow: hidden; border: 1px solid #23232B;
-    user-select: none; touch-action: pan-y;
+    position: relative; max-width: 1200px; margin: 0 auto; height: 660px;
+    border-radius: 22px; overflow: hidden; border: 1px solid #23232B;
+    user-select: none; touch-action: pan-y; background: #0D0D11;
   }
-  .cort-capa { position: absolute; inset: 0; display: flex; align-items: center; }
-  .cort-antes { background: #17140F; justify-content: flex-start; padding-left: 7%; }
-  .cort-despues {
-    background: #0D1018; justify-content: flex-end; padding-right: 6%;
-    clip-path: inset(0 0 0 50%);
+  .cort-capa { position: absolute; inset: 0; }
+  /* La foto NO se recorta con la cortina: cada capa la trae completa y es el
+     clip el que decide cuanta se ve. Asi la escena no se deforma al arrastrar. */
+  .cort-capa img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .cort-despues { clip-path: inset(0 0 0 50%); }
+
+  .cort-velo { position: absolute; inset: 0; }
+  /* Cada velo empuja hacia SU lado: el de "hoy" oscurece la izquierda, donde va
+     la libreta; el de "con SACS" oscurece la derecha, donde va el ticket. */
+  /* Velo VERTICAL en los dos lados: la cara tiene que verse, y el texto vive
+     abajo. Un velo horizontal apagaba justo a la persona, que es lo que hace
+     funcionar la comparacion. */
+  .cort-velo-a {
+    background: linear-gradient(180deg, rgba(10,9,7,.25) 0%, rgba(10,9,7,.1) 30%, rgba(10,9,7,.72) 68%, rgba(10,9,7,.94) 100%);
+  }
+  .cort-velo-d {
+    background: linear-gradient(180deg, rgba(6,9,14,.25) 0%, rgba(6,9,14,.08) 30%, rgba(6,9,14,.7) 66%, rgba(6,9,14,.93) 100%);
   }
 
   .cort-etq {
-    position: absolute; top: 20px; font-size: 10.5px; letter-spacing: .14em;
-    text-transform: uppercase; font-weight: 800; padding: 6px 13px; border-radius: 999px;
+    position: absolute; top: 22px; z-index: 2; font-size: 11px; letter-spacing: .16em;
+    text-transform: uppercase; font-weight: 800; padding: 7px 15px; border-radius: 999px;
   }
-  .cort-etq-a { left: 22px; background: rgba(232,168,56,.14); color: #E8A838; border: 1px solid rgba(232,168,56,.3); }
-  .cort-etq-d { right: 22px; background: rgba(75,123,229,.16); color: #7FA6F5; border: 1px solid rgba(75,123,229,.36); }
+  /* Fondo solido, no translucido: del lado "con SACS" la foto es clara y una
+     pastilla transparente se perdia por completo. */
+  .cort-etq-a {
+    left: 24px; background: rgba(28,20,6,.86); color: #F0B84C;
+    border: 1px solid rgba(232,168,56,.45); backdrop-filter: blur(6px);
+  }
+  .cort-etq-d {
+    right: 24px; background: rgba(8,14,28,.86); color: #A8C4FA;
+    border: 1px solid rgba(120,160,240,.5); backdrop-filter: blur(6px);
+  }
+
+  /* Los paneles se pegan a la orilla de su lado para que sigan visibles con la
+     cortina en cualquier posicion. */
+  .cort-panel { position: absolute; bottom: 7%; z-index: 2; }
+  .cort-panel-a { left: 5%; max-width: 40%; }
+  .cort-panel-d { right: 4%; width: min(430px, 42%); }
 
   .cort-libreta {
     font-family: "Bradley Hand", "Segoe Script", "Comic Sans MS", cursive;
-    color: #C9B48A; font-size: clamp(16px, 2vw, 21px); line-height: 2.1;
+    color: #D8C49A; font-size: clamp(15px, 1.7vw, 20px); line-height: 1.9;
     transform: rotate(-1.6deg);
+    text-shadow: 0 2px 12px rgba(0,0,0,.7);
   }
-  .cort-libreta s { color: #7A6A4E; }
+  .cort-libreta s { color: #8A7857; }
 
-  .cort-pos { width: min(440px, 46vw); }
   .cort-fila {
-    display: flex; align-items: center; gap: 10px; background: #151A24;
-    border: 1px solid #22304A; border-radius: 11px; padding: 12px 14px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 12px; background: rgba(18,24,36,.9);
+    border: 1px solid #2B3A54; border-radius: 12px; padding: 12px 15px; margin-bottom: 8px;
+    backdrop-filter: blur(4px);
   }
-  .cort-fila b { font-size: 13.5px; font-weight: 600; color: #fff; flex: 1; }
-  .cort-fila i { font-style: normal; font-size: 12px; color: #6A6A76; }
+  .cort-fila b { font-size: 14.5px; font-weight: 600; color: #fff; flex: 1; }
+  .cort-fila i { font-style: normal; font-size: 12.5px; color: #7A8296; }
   .cort-fila u {
-    text-decoration: none; font-size: 11.5px; color: #04241A; background: #34D399;
-    border-radius: 6px; padding: 3px 9px; font-weight: 800;
+    text-decoration: none; font-size: 12px; color: #04241A; background: #34D399;
+    border-radius: 6px; padding: 4px 10px; font-weight: 800;
   }
+
+  .cort-pie {
+    margin: 16px 0 0; font-size: 13.5px; font-weight: 700; line-height: 1.45; letter-spacing: .01em;
+    text-shadow: 0 2px 10px rgba(0,0,0,.7);
+  }
+  .cort-pie-a { color: #E8A838; }
+  .cort-pie-d { color: #34D399; }
 
   .cort-tirador {
     position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: #fff;
-    cursor: ew-resize; z-index: 3;
+    cursor: ew-resize; z-index: 4;
   }
   .cort-tirador::after {
     content: ""; position: absolute; top: 50%; left: 50%;
-    width: 48px; height: 48px; margin: -24px 0 0 -24px; border-radius: 50%;
-    background: #fff; box-shadow: 0 4px 18px rgba(0,0,0,.4);
+    width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%;
+    background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,.5);
   }
   .cort-tirador::before {
     content: "⟷"; position: absolute; top: 50%; left: 50%; z-index: 1;
-    transform: translate(-50%, -50%); color: #0A0A0B; font-size: 18px; font-weight: 700;
+    transform: translate(-50%, -50%); color: #0A0A0B; font-size: 19px; font-weight: 700;
   }
   .cort-tirador:focus-visible { outline: 3px solid #60A5FA; outline-offset: 3px; }
 
-  @media (max-width: 760px) {
+  @media (max-width: 900px) {
     .cort-bloque { padding: 64px 18px 76px; }
-    .cort { height: 380px; }
-    .cort-antes { padding-left: 5%; }
-    .cort-pos { width: 60vw; }
+    .cort { height: 520px; }
+    .cort-panel-a { left: 5%; max-width: 44%; bottom: 5%; }
+    .cort-panel-d { right: 4%; width: 46%; bottom: 5%; }
+    .cort-fila { padding: 10px 12px; gap: 8px; }
     .cort-fila b { font-size: 12px; }
+    .cort-fila i { display: none; }
+    .cort-pie { font-size: 12px; }
   }
 </style>
 
